@@ -16,11 +16,14 @@ import (
 
 	"github.com/Benchmark-CO2/bip/internal/data"
 	"github.com/Benchmark-CO2/bip/internal/mailer"
+	"github.com/Benchmark-CO2/bip/internal/vcs"
 
 	_ "github.com/lib/pq"
 )
 
-var version = "0.0.0"
+var (
+	version = vcs.Version()
+)
 
 type config struct {
 	port int
