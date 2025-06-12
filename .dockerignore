@@ -1,0 +1,8 @@
+.envrc
+bin/
+api
+!api/
+
+node_modules/
+dist/
+routeTree.gen.ts

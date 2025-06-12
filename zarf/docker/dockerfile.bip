@@ -1,0 +1,54 @@
+FROM node:24-slim AS build_frontend
+
+WORKDIR /frontend
+
+RUN npm install -g pnpm@10.11.0
+
+COPY web/frontend/package.json web/frontend/pnpm-lock.yaml ./
+
+RUN pnpm install --frozen-lockfile
+
+COPY web/frontend .
+
+RUN pnpm build
+
+
+FROM golang:1.24 AS build_api
+ENV CGO_ENABLED=0
+ARG BUILD_REF
+
+WORKDIR /bip
+
+# vendor
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+COPY --from=build_frontend /frontend/dist /web/frontend/dist
+
+WORKDIR /bip/cmd/api
+RUN go build -ldflags "-X main.version=${BUILD_REF}"
+
+
+FROM alpine:3.21
+ARG BUILD_DATE
+ARG BUILD_REF
+
+RUN addgroup -g 1000 -S bip && \
+    adduser -u 1000 -h /bip -G bip -S bip
+
+COPY --from=build_api --chown=bip:bip /bip/cmd/api/api /bip/api
+
+WORKDIR /bip
+
+USER bip
+
+ENTRYPOINT ["./api"]
+
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+    org.opencontainers.image.title="bip-api" \
+    org.opencontainers.image.authors="Bruno Avelino <bruno.souza.avelino2@gmail.com> | Felipe Okino <felipe.okino@gmail.com> | Mateus Canali de Miranda <mateuscanalimiranda@gmail.com>" \
+    org.opencontainers.image.source="https://github.com/Benchmark-CO2/bip" \
+    org.opencontainers.image.revision="${BUILD_REF}" \
+    org.opencontainers.image.vendor="BRUNO DE SOUZA AVELINO DESENVOLVIMENTO DE SOFTWARE LTDA | Rubber Duck Ideas LTDA | MATEUS CANALI DE MIRANDA DESENVOLVIMEENTO DE PROGRAMAS"
