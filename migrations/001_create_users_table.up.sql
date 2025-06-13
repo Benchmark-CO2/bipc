@@ -6,6 +6,6 @@ CREATE TABLE IF NOT EXISTS users (
     name TEXT NOT NULL,
     email citext UNIQUE NOT NULL,
     password_hash BYTEA NOT NULL,
-    activated BOOLEAN NOT NULL DEFAULT FALSE
+    activated BOOLEAN NOT NULL DEFAULT FALSE,
     image_url TEXT DEFAULT NULL,
 );

@@ -24,7 +24,7 @@ include .envrc
 # ==============================================================================
 # Node Installation & Browsers
 # 
-#	You need to have Node.js version 18+ or 20+.
+#	You need to have Node.js version >= 24.2.0 and pnpm version 10.12.1
 #
 #	Chrome  >=87
 #	Firefox >=78
@@ -40,16 +40,12 @@ include .envrc
 # ==============================================================================
 # Define dependencies
 
-GOLANG   := golang:1.24
-ALPINE   := alpine:3.21
-POSTGRES := postgres:17.5
-NODE     := node:24-slim
-MAILHOG  := mailhog/mailhog:v1.0.1
-
-VERSION   := 0.0.1
-BIP_IMAGE := localhost/bip:$(VERSION)
-
-export VITE_VERSION := $(VERSION)
+GOLANG    := golang:1.24
+ALPINE    := alpine:3.22
+POSTGRES  := postgres:17.5
+NODE      := node:24-slim
+MAILHOG   := mailhog/mailhog:v1.0.1
+BIP_IMAGE := localhost/bip:latest
 	
 # ==================================================================================== #
 # HELPERS
@@ -94,8 +90,6 @@ docker/build:
 	docker build \
 		-f zarf/docker/dockerfile.bip \
 		-t $(BIP_IMAGE) \
-		--build-arg BUILD_REF=$(VERSION) \
-		--build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
 		.
 
 ## compose/up: start the Docker Compose services
@@ -105,7 +99,7 @@ compose/up:
 
 ## compose/build-up: build the Docker image and start the services
 .PHONY: compose/build-up
-compose/build-up: docker-build compose-up
+compose/build-up: docker/build compose/up
 
 ## compose/down: stop and remove the Docker Compose services
 .PHONY: compose/down
@@ -125,7 +119,7 @@ run/help:
 ## run/api: run the cmd/api application
 .PHONY: run/api
 run/api:
-	@go run ./cmd/api -limiter-enabled=false -db-dsn=$(DB_DSN)
+	@go run ./cmd/api -limiter-enabled=false -db-dsn=$(DB_DSN) -smtp-host=$(SMTP_HOSTNAME) -smtp-port=$(SMTP_PORT)
 
 ## run/metrics: run the TermUI monitor for the application
 .PHONY: run/metrics
@@ -170,14 +164,18 @@ audit:
 	CGO_ENABLED=0 go vet ./...
 	staticcheck -checks=all ./...
 	govulncheck ./...
-#	CGO_ENABLED=1 go test -race -count=1 ./...
 
 # ==================================================================================== #
 # BUILD
 # ==================================================================================== #
 
+## build/frontend: build the frontend application
+.PHONY: build/frontend
+build/frontend:
+	cd ./web/frontend && pnpm build
+
 ## build/api: build the cmd/api application
 .PHONY: build/api
 build/api:
 	go build -ldflags='-s' -o=./bin/api ./cmd/api
-	GOOS=linux GOARCH=amd64 go build -ldflags='-s' -o=./bin/linux_amd64/api ./cmd/api
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags='-s' -o=./bin/linux_amd64/api ./cmd/api

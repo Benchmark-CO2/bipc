@@ -3,6 +3,7 @@ package mailer
 import (
 	"bytes"
 	"embed"
+	"fmt"
 	"time"
 
 	"github.com/wneessen/go-mail"
@@ -29,7 +30,7 @@ func New(host string, port int, username, password, sender string, env string) (
 		mail.WithTimeout(5*time.Second),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("mailer.New: %w", err)
 	}
 
 	if env == "development" {

@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"os"
 	"runtime"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -74,12 +73,11 @@ func main() {
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 120, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
 
-	port, _ := strconv.Atoi(os.Getenv("SMTP_PORT"))
-	flag.IntVar(&cfg.smtp.port, "smtp-port", port, "SMTP port")
-	flag.StringVar(&cfg.smtp.host, "smtp-host", os.Getenv("SMTP_HOSTNAME"), "SMTP host")
-	flag.StringVar(&cfg.smtp.username, "smtp-username", os.Getenv("SMTP_USERNAME"), "SMTP username")
-	flag.StringVar(&cfg.smtp.password, "smtp-password", os.Getenv("SMTP_PASSWORD"), "SMTP password")
-	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "BIP <no-reply@seudominio.com>", "SMTP sender")
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 0, "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", "", "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", "", "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "BIP <no-reply@bip.software>", "SMTP sender")
 
 	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {
 		cfg.cors.trustedOrigins = strings.Fields(val)
