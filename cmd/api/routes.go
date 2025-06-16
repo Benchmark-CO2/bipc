@@ -12,10 +12,11 @@ import (
 func (app *application) routes() http.Handler {
 	router := httprouter.New()
 
-	router.Handler(http.MethodGet, "/v1/metrics", expvar.Handler()) // restrict access in caddyfile
+	router.Handler(http.MethodGet, "/v1/metrics", expvar.Handler()) // restrict access
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
 
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/users", app.requireAuthenticatedUser(app.updateUserHandler))
 	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)
 	router.HandlerFunc(http.MethodPut, "/v1/users/password", app.updateUserPasswordHandler)
 

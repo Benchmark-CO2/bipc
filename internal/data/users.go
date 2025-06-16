@@ -24,6 +24,7 @@ type User struct {
 	Email     string    `json:"email"`
 	Password  password  `json:"-"`
 	Activated bool      `json:"activated"`
+	ImageURL  *string   `json:"image_url,omitzero"`
 }
 
 func (u *User) IsAnonymous() bool {
@@ -53,6 +54,10 @@ func ValidateUser(v *validator.Validator, user *User) {
 
 	if user.Password.hash == nil {
 		panic("missing password hash for user")
+	}
+
+	if user.ImageURL != nil {
+		v.Check(validator.IsValidHTTPURL(*user.ImageURL), "image_url", "must be a valid URL")
 	}
 }
 
@@ -93,11 +98,11 @@ type UserModel struct {
 
 func (m UserModel) Insert(user *User) error {
 	query := `
-        INSERT INTO users (name, email, password_hash, activated) 
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO users (name, email, password_hash, activated, image_url) 
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING id, created_at`
 
-	args := []any{user.Name, user.Email, user.Password.hash, user.Activated}
+	args := []any{user.Name, user.Email, user.Password.hash, user.Activated, user.ImageURL}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -117,7 +122,7 @@ func (m UserModel) Insert(user *User) error {
 
 func (m UserModel) GetByEmail(email string) (*User, error) {
 	query := `
-        SELECT id, created_at, name, email, password_hash, activated
+        SELECT id, created_at, name, email, password_hash, activated, image_url
         FROM users
         WHERE email = $1`
 
@@ -133,6 +138,7 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 		&user.Email,
 		&user.Password.hash,
 		&user.Activated,
+		&user.ImageURL,
 	)
 
 	if err != nil {
@@ -150,14 +156,15 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 func (m UserModel) Update(user *User) error {
 	query := `
         UPDATE users 
-        SET name = $1, email = $2, password_hash = $3, activated = $4
-        WHERE id = $5`
+        SET name = $1, email = $2, password_hash = $3, activated = $4, image_url = $5
+        WHERE id = $6`
 
 	args := []any{
 		user.Name,
 		user.Email,
 		user.Password.hash,
 		user.Activated,
+		user.ImageURL,
 		user.ID,
 	}
 
@@ -190,7 +197,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 
 	query := `
-        SELECT users.id, users.created_at, users.name, users.email, users.password_hash, users.activated
+        SELECT users.id, users.created_at, users.name, users.email, users.password_hash, users.activated, users.image_url
         FROM users
         INNER JOIN tokens
         ON users.id = tokens.user_id
@@ -212,6 +219,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 		&user.Email,
 		&user.Password.hash,
 		&user.Activated,
+		&user.ImageURL,
 	)
 	if err != nil {
 		switch {
