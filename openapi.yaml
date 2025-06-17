@@ -1,194 +1,156 @@
 openapi: 3.0.0
 info:
-  title: Estruturas
+  title: Structures
   version: 1.0.0
 
 paths:
   /unit:
     post:
-      summary: Criar nova unidade
+      summary: Create new unit
       description: >
-        Cria uma nova unidade vinculada a um projeto.
+        Creates a new unit linked to a project.
 
-        O campo `tipo` determina quais campos adicionais são obrigatórios:
+        The `type` field determines which additional fields are required:
 
-        - **Torre**: requer os campos da tabela `torre`, como `pavimentos_total`, `area_total`, etc.
+        - **Tower**: requires the fields from the `Tower` table, such as `total_floors`, `total_area`, etc.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateUnidade'
+              $ref: '#/components/schemas/CreateUnit'
             examples:
-              torre:
-                summary: Unidade tipo Torre
+              tower:
+                summary: Unit type Tower
                 value:
-                  projeto_id: 123
-                  tipo: Torre
-                  pavimentos_total: 15
-                  pavimentos_torre: 10
-                  pavimentos_embasamento: 2
-                  pavimentos_subsolo: 2
-                  pavimentos_tipo: 6
-                  area_total: 12500.75
+                  project_id: 123
+                  type: Tower
+                  total_floors: 15
+                  tower_floors: 10
+                  base_floors: 2
+                  basement_floors: 2
+                  type_floors: 6
+                  total_area: 12500.75
       responses: 
         '200':
-          description: Criado com sucesso
+          description: Successfully created
 
   /modules:
     post:
-      summary: Criar novo módulo
+      summary: Create new module
       description: >
-        Cria um novo módulo vinculado a uma torre.
+        Creates a new module linked to a tower.
 
-        O campo `tipoDeEstrutura` determina quais campos adicionais devem ser enviados:
+        The `structure_type` field determines which additional fields must be sent:
 
-        - **Viga Pilar**:
-          - `concreto_pilares`, `concreto_vigas`, `concreto_lajes` (lista com volume e fck)
-          - `aco_ca50`, `aco_ca60` (quantidade de aço)
-          - `forma_pilares`, `forma_vigas`, `forma_lajes`, `forma_total` (áreas de forma)
-          - `numero_pilar`, `vao_medio_viga`, `vao_medio_laje`
+        - **Beam Column**:
+          - `concrete_columns`, `concrete_beams`, `concrete_slabs` (list with volume and fck)
+          - `steel_ca50`, `steel_ca60` (steel quantity)
+          - `form_columns`, `form_beams`, `form_slabs`, `form_total` (form areas)
+          - `column_number`, `avg_beam_span`, `avg_slab_span`
 
-        - **Parede de concreto**:
-          - `concreto_parede`, `concreto_laje` (lista com volume e fck)
-          - `aco_ca50`, `aco_ca60` (quantidade de aço)
-          - `espessura_parede`, `espessura_laje`, `area_forma`, `area_parede`
+        - **Concrete Wall**:
+          - `concrete_walls`, `concrete_slabs` (list with volume and fck)
+          - `steel_ca50`, `steel_ca60` (steel quantity)
+          - `wall_thickness`, `slab_thickness`, `form_area`, `wall_area`
 
-        - **Alvenaria estrutural**:
-          - `graute_vertical`, `graute_horizontal` (lista com volume e fck)
-          - `aco_ca50`, `aco_ca60` (quantidade de aço)
-          - `blocos` (lista com tipo, fbk e quantidade)
+        - **Structural Masonry**:
+          - `vertical_grout`, `horizontal_grout` (list with volume and fck)
+          - `steel_ca50`, `steel_ca60` (steel quantity)
+          - `blocks` (list with type, fbk and quantity)
 
-        O backend validará os campos conforme o valor de `tipoDeEstrutura`.
+        The backend will validate the fields according to the value of `structure_type`.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateModulo'
+              $ref: '#/components/schemas/CreateModule'
             examples:
-              vigaPilar:
-                summary: Estrutura do tipo "Viga Pilar"
+              beamColumn:
+                summary: Structure type "Beam Column"
                 value:
-                  torre_id: 1
-                  nome: Pavimento Tipo A
-                  tipoDeEstrutura: Viga Pilar
-                  repeticao: 5
-                  area: 1350.5
-                  altura: 3.2
-                  concreto_pilares:
+                  unit_id: 1
+                  name: Floor Type A
+                  structure_type: beam_olumn
+                  floor_repetition: 5
+                  floor_area: 1350.5
+                  floor_height: 3.2
+                  concrete_columns:
                     - fck: "30"
                       volume: 10.5
-                  concreto_vigas:
+                  concrete_beams:
                     - fck: "30"
                       volume: 12.0
-                  concreto_lajes:
+                  concrete_slabs:
                     - fck: "25"
                       volume: 14.0
-                  aco_ca50: 1200
-                  aco_ca60: 300
-                  forma_pilares: 200
-                  forma_vigas: 350
-                  forma_lajes: 450
-                  forma_total: 1000
-                  numero_pilar: 24
-                  vao_medio_viga: 7
-                  vao_medio_laje: 6
+                  steel_ca50: 1200
+                  steel_ca60: 300
+                  form_columns: 200
+                  form_beams: 350
+                  form_slabs: 450
+                  form_total: 1000
+                  column_number: 24
+                  avg_beam_span: 7
+                  avg_slab_span: 6
 
-              paredeDeConcreto:
-                summary: Estrutura do tipo "Parede de concreto"
+              concreteWall:
+                summary: Structure type "Concrete Wall"
                 value:
-                  torre_id: 2
-                  nome: Embasamento
-                  tipoDeEstrutura: Parede de concreto
-                  repeticao: 1
-                  area: 800.0
-                  altura: 3.0
-                  concreto_parede:
+                  unit_id: 2
+                  name: Basement
+                  structure_type: concrete_wall
+                  floor_repetition: 1
+                  floor_area: 800.0
+                  floor_height: 3.0
+                  concrete_walls:
                     - fck: "30"
                       volume: 8.0
-                  concreto_laje:
+                  concrete_slabs:
                     - fck: "30"
                       volume: 6.5
-                  aco_ca50: 1000
-                  aco_ca60: 250
-                  espessura_parede: 0.15
-                  espessura_laje: 0.18
-                  area_forma: 300
-                  area_parede: 250
+                  steel_ca50: 1000
+                  steel_ca60: 250
+                  wall_thickness: 0.15
+                  slab_thickness: 0.18
+                  form_area: 300
+                  wall_area: 250
 
-              alvenariaEstrutural:
-                summary: Estrutura do tipo "Alvenaria estrutural"
+              structuralMasonry:
+                summary: Structure type "Structural Masonry"
                 value:
-                  torre_id: 3
-                  nome: Torre B
-                  tipoDeEstrutura: Alvenaria estrutural
-                  repeticao: 8
-                  area: 1100.0
-                  altura: 2.8
-                  graute_vertical:
+                  unit_id: 3
+                  name: Tower B
+                  structure_type: structural_masonry
+                  floor_repetition: 8
+                  floor_area: 1100.0
+                  floor_height: 2.8
+                  vertical_grout:
                     - fck: "25"
                       volume: 5.5
-                  graute_horizontal:
+                  horizontal_grout:
                     - fck: "25"
                       volume: 2.2
-                  aco_ca50: 950
-                  aco_ca60: 400
-                  blocos:
-                    - tipo: BL 14x19
+                  steel_ca50: 950
+                  steel_ca60: 400
+                  blocks:
+                    - type: BL 14x19
                       fbk: "06"
-                      quantidade: 1200
-                    - tipo: CL 14x34
+                      quantity: 1200
+                    - type: CL 14x34
                       fbk: "04"
-                      quantidade: 800
+                      quantity: 800
       responses:
         '200':
-          description: Criado com sucesso
+          description: Successfully created
+
 components:
   schemas:
-    UnidadeBase:
-      type: object
-      properties:
-        projeto_id:
-          type: integer
-          description: ID do projeto ao qual a unidade pertence
-        nome:
-          type: string
-        tipo:
-          type: string
-          enum: ["Torre"]
-          description: Tipo da unidade (atualmente apenas "Torre" é suportado)
-      required:
-        [projeto_id, nome, tipo]
-    Torre:
-      type: object
-      properties:
-        pavimentos_total:
-          type: integer
-        pavimentos_torre:
-          type: integer
-        pavimentos_embasamento:
-          type: integer
-        pavimentos_subsolo:
-          type: integer
-        pavimentos_tipo:
-          type: integer
-        area_total:
-          type: number
-          format: float
-      required:
-        [area_total]
-    CreateUnidade:
-      allOf:
-        - $ref: '#/components/schemas/UnidadeBase'
-        - oneOf:
-            - $ref: '#/components/schemas/Torre'
-
-
-    Concreto:
+    Concrete:
       type: array
       description: >
-        "Lista de volumes de concreto por valor de Fck. Deve ter pelo menos um item. Não devem existir valores repetidos de 'fck'.""
+        List of concrete volumes by Fck value. Must have at least one item. There must be no repeated 'fck' values.
       minItems: 1
       items:
         type: object
@@ -202,15 +164,15 @@ components:
             format: float
         required: [fck, volume]
 
-    Bloco:
+    Block:
       type: array
       description: >
-        "Lista de blocos por valor de Fck. Deve ter pelo menos um item. Não devem existir valores repetidos de 'fck'.""
+        List of blocks by Fbk value. Must have at least one item. There must be no repeated 'fbk' values.
       minItems: 1
       items:
         type: object
         properties:
-          tipo:
+          type:
             type: string
             enum:
               - "BL 14x4"
@@ -234,138 +196,125 @@ components:
           fbk:
             type: string
             enum: ["02", "04", "06", "08", "10", "12"]
-          quantidade:
+          quantity:
             type: integer
-        required: [tipo, fbk, quantidade]
+        required: [type, fbk, quantity]
 
-    ParedeConcreto:
+    BeamColumn:
       type: object
-      description: Parede de Concreto
+      description: Beam Column
       properties:
-        concreto_parede:
-          $ref: '#/components/schemas/Concreto'
-        concreto_laje:
-          $ref: '#/components/schemas/Concreto'
-        aco_ca50:
+        concrete_columns:
+          $ref: '#/components/schemas/Concrete'
+        concrete_beams:
+          $ref: '#/components/schemas/Concrete'
+        concrete_slabs:
+          $ref: '#/components/schemas/Concrete'
+        steel_ca50:
           type: number
-        aco_ca60:
+        steel_ca60:
           type: number
-        espessura_parede:
+        form_columns:
           type: number
-        espessura_laje:
+        form_beams:
           type: number
-        area_forma:
+        form_slabs:
           type: number
-        area_parede:
+        form_total:
           type: number
-      required:
-        - concreto_parede
-        - concreto_laje
-        - aco_ca50
-        - aco_ca60
-
-    VigaPilar:
-      type: object
-      description: Viga Pilar
-      properties:
-        concreto_pilares:
-            $ref: '#/components/schemas/Concreto'
-        concreto_vigas:
-            $ref: '#/components/schemas/Concreto'
-        concreto_lajes:
-            $ref: '#/components/schemas/Concreto'
-        aco_ca50:
-          type: number
-        aco_ca60:
-          type: number
-        forma_pilares:
-          type: number
-        forma_vigas:
-          type: number
-        forma_lajes:
-          type: number
-        forma_total:
-          type: number
-        numero_pilar:
+        column_number:
           type: integer
-        vao_medio_viga:
+        avg_beam_span:
           type: integer
-        vao_medio_laje:
+        avg_slab_span:
           type: integer
       required:
-        - concreto_pilares
-        - concreto_vigas
-        - concreto_lajes
-        - aco_ca50
-        - aco_ca60
+        - concrete_columns
+        - concrete_beams
+        - concrete_slabs
+        - steel_ca50
+        - steel_ca60
 
-    AlvenariaEstrutural:
+    ConcreteWall:
       type: object
-      description: Alvenaria Estrutural
+      description: Concrete Wall
       properties:
-        graute_vertical:
-            $ref: '#/components/schemas/Concreto'
-        graute_horizontal:
-            $ref: '#/components/schemas/Concreto'
-        aco_ca50:
+        concrete_walls:
+          $ref: '#/components/schemas/Concrete'
+        concrete_slabs:
+          $ref: '#/components/schemas/Concrete'
+        steel_ca50:
           type: number
-        aco_ca60:
+        steel_ca60:
           type: number
-        blocos:
-          $ref: '#/components/schemas/Bloco'
+        wall_thickness:
+          type: number
+        slab_thickness:
+          type: number
+        form_area:
+          type: number
+        wall_area:
+          type: number
       required:
-        - graute_vertical
-        - graute_horizontal
-        - aco_ca60
-        - aco_ca50
-        - blocos
-    
-    BaseModulo:
-      oneOf:
-        - $ref: '#/components/schemas/ParedeConcreto'
-        - $ref: '#/components/schemas/VigaPilar'
-        - $ref: '#/components/schemas/AlvenariaEstrutural'
-    CreateModulo:
+        - concrete_walls
+        - concrete_slabs
+        - steel_ca50
+        - steel_ca60
+
+    StructuralMasonry:
+      type: object
+      description: Structural Masonry
+      properties:
+        vertical_grout:
+          $ref: '#/components/schemas/Concrete'
+        horizontal_grout:
+          $ref: '#/components/schemas/Concrete'
+        steel_ca50:
+          type: number
+        steel_ca60:
+          type: number
+        blocks:
+          $ref: '#/components/schemas/Block'
+      required:
+        - vertical_grout
+        - horizontal_grout
+        - steel_ca50
+        - steel_ca60
+        - blocks
+
+    BasicModuleData:
+      type: object
+      properties:
+        unit_id:
+          type: integer
+        name:
+          type: string
+        structure_type:
+          type: string
+          enum:
+            - "beam_column"
+            - "concrete_wall"
+            - "structural_masonry"
+        floor_repetition:
+          type: integer
+        floor_area:
+          type: number
+          format: float
+        floor_height:
+          type: number
+          format: float
+      required:
+        - unit_id
+        - name
+        - structure_type
+        - floor_repetition
+        - floor_area
+        - floor_height
+
+    CreateModule:
       allOf:
-        - type: object
-          properties:
-            torre_id:
-              type: integer
-            nome:
-              type: string
-              description: "Nome do módulo, ex: Pavimento 1 ao 10, Embasamento etc"
-              example: ["Pavimento 1 ao 10"]
-            tipoDeEstrutura:
-              type: string
-              enum:
-                - "Viga Pilar"
-                - "Parede de concreto"
-                - "Alvenaria estrutural"
-              example:
-                - "Viga Pilar"
-                - "Parede de concreto"
-                - "Alvenaria estrutural"
-            repeticao:
-              type: integer
-            area:
-              type: number
-              format: float
-            altura:
-              type: number
-              format: float
-          required:
-            - name
-            - tipoDeEstrutura
-            - torre_id
-            - nome
-            - repeticao
-            - area
-        - $ref: '#/components/schemas/BaseModulo'
-
-    CreateSimulacao:
-      allOf:
-        - type: object
-          properties:
-            moduleId:
-              type: string
-        - $ref: '#/components/schemas/BaseModulo'
+        - $ref: '#/components/schemas/BasicModuleData'
+        - oneOf:
+            - $ref: '#/components/schemas/BeamColumn'
+            - $ref: '#/components/schemas/ConcreteWall'
+            - $ref: '#/components/schemas/StructuralMasonry'
