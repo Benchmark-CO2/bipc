@@ -4,3 +4,4 @@ DROP TABLE IF EXISTS projects;
 DROP TYPE IF EXISTS project_phase;
 DROP TYPE IF EXISTS state_br;
 DROP DOMAIN IF EXISTS cep_br;
+DROP INDEX IF EXISTS projects_name_idx;

@@ -144,6 +144,11 @@ db/migrations/new:
 db/migrations/up: confirm
 	migrate -path ./migrations -database $(DB_DSN) up
 
+## db/migrations/down: apply all down database migrations
+.PHONY: db/migrations/down
+db/migrations/down:
+	migrate -path ./migrations -database $(DB_DSN) down
+
 # ==================================================================================== #
 # QUALITY CONTROL
 # ==================================================================================== #
