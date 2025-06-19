@@ -25,7 +25,7 @@ paths:
                 value:
                   project_id: 123
                   name: "Tower A"
-                  type: Tower
+                  type: "tower"
                   total_floors: 15
                   tower_floors: 10
                   base_floors: 2
@@ -159,7 +159,7 @@ components:
         type:
           type: string
           enum: ["tower"]
-          description: Unit type (currently only "Tower" is supported)
+          description: Unit type (currently only "tower" is supported)
       required:
         [project_id, name, type]
     Tower:
