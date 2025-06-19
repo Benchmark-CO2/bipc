@@ -24,6 +24,7 @@ paths:
                 summary: Unit type Tower
                 value:
                   project_id: 123
+                  name: "Tower A"
                   type: Tower
                   total_floors: 15
                   tower_floors: 10
@@ -72,7 +73,7 @@ paths:
                 value:
                   unit_id: 1
                   name: Floor Type A
-                  structure_type: beam_olumn
+                  structure_type: beam_column
                   floor_repetition: 5
                   floor_area: 1350.5
                   floor_height: 3.2
@@ -147,6 +148,44 @@ paths:
 
 components:
   schemas:
+    BaseUnit:
+      type: object
+      properties:
+        project_id:
+          type: integer
+          description: Project ID to which the unit belongs
+        name:
+          type: string
+        type:
+          type: string
+          enum: ["tower"]
+          description: Unit type (currently only "Tower" is supported)
+      required:
+        [project_id, name, type]
+    Tower:
+      type: object
+      properties:
+        total_floors:
+          type: integer
+        tower_floors:
+          type: integer
+        base_floors:
+          type: integer
+        basement_floors:
+          type: integer
+        type_floors:
+          type: integer
+        total_area:
+          type: number
+          format: float
+      required:
+        [total_area]
+    CreateUnit:
+      allOf:
+        - $ref: '#/components/schemas/BaseUnit'
+        - oneOf:
+            - $ref: '#/components/schemas/Tower'
+
     Concrete:
       type: array
       description: >
