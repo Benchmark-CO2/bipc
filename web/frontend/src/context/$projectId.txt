@@ -1,0 +1,37 @@
+import { getProjectByUUID } from '@/actions/projects/getProject'
+import CustomBanner from '@/components/ui/customBanner'
+import { createFileRoute, useLoaderData } from '@tanstack/react-router'
+
+export const Route = createFileRoute('/_private/projects/$projectId')({
+  component: RouteComponent,
+  loader: async ({ params }) => {
+    const { projectId } = params
+    if (!projectId) {
+      throw new Error('Project ID is required')
+    }
+    const { data } = await getProjectByUUID(projectId)
+    return {
+      project: data.projects,
+      crumb: 'Project Details',
+    }
+  },
+})
+
+function RouteComponent() {
+  const { project = null } = useLoaderData({
+    from: '/_private/projects/$projectId',
+  })
+
+  if (!project?.uuid) {
+    return <div>Loading...</div>
+  }
+  return (
+    <div className="w-full h-full flex flex-col gap-4">
+      <CustomBanner
+        description={project.description || ''}
+        title={project.name || ''}
+        image={project.background_image || ''}
+      />
+    </div>
+  )
+}
