@@ -1,0 +1,289 @@
+{
+  "common": {
+    "appName": "BIP",
+    "user": "User",
+    "logout": "Logout",
+    "portal": "Portal",
+    "constructiveTechnology": "Constructive Technology",
+    "projectPhaseOptions": {
+      "preliminaryStudy": "Preliminary Study",
+      "draft": "Draft",
+      "basicProject": "Basic Project",
+      "executiveProject": "Executive Project",
+      "releasedForConstruction": "Released for Construction"
+    },
+        "structureType": {
+      "beamColumn": "Beam Column",
+      "concreteWall": "Concrete Wall",
+      "masonry": "Masonry"
+    },
+    "buildingType": {
+      "residential": "Residential",
+      "mixed": "Mixed",
+      "corporate": "Corporate"
+    },
+    "crumbs": {
+      "home": "Home",
+      "projects": "Projects",
+      "simulations": "Simulations",
+      "settings": "Settings",
+      "dashboard": "Dashboard"
+    },
+    "noItemsFound": "No items found",
+    "users_one": "User",
+    "users_other": "Users"
+  },
+  "home": {
+    "title": "Home",
+    "description": "This app helps you manage your projects efficiently."
+  },
+  "sidebar": {
+    "theme": "Theme",
+    "light": "Light Mode",
+    "dark": "Dark Mode",
+    "system": "System",
+
+    "language": "Language",
+    "languageToggle": {
+      "title": "Change language"
+    },
+    "es": "Spanish",
+    "ru": "Russian",
+    "en": "English",
+    "ptbr": "Portuguese"
+
+  },
+  "projects": {
+    "title": "Projects",
+    "description": "Manage your projects here"
+  },
+  "projectsPage": {
+    "addProject": "Add Project",
+    "noProjects": "You have no projects."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "This is the dashboard page."
+  },
+  "settings": {
+    "title": "Settings",
+    "theme": "Theme"
+  },
+  "public": {
+    "comingSoonTitle": "Under Construction 🚧",
+    "comingSoonDescription": "We're working to bring something amazing to you.",
+    "accessProjects": "Access Projects",
+    "login": "Login"
+  },
+  "loginPage": {
+    "title": "LOGIN",
+    "error": "Incorrect email or password",
+    "placeholderEmail": "Email",
+    "placeholderPassword": "Password",
+    "buttonLogin": "Login",
+    "buttonRegister": "Register"
+  },
+  "signUp": {
+    "title": "SIGN UP",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "buttonSignUp": "Sign Up",
+    "buttonHaveAccount": "Already have an account? Login",
+    "errorEmailExists": "Email already registered"
+  },
+  "simulations": {
+    "title": "Simulations",
+    "description": "Here are all simulations for the selected constructive technology.",
+    "addSimulation": "Add Simulation"
+  },
+  "error": {
+    "sessionExpired": "Oops, your session has expired...",
+    "goToLogin": "Go to Login",
+    "errorCreateProject": "Error creating project",
+    "errorCreateUnit": "Error creating construction unit",
+    "errorCreateModule": "Error creating module",
+    "errorCreateSimulation": "Error creating simulation",
+    "errorDeleteProject": "Error deleting project",
+    "errorDeleteUnit": "Error deleting construction unit",
+    "errorDeleteModule": "Error deleting module",
+    "errorDeleteSimulation": "Error deleting simulation",
+    "errorUpdateProject": "Error updating project",
+    "errorUpdateUnit": "Error updating construction unit",
+    "errorUpdateModule": "Error updating module",
+    "errorUpdateSimulation": "Error updating simulation",
+    "errorFetchProjects": "Error fetching projects",
+    "errorFetchUnits": "Error fetching construction units",
+    "errorFetchModules": "Error fetching modules",
+    "errorFetchSimulations": "Error fetching simulations",
+    "errorFetchProjectById": "Error fetching project by ID",
+    "errorFetchZipCode": "Error fetching ZIP code",
+    "errorEditProject": "Error editing project"
+  },
+  "warn": {
+    "verifyZipCode": "Please verify the ZIP code"
+  },
+  "success": {
+    "unitCreated": "Construction unit created successfully",
+    "unitUpdated": "Construction unit updated successfully",
+    "unitDeleted": "Construction unit deleted successfully",
+    "moduleCreated": "Module created successfully",
+    "moduleUpdated": "Module updated successfully",
+    "moduleDeleted": "Module deleted successfully",
+    "simulationCreated": "Simulation created successfully",
+    "simulationUpdated": "Simulation updated successfully",
+    "simulationDeleted": "Simulation deleted successfully",
+    "projectCreated": "Project created successfully",
+    "projectUpdated": "Project updated successfully",
+    "projectDeleted": "Project deleted successfully"
+  },
+  "drawer": {
+    "editUnitTitle": "Edit Construction Unit",
+    "unitNameLabel": "Construction Unit Name *",
+    "saveUnitButton": "Save Unit",
+    "addUnitTitle": "Add Construction Unit",
+    "addUnitDescription": "Here will be a description of what the construction unit is, how it should be used, and which fields are required.",
+    "createUnitButton": "Create Unit",
+    "addProjectTitle": "Add Projects",
+    "projectNameLabel": "Project Name *",
+    "cepLabel": "ZIP Code *",
+    "cepPlaceholder": "Enter the ZIP code",
+    "stateLabel": "State *",
+    "statePlaceholder": "Select a state",
+    "cityLabel": "City *",
+    "cityPlaceholder": "Select a city",
+    "neighborhoodLabel": "Neighborhood *",
+    "neighborhoodPlaceholder": "Enter the neighborhood",
+    "streetLabel": "Street *",
+    "streetPlaceholder": "Enter the street",
+    "numberLabel": "Number *",
+    "numberPlaceholder": "Enter the number",
+    "projectPhaseLabel": "Project Phase *",
+    "projectPhasePlaceholder": "Select a project phase",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Enter a description",
+    "imageLabel": "Image",
+    "imagePlaceholder": "Upload an image (optional)",
+    "addProjectButton": "Add Project",
+    "editProjectButton": "Edit Project"
+  },
+  "modalConfirmDeleteUnit": {
+    "title": "Delete Unit",
+    "description": "This action cannot be undone. Are you sure you want to proceed?",
+    "cancelButton": "Cancel",
+    "deleteButton": "Delete"
+  },
+  "drawerEditModule": {
+    "title": "Edit Constructive Technology",
+    "structureTypeLabel": "Structure Type",
+    "structureTypePlaceholder": "Select a structure type",
+    "buildingTypeLabel": "Building Type",
+    "buildingTypePlaceholder": "Select a building type",
+    "repeatedUnitLabel": "Repeated Unit",
+    "floorsNumberLabel": "Number of Floors",
+    "totalLabel": "Total",
+    "towerLabel": "Tower",
+    "basementLabel": "Basement",
+    "basementNumberLabel": "Number of Basements",
+    "totalBuiltAreaLabel": "Total Built Area",
+    "floorHeightLabel": "Floor Height",
+    "maxFloorHeightLabel": "Maximum Floor Height",
+    "wallThicknessLabel": "Wall Thickness",
+    "slabThicknessLabel": "Slab Thickness",
+    "concreteVolumeFck20Label": "Concrete Volume (Fck 20)",
+    "concreteVolumeFck25Label": "Concrete Volume (Fck 25)",
+    "concreteVolumeFck30Label": "Concrete Volume (Fck 30)",
+    "concreteVolumeFck35Label": "Concrete Volume (Fck 35)",
+    "concreteVolumeFck40Label": "Concrete Volume (Fck 40)",
+    "concreteVolumeFck45Label": "Concrete Volume (Fck 45)",
+    "steelConsumptionLabel": "Steel Consumption",
+    "defaultTechnology": "Constructive Technology",
+    "dragAndDropFiles": "Drag and drop files here or click to upload",
+    "featureNotIntegrated": "Feature not yet integrated",
+    "editModule": "Edit Constructive Technology",
+    "updateModule": "Update Constructive Technology",
+    "saveModule": "Save Constructive Technology",
+    "saveSimulation": "Save Simulation"
+  },
+  "drawerAddModule": {
+    "title": "Add Constructive Technology",
+    "description": "Fill in the details below to add a new module.",
+    "createButton": "Create Module",
+    "defaultContext": "Constructive Technology",
+    "repeatUnit": "Does the unit repeat? How many times?",
+    "numberOfFloors": "Number of floors:",
+    "total": "Total",
+    "tower": "Tower",
+    "basement": "Basement",
+    "basementNumber": "Number of basements",
+    "totalBuiltArea": "Total Built Area (m²)",
+    "floorToFloorHeight": "Floor-to-Floor Height (m)",
+    "maxFloorToFloorHeight": "Maximum Floor-to-Floor Height (m)",
+    "wallThickness": "Wall Thickness (m)",
+    "slabThickness": "Slab Thickness (m)",
+    "concreteVolumeFck20": "Concrete Volume Fck20 (m³)",
+    "concreteVolumeFck25": "Concrete Volume Fck25 (m³)",
+    "concreteVolumeFck30": "Concrete Volume Fck30 (m³)",
+    "concreteVolumeFck35": "Concrete Volume Fck35 (m³)",
+    "concreteVolumeFck40": "Concrete Volume Fck40 (m³)",
+    "concreteVolumeFck45": "Concrete Volume Fck45 (m³)",
+    "steelConsumption": "Steel Consumption (kg)",
+    "addConstructiveTechnology": "Add Constructive Technology"
+  },
+  "simulationTable": {
+    "title": "Simulations",
+    "description": "Here are all simulations for the selected constructive technology.",
+    "addSimulation": "Add Simulation",
+    "noItemsFound": "No simulations found",
+    "headers": {
+      "name": "Name",
+      "description": "Description",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At",
+      "version": "Version",
+      "isValid": "Is Valid Version?",
+      "actions": "Actions"
+    },
+    "saveSimulation": "Save Simulation",
+    "updateSimulation": "Update Simulation",
+    "deleteSimulation": "Delete Simulation",
+    "loading": "Loading...",
+    "setValidVersion": "Set Valid Version",
+    "selectVersions": "Select versions in the table above to compare simulations."
+  },
+  "modulesTable": {
+    "headers": {
+      "structureType": "Structure Type",
+      "buildingType": "Building Type",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At",
+      "buildedAreaTotal": "Total Built Area (m²)",
+      "steelConsumption": "Steel Consumption (kg)"
+    },
+    "structureType": {
+      "beamColumn": "Beam Column",
+      "concreteWall": "Concrete Wall",
+      "masonry": "Masonry"
+    },
+    "buildingType": {
+      "residential": "Residential",
+      "mixed": "Mixed",
+      "corporate": "Corporate"
+    }
+  },
+  "projectTable": {
+    "headers": {
+      "name": "Name",
+      "city": "City",
+      "state": "State",
+      "projectPhase": "Project Phase",
+      "users_one": "User",
+      "users_other": "Users",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At",
+      "description": "Description",
+      "ID": "ID"
+    }
+  }
+}

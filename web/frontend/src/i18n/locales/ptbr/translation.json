@@ -1,0 +1,283 @@
+{
+  "common": {
+    "appName": "BIP",
+    "user": "Usuário",
+    "logout": "Sair",
+    "constructiveTechnology": "Tecnologia Construtiva",
+    "projectPhaseOptions": {
+      "preliminaryStudy": "Estudo Preliminar",
+      "draft": "Rascunho",
+      "basicProject": "Projeto Básico",
+      "executiveProject": "Projeto Executivo",
+      "releasedForConstruction": "Liberado para Construção"
+    },
+    "structureType": {
+      "beamColumn": "Viga Pilar",
+      "concreteWall": "Parede de Concreto",
+      "masonry": "Alvenaria"
+    },
+    "buildingType": {
+      "residential": "Residencial",
+      "mixed": "Misto",
+      "corporate": "Corporativo"
+    },
+    "crumbs": {
+      "home": "Início",
+      "projects": "Projetos",
+      "simulations": "Simulações"
+    },
+    "users_one": "Usuário",
+    "users_other": "Usuários"
+  },
+  "home": {
+    "title": "Pagina Inicial",
+    "description": "Este aplicativo ajuda você a gerenciar seus projetos de forma eficiente."
+  },
+  "sidebar": {
+    "theme": "Tema",
+    "light": "Claro",
+    "dark": "Escuro",
+    "system": "Sistema",
+    "language": "Idioma",
+    "languageToggle": {
+      "title": "Alterar idioma"
+    },
+    "es": "Espanhol",
+    "ru": "Russo",
+    "en": "Inglês",
+    "ptbr": "Português"
+  },
+  "projects": {
+    "title": "Projetos",
+    "description": "Gerencie seus projetos aqui"
+  },
+  "simulations": {
+    "title": "Simulações",
+    "description": "Aqui estão todas as simulações da tecnologia construtiva selecionada.",
+    "addSimulation": "Adicionar Simulação"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "Esta é a página do dashboard."
+  },
+  "settings": {
+    "title": "Configurações",
+    "theme": "Tema"
+  },
+  "public": {
+    "comingSoonTitle": "Em Construção 🚧",
+    "comingSoonDescription": "Estamos trabalhando para trazer algo incrível para você.",
+    "accessProjects": "Acessar Projetos",
+    "login": "Fazer Login"
+  },
+  "loginPage": {
+    "title": "LOGIN",
+    "error": "Email ou senha incorretos",
+    "placeholderEmail": "Email",
+    "placeholderPassword": "Senha",
+    "buttonLogin": "Login",
+    "buttonRegister": "Cadastrar"
+  },
+  "signUp": {
+    "title": "CADASTRO",
+    "name": "Nome",
+    "email": "Email",
+    "password": "Senha",
+    "confirmPassword": "Confirmar Senha",
+    "buttonSignUp": "Cadastrar",
+    "buttonHaveAccount": "Já tem uma conta? Faça login",
+    "errorEmailExists": "Email já cadastrado"
+  },
+  "projectsPage": {
+    "addProject": "Adicionar Projeto",
+    "noProjects": "Você não possui projetos."
+  },
+  "error": {
+    "sessionExpired": "Ooops, Sua sessão expirou...",
+    "goToLogin": "Ir para Login",
+    "errorCreateProject": "Erro ao criar projeto",
+    "errorCreateSimulation": "Erro ao criar simulação",
+    "errorCreateModule": "Erro ao criar módulo",
+    "errorCreateUnit": "Erro ao criar unidade",
+    "errorCreateUnitType": "Erro ao criar tipo de unidade",
+    "errorDeleteProject": "Erro ao deletar projeto",
+    "errorDeleteUnit": "Erro ao deletar unidade de construção",
+    "errorDeleteModule": "Erro ao deletar módulo",
+    "errorDeleteSimulation": "Erro ao deletar simulação",
+    "errorUpdateProject": "Erro ao atualizar projeto",
+    "errorUpdateUnit": "Erro ao atualizar unidade de construção",
+    "errorUpdateModule": "Erro ao atualizar módulo",
+    "errorUpdateSimulation": "Erro ao atualizar simulação",
+    "errorFetchZipCode": "Erro ao buscar CEP",
+    "errorEditProject": "Erro ao editar projeto"
+  },
+  "warn": {
+    "verifyZipCode": "Por favor, verifique o CEP"
+  },
+  "success": {
+    "projectCreated": "Projeto criado com sucesso",
+    "projectUpdated": "Projeto atualizado com sucesso",
+    "projectDeleted": "Projeto deletado com sucesso",
+    "simulationCreated": "Simulação criada com sucesso",
+    "simulationUpdated": "Simulação atualizada com sucesso",
+    "simulationDeleted": "Simulação deletada com sucesso",
+    "moduleCreated": "Módulo criado com sucesso",
+    "moduleUpdated": "Módulo atualizado com sucesso",
+    "moduleDeleted": "Módulo deletado com sucesso",
+    "unitCreated": "Unidade de construção criada com sucesso",
+    "unitUpdated": "Unidade de construção atualizada com sucesso",
+    "unitDeleted": "Unidade de construção deletada com sucesso"
+  },
+  "modalConfirmDeleteUnit": {
+    "title": "Deletar Unidade",
+    "description": "Esta ação não pode ser desfeita. Você tem certeza de que deseja continuar?",
+    "cancelButton": "Cancelar",
+    "deleteButton": "Deletar"
+  },
+  "drawerEditModule": {
+    "title": "Editar Tecnologia Construtiva",
+    "structureTypeLabel": "Tipo de Estrutura",
+    "structureTypePlaceholder": "Selecione um tipo de estrutura",
+    "buildingTypeLabel": "Tipo de Edifício",
+    "buildingTypePlaceholder": "Selecione um tipo de edifício",
+    
+    "repeatedUnitLabel": "Unidade Repetida",
+    "floorsNumberLabel": "Número de Andares",
+    "totalLabel": "Total",
+    "towerLabel": "Torre",
+    "basementLabel": "Subsolo",
+    "basementNumberLabel": "Número de Subsolos",
+    "totalBuiltAreaLabel": "Área Total Construída",
+    "floorHeightLabel": "Altura do Andar",
+    "maxFloorHeightLabel": "Altura Máxima do Andar",
+    "wallThicknessLabel": "Espessura da Parede",
+    "slabThicknessLabel": "Espessura da Laje",
+    "concreteVolumeFck20Label": "Volume de Concreto (Fck 20)",
+    "concreteVolumeFck25Label": "Volume de Concreto (Fck 25)",
+    "concreteVolumeFck30Label": "Volume de Concreto (Fck 30)",
+    "concreteVolumeFck35Label": "Volume de Concreto (Fck 35)",
+    "concreteVolumeFck40Label": "Volume de Concreto (Fck 40)",
+    "concreteVolumeFck45Label": "Volume de Concreto (Fck 45)",
+    "steelConsumptionLabel": "Consumo de Aço",
+    "defaultTechnology": "Tecnologia Construtiva",
+    "dragAndDropFiles": "Arraste e solte arquivos aqui ou clique para fazer upload",
+    "featureNotIntegrated": "Funcionalidade ainda não integrada",
+    "editModule": "Editar Tecnologia Construtiva",
+    "updateModule": "Atualizar Tecnologia Construtiva",
+    "saveModule": "Salvar Tecnologia Construtiva",
+    "saveSimulation": "Salvar Simulação"
+  },
+  "drawerAddModule": {
+    "title": "Adicionar Tecnologia Construtiva",
+    "description": "Preencha os detalhes abaixo para adicionar uma nova tecnologia construtiva.",
+    "createButton": "Criar Tecnologia Construtiva",
+    "defaultContext": "Tecnologia Construtiva",
+    "repeatUnit": "A unidade se repete? Quantas vezes?",
+    "numberOfFloors": "Número de pavimentos:",
+    "total": "Total",
+    "tower": "Torre",
+    "basement": "Embasamento",
+    "basementNumber": "Número de subsolos",
+    "totalBuiltArea": "Área Construída Total (m²)",
+    "floorToFloorHeight": "Altura do Piso a Piso (m)",
+    "maxFloorToFloorHeight": "Maior Altura do Piso a Piso (m)",
+    "wallThickness": "Espessura de Paredes (m)",
+    "slabThickness": "Espessura de Lajes (m)",
+    "concreteVolumeFck20": "Volume de Concreto Fck20 (m³)",
+    "concreteVolumeFck25": "Volume de Concreto Fck25 (m³)",
+    "concreteVolumeFck30": "Volume de Concreto Fck30 (m³)",
+    "concreteVolumeFck35": "Volume de Concreto Fck35 (m³)",
+    "concreteVolumeFck40": "Volume de Concreto Fck40 (m³)",
+    "concreteVolumeFck45": "Volume de Concreto Fck45 (m³)",
+    "steelConsumption": "Consumo de aço (kg)",
+    "addConstructiveTechnology": "Adicionar Tecnologia Construtiva"
+  },
+  "moduleTable": {
+    "noItemsFound": "Nenhum item encontrado",
+    "addNewTechnology": "Adicione uma nova tecnologia construtiva no botão acima."
+  },
+  "simulationTable": {
+    "headers": {
+      "name": "Nome",
+      "description": "Descrição",
+      "createdAt": "Criado Em",
+      "updatedAt": "Atualizado Em",
+      "version": "Versão",
+      "isValid": "Versão é válida?",
+      "actions": "Ações"
+    },
+    "updateSimulation": "Atualizar Simulação",
+    "title": "Simulações",
+    "description": "Aqui estão todas as simulações da tecnologia construtiva selecionada.",
+    "addSimulation": "Adicionar Simulação",
+    "saveSimulation": "Salvar Simulação",
+    "noItemsFound": "Nenhuma simulação encontrada",
+    "loading": "Carregando...",
+    "setValidVersion": "Definir versão válida",
+    "selectVersions": "Selecione versões na tabela acima para comparar simulações."
+  },
+  "drawer": {
+    "editUnitTitle": "Editar Unidade de Construção",
+    "unitNameLabel": "Nome da Unidade *",
+    "saveUnitButton": "Salvar Unidade",
+    "addUnitTitle": "Adicionar Unidade de Construção",
+    "addUnitDescription": "Aqui estará uma descrição do que é a unidade de construção, como deve ser usada e quais campos são obrigatórios.",
+    "createUnitButton": "Criar Unidade",
+    "addProjectTitle": "Adicionar Projetos",
+    "projectNameLabel": "Nome do Projeto *",
+    "cepLabel": "CEP *",
+    "cepPlaceholder": "Digite o CEP",
+    "stateLabel": "Estado *",
+    "statePlaceholder": "Selecione um estado",
+    "cityLabel": "Cidade *",
+    "cityPlaceholder": "Selecione uma cidade",
+    "neighborhoodLabel": "Bairro *",
+    "neighborhoodPlaceholder": "Selecione um bairro",
+    "streetLabel": "Rua *",
+    "streetPlaceholder": "Digite o nome da rua",
+    "numberLabel": "Número *",
+    "numberPlaceholder": "Digite o número da casa",
+    "projectPhaseLabel": "Fase do Projeto *",
+    "projectPhasePlaceholder": "Selecione uma fase do projeto",
+    "descriptionLabel": "Descrição",
+    "descriptionPlaceholder": "Digite uma descrição do projeto",
+    "imageLabel": "Imagem do Projeto",
+    "imagePlaceholder": "Selecione uma imagem do projeto (opcional)",
+    "addProjectButton": "Adicionar Projeto",
+    "editProjectTitle": "Editar Projeto"
+  },
+  "modulesTable": {
+    "headers": {
+      "structureType": "Tipo de Estrutura",
+      "buildingType": "Tipo de Edifícação",
+      "createdAt": "Criado em",
+      "updatedAt": "Atualizado em",
+      "buildedAreaTotal": "Área Construída Total (m²)",
+      "steelConsumption": "Consumo de Aço (kg)"
+    },
+    "structureType": {
+      "beamColumn": "Viga Pilar",
+      "concreteWall": "Parede de Concreto",
+      "masonry": "Alvenaria"
+    },
+    "buildingType": {
+      "residential": "Residencial",
+      "mixed": "Misto",
+      "corporate": "Corporativo"
+    }
+  },
+  "projectTable": {
+    "headers": {
+      "name": "Nome",
+      "city": "Cidade",
+      "state": "Estado",
+      "projectPhase": "Fase do Projeto",
+      "users_one": "Usuário",
+      "users_other": "Usuários",
+      "createdAt": "Criado em",
+      "updatedAt": "Atualizado em",
+      "description": "Descrição",
+      "ID": "ID"
+    }
+  }
+}

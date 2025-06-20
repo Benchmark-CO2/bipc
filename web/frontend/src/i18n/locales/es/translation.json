@@ -1,0 +1,287 @@
+{
+  "common": {
+    "appName": "BIP",
+    "user": "Usuario",
+    "logout": "Salir",
+    "portal": "Portal",
+    "constructiveTechnology": "Tecnología Constructiva",
+    "projectPhaseOptions": {
+      "preliminaryStudy": "Estudio Preliminar",
+      "draft": "Borrador",
+      "basicProject": "Proyecto Básico",
+      "executiveProject": "Proyecto Ejecutivo",
+      "releasedForConstruction": "Liberado para Construcción"
+    },
+    "structureType": {
+      "beamColumn": "Viga Pilar",
+      "concreteWall": "Pared de Hormigón",
+      "masonry": "Mampostería"
+    },
+    "buildingType": {
+      "residential": "Residencial",
+      "mixed": "Mixto",
+      "corporate": "Corporativo"
+    },
+    "crumbs": {
+      "home": "Inicio",
+      "projects": "Proyectos",
+      "simulations": "Simulaciones",
+      "settings": "Configuraciones",
+      "dashboard": "Tablero"
+    },
+    "noItemsFound": "No se encontraron elementos",
+    "users_one": "Usuario",
+    "users_other": "Usuarios"
+  },
+  "home": {
+    "title": "Inicio",
+    "description": "Esta aplicación te ayuda a gestionar tus proyectos de manera eficiente."
+  },
+  "sidebar": {
+    "theme": "Tema",
+    "light": "Modo Claro",
+    "dark": "Modo Oscuro",
+    "system": "Sistema",
+    "language": "Idioma",
+    "languageToggle": {
+      "title": "Cambiar idioma"
+    },
+    "en": "Inglés",
+    "ptbr": "Portugués",
+    "es": "Español",
+    "ru": "Ruso"
+  },
+  "projects": {
+    "title": "Proyectos",
+    "description": "Administra tus proyectos aquí"
+  },
+  "projectsPage": {
+    "addProject": "Agregar Proyecto",
+    "noProjects": "No tienes proyectos."
+  },
+  "dashboard": {
+    "title": "Tablero",
+    "description": "Esta es la página del tablero."
+  },
+  "settings": {
+    "title": "Configuraciones",
+    "theme": "Tema"
+  },
+  "public": {
+    "comingSoonTitle": "En Construcción 🚧",
+    "comingSoonDescription": "Estamos trabajando para traer algo increíble para ti.",
+    "accessProjects": "Acceder a Proyectos",
+    "login": "Iniciar Sesión"
+  },
+  "loginPage": {
+    "title": "INICIAR SESIÓN",
+    "error": "Correo electrónico o contraseña incorrectos",
+    "placeholderEmail": "Correo electrónico",
+    "placeholderPassword": "Contraseña",
+    "buttonLogin": "Iniciar Sesión",
+    "buttonRegister": "Registrarse"
+  },
+  "signUp": {
+    "title": "REGISTRARSE",
+    "name": "Nombre",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "buttonSignUp": "Registrarse",
+    "buttonHaveAccount": "¿Ya tienes una cuenta? Inicia sesión",
+    "errorEmailExists": "Correo electrónico ya registrado"
+  },
+  "simulations": {
+    "title": "Simulaciones",
+    "description": "Aquí están todas las simulaciones para la tecnología constructiva seleccionada.",
+    "addSimulation": "Agregar Simulación"
+  },
+  "error": {
+    "sessionExpired": "Oops, tu sesión ha expirado...",
+    "goToLogin": "Ir a Iniciar Sesión",
+    "errorCreateProject": "Error al crear el proyecto",
+    "errorCreateUnit": "Error al crear la unidad de construcción",
+    "errorCreateModule": "Error al crear el módulo",
+    "errorCreateSimulation": "Error al crear la simulación",
+    "errorDeleteProject": "Error al eliminar el proyecto",
+    "errorDeleteUnit": "Error al eliminar la unidad de construcción",
+    "errorDeleteModule": "Error al eliminar el módulo",
+    "errorDeleteSimulation": "Error al eliminar la simulación",
+    "errorUpdateProject": "Error al actualizar el proyecto",
+    "errorUpdateUnit": "Error al actualizar la unidad de construcción",
+    "errorUpdateModule": "Error al actualizar el módulo",
+    "errorUpdateSimulation": "Error al actualizar la simulación",
+    "errorFetchProjects": "Error al obtener los proyectos",
+    "errorFetchUnits": "Error al obtener las unidades de construcción",
+    "errorFetchModules": "Error al obtener los módulos",
+    "errorFetchSimulations": "Error al obtener las simulaciones",
+    "errorFetchProjectById": "Error al obtener el proyecto por ID",
+    "errorFetchZipCode": "Error al obtener el código postal",
+    "errorEditProject": "Error al editar el proyecto"
+  },
+  "warn": {
+    "verifyZipCode": "Por favor, verifica el código postal"
+  },
+  "success": {
+    "unitCreated": "Unidad de construcción creada exitosamente",
+    "unitUpdated": "Unidad de construcción actualizada exitosamente",
+    "unitDeleted": "Unidad de construcción eliminada exitosamente",
+    "moduleCreated": "Módulo creado exitosamente",
+    "moduleUpdated": "Módulo actualizado exitosamente",
+    "moduleDeleted": "Módulo eliminado exitosamente",
+    "simulationCreated": "Simulación creada exitosamente",
+    "simulationUpdated": "Simulación actualizada exitosamente",
+    "simulationDeleted": "Simulación eliminada exitosamente",
+    "projectCreated": "Proyecto creado exitosamente",
+    "projectUpdated": "Proyecto actualizado exitosamente",
+    "projectDeleted": "Proyecto eliminado exitosamente"
+  },
+  "drawer": {
+    "editUnitTitle": "Editar Unidad de Construcción",
+    "unitNameLabel": "Nombre de la Unidad de Construcción *",
+    "saveUnitButton": "Guardar Unidad",
+    "addUnitTitle": "Agregar Unidad de Construcción",
+    "addUnitDescription": "Aquí habrá una descripción de lo que es la unidad de construcción, cómo debe usarse y qué campos son obligatorios.",
+    "createUnitButton": "Crear Unidad",
+    "addProjectTitle": "Agregar Proyectos",
+    "projectNameLabel": "Nombre del Proyecto *",
+    "cepLabel": "Código Postal *",
+    "cepPlaceholder": "Introduce el código postal",
+    "stateLabel": "Estado *",
+    "statePlaceholder": "Selecciona un estado",
+    "cityLabel": "Ciudad *",
+    "cityPlaceholder": "Selecciona una ciudad",
+    "neighborhoodLabel": "Barrio *",
+    "neighborhoodPlaceholder": "Introduce el barrio",
+    "streetLabel": "Calle *",
+    "streetPlaceholder": "Introduce el nombre de la calle",
+    "numberLabel": "Número *",
+    "numberPlaceholder": "Introduce el número de la casa",
+    "projectPhaseLabel": "Fase del Proyecto *",
+    "projectPhasePlaceholder": "Selecciona una fase del proyecto",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Introduce una descripción",
+    "imageLabel": "Imagen del Proyecto",
+    "imagePlaceholder": "Selecciona una imagen del proyecto (opcional)",
+    "addProjectButton": "Agregar Proyecto",
+    "editProjectButton": "Editar Proyecto"
+  },
+  "modalConfirmDeleteUnit": {
+    "title": "Eliminar Unidad",
+    "description": "Esta acción no se puede deshacer. ¿Estás seguro de que deseas continuar?",
+    "cancelButton": "Cancelar",
+    "deleteButton": "Eliminar"
+  },
+  "drawerEditModule": {
+    "title": "Editar Tecnología Constructiva",
+    "structureTypeLabel": "Tipo de Estructura",
+    "structureTypePlaceholder": "Selecciona un tipo de estructura",
+    "buildingTypeLabel": "Tipo de Edificio",
+    "buildingTypePlaceholder": "Selecciona un tipo de edificio",
+    "repeatedUnitLabel": "Unidad Repetida",
+    "floorsNumberLabel": "Número de Pisos",
+    "totalLabel": "Total",
+    "towerLabel": "Torre",
+    "basementLabel": "Sótano",
+    "basementNumberLabel": "Número de Sótanos",
+    "totalBuiltAreaLabel": "Área Total Construida",
+    "floorHeightLabel": "Altura del Piso",
+    "maxFloorHeightLabel": "Altura Máxima del Piso",
+    "wallThicknessLabel": "Grosor de la Pared",
+    "slabThicknessLabel": "Grosor de la Losa",
+    "concreteVolumeFck20Label": "Volumen de Hormigón (Fck 20)",
+    "concreteVolumeFck25Label": "Volumen de Hormigón (Fck 25)",
+    "concreteVolumeFck30Label": "Volumen de Hormigón (Fck 30)",
+    "concreteVolumeFck35Label": "Volumen de Hormigón (Fck 35)",
+    "concreteVolumeFck40Label": "Volumen de Hormigón (Fck 40)",
+    "concreteVolumeFck45Label": "Volumen de Hormigón (Fck 45)",
+    "steelConsumptionLabel": "Consumo de Acero",
+    "defaultTechnology": "Tecnología Constructiva",
+    "dragAndDropFiles": "Arrastra y suelta archivos aquí o haz clic para subir",
+    "featureNotIntegrated": "Función aún no integrada",
+    "editModule": "Editar Tecnología Constructiva",
+    "updateModule": "Actualizar Tecnología Constructiva",
+    "saveModule": "Guardar Tecnología Constructiva",
+    "saveSimulation": "Guardar Simulación"
+  },
+  "drawerAddModule": {
+    "title": "Agregar Tecnología Constructiva",
+    "description": "Llena los detalles a continuación para agregar un nuevo módulo.",
+    "createButton": "Crear Módulo",
+    "defaultContext": "Tecnología Constructiva",
+    "repeatUnit": "¿La unidad se repite? ¿Cuántas veces?",
+    "numberOfFloors": "Número de pisos:",
+    "total": "Total",
+    "tower": "Torre",
+    "basement": "Sótano",
+    "basementNumber": "Número de sótanos",
+    "totalBuiltArea": "Área Total Construida (m²)",
+    "floorToFloorHeight": "Altura de Piso a Piso (m)",
+    "maxFloorToFloorHeight": "Altura Máxima de Piso a Piso (m)",
+    "wallThickness": "Grosor de la Pared (m)",
+    "slabThickness": "Grosor de la Losa (m)",
+    "concreteVolumeFck20": "Volumen de Hormigón Fck20 (m³)",
+    "concreteVolumeFck25": "Volumen de Hormigón Fck25 (m³)",
+    "concreteVolumeFck30": "Volumen de Hormigón Fck30 (m³)",
+    "concreteVolumeFck35": "Volumen de Hormigón Fck35 (m³)",
+    "concreteVolumeFck40": "Volumen de Hormigón Fck40 (m³)",
+    "concreteVolumeFck45": "Volumen de Hormigón Fck45 (m³)",
+    "steelConsumption": "Consumo de Acero (kg)",
+    "addConstructiveTechnology": "Agregar Tecnología Constructiva"
+  },
+  "simulationTable": {
+    "title": "Simulaciones",
+    "description": "Aquí están todas las simulaciones para la tecnología constructiva seleccionada.",
+    "addSimulation": "Agregar Simulación",
+    "noItemsFound": "No se encontraron simulaciones",
+    "headers": {
+      "name": "Nombre",
+      "description": "Descripción",
+      "createdAt": "Creado En",
+      "updatedAt": "Actualizado En",
+      "version": "Versión",
+      "isValid": "¿Es una versión válida?",
+      "actions": "Acciones"
+    },
+    "saveSimulation": "Guardar Simulación",
+    "updateSimulation": "Actualizar Simulación",
+    "deleteSimulation": "Eliminar Simulación",
+    "loading": "Cargando...",
+    "setValidVersion": "Establecer Versión Válida",
+    "selectVersions": "Selecciona versiones en la tabla de arriba para comparar simulaciones."
+  },
+  "modulesTable": {
+    "headers": {
+      "structureType": "Tipo de Estructura",
+      "buildingType": "Tipo de Edificio",
+      "createdAt": "Creado En",
+      "updatedAt": "Actualizado En",
+      "buildedAreaTotal": "Área Total Construida (m²)",
+      "steelConsumption": "Consumo de Acero (kg)"
+    },
+    "structureType": {
+      "beamColumn": "Viga Pilar",
+      "concreteWall": "Pared de Hormigón",
+      "masonry": "Mampostería"
+    },
+    "buildingType": {
+      "residential": "Residencial",
+      "mixed": "Mixto",
+      "corporate": "Corporativo"
+    }
+  },
+  "projectTable": {
+    "headers": {
+      "name": "Nombre",
+      "city": "Ciudad",
+      "state": "Estado",
+      "projectPhase": "Fase del Proyecto",
+      "users_one": "Usuario",
+      "users_other": "Usuarios",
+      "createdAt": "Creado En",
+      "updatedAt": "Actualizado En",
+      "description": "Descripción",
+      "ID": "ID"
+    }
+  }
+}

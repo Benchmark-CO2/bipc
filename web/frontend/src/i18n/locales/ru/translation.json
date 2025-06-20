@@ -1,0 +1,287 @@
+{
+  "common": {
+    "appName": "BIP",
+    "user": "Пользователь",
+    "logout": "Выйти",
+    "portal": "Портал",
+    "constructiveTechnology": "Строительная технология",
+    "projectPhaseOptions": {
+      "preliminaryStudy": "Предварительное исследование",
+      "draft": "Черновик",
+      "basicProject": "Основной проект",
+      "executiveProject": "Исполнительный проект",
+      "releasedForConstruction": "Разрешено для строительства"
+    },
+    "structureType": {
+      "beamColumn": "Балка Колонна",
+      "concreteWall": "Бетонная стена",
+      "masonry": "Кладка"
+    },
+    "buildingType": {
+      "residential": "Жилой",
+      "mixed": "Смешанный",
+      "corporate": "Корпоративный"
+    },
+    "crumbs": {
+      "home": "Главная",
+      "projects": "Проекты",
+      "simulations": "Симуляции",
+      "settings": "Настройки",
+      "dashboard": "Панель управления"
+    },
+    "noItemsFound": "Нет элементов",
+    "users_one": "Пользователь",
+    "users_other": "Пользователи"
+  },
+  "home": {
+    "title": "Главная",
+    "description": "Это приложение помогает эффективно управлять вашими проектами."
+  },
+  "sidebar": {
+    "theme": "Тема",
+    "light": "Светлый режим",
+    "dark": "Темный режим",
+    "system": "Система",
+    "language": "Язык",
+    "languageToggle": {
+      "title": "Изменить язык"
+    },
+    "en": "Английский",
+    "ptbr": "Португальский",
+    "es": "Испанский",
+    "ru": "Русский"
+  },
+  "projects": {
+    "title": "Проекты",
+    "description": "Управляйте своими проектами здесь"
+  },
+  "projectsPage": {
+    "addProject": "Добавить проект",
+    "noProjects": "У вас нет проектов."
+  },
+  "dashboard": {
+    "title": "Панель управления",
+    "description": "Это страница панели управления."
+  },
+  "settings": {
+    "title": "Настройки",
+    "theme": "Тема"
+  },
+  "public": {
+    "comingSoonTitle": "В разработке 🚧",
+    "comingSoonDescription": "Мы работаем над чем-то удивительным для вас.",
+    "accessProjects": "Доступ к проектам",
+    "login": "Войти"
+  },
+  "loginPage": {
+    "title": "ВХОД",
+    "error": "Неверный email или пароль",
+    "placeholderEmail": "Email",
+    "placeholderPassword": "Пароль",
+    "buttonLogin": "Войти",
+    "buttonRegister": "Регистрация"
+  },
+  "signUp": {
+    "title": "РЕГИСТРАЦИЯ",
+    "name": "Имя",
+    "email": "Email",
+    "password": "Пароль",
+    "confirmPassword": "Подтвердите пароль",
+    "buttonSignUp": "Зарегистрироваться",
+    "buttonHaveAccount": "Уже есть аккаунт? Войти",
+    "errorEmailExists": "Email уже зарегистрирован"
+  },
+  "simulations": {
+    "title": "Симуляции",
+    "description": "Здесь находятся все симуляции для выбранной строительной технологии.",
+    "addSimulation": "Добавить симуляцию"
+  },
+  "error": {
+    "sessionExpired": "Упс, ваша сессия истекла...",
+    "goToLogin": "Перейти к входу",
+    "errorCreateProject": "Ошибка при создании проекта",
+    "errorCreateUnit": "Ошибка при создании строительной единицы",
+    "errorCreateModule": "Ошибка при создании модуля",
+    "errorCreateSimulation": "Ошибка при создании симуляции",
+    "errorDeleteProject": "Ошибка при удалении проекта",
+    "errorDeleteUnit": "Ошибка при удалении строительной единицы",
+    "errorDeleteModule": "Ошибка при удалении модуля",
+    "errorDeleteSimulation": "Ошибка при удалении симуляции",
+    "errorUpdateProject": "Ошибка при обновлении проекта",
+    "errorUpdateUnit": "Ошибка при обновлении строительной единицы",
+    "errorUpdateModule": "Ошибка при обновлении модуля",
+    "errorUpdateSimulation": "Ошибка при обновлении симуляции",
+    "errorFetchProjects": "Ошибка при получении проектов",
+    "errorFetchUnits": "Ошибка при получении строительных единиц",
+    "errorFetchModules": "Ошибка при получении модулей",
+    "errorFetchSimulations": "Ошибка при получении симуляций",
+    "errorFetchProjectById": "Ошибка при получении проекта по ID",
+    "errorFetchZipCode": "Ошибка при получении почтового индекса",
+    "errorEditProject": "Ошибка при редактировании проекта"
+  },
+  "warn": {
+    "verifyZipCode": "Пожалуйста, проверьте почтовый индекс"
+  },
+  "success": {
+    "unitCreated": "Строительная единица успешно создана",
+    "unitUpdated": "Строительная единица успешно обновлена",
+    "unitDeleted": "Строительная единица успешно удалена",
+    "moduleCreated": "Модуль успешно создан",
+    "moduleUpdated": "Модуль успешно обновлен",
+    "moduleDeleted": "Модуль успешно удален",
+    "simulationCreated": "Симуляция успешно создана",
+    "simulationUpdated": "Симуляция успешно обновлена",
+    "simulationDeleted": "Симуляция успешно удалена",
+    "projectCreated": "Проект успешно создан",
+    "projectUpdated": "Проект успешно обновлен",
+    "projectDeleted": "Проект успешно удален"
+  },
+  "drawer": {
+    "editUnitTitle": "Редактировать строительную единицу",
+    "unitNameLabel": "Название строительной единицы *",
+    "saveUnitButton": "Сохранить единицу",
+    "addUnitTitle": "Добавить строительную единицу",
+    "addUnitDescription": "Здесь будет описание строительной единицы, как она должна использоваться и какие поля обязательны.",
+    "createUnitButton": "Создать единицу",
+    "addProjectTitle": "Добавить проекты",
+    "projectNameLabel": "Название проекта *",
+    "cepLabel": "Почтовый индекс *",
+    "cepPlaceholder": "Введите почтовый индекс",
+    "stateLabel": "Штат *",
+    "statePlaceholder": "Выберите штат",
+    "cityLabel": "Город *",
+    "cityPlaceholder": "Выберите город",
+    "neighborhoodLabel": "Район *",
+    "neighborhoodPlaceholder": "Введите район",
+    "streetLabel": "Улица *",
+    "streetPlaceholder": "Введите название улицы",
+    "numberLabel": "Номер *",
+    "numberPlaceholder": "Введите номер дома",
+    "projectPhaseLabel": "Фаза проекта *",
+    "projectPhasePlaceholder": "Выберите фазу проекта",
+    "descriptionLabel": "Описание",
+    "descriptionPlaceholder": "Введите описание проекта",
+    "imageLabel": "Изображение проекта",
+    "imagePlaceholder": "Выберите изображение проекта (опционально)",
+    "addProjectButton": "Добавить проект",
+    "editProjectButton": "Редактировать проект"
+  },
+  "modalConfirmDeleteUnit": {
+    "title": "Удалить единицу",
+    "description": "Это действие нельзя отменить. Вы уверены, что хотите продолжить?",
+    "cancelButton": "Отмена",
+    "deleteButton": "Удалить"
+  },
+  "drawerEditModule": {
+    "title": "Редактировать строительную технологию",
+    "structureTypeLabel": "Тип структуры",
+    "structureTypePlaceholder": "Выберите тип структуры",
+    "buildingTypeLabel": "Тип здания",
+    "buildingTypePlaceholder": "Выберите тип здания",
+    "repeatedUnitLabel": "Повторяющаяся единица",
+    "floorsNumberLabel": "Количество этажей",
+    "totalLabel": "Итого",
+    "towerLabel": "Башня",
+    "basementLabel": "Подвал",
+    "basementNumberLabel": "Количество подвалов",
+    "totalBuiltAreaLabel": "Общая площадь застройки",
+    "floorHeightLabel": "Высота этажа",
+    "maxFloorHeightLabel": "Максимальная высота этажа",
+    "wallThicknessLabel": "Толщина стены",
+    "slabThicknessLabel": "Толщина плиты",
+    "concreteVolumeFck20Label": "Объем бетона (Fck 20)",
+    "concreteVolumeFck25Label": "Объем бетона (Fck 25)",
+    "concreteVolumeFck30Label": "Объем бетона (Fck 30)",
+    "concreteVolumeFck35Label": "Объем бетона (Fck 35)",
+    "concreteVolumeFck40Label": "Объем бетона (Fck 40)",
+    "concreteVolumeFck45Label": "Объем бетона (Fck 45)",
+    "steelConsumptionLabel": "Потребление стали",
+    "defaultTechnology": "Строительная технология",
+    "dragAndDropFiles": "Перетащите файлы сюда или нажмите для загрузки",
+    "featureNotIntegrated": "Функция еще не интегрирована",
+    "editModule": "Редактировать строительную технологию",
+    "updateModule": "Обновить строительную технологию",
+    "saveModule": "Сохранить строительную технологию",
+    "saveSimulation": "Сохранить симуляцию"
+  },
+  "drawerAddModule": {
+    "title": "Добавить строительную технологию",
+    "description": "Заполните данные ниже, чтобы добавить новый модуль.",
+    "createButton": "Создать модуль",
+    "defaultContext": "Строительная технология",
+    "repeatUnit": "Повторяется ли единица? Сколько раз?",
+    "numberOfFloors": "Количество этажей:",
+    "total": "Итого",
+    "tower": "Башня",
+    "basement": "Подвал",
+    "basementNumber": "Количество подвалов",
+    "totalBuiltArea": "Общая площадь застройки (м²)",
+    "floorToFloorHeight": "Высота от этажа до этажа (м)",
+    "maxFloorToFloorHeight": "Максимальная высота от этажа до этажа (м)",
+    "wallThickness": "Толщина стены (м)",
+    "slabThickness": "Толщина плиты (м)",
+    "concreteVolumeFck20": "Объем бетона Fck20 (м³)",
+    "concreteVolumeFck25": "Объем бетона Fck25 (м³)",
+    "concreteVolumeFck30": "Объем бетона Fck30 (м³)",
+    "concreteVolumeFck35": "Объем бетона Fck35 (м³)",
+    "concreteVolumeFck40": "Объем бетона Fck40 (м³)",
+    "concreteVolumeFck45": "Объем бетона Fck45 (м³)",
+    "steelConsumption": "Потребление стали (кг)",
+    "addConstructiveTechnology": "Добавить строительную технологию"
+  },
+  "simulationTable": {
+    "title": "Симуляции",
+    "description": "Здесь находятся все симуляции для выбранной строительной технологии.",
+    "addSimulation": "Добавить симуляцию",
+    "noItemsFound": "Симуляции не найдены",
+    "headers": {
+      "name": "Название",
+      "description": "Описание",
+      "createdAt": "Создано",
+      "updatedAt": "Обновлено",
+      "version": "Версия",
+      "isValid": "Является ли версия действительной?",
+      "actions": "Действия"
+    },
+    "saveSimulation": "Сохранить симуляцию",
+    "updateSimulation": "Обновить симуляцию",
+    "deleteSimulation": "Удалить симуляцию",
+    "loading": "Загрузка...",
+    "setValidVersion": "Установить действительную версию",
+    "selectVersions": "Выберите версии в таблице выше, чтобы сравнить симуляции."
+  },
+  "modulesTable": {
+    "headers": {
+      "structureType": "Тип структуры",
+      "buildingType": "Тип здания",
+      "createdAt": "Создано",
+      "updatedAt": "Обновлено",
+      "buildedAreaTotal": "Общая площадь застройки (м²)",
+      "steelConsumption": "Потребление стали (кг)"
+    },
+    "structureType": {
+      "beamColumn": "Балка Колонна",
+      "concreteWall": "Бетонная стена",
+      "masonry": "Кладка"
+    },
+    "buildingType": {
+      "residential": "Жилой",
+      "mixed": "Смешанный",
+      "corporate": "Корпоративный"
+    }
+  },
+  "projectTable": {
+    "headers": {
+      "name": "Название",
+      "city": "Город",
+      "state": "Штат",
+      "projectPhase": "Фаза проекта",
+      "users_one": "Пользователь",
+      "users_other": "Пользователи",
+      "createdAt": "Создано",
+      "updatedAt": "Обновлено",
+      "description": "Описание",
+      "ID": "ID"
+    }
+  }
+}
