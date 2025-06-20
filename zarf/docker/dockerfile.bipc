@@ -20,7 +20,7 @@ WORKDIR /bipc
 
 COPY . .
 
-COPY --from=build_frontend /frontend/dist /web/frontend/dist
+COPY --from=build_frontend /frontend/dist ./web/frontend/dist
 
 WORKDIR /bipc/cmd/api
 RUN go build -ldflags='-s'

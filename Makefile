@@ -157,6 +157,11 @@ migrations/up: confirm
 migrations/down:
 	migrate -path ./migrations -database $(DB_DSN) down
 
+minio/local:
+	mc alias set local http://localhost:9000 minioadmin minioadmin
+	mc mb local/bipc
+	mc anonymous set download local/bipc
+
 # ==================================================================================== #
 # QUALITY CONTROL
 # ==================================================================================== #
