@@ -83,24 +83,24 @@ func UnmarshalModuleStructure(data []byte) (ModuleStructure, error) {
 		return nil, err
 	}
 	switch strings.ToLower(basic.StructureType) {
-	// case "beam_column":
-	// 	var b BeamColumn
-	// 	if err := json.Unmarshal(data, &b); err != nil {
-	// 		return nil, err
-	// 	}
-	// 	return &b, nil
+	case "beam_column":
+		var b BeamColumn
+		if err := json.Unmarshal(data, &b); err != nil {
+			return nil, err
+		}
+		return &b, nil
 	case "concrete_wall":
 		var w ConcreteWall
 		if err := json.Unmarshal(data, &w); err != nil {
 			return nil, err
 		}
 		return &w, nil
-	// case "structural_masonry":
-	// 	var m StructuralMasonry
-	// 	if err := json.Unmarshal(data, &m); err != nil {
-	// 		return nil, err
-	// 	}
-	// 	return &m, nil
+	case "structural_masonry":
+		var m StructuralMasonry
+		if err := json.Unmarshal(data, &m); err != nil {
+			return nil, err
+		}
+		return &m, nil
 	default:
 		return nil, errors.New("invalid structure_type")
 	}
@@ -192,7 +192,64 @@ func (w *ConcreteWall) Calculate() (CO2Consuption, error) {
         return CO2Consuption{}, err
     }
 
-	// todo: repetition
+	// to obtain consuption per area CO2/m2
+	result.Max = result.Max / float64(w.FloorArea)
+	result.Min = result.Min / float64(w.FloorArea)
+
+    return result, nil
+}
+
+func (b *BeamColumn) Calculate() (CO2Consuption, error) {
+    result := CO2Consuption{}
+
+    result, err := calculateConcrete(b.ConcreteColumns, sidacConcreteData, result)
+    if err != nil {
+        return CO2Consuption{}, err
+    }
+
+    result, err = calculateConcrete(b.ConcreteBeams, sidacConcreteData, result)
+    if err != nil {
+        return CO2Consuption{}, err
+    }
+
+    result, err = calculateConcrete(b.ConcreteSlabs, sidacConcreteData, result)
+    if err != nil {
+        return CO2Consuption{}, err
+    }
+
+    result, err = calculateSteel(b.SteelCA50, b.SteelCA60, sidacSteelData, result)
+    if err != nil {
+        return CO2Consuption{}, err
+    }
+	
+	// to obtain consuption per area (CO2/m2)
+	result.Max = result.Max / float64(b.FloorArea)
+	result.Min = result.Min / float64(b.FloorArea)
+
+    return result, nil
+}
+
+func (m *StructuralMasonry) Calculate() (CO2Consuption, error) {
+	result := CO2Consuption{}
+
+    result, err := calculateConcrete(m.VerticalGrout, sidacConcreteData, result)
+    if err != nil {
+        return CO2Consuption{}, err
+    }
+
+    result, err = calculateConcrete(m.HorizontalGrout, sidacConcreteData, result)
+    if err != nil {
+        return CO2Consuption{}, err
+    }
+
+    result, err = calculateSteel(m.SteelCA50, m.SteelCA60, sidacSteelData, result)
+    if err != nil {
+        return CO2Consuption{}, err
+    }
+	
+	// to obtain consuption per area (CO2/m2)
+	result.Max = result.Max / float64(m.FloorArea)
+	result.Min = result.Min / float64(m.FloorArea)
 
     return result, nil
 }
