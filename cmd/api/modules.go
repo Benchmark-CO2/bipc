@@ -4,7 +4,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/Benchmark-CO2/bip/internal/modules"
+	"github.com/Benchmark-CO2/bipc/internal/modules"
 )
 
 func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Request) {

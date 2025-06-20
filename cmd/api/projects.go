@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Benchmark-CO2/bip/internal/data"
-	"github.com/Benchmark-CO2/bip/internal/validator"
+	"github.com/Benchmark-CO2/bipc/internal/data"
+	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
 func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Request) {

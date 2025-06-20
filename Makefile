@@ -1,18 +1,21 @@
 # ==============================================================================
 # .envrc file
 #
-# export DB_PASSWORD=
-# export DB_USER=
-# export DB_NAME=
-# export DB_HOST=
-# export DB_PORT=
-# export DB_SSLMODE=
-# export DB_DSN=postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}
+# export DB_DSN=
 #
-# export SMTP_HOSTNAME=
+# export SMTP_HOST=
 # export SMTP_PORT=
 # export SMTP_USERNAME=
 # export SMTP_PASSWORD=
+# export SMTP_SENDER=
+#
+# export S3_ENDPOINT=
+# export S3_ACCESS_KEY=
+# export S3_SECRET_KEY=
+# export S3_SECURE=
+# export S3_REGION=
+# export S3_BUCKET=
+# export S3_BASE_URL=
 
 include .envrc
 
@@ -45,7 +48,8 @@ ALPINE    := alpine:3.22
 POSTGRES  := postgres:17.5
 NODE      := node:24-slim
 MAILHOG   := mailhog/mailhog:v1.0.1
-BIP_IMAGE := localhost/bip:latest
+MINIO     := minio/minio:RELEASE.2025-04-22T22-12-26Z
+BIPC_IMAGE := localhost/bipc:latest
 	
 # ==================================================================================== #
 # HELPERS
@@ -73,6 +77,7 @@ dev/gotooling:
 	 go install github.com/divan/expvarmon@latest
 	 go install honnef.co/go/tools/cmd/staticcheck@latest
 	 go install golang.org/x/vuln/cmd/govulncheck@latest
+	 go install github.com/minio/mc@latest
 
 ## dev/docker: pull all required Docker images for development
 .PHONY: dev/docker
@@ -82,20 +87,21 @@ dev/docker:
 	docker pull $(POSTGRES) & \
 	docker pull $(NODE) & \
 	docker pull $(MAILHOG) & \
+	docker pull $(MINIO) & \
 	wait;
 
 ## docker/build: build the Docker image for the application
 .PHONY: docker/build
 docker/build:
 	docker build \
-		-f zarf/docker/dockerfile.bip \
-		-t $(BIP_IMAGE) \
+		-f zarf/docker/dockerfile.bipc \
+		-t $(BIPC_IMAGE) \
 		.
 
 ## compose/up: start the Docker Compose services
 .PHONY: compose/up
 compose/up:
-	cd ./zarf/compose/ && docker compose -f docker_compose.yaml -p bip up -d
+	cd ./zarf/compose/ && docker compose -f docker_compose.yaml -p bipc up -d
 
 ## compose/build-up: build the Docker image and start the services
 .PHONY: compose/build-up
@@ -104,12 +110,12 @@ compose/build-up: docker/build compose/up
 ## compose/down: stop and remove the Docker Compose services
 .PHONY: compose/down
 compose/down:
-	cd ./zarf/compose/ && docker compose -f docker_compose.yaml -p bip down
+	cd ./zarf/compose/ && docker compose -f docker_compose.yaml -p bipc down
 
 ## compose/logs: view the logs of the Docker Compose services
 .PHONY: compose/logs
 compose/logs:
-	cd ./zarf/compose/ && docker compose -f docker_compose.yaml -p bip logs
+	cd ./zarf/compose/ && docker compose -f docker_compose.yaml -p bipc logs
 
 ## run/help: list the command-line flags options
 .PHONY: run/help
@@ -119,34 +125,36 @@ run/help:
 ## run/api: run the cmd/api application
 .PHONY: run/api
 run/api:
-	@go run ./cmd/api -limiter-enabled=false -db-dsn=$(DB_DSN) -smtp-host=$(SMTP_HOSTNAME) -smtp-port=$(SMTP_PORT)
+	@go run ./cmd/api -limiter-enabled=false -db-dsn=$(DB_DSN) \
+	-smtp-host=$(SMTP_HOST) -smtp-port=$(SMTP_PORT) -smtp-username=$(SMTP_USERNAME) -smtp-password=$(SMTP_PASSWORD) -smtp-sender=$(SMTP_SENDER) \
+	-s3-endpoint=$(S3_ENDPOINT) -s3-access-key=$(S3_ACCESS_KEY) -s3-secret-key=$(S3_SECRET_KEY) -s3-secure=$(S3_SECURE) -s3-region=$(S3_REGION) -s3-bucket=$(S3_BUCKET) -s3-base-url=$(S3_BASE_URL)
 
-## run/metrics: run the TermUI monitor for the application
-.PHONY: run/metrics
-run/metrics:
+## metrics: run the TermUI monitor for the application
+.PHONY: metrics
+metrics:
 	expvarmon -ports="localhost:4000" -endpoint="/v1/metrics" -i=5s \
 	-vars="str:version,goroutines,total_requests_received,total_responses_sent,in_flight_requests,duration:total_processing_time_μs,\
 	str:database.MaxOpenConnections,database.OpenConnections,database.InUse,database.Idle,database.WaitCount,duration:database.WaitDuration,database.MaxIdleTimeClosed,\
 	mem:memstats.HeapAlloc,mem:memstats.HeapSys,mem:memstats.Sys"
 
-## run/load email=$1 password=$2: run a load test against the API
-.PHONY: run/load
-run/load: confirm
+## load email=$1 password=$2: run a load test against the API
+.PHONY: load
+load: confirm
 	hey -c 50 -n 700 -d '{"email": "$(email)", "password": "$(password)"}' -m "POST" http://localhost:4000/v1/tokens/authentication
 
-## db/migrations/new name=$1: create a new database migration
-.PHONY: db/migrations/new
-db/migrations/new:
+## migrations/new name=$1: create a new database migration
+.PHONY: migrations/new
+migrations/new:
 	migrate create -seq -ext=.sql -dir=./migrations -digits 3 $(name)
 
-## db/migrations/up: apply all up database migrations
-.PHONY: db/migrations/up
-db/migrations/up: confirm
+## migrations/up: apply all up database migrations
+.PHONY: migrations/up
+migrations/up: confirm
 	migrate -path ./migrations -database $(DB_DSN) up
 
-## db/migrations/down: apply all down database migrations
-.PHONY: db/migrations/down
-db/migrations/down:
+## migrations/down: apply all down database migrations
+.PHONY: migrations/down
+migrations/down:
 	migrate -path ./migrations -database $(DB_DSN) down
 
 # ==================================================================================== #

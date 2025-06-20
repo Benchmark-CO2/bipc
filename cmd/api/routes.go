@@ -6,7 +6,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 
-	"github.com/Benchmark-CO2/bip/web"
+	"github.com/Benchmark-CO2/bipc/web"
 )
 
 func (app *application) routes() http.Handler {
@@ -32,6 +32,8 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID", app.requirePermission("project:view", app.showProjectHandler))
 	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID", app.requirePermission("project:edit", app.updateProjectHandler))
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID", app.requirePermission("project:edit", app.deleteProjectHandler))
+
+	router.HandlerFunc(http.MethodGet, "/v1/presigned-urls", app.presignedURLHandler)
 
 	router.HandlerFunc(http.MethodPost, "/v1/module", app.createModuleHandler)
 

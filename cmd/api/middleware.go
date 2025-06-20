@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Benchmark-CO2/bip/internal/data"
-	"github.com/Benchmark-CO2/bip/internal/validator"
-	"github.com/Benchmark-CO2/bip/web"
+	"github.com/Benchmark-CO2/bipc/internal/data"
+	"github.com/Benchmark-CO2/bipc/internal/validator"
+	"github.com/Benchmark-CO2/bipc/web"
 
 	"golang.org/x/time/rate"
 )
@@ -307,9 +307,7 @@ func (app *application) requirePermission(code string, next http.HandlerFunc) ht
 
 		projectID, err := app.readIDParam(r, "projectID")
 		if err != nil {
-			v := validator.New()
-			v.AddError("url", err.Error())
-			app.failedValidationResponse(w, r, v.Errors)
+			app.badRequestResponse(w, r, err)
 			return
 		}
 

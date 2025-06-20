@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Benchmark-CO2/bip/internal/data"
-	"github.com/Benchmark-CO2/bip/internal/validator"
+	"github.com/Benchmark-CO2/bipc/internal/data"
+	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
 func (app *application) createAuthenticationTokenHandler(w http.ResponseWriter, r *http.Request) {
