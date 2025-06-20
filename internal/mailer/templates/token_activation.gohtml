@@ -1,9 +1,9 @@
-{{define "subject"}}Activate your BIP account{{ end }}
+{{define "subject"}}Activate your BIPC account{{ end }}
 
 {{define "plainBody"}}
 Hi, Please send a `PUT /v1/users/activated` request with the following JSON body
 to activate your account: {"token": "{{.activationToken}}"} Please note that
-this is a one-time use token and it will expire in 3 days. Thanks, The BIP Team
+this is a one-time use token and it will expire in 3 days. Thanks, The BIPC Team
 {{ end }}
 
 {{define "htmlBody"}}
@@ -28,7 +28,7 @@ this is a one-time use token and it will expire in 3 days. Thanks, The BIP Team
     </p>
     <p>
       Thanks,<br />
-      The BIP Team
+      The BIPC Team
     </p>
   </body>
 </html>

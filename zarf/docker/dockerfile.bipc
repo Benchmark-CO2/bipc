@@ -16,25 +16,25 @@ RUN pnpm build
 FROM golang:1.24 AS build_api
 ENV CGO_ENABLED=0
 
-WORKDIR /bip
+WORKDIR /bipc
 
 COPY . .
 
 COPY --from=build_frontend /frontend/dist /web/frontend/dist
 
-WORKDIR /bip/cmd/api
+WORKDIR /bipc/cmd/api
 RUN go build -ldflags='-s'
 
 
 FROM alpine:3.22
 
-RUN addgroup -g 1000 -S bip && \
-    adduser -u 1000 -h /bip -G bip -S bip
+RUN addgroup -g 1000 -S bipc && \
+    adduser -u 1000 -h /bipc -G bipc -S bipc
 
-COPY --from=build_api --chown=bip:bip /bip/cmd/api/api /bip/api
+COPY --from=build_api --chown=bipc:bipc /bipc/cmd/api/api /bipc/api
 
-WORKDIR /bip
+WORKDIR /bipc
 
-USER bip
+USER bipc
 
 ENTRYPOINT ["./api"]

@@ -1,11 +1,11 @@
-{{define "subject"}}Welcome to BIP!{{ end }}
+{{define "subject"}}Welcome to BIPC!{{ end }}
 
 {{define "plainBody"}}
-Hi, Thanks for signing up for a BIP account. We're excited to have you on board!
+Hi, Thanks for signing up for a BIPC account. We're excited to have you on board!
 For future reference, your user ID number is {{.userID}}. Please send a request
 to the `PUT /v1/users/activated` endpoint with the following JSON body to
 activate your account: {"token": "{{.activationToken}}"} Please note that this
-is a one-time use token and it will expire in 3 days. Thanks, The BIP Team
+is a one-time use token and it will expire in 3 days. Thanks, The BIPC Team
 {{ end }}
 
 {{define "htmlBody"}}
@@ -19,7 +19,7 @@ is a one-time use token and it will expire in 3 days. Thanks, The BIP Team
   <body>
     <p>Hi,</p>
     <p>
-      Thanks for signing up for a BIP account. We're excited to have you on
+      Thanks for signing up for a BIPC account. We're excited to have you on
       board!
     </p>
     <p>For future reference, your user ID number is {{.userID}}.</p>
@@ -36,7 +36,7 @@ is a one-time use token and it will expire in 3 days. Thanks, The BIP Team
     </p>
     <p>
       Thanks,<br />
-      The BIP Team
+      The BIPC Team
     </p>
   </body>
 </html>

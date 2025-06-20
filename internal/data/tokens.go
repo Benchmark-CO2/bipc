@@ -7,7 +7,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/Benchmark-CO2/bip/internal/validator"
+	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
 const (

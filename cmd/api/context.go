@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/Benchmark-CO2/bip/internal/data"
+	"github.com/Benchmark-CO2/bipc/internal/data"
 )
 
 type contextKey string

@@ -44,14 +44,14 @@ type BeamColumn struct {
 
 type ConcreteWall struct {
 	BasicModuleData
-	ConcreteWalls   []Concrete `json:"concrete_walls"`
-	ConcreteSlabs   []Concrete `json:"concrete_slabs"`
-	SteelCA50       float64    `json:"steel_ca50"`
-	SteelCA60       float64    `json:"steel_ca60"`
-	WallThickness   *float64   `json:"wall_thickness,omitempty"`
-	SlabThickness   *float64   `json:"slab_thickness,omitempty"`
-	FormArea        *float64   `json:"form_area,omitempty"`
-	WallArea        *float64   `json:"wall_area,omitempty"`
+	ConcreteWalls []Concrete `json:"concrete_walls"`
+	ConcreteSlabs []Concrete `json:"concrete_slabs"`
+	SteelCA50     float64    `json:"steel_ca50"`
+	SteelCA60     float64    `json:"steel_ca60"`
+	WallThickness *float64   `json:"wall_thickness,omitempty"`
+	SlabThickness *float64   `json:"slab_thickness,omitempty"`
+	FormArea      *float64   `json:"form_area,omitempty"`
+	WallArea      *float64   `json:"wall_area,omitempty"`
 }
 
 type StructuralMasonry struct {

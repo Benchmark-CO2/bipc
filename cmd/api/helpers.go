@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Benchmark-CO2/bip/internal/validator"
+	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/julienschmidt/httprouter"
 )
 
