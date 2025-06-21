@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { postProject } from "@/actions/projects/postProject";
+import { putProject } from "@/actions/projects/putProject";
+import { IProject } from "@/types/projects";
 import useCep from "@/hooks/useLocation";
 import { masks } from "@/utils/masks";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -37,28 +39,36 @@ import { Textarea } from "../ui/textarea";
 import {
   ProjectFormSchema,
   projectFormSchema,
-} from "@/validators/project.validador";
+} from "@/validators/projectForm.validador";
 
 interface IDrawerAddProject {
   componentTrigger: React.ReactNode;
+  projectData?: IProject; // Dados do projeto para edição (opcional)
 }
 
-export default function DrawerAddProject({
+export default function DrawerFormProject({
   componentTrigger,
+  projectData,
 }: IDrawerAddProject) {
+  console.log(projectData);
+  const [openDrawer, setOpenDrawer] = useState(false);
+
+  const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const isEditMode = !!projectData;
+
   const form = useForm<ProjectFormSchema>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      state: "",
-      city: "",
-      neighborhood: "",
-      cep: "",
-      phase: "preliminary_study",
-      street: "",
-      number: "",
+      name: projectData?.name || "",
+      description: projectData?.description || "",
+      state: projectData?.state || "",
+      city: projectData?.city || "",
+      neighborhood: projectData?.neighborhood || "",
+      cep: projectData?.cep || "",
+      phase: projectData?.phase || "preliminary_study",
+      street: projectData?.street || "",
+      number: projectData?.number || "",
       image_url: undefined,
     },
   });
@@ -72,7 +82,12 @@ export default function DrawerAddProject({
 
   const navigate = useNavigate();
 
-  const { data, isSuccess, isPending, mutate } = useMutation({
+  const {
+    isSuccess: isCreationSuccess,
+    isPending: isCreationPending,
+    mutate: mutateCreation,
+    reset: resetCreation,
+  } = useMutation({
     mutationFn: postProject,
     onError: (error) => {
       toast.error(t("error.errorCreateProject"), {
@@ -80,28 +95,97 @@ export default function DrawerAddProject({
         duration: 5000,
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success("Projeto criado com sucesso", {
         description: "O projeto foi criado com sucesso",
         duration: 5000,
       });
+      queryClient.invalidateQueries({
+        queryKey: ["projects"],
+      });
+      setOpenDrawer(false);
+      form.reset();
+
+      // Navegar para o projeto criado se tiver o ID na resposta
+      if (data.data.project?.id) {
+        navigate({
+          to: `/projects/${data.data.project.id}`,
+          from: "/projects",
+        })
+          .then(() => null)
+          .catch((err: unknown) => err);
+      }
+    },
+  });
+
+  const {
+    isSuccess: isUpdateSuccess,
+    isPending: isUpdatePending,
+    mutate: mutateUpdate,
+    reset: resetUpdate,
+  } = useMutation({
+    mutationFn: (data: ProjectFormSchema) =>
+      putProject(data as any, projectData!.id),
+    onError: (error) => {
+      toast.error(t("error.errorEditProject"), {
+        description: error.message,
+        duration: 5000,
+      });
+    },
+    onSuccess: () => {
+      toast.success(t("success.projectUpdated"), {
+        duration: 5000,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["projects"],
+      });
+      setOpenDrawer(false);
+      form.reset();
     },
   });
 
   const onSubmit = (data: ProjectFormSchema) => {
-    mutate(data);
+    if (isEditMode) {
+      mutateUpdate(data);
+      return;
+    }
+    mutateCreation(data);
   };
 
   useEffect(() => {
-    if (data?.data.project_uuid) {
-      navigate({
-        to: `/projects/${data.data.project_uuid}`,
-        from: "/projects",
-      })
-        .then(() => null)
-        .catch((err: unknown) => err);
+    if (openDrawer) {
+      resetCreation();
+      resetUpdate();
+
+      if (projectData) {
+        form.reset({
+          name: projectData.name || "",
+          description: projectData.description || "",
+          state: projectData.state || "",
+          city: projectData.city || "",
+          neighborhood: projectData.neighborhood || "",
+          cep: projectData.cep || "",
+          phase: projectData.phase || "preliminary_study",
+          street: projectData.street || "",
+          number: projectData.number || "",
+          image_url: undefined,
+        });
+      } else {
+        form.reset({
+          name: "",
+          description: "",
+          state: "",
+          city: "",
+          neighborhood: "",
+          cep: "",
+          phase: "preliminary_study",
+          street: "",
+          number: "",
+          image_url: undefined,
+        });
+      }
     }
-  }, [data, navigate]);
+  }, [projectData, openDrawer, form, resetCreation, resetUpdate]);
 
   useEffect(() => {
     if (locationData) {
@@ -129,12 +213,28 @@ export default function DrawerAddProject({
   }, [isError, form]);
 
   return (
-    <Drawer direction="right">
-      <DrawerTrigger asChild>{componentTrigger}</DrawerTrigger>
+    <Drawer
+      direction="right"
+      onClose={() => setOpenDrawer(false)}
+      open={openDrawer}
+    >
+      <DrawerTrigger
+        asChild
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpenDrawer(true);
+        }}
+      >
+        {componentTrigger}
+      </DrawerTrigger>
       <DrawerContent className="min-w-2/5 px-6">
         <div className="mx-auto w-11/12">
           <DrawerHeader>
-            <DrawerTitle>{t("drawer.addProjectTitle")}</DrawerTitle>
+            <DrawerTitle>
+              {isEditMode
+                ? t("drawer.editProjectTitle")
+                : t("drawer.addProjectTitle")}
+            </DrawerTitle>
             {/* <DrawerDescription>Set your daily activity goal.</DrawerDescription> */}
           </DrawerHeader>
           <Form {...form}>
@@ -156,7 +256,7 @@ export default function DrawerAddProject({
                 )}
               />
               <FormField
-                // control={form.control}
+                control={form.control}
                 name="cep"
                 render={({ field }) => (
                   <FormItem className="flex-1/3">
@@ -350,17 +450,31 @@ export default function DrawerAddProject({
                   </FormItem>
                 )}
               />
-              <Button
-                disabled={isPending || isSuccess}
-                type="submit"
-                variant="noStyles"
-                className="mt-6"
-              >
-                {t("drawer.addProjectButton")}
-                {isPending && (
-                  <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
-                )}
-              </Button>
+              {isEditMode ? (
+                <Button
+                  disabled={isUpdatePending || isUpdateSuccess}
+                  type="submit"
+                  variant="noStyles"
+                  className="mt-6"
+                >
+                  {t("drawer.editProjectButton")}
+                  {isUpdatePending && (
+                    <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  disabled={isCreationPending || isCreationSuccess}
+                  type="submit"
+                  variant="noStyles"
+                  className="mt-6"
+                >
+                  {t("drawer.addProjectButton")}
+                  {isCreationPending && (
+                    <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                  )}
+                </Button>
+              )}
             </form>
           </Form>
         </div>
