@@ -1,10 +1,10 @@
-import { login } from '@/actions/auth/login'
-import { Button } from '@/components/ui/button'
-import { useAuth } from '@/hooks/useAuth'
-import { useMutation } from '@tanstack/react-query'
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
-import { FormEvent, useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { login } from '@/actions/auth/login';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import { useMutation } from '@tanstack/react-query';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { FormEvent, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const Login = () => {
   const auth = useAuth()
@@ -49,10 +49,9 @@ const Login = () => {
   }
 
   useEffect(() => {
-    const token = data?.data as string
-
+    const token = data?.data.authentication_token
     if (token) {
-      auth.login(token, email)
+      auth.login(token, data?.data.user)
       navigateTo('/')
     }
   }, [data, navigate])
