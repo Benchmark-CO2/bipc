@@ -145,6 +145,7 @@
     "addUnitDescription": "Here will be a description of what the construction unit is, how it should be used, and which fields are required.",
     "createUnitButton": "Create Unit",
     "addProjectTitle": "Add Projects",
+    "editProjectTitle": "Edit Project",
     "projectNameLabel": "Project Name *",
     "cepLabel": "ZIP Code *",
     "cepPlaceholder": "Enter the ZIP code",
