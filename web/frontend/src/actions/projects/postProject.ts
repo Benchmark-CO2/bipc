@@ -1,9 +1,7 @@
 import api from "@/service/api";
-import { ProjectFormSchema } from "@/validators/project.validador";
+import { IProject } from "@/types/projects";
+import { ProjectFormSchema } from "@/validators/projectForm.validador";
 
 export const postProject = (projectParams: ProjectFormSchema) => {
-  return api.post<{ project_uuid: string; message: string }>(
-    "/v1/projects",
-    projectParams
-  );
+  return api.post<{ project: IProject }>("/v1/projects", projectParams);
 };
