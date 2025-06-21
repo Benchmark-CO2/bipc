@@ -50,7 +50,6 @@ export default function DrawerFormProject({
   componentTrigger,
   projectData,
 }: IDrawerAddProject) {
-  console.log(projectData);
   const [openDrawer, setOpenDrawer] = useState(false);
 
   const queryClient = useQueryClient();
