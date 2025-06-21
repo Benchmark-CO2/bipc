@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "BIP",
+    "appName": "BIPC",
     "user": "User",
     "logout": "Logout",
     "portal": "Portal",
@@ -12,7 +12,7 @@
       "executiveProject": "Executive Project",
       "releasedForConstruction": "Released for Construction"
     },
-        "structureType": {
+    "structureType": {
       "beamColumn": "Beam Column",
       "concreteWall": "Concrete Wall",
       "masonry": "Masonry"
@@ -51,7 +51,6 @@
     "ru": "Russian",
     "en": "English",
     "ptbr": "Portuguese"
-
   },
   "projects": {
     "title": "Projects",

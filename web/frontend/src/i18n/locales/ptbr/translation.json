@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "BIP",
+    "appName": "BIPC",
     "user": "Usuário",
     "logout": "Sair",
     "constructiveTechnology": "Tecnologia Construtiva",
@@ -140,7 +140,7 @@
     "structureTypePlaceholder": "Selecione um tipo de estrutura",
     "buildingTypeLabel": "Tipo de Edifício",
     "buildingTypePlaceholder": "Selecione um tipo de edifício",
-    
+
     "repeatedUnitLabel": "Unidade Repetida",
     "floorsNumberLabel": "Número de Andares",
     "totalLabel": "Total",
