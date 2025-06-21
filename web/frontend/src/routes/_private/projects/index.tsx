@@ -1,5 +1,5 @@
 import { getAllProjectsByUser } from "@/actions/projects/getProjects";
-import { DrawerAddProject, ProjectTable } from "@/components/layout";
+import { DrawerFormProject, ProjectTable } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import CustomCard from "@/components/ui/customCard";
 import { useQuery } from "@tanstack/react-query";
@@ -70,7 +70,7 @@ function RouteComponent() {
     <div>
       <div className="mb-2 flex justify-end gap-1">
         {viewMode === "table" && (
-          <DrawerAddProject componentTrigger={componentTrigger} />
+          <DrawerFormProject componentTrigger={componentTrigger} />
         )}
         <Button
           variant={viewMode !== "table" ? "default" : "outline"}
@@ -92,15 +92,15 @@ function RouteComponent() {
         />
       ) : (
         <div className="flex w-full flex-wrap items-center gap-4">
-          <DrawerAddProject componentTrigger={componentTrigger} />
+          <DrawerFormProject componentTrigger={componentTrigger} />
           {data?.data.projects.length ? (
             data?.data.projects.map((project) => (
               <>
                 <CustomCard
-                  key={project.uuid}
+                  key={project.id}
                   project={project}
                   onClick={() => {
-                    onClickProject(project.uuid);
+                    onClickProject(project.id);
                   }}
                 />
               </>
