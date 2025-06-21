@@ -1,4 +1,4 @@
-import api from "@/service/api"
+import api from "@/service/api";
 
 interface TAuthParams {
   name: string
@@ -7,5 +7,5 @@ interface TAuthParams {
 }
 
 export const register = (authParams: TAuthParams) => {
-  return api.post('/auth/register', authParams)
+  return api.post('/v1/users', authParams)
 }
