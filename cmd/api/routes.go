@@ -36,6 +36,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/presigned-urls", app.presignedURLHandler)
 
 	router.HandlerFunc(http.MethodPost, "/v1/module", app.createModuleHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/unit", app.createUnitHandler)
 
 	return app.metrics(app.recoverPanic(app.commonHeaders(app.enableCORS(app.rateLimit(app.authenticate(router))))))
 }
