@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
@@ -60,6 +61,26 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 	err = app.models.Units.Insert(unit)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"unit": unit}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) showUnitHandler(w http.ResponseWriter, r *http.Request) {
+	unitID, _ := app.readIDParam(r, "unitID")
+
+	unit, err := app.models.Units.GetByID(unitID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 

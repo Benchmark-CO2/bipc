@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/validator"
@@ -62,6 +63,49 @@ func (m UnitModel) Insert(unit *Unit) error {
 		&unit.UpdatedAt,
 		&unit.Version,
 	)
+}
+
+func (m UnitModel) GetByID(id int64) (*Unit, error) {
+	if id < 1 {
+		return nil, ErrRecordNotFound
+	}
+
+	query := `
+		SELECT id, project_id, name, type, total_floors, tower_floors, base_floors, basement_floors, type_floors, total_area, created_at, updated_at, version
+		FROM units
+		WHERE id = $1`
+
+	var unit Unit
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(
+		&unit.ID,
+		&unit.ProjectID,
+		&unit.Name,
+		&unit.Type,
+		&unit.TotalFloors,
+		&unit.TowerFloors,
+		&unit.BaseFloors,
+		&unit.BasementFloors,
+		&unit.TypeFloors,
+		&unit.TotalArea,
+		&unit.CreatedAt,
+		&unit.UpdatedAt,
+		&unit.Version,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &unit, nil
 }
 
 type UnitModel struct {
