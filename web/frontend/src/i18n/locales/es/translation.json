@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "BIP",
+    "appName": "BIPC",
     "user": "Usuario",
     "logout": "Salir",
     "portal": "Portal",
@@ -144,6 +144,7 @@
     "addUnitDescription": "Aquí habrá una descripción de lo que es la unidad de construcción, cómo debe usarse y qué campos son obligatorios.",
     "createUnitButton": "Crear Unidad",
     "addProjectTitle": "Agregar Proyectos",
+    "editProjectTitle": "Editar Proyecto",
     "projectNameLabel": "Nombre del Proyecto *",
     "cepLabel": "Código Postal *",
     "cepPlaceholder": "Introduce el código postal",
