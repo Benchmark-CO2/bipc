@@ -33,10 +33,11 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID", app.requirePermission("project:edit", app.updateProjectHandler))
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID", app.requirePermission("project:edit", app.deleteProjectHandler))
 
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units", app.requirePermission("project:edit", app.createUnitHandler))
+	
 	router.HandlerFunc(http.MethodGet, "/v1/presigned-urls", app.presignedURLHandler)
 
 	router.HandlerFunc(http.MethodPost, "/v1/module", app.createModuleHandler)
-	router.HandlerFunc(http.MethodPost, "/v1/unit", app.createUnitHandler)
-
+	
 	return app.metrics(app.recoverPanic(app.commonHeaders(app.enableCORS(app.rateLimit(app.authenticate(router))))))
 }

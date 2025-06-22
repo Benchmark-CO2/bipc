@@ -8,9 +8,9 @@ import (
 )
 
 type BaseUnit struct {
-	ProjectID int    `json:"project_id"`
+	ProjectID int64  `json:"project_id"`
 	Name      string `json:"name"`
-	Type      string `json:"type"` // "tower"
+	Type      string `json:"type"`
 }
 
 type Tower struct {
@@ -28,6 +28,8 @@ type CreateUnit struct {
 }
 
 func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request) {
+	projectID, _ := app.readIDParam(r, "projectID")
+
 	var input CreateUnit
 
 	err := app.readJSON(w, r, &input)
@@ -37,7 +39,7 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	unit := &data.Unit{
-		ProjectID:      input.ProjectID,
+		ProjectID:      projectID,
 		Name:           input.Name,
 		Type:           input.Type,
 		TotalFloors:    &input.TotalFloors,

@@ -22,22 +22,29 @@ var (
 	ErrDuplicateProjectName = errors.New("duplicate project name")
 )
 
+type UnitBasic struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
 type Project struct {
-	ID           int64     `json:"id"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	Version      int64     `json:"-"`
-	UserID       int64     `json:"user_id"`
-	Name         string    `json:"name"`
-	CEP          string    `json:"cep"`
-	State        string    `json:"state"`
-	City         string    `json:"city"`
-	Neighborhood string    `json:"neighborhood"`
-	Street       string    `json:"street"`
-	Number       string    `json:"number"`
-	Phase        string    `json:"phase"`
-	Description  *string   `json:"description,omitzero"`
-	ImageURL     *string   `json:"image_url,omitzero"`
+	ID           int64       `json:"id"`
+	CreatedAt    time.Time   `json:"created_at"`
+	UpdatedAt    time.Time   `json:"updated_at"`
+	Version      int64       `json:"-"`
+	UserID       int64       `json:"user_id"`
+	Name         string      `json:"name"`
+	CEP          string      `json:"cep"`
+	State        string      `json:"state"`
+	City         string      `json:"city"`
+	Neighborhood string      `json:"neighborhood"`
+	Street       string      `json:"street"`
+	Number       string      `json:"number"`
+	Phase        string      `json:"phase"`
+	Description  *string     `json:"description,omitzero"`
+	ImageURL     *string     `json:"image_url,omitzero"`
+	Units        []UnitBasic `json:"units,omitempty"`
 }
 
 func ValidateProject(v *validator.Validator, project *Project) {
@@ -163,6 +170,31 @@ func (m ProjectModel) GetByID(id int64) (*Project, error) {
 			return nil, err
 		}
 	}
+	
+	unitsQuery := `
+        SELECT id, name, type
+        FROM units
+        WHERE project_id = $1
+        ORDER BY id
+    `
+    rows, err := m.DB.QueryContext(ctx, unitsQuery, project.ID)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var units []UnitBasic
+    for rows.Next() {
+        var u UnitBasic
+        if err := rows.Scan(&u.ID, &u.Name, &u.Type); err != nil {
+            return nil, err
+        }
+        units = append(units, u)
+    }
+    if err := rows.Err(); err != nil {
+        return nil, err
+    }
+    project.Units = units
 
 	return &project, nil
 }

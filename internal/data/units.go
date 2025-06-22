@@ -10,7 +10,7 @@ import (
 
 type Unit struct {
 	ID             int64     `json:"id"`
-	ProjectID      int       `json:"project_id"`
+	ProjectID      int64     `json:"project_id"`
 	Name           string    `json:"name"`
 	Type           string    `json:"type"`
 	TotalFloors    *int      `json:"total_floors,omitempty"`
