@@ -1,0 +1,8 @@
+POST http://localhost:3000/v1/users
+Content-Type: application/json
+
+{
+  "name": "Felipe Okino",
+  "email": "felipe1okino@live.com",
+  "password": "12345678"
+}

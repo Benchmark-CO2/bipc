@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "BIP",
+    "appName": "BIPC",
     "user": "Usuário",
     "logout": "Sair",
     "constructiveTechnology": "Tecnologia Construtiva",
@@ -140,7 +140,7 @@
     "structureTypePlaceholder": "Selecione um tipo de estrutura",
     "buildingTypeLabel": "Tipo de Edifício",
     "buildingTypePlaceholder": "Selecione um tipo de edifício",
-    
+
     "repeatedUnitLabel": "Unidade Repetida",
     "floorsNumberLabel": "Número de Andares",
     "totalLabel": "Total",
@@ -224,6 +224,7 @@
     "addUnitDescription": "Aqui estará uma descrição do que é a unidade de construção, como deve ser usada e quais campos são obrigatórios.",
     "createUnitButton": "Criar Unidade",
     "addProjectTitle": "Adicionar Projetos",
+    "editProjectTitle": "Editar Projeto",
     "projectNameLabel": "Nome do Projeto *",
     "cepLabel": "CEP *",
     "cepPlaceholder": "Digite o CEP",
@@ -244,7 +245,7 @@
     "imageLabel": "Imagem do Projeto",
     "imagePlaceholder": "Selecione uma imagem do projeto (opcional)",
     "addProjectButton": "Adicionar Projeto",
-    "editProjectTitle": "Editar Projeto"
+    "editProjectButton": "Editar Projeto"
   },
   "modulesTable": {
     "headers": {

@@ -1,22 +1,47 @@
-import { storageTokenKey } from '@/providers/authProvider'
-import { BASE_URL } from '@/utils/constants'
-import axios from 'axios'
+import { BASE_URL } from "@/utils/constants";
+import { storageTokenKey } from "@/providers/authProvider";
+import axios from "axios";
 
 const api = axios.create({
   baseURL: BASE_URL as string,
-})
+});
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem(storageTokenKey)
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+    const storedUser = localStorage.getItem(storageTokenKey);
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        if (
+          parsedUser &&
+          typeof parsedUser === "object" &&
+          "token" in parsedUser
+        ) {
+          config.headers.Authorization = `Bearer ${parsedUser.token}`;
+        }
+      } catch (error) {
+        console.error("Error parsing stored user token:", error);
+      }
     }
-    return config
+    return config;
   },
   (error: Error) => {
-    return Promise.reject(error)
+    return Promise.reject(error);
   }
-)
+);
 
-export default api
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem(storageTokenKey);
+
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default api;

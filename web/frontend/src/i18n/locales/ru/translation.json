@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "BIP",
+    "appName": "BIPC",
     "user": "Пользователь",
     "logout": "Выйти",
     "portal": "Портал",
@@ -144,6 +144,7 @@
     "addUnitDescription": "Здесь будет описание строительной единицы, как она должна использоваться и какие поля обязательны.",
     "createUnitButton": "Создать единицу",
     "addProjectTitle": "Добавить проекты",
+    "editProjectTitle": "Редактировать проект",
     "projectNameLabel": "Название проекта *",
     "cepLabel": "Почтовый индекс *",
     "cepPlaceholder": "Введите почтовый индекс",

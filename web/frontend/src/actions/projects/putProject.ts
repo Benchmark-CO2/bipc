@@ -1,8 +1,10 @@
-import api from '@/service/api';
-import { EditProjectFormSchema } from '@/validators/editProject.validator';
+import api from "@/service/api";
+import { IProject } from "@/types/projects";
+import { ProjectFormSchema } from "@/validators/projectForm.validador";
 
-export const putProject = (projectParams: EditProjectFormSchema, uuid: string) => {
-  // @ts-expect-error // projectPhase nao esta definido no banco
-  delete projectParams.projectPhase;
-  return api.put(`/projects/${uuid}`, projectParams)
-}
+export const putProject = (projectParams: ProjectFormSchema, uuid: string) => {
+  return api.patch<{ project: IProject }>(
+    `/v1/projects/${uuid}`,
+    projectParams
+  );
+};

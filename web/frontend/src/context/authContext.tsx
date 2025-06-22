@@ -1,10 +1,18 @@
+import { TUser } from '@/types/user';
 import { createContext } from "react";
 
 export interface AuthContext {
   isAuthenticated: boolean
-  login: (token: string, email: string) => void
+  login: (
+  authentication_token: {
+		token: string,
+		expiry: string
+  }, user: TUser) => void
   logout: () => void
-  user: string | null
+  token: {
+    token: string,
+    expiry: string
+  } | null
   email: string | null
 }
 
