@@ -38,16 +38,16 @@ export function TabsContainer({
   const handleDeleteUnit = (unitId: string) => {
     void deleteUnit(projectId, unitId)
       .then(async () => {
-        toast.success("Unidade de Construção deletada com sucesso!");
+        toast.success(t("success.unitDeleted"));
         await queryClient.invalidateQueries({
           queryKey: ["projects"],
           refetchType: "all",
         });
       })
       .catch((error) => {
-        toast.error("Erro ao deletar a Unidade de Construção", {
+        toast.error(t("error.errorDeleteUnit"), {
           description:
-            error instanceof Error ? error.message : "Erro desconhecido",
+            error instanceof Error ? error.message : t("error.errorUnknown"),
           duration: 5000,
         });
       });
@@ -86,8 +86,8 @@ export function TabsContainer({
                       e.preventDefault();
                     }}
                   >
-                    Editar
                     <Pen size={16} className="text-primary" />
+                    {t("common.edit")}
                   </DropdownMenuItem>
                 }
               />
@@ -103,8 +103,8 @@ export function TabsContainer({
                       e.preventDefault();
                     }}
                   >
-                    Excluir
                     <Trash size={16} className="text-destructive" />
+                    {t("common.delete")}
                   </DropdownMenuItem>
                 }
               />

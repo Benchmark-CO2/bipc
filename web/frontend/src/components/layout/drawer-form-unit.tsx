@@ -76,15 +76,15 @@ const DrawerFormUnit = ({
     mutate: mutateCreation,
   } = useMutation({
     mutationFn: (data: UnitFormSchema) => postUnit(data, projectId),
-    onError: () => {
-      toast.error("Erro", {
-        description: "Erro ao criar a Unidade de Construção",
+    onError: (error) => {
+      toast.error(t("error.errorCreateUnit"), {
+        description:
+          error instanceof Error ? error.message : t("error.errorUnknown"),
         duration: 5000,
       });
     },
     onSuccess: (data) => {
-      toast.success("Criado com sucesso", {
-        description: "A Unidade de Construção foi criada com sucesso",
+      toast.success(t("success.unitCreated"), {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -111,13 +111,13 @@ const DrawerFormUnit = ({
   } = useMutation({
     mutationFn: (data: UnitFormSchema) => patchUnit(data, projectId, unitId!),
     onError: (error) => {
-      toast.error("Algo deu errado ao atualizar Unidade", {
-        description: error.message,
+      toast.error(t("error.errorUpdateUnit"), {
+        description: error.message || t("error.errorUnknown"),
         duration: 5000,
       });
     },
     onSuccess: () => {
-      toast.success("Unidade de Construção atualizada", {
+      toast.success(t("success.unitCreated"), {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -153,7 +153,6 @@ const DrawerFormUnit = ({
     enabled: !!unitId,
   });
 
-  // Reset form when unit data is loaded
   useEffect(() => {
     if (unitData) {
       form.reset({
@@ -274,7 +273,7 @@ const DrawerFormUnit = ({
                     disabled={isUpdatePending || isUpdateSuccess}
                     type="submit"
                     variant="noStyles"
-                    className="mt-6"
+                    className="mt-6 w-full"
                   >
                     {t("drawerFormUnit.editUnitButton")}
                     {isUpdatePending && (
