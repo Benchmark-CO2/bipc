@@ -1,50 +1,61 @@
-import { deleteProject } from '@/actions/projects/deleteProjects';
-import { queryClient } from '@/utils/queryClient';
-import { Trash } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { Button } from '../ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { Trash } from "lucide-react";
+import { useState } from "react";
+import { Button } from "../ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
+import { useTranslation } from "react-i18next";
 
-const ModalConfirmDelete = ({projectUUID, componentTrigger}: {projectUUID: string, componentTrigger?: React.ReactNode}) => {
+interface ModalConfirmDeleteProps {
+  componentTrigger?: React.ReactNode;
+  title: string;
+  onConfirm?: () => void;
+}
+
+const ModalConfirmDelete = ({
+  componentTrigger,
+  onConfirm,
+  title,
+}: ModalConfirmDeleteProps) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
-  const onConfirm = () => {
-    void deleteProject(projectUUID).then(async () => {
-      
-      toast.success('Projeto deletado com sucesso!')
-      await queryClient.invalidateQueries({
-        queryKey: ['projects'],
-        refetchType: 'all'
-      })
-      setOpen(false)
-    })
-  }
+  const onConfirmDeletion = async () => {
+    await onConfirm?.();
+    setOpen(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild   data-action='delete-project'>
-        {componentTrigger ?? <Trash size={20} className='delete-project z-50 absolute right-2 top-2 hover:shadow-md'/>}
+      <DialogTrigger asChild data-action="delete-project">
+        {componentTrigger ?? (
+          <Trash
+            size={20}
+            className="delete-project z-50 absolute right-2 top-2 hover:shadow-md"
+          />
+        )}
       </DialogTrigger>
       <DialogContent className="text-center">
         <DialogHeader>
-          <DialogTitle className="text-center">
-            Deletar projeto
-          </DialogTitle>
+          <DialogTitle className="text-center">{title}</DialogTitle>
         </DialogHeader>
-          <p className="text-gray-600">
-            Esta ação não pode ser desfeita. Você tem certeza de que deseja continuar?
-          </p>
+        <p className="text-gray-600">{t("modalConfirmDelete.description")}</p>
         <DialogFooter className="flex justify-between">
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancelar
+            {t("modalConfirmDelete.cancelButton")}
           </Button>
-          <Button variant="destructive" onClick={onConfirm}>
-            Deletar
+          <Button variant="destructive" onClick={onConfirmDeletion}>
+            {t("modalConfirmDelete.deleteButton")}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
 
-export default ModalConfirmDelete
+export default ModalConfirmDelete;
