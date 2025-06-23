@@ -1,7 +1,7 @@
 import { IProject } from "@/types/projects";
 import { Edit } from "lucide-react";
 import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
+// import { useTranslation } from "react-i18next";
 import ModalConfirmDelete from "../layout/modal-confirm-delete";
 import { DrawerFormProject } from "../layout";
 
@@ -10,7 +10,7 @@ interface CustomCardProps {
   onClick: () => void;
 }
 const CustomCard = ({ onClick, project }: CustomCardProps) => {
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const { city, description, name, state, image_url } = project;

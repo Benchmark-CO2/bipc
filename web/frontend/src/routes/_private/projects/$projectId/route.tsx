@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import CustomBanner from "@/components/ui/customBanner";
 import NotFoundList from "@/components/ui/not-found-list";
 import { TabsContainer } from "@/components/ui/tabsContainer";
-import { getFromStorage, setToStorage } from "@/lib/storage";
-import { TProjectsTemp, TProjectUnit } from "@/types/projects";
+import { getFromStorage } from "@/lib/storage";
+import { TProjectsTemp } from "@/types/projects";
 // import { mockUnits } from '@/utils/mockUnits'
-import { AddUnitFormSchema } from "@/validators/addUnit.validator";
+// import { AddUnitFormSchema } from "@/validators/addUnit.validator";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_private/projects/$projectId")({
 
     return {
       project,
-      units: projects[projectId] || [],
+      units: project.units || [],
       crumb: project.name,
     };
   },
@@ -41,39 +41,40 @@ function RouteComponent() {
   const { project, units } = Route.useLoaderData();
   const params: { projectId: string; unitId: string; moduleId: string } =
     Route.useParams();
-  const [tabs, setTabs] = useState(units);
-  const [selectedTab, setSelectedTab] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
+  const [tabs, _] = useState(units);
+  const [selectedTab, setSelectedTab] = useState(0);
+  // const [isOpen, setIsOpen] = useState(false);
 
-  const handleAddNewUnit = (data: AddUnitFormSchema) => {
-    const newUnit = {
-      id: String(tabs.length + 1),
-      name: data.name,
-    };
+  // const handleAddNewUnit = (data: AddUnitFormSchema) => {
+  //   const newUnit = {
+  //     id: String(tabs.length + 1),
+  //     name: data.name,
+  //   };
 
-    setTabs((prev) => {
-      const newTabs = [...prev, newUnit];
-      setToStorage(`${PROJECT_UNITS}/${project.id}`, {
-        [project.id]: newTabs,
-      });
-      return newTabs;
-    });
-  };
+  //   setTabs((prev) => {
+  //     const newTabs = [...prev, newUnit];
+  //     setToStorage(`${PROJECT_UNITS}/${project.id}`, {
+  //       [project.id]: newTabs,
+  //     });
+  //     return newTabs;
+  //   });
+  // };
 
   useEffect(() => {
     if (tabs.length > 0 && !params.unitId) {
       history.pushState({}, "", `/projects/${project.id}/${tabs[0].id}`);
       setSelectedTab(tabs[0].id);
     } else if (params.unitId) {
-      const unit = tabs.find((unit) => unit.id === params.unitId);
+      const paramUnit = Number(params.unitId);
+      const unit = tabs.find((unit) => unit.id === paramUnit);
       if (unit) {
         setSelectedTab(unit.id);
       } else {
         history.pushState({}, "", `/projects/${project.id}`);
-        setSelectedTab("");
+        setSelectedTab(0);
       }
     } else {
-      setSelectedTab("");
+      setSelectedTab(0);
     }
   }, [tabs, params, project]);
 
@@ -97,9 +98,7 @@ function RouteComponent() {
             showIcon
             button={
               <DrawerAddUnit
-                isOpen={isOpen}
-                setIsOpen={setIsOpen}
-                callback={handleAddNewUnit}
+                projectId={params.projectId}
                 triggerComponent={
                   <Button variant="outline" className="mt-4">
                     Adicionar Unidade
@@ -113,33 +112,33 @@ function RouteComponent() {
     );
   }
 
-  const handleEditUnit = (data: TProjectUnit) => {
-    const updatedTabs = tabs.map((unit) => {
-      if (unit.id === data.id) {
-        return {
-          ...unit,
-          name: data.name,
-        };
-      }
-      return unit;
-    });
-    setTabs(updatedTabs);
-    setToStorage(`${PROJECT_UNITS}/${project.id}`, {
-      [project.id]: updatedTabs,
-    });
-  };
+  // const handleEditUnit = (data: TProjectUnit) => {
+  //   const updatedTabs = tabs.map((unit) => {
+  //     if (unit.id === data.id) {
+  //       return {
+  //         ...unit,
+  //         name: data.name,
+  //       };
+  //     }
+  //     return unit;
+  //   });
+  //   setTabs(updatedTabs);
+  //   setToStorage(`${PROJECT_UNITS}/${project.id}`, {
+  //     [project.id]: updatedTabs,
+  //   });
+  // };
 
-  const handleDeleteUnit = (unitId: string) => {
-    const updatedTabs = tabs.filter((unit) => unit.id !== unitId);
-    setTabs(updatedTabs);
-    setToStorage(`${PROJECT_UNITS}/${project.id}`, {
-      [project.id]: updatedTabs,
-    });
-    if (selectedTab === unitId) {
-      history.pushState({}, "", `/projects/${project.id}`);
-      setSelectedTab("");
-    }
-  };
+  // const handleDeleteUnit = (unitId: string) => {
+  //   const updatedTabs = tabs.filter((unit) => unit.id !== unitId);
+  //   setTabs(updatedTabs);
+  //   setToStorage(`${PROJECT_UNITS}/${project.id}`, {
+  //     [project.id]: updatedTabs,
+  //   });
+  //   if (selectedTab === unitId) {
+  //     history.pushState({}, "", `/projects/${project.id}`);
+  //     setSelectedTab("");
+  //   }
+  // };
 
   return (
     <>
@@ -155,9 +154,9 @@ function RouteComponent() {
             projectId={project.id}
             units={tabs}
             selectedTab={selectedTab}
-            handleAddNewUnit={handleAddNewUnit}
-            handleEditUnit={handleEditUnit}
-            handleDeleteUnit={handleDeleteUnit}
+            // handleAddNewUnit={handleAddNewUnit}
+            // handleEditUnit={handleEditUnit}
+            // handleDeleteUnit={handleDeleteUnit}
           />
         )}
 

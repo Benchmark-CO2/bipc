@@ -383,20 +383,20 @@ export default function DrawerFormProject({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="preliminary_study">
-                            {t("common.projectPhaseOptions.preliminaryStudy")}
+                            {t("common.projectPhaseOptions.preliminary_study")}
                           </SelectItem>
                           <SelectItem value="draft">
                             {t("common.projectPhaseOptions.draft")}
                           </SelectItem>
                           <SelectItem value="basic_project">
-                            {t("common.projectPhaseOptions.basicProject")}
+                            {t("common.projectPhaseOptions.basic_project")}
                           </SelectItem>
                           <SelectItem value="executive_project">
-                            {t("common.projectPhaseOptions.executiveProject")}
+                            {t("common.projectPhaseOptions.executive_project")}
                           </SelectItem>
                           <SelectItem value="released_for_construction">
                             {t(
-                              "common.projectPhaseOptions.releasedForConstruction"
+                              "common.projectPhaseOptions.released_for_construction"
                             )}
                           </SelectItem>
                         </SelectContent>
