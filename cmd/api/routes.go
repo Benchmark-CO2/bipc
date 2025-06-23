@@ -31,7 +31,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/projects", app.requireAuthenticatedUser(app.listProjectsHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID", app.requirePermission("project:view", app.showProjectHandler))
 	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID", app.requirePermission("project:edit", app.updateProjectHandler))
-	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID", app.requirePermission("project:edit", app.deleteProjectHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID", app.requirePermission("project:owner", app.deleteProjectHandler))
 
 	router.HandlerFunc(http.MethodGet, "/v1/presigned-urls", app.presignedURLHandler)
 

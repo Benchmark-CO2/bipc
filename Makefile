@@ -43,12 +43,12 @@ include .envrc
 # ==============================================================================
 # Define dependencies
 
-GOLANG    := golang:1.24
-ALPINE    := alpine:3.22
-POSTGRES  := postgres:17.5
-NODE      := node:24-slim
-MAILHOG   := mailhog/mailhog:v1.0.1
-MINIO     := minio/minio:RELEASE.2025-04-22T22-12-26Z
+GOLANG     := golang:1.24
+ALPINE     := alpine:3.22
+POSTGRES   := postgres:17.5
+NODE       := node:24-slim
+MAILHOG    := mailhog/mailhog:v1.0.1
+MINIO      := minio/minio:RELEASE.2025-04-22T22-12-26Z
 BIPC_IMAGE := localhost/bipc:latest
 	
 # ==================================================================================== #
@@ -157,6 +157,8 @@ migrations/up: confirm
 migrations/down:
 	migrate -path ./migrations -database $(DB_DSN) down
 
+## minio/local: setup MinIO local storage
+.PHONY: minio/local
 minio/local:
 	mc alias set local http://localhost:9000 minioadmin minioadmin
 	mc mb local/bipc
@@ -190,7 +192,7 @@ audit:
 ## build/frontend: build the frontend application
 .PHONY: build/frontend
 build/frontend:
-	cd ./web/frontend && pnpm build
+	cd ./web/frontend && pnpm install && pnpm build
 
 ## build/api: build the cmd/api application
 .PHONY: build/api

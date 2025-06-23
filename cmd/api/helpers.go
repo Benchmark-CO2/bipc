@@ -17,7 +17,12 @@ import (
 func (app *application) readIDParam(r *http.Request, name string) (int64, error) {
 	params := httprouter.ParamsFromContext(r.Context())
 
-	id, err := strconv.ParseInt(params.ByName(name), 10, 64)
+	raw := params.ByName(name)
+	if raw == "" {
+		return 0, fmt.Errorf("required path parameter %q is missing from the request URL", name)
+	}
+
+	id, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil || id < 1 {
 		return 0, fmt.Errorf("invalid %q parameter", name)
 	}

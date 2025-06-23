@@ -198,16 +198,9 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 func (app *application) deleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 	projectID, _ := app.readIDParam(r, "projectID")
 
-	user := app.contextGetUser(r)
-
-	err := app.models.Projects.Delete(projectID, user.ID)
+	err := app.models.Projects.Delete(projectID)
 	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrRecordNotFound):
-			app.notPermittedResponse(w, r)
-		default:
-			app.serverErrorResponse(w, r, err)
-		}
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 

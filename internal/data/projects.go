@@ -86,14 +86,7 @@ func (m ProjectModel) Insert(project *Project) error {
 	if err != nil {
 		return err
 	}
-
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-		} else {
-			tx.Commit()
-		}
-	}()
+	defer tx.Rollback()
 
 	query1 := `
 		INSERT INTO projects (user_id, name, cep, state, city, neighborhood, street, number, phase, description, image_url)
@@ -117,9 +110,16 @@ func (m ProjectModel) Insert(project *Project) error {
 		INSERT INTO users_projects_permissions (user_id, project_id, permission_id)
 		SELECT $1, $2, permissions.id FROM permissions WHERE permissions.code = ANY($3)`
 
-	_, err = tx.Exec(query2, project.UserID, project.ID, pq.Array([]string{"project:view", "project:edit"}))
+	_, err = tx.Exec(query2, project.UserID, project.ID, pq.Array([]string{"project:owner", "project:view", "project:edit"}))
+	if err != nil {
+		return err
+	}
 
-	return err
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (m ProjectModel) GetByID(id int64) (*Project, error) {
@@ -227,19 +227,19 @@ func (m ProjectModel) BumpVersion(id int64) {
 	}()
 }
 
-func (m ProjectModel) Delete(projectID int64, userID int64) error {
+func (m ProjectModel) Delete(projectID int64) error {
 	if projectID < 1 {
 		return ErrRecordNotFound
 	}
 
 	query := `
 	DELETE FROM projects
-	WHERE id = $1 AND user_id = $2`
+	WHERE id = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	result, err := m.DB.ExecContext(ctx, query, projectID, userID)
+	result, err := m.DB.ExecContext(ctx, query, projectID)
 	if err != nil {
 		return err
 	}
@@ -251,7 +251,7 @@ func (m ProjectModel) Delete(projectID int64, userID int64) error {
 	}
 
 	if rowsAffected == 0 {
-		return ErrRecordNotFound
+		return ErrNoRowsDeleted
 	}
 
 	return nil

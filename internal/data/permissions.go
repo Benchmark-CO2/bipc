@@ -54,15 +54,39 @@ func (m PermissionModel) GetAllForUser(userID int64, projectID int64) (Permissio
 	return permissions, nil
 }
 
-func (m PermissionModel) AddForUser(userID int64, projectID int64, codes ...string) error {
-	query := `
-        INSERT INTO users_projects_permissions (user_id, project_id, permission_id)
-        SELECT $1, $2, permissions.id FROM permissions WHERE permissions.code = ANY($3)
-		ON CONFLICT DO NOTHING`
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+func (m PermissionModel) SetForUser(userID int64, projectID int64, codes ...string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := m.DB.ExecContext(ctx, query, userID, projectID, pq.Array(codes))
-	return err
+	tx, err := m.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	deleteQuery := `
+        DELETE FROM users_projects_permissions upp
+        WHERE upp.user_id = $1 AND upp.project_id = $2 
+        AND upp.permission_id NOT IN (SELECT p.id FROM permissions p WHERE p.code = ANY($3))`
+
+	_, err = tx.ExecContext(ctx, deleteQuery, userID, projectID, pq.Array(codes))
+	if err != nil {
+		return err
+	}
+
+	insertQuery := `
+        INSERT INTO users_projects_permissions (user_id, project_id, permission_id)
+        SELECT $1, $2, p.id FROM permissions p WHERE p.code = ANY($3)
+		ON CONFLICT DO NOTHING`
+
+	_, err = tx.ExecContext(ctx, insertQuery, userID, projectID, pq.Array(codes))
+	if err != nil {
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
 }

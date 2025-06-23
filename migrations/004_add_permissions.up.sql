@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users_projects_permissions (
 -- Insert initial permissions 
 INSERT INTO permissions (code)
 VALUES 
+    ('project:owner'),
     ('project:view'),
     ('project:edit');
 

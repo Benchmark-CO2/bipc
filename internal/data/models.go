@@ -8,6 +8,7 @@ import (
 var (
 	ErrRecordNotFound = errors.New("record not found")
 	ErrEditConflict   = errors.New("edit conflict")
+	ErrNoRowsDeleted  = errors.New("no rows were deleted")
 )
 
 type Models struct {

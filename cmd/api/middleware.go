@@ -300,14 +300,20 @@ func (app *application) requireActivatedUser(next http.HandlerFunc) http.Handler
 	return app.requireAuthenticatedUser(fn)
 }
 
-// require :projectID parameter in the request URL
 func (app *application) requirePermission(code string, next http.HandlerFunc) http.HandlerFunc {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		user := app.contextGetUser(r)
 
 		projectID, err := app.readIDParam(r, "projectID")
 		if err != nil {
-			app.badRequestResponse(w, r, err)
+			switch {
+			case strings.HasPrefix(err.Error(), "required path parameter"):
+				app.badRequestResponse(w, r, err)
+			default:
+				v := validator.New()
+				v.AddError("url", err.Error())
+				app.failedValidationResponse(w, r, v.Errors)
+			}
 			return
 		}
 
