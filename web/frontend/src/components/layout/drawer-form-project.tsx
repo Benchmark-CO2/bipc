@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { postProject } from "@/actions/projects/postProject";
-import { putProject } from "@/actions/projects/putProject";
+import { patchProject } from "@/actions/projects/patchProject";
 import { IProject } from "@/types/projects";
 import useCep from "@/hooks/useLocation";
 import { masks } from "@/utils/masks";
@@ -124,7 +124,7 @@ export default function DrawerFormProject({
     reset: resetUpdate,
   } = useMutation({
     mutationFn: (data: ProjectFormSchema) =>
-      putProject(data as any, projectData!.id),
+      patchProject(data as any, projectData!.id),
     onError: (error) => {
       toast.error(t("error.errorEditProject"), {
         description: error.message,
