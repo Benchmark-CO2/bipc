@@ -6,11 +6,11 @@
     "portal": "Portal",
     "constructiveTechnology": "Constructive Technology",
     "projectPhaseOptions": {
-      "preliminaryStudy": "Preliminary Study",
+      "preliminary_study": "Preliminary Study",
       "draft": "Draft",
-      "basicProject": "Basic Project",
-      "executiveProject": "Executive Project",
-      "releasedForConstruction": "Released for Construction"
+      "basic_project": "Basic Project",
+      "executive_project": "Executive Project",
+      "released_for_construction": "Released for Construction"
     },
     "structureType": {
       "beamColumn": "Beam Column",
