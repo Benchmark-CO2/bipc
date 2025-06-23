@@ -168,8 +168,9 @@
     "addProjectButton": "Add Project",
     "editProjectButton": "Edit Project"
   },
-  "modalConfirmDeleteUnit": {
-    "title": "Delete Unit",
+  "modalConfirmDelete": {
+    "projectTitle": "Delete Project",
+    "unitTitle": "Delete Unit",
     "description": "This action cannot be undone. Are you sure you want to proceed?",
     "cancelButton": "Cancel",
     "deleteButton": "Delete"
@@ -230,6 +231,29 @@
     "concreteVolumeFck45": "Concrete Volume Fck45 (m³)",
     "steelConsumption": "Steel Consumption (kg)",
     "addConstructiveTechnology": "Add Constructive Technology"
+  },
+  "drawerFormUnit": {
+    "createButton": "Create Construction Unit",
+    "addTitle": "Add Construction Unit",
+    "editTitle": "Edit Construction Unit",
+    "description": "Here will be a description of what the construction unit is, how it should be used, and which fields are required.",
+    "unitNameLabel": "Construction Unit Name *",
+    "unitNamePlaceholder": "Enter the construction unit name",
+    "unitTypeLabel": "Unit Type *",
+    "unitTypePlaceholder": "Select the type",
+    "unitTypeOptions": {
+      "tower": "Tower"
+    },
+    "towerForm": {
+      "total_floors": "Total Floors",
+      "tower_floors": "Tower Floors",
+      "base_floors": "Base Floors",
+      "basement_floors": "Basement Floors",
+      "type_floors": "Type Floors",
+      "total_area": "Total Area (m²)"
+    },
+    "addUnitButton": "Add Unit",
+    "editUnitButton": "Update Unit"
   },
   "simulationTable": {
     "title": "Simulations",

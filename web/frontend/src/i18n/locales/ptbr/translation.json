@@ -129,12 +129,6 @@
     "unitUpdated": "Unidade de construção atualizada com sucesso",
     "unitDeleted": "Unidade de construção deletada com sucesso"
   },
-  "modalConfirmDeleteUnit": {
-    "title": "Deletar Unidade",
-    "description": "Esta ação não pode ser desfeita. Você tem certeza de que deseja continuar?",
-    "cancelButton": "Cancelar",
-    "deleteButton": "Deletar"
-  },
   "drawerEditModule": {
     "title": "Editar Tecnologia Construtiva",
     "structureTypeLabel": "Tipo de Estrutura",
@@ -192,6 +186,29 @@
     "concreteVolumeFck45": "Volume de Concreto Fck45 (m³)",
     "steelConsumption": "Consumo de aço (kg)",
     "addConstructiveTechnology": "Adicionar Tecnologia Construtiva"
+  },
+  "drawerFormUnit": {
+    "createButton": "Criar Unidade de Construção",
+    "addTitle": "Adicionar Unidade de Construção",
+    "editTitle": "Atualizar Unidade de Construção",
+    "description": "Aqui terá uma descrição do que é a unidade de construção, como ela deve ser utilizada e quais são os campos obrigatórios.",
+    "unitNameLabel": "Nome da Unidade de Construção *",
+    "unitNamePlaceholder": "Digite o nome da unidade de construção",
+    "unitTypeLabel": "Tipo de Unidade *",
+    "unitTypePlaceholder": "Selecione um tipo de unidade",
+    "unitTypeOptions": {
+      "tower": "Torre"
+    },
+    "towerForm": {
+      "total_floors": "Total de Andares",
+      "tower_floors": "Andares da Torre",
+      "base_floors": "Andares do Embasamento",
+      "basement_floors": "Andares do Subsolo",
+      "type_floors": "Andares Tipo",
+      "total_area": "Área Total (m²)"
+    },
+    "addUnitButton": "Adicionar Unidade",
+    "editUnitButton": "Atualizar Unidade"
   },
   "moduleTable": {
     "noItemsFound": "Nenhum item encontrado",

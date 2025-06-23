@@ -167,12 +167,6 @@
     "addProjectButton": "Добавить проект",
     "editProjectButton": "Редактировать проект"
   },
-  "modalConfirmDeleteUnit": {
-    "title": "Удалить единицу",
-    "description": "Это действие нельзя отменить. Вы уверены, что хотите продолжить?",
-    "cancelButton": "Отмена",
-    "deleteButton": "Удалить"
-  },
   "drawerEditModule": {
     "title": "Редактировать строительную технологию",
     "structureTypeLabel": "Тип структуры",
@@ -229,6 +223,29 @@
     "concreteVolumeFck45": "Объем бетона Fck45 (м³)",
     "steelConsumption": "Потребление стали (кг)",
     "addConstructiveTechnology": "Добавить строительную технологию"
+  },
+  "drawerFormUnit": {
+    "createButton": "Создать строительную единицу",
+    "addTitle": "Добавить строительную единицу",
+    "editTitle": "Редактировать строительную единицу",
+    "description": "Здесь будет описание того, что такое строительная единица, как она должна использоваться и какие поля обязательны.",
+    "unitNameLabel": "Название строительной единицы *",
+    "unitNamePlaceholder": "Введите название строительной единицы",
+    "unitTypeLabel": "Тип единицы *",
+    "unitTypePlaceholder": "Выберите тип строительной единицы",
+    "unitTypeOptions": {
+      "tower": "Башня"
+    },
+    "towerForm": {
+      "total_floors": "Общее количество этажей",
+      "tower_floors": "Этажи башни",
+      "base_floors": "Базовые этажи",
+      "basement_floors": "Подвальные этажи",
+      "type_floors": "Типовые этажи",
+      "total_area": "Общая площадь (м²)"
+    },
+    "addUnitButton": "Добавить единицу",
+    "editUnitButton": "Обновить единицу"
   },
   "simulationTable": {
     "title": "Симуляции",

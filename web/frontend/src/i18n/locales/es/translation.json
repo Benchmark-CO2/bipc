@@ -167,12 +167,6 @@
     "addProjectButton": "Agregar Proyecto",
     "editProjectButton": "Editar Proyecto"
   },
-  "modalConfirmDeleteUnit": {
-    "title": "Eliminar Unidad",
-    "description": "Esta acción no se puede deshacer. ¿Estás seguro de que deseas continuar?",
-    "cancelButton": "Cancelar",
-    "deleteButton": "Eliminar"
-  },
   "drawerEditModule": {
     "title": "Editar Tecnología Constructiva",
     "structureTypeLabel": "Tipo de Estructura",
@@ -229,6 +223,29 @@
     "concreteVolumeFck45": "Volumen de Hormigón Fck45 (m³)",
     "steelConsumption": "Consumo de Acero (kg)",
     "addConstructiveTechnology": "Agregar Tecnología Constructiva"
+  },
+  "drawerFormUnit": {
+    "createButton": "Crear Unidad de Construcción",
+    "addTitle": "Agregar Unidad de Construcción",
+    "editTitle": "Editar Unidad de Construcción",
+    "description": "Aquí habrá una descripción de lo que es la unidad de construcción, cómo debe usarse y qué campos son obligatorios.",
+    "unitNameLabel": "Nombre de la Unidad de Construcción *",
+    "unitNamePlaceholder": "Introduce el nombre de la unidad de construcción",
+    "unitTypeLabel": "Tipo de Unidad *",
+    "unitTypePlaceholder": "Selecciona un tipo de unidad",
+    "unitTypeOptions": {
+      "tower": "Torre"
+    },
+    "towerForm": {
+      "total_floors": "Pisos Totales",
+      "tower_floors": "Pisos de Torre",
+      "base_floors": "Pisos de Base",
+      "basement_floors": "Pisos de Sótano",
+      "type_floors": "Pisos Tipo",
+      "total_area": "Área Total (m²)"
+    },
+    "addUnitButton": "Agregar Unidad",
+    "editUnitButton": "Actualizar Unidad"
   },
   "simulationTable": {
     "title": "Simulaciones",
