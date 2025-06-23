@@ -1,8 +1,9 @@
+import { getProjectByUUID } from "@/actions/projects/getProject";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_private/projects/$projectId/$unitId")({
   component: RouteComponent,
-  loader: ({ params }) => {
+  loader: async ({ params, context }) => {
     const { unitId, projectId } = params as {
       unitId: string;
       projectId: string;
@@ -12,12 +13,29 @@ export const Route = createFileRoute("/_private/projects/$projectId/$unitId")({
       throw new Error("Project ID is required");
     }
 
-    // const projects = getFromStorage(`@projects/units/${projectId}`, {} as TProjectsTemp)
-    // const projectUnits = projects[projectId] || []
-    // const unitCrumb = projectUnits.find((unit) => unit.id === unitId)?.name
+    await context.queryClient.ensureQueryData({
+      queryKey: ["project", projectId],
+      queryFn: () => getProjectByUUID(projectId),
+    });
+
+    const projectData = context.queryClient.getQueryData<any>([
+      "project",
+      projectId,
+    ]);
+    const project = projectData?.data?.project;
+
+    if (!project) {
+      throw new Error("Project not found");
+    }
+
+    const projectUnits = project.units || [];
+    const unitParam = Number(params.unitId);
+    const unitCrumb = projectUnits.find(
+      (unit: any) => unit.id === unitParam
+    )?.name;
 
     return {
-      crumb: unitId,
+      crumb: unitCrumb || unitId,
     };
   },
 });

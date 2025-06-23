@@ -1,12 +1,15 @@
+import { deleteProject } from "@/actions/projects/deleteProjects";
 import { getAllProjectsByUser } from "@/actions/projects/getProjects";
 import { DrawerFormProject, ProjectTable } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import CustomCard from "@/components/ui/customCard";
+import { queryClient } from "@/utils/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { LayoutGrid, List, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_private/projects/")({
   component: RouteComponent,
@@ -51,6 +54,24 @@ function RouteComponent() {
       .catch((err: unknown) => err);
   };
 
+  const onDeleteProject = (projectUid: string) => {
+    void deleteProject(projectUid)
+      .then(async () => {
+        toast.success("Projeto deletado com sucesso!");
+        await queryClient.invalidateQueries({
+          queryKey: ["projects"],
+          refetchType: "all",
+        });
+      })
+      .catch((error) => {
+        toast.error("Erro ao deletar Projeto", {
+          description:
+            error instanceof Error ? error.message : "Erro desconhecido",
+          duration: 5000,
+        });
+      });
+  };
+
   const componentTrigger =
     viewMode === "table" ? (
       <Button variant="outline">
@@ -89,6 +110,7 @@ function RouteComponent() {
         <ProjectTable
           projects={data?.data.projects ?? []}
           onClickProject={onClickProject}
+          onDeleteProject={onDeleteProject}
         />
       ) : (
         <div className="flex w-full flex-wrap items-center gap-4">
@@ -102,6 +124,7 @@ function RouteComponent() {
                   onClick={() => {
                     onClickProject(project.id);
                   }}
+                  onDeleteProject={onDeleteProject}
                 />
               </>
             ))
