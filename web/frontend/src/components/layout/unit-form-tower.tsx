@@ -9,12 +9,15 @@ import {
 import { Input } from "../ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { UnitFormSchema } from "@/validators/unitForm.validator";
+import { useTranslation } from "react-i18next";
 
 interface UnitFormTowerProps {
   form: UseFormReturn<UnitFormSchema>;
 }
 
 const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
+  const { t } = useTranslation();
+
   return (
     <>
       <div className="grid grid-cols-2 gap-4">
@@ -23,7 +26,9 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
           name="total_floors"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Total de Andares *</FormLabel>
+              <FormLabel>
+                {t("drawerFormUnit.towerForm.total_floors")} *
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -46,7 +51,9 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
           name="tower_floors"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Andares da Torre *</FormLabel>
+              <FormLabel>
+                {t("drawerFormUnit.towerForm.tower_floors")} *
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -71,7 +78,9 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
           name="base_floors"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Andares da Base *</FormLabel>
+              <FormLabel>
+                {t("drawerFormUnit.towerForm.base_floors")} *
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -94,7 +103,9 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
           name="basement_floors"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Andares do Subsolo *</FormLabel>
+              <FormLabel>
+                {t("drawerFormUnit.towerForm.basement_floors")} *
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -119,7 +130,9 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
           name="type_floors"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Andares Tipo *</FormLabel>
+              <FormLabel>
+                {t("drawerFormUnit.towerForm.type_floors")} *
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -142,7 +155,9 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
           name="total_area"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Área Total (m²) *</FormLabel>
+              <FormLabel>
+                {t("drawerFormUnit.towerForm.total_area")} *
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
