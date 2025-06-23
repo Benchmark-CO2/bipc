@@ -5,8 +5,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "../ui/form";
-import { Input } from "../ui/input";
+} from "../../ui/form";
+import { Input } from "../../ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { UnitFormSchema } from "@/validators/unitForm.validator";
 import { useTranslation } from "react-i18next";

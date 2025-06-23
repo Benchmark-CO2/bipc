@@ -3,7 +3,7 @@
     "appName": "BIPC",
     "user": "Usuário",
     "logout": "Sair",
-    "constructiveTechnology": "Tecnologia Construtiva",
+    "constructiveTechnology": "Módulo",
     "projectPhaseOptions": {
       "preliminaryStudy": "Estudo Preliminar",
       "draft": "Rascunho",
@@ -55,12 +55,21 @@
   },
   "projects": {
     "title": "Projetos",
-    "description": "Gerencie seus projetos aqui"
+    "description": "Gerencie seus projetos aqui",
+    "addProject": "Adicionar Projeto",
+    "noProjects": "Você não possui projetos."
+  },
+  "units": {
+    "title": "Unidades de Construção",
+    "description": "Adicione unidades de construção ao seu projeto no botão acima.",
+    "addUnit": "Adicionar Unidade de Construção",
+    "noUnits": "Nenhuma unidade de construção encontrada"
   },
   "simulations": {
     "title": "Simulações",
-    "description": "Aqui estão todas as simulações da tecnologia construtiva selecionada.",
-    "addSimulation": "Adicionar Simulação"
+    "description": "Aqui estão todas as simulações da Módulo selecionada.",
+    "addSimulation": "Adicionar Simulação",
+    "noSimulations": "Nenhuma simulação encontrada"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -93,10 +102,6 @@
     "buttonSignUp": "Cadastrar",
     "buttonHaveAccount": "Já tem uma conta? Faça login",
     "errorEmailExists": "Email já cadastrado"
-  },
-  "projectsPage": {
-    "addProject": "Adicionar Projeto",
-    "noProjects": "Você não possui projetos."
   },
   "error": {
     "sessionExpired": "Ooops, Sua sessão expirou...",
@@ -136,7 +141,7 @@
     "unitDeleted": "Unidade de construção deletada com sucesso"
   },
   "drawerEditModule": {
-    "title": "Editar Tecnologia Construtiva",
+    "title": "Editar Módulo",
     "structureTypeLabel": "Tipo de Estrutura",
     "structureTypePlaceholder": "Selecione um tipo de estrutura",
     "buildingTypeLabel": "Tipo de Edifício",
@@ -160,19 +165,19 @@
     "concreteVolumeFck40Label": "Volume de Concreto (Fck 40)",
     "concreteVolumeFck45Label": "Volume de Concreto (Fck 45)",
     "steelConsumptionLabel": "Consumo de Aço",
-    "defaultTechnology": "Tecnologia Construtiva",
+    "defaultTechnology": "Módulo",
     "dragAndDropFiles": "Arraste e solte arquivos aqui ou clique para fazer upload",
     "featureNotIntegrated": "Funcionalidade ainda não integrada",
-    "editModule": "Editar Tecnologia Construtiva",
-    "updateModule": "Atualizar Tecnologia Construtiva",
-    "saveModule": "Salvar Tecnologia Construtiva",
+    "editModule": "Editar Módulo",
+    "updateModule": "Atualizar Módulo",
+    "saveModule": "Salvar Módulo",
     "saveSimulation": "Salvar Simulação"
   },
   "drawerAddModule": {
-    "title": "Adicionar Tecnologia Construtiva",
-    "description": "Preencha os detalhes abaixo para adicionar uma nova tecnologia construtiva.",
-    "createButton": "Criar Tecnologia Construtiva",
-    "defaultContext": "Tecnologia Construtiva",
+    "title": "Adicionar Módulo",
+    "description": "Preencha os detalhes abaixo para adicionar um novo Módulo.",
+    "createButton": "Criar Módulo",
+    "defaultContext": "Módulo",
     "repeatUnit": "A unidade se repete? Quantas vezes?",
     "numberOfFloors": "Número de pavimentos:",
     "total": "Total",
@@ -191,7 +196,7 @@
     "concreteVolumeFck40": "Volume de Concreto Fck40 (m³)",
     "concreteVolumeFck45": "Volume de Concreto Fck45 (m³)",
     "steelConsumption": "Consumo de aço (kg)",
-    "addConstructiveTechnology": "Adicionar Tecnologia Construtiva"
+    "addConstructiveTechnology": "Adicionar Módulo"
   },
   "drawerFormProject": {
     "createButton": "Criar Projeto",
@@ -246,7 +251,7 @@
   },
   "moduleTable": {
     "noItemsFound": "Nenhum item encontrado",
-    "addNewTechnology": "Adicione uma nova tecnologia construtiva no botão acima."
+    "addNewTechnology": "Adicione uma nova Módulo no botão acima."
   },
   "simulationTable": {
     "headers": {
@@ -260,7 +265,7 @@
     },
     "updateSimulation": "Atualizar Simulação",
     "title": "Simulações",
-    "description": "Aqui estão todas as simulações da tecnologia construtiva selecionada.",
+    "description": "Aqui estão todas as simulações da Módulo selecionada.",
     "addSimulation": "Adicionar Simulação",
     "saveSimulation": "Salvar Simulação",
     "noItemsFound": "Nenhuma simulação encontrada",

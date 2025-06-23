@@ -4,7 +4,7 @@
     "user": "Usuario",
     "logout": "Salir",
     "portal": "Portal",
-    "constructiveTechnology": "Tecnología Constructiva",
+    "constructiveTechnology": "Módulo",
     "projectPhaseOptions": {
       "preliminaryStudy": "Estudio Preliminar",
       "draft": "Borrador",
@@ -58,11 +58,15 @@
   },
   "projects": {
     "title": "Proyectos",
-    "description": "Administra tus proyectos aquí"
-  },
-  "projectsPage": {
+    "description": "Administra tus proyectos aquí",
     "addProject": "Agregar Proyecto",
     "noProjects": "No tienes proyectos."
+  },
+  "units": {
+    "title": "Unidades de Construcción",
+    "description": "Aquí están todas las unidades de construcción para el proyecto seleccionado.",
+    "addUnit": "Agregar Unidad de Construcción",
+    "noUnits": "No hay unidades de construcción disponibles."
   },
   "dashboard": {
     "title": "Tablero",
@@ -98,8 +102,9 @@
   },
   "simulations": {
     "title": "Simulaciones",
-    "description": "Aquí están todas las simulaciones para la tecnología constructiva seleccionada.",
-    "addSimulation": "Agregar Simulación"
+    "description": "Aquí están todas las simulaciones para la Módulo seleccionada.",
+    "addSimulation": "Agregar Simulación",
+    "noSimulations": "No hay simulaciones disponibles."
   },
   "error": {
     "sessionExpired": "Oops, tu sesión ha expirado...",
@@ -143,7 +148,7 @@
     "projectDeleted": "Proyecto eliminado exitosamente"
   },
   "drawerEditModule": {
-    "title": "Editar Tecnología Constructiva",
+    "title": "Editar Módulo",
     "structureTypeLabel": "Tipo de Estructura",
     "structureTypePlaceholder": "Selecciona un tipo de estructura",
     "buildingTypeLabel": "Tipo de Edificio",
@@ -166,19 +171,19 @@
     "concreteVolumeFck40Label": "Volumen de Hormigón (Fck 40)",
     "concreteVolumeFck45Label": "Volumen de Hormigón (Fck 45)",
     "steelConsumptionLabel": "Consumo de Acero",
-    "defaultTechnology": "Tecnología Constructiva",
+    "defaultTechnology": "Módulo",
     "dragAndDropFiles": "Arrastra y suelta archivos aquí o haz clic para subir",
     "featureNotIntegrated": "Función aún no integrada",
-    "editModule": "Editar Tecnología Constructiva",
-    "updateModule": "Actualizar Tecnología Constructiva",
-    "saveModule": "Guardar Tecnología Constructiva",
+    "editModule": "Editar Módulo",
+    "updateModule": "Actualizar Módulo",
+    "saveModule": "Guardar Módulo",
     "saveSimulation": "Guardar Simulación"
   },
   "drawerAddModule": {
-    "title": "Agregar Tecnología Constructiva",
+    "title": "Agregar Módulo",
     "description": "Llena los detalles a continuación para agregar un nuevo módulo.",
     "createButton": "Crear Módulo",
-    "defaultContext": "Tecnología Constructiva",
+    "defaultContext": "Módulo",
     "repeatUnit": "¿La unidad se repite? ¿Cuántas veces?",
     "numberOfFloors": "Número de pisos:",
     "total": "Total",
@@ -197,7 +202,7 @@
     "concreteVolumeFck40": "Volumen de Hormigón Fck40 (m³)",
     "concreteVolumeFck45": "Volumen de Hormigón Fck45 (m³)",
     "steelConsumption": "Consumo de Acero (kg)",
-    "addConstructiveTechnology": "Agregar Tecnología Constructiva"
+    "addConstructiveTechnology": "Agregar Módulo"
   },
   "drawerFormProject": {
     "createButton": "Crear Proyecto",
@@ -252,7 +257,7 @@
   },
   "simulationTable": {
     "title": "Simulaciones",
-    "description": "Aquí están todas las simulaciones para la tecnología constructiva seleccionada.",
+    "description": "Aquí están todas las simulaciones para la Módulo seleccionada.",
     "addSimulation": "Agregar Simulación",
     "noItemsFound": "No se encontraron simulaciones",
     "headers": {

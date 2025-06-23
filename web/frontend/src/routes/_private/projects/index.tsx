@@ -57,16 +57,16 @@ function RouteComponent() {
   const onDeleteProject = (projectUid: string) => {
     void deleteProject(projectUid)
       .then(async () => {
-        toast.success("Projeto deletado com sucesso!");
+        toast.success(t("success.projectDeleted"));
         await queryClient.invalidateQueries({
           queryKey: ["projects"],
           refetchType: "all",
         });
       })
       .catch((error) => {
-        toast.error("Erro ao deletar Projeto", {
+        toast.error(t("error.errorDeleteProject"), {
           description:
-            error instanceof Error ? error.message : "Erro desconhecido",
+            error instanceof Error ? error.message : t("error.errorUnknown"),
           duration: 5000,
         });
       });
@@ -76,14 +76,12 @@ function RouteComponent() {
     viewMode === "table" ? (
       <Button variant="outline">
         <Plus className="h-4 w-4" />
-        {t("projectsPage.addProject")}
+        {t("projects.addProject")}
       </Button>
     ) : (
       <div className="flex h-60 w-full flex-col items-center justify-center overflow-hidden rounded-lg bg-white p-4 shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-xl md:w-1/3 lg:w-1/4 xl:max-w-100 dark:bg-zinc-800 dark:shadow-zinc-900">
         <Plus className="size-8" />
-        <span className="text-lg font-medium">
-          {t("projectsPage.addProject")}
-        </span>
+        <span className="text-lg font-medium">{t("projects.addProject")}</span>
       </div>
     );
 
@@ -130,7 +128,7 @@ function RouteComponent() {
             ))
           ) : (
             <div className="flex h-full w-full flex-col gap-4">
-              <p>{t("projectsPage.noProjects")}</p>
+              <p>{t("projects.noProjects")}</p>
             </div>
           )}
         </div>

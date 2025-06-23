@@ -59,11 +59,15 @@
   },
   "projects": {
     "title": "Projects",
-    "description": "Manage your projects here"
-  },
-  "projectsPage": {
+    "description": "Manage your projects here",
     "addProject": "Add Project",
     "noProjects": "You have no projects."
+  },
+  "units": {
+    "title": "Construction Units",
+    "description": "Manage your construction units here",
+    "addUnit": "Add Construction Unit",
+    "noUnits": "You have no construction units."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -100,7 +104,8 @@
   "simulations": {
     "title": "Simulations",
     "description": "Here are all simulations for the selected constructive technology.",
-    "addSimulation": "Add Simulation"
+    "addSimulation": "Add Simulation",
+    "noSimulations": "No simulations found"
   },
   "error": {
     "sessionExpired": "Oops, your session has expired...",
@@ -151,7 +156,7 @@
     "deleteButton": "Delete"
   },
   "drawerEditModule": {
-    "title": "Edit Constructive Technology",
+    "title": "Edit Module",
     "structureTypeLabel": "Structure Type",
     "structureTypePlaceholder": "Select a structure type",
     "buildingTypeLabel": "Building Type",
@@ -183,10 +188,10 @@
     "saveSimulation": "Save Simulation"
   },
   "drawerAddModule": {
-    "title": "Add Constructive Technology",
+    "title": "Add Module",
     "description": "Fill in the details below to add a new module.",
     "createButton": "Create Module",
-    "defaultContext": "Constructive Technology",
+    "defaultContext": "Module Context",
     "repeatUnit": "Does the unit repeat? How many times?",
     "numberOfFloors": "Number of floors:",
     "total": "Total",
@@ -205,7 +210,7 @@
     "concreteVolumeFck40": "Concrete Volume Fck40 (m³)",
     "concreteVolumeFck45": "Concrete Volume Fck45 (m³)",
     "steelConsumption": "Steel Consumption (kg)",
-    "addConstructiveTechnology": "Add Constructive Technology"
+    "addConstructiveTechnology": "Add Module"
   },
   "drawerFormProject": {
     "createButton": "Create Project",

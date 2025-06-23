@@ -1,19 +1,18 @@
 import { TProjectUnit } from "@/types/projects";
 import { useRouter } from "@tanstack/react-router";
 import { MoreHorizontal, Pen, Trash } from "lucide-react";
-import DrawerAddUnit from "../layout/drawer-form-unit";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./dropdown-menu";
-import DrawerFormUnit from "../layout/drawer-form-unit";
 import { deleteUnit } from "@/actions/units/deleteUnit";
 import { toast } from "sonner";
 import { queryClient } from "@/utils/queryClient";
 import ModalConfirmDelete from "../layout/modal-confirm-delete";
 import { useTranslation } from "react-i18next";
+import { DrawerFormUnit } from "../layout";
 
 interface TabsContainerProps {
   units: TProjectUnit[];
@@ -113,7 +112,7 @@ export function TabsContainer({
         </button>
       ))}
 
-      <DrawerAddUnit projectId={projectId} />
+      <DrawerFormUnit projectId={projectId} />
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import { getProjectByUUID } from "@/actions/projects/getProject";
-import DrawerAddUnit from "@/components/layout/drawer-form-unit";
 import { Button } from "@/components/ui/button";
 import CustomBanner from "@/components/ui/customBanner";
 import NotFoundList from "@/components/ui/not-found-list";
@@ -7,6 +6,8 @@ import { TabsContainer } from "@/components/ui/tabsContainer";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { DrawerFormUnit } from "@/components/layout";
+import { t } from "i18next";
 
 export const Route = createFileRoute("/_private/projects/$projectId")({
   component: RouteComponent,
@@ -100,15 +101,15 @@ function RouteComponent() {
         <div className="flex h-full w-full flex-col items-center justify-center">
           <NotFoundList
             icon={"package"}
-            message="Nenhum elemento encontrado"
-            description="Adicione uma nova Unidade de Construção"
+            message={t("units.noUnits")}
+            description={t("units.description")}
             showIcon
             button={
-              <DrawerAddUnit
+              <DrawerFormUnit
                 projectId={projectId}
                 triggerComponent={
                   <Button variant="outline" className="mt-4">
-                    Adicionar Unidade
+                    t("units.addUnit")
                   </Button>
                 }
               />
