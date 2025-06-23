@@ -1,16 +1,17 @@
 import { IProject } from "@/types/projects";
 import { Edit } from "lucide-react";
 import React, { useState } from "react";
-// import { useTranslation } from "react-i18next";
 import ModalConfirmDelete from "../layout/modal-confirm-delete";
 import { DrawerFormProject } from "../layout";
+import { useTranslation } from "react-i18next";
 
 interface CustomCardProps {
   project: IProject;
   onClick: () => void;
+  onDeleteProject?: (projectUid: string) => void;
 }
-const CustomCard = ({ onClick, project }: CustomCardProps) => {
-  // const { t } = useTranslation();
+const CustomCard = ({ onClick, project, onDeleteProject }: CustomCardProps) => {
+  const { t } = useTranslation();
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const { city, description, name, state, image_url } = project;
@@ -38,7 +39,11 @@ const CustomCard = ({ onClick, project }: CustomCardProps) => {
       className="card w-full max-w-md flex-col items-center justify-center overflow-hidden rounded-lg bg-white shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-lg md:w-1/3 lg:w-1/4 xl:max-w-100 dark:bg-zinc-800 dark:shadow-zinc-900"
     >
       <div className="group relative h-60 w-full max-sm:h-40">
-        <ModalConfirmDelete key={project.id} projectUUID={project.id} />
+        <ModalConfirmDelete
+          key={project.id}
+          title={t("modalConfirmDelete.projectTitle")}
+          onConfirm={() => onDeleteProject?.(project.id)}
+        />
         <DrawerFormProject
           componentTrigger={
             <Edit

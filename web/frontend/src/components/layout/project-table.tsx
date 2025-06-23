@@ -22,11 +22,13 @@ import DrawerFormProject from "./drawer-form-project";
 interface IProjectTable {
   projects: IProject[];
   onClickProject: (projectUid: string) => void;
+  onDeleteProject?: (projectUid: string) => void;
 }
 
 export default function ProjectTable({
   projects,
   onClickProject,
+  onDeleteProject,
 }: IProjectTable) {
   const { t } = useTranslation();
 
@@ -119,7 +121,8 @@ export default function ProjectTable({
                   />
                   <ModalConfirmDelete
                     key={row.original.id}
-                    projectUUID={row.original.id}
+                    title={t("modalConfirmDelete.projectTitle")}
+                    onConfirm={() => onDeleteProject?.(row.original.id)}
                     componentTrigger={
                       <Trash size={20} className="text-destructive" />
                     }
