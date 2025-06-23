@@ -28,7 +28,12 @@
     },
     "noItemsFound": "Nenhum item encontrado",
     "users_one": "Usuário",
-    "users_other": "Usuários"
+    "users_other": "Usuários",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "add": "Adicionar"
   },
   "home": {
     "title": "Pagina Inicial",
@@ -110,7 +115,8 @@
     "errorUpdateModule": "Erro ao atualizar módulo",
     "errorUpdateSimulation": "Erro ao atualizar simulação",
     "errorFetchZipCode": "Erro ao buscar CEP",
-    "errorEditProject": "Erro ao editar projeto"
+    "errorEditProject": "Erro ao editar projeto",
+    "errorUnknown": "Erro desconhecido"
   },
   "warn": {
     "verifyZipCode": "Por favor, verifique o CEP"
@@ -187,6 +193,34 @@
     "steelConsumption": "Consumo de aço (kg)",
     "addConstructiveTechnology": "Adicionar Tecnologia Construtiva"
   },
+  "drawerFormProject": {
+    "createButton": "Criar Projeto",
+    "addTitle": "Adicionar Projeto",
+    "editTitle": "Editar Projeto",
+    "description": "Aqui terá uma descrição do que é o projeto, como ele deve ser utilizado e quais são os campos obrigatórios.",
+    "projectNameLabel": "Nome do Projeto *",
+    "projectNamePlaceholder": "Digite o nome do projeto",
+    "cepLabel": "CEP *",
+    "cepPlaceholder": "Digite o CEP",
+    "stateLabel": "Estado *",
+    "statePlaceholder": "Selecione um estado",
+    "cityLabel": "Cidade *",
+    "cityPlaceholder": "Selecione uma cidade",
+    "neighborhoodLabel": "Bairro *",
+    "neighborhoodPlaceholder": "Selecione um bairro",
+    "streetLabel": "Rua *",
+    "streetPlaceholder": "Digite o nome da rua",
+    "numberLabel": "Número *",
+    "numberPlaceholder": "Digite o número da casa",
+    "projectPhaseLabel": "Fase do Projeto *",
+    "projectPhasePlaceholder": "Selecione uma fase do projeto",
+    "descriptionLabel": "Descrição (opcional)",
+    "descriptionPlaceholder": "Digite uma descrição do projeto (opcional)",
+    "imageLabel": "Imagem do Projeto (opcional)",
+    "imagePlaceholder": "Selecione uma imagem do projeto (opcional)",
+    "addProjectButton": "Adicionar Projeto",
+    "editProjectButton": "Editar Projeto"
+  },
   "drawerFormUnit": {
     "createButton": "Criar Unidade de Construção",
     "addTitle": "Adicionar Unidade de Construção",
@@ -233,37 +267,6 @@
     "loading": "Carregando...",
     "setValidVersion": "Definir versão válida",
     "selectVersions": "Selecione versões na tabela acima para comparar simulações."
-  },
-  "drawer": {
-    "editUnitTitle": "Editar Unidade de Construção",
-    "unitNameLabel": "Nome da Unidade *",
-    "saveUnitButton": "Salvar Unidade",
-    "addUnitTitle": "Adicionar Unidade de Construção",
-    "addUnitDescription": "Aqui estará uma descrição do que é a unidade de construção, como deve ser usada e quais campos são obrigatórios.",
-    "createUnitButton": "Criar Unidade",
-    "addProjectTitle": "Adicionar Projetos",
-    "editProjectTitle": "Editar Projeto",
-    "projectNameLabel": "Nome do Projeto *",
-    "cepLabel": "CEP *",
-    "cepPlaceholder": "Digite o CEP",
-    "stateLabel": "Estado *",
-    "statePlaceholder": "Selecione um estado",
-    "cityLabel": "Cidade *",
-    "cityPlaceholder": "Selecione uma cidade",
-    "neighborhoodLabel": "Bairro *",
-    "neighborhoodPlaceholder": "Selecione um bairro",
-    "streetLabel": "Rua *",
-    "streetPlaceholder": "Digite o nome da rua",
-    "numberLabel": "Número *",
-    "numberPlaceholder": "Digite o número da casa",
-    "projectPhaseLabel": "Fase do Projeto *",
-    "projectPhasePlaceholder": "Selecione uma fase do projeto",
-    "descriptionLabel": "Descrição",
-    "descriptionPlaceholder": "Digite uma descrição do projeto",
-    "imageLabel": "Imagem do Projeto",
-    "imagePlaceholder": "Selecione uma imagem do projeto (opcional)",
-    "addProjectButton": "Adicionar Projeto",
-    "editProjectButton": "Editar Projeto"
   },
   "modulesTable": {
     "headers": {

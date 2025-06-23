@@ -31,7 +31,12 @@
     },
     "noItemsFound": "Нет элементов",
     "users_one": "Пользователь",
-    "users_other": "Пользователи"
+    "users_other": "Пользователи",
+    "edit": "Редактировать",
+    "delete": "Удалить",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "add": "Добавить"
   },
   "home": {
     "title": "Главная",
@@ -117,7 +122,8 @@
     "errorFetchSimulations": "Ошибка при получении симуляций",
     "errorFetchProjectById": "Ошибка при получении проекта по ID",
     "errorFetchZipCode": "Ошибка при получении почтового индекса",
-    "errorEditProject": "Ошибка при редактировании проекта"
+    "errorEditProject": "Ошибка при редактировании проекта",
+    "errorUnknown": "Произошла неизвестная ошибка"
   },
   "warn": {
     "verifyZipCode": "Пожалуйста, проверьте почтовый индекс"
@@ -135,37 +141,6 @@
     "projectCreated": "Проект успешно создан",
     "projectUpdated": "Проект успешно обновлен",
     "projectDeleted": "Проект успешно удален"
-  },
-  "drawer": {
-    "editUnitTitle": "Редактировать строительную единицу",
-    "unitNameLabel": "Название строительной единицы *",
-    "saveUnitButton": "Сохранить единицу",
-    "addUnitTitle": "Добавить строительную единицу",
-    "addUnitDescription": "Здесь будет описание строительной единицы, как она должна использоваться и какие поля обязательны.",
-    "createUnitButton": "Создать единицу",
-    "addProjectTitle": "Добавить проекты",
-    "editProjectTitle": "Редактировать проект",
-    "projectNameLabel": "Название проекта *",
-    "cepLabel": "Почтовый индекс *",
-    "cepPlaceholder": "Введите почтовый индекс",
-    "stateLabel": "Штат *",
-    "statePlaceholder": "Выберите штат",
-    "cityLabel": "Город *",
-    "cityPlaceholder": "Выберите город",
-    "neighborhoodLabel": "Район *",
-    "neighborhoodPlaceholder": "Введите район",
-    "streetLabel": "Улица *",
-    "streetPlaceholder": "Введите название улицы",
-    "numberLabel": "Номер *",
-    "numberPlaceholder": "Введите номер дома",
-    "projectPhaseLabel": "Фаза проекта *",
-    "projectPhasePlaceholder": "Выберите фазу проекта",
-    "descriptionLabel": "Описание",
-    "descriptionPlaceholder": "Введите описание проекта",
-    "imageLabel": "Изображение проекта",
-    "imagePlaceholder": "Выберите изображение проекта (опционально)",
-    "addProjectButton": "Добавить проект",
-    "editProjectButton": "Редактировать проект"
   },
   "drawerEditModule": {
     "title": "Редактировать строительную технологию",
@@ -223,6 +198,34 @@
     "concreteVolumeFck45": "Объем бетона Fck45 (м³)",
     "steelConsumption": "Потребление стали (кг)",
     "addConstructiveTechnology": "Добавить строительную технологию"
+  },
+  "drawerFormProject": {
+    "createButton": "Создать проект",
+    "addTitle": "Добавить проект",
+    "editTitle": "Редактировать проект",
+    "description": "Здесь будет описание того, что такое проект, как он должен использоваться и какие поля обязательны.",
+    "projectNameLabel": "Название проекта *",
+    "projectNamePlaceholder": "Введите название проекта",
+    "cepLabel": "Почтовый индекс *",
+    "cepPlaceholder": "Введите почтовый индекс",
+    "stateLabel": "Штат *",
+    "statePlaceholder": "Выберите штат",
+    "cityLabel": "Город *",
+    "cityPlaceholder": "Выберите город",
+    "neighborhoodLabel": "Район *",
+    "neighborhoodPlaceholder": "Выберите район",
+    "streetLabel": "Улица *",
+    "streetPlaceholder": "Введите название улицы",
+    "numberLabel": "Номер *",
+    "numberPlaceholder": "Введите номер дома",
+    "projectPhaseLabel": "Фаза проекта *",
+    "projectPhasePlaceholder": "Выберите фазу проекта",
+    "descriptionLabel": "Описание (опционально)",
+    "descriptionPlaceholder": "Введите описание проекта (опционально)",
+    "imageLabel": "Изображение проекта (опционально)",
+    "imagePlaceholder": "Выберите изображение проекта (опционально)",
+    "addProjectButton": "Добавить проект",
+    "editProjectButton": "Редактировать проект"
   },
   "drawerFormUnit": {
     "createButton": "Создать строительную единицу",

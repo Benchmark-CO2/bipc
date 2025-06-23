@@ -31,7 +31,12 @@
     },
     "noItemsFound": "No se encontraron elementos",
     "users_one": "Usuario",
-    "users_other": "Usuarios"
+    "users_other": "Usuarios",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "add": "Agregar"
   },
   "home": {
     "title": "Inicio",
@@ -117,7 +122,8 @@
     "errorFetchSimulations": "Error al obtener las simulaciones",
     "errorFetchProjectById": "Error al obtener el proyecto por ID",
     "errorFetchZipCode": "Error al obtener el código postal",
-    "errorEditProject": "Error al editar el proyecto"
+    "errorEditProject": "Error al editar el proyecto",
+    "errorUnknown": "Error desconocido"
   },
   "warn": {
     "verifyZipCode": "Por favor, verifica el código postal"
@@ -135,37 +141,6 @@
     "projectCreated": "Proyecto creado exitosamente",
     "projectUpdated": "Proyecto actualizado exitosamente",
     "projectDeleted": "Proyecto eliminado exitosamente"
-  },
-  "drawer": {
-    "editUnitTitle": "Editar Unidad de Construcción",
-    "unitNameLabel": "Nombre de la Unidad de Construcción *",
-    "saveUnitButton": "Guardar Unidad",
-    "addUnitTitle": "Agregar Unidad de Construcción",
-    "addUnitDescription": "Aquí habrá una descripción de lo que es la unidad de construcción, cómo debe usarse y qué campos son obligatorios.",
-    "createUnitButton": "Crear Unidad",
-    "addProjectTitle": "Agregar Proyectos",
-    "editProjectTitle": "Editar Proyecto",
-    "projectNameLabel": "Nombre del Proyecto *",
-    "cepLabel": "Código Postal *",
-    "cepPlaceholder": "Introduce el código postal",
-    "stateLabel": "Estado *",
-    "statePlaceholder": "Selecciona un estado",
-    "cityLabel": "Ciudad *",
-    "cityPlaceholder": "Selecciona una ciudad",
-    "neighborhoodLabel": "Barrio *",
-    "neighborhoodPlaceholder": "Introduce el barrio",
-    "streetLabel": "Calle *",
-    "streetPlaceholder": "Introduce el nombre de la calle",
-    "numberLabel": "Número *",
-    "numberPlaceholder": "Introduce el número de la casa",
-    "projectPhaseLabel": "Fase del Proyecto *",
-    "projectPhasePlaceholder": "Selecciona una fase del proyecto",
-    "descriptionLabel": "Descripción",
-    "descriptionPlaceholder": "Introduce una descripción",
-    "imageLabel": "Imagen del Proyecto",
-    "imagePlaceholder": "Selecciona una imagen del proyecto (opcional)",
-    "addProjectButton": "Agregar Proyecto",
-    "editProjectButton": "Editar Proyecto"
   },
   "drawerEditModule": {
     "title": "Editar Tecnología Constructiva",
@@ -223,6 +198,34 @@
     "concreteVolumeFck45": "Volumen de Hormigón Fck45 (m³)",
     "steelConsumption": "Consumo de Acero (kg)",
     "addConstructiveTechnology": "Agregar Tecnología Constructiva"
+  },
+  "drawerFormProject": {
+    "createButton": "Crear Proyecto",
+    "addTitle": "Agregar Proyecto",
+    "editTitle": "Editar Proyecto",
+    "description": "Aquí habrá una descripción de lo que es el proyecto, cómo debe ser utilizado y cuáles son los campos obligatorios.",
+    "projectNameLabel": "Nombre del Proyecto *",
+    "projectNamePlaceholder": "Introduce el nombre del proyecto",
+    "cepLabel": "Código Postal *",
+    "cepPlaceholder": "Introduce el código postal",
+    "stateLabel": "Estado *",
+    "statePlaceholder": "Selecciona un estado",
+    "cityLabel": "Ciudad *",
+    "cityPlaceholder": "Selecciona una ciudad",
+    "neighborhoodLabel": "Barrio *",
+    "neighborhoodPlaceholder": "Selecciona un barrio",
+    "streetLabel": "Calle *",
+    "streetPlaceholder": "Introduce el nombre de la calle",
+    "numberLabel": "Número *",
+    "numberPlaceholder": "Introduce el número de la casa",
+    "projectPhaseLabel": "Fase del Proyecto *",
+    "projectPhasePlaceholder": "Selecciona una fase del proyecto",
+    "descriptionLabel": "Descripción (opcional)",
+    "descriptionPlaceholder": "Introduce una descripción del proyecto (opcional)",
+    "imageLabel": "Imagen del Proyecto (opcional)",
+    "imagePlaceholder": "Selecciona una imagen del proyecto (opcional)",
+    "addProjectButton": "Agregar Proyecto",
+    "editProjectButton": "Editar Proyecto"
   },
   "drawerFormUnit": {
     "createButton": "Crear Unidad de Construcción",

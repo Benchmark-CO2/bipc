@@ -31,7 +31,12 @@
     },
     "noItemsFound": "No items found",
     "users_one": "User",
-    "users_other": "Users"
+    "users_other": "Users",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "add": "Add"
   },
   "home": {
     "title": "Home",
@@ -118,7 +123,8 @@
     "errorFetchSimulations": "Error fetching simulations",
     "errorFetchProjectById": "Error fetching project by ID",
     "errorFetchZipCode": "Error fetching ZIP code",
-    "errorEditProject": "Error editing project"
+    "errorEditProject": "Error editing project",
+    "errorUnknown": "An unknown error occurred"
   },
   "warn": {
     "verifyZipCode": "Please verify the ZIP code"
@@ -136,37 +142,6 @@
     "projectCreated": "Project created successfully",
     "projectUpdated": "Project updated successfully",
     "projectDeleted": "Project deleted successfully"
-  },
-  "drawer": {
-    "editUnitTitle": "Edit Construction Unit",
-    "unitNameLabel": "Construction Unit Name *",
-    "saveUnitButton": "Save Unit",
-    "addUnitTitle": "Add Construction Unit",
-    "addUnitDescription": "Here will be a description of what the construction unit is, how it should be used, and which fields are required.",
-    "createUnitButton": "Create Unit",
-    "addProjectTitle": "Add Projects",
-    "editProjectTitle": "Edit Project",
-    "projectNameLabel": "Project Name *",
-    "cepLabel": "ZIP Code *",
-    "cepPlaceholder": "Enter the ZIP code",
-    "stateLabel": "State *",
-    "statePlaceholder": "Select a state",
-    "cityLabel": "City *",
-    "cityPlaceholder": "Select a city",
-    "neighborhoodLabel": "Neighborhood *",
-    "neighborhoodPlaceholder": "Enter the neighborhood",
-    "streetLabel": "Street *",
-    "streetPlaceholder": "Enter the street",
-    "numberLabel": "Number *",
-    "numberPlaceholder": "Enter the number",
-    "projectPhaseLabel": "Project Phase *",
-    "projectPhasePlaceholder": "Select a project phase",
-    "descriptionLabel": "Description",
-    "descriptionPlaceholder": "Enter a description",
-    "imageLabel": "Image",
-    "imagePlaceholder": "Upload an image (optional)",
-    "addProjectButton": "Add Project",
-    "editProjectButton": "Edit Project"
   },
   "modalConfirmDelete": {
     "projectTitle": "Delete Project",
@@ -231,6 +206,34 @@
     "concreteVolumeFck45": "Concrete Volume Fck45 (m³)",
     "steelConsumption": "Steel Consumption (kg)",
     "addConstructiveTechnology": "Add Constructive Technology"
+  },
+  "drawerFormProject": {
+    "createButton": "Create Project",
+    "addTitle": "Add Project",
+    "editTitle": "Edit Project",
+    "description": "Here will be a description of what the project is, how it should be used, and which fields are required.",
+    "projectNameLabel": "Project Name *",
+    "projectNamePlaceholder": "Enter the project name",
+    "cepLabel": "ZIP Code *",
+    "cepPlaceholder": "Enter the ZIP code",
+    "stateLabel": "State *",
+    "statePlaceholder": "Select a state",
+    "cityLabel": "City *",
+    "cityPlaceholder": "Select a city",
+    "neighborhoodLabel": "Neighborhood *",
+    "neighborhoodPlaceholder": "Select a neighborhood",
+    "streetLabel": "Street *",
+    "streetPlaceholder": "Enter the street name",
+    "numberLabel": "Number *",
+    "numberPlaceholder": "Enter the house number",
+    "projectPhaseLabel": "Project Phase *",
+    "projectPhasePlaceholder": "Select a project phase",
+    "descriptionLabel": "Description (optional)",
+    "descriptionPlaceholder": "Enter a project description (optional)",
+    "imageLabel": "Project Image (optional)",
+    "imagePlaceholder": "Select a project image (optional)",
+    "addProjectButton": "Add Project",
+    "editProjectButton": "Edit Project"
   },
   "drawerFormUnit": {
     "createButton": "Create Construction Unit",
