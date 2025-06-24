@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"mime"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -34,6 +35,7 @@ func (app *application) presignedURLHandler(w http.ResponseWriter, r *http.Reque
 	policy.SetKey(key)
 	policy.SetExpires(time.Now().UTC().Add(15 * time.Minute))
 	policy.SetContentTypeStartsWith("image/")
+	policy.SetContentType(mime.TypeByExtension(ext))
 	policy.SetContentLengthRange(0, 25*1024*1024) // 25 MB limit
 	policy.SetSuccessStatusAction("201")
 
@@ -47,8 +49,15 @@ func (app *application) presignedURLHandler(w http.ResponseWriter, r *http.Reque
 		fmt.Printf("%s:%s\n", k, v)
 	}
 
+	var host string
+	if app.config.env == "development" {
+		host = "localhost:9000"
+	} else {
+		host = url.Host
+	}
+
 	data := envelope{
-		"url":        fmt.Sprintf("%s://%s%s", url.Scheme, url.Host, url.Path),
+		"url":        fmt.Sprintf("%s://%s%s", url.Scheme, host, url.Path),
 		"form_data":  formData,
 		"public_url": fmt.Sprintf("%s/%s", app.config.S3.baseURL, key),
 	}

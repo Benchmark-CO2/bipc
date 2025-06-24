@@ -49,7 +49,7 @@ services:
       - GOGC=off
       - GOMEMLIMIT
     command: [
-      "-port=3000", "-db-dsn=postgres://bipc:pa55word@10.5.0.2:5432/bipc?sslmode=disable", "-smtp-host=10.5.0.3", "-smtp-port=1025", "-smtp-sender=\"BIPC <no-reply@yourdomain.com>\"",
+      "-port=3000", "-db-dsn=postgres://bipc:pa55word@10.5.0.2:5432/bipc?sslmode=disable", "-smtp-host=10.5.0.3", "-smtp-port=1025", "-smtp-sender=BIPC <no-reply@yourdomain.com>",
       "-s3-endpoint=10.5.0.5:9000", "-s3-access-key=minioadmin", "-s3-secret-key=minioadmin", "-s3-secure=false", "-s3-bucket=bipc", "-s3-base-url=http://localhost:9000/bipc", "-cors-trusted-origins=http://localhost:5173"]
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/v1/healthcheck || exit 1"]

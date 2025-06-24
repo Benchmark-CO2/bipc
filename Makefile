@@ -73,8 +73,6 @@ confirm:
 .PHONY: dev/gotooling
 dev/gotooling:
 	 go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-	 go install github.com/rakyll/hey@latest
-	 go install github.com/divan/expvarmon@latest
 	 go install honnef.co/go/tools/cmd/staticcheck@latest
 	 go install golang.org/x/vuln/cmd/govulncheck@latest
 	 go install github.com/minio/mc@latest
@@ -128,19 +126,6 @@ run/api:
 	@go run ./cmd/api -limiter-enabled=false -db-dsn=$(DB_DSN) \
 	-smtp-host=$(SMTP_HOST) -smtp-port=$(SMTP_PORT) -smtp-username=$(SMTP_USERNAME) -smtp-password=$(SMTP_PASSWORD) -smtp-sender=$(SMTP_SENDER) \
 	-s3-endpoint=$(S3_ENDPOINT) -s3-access-key=$(S3_ACCESS_KEY) -s3-secret-key=$(S3_SECRET_KEY) -s3-secure=$(S3_SECURE) -s3-region=$(S3_REGION) -s3-bucket=$(S3_BUCKET) -s3-base-url=$(S3_BASE_URL)
-
-## metrics: run the TermUI monitor for the application
-.PHONY: metrics
-metrics:
-	expvarmon -ports="localhost:4000" -endpoint="/v1/metrics" -i=5s \
-	-vars="str:version,goroutines,total_requests_received,total_responses_sent,in_flight_requests,duration:total_processing_time_μs,\
-	str:database.MaxOpenConnections,database.OpenConnections,database.InUse,database.Idle,database.WaitCount,duration:database.WaitDuration,database.MaxIdleTimeClosed,\
-	mem:memstats.HeapAlloc,mem:memstats.HeapSys,mem:memstats.Sys"
-
-## load email=$1 password=$2: run a load test against the API
-.PHONY: load
-load: confirm
-	hey -c 50 -n 700 -d '{"email": "$(email)", "password": "$(password)"}' -m "POST" http://localhost:4000/v1/tokens/authentication
 
 ## migrations/new name=$1: create a new database migration
 .PHONY: migrations/new
