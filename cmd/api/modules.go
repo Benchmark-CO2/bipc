@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 
@@ -9,6 +8,9 @@ import (
 )
 
 func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Request) {
+	unitID, _ := app.readIDParam(r, "unitID")
+	
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
@@ -21,12 +23,21 @@ func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Reque
 		app.badRequestResponse(w, r, err)
 		return
 	}
-	
-	result, err := module.Calculate()
-	
-	fmt.Printf("%+v\n", result)
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"teste": module}, nil)
+	// TODO: validate
+	result, err := module.Calculate()
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = module.Insert(app.models, unitID, result)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"result": result}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
