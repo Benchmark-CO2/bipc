@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { postProject } from "@/actions/projects/postProject";
-import { putProject } from "@/actions/projects/putProject";
+import { patchProject } from "@/actions/projects/patchProject";
 import { IProject } from "@/types/projects";
 import useCep from "@/hooks/useLocation";
 import { masks } from "@/utils/masks";
@@ -43,7 +43,7 @@ import {
 
 interface IDrawerAddProject {
   componentTrigger: React.ReactNode;
-  projectData?: IProject; // Dados do projeto para edição (opcional)
+  projectData?: IProject;
 }
 
 export default function DrawerFormProject({
@@ -95,8 +95,7 @@ export default function DrawerFormProject({
       });
     },
     onSuccess: (data) => {
-      toast.success("Projeto criado com sucesso", {
-        description: "O projeto foi criado com sucesso",
+      toast.success(t("success.projectCreated"), {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -105,7 +104,6 @@ export default function DrawerFormProject({
       setOpenDrawer(false);
       form.reset();
 
-      // Navegar para o projeto criado se tiver o ID na resposta
       if (data.data.project?.id) {
         navigate({
           to: `/projects/${data.data.project.id}`,
@@ -124,7 +122,7 @@ export default function DrawerFormProject({
     reset: resetUpdate,
   } = useMutation({
     mutationFn: (data: ProjectFormSchema) =>
-      putProject(data as any, projectData!.id),
+      patchProject(data as any, projectData!.id),
     onError: (error) => {
       toast.error(t("error.errorEditProject"), {
         description: error.message,
@@ -199,7 +197,7 @@ export default function DrawerFormProject({
   useEffect(() => {
     if (isError) {
       toast.error(t("error.errorFetchZipCode"), {
-        description: "Verifique se o CEP está correto",
+        description: t("warn.verifyZipCode"),
         duration: 5000,
       });
       form.setError("cep", {
@@ -231,10 +229,9 @@ export default function DrawerFormProject({
           <DrawerHeader>
             <DrawerTitle>
               {isEditMode
-                ? t("drawer.editProjectTitle")
-                : t("drawer.addProjectTitle")}
+                ? t("drawerFormProject.editTitle")
+                : t("drawerFormProject.addTitle")}
             </DrawerTitle>
-            {/* <DrawerDescription>Set your daily activity goal.</DrawerDescription> */}
           </DrawerHeader>
           <Form {...form}>
             <form
@@ -246,9 +243,16 @@ export default function DrawerFormProject({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("drawer.projectNameLabel")}</FormLabel>
+                    <FormLabel>
+                      {t("drawerFormProject.projectNameLabel")}
+                    </FormLabel>
                     <FormControl>
-                      <Input placeholder="Projeto 1" {...field} />
+                      <Input
+                        placeholder={t(
+                          "drawerFormProject.projectNamePlaceholder"
+                        )}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -259,11 +263,11 @@ export default function DrawerFormProject({
                 name="cep"
                 render={({ field }) => (
                   <FormItem className="flex-1/3">
-                    <FormLabel>{t("drawer.cepLabel")}</FormLabel>
+                    <FormLabel>{t("drawerFormProject.cepLabel")}</FormLabel>
                     <FormControl>
                       <div className="flex items-center gap-2">
                         <Input
-                          placeholder={t("drawer.cepPlaceholder")}
+                          placeholder={t("drawerFormProject.cepPlaceholder")}
                           value={masks.cep((field.value as string) || "")}
                           onChange={(e) => {
                             field.onChange(e.target.value);
@@ -286,10 +290,10 @@ export default function DrawerFormProject({
                   name="state"
                   render={({ field }) => (
                     <FormItem className="flex-1/3">
-                      <FormLabel>{t("drawer.stateLabel")}</FormLabel>
+                      <FormLabel>{t("drawerFormProject.stateLabel")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t("drawer.statePlaceholder")}
+                          placeholder={t("drawerFormProject.statePlaceholder")}
                           {...field}
                         />
                       </FormControl>
@@ -302,10 +306,10 @@ export default function DrawerFormProject({
                   name="city"
                   render={({ field }) => (
                     <FormItem className="flex-2/3">
-                      <FormLabel>{t("drawer.cityLabel")}</FormLabel>
+                      <FormLabel>{t("drawerFormProject.cityLabel")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t("drawer.cityPlaceholder")}
+                          placeholder={t("drawerFormProject.cityPlaceholder")}
                           {...field}
                         />
                       </FormControl>
@@ -319,10 +323,14 @@ export default function DrawerFormProject({
                 name="neighborhood"
                 render={({ field }) => (
                   <FormItem className="flex-2/3">
-                    <FormLabel>{t("drawer.neighborhoodLabel")}</FormLabel>
+                    <FormLabel>
+                      {t("drawerFormProject.neighborhoodLabel")}
+                    </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder={t("drawer.neighborhoodPlaceholder")}
+                        placeholder={t(
+                          "drawerFormProject.neighborhoodPlaceholder"
+                        )}
                         {...field}
                       />
                     </FormControl>
@@ -336,10 +344,12 @@ export default function DrawerFormProject({
                   name="street"
                   render={({ field }) => (
                     <FormItem className="flex-2/3">
-                      <FormLabel>{t("drawer.streetLabel")}</FormLabel>
+                      <FormLabel>
+                        {t("drawerFormProject.streetLabel")}
+                      </FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t("drawer.streetPlaceholder")}
+                          placeholder={t("drawerFormProject.streetPlaceholder")}
                           {...field}
                         />
                       </FormControl>
@@ -352,10 +362,12 @@ export default function DrawerFormProject({
                   name="number"
                   render={({ field }) => (
                     <FormItem className="flex-1/3">
-                      <FormLabel>{t("drawer.numberLabel")}</FormLabel>
+                      <FormLabel>
+                        {t("drawerFormProject.numberLabel")}
+                      </FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t("drawer.numberPlaceholder")}
+                          placeholder={t("drawerFormProject.numberPlaceholder")}
                           {...field}
                         />
                       </FormControl>
@@ -369,7 +381,9 @@ export default function DrawerFormProject({
                 name="phase"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("drawer.projectPhaseLabel")}</FormLabel>
+                    <FormLabel>
+                      {t("drawerFormProject.projectPhaseLabel")}
+                    </FormLabel>
                     <FormControl>
                       <Select
                         defaultValue=""
@@ -378,25 +392,27 @@ export default function DrawerFormProject({
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue
-                            placeholder={t("drawer.projectPhasePlaceholder")}
+                            placeholder={t(
+                              "drawerFormProject.projectPhasePlaceholder"
+                            )}
                           />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="preliminary_study">
-                            {t("common.projectPhaseOptions.preliminaryStudy")}
+                            {t("common.projectPhaseOptions.preliminary_study")}
                           </SelectItem>
                           <SelectItem value="draft">
                             {t("common.projectPhaseOptions.draft")}
                           </SelectItem>
                           <SelectItem value="basic_project">
-                            {t("common.projectPhaseOptions.basicProject")}
+                            {t("common.projectPhaseOptions.basic_project")}
                           </SelectItem>
                           <SelectItem value="executive_project">
-                            {t("common.projectPhaseOptions.executiveProject")}
+                            {t("common.projectPhaseOptions.executive_project")}
                           </SelectItem>
                           <SelectItem value="released_for_construction">
                             {t(
-                              "common.projectPhaseOptions.releasedForConstruction"
+                              "common.projectPhaseOptions.released_for_construction"
                             )}
                           </SelectItem>
                         </SelectContent>
@@ -411,10 +427,14 @@ export default function DrawerFormProject({
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("drawer.descriptionLabel")}</FormLabel>
+                    <FormLabel>
+                      {t("drawerFormProject.descriptionLabel")}
+                    </FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder={t("drawer.descriptionPlaceholder")}
+                        placeholder={t(
+                          "drawerFormProject.descriptionPlaceholder"
+                        )}
                         minLength={10}
                         maxLength={200}
                         rows={4}
@@ -431,18 +451,18 @@ export default function DrawerFormProject({
                 name="image_url"
                 render={({ field: { onChange, ...rest } }) => (
                   <FormItem>
-                    <FormLabel>{t("drawer.imageLabel")}</FormLabel>
+                    <FormLabel>{t("drawerFormProject.imageLabel")}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder={t("drawer.imagePlaceholder")}
+                        placeholder={t("drawerFormProject.imagePlaceholder")}
                         type="file"
                         accept="image/*"
                         onChange={(e) => {
-                          const file = e.target.files?.[0]; // Captura apenas o primeiro arquivo
+                          const file = e.target.files?.[0];
                           if (file) onChange(file);
                         }}
                         {...rest}
-                        value={undefined} // Prevents React from trying to control the value
+                        value={undefined}
                       />
                     </FormControl>
                     <FormMessage />
@@ -456,7 +476,7 @@ export default function DrawerFormProject({
                   variant="noStyles"
                   className="mt-6"
                 >
-                  {t("drawer.editProjectButton")}
+                  {t("drawerFormProject.editProjectButton")}
                   {isUpdatePending && (
                     <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
                   )}
@@ -468,7 +488,7 @@ export default function DrawerFormProject({
                   variant="noStyles"
                   className="mt-6"
                 >
-                  {t("drawer.addProjectButton")}
+                  {t("drawerFormProject.addProjectButton")}
                   {isCreationPending && (
                     <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
                   )}

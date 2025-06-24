@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/consistent-indexed-object-style */
 
 import { DataPoint } from "@/components/charts/mock";
+import { TUnitType } from "./units";
 
 export type TProjectPhase =
   | "preliminary_study"
@@ -24,6 +25,7 @@ export interface IProject {
   image_url?: string;
   created_at: string;
   updated_at: string;
+  units: TProjectUnit[];
 }
 
 export type TProjectsTemp = {
@@ -31,8 +33,9 @@ export type TProjectsTemp = {
 };
 
 export type TProjectUnit = {
-  name: string;
-  id: string;
+  name: number;
+  id: number;
+  type: TUnitType;
 };
 
 export type TProjectUnitModule = {

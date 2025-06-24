@@ -1,81 +1,90 @@
 import { getProjectByUUID } from "@/actions/projects/getProject";
-import DrawerAddUnit from "@/components/layout/drawer-add-unit";
 import { Button } from "@/components/ui/button";
 import CustomBanner from "@/components/ui/customBanner";
 import NotFoundList from "@/components/ui/not-found-list";
 import { TabsContainer } from "@/components/ui/tabsContainer";
-import { getFromStorage, setToStorage } from "@/lib/storage";
-import { TProjectsTemp, TProjectUnit } from "@/types/projects";
-// import { mockUnits } from '@/utils/mockUnits'
-import { AddUnitFormSchema } from "@/validators/addUnit.validator";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-
-const PROJECT_UNITS = "@projects/units";
+import { DrawerFormUnit } from "@/components/layout";
+import { t } from "i18next";
 
 export const Route = createFileRoute("/_private/projects/$projectId")({
   component: RouteComponent,
-  loader: async ({ params }) => {
+  loader: async ({ params, context }) => {
     const { projectId } = params;
     if (!projectId) {
       throw new Error("Project ID is required");
     }
 
-    const { data } = await getProjectByUUID(projectId);
-    const project = data.project;
+    await context.queryClient.ensureQueryData({
+      queryKey: ["project", projectId],
+      queryFn: () => getProjectByUUID(projectId),
+    });
 
-    const projects = getFromStorage(
-      `${PROJECT_UNITS}/${projectId}`,
-      {} as TProjectsTemp
-    );
+    const projectData = context.queryClient.getQueryData<any>([
+      "project",
+      projectId,
+    ]);
+    const project = projectData?.data?.project;
 
     return {
-      project,
-      units: projects[projectId] || [],
-      crumb: project.name,
+      projectId,
+      crumb: project?.name || "Projeto",
     };
   },
 });
 
 function RouteComponent() {
-  const { project, units } = Route.useLoaderData();
+  const { projectId } = Route.useLoaderData();
   const params: { projectId: string; unitId: string; moduleId: string } =
     Route.useParams();
+
+  const {
+    data: projectData,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: () => getProjectByUUID(projectId),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const project = projectData?.data?.project;
+  const units = project?.units || [];
+
   const [tabs, setTabs] = useState(units);
-  const [selectedTab, setSelectedTab] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
+  const [selectedTab, setSelectedTab] = useState(0);
 
-  const handleAddNewUnit = (data: AddUnitFormSchema) => {
-    const newUnit = {
-      id: String(tabs.length + 1),
-      name: data.name,
-    };
-
-    setTabs((prev) => {
-      const newTabs = [...prev, newUnit];
-      setToStorage(`${PROJECT_UNITS}/${project.id}`, {
-        [project.id]: newTabs,
-      });
-      return newTabs;
-    });
-  };
+  useEffect(() => {
+    setTabs(units);
+  }, [units]);
 
   useEffect(() => {
     if (tabs.length > 0 && !params.unitId) {
-      history.pushState({}, "", `/projects/${project.id}/${tabs[0].id}`);
+      history.pushState({}, "", `/projects/${projectId}/${tabs[0].id}`);
       setSelectedTab(tabs[0].id);
     } else if (params.unitId) {
-      const unit = tabs.find((unit) => unit.id === params.unitId);
+      const paramUnit = Number(params.unitId);
+      const unit = tabs.find((unit: any) => unit.id === paramUnit);
       if (unit) {
         setSelectedTab(unit.id);
       } else {
-        history.pushState({}, "", `/projects/${project.id}`);
-        setSelectedTab("");
+        history.pushState({}, "", `/projects/${projectId}`);
+        setSelectedTab(0);
       }
     } else {
-      setSelectedTab("");
+      setSelectedTab(0);
     }
-  }, [tabs, params, project]);
+  }, [tabs, params, projectId]);
+
+  if (isLoading) {
+    return <div>Carregando projeto...</div>;
+  }
+
+  if (error || !project) {
+    return <div>Erro ao carregar projeto</div>;
+  }
 
   if (params.moduleId) {
     return <Outlet />;
@@ -92,17 +101,15 @@ function RouteComponent() {
         <div className="flex h-full w-full flex-col items-center justify-center">
           <NotFoundList
             icon={"package"}
-            message="Nenhum elemento encontrado"
-            description="Adicione uma nova Unidade de Construção"
+            message={t("units.noUnits")}
+            description={t("units.description")}
             showIcon
             button={
-              <DrawerAddUnit
-                isOpen={isOpen}
-                setIsOpen={setIsOpen}
-                callback={handleAddNewUnit}
+              <DrawerFormUnit
+                projectId={projectId}
                 triggerComponent={
                   <Button variant="outline" className="mt-4">
-                    Adicionar Unidade
+                    t("units.addUnit")
                   </Button>
                 }
               />
@@ -112,34 +119,6 @@ function RouteComponent() {
       </div>
     );
   }
-
-  const handleEditUnit = (data: TProjectUnit) => {
-    const updatedTabs = tabs.map((unit) => {
-      if (unit.id === data.id) {
-        return {
-          ...unit,
-          name: data.name,
-        };
-      }
-      return unit;
-    });
-    setTabs(updatedTabs);
-    setToStorage(`${PROJECT_UNITS}/${project.id}`, {
-      [project.id]: updatedTabs,
-    });
-  };
-
-  const handleDeleteUnit = (unitId: string) => {
-    const updatedTabs = tabs.filter((unit) => unit.id !== unitId);
-    setTabs(updatedTabs);
-    setToStorage(`${PROJECT_UNITS}/${project.id}`, {
-      [project.id]: updatedTabs,
-    });
-    if (selectedTab === unitId) {
-      history.pushState({}, "", `/projects/${project.id}`);
-      setSelectedTab("");
-    }
-  };
 
   return (
     <>
@@ -152,12 +131,9 @@ function RouteComponent() {
 
         {tabs.length > 0 && (
           <TabsContainer
-            projectId={project.id}
+            projectId={projectId}
             units={tabs}
             selectedTab={selectedTab}
-            handleAddNewUnit={handleAddNewUnit}
-            handleEditUnit={handleEditUnit}
-            handleDeleteUnit={handleDeleteUnit}
           />
         )}
 

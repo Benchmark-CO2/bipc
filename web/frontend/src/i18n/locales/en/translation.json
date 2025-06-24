@@ -6,11 +6,11 @@
     "portal": "Portal",
     "constructiveTechnology": "Constructive Technology",
     "projectPhaseOptions": {
-      "preliminaryStudy": "Preliminary Study",
+      "preliminary_study": "Preliminary Study",
       "draft": "Draft",
-      "basicProject": "Basic Project",
-      "executiveProject": "Executive Project",
-      "releasedForConstruction": "Released for Construction"
+      "basic_project": "Basic Project",
+      "executive_project": "Executive Project",
+      "released_for_construction": "Released for Construction"
     },
     "structureType": {
       "beamColumn": "Beam Column",
@@ -31,7 +31,12 @@
     },
     "noItemsFound": "No items found",
     "users_one": "User",
-    "users_other": "Users"
+    "users_other": "Users",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "add": "Add"
   },
   "home": {
     "title": "Home",
@@ -54,11 +59,15 @@
   },
   "projects": {
     "title": "Projects",
-    "description": "Manage your projects here"
-  },
-  "projectsPage": {
+    "description": "Manage your projects here",
     "addProject": "Add Project",
     "noProjects": "You have no projects."
+  },
+  "units": {
+    "title": "Construction Units",
+    "description": "Manage your construction units here",
+    "addUnit": "Add Construction Unit",
+    "noUnits": "You have no construction units."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -95,7 +104,8 @@
   "simulations": {
     "title": "Simulations",
     "description": "Here are all simulations for the selected constructive technology.",
-    "addSimulation": "Add Simulation"
+    "addSimulation": "Add Simulation",
+    "noSimulations": "No simulations found"
   },
   "error": {
     "sessionExpired": "Oops, your session has expired...",
@@ -118,7 +128,8 @@
     "errorFetchSimulations": "Error fetching simulations",
     "errorFetchProjectById": "Error fetching project by ID",
     "errorFetchZipCode": "Error fetching ZIP code",
-    "errorEditProject": "Error editing project"
+    "errorEditProject": "Error editing project",
+    "errorUnknown": "An unknown error occurred"
   },
   "warn": {
     "verifyZipCode": "Please verify the ZIP code"
@@ -137,45 +148,15 @@
     "projectUpdated": "Project updated successfully",
     "projectDeleted": "Project deleted successfully"
   },
-  "drawer": {
-    "editUnitTitle": "Edit Construction Unit",
-    "unitNameLabel": "Construction Unit Name *",
-    "saveUnitButton": "Save Unit",
-    "addUnitTitle": "Add Construction Unit",
-    "addUnitDescription": "Here will be a description of what the construction unit is, how it should be used, and which fields are required.",
-    "createUnitButton": "Create Unit",
-    "addProjectTitle": "Add Projects",
-    "editProjectTitle": "Edit Project",
-    "projectNameLabel": "Project Name *",
-    "cepLabel": "ZIP Code *",
-    "cepPlaceholder": "Enter the ZIP code",
-    "stateLabel": "State *",
-    "statePlaceholder": "Select a state",
-    "cityLabel": "City *",
-    "cityPlaceholder": "Select a city",
-    "neighborhoodLabel": "Neighborhood *",
-    "neighborhoodPlaceholder": "Enter the neighborhood",
-    "streetLabel": "Street *",
-    "streetPlaceholder": "Enter the street",
-    "numberLabel": "Number *",
-    "numberPlaceholder": "Enter the number",
-    "projectPhaseLabel": "Project Phase *",
-    "projectPhasePlaceholder": "Select a project phase",
-    "descriptionLabel": "Description",
-    "descriptionPlaceholder": "Enter a description",
-    "imageLabel": "Image",
-    "imagePlaceholder": "Upload an image (optional)",
-    "addProjectButton": "Add Project",
-    "editProjectButton": "Edit Project"
-  },
-  "modalConfirmDeleteUnit": {
-    "title": "Delete Unit",
+  "modalConfirmDelete": {
+    "projectTitle": "Delete Project",
+    "unitTitle": "Delete Unit",
     "description": "This action cannot be undone. Are you sure you want to proceed?",
     "cancelButton": "Cancel",
     "deleteButton": "Delete"
   },
   "drawerEditModule": {
-    "title": "Edit Constructive Technology",
+    "title": "Edit Module",
     "structureTypeLabel": "Structure Type",
     "structureTypePlaceholder": "Select a structure type",
     "buildingTypeLabel": "Building Type",
@@ -207,10 +188,10 @@
     "saveSimulation": "Save Simulation"
   },
   "drawerAddModule": {
-    "title": "Add Constructive Technology",
+    "title": "Add Module",
     "description": "Fill in the details below to add a new module.",
     "createButton": "Create Module",
-    "defaultContext": "Constructive Technology",
+    "defaultContext": "Module Context",
     "repeatUnit": "Does the unit repeat? How many times?",
     "numberOfFloors": "Number of floors:",
     "total": "Total",
@@ -229,7 +210,58 @@
     "concreteVolumeFck40": "Concrete Volume Fck40 (m³)",
     "concreteVolumeFck45": "Concrete Volume Fck45 (m³)",
     "steelConsumption": "Steel Consumption (kg)",
-    "addConstructiveTechnology": "Add Constructive Technology"
+    "addConstructiveTechnology": "Add Module"
+  },
+  "drawerFormProject": {
+    "createButton": "Create Project",
+    "addTitle": "Add Project",
+    "editTitle": "Edit Project",
+    "description": "Here will be a description of what the project is, how it should be used, and which fields are required.",
+    "projectNameLabel": "Project Name *",
+    "projectNamePlaceholder": "Enter the project name",
+    "cepLabel": "ZIP Code *",
+    "cepPlaceholder": "Enter the ZIP code",
+    "stateLabel": "State *",
+    "statePlaceholder": "Select a state",
+    "cityLabel": "City *",
+    "cityPlaceholder": "Select a city",
+    "neighborhoodLabel": "Neighborhood *",
+    "neighborhoodPlaceholder": "Select a neighborhood",
+    "streetLabel": "Street *",
+    "streetPlaceholder": "Enter the street name",
+    "numberLabel": "Number *",
+    "numberPlaceholder": "Enter the house number",
+    "projectPhaseLabel": "Project Phase *",
+    "projectPhasePlaceholder": "Select a project phase",
+    "descriptionLabel": "Description (optional)",
+    "descriptionPlaceholder": "Enter a project description (optional)",
+    "imageLabel": "Project Image (optional)",
+    "imagePlaceholder": "Select a project image (optional)",
+    "addProjectButton": "Add Project",
+    "editProjectButton": "Edit Project"
+  },
+  "drawerFormUnit": {
+    "createButton": "Create Construction Unit",
+    "addTitle": "Add Construction Unit",
+    "editTitle": "Edit Construction Unit",
+    "description": "Here will be a description of what the construction unit is, how it should be used, and which fields are required.",
+    "unitNameLabel": "Construction Unit Name *",
+    "unitNamePlaceholder": "Enter the construction unit name",
+    "unitTypeLabel": "Unit Type *",
+    "unitTypePlaceholder": "Select the type",
+    "unitTypeOptions": {
+      "tower": "Tower"
+    },
+    "towerForm": {
+      "total_floors": "Total Floors",
+      "tower_floors": "Tower Floors",
+      "base_floors": "Base Floors",
+      "basement_floors": "Basement Floors",
+      "type_floors": "Type Floors",
+      "total_area": "Total Area (m²)"
+    },
+    "addUnitButton": "Add Unit",
+    "editUnitButton": "Update Unit"
   },
   "simulationTable": {
     "title": "Simulations",

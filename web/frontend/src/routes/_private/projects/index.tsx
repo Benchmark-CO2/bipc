@@ -1,12 +1,15 @@
+import { deleteProject } from "@/actions/projects/deleteProjects";
 import { getAllProjectsByUser } from "@/actions/projects/getProjects";
 import { DrawerFormProject, ProjectTable } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import CustomCard from "@/components/ui/customCard";
+import { queryClient } from "@/utils/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { LayoutGrid, List, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_private/projects/")({
   component: RouteComponent,
@@ -51,18 +54,34 @@ function RouteComponent() {
       .catch((err: unknown) => err);
   };
 
+  const onDeleteProject = (projectUid: string) => {
+    void deleteProject(projectUid)
+      .then(async () => {
+        toast.success(t("success.projectDeleted"));
+        await queryClient.invalidateQueries({
+          queryKey: ["projects"],
+          refetchType: "all",
+        });
+      })
+      .catch((error) => {
+        toast.error(t("error.errorDeleteProject"), {
+          description:
+            error instanceof Error ? error.message : t("error.errorUnknown"),
+          duration: 5000,
+        });
+      });
+  };
+
   const componentTrigger =
     viewMode === "table" ? (
       <Button variant="outline">
         <Plus className="h-4 w-4" />
-        {t("projectsPage.addProject")}
+        {t("projects.addProject")}
       </Button>
     ) : (
       <div className="flex h-60 w-full flex-col items-center justify-center overflow-hidden rounded-lg bg-white p-4 shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-xl md:w-1/3 lg:w-1/4 xl:max-w-100 dark:bg-zinc-800 dark:shadow-zinc-900">
         <Plus className="size-8" />
-        <span className="text-lg font-medium">
-          {t("projectsPage.addProject")}
-        </span>
+        <span className="text-lg font-medium">{t("projects.addProject")}</span>
       </div>
     );
 
@@ -89,6 +108,7 @@ function RouteComponent() {
         <ProjectTable
           projects={data?.data.projects ?? []}
           onClickProject={onClickProject}
+          onDeleteProject={onDeleteProject}
         />
       ) : (
         <div className="flex w-full flex-wrap items-center gap-4">
@@ -102,12 +122,13 @@ function RouteComponent() {
                   onClick={() => {
                     onClickProject(project.id);
                   }}
+                  onDeleteProject={onDeleteProject}
                 />
               </>
             ))
           ) : (
             <div className="flex h-full w-full flex-col gap-4">
-              <p>{t("projectsPage.noProjects")}</p>
+              <p>{t("projects.noProjects")}</p>
             </div>
           )}
         </div>

@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_private/projects/$projectId/$unitId/")({
       throw new Error("Project ID is required");
     }
     const { data } = await getProjectByUUID(projectId);
-    const project = data.projects;
+    const project = data.project;
 
     const units = getFromStorage(
       `${UNIT_MODULES}/${projectId}`,

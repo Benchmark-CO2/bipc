@@ -3,7 +3,7 @@
     "appName": "BIPC",
     "user": "Usuário",
     "logout": "Sair",
-    "constructiveTechnology": "Tecnologia Construtiva",
+    "constructiveTechnology": "Módulo",
     "projectPhaseOptions": {
       "preliminaryStudy": "Estudo Preliminar",
       "draft": "Rascunho",
@@ -26,8 +26,14 @@
       "projects": "Projetos",
       "simulations": "Simulações"
     },
+    "noItemsFound": "Nenhum item encontrado",
     "users_one": "Usuário",
-    "users_other": "Usuários"
+    "users_other": "Usuários",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "add": "Adicionar"
   },
   "home": {
     "title": "Pagina Inicial",
@@ -49,12 +55,21 @@
   },
   "projects": {
     "title": "Projetos",
-    "description": "Gerencie seus projetos aqui"
+    "description": "Gerencie seus projetos aqui",
+    "addProject": "Adicionar Projeto",
+    "noProjects": "Você não possui projetos."
+  },
+  "units": {
+    "title": "Unidades de Construção",
+    "description": "Adicione unidades de construção ao seu projeto no botão acima.",
+    "addUnit": "Adicionar Unidade de Construção",
+    "noUnits": "Nenhuma unidade de construção encontrada"
   },
   "simulations": {
     "title": "Simulações",
-    "description": "Aqui estão todas as simulações da tecnologia construtiva selecionada.",
-    "addSimulation": "Adicionar Simulação"
+    "description": "Aqui estão todas as simulações da Módulo selecionada.",
+    "addSimulation": "Adicionar Simulação",
+    "noSimulations": "Nenhuma simulação encontrada"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -88,10 +103,6 @@
     "buttonHaveAccount": "Já tem uma conta? Faça login",
     "errorEmailExists": "Email já cadastrado"
   },
-  "projectsPage": {
-    "addProject": "Adicionar Projeto",
-    "noProjects": "Você não possui projetos."
-  },
   "error": {
     "sessionExpired": "Ooops, Sua sessão expirou...",
     "goToLogin": "Ir para Login",
@@ -109,7 +120,8 @@
     "errorUpdateModule": "Erro ao atualizar módulo",
     "errorUpdateSimulation": "Erro ao atualizar simulação",
     "errorFetchZipCode": "Erro ao buscar CEP",
-    "errorEditProject": "Erro ao editar projeto"
+    "errorEditProject": "Erro ao editar projeto",
+    "errorUnknown": "Erro desconhecido"
   },
   "warn": {
     "verifyZipCode": "Por favor, verifique o CEP"
@@ -128,14 +140,8 @@
     "unitUpdated": "Unidade de construção atualizada com sucesso",
     "unitDeleted": "Unidade de construção deletada com sucesso"
   },
-  "modalConfirmDeleteUnit": {
-    "title": "Deletar Unidade",
-    "description": "Esta ação não pode ser desfeita. Você tem certeza de que deseja continuar?",
-    "cancelButton": "Cancelar",
-    "deleteButton": "Deletar"
-  },
   "drawerEditModule": {
-    "title": "Editar Tecnologia Construtiva",
+    "title": "Editar Módulo",
     "structureTypeLabel": "Tipo de Estrutura",
     "structureTypePlaceholder": "Selecione um tipo de estrutura",
     "buildingTypeLabel": "Tipo de Edifício",
@@ -159,19 +165,19 @@
     "concreteVolumeFck40Label": "Volume de Concreto (Fck 40)",
     "concreteVolumeFck45Label": "Volume de Concreto (Fck 45)",
     "steelConsumptionLabel": "Consumo de Aço",
-    "defaultTechnology": "Tecnologia Construtiva",
+    "defaultTechnology": "Módulo",
     "dragAndDropFiles": "Arraste e solte arquivos aqui ou clique para fazer upload",
     "featureNotIntegrated": "Funcionalidade ainda não integrada",
-    "editModule": "Editar Tecnologia Construtiva",
-    "updateModule": "Atualizar Tecnologia Construtiva",
-    "saveModule": "Salvar Tecnologia Construtiva",
+    "editModule": "Editar Módulo",
+    "updateModule": "Atualizar Módulo",
+    "saveModule": "Salvar Módulo",
     "saveSimulation": "Salvar Simulação"
   },
   "drawerAddModule": {
-    "title": "Adicionar Tecnologia Construtiva",
-    "description": "Preencha os detalhes abaixo para adicionar uma nova tecnologia construtiva.",
-    "createButton": "Criar Tecnologia Construtiva",
-    "defaultContext": "Tecnologia Construtiva",
+    "title": "Adicionar Módulo",
+    "description": "Preencha os detalhes abaixo para adicionar um novo Módulo.",
+    "createButton": "Criar Módulo",
+    "defaultContext": "Módulo",
     "repeatUnit": "A unidade se repete? Quantas vezes?",
     "numberOfFloors": "Número de pavimentos:",
     "total": "Total",
@@ -190,42 +196,15 @@
     "concreteVolumeFck40": "Volume de Concreto Fck40 (m³)",
     "concreteVolumeFck45": "Volume de Concreto Fck45 (m³)",
     "steelConsumption": "Consumo de aço (kg)",
-    "addConstructiveTechnology": "Adicionar Tecnologia Construtiva"
+    "addConstructiveTechnology": "Adicionar Módulo"
   },
-  "moduleTable": {
-    "noItemsFound": "Nenhum item encontrado",
-    "addNewTechnology": "Adicione uma nova tecnologia construtiva no botão acima."
-  },
-  "simulationTable": {
-    "headers": {
-      "name": "Nome",
-      "description": "Descrição",
-      "createdAt": "Criado Em",
-      "updatedAt": "Atualizado Em",
-      "version": "Versão",
-      "isValid": "Versão é válida?",
-      "actions": "Ações"
-    },
-    "updateSimulation": "Atualizar Simulação",
-    "title": "Simulações",
-    "description": "Aqui estão todas as simulações da tecnologia construtiva selecionada.",
-    "addSimulation": "Adicionar Simulação",
-    "saveSimulation": "Salvar Simulação",
-    "noItemsFound": "Nenhuma simulação encontrada",
-    "loading": "Carregando...",
-    "setValidVersion": "Definir versão válida",
-    "selectVersions": "Selecione versões na tabela acima para comparar simulações."
-  },
-  "drawer": {
-    "editUnitTitle": "Editar Unidade de Construção",
-    "unitNameLabel": "Nome da Unidade *",
-    "saveUnitButton": "Salvar Unidade",
-    "addUnitTitle": "Adicionar Unidade de Construção",
-    "addUnitDescription": "Aqui estará uma descrição do que é a unidade de construção, como deve ser usada e quais campos são obrigatórios.",
-    "createUnitButton": "Criar Unidade",
-    "addProjectTitle": "Adicionar Projetos",
-    "editProjectTitle": "Editar Projeto",
+  "drawerFormProject": {
+    "createButton": "Criar Projeto",
+    "addTitle": "Adicionar Projeto",
+    "editTitle": "Editar Projeto",
+    "description": "Aqui terá uma descrição do que é o projeto, como ele deve ser utilizado e quais são os campos obrigatórios.",
     "projectNameLabel": "Nome do Projeto *",
+    "projectNamePlaceholder": "Digite o nome do projeto",
     "cepLabel": "CEP *",
     "cepPlaceholder": "Digite o CEP",
     "stateLabel": "Estado *",
@@ -240,12 +219,59 @@
     "numberPlaceholder": "Digite o número da casa",
     "projectPhaseLabel": "Fase do Projeto *",
     "projectPhasePlaceholder": "Selecione uma fase do projeto",
-    "descriptionLabel": "Descrição",
-    "descriptionPlaceholder": "Digite uma descrição do projeto",
-    "imageLabel": "Imagem do Projeto",
+    "descriptionLabel": "Descrição (opcional)",
+    "descriptionPlaceholder": "Digite uma descrição do projeto (opcional)",
+    "imageLabel": "Imagem do Projeto (opcional)",
     "imagePlaceholder": "Selecione uma imagem do projeto (opcional)",
     "addProjectButton": "Adicionar Projeto",
     "editProjectButton": "Editar Projeto"
+  },
+  "drawerFormUnit": {
+    "createButton": "Criar Unidade de Construção",
+    "addTitle": "Adicionar Unidade de Construção",
+    "editTitle": "Atualizar Unidade de Construção",
+    "description": "Aqui terá uma descrição do que é a unidade de construção, como ela deve ser utilizada e quais são os campos obrigatórios.",
+    "unitNameLabel": "Nome da Unidade de Construção *",
+    "unitNamePlaceholder": "Digite o nome da unidade de construção",
+    "unitTypeLabel": "Tipo de Unidade *",
+    "unitTypePlaceholder": "Selecione um tipo de unidade",
+    "unitTypeOptions": {
+      "tower": "Torre"
+    },
+    "towerForm": {
+      "total_floors": "Total de Andares",
+      "tower_floors": "Andares da Torre",
+      "base_floors": "Andares do Embasamento",
+      "basement_floors": "Andares do Subsolo",
+      "type_floors": "Andares Tipo",
+      "total_area": "Área Total (m²)"
+    },
+    "addUnitButton": "Adicionar Unidade",
+    "editUnitButton": "Atualizar Unidade"
+  },
+  "moduleTable": {
+    "noItemsFound": "Nenhum item encontrado",
+    "addNewTechnology": "Adicione uma nova Módulo no botão acima."
+  },
+  "simulationTable": {
+    "headers": {
+      "name": "Nome",
+      "description": "Descrição",
+      "createdAt": "Criado Em",
+      "updatedAt": "Atualizado Em",
+      "version": "Versão",
+      "isValid": "Versão é válida?",
+      "actions": "Ações"
+    },
+    "updateSimulation": "Atualizar Simulação",
+    "title": "Simulações",
+    "description": "Aqui estão todas as simulações da Módulo selecionada.",
+    "addSimulation": "Adicionar Simulação",
+    "saveSimulation": "Salvar Simulação",
+    "noItemsFound": "Nenhuma simulação encontrada",
+    "loading": "Carregando...",
+    "setValidVersion": "Definir versão válida",
+    "selectVersions": "Selecione versões na tabela acima para comparar simulações."
   },
   "modulesTable": {
     "headers": {

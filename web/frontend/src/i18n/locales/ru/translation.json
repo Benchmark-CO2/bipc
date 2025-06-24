@@ -31,7 +31,12 @@
     },
     "noItemsFound": "Нет элементов",
     "users_one": "Пользователь",
-    "users_other": "Пользователи"
+    "users_other": "Пользователи",
+    "edit": "Редактировать",
+    "delete": "Удалить",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "add": "Добавить"
   },
   "home": {
     "title": "Главная",
@@ -53,11 +58,15 @@
   },
   "projects": {
     "title": "Проекты",
-    "description": "Управляйте своими проектами здесь"
-  },
-  "projectsPage": {
+    "description": "Управляйте своими проектами здесь",
     "addProject": "Добавить проект",
     "noProjects": "У вас нет проектов."
+  },
+  "units": {
+    "title": "Строительные единицы",
+    "description": "Управляйте строительными единицами здесь",
+    "addUnit": "Добавить строительную единицу",
+    "noUnits": "Строительные единицы не найдены"
   },
   "dashboard": {
     "title": "Панель управления",
@@ -94,7 +103,8 @@
   "simulations": {
     "title": "Симуляции",
     "description": "Здесь находятся все симуляции для выбранной строительной технологии.",
-    "addSimulation": "Добавить симуляцию"
+    "addSimulation": "Добавить симуляцию",
+    "noSimulations": "Симуляции не найдены"
   },
   "error": {
     "sessionExpired": "Упс, ваша сессия истекла...",
@@ -117,7 +127,8 @@
     "errorFetchSimulations": "Ошибка при получении симуляций",
     "errorFetchProjectById": "Ошибка при получении проекта по ID",
     "errorFetchZipCode": "Ошибка при получении почтового индекса",
-    "errorEditProject": "Ошибка при редактировании проекта"
+    "errorEditProject": "Ошибка при редактировании проекта",
+    "errorUnknown": "Произошла неизвестная ошибка"
   },
   "warn": {
     "verifyZipCode": "Пожалуйста, проверьте почтовый индекс"
@@ -135,43 +146,6 @@
     "projectCreated": "Проект успешно создан",
     "projectUpdated": "Проект успешно обновлен",
     "projectDeleted": "Проект успешно удален"
-  },
-  "drawer": {
-    "editUnitTitle": "Редактировать строительную единицу",
-    "unitNameLabel": "Название строительной единицы *",
-    "saveUnitButton": "Сохранить единицу",
-    "addUnitTitle": "Добавить строительную единицу",
-    "addUnitDescription": "Здесь будет описание строительной единицы, как она должна использоваться и какие поля обязательны.",
-    "createUnitButton": "Создать единицу",
-    "addProjectTitle": "Добавить проекты",
-    "editProjectTitle": "Редактировать проект",
-    "projectNameLabel": "Название проекта *",
-    "cepLabel": "Почтовый индекс *",
-    "cepPlaceholder": "Введите почтовый индекс",
-    "stateLabel": "Штат *",
-    "statePlaceholder": "Выберите штат",
-    "cityLabel": "Город *",
-    "cityPlaceholder": "Выберите город",
-    "neighborhoodLabel": "Район *",
-    "neighborhoodPlaceholder": "Введите район",
-    "streetLabel": "Улица *",
-    "streetPlaceholder": "Введите название улицы",
-    "numberLabel": "Номер *",
-    "numberPlaceholder": "Введите номер дома",
-    "projectPhaseLabel": "Фаза проекта *",
-    "projectPhasePlaceholder": "Выберите фазу проекта",
-    "descriptionLabel": "Описание",
-    "descriptionPlaceholder": "Введите описание проекта",
-    "imageLabel": "Изображение проекта",
-    "imagePlaceholder": "Выберите изображение проекта (опционально)",
-    "addProjectButton": "Добавить проект",
-    "editProjectButton": "Редактировать проект"
-  },
-  "modalConfirmDeleteUnit": {
-    "title": "Удалить единицу",
-    "description": "Это действие нельзя отменить. Вы уверены, что хотите продолжить?",
-    "cancelButton": "Отмена",
-    "deleteButton": "Удалить"
   },
   "drawerEditModule": {
     "title": "Редактировать строительную технологию",
@@ -229,6 +203,57 @@
     "concreteVolumeFck45": "Объем бетона Fck45 (м³)",
     "steelConsumption": "Потребление стали (кг)",
     "addConstructiveTechnology": "Добавить строительную технологию"
+  },
+  "drawerFormProject": {
+    "createButton": "Создать проект",
+    "addTitle": "Добавить проект",
+    "editTitle": "Редактировать проект",
+    "description": "Здесь будет описание того, что такое проект, как он должен использоваться и какие поля обязательны.",
+    "projectNameLabel": "Название проекта *",
+    "projectNamePlaceholder": "Введите название проекта",
+    "cepLabel": "Почтовый индекс *",
+    "cepPlaceholder": "Введите почтовый индекс",
+    "stateLabel": "Штат *",
+    "statePlaceholder": "Выберите штат",
+    "cityLabel": "Город *",
+    "cityPlaceholder": "Выберите город",
+    "neighborhoodLabel": "Район *",
+    "neighborhoodPlaceholder": "Выберите район",
+    "streetLabel": "Улица *",
+    "streetPlaceholder": "Введите название улицы",
+    "numberLabel": "Номер *",
+    "numberPlaceholder": "Введите номер дома",
+    "projectPhaseLabel": "Фаза проекта *",
+    "projectPhasePlaceholder": "Выберите фазу проекта",
+    "descriptionLabel": "Описание (опционально)",
+    "descriptionPlaceholder": "Введите описание проекта (опционально)",
+    "imageLabel": "Изображение проекта (опционально)",
+    "imagePlaceholder": "Выберите изображение проекта (опционально)",
+    "addProjectButton": "Добавить проект",
+    "editProjectButton": "Редактировать проект"
+  },
+  "drawerFormUnit": {
+    "createButton": "Создать строительную единицу",
+    "addTitle": "Добавить строительную единицу",
+    "editTitle": "Редактировать строительную единицу",
+    "description": "Здесь будет описание того, что такое строительная единица, как она должна использоваться и какие поля обязательны.",
+    "unitNameLabel": "Название строительной единицы *",
+    "unitNamePlaceholder": "Введите название строительной единицы",
+    "unitTypeLabel": "Тип единицы *",
+    "unitTypePlaceholder": "Выберите тип строительной единицы",
+    "unitTypeOptions": {
+      "tower": "Башня"
+    },
+    "towerForm": {
+      "total_floors": "Общее количество этажей",
+      "tower_floors": "Этажи башни",
+      "base_floors": "Базовые этажи",
+      "basement_floors": "Подвальные этажи",
+      "type_floors": "Типовые этажи",
+      "total_area": "Общая площадь (м²)"
+    },
+    "addUnitButton": "Добавить единицу",
+    "editUnitButton": "Обновить единицу"
   },
   "simulationTable": {
     "title": "Симуляции",
