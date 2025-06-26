@@ -216,5 +216,8 @@ production/deploy/api:
 		&& sudo systemctl reload caddy \
 	'
 
+# journalctl -xeu api.service
+# sudo systemctl status api.service
+# ssh -L :9999:68.183.24.32:4000 -i ~/.ssh/id_rsa_bipc bipc@68.183.24.32
 
 
