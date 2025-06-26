@@ -101,7 +101,15 @@
     "confirmPassword": "Confirmar Senha",
     "buttonSignUp": "Cadastrar",
     "buttonHaveAccount": "Já tem uma conta? Faça login",
-    "errorEmailExists": "Email já cadastrado"
+    "errorEmailExists": "Email já cadastrado",
+    "dialog": {
+      "success": {
+        "title": "Cadastro realizado com sucesso",
+        "description": "Você pode acessar sua conta agora.",
+        "content": "Um email de confirmação foi enviado para o seu endereço de email.",
+        "button": "Ir para Login"
+      }
+    }
   },
   "error": {
     "sessionExpired": "Ooops, Sua sessão expirou...",

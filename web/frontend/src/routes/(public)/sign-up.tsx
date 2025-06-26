@@ -8,13 +8,16 @@ import { registerFormSchema, RegisterFormSchema } from '@/validators/registerFor
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 
+import { DialogSuccessSignup } from '@/components/layout/dialogs/dialog-success-signup';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AxiosError } from 'axios';
-import { useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
 const SignUp = () => {
+  const [successModal, setSuccessModal] = useState(false)
   const form = useForm<RegisterFormSchema>({
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
@@ -27,7 +30,7 @@ const SignUp = () => {
   const navigate = useNavigate()
   const { t } = useTranslation()
 
-  const { data, isPending, mutate } = useMutation({
+  const { isPending, mutate } = useMutation({
     mutationFn: register,
     onError: (error: AxiosError) => {
 
@@ -37,7 +40,13 @@ const SignUp = () => {
           message: 'Email já cadastrado',
         })
       }
-    }
+    },
+    onSuccess() {
+      toast.success(t('signUp.dialog.success.title'), {
+        description: t('signUp.dialog.success.content'),
+      })
+      setSuccessModal(true)
+    },
   })
   const handleSubmit = (data: RegisterFormSchema) => {
     const { name, email, password } = data
@@ -48,14 +57,10 @@ const SignUp = () => {
     })
   }
 
-  useEffect(() => {
-    if (data?.status === 201) {
-      navigate({
-        to: '/login',
-        from: '/sign-up',
-      }).then(() => null).catch((err: unknown) => err)
-    }
-  }, [data, navigate])
+  const handleClose = () => {
+    setSuccessModal(false)
+    navigate({ to: '/login', from: '/sign-up' })
+  }
 
   return (
     <div className="w-full h-full flex transition-all justify-center items-center">
@@ -124,6 +129,7 @@ const SignUp = () => {
           </Button>
         </form>
       </Form>
+      {successModal && <DialogSuccessSignup handleClose={handleClose} />}
     </div>
   )
 }

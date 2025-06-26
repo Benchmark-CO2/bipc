@@ -29,14 +29,10 @@ export function LanguageToggle() {
           {t('sidebar.ptbr')}
           {flags['pt-BR'].flag}
         </DropdownMenuItem>
-        {/* <DropdownMenuItem className='flex w-full justify-between cursor-pointer' onClick={() => void handleChangeLanguage('ru-RU')}>
-          {t('sidebar.ru')}
-          {flags['ru-RU'].flag}
-        </DropdownMenuItem>
         <DropdownMenuItem className='flex w-full justify-between cursor-pointer' onClick={() => void handleChangeLanguage('es-ES')}>
           {t('sidebar.es')}
           {flags['es-ES'].flag}
-        </DropdownMenuItem> */}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

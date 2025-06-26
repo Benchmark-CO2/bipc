@@ -99,7 +99,15 @@
     "confirmPassword": "Confirm Password",
     "buttonSignUp": "Sign Up",
     "buttonHaveAccount": "Already have an account? Login",
-    "errorEmailExists": "Email already registered"
+    "errorEmailExists": "Email already registered",
+    "dialog": {
+      "success": {
+        "title": "Registration Successful",
+        "description": "Your account has been created successfully. You can now log in.",
+        "content": "A confirmation email has been sent to your email address.",
+        "button": "Login"
+      }
+    }
   },
   "simulations": {
     "title": "Simulations",
