@@ -195,9 +195,10 @@ const DrawerFormUnit = ({
           </DrawerTitle>
         </DrawerHeader>
         <DrawerDescription className="px-6">
-          {t("drawerFormUnit.description")}
+          {t("drawerFormUnit.description")} <br />
+          {t("drawerFormUnit.example")}
         </DrawerDescription>
-        <div className="mx-auto w-full p-6">
+        <>
           {isLoadingUnitFields ? (
             <div className="flex h-20 w-full items-center justify-center">
               <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
@@ -206,7 +207,7 @@ const DrawerFormUnit = ({
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(handleSubmit)}
-                className="w-full space-y-4"
+                className="flex max-h-[calc(100vh-100px)] flex-col gap-3 overflow-y-auto p-6"
               >
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
@@ -296,7 +297,7 @@ const DrawerFormUnit = ({
               </form>
             </Form>
           )}
-        </div>
+        </>
       </DrawerContent>
     </Drawer>
   );
