@@ -1,13 +1,13 @@
 import { getProjectByUUID } from "@/actions/projects/getProject";
+import { DrawerFormUnit } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import CustomBanner from "@/components/ui/customBanner";
 import NotFoundList from "@/components/ui/not-found-list";
 import { TabsContainer } from "@/components/ui/tabsContainer";
-import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { DrawerFormUnit } from "@/components/layout";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { t } from "i18next";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_private/projects/$projectId")({
   component: RouteComponent,
@@ -109,7 +109,7 @@ function RouteComponent() {
                 projectId={projectId}
                 triggerComponent={
                   <Button variant="outline" className="mt-4">
-                    t("units.addUnit")
+                   {t("units.addUnit")}
                   </Button>
                 }
               />
