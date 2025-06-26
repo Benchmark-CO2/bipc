@@ -1,9 +1,9 @@
 import { IProject } from "@/types/projects";
 import { Edit } from "lucide-react";
-import React, { useState } from "react";
-import ModalConfirmDelete from "../layout/modal-confirm-delete";
-import { DrawerFormProject } from "../layout";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { DrawerFormProject } from "../layout";
+import ModalConfirmDelete from "../layout/modal-confirm-delete";
 
 interface CustomCardProps {
   project: IProject;
@@ -32,6 +32,10 @@ const CustomCard = ({ onClick, project, onDeleteProject }: CustomCardProps) => {
     }
   };
 
+  useEffect(() => {
+    if (!project.image_url) handleImageLoadEnd()
+  },[])
+
   return (
     <div
       data-action="open-project"
@@ -56,13 +60,13 @@ const CustomCard = ({ onClick, project, onDeleteProject }: CustomCardProps) => {
         />
         <div className="max-w-md overflow-hidden rounded-lg">
           {!imageLoaded && <CustomCardSkeleton />}
-          <img
+          {image_url && <img
             data-loaded={imageLoaded}
             src={image_url}
             alt=""
             className="relative h-full min-h-60 w-full overflow-hidden rounded-lg object-cover transition-transform delay-200 duration-500 group-hover:scale-125 data-[loaded=false]:hidden"
             onLoad={handleImageLoadEnd}
-          />
+          />}
         </div>
 
         {/* dark filter */}
