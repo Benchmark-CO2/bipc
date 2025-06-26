@@ -128,7 +128,8 @@
     "errorFetchProjectById": "Error al obtener el proyecto por ID",
     "errorFetchZipCode": "Error al obtener el código postal",
     "errorEditProject": "Error al editar el proyecto",
-    "errorUnknown": "Error desconocido"
+    "errorUnknown": "Error desconocido",
+    "errorUploadFile": "Error al subir el archivo"
   },
   "warn": {
     "verifyZipCode": "Por favor, verifica el código postal"

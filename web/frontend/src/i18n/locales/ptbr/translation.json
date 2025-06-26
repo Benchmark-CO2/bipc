@@ -5,11 +5,11 @@
     "logout": "Sair",
     "constructiveTechnology": "Módulo",
     "projectPhaseOptions": {
-      "preliminaryStudy": "Estudo Preliminar",
+      "preliminary_study": "Estudo Preliminar",
       "draft": "Rascunho",
-      "basicProject": "Projeto Básico",
-      "executiveProject": "Projeto Executivo",
-      "releasedForConstruction": "Liberado para Construção"
+      "basic_project": "Projeto Básico",
+      "executive_project": "Projeto Executivo",
+      "released_for_construction": "Liberado para Construção"
     },
     "structureType": {
       "beamColumn": "Viga Pilar",
@@ -121,7 +121,8 @@
     "errorUpdateSimulation": "Erro ao atualizar simulação",
     "errorFetchZipCode": "Erro ao buscar CEP",
     "errorEditProject": "Erro ao editar projeto",
-    "errorUnknown": "Erro desconhecido"
+    "errorUnknown": "Erro desconhecido",
+    "errorUploadFile": "Erro ao fazer upload do arquivo"
   },
   "warn": {
     "verifyZipCode": "Por favor, verifique o CEP"

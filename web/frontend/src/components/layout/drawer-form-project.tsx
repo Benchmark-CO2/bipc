@@ -1,13 +1,19 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { postProject } from "@/actions/projects/postProject";
+import { getSignedUrl } from '@/actions/files/getSigneedUrl';
+import { postFile } from '@/actions/files/postFile';
 import { patchProject } from "@/actions/projects/patchProject";
-import { IProject } from "@/types/projects";
+import { postProject, PostProjectRequest } from "@/actions/projects/postProject";
 import useCep from "@/hooks/useLocation";
+import { IProject } from "@/types/projects";
 import { masks } from "@/utils/masks";
+import {
+  ProjectFormSchema,
+  projectFormSchema,
+} from "@/validators/projectForm.validador";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -36,10 +42,6 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
-import {
-  ProjectFormSchema,
-  projectFormSchema,
-} from "@/validators/projectForm.validador";
 
 interface IDrawerAddProject {
   componentTrigger: React.ReactNode;
@@ -51,6 +53,7 @@ export default function DrawerFormProject({
   projectData,
 }: IDrawerAddProject) {
   const [openDrawer, setOpenDrawer] = useState(false);
+  const [file, setFile] = useState<File | undefined>(undefined);
 
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -141,13 +144,49 @@ export default function DrawerFormProject({
     },
   });
 
-  const onSubmit = (data: ProjectFormSchema) => {
+  const { data: signedUrlData } = useQuery({
+    queryKey: ["projects", "signed_url"],
+    queryFn: () => getSignedUrl(file?.name!),
+    enabled: !!file,
+    staleTime: 1000 * 60 * 15,
+  })
+
+  const uploadImage = async () => {
+    if (!file || !signedUrlData) return;
+
+    const fileParams = new FormData();
+    Object.keys(signedUrlData.data.form_data).forEach((key) => {
+      fileParams.append(key, signedUrlData.data.form_data[key]);
+    })
+    fileParams.append("file", file);
+
+    const imageUrl = signedUrlData.data.public_url;
+   try {
+     await postFile(signedUrlData.data.url, fileParams)
+   } catch (error) {
+      toast.error(t("error.errorUnknown"), {
+        description: (error as Error).message,
+        duration: 5000,
+      });
+      return;
+   }
+   return imageUrl
+  };
+  const onSubmit = async (data: ProjectFormSchema) => {
+    let imageUrl: string | undefined = undefined;
+    if (file) {
+      imageUrl = await uploadImage();
+    }
     if (isEditMode) {
       mutateUpdate(data);
       return;
     }
-    mutateCreation(data);
+    mutateCreation({...(data as PostProjectRequest), ...(imageUrl ? {image_url: imageUrl} : {}) });
   };
+
+  const handleChangeImage = async (file: File) => {
+    setFile(file);
+  }
 
   useEffect(() => {
     if (openDrawer) {
@@ -459,7 +498,10 @@ export default function DrawerFormProject({
                         accept="image/*"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-                          if (file) onChange(file);
+                          if (file) {
+                            onChange(file);
+                            handleChangeImage(file);
+                          };
                         }}
                         {...rest}
                         value={undefined}
