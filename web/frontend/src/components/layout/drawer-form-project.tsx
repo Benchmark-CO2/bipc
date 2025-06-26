@@ -1,13 +1,19 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import { postProject } from "@/actions/projects/postProject";
+import { getSignedUrl } from '@/actions/files/getSigneedUrl';
+import { postFile } from '@/actions/files/postFile';
 import { patchProject } from "@/actions/projects/patchProject";
-import { IProject } from "@/types/projects";
+import { postProject, PostProjectRequest } from "@/actions/projects/postProject";
 import useCep from "@/hooks/useLocation";
+import { IProject } from "@/types/projects";
 import { masks } from "@/utils/masks";
+import {
+  ProjectFormSchema,
+  projectFormSchema,
+} from "@/validators/projectForm.validador";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -37,10 +43,6 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
-import {
-  ProjectFormSchema,
-  projectFormSchema,
-} from "@/validators/projectForm.validador";
 
 interface IDrawerAddProject {
   componentTrigger: React.ReactNode;
@@ -52,6 +54,7 @@ export default function DrawerFormProject({
   projectData,
 }: IDrawerAddProject) {
   const [openDrawer, setOpenDrawer] = useState(false);
+  const [file, setFile] = useState<File | undefined>(undefined);
 
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -142,13 +145,49 @@ export default function DrawerFormProject({
     },
   });
 
-  const onSubmit = (data: ProjectFormSchema) => {
+  const { data: signedUrlData } = useQuery({
+    queryKey: ["projects", "signed_url"],
+    queryFn: () => getSignedUrl(file?.name!),
+    enabled: !!file,
+    staleTime: 1000 * 60 * 15,
+  })
+
+  const uploadImage = async () => {
+    if (!file || !signedUrlData) return;
+
+    const fileParams = new FormData();
+    Object.keys(signedUrlData.data.form_data).forEach((key) => {
+      fileParams.append(key, signedUrlData.data.form_data[key]);
+    })
+    fileParams.append("file", file);
+
+    const imageUrl = signedUrlData.data.public_url;
+   try {
+     await postFile(signedUrlData.data.url, fileParams)
+   } catch (error) {
+      toast.error(t("error.errorUnknown"), {
+        description: (error as Error).message,
+        duration: 5000,
+      });
+      return;
+   }
+   return imageUrl
+  };
+  const onSubmit = async (data: ProjectFormSchema) => {
+    let imageUrl: string | undefined = undefined;
+    if (file) {
+      imageUrl = await uploadImage();
+    }
     if (isEditMode) {
       mutateUpdate(data);
       return;
     }
-    mutateCreation(data);
+    mutateCreation({...(data as PostProjectRequest), ...(imageUrl ? {image_url: imageUrl} : {}) });
   };
+
+  const handleChangeImage = async (file: File) => {
+    setFile(file);
+  }
 
   useEffect(() => {
     if (openDrawer) {
@@ -341,158 +380,164 @@ export default function DrawerFormProject({
                 </FormItem>
               )}
             />
-            <div className="flex w-full gap-4">
-              <FormField
-                control={form.control}
-                name="street"
-                render={({ field }) => (
-                  <FormItem className="flex-2/3">
-                    <FormLabel>{t("drawerFormProject.streetLabel")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={t("drawerFormProject.streetPlaceholder")}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="number"
-                render={({ field }) => (
-                  <FormItem className="flex-1/3">
-                    <FormLabel>{t("drawerFormProject.numberLabel")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={t("drawerFormProject.numberPlaceholder")}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="phase"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {t("drawerFormProject.projectPhaseLabel")}
-                  </FormLabel>
-                  <FormControl>
-                    <Select
-                      defaultValue=""
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue
-                          placeholder={t(
-                            "drawerFormProject.projectPhasePlaceholder"
-                          )}
+              <div className="flex w-full gap-4">
+                <FormField
+                  control={form.control}
+                  name="street"
+                  render={({ field }) => (
+                    <FormItem className="flex-2/3">
+                      <FormLabel>
+                        {t("drawerFormProject.streetLabel")}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t("drawerFormProject.streetPlaceholder")}
+                          {...field}
                         />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="preliminary_study">
-                          {t("common.projectPhaseOptions.preliminary_study")}
-                        </SelectItem>
-                        <SelectItem value="draft">
-                          {t("common.projectPhaseOptions.draft")}
-                        </SelectItem>
-                        <SelectItem value="basic_project">
-                          {t("common.projectPhaseOptions.basic_project")}
-                        </SelectItem>
-                        <SelectItem value="executive_project">
-                          {t("common.projectPhaseOptions.executive_project")}
-                        </SelectItem>
-                        <SelectItem value="released_for_construction">
-                          {t(
-                            "common.projectPhaseOptions.released_for_construction"
-                          )}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {t("drawerFormProject.descriptionLabel")}
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder={t(
-                        "drawerFormProject.descriptionPlaceholder"
-                      )}
-                      minLength={10}
-                      maxLength={200}
-                      rows={4}
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="image_url"
-              render={({ field: { onChange, ...rest } }) => (
-                <FormItem>
-                  <FormLabel>{t("drawerFormProject.imageLabel")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t("drawerFormProject.imagePlaceholder")}
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) onChange(file);
-                      }}
-                      {...rest}
-                      value={undefined}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {isEditMode ? (
-              <Button
-                disabled={isUpdatePending || isUpdateSuccess}
-                type="submit"
-                variant="noStyles"
-                className="mt-6"
-              >
-                {t("drawerFormProject.editProjectButton")}
-                {isUpdatePending && (
-                  <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="number"
+                  render={({ field }) => (
+                    <FormItem className="flex-1/3">
+                      <FormLabel>
+                        {t("drawerFormProject.numberLabel")}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t("drawerFormProject.numberPlaceholder")}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={form.control}
+                name="phase"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("drawerFormProject.projectPhaseLabel")}
+                    </FormLabel>
+                    <FormControl>
+                      <Select
+                        defaultValue=""
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue
+                            placeholder={t(
+                              "drawerFormProject.projectPhasePlaceholder"
+                            )}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="preliminary_study">
+                            {t("common.projectPhaseOptions.preliminary_study")}
+                          </SelectItem>
+                          <SelectItem value="draft">
+                            {t("common.projectPhaseOptions.draft")}
+                          </SelectItem>
+                          <SelectItem value="basic_project">
+                            {t("common.projectPhaseOptions.basic_project")}
+                          </SelectItem>
+                          <SelectItem value="executive_project">
+                            {t("common.projectPhaseOptions.executive_project")}
+                          </SelectItem>
+                          <SelectItem value="released_for_construction">
+                            {t(
+                              "common.projectPhaseOptions.released_for_construction"
+                            )}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </Button>
-            ) : (
-              <Button
-                disabled={isCreationPending || isCreationSuccess}
-                type="submit"
-                variant="noStyles"
-                className="mt-6"
-              >
-                {t("drawerFormProject.addProjectButton")}
-                {isCreationPending && (
-                  <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("drawerFormProject.descriptionLabel")}
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={t(
+                          "drawerFormProject.descriptionPlaceholder"
+                        )}
+                        minLength={10}
+                        maxLength={200}
+                        rows={4}
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </Button>
-            )}
+              />
+              <FormField
+                control={form.control}
+                name="image_url"
+                render={({ field: { onChange, ...rest } }) => (
+                  <FormItem>
+                    <FormLabel>{t("drawerFormProject.imageLabel")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t("drawerFormProject.imagePlaceholder")}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            onChange(file);
+                            handleChangeImage(file);
+                          };
+                        }}
+                        {...rest}
+                        value={undefined}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {isEditMode ? (
+                <Button
+                  disabled={isUpdatePending || isUpdateSuccess}
+                  type="submit"
+                  className="mt-6"
+                >
+                  {t("drawerFormProject.editProjectButton")}
+                  {isUpdatePending && (
+                    <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  disabled={isCreationPending || isCreationSuccess}
+                  type="submit"
+                  className="mt-6"
+                >
+                  {t("drawerFormProject.addProjectButton")}
+                  {isCreationPending && (
+                    <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                  )}
+                </Button>
+              )}
+           
           </form>
         </Form>
       </DrawerContent>

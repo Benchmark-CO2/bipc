@@ -129,7 +129,8 @@
     "errorFetchProjectById": "Error fetching project by ID",
     "errorFetchZipCode": "Error fetching ZIP code",
     "errorEditProject": "Error editing project",
-    "errorUnknown": "An unknown error occurred"
+    "errorUnknown": "An unknown error occurred",
+    "errorUploadFile": "Error uploading file"
   },
   "warn": {
     "verifyZipCode": "Please verify the ZIP code"

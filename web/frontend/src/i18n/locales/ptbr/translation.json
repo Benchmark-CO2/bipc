@@ -121,7 +121,8 @@
     "errorUpdateSimulation": "Erro ao atualizar simulação",
     "errorFetchZipCode": "Erro ao buscar CEP",
     "errorEditProject": "Erro ao editar projeto",
-    "errorUnknown": "Erro desconhecido"
+    "errorUnknown": "Erro desconhecido",
+    "errorUploadFile": "Erro ao fazer upload do arquivo"
   },
   "warn": {
     "verifyZipCode": "Por favor, verifique o CEP"
