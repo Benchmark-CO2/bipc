@@ -45,9 +45,9 @@ func (app *application) presignedURLHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	for k, v := range formData {
-		fmt.Printf("%s:%s\n", k, v)
-	}
+	// for k, v := range formData {
+	// 	fmt.Printf("%s:%s\n", k, v)
+	// }
 
 	var host string
 	if app.config.env == "development" {
