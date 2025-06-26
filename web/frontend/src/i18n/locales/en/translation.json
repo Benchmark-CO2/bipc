@@ -319,5 +319,27 @@
       "description": "Description",
       "ID": "ID"
     }
+  },
+  "drawerInvite": {
+    "title": "Invite User",
+    "description": "Invite a user to the project by entering their email and selecting permissions.",
+    "emailLabel": "Email *",
+    "emailPlaceholder": "Enter the user's email",
+    "projectsLabel": "Projects *",
+    "projectsPlaceholder": "Select a project",
+    "permissionsLabel": "Permissions *",
+    "viewPermission": "View",
+    "editPermission": "Edit",
+    "inviteButton": "Invite",
+    "successMessage": "User invited successfully!",
+    "errorMessage": "Error inviting user"
+  },
+  "forms": {
+    "requiredField": "This field is required",
+    "invalidEmail": "Please enter a valid email address",
+    "minLength": "Minimum length is {min} characters",
+    "maxLength": "Maximum length is {max} characters",
+    "selectOption": "Please select an option",
+    "selectMinimumOnePermission": "Please select at least one permission"
   }
 }

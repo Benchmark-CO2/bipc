@@ -308,5 +308,27 @@
       "description": "Descrição",
       "ID": "ID"
     }
+  },
+  "drawerInvite": {
+    "title": "Convidar Usuário",
+    "description": "Preencha os detalhes abaixo para convidar um novo usuário.",
+    "emailLabel": "Email do Usuário *",
+    "emailPlaceholder": "Digite o email do usuário",
+    "projectsLabel": "Projetos *",
+    "projectsPlaceholder": "Selecione um projeto",
+    "permissionsLabel": "Permissões *",
+    "viewPermission": "Visualizar",
+    "editPermission": "Editar",
+    "inviteButton": "Convidar",
+    "successMessage": "Usuário convidado com sucesso!",
+    "errorMessage": "Erro ao convidar usuário. Tente novamente."
+  },
+  "forms": {
+    "requiredField": "Campo obrigatório",
+    "invalidEmail": "Email inválido",
+    "minLength": "Mínimo de {min} caracteres",
+    "maxLength": "Máximo de {max} caracteres",
+    "selectOption": "Selecione uma opção",
+    "selectMinimumOnePermission": "Selecione pelo menos uma permissão"
   }
 }

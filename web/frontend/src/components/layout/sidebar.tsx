@@ -5,6 +5,7 @@ import { LanguageToggle } from '../language-toggle';
 import { ModeToggle } from '../mode-toggle';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Button } from '../ui/button';
+import DrawerInvite from './drawer-invite';
 
 interface ISidebar {
   handleLogout: () => void
@@ -37,6 +38,11 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           <Link to='/projects' className='hover:text-gray-400' activeProps={activeProps}>
             {t('projects.title')}
           </Link>
+          <ul className='mt-2 flex flex-col gap-1 pl-4'>
+            <li className='hover:text-gray-400'>
+              <DrawerInvite  />
+            </li>
+          </ul>
         </li>
         <li className='mt-auto'>
           <div className='flex items-center justify-between'>
