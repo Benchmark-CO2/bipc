@@ -1,0 +1,8 @@
+{
+  email bruno.souza.avelino2@gmail.com
+}
+
+bip.software {
+  respond /v1/metrics "Not Permitted" 403
+  reverse_proxy localhost:4000
+}

@@ -15,7 +15,7 @@ func (app *application) routes() http.Handler {
 	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
 	router.NotFound = app.notFound(http.FileServer(http.FS(web.DistFs)))
 
-	router.Handler(http.MethodGet, "/v1/metrics", expvar.Handler()) // restrict access
+	router.Handler(http.MethodGet, "/v1/metrics", expvar.Handler())
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/presigned-urls", app.presignedURLHandler)
 
