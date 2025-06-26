@@ -135,9 +135,9 @@ export default function DrawerEditModule({
                           <SelectValue placeholder={t('drawerEditModule.buildingTypePlaceholder')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value='Residencial'>Residencial</SelectItem>
-                          <SelectItem value='Misto'>Misto</SelectItem>
-                          <SelectItem value='Corporativo'>Corporativo</SelectItem>
+                          <SelectItem value='residential'>Residencial</SelectItem>
+                          <SelectItem value='mixed'>Misto</SelectItem>
+                          <SelectItem value='corporate'>Corporativo</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>
