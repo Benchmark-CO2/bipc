@@ -3,6 +3,8 @@ import { postAddUserToProject } from '@/actions/projects/postAddUserToProject';
 import { AddUserToProjectFormSchema } from '@/validators/addUserToProject.validator';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { CircleX } from 'lucide-react';
+import { useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -17,6 +19,8 @@ const permissionsOptions: Array<{ value: string; label: 'drawerInvite.viewPermis
   { value: 'project:edit', label: 'drawerInvite.editPermission' }
 ];
 const DrawerInvite = () => {
+  const ref = useRef<HTMLButtonElement>(null);
+
   const { t } = useTranslation();
   const form = useForm({
     resolver: zodResolver(AddUserToProjectFormSchema),
@@ -32,20 +36,21 @@ const DrawerInvite = () => {
     queryFn: getAllProjectsByUser
   })
 
-  const { mutate, isError } = useMutation({
+  const { mutate } = useMutation({
     mutationFn: ({projectId, email, permissions}: AddUserToProjectFormSchema) => postAddUserToProject(projectId, email, permissions),
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast.success(t("drawerInvite.title"), {
         description: t("drawerInvite.successMessage"),
         duration: 5000,
       });
       form.reset();
+      ref.current?.click()
     },
-    onError: (error: any) => {
-      console.error('Error inviting user:', error);
+    onError: () => {
       toast.error(t("drawerInvite.title"), {
         description: t("drawerInvite.errorMessage"),
         duration: 5000,
+        icon: <CircleX className='stroke-destructive' size={24} />
       });
     } 
   })
@@ -55,19 +60,11 @@ const DrawerInvite = () => {
     mutate({ projectId, email, permissions });
   }
  
-  // useEffect(() => {
-  //   if (isError) {
-  //     toast.error(t("error.errorFetchZipCode"), {
-  //       description: t("warn.verifyZipCode"),
-  //       duration: 5000,
-  //     });
-  //   }
-  // }, [isError]);
   return (
     <Drawer
        direction="right"
     >
-      <DrawerTrigger>
+      <DrawerTrigger ref={ref}>
         <button className="btn btn-primary cursor-pointer">{t('drawerInvite.title')}</button>
       </DrawerTrigger>
        <DrawerContent className='min-w-2/5'>

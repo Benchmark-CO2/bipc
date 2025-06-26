@@ -98,7 +98,15 @@
     "confirmPassword": "Confirmar Contraseña",
     "buttonSignUp": "Registrarse",
     "buttonHaveAccount": "¿Ya tienes una cuenta? Inicia sesión",
-    "errorEmailExists": "Correo electrónico ya registrado"
+    "errorEmailExists": "Correo electrónico ya registrado",
+    "dialog": {
+      "sucess": {
+        "title": "Registro exitoso",
+        "description": "Tu cuenta ha sido creada exitosamente. Ahora puedes iniciar sesión.",
+        "content": "Se ha enviado un correo electrónico de confirmación a tu dirección de correo electrónico.",
+        "button": "Iniciar Sesión"
+      }
+    }
   },
   "simulations": {
     "title": "Simulaciones",
