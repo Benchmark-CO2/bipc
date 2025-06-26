@@ -175,14 +175,37 @@ export default function DrawerFormProject({
   };
   const onSubmit = async (data: ProjectFormSchema) => {
     let imageUrl: string | undefined = undefined;
+    const copyData: PostProjectRequest = {
+      name: data.name,
+      description: data.description,
+      state: data.state,
+      city: data.city,
+      neighborhood: data.neighborhood,
+      cep: data.cep,
+      phase: data.phase,
+      street: data.street,
+      number: data.number,
+      image_url: undefined
+    }
     if (file) {
       imageUrl = await uploadImage();
     }
     if (isEditMode) {
-      mutateUpdate(data);
+      if (imageUrl) {
+        copyData.image_url = imageUrl;
+      } else {
+        delete copyData.image_url;
+      }
+      mutateUpdate(copyData as ProjectFormSchema);
       return;
     }
-    mutateCreation({...(data as PostProjectRequest), ...(imageUrl ? {image_url: imageUrl} : {}) });
+
+    if (imageUrl) {
+      copyData.image_url = imageUrl;
+    } else {
+      delete copyData.image_url;
+    }
+    mutateCreation(copyData as PostProjectRequest);
   };
 
   const handleChangeImage = async (file: File) => {
