@@ -334,9 +334,20 @@
   "forms": {
     "requiredField": "Campo obrigatório",
     "invalidEmail": "Email inválido",
-    "minLength": "Mínimo de {min} caracteres",
-    "maxLength": "Máximo de {max} caracteres",
+    "minLength": "Mínimo de {{min}} caracteres",
+    "maxLength": "Máximo de {{max}} caracteres",
     "selectOption": "Selecione uma opção",
-    "selectMinimumOnePermission": "Selecione pelo menos uma permissão"
+    "selectMinimumOnePermission": "Selecione pelo menos uma permissão",
+    "customRequiredField": "{{field}} é obrigatório",
+    "passwordMinLength": "Senha deve ter pelo menos {{min}} caracteres",
+    "fullNameRequired": "Por favor, insira seu nome completo",
+    "passwordsDoNotMatch": "As senhas não coincidem",
+    "emailAlreadyExists": "Email já cadastrado",
+    "fields": {
+      "name": "Nome",
+      "email": "Email",
+      "password": "Senha",
+      "confirmPassword": "Confirmar Senha"
+    }
   }
 }
