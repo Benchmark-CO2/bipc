@@ -345,9 +345,20 @@
   "forms": {
     "requiredField": "This field is required",
     "invalidEmail": "Please enter a valid email address",
-    "minLength": "Minimum length is {min} characters",
-    "maxLength": "Maximum length is {max} characters",
+    "minLength": "Minimum length is {{min}} characters",
+    "maxLength": "Maximum length is {{max}} characters",
     "selectOption": "Please select an option",
-    "selectMinimumOnePermission": "Please select at least one permission"
+    "selectMinimumOnePermission": "Please select at least one permission",
+    "customRequiredField": "{{field}} is required",
+    "passwordMinLength": "Password must be at least {{min}} characters",
+    "fullNameRequired": "Please enter your full name",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "emailAlreadyExists": "Email already registered",
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password"	
+    }
   }
 }

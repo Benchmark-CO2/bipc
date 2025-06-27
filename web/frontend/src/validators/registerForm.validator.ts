@@ -1,27 +1,30 @@
+import { t } from 'i18next';
 import { z } from 'zod';
 
 export const registerFormSchema = z.object({
   name: z
     .string()
-    .min(1, { message: 'Nome  é obrigatório' })
-    .regex(/^[a-zA-Z]+ [a-zA-Z]+$/, { message: 'Please enter your full name' }),
+    .min(1, { message: t('forms.customRequiredField', { field: t('forms.fields.name') }) })
+    .regex(/^[A-Za-zÀ-ÿ]+( [A-Za-zÀ-ÿ]+)+$/, { message: t('forms.fullNameRequired') }),
   email: z
     .string()
-    .min(1, { message: 'Email  é obrigatório' })
-    .email({ message: 'Invalid email address' }),
+    .min(1, { message: t('forms.customRequiredField', {
+      field: t('forms.fields.email')
+    }) })
+    .email({ message: t('forms.invalidEmail') }),
   password: z
     .string()
-    .min(1, { message: 'Senha é obrigatória' })
-    .min(8, { message: 'Senha precisa ter mais que 8 caracteres' }),
+    .min(1, { message: t('forms.customRequiredField', { field: t('forms.fields.password') }) })
+    .min(8, { message: t('forms.passwordMinLength', { min: 8 }) }),
   confirmPassword: z
     .string()
-    .min(1, { message: 'Confirmação de senha  é obrigatória' })
+    .min(1, { message: t('forms.customRequiredField', { field: t('forms.fields.confirmPassword') }) })
 }).superRefine((data, ctx) => {
   const { password, confirmPassword } = data;
   if (password !== confirmPassword) {
     ctx.addIssue({
       code: 'custom',
-      message: 'Senhas não coincidem',
+      message: t('forms.passwordsDoNotMatch'),
       path: ['confirmPassword']
     })
   }
