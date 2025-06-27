@@ -232,3 +232,53 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 
 	return &user, nil
 }
+
+func (m UserModel) Suggest(userID int64) ([]*User, error) {
+	query := `
+		SELECT users.id, users.created_at, users.name, users.email, users.activated, users.image_url
+		FROM users
+		INNER JOIN (
+			SELECT DISTINCT user_id
+			FROM users_projects_permissions
+ 			WHERE project_id IN (
+    			SELECT DISTINCT project_id
+    			FROM users_projects_permissions
+   				WHERE user_id = $1
+			)
+			AND user_id <> $1
+		) colaborators ON users.id = colaborators.user_id`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*User
+
+	for rows.Next() {
+		var user User
+
+		err := rows.Scan(
+			&user.ID,
+			&user.CreatedAt,
+			&user.Name,
+			&user.Email,
+			&user.Activated,
+			&user.ImageURL,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		users = append(users, &user)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}

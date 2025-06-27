@@ -123,7 +123,7 @@ run/help:
 ## run/api: run the cmd/api application
 .PHONY: run/api
 run/api:
-	go run ./cmd/api -limiter-enabled=false -db-dsn=$(DB_DSN) \
+	go run ./cmd/api -port=4000 -env=development -db-dsn=$(DB_DSN) -limiter-enabled=false \
 	-smtp-host=$(SMTP_HOST) -smtp-port=$(SMTP_PORT) -smtp-username=$(SMTP_USERNAME) -smtp-password=$(SMTP_PASSWORD) -smtp-sender=$(SMTP_SENDER) \
 	-s3-endpoint=$(S3_ENDPOINT) -s3-access-key=$(S3_ACCESS_KEY) -s3-secret-key=$(S3_SECRET_KEY) -s3-secure=$(S3_SECURE) -s3-region=$(S3_REGION) -s3-bucket=$(S3_BUCKET) -s3-base-url=$(S3_BASE_URL)
 
@@ -196,8 +196,6 @@ production_host_ip = 68.183.24.32
 production/connect:
 	ssh -i ~/.ssh/id_rsa_bipc bipc@$(production_host_ip)
 
-# ssh -L :9999:68.183.24.32:4000 -i ~/.ssh/id_rsa_bipc bipc@68.183.24.32
-
 ## production/deploy/api: deploy the api to production
 .PHONY: production/deploy/api
 production/deploy/api:
@@ -218,6 +216,6 @@ production/deploy/api:
 
 # journalctl -xeu api.service
 # sudo systemctl status api.service
-# ssh -L :9999:68.183.24.32:4000 -i ~/.ssh/id_rsa_bipc bipc@68.183.24.32
+# ssh -L :9999:$(production_host_ip):4000 -i ~/.ssh/id_rsa_bipc bipc@$(production_host_ip)
 
 
