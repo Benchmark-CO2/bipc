@@ -93,6 +93,33 @@
     "buttonLogin": "Login",
     "buttonRegister": "Cadastrar"
   },
+  "activateUser": {
+    "noToken": {
+      "title": "",
+      "description": "",
+      "goToLogin": ""
+    },
+    "activated": {
+      "title": "",
+      "description": "",
+      "goToLogin": ""
+    },
+    "error": {
+      "title": "",
+      "description": "",
+      "retry": "",
+      "support": ""
+    },
+    "loading": {
+      "title": "",
+      "description": ""
+    },
+    "confirm": {
+      "title": "",
+      "description": "",
+      "confirmAction": ""
+    }
+  },
   "signUp": {
     "title": "CADASTRO",
     "name": "Nome",
