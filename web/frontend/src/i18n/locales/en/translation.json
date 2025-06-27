@@ -91,6 +91,33 @@
     "buttonLogin": "Login",
     "buttonRegister": "Register"
   },
+  "activateUser": {
+    "invalid": {
+      "title": "Invalid Link",
+      "description": "The activation link is invalid or has expired. Please request a new confirmation email.",
+      "goToLogin": "Go to Login"
+    },
+    "success": {
+      "title": "Account Activated!",
+      "description": "Your account has been successfully activated. You can now log in and start using our platform.",
+      "goToLogin": "Log In"
+    },
+    "error": {
+      "title": "Activation Error",
+      "description": "Unable to activate your account. Please try again or contact support.",
+      "retry": "Try Again",
+      "support": "Contact Support"
+    },
+    "loading": {
+      "title": "Activating Account...",
+      "description": "Please wait while we process your account activation."
+    },
+    "confirm": {
+      "title": "Confirm Registration",
+      "description": "Click the button below to activate your account and start using our platform.",
+      "confirmAction": "Confirm"
+    }
+  },
   "signUp": {
     "title": "SIGN UP",
     "name": "Name",
@@ -358,7 +385,7 @@
       "name": "Name",
       "email": "Email",
       "password": "Password",
-      "confirmPassword": "Confirm Password"	
+      "confirmPassword": "Confirm Password"
     }
   }
 }
