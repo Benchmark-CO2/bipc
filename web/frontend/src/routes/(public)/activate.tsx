@@ -16,7 +16,7 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { CheckCircle, Loader2, Mail, XCircle } from "lucide-react";
-import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 type ActivateSearch = {
   tkn?: string;
@@ -33,15 +33,11 @@ export const Route = createFileRoute("/(public)/activate")({
 
 function RouteComponent() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { tkn: token } = useSearch({ from: "/(public)/activate" });
 
   const activationMutation = useMutation({
     mutationFn: putActivateUser,
-    onSuccess: () => {
-      toast.success("Conta ativada", {
-        description: "Vá ao login e acesse nossa plataforma",
-      });
-    },
   });
 
   const handleActivateAccount = () => {
@@ -65,15 +61,16 @@ function RouteComponent() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
               <XCircle className="h-6 w-6 text-red-600" />
             </div>
-            <CardTitle className="text-xl">Link Inválido</CardTitle>
+            <CardTitle className="text-xl">
+              {t("activateUser.invalid.title")}
+            </CardTitle>
             <CardDescription>
-              O link de ativação é inválido ou expirou. Solicite um novo email
-              de confirmação.
+              {t("activateUser.invalid.description")}
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
             <Button variant="outline" onClick={handleNavigateToLogin}>
-              Voltar ao Login
+              {t("activateUser.invalid.goToLogin")}
             </Button>
           </CardFooter>
         </Card>
@@ -89,14 +86,17 @@ function RouteComponent() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
-            <CardTitle className="text-xl">Conta Ativada!</CardTitle>
+            <CardTitle className="text-xl">
+              {t("activateUser.success.title")}
+            </CardTitle>
             <CardDescription>
-              Sua conta foi ativada com sucesso. Agora você pode fazer login e
-              começar a usar nossa plataforma.
+              {t("activateUser.success.description")}
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
-            <Button onClick={handleNavigateToLogin}>Fazer Login</Button>
+            <Button onClick={handleNavigateToLogin}>
+              {t("activateUser.success.goToLogin")}
+            </Button>
           </CardFooter>
         </Card>
       </div>
@@ -111,25 +111,26 @@ function RouteComponent() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
               <XCircle className="h-6 w-6 text-red-600" />
             </div>
-            <CardTitle className="text-xl">Erro na Ativação</CardTitle>
+            <CardTitle className="text-xl">
+              {t("activateUser.error.title")}
+            </CardTitle>
             <CardDescription>
-              Não foi possível ativar sua conta. Tente novamente ou entre em
-              contato com o suporte.
+              {t("activateUser.error.description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Alert variant="destructive">
               <AlertDescription>
-                {activationMutation.error?.message || "Erro desconhecido"}
+                {activationMutation.error?.message || t("error.errorUnknown")}
               </AlertDescription>
             </Alert>
           </CardContent>
           <CardFooter className="flex gap-2 justify-center">
             <Button variant="outline" onClick={handleTryAgain}>
-              Tentar Novamente
+              {t("activateUser.error.retry")}
             </Button>
             {/* <Button variant="outline" onClick={handleNavigateToContact}>
-              Contatar Suporte
+              {t("activateUser.error.support")}
             </Button> */}
           </CardFooter>
         </Card>
@@ -145,9 +146,11 @@ function RouteComponent() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
               <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
             </div>
-            <CardTitle className="text-xl">Ativando Conta...</CardTitle>
+            <CardTitle className="text-xl">
+              {t("activateUser.loading.title")}
+            </CardTitle>
             <CardDescription>
-              Aguarde enquanto processamos a ativação da sua conta.
+              {t("activateUser.loading.description")}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -162,15 +165,16 @@ function RouteComponent() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
             <Mail className="h-6 w-6 text-blue-600" />
           </div>
-          <CardTitle className="text-xl">Confirmar Cadastro</CardTitle>
+          <CardTitle className="text-xl">
+            {t("activateUser.confirm.title")}
+          </CardTitle>
           <CardDescription>
-            Clique no botão abaixo para ativar sua conta e começar a usar nossa
-            plataforma.
+            {t("activateUser.confirm.description")}
           </CardDescription>
         </CardHeader>
         <CardFooter className="flex justify-center">
           <Button onClick={handleActivateAccount} size="lg">
-            Confirmar Cadastro
+            {t("activateUser.confirm.confirmAction")}
           </Button>
         </CardFooter>
       </Card>
