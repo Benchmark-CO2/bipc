@@ -94,30 +94,30 @@
     "buttonRegister": "Cadastrar"
   },
   "activateUser": {
-    "noToken": {
-      "title": "",
-      "description": "",
-      "goToLogin": ""
+    "invalid": {
+      "title": "Link Inválido",
+      "description": "O link de ativação é inválido ou expirou. Solicite um novo email de confirmação.",
+      "goToLogin": "Voltar ao Login"
     },
-    "activated": {
-      "title": "",
-      "description": "",
-      "goToLogin": ""
+    "success": {
+      "title": "Conta Ativada!",
+      "description": "Sua conta foi ativada com sucesso. Agora você pode fazer login e começar a usar nossa plataforma.",
+      "goToLogin": "Fazer Login"
     },
     "error": {
-      "title": "",
-      "description": "",
-      "retry": "",
-      "support": ""
+      "title": "Erro na Ativação",
+      "description": "Não foi possível ativar sua conta. Tente novamente ou entre em contato com o suporte.",
+      "retry": "Tentar Novamente",
+      "support": "Contatar Suporte"
     },
     "loading": {
-      "title": "",
-      "description": ""
+      "title": "Ativando Conta...",
+      "description": "Aguarde enquanto processamos a ativação da sua conta."
     },
     "confirm": {
-      "title": "",
-      "description": "",
-      "confirmAction": ""
+      "title": "Confirmar Cadastro",
+      "description": "Clique no botão abaixo para ativar sua conta e começar a usar nossa plataforma.",
+      "confirmAction": "Confirmar"
     }
   },
   "signUp": {

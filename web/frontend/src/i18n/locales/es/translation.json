@@ -90,6 +90,33 @@
     "buttonLogin": "Iniciar Sesión",
     "buttonRegister": "Registrarse"
   },
+  "activateUser": {
+    "invalid": {
+      "title": "Enlace Inválido",
+      "description": "El enlace de activación es inválido o ha expirado. Solicita un nuevo correo electrónico de confirmación.",
+      "goToLogin": "Volver al Inicio de Sesión"
+    },
+    "success": {
+      "title": "¡Cuenta Activada!",
+      "description": "Tu cuenta ha sido activada exitosamente. Ahora puedes iniciar sesión y comenzar a usar nuestra plataforma.",
+      "goToLogin": "Iniciar Sesión"
+    },
+    "error": {
+      "title": "Error en la Activación",
+      "description": "No fue posible activar tu cuenta. Inténtalo nuevamente o contacta con el soporte.",
+      "retry": "Intentar Nuevamente",
+      "support": "Contactar Soporte"
+    },
+    "loading": {
+      "title": "Activando Cuenta...",
+      "description": "Espera mientras procesamos la activación de tu cuenta."
+    },
+    "confirm": {
+      "title": "Confirmar Registro",
+      "description": "Haz clic en el botón de abajo para activar tu cuenta y comenzar a usar nuestra plataforma.",
+      "confirmAction": "Confirmar"
+    }
+  },
   "signUp": {
     "title": "REGISTRARSE",
     "name": "Nombre",
