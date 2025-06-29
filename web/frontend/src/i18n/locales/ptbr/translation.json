@@ -26,6 +26,11 @@
       "projects": "Projetos",
       "simulations": "Simulações"
     },
+    "activeUserWarning": {
+      "title": "Usuário não ativo",
+      "description": "Verifique seu e-mail para continuar usando o sistema. Se não recebeu, confira sua caixa de spam ou",
+      "button": "solicite um novo acesso."
+    },
     "noItemsFound": "Nenhum item encontrado",
     "users_one": "Usuário",
     "users_other": "Usuários",

@@ -29,6 +29,11 @@
       "settings": "Configuraciones",
       "dashboard": "Tablero"
     },
+    "activeUserWarning": {
+      "title": "Usuario no activo",
+      "description": "Verifica tu correo electrónico para continuar usando el sistema. Si no lo recibiste, revisa tu carpeta de spam o",
+      "button": "solicita un nuevo acceso."
+    },
     "noItemsFound": "No se encontraron elementos",
     "users_one": "Usuario",
     "users_other": "Usuarios",

@@ -29,6 +29,11 @@
       "settings": "Settings",
       "dashboard": "Dashboard"
     },
+    "activeUserWarning": {
+      "title": "User not active",
+      "description": "Check your email to continue using the system. If you didn't receive it, check your spam folder or",
+      "button": "request new access."
+    },
     "noItemsFound": "No items found",
     "users_one": "User",
     "users_other": "Users",
