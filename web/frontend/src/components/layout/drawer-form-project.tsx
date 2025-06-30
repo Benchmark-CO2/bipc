@@ -46,6 +46,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
+import { X } from "lucide-react";
 
 interface IDrawerAddProject {
   componentTrigger: React.ReactNode;
@@ -276,11 +277,7 @@ export default function DrawerFormProject({
   }, [isError, form]);
 
   return (
-    <Drawer
-      direction="right"
-      onClose={() => setOpenDrawer(false)}
-      open={openDrawer}
-    >
+    <Drawer direction="right" open={openDrawer} dismissible={false}>
       <DrawerTrigger
         asChild
         onClick={(e) => {
@@ -291,19 +288,26 @@ export default function DrawerFormProject({
         {componentTrigger}
       </DrawerTrigger>
       <DrawerContent className="min-w-2/5">
-        <DrawerHeader className="px-6">
+        <DrawerHeader className="px-8">
           <DrawerTitle>
             {isEditMode
               ? t("drawerFormProject.editTitle")
               : t("drawerFormProject.addTitle")}
           </DrawerTitle>
+          <Button
+            onClick={() => setOpenDrawer(false)}
+            className="absolute right-4 top-2"
+            variant="ghost"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </DrawerHeader>
-        <DrawerDescription className="px-6">
+        <DrawerDescription className="px-8">
           {t("drawerFormProject.description")}
         </DrawerDescription>
         <Form {...form}>
           <form
-            className="flex max-h-[calc(100vh-100px)] flex-col gap-3 overflow-y-auto p-6"
+            className="flex max-h-[calc(100vh-100px)] flex-col gap-3 overflow-y-auto p-8"
             onSubmit={form.handleSubmit(onSubmit)}
           >
             <FormField

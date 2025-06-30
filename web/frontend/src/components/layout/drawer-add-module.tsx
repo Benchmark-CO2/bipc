@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { X } from "lucide-react";
 
 interface IDrawerAddProject {
   componentTrigger: React.ReactNode;
@@ -71,26 +72,38 @@ export default function DrawerAddModule({
   }, [curModule, form, t]);
 
   return (
-    <Drawer direction="right" open={isOpen} onOpenChange={setIsOpen}>
+    <Drawer
+      direction="right"
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      dismissible={false}
+    >
       <DrawerTrigger asChild>
         <div onClick={() => setIsOpen(true)}>{componentTrigger}</div>
       </DrawerTrigger>
       <DrawerContent className="min-w-2/5">
-        <DrawerHeader className="px-6">
+        <DrawerHeader className="px-8">
           <DrawerTitle>
             {context === "simulation"
               ? t("simulations.addSimulation")
               : t("common.constructiveTechnology")}
           </DrawerTitle>
+          <Button
+            onClick={() => setIsOpen(false)}
+            className="absolute right-4 top-2"
+            variant="ghost"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </DrawerHeader>
-        <DrawerDescription className="px-6">
+        <DrawerDescription className="px-8">
           {t("drawerAddModule.description")}
         </DrawerDescription>
         <Form {...form}>
           {/* Botão de Enviar */}
 
           <form
-            className="flex max-h-[calc(100vh-100px)] flex-col gap-3 overflow-y-auto p-6"
+            className="flex max-h-[calc(100vh-100px)] flex-col gap-3 overflow-y-auto p-8"
             onSubmit={form.handleSubmit(onSubmit)}
           >
             <div className="flex items-center justify-center">

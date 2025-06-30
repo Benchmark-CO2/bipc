@@ -3,7 +3,7 @@ import {
   unitFormSchema,
 } from "@/validators/unitForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Button } from "../../ui/button";
 import {
@@ -178,6 +178,7 @@ const DrawerFormUnit = ({
       open={isOpen}
       onOpenChange={setIsOpen}
       onClose={handleClose}
+      dismissible={false}
     >
       <DrawerTrigger asChild>
         {triggerComponent ?? (
@@ -187,14 +188,21 @@ const DrawerFormUnit = ({
         )}
       </DrawerTrigger>
       <DrawerContent className="min-w-2/5">
-        <DrawerHeader className="px-6">
+        <DrawerHeader className="px-8">
           <DrawerTitle>
             {unitId
               ? t("drawerFormUnit.editTitle")
               : t("drawerFormUnit.addTitle")}
           </DrawerTitle>
+          <Button
+            onClick={handleClose}
+            className="absolute right-4 top-2"
+            variant="ghost"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </DrawerHeader>
-        <DrawerDescription className="px-6">
+        <DrawerDescription className="px-8">
           {t("drawerFormUnit.description")} <br />
           {t("drawerFormUnit.example")}
         </DrawerDescription>
@@ -207,7 +215,7 @@ const DrawerFormUnit = ({
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(handleSubmit)}
-                className="flex max-h-[calc(100vh-100px)] flex-col gap-3 overflow-y-auto p-6"
+                className="flex max-h-[calc(100vh-100px)] flex-col gap-3 overflow-y-auto p-8"
               >
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
