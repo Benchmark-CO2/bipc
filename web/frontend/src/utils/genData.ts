@@ -24,12 +24,12 @@ export const genData = (filledPoints: number) => {
 }
 export function generateNextDescendingPoint (
   {x, y}: DataPoint,
-  xStep = 5,
+  xStep = 0.00001,
   minY = 0
 ): { x: number; y: number; fill: boolean } {
   if (x === undefined || y === undefined) {
-    const initialY = 0.85 + Math.random() * 0.15; // Entre 0.85 e 1
-    const initialX = 90; // Por exemplo, começa no X=40 (ajuste como quiser)
+    const initialY = 0.99; // Entre 0.85 e 1
+    const initialX = 80; // Por exemplo, começa no X=40 (ajuste como quiser)
     return {
       x: initialX,
       y: parseFloat(initialY.toFixed(4)),
@@ -38,7 +38,7 @@ export function generateNextDescendingPoint (
   }
 
   const yRange = 1 - minY;
-  const baseStep = yRange / 8;
+  const baseStep = yRange / 17;
   const noise = (Math.random() - 0.5) * baseStep * 0.6;
   const downwardDrift = baseStep * (0.7 + Math.random() * 0.6);
 
@@ -46,14 +46,14 @@ export function generateNextDescendingPoint (
 
   // Garantir que o Y sempre desça
   if (newY >= y) {
-    newY = y - 0.001;
+    newY = y - 0.00001;
   }
   if (newY < minY) {
     newY = minY;
   }
 
   // Garantir que o X sempre desça (andando da direita para a esquerda)
-  const newX = x - xStep;
+  const newX = x - xStep*300_000;
   return {
     x: newX,
     y: parseFloat(newY.toFixed(4)),

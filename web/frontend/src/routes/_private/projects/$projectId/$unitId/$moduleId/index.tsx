@@ -48,6 +48,7 @@ export const Route = createFileRoute(
       [] as TSimulation[]
     );
 
+    let fakeGlobalSims = getFromStorage('fakeGlobalSims', [] as TSimulation[]);
     if (simulationsFromStorage.length) {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
@@ -66,8 +67,29 @@ export const Route = createFileRoute(
 
     const simulations: TSimulation[] = [];
 
-    if (!simulationsFromStorage.length) {
-      const rowData = genRowData(null);
+    if (!fakeGlobalSims.length) {
+    let lastDataPoint = {} as DataPoint | undefined;
+    const fakeGlobalData = Array.from({ length: 20 }, (_) => {
+      const rowData = genRowData(lastDataPoint);
+      lastDataPoint = rowData.green;
+      return {...rowData};
+    });
+
+    const _fakeGlobalSims: TSimulation[] = fakeGlobalData.map((data) => ({
+      version: '0',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      data,
+      isValid: false,
+      name: 'concreteWall',
+      isGlobal: true,
+    }));
+
+    fakeGlobalSims = _fakeGlobalSims;
+    setToStorage("fakeGlobalSims", _fakeGlobalSims);
+  }
+  if (!simulationsFromStorage.length) {
+      const rowData = genRowData(fakeGlobalSims[4].data.green || null);
       simulations.push({
         name: module.tipoDeEstrutura,
         version: module.version || "1",
@@ -88,12 +110,13 @@ export const Route = createFileRoute(
       crumb: t("common.crumbs.simulations"),
       simulations: simulations,
       module,
+      globalSims: fakeGlobalSims,
     };
   },
 });
 
 function RouteComponent() {
-  const { simulations, module } = useLoaderData({
+  const { simulations, module, globalSims } = useLoaderData({
     from: "/_private/projects/$projectId/$unitId/$moduleId/",
   });
 
@@ -139,26 +162,7 @@ function RouteComponent() {
     });
   };
 
-  const handleAddNewSimulation = (data: AddModuleFormSchema) => {
-    const lastSimulation = sims[sims.length - 1] || null;
-    const newSimulation = {
-      name: data.tipoDeEstrutura,
-      version: String(sims.length + 1),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      data: genRowData(lastSimulation?.data.green || null),
-      isValid: false,
-    } as TSimulation;
-
-    setSims((prev) => {
-      const newSims = [...prev, newSimulation];
-      setToStorage(
-        `${MODULE_SIMULATIONS}/${params.projectId}/${params.unitId}/${params.moduleId}`,
-        newSims
-      );
-      return [...prev, newSimulation];
-    });
-  };
+  
 
   useEffect(() => {
     document.title = "BIPC / Simulações";
@@ -177,23 +181,48 @@ function RouteComponent() {
     }
     setSelectedSimulations([...selectedSimulations, simulationId]);
   };
+
+ 
+
+ const handleAddNewSimulation = (data: AddModuleFormSchema) => {
+    const lastSimulation = sims[sims.length - 1] || globalSims[12].data;
+    const newSimulation = {
+      name: data.tipoDeEstrutura,
+      version: String(sims.length + 1),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      data: genRowData(lastSimulation?.data.green || null),
+      isValid: false,
+    } as TSimulation;
+
+    setSims((prev) => {
+      const newSims = [...prev, newSimulation];
+      setToStorage(
+        `${MODULE_SIMULATIONS}/${params.projectId}/${params.unitId}/${params.moduleId}`,
+        newSims
+      );
+      return [...prev, newSimulation];
+    });
+  };
   const dataPoints: Record<"green" | "grey", DataPoint[]> = {
-    green: sims
+    green: [...sims, ...globalSims].sort((a, b) => a.data.green.x + b.data.green.x)
       .map((sim) => ({
         x: sim.data.green.x,
         y: sim.data.green.y,
-        fill: new Set(selectedSimulations).has(sim.version),
+        fill: +sim.version ? new Set(selectedSimulations).has(sim.version) : false,
         label:
           new Set(selectedSimulations).has(sim.version) && "n" + sim.version,
+        isGlobal: sim.isGlobal,
       }))
       .reverse() as DataPoint[],
-    grey: sims
+    grey: [...sims, ...globalSims].sort((a, b) => a.data.grey.x + b.data.grey.x)
       .map((sim) => ({
         x: sim.data.grey.x,
         y: sim.data.grey.y,
-        fill: new Set(selectedSimulations).has(sim.version),
+        fill: +sim.version ? new Set(selectedSimulations).has(sim.version) : false,
         label:
           new Set(selectedSimulations).has(sim.version) && "v" + sim.version,
+        isGlobal: sim.isGlobal,
       }))
       .reverse() as DataPoint[],
   };
