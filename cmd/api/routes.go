@@ -15,13 +15,15 @@ func (app *application) routes() http.Handler {
 	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
 	router.NotFound = app.notFound(http.FileServer(http.FS(web.DistFs)))
 
-	router.Handler(http.MethodGet, "/v1/metrics", expvar.Handler()) // restrict access
+	router.Handler(http.MethodGet, "/v1/metrics", expvar.Handler())
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/presigned-urls", app.presignedURLHandler)
 
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/users", app.requireAuthenticatedUser(app.updateUserHandler))
 	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)
 	router.HandlerFunc(http.MethodPut, "/v1/users/password", app.updateUserPasswordHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/users/suggest", app.requireAuthenticatedUser(app.suggestUsersHandler))
 
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", app.createAuthenticationTokenHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/activation", app.createActivationTokenHandler)
@@ -32,6 +34,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID", app.requirePermission("project:view", app.showProjectHandler))
 	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID", app.requirePermission("project:edit", app.updateProjectHandler))
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID", app.requirePermission("project:owner", app.deleteProjectHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/assign-user", app.requirePermission("project:owner", app.assignUserHandler))
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units", app.requirePermission("project:edit", app.createUnitHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID", app.requirePermission("project:view", app.showUnitHandler))

@@ -7,7 +7,7 @@
     "constructiveTechnology": "Módulo",
     "projectPhaseOptions": {
       "preliminaryStudy": "Estudio Preliminar",
-      "draft": "Borrador",
+      "not_defined": "No Definido",
       "basicProject": "Proyecto Básico",
       "executiveProject": "Proyecto Ejecutivo",
       "releasedForConstruction": "Liberado para Construcción"
@@ -29,6 +29,16 @@
       "settings": "Configuraciones",
       "dashboard": "Tablero"
     },
+    "activeUserWarning": {
+      "title": "Usuario no activo",
+      "description": "Verifica tu correo electrónico para continuar usando el sistema. Si no lo recibiste, revisa tu carpeta de spam o",
+      "button": "solicita un nuevo acceso.",
+      "modalMessage": "Confirma abajo para activar tu cuenta. Recibirás un correo electrónico con el enlace de activación.",
+      "emailSentError": "Error al enviar el correo electrónico de activación. Inténtalo nuevamente más tarde.",
+      "emailSentSuccess": "Correo electrónico de activación enviado exitosamente. Verifica tu bandeja de entrada.",
+      "emailSentPending": "Enviando correo electrónico de activación...",
+      "sendEmail": "Enviar Correo Electrónico"
+    },
     "noItemsFound": "No se encontraron elementos",
     "users_one": "Usuario",
     "users_other": "Usuarios",
@@ -36,7 +46,9 @@
     "delete": "Eliminar",
     "save": "Guardar",
     "cancel": "Cancelar",
-    "add": "Agregar"
+    "add": "Agregar",
+    "close": "Cerrar",
+    "open": "Abrir"
   },
   "home": {
     "title": "Inicio",
@@ -90,6 +102,33 @@
     "buttonLogin": "Iniciar Sesión",
     "buttonRegister": "Registrarse"
   },
+  "activateUser": {
+    "invalid": {
+      "title": "Enlace Inválido",
+      "description": "El enlace de activación es inválido o ha expirado. Solicita un nuevo correo electrónico de confirmación.",
+      "goToLogin": "Volver al Inicio de Sesión"
+    },
+    "success": {
+      "title": "¡Cuenta Activada!",
+      "description": "Tu cuenta ha sido activada exitosamente. Ahora puedes iniciar sesión y comenzar a usar nuestra plataforma.",
+      "goToLogin": "Iniciar Sesión"
+    },
+    "error": {
+      "title": "Error en la Activación",
+      "description": "No fue posible activar tu cuenta. Inténtalo nuevamente o contacta con el soporte.",
+      "retry": "Intentar Nuevamente",
+      "support": "Contactar Soporte"
+    },
+    "loading": {
+      "title": "Activando Cuenta...",
+      "description": "Espera mientras procesamos la activación de tu cuenta."
+    },
+    "confirm": {
+      "title": "Confirmar Registro",
+      "description": "Haz clic en el botón de abajo para activar tu cuenta y comenzar a usar nuestra plataforma.",
+      "confirmAction": "Confirmar"
+    }
+  },
   "signUp": {
     "title": "REGISTRARSE",
     "name": "Nombre",
@@ -98,7 +137,15 @@
     "confirmPassword": "Confirmar Contraseña",
     "buttonSignUp": "Registrarse",
     "buttonHaveAccount": "¿Ya tienes una cuenta? Inicia sesión",
-    "errorEmailExists": "Correo electrónico ya registrado"
+    "errorEmailExists": "Correo electrónico ya registrado",
+    "dialog": {
+      "sucess": {
+        "title": "Registro exitoso",
+        "description": "Tu cuenta ha sido creada exitosamente. Ahora puedes iniciar sesión.",
+        "content": "Se ha enviado un correo electrónico de confirmación a tu dirección de correo electrónico.",
+        "button": "Iniciar Sesión"
+      }
+    }
   },
   "simulations": {
     "title": "Simulaciones",
@@ -128,7 +175,8 @@
     "errorFetchProjectById": "Error al obtener el proyecto por ID",
     "errorFetchZipCode": "Error al obtener el código postal",
     "errorEditProject": "Error al editar el proyecto",
-    "errorUnknown": "Error desconocido"
+    "errorUnknown": "Error desconocido",
+    "errorUploadFile": "Error al subir el archivo"
   },
   "warn": {
     "verifyZipCode": "Por favor, verifica el código postal"
@@ -181,7 +229,7 @@
   },
   "drawerAddModule": {
     "title": "Agregar Módulo",
-    "description": "Llena los detalles a continuación para agregar un nuevo módulo.",
+    "description": "Un mismo edificio suele combinar más de una tecnología constructiva, incluso en un solo subsistema de la construcción. Como la forma de cuantificar material cambia dependiendo del tipo de tecnología, cada tipo posee un módulo de cálculo que puede ser agregado para componer la suma de CO2 de la unidad.",
     "createButton": "Crear Módulo",
     "defaultContext": "Módulo",
     "repeatUnit": "¿La unidad se repite? ¿Cuántas veces?",
@@ -208,20 +256,20 @@
     "createButton": "Crear Proyecto",
     "addTitle": "Agregar Proyecto",
     "editTitle": "Editar Proyecto",
-    "description": "Aquí habrá una descripción de lo que es el proyecto, cómo debe ser utilizado y cuáles son los campos obligatorios.",
+    "description": "El nombre del proyecto puede estar compuesto por cualquier expresión alfanumérica que identifique tu proyecto. Ej.: 'Residencial 1', 'Edificio Janus', 'Complejo multifamiliar mixto'",
     "projectNameLabel": "Nombre del Proyecto *",
     "projectNamePlaceholder": "Introduce el nombre del proyecto",
-    "cepLabel": "Código Postal *",
+    "cepLabel": "Código Postal",
     "cepPlaceholder": "Introduce el código postal",
     "stateLabel": "Estado *",
     "statePlaceholder": "Selecciona un estado",
     "cityLabel": "Ciudad *",
     "cityPlaceholder": "Selecciona una ciudad",
-    "neighborhoodLabel": "Barrio *",
+    "neighborhoodLabel": "Barrio",
     "neighborhoodPlaceholder": "Selecciona un barrio",
-    "streetLabel": "Calle *",
+    "streetLabel": "Calle",
     "streetPlaceholder": "Introduce el nombre de la calle",
-    "numberLabel": "Número *",
+    "numberLabel": "Número",
     "numberPlaceholder": "Introduce el número de la casa",
     "projectPhaseLabel": "Fase del Proyecto *",
     "projectPhasePlaceholder": "Selecciona una fase del proyecto",
@@ -236,7 +284,8 @@
     "createButton": "Crear Unidad de Construcción",
     "addTitle": "Agregar Unidad de Construcción",
     "editTitle": "Editar Unidad de Construcción",
-    "description": "Aquí habrá una descripción de lo que es la unidad de construcción, cómo debe usarse y qué campos son obligatorios.",
+    "description": "Una unidad de construcción corresponde a una parte del proyecto independiente de las demás. El tipo de unidad define qué información se solicita. Usa unidades de construcción para gestionar la complejidad y cantidad de edificios en el mismo proyecto.",
+    "example": "Ejemplo: un proyecto compuesto por dos torres puede dividirse en dos unidades. En el caso de un edificio, los campos solicitados son pisos, etc.",
     "unitNameLabel": "Nombre de la Unidad de Construcción *",
     "unitNamePlaceholder": "Introduce el nombre de la unidad de construcción",
     "unitTypeLabel": "Tipo de Unidad *",
@@ -308,6 +357,39 @@
       "updatedAt": "Actualizado En",
       "description": "Descripción",
       "ID": "ID"
+    }
+  },
+  "drawerInvite": {
+    "title": "Invitar Usuario",
+    "description": "Invitar a un usuario al proyecto ingresando su correo electrónico y seleccionando permisos.",
+    "emailLabel": "Email *",
+    "emailPlaceholder": "Ingrese el correo electrónico del usuario",
+    "projectsLabel": "Proyectos *",
+    "projectsPlaceholder": "Seleccione un proyecto",
+    "permissionsLabel": "Permisos *",
+    "viewPermission": "Ver",
+    "editPermission": "Editar",
+    "inviteButton": "Invitar",
+    "successMessage": "¡Usuario invitado con éxito!",
+    "errorMessage": "Error al invitar al usuario"
+  },
+  "forms": {
+    "requiredField": "Este campo es obligatorio",
+    "invalidEmail": "Por favor, introduce una dirección de correo electrónico válida",
+    "minLength": "La longitud mínima es de {{min}} caracteres",
+    "maxLength": "La longitud máxima es de {{max}} caracteres",
+    "selectOption": "Por favor, selecciona una opción",
+    "selectMinimumOnePermission": "Por favor, selecciona al menos un permiso",
+    "customRequiredField": "{{field}} es obligatorio",
+    "passwordMinLength": "La contraseña debe tener al menos {{min}} caracteres",
+    "fullNameRequired": "Por favor, introduce tu nombre completo",
+    "passwordsDoNotMatch": "Las contraseñas no coinciden",
+    "emailAlreadyExists": "El correo electrónico ya está registrado",
+    "fields": {
+      "name": "Nombre",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "confirmPassword": "Confirmar Contraseña"
     }
   }
 }

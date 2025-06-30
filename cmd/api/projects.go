@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
@@ -255,6 +256,63 @@ func (app *application) listProjectsHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"projects": projects, "metadata": metadata}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) assignUserHandler(w http.ResponseWriter, r *http.Request) {
+	user := app.contextGetUser(r)
+	projectID, _ := app.readIDParam(r, "projectID")
+
+	var input struct {
+		Email       string   `json:"email"`
+		Permissions []string `json:"permissions"`
+	}
+
+	err := app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	input.Permissions = slices.DeleteFunc(input.Permissions, func(s string) bool {
+		return s == "project:owner"
+	})
+
+	v := validator.New()
+
+	if data.ValidateEmail(v, input.Email); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	var u *data.User
+	u, err = app.models.Users.GetByEmail(input.Email)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			v.AddError("email", "no user found with this email address")
+			app.failedValidationResponse(w, r, v.Errors)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	if u.ID == user.ID {
+		v.AddError("email", "you cannot set permissions for yourself")
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	err = app.models.Permissions.SetForUser(u.ID, projectID, input.Permissions...)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "user assigned successfully"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

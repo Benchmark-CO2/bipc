@@ -3,13 +3,13 @@
     "appName": "BIPC",
     "user": "Usuário",
     "logout": "Sair",
-    "constructiveTechnology": "Módulo",
+    "constructiveTechnology": "Módulo de Tecnologia Construtiva",
     "projectPhaseOptions": {
-      "preliminaryStudy": "Estudo Preliminar",
-      "draft": "Rascunho",
-      "basicProject": "Projeto Básico",
-      "executiveProject": "Projeto Executivo",
-      "releasedForConstruction": "Liberado para Construção"
+      "preliminary_study": "Estudo Preliminar",
+      "not_defined": "Não definido",
+      "basic_project": "Projeto Básico",
+      "executive_project": "Projeto Executivo",
+      "released_for_construction": "Liberado para Obra"
     },
     "structureType": {
       "beamColumn": "Viga Pilar",
@@ -26,6 +26,16 @@
       "projects": "Projetos",
       "simulations": "Simulações"
     },
+    "activeUserWarning": {
+      "title": "Usuário não ativo",
+      "description": "Verifique seu e-mail para continuar usando o sistema. Se não recebeu, confira sua caixa de spam ou",
+      "button": "solicite um novo acesso.",
+      "modalMessage": "Confirme abaixo para ativar sua conta. Você receberá um e-mail com o link de ativação.",
+      "emailSentError": "Erro ao enviar o e-mail de ativação. Tente novamente mais tarde.",
+      "emailSentSuccess": "E-mail de ativação enviado com sucesso. Verifique sua caixa de entrada.",
+      "emailSentPending": "Enviando e-mail de ativação...",
+      "sendEmail": "Enviar E-mail"
+    },
     "noItemsFound": "Nenhum item encontrado",
     "users_one": "Usuário",
     "users_other": "Usuários",
@@ -33,7 +43,9 @@
     "delete": "Excluir",
     "save": "Salvar",
     "cancel": "Cancelar",
-    "add": "Adicionar"
+    "add": "Adicionar",
+    "close": "Fechar",
+    "open": "Abrir"
   },
   "home": {
     "title": "Pagina Inicial",
@@ -67,7 +79,7 @@
   },
   "simulations": {
     "title": "Simulações",
-    "description": "Aqui estão todas as simulações da Módulo selecionada.",
+    "description": "Aqui estão todas as simulações do Módulo de Tecnologia Construtiva selecionada.",
     "addSimulation": "Adicionar Simulação",
     "noSimulations": "Nenhuma simulação encontrada"
   },
@@ -93,6 +105,33 @@
     "buttonLogin": "Login",
     "buttonRegister": "Cadastrar"
   },
+  "activateUser": {
+    "invalid": {
+      "title": "Link Inválido",
+      "description": "O link de ativação é inválido ou expirou. Solicite um novo email de confirmação.",
+      "goToLogin": "Voltar ao Login"
+    },
+    "success": {
+      "title": "Conta Ativada!",
+      "description": "Sua conta foi ativada com sucesso. Agora você pode fazer login e começar a usar nossa plataforma.",
+      "goToLogin": "Fazer Login"
+    },
+    "error": {
+      "title": "Erro na Ativação",
+      "description": "Não foi possível ativar sua conta. Tente novamente ou entre em contato com o suporte.",
+      "retry": "Tentar Novamente",
+      "support": "Contatar Suporte"
+    },
+    "loading": {
+      "title": "Ativando Conta...",
+      "description": "Aguarde enquanto processamos a ativação da sua conta."
+    },
+    "confirm": {
+      "title": "Confirmar Cadastro",
+      "description": "Clique no botão abaixo para ativar sua conta e começar a usar nossa plataforma.",
+      "confirmAction": "Confirmar"
+    }
+  },
   "signUp": {
     "title": "CADASTRO",
     "name": "Nome",
@@ -101,27 +140,36 @@
     "confirmPassword": "Confirmar Senha",
     "buttonSignUp": "Cadastrar",
     "buttonHaveAccount": "Já tem uma conta? Faça login",
-    "errorEmailExists": "Email já cadastrado"
+    "errorEmailExists": "Email já cadastrado",
+    "dialog": {
+      "success": {
+        "title": "Cadastro realizado com sucesso",
+        "description": "Você pode acessar sua conta agora.",
+        "content": "Um email de confirmação foi enviado para o seu endereço de email.",
+        "button": "Ir para Login"
+      }
+    }
   },
   "error": {
     "sessionExpired": "Ooops, Sua sessão expirou...",
     "goToLogin": "Ir para Login",
     "errorCreateProject": "Erro ao criar projeto",
     "errorCreateSimulation": "Erro ao criar simulação",
-    "errorCreateModule": "Erro ao criar módulo",
+    "errorCreateModule": "Erro ao criar Módulo de Tecnologia Construtiva",
     "errorCreateUnit": "Erro ao criar unidade",
     "errorCreateUnitType": "Erro ao criar tipo de unidade",
     "errorDeleteProject": "Erro ao deletar projeto",
     "errorDeleteUnit": "Erro ao deletar unidade de construção",
-    "errorDeleteModule": "Erro ao deletar módulo",
+    "errorDeleteModule": "Erro ao deletar Módulo de Tecnologia Construtiva",
     "errorDeleteSimulation": "Erro ao deletar simulação",
     "errorUpdateProject": "Erro ao atualizar projeto",
     "errorUpdateUnit": "Erro ao atualizar unidade de construção",
-    "errorUpdateModule": "Erro ao atualizar módulo",
+    "errorUpdateModule": "Erro ao atualizar Módulo de Tecnologia Construtiva",
     "errorUpdateSimulation": "Erro ao atualizar simulação",
     "errorFetchZipCode": "Erro ao buscar CEP",
     "errorEditProject": "Erro ao editar projeto",
-    "errorUnknown": "Erro desconhecido"
+    "errorUnknown": "Erro desconhecido",
+    "errorUploadFile": "Erro ao fazer upload do arquivo"
   },
   "warn": {
     "verifyZipCode": "Por favor, verifique o CEP"
@@ -133,15 +181,15 @@
     "simulationCreated": "Simulação criada com sucesso",
     "simulationUpdated": "Simulação atualizada com sucesso",
     "simulationDeleted": "Simulação deletada com sucesso",
-    "moduleCreated": "Módulo criado com sucesso",
-    "moduleUpdated": "Módulo atualizado com sucesso",
-    "moduleDeleted": "Módulo deletado com sucesso",
+    "moduleCreated": "Módulo de Tecnologia Construtiva criado com sucesso",
+    "moduleUpdated": "Módulo de Tecnologia Construtiva atualizado com sucesso",
+    "moduleDeleted": "Módulo de Tecnologia Construtiva deletado com sucesso",
     "unitCreated": "Unidade de construção criada com sucesso",
     "unitUpdated": "Unidade de construção atualizada com sucesso",
     "unitDeleted": "Unidade de construção deletada com sucesso"
   },
   "drawerEditModule": {
-    "title": "Editar Módulo",
+    "title": "Editar Módulo de Tecnologia Construtiva",
     "structureTypeLabel": "Tipo de Estrutura",
     "structureTypePlaceholder": "Selecione um tipo de estrutura",
     "buildingTypeLabel": "Tipo de Edifício",
@@ -165,19 +213,19 @@
     "concreteVolumeFck40Label": "Volume de Concreto (Fck 40)",
     "concreteVolumeFck45Label": "Volume de Concreto (Fck 45)",
     "steelConsumptionLabel": "Consumo de Aço",
-    "defaultTechnology": "Módulo",
+    "defaultTechnology": "Módulo de Tecnologia Construtiva",
     "dragAndDropFiles": "Arraste e solte arquivos aqui ou clique para fazer upload",
     "featureNotIntegrated": "Funcionalidade ainda não integrada",
-    "editModule": "Editar Módulo",
-    "updateModule": "Atualizar Módulo",
-    "saveModule": "Salvar Módulo",
+    "editModule": "Editar Módulo de Tecnologia Construtiva",
+    "updateModule": "Atualizar Módulo de Tecnologia Construtiva",
+    "saveModule": "Salvar Módulo de Tecnologia Construtiva",
     "saveSimulation": "Salvar Simulação"
   },
   "drawerAddModule": {
-    "title": "Adicionar Módulo",
-    "description": "Preencha os detalhes abaixo para adicionar um novo Módulo.",
-    "createButton": "Criar Módulo",
-    "defaultContext": "Módulo",
+    "title": "Adicionar Módulo de Tecnologia Construtiva",
+    "description": "Um mesmo edifício costuma combinar mais de uma tecnologia construtiva, mesmo em um único subsistema da construção. Como a forma de quantificar material muda dependendo do tipo de tecnologia, cada tipo possui um módulo de cálculo que pode ser adicionado para compor a soma de CO2 da unidade.",
+    "createButton": "Criar Módulo de Tecnologia Construtiva",
+    "defaultContext": "Módulo de Tecnologia Construtiva",
     "repeatUnit": "A unidade se repete? Quantas vezes?",
     "numberOfFloors": "Número de pavimentos:",
     "total": "Total",
@@ -202,20 +250,20 @@
     "createButton": "Criar Projeto",
     "addTitle": "Adicionar Projeto",
     "editTitle": "Editar Projeto",
-    "description": "Aqui terá uma descrição do que é o projeto, como ele deve ser utilizado e quais são os campos obrigatórios.",
+    "description": "O nome de projeto pode ser composto por qualquer expressão alfanumerica que identifique seu projeto. Ex.: 'Residencial 1', 'Edificio Janus', 'Conjunto multifamiliar misto'",
     "projectNameLabel": "Nome do Projeto *",
     "projectNamePlaceholder": "Digite o nome do projeto",
-    "cepLabel": "CEP *",
+    "cepLabel": "CEP",
     "cepPlaceholder": "Digite o CEP",
     "stateLabel": "Estado *",
     "statePlaceholder": "Selecione um estado",
     "cityLabel": "Cidade *",
     "cityPlaceholder": "Selecione uma cidade",
-    "neighborhoodLabel": "Bairro *",
+    "neighborhoodLabel": "Bairro",
     "neighborhoodPlaceholder": "Selecione um bairro",
-    "streetLabel": "Rua *",
+    "streetLabel": "Rua",
     "streetPlaceholder": "Digite o nome da rua",
-    "numberLabel": "Número *",
+    "numberLabel": "Número",
     "numberPlaceholder": "Digite o número da casa",
     "projectPhaseLabel": "Fase do Projeto *",
     "projectPhasePlaceholder": "Selecione uma fase do projeto",
@@ -230,7 +278,8 @@
     "createButton": "Criar Unidade de Construção",
     "addTitle": "Adicionar Unidade de Construção",
     "editTitle": "Atualizar Unidade de Construção",
-    "description": "Aqui terá uma descrição do que é a unidade de construção, como ela deve ser utilizada e quais são os campos obrigatórios.",
+    "description": "Uma unidade da construção corresponde a uma parte do projeto independente das demais. O tipo de unidade define quais informações são solicitadas. Utilize as unidades da construção para gerir a complexidade e quantidade de edificios em um mesmo projeto.",
+    "example": "Exemplo: um projeto composto por duas torres pode ser dividido em duas unidades. No caso de um edificio, os campos solicitados são pavimentos etc.",
     "unitNameLabel": "Nome da Unidade de Construção *",
     "unitNamePlaceholder": "Digite o nome da unidade de construção",
     "unitTypeLabel": "Tipo de Unidade *",
@@ -251,7 +300,7 @@
   },
   "moduleTable": {
     "noItemsFound": "Nenhum item encontrado",
-    "addNewTechnology": "Adicione uma nova Módulo no botão acima."
+    "addNewTechnology": "Adicione um novo Módulo de Tecnologia Construtiva no botão acima."
   },
   "simulationTable": {
     "headers": {
@@ -265,7 +314,7 @@
     },
     "updateSimulation": "Atualizar Simulação",
     "title": "Simulações",
-    "description": "Aqui estão todas as simulações da Módulo selecionada.",
+    "description": "Aqui estão todas as simulações da Módulo de Tecnologia Construtiva selecionada.",
     "addSimulation": "Adicionar Simulação",
     "saveSimulation": "Salvar Simulação",
     "noItemsFound": "Nenhuma simulação encontrada",
@@ -305,6 +354,39 @@
       "updatedAt": "Atualizado em",
       "description": "Descrição",
       "ID": "ID"
+    }
+  },
+  "drawerInvite": {
+    "title": "Convidar Usuário",
+    "description": "Preencha os detalhes abaixo para convidar um novo usuário.",
+    "emailLabel": "Email do Usuário *",
+    "emailPlaceholder": "Digite o email do usuário",
+    "projectsLabel": "Projetos *",
+    "projectsPlaceholder": "Selecione um projeto",
+    "permissionsLabel": "Permissões *",
+    "viewPermission": "Visualizar",
+    "editPermission": "Editar",
+    "inviteButton": "Convidar",
+    "successMessage": "Usuário convidado com sucesso!",
+    "errorMessage": "Erro ao convidar usuário. Tente novamente."
+  },
+  "forms": {
+    "requiredField": "Campo obrigatório",
+    "invalidEmail": "Email inválido",
+    "minLength": "Mínimo de {{min}} caracteres",
+    "maxLength": "Máximo de {{max}} caracteres",
+    "selectOption": "Selecione uma opção",
+    "selectMinimumOnePermission": "Selecione pelo menos uma permissão",
+    "customRequiredField": "{{field}} é obrigatório",
+    "passwordMinLength": "Senha deve ter pelo menos {{min}} caracteres",
+    "fullNameRequired": "Por favor, insira seu nome completo",
+    "passwordsDoNotMatch": "As senhas não coincidem",
+    "emailAlreadyExists": "Email já cadastrado",
+    "fields": {
+      "name": "Nome",
+      "email": "Email",
+      "password": "Senha",
+      "confirmPassword": "Confirmar Senha"
     }
   }
 }

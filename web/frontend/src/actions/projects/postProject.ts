@@ -1,7 +1,23 @@
 import api from "@/service/api";
 import { IProject } from "@/types/projects";
-import { ProjectFormSchema } from "@/validators/projectForm.validador";
 
-export const postProject = (projectParams: ProjectFormSchema) => {
+export interface PostProjectRequest {
+  number: string;
+  name: string;
+  cep: string;
+  state: string;
+  city: string;
+  neighborhood: string;
+  street: string;
+  phase:
+    | "preliminary_study"
+    | "not_defined"
+    | "basic_project"
+    | "executive_project"
+    | "released_for_construction";
+  description?: string | undefined;
+  image_url?: string | undefined;
+}
+export const postProject = (projectParams: PostProjectRequest) => {
   return api.post<{ project: IProject }>("/v1/projects", projectParams);
 };

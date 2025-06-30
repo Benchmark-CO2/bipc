@@ -73,8 +73,6 @@ confirm:
 .PHONY: dev/gotooling
 dev/gotooling:
 	 go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-	 go install github.com/rakyll/hey@latest
-	 go install github.com/divan/expvarmon@latest
 	 go install honnef.co/go/tools/cmd/staticcheck@latest
 	 go install golang.org/x/vuln/cmd/govulncheck@latest
 	 go install github.com/minio/mc@latest
@@ -125,22 +123,9 @@ run/help:
 ## run/api: run the cmd/api application
 .PHONY: run/api
 run/api:
-	@go run ./cmd/api -limiter-enabled=false -db-dsn=$(DB_DSN) \
+	go run ./cmd/api -port=4000 -env=development -db-dsn=$(DB_DSN) -limiter-enabled=false \
 	-smtp-host=$(SMTP_HOST) -smtp-port=$(SMTP_PORT) -smtp-username=$(SMTP_USERNAME) -smtp-password=$(SMTP_PASSWORD) -smtp-sender=$(SMTP_SENDER) \
 	-s3-endpoint=$(S3_ENDPOINT) -s3-access-key=$(S3_ACCESS_KEY) -s3-secret-key=$(S3_SECRET_KEY) -s3-secure=$(S3_SECURE) -s3-region=$(S3_REGION) -s3-bucket=$(S3_BUCKET) -s3-base-url=$(S3_BASE_URL)
-
-## metrics: run the TermUI monitor for the application
-.PHONY: metrics
-metrics:
-	expvarmon -ports="localhost:4000" -endpoint="/v1/metrics" -i=5s \
-	-vars="str:version,goroutines,total_requests_received,total_responses_sent,in_flight_requests,duration:total_processing_time_μs,\
-	str:database.MaxOpenConnections,database.OpenConnections,database.InUse,database.Idle,database.WaitCount,duration:database.WaitDuration,database.MaxIdleTimeClosed,\
-	mem:memstats.HeapAlloc,mem:memstats.HeapSys,mem:memstats.Sys"
-
-## load email=$1 password=$2: run a load test against the API
-.PHONY: load
-load: confirm
-	hey -c 50 -n 700 -d '{"email": "$(email)", "password": "$(password)"}' -m "POST" http://localhost:4000/v1/tokens/authentication
 
 ## migrations/new name=$1: create a new database migration
 .PHONY: migrations/new
@@ -199,3 +184,38 @@ build/frontend:
 build/api:
 	go build -ldflags='-s' -o=./bin/api ./cmd/api
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags='-s' -o=./bin/linux_amd64/api ./cmd/api
+
+# ==================================================================================== #
+# PRODUCTION
+# ==================================================================================== #
+
+production_host_ip = 68.183.24.32
+
+## production/connect: connect to the production server
+.PHONY: production/connect
+production/connect:
+	ssh -i ~/.ssh/id_rsa_bipc bipc@$(production_host_ip)
+
+## production/deploy/api: deploy the api to production
+.PHONY: production/deploy/api
+production/deploy/api:
+	rsync -P -e "ssh -i ~/.ssh/id_rsa_bipc" ./bin/linux_amd64/api bipc@$(production_host_ip):~
+	rsync -rP --delete -e "ssh -i ~/.ssh/id_rsa_bipc" ./migrations bipc@$(production_host_ip):~
+	rsync -P -e "ssh -i ~/.ssh/id_rsa_bipc" .envrc bipc@$(production_host_ip):~
+	rsync -P -e "ssh -i ~/.ssh/id_rsa_bipc" ./remote/production/api.service bipc@$(production_host_ip):~
+	rsync -P -e "ssh -i ~/.ssh/id_rsa_bipc" ./remote/production/Caddyfile bipc@$(production_host_ip):~
+	ssh -t -i ~/.ssh/id_rsa_bipc bipc@$(production_host_ip) '\
+		migrate -path ~/migrations -database $(DB_DSN) up \
+		&& sudo mv ~/.envrc /etc/environment \
+		&& sudo mv ~/api.service /etc/systemd/system/ \
+		&& sudo systemctl enable api \
+		&& sudo systemctl restart api \
+		&& sudo mv ~/Caddyfile /etc/caddy/ \
+		&& sudo systemctl reload caddy \
+	'
+
+# journalctl -xeu api.service
+# sudo systemctl status api.service
+# ssh -L :9999:$(production_host_ip):4000 -i ~/.ssh/id_rsa_bipc bipc@$(production_host_ip)
+
+
