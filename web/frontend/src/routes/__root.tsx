@@ -3,7 +3,7 @@ import { PublicHeader, Sidebar } from "@/components/layout";
 import Screen from "@/components/layout/screen";
 import BreadCrumbs from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
-import UserActiveWarning from "@/components/ui/user-active-warning";
+import UserActiveWarning from "@/components/layout/user-active-warning";
 // import { ModeToggle } from '@/components/mode-toggle'
 import { AuthContext } from "@/context/authContext";
 import { useAuth } from "@/hooks/useAuth";

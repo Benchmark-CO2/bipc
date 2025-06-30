@@ -32,7 +32,12 @@
     "activeUserWarning": {
       "title": "Usuario no activo",
       "description": "Verifica tu correo electrónico para continuar usando el sistema. Si no lo recibiste, revisa tu carpeta de spam o",
-      "button": "solicita un nuevo acceso."
+      "button": "solicita un nuevo acceso.",
+      "modalMessage": "Confirma abajo para activar tu cuenta. Recibirás un correo electrónico con el enlace de activación.",
+      "emailSentError": "Error al enviar el correo electrónico de activación. Inténtalo nuevamente más tarde.",
+      "emailSentSuccess": "Correo electrónico de activación enviado exitosamente. Verifica tu bandeja de entrada.",
+      "emailSentPending": "Enviando correo electrónico de activación...",
+      "sendEmail": "Enviar Correo Electrónico"
     },
     "noItemsFound": "No se encontraron elementos",
     "users_one": "Usuario",
@@ -41,7 +46,9 @@
     "delete": "Eliminar",
     "save": "Guardar",
     "cancel": "Cancelar",
-    "add": "Agregar"
+    "add": "Agregar",
+    "close": "Cerrar",
+    "open": "Abrir"
   },
   "home": {
     "title": "Inicio",

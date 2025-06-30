@@ -32,7 +32,12 @@
     "activeUserWarning": {
       "title": "User not active",
       "description": "Check your email to continue using the system. If you didn't receive it, check your spam folder or",
-      "button": "request new access."
+      "button": "request new access.",
+      "modalMessage": "Confirm below to activate your account. You will receive an email with the activation link.",
+      "emailSentError": "Error sending activation email. Please try again later.",
+      "emailSentSuccess": "Activation email sent successfully. Check your inbox.",
+      "emailSentPending": "Sending activation email...",
+      "sendEmail": "Send Email"
     },
     "noItemsFound": "No items found",
     "users_one": "User",
@@ -41,7 +46,9 @@
     "delete": "Delete",
     "save": "Save",
     "cancel": "Cancel",
-    "add": "Add"
+    "add": "Add",
+    "close": "Close",
+    "open": "Open"
   },
   "home": {
     "title": "Home",
