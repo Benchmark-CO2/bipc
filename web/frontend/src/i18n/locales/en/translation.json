@@ -48,7 +48,9 @@
     "cancel": "Cancel",
     "add": "Add",
     "close": "Close",
-    "open": "Open"
+    "open": "Open",
+    "new_one": "New",
+    "new_other": "New"
   },
   "home": {
     "title": "Home",
@@ -67,7 +69,10 @@
     "es": "Spanish",
     "ru": "Russian",
     "en": "English",
-    "ptbr": "Portuguese"
+    "ptbr": "Portuguese",
+
+    "notifications": "Notifications",
+    "profile": "Profile"
   },
   "projects": {
     "title": "Projects",
@@ -404,5 +409,14 @@
       "password": "Password",
       "confirmPassword": "Confirm Password"
     }
+  },
+  "profile": {
+    "title": "Profile",
+    "description": "Manage your profile settings here.",
+    "editProfile": "Edit Profile",
+    "viewProfile": "View Profile",
+    "settings": "Settings",
+    "invites": "Invites",
+    "noInvites": "You have no invites."
   }
 }

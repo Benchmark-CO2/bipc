@@ -48,7 +48,9 @@
     "cancel": "Cancelar",
     "add": "Agregar",
     "close": "Cerrar",
-    "open": "Abrir"
+    "open": "Abrir",
+    "new_one": "Nuevo",
+    "new_other": "Nuevos"
   },
   "home": {
     "title": "Inicio",
@@ -66,7 +68,9 @@
     "en": "Inglés",
     "ptbr": "Portugués",
     "es": "Español",
-    "ru": "Ruso"
+    "ru": "Ruso",
+    "notifications": "Notificaciones",
+    "profile": "Perfil"
   },
   "projects": {
     "title": "Proyectos",
@@ -403,5 +407,14 @@
       "password": "Contraseña",
       "confirmPassword": "Confirmar Contraseña"
     }
+  },
+   "profile": {
+    "title": "Perfil",
+    "description": "Administra la configuración de tu perfil aquí.",
+    "editProfile": "Editar Perfil",
+    "viewProfile": "Ver Perfil",
+    "settings": "Configuraciones",
+    "invites": "Invitaciones",
+    "noInvites": "No tienes invitaciones."
   }
 }

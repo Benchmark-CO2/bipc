@@ -1,8 +1,10 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from '@tanstack/react-router';
+import { Settings } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { LanguageToggle } from '../language-toggle';
 import { ModeToggle } from '../mode-toggle';
+import { Notifications } from '../notifications';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Button } from '../ui/button';
 import DrawerInvite from './drawer-invite';
@@ -46,6 +48,16 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         </li>
         <li className='mt-auto'>
           <div className='flex items-center justify-between'>
+            <span className='text-sm'>{t('sidebar.notifications')}</span>
+            <Notifications  />
+          </div>
+          <div className='flex items-center justify-between my-2'>
+                <span className='text-sm'>{t('sidebar.profile')}</span>
+              <Link to='/profile' className='hover:text-gray-400 flex justify-between items-center' activeProps={activeProps}>
+                <Settings size={16} className='w-9!' />
+              </Link>
+          </div>
+          <div className='flex items-center justify-between'>
             <span className='text-sm'>{t('sidebar.theme')}</span>
             <ModeToggle />
           </div>
@@ -53,6 +65,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             <span className='text-sm'>{t('sidebar.language')}</span>
             <LanguageToggle />
           </div>
+          
         </li>
         <li className='flex items-center gap-4 border-t border-zinc-700 pt-4'>
           <div className='flex items-center gap-2'>
