@@ -9,7 +9,12 @@ export interface PostProjectRequest {
   city: string;
   neighborhood: string;
   street: string;
-  phase: "preliminary_study" | "draft" | "basic_project" | "executive_project" | "released_for_construction";
+  phase:
+    | "preliminary_study"
+    | "not_defined"
+    | "basic_project"
+    | "executive_project"
+    | "released_for_construction";
   description?: string | undefined;
   image_url?: string | undefined;
 }

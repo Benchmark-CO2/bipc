@@ -5,7 +5,7 @@ import { TUnitType } from "./units";
 
 export type TProjectPhase =
   | "preliminary_study"
-  | "draft"
+  | "not_defined"
   | "basic_project"
   | "executive_project"
   | "released_for_construction";

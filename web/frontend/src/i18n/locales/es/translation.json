@@ -7,7 +7,7 @@
     "constructiveTechnology": "Módulo",
     "projectPhaseOptions": {
       "preliminaryStudy": "Estudio Preliminar",
-      "draft": "Borrador",
+      "not_defined": "No Definido",
       "basicProject": "Proyecto Básico",
       "executiveProject": "Proyecto Ejecutivo",
       "releasedForConstruction": "Liberado para Construcción"
