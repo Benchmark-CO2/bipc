@@ -3,6 +3,7 @@ export interface DataPoint {
   y: number;
   fill: boolean;
   label?: string;
+  isGlobal?: boolean; // Indica se o ponto é de uma simulação global
 };
 
 export function generateDescendingMockData(

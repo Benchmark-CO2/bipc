@@ -83,4 +83,5 @@ export type TSimulation = {
     grey: DataPoint;
   };
   isValid: boolean;
+  isGlobal?: boolean; // Indica se a simulação é global
 };

@@ -11,7 +11,7 @@ interface IProps {
   fill?: string
   stroke?: string
   strokeWidth?: number
-  payload?: { fill: boolean; label: string }
+  payload?: { fill: boolean; label: string, isGlobal?: boolean }
 }
 
 interface IChartProps {
@@ -277,8 +277,11 @@ function Chart({ maxHeight, maxWidth, filledPoints, datachart }: IChartProps) {
                         cx={cx}
                         cy={cy}
                         r={4}
-                        fill='#4CAF50'
-                        className='dark:fill-zinc-200! dark:stroke-green-500 dark:stroke-2!'
+                        data-isglobal={!!payload?.isGlobal}
+                        data-filled={payload?.fill && !payload.isGlobal}
+                        className='fill-accent-foreground dark:stroke-primary dark:stroke-1! data-[isglobal=true]:fill-accent-foreground/50! data-[isglobal=true]:stroke-0! data-[filled=true]:fill-primary!'
+                        // stroke={payload?.fill ? '#4CAF50' : '#2C1D1B'}
+                        // strokeWidth={payload?.fill ? 1 : 0}
                       />
                       <text
                         x={(cx as number) + 10}
@@ -310,9 +313,9 @@ function Chart({ maxHeight, maxWidth, filledPoints, datachart }: IChartProps) {
                         cx={cx as number}
                         cy={cy as number}
                         r={4}
-                        fill={payload?.fill ? '#FF0000' : '#2C1D1B'}
-                        data-key={payload?.fill ? 'filled' : 'not-filled'}
-                        className='fill-zinc-700 data-[key=filled]:fill-red-500 dark:fill-zinc-200 dark:data-[key=not-filled]:fill-zinc-400'
+                        data-isglobal={payload?.isGlobal ? payload.isGlobal : false}
+                        data-filled={payload?.fill && !payload.isGlobal}
+                        className='fill-zinc-700 data-[filled=true]:fill-red-500 dark:fill-zinc-200 dark:data-[key=not-filled]:fill-zinc-400 data-[isglobal=true]:fill-accent-foreground/70 data-[isglobal=false]:stroke-1! data-[isglobal=false]:stroke-red-500!'
                       />
                       <text
                         x={(cx as number) - 20}
