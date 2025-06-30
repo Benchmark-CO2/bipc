@@ -1,19 +1,22 @@
-import { TUser } from '@/types/user';
+import { TUser } from "@/types/user";
 import { createContext } from "react";
 
 export interface AuthContext {
-  isAuthenticated: boolean
+  isAuthenticated: boolean;
+  activated: boolean | null;
   login: (
-  authentication_token: {
-		token: string,
-		expiry: string
-  }, user: TUser) => void
-  logout: () => void
+    authentication_token: {
+      token: string;
+      expiry: string;
+    },
+    user: TUser
+  ) => void;
+  logout: () => void;
   token: {
-    token: string,
-    expiry: string
-  } | null
-  email: string | null
+    token: string;
+    expiry: string;
+  } | null;
+  email: string | null;
 }
 
-export const AuthContext = createContext<AuthContext | null>(null)
+export const AuthContext = createContext<AuthContext | null>(null);

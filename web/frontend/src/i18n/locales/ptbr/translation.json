@@ -6,10 +6,10 @@
     "constructiveTechnology": "Módulo de Tecnologia Construtiva",
     "projectPhaseOptions": {
       "preliminary_study": "Estudo Preliminar",
-      "draft": "Rascunho",
+      "draft": "Não definido",
       "basic_project": "Projeto Básico",
       "executive_project": "Projeto Executivo",
-      "released_for_construction": "Liberado para Construção"
+      "released_for_construction": "Liberado para Obra"
     },
     "structureType": {
       "beamColumn": "Viga Pilar",
@@ -26,6 +26,16 @@
       "projects": "Projetos",
       "simulations": "Simulações"
     },
+    "activeUserWarning": {
+      "title": "Usuário não ativo",
+      "description": "Verifique seu e-mail para continuar usando o sistema. Se não recebeu, confira sua caixa de spam ou",
+      "button": "solicite um novo acesso.",
+      "modalMessage": "Confirme abaixo para ativar sua conta. Você receberá um e-mail com o link de ativação.",
+      "emailSentError": "Erro ao enviar o e-mail de ativação. Tente novamente mais tarde.",
+      "emailSentSuccess": "E-mail de ativação enviado com sucesso. Verifique sua caixa de entrada.",
+      "emailSentPending": "Enviando e-mail de ativação...",
+      "sendEmail": "Enviar E-mail"
+    },
     "noItemsFound": "Nenhum item encontrado",
     "users_one": "Usuário",
     "users_other": "Usuários",
@@ -33,7 +43,9 @@
     "delete": "Excluir",
     "save": "Salvar",
     "cancel": "Cancelar",
-    "add": "Adicionar"
+    "add": "Adicionar",
+    "close": "Fechar",
+    "open": "Abrir"
   },
   "home": {
     "title": "Pagina Inicial",
@@ -241,17 +253,17 @@
     "description": "O nome de projeto pode ser composto por qualquer expressão alfanumerica que identifique seu projeto. Ex.: 'Residencial 1', 'Edificio Janus', 'Conjunto multifamiliar misto'",
     "projectNameLabel": "Nome do Projeto *",
     "projectNamePlaceholder": "Digite o nome do projeto",
-    "cepLabel": "CEP *",
+    "cepLabel": "CEP",
     "cepPlaceholder": "Digite o CEP",
     "stateLabel": "Estado *",
     "statePlaceholder": "Selecione um estado",
     "cityLabel": "Cidade *",
     "cityPlaceholder": "Selecione uma cidade",
-    "neighborhoodLabel": "Bairro *",
+    "neighborhoodLabel": "Bairro",
     "neighborhoodPlaceholder": "Selecione um bairro",
-    "streetLabel": "Rua *",
+    "streetLabel": "Rua",
     "streetPlaceholder": "Digite o nome da rua",
-    "numberLabel": "Número *",
+    "numberLabel": "Número",
     "numberPlaceholder": "Digite o número da casa",
     "projectPhaseLabel": "Fase do Projeto *",
     "projectPhasePlaceholder": "Selecione uma fase do projeto",

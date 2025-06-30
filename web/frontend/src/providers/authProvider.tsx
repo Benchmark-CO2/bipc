@@ -1,63 +1,78 @@
 import { AuthContext } from "@/context/authContext";
-import { TUser } from '@/types/user';
+import { TUser } from "@/types/user";
 import { useEffect, useState } from "react";
 
-export const storageTokenKey = 'tanstack.auth.user'
+export const storageTokenKey = "tanstack.auth.user";
 
 function getStoredUser() {
-  const storedUser = localStorage.getItem(storageTokenKey)
+  const storedUser = localStorage.getItem(storageTokenKey);
   if (!storedUser) {
-    return null
+    return null;
   }
   try {
-    const parsedUser = JSON.parse(storedUser)
-    if (parsedUser && typeof parsedUser === 'object' && 'token' in parsedUser && 'expiry' in parsedUser) {
-      return parsedUser
+    const parsedUser = JSON.parse(storedUser);
+    if (
+      parsedUser &&
+      typeof parsedUser === "object" &&
+      "token" in parsedUser &&
+      "expiry" in parsedUser
+    ) {
+      return parsedUser;
     }
   } catch (error) {
-    localStorage.removeItem(storageTokenKey) // Clear invalid data
-    return null
+    localStorage.removeItem(storageTokenKey); // Clear invalid data
+    return null;
   }
 }
 
-function setStoredUser(authentication_token: {
-  token: string,
-  expiry: string
-} | null) {
+function setStoredUser(
+  authentication_token: {
+    token: string;
+    expiry: string;
+  } | null
+) {
   if (authentication_token) {
-    localStorage.setItem(storageTokenKey, JSON.stringify(authentication_token))
+    localStorage.setItem(storageTokenKey, JSON.stringify(authentication_token));
   } else {
-    localStorage.removeItem(storageTokenKey)
+    localStorage.removeItem(storageTokenKey);
   }
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<{ token: string, expiry: string } | null>(getStoredUser())
-  const [email, setEmail] = useState<string | null>(null)
-  const isAuthenticated = !!token?.token
+  const [token, setToken] = useState<{ token: string; expiry: string } | null>(
+    getStoredUser()
+  );
+  const [email, setEmail] = useState<string | null>(null);
+  const [activated, setActivated] = useState<boolean | null>(null);
+  const isAuthenticated = !!token?.token;
 
   const logout = () => {
-    setStoredUser(null)
-    setToken(null)
-  }
+    setStoredUser(null);
+    setToken(null);
+  };
 
-  const login = (authentication_token: {
-    token: string,
-    expiry: string
-  }, user: TUser) => {
-    setStoredUser(authentication_token)
-    setToken(authentication_token)
-    setEmail(user.email)
-  }
+  const login = (
+    authentication_token: {
+      token: string;
+      expiry: string;
+    },
+    user: TUser
+  ) => {
+    setStoredUser(authentication_token);
+    setToken(authentication_token);
+    setEmail(user.email);
+    setActivated(user.activated);
+  };
 
   useEffect(() => {
-    setToken(getStoredUser())
-  }, [])
+    setToken(getStoredUser());
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, token, login, logout, email }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, token, login, logout, email, activated }}
+    >
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
-
