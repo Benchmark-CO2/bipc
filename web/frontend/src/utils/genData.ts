@@ -53,7 +53,7 @@ export function generateNextDescendingPoint (
   }
 
   // Garantir que o X sempre desça (andando da direita para a esquerda)
-  const newX = x - xStep*30000;
+  const newX = x - xStep*300_000;
   return {
     x: newX,
     y: parseFloat(newY.toFixed(4)),

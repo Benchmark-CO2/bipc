@@ -67,7 +67,7 @@ export const Route = createFileRoute(
 
     const simulations: TSimulation[] = [];
 
-    if (!fakeGlobalSims.length && !simulationsFromStorage.length) {
+    if (!fakeGlobalSims.length) {
     let lastDataPoint = {} as DataPoint | undefined;
     const fakeGlobalData = Array.from({ length: 20 }, (_) => {
       const rowData = genRowData(lastDataPoint);
@@ -87,8 +87,9 @@ export const Route = createFileRoute(
 
     fakeGlobalSims = _fakeGlobalSims;
     setToStorage("fakeGlobalSims", _fakeGlobalSims);
-  
-      const rowData = genRowData(fakeGlobalData[4].green || null);
+  }
+  if (!simulationsFromStorage.length) {
+      const rowData = genRowData(fakeGlobalSims[4].data.green || null);
       simulations.push({
         name: module.tipoDeEstrutura,
         version: module.version || "1",
@@ -204,7 +205,7 @@ function RouteComponent() {
     });
   };
   const dataPoints: Record<"green" | "grey", DataPoint[]> = {
-    green: [...sims, ...globalSims].sort((a, b) => a.data.green.x - b.data.green.x)
+    green: [...sims, ...globalSims].sort((a, b) => a.data.green.x + b.data.green.x)
       .map((sim) => ({
         x: sim.data.green.x,
         y: sim.data.green.y,
@@ -214,7 +215,7 @@ function RouteComponent() {
         isGlobal: sim.isGlobal,
       }))
       .reverse() as DataPoint[],
-    grey: [...sims, ...globalSims].sort((a, b) => a.data.grey.x - b.data.grey.x)
+    grey: [...sims, ...globalSims].sort((a, b) => a.data.grey.x + b.data.grey.x)
       .map((sim) => ({
         x: sim.data.grey.x,
         y: sim.data.grey.y,
