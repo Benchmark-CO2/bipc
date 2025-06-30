@@ -73,7 +73,7 @@ export default function DrawerFormProject({
       city: projectData?.city || "",
       neighborhood: projectData?.neighborhood || "",
       cep: projectData?.cep || "",
-      phase: projectData?.phase || "preliminary_study",
+      phase: projectData?.phase || "not_defined",
       street: projectData?.street || "",
       number: projectData?.number || "",
       image_url: undefined,
@@ -229,7 +229,7 @@ export default function DrawerFormProject({
           city: projectData.city || "",
           neighborhood: projectData.neighborhood || "",
           cep: projectData.cep || "",
-          phase: projectData.phase || "preliminary_study",
+          phase: projectData.phase || "not_defined",
           street: projectData.street || "",
           number: projectData.number || "",
           image_url: undefined,
@@ -242,7 +242,7 @@ export default function DrawerFormProject({
           city: "",
           neighborhood: "",
           cep: "",
-          phase: "preliminary_study",
+          phase: "not_defined",
           street: "",
           number: "",
           image_url: undefined,
@@ -466,11 +466,11 @@ export default function DrawerFormProject({
                         />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="not_defined">
+                          {t("common.projectPhaseOptions.not_defined")}
+                        </SelectItem>
                         <SelectItem value="preliminary_study">
                           {t("common.projectPhaseOptions.preliminary_study")}
-                        </SelectItem>
-                        <SelectItem value="draft">
-                          {t("common.projectPhaseOptions.draft")}
                         </SelectItem>
                         <SelectItem value="basic_project">
                           {t("common.projectPhaseOptions.basic_project")}

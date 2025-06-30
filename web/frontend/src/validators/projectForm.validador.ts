@@ -16,7 +16,7 @@ export const projectFormSchema = z.object({
   number: z.string().min(1, "O número deve ser informado").optional(),
   phase: z.enum(
     [
-      "draft",
+      "not_defined",
       "preliminary_study",
       "basic_project",
       "executive_project",

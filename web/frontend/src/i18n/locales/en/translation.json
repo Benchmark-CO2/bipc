@@ -7,7 +7,7 @@
     "constructiveTechnology": "Constructive Technology",
     "projectPhaseOptions": {
       "preliminary_study": "Preliminary Study",
-      "draft": "Draft",
+      "not_defined": "Not defined",
       "basic_project": "Basic Project",
       "executive_project": "Executive Project",
       "released_for_construction": "Released for Construction"
