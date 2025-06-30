@@ -195,6 +195,13 @@
     "projectUpdated": "Proyecto actualizado exitosamente",
     "projectDeleted": "Proyecto eliminado exitosamente"
   },
+  "modalConfirmDelete": {
+    "projectTitle": "Eliminar Proyecto",
+    "unitTitle": "Eliminar Unidad",
+    "description": "Esta acción no se puede deshacer. ¿Estás seguro de que quieres continuar?",
+    "cancelButton": "Cancelar",
+    "deleteButton": "Eliminar"
+  },
   "drawerEditModule": {
     "title": "Editar Módulo",
     "structureTypeLabel": "Tipo de Estructura",
@@ -250,6 +257,8 @@
     "concreteVolumeFck40": "Volumen de Hormigón Fck40 (m³)",
     "concreteVolumeFck45": "Volumen de Hormigón Fck45 (m³)",
     "steelConsumption": "Consumo de Acero (kg)",
+    "concreteComsumption": "Consumo de Concreto (m³)",
+    "co2Emission": "Emisión de CO₂ (kgCO₂)",
     "addConstructiveTechnology": "Agregar Módulo"
   },
   "drawerFormProject": {
@@ -327,12 +336,15 @@
   },
   "modulesTable": {
     "headers": {
+      "name": "Nombre",
       "structureType": "Tipo de Estructura",
       "buildingType": "Tipo de Edificio",
       "createdAt": "Creado En",
       "updatedAt": "Actualizado En",
       "buildedAreaTotal": "Área Total Construida (m²)",
-      "steelConsumption": "Consumo de Acero (kg)"
+      "steelConsumption": "Consumo de Acero (kg)",
+      "concreteConsumption": "Consumo de Concreto (m³)",
+      "co2Emission": "Emisión de CO₂ (kgCO₂)"
     },
     "structureType": {
       "beamColumn": "Viga Pilar",

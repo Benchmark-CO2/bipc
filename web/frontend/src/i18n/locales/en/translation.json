@@ -258,6 +258,8 @@
     "concreteVolumeFck40": "Concrete Volume Fck40 (m³)",
     "concreteVolumeFck45": "Concrete Volume Fck45 (m³)",
     "steelConsumption": "Steel Consumption (kg)",
+    "concreteComsumption": "Concrete Consumption (m³)",
+    "co2Emission": "CO₂ Emission (kgCO₂)",
     "addConstructiveTechnology": "Add Constructive Technology Module"
   },
   "drawerFormProject": {
@@ -335,12 +337,15 @@
   },
   "modulesTable": {
     "headers": {
+      "name": "Name",
       "structureType": "Structure Type",
       "buildingType": "Building Type",
       "createdAt": "Created At",
       "updatedAt": "Updated At",
       "buildedAreaTotal": "Total Built Area (m²)",
-      "steelConsumption": "Steel Consumption (kg)"
+      "steelConsumption": "Steel Consumption (kg)",
+      "concreteConsumption": "Concrete Consumption (m³)",
+      "co2Emission": "CO₂ Emission (kgCO₂)"
     },
     "structureType": {
       "beamColumn": "Beam Column",
