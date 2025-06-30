@@ -466,11 +466,11 @@ export default function DrawerFormProject({
                         />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="not_defined">
+                          {t("common.projectPhaseOptions.not_defined")}
+                        </SelectItem>
                         <SelectItem value="preliminary_study">
                           {t("common.projectPhaseOptions.preliminary_study")}
-                        </SelectItem>
-                        <SelectItem value="draft">
-                          {t("common.projectPhaseOptions.draft")}
                         </SelectItem>
                         <SelectItem value="basic_project">
                           {t("common.projectPhaseOptions.basic_project")}
