@@ -19,12 +19,12 @@ const towerFieldsSchema = z.object({
   tower_floors: z
     .number()
     .int()
-    .positive("O número de andares da torre deve ser um número positivo")
+    .nonnegative("O número de andares da torre deve ser um número não negativo")
     .optional(),
   base_floors: z
     .number()
     .int()
-    .positive("O número de andares da base deve ser um número positivo")
+    .nonnegative("O número de andares da base deve ser um número não negativo")
     .optional(),
   basement_floors: z
     .number()
@@ -36,7 +36,7 @@ const towerFieldsSchema = z.object({
   type_floors: z
     .number()
     .int()
-    .positive("O número de andares do tipo deve ser um número positivo")
+    .nonnegative("O número de andares do tipo deve ser um número não negativo")
     .optional(),
   total_area: z
     .number()

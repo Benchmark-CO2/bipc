@@ -1,35 +1,51 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
   RowSelectionState,
-  useReactTable
-} from '@tanstack/react-table';
+  useReactTable,
+} from "@tanstack/react-table";
 // import { IModule } from '@/types/modules'
-import { useNavigate } from '@tanstack/react-router';
-import { ChartLine, Pen } from 'lucide-react';
-import { moduleColumns } from '../columns/modules';
+import { useNavigate } from "@tanstack/react-router";
+import { ChartLine, Pen, Trash } from "lucide-react";
+import { moduleColumns } from "../columns/modules";
 // import { Checkbox } from '../ui/checkbox'
-import { TModuleData } from '@/types/projects';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import NotFoundList from '../ui/not-found-list';
-import DrawerEditModule from './drawer-edit-module';
+import { TModuleData } from "@/types/projects";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import NotFoundList from "../ui/not-found-list";
+import DrawerEditModule from "./drawer-edit-module";
+import { Checkbox } from "../ui/checkbox";
+import ModalSimple from "./modal-simple";
 
 interface IModuleTable {
-  modules: TModuleData[]
-  projectId: string
-  unitId: string
-  handleUpdateModule: (module: TModuleData) => void
+  modules: TModuleData[];
+  projectId: string;
+  unitId: string;
+  handleUpdateModule: (module: TModuleData) => void;
+  handleDeleteModule?: (moduleId: string) => void;
 }
 
-export default function ModuleTable({ modules, projectId, unitId, handleUpdateModule }: IModuleTable) {
-  const { t } = useTranslation()
-  const navigate = useNavigate({ from: '/projects/$projectId' })
+export default function ModuleTable({
+  modules,
+  projectId,
+  unitId,
+  handleUpdateModule,
+  handleDeleteModule,
+}: IModuleTable) {
+  const { t } = useTranslation();
+  const navigate = useNavigate({ from: "/projects/$projectId" });
 
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   const table = useReactTable({
     data: modules,
@@ -38,36 +54,54 @@ export default function ModuleTable({ modules, projectId, unitId, handleUpdateMo
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     state: {
-      rowSelection
+      rowSelection,
     },
     enableRowSelection: true,
-    onRowSelectionChange: setRowSelection
-  })
+    onRowSelectionChange: setRowSelection,
+  });
 
   const onClickModuleSimulation = (moduleId: string) => {
     void navigate({
       to: `/projects/${projectId}/${unitId}/${moduleId}`,
-      from: '/projects/$projectId/$unitId'
-    })
-  }
+      from: "/projects/$projectId/$unitId",
+    });
+  };
 
-  // const selectedRowModel = table.getSelectedRowModel()
+  const selectedRowModel = table.getSelectedRowModel();
 
-  // const totals = useMemo(() => {
-  //   const selected = selectedRowModel.rows
+  const totals = useMemo(() => {
+    const selected = selectedRowModel.rows;
 
-  //   return {
-  //     kg: selected.reduce((acc, row) => acc + (row.original.consume_kg || 0), 0),
-  //     kgco2: selected.reduce((acc, row) => acc + (row.original.consume_kgco2 || 0), 0),
-  //     mj: selected.reduce((acc, row) => acc + (row.original.consume_mj || 0), 0)
-  //   }
-  // }, [selectedRowModel.rows])
+    return {
+      areaTotal: selected.reduce(
+        (acc, row) => acc + (row.original.areaConstruidaTotal || 0),
+        0
+      ),
+      aco: selected.reduce(
+        (acc, row) => acc + (row.original.consumoDeAco || 0),
+        0
+      ),
+      concreto: selected.reduce(
+        (acc, row) => acc + (row.original.consumoDeConcreto || 0),
+        0
+      ),
+      co2: selected.reduce(
+        (acc, row) => acc + (row.original.emissaoDeCo2 || 0),
+        0
+      ),
+    };
+  }, [selectedRowModel.rows]);
 
-  const handleClickRow = (e: React.MouseEvent<HTMLTableRowElement>, module: TModuleData) => {
-    const target = e.target as HTMLElement
-    const dataType = target.closest('[data-action]')?.getAttribute('data-action')
-    if (dataType === 'open-simulations') {
-      onClickModuleSimulation(module.module_uuid)
+  const handleClickRow = (
+    e: React.MouseEvent<HTMLTableRowElement>,
+    module: TModuleData
+  ) => {
+    const target = e.target as HTMLElement;
+    const dataType = target
+      .closest("[data-action]")
+      ?.getAttribute("data-action");
+    if (dataType === "open-simulations") {
+      onClickModuleSimulation(module.module_uuid);
     }
 
     // else if (dataType === 'delete-module') {
@@ -75,15 +109,15 @@ export default function ModuleTable({ modules, projectId, unitId, handleUpdateMo
     // } else if (dataType === 'edit-module') {
     //   setModuleToEdit(module)
     // }
-  }
+  };
 
   return (
-    <div className='space-y-4 rounded-md border p-4'>
+    <div className="space-y-4 rounded-md border p-4">
       {modules.length === 0 ? (
         <NotFoundList
-          message={t('common.noItemsFound')}
-          description={t('drawerAddModule.addConstructiveTechnology')}
-          icon='file'
+          message={t("common.noItemsFound")}
+          description={t("drawerAddModule.addConstructiveTechnology")}
+          icon="file"
           showIcon={true}
         />
       ) : (
@@ -91,18 +125,21 @@ export default function ModuleTable({ modules, projectId, unitId, handleUpdateMo
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {/* <TableHead>
+                <TableHead>
                   <Checkbox
                     checked={table.getIsAllPageRowsSelected()}
-                    onCheckedChange={(value: boolean | 'indeterminate') => {
-                      table.toggleAllPageRowsSelected(!!value)
+                    onCheckedChange={(value: boolean | "indeterminate") => {
+                      table.toggleAllPageRowsSelected(!!value);
                     }}
-                    aria-label='Selecionar tudo'
+                    aria-label="Selecionar tudo"
                   />
-                </TableHead> */}
+                </TableHead>
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id}>
-                    {flexRender(header.column.columnDef.header, header.getContext())}
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
                   </TableHead>
                 ))}
                 <TableHead></TableHead>
@@ -112,46 +149,73 @@ export default function ModuleTable({ modules, projectId, unitId, handleUpdateMo
           <TableBody>
             {table.getRowModel().rows.map((row) => (
               <TableRow
-                data-action='open-module'
+                data-action="open-module"
                 key={row.id}
-                className='hover:cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                data-state={row.getIsSelected() && 'selected'}
+                className="hover:cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                data-state={row.getIsSelected() && "selected"}
                 onClick={(e) => handleClickRow(e, row.original)}
               >
-                {/* <TableCell>
+                <TableCell>
                   <Checkbox
                     checked={row.getIsSelected()}
-                    onCheckedChange={(value: boolean | 'indeterminate') => {
-                      row.toggleSelected(!!value)
+                    onCheckedChange={(value: boolean | "indeterminate") => {
+                      row.toggleSelected(!!value);
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    aria-label='Selecionar linha'
+                    aria-label="Selecionar linha"
                   />
-                </TableCell> */}
+                </TableCell>
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
                 ))}
                 <TableCell>
-                  <div className='flex items-center justify-end gap-2'>
-                    <ChartLine data-action='open-simulations' className='hover:scale-105' />
+                  <div className="flex items-center justify-end gap-2">
+                    <ChartLine
+                      data-action="open-simulations"
+                      className="hover:scale-105"
+                    />
                     <DrawerEditModule
-                      componentTrigger={<Pen size={16} data-action='edit-module' className='hover:scale-105' />}
+                      componentTrigger={
+                        <Pen
+                          size={16}
+                          data-action="edit-module"
+                          className="hover:scale-105"
+                        />
+                      }
                       module={row.original}
                       callback={handleUpdateModule}
+                    />
+                    <ModalSimple
+                      componentTrigger={
+                        <Trash size={16} className="hover:scale-105" />
+                      }
+                      content={
+                        "Você tem certeza que deseja excluir este módulo? Essa ação não pode ser desfeita."
+                      }
+                      title={"Excluir módulo"}
+                      onConfirm={() => {
+                        handleDeleteModule?.(row.original.module_uuid);
+                      }}
+                      confirmTitle="Deletar"
                     />
                   </div>
                 </TableCell>
               </TableRow>
             ))}
-            {/* <TableRow>
-              <TableCell colSpan={4}>Selecionados ({selectedRowModel.rows.length}) :</TableCell>
-              <TableCell>{totals.kg} kg</TableCell>
-              <TableCell>{totals.kgco2} kgCO₂</TableCell>
-              <TableCell>{totals.mj} MJ</TableCell>
-            </TableRow> */}
+            <TableRow>
+              <TableCell colSpan={3}>
+                Selecionados ({selectedRowModel.rows.length}) :
+              </TableCell>
+              <TableCell>{totals.areaTotal.toFixed(2)} m²</TableCell>
+              <TableCell>{totals.aco.toFixed(2)} kg</TableCell>
+              <TableCell>{totals.concreto.toFixed(2)} m³</TableCell>
+              <TableCell>{totals.co2.toFixed(2)} kgCO₂</TableCell>
+            </TableRow>
           </TableBody>
         </Table>
       )}
     </div>
-  )
+  );
 }
