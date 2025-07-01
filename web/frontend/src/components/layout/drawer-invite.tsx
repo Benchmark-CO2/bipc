@@ -9,9 +9,9 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from '../ui/button';
+import { Combobox } from '../ui/combobox';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from '../ui/drawer';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
-import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const permissionsOptions: Array<{ value: string; label: 'drawerInvite.viewPermission' | 'drawerInvite.editPermission' }> = [
@@ -57,7 +57,8 @@ const DrawerInvite = () => {
 
   const handleSubmit = (data: AddUserToProjectFormSchema) => {
     const { projectId, email, permissions } = data;
-    mutate({ projectId, email, permissions });
+    console.log('Submitting invite:', { projectId, email, permissions });
+    // mutate({ projectId, email, permissions });
   }
  
   return (
@@ -111,10 +112,7 @@ const DrawerInvite = () => {
               <FormItem>
                 <FormLabel>{t('drawerInvite.emailLabel')}</FormLabel>
                 <FormControl className='w-full'>
-                  <Input
-                    placeholder={t('drawerInvite.emailPlaceholder')}
-                    {...field}
-                  />
+                  <Combobox {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
