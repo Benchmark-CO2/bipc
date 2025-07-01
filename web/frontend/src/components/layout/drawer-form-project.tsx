@@ -197,6 +197,7 @@ export default function DrawerFormProject({
     if (!copyData.cep) delete copyData.cep;
     if (!copyData.street) delete copyData.street;
     if (!copyData.number) delete copyData.number;
+    if (!copyData.description) delete copyData.description;
 
     if (file) {
       imageUrl = await uploadImage();
