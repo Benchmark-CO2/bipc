@@ -16,12 +16,12 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 
 	var input struct {
 		Name         string  `json:"name"`
-		CEP          string  `json:"cep"`
+		CEP          *string `json:"cep"`
 		State        string  `json:"state"`
 		City         string  `json:"city"`
-		Neighborhood string  `json:"neighborhood"`
-		Street       string  `json:"street"`
-		Number       string  `json:"number"`
+		Neighborhood *string `json:"neighborhood"`
+		Street       *string `json:"street"`
+		Number       *string `json:"number"`
 		Phase        string  `json:"phase"`
 		Description  *string `json:"description"`
 		ImageURL     *string `json:"image_url"`
@@ -134,7 +134,7 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	if input.CEP != nil {
-		project.CEP = *input.CEP
+		project.CEP = input.CEP
 	}
 
 	if input.State != nil {
@@ -146,15 +146,15 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	if input.Neighborhood != nil {
-		project.Neighborhood = *input.Neighborhood
+		project.Neighborhood = input.Neighborhood
 	}
 
 	if input.Street != nil {
-		project.Street = *input.Street
+		project.Street = input.Street
 	}
 
 	if input.Number != nil {
-		project.Number = *input.Number
+		project.Number = input.Number
 	}
 
 	if input.Phase != nil {

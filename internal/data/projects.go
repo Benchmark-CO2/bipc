@@ -34,12 +34,12 @@ type Project struct {
 	UpdatedAt    time.Time   `json:"updated_at"`
 	UserID       int64       `json:"user_id"`
 	Name         string      `json:"name"`
-	CEP          string      `json:"cep"`
+	CEP          *string     `json:"cep,omitzero"`
 	State        string      `json:"state"`
 	City         string      `json:"city"`
-	Neighborhood string      `json:"neighborhood"`
-	Street       string      `json:"street"`
-	Number       string      `json:"number"`
+	Neighborhood *string     `json:"neighborhood,omitzero"`
+	Street       *string     `json:"street,omitzero"`
+	Number       *string     `json:"number,omitzero"`
 	Phase        string      `json:"phase"`
 	Description  *string     `json:"description,omitzero"`
 	ImageURL     *string     `json:"image_url,omitzero"`
@@ -50,7 +50,9 @@ func ValidateProject(v *validator.Validator, project *Project) {
 	v.Check(project.Name != "", "name", "must be provided")
 	v.Check(len(project.Name) <= 100, "name", "must not be more than 100 bytes long")
 
-	v.Check(validator.Matches(project.CEP, validator.CEPRX), "cep", "must be a valid CEP")
+	if project.CEP != nil {
+		v.Check(validator.Matches(*project.CEP, validator.CEPRX), "cep", "must be a valid CEP")
+	}
 
 	v.Check(project.State != "", "state", "must be provided")
 	v.Check(len(project.State) == 2, "state", "must be a valid state code (2 characters)")
@@ -59,14 +61,20 @@ func ValidateProject(v *validator.Validator, project *Project) {
 	v.Check(project.City != "", "city", "must be provided")
 	v.Check(len(project.City) <= 100, "city", "must not be more than 100 bytes long")
 
-	v.Check(project.Neighborhood != "", "neighborhood", "must be provided")
-	v.Check(len(project.Neighborhood) <= 100, "neighborhood", "must not be more than 100 bytes long")
+	if project.Neighborhood != nil {
+		v.Check(*project.Neighborhood != "", "neighborhood", "must be provided")
+		v.Check(len(*project.Neighborhood) <= 100, "neighborhood", "must not be more than 100 bytes long")
+	}
 
-	v.Check(project.Street != "", "street", "must be provided")
-	v.Check(len(project.Street) <= 100, "street", "must not be more than 100 bytes long")
+	if project.Street != nil {
+		v.Check(*project.Street != "", "street", "must be provided")
+		v.Check(len(*project.Street) <= 100, "street", "must not be more than 100 bytes long")
+	}
 
-	v.Check(project.Number != "", "number", "must be provided")
-	v.Check(len(project.Number) <= 20, "number", "must not be more than 20 bytes long")
+	if project.Number != nil {
+		v.Check(*project.Number != "", "number", "must be provided")
+		v.Check(len(*project.Number) <= 20, "number", "must not be more than 20 bytes long")
+	}
 
 	v.Check(project.Phase != "", "phase", "must be provided")
 	v.Check(validator.PermittedValue(project.Phase, phases...), "phase", fmt.Sprintf("must be a valid phase (allowed: %s)", strings.Join(phases, ", ")))
