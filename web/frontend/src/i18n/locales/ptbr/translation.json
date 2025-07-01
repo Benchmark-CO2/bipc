@@ -132,6 +132,33 @@
       "confirmAction": "Confirmar"
     }
   },
+  "resetPassword": {
+    "invalid": {
+      "title": "Link Inválido",
+      "description": "O link de ativação é inválido ou expirou. Solicite um novo email de confirmação.",
+      "goToLogin": "Voltar ao Login"
+    },
+    "success": {
+      "title": "Senha alterada!",
+      "description": "Sua senha foi alterada com sucesso. Agora você pode fazer login com sua nova senha.",
+      "goToLogin": "Fazer Login"
+    },
+    "error": {
+      "title": "Erro ao alterar senha",
+      "description": "Não foi possível alterar sua senha. Tente novamente ou entre em contato com o suporte.",
+      "retry": "Tentar Novamente",
+      "support": "Contatar Suporte"
+    },
+    "loading": {
+      "title": "Resetando senha...",
+      "description": "Aguarde enquanto processamos a alteração de senha."
+    },
+    "confirm": {
+      "title": "Alterar Senha",
+      "description": "Preencha os campos abaixo para alterar sua senha.",
+      "confirmAction": "Confirmar"
+    }
+  },
   "signUp": {
     "title": "CADASTRO",
     "name": "Nome",
