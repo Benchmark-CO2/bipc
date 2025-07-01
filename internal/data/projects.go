@@ -62,17 +62,17 @@ func ValidateProject(v *validator.Validator, project *Project) {
 	v.Check(len(project.City) <= 100, "city", "must not be more than 100 bytes long")
 
 	if project.Neighborhood != nil {
-		v.Check(*project.Neighborhood != "", "neighborhood", "must be provided")
+		v.Check(*project.Neighborhood != "", "neighborhood", "empty neighborhood is not allowed")
 		v.Check(len(*project.Neighborhood) <= 100, "neighborhood", "must not be more than 100 bytes long")
 	}
 
 	if project.Street != nil {
-		v.Check(*project.Street != "", "street", "must be provided")
+		v.Check(*project.Street != "", "street", "empty street is not allowed")
 		v.Check(len(*project.Street) <= 100, "street", "must not be more than 100 bytes long")
 	}
 
 	if project.Number != nil {
-		v.Check(*project.Number != "", "number", "must be provided")
+		v.Check(*project.Number != "", "number", "empty number is not allowed")
 		v.Check(len(*project.Number) <= 20, "number", "must not be more than 20 bytes long")
 	}
 
@@ -80,10 +80,12 @@ func ValidateProject(v *validator.Validator, project *Project) {
 	v.Check(validator.PermittedValue(project.Phase, phases...), "phase", fmt.Sprintf("must be a valid phase (allowed: %s)", strings.Join(phases, ", ")))
 
 	if project.Description != nil {
+		v.Check(*project.Description != "", "description", "empty description is not allowed")
 		v.Check(len(*project.Description) <= 500, "description", "must not be more than 500 bytes long")
 	}
 
 	if project.ImageURL != nil {
+		v.Check(*project.ImageURL != "", "image_url", "empty image URL is not allowed")
 		v.Check(validator.IsValidHTTPURL(*project.ImageURL), "image_url", "must be a valid URL")
 	}
 }
