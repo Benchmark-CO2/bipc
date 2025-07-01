@@ -39,7 +39,7 @@ import { X } from "lucide-react";
 interface IDrawerAddProject {
   componentTrigger: React.ReactNode;
   callback?: (data: AddModuleFormSchema) => void;
-  curModule?: Pick<TModuleData, "tipoDeEstrutura">;
+  curModule?: Pick<TModuleData, "tipoDeEstrutura" | "nome">;
   context?: string;
 }
 
@@ -71,6 +71,7 @@ export default function DrawerAddModule({
   useEffect(() => {
     if (curModule) {
       form.setValue("tipoDeEstrutura", curModule.tipoDeEstrutura);
+      form.setValue("nome", curModule.nome);
     }
   }, [curModule, form, t]);
 
@@ -124,7 +125,7 @@ export default function DrawerAddModule({
                 <FormItem>
                   <FormLabel>Nome</FormLabel>
                   <FormControl>
-                    <Input type="text" {...field} />
+                    <Input type="text" {...field} disabled={!!curModule} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
