@@ -3,8 +3,7 @@
 {{define "plainBody"}}
 Hi, Thanks for signing up for a BIPC account. We're excited to have you on board!
 For future reference, your user ID number is {{.userID}}.
-Please send a request to the `PUT /v1/users/activated` endpoint with the following JSON body to activate your account: {"token": "{{.activationToken}}"}
-Or access this link: http://bip.software/activate?tkn={{.activationToken}}
+Access this link http://bip.software/activate?tkn={{.activationToken}} to activate your account.
 Please note that this is a one-time use token and it will expire in 3 days.
 Thanks, The BIPC Team
 {{ end }}
@@ -24,17 +23,9 @@ Thanks, The BIPC Team
       board!
     </p>
     <p>For future reference, your user ID number is {{.userID}}.</p>
+    <p>Access <a href="http://bip.software/activate?tkn={{.activationToken}}">this link</a> to activate your account.</p>
     <p>
-      Please send a request to the <code>PUT /v1/users/activated</code> endpoint
-      with the following JSON body to activate your account:
-    </p>
-    <pre><code>
-    {"token": "{{.activationToken}}"}
-    </code></pre>
-    <p>Or access <a href="http://bip.software/activate?tkn={{.activationToken}}">this link</a></p>
-    <p>
-      Please note that this is a one-time use token and it will expire in 3
-      days.
+      Please note that this is a one-time use token and it will expire in 3 days.
     </p>
     <p>
       Thanks,<br />
