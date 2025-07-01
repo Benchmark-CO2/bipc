@@ -21,14 +21,7 @@ func (app *application) presignedURLHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	objectKey := r.URL.Query().Get("key")
-	var key string
-	if objectKey != "" {
-		// TODO: verify user permissions for the specified key
-		key = objectKey
-	} else {
-		key = "images/" + uuid.New().String() + ext
-	}
+	key := "images/" + uuid.New().String() + ext
 
 	policy := minio.NewPostPolicy()
 	policy.SetBucket(app.config.S3.bucket)
