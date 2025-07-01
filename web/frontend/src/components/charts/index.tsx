@@ -159,8 +159,8 @@ function Chart({ maxHeight, maxWidth, filledPoints, datachart }: IChartProps) {
  
   useEffect(() => {
     if (datachart) {
-      setGreenData(datachart.green)
-      setGreyData(datachart.grey)
+      setGreenData(datachart.green.sort((a, b) => a.x - b.x))
+      setGreyData(datachart.grey.sort((a, b) => a.x - b.x))
     }
     startLoading()
   }, [datachart])
@@ -297,8 +297,9 @@ function Chart({ maxHeight, maxWidth, filledPoints, datachart }: IChartProps) {
                     </g>
                   )
                 }}
-                className='stroke-foreground! stroke-[0.5px]'
+                className='stroke-accent-foreground/70! stroke-[0.5px]'
                 line={{ stroke: '#000000' }}
+                lineJointType={'natural'}
               />
 
               {/* Grey series */}
@@ -332,6 +333,7 @@ function Chart({ maxHeight, maxWidth, filledPoints, datachart }: IChartProps) {
                 }}
                 className='stroke-foreground! stroke-[0.5px]'
                 line={{ stroke: '#000000' }}
+                lineJointType={'natural'}
               />
               {/* Reference lines and labels */}
               {!dataLoading && referenceLines2.map((line, index) => (

@@ -6,6 +6,7 @@ import {
   DEFAULT_VALUES,
 } from "@/validators/addModule.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -34,7 +35,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { X } from "lucide-react";
 
 interface IDrawerAddProject {
   componentTrigger: React.ReactNode;
@@ -64,7 +64,6 @@ export default function DrawerAddModule({
         created_at: new Date().toISOString(),
       });
       setIsOpen(false);
-      form.reset();
     }
   };
 
