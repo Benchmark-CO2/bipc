@@ -257,7 +257,7 @@ func (m UserModel) Suggest(userID int64) ([]*User, error) {
 	}
 	defer rows.Close()
 
-	var users []*User
+	users := []*User{}
 
 	for rows.Next() {
 		var user User

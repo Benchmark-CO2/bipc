@@ -207,6 +207,7 @@ production/deploy/api:
 	ssh -t -i ~/.ssh/id_rsa_bipc bipc@$(production_host_ip) '\
 		migrate -path ~/migrations -database $(DB_DSN) up \
 		&& sudo mv ~/.envrc /etc/environment \
+		&& sudo systemctl daemon-reload \
 		&& sudo mv ~/api.service /etc/systemd/system/ \
 		&& sudo systemctl enable api \
 		&& sudo systemctl restart api \

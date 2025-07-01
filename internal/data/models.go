@@ -17,6 +17,7 @@ type Models struct {
 	Permissions PermissionModel
 	Projects    ProjectModel
 	Units       UnitModel
+	Invitations InvitationModel
 }
 
 func NewModels(db *sql.DB) Models {
@@ -26,5 +27,6 @@ func NewModels(db *sql.DB) Models {
 		Permissions: PermissionModel{DB: db},
 		Projects:    ProjectModel{DB: db},
 		Units:       UnitModel{DB: db},
+		Invitations: InvitationModel{DB: db},
 	}
 }
