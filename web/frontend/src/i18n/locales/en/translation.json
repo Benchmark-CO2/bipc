@@ -114,7 +114,20 @@
     "placeholderEmail": "Email",
     "placeholderPassword": "Password",
     "buttonLogin": "Login",
-    "buttonRegister": "Register"
+    "askRegister": "Don't have an account?",
+    "buttonRegister": "Register",
+    "buttonForgotPassword": "Forgot Password?"
+  },
+  "forgetPage": {
+    "title": "FORGOT MY PASSWORD",
+    "description": "Enter your email to receive a password reset link.",
+    "placeholderEmail": "Email",
+    "buttonSendEmail": "Send Email",
+    "successTitle": "Email Sent",
+    "successMessage": "Email sent successfully! If the email is registered, you will receive a link to reset your password.",
+    "errorMessage": "Something went wrong. Check if the email is correct or try again later.",
+    "emailIsRequired": "Email is required",
+    "backToLogin": "Back to Login"
   },
   "activateUser": {
     "invalid": {
@@ -140,6 +153,33 @@
     "confirm": {
       "title": "Confirm Registration",
       "description": "Click the button below to activate your account and start using our platform.",
+      "confirmAction": "Confirm"
+    }
+  },
+  "resetPassword": {
+    "invalid": {
+      "title": "Invalid Link",
+      "description": "The reset link is invalid or has expired. Please request a new password reset email.",
+      "goToLogin": "Go to Login"
+    },
+    "success": {
+      "title": "Password Changed!",
+      "description": "Your password has been successfully changed. You can now log in with your new password.",
+      "goToLogin": "Log In"
+    },
+    "error": {
+      "title": "Password Reset Error",
+      "description": "Unable to reset your password. Please try again or contact support.",
+      "retry": "Try Again",
+      "support": "Contact Support"
+    },
+    "loading": {
+      "title": "Resetting Password...",
+      "description": "Please wait while we process your password reset."
+    },
+    "confirm": {
+      "title": "Reset Password",
+      "description": "Fill in the fields below to reset your password.",
       "confirmAction": "Confirm"
     }
   },

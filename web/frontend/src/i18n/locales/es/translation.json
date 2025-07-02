@@ -112,7 +112,20 @@
     "placeholderEmail": "Correo electrónico",
     "placeholderPassword": "Contraseña",
     "buttonLogin": "Iniciar Sesión",
-    "buttonRegister": "Registrarse"
+    "askRegister": "¿No tienes una cuenta?",
+    "buttonRegister": "Registrarse",
+    "buttonForgotPassword": "¿Olvidaste tu contraseña?"
+  },
+  "forgetPage": {
+    "title": "OLVIDÉ MI CONTRASEÑA",
+    "description": "Introduce tu correo electrónico para recibir un enlace de restablecimiento de contraseña.",
+    "placeholderEmail": "Correo electrónico",
+    "buttonSendEmail": "Enviar Correo Electrónico",
+    "successTitle": "¡Correo electrónico enviado!",
+    "successMessage": "¡Correo electrónico enviado exitosamente! Verifica tu bandeja de entrada.",
+    "errorMessage": "Error al enviar el correo electrónico. Inténtalo nuevamente más tarde.",
+    "emailIsRequired": "El correo electrónico es obligatorio",
+    "backToLogin": "Volver al Inicio"
   },
   "activateUser": {
     "invalid": {
@@ -138,6 +151,33 @@
     "confirm": {
       "title": "Confirmar Registro",
       "description": "Haz clic en el botón de abajo para activar tu cuenta y comenzar a usar nuestra plataforma.",
+      "confirmAction": "Confirmar"
+    }
+  },
+  "resetPassword": {
+    "invalid": {
+      "title": "Enlace Inválido",
+      "description": "El enlace de activación es inválido o ha expirado. Solicita un nuevo correo electrónico de confirmación.",
+      "goToLogin": "Volver al Inicio de Sesión"
+    },
+    "success": {
+      "title": "¡Contraseña cambiada!",
+      "description": "Tu contraseña ha sido cambiada exitosamente. Ahora puedes iniciar sesión con tu nueva contraseña.",
+      "goToLogin": "Iniciar Sesión"
+    },
+    "error": {
+      "title": "Error al cambiar contraseña",
+      "description": "No fue posible cambiar tu contraseña. Inténtalo nuevamente o contacta con el soporte.",
+      "retry": "Intentar Nuevamente",
+      "support": "Contactar Soporte"
+    },
+    "loading": {
+      "title": "Restableciendo contraseña...",
+      "description": "Espera mientras procesamos el cambio de contraseña."
+    },
+    "confirm": {
+      "title": "Cambiar Contraseña",
+      "description": "Completa los campos a continuación para cambiar tu contraseña.",
       "confirmAction": "Confirmar"
     }
   },
@@ -419,7 +459,7 @@
       "confirmPassword": "Confirmar Contraseña"
     }
   },
-   "profile": {
+  "profile": {
     "title": "Perfil",
     "description": "Administra la configuración de tu perfil aquí.",
     "editProfile": "Editar Perfil",
