@@ -26,9 +26,7 @@ type Invitation struct {
 	ExpiresAt   time.Time `json:"expires_at"`
 	Status      string    `json:"status"`
 	InviterID   int64     `json:"inviter_id"`
-	InviterName string    `json:"inviter_name"`
 	ProjectID   int64     `json:"project_id"`
-	ProjectName string    `json:"project_name"`
 	Email       string    `json:"email"`
 	Permissions []string  `json:"permissions"`
 }
@@ -36,6 +34,12 @@ type Invitation struct {
 func ValidateStatus(v *validator.Validator, s string) {
 	v.Check(s != "", "status", "must be provided")
 	v.Check(validator.PermittedValue(s, status...), "status", fmt.Sprintf("must be a valid state code (allowed: %s)", strings.Join(status, ", ")))
+}
+
+type InvitationWithDetails struct {
+	Invitation
+	InviterName string `json:"inviter_name"`
+	ProjectName string `json:"project_name"`
 }
 
 type InvitationModel struct {
@@ -66,7 +70,7 @@ func (m *InvitationModel) Insert(invitation *Invitation) error {
 	return nil
 }
 
-func (m *InvitationModel) GetPendingByEmail(email string) ([]*Invitation, error) {
+func (m *InvitationModel) GetPendingByEmail(email string) ([]*InvitationWithDetails, error) {
 	query := `
 		SELECT i.id, i.token, i.created_at, i.expires_at, i.status, i.inviter_id, u.name as inviter_name, i.project_id, p.name as project_name, i.email, i.permissions
 		FROM invitations i inner join projects p on p.id = i.project_id inner join users u on u.id = i.inviter_id
@@ -82,10 +86,10 @@ func (m *InvitationModel) GetPendingByEmail(email string) ([]*Invitation, error)
 	}
 	defer rows.Close()
 
-	invitations := []*Invitation{}
+	invitations := []*InvitationWithDetails{}
 
 	for rows.Next() {
-		var invitation Invitation
+		var invitation InvitationWithDetails
 
 		err := rows.Scan(
 			&invitation.ID,
@@ -141,10 +145,9 @@ func (m *InvitationModel) Reply(invitationID int64, status string, email string)
 
 func (m *InvitationModel) GetByID(id int64) (*Invitation, error) {
 	query := `
-		SELECT i.id, i.token, i.created_at, i.expires_at, i.status, i.inviter_id, u.name as inviter_name, i.project_id, p.name as project_name, i.email, i.permissions
-		FROM invitations i INNER JOIN projects p ON p.id = i.project_id
-		INNER JOIN users u ON u.id = i.inviter_id
-		WHERE i.id = $1`
+		SELECT id, token, created_at, expires_at, status, inviter_id, project_id, email, permissionsAdd commentMore actions
+		FROM invitations
+		WHERE id = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -157,9 +160,7 @@ func (m *InvitationModel) GetByID(id int64) (*Invitation, error) {
 		&invitation.ExpiresAt,
 		&invitation.Status,
 		&invitation.InviterID,
-		&invitation.ProjectName,
 		&invitation.ProjectID,
-		&invitation.InviterName,
 		&invitation.Email,
 		pq.Array(&invitation.Permissions),
 	)
