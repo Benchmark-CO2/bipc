@@ -114,7 +114,20 @@
     "placeholderEmail": "Email",
     "placeholderPassword": "Password",
     "buttonLogin": "Login",
-    "buttonRegister": "Register"
+    "askRegister": "Don't have an account?",
+    "buttonRegister": "Register",
+    "buttonForgotPassword": "Forgot Password?"
+  },
+  "forgetPage": {
+    "title": "FORGOT MY PASSWORD",
+    "description": "Enter your email to receive a password reset link.",
+    "placeholderEmail": "Email",
+    "buttonSendEmail": "Send Email",
+    "successTitle": "Email Sent",
+    "successMessage": "Email sent successfully! If the email is registered, you will receive a link to reset your password.",
+    "errorMessage": "Something went wrong. Check if the email is correct or try again later.",
+    "emailIsRequired": "Email is required",
+    "backToLogin": "Back to Login"
   },
   "activateUser": {
     "invalid": {

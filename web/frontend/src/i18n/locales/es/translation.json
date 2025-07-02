@@ -112,7 +112,20 @@
     "placeholderEmail": "Correo electrónico",
     "placeholderPassword": "Contraseña",
     "buttonLogin": "Iniciar Sesión",
-    "buttonRegister": "Registrarse"
+    "askRegister": "¿No tienes una cuenta?",
+    "buttonRegister": "Registrarse",
+    "buttonForgotPassword": "¿Olvidaste tu contraseña?"
+  },
+  "forgetPage": {
+    "title": "OLVIDÉ MI CONTRASEÑA",
+    "description": "Introduce tu correo electrónico para recibir un enlace de restablecimiento de contraseña.",
+    "placeholderEmail": "Correo electrónico",
+    "buttonSendEmail": "Enviar Correo Electrónico",
+    "successTitle": "¡Correo electrónico enviado!",
+    "successMessage": "¡Correo electrónico enviado exitosamente! Verifica tu bandeja de entrada.",
+    "errorMessage": "Error al enviar el correo electrónico. Inténtalo nuevamente más tarde.",
+    "emailIsRequired": "El correo electrónico es obligatorio",
+    "backToLogin": "Volver al Inicio"
   },
   "activateUser": {
     "invalid": {
@@ -446,7 +459,7 @@
       "confirmPassword": "Confirmar Contraseña"
     }
   },
-   "profile": {
+  "profile": {
     "title": "Perfil",
     "description": "Administra la configuración de tu perfil aquí.",
     "editProfile": "Editar Perfil",

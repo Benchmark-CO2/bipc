@@ -115,7 +115,20 @@
     "placeholderEmail": "Email",
     "placeholderPassword": "Senha",
     "buttonLogin": "Login",
-    "buttonRegister": "Cadastrar"
+    "askRegister": "Não tem uma conta?",
+    "buttonRegister": "Cadastrar",
+    "buttonForgotPassword": "Esqueci minha senha"
+  },
+  "forgetPage": {
+    "title": "ESQUECI MINHA SENHA",
+    "description": "Digite seu email para receber um link de redefinição de senha.",
+    "placeholderEmail": "Email",
+    "buttonSendEmail": "Enviar Email",
+    "successTitle": "Email Enviado!",
+    "successMessage": "Email enviado com sucesso! Se o seu email estiver correto, você receberá um link para redefinir sua senha.",
+    "errorMessage": "Erro ao enviar email. Cheque se o email está correto e tente novamente.",
+    "emailIsRequired": "O email é obrigatório",
+    "backToLogin": "Voltar ao Login"
   },
   "activateUser": {
     "invalid": {
