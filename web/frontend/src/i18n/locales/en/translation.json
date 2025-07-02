@@ -429,5 +429,13 @@
     "settings": "Settings",
     "invites": "Invites",
     "noInvites": "You have no invites."
+  },
+  "utils": {
+    "date": {
+      "daysAgo": "{{count}} days ago",
+      "hoursAgo": "{{count}} hours ago",
+      "minutesAgo": "{{count}} minutes ago",
+      "secondsAgo": "{{count}} seconds ago"
+    }
   }
 }

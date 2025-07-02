@@ -1,3 +1,5 @@
+import { t } from 'i18next';
+
 function calculateRelativeTime(date: Date): string {
     const now = new Date();
     const differenceMs = now.getTime() - date.getTime();
@@ -7,13 +9,13 @@ function calculateRelativeTime(date: Date): string {
     const days = Math.floor(hours / 24);
 
     if (days > 0) {
-        return `${days} days ago`;
+        return t('utils.date.daysAgo', { count: days });
     } else if (hours > 0) {
-        return `${hours} hours ago`;
+        return t('utils.date.hoursAgo', { count: hours });
     } else if (minutes > 0) {
-        return `${minutes} minutes ago`;
+        return t('utils.date.minutesAgo', { count: minutes });
     } else {
-        return `${seconds} seconds ago`;
+        return t('utils.date.secondsAgo', { count: seconds });
     }
 }
 
