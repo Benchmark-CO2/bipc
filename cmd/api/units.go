@@ -70,7 +70,7 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
-func (app *application) showUnitHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) readUnitHandler(w http.ResponseWriter, r *http.Request) {
 	unitID, _ := app.readIDParam(r, "unitID")
 
 	unit, err := app.models.Units.GetByID(unitID)

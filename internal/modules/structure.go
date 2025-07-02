@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
+	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
 type Concrete struct {
@@ -90,7 +91,7 @@ func (c *Consuption) divideByArea(area float64) {
 
 type ModuleStructure interface {
 	Type() string
-	// Validate(v *validator.Validator)
+	Validate(v *validator.Validator)
 	Calculate() (Consuption, error)
 	Insert(models data.Models, unitID int64, result Consuption) error
 }
@@ -98,6 +99,85 @@ type ModuleStructure interface {
 func (b *BeamColumn) Type() string   { return b.StructureType }
 func (w *ConcreteWall) Type() string { return w.StructureType }
 
+func (w *ConcreteWall) Validate(v *validator.Validator) {
+	v.Check(w.Name != "", "name", "must be provided")
+	v.Check(w.StructureType != "", "structure_type", "must be provided")
+	v.Check(w.FloorRepetition > 0, "floor_repetition", "must be greater than 0")
+	v.Check(w.FloorArea > 0, "floor_area", "must be greater than 0")
+	v.Check(w.FloorHeight > 0, "floor_height", "must be greater than 0")
+
+	validateConcreteList(v, w.ConcreteWalls, "concrete_walls")
+	validateConcreteList(v, w.ConcreteSlabs, "concrete_slabs")
+
+	v.Check(w.SteelCA50 >= 0, "steel_ca50", "cannot be negative")
+	v.Check(w.SteelCA60 >= 0, "steel_ca60", "cannot be negative")
+	v.Check(w.SteelCA50 > 0 || w.SteelCA60 > 0, "steel", "at least one steel value must be greater than 0")
+
+	if w.WallThickness != nil {
+		v.Check(*w.WallThickness >= 0, "wall_thickness", "cannot be negative")
+	}
+	if w.SlabThickness != nil {
+		v.Check(*w.SlabThickness >= 0, "slab_thickness", "cannot be negative")
+	}
+	if w.FormArea != nil {
+		v.Check(*w.FormArea >= 0, "form_area", "cannot be negative")
+	}
+	if w.WallArea != nil {
+		v.Check(*w.WallArea >= 0, "wall_area", "cannot be negative")
+	}
+}
+
+func (b *BeamColumn) Validate(v *validator.Validator) {
+	v.Check(b.Name != "", "name", "must be provided")
+	v.Check(b.StructureType != "", "structure_type", "must be provided")
+	v.Check(b.FloorRepetition > 0, "floor_repetition", "must be greater than 0")
+	v.Check(b.FloorArea > 0, "floor_area", "must be greater than 0")
+	v.Check(b.FloorHeight > 0, "floor_height", "must be greater than 0")
+
+	validateConcreteList(v, b.ConcreteColumns, "concrete_columns")
+	validateConcreteList(v, b.ConcreteBeams, "concrete_beams")
+	validateConcreteList(v, b.ConcreteSlabs, "concrete_slabs")
+
+	v.Check(b.SteelCA50 >= 0, "steel_ca50", "cannot be negative")
+	v.Check(b.SteelCA60 >= 0, "steel_ca60", "cannot be negative")
+	v.Check(b.SteelCA50 > 0 || b.SteelCA60 > 0, "steel", "at least one steel value must be greater than 0")
+
+	if b.FormColumns != nil {
+		v.Check(*b.FormColumns >= 0, "form_columns", "cannot be negative")
+	}
+	if b.FormBeams != nil {
+		v.Check(*b.FormBeams >= 0, "form_beams", "cannot be negative")
+	}
+	if b.FormSlabs != nil {
+		v.Check(*b.FormSlabs >= 0, "form_slabs", "cannot be negative")
+	}
+	if b.FormTotal != nil {
+		v.Check(*b.FormTotal >= 0, "form_total", "cannot be negative")
+	}
+	if b.ColumnNumber != nil {
+		v.Check(*b.ColumnNumber >= 0, "column_number", "cannot be negative")
+	}
+	if b.AvgBeamSpan != nil {
+		v.Check(*b.AvgBeamSpan >= 0, "avg_beam_span", "cannot be negative")
+	}
+	if b.AvgSlabSpan != nil {
+		v.Check(*b.AvgSlabSpan >= 0, "avg_slab_span", "cannot be negative")
+	}
+}
+
+func validateConcreteList(v *validator.Validator, list []Concrete, fieldPrefix string) {
+	fckSet := make(map[string]struct{})
+	for _, c := range list {
+		v.Check(c.Volume > 0, fieldPrefix+".volume", "must be greater than 0")
+		v.Check(c.Fck != "", fieldPrefix+".fck", "must be provided")
+		if _, exists := fckSet[c.Fck]; exists {
+			v.Check(false, fieldPrefix+".fck", "duplicate fck value: "+c.Fck)
+		} else {
+			fckSet[c.Fck] = struct{}{}
+		}
+	}
+	v.Check(len(list) > 0, fieldPrefix, "must have at least one item")
+}
 
 func UnmarshalModuleStructure(data []byte) (ModuleStructure, error) {
 	var basic BasicModuleData

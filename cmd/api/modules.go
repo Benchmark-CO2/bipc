@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Benchmark-CO2/bipc/internal/modules"
+	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
 func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +25,13 @@ func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// TODO: validate
+	v := validator.New()
+	module.Validate(v)
+	if !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
 	result, err := module.Calculate()
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
