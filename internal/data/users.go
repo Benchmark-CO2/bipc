@@ -233,7 +233,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 	return &user, nil
 }
 
-func (m UserModel) Suggest(userID int64) ([]*User, error) {
+func (m UserModel) Collaborators(userID int64) ([]*User, error) {
 	query := `
 		SELECT users.id, users.created_at, users.name, users.email, users.activated, users.image_url
 		FROM users
@@ -246,7 +246,7 @@ func (m UserModel) Suggest(userID int64) ([]*User, error) {
    				WHERE user_id = $1
 			)
 			AND user_id <> $1
-		) colaborators ON users.id = colaborators.user_id`
+		) collaborators ON users.id = collaborators.user_id`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
