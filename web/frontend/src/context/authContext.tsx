@@ -17,6 +17,7 @@ export interface AuthContext {
     expiry: string;
   } | null;
   email: string | null;
+  user: TUser | null;
 }
 
 export const AuthContext = createContext<AuthContext | null>(null);

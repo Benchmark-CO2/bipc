@@ -1,5 +1,5 @@
+import { postSendInvite } from '@/actions/invites/postSendInvite';
 import { getAllProjectsByUser } from '@/actions/projects/getProjects';
-import { postAddUserToProject } from '@/actions/projects/postAddUserToProject';
 import { AddUserToProjectFormSchema } from '@/validators/addUserToProject.validator';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -9,9 +9,9 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from '../ui/button';
+import { Combobox } from '../ui/combobox';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from '../ui/drawer';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
-import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const permissionsOptions: Array<{ value: string; label: 'drawerInvite.viewPermission' | 'drawerInvite.editPermission' }> = [
@@ -37,7 +37,7 @@ const DrawerInvite = () => {
   })
 
   const { mutate } = useMutation({
-    mutationFn: ({projectId, email, permissions}: AddUserToProjectFormSchema) => postAddUserToProject(projectId, email, permissions),
+    mutationFn: ({projectId, email, permissions}: AddUserToProjectFormSchema) => postSendInvite(projectId, email, permissions),
     onSuccess: () => {
       toast.success(t("drawerInvite.title"), {
         description: t("drawerInvite.successMessage"),
@@ -57,6 +57,7 @@ const DrawerInvite = () => {
 
   const handleSubmit = (data: AddUserToProjectFormSchema) => {
     const { projectId, email, permissions } = data;
+    console.log('Submitting invite:', { projectId, email, permissions });
     mutate({ projectId, email, permissions });
   }
  
@@ -111,10 +112,7 @@ const DrawerInvite = () => {
               <FormItem>
                 <FormLabel>{t('drawerInvite.emailLabel')}</FormLabel>
                 <FormControl className='w-full'>
-                  <Input
-                    placeholder={t('drawerInvite.emailPlaceholder')}
-                    {...field}
-                  />
+                  <Combobox {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

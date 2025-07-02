@@ -48,7 +48,17 @@
     "cancel": "Cancel",
     "add": "Add",
     "close": "Close",
-    "open": "Open"
+    "open": "Open",
+    "new_one": "New",
+    "new_other": "New",
+    "accept": "Accept",
+    "reject": "Reject",
+    "invite_one": "Invite",
+    "invite_other": "Invites",
+    "invitedBy": "Invited by",
+    "inviteNotFound": "Invite not found",
+    "inviteNotFoundDescription": "The invite you are looking for does not exist or has already been accepted.",
+    "showAll": "Show All"
   },
   "home": {
     "title": "Home",
@@ -67,7 +77,10 @@
     "es": "Spanish",
     "ru": "Russian",
     "en": "English",
-    "ptbr": "Portuguese"
+    "ptbr": "Portuguese",
+
+    "notifications": "Notifications",
+    "profile": "Profile"
   },
   "projects": {
     "title": "Projects",
@@ -377,6 +390,9 @@
     "description": "Invite a user to the project by entering their email and selecting permissions.",
     "emailLabel": "Email *",
     "emailPlaceholder": "Enter the user's email",
+    "nameLabel": "Name *",
+    "namePlaceholder": "Enter the user's name",
+    "nameOrEmailPlaceholder": "Select user or enter email",
     "projectsLabel": "Projects *",
     "projectsPlaceholder": "Select a project",
     "permissionsLabel": "Permissions *",
@@ -403,6 +419,23 @@
       "email": "Email",
       "password": "Password",
       "confirmPassword": "Confirm Password"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "description": "Manage your profile settings here.",
+    "editProfile": "Edit Profile",
+    "viewProfile": "View Profile",
+    "settings": "Settings",
+    "invites": "Invites",
+    "noInvites": "You have no invites."
+  },
+  "utils": {
+    "date": {
+      "daysAgo": "{{count}} days ago",
+      "hoursAgo": "{{count}} hours ago",
+      "minutesAgo": "{{count}} minutes ago",
+      "secondsAgo": "{{count}} seconds ago"
     }
   }
 }
