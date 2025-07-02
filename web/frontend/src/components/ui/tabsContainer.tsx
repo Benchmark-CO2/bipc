@@ -1,15 +1,12 @@
 import { TProjectUnit } from "@/types/projects";
 import { useRouter } from "@tanstack/react-router";
-import { MoreHorizontal, Pen, Trash } from "lucide-react";
+import { EllipsisVertical, Pen, Trash } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./dropdown-menu";
-import { deleteUnit } from "@/actions/units/deleteUnit";
-import { toast } from "sonner";
-import { queryClient } from "@/utils/queryClient";
 import ModalConfirmDelete from "../layout/modal-confirm-delete";
 import { useTranslation } from "react-i18next";
 import { DrawerFormUnit } from "../layout";
@@ -18,12 +15,14 @@ interface TabsContainerProps {
   units: TProjectUnit[];
   projectId: string;
   selectedTab?: number;
+  tempDeleteTab?: (unitId: string) => void;
 }
 
 export function TabsContainer({
   units,
   projectId,
   selectedTab,
+  tempDeleteTab,
 }: TabsContainerProps) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -35,21 +34,22 @@ export function TabsContainer({
   };
 
   const handleDeleteUnit = (unitId: string) => {
-    void deleteUnit(projectId, unitId)
-      .then(async () => {
-        toast.success(t("success.unitDeleted"));
-        await queryClient.invalidateQueries({
-          queryKey: ["projects"],
-          refetchType: "all",
-        });
-      })
-      .catch((error) => {
-        toast.error(t("error.errorDeleteUnit"), {
-          description:
-            error instanceof Error ? error.message : t("error.errorUnknown"),
-          duration: 5000,
-        });
-      });
+    tempDeleteTab?.(unitId);
+    // void deleteUnit(projectId, unitId)
+    //   .then(async () => {
+    //     toast.success(t("success.unitDeleted"));
+    //     await queryClient.invalidateQueries({
+    //       queryKey: ["projects"],
+    //       refetchType: "all",
+    //     });
+    //   })
+    //   .catch((error) => {
+    //     toast.error(t("error.errorDeleteUnit"), {
+    //       description:
+    //         error instanceof Error ? error.message : t("error.errorUnknown"),
+    //       duration: 5000,
+    //     });
+    //   });
   };
 
   const unitId = selectedTab ?? "";
@@ -70,8 +70,8 @@ export function TabsContainer({
         >
           {unit.name}
           <DropdownMenu dir="rtl">
-            <DropdownMenuTrigger className="ml-2">
-              <MoreHorizontal size={16} className="text-primary" />
+            <DropdownMenuTrigger className="ml-2 cursor-pointer">
+              <EllipsisVertical size={16} className="text-primary" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DrawerFormUnit

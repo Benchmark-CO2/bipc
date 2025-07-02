@@ -45,7 +45,17 @@
     "cancel": "Cancelar",
     "add": "Adicionar",
     "close": "Fechar",
-    "open": "Abrir"
+    "open": "Abrir",
+    "new_one": "Novo",
+    "new_other": "Novos",
+    "accept": "Aceitar",
+    "reject": "Rejeitar",
+    "invite_one": "Convite",
+    "invite_other": "Convites",
+    "invitedBy": "Convidado por",
+    "inviteNotFound": "Convite não encontrado",
+    "inviteNotFoundDescription": "O convite que você está procurando não existe ou já foi aceito.",
+    "showAll": "Mostrar Todos"
   },
   "home": {
     "title": "Pagina Inicial",
@@ -63,7 +73,9 @@
     "es": "Espanhol",
     "ru": "Russo",
     "en": "Inglês",
-    "ptbr": "Português"
+    "ptbr": "Português",
+    "notifications": "Notificações",
+    "profile": "Perfil"
   },
   "projects": {
     "title": "Projetos",
@@ -188,6 +200,13 @@
     "unitUpdated": "Unidade de construção atualizada com sucesso",
     "unitDeleted": "Unidade de construção deletada com sucesso"
   },
+  "modalConfirmDelete": {
+    "projectTitle": "Excluir Projeto",
+    "unitTitle": "Excluir Unidade",
+    "description": "Esta ação não pode ser desfeita. Tem certeza de que deseja prosseguir?",
+    "cancelButton": "Cancelar",
+    "deleteButton": "Excluir"
+  },
   "drawerEditModule": {
     "title": "Editar Módulo de Tecnologia Construtiva",
     "structureTypeLabel": "Tipo de Estrutura",
@@ -244,6 +263,8 @@
     "concreteVolumeFck40": "Volume de Concreto Fck40 (m³)",
     "concreteVolumeFck45": "Volume de Concreto Fck45 (m³)",
     "steelConsumption": "Consumo de aço (kg)",
+    "concreteComsumption": "Consumo de concreto (m³)",
+    "co2Emission": "Emissão de CO₂ (kgCO₂)",
     "addConstructiveTechnology": "Adicionar Módulo"
   },
   "drawerFormProject": {
@@ -324,12 +345,15 @@
   },
   "modulesTable": {
     "headers": {
+      "name": "Nome",
       "structureType": "Tipo de Estrutura",
       "buildingType": "Tipo de Edifícação",
       "createdAt": "Criado em",
       "updatedAt": "Atualizado em",
       "buildedAreaTotal": "Área Construída Total (m²)",
-      "steelConsumption": "Consumo de Aço (kg)"
+      "steelConsumption": "Consumo de Aço (kg)",
+      "concreteConsumption": "Consumo de Concreto (m³)",
+      "co2Emission": "Emissão de CO₂ (kgCO₂)"
     },
     "structureType": {
       "beamColumn": "Viga Pilar",
@@ -361,6 +385,9 @@
     "description": "Preencha os detalhes abaixo para convidar um novo usuário.",
     "emailLabel": "Email do Usuário *",
     "emailPlaceholder": "Digite o email do usuário",
+    "nameLabel": "Nome *",
+    "namePlaceholder": "Digite o nome do usuário",
+    "nameOrEmailPlaceholder": "Selecione o usuário ou digite o email",
     "projectsLabel": "Projetos *",
     "projectsPlaceholder": "Selecione um projeto",
     "permissionsLabel": "Permissões *",
@@ -387,6 +414,23 @@
       "email": "Email",
       "password": "Senha",
       "confirmPassword": "Confirmar Senha"
+    }
+  },
+  "profile": {
+    "title": "Perfil",
+    "description": "Gerencie as configurações do seu perfil aqui.",
+    "editProfile": "Editar Perfil",
+    "viewProfile": "Ver Perfil",
+    "settings": "Configurações",
+    "invites": "Convites",
+    "noInvites": "Você não tem convites."
+  },
+  "utils": {
+    "date": {
+      "daysAgo": "{{count}} dias atrás",
+      "hoursAgo": "{{count}} horas atrás",
+      "minutesAgo": "{{count}} minutos atrás",
+      "secondsAgo": "{{count}} segundos atrás"
     }
   }
 }

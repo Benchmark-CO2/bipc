@@ -64,6 +64,9 @@ export default function DrawerEditModule({
       callback({
         ...data,
         module_uuid: module.module_uuid,
+        consumoDeAco: Math.round((Math.random() * 50 + 10) * 100) / 100, // 10-60kg
+        consumoDeConcreto: Math.round((Math.random() * 2 + 0.5) * 100) / 100, // 0.5-2.5m³
+        emissaoDeCo2: Math.round((Math.random() * 30 + 5) * 100) / 100, // 5-35kgCO2
       } as TModuleData);
       setIsOpen(false);
       form.reset();
@@ -92,10 +95,17 @@ export default function DrawerEditModule({
     }
   }, [module, form]);
   return (
-    <Drawer direction="right" open={isOpen} onOpenChange={setIsOpen}>
-      <DrawerTrigger>{componentTrigger}</DrawerTrigger>
+    <Drawer
+      direction="right"
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      dismissible={false}
+    >
+      <DrawerTrigger onClick={() => setIsOpen(true)}>
+        {componentTrigger}
+      </DrawerTrigger>
       <DrawerContent className="min-w-2/5">
-        <div className="mx-auto w-full p-8">
+        <div className="mx-auto w-full">
           <DrawerHeader>
             <DrawerTitle>{t("drawerEditModule.title")}</DrawerTitle>
             <Button
@@ -153,41 +163,6 @@ export default function DrawerEditModule({
                           <SelectItem value={"masonry"}>
                             {t("common.structureType.masonry")}
                           </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Tipo de Edificação */}
-              <FormField
-                control={form.control}
-                name="tipoDeEdificacao"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {t("drawerEditModule.buildingTypeLabel")}
-                    </FormLabel>
-                    <FormControl className="w-full">
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue
-                            placeholder={t(
-                              "drawerEditModule.buildingTypePlaceholder"
-                            )}
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="residential">
-                            Residencial
-                          </SelectItem>
-                          <SelectItem value="mixed">Misto</SelectItem>
-                          <SelectItem value="corporate">Corporativo</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>
@@ -460,23 +435,6 @@ export default function DrawerEditModule({
                     <FormItem>
                       <FormLabel>
                         {t("drawerEditModule.concreteVolumeFck45Label")}
-                      </FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.01" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Consumo de aço */}
-                <FormField
-                  control={form.control}
-                  name="consumoDeAco"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {t("drawerEditModule.steelConsumptionLabel")}
                       </FormLabel>
                       <FormControl>
                         <Input type="number" step="0.01" {...field} />

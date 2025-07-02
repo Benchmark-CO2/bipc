@@ -43,8 +43,8 @@ export type TProjectUnitModule = {
 };
 
 export type TModuleData = {
+  nome: string;
   tipoDeEstrutura: "beamColumn" | "concreteWall" | "masonry";
-  tipoDeEdificacao: "residential" | "mixed" | "corporate";
   data: string;
   numeroDeTorres: number;
   pavimentosSemFundacao: number;
@@ -64,6 +64,8 @@ export type TModuleData = {
   volumeDeConcretoFck40: number;
   volumeDeConcretoFck45: number;
   consumoDeAco: number;
+  consumoDeConcreto: number;
+  emissaoDeCo2: number;
   version: string;
   module_uuid: string;
   created_at: string;
@@ -83,4 +85,5 @@ export type TSimulation = {
     grey: DataPoint;
   };
   isValid: boolean;
+  isGlobal?: boolean; // Indica se a simulação é global
 };

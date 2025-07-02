@@ -63,8 +63,8 @@ function RouteComponent() {
   }, [modules]);
 
   const handleAddNewModule = (data: AddModuleFormSchema) => {
-    if (mods.find((el) => el.tipoDeEstrutura === data.tipoDeEstrutura)) {
-      toast.error("Esse tipo de estrutura ja existe na unidade");
+    if (mods.find((el) => el.nome === data.nome)) {
+      toast.error("Esse elemento ja existe na unidade");
       return;
     }
     const formatData = {
@@ -72,6 +72,9 @@ function RouteComponent() {
       // data: typeof data.data === 'string' ? data.data : data.data instanceof Date ? data.data.toISOString() : '',
       module_uuid: String(mods.length + 1),
       version: "1",
+      consumoDeAco: Math.round((Math.random() * 50 + 10) * 100) / 100, // 10-60kg
+      consumoDeConcreto: Math.round((Math.random() * 2 + 0.5) * 100) / 100, // 0.5-2.5m³
+      emissaoDeCo2: Math.round((Math.random() * 30 + 5) * 100) / 100, // 5-35kgCO2
     } as TModuleData;
 
     const units = getFromStorage(
@@ -105,6 +108,21 @@ function RouteComponent() {
     });
   };
 
+  const handleDeleteModule = (moduleId: string) => {
+    const units = getFromStorage(
+      `${UNIT_MODULES}/${projectId}`,
+      {} as TProjectUnitModule
+    );
+    setMods((prev) => {
+      const newMods = prev.filter((mod) => mod.module_uuid !== moduleId);
+      setToStorage(`${UNIT_MODULES}/${projectId}`, {
+        ...units,
+        [unitId]: newMods,
+      });
+      return newMods;
+    });
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end gap-4">
@@ -123,6 +141,7 @@ function RouteComponent() {
         projectId={projectId}
         unitId={unitId}
         handleUpdateModule={handleUpdateModule}
+        handleDeleteModule={handleDeleteModule}
       />
     </div>
   );

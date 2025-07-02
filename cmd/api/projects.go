@@ -16,12 +16,12 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 
 	var input struct {
 		Name         string  `json:"name"`
-		CEP          string  `json:"cep"`
+		CEP          *string `json:"cep"`
 		State        string  `json:"state"`
 		City         string  `json:"city"`
-		Neighborhood string  `json:"neighborhood"`
-		Street       string  `json:"street"`
-		Number       string  `json:"number"`
+		Neighborhood *string `json:"neighborhood"`
+		Street       *string `json:"street"`
+		Number       *string `json:"number"`
 		Phase        string  `json:"phase"`
 		Description  *string `json:"description"`
 		ImageURL     *string `json:"image_url"`
@@ -134,7 +134,7 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	if input.CEP != nil {
-		project.CEP = *input.CEP
+		project.CEP = input.CEP
 	}
 
 	if input.State != nil {
@@ -146,15 +146,15 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	if input.Neighborhood != nil {
-		project.Neighborhood = *input.Neighborhood
+		project.Neighborhood = input.Neighborhood
 	}
 
 	if input.Street != nil {
-		project.Street = *input.Street
+		project.Street = input.Street
 	}
 
 	if input.Number != nil {
-		project.Number = *input.Number
+		project.Number = input.Number
 	}
 
 	if input.Phase != nil {
@@ -261,7 +261,7 @@ func (app *application) listProjectsHandler(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func (app *application) assignUserHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) inviteUserHandler(w http.ResponseWriter, r *http.Request) {
 	user := app.contextGetUser(r)
 	projectID, _ := app.readIDParam(r, "projectID")
 
@@ -287,12 +287,38 @@ func (app *application) assignUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var u *data.User
-	u, err = app.models.Users.GetByEmail(input.Email)
+	user_invited, err := app.models.Users.GetByEmail(input.Email)
+	if err != nil && !errors.Is(err, data.ErrRecordNotFound) {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if user_invited != nil {
+		permissions, err := app.models.Permissions.GetAllForUser(user_invited.ID, projectID)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		if len(permissions) > 0 {
+			v.AddError("email", "this user is already a member of the project")
+			app.failedValidationResponse(w, r, v.Errors)
+			return
+		}
+	}
+
+	invitation := &data.Invitation{
+		InviterID:   user.ID,
+		ProjectID:   projectID,
+		Email:       input.Email,
+		Permissions: input.Permissions,
+	}
+
+	err = app.models.Invitations.Insert(invitation)
 	if err != nil {
 		switch {
-		case errors.Is(err, data.ErrRecordNotFound):
-			v.AddError("email", "no user found with this email address")
+		case errors.Is(err, data.ErrDuplicatePendingInvitation):
+			v.AddError("email", "a pending invitation already exists for this email in this project")
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -300,19 +326,25 @@ func (app *application) assignUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if u.ID == user.ID {
-		v.AddError("email", "you cannot set permissions for yourself")
-		app.failedValidationResponse(w, r, v.Errors)
-		return
-	}
+	app.background(func() {
+		project, err := app.models.Projects.GetByID(projectID)
+		if err != nil {
+			app.logger.Error(err.Error())
+			return
+		}
 
-	err = app.models.Permissions.SetForUser(u.ID, projectID, input.Permissions...)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
+		data := map[string]any{
+			"projectName": project.Name,
+			"inviterName": user.Name,
+		}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "user assigned successfully"}, nil)
+		err = app.mailer.Send(input.Email, "invitation.gohtml", data)
+		if err != nil {
+			app.logger.Error(err.Error())
+		}
+	})
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "invitation sent successfully"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

@@ -1,0 +1,32 @@
+{{define "subject"}}Your project awaits. Start collaborating today{{ end }}
+
+{{define "plainBody"}}
+Hi, 
+You`ve been invited by {{.inviterName}} to join the project "{{.projectName}}".
+To accept the invitation, log in to the platform: https://bip.software/login
+This invitation will expire in 7 days.
+Thanks,
+The BIPC Team
+{{ end }}
+
+{{define "htmlBody"}}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  </head>
+  <body>
+    <p>Hi,</p>
+    <p>You`ve been invited by <strong>{{.inviterName}}</strong> to join the project "<strong>{{.projectName}}</strong>".</p>
+    <p>
+      To accept the invitation, log in to the platform: <a href="http://bip.software/login">log in here</a>.
+    </p>
+    <p>This invitation will expire in 7 days.</p>
+    <p>
+      Thanks,<br />
+      The BIPC Team
+    </p>
+  </body>
+</html>
+{{ end }}

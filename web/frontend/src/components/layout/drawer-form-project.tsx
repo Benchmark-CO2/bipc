@@ -179,7 +179,7 @@ export default function DrawerFormProject({
   };
   const onSubmit = async (data: ProjectFormSchema) => {
     let imageUrl: string | undefined = undefined;
-    const copyData: PostProjectRequest = {
+    const copyData: Partial<PostProjectRequest> = {
       name: data.name,
       description: data.description,
       state: data.state,
@@ -191,9 +191,18 @@ export default function DrawerFormProject({
       number: data.number || "",
       image_url: undefined,
     };
+
+    // Remove empty optional fields
+    if (!copyData.neighborhood) delete copyData.neighborhood;
+    if (!copyData.cep) delete copyData.cep;
+    if (!copyData.street) delete copyData.street;
+    if (!copyData.number) delete copyData.number;
+    if (!copyData.description) delete copyData.description;
+
     if (file) {
       imageUrl = await uploadImage();
     }
+
     if (isEditMode) {
       if (imageUrl) {
         copyData.image_url = imageUrl;

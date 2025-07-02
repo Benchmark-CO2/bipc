@@ -17,7 +17,7 @@ var (
 		"MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI",
 		"RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"}
 
-	phases = []string{"preliminary_study", "draft", "basic_project", "executive_project", "released_for_construction"}
+	phases = []string{"preliminary_study", "not_defined", "basic_project", "executive_project", "released_for_construction"}
 
 	ErrDuplicateProjectName = errors.New("duplicate project name")
 )
@@ -32,15 +32,14 @@ type Project struct {
 	ID           int64       `json:"id"`
 	CreatedAt    time.Time   `json:"created_at"`
 	UpdatedAt    time.Time   `json:"updated_at"`
-	Version      int64       `json:"-"`
 	UserID       int64       `json:"user_id"`
 	Name         string      `json:"name"`
-	CEP          string      `json:"cep"`
+	CEP          *string     `json:"cep,omitzero"`
 	State        string      `json:"state"`
 	City         string      `json:"city"`
-	Neighborhood string      `json:"neighborhood"`
-	Street       string      `json:"street"`
-	Number       string      `json:"number"`
+	Neighborhood *string     `json:"neighborhood,omitzero"`
+	Street       *string     `json:"street,omitzero"`
+	Number       *string     `json:"number,omitzero"`
 	Phase        string      `json:"phase"`
 	Description  *string     `json:"description,omitzero"`
 	ImageURL     *string     `json:"image_url,omitzero"`
@@ -51,7 +50,9 @@ func ValidateProject(v *validator.Validator, project *Project) {
 	v.Check(project.Name != "", "name", "must be provided")
 	v.Check(len(project.Name) <= 100, "name", "must not be more than 100 bytes long")
 
-	v.Check(validator.Matches(project.CEP, validator.CEPRX), "cep", "must be a valid CEP")
+	if project.CEP != nil {
+		v.Check(validator.Matches(*project.CEP, validator.CEPRX), "cep", "must be a valid CEP")
+	}
 
 	v.Check(project.State != "", "state", "must be provided")
 	v.Check(len(project.State) == 2, "state", "must be a valid state code (2 characters)")
@@ -60,23 +61,31 @@ func ValidateProject(v *validator.Validator, project *Project) {
 	v.Check(project.City != "", "city", "must be provided")
 	v.Check(len(project.City) <= 100, "city", "must not be more than 100 bytes long")
 
-	v.Check(project.Neighborhood != "", "neighborhood", "must be provided")
-	v.Check(len(project.Neighborhood) <= 100, "neighborhood", "must not be more than 100 bytes long")
+	if project.Neighborhood != nil {
+		v.Check(*project.Neighborhood != "", "neighborhood", "empty neighborhood is not allowed")
+		v.Check(len(*project.Neighborhood) <= 100, "neighborhood", "must not be more than 100 bytes long")
+	}
 
-	v.Check(project.Street != "", "street", "must be provided")
-	v.Check(len(project.Street) <= 100, "street", "must not be more than 100 bytes long")
+	if project.Street != nil {
+		v.Check(*project.Street != "", "street", "empty street is not allowed")
+		v.Check(len(*project.Street) <= 100, "street", "must not be more than 100 bytes long")
+	}
 
-	v.Check(project.Number != "", "number", "must be provided")
-	v.Check(len(project.Number) <= 20, "number", "must not be more than 20 bytes long")
+	if project.Number != nil {
+		v.Check(*project.Number != "", "number", "empty number is not allowed")
+		v.Check(len(*project.Number) <= 20, "number", "must not be more than 20 bytes long")
+	}
 
 	v.Check(project.Phase != "", "phase", "must be provided")
 	v.Check(validator.PermittedValue(project.Phase, phases...), "phase", fmt.Sprintf("must be a valid phase (allowed: %s)", strings.Join(phases, ", ")))
 
 	if project.Description != nil {
+		v.Check(*project.Description != "", "description", "empty description is not allowed")
 		v.Check(len(*project.Description) <= 500, "description", "must not be more than 500 bytes long")
 	}
 
 	if project.ImageURL != nil {
+		v.Check(*project.ImageURL != "", "image_url", "empty image URL is not allowed")
 		v.Check(validator.IsValidHTTPURL(*project.ImageURL), "image_url", "must be a valid URL")
 	}
 }
@@ -98,12 +107,12 @@ func (m ProjectModel) Insert(project *Project) error {
 	query1 := `
 		INSERT INTO projects (user_id, name, cep, state, city, neighborhood, street, number, phase, description, image_url)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-		RETURNING id, created_at, updated_at, version`
+		RETURNING id, created_at, updated_at`
 
 	args := []any{project.UserID, project.Name, project.CEP, project.State, project.City, project.Neighborhood,
 		project.Street, project.Number, project.Phase, project.Description, project.ImageURL}
 
-	err = tx.QueryRow(query1, args...).Scan(&project.ID, &project.CreatedAt, &project.UpdatedAt, &project.Version)
+	err = tx.QueryRow(query1, args...).Scan(&project.ID, &project.CreatedAt, &project.UpdatedAt)
 	if err != nil {
 		switch {
 		case err.Error() == `pq: duplicate key value violates unique constraint "projects_user_id_name_key"`:
@@ -130,12 +139,8 @@ func (m ProjectModel) Insert(project *Project) error {
 }
 
 func (m ProjectModel) GetByID(id int64) (*Project, error) {
-	if id < 1 {
-		return nil, ErrRecordNotFound
-	}
-
 	query := `
-		SELECT id, created_at, updated_at, version, user_id, name, cep, state, city, neighborhood, street, number, phase, description, image_url
+		SELECT id, created_at, updated_at, user_id, name, cep, state, city, neighborhood, street, number, phase, description, image_url
 		FROM projects
 		WHERE id = $1`
 
@@ -148,7 +153,6 @@ func (m ProjectModel) GetByID(id int64) (*Project, error) {
 		&project.ID,
 		&project.CreatedAt,
 		&project.UpdatedAt,
-		&project.Version,
 		&project.UserID,
 		&project.Name,
 		&project.CEP,
@@ -161,7 +165,6 @@ func (m ProjectModel) GetByID(id int64) (*Project, error) {
 		&project.Description,
 		&project.ImageURL,
 	)
-
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
@@ -170,31 +173,31 @@ func (m ProjectModel) GetByID(id int64) (*Project, error) {
 			return nil, err
 		}
 	}
-	
+
 	unitsQuery := `
         SELECT id, name, type
         FROM units
         WHERE project_id = $1
         ORDER BY id
     `
-    rows, err := m.DB.QueryContext(ctx, unitsQuery, project.ID)
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
+	rows, err := m.DB.QueryContext(ctx, unitsQuery, project.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-    var units []UnitBasic
-    for rows.Next() {
-        var u UnitBasic
-        if err := rows.Scan(&u.ID, &u.Name, &u.Type); err != nil {
-            return nil, err
-        }
-        units = append(units, u)
-    }
-    if err := rows.Err(); err != nil {
-        return nil, err
-    }
-    project.Units = units
+	var units []UnitBasic
+	for rows.Next() {
+		var u UnitBasic
+		if err := rows.Scan(&u.ID, &u.Name, &u.Type); err != nil {
+			return nil, err
+		}
+		units = append(units, u)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	project.Units = units
 
 	return &project, nil
 }
@@ -203,7 +206,7 @@ func (m ProjectModel) Update(project *Project) error {
 	query := `
 		UPDATE projects
 		SET name = $1, cep = $2, state = $3, city = $4, neighborhood = $5, street = $6,
-		number = $7, phase = $8, description = $9, image_url = $10, version = version + 1
+		number = $7, phase = $8, description = $9, image_url = $10
 		WHERE id = $11`
 
 	args := []any{
@@ -245,25 +248,7 @@ func (m ProjectModel) Update(project *Project) error {
 	return nil
 }
 
-func (m ProjectModel) BumpVersion(id int64) {
-	go func() {
-		query := `
- 		UPDATE projects
- 		SET version = version + 1
- 		WHERE id = $1`
-
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel()
-
-		m.DB.ExecContext(ctx, query, id)
-	}()
-}
-
 func (m ProjectModel) Delete(projectID int64) error {
-	if projectID < 1 {
-		return ErrRecordNotFound
-	}
-
 	query := `
 	DELETE FROM projects
 	WHERE id = $1`
@@ -291,7 +276,7 @@ func (m ProjectModel) Delete(projectID int64) error {
 
 func (m ProjectModel) GetAll(name string, filters Filters, userID int64) ([]*Project, Metadata, error) {
 	query := fmt.Sprintf(`
- 		SELECT COUNT(*) OVER(), p.id, p.created_at, p.updated_at, p.version, p.user_id, p.name,
+ 		SELECT COUNT(*) OVER(), p.id, p.created_at, p.updated_at, p.user_id, p.name,
 		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description, p.image_url
  		FROM projects p
 		INNER JOIN users_projects_permissions upp ON upp.project_id = p.id
@@ -323,7 +308,6 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID int64) ([]*Pro
 			&project.ID,
 			&project.CreatedAt,
 			&project.UpdatedAt,
-			&project.Version,
 			&project.UserID,
 			&project.Name,
 			&project.CEP,

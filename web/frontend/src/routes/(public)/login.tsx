@@ -60,7 +60,7 @@ const Login = () => {
     const token = data?.data.authentication_token;
     if (token) {
       auth.login(token, data?.data.user);
-      navigateTo("/");
+      navigateTo("/projects");
     }
   }, [data, navigate]);
 

@@ -6,6 +6,7 @@ import {
   DEFAULT_VALUES,
 } from "@/validators/addModule.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -34,12 +35,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { X } from "lucide-react";
 
 interface IDrawerAddProject {
   componentTrigger: React.ReactNode;
   callback?: (data: AddModuleFormSchema) => void;
-  curModule?: Pick<TModuleData, "tipoDeEstrutura">;
+  curModule?: Pick<TModuleData, "tipoDeEstrutura" | "nome">;
   context?: string;
 }
 
@@ -59,15 +59,18 @@ export default function DrawerAddModule({
   const onSubmit = (data: AddModuleFormSchema) => {
     // toast.error(t('drawerAddModule.featureNotIntegrated'))
     if (callback) {
-      callback({ ...data, created_at: new Date().toISOString() });
+      callback({
+        ...data,
+        created_at: new Date().toISOString(),
+      });
       setIsOpen(false);
-      form.reset();
     }
   };
 
   useEffect(() => {
     if (curModule) {
       form.setValue("tipoDeEstrutura", curModule.tipoDeEstrutura);
+      form.setValue("nome", curModule.nome);
     }
   }, [curModule, form, t]);
 
@@ -114,6 +117,20 @@ export default function DrawerAddModule({
               </Button>
             </div>
 
+            <FormField
+              control={form.control}
+              name="nome"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome</FormLabel>
+                  <FormControl>
+                    <Input type="text" {...field} disabled={!!curModule} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Tipo de Estrutura */}
             <FormField
               control={form.control}
@@ -145,45 +162,6 @@ export default function DrawerAddModule({
                         </SelectItem>
                         <SelectItem value="masonry">
                           {t("common.structureType.masonry")}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Tipo de Edificação */}
-            <FormField
-              control={form.control}
-              name="tipoDeEdificacao"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {t("drawerEditModule.buildingTypeLabel")}
-                  </FormLabel>
-                  <FormControl className="w-full">
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue
-                          placeholder={t(
-                            "drawerEditModule.buildingTypePlaceholder"
-                          )}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="residential">
-                          {t("common.buildingType.residential")}
-                        </SelectItem>
-                        <SelectItem value="mixed">
-                          {t("common.buildingType.mixed")}
-                        </SelectItem>
-                        <SelectItem value="corporate">
-                          {t("common.buildingType.corporate")}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -443,23 +421,6 @@ export default function DrawerAddModule({
                   <FormItem>
                     <FormLabel>
                       {t("drawerAddModule.concreteVolumeFck45")}
-                    </FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Consumo de aço */}
-              <FormField
-                control={form.control}
-                name="consumoDeAco"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {t("drawerAddModule.steelConsumption")}
                     </FormLabel>
                     <FormControl>
                       <Input type="number" step="0.01" {...field} />

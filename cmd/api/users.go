@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
@@ -263,10 +264,10 @@ func (app *application) updateUserPasswordHandler(w http.ResponseWriter, r *http
 	}
 }
 
-func (app *application) suggestUsersHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) UserCollaboratorsHandler(w http.ResponseWriter, r *http.Request) {
 	user := app.contextGetUser(r)
 
-	users, err := app.models.Users.Suggest(user.ID)
+	users, err := app.models.Users.Collaborators(user.ID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -276,5 +277,90 @@ func (app *application) suggestUsersHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
+	}
+}
+
+func (app *application) PendingInvitationsHandler(w http.ResponseWriter, r *http.Request) {
+	user := app.contextGetUser(r)
+
+	invitations, err := app.models.Invitations.GetPendingByEmail(user.Email)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"invitations": invitations}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+}
+
+func (app *application) replyInvitationHandler(w http.ResponseWriter, r *http.Request) {
+	user := app.contextGetUser(r)
+
+	invitationID, err := app.readIDParam(r, "invitationID")
+	if err != nil {
+		switch {
+		case strings.HasPrefix(err.Error(), "required path parameter"):
+			app.badRequestResponse(w, r, err)
+		default:
+			v := validator.New()
+			v.AddError("url", err.Error())
+			app.failedValidationResponse(w, r, v.Errors)
+		}
+		return
+	}
+
+	var input struct {
+		Status string `json:"status"`
+	}
+
+	err = app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	v := validator.New()
+
+	if data.ValidateStatus(v, input.Status); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	err = app.models.Invitations.Reply(invitationID, input.Status, user.Email)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	if input.Status == "accepted" {
+		invitation, err := app.models.Invitations.GetByID(invitationID)
+		if err != nil {
+			switch {
+			case errors.Is(err, data.ErrRecordNotFound):
+				app.notFoundResponse(w, r)
+			default:
+				app.serverErrorResponse(w, r, err)
+			}
+			return
+		}
+
+		err = app.models.Permissions.SetForUser(user.ID, invitation.ProjectID, invitation.Permissions...)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "invitation successfully replied"}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
 	}
 }
