@@ -145,7 +145,7 @@ func (m *InvitationModel) Reply(invitationID int64, status string, email string)
 
 func (m *InvitationModel) GetByID(id int64) (*Invitation, error) {
 	query := `
-		SELECT id, token, created_at, expires_at, status, inviter_id, project_id, email, permissionsAdd commentMore actions
+		SELECT id, token, created_at, expires_at, status, inviter_id, project_id, email, permissions
 		FROM invitations
 		WHERE id = $1`
 
