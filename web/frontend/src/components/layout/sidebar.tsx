@@ -1,6 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
+import { stringUtils } from '@/utils/string';
 import { Link } from '@tanstack/react-router';
-import { Settings } from 'lucide-react';
+import { Settings, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { LanguageToggle } from '../language-toggle';
 import { ModeToggle } from '../mode-toggle';
@@ -20,7 +21,7 @@ const activeProps = {
 }
 
 const Sidebar = ({ handleLogout }: ISidebar) => {
-  const { email } = useAuth()
+  const { user } = useAuth()
   const { t } = useTranslation();
   return (
     <div className='flex h-screen w-64 flex-col bg-zinc-800 p-4 text-white'>
@@ -72,12 +73,12 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             <Avatar>
               {/* <AvatarImage src='https://github.com/shadcn.png' /> */}
               <AvatarFallback className='bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200'>
-                {email?.charAt(0).toUpperCase()}
+                {stringUtils.getInitials(user?.name || '') || <User className='w-4 h-4' />}
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className='text-sm font-medium'>{t('common.user')}</p>
-              <p className='text-xs text-gray-400'>{email}</p>
+              <p className='text-sm font-medium'>{user?.name}</p>
+              <p className='text-xs text-gray-400'>{user?.email}</p>
             </div>
           </div>
         </li>

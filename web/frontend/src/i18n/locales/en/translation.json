@@ -50,7 +50,15 @@
     "close": "Close",
     "open": "Open",
     "new_one": "New",
-    "new_other": "New"
+    "new_other": "New",
+    "accept": "Accept",
+    "reject": "Reject",
+    "invite_one": "Invite",
+    "invite_other": "Invites",
+    "invitedBy": "Invited by",
+    "inviteNotFound": "Invite not found",
+    "inviteNotFoundDescription": "The invite you are looking for does not exist or has already been accepted.",
+    "showAll": "Show All"
   },
   "home": {
     "title": "Home",

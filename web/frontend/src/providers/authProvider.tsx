@@ -21,7 +21,7 @@ function getStoredToken() {
       return parsedUser;
     }
   } catch (error) {
-    localStorage.removeItem(storageTokenKey); // Clear invalid data
+    localStorage.removeItem(storageTokenKey);
     return null;
   }
 }
@@ -67,15 +67,22 @@ function setStoredUser(
   }
 }
 
+function clearStoredData() {
+  localStorage.removeItem(storageTokenKey);
+  localStorage.removeItem(storageUserKey);
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<{ token: string; expiry: string } | null>(
     getStoredToken()
   );
+  const [user, setUser] = useState<TUser | null>(getStoredUser());
   const isAuthenticated = !!token?.token;
 
   const logout = () => {
     setStoredToken(null);
     setToken(null);
+    clearStoredData()
   };
 
   const login = (
@@ -88,16 +95,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setStoredToken(authentication_token);
     setStoredUser(user);
     setToken(authentication_token);
+    setUser(user);
   };
 
   useEffect(() => {
     setToken(getStoredToken());
   }, []);
-  const storedUser = getStoredUser();
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, token, login, logout, email: storedUser?.email ?? null, activated: storedUser?.activated ?? null }}
+      value={{ isAuthenticated, token, login, logout, email: user?.email ?? null, activated: user?.activated ?? null, user }}
     >
       {children}
     </AuthContext.Provider>

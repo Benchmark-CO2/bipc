@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { t } from 'i18next';
 
 const ProfileToolbar = () => {
-  const { invites, setHasOpened, hasOpened, newInvitesCount } = useInvites();
+  const { invites, setHasOpened, hasOpened, newInvitesCount } = useInvites({});
   const hasInvites = invites && invites.length > 0;
   return (
     <div className='flex flex-col gap-4 p-4 bg-accent-foreground/10 shadow-md rounded-lg mt-4 mb-6'>

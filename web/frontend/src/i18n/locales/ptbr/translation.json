@@ -47,7 +47,15 @@
     "close": "Fechar",
     "open": "Abrir",
     "new_one": "Novo",
-    "new_other": "Novos"
+    "new_other": "Novos",
+    "accept": "Aceitar",
+    "reject": "Rejeitar",
+    "invite_one": "Convite",
+    "invite_other": "Convites",
+    "invitedBy": "Convidado por",
+    "inviteNotFound": "Convite não encontrado",
+    "inviteNotFoundDescription": "O convite que você está procurando não existe ou já foi aceito.",
+    "showAll": "Mostrar Todos"
   },
   "home": {
     "title": "Pagina Inicial",

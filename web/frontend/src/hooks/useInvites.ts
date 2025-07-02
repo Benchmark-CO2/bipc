@@ -1,101 +1,43 @@
-import { useQuery } from '@tanstack/react-query';
+import { getInvites, IInvite } from '@/actions/invites/getInvites';
+import { putReplyInvite, PutReplyInviteRequest } from '@/actions/invites/putReplyInvite';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { UseNavigateResult } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
-export interface IInvite {
-  id: number;
-  email: string;
-  project: {
-    id: number;
-    name: string;
-    description: string;
-  };
-  status: 'pending' | 'accepted' | 'declined';
-}
-export const useInvites = () => {
+
+export const useInvites = (props: { navigate?: UseNavigateResult<string>, inviteId?: string}) => {
   const [hasOpened, setHasOpened] = useState<boolean>(false);
   const [newInvitesCount, setNewInvitesCount] = useState<number>(0);
   const [isInviteLoading, setIsInviteLoading] = useState<boolean>(true);
-
-  const { data, isLoading } = useQuery<IInvite[]>({
+  
+  const { data, isLoading } = useQuery({
     queryKey: ['invites'],
-    queryFn: async () => {
-      // Simulate fetching invites
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve([
-            { id: 1, email: 'user1@example.com', project: {
-              id: 1,
-              name: 'Project Alpha',
-              description: 'This is a sample project for testing invites.',
-            }, status: 'pending' },
-            { id: 2, email: 'user2@example.com', project: {
-              id: 2,
-              name: 'Project Beta',
-              description: 'This is another sample project for testing invites.',
-            }, status: 'accepted' },
-            { id: 3, email: 'user3@example.com', project: {
-              id: 3,
-              name: 'Project Gamma',
-              description: 'This is yet another sample project for testing invites.',
-            }, status: 'declined' },
-            { id: 4, email: 'user4@example.com', project: {
-              id: 4,
-              name: 'Project Delta',
-              description: 'This is a fourth sample project for testing invites.',
-            }, status: 'pending' },
-            { id: 5, email: 'user5@example.com', project: {
-              id: 5,
-              name: 'Project Epsilon',
-              description: 'This is a fifth sample project for testing invites.',
-            }, status: 'pending' },
-            { id: 6, email: 'user6@example.com', project: {
-              id: 6,
-              name: 'Project Zeta',
-              description: 'This is a sixth sample project for testing invites.',
-            }, status: 'pending' },
-            { id: 7, email: 'user5@example.com', project: {
-              id: 5,
-              name: 'Project Epsilon',
-              description: 'This is a fifth sample project for testing invites.',
-            }, status: 'pending' },
-            { id: 8, email: 'user6@example.com', project: {
-              id: 6,
-              name: 'Project Zeta',
-              description: 'This is a sixth sample project for testing invites.',
-            }, status: 'pending' },
-            { id: 9, email: 'user6@example.com', project: {
-              id: 6,
-              name: 'Project Zeta',
-              description: 'This is a sixth sample project for testing invites.',
-            }, status: 'pending' }
-          ]);
-        }, 1000);
-      });
-    },
+    queryFn: getInvites
   });
 
-  const getInviteById = (id: number) => {
-    setIsInviteLoading(true);
-    try {
-      return data?.find(invite => invite.id === id);
-    } catch (error) {
-      console.error('Error fetching invite by ID:', error);
-    } finally {
-      setIsInviteLoading(false);
-    }
+  const getInviteById = (id?: string) => {
+    const invite = data?.data.invitations.find(invite => String(invite.id) === String(id));
+    return invite ? [invite] : null;
   };
 
+  const { mutate } = useMutation({
+    mutationFn: ({
+      inviteId, response
+    }:{inviteId: number, response: PutReplyInviteRequest }) => putReplyInvite(String(inviteId), response),
+  })
+
   useEffect(() => {
-    if (data === undefined) {
+    if (data?.data.invitations === undefined) {
       return;
     }
-    if (data.length > 0) {
+    if (data.data.invitations.length > 0) {
       const lastCount = localStorage.getItem('invitesCount') || '0';
       const lastCountNumber = parseInt(lastCount, 10);
-      if (lastCountNumber < data.length) {
-        localStorage.setItem('invitesCount', String(data.length));
+      if (lastCountNumber < data.data.invitations.length) {
+        localStorage.setItem('invitesCount', String(data.data.invitations.length));
         setHasOpened(false);
-        setNewInvitesCount(data.length - lastCountNumber);
+        setNewInvitesCount(data.data.invitations.length - lastCountNumber);
       } else {
         setHasOpened(true);
       }
@@ -115,8 +57,25 @@ export const useInvites = () => {
     });
   };
 
+  const handleSubmitReplyInvite = async (inviteId: number, response: PutReplyInviteRequest) => {
+    setIsInviteLoading(true);
+    try {
+      mutate({inviteId, response})
+      if (props?.navigate) {
+        props.navigate({
+          to: '/profile/invites'
+        })
+      }
+    } catch (error) {
+      toast.error('Error processing invite response. Please try again later.');
+    } finally {
+      setIsInviteLoading(false);
+    }
+  }
+
+
   return {
-    invites: orderInvites(data||[]) || [],
+    invites: props?.inviteId ? getInviteById(props?.inviteId) : orderInvites(data?.data.invitations || []),
     newInvitesCount,
     getInviteById,
     isLoading,
@@ -124,7 +83,8 @@ export const useInvites = () => {
     hasOpened,
     setHasOpened: (opened: boolean) => {
       localStorage.setItem('invitesOpened', String(opened));
-    }
+    },
+    handleSubmitReplyInvite
   };
 };
 

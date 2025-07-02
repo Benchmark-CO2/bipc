@@ -50,7 +50,15 @@
     "close": "Cerrar",
     "open": "Abrir",
     "new_one": "Nuevo",
-    "new_other": "Nuevos"
+    "new_other": "Nuevos",
+    "accept": "Aceptar",
+    "reject": "Rechazar",
+    "invite_one": "Invitación",
+    "invite_other": "Invitaciones",
+    "invitedBy": "Invitado por",
+    "inviteNotFound": "Invitación no encontrada",
+    "inviteNotFoundDescription": "La invitación que estás buscando no existe o ya ha sido aceptada.",
+    "showAll": "Mostrar Todo"
   },
   "home": {
     "title": "Inicio",

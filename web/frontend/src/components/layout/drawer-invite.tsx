@@ -1,5 +1,5 @@
+import { postSendInvite } from '@/actions/invites/postSendInvite';
 import { getAllProjectsByUser } from '@/actions/projects/getProjects';
-import { postAddUserToProject } from '@/actions/projects/postAddUserToProject';
 import { AddUserToProjectFormSchema } from '@/validators/addUserToProject.validator';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -37,7 +37,7 @@ const DrawerInvite = () => {
   })
 
   const { mutate } = useMutation({
-    mutationFn: ({projectId, email, permissions}: AddUserToProjectFormSchema) => postAddUserToProject(projectId, email, permissions),
+    mutationFn: ({projectId, email, permissions}: AddUserToProjectFormSchema) => postSendInvite(projectId, email, permissions),
     onSuccess: () => {
       toast.success(t("drawerInvite.title"), {
         description: t("drawerInvite.successMessage"),
@@ -58,7 +58,7 @@ const DrawerInvite = () => {
   const handleSubmit = (data: AddUserToProjectFormSchema) => {
     const { projectId, email, permissions } = data;
     console.log('Submitting invite:', { projectId, email, permissions });
-    // mutate({ projectId, email, permissions });
+    mutate({ projectId, email, permissions });
   }
  
   return (
