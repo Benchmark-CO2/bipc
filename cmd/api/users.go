@@ -264,10 +264,10 @@ func (app *application) updateUserPasswordHandler(w http.ResponseWriter, r *http
 	}
 }
 
-func (app *application) suggestUsersHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) UserCollaboratorsHandler(w http.ResponseWriter, r *http.Request) {
 	user := app.contextGetUser(r)
 
-	users, err := app.models.Users.Suggest(user.ID)
+	users, err := app.models.Users.Collaborators(user.ID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

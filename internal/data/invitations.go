@@ -36,6 +36,12 @@ func ValidateStatus(v *validator.Validator, s string) {
 	v.Check(validator.PermittedValue(s, status...), "status", fmt.Sprintf("must be a valid state code (allowed: %s)", strings.Join(status, ", ")))
 }
 
+type InvitationWithDetails struct {
+	Invitation
+	InviterName string `json:"inviter_name"`
+	ProjectName string `json:"project_name"`
+}
+
 type InvitationModel struct {
 	DB *sql.DB
 }
@@ -64,11 +70,12 @@ func (m *InvitationModel) Insert(invitation *Invitation) error {
 	return nil
 }
 
-func (m *InvitationModel) GetPendingByEmail(email string) ([]*Invitation, error) {
+func (m *InvitationModel) GetPendingByEmail(email string) ([]*InvitationWithDetails, error) {
 	query := `
-		SELECT id, token, created_at, expires_at, status, inviter_id, project_id, email, permissions
-		FROM invitations
-		WHERE email = $1 AND status = 'pending' AND expires_at > $2`
+		SELECT i.id, i.token, i.created_at, i.expires_at, i.status, i.inviter_id, u.name as inviter_name, i.project_id, p.name as project_name, i.email, i.permissions
+		FROM invitations i inner join projects p on p.id = i.project_id inner join users u on u.id = i.inviter_id
+		WHERE i.email = $1 AND i.status = 'pending' AND i.expires_at > $2
+		`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -79,10 +86,10 @@ func (m *InvitationModel) GetPendingByEmail(email string) ([]*Invitation, error)
 	}
 	defer rows.Close()
 
-	invitations := []*Invitation{}
+	invitations := []*InvitationWithDetails{}
 
 	for rows.Next() {
-		var invitation Invitation
+		var invitation InvitationWithDetails
 
 		err := rows.Scan(
 			&invitation.ID,
@@ -91,7 +98,9 @@ func (m *InvitationModel) GetPendingByEmail(email string) ([]*Invitation, error)
 			&invitation.ExpiresAt,
 			&invitation.Status,
 			&invitation.InviterID,
+			&invitation.InviterName,
 			&invitation.ProjectID,
+			&invitation.ProjectName,
 			&invitation.Email,
 			pq.Array(&invitation.Permissions),
 		)
