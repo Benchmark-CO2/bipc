@@ -395,10 +395,10 @@
       "buildingType": "Building Type",
       "createdAt": "Created At",
       "updatedAt": "Updated At",
-      "buildedAreaTotal": "Total Built Area (m²)",
+      "buildedAreaTotal": "Built Area (m²)",
       "steelConsumption": "Steel Consumption (kg)",
       "concreteConsumption": "Concrete Consumption (m³)",
-      "co2Emission": "CO₂ Emission (kgCO₂)",
+      "co2Emission": "CO₂ Emission (kgCO₂/m²)",
       "energy": "Energy (MJ)"
     },
     "structureType": {
