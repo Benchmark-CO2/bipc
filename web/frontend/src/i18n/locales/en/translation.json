@@ -398,7 +398,8 @@
       "buildedAreaTotal": "Total Built Area (m²)",
       "steelConsumption": "Steel Consumption (kg)",
       "concreteConsumption": "Concrete Consumption (m³)",
-      "co2Emission": "CO₂ Emission (kgCO₂)"
+      "co2Emission": "CO₂ Emission (kgCO₂)",
+      "energy": "Energy (MJ)"
     },
     "structureType": {
       "beamColumn": "Beam Column",

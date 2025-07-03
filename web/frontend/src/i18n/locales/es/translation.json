@@ -396,7 +396,8 @@
       "buildedAreaTotal": "Área Total Construida (m²)",
       "steelConsumption": "Consumo de Acero (kg)",
       "concreteConsumption": "Consumo de Concreto (m³)",
-      "co2Emission": "Emisión de CO₂ (kgCO₂)"
+      "co2Emission": "Emisión de CO₂ (kgCO₂)",
+      "energy": "Energía (MJ)"
     },
     "structureType": {
       "beamColumn": "Viga Pilar",
