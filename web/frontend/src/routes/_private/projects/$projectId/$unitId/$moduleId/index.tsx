@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import CustomBanner from "@/components/ui/customBanner";
 import { getFromStorage, setToStorage } from "@/lib/storage";
 import { TModuleData, TProjectUnitModule, TSimulation } from "@/types/projects";
-import { genRowData } from "@/utils/genData";
+import { genRowData, genRowData2 } from "@/utils/genData";
 import { AddModuleFormSchema } from "@/validators/addModule.validator";
 // import { mockSimulation } from '@/utils/mockSimulation'
 import { createFileRoute, useLoaderData } from "@tanstack/react-router";
@@ -191,7 +191,7 @@ function RouteComponent() {
       version: String(sims.length + 1),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      data: genRowData(lastSimulation?.data.green || null),
+      data: genRowData2(lastSimulation?.data.green || null),
       isValid: false,
     } as TSimulation;
 
@@ -205,7 +205,7 @@ function RouteComponent() {
     });
   };
   const dataPoints: Record<"green" | "grey", DataPoint[]> = {
-    green: [...sims, ...globalSims].sort((a, b) => a.data.green.x + b.data.green.x)
+    green: [...sims].sort((a, b) => a.data.green.x + b.data.green.x)
       .map((sim) => ({
         x: sim.data.green.x,
         y: sim.data.green.y,
@@ -215,7 +215,29 @@ function RouteComponent() {
         isGlobal: sim.isGlobal,
       }))
       .reverse() as DataPoint[],
-    grey: [...sims, ...globalSims].sort((a, b) => a.data.grey.x + b.data.grey.x)
+    grey: [...sims].sort((a, b) => a.data.grey.x + b.data.grey.x)
+      .map((sim) => ({
+        x: sim.data.grey.x,
+        y: sim.data.grey.y,
+        fill: +sim.version ? new Set(selectedSimulations).has(sim.version) : false,
+        label:
+          new Set(selectedSimulations).has(sim.version) && "v" + sim.version,
+        isGlobal: sim.isGlobal,
+      }))
+      .reverse() as DataPoint[],
+  };
+  const globalData: Record<"green" | "grey", DataPoint[]> = {
+    green: [...globalSims].sort((a, b) => a.data.green.x + b.data.green.x)
+      .map((sim) => ({
+        x: sim.data.green.x,
+        y: sim.data.green.y,
+        fill: +sim.version ? new Set(selectedSimulations).has(sim.version) : false,
+        label:
+          new Set(selectedSimulations).has(sim.version) && "n" + sim.version,
+        isGlobal: sim.isGlobal,
+      }))
+      .reverse() as DataPoint[],
+    grey: [...globalSims].sort((a, b) => a.data.grey.x + b.data.grey.x)
       .map((sim) => ({
         x: sim.data.grey.x,
         y: sim.data.grey.y,
@@ -268,6 +290,7 @@ function RouteComponent() {
             filledPoints={+simulationId || 0}
             key={simulationId}
             datachart={dataPoints}
+            globalData={globalData}
           />
         }
       </div>
