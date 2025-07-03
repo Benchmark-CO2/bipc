@@ -40,7 +40,7 @@ type BeamColumnModule struct {
 	TotalEnergyMin  *float64  `json:"total_energy_min,omitempty"`
 	TotalEnergyMax  *float64  `json:"total_energy_max,omitempty"`
 	Version         int32     `json:"version"`
-	InUse           *bool     `json:"in_use,omitempty"`
+	InUse           bool      `json:"in_use"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }
@@ -65,7 +65,7 @@ type ConcreteWallModule struct {
 	TotalEnergyMin  *float64  `json:"total_energy_min,omitempty"`
 	TotalEnergyMax  *float64  `json:"total_energy_max,omitempty"`
 	Version         int32     `json:"version"`
-	InUse           *bool     `json:"in_use,omitempty"`
+	InUse           bool      `json:"in_use"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }
@@ -108,6 +108,27 @@ func (m BeamColumnModuleModel) Insert(module *BeamColumnModule) error {
 	if err != nil {
 		return err
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	if module.ID > 0 {
+		query := `
+			INSERT INTO module_beam_column (
+				id, unit_id, name, floor_repetition, floor_area, floor_height,
+				concrete_columns, concrete_beams, concrete_slabs, steel_ca50, steel_ca60,
+				form_columns, form_beams, form_slabs, form_total, column_number, avg_beam_span, avg_slab_span,
+				total_co2_min, total_co2_max, total_energy_min, total_energy_max, version, in_use
+			) VALUES (
+				$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24
+			)
+			RETURNING id, created_at, updated_at`
+		return m.DB.QueryRowContext(ctx, query,
+			module.ID, module.UnitID, module.Name, module.FloorRepetition, module.FloorArea, module.FloorHeight,
+			colID, beamID, slabID, module.SteelCA50, module.SteelCA60,
+			module.FormColumns, module.FormBeams, module.FormSlabs, module.FormTotal, module.ColumnNumber, module.AvgBeamSpan, module.AvgSlabSpan,
+			module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax, module.Version, module.InUse,
+		).Scan(&module.ID, &module.CreatedAt, &module.UpdatedAt)
+	}
 	query := `
 		INSERT INTO module_beam_column (
 			unit_id, name, floor_repetition, floor_area, floor_height,
@@ -115,14 +136,9 @@ func (m BeamColumnModuleModel) Insert(module *BeamColumnModule) error {
 			form_columns, form_beams, form_slabs, form_total, column_number, avg_beam_span, avg_slab_span,
 			total_co2_min, total_co2_max, total_energy_min, total_energy_max, version, in_use
 		) VALUES (
-			$1, $2, $3, $4, $5,
-			$6, $7, $8, $9, $10,
-			$11, $12, $13, $14, $15, $16, $17,
-			$18, $19, $20, $21, $22, $23
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
 		)
 		RETURNING id, created_at, updated_at`
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
 	return m.DB.QueryRowContext(ctx, query,
 		module.UnitID, module.Name, module.FloorRepetition, module.FloorArea, module.FloorHeight,
 		colID, beamID, slabID, module.SteelCA50, module.SteelCA60,
@@ -162,3 +178,19 @@ func (m ConcreteWallModuleModel) Insert(module *ConcreteWallModule) error {
 		module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax, module.Version, module.InUse,
 	).Scan(&module.ID, &module.CreatedAt, &module.UpdatedAt)
 }
+
+func (m BeamColumnModuleModel) GetLatestVersion(id int64) (int32, error) {
+	query := `SELECT version FROM module_beam_column WHERE id = $1 ORDER BY version DESC LIMIT 1`
+	var version int32
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(&version)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, nil // ou -1 se preferir indicar ausência
+		}
+		return 0, err
+	}
+	return version, nil
+}
+

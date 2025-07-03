@@ -93,7 +93,8 @@ type ModuleStructure interface {
 	Type() string
 	Validate(v *validator.Validator)
 	Calculate() (Consuption, error)
-	Insert(models data.Models, unitID int64, result Consuption) error
+	Insert(models data.Models, unitID int64, result Consuption, opts *InsertOptions) error
+	GetLatestVersion(models data.Models, moduleID int64) (int32, error)
 }
 
 func (b *BeamColumn) Type() string   { return b.StructureType }
@@ -351,7 +352,12 @@ func (b *BeamColumn) Calculate() (Consuption, error) {
 	return total, nil
 }
 
-func (b *BeamColumn) Insert(models data.Models, unitID int64, result Consuption) error {
+type InsertOptions struct {
+	Version *int32
+	ID      *int64
+}
+
+func (b *BeamColumn) Insert(models data.Models, unitID int64, result Consuption, opts *InsertOptions) error {
 	columns := aggregateConcreteVolumes(b.ConcreteColumns)
 	beams := aggregateConcreteVolumes(b.ConcreteBeams)
 	slabs := aggregateConcreteVolumes(b.ConcreteSlabs)
@@ -378,7 +384,20 @@ func (b *BeamColumn) Insert(models data.Models, unitID int64, result Consuption)
 		TotalCO2Max:     &result.CO2Max,
 		TotalEnergyMin:  &result.EnergyMin,
 		TotalEnergyMax:  &result.EnergyMax,
+		Version:         1,
+		InUse:           true,
 	}
+
+	if opts != nil {
+		if opts.ID != nil && *opts.ID > 0 {
+			module.ID = *opts.ID
+		}
+		
+		if opts.Version != nil && *opts.Version > 0 {
+			module.Version = *opts.Version
+		}
+	}
+	
 	return models.BeamColumnModules.Insert(module)
 }
 
@@ -406,6 +425,9 @@ func (w *ConcreteWall) Insert(models data.Models, unitID int64, result Consuptio
 		TotalEnergyMax:  &result.EnergyMax,
 	}
 	return models.ConcreteWallModules.Insert(module)
+}
+func (w *BeamColumn) GetLatestVersion(models data.Models, moduleID int64) (int32, error) {
+	return models.BeamColumnModules.GetLatestVersion(moduleID)
 }
 
 func aggregateConcreteVolumes(list []Concrete) *data.Concrete {
