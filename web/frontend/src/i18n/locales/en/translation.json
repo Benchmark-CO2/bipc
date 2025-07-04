@@ -396,10 +396,10 @@
       "createdAt": "Created At",
       "updatedAt": "Updated At",
       "buildedAreaTotal": "Built Area (m²)",
-      "steelConsumption": "Steel Consumption (kg)",
-      "concreteConsumption": "Concrete Consumption (m³)",
+      "steelConsumption": "Steel Consumption (kg/m²)",
+      "concreteConsumption": "Concrete Consumption (m³/m²)",
       "co2Emission": "CO₂ Emission (kgCO₂/m²)",
-      "energy": "Energy (MJ)"
+      "energy": "Energy (MJ/m²)"
     },
     "structureType": {
       "beamColumn": "Beam Column",

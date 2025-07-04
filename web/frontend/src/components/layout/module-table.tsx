@@ -213,10 +213,10 @@ export default function ModuleTable({
                 Selecionados ({selectedRowModel.rows.length}) :
               </TableCell>
               <TableCell>{totals.areaTotal.toFixed(2)} m²</TableCell>
-              <TableCell>{totals.aco.toFixed(2)} kg</TableCell>
-              <TableCell>{totals.concreto.toFixed(2)} m³</TableCell>
+              <TableCell>{totals.aco.toFixed(2)} kg/m²</TableCell>
+              <TableCell>{totals.concreto.toFixed(2)} m³/m²</TableCell>
               <TableCell>{totals.co2.toFixed(2)} kgCO₂/m²</TableCell>
-              <TableCell>{totals.energia.toFixed(2)} MJ</TableCell>
+              <TableCell>{totals.energia.toFixed(2)} MJ/m²</TableCell>
             </TableRow>
           </TableBody>
         </Table>
