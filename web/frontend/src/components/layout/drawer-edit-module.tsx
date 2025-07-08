@@ -64,9 +64,43 @@ export default function DrawerEditModule({
       callback({
         ...data,
         module_uuid: module.module_uuid,
-        consumoDeAco: Math.round((Math.random() * 50 + 10) * 100) / 100, // 10-60kg
-        consumoDeConcreto: Math.round((Math.random() * 2 + 0.5) * 100) / 100, // 0.5-2.5m³
-        emissaoDeCo2: Math.round((Math.random() * 30 + 5) * 100) / 100, // 5-35kgCO2
+        consumoDeAco: (() => {
+          switch (data.tipoDeEstrutura) {
+            case "concreteWall":
+              return (
+                Math.round((Math.random() * (6.33 - 0.79) + 0.79) * 100) / 100
+              );
+            case "masonry":
+              return Math.round((Math.random() * (80 - 15) + 15) * 100) / 100; // 15-80kg
+            case "beamColumn":
+              return (
+                Math.round((Math.random() * (127.78 - 26.54) + 26.54) * 100) /
+                100
+              );
+            default:
+              return Math.round((Math.random() * 50 + 10) * 100) / 100;
+          }
+        })(),
+        consumoDeConcreto: (() => {
+          switch (data.tipoDeEstrutura) {
+            case "concreteWall":
+              return (
+                Math.round((Math.random() * (1.73 - 0.16) + 0.16) * 100) / 100
+              );
+            case "masonry":
+              return (
+                Math.round((Math.random() * (2.5 - 0.8) + 0.8) * 100) / 100
+              ); // 0.8-2.5m³
+            case "beamColumn":
+              return (
+                Math.round((Math.random() * (1.29 - 0.27) + 0.27) * 100) / 100
+              );
+            default:
+              return Math.round((Math.random() * 2 + 0.5) * 100) / 100;
+          }
+        })(),
+        emissaoDeCo2: Math.round((Math.random() * (190 - 80) + 80) * 100) / 100,
+        energia: Math.round((Math.random() * (1200 - 400) + 400) * 100) / 100,
       } as TModuleData);
       setIsOpen(false);
       form.reset();

@@ -28,6 +28,10 @@ interface IChartProps {
     green: DataPoint[]
     grey: DataPoint[]
   }
+  globalData?: {
+    green: DataPoint[]
+    grey: DataPoint[]
+  }
 }
 
 const Loader = ({ width, height }: { width: number; height: number }) => (
@@ -136,7 +140,7 @@ const Loader = ({ width, height }: { width: number; height: number }) => (
     </rect>
   </svg>
 )
-function Chart({ maxHeight, maxWidth, filledPoints, datachart }: IChartProps) {
+function Chart({ maxHeight, maxWidth, filledPoints, datachart, globalData }: IChartProps) {
 
   const [width, setWidth] = useState(window.innerWidth)
   const [height, setHeight] = useState(window.innerHeight)
@@ -298,8 +302,80 @@ function Chart({ maxHeight, maxWidth, filledPoints, datachart }: IChartProps) {
                   )
                 }}
                 className='stroke-accent-foreground/70! stroke-[0.5px]'
-                line={{ stroke: '#000000' }}
-                lineJointType={'natural'}
+                // line={{ stroke: '#000000' }}
+                // lineJointType={'natural'}
+              />
+         <Scatter
+                name='Series global 1'
+                data={!dataLoading ? globalData?.green : []}
+                shape={(props: ScatterProps['shape']) => {
+                  const { cx, cy, payload } = props as IProps
+
+                  return (
+                    <g>
+                      <circle
+                        cx={cx}
+                        cy={cy}
+                        r={4}
+                        data-isglobal={!!payload?.isGlobal}
+                        data-filled={payload?.fill && !payload.isGlobal}
+                        className='fill-accent-foreground dark:stroke-primary dark:stroke-1! data-[isglobal=true]:fill-accent-foreground/50! data-[isglobal=true]:stroke-0! data-[filled=true]:fill-primary!'
+                        // stroke={payload?.fill ? '#4CAF50' : '#2C1D1B'}
+                        // strokeWidth={payload?.fill ? 1 : 0}
+                      />
+                      <text
+                        x={(cx as number) + 10}
+                        y={(cy as number) - 10}
+                        textAnchor='left'
+                        dominantBaseline='middle'
+                        fontSize={12}
+                        fill='#000000'
+                        className='dark:fill-zinc-200'
+                      >
+                        {payload?.label ? payload.label : ''}
+                      </text>
+                    </g>
+                  )
+                }}
+                className='stroke-accent-foreground/70! stroke-[0.5px]'
+                // line={{ stroke: '#000000' }}
+                // lineJointType={'natural'}
+              />
+         <Scatter
+                name='Series global 2'
+                data={!dataLoading ? globalData?.grey : []}
+                shape={(props: ScatterProps['shape']) => {
+                  const { cx, cy, payload } = props as IProps
+
+                  return (
+                    <g>
+                      <circle
+                        cx={cx}
+                        cy={cy}
+                        r={4}
+                        data-isglobal={!!payload?.isGlobal}
+                        data-filled={payload?.fill && !payload.isGlobal}
+                        className='fill-accent-foreground dark:stroke-primary dark:stroke-1! data-[isglobal=true]:fill-accent-foreground/50! data-[isglobal=true]:stroke-0! data-[filled=true]:fill-primary!'
+                        // stroke={payload?.fill ? '#4CAF50' : '#2C1D1B'}
+                        // strokeWidth={payload?.fill ? 1 : 0}
+                      />
+                      <text
+                        x={(cx as number) + 10}
+                        y={(cy as number) - 10}
+                        textAnchor='left'
+                        dominantBaseline='middle'
+                        fontSize={12}
+                        fill='#000000'
+                        className='dark:fill-zinc-200'
+                      >
+                        {payload?.label ? payload.label : ''}
+                      </text>
+                    </g>
+                  )
+                }}
+                className='stroke-accent-foreground/70! stroke-[0.5px]'
+                // line={{ stroke: '#000000' }}
+                // lineJointType={'natural'}
               />
 
               {/* Grey series */}
@@ -332,8 +408,8 @@ function Chart({ maxHeight, maxWidth, filledPoints, datachart }: IChartProps) {
                   )
                 }}
                 className='stroke-foreground! stroke-[0.5px]'
-                line={{ stroke: '#000000' }}
-                lineJointType={'natural'}
+                // line={{ stroke: '#000000' }}
+                // lineJointType={'natural'}
               />
               {/* Reference lines and labels */}
               {!dataLoading && referenceLines2.map((line, index) => (

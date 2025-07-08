@@ -66,6 +66,7 @@ export type TModuleData = {
   consumoDeAco: number;
   consumoDeConcreto: number;
   emissaoDeCo2: number;
+  energia: number;
   version: string;
   module_uuid: string;
   created_at: string;
