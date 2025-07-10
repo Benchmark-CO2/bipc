@@ -401,7 +401,7 @@ func (b *BeamColumn) Insert(models data.Models, unitID int64, result Consuption,
 	return models.BeamColumnModules.Insert(module)
 }
 
-func (w *ConcreteWall) Insert(models data.Models, unitID int64, result Consuption) error {
+func (w *ConcreteWall) Insert(models data.Models, unitID int64, result Consuption, opts *InsertOptions) error {
 	walls := aggregateConcreteVolumes(w.ConcreteWalls)
 	slabs := aggregateConcreteVolumes(w.ConcreteSlabs)
 
@@ -423,9 +423,25 @@ func (w *ConcreteWall) Insert(models data.Models, unitID int64, result Consuptio
 		TotalCO2Max:     &result.CO2Max,
 		TotalEnergyMin:  &result.EnergyMin,
 		TotalEnergyMax:  &result.EnergyMax,
+		Version:         1,
+		InUse:           true,
+	}
+
+	if opts != nil {
+		if opts.ID != nil && *opts.ID > 0 {
+			module.ID = *opts.ID
+		}
+		if opts.Version != nil && *opts.Version > 0 {
+			module.Version = *opts.Version
+		}
 	}
 	return models.ConcreteWallModules.Insert(module)
 }
+
+func (w *ConcreteWall) GetLatestVersion(models data.Models, moduleID int64) (int32, error) {
+	return models.ConcreteWallModules.GetLatestVersion(moduleID)
+}
+
 func (w *BeamColumn) GetLatestVersion(models data.Models, moduleID int64) (int32, error) {
 	return models.BeamColumnModules.GetLatestVersion(moduleID)
 }
