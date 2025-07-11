@@ -3,7 +3,7 @@ import { getAllProjectsByUser } from '@/actions/projects/getProjects';
 import { AddUserToProjectFormSchema } from '@/validators/addUserToProject.validator';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { CircleX } from 'lucide-react';
+import { CircleX, UserPlus } from 'lucide-react';
 import { useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -65,8 +65,9 @@ const DrawerInvite = () => {
     <Drawer
        direction="right"
     >
-      <DrawerTrigger ref={ref}>
-        <button className="btn btn-primary cursor-pointer">{t('drawerInvite.title')}</button>
+      <DrawerTrigger ref={ref} className='flex w-full justify-between'>
+        <span>{t('projects.title')}</span>
+        <UserPlus size={20} className='group-[.closed]:mx-auto' />
       </DrawerTrigger>
        <DrawerContent className='min-w-2/5'>
         <DrawerHeader className='px-6'>

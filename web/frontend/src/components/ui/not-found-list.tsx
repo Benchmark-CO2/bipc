@@ -1,5 +1,5 @@
-import { Search, FileText, Package } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils';
+import { FileText, Package, Search } from 'lucide-react';
 
 interface NotFoundListProps {
   message?: string
@@ -42,7 +42,7 @@ const NotFoundList = ({
   return (
     <div
       className={cn(
-        'flex w-full flex-col items-center justify-center rounded-md border bg-zinc-100 px-6 py-16 text-center text-zinc-500 dark:bg-zinc-800',
+        'flex w-full flex-col items-center justify-center rounded-md border bg-zinc-100 px-6 py-16 text-center text-zinc-500 dark:bg-sidebar-950',
         className
       )}
     >

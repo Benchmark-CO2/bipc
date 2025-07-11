@@ -18,6 +18,8 @@ export interface AuthContext {
   } | null;
   email: string | null;
   user: TUser | null;
+  sidebarStatus: 'open' | 'closed';
+  toggleSidebar: () => void;
 }
 
 export const AuthContext = createContext<AuthContext | null>(null);

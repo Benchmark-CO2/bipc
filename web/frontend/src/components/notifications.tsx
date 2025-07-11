@@ -4,7 +4,6 @@ import { Link } from '@tanstack/react-router';
 import { Bell, CircleArrowRight } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
 const NotificationCard = ({ notification, onClick }: { notification: IInvite, onClick: () => void }) => {
@@ -25,7 +24,10 @@ const EmptyList = () => (
   </div>
 )
 
-export const Notifications = () => {
+interface INotificationProps {
+  size?: number
+}
+export const Notifications = ({ size = 16 }: INotificationProps) => {
   const { notifications } = useNotifications()
   const { t } = useTranslation();
   const ref = useRef<HTMLButtonElement>(null);
@@ -34,17 +36,16 @@ export const Notifications = () => {
       ref.current.click();
     }
   }
+  
   return (
     <Popover modal i18nIsDynamicList>
-      <PopoverTrigger ref={ref}>
-        <Button variant='ghost' size='icon' className="relative cursor-pointer">
-          <Bell className="cursor-pointer" size={16} />
+      <PopoverTrigger ref={ref} className='group-hover:animate-bounce relative'>
+          <Bell className="cursor-pointer" size={size}  />
           {notifications.length > 0 && (
-            <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full px-1 text-xs scale-75">
+            <span className="absolute -top-1 -right-1 scale-75 bg-destructive text-white rounded-full px-1 text-xs">
               {notifications.length}
             </span>
           )}
-        </Button>
       </PopoverTrigger>
       <PopoverContent align='start' alignOffset={20} className="w-80 max-h-[400px] overflow-y-auto ">
         <div className="p-2 border-b border-gray-200">

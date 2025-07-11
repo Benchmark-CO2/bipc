@@ -1,5 +1,6 @@
 import { Trash } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -9,7 +10,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
-import { useTranslation } from "react-i18next";
 
 interface ModalConfirmDeleteProps {
   componentTrigger?: React.ReactNode;
@@ -36,7 +36,7 @@ const ModalConfirmDelete = ({
         {componentTrigger ?? (
           <Trash
             size={20}
-            className="delete-project z-50 absolute right-2 top-2 hover:shadow-md"
+            className="delete-project z-5 absolute right-2 top-2 hover:shadow-md"
           />
         )}
       </DialogTrigger>

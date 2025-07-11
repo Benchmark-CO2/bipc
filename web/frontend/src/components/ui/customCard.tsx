@@ -40,7 +40,7 @@ const CustomCard = ({ onClick, project, onDeleteProject }: CustomCardProps) => {
     <div
       data-action="open-project"
       onClick={handleClickCard}
-      className="card w-full max-w-md flex-col items-center justify-center overflow-hidden rounded-lg bg-white shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-lg md:w-1/3 lg:w-1/4 xl:max-w-100 dark:bg-zinc-800 dark:shadow-zinc-900"
+      className="card w-full max-w-md flex-col items-center justify-center overflow-hidden rounded-lg bg-white shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-lg md:w-1/3 lg:w-1/4 xl:max-w-100 dark:bg-sidebar-950 dark:shadow-sidebar-900"
     >
       <div className="group relative h-60 w-full max-sm:h-40">
         <ModalConfirmDelete
@@ -53,7 +53,7 @@ const CustomCard = ({ onClick, project, onDeleteProject }: CustomCardProps) => {
             <Edit
               size={20}
               color="#FFF"
-              className="delete-project z-50 absolute right-10 top-2 hover:shadow-md"
+              className="delete-project z-5 absolute right-10 top-2 hover:shadow-md"
             />
           }
           projectData={project}

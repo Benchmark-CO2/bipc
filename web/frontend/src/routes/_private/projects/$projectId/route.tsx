@@ -7,6 +7,7 @@ import { TabsContainer } from "@/components/ui/tabsContainer";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { t } from "i18next";
+import { Plus } from 'lucide-react';
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_private/projects/$projectId")({
@@ -117,7 +118,7 @@ function RouteComponent() {
                 projectId={projectId}
                 triggerComponent={
                   <Button variant="outline" className="mt-4">
-                    {t("units.addUnit")}
+                    <Plus  />{t("units.addUnit")}
                   </Button>
                 }
               />
