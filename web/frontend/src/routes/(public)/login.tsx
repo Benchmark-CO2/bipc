@@ -1,6 +1,7 @@
 import { login } from "@/actions/auth/login";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
@@ -142,9 +143,25 @@ const Login = () => {
             </Button>
           </form>
 
-          <div className="mt-6">
+          <div className="flex justify-center mt-4">
             <Button
-              className="w-full bg-transparent border border-zinc-600 text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800"
+              className="text-sm text-zinc-600 dark:text-zinc-400 hover:underline"
+              variant="link"
+              onClick={() => navigateTo("/forget")}
+              disabled={isPending}
+            >
+              {t("loginPage.buttonForgotPassword")}
+            </Button>
+          </div>
+
+          <Separator className="my-6" />
+
+          <div className="flex justify-end items-center gap-4">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              {t("loginPage.askRegister")}
+            </p>
+            <Button
+              className="bg-transparent border border-zinc-600 text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800"
               variant="outline"
               onClick={() => navigateTo("/sign-up")}
               disabled={isPending}

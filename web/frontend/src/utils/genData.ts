@@ -22,6 +22,7 @@ export const genData = (filledPoints: number) => {
         grey: _greyData
       }
 }
+
 export function generateNextDescendingPoint (
   {x, y}: DataPoint,
   xStep = 0.00001,
@@ -60,6 +61,47 @@ export function generateNextDescendingPoint (
     fill: false,
   };
 }
+export function generateNextNaturalDescendingPoint (
+  {x, y}: DataPoint,
+  xStep = 10,
+  minY = 0,
+): { x: number; y: number; fill: boolean } {
+  if (x === undefined || y === undefined) {
+    const initialY = 0.99; // Entre 0.85 e 1
+    const initialX = 80; // Por exemplo, começa no X=40 (ajuste como quiser)
+    return {
+      x: initialX,
+      y: parseFloat(initialY.toFixed(4)),
+      fill: false,
+    };
+  }
+
+  // gen number between 1 and 10
+  const randomNumber = Math.floor(Math.random() * 7) + 1;
+
+  const yRange = 1 - minY;
+  const baseStep = yRange / (17/randomNumber);
+  const noise = (Math.random() - 0.5) * baseStep * 0.6;
+  const downwardDrift = baseStep * (0.7 + Math.random() * 0.6);
+
+  let newY = y - downwardDrift - noise;
+
+  // Garantir que o Y sempre desça
+  if (newY >= y) {
+    newY = y - 0.00001;
+  }
+  if (newY < minY) {
+    newY = minY;
+  }
+
+  // Garantir que o X sempre desça (andando da direita para a esquerda)
+  const newX = x - xStep;
+  return {
+    x: newX,
+    y: parseFloat(newY.toFixed(4)),
+    fill: false,
+  };
+}
 
 export const genRowData = (lastValue: DataPoint | null = null) => {
   let _rowData = {} as DataPoint;
@@ -67,6 +109,21 @@ export const genRowData = (lastValue: DataPoint | null = null) => {
     _rowData = generateNextDescendingPoint({ x: undefined, y: undefined, fill: false } as unknown as DataPoint);
   else
     _rowData = generateNextDescendingPoint(lastValue);
+  
+  return {
+    green: _rowData,
+    grey: { x: _rowData.x + 30,
+      y: _rowData.y,
+      fill: true} as DataPoint
+  };
+}
+
+export const genRowData2 = (lastValue: DataPoint | null = null) => {
+  let _rowData = {} as DataPoint;
+  if (lastValue === null)
+    _rowData = generateNextNaturalDescendingPoint({ x: undefined, y: undefined, fill: false } as unknown as DataPoint);
+  else
+    _rowData = generateNextNaturalDescendingPoint(lastValue);
   
   return {
     green: _rowData,

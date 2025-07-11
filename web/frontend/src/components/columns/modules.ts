@@ -43,4 +43,9 @@ export const moduleColumns: ColumnDef<TModuleData>[] = [
     header: t("modulesTable.headers.co2Emission"),
     cell: ({ row }) => row.original.emissaoDeCo2 || "Sem emissão de CO2",
   },
+  {
+    accessorKey: "energia",
+    header: t("modulesTable.headers.energy"),
+    cell: ({ row }) => row.original.energia || "Sem energia",
+  },
 ];

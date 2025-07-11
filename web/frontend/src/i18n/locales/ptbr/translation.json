@@ -115,7 +115,20 @@
     "placeholderEmail": "Email",
     "placeholderPassword": "Senha",
     "buttonLogin": "Login",
-    "buttonRegister": "Cadastrar"
+    "askRegister": "Não tem uma conta?",
+    "buttonRegister": "Cadastrar",
+    "buttonForgotPassword": "Esqueci minha senha"
+  },
+  "forgetPage": {
+    "title": "ESQUECI MINHA SENHA",
+    "description": "Digite seu email para receber um link de redefinição de senha.",
+    "placeholderEmail": "Email",
+    "buttonSendEmail": "Enviar Email",
+    "successTitle": "Email Enviado!",
+    "successMessage": "Email enviado com sucesso! Se o seu email estiver correto, você receberá um link para redefinir sua senha.",
+    "errorMessage": "Erro ao enviar email. Cheque se o email está correto e tente novamente.",
+    "emailIsRequired": "O email é obrigatório",
+    "backToLogin": "Voltar ao Login"
   },
   "activateUser": {
     "invalid": {
@@ -141,6 +154,33 @@
     "confirm": {
       "title": "Confirmar Cadastro",
       "description": "Clique no botão abaixo para ativar sua conta e começar a usar nossa plataforma.",
+      "confirmAction": "Confirmar"
+    }
+  },
+  "resetPassword": {
+    "invalid": {
+      "title": "Link Inválido",
+      "description": "O link de ativação é inválido ou expirou. Solicite um novo email de confirmação.",
+      "goToLogin": "Voltar ao Login"
+    },
+    "success": {
+      "title": "Senha alterada!",
+      "description": "Sua senha foi alterada com sucesso. Agora você pode fazer login com sua nova senha.",
+      "goToLogin": "Fazer Login"
+    },
+    "error": {
+      "title": "Erro ao alterar senha",
+      "description": "Não foi possível alterar sua senha. Tente novamente ou entre em contato com o suporte.",
+      "retry": "Tentar Novamente",
+      "support": "Contatar Suporte"
+    },
+    "loading": {
+      "title": "Resetando senha...",
+      "description": "Aguarde enquanto processamos a alteração de senha."
+    },
+    "confirm": {
+      "title": "Alterar Senha",
+      "description": "Preencha os campos abaixo para alterar sua senha.",
       "confirmAction": "Confirmar"
     }
   },
@@ -350,10 +390,11 @@
       "buildingType": "Tipo de Edifícação",
       "createdAt": "Criado em",
       "updatedAt": "Atualizado em",
-      "buildedAreaTotal": "Área Construída Total (m²)",
-      "steelConsumption": "Consumo de Aço (kg)",
-      "concreteConsumption": "Consumo de Concreto (m³)",
-      "co2Emission": "Emissão de CO₂ (kgCO₂)"
+      "buildedAreaTotal": "Área Total (m²)",
+      "steelConsumption": "Consumo de Aço (kg/m²)",
+      "concreteConsumption": "Consumo de Concreto (m³/m²)",
+      "co2Emission": "Emissão de CO₂ (kgCO₂/m²)",
+      "energy": "Energia (MJ/m²)"
     },
     "structureType": {
       "beamColumn": "Viga Pilar",
