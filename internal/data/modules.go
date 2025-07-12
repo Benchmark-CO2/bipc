@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 )
 
@@ -156,6 +157,27 @@ func (m ConcreteWallModuleModel) Insert(module *ConcreteWallModule) error {
 	if err != nil {
 		return err
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	if module.ID > 0 {
+		query := `
+			INSERT INTO module_concrete_wall (
+				id, unit_id, name, floor_repetition, floor_area, floor_height,
+				concrete_walls, concrete_slabs, steel_ca50, steel_ca60,
+				wall_thickness, slab_thickness, form_area, wall_area,
+				total_co2_min, total_co2_max, total_energy_min, total_energy_max, version, in_use
+			) VALUES (
+				$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+			)
+			RETURNING id, created_at, updated_at`
+		return m.DB.QueryRowContext(ctx, query,
+			module.ID, module.UnitID, module.Name, module.FloorRepetition, module.FloorArea, module.FloorHeight,
+			wallsID, slabsID, module.SteelCA50, module.SteelCA60,
+			module.WallThickness, module.SlabThickness, module.FormArea, module.WallArea,
+			module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax, module.Version, module.InUse,
+		).Scan(&module.ID, &module.CreatedAt, &module.UpdatedAt)
+	}
 	query := `
 		INSERT INTO module_concrete_wall (
 			unit_id, name, floor_repetition, floor_area, floor_height,
@@ -163,14 +185,9 @@ func (m ConcreteWallModuleModel) Insert(module *ConcreteWallModule) error {
 			wall_thickness, slab_thickness, form_area, wall_area,
 			total_co2_min, total_co2_max, total_energy_min, total_energy_max, version, in_use
 		) VALUES (
-			$1, $2, $3, $4, $5,
-			$6, $7, $8, $9,
-			$10, $11, $12, $13,
-			$14, $15, $16, $17, $18, $19
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
 		)
 		RETURNING id, created_at, updated_at`
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
 	return m.DB.QueryRowContext(ctx, query,
 		module.UnitID, module.Name, module.FloorRepetition, module.FloorArea, module.FloorHeight,
 		wallsID, slabsID, module.SteelCA50, module.SteelCA60,
@@ -187,10 +204,24 @@ func (m BeamColumnModuleModel) GetLatestVersion(id int64) (int32, error) {
 	err := m.DB.QueryRowContext(ctx, query, id).Scan(&version)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return 0, nil // ou -1 se preferir indicar ausência
+			return 0, nil
 		}
 		return 0, err
 	}
 	return version, nil
 }
 
+func (m ConcreteWallModuleModel) GetLatestVersion(id int64) (int32, error) {
+	query := `SELECT version FROM module_concrete_wall WHERE id = $1 ORDER BY version DESC LIMIT 1`
+	var version int32
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(&version)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, nil
+		}
+		return 0, err
+	}
+	return version, nil
+}
