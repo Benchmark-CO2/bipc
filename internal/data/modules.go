@@ -3,7 +3,6 @@ package data
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"time"
 )
 
@@ -194,36 +193,6 @@ func (m ConcreteWallModuleModel) Insert(module *ConcreteWallModule) error {
 		module.WallThickness, module.SlabThickness, module.FormArea, module.WallArea,
 		module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax, module.Version, module.InUse,
 	).Scan(&module.ID, &module.CreatedAt, &module.UpdatedAt)
-}
-
-func (m BeamColumnModuleModel) GetLatestVersion(id int64) (int32, error) {
-	query := `SELECT version FROM module_beam_column WHERE id = $1 ORDER BY version DESC LIMIT 1`
-	var version int32
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	err := m.DB.QueryRowContext(ctx, query, id).Scan(&version)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return 0, nil
-		}
-		return 0, err
-	}
-	return version, nil
-}
-
-func (m ConcreteWallModuleModel) GetLatestVersion(id int64) (int32, error) {
-	query := `SELECT version FROM module_concrete_wall WHERE id = $1 ORDER BY version DESC LIMIT 1`
-	var version int32
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	err := m.DB.QueryRowContext(ctx, query, id).Scan(&version)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return 0, nil
-		}
-		return 0, err
-	}
-	return version, nil
 }
 
 func (m BeamColumnModuleModel) GetById(id int64) ([]*BeamColumnModule, error) {

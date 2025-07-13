@@ -62,42 +62,37 @@ func (app *application) createVersionHandler(w http.ResponseWriter, r *http.Requ
 	}
 	defer r.Body.Close()
 
-	module, err := modules.UnmarshalModuleStructure(body)
+	newVersionModule, err := modules.UnmarshalModuleStructure(body)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	newVersionNumber, err := newVersionModule.MergeModuleData(app.models, moduleID)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
 	v := validator.New()
-	module.Validate(v)
+	newVersionModule.ValidateVersion(v)
 	if !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	result, err := module.Calculate()
+	result, err := newVersionModule.Calculate()
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	lastVersion, err := module.GetLatestVersion(app.models, moduleID)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-	if lastVersion < 1 {
-		app.notFoundResponse(w, r)
-		return
-	}
-
-	newVersion := lastVersion + 1
 	opts := &modules.InsertOptions{
-		Version: &newVersion,
+		Version: newVersionNumber,
 		ID:      &moduleID,
 	}
 
-	err = module.Insert(app.models, unitID, result, opts)
+	err = newVersionModule.Insert(app.models, unitID, result, opts)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
