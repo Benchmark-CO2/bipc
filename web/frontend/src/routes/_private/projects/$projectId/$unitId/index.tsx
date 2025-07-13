@@ -1,5 +1,9 @@
 import { getProjectByUUID } from "@/actions/projects/getProject";
-import { DrawerAddModule, ModuleTable } from "@/components/layout";
+import {
+  // DrawerAddModule,
+  DrawerFormModule,
+  ModuleTable,
+} from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { getFromStorage, setToStorage } from "@/lib/storage";
 import { TModuleData, TProjectUnitModule } from "@/types/projects";
@@ -162,13 +166,22 @@ function RouteComponent() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end gap-4">
-        <DrawerAddModule
+        {/* <DrawerAddModule
           callback={handleAddNewModule}
           componentTrigger={
             <Button variant="noStyles" className="flex items-center gap-2">
               {t("drawerAddModule.addConstructiveTechnology")}
             </Button>
           }
+        /> */}
+        <DrawerFormModule
+          triggerComponent={
+            <Button variant="noStyles" className="flex items-center gap-2">
+              {t("drawerAddModule.addConstructiveTechnology")}
+            </Button>
+          }
+          projectId={projectId}
+          unitId={unitId}
         />
       </div>
       <ModuleTable

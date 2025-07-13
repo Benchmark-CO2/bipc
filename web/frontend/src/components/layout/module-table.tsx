@@ -26,6 +26,7 @@ import NotFoundList from "../ui/not-found-list";
 import DrawerEditModule from "./drawer-edit-module";
 import { Checkbox } from "../ui/checkbox";
 import ModalSimple from "./modal-simple";
+import DrawerFormModule from "./drawer-form-module";
 
 interface IModuleTable {
   modules: TModuleData[];
@@ -180,7 +181,19 @@ export default function ModuleTable({
                       data-action="open-simulations"
                       className="hover:scale-105"
                     />
-                    <DrawerEditModule
+                    <DrawerFormModule
+                      triggerComponent={
+                        <Pen
+                          size={16}
+                          data-action="edit-module"
+                          className="hover:scale-105"
+                        />
+                      }
+                      moduleId={row.original.module_uuid}
+                      projectId={projectId}
+                      unitId={unitId}
+                    />
+                    {/* <DrawerEditModule
                       componentTrigger={
                         <Pen
                           size={16}
@@ -190,7 +203,7 @@ export default function ModuleTable({
                       }
                       module={row.original}
                       callback={handleUpdateModule}
-                    />
+                    /> */}
                     <ModalSimple
                       componentTrigger={
                         <Trash size={16} className="hover:scale-105" />
