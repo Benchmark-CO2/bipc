@@ -3,11 +3,12 @@ import {
   moduleFormSchema,
 } from "@/validators/moduleForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus } from "lucide-react";
+import { Trash, Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "../../ui/button";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Drawer,
   DrawerContent,
@@ -35,18 +36,30 @@ import {
 import ModuleFormBeamColumn from "./module-form-beam-column";
 import ModuleFormConcreteWall from "./module-form-concrete-wall";
 import ModuleFormStructuralMasonry from "./module-form-structural-masonry";
+import { TModuleStructure } from "@/types/modules";
+import { useMutation } from "@tanstack/react-query";
+import { postModule } from "@/actions/modules/postModule";
+import { useTranslation } from "react-i18next";
+import { mockModule } from "@/utils/mockModule";
 
 interface DrawerFormModuleProps {
   triggerComponent?: React.ReactNode;
+  projectId: string;
   unitId: string;
   moduleId?: string;
 }
 
 const DrawerFormModule = ({
   triggerComponent,
+  projectId,
+  unitId,
   moduleId,
 }: DrawerFormModuleProps) => {
   const [isOpen, setIsOpen] = useState(false);
+
+  const { t } = useTranslation();
+  // const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const form = useForm<ModuleFormSchema>({
     resolver: zodResolver(moduleFormSchema),
@@ -82,6 +95,41 @@ const DrawerFormModule = ({
     },
   });
 
+  const moduleData: TModuleStructure = mockModule;
+
+  const {
+    // isSuccess: isCreationSuccess,
+    // isPending: isCreationPending,
+    mutate: mutateCreation,
+  } = useMutation({
+    mutationFn: (data: TModuleStructure) => postModule(data, projectId, unitId),
+    onError: (error) => {
+      toast.error("Erro ao criar módulo", {
+        description:
+          error instanceof Error ? error.message : t("error.errorUnknown"),
+        duration: 5000,
+      });
+    },
+    onSuccess: (data) => {
+      toast.success("", {
+        duration: 5000,
+      });
+      // queryClient.invalidateQueries({
+      //   queryKey: ["project", projectId],
+      // });
+      console.log(data);
+      setIsOpen(false);
+      form.reset();
+
+      navigate({
+        to: `/projects/${projectId}/${unitId}`,
+        from: "/projects",
+      })
+        .then(() => null)
+        .catch((err: unknown) => err);
+    },
+  });
+
   useEffect(() => {
     const ensureArraysInitialized = () => {
       const fieldsToInit = [
@@ -104,7 +152,16 @@ const DrawerFormModule = ({
     ensureArraysInitialized();
   }, [form]);
 
+  useEffect(() => {
+    if (moduleData && moduleId) {
+      form.reset(moduleData);
+    }
+  }, [moduleData, moduleId]);
+
   const handleSubmit = (data: ModuleFormSchema) => {
+    if (moduleId) {
+      return;
+    }
     console.log("=== SUBMIT TRIGGERED ===");
 
     // Campos base sempre enviados
@@ -117,16 +174,16 @@ const DrawerFormModule = ({
     };
 
     // Filtrar apenas os campos relevantes para o tipo de estrutura
-    let filteredData;
+    let filteredData: TModuleStructure = baseFields as TModuleStructure;
 
     if (data.structure_type === "beam_column") {
       filteredData = {
         ...baseFields,
-        concrete_columns: data.concrete_columns,
-        concrete_beams: data.concrete_beams,
-        concrete_slabs: data.concrete_slabs,
-        steel_ca50: data.steel_ca50,
-        steel_ca60: data.steel_ca60,
+        concrete_columns: data.concrete_columns || [],
+        concrete_beams: data.concrete_beams || [],
+        concrete_slabs: data.concrete_slabs || [],
+        steel_ca50: data.steel_ca50 || 0,
+        steel_ca60: data.steel_ca60 || 0,
         form_columns: data.form_columns,
         form_beams: data.form_beams,
         form_slabs: data.form_slabs,
@@ -138,10 +195,10 @@ const DrawerFormModule = ({
     } else if (data.structure_type === "concrete_wall") {
       filteredData = {
         ...baseFields,
-        concrete_walls: data.concrete_walls,
-        concrete_slabs: data.concrete_slabs,
-        steel_ca50: data.steel_ca50,
-        steel_ca60: data.steel_ca60,
+        concrete_walls: data.concrete_walls || [],
+        concrete_slabs: data.concrete_slabs || [],
+        steel_ca50: data.steel_ca50 || 0,
+        steel_ca60: data.steel_ca60 || 0,
         wall_thickness: data.wall_thickness,
         slab_thickness: data.slab_thickness,
         form_area: data.form_area,
@@ -150,25 +207,27 @@ const DrawerFormModule = ({
     } else if (data.structure_type === "structural_masonry") {
       filteredData = {
         ...baseFields,
-        vertical_grout: data.vertical_grout,
-        horizontal_grout: data.horizontal_grout,
-        steel_ca50: data.steel_ca50,
-        steel_ca60: data.steel_ca60,
-        blocks: data.blocks,
+        vertical_grout: data.vertical_grout || [],
+        horizontal_grout: data.horizontal_grout || [],
+        steel_ca50: data.steel_ca50 || 0,
+        steel_ca60: data.steel_ca60 || 0,
+        blocks: data.blocks || [],
       };
     }
 
     console.log("Filtered module form data:", filteredData);
 
+    mutateCreation(filteredData);
+
     // TODO: Implementar endpoints de criação/edição de módulos
-    toast.success(
-      moduleId
-        ? "Módulo atualizado com sucesso!"
-        : "Módulo criado com sucesso!",
-      { duration: 3000 }
-    );
-    setIsOpen(false);
-    form.reset();
+    // toast.success(
+    //   moduleId
+    //     ? "Módulo atualizado com sucesso!"
+    //     : "Módulo criado com sucesso!",
+    //   { duration: 3000 }
+    // );
+    // setIsOpen(false);
+    // form.reset();
   };
 
   const handleClose = () => {
@@ -240,6 +299,7 @@ const DrawerFormModule = ({
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
+                          disabled={Boolean(moduleData)}
                         >
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder="Selecione o tipo de estrutura" />
@@ -345,9 +405,21 @@ const DrawerFormModule = ({
                 }
               })()}
 
-              <Button type="submit" variant="noStyles" className="mt-6 w-full">
-                {moduleId ? "Atualizar Módulo" : "Criar Módulo"}
-              </Button>
+              <div className="flex gap-2 mt-6">
+                {moduleId && moduleData && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => console.log("Delete module", moduleId)}
+                    className="flex-shrink-0"
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button type="submit" variant="noStyles" className="flex-1">
+                  {moduleId ? "Atualizar Módulo" : "Criar Módulo"}
+                </Button>
+              </div>
             </form>
           </Form>
         </div>
