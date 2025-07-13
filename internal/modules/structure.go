@@ -28,8 +28,18 @@ type BasicModuleData struct {
 	FloorHeight     float64 `json:"floor_height"`
 }
 
+type ModuleResponseData struct {
+	CO2Min    *float64 `json:"co2_min,omitempty"`
+	CO2Max    *float64 `json:"co2_max,omitempty"`
+	EnergyMin *float64 `json:"energy_min,omitempty"`
+	EnergyMax *float64 `json:"energy_max,omitempty"`
+	InUse     bool     `json:"in_use"`
+	Version   int32    `json:"version"`
+}
+
 type BeamColumn struct {
 	BasicModuleData
+	ModuleResponseData
 	ConcreteColumns []Concrete `json:"concrete_columns"`
 	ConcreteBeams   []Concrete `json:"concrete_beams"`
 	ConcreteSlabs   []Concrete `json:"concrete_slabs"`
@@ -46,6 +56,7 @@ type BeamColumn struct {
 
 type ConcreteWall struct {
 	BasicModuleData
+	ModuleResponseData
 	ConcreteWalls []Concrete `json:"concrete_walls"`
 	ConcreteSlabs []Concrete `json:"concrete_slabs"`
 	SteelCA50     float64    `json:"steel_ca50"`
@@ -465,4 +476,116 @@ func aggregateConcreteVolumes(list []Concrete) *data.Concrete {
 		}
 	}
 	return c
+}
+
+func toConcrete(c data.Concrete) []Concrete {
+	var concretes []Concrete
+	if c.VolumeFck20 > 0 {
+		concretes = append(concretes, Concrete{Fck: "20", Volume: c.VolumeFck20})
+	}
+	if c.VolumeFck25 > 0 {
+		concretes = append(concretes, Concrete{Fck: "25", Volume: c.VolumeFck25})
+	}
+	if c.VolumeFck30 > 0 {
+		concretes = append(concretes, Concrete{Fck: "30", Volume: c.VolumeFck30})
+	}
+	if c.VolumeFck35 > 0 {
+		concretes = append(concretes, Concrete{Fck: "35", Volume: c.VolumeFck35})
+	}
+	if c.VolumeFck40 > 0 {
+		concretes = append(concretes, Concrete{Fck: "40", Volume: c.VolumeFck40})
+	}
+	if c.VolumeFck45 > 0 {
+		concretes = append(concretes, Concrete{Fck: "45", Volume: c.VolumeFck45})
+	}
+	return concretes
+}
+
+func toBeamColumnResponse(m *data.BeamColumnModule) *BeamColumn {
+	return &BeamColumn{
+		BasicModuleData: BasicModuleData{
+			Name:            m.Name,
+			StructureType:   "beam_column",
+			FloorRepetition: m.FloorRepetition,
+			FloorArea:       m.FloorArea,
+			FloorHeight:     m.FloorHeight,
+		},
+		ModuleResponseData: ModuleResponseData{
+			CO2Min:    m.TotalCO2Min,
+			CO2Max:    m.TotalCO2Max,
+			EnergyMin: m.TotalEnergyMin,
+			EnergyMax: m.TotalEnergyMax,
+			InUse:     m.InUse,
+			Version:   m.Version,
+		},
+		ConcreteColumns: toConcrete(m.ConcreteColumns),
+		ConcreteBeams:   toConcrete(m.ConcreteBeams),
+		ConcreteSlabs:   toConcrete(m.ConcreteSlabs),
+		SteelCA50:       m.SteelCA50,
+		SteelCA60:       m.SteelCA60,
+		FormColumns:     m.FormColumns,
+		FormBeams:       m.FormBeams,
+		FormSlabs:       m.FormSlabs,
+		FormTotal:       m.FormTotal,
+		ColumnNumber:    m.ColumnNumber,
+		AvgBeamSpan:     m.AvgBeamSpan,
+		AvgSlabSpan:     m.AvgSlabSpan,
+	}
+}
+
+func toConcreteWallResponse(m *data.ConcreteWallModule) *ConcreteWall {
+	return &ConcreteWall{
+		BasicModuleData: BasicModuleData{
+			Name:            m.Name,
+			StructureType:   "concrete_wall",
+			FloorRepetition: m.FloorRepetition,
+			FloorArea:       m.FloorArea,
+			FloorHeight:     m.FloorHeight,
+		},
+		ModuleResponseData: ModuleResponseData{
+			CO2Min:    m.TotalCO2Min,
+			CO2Max:    m.TotalCO2Max,
+			EnergyMin: m.TotalEnergyMin,
+			EnergyMax: m.TotalEnergyMax,
+			InUse:     m.InUse,
+			Version:   m.Version,
+		},
+		ConcreteWalls: toConcrete(m.ConcreteWalls),
+		ConcreteSlabs: toConcrete(m.ConcreteSlabs),
+		SteelCA50:     m.SteelCA50,
+		SteelCA60:     m.SteelCA60,
+		WallThickness: m.WallThickness,
+		SlabThickness: m.SlabThickness,
+		FormArea:      m.FormArea,
+		WallArea:      m.WallArea,
+	}
+}
+
+func GetModule(models data.Models, id int64) (any, error) {
+	
+	concreteWallModules, err := models.ConcreteWallModules.GetById(id)
+	if err != nil {
+		return nil, err
+	}
+	if len(concreteWallModules) > 0 {
+		var res []*ConcreteWall
+		for _, v := range concreteWallModules {
+			res = append(res, toConcreteWallResponse(v))
+		}
+		return res, nil
+	}
+
+	beamColumnModules, err := models.BeamColumnModules.GetById(id)
+	if err != nil {
+		return nil, err
+	}
+	if len(beamColumnModules) > 0 {
+		var res []*BeamColumn
+		for _, v := range beamColumnModules {
+			res = append(res, toBeamColumnResponse(v))
+		}
+		return res, nil
+	}
+
+	return nil, data.ErrRecordNotFound
 }

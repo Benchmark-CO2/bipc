@@ -225,3 +225,107 @@ func (m ConcreteWallModuleModel) GetLatestVersion(id int64) (int32, error) {
 	}
 	return version, nil
 }
+
+func (m BeamColumnModuleModel) GetById(id int64) ([]*BeamColumnModule, error) {
+	query := `SELECT
+		mbc.id, mbc.unit_id, mbc.name, mbc.floor_repetition, mbc.floor_area, mbc.floor_height,
+		cc.id, cc.volume_fck20, cc.volume_fck25, cc.volume_fck30, cc.volume_fck35, cc.volume_fck40, cc.volume_fck45,
+		cb.id, cb.volume_fck20, cb.volume_fck25, cb.volume_fck30, cb.volume_fck35, cb.volume_fck40, cb.volume_fck45,
+		cs.id, cs.volume_fck20, cs.volume_fck25, cs.volume_fck30, cs.volume_fck35, cs.volume_fck40, cs.volume_fck45,
+		mbc.steel_ca50, mbc.steel_ca60,
+		mbc.form_columns, mbc.form_beams, mbc.form_slabs, mbc.form_total, mbc.column_number, mbc.avg_beam_span, mbc.avg_slab_span,
+		mbc.total_co2_min, mbc.total_co2_max, mbc.total_energy_min, mbc.total_energy_max,
+		mbc.version, mbc.in_use, mbc.created_at, mbc.updated_at
+	FROM module_beam_column mbc
+	LEFT JOIN concrete cc ON mbc.concrete_columns = cc.id
+	LEFT JOIN concrete cb ON mbc.concrete_beams = cb.id
+	LEFT JOIN concrete cs ON mbc.concrete_slabs = cs.id
+	WHERE mbc.id = $1
+	ORDER BY mbc.version ASC`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var modules []*BeamColumnModule
+
+	for rows.Next() {
+		var module BeamColumnModule
+		err := rows.Scan(
+			&module.ID, &module.UnitID, &module.Name, &module.FloorRepetition, &module.FloorArea, &module.FloorHeight,
+			&module.ConcreteColumns.ID, &module.ConcreteColumns.VolumeFck20, &module.ConcreteColumns.VolumeFck25, &module.ConcreteColumns.VolumeFck30, &module.ConcreteColumns.VolumeFck35, &module.ConcreteColumns.VolumeFck40, &module.ConcreteColumns.VolumeFck45,
+			&module.ConcreteBeams.ID, &module.ConcreteBeams.VolumeFck20, &module.ConcreteBeams.VolumeFck25, &module.ConcreteBeams.VolumeFck30, &module.ConcreteBeams.VolumeFck35, &module.ConcreteBeams.VolumeFck40, &module.ConcreteBeams.VolumeFck45,
+			&module.ConcreteSlabs.ID, &module.ConcreteSlabs.VolumeFck20, &module.ConcreteSlabs.VolumeFck25, &module.ConcreteSlabs.VolumeFck30, &module.ConcreteSlabs.VolumeFck35, &module.ConcreteSlabs.VolumeFck40, &module.ConcreteSlabs.VolumeFck45,
+			&module.SteelCA50, &module.SteelCA60,
+			&module.FormColumns, &module.FormBeams, &module.FormSlabs, &module.FormTotal, &module.ColumnNumber, &module.AvgBeamSpan, &module.AvgSlabSpan,
+			&module.TotalCO2Min, &module.TotalCO2Max, &module.TotalEnergyMin, &module.TotalEnergyMax,
+			&module.Version, &module.InUse, &module.CreatedAt, &module.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		modules = append(modules, &module)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return modules, nil
+}
+
+func (m ConcreteWallModuleModel) GetById(id int64) ([]*ConcreteWallModule, error) {
+	query := `SELECT
+		mcw.id, mcw.unit_id, mcw.name, mcw.floor_repetition, mcw.floor_area, mcw.floor_height,
+		cw.id, cw.volume_fck20, cw.volume_fck25, cw.volume_fck30, cw.volume_fck35, cw.volume_fck40, cw.volume_fck45,
+		cs.id, cs.volume_fck20, cs.volume_fck25, cs.volume_fck30, cs.volume_fck35, cs.volume_fck40, cs.volume_fck45,
+		mcw.steel_ca50, mcw.steel_ca60,
+		mcw.wall_thickness, mcw.slab_thickness, mcw.form_area, mcw.wall_area,
+		mcw.total_co2_min, mcw.total_co2_max, mcw.total_energy_min, mcw.total_energy_max,
+		mcw.version, mcw.in_use, mcw.created_at, mcw.updated_at
+	FROM module_concrete_wall mcw
+	LEFT JOIN concrete cw ON mcw.concrete_walls = cw.id
+	LEFT JOIN concrete cs ON mcw.concrete_slabs = cs.id
+	WHERE mcw.id = $1
+	ORDER BY mcw.version ASC`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var modules []*ConcreteWallModule
+
+	for rows.Next() {
+		var module ConcreteWallModule
+		err := rows.Scan(
+			&module.ID, &module.UnitID, &module.Name, &module.FloorRepetition, &module.FloorArea, &module.FloorHeight,
+			&module.ConcreteWalls.ID, &module.ConcreteWalls.VolumeFck20, &module.ConcreteWalls.VolumeFck25, &module.ConcreteWalls.VolumeFck30, &module.ConcreteWalls.VolumeFck35, &module.ConcreteWalls.VolumeFck40, &module.ConcreteWalls.VolumeFck45,
+			&module.ConcreteSlabs.ID, &module.ConcreteSlabs.VolumeFck20, &module.ConcreteSlabs.VolumeFck25, &module.ConcreteSlabs.VolumeFck30, &module.ConcreteSlabs.VolumeFck35, &module.ConcreteSlabs.VolumeFck40, &module.ConcreteSlabs.VolumeFck45,
+			&module.SteelCA50, &module.SteelCA60,
+			&module.WallThickness, &module.SlabThickness, &module.FormArea, &module.WallArea,
+			&module.TotalCO2Min, &module.TotalCO2Max, &module.TotalEnergyMin, &module.TotalEnergyMax,
+			&module.Version, &module.InUse, &module.CreatedAt, &module.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		modules = append(modules, &module)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return modules, nil
+}
+

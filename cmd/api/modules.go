@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"io"
 	"net/http"
 
+	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/modules"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
@@ -102,6 +104,30 @@ func (app *application) createVersionHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"result": result}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) readModuleHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := app.readIDParam(r, "moduleID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	module, err := modules.GetModule(app.models, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"versions": module}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
