@@ -40,6 +40,7 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units", app.requirePermission("project:edit", app.createUnitHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID", app.requirePermission("project:view", app.readUnitHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID", app.requirePermission("project:edit", app.deleteUnitHandler))
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/modules", app.requirePermission("project:edit" ,app.createModuleHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/modules/:moduleID", app.requirePermission("project:view", app.readModuleHandler))
