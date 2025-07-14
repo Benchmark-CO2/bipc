@@ -3,7 +3,7 @@ import {
   moduleFormSchema,
 } from "@/validators/moduleForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Trash, Plus } from "lucide-react";
+import { Trash, Plus, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -47,6 +47,7 @@ interface DrawerFormModuleProps {
   projectId: string;
   unitId: string;
   moduleId?: string;
+  structureType?: "beam_column" | "concrete_wall" | "structural_masonry";
 }
 
 const DrawerFormModule = ({
@@ -54,6 +55,7 @@ const DrawerFormModule = ({
   projectId,
   unitId,
   moduleId,
+  structureType,
 }: DrawerFormModuleProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -245,7 +247,13 @@ const DrawerFormModule = ({
     <Drawer
       direction="right"
       open={isOpen}
-      onOpenChange={setIsOpen}
+      dismissible={false}
+      onOpenChange={() => {
+        setIsOpen(true);
+        if (structureType) {
+          form.setValue("structure_type", structureType);
+        }
+      }}
       onClose={handleClose}
     >
       <DrawerTrigger asChild>
@@ -256,10 +264,17 @@ const DrawerFormModule = ({
         )}
       </DrawerTrigger>
       <DrawerContent className="min-w-3/5">
-        <DrawerHeader className="px-6">
+        <DrawerHeader className="px-8">
           <DrawerTitle>
             {moduleId ? "Editar Módulo" : "Adicionar Módulo"}
           </DrawerTitle>
+          <Button
+            onClick={handleClose}
+            className="absolute right-4 top-2"
+            variant="ghost"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </DrawerHeader>
         <DrawerDescription className="px-6">
           Configure os dados estruturais do módulo
@@ -299,7 +314,7 @@ const DrawerFormModule = ({
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
-                          disabled={Boolean(moduleData)}
+                          disabled={Boolean(moduleId)}
                         >
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder="Selecione o tipo de estrutura" />
