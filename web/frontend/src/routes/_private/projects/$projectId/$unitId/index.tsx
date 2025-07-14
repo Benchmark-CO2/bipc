@@ -1,4 +1,5 @@
 import { getProjectByUUID } from "@/actions/projects/getProject";
+import { getUnitByUUID } from "@/actions/units/getUnit";
 import {
   // DrawerAddModule,
   DrawerFormModule,
@@ -35,12 +36,16 @@ export const Route = createFileRoute("/_private/projects/$projectId/$unitId/")({
     const { data } = await getProjectByUUID(projectId);
     const project = data.project;
 
-    const units = getFromStorage(
-      `${UNIT_MODULES}/${projectId}`,
-      {} as TProjectUnitModule
-    );
+    const { data: unitData } = await getUnitByUUID(projectId, unitId);
+    console.log(unitData);
+
+    // const units = getFromStorage(
+    //   `${UNIT_MODULES}/${projectId}`,
+    //   {} as TProjectUnitModule
+    // );
+
     return {
-      modules: units[unitId] ? units[unitId] : [],
+      unit: unitData.unit,
       project,
     };
   },
@@ -52,115 +57,117 @@ function RouteComponent() {
     from: "/_private/projects/$projectId/$unitId/",
   });
 
-  const { modules } = useLoaderData({
+  const { unit } = useLoaderData({
     from: "/_private/projects/$projectId/$unitId/",
   });
 
-  const [mods, setMods] = useState(modules);
+  const modules = {
+    beamColumn: unit?.beam_column_modules || [],
+    concreteWall: unit?.concrete_wall_modules || [],
+    structuralMasonry: unit?.structural_masonry_modules || [],
+  };
 
   useEffect(() => {
     document.title = "BIPC / Tecnologia Construtiva";
   }, []);
 
-  useEffect(() => {
-    setMods(modules);
-  }, [modules]);
+  // const handleAddNewModule = (data: AddModuleFormSchema) => {
+  //   if (
+  //     mods.find(
+  //       (el) =>
+  //         el.nome === data.nome && el.tipoDeEstrutura === data.tipoDeEstrutura
+  //     )
+  //   ) {
+  //     toast.error("Esse elemento ja existe na unidade");
+  //     return;
+  //   }
+  //   const formatData = {
+  //     ...data,
+  //     // data: typeof data.data === 'string' ? data.data : data.data instanceof Date ? data.data.toISOString() : '',
+  //     module_uuid: String(mods.length + 1),
+  //     version: "1",
+  //     consumoDeAco: (() => {
+  //       switch (data.tipoDeEstrutura) {
+  //         case "concreteWall":
+  //           return (
+  //             Math.round((Math.random() * (6.33 - 0.79) + 0.79) * 100) / 100
+  //           );
+  //         case "masonry":
+  //           return Math.round((Math.random() * (80 - 15) + 15) * 100) / 100; // 15-80kg
+  //         case "beamColumn":
+  //           return (
+  //             Math.round((Math.random() * (127.78 - 26.54) + 26.54) * 100) / 100
+  //           );
+  //         default:
+  //           return Math.round((Math.random() * 50 + 10) * 100) / 100;
+  //       }
+  //     })(),
+  //     consumoDeConcreto: (() => {
+  //       switch (data.tipoDeEstrutura) {
+  //         case "concreteWall":
+  //           return (
+  //             Math.round((Math.random() * (1.73 - 0.16) + 0.16) * 100) / 100
+  //           );
+  //         case "masonry":
+  //           return Math.round((Math.random() * (2.5 - 0.8) + 0.8) * 100) / 100; // 0.8-2.5m³
+  //         case "beamColumn":
+  //           return (
+  //             Math.round((Math.random() * (1.29 - 0.27) + 0.27) * 100) / 100
+  //           );
+  //         default:
+  //           return Math.round((Math.random() * 2 + 0.5) * 100) / 100;
+  //       }
+  //     })(),
+  //     emissaoDeCo2: Math.round((Math.random() * (190 - 80) + 80) * 100) / 100,
+  //     energia: Math.round((Math.random() * (1200 - 400) + 400) * 100) / 100,
+  //   } as TModuleData;
 
-  const handleAddNewModule = (data: AddModuleFormSchema) => {
-    if (
-      mods.find(
-        (el) =>
-          el.nome === data.nome && el.tipoDeEstrutura === data.tipoDeEstrutura
-      )
-    ) {
-      toast.error("Esse elemento ja existe na unidade");
-      return;
-    }
-    const formatData = {
-      ...data,
-      // data: typeof data.data === 'string' ? data.data : data.data instanceof Date ? data.data.toISOString() : '',
-      module_uuid: String(mods.length + 1),
-      version: "1",
-      consumoDeAco: (() => {
-        switch (data.tipoDeEstrutura) {
-          case "concreteWall":
-            return (
-              Math.round((Math.random() * (6.33 - 0.79) + 0.79) * 100) / 100
-            );
-          case "masonry":
-            return Math.round((Math.random() * (80 - 15) + 15) * 100) / 100; // 15-80kg
-          case "beamColumn":
-            return (
-              Math.round((Math.random() * (127.78 - 26.54) + 26.54) * 100) / 100
-            );
-          default:
-            return Math.round((Math.random() * 50 + 10) * 100) / 100;
-        }
-      })(),
-      consumoDeConcreto: (() => {
-        switch (data.tipoDeEstrutura) {
-          case "concreteWall":
-            return (
-              Math.round((Math.random() * (1.73 - 0.16) + 0.16) * 100) / 100
-            );
-          case "masonry":
-            return Math.round((Math.random() * (2.5 - 0.8) + 0.8) * 100) / 100; // 0.8-2.5m³
-          case "beamColumn":
-            return (
-              Math.round((Math.random() * (1.29 - 0.27) + 0.27) * 100) / 100
-            );
-          default:
-            return Math.round((Math.random() * 2 + 0.5) * 100) / 100;
-        }
-      })(),
-      emissaoDeCo2: Math.round((Math.random() * (190 - 80) + 80) * 100) / 100,
-      energia: Math.round((Math.random() * (1200 - 400) + 400) * 100) / 100,
-    } as TModuleData;
-
-    const units = getFromStorage(
-      `${UNIT_MODULES}/${projectId}`,
-      {} as TProjectUnitModule
-    );
-    setMods((prev) => {
-      const newMods = [...prev, formatData];
-      setToStorage(`${UNIT_MODULES}/${projectId}`, {
-        ...units,
-        [unitId]: newMods,
-      });
-      return newMods;
-    });
-  };
+  //   const units = getFromStorage(
+  //     `${UNIT_MODULES}/${projectId}`,
+  //     {} as TProjectUnitModule
+  //   );
+  //   setMods((prev) => {
+  //     const newMods = [...prev, formatData];
+  //     setToStorage(`${UNIT_MODULES}/${projectId}`, {
+  //       ...units,
+  //       [unitId]: newMods,
+  //     });
+  //     return newMods;
+  //   });
+  // };
 
   const handleUpdateModule = (module: TModuleData) => {
-    const units = getFromStorage(
-      `${UNIT_MODULES}/${projectId}`,
-      {} as TProjectUnitModule
-    );
-    setMods((prev) => {
-      const newMods = prev.map((mod) =>
-        mod.module_uuid === module.module_uuid ? module : mod
-      );
-      setToStorage(`${UNIT_MODULES}/${projectId}`, {
-        ...units,
-        [unitId]: newMods,
-      });
-      return newMods;
-    });
+    console.log("Updating module:", module);
+    // const units = getFromStorage(
+    //   `${UNIT_MODULES}/${projectId}`,
+    //   {} as TProjectUnitModule
+    // );
+    // setMods((prev) => {
+    //   const newMods = prev.map((mod) =>
+    //     mod.module_uuid === module.module_uuid ? module : mod
+    //   );
+    //   setToStorage(`${UNIT_MODULES}/${projectId}`, {
+    //     ...units,
+    //     [unitId]: newMods,
+    //   });
+    //   return newMods;
+    // });
   };
 
   const handleDeleteModule = (moduleId: string) => {
-    const units = getFromStorage(
-      `${UNIT_MODULES}/${projectId}`,
-      {} as TProjectUnitModule
-    );
-    setMods((prev) => {
-      const newMods = prev.filter((mod) => mod.module_uuid !== moduleId);
-      setToStorage(`${UNIT_MODULES}/${projectId}`, {
-        ...units,
-        [unitId]: newMods,
-      });
-      return newMods;
-    });
+    console.log("Deleting module with ID:", moduleId);
+    // const units = getFromStorage(
+    //   `${UNIT_MODULES}/${projectId}`,
+    //   {} as TProjectUnitModule
+    // );
+    // setMods((prev) => {
+    //   const newMods = prev.filter((mod) => mod.module_uuid !== moduleId);
+    //   setToStorage(`${UNIT_MODULES}/${projectId}`, {
+    //     ...units,
+    //     [unitId]: newMods,
+    //   });
+    //   return newMods;
+    // });
   };
 
   return (
@@ -174,19 +181,20 @@ function RouteComponent() {
             </Button>
           }
         /> */}
-        <DrawerFormModule
-          triggerComponent={
-            <Button variant="noStyles" className="flex items-center gap-2">
-              {t("drawerAddModule.addConstructiveTechnology")}
-            </Button>
-          }
-          projectId={projectId}
-          unitId={unitId}
-        />
       </div>
       <ModuleTable
-        key={`${JSON.stringify(mods)}`}
-        modules={mods}
+        key={`${JSON.stringify(modules.concreteWall)}`}
+        tableId="concrete_wall"
+        modules={modules.concreteWall}
+        projectId={projectId}
+        unitId={unitId}
+        handleUpdateModule={handleUpdateModule}
+        handleDeleteModule={handleDeleteModule}
+      />
+      <ModuleTable
+        key={`${JSON.stringify(modules.beamColumn)}`}
+        tableId="beam_column"
+        modules={modules.beamColumn}
         projectId={projectId}
         unitId={unitId}
         handleUpdateModule={handleUpdateModule}
