@@ -23,13 +23,15 @@ import { TModuleData } from "@/types/projects";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import NotFoundList from "../ui/not-found-list";
-import DrawerEditModule from "./drawer-edit-module";
 import { Checkbox } from "../ui/checkbox";
 import ModalSimple from "./modal-simple";
 import DrawerFormModule from "./drawer-form-module";
+import { IModuleItem } from "@/types/modules";
+import { Button } from "../ui/button";
 
 interface IModuleTable {
-  modules: TModuleData[];
+  tableId: "concrete_wall" | "beam_column" | "structural_masonry";
+  modules: IModuleItem[];
   projectId: string;
   unitId: string;
   handleUpdateModule: (module: TModuleData) => void;
@@ -37,6 +39,7 @@ interface IModuleTable {
 }
 
 export default function ModuleTable({
+  tableId,
   modules,
   projectId,
   unitId,
@@ -74,24 +77,28 @@ export default function ModuleTable({
     const selected = selectedRowModel.rows;
 
     return {
-      areaTotal: selected.reduce(
-        (acc, row) => acc + (row.original.areaConstruidaTotal || 0),
+      total_concrete: selected.reduce(
+        (acc, row) => acc + (row.original.total_concrete || 0),
         0
       ),
-      aco: selected.reduce(
-        (acc, row) => acc + (row.original.consumoDeAco || 0),
+      total_steel: selected.reduce(
+        (acc, row) => acc + (row.original.total_steel || 0),
         0
       ),
-      concreto: selected.reduce(
-        (acc, row) => acc + (row.original.consumoDeConcreto || 0),
+      co2_min: selected.reduce(
+        (acc, row) => acc + (row.original.co2_min || 0),
         0
       ),
-      co2: selected.reduce(
-        (acc, row) => acc + (row.original.emissaoDeCo2 || 0),
+      co2_max: selected.reduce(
+        (acc, row) => acc + (row.original.co2_max || 0),
         0
       ),
-      energia: selected.reduce(
-        (acc, row) => acc + (row.original.energia || 0),
+      energy_min: selected.reduce(
+        (acc, row) => acc + (row.original.energy_min || 0),
+        0
+      ),
+      energy_max: selected.reduce(
+        (acc, row) => acc + (row.original.energy_max || 0),
         0
       ),
     };
@@ -99,14 +106,14 @@ export default function ModuleTable({
 
   const handleClickRow = (
     e: React.MouseEvent<HTMLTableRowElement>,
-    module: TModuleData
+    module: IModuleItem
   ) => {
     const target = e.target as HTMLElement;
     const dataType = target
       .closest("[data-action]")
       ?.getAttribute("data-action");
     if (dataType === "open-simulations") {
-      onClickModuleSimulation(module.module_uuid);
+      onClickModuleSimulation(module.id.toString());
     }
 
     // else if (dataType === 'delete-module') {
@@ -118,12 +125,42 @@ export default function ModuleTable({
 
   return (
     <div className="space-y-4 rounded-md border p-4">
+      {/* Header da tabela com nome e informações */}
+      <div className="flex items-center justify-between border-b pb-4">
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            {tableId
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (c) => c.toUpperCase())}
+          </h3>
+          {selectedRowModel.rows.length > 0 && (
+            <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+              <div className="rounded-full bg-blue-100 dark:bg-blue-900/30 px-2 py-1">
+                {selectedRowModel.rows.length} item
+                {selectedRowModel.rows.length > 1 ? "s" : ""} selecionado
+                {selectedRowModel.rows.length > 1 ? "s" : ""}
+              </div>
+            </div>
+          )}
+        </div>
+        <DrawerFormModule
+          triggerComponent={
+            <Button variant="noStyles" className="flex items-center gap-2">
+              {t("drawerAddModule.addConstructiveTechnology")}
+            </Button>
+          }
+          projectId={projectId}
+          unitId={unitId}
+          structureType={tableId}
+        />
+      </div>
+
       {modules.length === 0 ? (
         <NotFoundList
           message={t("common.noItemsFound")}
           description={t("drawerAddModule.addConstructiveTechnology")}
           icon="file"
-          showIcon={true}
+          showIcon={false}
         />
       ) : (
         <Table>
@@ -189,7 +226,7 @@ export default function ModuleTable({
                           className="hover:scale-105"
                         />
                       }
-                      moduleId={row.original.module_uuid}
+                      moduleId={row.original.id.toString()}
                       projectId={projectId}
                       unitId={unitId}
                     />
@@ -213,7 +250,7 @@ export default function ModuleTable({
                       }
                       title={"Excluir módulo"}
                       onConfirm={() => {
-                        handleDeleteModule?.(row.original.module_uuid);
+                        handleDeleteModule?.(row.original.id.toString());
                       }}
                       confirmTitle="Deletar"
                     />
@@ -222,14 +259,13 @@ export default function ModuleTable({
               </TableRow>
             ))}
             <TableRow>
-              <TableCell colSpan={3}>
-                Selecionados ({selectedRowModel.rows.length}) :
-              </TableCell>
-              <TableCell>{totals.areaTotal.toFixed(2)} m²</TableCell>
-              <TableCell>{totals.aco.toFixed(2)} kg/m²</TableCell>
-              <TableCell>{totals.concreto.toFixed(2)} m³/m²</TableCell>
-              <TableCell>{totals.co2.toFixed(2)} kgCO₂/m²</TableCell>
-              <TableCell>{totals.energia.toFixed(2)} MJ/m²</TableCell>
+              <TableCell colSpan={2}>Total</TableCell>
+              <TableCell>{totals.total_concrete.toFixed(2)} kg/m²</TableCell>
+              <TableCell>{totals.total_steel.toFixed(2)} kg/m²</TableCell>
+              <TableCell>{totals.co2_min.toFixed(2)} kgCO₂/m²</TableCell>
+              <TableCell>{totals.co2_max.toFixed(2)} kgCO₂/m²</TableCell>
+              <TableCell>{totals.energy_min.toFixed(2)} MJ/m²</TableCell>
+              <TableCell>{totals.energy_max.toFixed(2)} MJ/m²</TableCell>
             </TableRow>
           </TableBody>
         </Table>
