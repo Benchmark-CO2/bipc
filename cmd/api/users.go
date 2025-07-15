@@ -264,7 +264,7 @@ func (app *application) updateUserPasswordHandler(w http.ResponseWriter, r *http
 	}
 }
 
-func (app *application) UserCollaboratorsHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) userCollaboratorsHandler(w http.ResponseWriter, r *http.Request) {
 	user := app.contextGetUser(r)
 
 	users, err := app.models.Users.Collaborators(user.ID)
@@ -280,7 +280,7 @@ func (app *application) UserCollaboratorsHandler(w http.ResponseWriter, r *http.
 	}
 }
 
-func (app *application) PendingInvitationsHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) pendingInvitationsHandler(w http.ResponseWriter, r *http.Request) {
 	user := app.contextGetUser(r)
 
 	invitations, err := app.models.Invitations.GetPendingByEmail(user.Email)
