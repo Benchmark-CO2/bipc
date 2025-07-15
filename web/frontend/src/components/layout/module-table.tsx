@@ -296,7 +296,7 @@ export default function ModuleTable({
               </TableRow>
             ))}
             <TableRow>
-              <TableCell colSpan={2}>Total</TableCell>
+              <TableCell colSpan={3}>Total</TableCell>
               <TableCell>{totals.total_concrete.toFixed(2)} kg/m²</TableCell>
               <TableCell>{totals.total_steel.toFixed(2)} kg/m²</TableCell>
               <TableCell>{totals.co2_min.toFixed(2)} kgCO₂/m²</TableCell>
