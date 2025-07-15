@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "../../ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
+import { useTranslation } from "react-i18next";
 
 interface ModuleFormStructuralMasonryProps {
   form: UseFormReturn<ModuleFormSchema>;
@@ -26,6 +27,7 @@ interface ModuleFormStructuralMasonryProps {
 const ModuleFormStructuralMasonry = ({
   form,
 }: ModuleFormStructuralMasonryProps) => {
+  const { t } = useTranslation();
   const fckOptions = ["20", "25", "30", "35", "40", "45"] as const;
   const fbkOptions = ["02", "04", "06", "08", "10", "12"] as const;
   const blockTypes = [
@@ -148,7 +150,9 @@ const ModuleFormStructuralMasonry = ({
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-medium">Blocos</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("drawerFormModule.masonryForm.blocksLabel")}
+            </CardTitle>
             <Button
               type="button"
               variant="outline"
@@ -173,14 +177,20 @@ const ModuleFormStructuralMasonry = ({
                 name={`blocks.${index}.type`}
                 render={({ field }) => (
                   <FormItem className="flex-1">
-                    <FormLabel className="text-xs">Tipo</FormLabel>
+                    <FormLabel className="text-xs">
+                      {t("drawerFormModule.masonryForm.blockTypeLabel")}
+                    </FormLabel>
                     <FormControl>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Tipo" />
+                          <SelectValue
+                            placeholder={t(
+                              "drawerFormModule.masonryForm.blockTypePlaceholder"
+                            )}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {blockTypes.map((type) => (
@@ -200,7 +210,9 @@ const ModuleFormStructuralMasonry = ({
                 name={`blocks.${index}.fbk`}
                 render={({ field }) => (
                   <FormItem className="flex-1">
-                    <FormLabel className="text-xs">FBK (MPa)</FormLabel>
+                    <FormLabel className="text-xs">
+                      {t("drawerFormModule.masonryForm.blockFbkLabel")}
+                    </FormLabel>
                     <FormControl>
                       <Select
                         onValueChange={field.onChange}
@@ -227,7 +239,9 @@ const ModuleFormStructuralMasonry = ({
                 name={`blocks.${index}.quantity`}
                 render={({ field }) => (
                   <FormItem className="flex-1">
-                    <FormLabel className="text-xs">Quantidade</FormLabel>
+                    <FormLabel className="text-xs">
+                      {t("drawerFormModule.masonryForm.blockQuantityLabel")}
+                    </FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -258,12 +272,20 @@ const ModuleFormStructuralMasonry = ({
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">Alvenaria Estrutural</h3>
+      <h3 className="text-lg font-semibold">
+        {t("common.structureType.masonry")}
+      </h3>
 
       {/* Graute */}
       <div className="grid grid-cols-1 gap-4">
-        {renderConcreteFields("vertical_grout", "Graute Vertical")}
-        {renderConcreteFields("horizontal_grout", "Graute Horizontal")}
+        {renderConcreteFields(
+          "vertical_grout",
+          t("drawerFormModule.masonryForm.verticalGroutLabel")
+        )}
+        {renderConcreteFields(
+          "horizontal_grout",
+          t("drawerFormModule.masonryForm.horizontalGroutLabel")
+        )}
       </div>
 
       {/* Aços */}
@@ -273,7 +295,9 @@ const ModuleFormStructuralMasonry = ({
           name="steel_ca50"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Aço CA50 (kg)</FormLabel>
+              <FormLabel>
+                {t("drawerFormModule.commonForm.steelCA50Label")}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -293,7 +317,9 @@ const ModuleFormStructuralMasonry = ({
           name="steel_ca60"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Aço CA60 (kg)</FormLabel>
+              <FormLabel>
+                {t("drawerFormModule.commonForm.steelCA60Label")}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"

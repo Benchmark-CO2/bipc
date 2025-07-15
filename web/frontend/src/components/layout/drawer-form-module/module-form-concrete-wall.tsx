@@ -18,12 +18,14 @@ import {
   SelectValue,
 } from "../../ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
+import { useTranslation } from "react-i18next";
 
 interface ModuleFormConcreteWallProps {
   form: UseFormReturn<ModuleFormSchema>;
 }
 
 const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
+  const { t } = useTranslation();
   const fckOptions = ["20", "25", "30", "35", "40", "45"] as const;
 
   const renderConcreteFields = (
@@ -117,12 +119,20 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">Parede de Concreto</h3>
+      <h3 className="text-lg font-semibold">
+        {t("common.structureType.concreteWall")}
+      </h3>
 
       {/* Concreto */}
       <div className="grid grid-cols-1 gap-4">
-        {renderConcreteFields("concrete_walls", "Concreto - Paredes")}
-        {renderConcreteFields("concrete_slabs", "Concreto - Lajes")}
+        {renderConcreteFields(
+          "concrete_walls",
+          t("drawerFormModule.concreteWallForm.concreteWallsLabel")
+        )}
+        {renderConcreteFields(
+          "concrete_slabs",
+          t("drawerFormModule.commonForm.concreteSlabsLabel")
+        )}
       </div>
 
       {/* Aços */}
@@ -132,7 +142,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
           name="steel_ca50"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Aço CA50 (kg)</FormLabel>
+              <FormLabel>
+                {t("drawerFormModule.commonForm.steelCA50Label")}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -152,7 +164,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
           name="steel_ca60"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Aço CA60 (kg)</FormLabel>
+              <FormLabel>
+                {t("drawerFormModule.commonForm.steelCA60Label")}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -175,7 +189,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
           name="wall_thickness"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Espessura da Parede (m)</FormLabel>
+              <FormLabel>
+                {t("drawerFormModule.concreteWallForm.wallThicknessLabel")}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -195,7 +211,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
           name="slab_thickness"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Espessura da Laje (m)</FormLabel>
+              <FormLabel>
+                {t("drawerFormModule.concreteWallForm.slabThicknessLabel")}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -215,7 +233,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
           name="form_area"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Área de Forma (m²)</FormLabel>
+              <FormLabel>
+                {t("drawerFormModule.concreteWallForm.formAreaLabel")}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -235,7 +255,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
           name="wall_area"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Área da Parede (m²)</FormLabel>
+              <FormLabel>
+                {t("drawerFormModule.concreteWallForm.wallAreaLabel")}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"

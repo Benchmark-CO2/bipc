@@ -3,7 +3,7 @@ import {
   moduleFormSchema,
 } from "@/validators/moduleForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Trash, Plus, X } from "lucide-react";
+import { Trash, Plus, X, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -37,7 +37,7 @@ import ModuleFormBeamColumn from "./module-form-beam-column";
 import ModuleFormConcreteWall from "./module-form-concrete-wall";
 import ModuleFormStructuralMasonry from "./module-form-structural-masonry";
 import { TModuleStructure } from "@/types/modules";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { postModule } from "@/actions/modules/postModule";
 import { useTranslation } from "react-i18next";
 import { mockModule } from "@/utils/mockModule";
@@ -60,7 +60,7 @@ const DrawerFormModule = ({
   const [isOpen, setIsOpen] = useState(false);
 
   const { t } = useTranslation();
-  // const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const form = useForm<ModuleFormSchema>({
@@ -101,25 +101,24 @@ const DrawerFormModule = ({
 
   const {
     // isSuccess: isCreationSuccess,
-    // isPending: isCreationPending,
+    isPending: isCreationPending,
     mutate: mutateCreation,
   } = useMutation({
     mutationFn: (data: TModuleStructure) => postModule(data, projectId, unitId),
     onError: (error) => {
-      toast.error("Erro ao criar módulo", {
+      toast.error(t("error.errorCreateModule"), {
         description:
           error instanceof Error ? error.message : t("error.errorUnknown"),
         duration: 5000,
       });
     },
-    onSuccess: (data) => {
-      toast.success("", {
+    onSuccess: () => {
+      toast.success(t("success.moduleCreated"), {
         duration: 5000,
       });
-      // queryClient.invalidateQueries({
-      //   queryKey: ["project", projectId],
-      // });
-      console.log(data);
+      queryClient.invalidateQueries({
+        queryKey: ["project", projectId],
+      });
       setIsOpen(false);
       form.reset();
 
@@ -164,9 +163,7 @@ const DrawerFormModule = ({
     if (moduleId) {
       return;
     }
-    console.log("=== SUBMIT TRIGGERED ===");
 
-    // Campos base sempre enviados
     const baseFields = {
       name: data.name,
       structure_type: data.structure_type,
@@ -175,7 +172,6 @@ const DrawerFormModule = ({
       floor_height: data.floor_height,
     };
 
-    // Filtrar apenas os campos relevantes para o tipo de estrutura
     let filteredData: TModuleStructure = baseFields as TModuleStructure;
 
     if (data.structure_type === "beam_column") {
@@ -217,19 +213,7 @@ const DrawerFormModule = ({
       };
     }
 
-    console.log("Filtered module form data:", filteredData);
-
     mutateCreation(filteredData);
-
-    // TODO: Implementar endpoints de criação/edição de módulos
-    // toast.success(
-    //   moduleId
-    //     ? "Módulo atualizado com sucesso!"
-    //     : "Módulo criado com sucesso!",
-    //   { duration: 3000 }
-    // );
-    // setIsOpen(false);
-    // form.reset();
   };
 
   const handleClose = () => {
@@ -238,9 +222,9 @@ const DrawerFormModule = ({
   };
 
   const structureTypes = [
-    { value: "beam_column", label: "Viga Pilar" },
-    { value: "concrete_wall", label: "Parede de Concreto" },
-    { value: "structural_masonry", label: "Alvenaria Estrutural" },
+    { value: "beam_column", label: t("common.structureType.beamColumn") },
+    { value: "concrete_wall", label: t("common.structureType.concreteWall") },
+    { value: "structural_masonry", label: t("common.structureType.masonry") },
   ];
 
   return (
@@ -266,7 +250,9 @@ const DrawerFormModule = ({
       <DrawerContent className="min-w-3/5">
         <DrawerHeader className="px-8">
           <DrawerTitle>
-            {moduleId ? "Editar Módulo" : "Adicionar Módulo"}
+            {moduleId
+              ? t("drawerFormModule.editTitle")
+              : t("drawerFormModule.addTitle")}
           </DrawerTitle>
           <Button
             onClick={handleClose}
@@ -277,7 +263,7 @@ const DrawerFormModule = ({
           </Button>
         </DrawerHeader>
         <DrawerDescription className="px-6">
-          Configure os dados estruturais do módulo
+          {t("drawerFormModule.description")}
         </DrawerDescription>
         <div className="mx-auto w-full p-6 overflow-auto h-[calc(100vh-78px)]">
           <Form {...form}>
@@ -292,10 +278,14 @@ const DrawerFormModule = ({
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome do Módulo</FormLabel>
+                      <FormLabel>
+                        {t("drawerFormModule.commonForm.nameLabel")}
+                      </FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Digite o nome do módulo"
+                          placeholder={t(
+                            "drawerFormModule.commonForm.namePlaceholder"
+                          )}
                           {...field}
                         />
                       </FormControl>
@@ -309,7 +299,9 @@ const DrawerFormModule = ({
                   name="structure_type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tipo de Estrutura</FormLabel>
+                      <FormLabel>
+                        {t("drawerFormModule.commonForm.structureTypeLabel")}
+                      </FormLabel>
                       <FormControl>
                         <Select
                           onValueChange={field.onChange}
@@ -317,7 +309,11 @@ const DrawerFormModule = ({
                           disabled={Boolean(moduleId)}
                         >
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecione o tipo de estrutura" />
+                            <SelectValue
+                              placeholder={t(
+                                "drawerFormModule.commonForm.structureTypePlaceholder"
+                              )}
+                            />
                           </SelectTrigger>
                           <SelectContent>
                             {structureTypes.map((type) => (
@@ -341,7 +337,9 @@ const DrawerFormModule = ({
                   name="floor_repetition"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Repetição de Andares</FormLabel>
+                      <FormLabel>
+                        {t("drawerFormModule.commonForm.floorRepetitionLabel")}
+                      </FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -362,7 +360,9 @@ const DrawerFormModule = ({
                   name="floor_area"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Área do Andar (m²)</FormLabel>
+                      <FormLabel>
+                        {t("drawerFormModule.commonForm.floorAreaLabel")}
+                      </FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -384,7 +384,9 @@ const DrawerFormModule = ({
                   name="floor_height"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Altura do Andar (m)</FormLabel>
+                      <FormLabel>
+                        {t("drawerFormModule.commonForm.floorHeightLabel")}
+                      </FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -431,8 +433,19 @@ const DrawerFormModule = ({
                     <Trash className="h-4 w-4" />
                   </Button>
                 )}
-                <Button type="submit" variant="noStyles" className="flex-1">
-                  {moduleId ? "Atualizar Módulo" : "Criar Módulo"}
+                <Button
+                  type="submit"
+                  variant="noStyles"
+                  className="flex-1"
+                  disabled={isCreationPending}
+                >
+                  {isCreationPending ? (
+                    <Loader2 className="animate-spin h-4 w-4" />
+                  ) : moduleId ? (
+                    t("common.update")
+                  ) : (
+                    t("common.add")
+                  )}
                 </Button>
               </div>
             </form>
