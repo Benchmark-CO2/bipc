@@ -44,7 +44,7 @@ export default function ModuleTable({
   modules,
   projectId,
   unitId,
-  handleUpdateModule,
+  // handleUpdateModule,
   handleDeleteModule,
   onSelectionChange,
 }: IModuleTable) {
