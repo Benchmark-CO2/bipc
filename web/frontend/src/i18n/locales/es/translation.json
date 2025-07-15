@@ -47,6 +47,7 @@
     "save": "Guardar",
     "cancel": "Cancelar",
     "add": "Agregar",
+    "update": "Actualizar",
     "close": "Cerrar",
     "open": "Abrir",
     "new_one": "Nuevo",
@@ -364,6 +365,53 @@
     },
     "addUnitButton": "Agregar Unidad",
     "editUnitButton": "Actualizar Unidad"
+  },
+  "drawerFormModule": {
+    "createButtonTrigger": "Crear Módulo",
+    "addTitle": "Agregar Módulo",
+    "editTitle": "Actualizar Módulo",
+    "description": "Un mismo edificio suele combinar más de una tecnología constructiva, incluso en un solo subsistema de la construcción. Como la forma de cuantificar material cambia dependiendo del tipo de tecnología, cada tipo posee un módulo de cálculo que puede ser agregado para componer la suma de CO2 de la unidad.",
+    "commonForm": {
+      "nameLabel": "Nombre del Módulo *",
+      "namePlaceholder": "Piso 1 al 3...",
+      "structureTypeLabel": "Tecnología Constructiva *",
+      "structureTypePlaceholder": "Selecciona una tecnología constructiva",
+      "floorRepetitionLabel": "Repetición de Pisos *",
+      "floorAreaLabel": "Área del Piso (m²) *",
+      "floorHeightLabel": "Altura del Piso (m) *",
+      "fckLabel": "Fck (MPa) *",
+      "fckVolume": "Volumen (m³) *",
+      "concreteSlabsLabel": "Concreto - Losas *",
+      "steelCA50Label": "Acero CA50 (kg/m²) *",
+      "steelCA60Label": "Acero CA60 (kg/m²) *"
+    },
+    "beamColumnForm": {
+      "concreteColumnsLabel": "Concreto - Columnas *",
+      "concreteBeamsLabel": "Concreto - Vigas *",
+      "formColumnsLabel": "Forma Columnas (m²)",
+      "formBeamsLabel": "Forma Vigas (m²)",
+      "formSlabsLabel": "Forma Losas (m²)",
+      "formTotalLabel": "Forma Total (m²)",
+      "columnNumberLabel": "Número de Columnas",
+      "avgBeamSpanLabel": "Vano Promedio de las Vigas (m)",
+      "avgSlabSpanLabel": "Vano Promedio de las Losas (m)"
+    },
+    "concreteWallForm": {
+      "concreteWallsLabel": "Concreto - Paredes *",
+      "wallThicknessLabel": "Grosor de la Pared (m)",
+      "slabThicknessLabel": "Grosor de la Losa (m)",
+      "formAreaLabel": "Área de la Forma (m²)",
+      "wallAreaLabel": "Área de la Pared (m²)"
+    },
+    "masonryForm": {
+      "verticalGroutLabel": "Lechada Vertical *",
+      "horizontalGroutLabel": "Lechada Horizontal *",
+      "blocksLabel": "Bloques *",
+      "blockTypeLabel": "Tipo *",
+      "blockTypePlaceholder": "Bloque",
+      "blockFbkLabel": "Fbk (MPa) *",
+      "blockQuantityLabel": "Cantidad *"
+    }
   },
   "simulationTable": {
     "title": "Simulaciones",
