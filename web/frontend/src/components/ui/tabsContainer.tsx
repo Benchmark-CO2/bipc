@@ -1,6 +1,6 @@
 import { TProjectUnit } from "@/types/projects";
 import { useRouter } from "@tanstack/react-router";
-import { EllipsisVertical, Pen, Trash } from "lucide-react";
+import { EllipsisVertical, Loader2, Pen, Trash } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,22 +10,26 @@ import {
 import ModalConfirmDelete from "../layout/modal-confirm-delete";
 import { useTranslation } from "react-i18next";
 import { DrawerFormUnit } from "../layout";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
+import { deleteUnit } from "@/actions/units/deleteUnit";
 
 interface TabsContainerProps {
   units: TProjectUnit[];
   projectId: string;
   selectedTab?: number;
-  tempDeleteTab?: (unitId: string) => void;
 }
 
 export function TabsContainer({
   units,
   projectId,
   selectedTab,
-  tempDeleteTab,
 }: TabsContainerProps) {
   const { t } = useTranslation();
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const handleTabClick = (unitId: number) => {
     void router.navigate({
@@ -34,23 +38,32 @@ export function TabsContainer({
   };
 
   const handleDeleteUnit = (unitId: string) => {
-    tempDeleteTab?.(unitId);
-    // void deleteUnit(projectId, unitId)
-    //   .then(async () => {
-    //     toast.success(t("success.unitDeleted"));
-    //     await queryClient.invalidateQueries({
-    //       queryKey: ["projects"],
-    //       refetchType: "all",
-    //     });
-    //   })
-    //   .catch((error) => {
-    //     toast.error(t("error.errorDeleteUnit"), {
-    //       description:
-    //         error instanceof Error ? error.message : t("error.errorUnknown"),
-    //       duration: 5000,
-    //     });
-    //   });
+    mutateDelete(unitId);
   };
+
+  const { isPending: isDeletePending, mutate: mutateDelete } = useMutation({
+    mutationFn: (unitId: string) => deleteUnit(projectId, unitId),
+    onError: (error) => {
+      toast.error(t("error.errorUpdateUnit"), {
+        description: error.message || t("error.errorUnknown"),
+        duration: 5000,
+      });
+    },
+    onSuccess: () => {
+      toast.success(t("success.unitUpdated"), {
+        duration: 5000,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project", projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["projects"],
+      });
+      navigate({
+        to: `/projects/${projectId}`,
+      });
+    },
+  });
 
   const unitId = selectedTab ?? "";
 
@@ -101,8 +114,13 @@ export function TabsContainer({
                       e.stopPropagation();
                       e.preventDefault();
                     }}
+                    disabled={isDeletePending}
                   >
-                    <Trash size={16} className="text-destructive" />
+                    {isDeletePending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash size={16} className="text-destructive" />
+                    )}
                     {t("common.delete")}
                   </DropdownMenuItem>
                 }
