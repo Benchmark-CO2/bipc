@@ -10,11 +10,11 @@ export const moduleColumns: ColumnDef<IModuleItem>[] = [
     header: "Nome",
     cell: ({ row }) => row.original.name || "Sem nome",
   },
-  // {
-  //   accessorKey: "structure_type",
-  //   header: "Tipo de Estrutura",
-  //   cell: ({ row }) => row.original.structure_type || "Sem nome",
-  // },
+  {
+    accessorKey: "floor_repetition",
+    header: "Repetições",
+    cell: ({ row }) => row.original.floor_repetition || "-",
+  },
   {
     accessorKey: "total_concrete",
     header: "Total de Concreto",
