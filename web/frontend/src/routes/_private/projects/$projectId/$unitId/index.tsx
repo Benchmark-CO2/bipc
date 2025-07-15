@@ -1,26 +1,14 @@
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { getUnitByUUID } from "@/actions/units/getUnit";
-import {
-  // DrawerAddModule,
-  DrawerFormModule,
-  ModuleTable,
-} from "@/components/layout";
-import { Button } from "@/components/ui/button";
-import { getFromStorage, setToStorage } from "@/lib/storage";
-import { TModuleData, TProjectUnitModule } from "@/types/projects";
-import { AddModuleFormSchema } from "@/validators/addModule.validator";
-// import { Unit } from '@/types/units'
-// import { mockUnits } from '@/utils/mockUnits'
+import { ModuleTable, ModuleTotalsSummary } from "@/components/layout";
+import { TModuleData } from "@/types/projects";
+import { IModuleItem } from "@/types/modules";
 import {
   createFileRoute,
   useLoaderData,
   useParams,
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
-
-const UNIT_MODULES = "@unit/modules";
 
 export const Route = createFileRoute("/_private/projects/$projectId/$unitId/")({
   component: RouteComponent,
@@ -52,7 +40,6 @@ export const Route = createFileRoute("/_private/projects/$projectId/$unitId/")({
 });
 
 function RouteComponent() {
-  const { t } = useTranslation();
   const { projectId, unitId } = useParams({
     from: "/_private/projects/$projectId/$unitId/",
   });
@@ -66,6 +53,31 @@ function RouteComponent() {
     concreteWall: unit?.concrete_wall_modules || [],
     structuralMasonry: unit?.structural_masonry_modules || [],
   };
+
+  const [selectedModules, setSelectedModules] = useState<{
+    concrete_wall: IModuleItem[];
+    beam_column: IModuleItem[];
+    structural_masonry: IModuleItem[];
+  }>({
+    concrete_wall: [],
+    beam_column: [],
+    structural_masonry: [],
+  });
+
+  const handleSelectionChange =
+    (tableId: "concrete_wall" | "beam_column" | "structural_masonry") =>
+    (modules: IModuleItem[]) => {
+      setSelectedModules((prev) => ({
+        ...prev,
+        [tableId]: modules,
+      }));
+    };
+
+  const allSelectedModules = [
+    ...selectedModules.concrete_wall,
+    ...selectedModules.beam_column,
+    ...selectedModules.structural_masonry,
+  ];
 
   useEffect(() => {
     document.title = "BIPC / Tecnologia Construtiva";
@@ -172,16 +184,7 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end gap-4">
-        {/* <DrawerAddModule
-          callback={handleAddNewModule}
-          componentTrigger={
-            <Button variant="noStyles" className="flex items-center gap-2">
-              {t("drawerAddModule.addConstructiveTechnology")}
-            </Button>
-          }
-        /> */}
-      </div>
+      <ModuleTotalsSummary selectedModules={allSelectedModules} />
       <ModuleTable
         key={`${JSON.stringify(modules.concreteWall)}`}
         tableId="concrete_wall"
@@ -190,6 +193,7 @@ function RouteComponent() {
         unitId={unitId}
         handleUpdateModule={handleUpdateModule}
         handleDeleteModule={handleDeleteModule}
+        onSelectionChange={handleSelectionChange("concrete_wall")}
       />
       <ModuleTable
         key={`${JSON.stringify(modules.beamColumn)}`}
@@ -199,6 +203,17 @@ function RouteComponent() {
         unitId={unitId}
         handleUpdateModule={handleUpdateModule}
         handleDeleteModule={handleDeleteModule}
+        onSelectionChange={handleSelectionChange("beam_column")}
+      />
+      <ModuleTable
+        key={`${JSON.stringify(modules.structuralMasonry)}`}
+        tableId="structural_masonry"
+        modules={modules.structuralMasonry}
+        projectId={projectId}
+        unitId={unitId}
+        handleUpdateModule={handleUpdateModule}
+        handleDeleteModule={handleDeleteModule}
+        onSelectionChange={handleSelectionChange("structural_masonry")}
       />
     </div>
   );

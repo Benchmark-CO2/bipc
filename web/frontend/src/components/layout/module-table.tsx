@@ -20,7 +20,7 @@ import { ChartLine, Pen, Trash } from "lucide-react";
 import { moduleColumns } from "../columns/modules";
 // import { Checkbox } from '../ui/checkbox'
 import { TModuleData } from "@/types/projects";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import NotFoundList from "../ui/not-found-list";
 import { Checkbox } from "../ui/checkbox";
@@ -36,6 +36,7 @@ interface IModuleTable {
   unitId: string;
   handleUpdateModule: (module: TModuleData) => void;
   handleDeleteModule?: (moduleId: string) => void;
+  onSelectionChange?: (selectedModules: IModuleItem[]) => void;
 }
 
 export default function ModuleTable({
@@ -45,6 +46,7 @@ export default function ModuleTable({
   unitId,
   handleUpdateModule,
   handleDeleteModule,
+  onSelectionChange,
 }: IModuleTable) {
   const { t } = useTranslation();
   const navigate = useNavigate({ from: "/projects/$projectId" });
@@ -73,34 +75,75 @@ export default function ModuleTable({
 
   const selectedRowModel = table.getSelectedRowModel();
 
+  useEffect(() => {
+    const selectedModules = selectedRowModel.rows.map((row) => row.original);
+    onSelectionChange?.(selectedModules);
+  }, [selectedRowModel.rows, onSelectionChange]);
+
   const totals = useMemo(() => {
     const selected = selectedRowModel.rows;
 
+    const totalRepetitions = selected.reduce(
+      (acc, row) => acc + (row.original.floor_repetition || 1),
+      0
+    );
+
     return {
       total_concrete: selected.reduce(
-        (acc, row) => acc + (row.original.total_concrete || 0),
+        (acc, row) =>
+          acc +
+          (row.original.total_concrete || 0) *
+            (row.original.floor_repetition || 1),
         0
       ),
       total_steel: selected.reduce(
-        (acc, row) => acc + (row.original.total_steel || 0),
+        (acc, row) =>
+          acc +
+          (row.original.total_steel || 0) *
+            (row.original.floor_repetition || 1),
         0
       ),
-      co2_min: selected.reduce(
-        (acc, row) => acc + (row.original.co2_min || 0),
-        0
-      ),
-      co2_max: selected.reduce(
-        (acc, row) => acc + (row.original.co2_max || 0),
-        0
-      ),
-      energy_min: selected.reduce(
-        (acc, row) => acc + (row.original.energy_min || 0),
-        0
-      ),
-      energy_max: selected.reduce(
-        (acc, row) => acc + (row.original.energy_max || 0),
-        0
-      ),
+
+      co2_min:
+        totalRepetitions > 0
+          ? selected.reduce(
+              (acc, row) =>
+                acc +
+                (row.original.co2_min || 0) *
+                  (row.original.floor_repetition || 1),
+              0
+            ) / totalRepetitions
+          : 0,
+      co2_max:
+        totalRepetitions > 0
+          ? selected.reduce(
+              (acc, row) =>
+                acc +
+                (row.original.co2_max || 0) *
+                  (row.original.floor_repetition || 1),
+              0
+            ) / totalRepetitions
+          : 0,
+      energy_min:
+        totalRepetitions > 0
+          ? selected.reduce(
+              (acc, row) =>
+                acc +
+                (row.original.energy_min || 0) *
+                  (row.original.floor_repetition || 1),
+              0
+            ) / totalRepetitions
+          : 0,
+      energy_max:
+        totalRepetitions > 0
+          ? selected.reduce(
+              (acc, row) =>
+                acc +
+                (row.original.energy_max || 0) *
+                  (row.original.floor_repetition || 1),
+              0
+            ) / totalRepetitions
+          : 0,
     };
   }, [selectedRowModel.rows]);
 
@@ -125,7 +168,6 @@ export default function ModuleTable({
 
   return (
     <div className="space-y-4 rounded-md border p-4">
-      {/* Header da tabela com nome e informações */}
       <div className="flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -133,19 +175,14 @@ export default function ModuleTable({
               .replace(/_/g, " ")
               .replace(/\b\w/g, (c) => c.toUpperCase())}
           </h3>
-          {selectedRowModel.rows.length > 0 && (
-            <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
-              <div className="rounded-full bg-blue-100 dark:bg-blue-900/30 px-2 py-1">
-                {selectedRowModel.rows.length} item
-                {selectedRowModel.rows.length > 1 ? "s" : ""} selecionado
-                {selectedRowModel.rows.length > 1 ? "s" : ""}
-              </div>
-            </div>
-          )}
         </div>
         <DrawerFormModule
           triggerComponent={
-            <Button variant="noStyles" className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="noStyles"
+              className="flex items-center gap-2"
+            >
               {t("drawerAddModule.addConstructiveTechnology")}
             </Button>
           }
