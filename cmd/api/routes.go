@@ -23,8 +23,8 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPatch, "/v1/users", app.requireAuthenticatedUser(app.updateUserHandler))
 	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)
 	router.HandlerFunc(http.MethodPut, "/v1/users/password", app.updateUserPasswordHandler)
-	router.HandlerFunc(http.MethodGet, "/v1/users/collaborators", app.requireAuthenticatedUser(app.UserCollaboratorsHandler))
-	router.HandlerFunc(http.MethodGet, "/v1/users/pending-invitations", app.requireAuthenticatedUser(app.PendingInvitationsHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/users/collaborators", app.requireAuthenticatedUser(app.userCollaboratorsHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/users/pending-invitations", app.requireAuthenticatedUser(app.pendingInvitationsHandler))
 	router.HandlerFunc(http.MethodPut, "/v1/users/reply/:invitationID", app.requireActivatedUser(app.replyInvitationHandler))
 
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", app.createAuthenticationTokenHandler)
