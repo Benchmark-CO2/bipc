@@ -154,6 +154,41 @@ func (m UnitModel) GetByID(id int64) (*Unit, error) {
 	return &unit, nil
 }
 
+func (m UnitModel) Update(unit *Unit) error {
+	query := `
+        UPDATE units
+        SET name = $1, type = $2, total_floors = $3, tower_floors = $4, base_floors = $5, basement_floors = $6, type_floors = $7, total_area = $8, updated_at = now(), version = version + 1
+        WHERE id = $9 AND version = $10
+        RETURNING updated_at, version`
+
+	args := []interface{}{
+		unit.Name,
+		unit.Type,
+		unit.TotalFloors,
+		unit.TowerFloors,
+		unit.BaseFloors,
+		unit.BasementFloors,
+		unit.TypeFloors,
+		unit.TotalArea,
+		unit.ID,
+		unit.Version,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&unit.UpdatedAt, &unit.Version)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+	return nil
+}
+
 func (m UnitModel) getBeamColumnModulesForUnit(unitID int64) ([]BeamColumnModuleBasic, error) {
 	query := `
 	WITH ranked_modules AS (
