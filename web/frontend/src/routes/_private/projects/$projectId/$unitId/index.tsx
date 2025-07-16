@@ -30,6 +30,16 @@ export const Route = createFileRoute("/_private/projects/$projectId/$unitId/")({
 });
 
 function RouteComponent() {
+  const [selectedModules, setSelectedModules] = useState<{
+    concrete_wall: IModuleItem[];
+    beam_column: IModuleItem[];
+    structural_masonry: IModuleItem[];
+  }>({
+    concrete_wall: [],
+    beam_column: [],
+    structural_masonry: [],
+  });
+
   const queryClient = useQueryClient();
   const { projectId, unitId } = useParams({
     from: "/_private/projects/$projectId/$unitId/",
@@ -48,16 +58,6 @@ function RouteComponent() {
     concreteWall: unit?.concrete_wall_modules || [],
     structuralMasonry: unit?.structural_masonry_modules || [],
   };
-
-  const [selectedModules, setSelectedModules] = useState<{
-    concrete_wall: IModuleItem[];
-    beam_column: IModuleItem[];
-    structural_masonry: IModuleItem[];
-  }>({
-    concrete_wall: [],
-    beam_column: [],
-    structural_masonry: [],
-  });
 
   // Reset selected modules when unitId changes
   useEffect(() => {
@@ -93,95 +93,6 @@ function RouteComponent() {
     document.title = "BIPC / Tecnologia Construtiva";
   }, []);
 
-  // const handleAddNewModule = (data: AddModuleFormSchema) => {
-  //   if (
-  //     mods.find(
-  //       (el) =>
-  //         el.nome === data.nome && el.tipoDeEstrutura === data.tipoDeEstrutura
-  //     )
-  //   ) {
-  //     toast.error("Esse elemento ja existe na unidade");
-  //     return;
-  //   }
-  //   const formatData = {
-  //     ...data,
-  //     // data: typeof data.data === 'string' ? data.data : data.data instanceof Date ? data.data.toISOString() : '',
-  //     module_uuid: String(mods.length + 1),
-  //     version: "1",
-  //     consumoDeAco: (() => {
-  //       switch (data.tipoDeEstrutura) {
-  //         case "concreteWall":
-  //           return (
-  //             Math.round((Math.random() * (6.33 - 0.79) + 0.79) * 100) / 100
-  //           );
-  //         case "masonry":
-  //           return Math.round((Math.random() * (80 - 15) + 15) * 100) / 100; // 15-80kg
-  //         case "beamColumn":
-  //           return (
-  //             Math.round((Math.random() * (127.78 - 26.54) + 26.54) * 100) / 100
-  //           );
-  //         default:
-  //           return Math.round((Math.random() * 50 + 10) * 100) / 100;
-  //       }
-  //     })(),
-  //     consumoDeConcreto: (() => {
-  //       switch (data.tipoDeEstrutura) {
-  //         case "concreteWall":
-  //           return (
-  //             Math.round((Math.random() * (1.73 - 0.16) + 0.16) * 100) / 100
-  //           );
-  //         case "masonry":
-  //           return Math.round((Math.random() * (2.5 - 0.8) + 0.8) * 100) / 100; // 0.8-2.5m³
-  //         case "beamColumn":
-  //           return (
-  //             Math.round((Math.random() * (1.29 - 0.27) + 0.27) * 100) / 100
-  //           );
-  //         default:
-  //           return Math.round((Math.random() * 2 + 0.5) * 100) / 100;
-  //       }
-  //     })(),
-  //     emissaoDeCo2: Math.round((Math.random() * (190 - 80) + 80) * 100) / 100,
-  //     energia: Math.round((Math.random() * (1200 - 400) + 400) * 100) / 100,
-  //   } as TModuleData;
-
-  //   const units = getFromStorage(
-  //     `${UNIT_MODULES}/${projectId}`,
-  //     {} as TProjectUnitModule
-  //   );
-  //   setMods((prev) => {
-  //     const newMods = [...prev, formatData];
-  //     setToStorage(`${UNIT_MODULES}/${projectId}`, {
-  //       ...units,
-  //       [unitId]: newMods,
-  //     });
-  //     return newMods;
-  //   });
-  // };
-
-  const handleUpdateModule = useCallback(
-    (module: TModuleData) => {
-      console.log("Updating module:", module);
-      // Add your update logic here
-      // After successful update, invalidate the query to refetch data
-      queryClient.invalidateQueries({
-        queryKey: ["unit", projectId, unitId],
-      });
-    },
-    [queryClient, projectId, unitId]
-  );
-
-  const handleDeleteModule = useCallback(
-    (moduleId: string) => {
-      console.log("Deleting module with ID:", moduleId);
-      // Add your delete logic here
-      // After successful deletion, invalidate the query to refetch data
-      queryClient.invalidateQueries({
-        queryKey: ["unit", projectId, unitId],
-      });
-    },
-    [queryClient, projectId, unitId]
-  );
-
   // Memoize selection handlers to prevent unnecessary re-renders
   const concreteWallSelectionHandler = useMemo(
     () => handleSelectionChange("concrete_wall"),
@@ -207,8 +118,6 @@ function RouteComponent() {
         modules={modules.concreteWall}
         projectId={projectId}
         unitId={unitId}
-        handleUpdateModule={handleUpdateModule}
-        handleDeleteModule={handleDeleteModule}
         onSelectionChange={concreteWallSelectionHandler}
       />
       <ModuleTable
@@ -217,8 +126,6 @@ function RouteComponent() {
         modules={modules.beamColumn}
         projectId={projectId}
         unitId={unitId}
-        handleUpdateModule={handleUpdateModule}
-        handleDeleteModule={handleDeleteModule}
         onSelectionChange={beamColumnSelectionHandler}
       />
       <ModuleTable
@@ -227,8 +134,6 @@ function RouteComponent() {
         modules={modules.structuralMasonry}
         projectId={projectId}
         unitId={unitId}
-        handleUpdateModule={handleUpdateModule}
-        handleDeleteModule={handleDeleteModule}
         onSelectionChange={structuralMasonrySelectionHandler}
       />
     </div>
