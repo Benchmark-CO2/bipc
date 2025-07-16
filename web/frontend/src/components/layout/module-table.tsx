@@ -28,6 +28,11 @@ import ModalSimple from "./modal-simple";
 import DrawerFormModule from "./drawer-form-module";
 import { IModuleItem } from "@/types/modules";
 import { Button } from "../ui/button";
+import {
+  mockModuleBeamColumn,
+  mockModuleConcreteWall,
+  mockModuleStructuralMasonry,
+} from "@/utils/mockModule";
 
 interface IModuleTable {
   tableId: "concrete_wall" | "beam_column" | "structural_masonry";
@@ -52,6 +57,19 @@ export default function ModuleTable({
   const navigate = useNavigate({ from: "/projects/$projectId" });
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+
+  // Select all modules when modules change
+  useEffect(() => {
+    if (modules.length > 0) {
+      const allSelected = modules.reduce((acc, _, index) => {
+        acc[index] = true;
+        return acc;
+      }, {} as RowSelectionState);
+      setRowSelection(allSelected);
+    } else {
+      setRowSelection({});
+    }
+  }, [modules, tableId, unitId]);
 
   const table = useReactTable({
     data: modules,
@@ -166,6 +184,12 @@ export default function ModuleTable({
     structural_masonry: t("common.structureType.masonry"),
   };
 
+  const moduleData = {
+    concrete_wall: mockModuleConcreteWall,
+    beam_column: mockModuleBeamColumn,
+    structural_masonry: mockModuleStructuralMasonry,
+  };
+
   return (
     <div className="space-y-4 rounded-md border p-4">
       <div className="flex items-center justify-between border-b pb-4">
@@ -267,6 +291,8 @@ export default function ModuleTable({
                       moduleId={row.original.id.toString()}
                       projectId={projectId}
                       unitId={unitId}
+                      moduleData={moduleData[row.original.structure_type]}
+                      structureType={row.original.structure_type}
                     />
                     <ModalSimple
                       componentTrigger={
