@@ -119,15 +119,15 @@ const DrawerFormModule = ({
       queryClient.invalidateQueries({
         queryKey: ["project", projectId],
       });
-      setIsOpen(false);
       form.reset();
+      setIsOpen(false);
 
-      navigate({
-        to: `/projects/${projectId}/${unitId}`,
-        from: "/projects",
-      })
-        .then(() => null)
-        .catch((err: unknown) => err);
+      // navigate({
+      //   to: `/projects/${projectId}/${unitId}`,
+      //   from: "/projects",
+      // })
+      //   .then(() => null)
+      //   .catch((err: unknown) => err);
     },
   });
 
@@ -158,6 +158,47 @@ const DrawerFormModule = ({
       form.reset(moduleData);
     }
   }, [moduleData, moduleId]);
+
+  // Reset structure-specific fields when structure_type changes
+  useEffect(() => {
+    const subscription = form.watch((_, { name }) => {
+      if (name === "structure_type" && !moduleId) {
+        // Reset all structure-specific fields to default values
+        const resetFields = {
+          // Beam Column fields
+          concrete_columns: [],
+          concrete_beams: [],
+          concrete_slabs: [],
+          steel_ca50: 0,
+          steel_ca60: 0,
+          form_columns: 0,
+          form_beams: 0,
+          form_slabs: 0,
+          form_total: 0,
+          column_number: 0,
+          avg_beam_span: 0,
+          avg_slab_span: 0,
+          // Concrete Wall fields
+          concrete_walls: [],
+          wall_thickness: 0,
+          slab_thickness: 0,
+          form_area: 0,
+          wall_area: 0,
+          // Structural Masonry fields
+          vertical_grout: [],
+          horizontal_grout: [],
+          blocks: [],
+        };
+
+        // Apply reset only for structure-specific fields
+        Object.entries(resetFields).forEach(([fieldName, defaultValue]) => {
+          form.setValue(fieldName as keyof ModuleFormSchema, defaultValue);
+        });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form, moduleId]);
 
   const handleSubmit = (data: ModuleFormSchema) => {
     if (moduleId) {
