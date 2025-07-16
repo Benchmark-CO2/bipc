@@ -3,50 +3,45 @@ import { getUnitByUUID } from "@/actions/units/getUnit";
 import { ModuleTable, ModuleTotalsSummary } from "@/components/layout";
 import { TModuleData } from "@/types/projects";
 import { IModuleItem } from "@/types/modules";
-import {
-  createFileRoute,
-  useLoaderData,
-  useParams,
-} from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, useParams } from "@tanstack/react-router";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_private/projects/$projectId/$unitId/")({
   component: RouteComponent,
-  loader: async ({ params }) => {
-    const { unitId, projectId } = params as {
-      unitId: string;
-      projectId: string;
-    };
-
-    if (!projectId) {
-      throw new Error("Project ID is required");
+  loader: async ({ context, params }) => {
+    const { projectId, unitId } = params;
+    if (!projectId || !unitId) {
+      throw new Error("Project ID and Unit ID are required");
     }
-    const { data } = await getProjectByUUID(projectId);
-    const project = data.project;
 
-    const { data: unitData } = await getUnitByUUID(projectId, unitId);
-    console.log(unitData);
+    await context.queryClient.ensureQueryData({
+      queryKey: ["project", projectId],
+      queryFn: () => getProjectByUUID(projectId),
+    });
 
-    // const units = getFromStorage(
-    //   `${UNIT_MODULES}/${projectId}`,
-    //   {} as TProjectUnitModule
-    // );
+    await context.queryClient.ensureQueryData({
+      queryKey: ["unit", projectId, unitId],
+      queryFn: () => getUnitByUUID(projectId, unitId),
+    });
 
-    return {
-      unit: unitData.unit,
-      project,
-    };
+    return null;
   },
 });
 
 function RouteComponent() {
+  const queryClient = useQueryClient();
   const { projectId, unitId } = useParams({
     from: "/_private/projects/$projectId/$unitId/",
   });
 
-  const { unit } = useLoaderData({
-    from: "/_private/projects/$projectId/$unitId/",
+  // Use React Query to keep data fresh, but use loader data as fallback
+  const { data: unitData } = useQuery({
+    queryKey: ["unit", projectId, unitId],
+    queryFn: () => getUnitByUUID(projectId, unitId),
+    enabled: !!projectId && !!unitId,
   });
+  const unit = unitData?.data?.unit;
 
   const modules = {
     beamColumn: unit?.beam_column_modules || [],
@@ -64,20 +59,35 @@ function RouteComponent() {
     structural_masonry: [],
   });
 
-  const handleSelectionChange =
-    (tableId: "concrete_wall" | "beam_column" | "structural_masonry") =>
-    (modules: IModuleItem[]) => {
-      setSelectedModules((prev) => ({
-        ...prev,
-        [tableId]: modules,
-      }));
-    };
+  // Reset selected modules when unitId changes
+  useEffect(() => {
+    setSelectedModules({
+      concrete_wall: [],
+      beam_column: [],
+      structural_masonry: [],
+    });
+  }, [unitId]);
 
-  const allSelectedModules = [
-    ...selectedModules.concrete_wall,
-    ...selectedModules.beam_column,
-    ...selectedModules.structural_masonry,
-  ];
+  const handleSelectionChange = useCallback(
+    (tableId: "concrete_wall" | "beam_column" | "structural_masonry") => {
+      return (modules: IModuleItem[]) => {
+        setSelectedModules((prev) => ({
+          ...prev,
+          [tableId]: modules,
+        }));
+      };
+    },
+    []
+  );
+
+  const allSelectedModules = useMemo(
+    () => [
+      ...selectedModules.concrete_wall,
+      ...selectedModules.beam_column,
+      ...selectedModules.structural_masonry,
+    ],
+    [selectedModules]
+  );
 
   useEffect(() => {
     document.title = "BIPC / Tecnologia Construtiva";
@@ -148,72 +158,78 @@ function RouteComponent() {
   //   });
   // };
 
-  const handleUpdateModule = (module: TModuleData) => {
-    console.log("Updating module:", module);
-    // const units = getFromStorage(
-    //   `${UNIT_MODULES}/${projectId}`,
-    //   {} as TProjectUnitModule
-    // );
-    // setMods((prev) => {
-    //   const newMods = prev.map((mod) =>
-    //     mod.module_uuid === module.module_uuid ? module : mod
-    //   );
-    //   setToStorage(`${UNIT_MODULES}/${projectId}`, {
-    //     ...units,
-    //     [unitId]: newMods,
-    //   });
-    //   return newMods;
-    // });
-  };
+  const handleUpdateModule = useCallback(
+    (module: TModuleData) => {
+      console.log("Updating module:", module);
+      // Add your update logic here
+      // After successful update, invalidate the query to refetch data
+      queryClient.invalidateQueries({
+        queryKey: ["unit", projectId, unitId],
+      });
+    },
+    [queryClient, projectId, unitId]
+  );
 
-  const handleDeleteModule = (moduleId: string) => {
-    console.log("Deleting module with ID:", moduleId);
-    // const units = getFromStorage(
-    //   `${UNIT_MODULES}/${projectId}`,
-    //   {} as TProjectUnitModule
-    // );
-    // setMods((prev) => {
-    //   const newMods = prev.filter((mod) => mod.module_uuid !== moduleId);
-    //   setToStorage(`${UNIT_MODULES}/${projectId}`, {
-    //     ...units,
-    //     [unitId]: newMods,
-    //   });
-    //   return newMods;
-    // });
-  };
+  const handleDeleteModule = useCallback(
+    (moduleId: string) => {
+      console.log("Deleting module with ID:", moduleId);
+      // Add your delete logic here
+      // After successful deletion, invalidate the query to refetch data
+      queryClient.invalidateQueries({
+        queryKey: ["unit", projectId, unitId],
+      });
+    },
+    [queryClient, projectId, unitId]
+  );
+
+  // Memoize selection handlers to prevent unnecessary re-renders
+  const concreteWallSelectionHandler = useMemo(
+    () => handleSelectionChange("concrete_wall"),
+    [handleSelectionChange]
+  );
+
+  const beamColumnSelectionHandler = useMemo(
+    () => handleSelectionChange("beam_column"),
+    [handleSelectionChange]
+  );
+
+  const structuralMasonrySelectionHandler = useMemo(
+    () => handleSelectionChange("structural_masonry"),
+    [handleSelectionChange]
+  );
 
   return (
     <div className="flex flex-col gap-4">
       <ModuleTotalsSummary selectedModules={allSelectedModules} />
       <ModuleTable
-        key={`${JSON.stringify(modules.concreteWall)}`}
+        key={`concrete_wall-${unitId}`}
         tableId="concrete_wall"
         modules={modules.concreteWall}
         projectId={projectId}
         unitId={unitId}
         handleUpdateModule={handleUpdateModule}
         handleDeleteModule={handleDeleteModule}
-        onSelectionChange={handleSelectionChange("concrete_wall")}
+        onSelectionChange={concreteWallSelectionHandler}
       />
       <ModuleTable
-        key={`${JSON.stringify(modules.beamColumn)}`}
+        key={`beam_column-${unitId}`}
         tableId="beam_column"
         modules={modules.beamColumn}
         projectId={projectId}
         unitId={unitId}
         handleUpdateModule={handleUpdateModule}
         handleDeleteModule={handleDeleteModule}
-        onSelectionChange={handleSelectionChange("beam_column")}
+        onSelectionChange={beamColumnSelectionHandler}
       />
       <ModuleTable
-        key={`${JSON.stringify(modules.structuralMasonry)}`}
+        key={`structural_masonry-${unitId}`}
         tableId="structural_masonry"
         modules={modules.structuralMasonry}
         projectId={projectId}
         unitId={unitId}
         handleUpdateModule={handleUpdateModule}
         handleDeleteModule={handleDeleteModule}
-        onSelectionChange={handleSelectionChange("structural_masonry")}
+        onSelectionChange={structuralMasonrySelectionHandler}
       />
     </div>
   );
