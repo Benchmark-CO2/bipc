@@ -158,12 +158,12 @@ export default function ModuleTable({
     if (dataType === "open-simulations") {
       onClickModuleSimulation(module.id.toString());
     }
+  };
 
-    // else if (dataType === 'delete-module') {
-    //   setModuleToDelete(module)
-    // } else if (dataType === 'edit-module') {
-    //   setModuleToEdit(module)
-    // }
+  const displayName = {
+    concrete_wall: t("common.structureType.concreteWall"),
+    beam_column: t("common.structureType.beamColumn"),
+    structural_masonry: t("common.structureType.masonry"),
   };
 
   return (
@@ -171,9 +171,10 @@ export default function ModuleTable({
       <div className="flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            {tableId
-              .replace(/_/g, " ")
-              .replace(/\b\w/g, (c) => c.toUpperCase())}
+            {displayName[tableId] ||
+              tableId
+                .replace(/_/g, " ")
+                .replace(/\b\w/g, (c) => c.toUpperCase())}
           </h3>
         </div>
         <DrawerFormModule
@@ -183,7 +184,7 @@ export default function ModuleTable({
               variant="noStyles"
               className="flex items-center gap-2"
             >
-              {t("drawerAddModule.addConstructiveTechnology")}
+              {t("drawerFormModule.createButtonTrigger")}
             </Button>
           }
           projectId={projectId}
@@ -194,8 +195,8 @@ export default function ModuleTable({
 
       {modules.length === 0 ? (
         <NotFoundList
-          message={t("common.noItemsFound")}
-          description={t("drawerAddModule.addConstructiveTechnology")}
+          message={t("modulesTable.noItemsFound")}
+          description={t("modulesTable.addNewTechnology")}
           icon="file"
           showIcon={false}
         />
@@ -267,29 +268,16 @@ export default function ModuleTable({
                       projectId={projectId}
                       unitId={unitId}
                     />
-                    {/* <DrawerEditModule
-                      componentTrigger={
-                        <Pen
-                          size={16}
-                          data-action="edit-module"
-                          className="hover:scale-105"
-                        />
-                      }
-                      module={row.original}
-                      callback={handleUpdateModule}
-                    /> */}
                     <ModalSimple
                       componentTrigger={
                         <Trash size={16} className="hover:scale-105" />
                       }
-                      content={
-                        "Você tem certeza que deseja excluir este módulo? Essa ação não pode ser desfeita."
-                      }
-                      title={"Excluir módulo"}
+                      content={t("modalConfirmDelete.description")}
+                      title={t("modalConfirmDelete.moduleTitle")}
                       onConfirm={() => {
                         handleDeleteModule?.(row.original.id.toString());
                       }}
-                      confirmTitle="Deletar"
+                      confirmTitle={t("modalConfirmDelete.deleteButton")}
                     />
                   </div>
                 </TableCell>

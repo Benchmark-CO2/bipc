@@ -253,6 +253,7 @@
   "modalConfirmDelete": {
     "projectTitle": "Delete Project",
     "unitTitle": "Delete Unit",
+    "moduleTitle": "Delete Module",
     "description": "This action cannot be undone. Are you sure you want to proceed?",
     "cancelButton": "Cancel",
     "deleteButton": "Delete"
@@ -439,26 +440,26 @@
   "modulesTable": {
     "headers": {
       "name": "Name",
-      "structureType": "Structure Type",
-      "buildingType": "Building Type",
-      "createdAt": "Created At",
-      "updatedAt": "Updated At",
-      "buildedAreaTotal": "Built Area (m²)",
-      "steelConsumption": "Steel Consumption (kg/m²)",
-      "concreteConsumption": "Concrete Consumption (m³/m²)",
-      "co2Emission": "CO₂ Emission (kgCO₂/m²)",
-      "energy": "Energy (MJ/m²)"
+      "floorRepetition": "Floor Repetition",
+      "totalConcrete": "Total Concrete (m³)",
+      "totalSteel": "Total Steel (kg)",
+      "co2Min": "CO2 (Min)",
+      "co2Max": "CO2 (Max)",
+      "energyMin": "Energy (Min)",
+      "energyMax": "Energy (Max)",
+      "versionInUse": "Current Version"
     },
-    "structureType": {
-      "beamColumn": "Beam Column",
-      "concreteWall": "Concrete Wall",
-      "masonry": "Masonry"
+    "summary": {
+      "selectedModules": "Selected Modules",
+      "totalConcrete": "Concrete",
+      "totalSteel": "Steel",
+      "co2Min": "CO2 Min. (Avg)",
+      "co2Max": "CO2 Max. (Avg)",
+      "energyMin": "Energy Min. (Avg)",
+      "energyMax": "Energy Max. (Avg)"
     },
-    "buildingType": {
-      "residential": "Residential",
-      "mixed": "Mixed",
-      "corporate": "Corporate"
-    }
+    "noItemsFound": "No items found",
+    "addNewTechnology": "Add a new Constructive Technology Module using the button above."
   },
   "projectTable": {
     "headers": {

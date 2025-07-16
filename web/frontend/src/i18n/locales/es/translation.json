@@ -251,6 +251,7 @@
   "modalConfirmDelete": {
     "projectTitle": "Eliminar Proyecto",
     "unitTitle": "Eliminar Unidad",
+    "moduleTitle": "Eliminar Módulo",
     "description": "Esta acción no se puede deshacer. ¿Estás seguro de que quieres continuar?",
     "cancelButton": "Cancelar",
     "deleteButton": "Eliminar"
@@ -437,26 +438,26 @@
   "modulesTable": {
     "headers": {
       "name": "Nombre",
-      "structureType": "Tipo de Estructura",
-      "buildingType": "Tipo de Edificio",
-      "createdAt": "Creado En",
-      "updatedAt": "Actualizado En",
-      "buildedAreaTotal": "Área Construida (m²)",
-      "steelConsumption": "Consumo de Acero (kg/m²)",
-      "concreteConsumption": "Consumo de Concreto (m³/m²)",
-      "co2Emission": "Emisión de CO₂ (kgCO₂/m²)",
-      "energy": "Energía (MJ/m²)"
+      "floorRepetition": "Repetición de Pisos",
+      "totalConcrete": "Total de Hormigón (m³)",
+      "totalSteel": "Total de Acero (kg)",
+      "co2Min": "CO2 (Mín)",
+      "co2Max": "CO2 (Máx)",
+      "energyMin": "Energía (Mín)",
+      "energyMax": "Energía (Máx)",
+      "versionInUse": "Versión Actual"
     },
-    "structureType": {
-      "beamColumn": "Viga Pilar",
-      "concreteWall": "Pared de Hormigón",
-      "masonry": "Mampostería"
+    "summary": {
+      "selectedModules": "Módulos Seleccionados",
+      "totalConcrete": "Hormigón",
+      "totalSteel": "Acero",
+      "co2Min": "CO2 Mín. (Promedio)",
+      "co2Max": "CO2 Máx. (Promedio)",
+      "energyMin": "Energía Mín. (Promedio)",
+      "energyMax": "Energía Máx. (Promedio)"
     },
-    "buildingType": {
-      "residential": "Residencial",
-      "mixed": "Mixto",
-      "corporate": "Corporativo"
-    }
+    "noItemsFound": "No se encontraron elementos",
+    "addNewTechnology": "Agrega un nuevo Módulo de Tecnología Constructiva en el botón de arriba."
   },
   "projectTable": {
     "headers": {

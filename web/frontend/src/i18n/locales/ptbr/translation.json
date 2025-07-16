@@ -244,6 +244,7 @@
   "modalConfirmDelete": {
     "projectTitle": "Excluir Projeto",
     "unitTitle": "Excluir Unidade",
+    "moduleTitle": "Excluir Módulo",
     "description": "Esta ação não pode ser desfeita. Tem certeza de que deseja prosseguir?",
     "cancelButton": "Cancelar",
     "deleteButton": "Excluir"
@@ -407,10 +408,6 @@
       "blockQuantityLabel": "Quantidade *"
     }
   },
-  "moduleTable": {
-    "noItemsFound": "Nenhum item encontrado",
-    "addNewTechnology": "Adicione um novo Módulo de Tecnologia Construtiva no botão acima."
-  },
   "simulationTable": {
     "headers": {
       "name": "Nome",
@@ -434,26 +431,26 @@
   "modulesTable": {
     "headers": {
       "name": "Nome",
-      "structureType": "Tipo de Estrutura",
-      "buildingType": "Tipo de Edifícação",
-      "createdAt": "Criado em",
-      "updatedAt": "Atualizado em",
-      "buildedAreaTotal": "Área Total (m²)",
-      "steelConsumption": "Consumo de Aço (kg/m²)",
-      "concreteConsumption": "Consumo de Concreto (m³/m²)",
-      "co2Emission": "Emissão de CO₂ (kgCO₂/m²)",
-      "energy": "Energia (MJ/m²)"
+      "floorRepetition": "Repetição de Andares",
+      "totalConcrete": "Total de Concreto (m³)",
+      "totalSteel": "Total de Aço (kg)",
+      "co2Min": "CO2 (Mín)",
+      "co2Max": "CO2 (Máx)",
+      "energyMin": "Energia (Mín)",
+      "energyMax": "Energia (Máx)",
+      "versionInUse": "Versão Atual"
     },
-    "structureType": {
-      "beamColumn": "Viga Pilar",
-      "concreteWall": "Parede de Concreto",
-      "masonry": "Alvenaria"
+    "summary": {
+      "selectedModules": "Módulos Selecionados",
+      "totalConcrete": "Concreto",
+      "totalSteel": "Aço",
+      "co2Min": "CO2 Min. (Média)",
+      "co2Max": "CO2 Max. (Média)",
+      "energyMin": "Energia Min. (Média)",
+      "energyMax": "Energia Max. (Média)"
     },
-    "buildingType": {
-      "residential": "Residencial",
-      "mixed": "Misto",
-      "corporate": "Corporativo"
-    }
+    "noItemsFound": "Nenhum item encontrado",
+    "addNewTechnology": "Adicione um novo Módulo de Tecnologia Construtiva no botão acima."
   },
   "projectTable": {
     "headers": {

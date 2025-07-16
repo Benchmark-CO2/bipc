@@ -1,58 +1,51 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-// import { IModule } from '@/types/modules'
 import { IModuleItem } from "@/types/modules";
 import { ColumnDef } from "@tanstack/react-table";
-// import { t } from "i18next";
+import { t } from "i18next";
 
 export const moduleColumns: ColumnDef<IModuleItem>[] = [
   {
     accessorKey: "name",
-    header: "Nome",
-    cell: ({ row }) => row.original.name || "Sem nome",
+    header: t("modulesTable.headers.name"),
+    cell: ({ row }) => row.original.name || "-",
   },
   {
     accessorKey: "floor_repetition",
-    header: "Repetições",
+    header: t("modulesTable.headers.floorRepetition"),
     cell: ({ row }) => row.original.floor_repetition || "-",
   },
   {
     accessorKey: "total_concrete",
-    header: "Total de Concreto",
+    header: t("modulesTable.headers.totalConcrete"),
     cell: ({ row }) => row.original.total_concrete?.toFixed(2) || "-",
   },
   {
     accessorKey: "total_steel",
-    header: "Total de Aço",
+    header: t("modulesTable.headers.totalSteel"),
     cell: ({ row }) => row.original.total_steel?.toFixed(2) || "-",
   },
   {
     accessorKey: "co2_min",
-    header: "CO2 (Mín)",
+    header: t("modulesTable.headers.co2Min"),
     cell: ({ row }) => row.original.co2_min?.toFixed(2) || "-",
   },
   {
     accessorKey: "co2_max",
-    header: "CO2 (Máx)",
+    header: t("modulesTable.headers.co2Max"),
     cell: ({ row }) => row.original.co2_max?.toFixed(2) || "-",
   },
   {
     accessorKey: "energy_min",
-    header: "Energia (Mín)",
+    header: t("modulesTable.headers.energyMin"),
     cell: ({ row }) => row.original.energy_min?.toFixed(2) || "-",
   },
   {
     accessorKey: "energy_max",
-    header: "Energia (Máximo)",
+    header: t("modulesTable.headers.energyMax"),
     cell: ({ row }) => row.original.energy_max?.toFixed(2) || "-",
   },
   {
     accessorKey: "version_in_use",
-    header: "Versão Atual",
+    header: t("modulesTable.headers.versionInUse"),
     cell: ({ row }) => row.original.version_in_use || "-",
-  },
-  {
-    accessorKey: "in_use",
-    header: "",
-    cell: ({ row }) => row.original.in_use || "-",
   },
 ];

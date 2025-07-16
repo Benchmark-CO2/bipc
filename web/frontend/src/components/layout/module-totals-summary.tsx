@@ -1,5 +1,6 @@
 import { IModuleItem } from "@/types/modules";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 interface IModuleTotalsSummary {
   selectedModules: IModuleItem[];
@@ -8,6 +9,8 @@ interface IModuleTotalsSummary {
 export default function ModuleTotalsSummary({
   selectedModules,
 }: IModuleTotalsSummary) {
+  const { t } = useTranslation();
+
   const grandTotals = useMemo(() => {
     // Soma das repetições para cálculo de média ponderada
     const totalRepetitions = selectedModules.reduce(
@@ -74,7 +77,7 @@ export default function ModuleTotalsSummary({
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="bg-white dark:bg-gray-800/80 rounded-lg p-3 border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-            Concreto
+            {t("modulesTable.summary.totalConcrete")}
           </div>
           <div className="text-sm font-bold text-gray-900 dark:text-gray-100">
             {grandTotals.total_concrete.toFixed(2)}
@@ -84,7 +87,7 @@ export default function ModuleTotalsSummary({
 
         <div className="bg-white dark:bg-gray-800/80 rounded-lg p-3 border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-            Aço
+            {t("modulesTable.summary.totalSteel")}
           </div>
           <div className="text-sm font-bold text-gray-900 dark:text-gray-100">
             {grandTotals.total_steel.toFixed(2)}
@@ -94,7 +97,7 @@ export default function ModuleTotalsSummary({
 
         <div className="bg-white dark:bg-gray-800/80 rounded-lg p-3 border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-            CO₂ Min (Média)
+            {t("modulesTable.summary.co2Min")}
           </div>
           <div className="text-sm font-bold text-gray-900 dark:text-gray-100">
             {grandTotals.co2_min.toFixed(2)}
@@ -106,7 +109,7 @@ export default function ModuleTotalsSummary({
 
         <div className="bg-white dark:bg-gray-800/80 rounded-lg p-3 border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-            CO₂ Max (Média)
+            {t("modulesTable.summary.co2Max")}
           </div>
           <div className="text-sm font-bold text-gray-900 dark:text-gray-100">
             {grandTotals.co2_max.toFixed(2)}
@@ -118,7 +121,7 @@ export default function ModuleTotalsSummary({
 
         <div className="bg-white dark:bg-gray-800/80 rounded-lg p-3 border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-            Energia Min (Média)
+            {t("modulesTable.summary.energyMin")}
           </div>
           <div className="text-sm font-bold text-gray-900 dark:text-gray-100">
             {grandTotals.energy_min.toFixed(2)}
@@ -128,7 +131,7 @@ export default function ModuleTotalsSummary({
 
         <div className="bg-white dark:bg-gray-800/80 rounded-lg p-3 border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-            Energia Max (Média)
+            {t("modulesTable.summary.energyMax")}
           </div>
           <div className="text-sm font-bold text-gray-900 dark:text-gray-100">
             {grandTotals.energy_max.toFixed(2)}
@@ -138,7 +141,7 @@ export default function ModuleTotalsSummary({
       </div>
       <div className="flex justify-end">
         <span className="text-xs text-gray-600 dark:text-gray-300">
-          Módulos selecionados: {selectedModules.length}
+          {t("modulesTable.summary.selectedModules")}: {selectedModules.length}
         </span>
       </div>
     </>
