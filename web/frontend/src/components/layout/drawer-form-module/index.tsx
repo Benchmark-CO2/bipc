@@ -40,13 +40,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { postModule } from "@/actions/modules/postModule";
 import { useTranslation } from "react-i18next";
 import { getDefaultValuesByType } from "./module-default-values";
+import { postModuleVersion } from "@/actions/modules/postModuleVersion";
 
 interface DrawerFormModuleProps {
   triggerComponent?: React.ReactNode;
   projectId: string;
   unitId: string;
   moduleId?: string;
-  moduleData?: TModuleStructure;
+  moduleData?: TModuleStructure | null;
   structureType: "beam_column" | "concrete_wall" | "structural_masonry";
 }
 
@@ -67,6 +68,32 @@ const DrawerFormModule = ({
     resolver: zodResolver(moduleFormSchema),
     defaultValues: getDefaultValuesByType(structureType),
   });
+
+  const { mutate: mutateModuleVersion, isPending: isUpdatePending } =
+    useMutation({
+      mutationFn: (data: TModuleStructure) =>
+        postModuleVersion(data, projectId, unitId, moduleId!),
+      onError: (error) => {
+        toast.error(t("error.errorUpdateModule"), {
+          description:
+            error instanceof Error ? error.message : t("error.errorUnknown"),
+          duration: 5000,
+        });
+      },
+      onSuccess: () => {
+        toast.success(t("success.moduleUpdated"), {
+          duration: 5000,
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["project", projectId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["unit", projectId, unitId],
+        });
+        form.reset();
+        setIsOpen(false);
+      },
+    });
 
   const {
     // isSuccess: isCreationSuccess,
@@ -93,13 +120,6 @@ const DrawerFormModule = ({
       });
       form.reset();
       setIsOpen(false);
-
-      // navigate({
-      //   to: `/projects/${projectId}/${unitId}`,
-      //   from: "/projects",
-      // })
-      //   .then(() => null)
-      //   .catch((err: unknown) => err);
     },
   });
 
@@ -133,6 +153,7 @@ const DrawerFormModule = ({
 
   const handleSubmit = (data: ModuleFormSchema) => {
     if (moduleId) {
+      mutateModuleVersion(data as TModuleStructure);
       return;
     }
 
@@ -410,9 +431,9 @@ const DrawerFormModule = ({
                   type="submit"
                   variant="noStyles"
                   className="flex-1"
-                  disabled={isCreationPending}
+                  disabled={isCreationPending || isUpdatePending}
                 >
-                  {isCreationPending ? (
+                  {isCreationPending || isUpdatePending ? (
                     <Loader2 className="animate-spin h-4 w-4" />
                   ) : moduleId ? (
                     t("common.update")
