@@ -62,6 +62,12 @@ export interface IBasicModule {
   floor_repetition: number;
   floor_area: number;
   floor_height: number;
+  co2_min?: number;
+  co2_max?: number;
+  energy_min?: number;
+  energy_max?: number;
+  in_use?: boolean;
+  version?: number;
 }
 
 export interface IBeamColumn extends IBasicModule {
