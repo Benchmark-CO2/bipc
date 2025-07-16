@@ -1,14 +1,13 @@
 import {
   ModuleFormSchema,
   moduleFormSchema,
-} from "@/validators/moduleForm.validator";
+} from "@/validators/moduleFormByType.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Trash, Plus, X, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "../../ui/button";
-import { useNavigate } from "@tanstack/react-router";
 import {
   Drawer,
   DrawerContent,
@@ -40,14 +39,15 @@ import { TModuleStructure } from "@/types/modules";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { postModule } from "@/actions/modules/postModule";
 import { useTranslation } from "react-i18next";
-import { mockModule } from "@/utils/mockModule";
+import { getDefaultValuesByType } from "./module-default-values";
 
 interface DrawerFormModuleProps {
   triggerComponent?: React.ReactNode;
   projectId: string;
   unitId: string;
   moduleId?: string;
-  structureType?: "beam_column" | "concrete_wall" | "structural_masonry";
+  moduleData?: TModuleStructure;
+  structureType: "beam_column" | "concrete_wall" | "structural_masonry";
 }
 
 const DrawerFormModule = ({
@@ -56,48 +56,17 @@ const DrawerFormModule = ({
   unitId,
   moduleId,
   structureType,
+  moduleData,
 }: DrawerFormModuleProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   const form = useForm<ModuleFormSchema>({
     resolver: zodResolver(moduleFormSchema),
-    defaultValues: {
-      name: "",
-      floor_repetition: 1,
-      floor_area: 0,
-      floor_height: 0,
-      structure_type: "concrete_wall",
-      // Beam Column
-      concrete_columns: [],
-      concrete_beams: [],
-      concrete_slabs: [],
-      steel_ca50: 0,
-      steel_ca60: 0,
-      form_columns: 0,
-      form_beams: 0,
-      form_slabs: 0,
-      form_total: 0,
-      column_number: 0,
-      avg_beam_span: 0,
-      avg_slab_span: 0,
-      // Concrete Wall
-      concrete_walls: [],
-      wall_thickness: 0,
-      slab_thickness: 0,
-      form_area: 0,
-      wall_area: 0,
-      // Structural Masonry
-      vertical_grout: [],
-      horizontal_grout: [],
-      blocks: [],
-    },
+    defaultValues: getDefaultValuesByType(structureType),
   });
-
-  const moduleData: TModuleStructure = mockModule;
 
   const {
     // isSuccess: isCreationSuccess,
@@ -118,6 +87,9 @@ const DrawerFormModule = ({
       });
       queryClient.invalidateQueries({
         queryKey: ["project", projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["unit", projectId, unitId],
       });
       form.reset();
       setIsOpen(false);
@@ -154,51 +126,10 @@ const DrawerFormModule = ({
   }, [form]);
 
   useEffect(() => {
-    if (moduleData && moduleId) {
-      form.reset(moduleData);
+    if (moduleData) {
+      form.reset(moduleData || getDefaultValuesByType(structureType));
     }
-  }, [moduleData, moduleId]);
-
-  // Reset structure-specific fields when structure_type changes
-  useEffect(() => {
-    const subscription = form.watch((_, { name }) => {
-      if (name === "structure_type" && !moduleId) {
-        // Reset all structure-specific fields to default values
-        const resetFields = {
-          // Beam Column fields
-          concrete_columns: [],
-          concrete_beams: [],
-          concrete_slabs: [],
-          steel_ca50: 0,
-          steel_ca60: 0,
-          form_columns: 0,
-          form_beams: 0,
-          form_slabs: 0,
-          form_total: 0,
-          column_number: 0,
-          avg_beam_span: 0,
-          avg_slab_span: 0,
-          // Concrete Wall fields
-          concrete_walls: [],
-          wall_thickness: 0,
-          slab_thickness: 0,
-          form_area: 0,
-          wall_area: 0,
-          // Structural Masonry fields
-          vertical_grout: [],
-          horizontal_grout: [],
-          blocks: [],
-        };
-
-        // Apply reset only for structure-specific fields
-        Object.entries(resetFields).forEach(([fieldName, defaultValue]) => {
-          form.setValue(fieldName as keyof ModuleFormSchema, defaultValue);
-        });
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [form, moduleId]);
+  }, [moduleData, moduleId, structureType, form]);
 
   const handleSubmit = (data: ModuleFormSchema) => {
     if (moduleId) {
@@ -345,7 +276,10 @@ const DrawerFormModule = ({
                       </FormLabel>
                       <FormControl>
                         <Select
-                          onValueChange={field.onChange}
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            form.reset(getDefaultValuesByType(value as any));
+                          }}
                           value={field.value}
                           disabled={Boolean(moduleId)}
                         >
@@ -453,10 +387,8 @@ const DrawerFormModule = ({
                   case "beam_column":
                     return <ModuleFormBeamColumn form={form} />;
                   case "concrete_wall":
-                    // return <span>concrete</span>;
                     return <ModuleFormConcreteWall form={form} />;
                   case "structural_masonry":
-                    // return <span>masonry</span>;
                     return <ModuleFormStructuralMasonry form={form} />;
                   default:
                     return null;
