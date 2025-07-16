@@ -433,7 +433,7 @@
     "headers": {
       "name": "Nome",
       "floorRepetition": "Repetição de Andares",
-      "totalConcrete": "Total de Concreto (m³)",
+      "totalConcrete": "Total de Concreto (kg)",
       "totalSteel": "Total de Aço (kg)",
       "co2Min": "CO2 (Mín)",
       "co2Max": "CO2 (Máx)",
