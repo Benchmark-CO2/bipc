@@ -136,7 +136,21 @@ func (app *application) readModuleHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	module, err := modules.GetModule(app.models, id)
+	qs := r.URL.Query()
+	moduleType := app.readString(qs, "type", "")
+
+	var module any
+
+	switch moduleType {
+	case "beam_column":
+		module, err = app.models.BeamColumnModules.GetById(id)
+	case "concrete_wall":
+		module, err = app.models.ConcreteWallModules.GetById(id)
+	default:
+		app.badRequestResponse(w, r, errors.New("invalid or missing 'type' query parameter"))
+		return
+	}
+
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -152,3 +166,40 @@ func (app *application) readModuleHandler(w http.ResponseWriter, r *http.Request
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) deleteModuleHandler(w http.ResponseWriter, r *http.Request) {
+	moduleID, err := app.readIDParam(r, "moduleID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	qs := r.URL.Query()
+	moduleType := app.readString(qs, "type", "")
+
+	switch moduleType {
+	case "beam_column":
+		err = app.models.BeamColumnModules.Delete(moduleID)
+	case "concrete_wall":
+		err = app.models.ConcreteWallModules.Delete(moduleID)
+	default:
+		app.badRequestResponse(w, r, errors.New("invalid or missing 'type' query parameter"))
+		return
+	}
+
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "module successfully deleted"}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+

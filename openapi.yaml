@@ -290,6 +290,12 @@ paths:
           required: true
           schema:
             type: integer
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: ["beam_column", "concrete_wall"]
       responses:
         '200':
           description: A single module
@@ -320,6 +326,30 @@ paths:
       responses:
         '200':
           description: Successfully created
+    delete:
+      summary: Delete a module
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: moduleID
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: ["beam_column", "concrete_wall"]
 
 components:
   schemas:

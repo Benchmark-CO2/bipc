@@ -61,6 +61,7 @@ type Module interface {
 	Insert(models data.Models, unitID int64, result Consuption, opts *InsertOptions) error
 	GetVersions(models data.Models, moduleID int64) (any, error)
 	MergeModuleData(models data.Models, moduleID int64) (*int32, error)
+	Delete(models data.Models, moduleID int64) error
 }
 
 func validateConcreteList(v *validator.Validator, list []Concrete, fieldPrefix string) {
@@ -226,33 +227,4 @@ func toConcrete(c data.Concrete) []Concrete {
 		concretes = append(concretes, Concrete{Fck: "45", Volume: c.VolumeFck45})
 	}
 	return concretes
-}
-
-func GetModule(models data.Models, id int64) (any, error) {
-
-	concreteWallModules, err := models.ConcreteWallModules.GetById(id)
-	if err != nil {
-		return nil, err
-	}
-	if len(concreteWallModules) > 0 {
-		var res []*ConcreteWall
-		for _, v := range concreteWallModules {
-			res = append(res, toConcreteWallResponse(v))
-		}
-		return res, nil
-	}
-
-	beamColumnModules, err := models.BeamColumnModules.GetById(id)
-	if err != nil {
-		return nil, err
-	}
-	if len(beamColumnModules) > 0 {
-		var res []*BeamColumn
-		for _, v := range beamColumnModules {
-			res = append(res, toBeamColumnResponse(v))
-		}
-		return res, nil
-	}
-
-	return nil, data.ErrRecordNotFound
 }

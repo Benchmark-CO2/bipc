@@ -245,6 +245,10 @@ func (m BeamColumnModuleModel) GetById(id int64) ([]*BeamColumnModule, error) {
 		return nil, err
 	}
 
+	if len(modules) == 0 {
+		return nil, ErrRecordNotFound
+	}
+
 	return modules, nil
 }
 
@@ -295,6 +299,60 @@ func (m ConcreteWallModuleModel) GetById(id int64) ([]*ConcreteWallModule, error
 		return nil, err
 	}
 
+	if len(modules) == 0 {
+		return nil, ErrRecordNotFound
+	}
+
 	return modules, nil
+}
+
+func (m BeamColumnModuleModel) Delete(id int64) error {
+	query := `
+		DELETE FROM module_beam_column
+		WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
+
+func (m ConcreteWallModuleModel) Delete(id int64) error {
+	query := `
+		DELETE FROM module_concrete_wall
+		WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
 }
 

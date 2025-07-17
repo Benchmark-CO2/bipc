@@ -199,3 +199,7 @@ func toBeamColumnResponse(m *data.BeamColumnModule) *BeamColumn {
 		AvgSlabSpan:     m.AvgSlabSpan,
 	}
 }
+
+func (b *BeamColumn) Delete(models data.Models, moduleID int64) error {
+	return models.BeamColumnModules.Delete(moduleID)
+}
