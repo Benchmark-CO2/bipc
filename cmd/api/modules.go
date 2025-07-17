@@ -185,3 +185,54 @@ func (app *application) deleteModuleHandler(w http.ResponseWriter, r *http.Reque
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) updateModuleHandler(w http.ResponseWriter, r *http.Request) {
+	moduleID, err := app.readIDParam(r, "moduleID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	var input struct {
+		Name string `json:"name"`
+		Type string `json:"type"`
+	}
+
+	err = app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	v := validator.New()
+	v.Check(input.Name != "", "name", "must be provided")
+	v.Check(input.Type != "", "type", "must be provided")
+	if !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	module, err := modules.ParseModuleType(input.Type)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	err = module.UpdateName(app.models, moduleID, input.Name)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "module name successfully updated"}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}

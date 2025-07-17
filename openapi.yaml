@@ -299,6 +299,42 @@ paths:
       responses:
         '200':
           description: A single module
+    patch:
+      summary: Update module name
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: moduleID
+          in: path
+          required: true
+          schema:
+            type: integer
+        requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                  enum: ["beam_column", "concrete_wall"]
+              required:
+                - name
+                - type
+      responses:
+        '200':
+          description: Module name successfully updated
     post:
       summary: Create a new version of a module
       parameters:

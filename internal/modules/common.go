@@ -73,6 +73,7 @@ type Module interface {
 	GetVersions(models data.Models, moduleID int64) (any, error)
 	MergeModuleData(models data.Models, moduleID int64) (*int32, error)
 	Delete(models data.Models, moduleID int64) error
+	UpdateName(models data.Models, moduleID int64, newName string) error
 }
 
 func validateConcreteList(v *validator.Validator, list []Concrete, fieldPrefix string) {

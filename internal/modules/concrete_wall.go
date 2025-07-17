@@ -173,3 +173,7 @@ func toConcreteWallResponse(m *data.ConcreteWallModule) *ConcreteWall {
 func (w *ConcreteWall) Delete(models data.Models, moduleID int64) error {
 	return models.ConcreteWallModules.Delete(moduleID)
 }
+
+func (w *ConcreteWall) UpdateName(models data.Models, moduleID int64, newName string) error {
+	return models.ConcreteWallModules.UpdateName(moduleID, newName)
+}

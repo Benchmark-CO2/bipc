@@ -45,6 +45,7 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/modules", app.requirePermission("project:edit" ,app.createModuleHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/modules/:moduleID", app.requirePermission("project:view", app.readModuleHandler))
+	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID/modules/:moduleID", app.requirePermission("project:edit", app.updateModuleHandler))
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/modules/:moduleID", app.requirePermission("project:edit", app.deleteModuleHandler))
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/modules/:moduleID", app.requirePermission("project:edit" , app.createVersionHandler))

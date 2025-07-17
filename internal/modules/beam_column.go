@@ -201,3 +201,7 @@ func toBeamColumnResponse(m *data.BeamColumnModule) *BeamColumn {
 func (b *BeamColumn) Delete(models data.Models, moduleID int64) error {
 	return models.BeamColumnModules.Delete(moduleID)
 }
+
+func (b *BeamColumn) UpdateName(models data.Models, moduleID int64, newName string) error {
+	return models.BeamColumnModules.UpdateName(moduleID, newName)
+}
