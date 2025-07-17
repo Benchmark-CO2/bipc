@@ -24,11 +24,11 @@ type BeamColumn struct {
 	AvgSlabSpan     *int       `json:"avg_slab_span,omitempty"`
 }
 
-func (b *BeamColumn) Type() string { return b.StructureType }
+func (b *BeamColumn) GetType() string { return b.Type }
 
 func (b *BeamColumn) Validate(v *validator.Validator) {
 	v.Check(b.Name != "", "name", "must be provided")
-	v.Check(b.StructureType != "", "structure_type", "must be provided")
+	v.Check(b.Type != "", "type", "must be provided")
 	b.ValidateVersion(v)
 }
 
@@ -125,16 +125,14 @@ func (b *BeamColumn) Insert(models data.Models, unitID int64, result Consuption,
 		if opts.ID != nil && *opts.ID > 0 {
 			module.ID = *opts.ID
 		}
-		
+
 		if opts.Version != nil && *opts.Version > 0 {
 			module.Version = *opts.Version
 		}
 	}
-	
+
 	return models.BeamColumnModules.Insert(module)
 }
-
-
 
 func (b *BeamColumn) GetVersions(models data.Models, moduleID int64) (any, error) {
 	beamColumnModules, err := models.BeamColumnModules.GetById(moduleID)
@@ -172,7 +170,7 @@ func toBeamColumnResponse(m *data.BeamColumnModule) *BeamColumn {
 	return &BeamColumn{
 		BasicModuleData: BasicModuleData{
 			Name:            m.Name,
-			StructureType:   "beam_column",
+			Type:            "beam_column",
 			FloorRepetition: m.FloorRepetition,
 			FloorArea:       m.FloorArea,
 			FloorHeight:     m.FloorHeight,

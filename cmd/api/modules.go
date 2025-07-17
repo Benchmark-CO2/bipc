@@ -28,7 +28,7 @@ func (app *application) parseModule(w http.ResponseWriter, r *http.Request) (mod
 
 	r.Body = io.NopCloser(bytes.NewBuffer(body))
 
-	switch strings.ToLower(basic.StructureType) {
+	switch strings.ToLower(basic.Type) {
 	case "beam_column":
 		var m modules.BeamColumn
 		err := app.readJSON(w, r, &m)
@@ -45,7 +45,7 @@ func (app *application) parseModule(w http.ResponseWriter, r *http.Request) (mod
 		return &m, nil
 
 	default:
-		return nil, errors.New("invalid structure_type")
+		return nil, errors.New("invalid type")
 	}
 }
 
@@ -202,4 +202,3 @@ func (app *application) deleteModuleHandler(w http.ResponseWriter, r *http.Reque
 		app.serverErrorResponse(w, r, err)
 	}
 }
-

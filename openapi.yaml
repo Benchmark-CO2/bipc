@@ -513,7 +513,7 @@ components:
       properties:
         name:
           type: string
-        structure_type:
+        type:
           type: string
           enum:
             - "beam_column"

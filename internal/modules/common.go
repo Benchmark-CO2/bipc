@@ -14,7 +14,7 @@ type Concrete struct {
 
 type BasicModuleData struct {
 	Name            string  `json:"name"`
-	StructureType   string  `json:"structure_type"`
+	Type            string  `json:"type"`
 	FloorRepetition int     `json:"floor_repetition"`
 	FloorArea       float64 `json:"floor_area"`
 	FloorHeight     float64 `json:"floor_height"`
@@ -54,7 +54,7 @@ func (c *Consuption) divideByArea(area float64) {
 }
 
 type Module interface {
-	Type() string
+	GetType() string
 	Validate(v *validator.Validator)
 	ValidateVersion(v *validator.Validator)
 	Calculate() (Consuption, error)
