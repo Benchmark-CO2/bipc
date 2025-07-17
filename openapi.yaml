@@ -1,170 +1,389 @@
 openapi: 3.0.0
 info:
-  title: Structures
+  title: Structures API
   version: 1.0.0
 
 paths:
-  /unit:
+  /v1/healthcheck:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+
+  /v1/users:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUser'
+      responses:
+        '202':
+          description: User successfully registered
+    patch:
+      summary: Update user details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUser'
+      responses:
+        '200':
+          description: User successfully updated
+
+  /v1/users/activated:
+    put:
+      summary: Activate a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          description: User successfully activated
+
+  /v1/users/password:
+    put:
+      summary: Update user password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Password successfully updated
+
+  /v1/tokens/authentication:
+    post:
+      summary: Create authentication token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '201':
+          description: Token successfully created
+
+  /v1/projects:
+    post:
+      summary: Create new project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project'
+      responses:
+        '201':
+          description: Successfully created
+    get:
+      summary: List all projects
+      responses:
+        '200':
+          description: A list of projects
+
+  /v1/projects/{projectID}:
+    get:
+      summary: Get a project by ID
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A single project
+    patch:
+      summary: Update a project
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project'
+      responses:
+        '200':
+          description: Successfully updated
+    delete:
+      summary: Delete a project
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successfully deleted
+
+  /v1/projects/{projectID}/invite:
+    post:
+      summary: Invite a user to a project
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                permissions:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Invitation sent
+
+  /v1/projects/{projectID}/units:
     post:
       summary: Create new unit
-      description: >
-        Creates a new unit linked to a project.
-
-        The `type` field determines which additional fields are required:
-
-        - **Tower**: requires the fields from the `Tower` table, such as `total_floors`, `total_area`, etc.
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: integer
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateUnit'
-            examples:
-              tower:
-                summary: Unit type Tower
-                value:
-                  project_id: 123
-                  name: "Tower A"
-                  type: "tower"
-                  total_floors: 15
-                  tower_floors: 10
-                  base_floors: 2
-                  basement_floors: 2
-                  type_floors: 6
-                  total_area: 12500.75
-      responses: 
+      responses:
         '200':
           description: Successfully created
 
-  /modules:
+  /v1/projects/{projectID}/units/{unitID}:
+    get:
+      summary: Get a unit by ID
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A single unit
+    patch:
+      summary: Update a unit
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Unit'
+      responses:
+        '200':
+          description: Successfully updated
+    delete:
+      summary: Delete a unit
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successfully deleted
+
+  /v1/projects/{projectID}/units/{unitID}/modules:
     post:
       summary: Create new module
-      description: >
-        Creates a new module linked to a tower.
-
-        The `structure_type` field determines which additional fields must be sent:
-
-        - **Beam Column**:
-          - `concrete_columns`, `concrete_beams`, `concrete_slabs` (list with volume and fck)
-          - `steel_ca50`, `steel_ca60` (steel quantity)
-          - `form_columns`, `form_beams`, `form_slabs`, `form_total` (form areas)
-          - `column_number`, `avg_beam_span`, `avg_slab_span`
-
-        - **Concrete Wall**:
-          - `concrete_walls`, `concrete_slabs` (list with volume and fck)
-          - `steel_ca50`, `steel_ca60` (steel quantity)
-          - `wall_thickness`, `slab_thickness`, `form_area`, `wall_area`
-
-        - **Structural Masonry**:
-          - `vertical_grout`, `horizontal_grout` (list with volume and fck)
-          - `steel_ca50`, `steel_ca60` (steel quantity)
-          - `blocks` (list with type, fbk and quantity)
-
-        The backend will validate the fields according to the value of `structure_type`.
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: integer
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateModule'
-            examples:
-              beamColumn:
-                summary: Structure type "Beam Column"
-                value:
-                  unit_id: 1
-                  name: Floor Type A
-                  structure_type: beam_column
-                  floor_repetition: 5
-                  floor_area: 1350.5
-                  floor_height: 3.2
-                  concrete_columns:
-                    - fck: "30"
-                      volume: 10.5
-                  concrete_beams:
-                    - fck: "30"
-                      volume: 12.0
-                  concrete_slabs:
-                    - fck: "25"
-                      volume: 14.0
-                  steel_ca50: 1200
-                  steel_ca60: 300
-                  form_columns: 200
-                  form_beams: 350
-                  form_slabs: 450
-                  form_total: 1000
-                  column_number: 24
-                  avg_beam_span: 7
-                  avg_slab_span: 6
+      responses:
+        '200':
+          description: Successfully created
 
-              concreteWall:
-                summary: Structure type "Concrete Wall"
-                value:
-                  unit_id: 2
-                  name: Basement
-                  structure_type: concrete_wall
-                  floor_repetition: 1
-                  floor_area: 800.0
-                  floor_height: 3.0
-                  concrete_walls:
-                    - fck: "30"
-                      volume: 8.0
-                  concrete_slabs:
-                    - fck: "30"
-                      volume: 6.5
-                  steel_ca50: 1000
-                  steel_ca60: 250
-                  wall_thickness: 0.15
-                  slab_thickness: 0.18
-                  form_area: 300
-                  wall_area: 250
-
-              structuralMasonry:
-                summary: Structure type "Structural Masonry"
-                value:
-                  unit_id: 3
-                  name: Tower B
-                  structure_type: structural_masonry
-                  floor_repetition: 8
-                  floor_area: 1100.0
-                  floor_height: 2.8
-                  vertical_grout:
-                    - fck: "25"
-                      volume: 5.5
-                  horizontal_grout:
-                    - fck: "25"
-                      volume: 2.2
-                  steel_ca50: 950
-                  steel_ca60: 400
-                  blocks:
-                    - type: BL 14x19
-                      fbk: "06"
-                      quantity: 1200
-                    - type: CL 14x34
-                      fbk: "04"
-                      quantity: 800
+  /v1/projects/{projectID}/units/{unitID}/modules/{moduleID}:
+    get:
+      summary: Get a module by ID
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: moduleID
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A single module
+    post:
+      summary: Create a new version of a module
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: moduleID
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateModule'
       responses:
         '200':
           description: Successfully created
 
 components:
   schemas:
-    BaseUnit:
+    CreateUser:
       type: object
       properties:
-        project_id:
-          type: integer
-          description: Project ID to which the unit belongs
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        image_url:
+          type: string
+
+    UpdateUser:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        image_url:
+          type: string
+
+    Project:
+      type: object
+      properties:
+        name:
+          type: string
+        cep:
+          type: string
+        state:
+          type: string
+        city:
+          type: string
+        neighborhood:
+          type: string
+        street:
+          type: string
+        number:
+          type: string
+        phase:
+          type: string
+        description:
+          type: string
+        image_url:
+          type: string
+      required:
+        - name
+        - state
+        - city
+        - phase
+
+    Unit:
+      type: object
+      properties:
         name:
           type: string
         type:
           type: string
           enum: ["tower"]
-          description: Unit type (currently only "tower" is supported)
-      required:
-        [project_id, name, type]
-    Tower:
-      type: object
-      properties:
         total_floors:
           type: integer
         tower_floors:
@@ -179,17 +398,15 @@ components:
           type: number
           format: float
       required:
-        [total_area]
+        - name
+        - type
+
     CreateUnit:
       allOf:
-        - $ref: '#/components/schemas/BaseUnit'
-        - oneOf:
-            - $ref: '#/components/schemas/Tower'
+        - $ref: '#/components/schemas/Unit'
 
     Concrete:
       type: array
-      description: >
-        List of concrete volumes by Fck value. Must have at least one item. There must be no repeated 'fck' values.
       minItems: 1
       items:
         type: object
@@ -197,51 +414,13 @@ components:
           fck:
             type: string
             enum: ["20", "25", "30", "35", "40", "45"]
-            example: "30"
           volume:
             type: number
             format: float
         required: [fck, volume]
 
-    Block:
-      type: array
-      description: >
-        List of blocks by Fbk value. Must have at least one item. There must be no repeated 'fbk' values.
-      minItems: 1
-      items:
-        type: object
-        properties:
-          type:
-            type: string
-            enum:
-              - "BL 14x4"
-              - "BL 14x19"
-              - "BL 14x34"
-              - "BL 14x39"
-              - "BL 14x54"
-              - "BL 19x4"
-              - "BL 19x19"
-              - "BL 19x39"
-              - "CL 14x19"
-              - "CL 14x34"
-              - "CL 14x14"
-              - "CL 14x39"
-              - "CL 19x19"
-              - "CL 19x39"
-              - "COMP 14x19"
-              - "COMP 14x39"
-              - "JOTA 14 x 39 x 19/9"
-              - "JOTA 14 x 19 x 19/9"
-          fbk:
-            type: string
-            enum: ["02", "04", "06", "08", "10", "12"]
-          quantity:
-            type: integer
-        required: [type, fbk, quantity]
-
     BeamColumn:
       type: object
-      description: Beam Column
       properties:
         concrete_columns:
           $ref: '#/components/schemas/Concrete'
@@ -276,7 +455,6 @@ components:
 
     ConcreteWall:
       type: object
-      description: Concrete Wall
       properties:
         concrete_walls:
           $ref: '#/components/schemas/Concrete'
@@ -300,32 +478,9 @@ components:
         - steel_ca50
         - steel_ca60
 
-    StructuralMasonry:
-      type: object
-      description: Structural Masonry
-      properties:
-        vertical_grout:
-          $ref: '#/components/schemas/Concrete'
-        horizontal_grout:
-          $ref: '#/components/schemas/Concrete'
-        steel_ca50:
-          type: number
-        steel_ca60:
-          type: number
-        blocks:
-          $ref: '#/components/schemas/Block'
-      required:
-        - vertical_grout
-        - horizontal_grout
-        - steel_ca50
-        - steel_ca60
-        - blocks
-
     BasicModuleData:
       type: object
       properties:
-        unit_id:
-          type: integer
         name:
           type: string
         structure_type:
@@ -333,7 +488,6 @@ components:
           enum:
             - "beam_column"
             - "concrete_wall"
-            - "structural_masonry"
         floor_repetition:
           type: integer
         floor_area:
@@ -343,7 +497,6 @@ components:
           type: number
           format: float
       required:
-        - unit_id
         - name
         - structure_type
         - floor_repetition
@@ -356,4 +509,3 @@ components:
         - oneOf:
             - $ref: '#/components/schemas/BeamColumn'
             - $ref: '#/components/schemas/ConcreteWall'
-            - $ref: '#/components/schemas/StructuralMasonry'
