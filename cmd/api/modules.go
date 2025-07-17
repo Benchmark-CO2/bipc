@@ -6,7 +6,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/modules"
@@ -28,25 +27,17 @@ func (app *application) parseModule(w http.ResponseWriter, r *http.Request) (mod
 
 	r.Body = io.NopCloser(bytes.NewBuffer(body))
 
-	switch strings.ToLower(basic.Type) {
-	case "beam_column":
-		var m modules.BeamColumn
-		err := app.readJSON(w, r, &m)
-		if err != nil {
-			return nil, err
-		}
-		return &m, nil
-	case "concrete_wall":
-		var m modules.ConcreteWall
-		err := app.readJSON(w, r, &m)
-		if err != nil {
-			return nil, err
-		}
-		return &m, nil
-
-	default:
-		return nil, errors.New("invalid type")
+	module, err := modules.ParseModuleType(basic.Type)
+	if err != nil {
+		return nil, err
 	}
+
+	err = app.readJSON(w, r, &module)
+	if err != nil {
+		return nil, err
+	}
+
+	return module, nil
 }
 
 func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Request) {
@@ -139,18 +130,13 @@ func (app *application) readModuleHandler(w http.ResponseWriter, r *http.Request
 	qs := r.URL.Query()
 	moduleType := app.readString(qs, "type", "")
 
-	var module any
-
-	switch moduleType {
-	case "beam_column":
-		module, err = app.models.BeamColumnModules.GetById(id)
-	case "concrete_wall":
-		module, err = app.models.ConcreteWallModules.GetById(id)
-	default:
-		app.badRequestResponse(w, r, errors.New("invalid or missing 'type' query parameter"))
+	module, err := modules.ParseModuleType(moduleType)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
+	versions, err := module.GetVersions(app.models, id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -161,7 +147,7 @@ func (app *application) readModuleHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"versions": module}, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"versions": versions}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -177,16 +163,13 @@ func (app *application) deleteModuleHandler(w http.ResponseWriter, r *http.Reque
 	qs := r.URL.Query()
 	moduleType := app.readString(qs, "type", "")
 
-	switch moduleType {
-	case "beam_column":
-		err = app.models.BeamColumnModules.Delete(moduleID)
-	case "concrete_wall":
-		err = app.models.ConcreteWallModules.Delete(moduleID)
-	default:
-		app.badRequestResponse(w, r, errors.New("invalid or missing 'type' query parameter"))
+	module, err := modules.ParseModuleType(moduleType)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
+	err = module.Delete(app.models, moduleID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):

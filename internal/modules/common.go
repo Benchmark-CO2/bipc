@@ -53,6 +53,17 @@ func (c *Consuption) divideByArea(area float64) {
 	c.EnergyMax /= area
 }
 
+func ParseModuleType(t string) (Module, error) {
+	switch t {
+	case "beam_column":
+		return &BeamColumn{}, nil
+	case "concrete_wall":
+		return &ConcreteWall{}, nil
+	default:
+		return nil, errors.New("invalid module type")
+	}
+}
+
 type Module interface {
 	GetType() string
 	Validate(v *validator.Validator)
