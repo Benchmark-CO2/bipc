@@ -90,6 +90,9 @@ const DrawerFormModule = ({
         queryClient.invalidateQueries({
           queryKey: ["unit", projectId, unitId],
         });
+        queryClient.invalidateQueries({
+          queryKey: ["module", projectId, unitId, moduleId!],
+        });
         form.reset();
         setIsOpen(false);
       },
@@ -417,16 +420,6 @@ const DrawerFormModule = ({
               })()}
 
               <div className="flex gap-2 mt-6">
-                {moduleId && moduleData && (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={() => console.log("Delete module", moduleId)}
-                    className="flex-shrink-0"
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                )}
                 <Button
                   type="submit"
                   variant="noStyles"

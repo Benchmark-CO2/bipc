@@ -1,11 +1,10 @@
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { getUnitByUUID } from "@/actions/units/getUnit";
 import { ModuleTable, ModuleTotalsSummary } from "@/components/layout";
-import { TModuleData } from "@/types/projects";
 import { IModuleItem } from "@/types/modules";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_private/projects/$projectId/$unitId/")({
   component: RouteComponent,
@@ -40,7 +39,6 @@ function RouteComponent() {
     structural_masonry: [],
   });
 
-  const queryClient = useQueryClient();
   const { projectId, unitId } = useParams({
     from: "/_private/projects/$projectId/$unitId/",
   });
