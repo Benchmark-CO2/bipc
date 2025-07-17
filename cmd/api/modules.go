@@ -1,26 +1,58 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/modules"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
-func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Request) {
-	unitID, _ := app.readIDParam(r, "unitID")
-
+func (app *application) parseModule(w http.ResponseWriter, r *http.Request) (modules.Module, error) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
-		return
+		return nil, err
 	}
 	defer r.Body.Close()
 
-	module, err := modules.UnmarshalModuleStructure(body)
+	var basic modules.BasicModuleData
+	err = json.Unmarshal(body, &basic)
+	if err != nil {
+		return nil, err
+	}
+
+	r.Body = io.NopCloser(bytes.NewBuffer(body))
+
+	switch strings.ToLower(basic.StructureType) {
+	case "beam_column":
+		var m modules.BeamColumn
+		err := app.readJSON(w, r, &m)
+		if err != nil {
+			return nil, err
+		}
+		return &m, nil
+	case "concrete_wall":
+		var m modules.ConcreteWall
+		err := app.readJSON(w, r, &m)
+		if err != nil {
+			return nil, err
+		}
+		return &m, nil
+
+	default:
+		return nil, errors.New("invalid structure_type")
+	}
+}
+
+func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Request) {
+	unitID, _ := app.readIDParam(r, "unitID")
+
+	module, err := app.parseModule(w, r)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -55,14 +87,7 @@ func (app *application) createVersionHandler(w http.ResponseWriter, r *http.Requ
 	unitID, _ := app.readIDParam(r, "unitID")
 	moduleID, _ := app.readIDParam(r, "moduleID")
 
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-	defer r.Body.Close()
-
-	newVersionModule, err := modules.UnmarshalModuleStructure(body)
+	newVersionModule, err := app.parseModule(w, r)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return

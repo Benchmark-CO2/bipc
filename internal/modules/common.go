@@ -1,9 +1,7 @@
 package modules
 
 import (
-	"encoding/json"
 	"errors"
-	"strings"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
@@ -55,7 +53,7 @@ func (c *Consuption) divideByArea(area float64) {
 	c.EnergyMax /= area
 }
 
-type ModuleStructure interface {
+type Module interface {
 	Type() string
 	Validate(v *validator.Validator)
 	ValidateVersion(v *validator.Validator)
@@ -77,29 +75,6 @@ func validateConcreteList(v *validator.Validator, list []Concrete, fieldPrefix s
 		}
 	}
 	v.Check(len(list) > 0, fieldPrefix, "must have at least one item")
-}
-
-func UnmarshalModuleStructure(data []byte) (ModuleStructure, error) {
-	var basic BasicModuleData
-	if err := json.Unmarshal(data, &basic); err != nil {
-		return nil, err
-	}
-	switch strings.ToLower(basic.StructureType) {
-	case "beam_column":
-		var b BeamColumn
-		if err := json.Unmarshal(data, &b); err != nil {
-			return nil, err
-		}
-		return &b, nil
-	case "concrete_wall":
-		var w ConcreteWall
-		if err := json.Unmarshal(data, &w); err != nil {
-			return nil, err
-		}
-		return &w, nil
-	default:
-		return nil, errors.New("invalid structure_type")
-	}
 }
 
 type SidacValue struct {
