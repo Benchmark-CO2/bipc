@@ -177,3 +177,7 @@ func (w *ConcreteWall) Delete(models data.Models, moduleID int64) error {
 func (w *ConcreteWall) UpdateName(models data.Models, moduleID int64, newName string) error {
 	return models.ConcreteWallModules.UpdateName(moduleID, newName)
 }
+
+func (w *ConcreteWall) UpdateInUse(models data.Models, moduleID int64, version int32) error {
+	return models.ConcreteWallModules.UpdateInUse(moduleID, version)
+}

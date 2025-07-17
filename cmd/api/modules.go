@@ -236,3 +236,45 @@ func (app *application) updateModuleHandler(w http.ResponseWriter, r *http.Reque
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) updateModuleInUseHandler(w http.ResponseWriter, r *http.Request) {
+	moduleID, err := app.readIDParam(r, "moduleID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+		var input struct {
+		Type    string `json:"type"`
+		Version int32  `json:"version"`
+	}
+
+	err = app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	module, err := modules.ParseModuleType(input.Type)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+	err = module.UpdateInUse(app.models, moduleID, input.Version)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "module version successfully updated"}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}

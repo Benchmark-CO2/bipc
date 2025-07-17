@@ -408,3 +408,54 @@ func (m ConcreteWallModuleModel) UpdateName(id int64, name string) error {
 	return nil
 }
 
+func (m BeamColumnModuleModel) UpdateInUse(id int64, version int32) error {
+	query := `
+		UPDATE module_beam_column
+		SET in_use = TRUE
+		WHERE id = $1 AND version = $2`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id, version)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
+
+func (m ConcreteWallModuleModel) UpdateInUse(id int64, version int32) error {
+	query := `
+		UPDATE module_concrete_wall
+		SET in_use = TRUE
+		WHERE id = $1 AND version = $2`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id, version)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}

@@ -205,3 +205,7 @@ func (b *BeamColumn) Delete(models data.Models, moduleID int64) error {
 func (b *BeamColumn) UpdateName(models data.Models, moduleID int64, newName string) error {
 	return models.BeamColumnModules.UpdateName(moduleID, newName)
 }
+
+func (b *BeamColumn) UpdateInUse(models data.Models, moduleID int64, version int32) error {
+	return models.BeamColumnModules.UpdateInUse(moduleID, version)
+}
