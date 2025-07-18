@@ -1,14 +1,18 @@
+import { postModule } from "@/actions/modules/postModule";
+import { TModuleStructure } from "@/types/modules";
+import { mockModules } from "@/utils/mockModules";
 import {
   ModuleFormSchema,
   moduleFormSchema,
 } from "@/validators/moduleForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Trash, Plus, X, Loader2 } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Plus, Trash, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "../../ui/button";
-import { useNavigate } from "@tanstack/react-router";
 import {
   Drawer,
   DrawerContent,
@@ -36,11 +40,6 @@ import {
 import ModuleFormBeamColumn from "./module-form-beam-column";
 import ModuleFormConcreteWall from "./module-form-concrete-wall";
 import ModuleFormStructuralMasonry from "./module-form-structural-masonry";
-import { TModuleStructure } from "@/types/modules";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { postModule } from "@/actions/modules/postModule";
-import { useTranslation } from "react-i18next";
-import { mockModule } from "@/utils/mockModule";
 
 interface DrawerFormModuleProps {
   triggerComponent?: React.ReactNode;
@@ -61,7 +60,6 @@ const DrawerFormModule = ({
 
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   const form = useForm<ModuleFormSchema>({
     resolver: zodResolver(moduleFormSchema),
@@ -97,7 +95,7 @@ const DrawerFormModule = ({
     },
   });
 
-  const moduleData: TModuleStructure = mockModule;
+  const moduleData = mockModules as unknown as TModuleStructure;
 
   const {
     // isSuccess: isCreationSuccess,

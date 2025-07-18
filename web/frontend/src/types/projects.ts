@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/consistent-indexed-object-style */
 
-import { DataPoint } from "@/components/charts/mock";
 import { TUnitType } from "./units";
 
 export type TProjectPhase =
@@ -76,15 +75,53 @@ export type TModuleSimulations = {
   [key: string]: TSimulation[];
 };
 
+// export type TSimulation = {
+//   name: "beamColumn" | "concreteWall" | "masonry";
+//   version: string;
+//   created_at: string;
+//   updated_at: string;
+//   data: {
+//     green: DataPoint;
+//     grey: DataPoint;
+//   };
+//   isValid: boolean;
+//   isGlobal?: boolean; // Indica se a simulação é global
+// };
+
+type ConcreteSlab = {
+  // Defina as propriedades reais de cada slab aqui
+  // Exemplo:
+  id: number;
+  thickness: number;
+  area: number;
+};
+
+type ConcreteWall = {
+  // Defina as propriedades reais de cada wall aqui
+  // Exemplo:
+  id: number;
+  length: number;
+  height: number;
+};
+
 export type TSimulation = {
-  name: "beamColumn" | "concreteWall" | "masonry";
-  version: string;
-  created_at: string;
-  updated_at: string;
-  data: {
-    green: DataPoint;
-    grey: DataPoint;
-  };
-  isValid: boolean;
-  isGlobal?: boolean; // Indica se a simulação é global
+  co2_max: number;
+  co2_min: number;
+  concrete_slabs: ConcreteSlab[];
+  concrete_walls: ConcreteWall[];
+  energy_max: number;
+  energy_min: number;
+  floor_area: number;
+  floor_height: number;
+  floor_repetition: number;
+  form_area: number;
+  in_use: boolean;
+  name: string;
+  slab_thickness: number;
+  steel_ca50: number;
+  steel_ca60: number;
+  structure_type: "beam_column" | "concrete_wall" | "masonry";
+  version: number;
+  wall_area: number;
+  wall_thickness: number;
 };

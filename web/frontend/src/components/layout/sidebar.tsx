@@ -16,7 +16,6 @@ import SidemenuItem from '../ui/sidemenu-item';
 import DrawerInvite from './drawer-invite';
 interface ISidebar {
   handleLogout: () => void
-  isScrolled?: boolean
 }
 
 const activeProps = {
@@ -29,7 +28,7 @@ const activeProps = {
   }
 }
 
-const Sidebar = ({ handleLogout, isScrolled }: ISidebar) => {
+const Sidebar = ({ handleLogout }: ISidebar) => {
   const { user, sidebarStatus, toggleSidebar } = useAuth()
   const { t } = useTranslation();
   const {theme} = useTheme()

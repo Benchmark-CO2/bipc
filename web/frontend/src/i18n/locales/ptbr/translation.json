@@ -417,7 +417,9 @@
       "updatedAt": "Atualizado Em",
       "version": "Versão",
       "isValid": "Versão é válida?",
-      "actions": "Ações"
+      "actions": "Ações",
+      "structureType": "Tipo de Estrutura",
+      "module": "Módulo"
     },
     "updateSimulation": "Atualizar Simulação",
     "title": "Simulações",

@@ -80,7 +80,7 @@ const startReload = () => {
                     <EllipsisVertical size={24} />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem className='flex items-center text-base justify-between cursor-pointer' onClick={() => onClickSetValidVersion(row.original.version)}>
+                    <DropdownMenuItem className='flex items-center text-base justify-between cursor-pointer' onClick={() => onClickSetValidVersion(row.original.version.toString())}>
                       {t('simulationTable.setValidVersion')}
                       <Check className='stroke-primary' size={32} />
                     </DropdownMenuItem>

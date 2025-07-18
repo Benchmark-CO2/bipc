@@ -429,7 +429,9 @@
       "updatedAt": "Updated At",
       "version": "Version",
       "isValid": "Is Valid Version?",
-      "actions": "Actions"
+      "actions": "Actions",
+      "module": "Module",
+      "structureType": "Structure Type"
     },
     "saveSimulation": "Save Simulation",
     "updateSimulation": "Update Simulation",
