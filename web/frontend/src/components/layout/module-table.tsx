@@ -20,27 +20,33 @@ import { ChartLine, Pen, Trash } from "lucide-react";
 import { moduleColumns } from "../columns/modules";
 // import { Checkbox } from '../ui/checkbox'
 import { TModuleData } from "@/types/projects";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import NotFoundList from "../ui/not-found-list";
-import DrawerEditModule from "./drawer-edit-module";
 import { Checkbox } from "../ui/checkbox";
 import ModalSimple from "./modal-simple";
+import DrawerFormModule from "./drawer-form-module";
+import { IModuleItem } from "@/types/modules";
+import { Button } from "../ui/button";
 
 interface IModuleTable {
-  modules: TModuleData[];
+  tableId: "concrete_wall" | "beam_column" | "structural_masonry";
+  modules: IModuleItem[];
   projectId: string;
   unitId: string;
   handleUpdateModule: (module: TModuleData) => void;
   handleDeleteModule?: (moduleId: string) => void;
+  onSelectionChange?: (selectedModules: IModuleItem[]) => void;
 }
 
 export default function ModuleTable({
+  tableId,
   modules,
   projectId,
   unitId,
-  handleUpdateModule,
+  // handleUpdateModule,
   handleDeleteModule,
+  onSelectionChange,
 }: IModuleTable) {
   const { t } = useTranslation();
   const navigate = useNavigate({ from: "/projects/$projectId" });
@@ -69,60 +75,130 @@ export default function ModuleTable({
 
   const selectedRowModel = table.getSelectedRowModel();
 
+  useEffect(() => {
+    const selectedModules = selectedRowModel.rows.map((row) => row.original);
+    onSelectionChange?.(selectedModules);
+  }, [selectedRowModel.rows, onSelectionChange]);
+
   const totals = useMemo(() => {
     const selected = selectedRowModel.rows;
 
+    const totalRepetitions = selected.reduce(
+      (acc, row) => acc + (row.original.floor_repetition || 1),
+      0
+    );
+
     return {
-      areaTotal: selected.reduce(
-        (acc, row) => acc + (row.original.areaConstruidaTotal || 0),
+      total_concrete: selected.reduce(
+        (acc, row) =>
+          acc +
+          (row.original.total_concrete || 0) *
+            (row.original.floor_repetition || 1),
         0
       ),
-      aco: selected.reduce(
-        (acc, row) => acc + (row.original.consumoDeAco || 0),
+      total_steel: selected.reduce(
+        (acc, row) =>
+          acc +
+          (row.original.total_steel || 0) *
+            (row.original.floor_repetition || 1),
         0
       ),
-      concreto: selected.reduce(
-        (acc, row) => acc + (row.original.consumoDeConcreto || 0),
-        0
-      ),
-      co2: selected.reduce(
-        (acc, row) => acc + (row.original.emissaoDeCo2 || 0),
-        0
-      ),
-      energia: selected.reduce(
-        (acc, row) => acc + (row.original.energia || 0),
-        0
-      ),
+
+      co2_min:
+        totalRepetitions > 0
+          ? selected.reduce(
+              (acc, row) =>
+                acc +
+                (row.original.co2_min || 0) *
+                  (row.original.floor_repetition || 1),
+              0
+            ) / totalRepetitions
+          : 0,
+      co2_max:
+        totalRepetitions > 0
+          ? selected.reduce(
+              (acc, row) =>
+                acc +
+                (row.original.co2_max || 0) *
+                  (row.original.floor_repetition || 1),
+              0
+            ) / totalRepetitions
+          : 0,
+      energy_min:
+        totalRepetitions > 0
+          ? selected.reduce(
+              (acc, row) =>
+                acc +
+                (row.original.energy_min || 0) *
+                  (row.original.floor_repetition || 1),
+              0
+            ) / totalRepetitions
+          : 0,
+      energy_max:
+        totalRepetitions > 0
+          ? selected.reduce(
+              (acc, row) =>
+                acc +
+                (row.original.energy_max || 0) *
+                  (row.original.floor_repetition || 1),
+              0
+            ) / totalRepetitions
+          : 0,
     };
   }, [selectedRowModel.rows]);
 
   const handleClickRow = (
     e: React.MouseEvent<HTMLTableRowElement>,
-    module: TModuleData
+    module: IModuleItem
   ) => {
     const target = e.target as HTMLElement;
     const dataType = target
       .closest("[data-action]")
       ?.getAttribute("data-action");
     if (dataType === "open-simulations") {
-      onClickModuleSimulation(module.module_uuid);
+      onClickModuleSimulation(module.id.toString());
     }
+  };
 
-    // else if (dataType === 'delete-module') {
-    //   setModuleToDelete(module)
-    // } else if (dataType === 'edit-module') {
-    //   setModuleToEdit(module)
-    // }
+  const displayName = {
+    concrete_wall: t("common.structureType.concreteWall"),
+    beam_column: t("common.structureType.beamColumn"),
+    structural_masonry: t("common.structureType.masonry"),
   };
 
   return (
     <div className="space-y-4 rounded-md border p-4">
+      <div className="flex items-center justify-between border-b pb-4">
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            {displayName[tableId] ||
+              tableId
+                .replace(/_/g, " ")
+                .replace(/\b\w/g, (c) => c.toUpperCase())}
+          </h3>
+        </div>
+        <DrawerFormModule
+          triggerComponent={
+            <Button
+              size="sm"
+              variant="noStyles"
+              className="flex items-center gap-2"
+            >
+              {t("drawerFormModule.createButtonTrigger")}
+            </Button>
+          }
+          projectId={projectId}
+          unitId={unitId}
+          structureType={tableId}
+        />
+      </div>
+
       {modules.length === 0 ? (
         <NotFoundList
-          message={t("common.noItemsFound")}
-          description={t("drawerAddModule.addConstructiveTechnology")}
+          message={t("modulesTable.noItemsFound")}
+          description={t("modulesTable.addNewTechnology")}
           icon="file"
-          showIcon={true}
+          showIcon={false}
         />
       ) : (
         <Table>
@@ -180,43 +256,41 @@ export default function ModuleTable({
                       data-action="open-simulations"
                       className="hover:scale-105"
                     />
-                    <DrawerEditModule
-                      componentTrigger={
+                    <DrawerFormModule
+                      triggerComponent={
                         <Pen
                           size={16}
                           data-action="edit-module"
                           className="hover:scale-105"
                         />
                       }
-                      module={row.original}
-                      callback={handleUpdateModule}
+                      moduleId={row.original.id.toString()}
+                      projectId={projectId}
+                      unitId={unitId}
                     />
                     <ModalSimple
                       componentTrigger={
                         <Trash size={16} className="hover:scale-105" />
                       }
-                      content={
-                        "Você tem certeza que deseja excluir este módulo? Essa ação não pode ser desfeita."
-                      }
-                      title={"Excluir módulo"}
+                      content={t("modalConfirmDelete.description")}
+                      title={t("modalConfirmDelete.moduleTitle")}
                       onConfirm={() => {
-                        handleDeleteModule?.(row.original.module_uuid);
+                        handleDeleteModule?.(row.original.id.toString());
                       }}
-                      confirmTitle="Deletar"
+                      confirmTitle={t("modalConfirmDelete.deleteButton")}
                     />
                   </div>
                 </TableCell>
               </TableRow>
             ))}
             <TableRow>
-              <TableCell colSpan={3}>
-                Selecionados ({selectedRowModel.rows.length}) :
-              </TableCell>
-              <TableCell>{totals.areaTotal.toFixed(2)} m²</TableCell>
-              <TableCell>{totals.aco.toFixed(2)} kg/m²</TableCell>
-              <TableCell>{totals.concreto.toFixed(2)} m³/m²</TableCell>
-              <TableCell>{totals.co2.toFixed(2)} kgCO₂/m²</TableCell>
-              <TableCell>{totals.energia.toFixed(2)} MJ/m²</TableCell>
+              <TableCell colSpan={3}>Total</TableCell>
+              <TableCell>{totals.total_concrete.toFixed(2)} kg/m²</TableCell>
+              <TableCell>{totals.total_steel.toFixed(2)} kg/m²</TableCell>
+              <TableCell>{totals.co2_min.toFixed(2)} kgCO₂/m²</TableCell>
+              <TableCell>{totals.co2_max.toFixed(2)} kgCO₂/m²</TableCell>
+              <TableCell>{totals.energy_min.toFixed(2)} MJ/m²</TableCell>
+              <TableCell>{totals.energy_max.toFixed(2)} MJ/m²</TableCell>
             </TableRow>
           </TableBody>
         </Table>

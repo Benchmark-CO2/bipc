@@ -70,7 +70,7 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
-func (app *application) showUnitHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) readUnitHandler(w http.ResponseWriter, r *http.Request) {
 	unitID, _ := app.readIDParam(r, "unitID")
 
 	unit, err := app.models.Units.GetByID(unitID)
@@ -85,6 +85,116 @@ func (app *application) showUnitHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"unit": unit}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) updateUnitHandler(w http.ResponseWriter, r *http.Request) {
+	unitID, err := app.readIDParam(r, "unitID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	unit, err := app.models.Units.GetByID(unitID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	var input struct {
+		Name           *string  `json:"name"`
+		Type           *string  `json:"type"`
+		TotalFloors    *int     `json:"total_floors"`
+		TowerFloors    *int     `json:"tower_floors"`
+		BaseFloors     *int     `json:"base_floors"`
+		BasementFloors *int     `json:"basement_floors"`
+		TypeFloors     *int     `json:"type_floors"`
+		TotalArea      *float64 `json:"total_area"`
+	}
+
+	err = app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if input.Name != nil {
+		unit.Name = *input.Name
+	}
+	if input.Type != nil {
+		unit.Type = *input.Type
+	}
+	if input.TotalFloors != nil {
+		unit.TotalFloors = input.TotalFloors
+	}
+	if input.TowerFloors != nil {
+		unit.TowerFloors = input.TowerFloors
+	}
+	if input.BaseFloors != nil {
+		unit.BaseFloors = input.BaseFloors
+	}
+	if input.BasementFloors != nil {
+		unit.BasementFloors = input.BasementFloors
+	}
+	if input.TypeFloors != nil {
+		unit.TypeFloors = input.TypeFloors
+	}
+	if input.TotalArea != nil {
+		unit.TotalArea = input.TotalArea
+	}
+
+	v := validator.New()
+
+	data.ValidateUnit(v, unit)
+
+	if !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	err = app.models.Units.Update(unit)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"unit": unit}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) deleteUnitHandler(w http.ResponseWriter, r *http.Request) {
+	unitID, err := app.readIDParam(r, "unitID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	err = app.models.Units.Delete(unitID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "unit successfully deleted"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

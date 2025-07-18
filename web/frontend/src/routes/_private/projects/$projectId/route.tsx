@@ -57,14 +57,6 @@ function RouteComponent() {
   const [tabs, setTabs] = useState(units);
   const [selectedTab, setSelectedTab] = useState(0);
 
-  const tempDeleteTab = (unitId: string) => {
-    setTabs((prevTabs) => prevTabs.filter((tab) => tab.id !== Number(unitId)));
-    if (selectedTab === Number(unitId)) {
-      setSelectedTab(0);
-      // history.pushState({}, "", `/projects/${projectId}`);
-    }
-  };
-
   useEffect(() => {
     setTabs(units);
   }, [units]);
@@ -143,7 +135,6 @@ function RouteComponent() {
             projectId={projectId}
             units={tabs}
             selectedTab={selectedTab}
-            tempDeleteTab={tempDeleteTab}
           />
         )}
 

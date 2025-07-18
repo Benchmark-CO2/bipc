@@ -117,8 +117,11 @@ const DrawerFormUnit = ({
       });
     },
     onSuccess: () => {
-      toast.success(t("success.unitCreated"), {
+      toast.success(t("success.unitUpdated"), {
         duration: 5000,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project", projectId],
       });
       queryClient.invalidateQueries({
         queryKey: ["projects"],

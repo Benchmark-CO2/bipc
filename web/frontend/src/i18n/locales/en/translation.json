@@ -47,6 +47,7 @@
     "save": "Save",
     "cancel": "Cancel",
     "add": "Add",
+    "update": "Update",
     "close": "Close",
     "open": "Open",
     "new_one": "New",
@@ -252,6 +253,7 @@
   "modalConfirmDelete": {
     "projectTitle": "Delete Project",
     "unitTitle": "Delete Unit",
+    "moduleTitle": "Delete Module",
     "description": "This action cannot be undone. Are you sure you want to proceed?",
     "cancelButton": "Cancel",
     "deleteButton": "Delete"
@@ -367,6 +369,54 @@
     "addUnitButton": "Add Unit",
     "editUnitButton": "Update Unit"
   },
+  "drawerFormModule": {
+    "createButtonTrigger": "Create Module",
+    "addTitle": "Add Module",
+    "editTitle": "Update Module",
+    "description": "The same building often combines more than one constructive technology, even within a single construction subsystem. Since the way to quantify materials changes depending on the type of technology, each type has a calculation module that can be added to compose the CO2 sum of the unit.",
+    "commonForm": {
+      "nameLabel": "Module Name *",
+      "namePlaceholder": "Floor 1 to 3...",
+      "structureTypeLabel": "Constructive Technology *",
+      "structureTypePlaceholder": "Select a constructive technology",
+      "floorRepetitionLabel": "Floor Repetition *",
+      "floorAreaLabel": "Floor Area (m²) *",
+      "floorHeightLabel": "Floor Height (m) *",
+      "fckLabel": "Fck (MPa) *",
+      "fckVolume": "Volume (m³) *",
+      "concreteSlabsLabel": "Concrete - Slabs *",
+      "steelCA50Label": "Steel CA50 (kg/m²) *",
+      "steelCA60Label": "Steel CA60 (kg/m²) *",
+      "minimumElementRequired": "At least one element must be maintained."
+    },
+    "beamColumnForm": {
+      "concreteColumnsLabel": "Concrete - Columns *",
+      "concreteBeamsLabel": "Concrete - Beams *",
+      "formColumnsLabel": "Form Columns (m²)",
+      "formBeamsLabel": "Form Beams (m²)",
+      "formSlabsLabel": "Form Slabs (m²)",
+      "formTotalLabel": "Form Total (m²)",
+      "columnNumberLabel": "Number of Columns",
+      "avgBeamSpanLabel": "Average Beam Span (m)",
+      "avgSlabSpanLabel": "Average Slab Span (m)"
+    },
+    "concreteWallForm": {
+      "concreteWallsLabel": "Concrete - Walls *",
+      "wallThicknessLabel": "Wall Thickness (m)",
+      "slabThicknessLabel": "Slab Thickness (m)",
+      "formAreaLabel": "Form Area (m²)",
+      "wallAreaLabel": "Wall Area (m²)"
+    },
+    "masonryForm": {
+      "verticalGroutLabel": "Vertical Grout *",
+      "horizontalGroutLabel": "Horizontal Grout *",
+      "blocksLabel": "Blocks *",
+      "blockTypeLabel": "Type *",
+      "blockTypePlaceholder": "Block",
+      "blockFbkLabel": "Fbk (MPa) *",
+      "blockQuantityLabel": "Quantity *"
+    }
+  },
   "simulationTable": {
     "title": "Simulations",
     "description": "Here are all simulations for the selected constructive technology.",
@@ -391,26 +441,26 @@
   "modulesTable": {
     "headers": {
       "name": "Name",
-      "structureType": "Structure Type",
-      "buildingType": "Building Type",
-      "createdAt": "Created At",
-      "updatedAt": "Updated At",
-      "buildedAreaTotal": "Built Area (m²)",
-      "steelConsumption": "Steel Consumption (kg/m²)",
-      "concreteConsumption": "Concrete Consumption (m³/m²)",
-      "co2Emission": "CO₂ Emission (kgCO₂/m²)",
-      "energy": "Energy (MJ/m²)"
+      "floorRepetition": "Floor Repetition",
+      "totalConcrete": "Total Concrete (m³)",
+      "totalSteel": "Total Steel (kg)",
+      "co2Min": "CO2 (Min)",
+      "co2Max": "CO2 (Max)",
+      "energyMin": "Energy (Min)",
+      "energyMax": "Energy (Max)",
+      "versionInUse": "Current Version"
     },
-    "structureType": {
-      "beamColumn": "Beam Column",
-      "concreteWall": "Concrete Wall",
-      "masonry": "Masonry"
+    "summary": {
+      "selectedModules": "Selected Modules",
+      "totalConcrete": "Concrete",
+      "totalSteel": "Steel",
+      "co2Min": "CO2 Min. (Avg)",
+      "co2Max": "CO2 Max. (Avg)",
+      "energyMin": "Energy Min. (Avg)",
+      "energyMax": "Energy Max. (Avg)"
     },
-    "buildingType": {
-      "residential": "Residential",
-      "mixed": "Mixed",
-      "corporate": "Corporate"
-    }
+    "noItemsFound": "No items found",
+    "addNewTechnology": "Add a new Constructive Technology Module using the button above."
   },
   "projectTable": {
     "headers": {
