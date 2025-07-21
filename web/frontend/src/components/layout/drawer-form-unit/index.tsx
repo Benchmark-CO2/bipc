@@ -1,10 +1,18 @@
+import { getUnitByUUID } from "@/actions/units/getUnit";
+import { patchUnit } from "@/actions/units/patchUnit";
+import { postUnit } from "@/actions/units/postUnit";
 import {
   UnitFormSchema,
   unitFormSchema,
 } from "@/validators/unitForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { Plus, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Button } from "../../ui/button";
 import {
   Drawer,
@@ -30,15 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../ui/select";
-import { useEffect, useState } from "react";
 import UnitFormTower from "./unit-form-tower";
-import { postUnit } from "@/actions/units/postUnit";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { useNavigate } from "@tanstack/react-router";
-import { getUnitByUUID } from "@/actions/units/getUnit";
-import { patchUnit } from "@/actions/units/patchUnit";
-import { useTranslation } from "react-i18next";
 
 interface DrawerFormUnitProps {
   triggerComponent?: React.ReactNode;
@@ -185,9 +185,12 @@ const DrawerFormUnit = ({
     >
       <DrawerTrigger asChild>
         {triggerComponent ?? (
-          <button className="cursor-pointer rounded-t-lg bg-muted px-4 py-2 hover:bg-accent">
+          <Button
+            variant={"outline"}
+            className="cursor-pointer rounded-t-lg bg-muted px-4 py-2 hover:bg-accent"
+          >
             <Plus />
-          </button>
+          </Button>
         )}
       </DrawerTrigger>
       <DrawerContent className="min-w-2/5">
@@ -284,7 +287,7 @@ const DrawerFormUnit = ({
                   <Button
                     disabled={isUpdatePending || isUpdateSuccess}
                     type="submit"
-                    variant="noStyles"
+                    variant="bipc"
                     className="mt-6 w-full"
                   >
                     {t("drawerFormUnit.editUnitButton")}
@@ -295,7 +298,7 @@ const DrawerFormUnit = ({
                 ) : (
                   <Button
                     type="submit"
-                    variant="noStyles"
+                    variant="bipc"
                     className="mt-6 w-full"
                     disabled={isCreationPending || isCreationSuccess}
                   >

@@ -24,7 +24,8 @@
   --border: hsl(240 5.9% 90%);
   --input: hsl(240 5.9% 90%);
   --ring: hsl(142.1 76.2% 36.3%);
-  /* --color-william-50: hsl(180, 47%, 96%);
+  --color-william-50: hsl(180, 47%, 96%);
+
 --color-william-100: hsl(180, 43%, 90%);
 --color-william-200: hsl(182, 42%, 82%);
 --color-william-300: hsl(184, 41%, 74%);
@@ -33,8 +34,9 @@
 --color-william-600: hsl(190, 38%, 50%);
 --color-william-700: hsl(192, 37%, 42%);
 --color-william-800: hsl(194, 36%, 34%);
---color-william-900: hsl(196, 35%, 26%);
---color-william-950: hsl(198, 34%, 18%); */
+--color-william-900: hsl(197, 35%, 20%);
+--color-william-950: hsl(198, 34%, 11%);
+
 --color-observatory-50: #eefff9;
 --color-observatory-100: #c5ffef;
 --color-observatory-200: #8bffe1;
@@ -46,30 +48,6 @@
 --color-observatory-800: #066959;
 --color-observatory-900: #0a5749;
 --color-observatory-950: #00352f;
-
---color-flame-pea-50: #fef4f2;
---color-flame-pea-100: #ffe6e1;
---color-flame-pea-200: #ffd1c8;
---color-flame-pea-300: #ffb1a1;
---color-flame-pea-400: #fd846c;
---color-flame-pea-500: #f65c3d;
---color-flame-pea-600: #e65234;
---color-flame-pea-700: #bf3216;
---color-flame-pea-800: #9e2d16;
---color-flame-pea-900: #832b19;
---color-flame-pea-950: #471308;
-
---color-william-50: #f3faeb;
---color-william-100: #e2f4d3;
---color-william-200: #c7ebab;
---color-william-300: #a2dc7a;
---color-william-400: #81cb50;
---color-william-500: #64b333;
---color-william-600: #4a8c24;
---color-william-700: #3a6b20;
---color-william-800: #31561e;
---color-william-900: #2b491e;
---color-william-950: #14280b;
 
   --color-active: #64b333;
 
@@ -102,6 +80,7 @@
   --input: hsl(240 3.7% 15.9%);
   --ring: hsl(142.4 71.8% 29.2%);
   --color-william-50: hsl(180, 47%, 96%);
+
 --color-william-100: hsl(180, 43%, 90%);
 --color-william-200: hsl(182, 42%, 82%);
 --color-william-300: hsl(184, 41%, 74%);
@@ -112,29 +91,7 @@
 --color-william-800: hsl(194, 36%, 34%);
 --color-william-900: hsl(197, 35%, 20%);
 --color-william-950: hsl(198, 34%, 11%);
---color-observatory-50: #eefff9;
---color-observatory-100: #c5ffef;
---color-observatory-200: #8bffe1;
---color-observatory-300: #4afed0;
---color-observatory-400: #15ecbc;
---color-observatory-500: #00d0a5;
---color-observatory-600: #00a888;
---color-observatory-700: #008971;
---color-observatory-800: #066959;
---color-observatory-900: #0a5749;
---color-observatory-950: #002b26;
 
---color-flame-pea-50: #fef4f2;
---color-flame-pea-100: #ffe6e1;
---color-flame-pea-200: #ffd1c8;
---color-flame-pea-300: #ffb1a1;
---color-flame-pea-400: #fd846c;
---color-flame-pea-500: #f65c3d;
---color-flame-pea-600: #e65234;
---color-flame-pea-700: #bf3216;
---color-flame-pea-800: #9e2d16;
---color-flame-pea-900: #832b19;
---color-flame-pea-950: #471308;
   --color-active: #64b333;
 
   --chart-1: hsl(160 60% 45%);
@@ -173,30 +130,18 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
-  --color-sidebar-50: var(--color-william-50);
-  --color-sidebar-100: var(--color-william-100);
-  --color-sidebar-200: var(--color-william-200);
-  --color-sidebar-300: var(--color-william-300);
-  --color-sidebar-400: var(--color-william-400);
-  --color-sidebar-500: var(--color-william-500);
-  --color-sidebar-600: var(--color-william-600);
-  --color-sidebar-700: var(--color-william-700);
-  --color-sidebar-800: var(--color-william-800);
-  --color-sidebar-900: var(--color-william-900);
-  --color-sidebar-950: var(--color-william-950);
+  --color-dark-50: var(--color-william-50);
+  --color-dark-100: var(--color-william-100);
+  --color-dark-200: var(--color-william-200);
+  --color-dark-300: var(--color-william-300);
+  --color-dark-400: var(--color-william-400);
+  --color-dark-500: var(--color-william-500);
+  --color-dark-600: var(--color-william-600);
+  --color-dark-700: var(--color-william-700);
+  --color-dark-800: var(--color-william-800);
+  --color-dark-900: var(--color-william-900);
+  --color-dark-950: var(--color-william-950);
 
-  --color-bg-50: var(--color-observatory-50);
-  --color-bg-100: var(--color-observatory-100);
-  --color-bg-200: var(--color-observatory-200);
-  --color-bg-300: var(--color-observatory-300);
-  --color-bg-400: var(--color-observatory-400);
-  --color-bg-500: var(--color-observatory-500);
-  --color-bg-600: var(--color-observatory-600);
-  --color-bg-700: var(--color-observatory-700);
-  --color-bg-800: var(--color-observatory-800);
-  --color-bg-900: var(--color-observatory-900);
-  --color-bg-950: var(--color-observatory-950);
-  
   --color-active: var(--color-active);
   --color-active-text: var(--color-white);
   --radius-sm: calc(var(--radius) - 4px);

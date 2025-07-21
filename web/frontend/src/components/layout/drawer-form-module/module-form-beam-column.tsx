@@ -1,6 +1,10 @@
+import { ModuleFormSchema } from "@/validators/moduleForm.validator";
+import { AlertCircle, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useFieldArray, UseFormReturn } from "react-hook-form";
-import { ModuleFormSchema } from "@/validators/moduleForm.validator";
+import { useTranslation } from "react-i18next";
+import { Button } from "../../ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
 import {
   FormControl,
   FormField,
@@ -9,8 +13,6 @@ import {
   FormMessage,
 } from "../../ui/form";
 import { Input } from "../../ui/input";
-import { Button } from "../../ui/button";
-import { Plus, Trash2, AlertCircle } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -18,8 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
-import { useTranslation } from "react-i18next";
 
 interface ModuleFormBeamColumnProps {
   form: UseFormReturn<ModuleFormSchema>;
@@ -56,7 +56,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
     };
 
     return (
-      <Card className="gap-1">
+      <Card className="gap-1 dark:bg-dark-950">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-medium">{title}</CardTitle>

@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 // import { ModeToggle } from '@/components/mode-toggle'
 import { AuthContext } from "@/context/authContext";
 import { useAuth } from "@/hooks/useAuth";
-import { cn } from '@/lib/utils';
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
 import { QueryClient } from "@tanstack/react-query";
 import {
   createRootRouteWithContext,
@@ -30,9 +31,9 @@ export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
 }>()({
   component: () => {
-    const { logout, isAuthenticated, activated} = useAuth();
+    const { logout, isAuthenticated, activated } = useAuth();
     const navigate = useNavigate();
-    
+
     const handleLogout = () => {
       logout();
       navigate({
@@ -43,14 +44,16 @@ export const Route = createRootRouteWithContext<{
         .catch((err: unknown) => err);
     };
 
-    const isMobile = window.innerWidth < 768;
-    
+    const isMobile = useIsMobile();
+
     return (
       <div className="flex h-screen w-full transition-all">
         {isAuthenticated && (
-          <div className={cn('flex w-full',{
-            'flex-col': isMobile
-          })}>
+          <div
+            className={cn("flex w-full", {
+              "flex-col": isMobile,
+            })}
+          >
             <Sidebar handleLogout={handleLogout} />
             <Screen>
               {activated === false && <UserActiveWarning />}

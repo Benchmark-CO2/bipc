@@ -31,20 +31,20 @@ const ModalConfirmDelete = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={setOpen} modal>
       <DialogTrigger asChild data-action="delete-project">
         {componentTrigger ?? (
-          <Trash
-            size={20}
-            className="delete-project z-5 absolute right-2 top-2 hover:shadow-md"
-          />
+          <div className=" w-full flex justify-between">
+            {t("common.delete")}
+            <Trash size={20} className="delete-project hover:shadow-md" />
+          </div>
         )}
       </DialogTrigger>
       <DialogContent className="text-center">
         <DialogHeader>
           <DialogTitle className="text-center">{title}</DialogTitle>
         </DialogHeader>
-        <p className="text-gray-600">{t("modalConfirmDelete.description")}</p>
+        <p className="text-gray-400">{t("modalConfirmDelete.description")}</p>
         <DialogFooter className="flex justify-between">
           <Button variant="outline" onClick={() => setOpen(false)}>
             {t("modalConfirmDelete.cancelButton")}

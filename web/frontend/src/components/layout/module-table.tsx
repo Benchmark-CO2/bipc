@@ -19,15 +19,15 @@ import { useNavigate } from "@tanstack/react-router";
 import { ChartLine, Pen, Trash } from "lucide-react";
 import { moduleColumns } from "../columns/modules";
 // import { Checkbox } from '../ui/checkbox'
-import { TModuleData } from "@/types/projects";
-import { useMemo, useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import NotFoundList from "../ui/not-found-list";
-import { Checkbox } from "../ui/checkbox";
-import ModalSimple from "./modal-simple";
-import DrawerFormModule from "./drawer-form-module";
 import { IModuleItem } from "@/types/modules";
+import { TModuleData } from "@/types/projects";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "../ui/button";
+import { Checkbox } from "../ui/checkbox";
+import NotFoundList from "../ui/not-found-list";
+import DrawerFormModule from "./drawer-form-module";
+import ModalSimple from "./modal-simple";
 
 interface IModuleTable {
   tableId: "concrete_wall" | "beam_column" | "structural_masonry";
@@ -181,7 +181,7 @@ export default function ModuleTable({
           triggerComponent={
             <Button
               size="sm"
-              variant="noStyles"
+              variant="bipc"
               className="flex items-center gap-2"
             >
               {t("drawerFormModule.createButtonTrigger")}
@@ -231,7 +231,7 @@ export default function ModuleTable({
               <TableRow
                 data-action="open-module"
                 key={row.id}
-                className="hover:cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                className="hover:cursor-pointer hover:bg-dark-100 dark:hover:bg-dark-950"
                 data-state={row.getIsSelected() && "selected"}
                 onClick={(e) => handleClickRow(e, row.original)}
               >

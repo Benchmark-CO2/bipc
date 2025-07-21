@@ -1,4 +1,5 @@
 import { postModule } from "@/actions/modules/postModule";
+import { postSimulation } from "@/actions/modules/postSimulation";
 import { TModuleStructure } from "@/types/modules";
 import { mockModules } from "@/utils/mockModules";
 import {
@@ -47,6 +48,7 @@ interface DrawerFormModuleProps {
   unitId: string;
   moduleId?: string;
   structureType?: "beam_column" | "concrete_wall" | "structural_masonry";
+  formData?: Partial<TModuleStructure>;
 }
 
 const DrawerFormModule = ({
@@ -55,6 +57,7 @@ const DrawerFormModule = ({
   unitId,
   moduleId,
   structureType,
+  formData,
 }: DrawerFormModuleProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -102,7 +105,10 @@ const DrawerFormModule = ({
     isPending: isCreationPending,
     mutate: mutateCreation,
   } = useMutation({
-    mutationFn: (data: TModuleStructure) => postModule(data, projectId, unitId),
+    mutationFn: (data: TModuleStructure) =>
+      !Boolean(moduleId)
+        ? postModule(data, projectId, unitId)
+        : postSimulation(data, projectId, unitId, moduleId!),
     onError: (error) => {
       toast.error(t("error.errorCreateModule"), {
         description:
@@ -152,10 +158,17 @@ const DrawerFormModule = ({
   }, [form]);
 
   useEffect(() => {
-    if (moduleData && moduleId) {
-      form.reset(moduleData);
+    if (formData && moduleId) {
+      Object.keys(formData).forEach((key) => {
+        if (formData[key as keyof TModuleStructure] !== undefined) {
+          form.setValue(
+            key as keyof ModuleFormSchema,
+            formData[key as keyof TModuleStructure]
+          );
+        }
+      });
     }
-  }, [moduleData, moduleId]);
+  }, [formData, moduleId]);
 
   // Reset structure-specific fields when structure_type changes
   useEffect(() => {
@@ -198,11 +211,7 @@ const DrawerFormModule = ({
     return () => subscription.unsubscribe();
   }, [form, moduleId]);
 
-  const handleSubmit = (data: ModuleFormSchema) => {
-    if (moduleId) {
-      return;
-    }
-
+  const handleSubmitEdit = (data: ModuleFormSchema) => {
     const baseFields = {
       name: data.name,
       structure_type: data.structure_type,
@@ -210,10 +219,23 @@ const DrawerFormModule = ({
       floor_area: data.floor_area,
       floor_height: data.floor_height,
     };
+  };
+  const handleSubmit = (data: ModuleFormSchema) => {
+    if (moduleId) {
+      handleSubmitEdit(data);
+    }
+
+    const baseFields = {
+      name: data.name || formData!.name!,
+      structure_type: data.structure_type || formData!.structure_type!,
+      floor_repetition: data.floor_repetition,
+      floor_area: data.floor_area,
+      floor_height: data.floor_height,
+    };
 
     let filteredData: TModuleStructure = baseFields as TModuleStructure;
 
-    if (data.structure_type === "beam_column") {
+    if (baseFields.structure_type === "beam_column") {
       filteredData = {
         ...baseFields,
         concrete_columns: data.concrete_columns || [],
@@ -229,7 +251,7 @@ const DrawerFormModule = ({
         avg_beam_span: data.avg_beam_span,
         avg_slab_span: data.avg_slab_span,
       };
-    } else if (data.structure_type === "concrete_wall") {
+    } else if (baseFields.structure_type === "concrete_wall") {
       filteredData = {
         ...baseFields,
         concrete_walls: data.concrete_walls || [],
@@ -241,7 +263,7 @@ const DrawerFormModule = ({
         form_area: data.form_area,
         wall_area: data.wall_area,
       };
-    } else if (data.structure_type === "structural_masonry") {
+    } else if (baseFields.structure_type === "structural_masonry") {
       filteredData = {
         ...baseFields,
         vertical_grout: data.vertical_grout || [],
@@ -315,6 +337,7 @@ const DrawerFormModule = ({
                 <FormField
                   control={form.control}
                   name="name"
+                  disabled={Boolean(moduleId)}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
@@ -336,6 +359,7 @@ const DrawerFormModule = ({
                 <FormField
                   control={form.control}
                   name="structure_type"
+                  disabled={Boolean(moduleId)}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
@@ -474,7 +498,7 @@ const DrawerFormModule = ({
                 )}
                 <Button
                   type="submit"
-                  variant="noStyles"
+                  variant="bipc"
                   className="flex-1"
                   disabled={isCreationPending}
                 >
