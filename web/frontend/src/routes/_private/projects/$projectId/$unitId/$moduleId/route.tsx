@@ -1,37 +1,36 @@
-import { getFromStorage } from '@/lib/storage';
-import { TProjectUnitModule } from '@/types/projects';
-import { createFileRoute, Outlet } from '@tanstack/react-router';
-import { t } from 'i18next';
+import { getModule } from "@/actions/modules/getModule";
+import { stringUtils } from "@/utils/string";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { t } from "i18next";
 
-const UNIT_MODULES = '@unit/modules';
 export const Route = createFileRoute(
-  '/_private/projects/$projectId/$unitId/$moduleId',
+  "/_private/projects/$projectId/$unitId/$moduleId"
 )({
   component: RouteComponent,
-  loader: ({ params }) => {
-    const { moduleId, unitId } = params
+  loader: async ({ params, context: { queryClient } }) => {
+    const { moduleId, unitId } = params;
     if (!moduleId) {
-      throw new Error('Module ID is required')
+      throw new Error("Module ID is required");
     }
-
-    const unitModulesFromStorage = getFromStorage(
-      `${UNIT_MODULES}/${params.projectId}`,
-      {} as TProjectUnitModule,
-    )
-    const unit = unitModulesFromStorage[unitId]
-
-    const module = unit?.find((module) => module.module_uuid === moduleId)
+    const { data } = await queryClient.ensureQueryData({
+      queryKey: ["modules", params.projectId, params.unitId],
+      queryFn: () => getModule(params.projectId, params.unitId, moduleId),
+    });
     return {
-      crumb: module?.tipoDeEstrutura ? t(`common.structureType.${module?.tipoDeEstrutura}`) : module?.tipoDeEstrutura,
-      module,
-    }
+      crumb: data.versions[0]
+        ? t(
+            `common.structureType.${stringUtils.fromSnakeToCamelCase(data.versions[0].structure_type) as "concreteWall"}`
+          )
+        : "-",
+      module: data.versions[0],
+    };
   },
-})
+});
 
 function RouteComponent() {
   return (
     <>
       <Outlet />
     </>
-  )
+  );
 }

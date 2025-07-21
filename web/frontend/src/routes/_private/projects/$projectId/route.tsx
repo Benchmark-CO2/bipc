@@ -7,6 +7,7 @@ import { TabsContainer } from "@/components/ui/tabsContainer";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { t } from "i18next";
+import { Plus } from 'lucide-react';
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/_private/projects/$projectId")({
@@ -55,14 +56,6 @@ function RouteComponent() {
 
   const [tabs, setTabs] = useState(units);
   const [selectedTab, setSelectedTab] = useState(0);
-
-  const tempDeleteTab = (unitId: string) => {
-    setTabs((prevTabs) => prevTabs.filter((tab) => tab.id !== Number(unitId)));
-    if (selectedTab === Number(unitId)) {
-      setSelectedTab(0);
-      // history.pushState({}, "", `/projects/${projectId}`);
-    }
-  };
 
   useEffect(() => {
     setTabs(units);
@@ -117,7 +110,7 @@ function RouteComponent() {
                 projectId={projectId}
                 triggerComponent={
                   <Button variant="outline" className="mt-4">
-                    {t("units.addUnit")}
+                    <Plus  />{t("units.addUnit")}
                   </Button>
                 }
               />
@@ -142,7 +135,6 @@ function RouteComponent() {
             projectId={projectId}
             units={tabs}
             selectedTab={selectedTab}
-            tempDeleteTab={tempDeleteTab}
           />
         )}
 

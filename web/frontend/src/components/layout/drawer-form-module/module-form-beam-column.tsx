@@ -1,5 +1,10 @@
-import { useFieldArray, UseFormReturn } from "react-hook-form";
 import { ModuleFormSchema } from "@/validators/moduleForm.validator";
+import { AlertCircle, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { useFieldArray, UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { Button } from "../../ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
 import {
   FormControl,
   FormField,
@@ -8,8 +13,6 @@ import {
   FormMessage,
 } from "../../ui/form";
 import { Input } from "../../ui/input";
-import { Button } from "../../ui/button";
-import { Plus, Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -17,14 +20,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
 
 interface ModuleFormBeamColumnProps {
   form: UseFormReturn<ModuleFormSchema>;
 }
 
 const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
+  const { t } = useTranslation();
   const fckOptions = ["20", "25", "30", "35", "40", "45"] as const;
+  const [showWarning, setShowWarning] = useState<string | null>(null);
 
   const renderConcreteFields = (
     fieldName: "concrete_columns" | "concrete_beams" | "concrete_slabs",
@@ -35,8 +39,24 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
       name: fieldName,
     });
 
+    // Garante que há pelo menos um elemento
+    if (fields.length === 0) {
+      append({ fck: "30" as const, volume: 0 });
+    }
+
+    const handleRemove = (index: number) => {
+      if (fields.length === 1) {
+        setShowWarning(fieldName);
+        setTimeout(() => {
+          setShowWarning(null);
+        }, 3000);
+        return;
+      }
+      remove(index);
+    };
+
     return (
-      <Card>
+      <Card className="gap-1 dark:bg-dark-950">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-medium">{title}</CardTitle>
@@ -103,13 +123,21 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => remove(index)}
+                onClick={() => handleRemove(index)}
                 className="shrink-0"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           ))}
+          {showWarning === fieldName && (
+            <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800 text-sm">
+              <AlertCircle className="h-4 w-4" />
+              <span>
+                {t("drawerFormModule.commonForm.minimumElementRequired")}
+              </span>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -117,13 +145,24 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">Viga Pilar</h3>
+      <h3 className="text-lg font-semibold">
+        {t("common.structureType.beamColumn")}
+      </h3>
 
       {/* Concreto */}
       <div className="grid grid-cols-1 gap-4">
-        {renderConcreteFields("concrete_columns", "Concreto - Colunas")}
-        {renderConcreteFields("concrete_beams", "Concreto - Vigas")}
-        {renderConcreteFields("concrete_slabs", "Concreto - Lajes")}
+        {renderConcreteFields(
+          "concrete_columns",
+          t("drawerFormModule.beamColumnForm.concreteColumnsLabel")
+        )}
+        {renderConcreteFields(
+          "concrete_beams",
+          t("drawerFormModule.beamColumnForm.concreteBeamsLabel")
+        )}
+        {renderConcreteFields(
+          "concrete_slabs",
+          t("drawerFormModule.commonForm.concreteSlabsLabel")
+        )}
       </div>
 
       {/* Aços */}
@@ -133,7 +172,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
           name="steel_ca50"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Aço CA50 (kg)</FormLabel>
+              <FormLabel>
+                {t("drawerFormModule.commonForm.steelCA50Label")}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -153,7 +194,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
           name="steel_ca60"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Aço CA60 (kg)</FormLabel>
+              <FormLabel>
+                {t("drawerFormModule.commonForm.steelCA60Label")}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -176,7 +219,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
           name="form_columns"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Forma Colunas (m²)</FormLabel>
+              <FormLabel>
+                {t("drawerFormModule.beamColumnForm.formColumnsLabel")}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -196,7 +241,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
           name="form_beams"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Forma Vigas (m²)</FormLabel>
+              <FormLabel>
+                {t("drawerFormModule.beamColumnForm.formBeamsLabel")}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -216,7 +263,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
           name="form_slabs"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Forma Lajes (m²)</FormLabel>
+              <FormLabel>
+                {t("drawerFormModule.beamColumnForm.formSlabsLabel")}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -236,7 +285,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
           name="form_total"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Forma Total (m²)</FormLabel>
+              <FormLabel>
+                {t("drawerFormModule.beamColumnForm.formTotalLabel")}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -259,7 +310,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
           name="column_number"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Número de Colunas</FormLabel>
+              <FormLabel>
+                {t("drawerFormModule.beamColumnForm.columnNumberLabel")}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -278,7 +331,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
           name="avg_beam_span"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Vão Médio Vigas (m)</FormLabel>
+              <FormLabel>
+                {t("drawerFormModule.beamColumnForm.avgBeamSpanLabel")}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -298,7 +353,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
           name="avg_slab_span"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Vão Médio Lajes (m)</FormLabel>
+              <FormLabel>
+                {t("drawerFormModule.beamColumnForm.avgSlabSpanLabel")}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="number"

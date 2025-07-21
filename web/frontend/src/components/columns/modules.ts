@@ -1,51 +1,51 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-// import { IModule } from '@/types/modules'
-import { TModuleData } from "@/types/projects";
+import { IModuleItem } from "@/types/modules";
 import { ColumnDef } from "@tanstack/react-table";
 import { t } from "i18next";
 
-export const moduleColumns: ColumnDef<TModuleData>[] = [
+export const moduleColumns: ColumnDef<IModuleItem>[] = [
   {
-    accessorKey: "nome",
+    accessorKey: "name",
     header: t("modulesTable.headers.name"),
-    cell: ({ row }) => row.original.nome || "Sem nome",
+    cell: ({ row }) => row.original.name || "-",
   },
   {
-    accessorKey: "tipoDeEstrutura",
-    header: t("modulesTable.headers.structureType"),
-    cell: ({
-      row: {
-        original: { tipoDeEstrutura },
-      },
-    }) =>
-      t(`modulesTable.structureType.${tipoDeEstrutura}`) ||
-      "Sem tipo de estrutura",
+    accessorKey: "floor_repetition",
+    header: t("modulesTable.headers.floorRepetition"),
+    cell: ({ row }) => row.original.floor_repetition || "-",
   },
   {
-    accessorKey: "areaConstruidaTotal",
-    header: t("modulesTable.headers.buildedAreaTotal"),
-    cell: ({ row }) =>
-      row.original.areaConstruidaTotal || "Sem área construída total",
+    accessorKey: "total_concrete",
+    header: t("modulesTable.headers.totalConcrete"),
+    cell: ({ row }) => row.original.total_concrete?.toFixed(2) || "-",
   },
   {
-    accessorKey: "consumoDeAco",
-    header: t("modulesTable.headers.steelConsumption"),
-    cell: ({ row }) => row.original.consumoDeAco || "Sem consumo de aço",
+    accessorKey: "total_steel",
+    header: t("modulesTable.headers.totalSteel"),
+    cell: ({ row }) => row.original.total_steel?.toFixed(2) || "-",
   },
   {
-    accessorKey: "consumoDeConcreto",
-    header: t("modulesTable.headers.concreteConsumption"),
-    cell: ({ row }) =>
-      row.original.consumoDeConcreto || "Sem consumo de concreto",
+    accessorKey: "co2_min",
+    header: t("modulesTable.headers.co2Min"),
+    cell: ({ row }) => row.original.co2_min?.toFixed(2) || "-",
   },
   {
-    accessorKey: "emissaoDeCo2",
-    header: t("modulesTable.headers.co2Emission"),
-    cell: ({ row }) => row.original.emissaoDeCo2 || "Sem emissão de CO2",
+    accessorKey: "co2_max",
+    header: t("modulesTable.headers.co2Max"),
+    cell: ({ row }) => row.original.co2_max?.toFixed(2) || "-",
   },
   {
-    accessorKey: "energia",
-    header: t("modulesTable.headers.energy"),
-    cell: ({ row }) => row.original.energia || "Sem energia",
+    accessorKey: "energy_min",
+    header: t("modulesTable.headers.energyMin"),
+    cell: ({ row }) => row.original.energy_min?.toFixed(2) || "-",
+  },
+  {
+    accessorKey: "energy_max",
+    header: t("modulesTable.headers.energyMax"),
+    cell: ({ row }) => row.original.energy_max?.toFixed(2) || "-",
+  },
+  {
+    accessorKey: "version_in_use",
+    header: t("modulesTable.headers.versionInUse"),
+    cell: ({ row }) => row.original.version_in_use || "-",
   },
 ];

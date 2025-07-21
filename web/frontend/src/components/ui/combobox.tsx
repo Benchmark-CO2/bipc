@@ -1,7 +1,7 @@
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import * as React from "react";
 
-import { getRecommendedUsers } from '@/actions/users/getRecommendedUsers';
+import { getRecommendedUsers } from "@/actions/users/getRecommendedUsers";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -9,8 +9,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { useQuery } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
+import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   Command,
   CommandEmpty,
@@ -25,15 +25,15 @@ interface IOption {
   label: string;
 }
 export function Combobox({ onChange }: { onChange?: (value: string) => void }) {
-  const {t} = useTranslation()
-  const [open, setOpen] = React.useState(false)
-  const [value, setValue] = React.useState("")
+  const { t } = useTranslation();
+  const [open, setOpen] = React.useState(false);
+  const [value, setValue] = React.useState("");
   const [userEmail, setUserEmail] = React.useState("");
   const [usersList, setUsersList] = React.useState<IOption[]>([]);
   const { data } = useQuery({
-    queryKey: ['users-suggestions'],
+    queryKey: ["users-suggestions"],
     queryFn: getRecommendedUsers,
-  })
+  });
 
   React.useEffect(() => {
     if (data?.data.users) {
@@ -45,7 +45,7 @@ export function Combobox({ onChange }: { onChange?: (value: string) => void }) {
     } else {
       setUsersList([]);
     }
-  }, [data])
+  }, [data]);
 
   const handleAddNewUser = () => {
     const newUser = { value: userEmail.trim(), label: userEmail.trim() };
@@ -59,7 +59,7 @@ export function Combobox({ onChange }: { onChange?: (value: string) => void }) {
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -75,10 +75,20 @@ export function Combobox({ onChange }: { onChange?: (value: string) => void }) {
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
         <Command>
-          <CommandInput placeholder={t("drawerInvite.nameOrEmailPlaceholder")} className="h-9" onInput={(e: React.ChangeEvent<HTMLInputElement>) => setUserEmail(e.target.value)}/>
+          <CommandInput
+            placeholder={t("drawerInvite.nameOrEmailPlaceholder")}
+            className="h-9"
+            onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setUserEmail(e.target.value)
+            }
+          />
           <CommandList>
-            <CommandEmpty className='justify-start my-2'>
-              <Button variant={'outline'} className="text-left w-full" onClick={handleAddNewUser}>
+            <CommandEmpty className="justify-start my-2">
+              <Button
+                variant={"outline"}
+                className="text-left w-full"
+                onClick={handleAddNewUser}
+              >
                 <Plus /> "{userEmail}"
               </Button>
             </CommandEmpty>
@@ -88,10 +98,10 @@ export function Combobox({ onChange }: { onChange?: (value: string) => void }) {
                   key={user.value}
                   value={user.value}
                   onSelect={(currentValue) => {
-                    setValue(currentValue === value ? "" : currentValue)
-                    setOpen(false)
+                    setValue(currentValue === value ? "" : currentValue);
+                    setOpen(false);
                     if (onChange) {
-                      onChange(currentValue === value ? "" : currentValue)
+                      onChange(currentValue === value ? "" : currentValue);
                     }
                   }}
                 >
@@ -109,5 +119,5 @@ export function Combobox({ onChange }: { onChange?: (value: string) => void }) {
         </Command>
       </PopoverContent>
     </Popover>
-  )
+  );
 }

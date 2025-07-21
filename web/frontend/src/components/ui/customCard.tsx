@@ -1,17 +1,73 @@
 import { IProject } from "@/types/projects";
-import { Edit } from "lucide-react";
+import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
+import { Edit, EllipsisVertical } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DrawerFormProject } from "../layout";
+import DrawerInvite from "../layout/drawer-invite";
 import ModalConfirmDelete from "../layout/modal-confirm-delete";
+import {
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./dropdown-menu";
 
+const CardMenu = ({
+  onDeleteProject,
+  project,
+}: {
+  onDeleteProject?: (projectUid: string) => void;
+  project: IProject;
+}) => {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  return (
+    <DropdownMenu
+      open={open}
+      onOpenChange={setOpen}
+      dir="ltr"
+      modal
+      key={project.id}
+    >
+      <DropdownMenuTrigger asChild>
+        <EllipsisVertical className="z-5 absolute right-1 top-3" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="relative flex flex-col w-[200px]">
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+          <DrawerInvite projectId={project.id} />
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <DrawerFormProject
+            componentTrigger={
+              <div className="w-full flex items-center justify-between">
+                {t("common.edit")}
+                <Edit
+                  size={20}
+                  color="#FFF"
+                  className="delete-project hover:shadow-md"
+                />
+              </div>
+            }
+            projectData={project}
+          />
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+          <ModalConfirmDelete
+            key={project.id}
+            title={t("modalConfirmDelete.projectTitle")}
+            onConfirm={() => onDeleteProject?.(project.id)}
+          />
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 interface CustomCardProps {
   project: IProject;
   onClick: () => void;
   onDeleteProject?: (projectUid: string) => void;
 }
 const CustomCard = ({ onClick, project, onDeleteProject }: CustomCardProps) => {
-  const { t } = useTranslation();
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const { city, description, name, state, image_url } = project;
@@ -26,6 +82,7 @@ const CustomCard = ({ onClick, project, onDeleteProject }: CustomCardProps) => {
       .closest("[data-action]")
       ?.getAttribute("data-action");
     if (dataType === "delete-project" || dataType === "edit-project") {
+      console.log("Action not handled for:", dataType);
       return;
     } else if (dataType === "open-project") {
       onClick();
@@ -33,40 +90,29 @@ const CustomCard = ({ onClick, project, onDeleteProject }: CustomCardProps) => {
   };
 
   useEffect(() => {
-    if (!project.image_url) handleImageLoadEnd()
-  },[])
+    if (!project.image_url) handleImageLoadEnd();
+  }, []);
 
   return (
     <div
       data-action="open-project"
       onClick={handleClickCard}
-      className="card w-full max-w-md flex-col items-center justify-center overflow-hidden rounded-lg bg-white shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-lg md:w-1/3 lg:w-1/4 xl:max-w-100 dark:bg-zinc-800 dark:shadow-zinc-900"
+      className="card w-full max-w-md flex-col items-center justify-center overflow-hidden rounded-lg bg-white shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-lg md:w-1/3 lg:w-1/4 xl:max-w-100 dark:bg-dark-950 dark:shadow-dark-900"
     >
       <div className="group relative h-60 w-full max-sm:h-40">
-        <ModalConfirmDelete
-          key={project.id}
-          title={t("modalConfirmDelete.projectTitle")}
-          onConfirm={() => onDeleteProject?.(project.id)}
-        />
-        <DrawerFormProject
-          componentTrigger={
-            <Edit
-              size={20}
-              color="#FFF"
-              className="delete-project z-50 absolute right-10 top-2 hover:shadow-md"
-            />
-          }
-          projectData={project}
-        />
+        <CardMenu onDeleteProject={onDeleteProject} project={project} />
+
         <div className="max-w-md overflow-hidden rounded-lg">
           {!imageLoaded && <CustomCardSkeleton />}
-          {image_url && <img
-            data-loaded={imageLoaded}
-            src={image_url}
-            alt=""
-            className="relative h-full min-h-60 w-full overflow-hidden rounded-lg object-cover transition-transform delay-200 duration-500 group-hover:scale-125 data-[loaded=false]:hidden"
-            onLoad={handleImageLoadEnd}
-          />}
+          {image_url && (
+            <img
+              data-loaded={imageLoaded}
+              src={image_url}
+              alt=""
+              className="relative h-full min-h-60 w-full overflow-hidden rounded-lg object-cover transition-transform delay-200 duration-500 group-hover:scale-125 data-[loaded=false]:hidden"
+              onLoad={handleImageLoadEnd}
+            />
+          )}
         </div>
 
         {/* dark filter */}

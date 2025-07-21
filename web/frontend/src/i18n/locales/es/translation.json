@@ -47,6 +47,7 @@
     "save": "Guardar",
     "cancel": "Cancelar",
     "add": "Agregar",
+    "update": "Actualizar",
     "close": "Cerrar",
     "open": "Abrir",
     "new_one": "Nuevo",
@@ -250,6 +251,7 @@
   "modalConfirmDelete": {
     "projectTitle": "Eliminar Proyecto",
     "unitTitle": "Eliminar Unidad",
+    "moduleTitle": "Eliminar Módulo",
     "description": "Esta acción no se puede deshacer. ¿Estás seguro de que quieres continuar?",
     "cancelButton": "Cancelar",
     "deleteButton": "Eliminar"
@@ -365,6 +367,55 @@
     "addUnitButton": "Agregar Unidad",
     "editUnitButton": "Actualizar Unidad"
   },
+  "drawerFormModule": {
+    "createButtonTrigger": "Crear Módulo",
+    "updateSimulation": "Actualizar Módulo",
+    "addTitle": "Agregar Módulo",
+    "editTitle": "Actualizar Módulo",
+    "description": "Un mismo edificio suele combinar más de una tecnología constructiva, incluso en un solo subsistema de la construcción. Como la forma de cuantificar material cambia dependiendo del tipo de tecnología, cada tipo posee un módulo de cálculo que puede ser agregado para componer la suma de CO2 de la unidad.",
+    "commonForm": {
+      "nameLabel": "Nombre del Módulo *",
+      "namePlaceholder": "Piso 1 al 3...",
+      "structureTypeLabel": "Tecnología Constructiva *",
+      "structureTypePlaceholder": "Selecciona una tecnología constructiva",
+      "floorRepetitionLabel": "Repetición de Pisos *",
+      "floorAreaLabel": "Área del Piso (m²) *",
+      "floorHeightLabel": "Altura del Piso (m) *",
+      "fckLabel": "Fck (MPa) *",
+      "fckVolume": "Volumen (m³) *",
+      "concreteSlabsLabel": "Concreto - Losas *",
+      "steelCA50Label": "Acero CA50 (kg/m²) *",
+      "steelCA60Label": "Acero CA60 (kg/m²) *",
+      "minimumElementRequired": "Es necesario mantener al menos un elemento."
+    },
+    "beamColumnForm": {
+      "concreteColumnsLabel": "Concreto - Columnas *",
+      "concreteBeamsLabel": "Concreto - Vigas *",
+      "formColumnsLabel": "Forma Columnas (m²)",
+      "formBeamsLabel": "Forma Vigas (m²)",
+      "formSlabsLabel": "Forma Losas (m²)",
+      "formTotalLabel": "Forma Total (m²)",
+      "columnNumberLabel": "Número de Columnas",
+      "avgBeamSpanLabel": "Vano Promedio de las Vigas (m)",
+      "avgSlabSpanLabel": "Vano Promedio de las Losas (m)"
+    },
+    "concreteWallForm": {
+      "concreteWallsLabel": "Concreto - Paredes *",
+      "wallThicknessLabel": "Grosor de la Pared (m)",
+      "slabThicknessLabel": "Grosor de la Losa (m)",
+      "formAreaLabel": "Área de la Forma (m²)",
+      "wallAreaLabel": "Área de la Pared (m²)"
+    },
+    "masonryForm": {
+      "verticalGroutLabel": "Lechada Vertical *",
+      "horizontalGroutLabel": "Lechada Horizontal *",
+      "blocksLabel": "Bloques *",
+      "blockTypeLabel": "Tipo *",
+      "blockTypePlaceholder": "Bloque",
+      "blockFbkLabel": "Fbk (MPa) *",
+      "blockQuantityLabel": "Cantidad *"
+    }
+  },
   "simulationTable": {
     "title": "Simulaciones",
     "description": "Aquí están todas las simulaciones para la Módulo seleccionada.",
@@ -377,7 +428,9 @@
       "updatedAt": "Actualizado En",
       "version": "Versión",
       "isValid": "¿Es una versión válida?",
-      "actions": "Acciones"
+      "actions": "Acciones",
+      "structureType": "Tipo de Estructura",
+      "module": "Módulo"
     },
     "saveSimulation": "Guardar Simulación",
     "updateSimulation": "Actualizar Simulación",
@@ -389,26 +442,26 @@
   "modulesTable": {
     "headers": {
       "name": "Nombre",
-      "structureType": "Tipo de Estructura",
-      "buildingType": "Tipo de Edificio",
-      "createdAt": "Creado En",
-      "updatedAt": "Actualizado En",
-      "buildedAreaTotal": "Área Construida (m²)",
-      "steelConsumption": "Consumo de Acero (kg/m²)",
-      "concreteConsumption": "Consumo de Concreto (m³/m²)",
-      "co2Emission": "Emisión de CO₂ (kgCO₂/m²)",
-      "energy": "Energía (MJ/m²)"
+      "floorRepetition": "Repetición de Pisos",
+      "totalConcrete": "Total de Hormigón (m³)",
+      "totalSteel": "Total de Acero (kg)",
+      "co2Min": "CO2 (Mín)",
+      "co2Max": "CO2 (Máx)",
+      "energyMin": "Energía (Mín)",
+      "energyMax": "Energía (Máx)",
+      "versionInUse": "Versión Actual"
     },
-    "structureType": {
-      "beamColumn": "Viga Pilar",
-      "concreteWall": "Pared de Hormigón",
-      "masonry": "Mampostería"
+    "summary": {
+      "selectedModules": "Módulos Seleccionados",
+      "totalConcrete": "Hormigón",
+      "totalSteel": "Acero",
+      "co2Min": "CO2 Mín. (Promedio)",
+      "co2Max": "CO2 Máx. (Promedio)",
+      "energyMin": "Energía Mín. (Promedio)",
+      "energyMax": "Energía Máx. (Promedio)"
     },
-    "buildingType": {
-      "residential": "Residencial",
-      "mixed": "Mixto",
-      "corporate": "Corporativo"
-    }
+    "noItemsFound": "No se encontraron elementos",
+    "addNewTechnology": "Agrega un nuevo Módulo de Tecnología Constructiva en el botón de arriba."
   },
   "projectTable": {
     "headers": {

@@ -16,6 +16,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { X } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -46,7 +47,6 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
-import { X } from "lucide-react";
 
 interface IDrawerAddProject {
   componentTrigger: React.ReactNode;
@@ -554,6 +554,7 @@ export default function DrawerFormProject({
                 disabled={isUpdatePending || isUpdateSuccess}
                 type="submit"
                 className="mt-6"
+                variant={"bipc"}
               >
                 {t("drawerFormProject.editProjectButton")}
                 {isUpdatePending && (
@@ -562,6 +563,7 @@ export default function DrawerFormProject({
               </Button>
             ) : (
               <Button
+                variant={"bipc"}
                 disabled={isCreationPending || isCreationSuccess}
                 type="submit"
                 className="mt-6"
