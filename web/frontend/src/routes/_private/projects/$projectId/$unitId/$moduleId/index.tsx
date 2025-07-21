@@ -28,7 +28,12 @@ export const Route = createFileRoute(
   loader: async ({
     params,
   }: {
-    params: { projectId: string; moduleId: string; unitId: string };
+    params: {
+      projectId: string;
+      moduleId: string;
+      unitId: string;
+      type: string;
+    };
     context: any;
   }) => {
     const {
@@ -129,7 +134,7 @@ function RouteComponent() {
   const { t } = useTranslation();
 
   // const params = Route.useParams();
-  const { projectId, unitId, moduleId } = useParams({
+  const { projectId, unitId, moduleId, type } = useParams({
     from: "/_private/projects/$projectId/$unitId/$moduleId/",
   });
 
@@ -144,8 +149,8 @@ function RouteComponent() {
 
   const { data: moduleVersions } = useQuery({
     queryKey: ["module", projectId, unitId, moduleId],
-    queryFn: () => getModule(projectId, unitId, moduleId),
-    enabled: !!projectId && !!unitId && !!moduleId,
+    queryFn: () => getModule(projectId, unitId, moduleId, type! as any),
+    enabled: !!projectId && !!unitId && !!moduleId && !!type,
   });
 
   // const { simulationId } = search as { simulationId: string };

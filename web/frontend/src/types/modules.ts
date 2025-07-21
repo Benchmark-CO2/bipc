@@ -51,8 +51,7 @@ export interface IModuleItem {
   co2_max?: number;
   energy_min?: number;
   energy_max?: number;
-  in_use: boolean;
-  version_in_use?: number;
+  version?: number;
 }
 
 export interface IBasicModule {

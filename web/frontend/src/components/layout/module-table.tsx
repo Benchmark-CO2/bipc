@@ -65,7 +65,7 @@ export default function ModuleTable({
 
   const onClickModuleSimulation = (moduleId: string) => {
     void navigate({
-      to: `/projects/${projectId}/${unitId}/${moduleId}`,
+      to: `/projects/${projectId}/${unitId}/${moduleId}?type=${tableId}`,
       from: "/projects/$projectId/$unitId",
     });
   };
@@ -164,7 +164,8 @@ export default function ModuleTable({
   };
 
   const { mutate: mutateModule } = useMutation({
-    mutationFn: (moduleId: string) => getModule(projectId, unitId, moduleId),
+    mutationFn: (moduleId: string) =>
+      getModule(projectId, unitId, moduleId, tableId),
     onError: () => {
       toast.error(t("error.errorFetchModules"));
       setModuleData(null);
