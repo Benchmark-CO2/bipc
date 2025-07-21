@@ -74,12 +74,12 @@ function RouteComponent() {
 
   const componentTrigger =
     viewMode === "table" ? (
-      <Button variant="outline">
+      <Button variant="default" className="text-white">
         <Plus className="h-4 w-4" />
         {t("projects.addProject")}
       </Button>
     ) : (
-      <div className="flex h-60 w-full flex-col items-center justify-center overflow-hidden rounded-lg bg-white p-4 shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-xl md:w-1/3 lg:w-1/4 xl:max-w-100 dark:bg-zinc-800 dark:shadow-zinc-900">
+      <div className="flex h-60 w-full flex-col items-center justify-center overflow-hidden rounded-lg bg-white p-4 shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-xl md:w-1/3 lg:w-1/4 xl:max-w-100 dark:bg-dark-950 dark:shadow-zinc-900">
         <Plus className="size-8" />
         <span className="text-lg font-medium">{t("projects.addProject")}</span>
       </div>

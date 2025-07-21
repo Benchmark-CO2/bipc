@@ -371,6 +371,7 @@
   },
   "drawerFormModule": {
     "createButtonTrigger": "Create Module",
+    "updateSimulation": "Update Module",
     "addTitle": "Add Module",
     "editTitle": "Update Module",
     "description": "The same building often combines more than one constructive technology, even within a single construction subsystem. Since the way to quantify materials changes depending on the type of technology, each type has a calculation module that can be added to compose the CO2 sum of the unit.",
@@ -429,7 +430,9 @@
       "updatedAt": "Updated At",
       "version": "Version",
       "isValid": "Is Valid Version?",
-      "actions": "Actions"
+      "actions": "Actions",
+      "module": "Module",
+      "structureType": "Structure Type"
     },
     "saveSimulation": "Save Simulation",
     "updateSimulation": "Update Simulation",

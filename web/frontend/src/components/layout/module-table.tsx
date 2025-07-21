@@ -202,7 +202,7 @@ export default function ModuleTable({
           triggerComponent={
             <Button
               size="sm"
-              variant="noStyles"
+              variant="bipc"
               className="flex items-center gap-2"
             >
               {t("drawerFormModule.createButtonTrigger")}
@@ -252,7 +252,7 @@ export default function ModuleTable({
               <TableRow
                 data-action="open-module"
                 key={row.id}
-                className="hover:cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                className="hover:cursor-pointer hover:bg-dark-100 dark:hover:bg-dark-950"
                 data-state={row.getIsSelected() && "selected"}
                 onClick={(e) => handleClickRow(e, row.original)}
               >

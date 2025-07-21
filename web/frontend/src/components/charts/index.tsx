@@ -341,7 +341,7 @@ function Chart({ maxHeight, maxWidth, filledPoints, datachart, globalData }: ICh
                 // line={{ stroke: '#000000' }}
                 // lineJointType={'natural'}
               />
-         <Scatter
+         {/* <Scatter
                 name='Series global 2'
                 data={!dataLoading ? globalData?.grey : []}
                 shape={(props: ScatterProps['shape']) => {
@@ -376,7 +376,7 @@ function Chart({ maxHeight, maxWidth, filledPoints, datachart, globalData }: ICh
                 className='stroke-accent-foreground/70! stroke-[0.5px]'
                 // line={{ stroke: '#000000' }}
                 // lineJointType={'natural'}
-              />
+              /> */}
 
               {/* Grey series */}
               <Scatter

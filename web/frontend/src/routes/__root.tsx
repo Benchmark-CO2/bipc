@@ -1,12 +1,14 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { PublicHeader, Sidebar } from "@/components/layout";
 import Screen from "@/components/layout/screen";
+import UserActiveWarning from "@/components/layout/user-active-warning";
 import BreadCrumbs from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
-import UserActiveWarning from "@/components/layout/user-active-warning";
 // import { ModeToggle } from '@/components/mode-toggle'
 import { AuthContext } from "@/context/authContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
 import { QueryClient } from "@tanstack/react-query";
 import {
   createRootRouteWithContext,
@@ -29,11 +31,11 @@ export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
 }>()({
   component: () => {
-    const authentication = useAuth();
+    const { logout, isAuthenticated, activated } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = () => {
-      authentication.logout();
+      logout();
       navigate({
         to: "/login",
         replace: true,
@@ -42,19 +44,25 @@ export const Route = createRootRouteWithContext<{
         .catch((err: unknown) => err);
     };
 
+    const isMobile = useIsMobile();
+
     return (
       <div className="flex h-screen w-full transition-all">
-        {authentication.isAuthenticated && (
-          <>
+        {isAuthenticated && (
+          <div
+            className={cn("flex w-full", {
+              "flex-col": isMobile,
+            })}
+          >
             <Sidebar handleLogout={handleLogout} />
             <Screen>
-              {authentication.activated === false && <UserActiveWarning />}
+              {activated === false && <UserActiveWarning />}
               <BreadCrumbs />
               <Outlet />
             </Screen>
-          </>
+          </div>
         )}
-        {!authentication.isAuthenticated && (
+        {!isAuthenticated && (
           <div className="flex flex-1 flex-col">
             <PublicHeader />
             <Outlet />

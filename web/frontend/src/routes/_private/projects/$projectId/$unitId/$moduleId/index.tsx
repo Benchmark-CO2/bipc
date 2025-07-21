@@ -1,13 +1,13 @@
 import { getModule } from "@/actions/modules/getModule";
-import { DataPoint } from "@/components/charts/mock";
+// import { DataPoint } from "@/components/charts/mock";
 import { DrawerFormModule } from "@/components/layout";
 import VersionsTable from "@/components/layout/versions-table";
 import { Button } from "@/components/ui/button";
 import CustomBanner from "@/components/ui/customBanner";
-import { getFromStorage, setToStorage } from "@/lib/storage";
+import { getFromStorage } from "@/lib/storage";
 import { TModuleStructure } from "@/types/modules";
 import { TSimulation } from "@/types/projects";
-import { genRowData } from "@/utils/genData";
+// import { genRowData } from "@/utils/genData";
 import { structureTypes } from "@/utils/structureTypes";
 import { useQuery } from "@tanstack/react-query";
 // import { mockSimulation } from '@/utils/mockSimulation'
@@ -73,27 +73,27 @@ export const Route = createFileRoute(
 
     // const simulations: TSimulation[] = [];
 
-    if (!fakeGlobalSims.length) {
-      let lastDataPoint = {} as DataPoint | undefined;
-      const fakeGlobalData = Array.from({ length: 20 }, (_) => {
-        const rowData = genRowData(lastDataPoint);
-        lastDataPoint = rowData.green;
-        return { ...rowData };
-      });
+    // if (!fakeGlobalSims.length) {
+    //   let lastDataPoint = {} as DataPoint | undefined;
+    //   const fakeGlobalData = Array.from({ length: 20 }, (_) => {
+    //     const rowData = genRowData(lastDataPoint);
+    //     lastDataPoint = rowData.green;
+    //     return { ...rowData };
+    //   });
 
-      const _fakeGlobalSims: TSimulation[] = fakeGlobalData.map((data) => ({
-        version: "0",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        data,
-        isValid: false,
-        name: "concreteWall",
-        isGlobal: true,
-      }));
+    //   const _fakeGlobalSims: TSimulation[] = fakeGlobalData.map((data) => ({
+    //     version: "0",
+    //     created_at: new Date().toISOString(),
+    //     updated_at: new Date().toISOString(),
+    //     data,
+    //     isValid: false,
+    //     name: "concreteWall",
+    //     isGlobal: true,
+    //   }));
 
-      fakeGlobalSims = _fakeGlobalSims;
-      setToStorage("fakeGlobalSims", _fakeGlobalSims);
-    }
+    //   fakeGlobalSims = _fakeGlobalSims;
+    //   setToStorage("fakeGlobalSims", _fakeGlobalSims);
+    // }
     // if (!simulationsFromStorage.length) {
     //   const rowData = genRowData(fakeGlobalSims[4].data.green || null);
     //   simulations.push({
@@ -150,11 +150,12 @@ function RouteComponent() {
 
   // const { simulationId } = search as { simulationId: string };
 
-  // const navigateToCreateSimulation = () => {
-  //   void navigate({
-  //     to: `/projects/$projectId/$unitId/$moduleId/simulation/new`
-  //   })
-  // }
+  // const { data } = useQuery({
+  //   queryKey: ["modules", projectId, unitId],
+  //   queryFn: () => getModule(projectId, unitId, moduleId),
+  // });
+
+  // const modules = data?.data.versions || [];
 
   // const handleClickSimulation = (simulationId: string) => {
   //   void navigate({
@@ -282,6 +283,8 @@ function RouteComponent() {
     return lastVersion || null;
   }, [versions]);
 
+  // console.log("dataPoints", dataPoints);
+
   return (
     <div className="flex flex-col gap-4">
       <CustomBanner
@@ -342,7 +345,10 @@ function RouteComponent() {
             filledPoints={+simulationId || 0}
             key={simulationId}
             datachart={dataPoints}
-            globalData={globalData}
+            globalData={{
+              green: [],
+              grey: [],
+            }}
           />
         } */}
       </div>

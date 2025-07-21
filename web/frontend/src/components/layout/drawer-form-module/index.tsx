@@ -1,11 +1,16 @@
+import { postModule } from "@/actions/modules/postModule";
+import { postSimulation } from "@/actions/modules/postSimulation";
+import { TModuleStructure } from "@/types/modules";
 import {
   ModuleFormSchema,
   moduleFormSchema,
 } from "@/validators/moduleFormByType.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Trash, Plus, X, Loader2 } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Plus, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "../../ui/button";
 import {
@@ -35,10 +40,6 @@ import {
 import ModuleFormBeamColumn from "./module-form-beam-column";
 import ModuleFormConcreteWall from "./module-form-concrete-wall";
 import ModuleFormStructuralMasonry from "./module-form-structural-masonry";
-import { TModuleStructure } from "@/types/modules";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { postModule } from "@/actions/modules/postModule";
-import { useTranslation } from "react-i18next";
 import { getDefaultValuesByType } from "./module-default-values";
 import { postModuleVersion } from "@/actions/modules/postModuleVersion";
 
@@ -103,7 +104,10 @@ const DrawerFormModule = ({
     isPending: isCreationPending,
     mutate: mutateCreation,
   } = useMutation({
-    mutationFn: (data: TModuleStructure) => postModule(data, projectId, unitId),
+    mutationFn: (data: TModuleStructure) =>
+      !Boolean(moduleId)
+        ? postModule(data, projectId, unitId)
+        : postSimulation(data, projectId, unitId, moduleId!),
     onError: (error) => {
       toast.error(t("error.errorCreateModule"), {
         description:
@@ -121,6 +125,11 @@ const DrawerFormModule = ({
       queryClient.invalidateQueries({
         queryKey: ["unit", projectId, unitId],
       });
+      if (moduleId) {
+        queryClient.invalidateQueries({
+          queryKey: ["modules", projectId, unitId],
+        });
+      }
       form.reset();
       setIsOpen(false);
     },
@@ -170,7 +179,7 @@ const DrawerFormModule = ({
 
     let filteredData: TModuleStructure = baseFields as TModuleStructure;
 
-    if (data.structure_type === "beam_column") {
+    if (baseFields.structure_type === "beam_column") {
       filteredData = {
         ...baseFields,
         concrete_columns: data.concrete_columns || [],
@@ -186,7 +195,7 @@ const DrawerFormModule = ({
         avg_beam_span: data.avg_beam_span,
         avg_slab_span: data.avg_slab_span,
       };
-    } else if (data.structure_type === "concrete_wall") {
+    } else if (baseFields.structure_type === "concrete_wall") {
       filteredData = {
         ...baseFields,
         concrete_walls: data.concrete_walls || [],
@@ -198,7 +207,7 @@ const DrawerFormModule = ({
         form_area: data.form_area,
         wall_area: data.wall_area,
       };
-    } else if (data.structure_type === "structural_masonry") {
+    } else if (baseFields.structure_type === "structural_masonry") {
       filteredData = {
         ...baseFields,
         vertical_grout: data.vertical_grout || [],
@@ -272,6 +281,7 @@ const DrawerFormModule = ({
                 <FormField
                   control={form.control}
                   name="name"
+                  disabled={Boolean(moduleId)}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
@@ -293,6 +303,7 @@ const DrawerFormModule = ({
                 <FormField
                   control={form.control}
                   name="structure_type"
+                  disabled={Boolean(moduleId)}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
@@ -422,7 +433,7 @@ const DrawerFormModule = ({
               <div className="flex gap-2 mt-6">
                 <Button
                   type="submit"
-                  variant="noStyles"
+                  variant="bipc"
                   className="flex-1"
                   disabled={isCreationPending || isUpdatePending}
                 >

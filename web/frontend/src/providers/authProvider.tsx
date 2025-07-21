@@ -45,10 +45,7 @@ function getStoredUser() {
   }
   try {
     const parsedUser = JSON.parse(storedUser);
-    if (
-      parsedUser &&
-      typeof parsedUser === "object"
-    ) {
+    if (parsedUser && typeof parsedUser === "object") {
       return parsedUser;
     }
   } catch (error) {
@@ -57,9 +54,7 @@ function getStoredUser() {
   }
 }
 
-function setStoredUser(
-  user: TUser | null
-) {
+function setStoredUser(user: TUser | null) {
   if (user) {
     localStorage.setItem(storageUserKey, JSON.stringify(user));
   } else {
@@ -67,9 +62,27 @@ function setStoredUser(
   }
 }
 
+function getStoredSidebarStatus() {
+  const isMobile = window.innerWidth < 768;
+  const storedSidebarStatus = localStorage.getItem("sidebarStatus");
+  if (storedSidebarStatus === null) {
+    if (isMobile) {
+      localStorage.setItem("sidebarStatus", "closed");
+      return "closed";
+    }
+    localStorage.setItem("sidebarStatus", "open");
+    return "open";
+  }
+  if (isMobile) {
+    return "closed";
+  }
+  return storedSidebarStatus === "open" ? "open" : "closed";
+}
+
 function clearStoredData() {
   localStorage.removeItem(storageTokenKey);
   localStorage.removeItem(storageUserKey);
+  localStorage.removeItem("sidebarStatus");
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -78,11 +91,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
   const [user, setUser] = useState<TUser | null>(getStoredUser());
   const isAuthenticated = !!token?.token;
+  const [sidebarOpen, setSidebarOpen] = useState<"open" | "closed">(
+    getStoredSidebarStatus()
+  );
 
   const logout = () => {
     setStoredToken(null);
     setToken(null);
-    clearStoredData()
+    clearStoredData();
   };
 
   const login = (
@@ -96,15 +112,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setStoredUser(user);
     setToken(authentication_token);
     setUser(user);
+    localStorage.setItem("sidebarStatus", "closed");
   };
 
   useEffect(() => {
     setToken(getStoredToken());
+    setUser(getStoredUser());
+    setSidebarOpen(getStoredSidebarStatus());
   }, []);
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, token, login, logout, email: user?.email ?? null, activated: user?.activated ?? null, user }}
+      value={{
+        isAuthenticated,
+        token,
+        login,
+        logout,
+        email: user?.email ?? null,
+        activated: user?.activated ?? null,
+        user,
+        sidebarStatus: sidebarOpen,
+        toggleSidebar: () =>
+          setSidebarOpen((oldState) =>
+            oldState === "open" ? "closed" : "open"
+          ),
+      }}
     >
       {children}
     </AuthContext.Provider>
