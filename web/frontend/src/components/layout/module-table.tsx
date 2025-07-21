@@ -23,14 +23,14 @@ import NotFoundList from "../ui/not-found-list";
 import { Checkbox } from "../ui/checkbox";
 import ModalSimple from "./modal-simple";
 import DrawerFormModule from "./drawer-form-module";
-import { IModuleItem, TModuleStructure } from "@/types/modules";
+import { IModuleItem, TModuleStructure, TModulesTypes } from "@/types/modules";
 import { Button } from "../ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { getModule } from "@/actions/modules/getModule";
 import { toast } from "sonner";
 
 interface IModuleTable {
-  tableId: "concrete_wall" | "beam_column" | "structural_masonry";
+  tableId: TModulesTypes;
   modules: IModuleItem[];
   projectId: string;
   unitId: string;

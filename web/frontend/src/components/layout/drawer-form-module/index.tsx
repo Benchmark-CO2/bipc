@@ -1,6 +1,6 @@
 import { postModule } from "@/actions/modules/postModule";
 import { postSimulation } from "@/actions/modules/postSimulation";
-import { TModuleStructure } from "@/types/modules";
+import { TModuleStructure, TModulesTypes } from "@/types/modules";
 import {
   ModuleFormSchema,
   moduleFormSchema,
@@ -49,7 +49,7 @@ interface DrawerFormModuleProps {
   unitId: string;
   moduleId?: string;
   moduleData?: TModuleStructure | null;
-  structureType: "beam_column" | "concrete_wall" | "structural_masonry";
+  structureType: TModulesTypes;
 }
 
 const DrawerFormModule = ({

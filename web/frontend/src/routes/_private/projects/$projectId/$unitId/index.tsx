@@ -1,7 +1,7 @@
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { getUnitByUUID } from "@/actions/units/getUnit";
 import { ModuleTable, ModuleTotalsSummary } from "@/components/layout";
-import { IModuleItem } from "@/types/modules";
+import { IModuleItem, TModulesTypes } from "@/types/modules";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -66,17 +66,14 @@ function RouteComponent() {
     });
   }, [unitId]);
 
-  const handleSelectionChange = useCallback(
-    (tableId: "concrete_wall" | "beam_column" | "structural_masonry") => {
-      return (modules: IModuleItem[]) => {
-        setSelectedModules((prev) => ({
-          ...prev,
-          [tableId]: modules,
-        }));
-      };
-    },
-    []
-  );
+  const handleSelectionChange = useCallback((tableId: TModulesTypes) => {
+    return (modules: IModuleItem[]) => {
+      setSelectedModules((prev) => ({
+        ...prev,
+        [tableId]: modules,
+      }));
+    };
+  }, []);
 
   const allSelectedModules = useMemo(
     () => [

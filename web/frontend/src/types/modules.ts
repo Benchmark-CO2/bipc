@@ -39,10 +39,15 @@ export interface IBlock {
   quantity: number;
 }
 
+export type TModulesTypes =
+  | "beam_column"
+  | "concrete_wall"
+  | "structural_masonry";
+
 export interface IModuleItem {
   id: number;
   name: string;
-  type: "beam_column" | "concrete_wall" | "structural_masonry";
+  type: TModulesTypes;
   floor_repetition: number;
   floor_area: number;
   total_concrete?: number;
@@ -57,7 +62,7 @@ export interface IModuleItem {
 export interface IBasicModule {
   id?: number;
   name: string;
-  type: "beam_column" | "concrete_wall" | "structural_masonry";
+  type: TModulesTypes;
   floor_repetition: number;
   floor_area: number;
   floor_height: number;

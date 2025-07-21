@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/consistent-indexed-object-style */
 
+import { TModulesTypes } from "./modules";
 import { TUnitType } from "./units";
 
 export type TProjectPhase =
@@ -120,7 +121,7 @@ export type TSimulation = {
   slab_thickness: number;
   steel_ca50: number;
   steel_ca60: number;
-  type: "beam_column" | "concrete_wall" | "structural_masonry";
+  type: TModulesTypes;
   version: number;
   wall_area: number;
   wall_thickness: number;

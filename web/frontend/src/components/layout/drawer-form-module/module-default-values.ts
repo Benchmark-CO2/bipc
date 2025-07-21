@@ -1,3 +1,5 @@
+import { TModulesTypes } from "@/types/modules";
+
 const basicDefaultValues = {
   name: "",
   floor_repetition: 1,
@@ -7,7 +9,7 @@ const basicDefaultValues = {
 
 export const concreteWallDefaultValues = {
   ...basicDefaultValues,
-  structure_type: "concrete_wall" as const,
+  type: "concrete_wall" as const,
   concrete_walls: [{ fck: "25" as const, volume: 0 }],
   concrete_slabs: [{ fck: "30" as const, volume: 0 }],
   steel_ca50: 0,
@@ -20,7 +22,7 @@ export const concreteWallDefaultValues = {
 
 export const beamColumnDefaultValues = {
   ...basicDefaultValues,
-  structure_type: "beam_column" as const,
+  type: "beam_column" as const,
   concrete_columns: [{ fck: "25" as const, volume: 0 }],
   concrete_beams: [{ fck: "30" as const, volume: 0 }],
   concrete_slabs: [{ fck: "30" as const, volume: 0 }],
@@ -37,7 +39,7 @@ export const beamColumnDefaultValues = {
 
 export const structuralMasonryDefaultValues = {
   ...basicDefaultValues,
-  structure_type: "structural_masonry" as const,
+  type: "structural_masonry" as const,
   vertical_grout: [{ fck: "25" as const, volume: 0 }],
   horizontal_grout: [{ fck: "25" as const, volume: 0 }],
   blocks: [{ type: "BL 14x19" as const, fbk: "06" as const, quantity: 0 }],
@@ -46,10 +48,8 @@ export const structuralMasonryDefaultValues = {
 };
 
 // Função para obter valores padrão baseados no tipo de estrutura
-export const getDefaultValuesByType = (
-  structureType: "beam_column" | "concrete_wall" | "structural_masonry"
-) => {
-  switch (structureType) {
+export const getDefaultValuesByType = (type: TModulesTypes) => {
+  switch (type) {
     case "beam_column":
       return beamColumnDefaultValues;
     case "concrete_wall":
