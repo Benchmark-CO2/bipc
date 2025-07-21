@@ -1,5 +1,4 @@
 import { postModule } from "@/actions/modules/postModule";
-import { postSimulation } from "@/actions/modules/postSimulation";
 import { TModuleStructure, TModulesTypes } from "@/types/modules";
 import {
   ModuleFormSchema,
@@ -49,7 +48,7 @@ interface DrawerFormModuleProps {
   unitId: string;
   moduleId?: string;
   moduleData?: TModuleStructure | null;
-  structureType: TModulesTypes;
+  type: TModulesTypes;
 }
 
 const DrawerFormModule = ({
@@ -57,7 +56,7 @@ const DrawerFormModule = ({
   projectId,
   unitId,
   moduleId,
-  structureType,
+  type,
   moduleData,
 }: DrawerFormModuleProps) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -67,7 +66,7 @@ const DrawerFormModule = ({
 
   const form = useForm<ModuleFormSchema>({
     resolver: zodResolver(moduleFormSchema),
-    defaultValues: getDefaultValuesByType(structureType),
+    defaultValues: getDefaultValuesByType(type),
   });
 
   const { mutate: mutateModuleVersion, isPending: isUpdatePending } =
@@ -104,10 +103,7 @@ const DrawerFormModule = ({
     isPending: isCreationPending,
     mutate: mutateCreation,
   } = useMutation({
-    mutationFn: (data: TModuleStructure) =>
-      !Boolean(moduleId)
-        ? postModule(data, projectId, unitId)
-        : postSimulation(data, projectId, unitId, moduleId!),
+    mutationFn: (data: TModuleStructure) => postModule(data, projectId, unitId),
     onError: (error) => {
       toast.error(t("error.errorCreateModule"), {
         description:
@@ -159,13 +155,19 @@ const DrawerFormModule = ({
 
   useEffect(() => {
     if (moduleData) {
-      form.reset(moduleData || getDefaultValuesByType(structureType));
+      form.reset(moduleData || getDefaultValuesByType(type));
     }
-  }, [moduleData, moduleId, structureType, form]);
+  }, [moduleData, moduleId, type, form]);
 
   const handleSubmit = (data: ModuleFormSchema) => {
     if (moduleId) {
-      mutateModuleVersion(data as TModuleStructure);
+      const completeData = {
+        ...data,
+        name: data.name || form.getValues("name") || moduleData?.name,
+        type: data.type || form.getValues("type") || moduleData?.type,
+      };
+      console.log(completeData);
+      mutateModuleVersion(completeData as TModuleStructure);
       return;
     }
 
@@ -239,8 +241,8 @@ const DrawerFormModule = ({
       dismissible={false}
       onOpenChange={() => {
         setIsOpen(true);
-        if (structureType) {
-          form.setValue("type", structureType);
+        if (type) {
+          form.setValue("type", type);
         }
       }}
       onClose={handleClose}

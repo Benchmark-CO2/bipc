@@ -1,6 +1,8 @@
+import { deleteModule } from "@/actions/modules/deleteModule";
 import { getModule } from "@/actions/modules/getModule";
 // import { DataPoint } from "@/components/charts/mock";
 import { DrawerFormModule } from "@/components/layout";
+import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
 import VersionsTable from "@/components/layout/versions-table";
 import { Button } from "@/components/ui/button";
 import CustomBanner from "@/components/ui/customBanner";
@@ -9,15 +11,17 @@ import { TModuleStructure, TModulesTypes } from "@/types/modules";
 import { TSimulation } from "@/types/projects";
 // import { genRowData } from "@/utils/genData";
 import { structureTypes } from "@/utils/structureTypes";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 // import { mockSimulation } from '@/utils/mockSimulation'
 import {
   createFileRoute,
   useLocation,
   useParams,
 } from "@tanstack/react-router";
+import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 // const MODULE_SIMULATIONS = "@module/simulations";
 // const UNIT_MODULES = "@unit/modules";
@@ -148,7 +152,7 @@ function RouteComponent() {
     TModuleStructure["version"][]
   >([]);
 
-  // const navigate = Route.useNavigate();
+  const navigate = Route.useNavigate();
 
   // const search = Route.useSearch();
 
@@ -157,6 +161,26 @@ function RouteComponent() {
     queryFn: () => getModule(projectId, unitId, moduleId, type!),
     enabled: !!projectId && !!unitId && !!moduleId && !!type,
   });
+
+  const { isPending: isDeleteModulePending, mutate: mutateDeleteModule } =
+    useMutation({
+      mutationFn: () => deleteModule(projectId, unitId!, moduleId!, type!),
+      onError: (error) => {
+        toast.error(t("error.errorDeleteModule"), {
+          description: error.message || t("error.errorUnknown"),
+          duration: 5000,
+        });
+      },
+      onSuccess: () => {
+        toast.success(t("success.moduleDeleted"), {
+          duration: 5000,
+        });
+
+        navigate({
+          to: `/_private/projects/${projectId}/${unitId}`,
+        });
+      },
+    });
 
   // const { simulationId } = search as { simulationId: string };
 
@@ -303,7 +327,7 @@ function RouteComponent() {
         title={structureTypes[versions[0]?.type] || "Unknown"}
       />
       <div className="border-b" />
-      <div className="flex justify-end gap-4">
+      <div className="flex justify-end gap-2">
         {/* <Button variant='outline' onClick={() => console.log('add simulation')}>
           Atribuir Acesso
         </Button>
@@ -320,6 +344,19 @@ function RouteComponent() {
           }
           context="simulation"
         /> */}
+        <ModalConfirmDelete
+          componentTrigger={
+            <Button variant="destructive" className="flex items-center gap-2">
+              {isDeleteModulePending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                t("common.delete")
+              )}
+            </Button>
+          }
+          title={"Delete Module"}
+          onConfirm={async () => await mutateDeleteModule()}
+        />
         <DrawerFormModule
           projectId={projectId}
           unitId={unitId}
@@ -329,7 +366,7 @@ function RouteComponent() {
               {t("simulations.addSimulation")}
             </Button>
           }
-          structureType={versions[0]?.type}
+          type={versions[0]?.type}
           moduleData={versionInUse}
         />
       </div>

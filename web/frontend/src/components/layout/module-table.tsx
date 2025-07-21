@@ -211,7 +211,7 @@ export default function ModuleTable({
           }
           projectId={projectId}
           unitId={unitId}
-          structureType={tableId}
+          type={tableId}
         />
       </div>
 
@@ -293,7 +293,7 @@ export default function ModuleTable({
                       projectId={projectId}
                       unitId={unitId}
                       moduleData={moduleData}
-                      structureType={row.original.type}
+                      type={row.original.type}
                     />
                     <ModalSimple
                       componentTrigger={
