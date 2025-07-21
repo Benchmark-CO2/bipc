@@ -20,11 +20,11 @@ type ConcreteWall struct {
 	WallArea      *float64   `json:"wall_area,omitempty"`
 }
 
-func (w *ConcreteWall) Type() string { return w.StructureType }
+func (w *ConcreteWall) GetType() string { return w.Type }
 
 func (w *ConcreteWall) Validate(v *validator.Validator) {
 	v.Check(w.Name != "", "name", "must be provided")
-	v.Check(w.StructureType != "", "structure_type", "must be provided")
+	v.Check(w.Type != "", "type", "must be provided")
 	w.ValidateVersion(v)
 }
 
@@ -110,8 +110,6 @@ func (w *ConcreteWall) Insert(models data.Models, unitID int64, result Consuptio
 	return models.ConcreteWallModules.Insert(module)
 }
 
-
-
 func (w *ConcreteWall) GetVersions(models data.Models, moduleID int64) (any, error) {
 	concreteWallModules, err := models.ConcreteWallModules.GetById(moduleID)
 	if err != nil {
@@ -148,7 +146,7 @@ func toConcreteWallResponse(m *data.ConcreteWallModule) *ConcreteWall {
 	return &ConcreteWall{
 		BasicModuleData: BasicModuleData{
 			Name:            m.Name,
-			StructureType:   "concrete_wall",
+			Type:            "concrete_wall",
 			FloorRepetition: m.FloorRepetition,
 			FloorArea:       m.FloorArea,
 			FloorHeight:     m.FloorHeight,
@@ -170,4 +168,16 @@ func toConcreteWallResponse(m *data.ConcreteWallModule) *ConcreteWall {
 		FormArea:      m.FormArea,
 		WallArea:      m.WallArea,
 	}
+}
+
+func (w *ConcreteWall) Delete(models data.Models, moduleID int64) error {
+	return models.ConcreteWallModules.Delete(moduleID)
+}
+
+func (w *ConcreteWall) UpdateName(models data.Models, moduleID int64, newName string) error {
+	return models.ConcreteWallModules.UpdateName(moduleID, newName)
+}
+
+func (w *ConcreteWall) UpdateInUse(models data.Models, moduleID int64, version int32) error {
+	return models.ConcreteWallModules.UpdateInUse(moduleID, version)
 }

@@ -12,7 +12,7 @@ import (
 type BeamColumnModuleBasic struct {
 	ID              int64    `json:"id"`
 	Name            string   `json:"name"`
-	StructureType   string   `json:"structure_type"`
+	Type            string   `json:"type"`
 	FloorRepetition int      `json:"floor_repetition"`
 	FloorArea       float64  `json:"floor_area"`
 	Concrete        *float64 `json:"total_concrete"`
@@ -21,14 +21,13 @@ type BeamColumnModuleBasic struct {
 	CO2Max          *float64 `json:"co2_max"`
 	EnergyMin       *float64 `json:"energy_min"`
 	EnergyMax       *float64 `json:"energy_max"`
-	InUse           bool     `json:"in_use"`
-	VersionInUse    *int32   `json:"version_in_use,omitempty"`
+	Version         *int32   `json:"version,omitempty"`
 }
 
 type ConcreteWallModuleBasic struct {
 	ID              int64    `json:"id"`
 	Name            string   `json:"name"`
-	StructureType   string   `json:"structure_type"`
+	Type            string   `json:"type"`
 	FloorRepetition int      `json:"floor_repetition"`
 	FloorArea       float64  `json:"floor_area"`
 	Concrete        *float64 `json:"total_concrete"`
@@ -37,8 +36,7 @@ type ConcreteWallModuleBasic struct {
 	CO2Max          *float64 `json:"co2_max"`
 	EnergyMin       *float64 `json:"energy_min"`
 	EnergyMax       *float64 `json:"energy_max"`
-	InUse           bool     `json:"in_use"`
-	VersionInUse    *int32   `json:"version_in_use,omitempty"`
+	Version         *int32   `json:"version,omitempty"`
 }
 
 type Unit struct {
@@ -194,22 +192,21 @@ func (m UnitModel) getBeamColumnModulesForUnit(unitID int64) ([]BeamColumnModule
 	WITH ranked_modules AS (
 		SELECT
 			mbc.*,
-			ROW_NUMBER() OVER(PARTITION BY mbc.id ORDER BY mbc.in_use DESC, mbc.version DESC) as rn
+			ROW_NUMBER() OVER(PARTITION BY mbc.id ORDER BY mbc.version DESC) as rn
 		FROM
 			module_beam_column mbc
 		WHERE
 			mbc.unit_id = $1
 	)
 	SELECT
-		rm.id, rm.name, 'beam_column' AS structure_type, rm.floor_repetition, rm.floor_area,
+		rm.id, rm.name, 'beam_column' AS type, rm.floor_repetition, rm.floor_area,
 		(
 			COALESCE(cc.volume_fck20, 0) + COALESCE(cc.volume_fck25, 0) + COALESCE(cc.volume_fck30, 0) + COALESCE(cc.volume_fck35, 0) + COALESCE(cc.volume_fck40, 0) + COALESCE(cc.volume_fck45, 0) +
 			COALESCE(cb.volume_fck20, 0) + COALESCE(cb.volume_fck25, 0) + COALESCE(cb.volume_fck30, 0) + COALESCE(cb.volume_fck35, 0) + COALESCE(cb.volume_fck40, 0) + COALESCE(cb.volume_fck45, 0) +
 			COALESCE(cs.volume_fck20, 0) + COALESCE(cs.volume_fck25, 0) + COALESCE(cs.volume_fck30, 0) + COALESCE(cs.volume_fck35, 0) + COALESCE(cs.volume_fck40, 0) + COALESCE(cs.volume_fck45, 0)
 		) AS total_concrete,
 		(rm.steel_ca50 + rm.steel_ca60) AS total_steel,
-		rm.total_co2_min, rm.total_co2_max, rm.total_energy_min, rm.total_energy_max, rm.in_use,
-		CASE WHEN rm.in_use THEN rm.version ELSE NULL END AS version_in_use
+		rm.total_co2_min, rm.total_co2_max, rm.total_energy_min, rm.total_energy_max, rm.version
 	FROM
 		ranked_modules rm
 	LEFT JOIN concrete cc ON rm.concrete_columns = cc.id
@@ -231,9 +228,9 @@ func (m UnitModel) getBeamColumnModulesForUnit(unitID int64) ([]BeamColumnModule
 	for rows.Next() {
 		var module BeamColumnModuleBasic
 		err := rows.Scan(
-			&module.ID, &module.Name, &module.StructureType, &module.FloorRepetition, &module.FloorArea,
+			&module.ID, &module.Name, &module.Type, &module.FloorRepetition, &module.FloorArea,
 			&module.Concrete, &module.Steel, &module.CO2Min, &module.CO2Max,
-			&module.EnergyMin, &module.EnergyMax, &module.InUse, &module.VersionInUse,
+			&module.EnergyMin, &module.EnergyMax, &module.Version,
 		)
 		if err != nil {
 			return nil, err
@@ -253,21 +250,20 @@ func (m UnitModel) getConcreteWallModulesForUnit(unitID int64) ([]ConcreteWallMo
 	WITH ranked_modules AS (
 		SELECT
 			mcw.*,
-			ROW_NUMBER() OVER(PARTITION BY mcw.id ORDER BY mcw.in_use DESC, mcw.version DESC) as rn
+			ROW_NUMBER() OVER(PARTITION BY mcw.id ORDER BY mcw.version DESC) as rn
 		FROM
 			module_concrete_wall mcw
 		WHERE
 			mcw.unit_id = $1
 	)
 	SELECT
-		rm.id, rm.name, 'concrete_wall' AS structure_type, rm.floor_repetition, rm.floor_area,
+		rm.id, rm.name, 'concrete_wall' AS type, rm.floor_repetition, rm.floor_area,
 		(
 			COALESCE(cw.volume_fck20, 0) + COALESCE(cw.volume_fck25, 0) + COALESCE(cw.volume_fck30, 0) + COALESCE(cw.volume_fck35, 0) + COALESCE(cw.volume_fck40, 0) + COALESCE(cw.volume_fck45, 0) +
 			COALESCE(cs_wall.volume_fck20, 0) + COALESCE(cs_wall.volume_fck25, 0) + COALESCE(cs_wall.volume_fck30, 0) + COALESCE(cs_wall.volume_fck35, 0) + COALESCE(cs_wall.volume_fck40, 0) + COALESCE(cs_wall.volume_fck45, 0)
 		) AS total_concrete,
 		(rm.steel_ca50 + rm.steel_ca60) AS total_steel,
-		rm.total_co2_min, rm.total_co2_max, rm.total_energy_min, rm.total_energy_max, rm.in_use,
-		CASE WHEN rm.in_use THEN rm.version ELSE NULL END AS version_in_use
+		rm.total_co2_min, rm.total_co2_max, rm.total_energy_min, rm.total_energy_max, rm.version
 	FROM
 		ranked_modules rm
 	LEFT JOIN concrete cw ON rm.concrete_walls = cw.id
@@ -288,9 +284,9 @@ func (m UnitModel) getConcreteWallModulesForUnit(unitID int64) ([]ConcreteWallMo
 	for rows.Next() {
 		var module ConcreteWallModuleBasic
 		err := rows.Scan(
-			&module.ID, &module.Name, &module.StructureType, &module.FloorRepetition, &module.FloorArea,
+			&module.ID, &module.Name, &module.Type, &module.FloorRepetition, &module.FloorArea,
 			&module.Concrete, &module.Steel, &module.CO2Min, &module.CO2Max,
-			&module.EnergyMin, &module.EnergyMax, &module.InUse, &module.VersionInUse,
+			&module.EnergyMin, &module.EnergyMax, &module.Version,
 		)
 		if err != nil {
 			return nil, err
