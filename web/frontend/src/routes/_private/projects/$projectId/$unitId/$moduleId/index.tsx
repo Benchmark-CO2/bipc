@@ -5,13 +5,17 @@ import VersionsTable from "@/components/layout/versions-table";
 import { Button } from "@/components/ui/button";
 import CustomBanner from "@/components/ui/customBanner";
 import { getFromStorage } from "@/lib/storage";
-import { TModuleStructure } from "@/types/modules";
+import { TModuleStructure, TModulesTypes } from "@/types/modules";
 import { TSimulation } from "@/types/projects";
 // import { genRowData } from "@/utils/genData";
 import { structureTypes } from "@/utils/structureTypes";
 import { useQuery } from "@tanstack/react-query";
 // import { mockSimulation } from '@/utils/mockSimulation'
-import { createFileRoute, useParams } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useLocation,
+  useParams,
+} from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -32,7 +36,6 @@ export const Route = createFileRoute(
       projectId: string;
       moduleId: string;
       unitId: string;
-      type: string;
     };
     context: any;
   }) => {
@@ -134,9 +137,11 @@ function RouteComponent() {
   const { t } = useTranslation();
 
   // const params = Route.useParams();
-  const { projectId, unitId, moduleId, type } = useParams({
+  const { projectId, unitId, moduleId } = useParams({
     from: "/_private/projects/$projectId/$unitId/$moduleId/",
   });
+  const { search } = useLocation();
+  const { type } = search as { type?: TModulesTypes };
 
   // const [sims, setSims] = useState<TSimulation[]>(simulations);
   const [selectedVersions, setSelectedVersions] = useState<
@@ -149,7 +154,7 @@ function RouteComponent() {
 
   const { data: moduleVersions } = useQuery({
     queryKey: ["module", projectId, unitId, moduleId],
-    queryFn: () => getModule(projectId, unitId, moduleId, type! as any),
+    queryFn: () => getModule(projectId, unitId, moduleId, type!),
     enabled: !!projectId && !!unitId && !!moduleId && !!type,
   });
 
