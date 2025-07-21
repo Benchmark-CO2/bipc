@@ -120,7 +120,7 @@ export type TSimulation = {
   slab_thickness: number;
   steel_ca50: number;
   steel_ca60: number;
-  structure_type: "beam_column" | "concrete_wall" | "structural_masonry";
+  type: "beam_column" | "concrete_wall" | "structural_masonry";
   version: number;
   wall_area: number;
   wall_thickness: number;

@@ -3,7 +3,7 @@ import { TModuleStructure } from "@/types/modules";
 export const mockModuleConcreteWall: TModuleStructure = {
   id: 1,
   name: "Mov1",
-  structure_type: "concrete_wall",
+  type: "concrete_wall",
   floor_repetition: 4,
   floor_area: 80,
   floor_height: 3,
@@ -30,7 +30,7 @@ export const mockModuleConcreteWall: TModuleStructure = {
 export const mockModuleBeamColumn: TModuleStructure = {
   id: 2,
   name: "Mov2",
-  structure_type: "beam_column",
+  type: "beam_column",
   floor_repetition: 3,
   floor_area: 100,
   floor_height: 3,
@@ -66,7 +66,7 @@ export const mockModuleBeamColumn: TModuleStructure = {
 export const mockModuleStructuralMasonry: TModuleStructure = {
   id: 3,
   name: "Mov3",
-  structure_type: "structural_masonry",
+  type: "structural_masonry",
   floor_repetition: 2,
   floor_area: 120,
   floor_height: 3,

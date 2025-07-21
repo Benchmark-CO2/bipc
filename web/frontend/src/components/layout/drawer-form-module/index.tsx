@@ -171,7 +171,7 @@ const DrawerFormModule = ({
 
     const baseFields = {
       name: data.name,
-      structure_type: data.structure_type,
+      type: data.type,
       floor_repetition: data.floor_repetition,
       floor_area: data.floor_area,
       floor_height: data.floor_height,
@@ -179,7 +179,7 @@ const DrawerFormModule = ({
 
     let filteredData: TModuleStructure = baseFields as TModuleStructure;
 
-    if (baseFields.structure_type === "beam_column") {
+    if (baseFields.type === "beam_column") {
       filteredData = {
         ...baseFields,
         concrete_columns: data.concrete_columns || [],
@@ -195,7 +195,7 @@ const DrawerFormModule = ({
         avg_beam_span: data.avg_beam_span,
         avg_slab_span: data.avg_slab_span,
       };
-    } else if (baseFields.structure_type === "concrete_wall") {
+    } else if (baseFields.type === "concrete_wall") {
       filteredData = {
         ...baseFields,
         concrete_walls: data.concrete_walls || [],
@@ -207,7 +207,7 @@ const DrawerFormModule = ({
         form_area: data.form_area,
         wall_area: data.wall_area,
       };
-    } else if (baseFields.structure_type === "structural_masonry") {
+    } else if (baseFields.type === "structural_masonry") {
       filteredData = {
         ...baseFields,
         vertical_grout: data.vertical_grout || [],
@@ -240,7 +240,7 @@ const DrawerFormModule = ({
       onOpenChange={() => {
         setIsOpen(true);
         if (structureType) {
-          form.setValue("structure_type", structureType);
+          form.setValue("type", structureType);
         }
       }}
       onClose={handleClose}
@@ -302,7 +302,7 @@ const DrawerFormModule = ({
 
                 <FormField
                   control={form.control}
-                  name="structure_type"
+                  name="type"
                   disabled={Boolean(moduleId)}
                   render={({ field }) => (
                     <FormItem>
@@ -416,7 +416,7 @@ const DrawerFormModule = ({
 
               {/* Campos específicos por tipo de estrutura */}
               {(() => {
-                const structureType = form.watch("structure_type");
+                const structureType = form.watch("type");
 
                 switch (structureType) {
                   case "beam_column":

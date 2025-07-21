@@ -295,7 +295,7 @@ function RouteComponent() {
       <CustomBanner
         description={t("simulations.description")}
         image=""
-        title={structureTypes[versions[0]?.structure_type] || "Unknown"}
+        title={structureTypes[versions[0]?.type] || "Unknown"}
       />
       <div className="border-b" />
       <div className="flex justify-end gap-4">
@@ -324,7 +324,7 @@ function RouteComponent() {
               {t("simulations.addSimulation")}
             </Button>
           }
-          structureType={versions[0]?.structure_type}
+          structureType={versions[0]?.type}
           moduleData={versionInUse}
         />
       </div>

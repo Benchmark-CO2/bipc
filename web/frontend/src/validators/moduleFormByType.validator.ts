@@ -78,13 +78,10 @@ const blockSchema = z
 export const moduleFormSchema = z
   .object({
     name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
-    structure_type: z.enum(
-      ["beam_column", "concrete_wall", "structural_masonry"],
-      {
-        required_error: "Selecione um tipo de estrutura",
-        invalid_type_error: "Tipo de estrutura inválido",
-      }
-    ),
+    type: z.enum(["beam_column", "concrete_wall", "structural_masonry"], {
+      required_error: "Selecione um tipo de estrutura",
+      invalid_type_error: "Tipo de estrutura inválido",
+    }),
     floor_repetition: z
       .number()
       .int()
@@ -124,7 +121,7 @@ export const moduleFormSchema = z
   })
   .refine(
     (data) => {
-      if (data.structure_type === "beam_column") {
+      if (data.type === "beam_column") {
         return (
           data.concrete_columns !== undefined &&
           data.concrete_beams !== undefined &&
@@ -145,12 +142,12 @@ export const moduleFormSchema = z
     {
       message:
         "Para Viga Pilar são obrigatórios: concreto (colunas, vigas, lajes), aços (CA50, CA60), formas (colunas, vigas, lajes, total), número de colunas e vãos médios",
-      path: ["structure_type"],
+      path: ["type"],
     }
   )
   .refine(
     (data) => {
-      if (data.structure_type === "concrete_wall") {
+      if (data.type === "concrete_wall") {
         return (
           data.concrete_walls !== undefined &&
           data.concrete_slabs !== undefined &&
@@ -167,12 +164,12 @@ export const moduleFormSchema = z
     {
       message:
         "Para Parede de Concreto são obrigatórios: concreto (paredes, lajes), aços (CA50, CA60), espessuras (parede, laje) e áreas (forma, parede)",
-      path: ["structure_type"],
+      path: ["type"],
     }
   )
   .refine(
     (data) => {
-      if (data.structure_type === "structural_masonry") {
+      if (data.type === "structural_masonry") {
         return (
           data.vertical_grout !== undefined &&
           data.horizontal_grout !== undefined &&
@@ -186,7 +183,7 @@ export const moduleFormSchema = z
     {
       message:
         "Para Alvenaria Estrutural são obrigatórios: graute (vertical, horizontal), aços (CA50, CA60) e blocos",
-      path: ["structure_type"],
+      path: ["type"],
     }
   );
 
@@ -196,7 +193,7 @@ export type ModuleFormSchema = z.infer<typeof moduleFormSchema>;
 // Funções auxiliares para validação específica por tipo
 export const validateBeamColumnData = (data: Partial<ModuleFormSchema>) => {
   return (
-    data.structure_type === "beam_column" &&
+    data.type === "beam_column" &&
     data.concrete_columns?.length &&
     data.concrete_beams?.length &&
     data.concrete_slabs?.length &&
@@ -214,7 +211,7 @@ export const validateBeamColumnData = (data: Partial<ModuleFormSchema>) => {
 
 export const validateConcreteWallData = (data: Partial<ModuleFormSchema>) => {
   return (
-    data.structure_type === "concrete_wall" &&
+    data.type === "concrete_wall" &&
     data.concrete_walls?.length &&
     data.concrete_slabs?.length &&
     data.steel_ca50 !== undefined &&
@@ -230,7 +227,7 @@ export const validateStructuralMasonryData = (
   data: Partial<ModuleFormSchema>
 ) => {
   return (
-    data.structure_type === "structural_masonry" &&
+    data.type === "structural_masonry" &&
     data.vertical_grout?.length &&
     data.horizontal_grout?.length &&
     data.blocks?.length &&
