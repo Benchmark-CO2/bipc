@@ -3,24 +3,25 @@ import { TSimulation } from "@/types/projects";
 import { ColumnDef } from "@tanstack/react-table";
 import { t } from "i18next";
 import { Check, X } from "lucide-react";
+import { Checkbox } from '../ui/checkbox';
 
 export const simulationColumns: ColumnDef<TSimulation>[] = [
   {
     accessorKey: "selected",
     header: ({ table }) => (
-      <input
-        type="checkbox"
+      <Checkbox
         checked={table.getIsAllRowsSelected()}
-        onChange={() => table.toggleAllRowsSelected()}
-        className="cursor-pointer"
+        onCheckedChange={() => table.toggleAllRowsSelected()}
+        onClick={(e) => e.stopPropagation()}
+        aria-label="Selecionar linha"
       />
     ),
     cell: ({ row }) => (
-      <input
-        type="checkbox"
+      <Checkbox
         checked={row.getIsSelected()}
-        onChange={() => row.toggleSelected()}
-        className="cursor-pointer"
+        onCheckedChange={() => row.toggleSelected()}
+        onClick={(e) => e.stopPropagation()}
+        aria-label="Selecionar linha"
       />
     ),
   },

@@ -123,6 +123,11 @@ const DrawerFormModule = ({
       queryClient.invalidateQueries({
         queryKey: ["project", projectId],
       });
+      if (moduleId) {
+        queryClient.invalidateQueries({
+        queryKey: ["modules", projectId, unitId],
+      });
+      }
       form.reset();
       setIsOpen(false);
 

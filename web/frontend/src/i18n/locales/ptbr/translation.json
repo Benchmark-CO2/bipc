@@ -363,6 +363,7 @@
   },
   "drawerFormModule": {
     "createButtonTrigger": "Criar Módulo",
+    "updateSimulation": "Atualizar Módulo",
     "addTitle": "Adicionar Módulo",
     "editTitle": "Atualizar Módulo",
     "description": "Um mesmo edifício costuma combinar mais de uma tecnologia construtiva, mesmo em um único subsistema da construção. Como a forma de quantificar material muda dependendo do tipo de tecnologia, cada tipo possui um módulo de cálculo que pode ser adicionado para compor a soma de CO2 da unidade.",
