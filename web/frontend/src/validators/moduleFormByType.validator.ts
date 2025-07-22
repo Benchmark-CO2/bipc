@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+// Schemas base compartilhados
 const concreteSchema = z
   .array(
     z.object({
@@ -73,6 +74,7 @@ const blockSchema = z
     }
   );
 
+// Schema flexível que aceita todos os campos
 export const moduleFormSchema = z
   .object({
     name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
@@ -185,8 +187,56 @@ export const moduleFormSchema = z
     }
   );
 
+// Tipos inferred
 export type ModuleFormSchema = z.infer<typeof moduleFormSchema>;
 
+// Funções auxiliares para validação específica por tipo
+export const validateBeamColumnData = (data: Partial<ModuleFormSchema>) => {
+  return (
+    data.type === "beam_column" &&
+    data.concrete_columns?.length &&
+    data.concrete_beams?.length &&
+    data.concrete_slabs?.length &&
+    data.steel_ca50 !== undefined &&
+    data.steel_ca60 !== undefined &&
+    data.form_columns !== undefined &&
+    data.form_beams !== undefined &&
+    data.form_slabs !== undefined &&
+    data.form_total !== undefined &&
+    data.column_number !== undefined &&
+    data.avg_beam_span !== undefined &&
+    data.avg_slab_span !== undefined
+  );
+};
+
+export const validateConcreteWallData = (data: Partial<ModuleFormSchema>) => {
+  return (
+    data.type === "concrete_wall" &&
+    data.concrete_walls?.length &&
+    data.concrete_slabs?.length &&
+    data.steel_ca50 !== undefined &&
+    data.steel_ca60 !== undefined &&
+    data.wall_thickness !== undefined &&
+    data.slab_thickness !== undefined &&
+    data.form_area !== undefined &&
+    data.wall_area !== undefined
+  );
+};
+
+export const validateStructuralMasonryData = (
+  data: Partial<ModuleFormSchema>
+) => {
+  return (
+    data.type === "structural_masonry" &&
+    data.vertical_grout?.length &&
+    data.horizontal_grout?.length &&
+    data.blocks?.length &&
+    data.steel_ca50 !== undefined &&
+    data.steel_ca60 !== undefined
+  );
+};
+
+// Schema para adicionar módulo (apenas nome)
 export const addModuleFormSchema = z.object({
   name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
 });

@@ -25,7 +25,7 @@
     "crumbs": {
       "home": "Inicio",
       "projects": "Proyectos",
-      "simulations": "Simulaciones",
+      "versions": "Versiones",
       "settings": "Configuraciones",
       "dashboard": "Tablero"
     },
@@ -200,11 +200,12 @@
       }
     }
   },
-  "simulations": {
-    "title": "Simulaciones",
-    "description": "Aquí están todas las simulaciones para la Módulo seleccionada.",
-    "addSimulation": "Agregar Simulación",
-    "noSimulations": "No hay simulaciones disponibles."
+  "versions": {
+    "title": "Versiones",
+    "description": "Aquí están todas las versiones para la Módulo seleccionada.",
+    "addVersion": "Agregar Versión",
+    "noVersions": "No hay versiones disponibles.",
+    "editVersionName": "Editar Nombre de Versión"
   },
   "error": {
     "sessionExpired": "Oops, tu sesión ha expirado...",
@@ -228,6 +229,7 @@
     "errorFetchProjectById": "Error al obtener el proyecto por ID",
     "errorFetchZipCode": "Error al obtener el código postal",
     "errorEditProject": "Error al editar el proyecto",
+    "errorEditModuleName": "Error al editar el nombre del módulo",
     "errorUnknown": "Error desconocido",
     "errorUploadFile": "Error al subir el archivo"
   },
@@ -241,9 +243,9 @@
     "moduleCreated": "Módulo creado exitosamente",
     "moduleUpdated": "Módulo actualizado exitosamente",
     "moduleDeleted": "Módulo eliminado exitosamente",
-    "simulationCreated": "Simulación creada exitosamente",
-    "simulationUpdated": "Simulación actualizada exitosamente",
-    "simulationDeleted": "Simulación eliminada exitosamente",
+    "versionCreated": "Versión creada exitosamente",
+    "versionUpdated": "Versión actualizada exitosamente",
+    "versionDeleted": "Versión eliminada exitosamente",
     "projectCreated": "Proyecto creado exitosamente",
     "projectUpdated": "Proyecto actualizado exitosamente",
     "projectDeleted": "Proyecto eliminado exitosamente"
@@ -443,7 +445,7 @@
     "headers": {
       "name": "Nombre",
       "floorRepetition": "Repetición de Pisos",
-      "totalConcrete": "Total de Hormigón (m³)",
+      "totalConcrete": "Total de Hormigón (kg)",
       "totalSteel": "Total de Acero (kg)",
       "co2Min": "CO2 (Mín)",
       "co2Max": "CO2 (Máx)",

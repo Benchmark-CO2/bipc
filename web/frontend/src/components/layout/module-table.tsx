@@ -14,28 +14,25 @@ import {
   RowSelectionState,
   useReactTable,
 } from "@tanstack/react-table";
-// import { IModule } from '@/types/modules'
 import { useNavigate } from "@tanstack/react-router";
-import { ChartLine, Pen, Trash } from "lucide-react";
+import { ChartLine, Pen } from "lucide-react";
 import { moduleColumns } from "../columns/modules";
-// import { Checkbox } from '../ui/checkbox'
-import { IModuleItem } from "@/types/modules";
-import { TModuleData } from "@/types/projects";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "../ui/button";
-import { Checkbox } from "../ui/checkbox";
 import NotFoundList from "../ui/not-found-list";
+import { Checkbox } from "../ui/checkbox";
 import DrawerFormModule from "./drawer-form-module";
-import ModalSimple from "./modal-simple";
+import { IModuleItem, TModuleStructure, TModulesTypes } from "@/types/modules";
+import { Button } from "../ui/button";
+import { useMutation } from "@tanstack/react-query";
+import { getModule } from "@/actions/modules/getModule";
+import { toast } from "sonner";
 
 interface IModuleTable {
-  tableId: "concrete_wall" | "beam_column" | "structural_masonry";
+  tableId: TModulesTypes;
   modules: IModuleItem[];
   projectId: string;
   unitId: string;
-  handleUpdateModule: (module: TModuleData) => void;
-  handleDeleteModule?: (moduleId: string) => void;
   onSelectionChange?: (selectedModules: IModuleItem[]) => void;
 }
 
@@ -44,14 +41,13 @@ export default function ModuleTable({
   modules,
   projectId,
   unitId,
-  // handleUpdateModule,
-  handleDeleteModule,
   onSelectionChange,
 }: IModuleTable) {
   const { t } = useTranslation();
   const navigate = useNavigate({ from: "/projects/$projectId" });
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [moduleData, setModuleData] = useState<TModuleStructure | null>(null);
 
   const table = useReactTable({
     data: modules,
@@ -68,7 +64,7 @@ export default function ModuleTable({
 
   const onClickModuleSimulation = (moduleId: string) => {
     void navigate({
-      to: `/projects/${projectId}/${unitId}/${moduleId}`,
+      to: `/projects/${projectId}/${unitId}/${moduleId}?type=${tableId}`,
       from: "/projects/$projectId/$unitId",
     });
   };
@@ -166,6 +162,31 @@ export default function ModuleTable({
     structural_masonry: t("common.structureType.masonry"),
   };
 
+  const { mutate: mutateModule } = useMutation({
+    mutationFn: (moduleId: string) =>
+      getModule(projectId, unitId, moduleId, tableId),
+    onError: () => {
+      toast.error(t("error.errorFetchModules"));
+      setModuleData(null);
+    },
+    onSuccess: (data) => {
+      const moduleInUse = data.data.versions.find((version) => version.in_use);
+      setModuleData(moduleInUse || null);
+    },
+  });
+
+  useEffect(() => {
+    if (modules.length > 0) {
+      const allSelected = modules.reduce((acc, _, index) => {
+        acc[index] = true;
+        return acc;
+      }, {} as RowSelectionState);
+      setRowSelection(allSelected);
+    } else {
+      setRowSelection({});
+    }
+  }, [modules, tableId, unitId]);
+
   return (
     <div className="space-y-4 rounded-md border p-4">
       <div className="flex items-center justify-between border-b pb-4">
@@ -189,7 +210,7 @@ export default function ModuleTable({
           }
           projectId={projectId}
           unitId={unitId}
-          structureType={tableId}
+          type={tableId}
         />
       </div>
 
@@ -262,22 +283,16 @@ export default function ModuleTable({
                           size={16}
                           data-action="edit-module"
                           className="hover:scale-105"
+                          onClick={() =>
+                            mutateModule(row.original.id.toString())
+                          }
                         />
                       }
                       moduleId={row.original.id.toString()}
                       projectId={projectId}
                       unitId={unitId}
-                    />
-                    <ModalSimple
-                      componentTrigger={
-                        <Trash size={16} className="hover:scale-105" />
-                      }
-                      content={t("modalConfirmDelete.description")}
-                      title={t("modalConfirmDelete.moduleTitle")}
-                      onConfirm={() => {
-                        handleDeleteModule?.(row.original.id.toString());
-                      }}
-                      confirmTitle={t("modalConfirmDelete.deleteButton")}
+                      moduleData={moduleData}
+                      type={row.original.type}
                     />
                   </div>
                 </TableCell>

@@ -1,9 +1,7 @@
 package modules
 
 import (
-	"encoding/json"
 	"errors"
-	"strings"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
@@ -16,7 +14,7 @@ type Concrete struct {
 
 type BasicModuleData struct {
 	Name            string  `json:"name"`
-	StructureType   string  `json:"structure_type"`
+	Type            string  `json:"type"`
 	FloorRepetition int     `json:"floor_repetition"`
 	FloorArea       float64 `json:"floor_area"`
 	FloorHeight     float64 `json:"floor_height"`
@@ -55,14 +53,28 @@ func (c *Consuption) divideByArea(area float64) {
 	c.EnergyMax /= area
 }
 
-type ModuleStructure interface {
-	Type() string
+func ParseModuleType(t string) (Module, error) {
+	switch t {
+	case "beam_column":
+		return &BeamColumn{}, nil
+	case "concrete_wall":
+		return &ConcreteWall{}, nil
+	default:
+		return nil, errors.New("invalid module type")
+	}
+}
+
+type Module interface {
+	GetType() string
 	Validate(v *validator.Validator)
 	ValidateVersion(v *validator.Validator)
 	Calculate() (Consuption, error)
 	Insert(models data.Models, unitID int64, result Consuption, opts *InsertOptions) error
 	GetVersions(models data.Models, moduleID int64) (any, error)
 	MergeModuleData(models data.Models, moduleID int64) (*int32, error)
+	Delete(models data.Models, moduleID int64) error
+	UpdateName(models data.Models, moduleID int64, newName string) error
+	UpdateInUse(models data.Models, moduleID int64, version int32) error
 }
 
 func validateConcreteList(v *validator.Validator, list []Concrete, fieldPrefix string) {
@@ -77,29 +89,6 @@ func validateConcreteList(v *validator.Validator, list []Concrete, fieldPrefix s
 		}
 	}
 	v.Check(len(list) > 0, fieldPrefix, "must have at least one item")
-}
-
-func UnmarshalModuleStructure(data []byte) (ModuleStructure, error) {
-	var basic BasicModuleData
-	if err := json.Unmarshal(data, &basic); err != nil {
-		return nil, err
-	}
-	switch strings.ToLower(basic.StructureType) {
-	case "beam_column":
-		var b BeamColumn
-		if err := json.Unmarshal(data, &b); err != nil {
-			return nil, err
-		}
-		return &b, nil
-	case "concrete_wall":
-		var w ConcreteWall
-		if err := json.Unmarshal(data, &w); err != nil {
-			return nil, err
-		}
-		return &w, nil
-	default:
-		return nil, errors.New("invalid structure_type")
-	}
 }
 
 type SidacValue struct {
@@ -251,33 +240,4 @@ func toConcrete(c data.Concrete) []Concrete {
 		concretes = append(concretes, Concrete{Fck: "45", Volume: c.VolumeFck45})
 	}
 	return concretes
-}
-
-func GetModule(models data.Models, id int64) (any, error) {
-
-	concreteWallModules, err := models.ConcreteWallModules.GetById(id)
-	if err != nil {
-		return nil, err
-	}
-	if len(concreteWallModules) > 0 {
-		var res []*ConcreteWall
-		for _, v := range concreteWallModules {
-			res = append(res, toConcreteWallResponse(v))
-		}
-		return res, nil
-	}
-
-	beamColumnModules, err := models.BeamColumnModules.GetById(id)
-	if err != nil {
-		return nil, err
-	}
-	if len(beamColumnModules) > 0 {
-		var res []*BeamColumn
-		for _, v := range beamColumnModules {
-			res = append(res, toBeamColumnResponse(v))
-		}
-		return res, nil
-	}
-
-	return nil, data.ErrRecordNotFound
 }

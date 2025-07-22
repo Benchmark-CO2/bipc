@@ -17,6 +17,7 @@ interface ModalSimpleProps {
   onConfirm?: () => void;
   confirmTitle?: string;
   onClose?: () => void;
+  disableConfirm?: boolean;
 }
 
 const ModalSimple = ({
@@ -26,6 +27,7 @@ const ModalSimple = ({
   content,
   confirmTitle = "Ok",
   onClose,
+  disableConfirm = false,
 }: ModalSimpleProps) => {
   const [open, setOpen] = useState(false);
   const { t } = useTranslation();
@@ -60,7 +62,11 @@ const ModalSimple = ({
             {t("common.cancel")}
           </Button>
           {onConfirm && (
-            <Button variant="default" onClick={onConfirmAction}>
+            <Button
+              variant="default"
+              onClick={onConfirmAction}
+              disabled={disableConfirm}
+            >
               {confirmTitle}
             </Button>
           )}

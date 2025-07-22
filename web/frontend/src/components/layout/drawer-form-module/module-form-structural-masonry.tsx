@@ -64,9 +64,9 @@ const ModuleFormStructuralMasonry = ({
       name: fieldName,
     });
 
-    if (fields.length === 0) {
-      append({ fck: "25" as const, volume: 0 });
-    }
+    // if (fields.length === 0) {
+    //   append({ fck: "25" as const, volume: 0 });
+    // }
 
     const handleRemove = (index: number) => {
       if (fields.length === 1) {
@@ -177,13 +177,13 @@ const ModuleFormStructuralMasonry = ({
       name: "blocks",
     });
 
-    if (fields.length === 0) {
-      append({
-        type: "BL 14x19" as const,
-        fbk: "06" as const,
-        quantity: 0,
-      });
-    }
+    // if (fields.length === 0) {
+    //   append({
+    //     type: "BL 14x19" as const,
+    //     fbk: "06" as const,
+    //     quantity: 0,
+    //   });
+    // }
 
     const handleRemove = (index: number) => {
       if (fields.length === 1) {

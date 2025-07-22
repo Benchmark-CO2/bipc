@@ -40,9 +40,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
     });
 
     // Garante que há pelo menos um elemento
-    if (fields.length === 0) {
-      append({ fck: "30" as const, volume: 0 });
-    }
+    // if (fields.length === 0) {
+    //   append({ fck: "30" as const, volume: 0 });
+    // }
 
     const handleRemove = (index: number) => {
       if (fields.length === 1) {

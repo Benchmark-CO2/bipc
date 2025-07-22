@@ -46,6 +46,6 @@ export const moduleColumns: ColumnDef<IModuleItem>[] = [
   {
     accessorKey: "version_in_use",
     header: t("modulesTable.headers.versionInUse"),
-    cell: ({ row }) => row.original.version_in_use || "-",
+    cell: ({ row }) => row.original.version || "-",
   },
 ];

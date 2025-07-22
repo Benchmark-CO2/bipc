@@ -245,6 +245,10 @@ func (m BeamColumnModuleModel) GetById(id int64) ([]*BeamColumnModule, error) {
 		return nil, err
 	}
 
+	if len(modules) == 0 {
+		return nil, ErrRecordNotFound
+	}
+
 	return modules, nil
 }
 
@@ -295,6 +299,163 @@ func (m ConcreteWallModuleModel) GetById(id int64) ([]*ConcreteWallModule, error
 		return nil, err
 	}
 
+	if len(modules) == 0 {
+		return nil, ErrRecordNotFound
+	}
+
 	return modules, nil
 }
 
+func (m BeamColumnModuleModel) Delete(id int64) error {
+	query := `
+		DELETE FROM module_beam_column
+		WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
+
+func (m ConcreteWallModuleModel) Delete(id int64) error {
+	query := `
+		DELETE FROM module_concrete_wall
+		WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
+
+func (m BeamColumnModuleModel) UpdateName(id int64, name string) error {
+	query := `
+		UPDATE module_beam_column
+		SET name = $1
+		WHERE id = $2`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, name, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
+
+func (m ConcreteWallModuleModel) UpdateName(id int64, name string) error {
+	query := `
+		UPDATE module_concrete_wall
+		SET name = $1
+		WHERE id = $2`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, name, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
+
+func (m BeamColumnModuleModel) UpdateInUse(id int64, version int32) error {
+	query := `
+		UPDATE module_beam_column
+		SET in_use = TRUE
+		WHERE id = $1 AND version = $2`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id, version)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
+
+func (m ConcreteWallModuleModel) UpdateInUse(id int64, version int32) error {
+	query := `
+		UPDATE module_concrete_wall
+		SET in_use = TRUE
+		WHERE id = $1 AND version = $2`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id, version)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}

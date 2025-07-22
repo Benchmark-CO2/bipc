@@ -25,7 +25,7 @@
     "crumbs": {
       "home": "Home",
       "projects": "Projects",
-      "simulations": "Simulations",
+      "versions": "Versions",
       "settings": "Settings",
       "dashboard": "Dashboard"
     },
@@ -202,11 +202,12 @@
       }
     }
   },
-  "simulations": {
-    "title": "Simulations",
-    "description": "Here are all simulations for the selected constructive technology.",
-    "addSimulation": "Add Simulation",
-    "noSimulations": "No simulations found"
+  "versions": {
+    "title": "Versions",
+    "description": "Here are all versions for the selected constructive technology.",
+    "addVersion": "Add Version",
+    "noVersions": "No versions found",
+    "editVersionName": "Edit Version Name"
   },
   "error": {
     "sessionExpired": "Oops, your session has expired...",
@@ -230,6 +231,7 @@
     "errorFetchProjectById": "Error fetching project by ID",
     "errorFetchZipCode": "Error fetching ZIP code",
     "errorEditProject": "Error editing project",
+    "errorEditModuleName": "Error editing module name",
     "errorUnknown": "An unknown error occurred",
     "errorUploadFile": "Error uploading file"
   },
@@ -243,9 +245,9 @@
     "moduleCreated": "Constructive Technology Module created successfully",
     "moduleUpdated": "Constructive Technology Module updated successfully",
     "moduleDeleted": "Constructive Technology Module deleted successfully",
-    "simulationCreated": "Simulation created successfully",
-    "simulationUpdated": "Simulation updated successfully",
-    "simulationDeleted": "Simulation deleted successfully",
+    "versionCreated": "Version created successfully",
+    "versionUpdated": "Version updated successfully",
+    "versionDeleted": "Version deleted successfully",
     "projectCreated": "Project created successfully",
     "projectUpdated": "Project updated successfully",
     "projectDeleted": "Project deleted successfully"
@@ -445,7 +447,7 @@
     "headers": {
       "name": "Name",
       "floorRepetition": "Floor Repetition",
-      "totalConcrete": "Total Concrete (m³)",
+      "totalConcrete": "Total Concrete (kg)",
       "totalSteel": "Total Steel (kg)",
       "co2Min": "CO2 (Min)",
       "co2Max": "CO2 (Max)",

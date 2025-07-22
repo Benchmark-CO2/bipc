@@ -2,7 +2,7 @@ import api from "@/service/api";
 import { TModuleStructure } from "@/types/modules";
 import { ModuleFormSchema } from "@/validators/moduleForm.validator";
 
-export const postSimulation = (
+export const postModuleVersion = (
   moduleParams: ModuleFormSchema,
   projectId: string,
   unitId: string,

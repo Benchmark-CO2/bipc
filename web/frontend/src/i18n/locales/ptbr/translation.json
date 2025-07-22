@@ -24,7 +24,9 @@
     "crumbs": {
       "home": "Início",
       "projects": "Projetos",
-      "simulations": "Simulações"
+      "versions": "Versões",
+      "dashboard": "Dashboard",
+      "settings": "Configurações"
     },
     "activeUserWarning": {
       "title": "Usuário não ativo",
@@ -90,11 +92,12 @@
     "addUnit": "Adicionar Unidade de Construção",
     "noUnits": "Nenhuma unidade de construção encontrada"
   },
-  "simulations": {
-    "title": "Simulações",
-    "description": "Aqui estão todas as simulações do Módulo de Tecnologia Construtiva selecionada.",
-    "addSimulation": "Adicionar Simulação",
-    "noSimulations": "Nenhuma simulação encontrada"
+  "versions": {
+    "title": "Versões",
+    "description": "Aqui estão todas as versões do Módulo de Tecnologia Construtiva selecionada.",
+    "addVersion": "Adicionar Versão",
+    "noVersions": "Nenhuma versão encontrada",
+    "editVersionName": "Editar Nome da Versão"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -221,6 +224,7 @@
     "errorUpdateSimulation": "Erro ao atualizar simulação",
     "errorFetchZipCode": "Erro ao buscar CEP",
     "errorEditProject": "Erro ao editar projeto",
+    "errorEditModuleName": "Erro ao editar nome do módulo",
     "errorUnknown": "Erro desconhecido",
     "errorUploadFile": "Erro ao fazer upload do arquivo"
   },
@@ -231,9 +235,9 @@
     "projectCreated": "Projeto criado com sucesso",
     "projectUpdated": "Projeto atualizado com sucesso",
     "projectDeleted": "Projeto deletado com sucesso",
-    "simulationCreated": "Simulação criada com sucesso",
-    "simulationUpdated": "Simulação atualizada com sucesso",
-    "simulationDeleted": "Simulação deletada com sucesso",
+    "versionCreated": "Versão criada com sucesso",
+    "versionUpdated": "Versão atualizada com sucesso",
+    "versionDeleted": "Versão deletada com sucesso",
     "moduleCreated": "Módulo de Tecnologia Construtiva criado com sucesso",
     "moduleUpdated": "Módulo de Tecnologia Construtiva atualizado com sucesso",
     "moduleDeleted": "Módulo de Tecnologia Construtiva deletado com sucesso",
@@ -436,7 +440,7 @@
     "headers": {
       "name": "Nome",
       "floorRepetition": "Repetição de Andares",
-      "totalConcrete": "Total de Concreto (m³)",
+      "totalConcrete": "Total de Concreto (kg)",
       "totalSteel": "Total de Aço (kg)",
       "co2Min": "CO2 (Mín)",
       "co2Max": "CO2 (Máx)",
