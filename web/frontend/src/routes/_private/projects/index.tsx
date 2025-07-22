@@ -41,10 +41,6 @@ function RouteComponent() {
     setViewMode((prev) => (prev === "table" ? "grid" : "table"));
   };
 
-  useEffect(() => {
-    document.title = "BIPC / Projetos";
-  }, []);
-
   const onClickProject = (projectUid: string) => {
     navigate({
       to: `/projects/${projectUid}`,
@@ -71,6 +67,10 @@ function RouteComponent() {
         });
       });
   };
+
+  useEffect(() => {
+    document.title = `BIPC / ${t("projects.title")}`;
+  }, [t]);
 
   const componentTrigger =
     viewMode === "table" ? (

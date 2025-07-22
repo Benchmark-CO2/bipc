@@ -126,10 +126,6 @@ function RouteComponent() {
     mutateSetModuleVersion(newVersion);
   };
 
-  useEffect(() => {
-    document.title = "BIPC / Versões";
-  }, []);
-
   const handleSelectRow = (version: number | undefined) => {
     if (version === undefined) return;
 
@@ -182,31 +178,19 @@ function RouteComponent() {
     grey: maxCo2DataPoints,
   };
 
+  useEffect(() => {
+    document.title = `BIPC / ${t("versions.title")}`;
+  }, [t]);
+
   return (
     <div className="flex flex-col gap-4">
       <CustomBanner
-        description={t("simulations.description")}
+        description={t("versions.description")}
         image=""
         title={structureTypes[versions[0]?.type] || "Unknown"}
       />
       <div className="border-b" />
       <div className="flex justify-end gap-2">
-        {/* <Button variant='outline' onClick={() => console.log('add simulation')}>
-          Atribuir Acesso
-        </Button>
-        <Button variant='noStyles' onClick={() => console.log('add report')}>
-          Adicionar Relatório
-        </Button> */}
-        {/* <DrawerAddModule
-          curModule={module}
-          callback={handleAddNewSimulation}
-          componentTrigger={
-            <Button variant="default" className="flex items-center gap-2">
-              {t("simulations.addSimulation")}
-            </Button>
-          }
-          context="simulation"
-        /> */}
         <ModalConfirmDelete
           componentTrigger={
             <Button variant="destructive" className="flex items-center gap-2">
@@ -226,7 +210,7 @@ function RouteComponent() {
           moduleId={moduleId}
           triggerComponent={
             <Button variant="default" className="flex items-center gap-2">
-              {t("simulations.addSimulation")}
+              {t("versions.addVersion")}
             </Button>
           }
           type={versions[0]?.type}
@@ -241,14 +225,6 @@ function RouteComponent() {
           setSelectedVersions={setSelectedVersions}
           onCheckVersion={handleSelectRow}
         />
-        {/* <SimulationTable
-          key={moduleVersions.length + 1}
-          simulations={sims}
-          onClickSetValidVersion={handleSetValidVersion}
-          selectedSimulations={selectedSimulations}
-          setSelectedSimulations={setSelectedSimulations}
-          onCheckSimulation={handleSelectRow}
-        /> */}
         {
           <Chart
             filledPoints={+moduleId || 0}

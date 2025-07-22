@@ -5,6 +5,7 @@ import { IModuleItem, TModulesTypes } from "@/types/modules";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_private/projects/$projectId/$unitId/")({
   component: RouteComponent,
@@ -39,6 +40,7 @@ function RouteComponent() {
     structural_masonry: [],
   });
 
+  const { t } = useTranslation();
   const { projectId, unitId } = useParams({
     from: "/_private/projects/$projectId/$unitId/",
   });
@@ -84,10 +86,6 @@ function RouteComponent() {
     [selectedModules]
   );
 
-  useEffect(() => {
-    document.title = "BIPC / Tecnologia Construtiva";
-  }, []);
-
   // Memoize selection handlers to prevent unnecessary re-renders
   const concreteWallSelectionHandler = useMemo(
     () => handleSelectionChange("concrete_wall"),
@@ -103,6 +101,10 @@ function RouteComponent() {
     () => handleSelectionChange("structural_masonry"),
     [handleSelectionChange]
   );
+
+  useEffect(() => {
+    document.title = `BIPC / ${t("units.title")}`;
+  }, [t]);
 
   return (
     <div className="flex flex-col gap-4">
