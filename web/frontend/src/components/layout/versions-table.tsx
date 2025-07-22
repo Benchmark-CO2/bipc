@@ -25,7 +25,7 @@ import { versionsColumns } from "../columns/versionsColumns";
 
 interface IVersionsTableProps {
   versions: TModuleStructure[];
-  onClickSetValidVersion: (versionId: any) => void;
+  onClickSetValidVersion: (versionId: number) => void;
   selectedVersions?: TModuleStructure["version"][];
   setSelectedVersions: (versions: TModuleStructure["version"][]) => void;
   onCheckVersion: (version: TModuleStructure["version"]) => void;
@@ -118,7 +118,8 @@ function VersionsTable({
                       className="flex items-center text-base justify-between cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onClickSetValidVersion(row.original.version);
+                        if (!row.original.version) return;
+                        onClickSetValidVersion(+row.original.version);
                       }}
                     >
                       {t("simulationTable.setValidVersion")}

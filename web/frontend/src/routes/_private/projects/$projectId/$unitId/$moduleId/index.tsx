@@ -1,18 +1,17 @@
 import { deleteModule } from "@/actions/modules/deleteModule";
 import { getModule } from "@/actions/modules/getModule";
-// import { DataPoint } from "@/components/charts/mock";
+import { postSetModuleInUse } from "@/actions/modules/postSetModuleInUse";
+import Chart from "@/components/charts";
+import { DataPoint } from "@/components/charts/mock";
 import { DrawerFormModule } from "@/components/layout";
 import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
 import VersionsTable from "@/components/layout/versions-table";
 import { Button } from "@/components/ui/button";
 import CustomBanner from "@/components/ui/customBanner";
-import { getFromStorage } from "@/lib/storage";
 import { TModuleStructure, TModulesTypes } from "@/types/modules";
-import { TSimulation } from "@/types/projects";
-// import { genRowData } from "@/utils/genData";
 import { structureTypes } from "@/utils/structureTypes";
-import { useMutation, useQuery } from "@tanstack/react-query";
-// import { mockSimulation } from '@/utils/mockSimulation'
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import {
   createFileRoute,
   useLocation,
@@ -22,9 +21,6 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-
-// const MODULE_SIMULATIONS = "@module/simulations";
-// const UNIT_MODULES = "@unit/modules";
 
 export const Route = createFileRoute(
   "/_private/projects/$projectId/$unitId/$moduleId/"
@@ -43,118 +39,33 @@ export const Route = createFileRoute(
     };
     context: any;
   }) => {
-    const {
-      moduleId,
-      // unitId,
-      // projectId
-    } = params;
+    const { moduleId } = params;
     if (!moduleId) {
       throw new Error("Module ID is required");
     }
 
-    // const unitModulesFromStorage = getFromStorage(
-    //   `${UNIT_MODULES}/${params.projectId}`,
-    //   {} as TProjectUnitModule
-    // );
-
-    // const module: TModuleData = unitModulesFromStorage[params.unitId].find(
-    //   (el) => el.module_uuid === moduleId
-    // )!;
-
-    // const simulationsFromStorage = getFromStorage(
-    //   `${MODULE_SIMULATIONS}/${params.projectId}/${params.unitId}/${moduleId}`,
-    //   [] as TSimulation[]
-    // );
-
-    let fakeGlobalSims = getFromStorage("fakeGlobalSims", [] as TSimulation[]);
-    // if (simulationsFromStorage.length) {
-    //   const yesterday = new Date();
-    //   yesterday.setDate(yesterday.getDate() - 1);
-
-    //   const oldVersion = simulationsFromStorage.some(
-    //     (sim) => new Date(sim.created_at).getTime() < yesterday.getTime()
-    //   );
-    //   if (oldVersion) {
-    //     setToStorage(
-    //       `${MODULE_SIMULATIONS}/${params.projectId}/${params.unitId}/${params.moduleId}`,
-    //       []
-    //     );
-    //     window.location.reload();
-    //   }
-    // }
-
-    // const simulations: TSimulation[] = [];
-
-    // if (!fakeGlobalSims.length) {
-    //   let lastDataPoint = {} as DataPoint | undefined;
-    //   const fakeGlobalData = Array.from({ length: 20 }, (_) => {
-    //     const rowData = genRowData(lastDataPoint);
-    //     lastDataPoint = rowData.green;
-    //     return { ...rowData };
-    //   });
-
-    //   const _fakeGlobalSims: TSimulation[] = fakeGlobalData.map((data) => ({
-    //     version: "0",
-    //     created_at: new Date().toISOString(),
-    //     updated_at: new Date().toISOString(),
-    //     data,
-    //     isValid: false,
-    //     name: "concreteWall",
-    //     isGlobal: true,
-    //   }));
-
-    //   fakeGlobalSims = _fakeGlobalSims;
-    //   setToStorage("fakeGlobalSims", _fakeGlobalSims);
-    // }
-    // if (!simulationsFromStorage.length) {
-    //   const rowData = genRowData(fakeGlobalSims[4].data.green || null);
-    //   simulations.push({
-    //     name: module.tipoDeEstrutura,
-    //     version: module.version || "1",
-    //     created_at: new Date().toISOString(),
-    //     updated_at: new Date().toISOString(),
-    //     data: rowData,
-    //     isValid: true,
-    //   });
-    //   setToStorage(
-    //     `${MODULE_SIMULATIONS}/${params.projectId}/${params.unitId}/${moduleId}`,
-    //     simulations
-    //   );
-    // } else {
-    //   simulations.push(...simulationsFromStorage);
-    // }
-
-    return {
-      // crumb: t("common.crumbs.simulations"),
-      // versions: data.versions,
-      // module,
-      globalSims: fakeGlobalSims,
-    };
+    return {};
   },
 });
 
 function RouteComponent() {
-  // const { globalSims } = useLoaderData({
-  //   from: "/_private/projects/$projectId/$unitId/$moduleId/",
-  // });
-
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
-  // const params = Route.useParams();
   const { projectId, unitId, moduleId } = useParams({
     from: "/_private/projects/$projectId/$unitId/$moduleId/",
   });
   const { search } = useLocation();
-  const { type } = search as { type?: TModulesTypes };
+  const { type } = search as {
+    type?: TModulesTypes;
+    versionId?: string;
+  };
 
-  // const [sims, setSims] = useState<TSimulation[]>(simulations);
   const [selectedVersions, setSelectedVersions] = useState<
     TModuleStructure["version"][]
   >([]);
 
   const navigate = Route.useNavigate();
-
-  // const search = Route.useSearch();
 
   const { data: moduleVersions } = useQuery({
     queryKey: ["module", projectId, unitId, moduleId],
@@ -182,43 +93,41 @@ function RouteComponent() {
       },
     });
 
-  // const { simulationId } = search as { simulationId: string };
+  const { mutate: mutateSetModuleVersion } = useMutation({
+    mutationFn: (newVersion: { version: number; type: TModulesTypes }) =>
+      postSetModuleInUse(newVersion, projectId, unitId!, moduleId!),
+    onError: (error) => {
+      toast.error(t("error.errorCreateModule"), {
+        description: error.message || t("error.errorUnknown"),
+        duration: 5000,
+      });
+    },
+    onSuccess: () => {
+      toast.success(t("success.moduleCreated"), {
+        duration: 5000,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["module", projectId, unitId, moduleId!],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["modules", projectId, unitId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project", projectId],
+      });
+    },
+  });
 
-  // const { data } = useQuery({
-  //   queryKey: ["modules", projectId, unitId],
-  //   queryFn: () => getModule(projectId, unitId, moduleId),
-  // });
-
-  // const modules = data?.data.versions || [];
-
-  // const handleClickSimulation = (simulationId: string) => {
-  //   void navigate({
-  //     to: "/projects/$projectId/$unitId/$moduleId",
-  //     search: {
-  //       simulationId,
-  //     },
-  //   });
-  // };
-
-  const handleSetValidVersion = (versionId: string) => {
-    console.log(versionId);
-    // setSims((prev) => {
-    //   const newSims = prev.map((sim) => {
-    //     if (sim.version === simulationId) {
-    //       return { ...sim, isValid: true };
-    //     }
-    //     return { ...sim, isValid: false };
-    //   });
-    //   setToStorage(
-    //     `${MODULE_SIMULATIONS}/${params.projectId}/${params.unitId}/${params.moduleId}`,
-    //     newSims
-    //   );
-    //   return newSims;
-    // });
+  const handleSetValidVersion = (versionId: number) => {
+    const newVersion = {
+      version: versionId,
+      type: type as TModulesTypes,
+    };
+    mutateSetModuleVersion(newVersion);
   };
 
   useEffect(() => {
-    document.title = "BIPC / Simulações";
+    document.title = "BIPC / Versões";
   }, []);
 
   const handleSelectRow = (version: number | undefined) => {
@@ -231,83 +140,6 @@ function RouteComponent() {
     setSelectedVersions([...selectedVersions, version]);
   };
 
-  // const handleAddNewSimulation = (data: AddModuleFormSchema) => {
-  //   const lastSimulation = sims[sims.length - 1] || globalSims[12].data;
-  //   const newSimulation = {
-  //     name: data.tipoDeEstrutura,
-  //     version: String(sims.length + 1),
-  //     created_at: new Date().toISOString(),
-  //     updated_at: new Date().toISOString(),
-  //     data: genRowData2(lastSimulation?.data.green || null),
-  //     isValid: false,
-  //   } as TSimulation;
-
-  //   setSims((prev) => {
-  //     const newSims = [...prev, newSimulation];
-  //     setToStorage(
-  //       `${MODULE_SIMULATIONS}/${params.projectId}/${params.unitId}/${params.moduleId}`,
-  //       newSims
-  //     );
-  //     return [...prev, newSimulation];
-  //   });
-  // };
-  // const dataPoints: Record<"green" | "grey", DataPoint[]> = {
-  //   green: [...sims]
-  //     .sort((a, b) => a.data.green.x + b.data.green.x)
-  //     .map((sim) => ({
-  //       x: sim.data.green.x,
-  //       y: sim.data.green.y,
-  //       fill: +sim.version
-  //         ? new Set(selectedSimulations).has(sim.version)
-  //         : false,
-  //       label:
-  //         new Set(selectedSimulations).has(sim.version) && "n" + sim.version,
-  //       isGlobal: sim.isGlobal,
-  //     }))
-  //     .reverse() as DataPoint[],
-  //   grey: [...sims]
-  //     .sort((a, b) => a.data.grey.x + b.data.grey.x)
-  //     .map((sim) => ({
-  //       x: sim.data.grey.x,
-  //       y: sim.data.grey.y,
-  //       fill: +sim.version
-  //         ? new Set(selectedSimulations).has(sim.version)
-  //         : false,
-  //       label:
-  //         new Set(selectedSimulations).has(sim.version) && "v" + sim.version,
-  //       isGlobal: sim.isGlobal,
-  //     }))
-  //     .reverse() as DataPoint[],
-  // };
-  // const globalData: Record<"green" | "grey", DataPoint[]> = {
-  //   green: [...globalSims]
-  //     .sort((a, b) => a.data.green.x + b.data.green.x)
-  //     .map((sim) => ({
-  //       x: sim.data.green.x,
-  //       y: sim.data.green.y,
-  //       fill: +sim.version
-  //         ? new Set(selectedSimulations).has(sim.version)
-  //         : false,
-  //       label:
-  //         new Set(selectedSimulations).has(sim.version) && "n" + sim.version,
-  //       isGlobal: sim.isGlobal,
-  //     }))
-  //     .reverse() as DataPoint[],
-  //   grey: [...globalSims]
-  //     .sort((a, b) => a.data.grey.x + b.data.grey.x)
-  //     .map((sim) => ({
-  //       x: sim.data.grey.x,
-  //       y: sim.data.grey.y,
-  //       fill: +sim.version
-  //         ? new Set(selectedSimulations).has(sim.version)
-  //         : false,
-  //       label:
-  //         new Set(selectedSimulations).has(sim.version) && "v" + sim.version,
-  //       isGlobal: sim.isGlobal,
-  //     }))
-  //     .reverse() as DataPoint[],
-  // }
-
   const versions = moduleVersions?.data?.versions || [];
 
   const versionInUse = useMemo(() => {
@@ -317,7 +149,38 @@ function RouteComponent() {
     return lastVersion || null;
   }, [versions]);
 
-  // console.log("dataPoints", dataPoints);
+  const totalCO2Max = versions.reduce(
+    (sum, sim) => sum + (sim.co2_max || 0),
+    0
+  );
+  const totalCO2Min = versions.reduce(
+    (sum, sim) => sum + (sim.co2_min || 0),
+    0
+  );
+
+  const maxCo2DataPoints = versions.map((ver: TModuleStructure) => {
+    return {
+      x: ver.co2_max || 0,
+      y: (ver.co2_max || 0) / totalCO2Max,
+      fill: selectedVersions.includes(ver.version),
+      label: ver.version ? `n${ver.version}` : undefined,
+      isGlobal: false,
+    };
+  });
+  const minCo2DataPoints = versions.map((ver: TModuleStructure) => {
+    return {
+      x: ver.co2_min || 0,
+      y: (ver.co2_min || 0) / totalCO2Min,
+      fill: selectedVersions.includes(ver.version),
+      label: ver.version ? `v${ver.version}` : undefined,
+      isGlobal: false,
+    };
+  });
+
+  const dataPoints: Record<"green" | "grey", DataPoint[]> = {
+    green: minCo2DataPoints,
+    grey: maxCo2DataPoints,
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -381,23 +244,22 @@ function RouteComponent() {
         {/* <SimulationTable
           key={moduleVersions.length + 1}
           simulations={sims}
-          onClickSimulation={handleClickSimulation}
           onClickSetValidVersion={handleSetValidVersion}
           selectedSimulations={selectedSimulations}
           setSelectedSimulations={setSelectedSimulations}
           onCheckSimulation={handleSelectRow}
         /> */}
-        {/* {
+        {
           <Chart
-            filledPoints={+simulationId || 0}
-            key={simulationId}
+            filledPoints={+moduleId || 0}
+            key={moduleId}
             datachart={dataPoints}
             globalData={{
               green: [],
               grey: [],
             }}
           />
-        } */}
+        }
       </div>
     </div>
   );
