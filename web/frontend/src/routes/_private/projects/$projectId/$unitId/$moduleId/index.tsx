@@ -202,7 +202,10 @@ function RouteComponent() {
             </Button>
           }
           title={"Delete Module"}
-          onConfirm={async () => await mutateDeleteModule()}
+          onConfirm={async () => {
+            if (!moduleId || !type) return;
+            await mutateDeleteModule();
+          }}
         />
         <DrawerFormModule
           projectId={projectId}
