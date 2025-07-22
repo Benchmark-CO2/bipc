@@ -243,9 +243,9 @@
     "moduleCreated": "Constructive Technology Module created successfully",
     "moduleUpdated": "Constructive Technology Module updated successfully",
     "moduleDeleted": "Constructive Technology Module deleted successfully",
-    "simulationCreated": "Simulation created successfully",
-    "simulationUpdated": "Simulation updated successfully",
-    "simulationDeleted": "Simulation deleted successfully",
+    "versionCreated": "Version created successfully",
+    "versionUpdated": "Version updated successfully",
+    "versionDeleted": "Version deleted successfully",
     "projectCreated": "Project created successfully",
     "projectUpdated": "Project updated successfully",
     "projectDeleted": "Project deleted successfully"

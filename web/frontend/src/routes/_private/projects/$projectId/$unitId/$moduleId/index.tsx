@@ -97,13 +97,13 @@ function RouteComponent() {
     mutationFn: (newVersion: { version: number; type: TModulesTypes }) =>
       postSetModuleInUse(newVersion, projectId, unitId!, moduleId!),
     onError: (error) => {
-      toast.error(t("error.errorCreateModule"), {
+      toast.error(t("error.errorUpdateModule"), {
         description: error.message || t("error.errorUnknown"),
         duration: 5000,
       });
     },
     onSuccess: () => {
-      toast.success(t("success.moduleCreated"), {
+      toast.success(t("success.versionUpdated"), {
         duration: 5000,
       });
       queryClient.invalidateQueries({

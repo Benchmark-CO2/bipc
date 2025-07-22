@@ -241,9 +241,9 @@
     "moduleCreated": "Módulo creado exitosamente",
     "moduleUpdated": "Módulo actualizado exitosamente",
     "moduleDeleted": "Módulo eliminado exitosamente",
-    "simulationCreated": "Simulación creada exitosamente",
-    "simulationUpdated": "Simulación actualizada exitosamente",
-    "simulationDeleted": "Simulación eliminada exitosamente",
+    "versionCreated": "Versión creada exitosamente",
+    "versionUpdated": "Versión actualizada exitosamente",
+    "versionDeleted": "Versión eliminada exitosamente",
     "projectCreated": "Proyecto creado exitosamente",
     "projectUpdated": "Proyecto actualizado exitosamente",
     "projectDeleted": "Proyecto eliminado exitosamente"
