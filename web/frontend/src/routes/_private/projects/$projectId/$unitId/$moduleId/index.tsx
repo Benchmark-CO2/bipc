@@ -1,13 +1,16 @@
 import { deleteModule } from "@/actions/modules/deleteModule";
 import { getModule } from "@/actions/modules/getModule";
+import { patchModuleName } from "@/actions/modules/pathModuleName";
 import { postSetModuleInUse } from "@/actions/modules/postSetModuleInUse";
 import Chart from "@/components/charts";
 import { DataPoint } from "@/components/charts/mock";
 import { DrawerFormModule } from "@/components/layout";
 import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
+import ModalSimple from "@/components/layout/modal-simple";
 import VersionsTable from "@/components/layout/versions-table";
 import { Button } from "@/components/ui/button";
 import CustomBanner from "@/components/ui/customBanner";
+import { Input } from "@/components/ui/input";
 import { TModuleStructure, TModulesTypes } from "@/types/modules";
 import { structureTypes } from "@/utils/structureTypes";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -17,8 +20,8 @@ import {
   useLocation,
   useParams,
 } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Edit, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -50,6 +53,7 @@ export const Route = createFileRoute(
 
 function RouteComponent() {
   const { t } = useTranslation();
+  const inputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   const { projectId, unitId, moduleId } = useParams({
@@ -64,6 +68,7 @@ function RouteComponent() {
   const [selectedVersions, setSelectedVersions] = useState<
     TModuleStructure["version"][]
   >([]);
+  const [moduleNameError, setModuleNameError] = useState("");
 
   const navigate = Route.useNavigate();
 
@@ -114,6 +119,30 @@ function RouteComponent() {
       });
       queryClient.invalidateQueries({
         queryKey: ["project", projectId],
+      });
+    },
+  });
+
+  const { mutate: mutateUpdateName } = useMutation({
+    mutationFn: (newName: string) =>
+      patchModuleName(
+        { name: newName, type: type! },
+        projectId,
+        unitId!,
+        moduleId!
+      ),
+    onError: (error) => {
+      toast.error(t("error.errorUpdateModule"), {
+        description: error.message || t("error.errorUnknown"),
+        duration: 5000,
+      });
+    },
+    onSuccess: () => {
+      toast.success(t("success.moduleUpdated"), {
+        duration: 5000,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["module", projectId, unitId, moduleId!],
       });
     },
   });
@@ -218,6 +247,37 @@ function RouteComponent() {
           }
           type={versions[0]?.type}
           moduleData={versionInUse}
+        />
+        <ModalSimple
+          componentTrigger={
+            <Button variant="default" className="flex items-center gap-2">
+              <Edit className="h-4 w-4" />
+            </Button>
+          }
+          content={
+            <>
+              <Input defaultValue={versionInUse?.name} ref={inputRef} />
+              {moduleNameError && (
+                <p className="text-red-500 mt-2 text-sm">{moduleNameError}</p>
+              )}
+            </>
+          }
+          title={t("versions.editVersionName")}
+          confirmTitle={t("common.save")}
+          onConfirm={() => {
+            if (
+              inputRef.current &&
+              inputRef.current.value !== "" &&
+              inputRef.current.value !== versionInUse?.name
+            ) {
+              mutateUpdateName(inputRef.current.value);
+            } else {
+              setModuleNameError(t("error.errorEditModuleName"));
+              setInterval(() => {
+                setModuleNameError("");
+              }, 3000);
+            }
+          }}
         />
       </div>
       <div className="grid grid-cols-1 gap-2 min-xl:grid-cols-2">
