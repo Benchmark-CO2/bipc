@@ -15,13 +15,12 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useNavigate } from "@tanstack/react-router";
-import { ChartLine, Pen, Trash } from "lucide-react";
+import { ChartLine, Pen } from "lucide-react";
 import { moduleColumns } from "../columns/modules";
 import { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import NotFoundList from "../ui/not-found-list";
 import { Checkbox } from "../ui/checkbox";
-import ModalSimple from "./modal-simple";
 import DrawerFormModule from "./drawer-form-module";
 import { IModuleItem, TModuleStructure, TModulesTypes } from "@/types/modules";
 import { Button } from "../ui/button";
@@ -294,17 +293,6 @@ export default function ModuleTable({
                       unitId={unitId}
                       moduleData={moduleData}
                       type={row.original.type}
-                    />
-                    <ModalSimple
-                      componentTrigger={
-                        <Trash size={16} className="hover:scale-105" />
-                      }
-                      content={t("modalConfirmDelete.description")}
-                      title={t("modalConfirmDelete.moduleTitle")}
-                      onConfirm={() => {
-                        console.log(row.original.id.toString());
-                      }}
-                      confirmTitle={t("modalConfirmDelete.deleteButton")}
                     />
                   </div>
                 </TableCell>
