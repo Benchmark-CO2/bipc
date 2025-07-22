@@ -88,7 +88,7 @@ export default function DrawerAddModule({
         <DrawerHeader className="px-8">
           <DrawerTitle>
             {context === "simulation"
-              ? t("simulations.addSimulation")
+              ? t("versions.addVersion")
               : t("common.constructiveTechnology")}
           </DrawerTitle>
           <Button
@@ -112,7 +112,7 @@ export default function DrawerAddModule({
             <div className="flex items-center justify-center">
               <Button type="submit" variant="noStyles" className="w-full">
                 {context === "simulation"
-                  ? t("simulations.addSimulation")
+                  ? t("versions.addVersion")
                   : t("drawerAddModule.addConstructiveTechnology")}
               </Button>
             </div>
@@ -433,7 +433,7 @@ export default function DrawerAddModule({
             <div className="flex items-center justify-center">
               <Button type="submit" variant="noStyles" className="w-full">
                 {context === "simulation"
-                  ? t("simulations.addSimulation")
+                  ? t("versions.addVersion")
                   : t("drawerAddModule.addConstructiveTechnology")}
               </Button>
             </div>
