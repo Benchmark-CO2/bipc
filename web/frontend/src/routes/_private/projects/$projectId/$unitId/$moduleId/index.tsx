@@ -187,7 +187,7 @@ function RouteComponent() {
       <CustomBanner
         description={t("versions.description")}
         image=""
-        title={structureTypes[versions[0]?.type] || "Unknown"}
+        title={`${structureTypes[versions[0]?.type] || "Unknown"} - ${versionInUse?.name || ""} `}
       />
       <div className="border-b" />
       <div className="flex justify-end gap-2">
