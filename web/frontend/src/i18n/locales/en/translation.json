@@ -206,7 +206,8 @@
     "title": "Versions",
     "description": "Here are all versions for the selected constructive technology.",
     "addVersion": "Add Version",
-    "noVersions": "No versions found"
+    "noVersions": "No versions found",
+    "editVersionName": "Edit Version Name"
   },
   "error": {
     "sessionExpired": "Oops, your session has expired...",
@@ -230,6 +231,7 @@
     "errorFetchProjectById": "Error fetching project by ID",
     "errorFetchZipCode": "Error fetching ZIP code",
     "errorEditProject": "Error editing project",
+    "errorEditModuleName": "Error editing module name",
     "errorUnknown": "An unknown error occurred",
     "errorUploadFile": "Error uploading file"
   },

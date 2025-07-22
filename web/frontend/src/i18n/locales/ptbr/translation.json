@@ -96,7 +96,8 @@
     "title": "Versões",
     "description": "Aqui estão todas as versões do Módulo de Tecnologia Construtiva selecionada.",
     "addVersion": "Adicionar Versão",
-    "noVersions": "Nenhuma versão encontrada"
+    "noVersions": "Nenhuma versão encontrada",
+    "editVersionName": "Editar Nome da Versão"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -223,6 +224,7 @@
     "errorUpdateSimulation": "Erro ao atualizar simulação",
     "errorFetchZipCode": "Erro ao buscar CEP",
     "errorEditProject": "Erro ao editar projeto",
+    "errorEditModuleName": "Erro ao editar nome do módulo",
     "errorUnknown": "Erro desconhecido",
     "errorUploadFile": "Erro ao fazer upload do arquivo"
   },
