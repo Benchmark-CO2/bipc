@@ -25,7 +25,7 @@
     "crumbs": {
       "home": "Inicio",
       "projects": "Proyectos",
-      "simulations": "Simulaciones",
+      "versions": "Versiones",
       "settings": "Configuraciones",
       "dashboard": "Tablero"
     },
@@ -200,11 +200,11 @@
       }
     }
   },
-  "simulations": {
-    "title": "Simulaciones",
-    "description": "Aquí están todas las simulaciones para la Módulo seleccionada.",
-    "addSimulation": "Agregar Simulación",
-    "noSimulations": "No hay simulaciones disponibles."
+  "versions": {
+    "title": "Versiones",
+    "description": "Aquí están todas las versiones para la Módulo seleccionada.",
+    "addVersion": "Agregar Versión",
+    "noVersions": "No hay versiones disponibles."
   },
   "error": {
     "sessionExpired": "Oops, tu sesión ha expirado...",

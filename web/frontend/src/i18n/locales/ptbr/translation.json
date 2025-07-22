@@ -24,7 +24,9 @@
     "crumbs": {
       "home": "Início",
       "projects": "Projetos",
-      "simulations": "Simulações"
+      "versions": "Versões",
+      "dashboard": "Dashboard",
+      "settings": "Configurações"
     },
     "activeUserWarning": {
       "title": "Usuário não ativo",
@@ -90,11 +92,11 @@
     "addUnit": "Adicionar Unidade de Construção",
     "noUnits": "Nenhuma unidade de construção encontrada"
   },
-  "simulations": {
-    "title": "Simulações",
-    "description": "Aqui estão todas as simulações do Módulo de Tecnologia Construtiva selecionada.",
-    "addSimulation": "Adicionar Simulação",
-    "noSimulations": "Nenhuma simulação encontrada"
+  "versions": {
+    "title": "Versões",
+    "description": "Aqui estão todas as versões do Módulo de Tecnologia Construtiva selecionada.",
+    "addVersion": "Adicionar Versão",
+    "noVersions": "Nenhuma versão encontrada"
   },
   "dashboard": {
     "title": "Dashboard",

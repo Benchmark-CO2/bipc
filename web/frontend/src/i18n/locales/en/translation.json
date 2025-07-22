@@ -25,7 +25,7 @@
     "crumbs": {
       "home": "Home",
       "projects": "Projects",
-      "simulations": "Simulations",
+      "versions": "Versions",
       "settings": "Settings",
       "dashboard": "Dashboard"
     },
@@ -202,11 +202,11 @@
       }
     }
   },
-  "simulations": {
-    "title": "Simulations",
-    "description": "Here are all simulations for the selected constructive technology.",
-    "addSimulation": "Add Simulation",
-    "noSimulations": "No simulations found"
+  "versions": {
+    "title": "Versions",
+    "description": "Here are all versions for the selected constructive technology.",
+    "addVersion": "Add Version",
+    "noVersions": "No versions found"
   },
   "error": {
     "sessionExpired": "Oops, your session has expired...",
