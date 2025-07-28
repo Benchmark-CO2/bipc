@@ -4,6 +4,8 @@ export { default as DrawerFormUnit } from "./drawer-form-unit/index";
 export { default as DrawerFormModule } from "./drawer-form-module";
 export { default as ModuleTable } from "./module-table";
 export { default as ModuleTotalsSummary } from "./module-totals-summary";
+export { default as ModuleFilter } from "./module-filter";
+export { default as DraggableModuleTable } from "./draggable-module-table";
 export { default as ProjectTable } from "./project-table";
 export { default as PublicHeader } from "./public-header";
 export { default as Sidebar } from "./sidebar";
