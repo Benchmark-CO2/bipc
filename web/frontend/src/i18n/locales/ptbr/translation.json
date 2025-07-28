@@ -457,8 +457,19 @@
       "energyMin": "Energia Min. (Média)",
       "energyMax": "Energia Max. (Média)"
     },
+    "filter": {
+      "buttonText": "Filtrar Módulos",
+      "visibleModules": "Módulos Visíveis",
+      "displayOrder": "Ordem de Exibição",
+      "module_one": "módulo",
+      "module_other": "módulos",
+      "empty": "(vazio)",
+      "position": "Posição"
+    },
     "noItemsFound": "Nenhum item encontrado",
-    "addNewTechnology": "Adicione um novo Módulo de Tecnologia Construtiva no botão acima."
+    "addNewTechnology": "Adicione um novo Módulo de Tecnologia Construtiva no botão acima.",
+    "dropToReorder": "Solte aqui para reordenar",
+    "dragToReorder": "Arraste para reordenar"
   },
   "projectTable": {
     "headers": {

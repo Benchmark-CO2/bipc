@@ -464,8 +464,19 @@
       "energyMin": "Energy Min. (Avg)",
       "energyMax": "Energy Max. (Avg)"
     },
+    "filter": {
+      "buttonText": "Filter Modules",
+      "visibleModules": "Visible Modules",
+      "displayOrder": "Display Order",
+      "module_one": "module",
+      "module_other": "modules",
+      "empty": "(empty)",
+      "position": "Position"
+    },
     "noItemsFound": "No items found",
-    "addNewTechnology": "Add a new Constructive Technology Module using the button above."
+    "addNewTechnology": "Add a new Constructive Technology Module using the button above.",
+    "dropToReorder": "Drop here to reorder",
+    "dragToReorder": "Drag to reorder"
   },
   "projectTable": {
     "headers": {
