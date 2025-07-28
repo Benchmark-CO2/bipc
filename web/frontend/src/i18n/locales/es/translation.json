@@ -445,7 +445,7 @@
     "headers": {
       "name": "Nombre",
       "floorRepetition": "Repetición de Pisos",
-      "totalConcrete": "Total de Hormigón (kg)",
+      "totalConcrete": "Total de Hormigón (m³)",
       "totalSteel": "Total de Acero (kg)",
       "co2Min": "CO2 (Mín)",
       "co2Max": "CO2 (Máx)",

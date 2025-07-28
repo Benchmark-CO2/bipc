@@ -447,7 +447,7 @@
     "headers": {
       "name": "Name",
       "floorRepetition": "Floor Repetition",
-      "totalConcrete": "Total Concrete (kg)",
+      "totalConcrete": "Total Concrete (m³)",
       "totalSteel": "Total Steel (kg)",
       "co2Min": "CO2 (Min)",
       "co2Max": "CO2 (Max)",
