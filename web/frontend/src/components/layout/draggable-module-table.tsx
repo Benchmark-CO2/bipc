@@ -60,7 +60,6 @@ export default function DraggableModuleTable({
     onDragEnd();
   };
 
-  // Botão de arrastar para usar como dragHandle
   const dragHandleButton = (
     <Button
       variant="outline"

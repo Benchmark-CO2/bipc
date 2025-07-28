@@ -48,7 +48,6 @@ function RouteComponent() {
     structural_masonry: [],
   });
 
-  // Estado para controlar a filtragem e ordenação dos módulos
   const [moduleFilterState, setModuleFilterState] = useState<ModuleFilterState>(
     {
       visibleModules: new Set<TModulesTypes>([
@@ -60,7 +59,6 @@ function RouteComponent() {
     }
   );
 
-  // Estado para drag and drop
   const [draggedModule, setDraggedModule] = useState<TModulesTypes | null>(
     null
   );
@@ -70,7 +68,6 @@ function RouteComponent() {
     from: "/_private/projects/$projectId/$unitId/",
   });
 
-  // Use React Query to keep data fresh, but use loader data as fallback
   const { data: unitData } = useQuery({
     queryKey: ["unit", projectId, unitId],
     queryFn: () => getUnitByUUID(projectId, unitId),
@@ -102,7 +99,6 @@ function RouteComponent() {
     [selectedModules]
   );
 
-  // Memoize selection handlers to prevent unnecessary re-renders
   const concreteWallSelectionHandler = useMemo(
     () => handleSelectionChange("concrete_wall"),
     [handleSelectionChange]
@@ -118,7 +114,6 @@ function RouteComponent() {
     [handleSelectionChange]
   );
 
-  // Reset selected modules when unitId changes
   useEffect(() => {
     setSelectedModules({
       concrete_wall: [],
@@ -127,7 +122,6 @@ function RouteComponent() {
     });
   }, [unitId]);
 
-  // Preparar dados dos módulos disponíveis para o filtro
   const availableModules = useMemo(() => {
     return [
       {
@@ -152,7 +146,6 @@ function RouteComponent() {
     modules.structuralMasonry.length,
   ]);
 
-  // Função para obter os dados do módulo baseado no tipo
   const getModuleData = useCallback(
     (moduleType: TModulesTypes) => {
       switch (moduleType) {
@@ -169,7 +162,6 @@ function RouteComponent() {
     [modules]
   );
 
-  // Função para obter o handler de seleção baseado no tipo
   const getSelectionHandler = useCallback(
     (moduleType: TModulesTypes) => {
       switch (moduleType) {
@@ -190,7 +182,6 @@ function RouteComponent() {
     ]
   );
 
-  // Funções de drag and drop
   const handleDragStart = useCallback((moduleType: TModulesTypes) => {
     setDraggedModule(moduleType);
   }, []);
@@ -212,9 +203,7 @@ function RouteComponent() {
       const draggedIndex = newOrder.indexOf(draggedModule);
       const targetIndex = newOrder.indexOf(targetModuleType);
 
-      // Remove o item da posição original
       newOrder.splice(draggedIndex, 1);
-      // Insere na nova posição
       newOrder.splice(targetIndex, 0, draggedModule);
 
       setModuleFilterState((prev) => ({
