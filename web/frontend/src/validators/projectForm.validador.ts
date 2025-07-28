@@ -6,8 +6,8 @@ export const projectFormSchema = z.object({
     .string()
     .optional()
     .or(z.string().min(9, "O CEP deve ter pelo menos 8 caracteres")),
-  state: z.string().min(2, "O estado deve ter pelo menos 3 caracteres"),
-  city: z.string().min(2, "A cidade deve ter pelo menos 3 caracteres"),
+  state: z.string().min(2, "O estado deve ter pelo menos 2 caracteres (Sigla)"),
+  city: z.string().min(2, "A cidade deve ter pelo menos 2 caracteres"),
   neighborhood: z
     .string()
     .optional()

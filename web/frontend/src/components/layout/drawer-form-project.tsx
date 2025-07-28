@@ -6,7 +6,7 @@ import {
   postProject,
   PostProjectRequest,
 } from "@/actions/projects/postProject";
-import useCep from "@/hooks/useLocation";
+import useCep from "@/hooks/useCep";
 import { IProject } from "@/types/projects";
 import { masks } from "@/utils/masks";
 import {
@@ -81,10 +81,19 @@ export default function DrawerFormProject({
   });
 
   const {
-    data: locationData,
-    isError,
-    isLoading: locationLoading,
+    cepData,
+    isErrorCep,
+    isLoadingCep,
     searchCep,
+    statesData,
+    isLoadingStates,
+    isErrorStates,
+    citiesData,
+    isLoadingCities,
+    isErrorCities,
+    selectedState,
+    handleStateChange,
+    findCityMatch,
   } = useCep();
 
   const navigate = useNavigate();
@@ -243,6 +252,9 @@ export default function DrawerFormProject({
           number: projectData.number || "",
           image_url: undefined,
         });
+        if (projectData.state) {
+          handleStateChange(projectData.state);
+        }
       } else {
         form.reset({
           name: "",
@@ -258,20 +270,54 @@ export default function DrawerFormProject({
         });
       }
     }
-  }, [projectData, openDrawer, form, resetCreation, resetUpdate]);
+  }, [
+    projectData,
+    openDrawer,
+    form,
+    resetCreation,
+    resetUpdate,
+    handleStateChange,
+  ]);
 
   useEffect(() => {
-    if (locationData) {
+    if (cepData) {
       form.clearErrors("cep");
-      form.setValue("state", locationData.state);
-      form.setValue("city", locationData.city);
-      form.setValue("neighborhood", locationData.neighborhood);
-      form.setValue("street", locationData.street);
+      form.setValue("state", cepData.state);
+      form.setValue("neighborhood", cepData.neighborhood);
+      form.setValue("street", cepData.street);
+      handleStateChange(cepData.state);
     }
-  }, [locationData, form]);
+  }, [cepData, form, handleStateChange]);
 
   useEffect(() => {
-    if (isError) {
+    if (cepData && citiesData.length > 0 && cepData.city) {
+      const matchedCity = findCityMatch(cepData.city, citiesData);
+      if (matchedCity) {
+        form.setValue("city", matchedCity.nome);
+      } else {
+        form.setValue("city", cepData.city);
+      }
+    }
+  }, [cepData, citiesData, form, findCityMatch]);
+
+  useEffect(() => {
+    if (
+      isEditMode &&
+      projectData?.city &&
+      citiesData.length > 0 &&
+      selectedState === projectData.state
+    ) {
+      const matchedCity = findCityMatch(projectData.city, citiesData);
+      if (matchedCity) {
+        form.setValue("city", matchedCity.nome);
+      } else {
+        form.setValue("city", projectData.city);
+      }
+    }
+  }, [isEditMode, projectData, citiesData, selectedState, form, findCityMatch]);
+
+  useEffect(() => {
+    if (isErrorCep) {
       toast.error(t("error.errorFetchZipCode"), {
         description: t("warn.verifyZipCode"),
         duration: 5000,
@@ -283,7 +329,7 @@ export default function DrawerFormProject({
       form.setValue("state", "");
       form.setValue("city", "");
     }
-  }, [isError, form]);
+  }, [isErrorCep, form]);
 
   return (
     <Drawer direction="right" open={openDrawer} dismissible={false}>
@@ -356,7 +402,7 @@ export default function DrawerFormProject({
                             searchCep(e.target.value);
                         }}
                       />
-                      {locationLoading && (
+                      {isLoadingCep && (
                         <div className="h-4 w-4 animate-spin rounded-full border-1 border-primary border-t-transparent" />
                       )}
                     </div>
@@ -370,15 +416,37 @@ export default function DrawerFormProject({
                 control={form.control}
                 name="state"
                 render={({ field }) => (
-                  <FormItem className="flex-1/3">
+                  <FormItem className="w-32 flex-shrink-0">
                     <FormLabel>{t("drawerFormProject.stateLabel")}</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder={t("drawerFormProject.statePlaceholder")}
-                        {...field}
-                      />
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          handleStateChange(value);
+                        }}
+                        value={field.value}
+                        disabled={isLoadingStates}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue
+                            placeholder={isLoadingStates ? "..." : "UF"}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {statesData.map((state) => (
+                            <SelectItem key={state.sigla} value={state.sigla}>
+                              {state.sigla}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </FormControl>
                     <FormMessage />
+                    {isErrorStates && (
+                      <p className="text-sm text-destructive">
+                        Erro ao carregar estados
+                      </p>
+                    )}
                   </FormItem>
                 )}
               />
@@ -386,15 +454,43 @@ export default function DrawerFormProject({
                 control={form.control}
                 name="city"
                 render={({ field }) => (
-                  <FormItem className="flex-2/3">
+                  <FormItem className="flex-1">
                     <FormLabel>{t("drawerFormProject.cityLabel")}</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder={t("drawerFormProject.cityPlaceholder")}
-                        {...field}
-                      />
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={!selectedState || isLoadingCities}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue
+                            placeholder={
+                              !selectedState
+                                ? "Selecione um estado primeiro"
+                                : isLoadingCities
+                                  ? "Carregando..."
+                                  : t("drawerFormProject.cityPlaceholder")
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {citiesData.map((city) => (
+                            <SelectItem
+                              key={city.codigo_ibge}
+                              value={city.nome}
+                            >
+                              {city.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </FormControl>
                     <FormMessage />
+                    {isErrorCities && (
+                      <p className="text-sm text-destructive">
+                        Erro ao carregar cidades
+                      </p>
+                    )}
                   </FormItem>
                 )}
               />
