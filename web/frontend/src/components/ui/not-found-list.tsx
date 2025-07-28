@@ -2,8 +2,8 @@ import { cn } from "@/lib/utils";
 import { FileText, Package, Search } from "lucide-react";
 
 interface NotFoundListProps {
-  message?: string;
-  description?: string;
+  message?: React.ReactNode | string;
+  description?: React.ReactNode | string;
   icon?: "search" | "file" | "package" | React.ReactElement;
   className?: string;
   showIcon?: boolean;

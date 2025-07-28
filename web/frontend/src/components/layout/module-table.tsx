@@ -300,8 +300,8 @@ export default function ModuleTable({
             ))}
             <TableRow>
               <TableCell colSpan={3}>Total</TableCell>
-              <TableCell>{totals.total_concrete.toFixed(2)} kg/m²</TableCell>
-              <TableCell>{totals.total_steel.toFixed(2)} kg/m²</TableCell>
+              <TableCell>{totals.total_concrete.toFixed(2)} m³</TableCell>
+              <TableCell>{totals.total_steel.toFixed(2)} kg</TableCell>
               <TableCell>{totals.co2_min.toFixed(2)} kgCO₂/m²</TableCell>
               <TableCell>{totals.co2_max.toFixed(2)} kgCO₂/m²</TableCell>
               <TableCell>{totals.energy_min.toFixed(2)} MJ/m²</TableCell>

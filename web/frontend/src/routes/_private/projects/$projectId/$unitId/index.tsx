@@ -1,11 +1,17 @@
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { getUnitByUUID } from "@/actions/units/getUnit";
-import { ModuleTable, ModuleTotalsSummary } from "@/components/layout";
+import {
+  DrawerFormModule,
+  ModuleTable,
+  ModuleTotalsSummary,
+} from "@/components/layout";
 import { IModuleItem, TModulesTypes } from "@/types/modules";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import NotFoundList from "@/components/ui/not-found-list";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_private/projects/$projectId/$unitId/")({
   component: RouteComponent,
@@ -106,33 +112,75 @@ function RouteComponent() {
     document.title = `BIPC / ${t("units.title")}`;
   }, [t]);
 
+  if (
+    modules.concreteWall.length === 0 &&
+    modules.beamColumn.length === 0 &&
+    modules.structuralMasonry.length === 0
+  ) {
+    return (
+      <div className="flex flex-col gap-4">
+        <NotFoundList
+          message={t("modulesTable.noItemsFound")}
+          description={
+            <>
+              {t("modulesTable.addNewTechnology")}
+              <br />
+              <DrawerFormModule
+                triggerComponent={
+                  <Button
+                    size="sm"
+                    variant="bipc"
+                    className="flex items-center gap-2 mx-auto mt-2"
+                  >
+                    {t("drawerFormModule.createButtonTrigger")}
+                  </Button>
+                }
+                projectId={projectId}
+                unitId={unitId}
+                type={"concrete_wall"}
+              />
+            </>
+          }
+          icon="file"
+          showIcon={false}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <ModuleTotalsSummary selectedModules={allSelectedModules} />
-      <ModuleTable
-        key={`concrete_wall-${unitId}`}
-        tableId="concrete_wall"
-        modules={modules.concreteWall}
-        projectId={projectId}
-        unitId={unitId}
-        onSelectionChange={concreteWallSelectionHandler}
-      />
-      <ModuleTable
-        key={`beam_column-${unitId}`}
-        tableId="beam_column"
-        modules={modules.beamColumn}
-        projectId={projectId}
-        unitId={unitId}
-        onSelectionChange={beamColumnSelectionHandler}
-      />
-      <ModuleTable
-        key={`structural_masonry-${unitId}`}
-        tableId="structural_masonry"
-        modules={modules.structuralMasonry}
-        projectId={projectId}
-        unitId={unitId}
-        onSelectionChange={structuralMasonrySelectionHandler}
-      />
+      {modules.concreteWall.length > 0 && (
+        <ModuleTable
+          key={`concrete_wall-${unitId}`}
+          tableId="concrete_wall"
+          modules={modules.concreteWall}
+          projectId={projectId}
+          unitId={unitId}
+          onSelectionChange={concreteWallSelectionHandler}
+        />
+      )}
+      {modules.beamColumn.length > 0 && (
+        <ModuleTable
+          key={`beam_column-${unitId}`}
+          tableId="beam_column"
+          modules={modules.beamColumn}
+          projectId={projectId}
+          unitId={unitId}
+          onSelectionChange={beamColumnSelectionHandler}
+        />
+      )}
+      {modules.structuralMasonry.length > 0 && (
+        <ModuleTable
+          key={`structural_masonry-${unitId}`}
+          tableId="structural_masonry"
+          modules={modules.structuralMasonry}
+          projectId={projectId}
+          unitId={unitId}
+          onSelectionChange={structuralMasonrySelectionHandler}
+        />
+      )}
     </div>
   );
 }

@@ -93,7 +93,7 @@ function RouteComponent() {
         });
 
         navigate({
-          to: `/_private/projects/${projectId}/${unitId}`,
+          to: `/projects/${projectId}/${unitId}`,
         });
       },
     });
