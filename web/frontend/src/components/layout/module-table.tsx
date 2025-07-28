@@ -34,6 +34,7 @@ interface IModuleTable {
   projectId: string;
   unitId: string;
   onSelectionChange?: (selectedModules: IModuleItem[]) => void;
+  dragHandle?: React.ReactNode;
 }
 
 export default function ModuleTable({
@@ -42,6 +43,7 @@ export default function ModuleTable({
   projectId,
   unitId,
   onSelectionChange,
+  dragHandle,
 }: IModuleTable) {
   const { t } = useTranslation();
   const navigate = useNavigate({ from: "/projects/$projectId" });
@@ -198,20 +200,23 @@ export default function ModuleTable({
                 .replace(/\b\w/g, (c) => c.toUpperCase())}
           </h3>
         </div>
-        <DrawerFormModule
-          triggerComponent={
-            <Button
-              size="sm"
-              variant="bipc"
-              className="flex items-center gap-2"
-            >
-              {t("drawerFormModule.createButtonTrigger")}
-            </Button>
-          }
-          projectId={projectId}
-          unitId={unitId}
-          type={tableId}
-        />
+        <div className="flex items-center gap-2">
+          {dragHandle}
+          <DrawerFormModule
+            triggerComponent={
+              <Button
+                size="sm"
+                variant="bipc"
+                className="flex items-center gap-2"
+              >
+                {t("drawerFormModule.createButtonTrigger")}
+              </Button>
+            }
+            projectId={projectId}
+            unitId={unitId}
+            type={tableId}
+          />
+        </div>
       </div>
 
       {modules.length === 0 ? (
