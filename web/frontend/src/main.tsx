@@ -11,11 +11,14 @@ import './i18n';
 import { AuthProvider } from './providers/authProvider';
 import { routeTree } from './routeTree.gen';
 import { queryClient } from './utils/queryClient';
+import { ProjectContext } from './context/projectContext';
+import { ProjectProvider } from './providers/projectProvider';
 const router = createRouter({
   routeTree,
   defaultPreload: 'intent',
   context: {
     auth: {} as AuthContext,
+    project: {} as ProjectContext,
     queryClient
   }
 })
@@ -43,6 +46,8 @@ createRoot(document.getElementById('root')!).render(
     <ThemeProvider defaultTheme='light'>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
+          <ProjectProvider>
+
           <App />
           <Toaster
             position='bottom-right'
@@ -52,6 +57,7 @@ createRoot(document.getElementById('root')!).render(
               }
             }}
           />
+          </ProjectProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>

@@ -17,6 +17,10 @@ import {
 } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
+import { ProjectContext } from "@/context/projectContext";
+import { AuthProvider } from "@/providers/authProvider";
+import { ProjectProvider } from "@/providers/projectProvider";
+import Summary from "@/components/ui/summary";
 
 const TanStackRouterDevtools = import.meta.env.PROD
   ? () => null
@@ -29,6 +33,7 @@ const TanStackRouterDevtools = import.meta.env.PROD
 export const Route = createRootRouteWithContext<{
   auth: AuthContext;
   queryClient: QueryClient;
+  project: ProjectContext
 }>()({
   component: () => {
     const { logout, isAuthenticated, activated } = useAuth();
@@ -58,7 +63,9 @@ export const Route = createRootRouteWithContext<{
             <Screen>
               {activated === false && <UserActiveWarning />}
               <BreadCrumbs />
-              <Outlet />
+
+                <Outlet />              
+              {/* <ModeToggle /> */}
             </Screen>
           </div>
         )}

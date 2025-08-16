@@ -1,0 +1,164 @@
+import { deleteProject } from "@/actions/projects/deleteProjects";
+import { getAllProjectsByUser } from "@/actions/projects/getProjects";
+import { DrawerFormProject, ProjectTable } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import CustomCard from "@/components/ui/customCard";
+import { ProjectContext } from "@/context/projectContext";
+import { queryClient } from "@/utils/queryClient";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { LayoutGrid, List, Plus } from "lucide-react";
+import { useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/_private/new_projects/")({
+  component: RouteComponent,
+  staleTime: 1000 * 60 * 5,
+  preloadStaleTime: 1000 * 60 * 5,
+
+  loader: async ({ context: { queryClient } }) => {
+    await queryClient.ensureQueryData({
+      queryKey: ["projects"],
+      queryFn: getAllProjectsByUser,
+    });
+
+    return null;
+  },
+});
+
+function RouteComponent() {
+  const [viewMode, setViewMode] = useState<"table" | "grid">("grid");
+  const { t } = useTranslation();
+
+  const navigate = useNavigate({ from: "/projects" });
+
+  const { data } = useQuery({
+    queryKey: ["projects"],
+    queryFn: getAllProjectsByUser,
+  });
+
+  const toggleViewMode = () => {
+    setViewMode((prev) => (prev === "table" ? "grid" : "table"));
+  };
+
+  useEffect(() => {
+    document.title = "BIPC / Projetos";
+  }, []);
+
+  const onClickProject = (projectUid: string) => {
+    navigate({
+      to: `/new_projects/${projectUid}`,
+      from: "/new_projects",
+    })
+      .then(() => null)
+      .catch((err: unknown) => err);
+  };
+
+  const onDeleteProject = (projectUid: string) => {
+    void deleteProject(projectUid)
+      .then(async () => {
+        toast.success(t("success.projectDeleted"));
+        await queryClient.invalidateQueries({
+          queryKey: ["projects"],
+          refetchType: "all",
+        });
+      })
+      .catch((error) => {
+        toast.error(t("error.errorDeleteProject"), {
+          description:
+            error instanceof Error ? error.message : t("error.errorUnknown"),
+          duration: 5000,
+        });
+      });
+  };
+
+  const componentTrigger =
+    viewMode === "table" ? (
+      <Button variant="outline">
+        <Plus className="h-4 w-4" />
+        {t("projects.addProject")}
+      </Button>
+    ) : (
+      <div className="flex h-60 w-full flex-col items-center justify-center overflow-hidden rounded-lg bg-white p-4 shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-xl md:w-1/3 lg:w-1/4 xl:max-w-100 dark:bg-zinc-800 dark:shadow-zinc-900">
+        <Plus className="size-8" />
+        <span className="text-lg font-medium">{t("projects.addProject")}</span>
+      </div>
+    );
+
+  const { props, type } = useContext(ProjectContext)!;
+  
+  useEffect(() => {
+    if (type === 'projects') {
+      props.actions.setProjects([{
+        id: '12312-12312-12312-12312',
+        name: 'Projeto 1',
+        pink: 240,
+        yellow: 320,
+        green: 470,
+      },{
+        id: '12312-12312-12312-12313',
+        name: 'Projeto 2',
+        pink: 180,
+        yellow: 400,
+        green: 250,
+      }, {
+        id: '12312-12312-12312-12314',
+        name: 'Projeto 3',
+        pink: 390,
+        yellow: 210,
+        green: 500,
+      }])
+    }
+  }, [type]);
+  return (
+    <div>
+      <div className="mb-2 flex justify-end gap-1">
+        {viewMode === "table" && (
+          <DrawerFormProject componentTrigger={componentTrigger} />
+        )}
+        <Button
+          variant={viewMode !== "table" ? "default" : "outline"}
+          onClick={toggleViewMode}
+        >
+          <LayoutGrid className="h-4 w-4" />
+        </Button>
+        <Button
+          variant={viewMode !== "grid" ? "default" : "outline"}
+          onClick={toggleViewMode}
+        >
+          <List className="h-4 w-4" />
+        </Button>
+      </div>
+      {viewMode === "table" ? (
+        <ProjectTable
+          projects={data?.data.projects ?? []}
+          onClickProject={onClickProject}
+          onDeleteProject={onDeleteProject}
+        />
+      ) : (
+        <div className="flex w-full flex-wrap items-center gap-4">
+          <DrawerFormProject componentTrigger={componentTrigger} />
+          {data?.data.projects.length ? (
+            data?.data.projects.map((project) => (
+              <>
+                <CustomCard
+                  key={project.id}
+                  project={project}
+                  onClick={() => {
+                    onClickProject(project.id);
+                  }}
+                  onDeleteProject={onDeleteProject}
+                />
+              </>
+            ))
+          ) : (
+            <div className="flex h-full w-full flex-col gap-4">
+              <p>{t("projects.noProjects")}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

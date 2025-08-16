@@ -5,6 +5,7 @@ interface ICustomBanner {
 }
 const CustomBanner = ({ title, description, image }: ICustomBanner) => {
   return (
+<<<<<<< ours
     <div className="w-full max-md:w-11/12 h-38 shadow-lg shadow-zinc-600 dark:shadow-zinc-900 rounded-md mx-auto relative">
       {image && (
         <img
@@ -12,6 +13,10 @@ const CustomBanner = ({ title, description, image }: ICustomBanner) => {
           src={image}
         />
       )}
+=======
+    <div className='w-full max-md:w-11/12 h-20 shadow-lg shadow-zinc-600 dark:shadow-zinc-900 rounded-md mx-auto relative'>
+      {/* <img className="h-full w-full object-cover z-1 absolute right-0 top-0 rounded-md " src={image} /> */}
+>>>>>>> theirs
 
       <div className="absolute top-0 bg-gradient-to-r left-0 from-dark-950 to-dark-900/50 text-white w-full h-full z-2 rounded-md p-4 max-md:p-2 flex flex-col justify-around">
         <h1 className="text-lg capitalize font-semibold">{title}</h1>
