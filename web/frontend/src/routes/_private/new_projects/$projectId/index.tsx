@@ -1,9 +1,10 @@
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import { unitsColumns } from "@/components/columns/units";
-import { CommonTable } from "@/components/layout";
+import { CommonTable, DrawerFormUnit } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
-import { createFileRoute } from "@tanstack/react-router";
+import { Drawer } from "@/components/ui/drawer";
+import { createFileRoute, useParams } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_private/new_projects/$projectId/")({
   component: RouteComponent,
@@ -51,6 +52,10 @@ const fakeTechnologies = [
 ];
 
 function RouteComponent() {
+  const { projectId } = useParams({
+    from: "/_private/new_projects/$projectId",
+  });
+
   const handleSelectionChange = (selectedItems: any[]) => {
     console.log("Selected items:", selectedItems);
   };
@@ -70,9 +75,14 @@ function RouteComponent() {
         onSelectionChange={handleSelectionChange}
         actions={
           <>
-            <Button onClick={handleAddUnit} variant="outline" size="sm">
-              Adicionar Unidade
-            </Button>
+            <DrawerFormUnit
+              triggerComponent={
+                <Button variant="outline" size="sm">
+                  Adicionar Unidade
+                </Button>
+              }
+              projectId={projectId}
+            />
             <Button variant="outline" size="sm">
               Editar Colaboradores
             </Button>

@@ -61,12 +61,7 @@ const DrawerFormUnit = ({
     defaultValues: {
       name: "",
       type: "tower" as const,
-      total_floors: undefined,
-      tower_floors: undefined,
-      base_floors: undefined,
-      basement_floors: undefined,
-      type_floors: undefined,
-      total_area: undefined,
+      floors: [],
     },
   });
 
@@ -161,12 +156,7 @@ const DrawerFormUnit = ({
       form.reset({
         name: unitData.name,
         type: unitData.type,
-        total_floors: unitData.total_floors,
-        tower_floors: unitData.tower_floors,
-        base_floors: unitData.base_floors,
-        basement_floors: unitData.basement_floors,
-        type_floors: unitData.type_floors,
-        total_area: unitData.total_area,
+        // floors: unitData.floors || [],
       });
     }
   }, [unitData]);
@@ -193,7 +183,7 @@ const DrawerFormUnit = ({
           </Button>
         )}
       </DrawerTrigger>
-      <DrawerContent className="min-w-2/5">
+      <DrawerContent className="min-w-3/5">
         <DrawerHeader className="px-8">
           <DrawerTitle>
             {unitId
