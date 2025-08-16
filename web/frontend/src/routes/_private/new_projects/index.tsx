@@ -87,28 +87,32 @@ function RouteComponent() {
     );
 
   const { props, type } = useContext(ProjectContext)!;
-  
+
   useEffect(() => {
-    if (type === 'projects') {
-      props.actions.setProjects([{
-        id: '12312-12312-12312-12312',
-        name: 'Projeto 1',
-        pink: 240,
-        yellow: 320,
-        green: 470,
-      },{
-        id: '12312-12312-12312-12313',
-        name: 'Projeto 2',
-        pink: 180,
-        yellow: 400,
-        green: 250,
-      }, {
-        id: '12312-12312-12312-12314',
-        name: 'Projeto 3',
-        pink: 390,
-        yellow: 210,
-        green: 500,
-      }])
+    if (type === "projects") {
+      props.actions.setProjects([
+        {
+          id: "12312-12312-12312-12312",
+          name: "Projeto 1",
+          pink: 240,
+          yellow: 320,
+          green: 470,
+        },
+        {
+          id: "12312-12312-12312-12313",
+          name: "Projeto 2",
+          pink: 180,
+          yellow: 400,
+          green: 250,
+        },
+        {
+          id: "12312-12312-12312-12314",
+          name: "Projeto 3",
+          pink: 390,
+          yellow: 210,
+          green: 500,
+        },
+      ]);
     }
   }, [type]);
   return (
