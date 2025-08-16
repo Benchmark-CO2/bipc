@@ -18,6 +18,10 @@ export const floorSchema = z.object({
     .positive("Número de repetições deve ser um número positivo"),
   underground: z.boolean(),
   color: z.string().min(1, "Cor é obrigatória"),
+  position: z
+    .number()
+    .int()
+    .nonnegative("Posição deve ser um número não negativo"),
 });
 
 export type FloorSchema = z.infer<typeof floorSchema>;
