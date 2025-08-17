@@ -88,7 +88,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
     const newColor = predefinedColors[fields.length % predefinedColors.length];
     append({
       tower_name: "",
-      area: 0,
+      area: 100,
       height: 0,
       repetition_number: 1,
       underground: false,
@@ -103,10 +103,19 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
 
   return (
     <div className="flex gap-6">
+      {/* Visualizador da torre */}
+      <div className="flex-shrink-0">
+        <BuildingVisualizer
+          key={`building-${watchedFloors?.length || 0}-${JSON.stringify(watchedFloors?.map((f) => ({ color: f.color, repetition: f.repetition_number, underground: f.underground })))}`}
+          floors={watchedFloors || []}
+        />
+      </div>
       {/* Formulário de pavimentos */}
       <div className="flex-1 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Pavimentos</h3>
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            Pavimentos
+          </h4>
           <Button
             type="button"
             onClick={addFloor}
@@ -309,14 +318,6 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Visualizador da torre */}
-      <div className="flex-shrink-0">
-        <BuildingVisualizer
-          key={`building-${watchedFloors?.length || 0}-${JSON.stringify(watchedFloors?.map((f) => ({ color: f.color, repetition: f.repetition_number, underground: f.underground })))}`}
-          floors={watchedFloors || []}
-        />
       </div>
     </div>
   );
