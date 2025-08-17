@@ -61,7 +61,17 @@ const DrawerFormUnit = ({
     defaultValues: {
       name: "",
       type: "tower" as const,
-      floors: [],
+      floors: [
+        {
+          tower_name: "",
+          area: 100,
+          height: 0,
+          repetition_number: 1,
+          underground: false,
+          color: "#c9c9c9",
+          position: 0,
+        },
+      ],
     },
   });
 
