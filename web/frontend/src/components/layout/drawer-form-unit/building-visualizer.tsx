@@ -51,7 +51,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({ floors }) => {
       <div className="flex flex-col items-center w-full max-w-40">
         <div className="flex flex-col-reverse w-full">
           {sortedAboveGroundFloors.map((floor, index) => (
-            <div key={`above-${index}`} className="w-full">
+            <div key={`above-${index}`} className="w-full max-w-35 mx-auto">
               {renderFloorBlocks(floor)}
             </div>
           ))}
@@ -65,7 +65,10 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({ floors }) => {
 
         <div className="flex flex-col w-full">
           {sortedUndergroundFloors.map((floor, index) => (
-            <div key={`underground-${index}`} className="w-full">
+            <div
+              key={`underground-${index}`}
+              className="w-full max-w-35 mx-auto"
+            >
               {renderFloorBlocks(floor)}
             </div>
           ))}
