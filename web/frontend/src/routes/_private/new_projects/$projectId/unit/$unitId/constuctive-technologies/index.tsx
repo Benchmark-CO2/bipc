@@ -1,7 +1,8 @@
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
-import { CommonTable } from "@/components/layout";
+import { CommonTable, DrawerFormModule } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useParams } from "@tanstack/react-router";
 import { createFileRoute } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
 import { Copy, Star, Trash } from "lucide-react";
@@ -121,6 +122,10 @@ const newColumns: ColumnDef<any>[] = [
 ];
 
 function RouteComponent() {
+  const { projectId, unitId } = useParams({
+    from: "/_private/new_projects/$projectId/unit/$unitId/constuctive-technologies",
+  });
+
   return (
     <div className="flex flex-col gap-4">
       {fakeOptions.map((option) => (
@@ -138,9 +143,16 @@ function RouteComponent() {
               onSelectionChange={console.log}
               actions={
                 <>
-                  <Button variant="outline" size="sm">
-                    Adicionar Tecnologia
-                  </Button>
+                  <DrawerFormModule
+                    projectId={projectId}
+                    unitId={unitId}
+                    triggerComponent={
+                      <Button variant="outline" size="sm">
+                        Adicionar Tecnologia
+                      </Button>
+                    }
+                    type="concrete_wall"
+                  />
                   <Button variant="ghost" size="icon">
                     <Copy className="h-4 w-4 text-primary" />
                   </Button>

@@ -2,9 +2,9 @@ import { TModulesTypes } from "@/types/modules";
 
 const basicDefaultValues = {
   name: "",
-  floor_repetition: 1,
-  floor_area: 0,
-  floor_height: 0,
+  // floor_repetition: 1,
+  // floor_area: 0,
+  // floor_height: 0,
 };
 
 export const concreteWallDefaultValues = {

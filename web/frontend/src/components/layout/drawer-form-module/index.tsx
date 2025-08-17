@@ -167,16 +167,16 @@ const DrawerFormModule = ({
         type: data.type || form.getValues("type") || moduleData?.type,
       };
       console.log(completeData);
-      mutateModuleVersion(completeData as TModuleStructure);
+      // mutateModuleVersion(completeData as TModuleStructure);
       return;
     }
 
     const baseFields = {
       name: data.name,
       type: data.type,
-      floor_repetition: data.floor_repetition,
-      floor_area: data.floor_area,
-      floor_height: data.floor_height,
+      // floor_repetition: data.floor_repetition,
+      // floor_area: data.floor_area,
+      // floor_height: data.floor_height,
     };
 
     let filteredData: TModuleStructure = baseFields as TModuleStructure;
@@ -220,7 +220,7 @@ const DrawerFormModule = ({
       };
     }
 
-    mutateCreation(filteredData);
+    // mutateCreation(filteredData);
   };
 
   const handleClose = () => {
@@ -342,7 +342,7 @@ const DrawerFormModule = ({
                 />
               </div>
 
-              {/* Campos de andar */}
+              {/* Campos de andar
               <div className="grid grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
@@ -414,7 +414,7 @@ const DrawerFormModule = ({
                     </FormItem>
                   )}
                 />
-              </div>
+              </div> */}
 
               {/* Campos específicos por tipo de estrutura */}
               {(() => {

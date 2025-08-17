@@ -145,9 +145,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">
+      {/* <h3 className="text-lg font-semibold">
         {t("common.structureType.beamColumn")}
-      </h3>
+      </h3> */}
 
       {/* Concreto */}
       <div className="grid grid-cols-1 gap-4">
@@ -212,8 +212,76 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
         />
       </div>
 
+      {/* Dados adicionais */}
+      <div className="grid grid-cols-3 gap-4">
+        <FormField
+          control={form.control}
+          name="column_number"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                {t("drawerFormModule.beamColumnForm.columnNumberLabel")}
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="avg_beam_span"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                {t("drawerFormModule.beamColumnForm.avgBeamSpanLabel")}
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="avg_slab_span"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                {t("drawerFormModule.beamColumnForm.avgSlabSpanLabel")}
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
       {/* Formas */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <FormField
           control={form.control}
           name="form_columns"
@@ -287,74 +355,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
             <FormItem>
               <FormLabel>
                 {t("drawerFormModule.beamColumnForm.formTotalLabel")}
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-
-      {/* Dados adicionais */}
-      <div className="grid grid-cols-3 gap-4">
-        <FormField
-          control={form.control}
-          name="column_number"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {t("drawerFormModule.beamColumnForm.columnNumberLabel")}
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="avg_beam_span"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {t("drawerFormModule.beamColumnForm.avgBeamSpanLabel")}
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="avg_slab_span"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {t("drawerFormModule.beamColumnForm.avgSlabSpanLabel")}
               </FormLabel>
               <FormControl>
                 <Input

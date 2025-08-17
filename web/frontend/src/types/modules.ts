@@ -63,9 +63,9 @@ export interface IBasicModule {
   id?: number;
   name: string;
   type: TModulesTypes;
-  floor_repetition: number;
-  floor_area: number;
-  floor_height: number;
+  // floor_repetition: number;
+  // floor_area: number;
+  // floor_height: number;
   co2_min?: number;
   co2_max?: number;
   energy_min?: number;

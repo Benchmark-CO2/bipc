@@ -144,71 +144,12 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">
+      {/* <h3 className="text-lg font-semibold">
         {t("common.structureType.concreteWall")}
-      </h3>
-
-      {/* Concreto */}
-      <div className="grid grid-cols-1 gap-4">
-        {renderConcreteFields(
-          "concrete_walls",
-          t("drawerFormModule.concreteWallForm.concreteWallsLabel")
-        )}
-        {renderConcreteFields(
-          "concrete_slabs",
-          t("drawerFormModule.commonForm.concreteSlabsLabel")
-        )}
-      </div>
-
-      {/* Aços */}
-      <div className="grid grid-cols-2 gap-4">
-        <FormField
-          control={form.control}
-          name="steel_ca50"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {t("drawerFormModule.commonForm.steelCA50Label")}
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="steel_ca60"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {t("drawerFormModule.commonForm.steelCA60Label")}
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
+      </h3> */}
 
       {/* Espessuras e Áreas */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <FormField
           control={form.control}
           name="wall_thickness"
@@ -282,6 +223,65 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
             <FormItem>
               <FormLabel>
                 {t("drawerFormModule.concreteWallForm.wallAreaLabel")}
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      {/* Concreto */}
+      <div className="grid grid-cols-1 gap-4">
+        {renderConcreteFields(
+          "concrete_walls",
+          t("drawerFormModule.concreteWallForm.concreteWallsLabel")
+        )}
+        {renderConcreteFields(
+          "concrete_slabs",
+          t("drawerFormModule.commonForm.concreteSlabsLabel")
+        )}
+      </div>
+
+      {/* Aços */}
+      <div className="grid grid-cols-2 gap-4">
+        <FormField
+          control={form.control}
+          name="steel_ca50"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                {t("drawerFormModule.commonForm.steelCA50Label")}
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="steel_ca60"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                {t("drawerFormModule.commonForm.steelCA60Label")}
               </FormLabel>
               <FormControl>
                 <Input

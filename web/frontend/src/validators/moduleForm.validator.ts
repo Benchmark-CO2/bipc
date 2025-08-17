@@ -80,16 +80,16 @@ export const moduleFormSchema = z
       required_error: "Selecione um tipo de estrutura",
       invalid_type_error: "Tipo de estrutura inválido",
     }),
-    floor_repetition: z
-      .number()
-      .int()
-      .positive("A repetição de andares deve ser um número positivo"),
-    floor_area: z
-      .number()
-      .positive("A área do andar deve ser um número positivo"),
-    floor_height: z
-      .number()
-      .positive("A altura do andar deve ser um número positivo"),
+    // floor_repetition: z
+    //   .number()
+    //   .int()
+    //   .positive("A repetição de andares deve ser um número positivo"),
+    // floor_area: z
+    //   .number()
+    //   .positive("A área do andar deve ser um número positivo"),
+    // floor_height: z
+    //   .number()
+    //   .positive("A altura do andar deve ser um número positivo"),
 
     // Beam Column
     concrete_columns: concreteSchema.optional(),
