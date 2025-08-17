@@ -21,7 +21,7 @@ import { Button } from "../ui/button";
 import { ChevronDown } from "lucide-react";
 
 interface ICommonTableProps {
-  tableName: string;
+  tableName: string | React.ReactNode;
   data: any[];
   columns: ColumnDef<any>[];
   onSelectionChange?: (selectedRows: any[]) => void;
@@ -70,7 +70,7 @@ export default function CommonTable({
   }, [rowSelection, onSelectionChange, table]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
