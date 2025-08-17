@@ -47,11 +47,6 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
 
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
 
-  // Debug: Log mudanças nos pavimentos
-  React.useEffect(() => {
-    console.log("Floors updated:", watchedFloors);
-  }, [watchedFloors]);
-
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = "move";
