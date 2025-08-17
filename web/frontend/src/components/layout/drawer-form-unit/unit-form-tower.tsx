@@ -9,9 +9,8 @@ import {
 import { Input } from "../../ui/input";
 import { UseFormReturn, useFieldArray, useWatch } from "react-hook-form";
 import { UnitFormSchema } from "@/validators/unitForm.validator";
-import { useTranslation } from "react-i18next";
 import { Button } from "../../ui/button";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { Plus, GripVertical } from "lucide-react";
 import { Card, CardContent } from "../../ui/card";
 import { Switch } from "@/components/ui/switch";
 import BuildingVisualizer from "./building-visualizer";
@@ -34,8 +33,6 @@ const predefinedColors = [
 ];
 
 const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
-  const { t } = useTranslation();
-
   const { fields, append, remove, move } = useFieldArray({
     control: form.control,
     name: "floors",
@@ -73,7 +70,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
       // Força uma atualização imediata das posições
       setTimeout(() => {
         const floors = form.getValues("floors");
-        floors.forEach((floor, index) => {
+        floors.forEach((_, index) => {
           form.setValue(`floors.${index}.position`, index, {
             shouldValidate: true,
           });

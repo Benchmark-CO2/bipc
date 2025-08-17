@@ -1,4 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { Button } from "../ui/button";
 
 export const unitsColumns: ColumnDef<any>[] = [
@@ -25,16 +26,27 @@ export const unitsColumns: ColumnDef<any>[] = [
   {
     id: "actions",
     header: "",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => console.log(row.original)}
-        >
-          Detalhes
-        </Button>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const navigate = useNavigate();
+      const { projectId } = useParams({
+        from: "/_private/new_projects/$projectId/",
+      });
+
+      return (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              navigate({
+                to: `/new_projects/${projectId}/unit/${row.original.id}`,
+              })
+            }
+          >
+            Detalhes
+          </Button>
+        </div>
+      );
+    },
   },
 ];
