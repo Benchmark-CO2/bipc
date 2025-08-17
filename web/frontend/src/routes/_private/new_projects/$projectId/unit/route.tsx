@@ -6,7 +6,7 @@ import { TabsContainer } from "@/components/ui/tabsContainer";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_private/new_projects/$projectId/unit")({
@@ -33,8 +33,6 @@ function RouteComponent() {
   const { projectId } = Route.useLoaderData();
   const params: { projectId: string; unitId: string; moduleId: string } =
     Route.useParams();
-
-  const match = Route.useMatch();
 
   const {
     data: projectData,

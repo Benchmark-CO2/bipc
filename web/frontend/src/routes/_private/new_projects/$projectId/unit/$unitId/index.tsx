@@ -1,25 +1,63 @@
-import { getProjectByUUID } from "@/actions/projects/getProject";
-import { DrawerAddModule, ModuleTable } from "@/components/layout";
+import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
+import { floorsColumns } from "@/components/columns/floors";
+import { CommonTable, DrawerFormUnit } from "@/components/layout";
 import { Button } from "@/components/ui/button";
-import CustomBanner from "@/components/ui/customBanner";
-import { getFromStorage, setToStorage } from "@/lib/storage";
-import { TModuleData, TProjectUnitModule } from "@/types/projects";
-import { AddModuleFormSchema } from "@/validators/addModule.validator";
-// import { Unit } from '@/types/units'
-// import { mockUnits } from '@/utils/mockUnits'
-import {
-  createFileRoute,
-  Link,
-  useLoaderData,
-  useParams,
-} from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import Divider from "@/components/ui/divider";
+import { createFileRoute, useParams } from "@tanstack/react-router";
 
-const UNIT_MODULES = "@unit/modules";
+const fakeUnit = {
+  id: "1",
+  name: "Unidade 1",
+  co2: "100 KgCO2/m²",
+  energy: "200 MJ/m²",
+  density: "50 m³/m²",
+  floors: [
+    {
+      id: "1",
+      co2: "50 KgCO2/m²",
+      energy: "100 MJ/m²",
+      density: "30 m³/m²",
+      repetitions: 1,
+      area: 100,
+      height: 3,
+      tower_name: "Torre A",
+      underground: false,
+      color: "#c9c9c9",
+    },
+    {
+      id: "2",
+      co2: "70 KgCO2/m²",
+      energy: "150 MJ/m²",
+      density: "40 m³/m²",
+      repetitions: 2,
+      area: 120,
+      height: 3,
+      tower_name: "Torre B",
+      underground: false,
+      color: "#d0d0d0",
+    },
+  ],
+  constructiveTechnologies: [
+    {
+      id: "1",
+      name: "Bloco Estrutural 1",
+      co2: "50 KgCO2/m²",
+      energy: "100 MJ/m²",
+      density: "30 m³/m²",
+    },
+    {
+      id: "2",
+      name: "Alvenaria 1",
+      co2: "70 KgCO2/m²",
+      energy: "150 MJ/m²",
+      density: "40 m³/m²",
+    },
+  ],
+};
 
-export const Route = createFileRoute("/_private/new_projects/$projectId/unit/$unitId/")({
+export const Route = createFileRoute(
+  "/_private/new_projects/$projectId/unit/$unitId/"
+)({
   component: RouteComponent,
   // loader: async ({ params }) => {
   //   const { unitId, projectId } = params as {
@@ -45,221 +83,103 @@ export const Route = createFileRoute("/_private/new_projects/$projectId/unit/$un
 });
 
 function RouteComponent() {
-  const { t } = useTranslation();
-  const navigate = Route.useNavigate()
-  // const { projectId, unitId } = useParams({
-  //   from: "/_private/projects/$projectId/$unitId/",
-  // });
+  // const { t } = useTranslation();
+  const { projectId, unitId } = useParams({
+    from: "/_private/new_projects/$projectId/unit/$unitId/",
+  });
 
-  // const { modules } = useLoaderData({
-  //   from: "/_private/projects/$projectId/$unitId/",
-  // });
+  const navigate = Route.useNavigate();
 
-  // const [mods, setMods] = useState(modules);
-
-  // useEffect(() => {
-  //   document.title = "BIPC / Tecnologia Construtiva";
-  // }, []);
-
-  // useEffect(() => {
-  //   setMods(modules);
-  // }, [modules]);
-
-  // const handleAddNewModule = (data: AddModuleFormSchema) => {
-  //   if (
-  //     mods.find(
-  //       (el) =>
-  //         el.nome === data.nome && el.tipoDeEstrutura === data.tipoDeEstrutura
-  //     )
-  //   ) {
-  //     toast.error("Esse elemento ja existe na unidade");
-  //     return;
-  //   }
-  //   const formatData = {
-  //     ...data,
-  //     // data: typeof data.data === 'string' ? data.data : data.data instanceof Date ? data.data.toISOString() : '',
-  //     module_uuid: String(mods.length + 1),
-  //     version: "1",
-  //     consumoDeAco: (() => {
-  //       switch (data.tipoDeEstrutura) {
-  //         case "concreteWall":
-  //           return (
-  //             Math.round((Math.random() * (6.33 - 0.79) + 0.79) * 100) / 100
-  //           );
-  //         case "masonry":
-  //           return Math.round((Math.random() * (80 - 15) + 15) * 100) / 100; // 15-80kg
-  //         case "beamColumn":
-  //           return (
-  //             Math.round((Math.random() * (127.78 - 26.54) + 26.54) * 100) / 100
-  //           );
-  //         default:
-  //           return Math.round((Math.random() * 50 + 10) * 100) / 100;
-  //       }
-  //     })(),
-  //     consumoDeConcreto: (() => {
-  //       switch (data.tipoDeEstrutura) {
-  //         case "concreteWall":
-  //           return (
-  //             Math.round((Math.random() * (1.73 - 0.16) + 0.16) * 100) / 100
-  //           );
-  //         case "masonry":
-  //           return Math.round((Math.random() * (2.5 - 0.8) + 0.8) * 100) / 100; // 0.8-2.5m³
-  //         case "beamColumn":
-  //           return (
-  //             Math.round((Math.random() * (1.29 - 0.27) + 0.27) * 100) / 100
-  //           );
-  //         default:
-  //           return Math.round((Math.random() * 2 + 0.5) * 100) / 100;
-  //       }
-  //     })(),
-  //     emissaoDeCo2: Math.round((Math.random() * (190 - 80) + 80) * 100) / 100,
-  //     energia: Math.round((Math.random() * (1200 - 400) + 400) * 100) / 100,
-  //   } as TModuleData;
-
-  //   const units = getFromStorage(
-  //     `${UNIT_MODULES}/${projectId}`,
-  //     {} as TProjectUnitModule
-  //   );
-  //   setMods((prev) => {
-  //     const newMods = [...prev, formatData];
-  //     setToStorage(`${UNIT_MODULES}/${projectId}`, {
-  //       ...units,
-  //       [unitId]: newMods,
-  //     });
-  //     return newMods;
+  // const handleClickNew = async () => {
+  //   navigate({
+  //     to: "/unit/new",
+  //     search: {
+  //       projectId: "12312-12312-12312-12312",
+  //     },
+  //     mask: {
+  //       to: "/new_projects/$projectId/unit",
+  //     },
   //   });
   // };
-
-  // const handleUpdateModule = (module: TModuleData) => {
-  //   const units = getFromStorage(
-  //     `${UNIT_MODULES}/${projectId}`,
-  //     {} as TProjectUnitModule
-  //   );
-  //   setMods((prev) => {
-  //     const newMods = prev.map((mod) =>
-  //       mod.module_uuid === module.module_uuid ? module : mod
-  //     );
-  //     setToStorage(`${UNIT_MODULES}/${projectId}`, {
-  //       ...units,
-  //       [unitId]: newMods,
-  //     });
-  //     return newMods;
+  // const handleClickEdit = async () => {
+  //   navigate({
+  //     to: "/unit/edit",
+  //     search: {
+  //       projectId: "12312-12312-12312-12312",
+  //       unitId: "45645-45645-45645-45645",
+  //     },
+  //     mask: {
+  //       to: "/new_projects/$projectId/unit/$unitId",
+  //     },
   //   });
   // };
-
-  // const handleDeleteModule = (moduleId: string) => {
-  //   const units = getFromStorage(
-  //     `${UNIT_MODULES}/${projectId}`,
-  //     {} as TProjectUnitModule
-  //   );
-  //   setMods((prev) => {
-  //     const newMods = prev.filter((mod) => mod.module_uuid !== moduleId);
-  //     setToStorage(`${UNIT_MODULES}/${projectId}`, {
-  //       ...units,
-  //       [unitId]: newMods,
-  //     });
-  //     return newMods;
+  // const handleClickNewLayer = async () => {
+  //   navigate({
+  //     to: "/layers/new",
+  //     search: {
+  //       projectId: "12312-12312-12312-12312",
+  //       unitId: "45645-45645-45645-45645",
+  //     },
+  //     mask: {
+  //       to: "/new_projects/$projectId/unit/$unitId",
+  //     },
   //   });
   // };
-
-  const handleClickNew = async () => {
-    navigate({
-      to: '/unit/new',
-      search: {
-        projectId: '12312-12312-12312-12312'
-      },
-      mask: {
-        to: '/new_projects/$projectId/unit',
-      }
-    })
-  }
-  const handleClickEdit = async () => {
-    navigate({
-      to: '/unit/edit',
-      search: {
-        projectId: '12312-12312-12312-12312',
-        unitId: '45645-45645-45645-45645',
-      },
-      mask: {
-        to: '/new_projects/$projectId/unit/$unitId',
-      }
-    })
-  }
-  const handleClickNewLayer = async () => {
-    navigate({
-      to: '/layers/new',
-      search: {
-        projectId: '12312-12312-12312-12312',
-        unitId: '45645-45645-45645-45645',
-      },
-      mask: {
-        to: '/new_projects/$projectId/unit/$unitId',
-      }
-    })
-  }
-  const handleClickEditLayer = async () => {
-    navigate({
-      to: '/layers/edit',
-      search: {
-        projectId: '12312-12312-12312-12312',
-        unitId: '45645-45645-45645-45645',
-      },
-      mask: {
-        to: '/new_projects/$projectId/unit/$unitId',
-      }
-    })
-  }
+  // const handleClickEditLayer = async () => {
+  //   navigate({
+  //     to: "/layers/edit",
+  //     search: {
+  //       projectId: "12312-12312-12312-12312",
+  //       unitId: "45645-45645-45645-45645",
+  //     },
+  //     mask: {
+  //       to: "/new_projects/$projectId/unit/$unitId",
+  //     },
+  //   });
+  // };
   const handleClickConstructiveTechnologies = async () => {
     navigate({
-      to: './constuctive-technologies',
-    })
-  }
-  // const handleClick = async () => {}
-  // const handleClick = async () => {}
+      to: "./constuctive-technologies",
+    });
+  };
 
   return (
     <div className="flex flex-col gap-4">
-      {/* <div className="flex justify-end gap-4">
-        <DrawerAddModule
-          callback={handleAddNewModule}
-          componentTrigger={
-            <Button variant="noStyles" className="flex items-center gap-2">
-              {t("drawerAddModule.addConstructiveTechnology")}
-            </Button>
-          }
-        />
-      </div>
-      <ModuleTable
-        key={`${JSON.stringify(mods)}`}
-        modules={mods}
-        projectId={projectId}
-        unitId={unitId}
-        handleUpdateModule={handleUpdateModule}
-        handleDeleteModule={handleDeleteModule}
-      /> */}
-      <div className="w-full flex justify-start h-[100px] flex-wrap gap-2">
-        <Button onClick={handleClickNew}>
-          criar unidade
-        </Button>
-        <Button onClick={handleClickEdit}>
-          editar unidade
-        </Button>
-        <Button onClick={handleClickNewLayer}>
-          Criar Pavimento
-        </Button>
-        <Button onClick={handleClickEditLayer}>
-          Editar Pavimento
-        </Button>
-        <Button onClick={handleClickConstructiveTechnologies}>
-          Tecnologias construtivas
-        </Button>
-      </div>
-      {/* <button onClick={handleClick}>
-        módulos
-      </button>
-      <button onClick={handleClick}>
-        módulos
-      </button> */}
+      <CommonTable
+        tableName="Pavimentos"
+        columns={floorsColumns}
+        data={fakeUnit.floors}
+        isSelectable={true}
+        onSelectionChange={console.log}
+        actions={
+          <DrawerFormUnit
+            projectId={projectId}
+            unitId={unitId}
+            triggerComponent={
+              <Button variant="outline" className="mt-4">
+                Editar Unidade
+              </Button>
+            }
+          />
+        }
+      />
+      <Divider />
+      <CommonTable
+        tableName="Tecnologias Construtivas"
+        data={fakeUnit.constructiveTechnologies}
+        columns={constructiveTechnologies}
+        isSelectable={false}
+        isInteractive={true}
+        actions={
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={handleClickConstructiveTechnologies}
+          >
+            Ver Tecnologias Construtivas
+          </Button>
+        }
+      />
     </div>
   );
 }
