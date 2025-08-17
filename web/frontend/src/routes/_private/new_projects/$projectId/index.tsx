@@ -3,7 +3,6 @@ import { unitsColumns } from "@/components/columns/units";
 import { CommonTable, DrawerFormUnit } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
-import { Drawer } from "@/components/ui/drawer";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_private/new_projects/$projectId/")({
@@ -58,10 +57,6 @@ function RouteComponent() {
 
   const handleSelectionChange = (selectedItems: any[]) => {
     console.log("Selected items:", selectedItems);
-  };
-
-  const handleAddUnit = () => {
-    console.log("Adicionar nova unidade");
   };
 
   return (
