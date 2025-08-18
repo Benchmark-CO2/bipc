@@ -5,7 +5,9 @@ interface IScreen {
 }
 const Screen = ({ children }: IScreen) => {
   return (
-    <main className={`h-full w-full overflow-auto p-6 relative`}>
+    <main
+      className={`h-full w-full overflow-auto relative flex flex-col pb-12`}
+    >
       {children}
     </main>
   );

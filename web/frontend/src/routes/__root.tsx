@@ -33,7 +33,7 @@ const TanStackRouterDevtools = import.meta.env.PROD
 export const Route = createRootRouteWithContext<{
   auth: AuthContext;
   queryClient: QueryClient;
-  project: ProjectContext
+  project: ProjectContext;
 }>()({
   component: () => {
     const { logout, isAuthenticated, activated } = useAuth();
@@ -63,8 +63,9 @@ export const Route = createRootRouteWithContext<{
             <Screen>
               {activated === false && <UserActiveWarning />}
               <BreadCrumbs />
-
-                <Outlet />              
+              <div className="flex-1 overflow-auto p-6 pt-0">
+                <Outlet />
+              </div>
               {/* <ModeToggle /> */}
             </Screen>
           </div>
