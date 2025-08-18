@@ -61,7 +61,7 @@ const Login = () => {
     const token = data?.data.authentication_token;
     if (token) {
       auth.login(token, data?.data.user);
-      navigateTo("/projects");
+      navigateTo("/new_projects");
     }
   }, [data, navigate]);
 
@@ -181,7 +181,7 @@ export const Route = createFileRoute("/(public)/login")({
 
     if (context.auth.isAuthenticated) {
       return redirect({
-        to: "/projects",
+        to: "/new_projects",
       });
     }
   },
