@@ -33,7 +33,7 @@ export type TProjectsTemp = {
 };
 
 export type TProjectUnit = {
-  name: number;
+  name: string;
   id: number;
   type: TUnitType;
 };

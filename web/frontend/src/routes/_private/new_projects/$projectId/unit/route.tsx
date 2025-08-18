@@ -3,6 +3,7 @@ import { DrawerFormUnit } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import NotFoundList from "@/components/ui/not-found-list";
 import { TabsContainer } from "@/components/ui/tabsContainer";
+import { mockProject } from "@/utils/mockProject";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
@@ -11,16 +12,16 @@ import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_private/new_projects/$projectId/unit")({
   component: RouteComponent,
-  loader: async ({ params, context }) => {
+  loader: async ({ params }) => {
     const { projectId } = params;
     if (!projectId) {
       throw new Error("Project ID is required");
     }
 
-    await context.queryClient.ensureQueryData({
-      queryKey: ["project", projectId],
-      queryFn: () => getProjectByUUID(projectId),
-    });
+    // await context.queryClient.ensureQueryData({
+    //   queryKey: ["project", projectId],
+    //   queryFn: () => getProjectByUUID(projectId),
+    // });
 
     return {
       projectId,
@@ -40,7 +41,12 @@ function RouteComponent() {
     error,
   } = useQuery({
     queryKey: ["project", projectId],
-    queryFn: () => getProjectByUUID(projectId),
+    // queryFn: () => getProjectByUUID(projectId),
+    queryFn: () => {
+      return {
+        data: { project: mockProject },
+      };
+    },
     staleTime: 1000 * 60 * 5,
   });
 
@@ -55,6 +61,7 @@ function RouteComponent() {
   }, [units]);
 
   useEffect(() => {
+    console.log(tabs);
     if (tabs.length > 0 && !params.unitId) {
       history.pushState(
         {},

@@ -3,6 +3,7 @@ import { getProjectByUUID } from "@/actions/projects/getProject";
 import CustomBanner from "@/components/ui/customBanner";
 import { ProjectContext } from "@/context/projectContext";
 import { IProject } from "@/types/projects";
+import { mockProject } from "@/utils/mockProject";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useContext, useEffect } from "react";
 
@@ -14,17 +15,18 @@ export const Route = createFileRoute("/_private/new_projects/$projectId")({
       throw new Error("Project ID is required");
     }
 
-    await context.queryClient.ensureQueryData({
-      queryKey: ["project", projectId],
-      queryFn: () => getProjectByUUID(projectId),
-    });
+    // await context.queryClient.ensureQueryData({
+    //   queryKey: ["project", projectId],
+    //   queryFn: () => getProjectByUUID(projectId),
+    // });
 
-    const projectData = context.queryClient.getQueryData<any>([
-      "project",
-      projectId,
-    ]);
+    // const projectData = context.queryClient.getQueryData<any>([
+    //   "project",
+    //   projectId,
+    // ]);
 
-    const project: IProject = projectData?.data?.project;
+    // const project: IProject = projectData?.data?.project;
+    const project: IProject = mockProject;
 
     return {
       project,

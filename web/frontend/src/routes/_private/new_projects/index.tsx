@@ -4,6 +4,7 @@ import { DrawerFormProject, ProjectTable } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import CustomCard from "@/components/ui/customCard";
 import { ProjectContext } from "@/context/projectContext";
+import { mockProject } from "@/utils/mockProject";
 import { queryClient } from "@/utils/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -136,15 +137,15 @@ function RouteComponent() {
       </div>
       {viewMode === "table" ? (
         <ProjectTable
-          projects={data?.data.projects ?? []}
+          projects={[...(data?.data.projects ?? []), mockProject]}
           onClickProject={onClickProject}
           onDeleteProject={onDeleteProject}
         />
       ) : (
         <div className="flex w-full flex-wrap items-center gap-4">
           <DrawerFormProject componentTrigger={componentTrigger} />
-          {data?.data.projects.length ? (
-            data?.data.projects.map((project) => (
+          {[...(data?.data.projects ?? []), mockProject].length ? (
+            [...(data?.data.projects ?? []), mockProject].map((project) => (
               <>
                 <CustomCard
                   key={project.id}
