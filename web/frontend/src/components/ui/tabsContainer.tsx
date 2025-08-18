@@ -19,7 +19,7 @@ export function TabsContainer({
 
   const handleTabClick = (unitId: number) => {
     void router.navigate({
-      to: `/projects/${projectId}/${unitId}`,
+      to: `/new_projects/${projectId}/unit/${unitId}`,
     });
   };
 
