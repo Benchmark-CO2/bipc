@@ -2,42 +2,93 @@ openapi: 3.0.0
 info:
   title: Structures API
   version: 1.0.0
+  description: |
+    API for managing structural engineering projects, including users, projects, units, and modules for calculating CO2 emissions.
+  contact:
+    name: API Support
+    email: support@example.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+tags:
+  - name: Users
+    description: User management
+  - name: Authentication
+    description: Authentication and token management
+  - name: Projects
+    description: Project management
+  - name: Invitations
+    description: User invitations to projects
+  - name: Units
+    description: Unit management within projects
+  - name: Modules
+    description: "Management of structural modules. A module represents a specific engineering solution (e.g., a beam-column system or a concrete wall system) for a set of floors within a tower. Modules are used to calculate CO2 emissions and other metrics."
 
 paths:
-  /v1/healthcheck:
-    get:
-      summary: Health check
-      responses:
-        '200':
-          description: OK
-
   /v1/users:
     post:
       summary: Register a new user
+      description: Creates a new user account. After registration, an activation token is sent to the user's email.
+      tags:
+        - Users
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateUser'
+            example:
+              name: "John Doe"
+              email: "john.doe@example.com"
+              password: "password123"
+              image_url: "http://example.com/avatar.png"
       responses:
         '202':
-          description: User successfully registered
+          description: Accepted. The user was successfully registered and an activation email has been sent.
+        '400':
+          description: Bad Request. The request body is invalid or malformed.
+        '422':
+          description: Unprocessable Entity. The request failed validation checks (e.g., duplicate email).
+        '500':
+          description: Internal Server Error.
     patch:
       summary: Update user details
+      description: Updates the details for the currently authenticated user. Requires authentication.
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/UpdateUser'
+            example:
+              name: "John Doe"
+              email: "john.doe@example.com"
+              image_url: "http://example.com/new_avatar.png"
       responses:
         '200':
-          description: User successfully updated
+          description: OK. The user was successfully updated.
+        '400':
+          description: Bad Request. The request body is invalid or malformed.
+        '401':
+          description: Unauthorized. The user is not authenticated.
+        '409':
+          description: Conflict. A conflicting edit occurred.
+        '422':
+          description: Unprocessable Entity. The request failed validation checks (e.g., duplicate email).
+        '500':
+          description: Internal Server Error.
 
   /v1/users/activated:
     put:
       summary: Activate a user
+      description: Activates a user account using a token sent to their email.
+      tags:
+        - Users
       requestBody:
         required: true
         content:
@@ -47,13 +98,26 @@ paths:
               properties:
                 token:
                   type: string
+                  description: The activation token.
+                  example: "J2bVb6wR2bF3aH4g5h6j7k8l9m0n1o2p"
       responses:
         '200':
-          description: User successfully activated
+          description: OK. User successfully activated.
+        '400':
+          description: Bad Request. The request body is invalid or malformed.
+        '409':
+          description: Conflict. A conflicting edit occurred.
+        '422':
+          description: Unprocessable Entity. The token is invalid or has expired.
+        '500':
+          description: Internal Server Error.
 
   /v1/users/password:
     put:
       summary: Update user password
+      description: Updates the password for a user, typically used in a password reset flow.
+      tags:
+        - Users
       requestBody:
         required: true
         content:
@@ -63,15 +127,31 @@ paths:
               properties:
                 password:
                   type: string
+                  format: password
+                  description: The new password.
+                  example: "newpassword123"
                 token:
                   type: string
+                  description: The password reset token.
+                  example: "K3cVc7xS3cG4bH5h6i7j8k9l0m1n2o3p"
       responses:
         '200':
-          description: Password successfully updated
+          description: OK. Password successfully updated.
+        '400':
+          description: Bad Request. The request body is invalid or malformed.
+        '409':
+          description: Conflict. A conflicting edit occurred.
+        '422':
+          description: Unprocessable Entity. The token is invalid or has expired.
+        '500':
+          description: Internal Server Error.
 
   /v1/tokens/authentication:
     post:
       summary: Create authentication token
+      description: Authenticates a user and returns a JWT token.
+      tags:
+        - Authentication
       requestBody:
         required: true
         content:
@@ -81,15 +161,44 @@ paths:
               properties:
                 email:
                   type: string
+                  format: email
+                  example: "john.doe@example.com"
                 password:
                   type: string
+                  format: password
+                  example: "password123"
       responses:
         '201':
-          description: Token successfully created
+          description: Created. Token successfully created.
+        '401':
+          description: Unauthorized. Invalid credentials.
+        '500':
+          description: Internal Server Error.
 
   /v1/projects:
+    get:
+      summary: List all projects
+      description: Returns a paginated list of projects for the authenticated user.
+      tags:
+        - Projects
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A paginated list of projects.
+        '401':
+          description: Unauthorized. The user is not authenticated.
+        '422':
+          description: Unprocessable Entity. The request failed validation checks.
+        '500':
+          description: Internal Server Error.
     post:
       summary: Create new project
+      description: Creates a new project for the authenticated user.
+      tags:
+        - Projects
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -98,33 +207,54 @@ paths:
               $ref: '#/components/schemas/Project'
       responses:
         '201':
-          description: Successfully created
-    get:
-      summary: List all projects
-      responses:
-        '200':
-          description: A list of projects
+          description: Created. The project was successfully created.
+        '400':
+          description: Bad Request. The request body is invalid or malformed.
+        '401':
+          description: Unauthorized. The user is not authenticated.
+        '422':
+          description: Unprocessable Entity. The request failed validation checks (e.g., duplicate project name).
+        '500':
+          description: Internal Server Error.
 
   /v1/projects/{projectID}:
     get:
       summary: Get a project by ID
+      description: Retrieves the details of a specific project.
+      tags:
+        - Projects
+      security:
+        - bearerAuth: []
       parameters:
         - name: projectID
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '200':
-          description: A single project
+          description: A single project.
+        '401':
+          description: Unauthorized. The user is not authenticated.
+        '404':
+          description: Not Found. The requested project does not exist.
+        '500':
+          description: Internal Server Error.
     patch:
       summary: Update a project
+      description: Updates the details of a specific project.
+      tags:
+        - Projects
+      security:
+        - bearerAuth: []
       parameters:
         - name: projectID
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -133,28 +263,58 @@ paths:
               $ref: '#/components/schemas/Project'
       responses:
         '200':
-          description: Successfully updated
+          description: OK. The project was successfully updated.
+        '400':
+          description: Bad Request. The request body is invalid or malformed.
+        '401':
+          description: Unauthorized. The user is not authenticated.
+        '404':
+          description: Not Found. The requested project does not exist.
+        '409':
+          description: Conflict. A conflicting edit occurred.
+        '422':
+          description: Unprocessable Entity. The request failed validation checks (e.g., duplicate project name).
+        '500':
+          description: Internal Server Error.
     delete:
       summary: Delete a project
+      description: Deletes a specific project.
+      tags:
+        - Projects
+      security:
+        - bearerAuth: []
       parameters:
         - name: projectID
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '200':
-          description: Successfully deleted
+          description: OK. The project was successfully deleted.
+        '401':
+          description: Unauthorized. The user is not authenticated.
+        '404':
+          description: Not Found. The requested project does not exist.
+        '500':
+          description: Internal Server Error.
 
   /v1/projects/{projectID}/invite:
     post:
       summary: Invite a user to a project
+      description: Sends an invitation to a user to collaborate on a project.
+      tags:
+        - Invitations
+      security:
+        - bearerAuth: []
       parameters:
         - name: projectID
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -164,261 +324,313 @@ paths:
               properties:
                 email:
                   type: string
+                  format: email
                 permissions:
                   type: array
                   items:
                     type: string
       responses:
         '200':
-          description: Invitation sent
+          description: OK. Invitation sent successfully.
+        '400':
+          description: Bad Request. The request body is invalid or malformed.
+        '401':
+          description: Unauthorized. The user is not authenticated.
+        '422':
+          description: Unprocessable Entity. The request failed validation checks (e.g., user already a member, or pending invitation exists).
+        '500':
+          description: Internal Server Error.
 
   /v1/projects/{projectID}/units:
     post:
       summary: Create new unit
+      description: Creates a new unit (e.g., a tower) within a project.
+      tags:
+        - Units
+      security:
+        - bearerAuth: []
       parameters:
         - name: projectID
           in: path
           required: true
+          description: The ID of the project to add the unit to.
           schema:
-            type: integer
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateUnit'
+              $ref: '#/components/schemas/UnitCreate'
       responses:
         '200':
-          description: Successfully created
+          description: OK. The unit was created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unit'
+        '400':
+          description: Bad Request. The request body is invalid or malformed.
+        '401':
+          description: Unauthorized. The user is not authenticated.
+        '422':
+          description: Unprocessable Entity. The request failed validation checks.
+        '500':
+          description: Internal Server Error.
 
   /v1/projects/{projectID}/units/{unitID}:
     get:
       summary: Get a unit by ID
+      description: Retrieves the details of a specific unit.
+      tags:
+        - Units
+      security:
+        - bearerAuth: []
       parameters:
         - name: projectID
           in: path
           required: true
+          description: The ID of the project.
           schema:
-            type: integer
+            type: string
+            format: uuid
         - name: unitID
           in: path
           required: true
+          description: The ID of the unit to retrieve.
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '200':
-          description: A single unit
+          description: A single unit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unit'
+        '401':
+          description: Unauthorized. The user is not authenticated.
+        '404':
+          description: Not Found. The requested unit does not exist.
+        '500':
+          description: Internal Server Error.
     patch:
       summary: Update a unit
+      description: Updates the details of a specific unit.
+      tags:
+        - Units
+      security:
+        - bearerAuth: []
       parameters:
         - name: projectID
           in: path
           required: true
+          description: The ID of the project.
           schema:
-            type: integer
+            type: string
+            format: uuid
         - name: unitID
           in: path
           required: true
+          description: The ID of the unit to update.
           schema:
-            type: integer
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Unit'
+              $ref: '#/components/schemas/UnitCreate'
       responses:
         '200':
-          description: Successfully updated
+          description: OK. The unit was successfully updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unit'
+        '400':
+          description: Bad Request. The request body is invalid or malformed.
+        '401':
+          description: Unauthorized. The user is not authenticated.
+        '404':
+          description: Not Found. The requested unit does not exist.
+        '409':
+          description: Conflict. A conflicting edit occurred.
+        '422':
+          description: Unprocessable Entity. The request failed validation checks.
+        '500':
+          description: Internal Server Error.
     delete:
       summary: Delete a unit
+      description: Deletes a specific unit.
+      tags:
+        - Units
+      security:
+        - bearerAuth: []
       parameters:
         - name: projectID
           in: path
           required: true
+          description: The ID of the project.
           schema:
-            type: integer
+            type: string
+            format: uuid
         - name: unitID
           in: path
           required: true
+          description: The ID of the unit to delete.
           schema:
-            type: integer
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK. The unit was successfully deleted.
+        '401':
+          description: Unauthorized. The user is not authenticated.
+        '404':
+          description: Not Found. The requested unit does not exist.
+        '500':
+          description: Internal Server Error.
+
+  /v1/towers/{towerID}/options:
+    post:
+      summary: Create a new engineering option for a tower
+      tags:
+          - Modules
+      parameters:
+        - name: towerID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TowerOptionCreateRequest'
+      responses:
+        '201':
+          description: Tower option created successfully
+
+  /v1/tower-options/{optionID}/modules:
+    post:
+      summary: Create a new module for a tower option
+      tags:
+        - Modules
+      parameters:
+        - name: optionID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModuleCreateRequest'
+      responses:
+        '201':
+          description: Module created successfully
+
+  /v1/modules/{moduleID}:
+    get:
+      summary: Get a module by ID
+      tags:
+        - Modules
+      parameters:
+        - name: moduleID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: A single module
+    delete:
+      summary: Delete a module
+      tags:
+        - Modules
+      parameters:
+        - name: moduleID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
         '200':
           description: Successfully deleted
 
-  /v1/projects/{projectID}/units/{unitID}/modules:
-    post:
-      summary: Create new module
-      parameters:
-        - name: projectID
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: unitID
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateModule'
-      responses:
-        '200':
-          description: Successfully created
-
-  /v1/projects/{projectID}/units/{unitID}/modules/{moduleID}:
-    get:
-      summary: Get a module by ID
-      parameters:
-        - name: projectID
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: unitID
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: moduleID
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: type
-          in: query
-          required: true
-          schema:
-            type: string
-            enum: ["beam_column", "concrete_wall"]
-      responses:
-        '200':
-          description: A single module
-    patch:
-      summary: Update module name
-      parameters:
-        - name: projectID
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: unitID
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: moduleID
-          in: path
-          required: true
-          schema:
-            type: integer
-        requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                type:
-                  type: string
-                  enum: ["beam_column", "concrete_wall"]
-              required:
-                - name
-                - type
-      responses:
-        '200':
-          description: Module name successfully updated
-    post:
-      summary: Create a new version of a module
-      parameters:
-        - name: projectID
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: unitID
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: moduleID
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateModule'
-      responses:
-        '200':
-          description: Successfully created
-    delete:
-      summary: Delete a module
-      parameters:
-        - name: projectID
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: unitID
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: moduleID
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: type
-          in: query
-          required: true
-          schema:
-            type: string
-            enum: ["beam_column", "concrete_wall"]
-
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     CreateUser:
       type: object
+      required:
+        - name
+        - email
+        - password
       properties:
         name:
           type: string
+          description: "User's full name."
+          example: "John Doe"
         email:
           type: string
+          format: email
+          description: "User's email address. Must be unique."
+          example: "john.doe@example.com"
         password:
           type: string
+          format: password
+          description: "User's password. Must be at least 8 characters long."
+          example: "password123"
         image_url:
           type: string
+          format: url
+          description: "URL for the user's profile picture."
+          example: "http://example.com/avatar.png"
 
     UpdateUser:
       type: object
       properties:
         name:
           type: string
+          description: "User's full name."
+          example: "John Doe"
         email:
           type: string
+          format: email
+          description: "User's email address. Must be unique."
+          example: "john.doe@example.com"
         password:
           type: string
+          format: password
+          description: "User's new password. Must be at least 8 characters long."
+          example: "newpassword123"
         image_url:
           type: string
+          format: url
+          description: "URL for the user's profile picture."
+          example: "http://example.com/new_avatar.png"
 
     Project:
       type: object
       properties:
         name:
           type: string
-        cep:
+        zip_code:
           type: string
         state:
           type: string
@@ -442,136 +654,344 @@ components:
         - city
         - phase
 
+    # --- Unit & Tower Schemas (based on new_db2.sql) ---
     Unit:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        project_id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          example: "Main Tower"
+        type:
+          type: string
+          example: "tower"
+
+    Tower:
+      allOf:
+        - $ref: '#/components/schemas/Unit'
+        - type: object
+          properties:
+            created_at:
+              type: string
+              format: date-time
+              readOnly: true
+            updated_at:
+              type: string
+              format: date-time
+              readOnly: true
+            version:
+              type: integer
+              readOnly: true
+            floor_groups:
+              type: array
+              items:
+                $ref: '#/components/schemas/FloorGroup'
+
+    FloorGroup:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          example: "Standard Floors"
+        floors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Floor'
+
+    Floor:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        index:
+          type: integer
+          description: "The floor number/index (e.g., -1 for basement, 1 for first floor)."
+          example: 1
+        area:
+          type: number
+          format: float
+          example: 450.5
+        height:
+          type: number
+          format: float
+          example: 2.8
+
+    UnitCreate:
+      type: object
+      required:
+        - name
+        - type
+        - data
+      properties:
+        name:
+          type: string
+          example: "Main Tower"
+        type:
+          type: string
+          enum: [tower]
+        data:
+          description: "Polymorphic data based on the unit type."
+          oneOf:
+            - $ref: '#/components/schemas/TowerCreateData'
+
+    TowerCreateData:
+      type: object
+      required:
+        - floor_groups
+      properties:
+        floor_groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/FloorGroupCreate'
+
+    FloorGroupCreate:
+      type: object
+      required:
+        - name
+        - color
+        - area
+        - height
+        - repetition
+        - is_basement
+      properties:
+        name:
+          type: string
+          example: "Typical Floor"
+        color:
+          type: string
+          example: "#FF0000"
+        area:
+          type: number
+          format: float
+          example: 500.0
+        height:
+          type: number
+          format: float
+          example: 3.0
+        repetition:
+          type: integer
+          example: 10
+        is_basement:
+          type: boolean
+          example: false
+
+    TowerOptionCreateRequest:
       type: object
       properties:
         name:
           type: string
-        type:
-          type: string
-          enum: ["tower"]
-        total_floors:
-          type: integer
-        tower_floors:
-          type: integer
-        base_floors:
-          type: integer
-        basement_floors:
-          type: integer
-        type_floors:
-          type: integer
-        total_area:
-          type: number
-          format: float
       required:
         - name
-        - type
 
-    CreateUnit:
-      allOf:
-        - $ref: '#/components/schemas/Unit'
-
-    Concrete:
-      type: array
-      minItems: 1
-      items:
-        type: object
-        properties:
-          fck:
+    # --- Module Schemas ---
+    ModuleCreateRequest:
+      type: object
+      description: "Request body for creating a new structural module. A module represents a specific structural system (e.g., beam-column or concrete wall) applied to a set of floors within a tower option."
+      properties:
+        type:
+          type: string
+          description: "The type of structural module."
+          enum: [beam_column, concrete_wall]
+        floor_ids:
+          type: array
+          description: "Array of floor IDs to which this module will be applied. These floors must belong to the tower associated with this tower option."
+          items:
             type: string
-            enum: ["20", "25", "30", "35", "40", "45"]
-          volume:
-            type: number
-            format: float
-        required: [fck, volume]
+            format: uuid
+            example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+        data:
+          description: "Polymorphic data containing the specific details for the chosen module type. The structure of this object depends on the 'type' field."
+          oneOf:
+            - $ref: '#/components/schemas/BeamColumnData'
+            - $ref: '#/components/schemas/ConcreteWallData'
+      required:
+        - type
+        - floor_ids
+        - data
+      example:
+        type: "beam_column"
+        floor_ids: ["f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6", "e7f8a9b0-c1d2-e3f4-a5b6-c7d8e9f0a1b2"]
+        data:
+          concrete_columns:
+            volumes:
+              - fck: 30
+                volume: 150.5
+              - fck: 35
+                volume: 50.0
+            steel:
+              - ca: 50
+                mass: 7500
+              - ca: 60
+                mass: 1200
+          concrete_beams:
+            volumes:
+              - fck: 30
+                volume: 200.0
+            steel:
+              - ca: 50
+                mass: 10000
+              - ca: 60
+                mass: 1500
+          concrete_slabs:
+            volumes:
+              - fck: 25
+                volume: 450.0
+            steel:
+              - ca: 50
+                mass: 22500
+          form_columns: 1200
+          form_beams: 2500
+          form_slabs: 9000
+          column_number: 120
+          avg_beam_span: 6
+          avg_slab_span: 5
 
-    BeamColumn:
+    # Schema for a single concrete volume item
+    ConcreteVolumeItem:
       type: object
       properties:
+        fck:
+          type: integer
+          description: "Characteristic compressive strength of concrete in MPa (Megapascals)."
+          enum: [20, 25, 30, 35, 40, 45]
+        volume:
+          type: number
+          format: float
+          description: "Volume of concrete with the specified fck in cubic meters (m³)."
+      required:
+        - fck
+        - volume
+
+    # Schema for the array of concrete volumes
+    ConcreteVolumes:
+      type: array
+      description: "An array defining concrete volumes, broken down by compressive strength (fck)."
+      minItems: 1
+      items:
+        $ref: '#/components/schemas/ConcreteVolumeItem'
+
+    # Schema for a single steel mass item
+    SteelMassItem:
+      type: object
+      properties:
+        ca:
+          type: integer
+          description: "The type of CA steel reinforcement."
+          enum: [50, 60]
+        mass:
+          type: number
+          format: float
+          description: "Total mass of steel reinforcement in kilograms (kg)."
+      required:
+        - ca
+        - mass
+
+    # Schema for the array of steel masses
+    SteelMasses:
+      type: array
+      description: "An array defining steel reinforcement mass, broken down by type."
+      items:
+        $ref: '#/components/schemas/SteelMass'
+
+    # Schema for the concrete element, with consistent references
+    ConcreteElement:
+      type: object
+      description: "Defines the composition of a concrete structural element, including its steel reinforcement and concrete volumes."
+      properties:
+        volumes:
+          $ref: '#/components/schemas/ConcreteVolumes'
+        steel:
+          $ref: '#/components/schemas/SteelMasses'
+      required:
+        - volumes
+        - steel
+
+    BeamColumnData:
+      type: object
+      description: "Data for a 'beam_column' type module."
+      properties:
         concrete_columns:
-          $ref: '#/components/schemas/Concrete'
+          description: "Concrete and steel composition for all columns in the specified floors."
+          allOf:
+            - $ref: '#/components/schemas/ConcreteElement'
         concrete_beams:
-          $ref: '#/components/schemas/Concrete'
+          description: "Concrete and steel composition for all beams in the specified floors."
+          allOf:
+            - $ref: '#/components/schemas/ConcreteElement'
         concrete_slabs:
-          $ref: '#/components/schemas/Concrete'
-        steel_ca50:
-          type: number
-        steel_ca60:
-          type: number
+          description: "Concrete and steel composition for all slabs in the specified floors."
+          allOf:
+            - $ref: '#/components/schemas/ConcreteElement'
         form_columns:
           type: number
+          description: "Total area of concrete forms for columns in square meters (m²)."
+          example: 1250.5
         form_beams:
           type: number
+          description: "Total area of concrete forms for beams in square meters (m²)."
+          example: 2500.0
         form_slabs:
           type: number
-        form_total:
-          type: number
+          description: "Total area of concrete forms for slabs in square meters (m²)."
+          example: 9000.0
         column_number:
           type: integer
+          description: "Total number of columns in the specified floors."
+          example: 120
         avg_beam_span:
           type: integer
+          description: "Average span between beams in meters (m)."
+          example: 6
         avg_slab_span:
           type: integer
+          description: "Average span of slabs in meters (m)."
+          example: 5
       required:
         - concrete_columns
         - concrete_beams
         - concrete_slabs
-        - steel_ca50
-        - steel_ca60
 
-    ConcreteWall:
+    ConcreteWallData:
       type: object
+      description: "Data for a 'concrete_wall' type module."
       properties:
         concrete_walls:
-          $ref: '#/components/schemas/Concrete'
+          description: "Concrete and steel composition for all walls in the specified floors."
+          allOf:
+            - $ref: '#/components/schemas/ConcreteElement'
         concrete_slabs:
-          $ref: '#/components/schemas/Concrete'
-        steel_ca50:
-          type: number
-        steel_ca60:
-          type: number
+          description: "Concrete and steel composition for all slabs in the specified floors."
+          allOf:
+            - $ref: '#/components/schemas/ConcreteElement'
         wall_thickness:
           type: number
+          description: "Average thickness of the concrete walls in meters (m)."
+          example: 0.20
         slab_thickness:
           type: number
+          description: "Average thickness of the concrete slabs in meters (m)."
+          example: 0.15
         form_area:
           type: number
+          description: "Total area of concrete forms for walls and slabs in square meters (m²)."
+          example: 15000
         wall_area:
           type: number
+          description: "Total area of the concrete walls in square meters (m²)."
+          example: 3000
       required:
         - concrete_walls
         - concrete_slabs
-        - steel_ca50
-        - steel_ca60
-
-    BasicModuleData:
-      type: object
-      properties:
-        name:
-          type: string
-        type:
-          type: string
-          enum:
-            - "beam_column"
-            - "concrete_wall"
-        floor_repetition:
-          type: integer
-        floor_area:
-          type: number
-          format: float
-        floor_height:
-          type: number
-          format: float
-      required:
-        - name
-        - structure_type
-        - floor_repetition
-        - floor_area
-        - floor_height
-
-    CreateModule:
-      allOf:
-        - $ref: '#/components/schemas/BasicModuleData'
-        - oneOf:
-            - $ref: '#/components/schemas/BeamColumn'
-            - $ref: '#/components/schemas/ConcreteWall'
