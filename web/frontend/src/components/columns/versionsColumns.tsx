@@ -28,11 +28,11 @@ export const versionsColumns: ColumnDef<TModuleStructure>[] = [
     header: "Versão",
     cell: ({ row }) => row.original.version || "-",
   },
-  {
-    accessorKey: "floor_repetition",
-    header: t("modulesTable.headers.floorRepetition"),
-    cell: ({ row }) => row.original.floor_repetition || "-",
-  },
+  // {
+  //   accessorKey: "floor_repetition",
+  //   header: t("modulesTable.headers.floorRepetition"),
+  //   cell: ({ row }) => row.original.floor_repetition || "-",
+  // },
   {
     accessorKey: "co2_min",
     header: t("modulesTable.headers.co2Min"),

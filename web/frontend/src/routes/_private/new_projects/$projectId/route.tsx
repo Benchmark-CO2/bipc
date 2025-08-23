@@ -1,4 +1,4 @@
-import { getProjectByUUID } from "@/actions/projects/getProject";
+// import { getProjectByUUID } from "@/actions/projects/getProject";
 // import { Button } from "@/components/ui/button";
 import CustomBanner from "@/components/ui/customBanner";
 import { ProjectContext } from "@/context/projectContext";
@@ -9,7 +9,7 @@ import { useContext, useEffect } from "react";
 
 export const Route = createFileRoute("/_private/new_projects/$projectId")({
   component: RouteComponent,
-  loader: async ({ params, context }) => {
+  loader: async ({ params }) => {
     const { projectId } = params;
     if (!projectId) {
       throw new Error("Project ID is required");

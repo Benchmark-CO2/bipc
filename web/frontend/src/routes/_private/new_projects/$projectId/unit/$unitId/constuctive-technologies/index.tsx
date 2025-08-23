@@ -122,9 +122,9 @@ const newColumns: ColumnDef<any>[] = [
 ];
 
 function RouteComponent() {
-  const { projectId, unitId } = useParams({
-    from: "/_private/new_projects/$projectId/unit/$unitId/constuctive-technologies",
-  });
+  // const { projectId, unitId } = useParams({
+  //   from: "/_private/new_projects/$projectId/unit/$unitId/constuctive-technologies",
+  // });
 
   return (
     <div className="flex flex-col gap-4">
@@ -144,8 +144,8 @@ function RouteComponent() {
               actions={
                 <>
                   <DrawerFormModule
-                    projectId={projectId}
-                    unitId={unitId}
+                    // projectId={projectId}
+                    // unitId={unitId}
                     triggerComponent={
                       <Button variant="outline" size="sm">
                         Adicionar Tecnologia
