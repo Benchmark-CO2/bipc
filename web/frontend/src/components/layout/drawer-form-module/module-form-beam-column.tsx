@@ -29,8 +29,12 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
   const caOptions = [50, 60];
 
   // Estados para controlar quando "Outro" foi selecionado
-  const [customFckSelected, setCustomFckSelected] = useState<Record<string, boolean>>({});
-  const [customCaSelected, setCustomCaSelected] = useState<Record<string, boolean>>({});
+  const [customFckSelected, setCustomFckSelected] = useState<
+    Record<string, boolean>
+  >({});
+  const [customCaSelected, setCustomCaSelected] = useState<
+    Record<string, boolean>
+  >({});
 
   // Função para calcular volume total
   const calculateTotalVolume = (
@@ -107,7 +111,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         <Input
                           {...field}
                           value={totalVolume.toFixed(2)}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
                           className="bg-gray-50 text-gray-700 font-medium"
                         />
                       </FormControl>
@@ -125,7 +131,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                   `${fieldName}.volumes.${index}.fck` as any
                 );
                 const fieldKey = `${fieldName}.volumes.${index}`;
-                const isCustomFck = customFckSelected[fieldKey] || (currentFck && !fckOptions.includes(currentFck));
+                const isCustomFck =
+                  customFckSelected[fieldKey] ||
+                  (currentFck && !fckOptions.includes(currentFck));
 
                 return (
                   <div
@@ -144,17 +152,17 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                 onValueChange={(value) => {
                                   if (value === "other") {
                                     // Marca que "outro" foi selecionado
-                                    setCustomFckSelected(prev => ({
+                                    setCustomFckSelected((prev) => ({
                                       ...prev,
-                                      [fieldKey]: true
+                                      [fieldKey]: true,
                                     }));
                                     // Define um valor padrão
                                     fckField.onChange(70);
                                   } else {
                                     // Remove a marcação de "outro"
-                                    setCustomFckSelected(prev => ({
+                                    setCustomFckSelected((prev) => ({
                                       ...prev,
-                                      [fieldKey]: false
+                                      [fieldKey]: false,
                                     }));
                                     fckField.onChange(Number(value));
                                   }
@@ -282,7 +290,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         <Input
                           {...field}
                           value={totalMass.toFixed(0)}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
                           className="bg-gray-50 text-gray-700 font-medium"
                         />
                       </FormControl>
@@ -300,7 +310,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                   `${fieldName}.steel.${index}.ca` as any
                 );
                 const steelFieldKey = `${fieldName}.steel.${index}`;
-                const isCustomCa = customCaSelected[steelFieldKey] || (currentCa && !caOptions.includes(currentCa));
+                const isCustomCa =
+                  customCaSelected[steelFieldKey] ||
+                  (currentCa && !caOptions.includes(currentCa));
 
                 return (
                   <div
@@ -319,17 +331,17 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                 onValueChange={(value) => {
                                   if (value === "other") {
                                     // Marca que "outro" foi selecionado
-                                    setCustomCaSelected(prev => ({
+                                    setCustomCaSelected((prev) => ({
                                       ...prev,
-                                      [steelFieldKey]: true
+                                      [steelFieldKey]: true,
                                     }));
                                     // Define um valor padrão
                                     caField.onChange(60);
                                   } else {
                                     // Remove a marcação de "outro"
-                                    setCustomCaSelected(prev => ({
+                                    setCustomCaSelected((prev) => ({
                                       ...prev,
-                                      [steelFieldKey]: false
+                                      [steelFieldKey]: false,
                                     }));
                                     caField.onChange(Number(value));
                                   }
