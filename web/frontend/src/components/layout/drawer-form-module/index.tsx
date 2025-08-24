@@ -40,6 +40,8 @@ import ModuleFormBeamColumn from "./module-form-beam-column";
 import ModuleFormConcreteWall from "./module-form-concrete-wall";
 // import ModuleFormStructuralMasonry from "./module-form-structural-masonry"; // comentado por enquanto
 import { getDefaultValuesByType } from "./module-default-values";
+import BuildingVisualizer from "../building-visualizer";
+import { mockUnit } from "@/utils/mockUnit";
 // import { postModuleVersion } from "@/actions/modules/postModuleVersion"; // comentado temporariamente
 
 interface DrawerFormModuleProps {
@@ -60,7 +62,9 @@ const DrawerFormModule = ({
   moduleData,
 }: DrawerFormModuleProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
 
+  const floors = mockUnit.floors;
   const { t } = useTranslation();
   // const queryClient = useQueryClient(); // comentado temporariamente
 
@@ -252,7 +256,7 @@ const DrawerFormModule = ({
           </button>
         )}
       </DrawerTrigger>
-      <DrawerContent className="min-w-3/5">
+      <DrawerContent className="min-w-4/6">
         <DrawerHeader className="px-8">
           <DrawerTitle>
             {moduleId
@@ -270,187 +274,209 @@ const DrawerFormModule = ({
         <DrawerDescription className="px-6">
           {t("drawerFormModule.description")}
         </DrawerDescription>
-        <div className="mx-auto w-full p-6 overflow-auto h-[calc(100vh-78px)]">
+        <div className="mx-auto w-full p-6 h-[calc(100vh-78px)] flex">
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(handleSubmit)}
-              className="w-full space-y-6"
+              className="w-full flex gap-6 h-full"
             >
-              {/* Campos básicos */}
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  disabled={Boolean(moduleId)}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {t("drawerFormModule.commonForm.nameLabel")}
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t(
-                            "drawerFormModule.commonForm.namePlaceholder"
-                          )}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="type"
-                  disabled={Boolean(moduleId)}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {t("drawerFormModule.commonForm.structureTypeLabel")}
-                      </FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            if (
-                              value === "beam_column" ||
-                              value === "concrete_wall"
-                            ) {
-                              form.reset(getDefaultValuesByType(value as any));
-                            }
-                          }}
-                          value={field.value}
-                          disabled={Boolean(moduleId)}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue
-                              placeholder={t(
-                                "drawerFormModule.commonForm.structureTypePlaceholder"
-                              )}
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {structureTypes.map((type) => (
-                              <SelectItem key={type.value} value={type.value}>
-                                {type.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="flex-shrink-0 h-full overflow-y-auto">
+                <div className="sticky top-0">
+                  <BuildingVisualizer
+                    key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ color: f.color, repetition: f.repetition_number, underground: f.underground })))}`}
+                    floors={floors || []}
+                    isSelectable={true}
+                    selectedFloors={selectedFloors}
+                    onCheckFloor={setSelectedFloors}
+                  />
+                </div>
               </div>
+              <div className="flex-1 overflow-y-auto pr-2">
+                <div className="p-4 border rounded-lg border-muted space-y-4">
+                  {/* Campos básicos */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      disabled={Boolean(moduleId)}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            {t("drawerFormModule.commonForm.nameLabel")}
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder={t(
+                                "drawerFormModule.commonForm.namePlaceholder"
+                              )}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-              {/* Campos de andar
-              <div className="grid grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="floor_repetition"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {t("drawerFormModule.commonForm.floorRepetitionLabel")}
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="type"
+                      disabled={Boolean(moduleId)}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            {t(
+                              "drawerFormModule.commonForm.structureTypeLabel"
+                            )}
+                          </FormLabel>
+                          <FormControl>
+                            <Select
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                if (
+                                  value === "beam_column" ||
+                                  value === "concrete_wall"
+                                ) {
+                                  form.reset(
+                                    getDefaultValuesByType(value as any)
+                                  );
+                                }
+                              }}
+                              value={field.value}
+                              disabled={Boolean(moduleId)}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue
+                                  placeholder={t(
+                                    "drawerFormModule.commonForm.structureTypePlaceholder"
+                                  )}
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {structureTypes.map((type) => (
+                                  <SelectItem
+                                    key={type.value}
+                                    value={type.value}
+                                  >
+                                    {type.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                <FormField
-                  control={form.control}
-                  name="floor_area"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {t("drawerFormModule.commonForm.floorAreaLabel")}
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  {/* Campos de andar
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="floor_repetition"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {t("drawerFormModule.commonForm.floorRepetitionLabel")}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(Number(e.target.value))
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="floor_height"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {t("drawerFormModule.commonForm.floorHeightLabel")}
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div> */}
+                  <FormField
+                    control={form.control}
+                    name="floor_area"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {t("drawerFormModule.commonForm.floorAreaLabel")}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(Number(e.target.value))
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              {/* Campos específicos por tipo de estrutura */}
-              {(() => {
-                const structureType = form.watch("type");
+                  <FormField
+                    control={form.control}
+                    name="floor_height"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {t("drawerFormModule.commonForm.floorHeightLabel")}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(Number(e.target.value))
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div> */}
 
-                switch (structureType) {
-                  case "beam_column":
-                    return <ModuleFormBeamColumn form={form as any} />;
-                  case "concrete_wall":
-                    return <ModuleFormConcreteWall form={form as any} />;
-                  // case "structural_masonry": // comentado por enquanto
-                  //   return <ModuleFormStructuralMasonry form={form} />;
-                  default:
-                    return null;
-                }
-              })()}
+                  {/* Campos específicos por tipo de estrutura */}
+                  {(() => {
+                    const structureType = form.watch("type");
 
-              <div className="flex gap-2 mt-6">
-                <Button
-                  type="submit"
-                  variant="bipc"
-                  className="flex-1"
-                  // disabled={isCreationPending || isUpdatePending} // comentado
-                >
-                  {/* {isCreationPending || isUpdatePending ? ( // comentado
-                    <Loader2 className="animate-spin h-4 w-4" />
-                  ) : moduleId ? (
-                    t("common.update")
-                  ) : (
-                    t("common.add")
-                  )} */}
-                  {moduleId ? t("common.update") : t("common.add")}
-                </Button>
+                    switch (structureType) {
+                      case "beam_column":
+                        return <ModuleFormBeamColumn form={form as any} />;
+                      case "concrete_wall":
+                        return <ModuleFormConcreteWall form={form as any} />;
+                      // case "structural_masonry": // comentado por enquanto
+                      //   return <ModuleFormStructuralMasonry form={form} />;
+                      default:
+                        return null;
+                    }
+                  })()}
+
+                  <div className="flex gap-2 mt-6">
+                    <Button
+                      type="submit"
+                      variant="bipc"
+                      className="flex-1"
+                      // disabled={isCreationPending || isUpdatePending} // comentado
+                    >
+                      {/* {isCreationPending || isUpdatePending ? ( // comentado
+                      <Loader2 className="animate-spin h-4 w-4" />
+                    ) : moduleId ? (
+                      t("common.update")
+                    ) : (
+                      t("common.add")
+                    )} */}
+                      {moduleId ? t("common.update") : t("common.add")}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </form>
           </Form>

@@ -1,0 +1,42 @@
+export const mockUnit = {
+  name: "Jorge",
+  type: "tower",
+  floors: [
+    {
+      tower_name: "AAAAA",
+      area: 100,
+      height: 2.18,
+      repetition_number: 5,
+      underground: false,
+      color: "#c9c9c9",
+      position: 0,
+    },
+    {
+      tower_name: "BBBB",
+      area: 100,
+      height: 2,
+      repetition_number: 2,
+      underground: false,
+      color: "#4ECDC4",
+      position: 1,
+    },
+    {
+      tower_name: "CC",
+      area: 100,
+      height: 1.9,
+      repetition_number: 1,
+      underground: false,
+      color: "#45B7D1",
+      position: 2,
+    },
+    {
+      tower_name: "Sub",
+      area: 100,
+      height: 4,
+      repetition_number: 1,
+      underground: true,
+      color: "#96CEB4",
+      position: 3,
+    },
+  ],
+};

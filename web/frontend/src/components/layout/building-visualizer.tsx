@@ -1,11 +1,20 @@
 import React from "react";
 import { FloorSchema } from "@/validators/unitForm.validator";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface BuildingVisualizerProps {
   floors: FloorSchema[];
+  isSelectable?: boolean;
+  selectedFloors?: string[];
+  onCheckFloor?: (selectedFloors: string[]) => void;
 }
 
-const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({ floors }) => {
+const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
+  floors,
+  isSelectable = false,
+  selectedFloors = [],
+  onCheckFloor,
+}) => {
   const undergroundFloors = floors.filter((floor) => floor.underground);
   const aboveGroundFloors = floors.filter((floor) => !floor.underground);
 
@@ -18,15 +27,36 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({ floors }) => {
     (a, b) => b.position - a.position
   );
 
+  const handleFloorSelection = (towerName: string, isChecked: boolean) => {
+    if (!onCheckFloor) return;
+
+    let newSelectedFloors: string[];
+
+    if (isChecked) {
+      // Adiciona o tower_name se não estiver na lista
+      newSelectedFloors = selectedFloors.includes(towerName)
+        ? selectedFloors
+        : [...selectedFloors, towerName];
+    } else {
+      // Remove o tower_name da lista
+      newSelectedFloors = selectedFloors.filter((name) => name !== towerName);
+    }
+
+    onCheckFloor(newSelectedFloors);
+  };
+
   const renderFloorBlocks = (floor: FloorSchema) => {
     const blocks = [];
     const widthPercentage = (floor.area / maxArea) * 100;
+    const isFloorSelected = selectedFloors.includes(floor.tower_name);
 
     for (let i = 0; i < floor.repetition_number; i++) {
       blocks.push(
         <div
           key={`${floor.tower_name}-${i}`}
-          className="h-6 mb-1 flex items-center justify-center text-xs font-medium text-white shadow-sm mx-auto"
+          className={`h-6 mb-1 flex items-center text-xs font-medium text-white shadow-sm mx-auto ${
+            isSelectable ? "justify-end pr-2" : "justify-center"
+          }`}
           style={{
             backgroundColor: floor.color,
             height: `${Math.max(24, floor.height * 6)}px`,
@@ -35,7 +65,16 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({ floors }) => {
           }}
           title={`${floor.tower_name} - ${floor.area}m² - ${floor.height}m`}
         >
-          <span>{floor.tower_name}</span>
+          <span className={isSelectable ? "mr-2" : ""}>{floor.tower_name}</span>
+          {isSelectable && (
+            <Checkbox
+              checked={isFloorSelected}
+              onCheckedChange={(checked) =>
+                handleFloorSelection(floor.tower_name, checked === true)
+              }
+              className=" border-white data-[state=checked]:bg-white data-[state=checked]:text-black"
+            />
+          )}
         </div>
       );
     }

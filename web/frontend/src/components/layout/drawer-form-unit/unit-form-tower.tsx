@@ -13,7 +13,7 @@ import { Button } from "../../ui/button";
 import { Plus, GripVertical } from "lucide-react";
 import { Card, CardContent } from "../../ui/card";
 import { Switch } from "@/components/ui/switch";
-import BuildingVisualizer from "./building-visualizer";
+import BuildingVisualizer from "../building-visualizer";
 
 interface UnitFormTowerProps {
   form: UseFormReturn<UnitFormSchema>;
