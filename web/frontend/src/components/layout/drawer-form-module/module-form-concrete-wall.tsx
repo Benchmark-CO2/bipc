@@ -107,8 +107,6 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
     const totalVolume = calculateTotalVolume(currentVolumes);
     const totalMass = calculateTotalMass(currentSteel);
 
-    console.log(currentVolumes);
-
     return (
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-gray-900">{title}</h3>
