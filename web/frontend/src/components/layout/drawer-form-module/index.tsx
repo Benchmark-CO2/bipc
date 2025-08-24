@@ -28,7 +28,6 @@ import {
   FormLabel,
   FormMessage,
 } from "../../ui/form";
-import { Input } from "../../ui/input";
 import {
   Select,
   SelectContent,
@@ -167,10 +166,11 @@ const DrawerFormModule = ({
   }, [moduleData, moduleId, type, form]);
 
   const handleSubmit = (data: ModuleFormSchema) => {
+    console.log(data);
     if (moduleId) {
       const completeData = {
         ...data,
-        name: data.name || form.getValues("name") || moduleData?.name,
+        // name: data.name || form.getValues("name") || moduleData?.name,
         type: data.type || form.getValues("type") || moduleData?.type,
       };
       console.log("Update data:", completeData);
@@ -179,7 +179,7 @@ const DrawerFormModule = ({
     }
 
     const baseFields = {
-      name: data.name,
+      // name: data.name,
       type: data.type,
     };
 
@@ -277,7 +277,9 @@ const DrawerFormModule = ({
         <div className="mx-auto w-full p-6 h-[calc(100vh-78px)] flex">
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit(handleSubmit)}
+              onSubmit={form.handleSubmit(handleSubmit, (errors) => {
+                console.log("Form validation errors:", errors);
+              })}
               className="w-full flex gap-6 h-full"
             >
               <div className="flex-shrink-0 h-full overflow-y-auto">
@@ -294,8 +296,8 @@ const DrawerFormModule = ({
               <div className="flex-1 overflow-y-auto pr-2">
                 <div className="p-4 border rounded-lg border-muted space-y-4">
                   {/* Campos básicos */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
+                  <div className="grid grid-cols-1 gap-4">
+                    {/* <FormField
                       control={form.control}
                       name="name"
                       disabled={Boolean(moduleId)}
@@ -315,7 +317,7 @@ const DrawerFormModule = ({
                           <FormMessage />
                         </FormItem>
                       )}
-                    />
+                    /> */}
 
                     <FormField
                       control={form.control}

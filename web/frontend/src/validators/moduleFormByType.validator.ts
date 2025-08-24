@@ -32,7 +32,7 @@ const concreteElementSchema = z.object({
 // Schema flexível que aceita todos os campos
 export const moduleFormSchema = z
   .object({
-    name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
+    // name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
     type: z.enum(["beam_column", "concrete_wall"], {
       // removed structural_masonry for now
       required_error: "Selecione um tipo de estrutura",

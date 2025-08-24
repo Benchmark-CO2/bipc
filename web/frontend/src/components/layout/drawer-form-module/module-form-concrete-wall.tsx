@@ -101,9 +101,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                           type="number"
                           step="0.01"
                           value={totalVolume.toFixed(2)}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
+                          readOnly
                           className="bg-gray-50 text-gray-700 font-medium"
                         />
                       </FormControl>
@@ -195,9 +193,10 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                   step="0.01"
                                   placeholder="100"
                                   value={volumeField.value || ""}
-                                  onChange={(e) =>
-                                    volumeField.onChange(Number(e.target.value))
-                                  }
+                                  onChange={(e) => {
+                                    const newValue = Number(e.target.value);
+                                    volumeField.onChange(newValue);
+                                  }}
                                 />
                               </FormControl>
                               {volumeFields.length > 1 && (
@@ -276,9 +275,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                           type="number"
                           step="0.01"
                           value={totalMass.toFixed(0)}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
+                          readOnly
                           className="bg-gray-50 text-gray-700 font-medium"
                         />
                       </FormControl>
@@ -367,9 +364,10 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                   step="0.01"
                                   placeholder="800"
                                   value={massField.value || ""}
-                                  onChange={(e) =>
-                                    massField.onChange(Number(e.target.value))
-                                  }
+                                  onChange={(e) => {
+                                    const newValue = Number(e.target.value);
+                                    massField.onChange(newValue);
+                                  }}
                                 />
                               </FormControl>
                               {steelFields.length > 1 && (
