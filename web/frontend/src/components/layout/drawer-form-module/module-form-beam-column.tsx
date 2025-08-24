@@ -1,6 +1,6 @@
 import { ModuleFormSchema } from "@/validators/moduleFormByType.validator";
 import { Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useFieldArray, UseFormReturn } from "react-hook-form";
 import { Button } from "../../ui/button";
 import { Card, CardContent } from "../../ui/card";
@@ -28,7 +28,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
   const fckOptions = [20, 25, 30, 35, 40, 45];
   const caOptions = [50, 60];
 
-  // Estados para controlar quando "Outro" foi selecionado
   const [customFckSelected, setCustomFckSelected] = useState<
     Record<string, boolean>
   >({});
@@ -36,19 +35,16 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
     Record<string, boolean>
   >({});
 
-  // Função para calcular volume total
   const calculateTotalVolume = (
     volumes: Array<{ fck: number; volume: number }>
   ) => {
     return volumes?.reduce((total, item) => total + (item.volume || 0), 0) || 0;
   };
 
-  // Função para calcular massa total
   const calculateTotalMass = (steel: Array<{ ca: number; mass: number }>) => {
     return steel?.reduce((total, item) => total + (item.mass || 0), 0) || 0;
   };
 
-  // Renderizar seção completa (volumes + steel)
   const renderCompleteSection = (
     fieldName: "concreteColumns" | "concreteBeams" | "concreteSlabs",
     title: string,
@@ -79,19 +75,12 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
     const totalVolume = calculateTotalVolume(currentVolumes);
     const totalMass = calculateTotalMass(currentSteel);
 
-    // Atualização automática dos totais quando valores mudam
-    useEffect(() => {
-      // Os campos de total são atualizados automaticamente através do watch
-    }, [currentVolumes, currentSteel]);
-
     return (
       <div className="space-y-3">
-        {/* Título fora do container */}
         <h3 className="text-sm font-medium text-gray-900">{title}</h3>
 
         <Card className={`border-2 ${borderColor}`}>
           <CardContent className="space-y-4">
-            {/* Volume total */}
             <div>
               <FormLabel className="text-sm text-gray-600">
                 Volume total de concreto (m³)
@@ -100,11 +89,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                 control={form.control}
                 name={`${fieldName}.totalVolume` as any}
                 render={({ field }) => {
-                  // Atualiza automaticamente com o total calculado
-                  useEffect(() => {
-                    field.onChange(totalVolume);
-                  }, [totalVolume, field]);
-
                   return (
                     <FormItem>
                       <FormControl>
@@ -124,7 +108,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
               />
             </div>
 
-            {/* Lista de volumes */}
             <div className="space-y-3">
               {volumeFields.map((field, index) => {
                 const currentFck = form.watch(
@@ -151,15 +134,12 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                               <Select
                                 onValueChange={(value) => {
                                   if (value === "other") {
-                                    // Marca que "outro" foi selecionado
                                     setCustomFckSelected((prev) => ({
                                       ...prev,
                                       [fieldKey]: true,
                                     }));
-                                    // Define um valor padrão
                                     fckField.onChange(70);
                                   } else {
-                                    // Remove a marcação de "outro"
                                     setCustomFckSelected((prev) => ({
                                       ...prev,
                                       [fieldKey]: false,
@@ -232,7 +212,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                       />
                     </div>
 
-                    {/* Campo customizado para FCK */}
                     {isCustomFck && (
                       <div>
                         <FormLabel className="text-xs">
@@ -267,10 +246,8 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
               Adicionar
             </Button>
 
-            {/* Divider discreto */}
             <div className="border-t border-gray-200 my-4"></div>
 
-            {/* Aço total */}
             <div>
               <FormLabel className="text-sm text-gray-600">
                 Aço total (kg)
@@ -279,11 +256,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                 control={form.control}
                 name={`${fieldName}.totalMass` as any}
                 render={({ field }) => {
-                  // Atualiza automaticamente com o total calculado
-                  useEffect(() => {
-                    field.onChange(totalMass);
-                  }, [totalMass, field]);
-
                   return (
                     <FormItem>
                       <FormControl>
@@ -303,7 +275,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
               />
             </div>
 
-            {/* Lista de aços */}
             <div className="space-y-3">
               {steelFields.map((field, index) => {
                 const currentCa = form.watch(
@@ -330,15 +301,12 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                               <Select
                                 onValueChange={(value) => {
                                   if (value === "other") {
-                                    // Marca que "outro" foi selecionado
                                     setCustomCaSelected((prev) => ({
                                       ...prev,
                                       [steelFieldKey]: true,
                                     }));
-                                    // Define um valor padrão
                                     caField.onChange(60);
                                   } else {
-                                    // Remove a marcação de "outro"
                                     setCustomCaSelected((prev) => ({
                                       ...prev,
                                       [steelFieldKey]: false,
@@ -408,7 +376,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                       />
                     </div>
 
-                    {/* Campo customizado para CA */}
                     {isCustomCa && (
                       <div>
                         <FormLabel className="text-xs">Outro CA</FormLabel>
@@ -448,7 +415,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
   return (
     <div className="space-y-6">
-      {/* Campos principais */}
       <div className="grid grid-cols-3 gap-4">
         <FormField
           control={form.control}
