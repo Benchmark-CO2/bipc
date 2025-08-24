@@ -72,6 +72,37 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
     const currentVolumes = form.watch(`${fieldName}.volumes` as any) || [];
     const currentSteel = form.watch(`${fieldName}.steel` as any) || [];
+
+    const isFckUsed = (fck: number, currentIndex: number) => {
+      return currentVolumes.some(
+        (volume: any, index: number) =>
+          index !== currentIndex &&
+          volume.fck === fck &&
+          fckOptions.includes(fck)
+      );
+    };
+
+    const isCaUsed = (ca: number, currentIndex: number) => {
+      return currentSteel.some(
+        (steel: any, index: number) =>
+          index !== currentIndex && steel.ca === ca && caOptions.includes(ca)
+      );
+    };
+
+    const getNextAvailableFck = () => {
+      const usedFcks = currentVolumes
+        .map((volume: any) => volume.fck)
+        .filter((fck: number) => fckOptions.includes(fck));
+      return fckOptions.find((fck) => !usedFcks.includes(fck)) || fckOptions[0];
+    };
+
+    const getNextAvailableCa = () => {
+      const usedCas = currentSteel
+        .map((steel: any) => steel.ca)
+        .filter((ca: number) => caOptions.includes(ca));
+      return caOptions.find((ca) => !usedCas.includes(ca)) || caOptions[0];
+    };
+
     const totalVolume = calculateTotalVolume(currentVolumes);
     const totalMass = calculateTotalMass(currentSteel);
 
@@ -161,8 +192,10 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                     <SelectItem
                                       key={fck}
                                       value={fck.toString()}
+                                      disabled={isFckUsed(fck, index)}
                                     >
-                                      {fck}
+                                      {fck}{" "}
+                                      {isFckUsed(fck, index) ? "(Em uso)" : ""}
                                     </SelectItem>
                                   ))}
                                   <SelectItem value="other">Outro</SelectItem>
@@ -241,7 +274,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => appendVolume({ fck: 20, volume: 0 })}
+              onClick={() =>
+                appendVolume({ fck: getNextAvailableFck(), volume: 0 })
+              }
               className="w-full text-green-600 border-green-600 hover:bg-green-50"
             >
               Adicionar
@@ -326,8 +361,13 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                 </SelectTrigger>
                                 <SelectContent>
                                   {caOptions.map((ca) => (
-                                    <SelectItem key={ca} value={ca.toString()}>
-                                      CA{ca}
+                                    <SelectItem
+                                      key={ca}
+                                      value={ca.toString()}
+                                      disabled={isCaUsed(ca, index)}
+                                    >
+                                      CA{ca}{" "}
+                                      {isCaUsed(ca, index) ? "(Em uso)" : ""}
                                     </SelectItem>
                                   ))}
                                   <SelectItem value="other">Outro</SelectItem>
@@ -404,7 +444,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => appendSteel({ ca: 50, mass: 0 })}
+              onClick={() => appendSteel({ ca: getNextAvailableCa(), mass: 0 })}
               className="w-full text-green-600 border-green-600 hover:bg-green-50"
             >
               Adicionar
