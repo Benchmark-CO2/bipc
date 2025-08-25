@@ -143,10 +143,10 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
 
             <div className="space-y-3">
               {volumeFields.map((field, index) => {
-                const currentFck = form.watch(
-                  `${fieldName}.volumes.${index}.fck` as any
-                );
                 const fieldKey = `${fieldName}.volumes.${index}`;
+                const currentFck = form.watch(
+                  `${fieldKey}.fck` as any
+                );
                 const isCustomFck =
                   customFckSelected[fieldKey] ||
                   (currentFck && !fckOptions.includes(currentFck));
@@ -159,7 +159,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                     <div className="grid grid-cols-2 gap-2 items-end">
                       <FormField
                         control={form.control}
-                        name={`${fieldName}.volumes.${index}.fck` as any}
+                        name={`${fieldKey}.fck` as any}
                         render={({ field: fckField }) => (
                           <FormItem>
                             <FormLabel className="text-xs">FCK (MPa)</FormLabel>
@@ -172,6 +172,10 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                       [fieldKey]: true,
                                     }));
                                     fckField.onChange(70);
+                                    form.setValue(
+                                      `${fieldKey}.customFck` as any,
+                                      true
+                                    );
                                   } else {
                                     setCustomFckSelected((prev) => ({
                                       ...prev,
@@ -211,7 +215,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
 
                       <FormField
                         control={form.control}
-                        name={`${fieldName}.volumes.${index}.volume` as any}
+                        name={`${fieldKey}.volume` as any}
                         render={({ field: volumeField }) => (
                           <FormItem>
                             <FormLabel className="text-xs">
@@ -249,29 +253,27 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                     </div>
 
                     {isCustomFck && (
-                      <div>
-                        <FormLabel className="text-xs">
-                          Outro FCK (MPa)
-                        </FormLabel>
-                        <Input
-                          type="number"
-                          placeholder="70"
-                          value={currentFck || ""}
-                          onChange={(e) => {
-                            const value = Number(e.target.value);
-                            form.setValue(
-                              `${fieldName}.volumes.${index}.fck` as any,
-                              value
-                            );
-                          }}
-                        />
-                        {showCustomFckWarning && (
-                          <div className="flex items-center gap-1 mt-1 text-orange-600 text-xs">
-                            <AlertTriangle className="h-3 w-3" />
-                            <span>Para cálculo será considerado FCK 50</span>
-                          </div>
+                      <FormField
+                        control={form.control}
+                        name={`${fieldKey}.fck` as any}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Outro FCK (MPa)</FormLabel>
+                            <Input
+                              type="number"
+                              placeholder="70"
+                              {...field}
+                              onChange={(e) => field.onChange(Number(e.target.value))}
+                            />
+                            {showCustomFckWarning && (
+                              <div className="flex items-center gap-1 mt-1 text-orange-600 text-xs">
+                                <AlertTriangle className="h-3 w-3" />
+                                <span>Para cálculo será considerado FCK 50</span>
+                              </div>
+                            )}
+                          </FormItem>
                         )}
-                      </div>
+                      />
                     )}
                   </div>
                 );

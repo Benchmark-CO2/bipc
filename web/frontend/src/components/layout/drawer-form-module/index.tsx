@@ -38,9 +38,9 @@ import {
 import ModuleFormBeamColumn from "./module-form-beam-column";
 import ModuleFormConcreteWall from "./module-form-concrete-wall";
 // import ModuleFormStructuralMasonry from "./module-form-structural-masonry"; // comentado por enquanto
-import { getDefaultValuesByType } from "./module-default-values";
-import BuildingVisualizer from "../building-visualizer";
 import { mockUnit } from "@/utils/mockUnit";
+import BuildingVisualizer from "../building-visualizer";
+import { getDefaultValuesByType } from "./module-default-values";
 // import { postModuleVersion } from "@/actions/modules/postModuleVersion"; // comentado temporariamente
 
 interface DrawerFormModuleProps {
@@ -279,6 +279,7 @@ const DrawerFormModule = ({
             <form
               onSubmit={form.handleSubmit(handleSubmit, (errors) => {
                 console.log("Form validation errors:", errors);
+                console.log("Current form values:", form.getValues());
               })}
               className="w-full flex gap-6 h-full"
             >

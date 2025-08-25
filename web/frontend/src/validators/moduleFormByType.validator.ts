@@ -2,9 +2,24 @@ import { z } from "zod";
 
 // Schemas baseados na nova tipagem type2.ts
 const concreteVolumeItemSchema = z.object({
-  fck: z.number().min(20).max(45, "Fck deve estar entre 20 e 45"),
+  fck: z.number(),
   volume: z.number().positive("O volume deve ser um número positivo"),
-});
+  customFck: z.boolean().optional(),
+}).superRefine((data, ctx) => {
+  if (!data.customFck) {
+    if (data.fck < 20 || data.fck > 45) {
+      ctx.addIssue({
+        path: ["fck"],
+        code: "custom",
+        message: "Fck deve estar entre 20 e 45",
+      });
+    }
+  }
+})
+.transform((data) => {
+  const { customFck, ...rest } = data;
+  return rest;
+})
 
 const steelMassItemSchema = z.object({
   ca: z.number().refine((val) => val === 50 || val === 60, {
