@@ -57,9 +57,12 @@ export const moduleFormSchema = z
     wallArea: z.number().nonnegative().optional(),
 
     // Structural Masonry (comentado por enquanto)
-    // vertical_grout: concreteElementSchema.optional(),
-    // horizontal_grout: concreteElementSchema.optional(),
-    // blocks: blockSchema.optional(),
+    // descomentei pra parar de dar erro, mas ta tudo como any
+    vertical_grout: z.any().optional(),
+    horizontal_grout: z.any().optional(),
+    blocks: z.any().optional(), // será definido depois
+    steel_ca50: z.any().optional(),
+    steel_ca60: z.any().optional(),
   })
   .refine(
     (data) => {

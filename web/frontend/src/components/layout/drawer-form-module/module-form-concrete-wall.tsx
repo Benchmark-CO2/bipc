@@ -1,7 +1,7 @@
 import { ModuleFormSchema } from "@/validators/moduleFormByType.validator";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { useFieldArray, UseFormReturn } from "react-hook-form";
+import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import { Button } from "../../ui/button";
 import { Card, CardContent } from "../../ui/card";
 import {
@@ -71,9 +71,12 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
 
     const borderColor = isRequired ? "border-blue-500" : "border-gray-300";
 
-    const currentVolumes = form.watch(`${fieldName}.volumes` as any) || [];
-    const currentSteel = form.watch(`${fieldName}.steel` as any) || [];
+    useWatch({ control: form.control, name: `${fieldName}.volumes` as any });
+    useWatch({ control: form.control, name: `${fieldName}.steel` as any });
+    const currentVolumes = form.getValues(`${fieldName}.volumes` as any) || [];
+    const currentSteel = form.getValues(`${fieldName}.steel` as any) || [];
 
+  
     const isFckUsed = (fck: number, currentIndex: number) => {
       return currentVolumes.some(
         (volume: any, index: number) =>
@@ -144,9 +147,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
             <div className="space-y-3">
               {volumeFields.map((field, index) => {
                 const fieldKey = `${fieldName}.volumes.${index}`;
-                const currentFck = form.watch(
-                  `${fieldKey}.fck` as any
-                );
+                const currentFck = form.watch(`${fieldKey}.fck` as any);
                 const isCustomFck =
                   customFckSelected[fieldKey] ||
                   (currentFck && !fckOptions.includes(currentFck));
@@ -258,17 +259,23 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                         name={`${fieldKey}.fck` as any}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">Outro FCK (MPa)</FormLabel>
+                            <FormLabel className="text-xs">
+                              Outro FCK (MPa)
+                            </FormLabel>
                             <Input
                               type="number"
                               placeholder="70"
                               {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
+                              onChange={(e) =>
+                                field.onChange(Number(e.target.value))
+                              }
                             />
                             {showCustomFckWarning && (
                               <div className="flex items-center gap-1 mt-1 text-orange-600 text-xs">
                                 <AlertTriangle className="h-3 w-3" />
-                                <span>Para cálculo será considerado FCK 50</span>
+                                <span>
+                                  Para cálculo será considerado FCK 50
+                                </span>
                               </div>
                             )}
                           </FormItem>
@@ -351,6 +358,10 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                       ...prev,
                                       [steelFieldKey]: true,
                                     }));
+                                    form.setValue(
+                                      `${fieldName}.steel.${index}.customCa` as any,
+                                      true
+                                    );
                                     caField.onChange(60);
                                   } else {
                                     setCustomCaSelected((prev) => ({
@@ -429,21 +440,24 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                     </div>
 
                     {isCustomCa && (
-                      <div>
-                        <FormLabel className="text-xs">Outro CA</FormLabel>
-                        <Input
-                          type="number"
-                          placeholder="CA60"
-                          value={currentCa || ""}
-                          onChange={(e) => {
-                            const value = Number(e.target.value);
-                            form.setValue(
-                              `${fieldName}.steel.${index}.ca` as any,
-                              value
-                            );
-                          }}
-                        />
-                      </div>
+                      <FormField
+                        control={form.control}
+                        name={`${fieldName}.steel.${index}.ca` as any}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Outro CA</FormLabel>
+                            <Input
+                              {...field}
+                              type="number"
+                              placeholder="CA60"
+                              // value={currentCa || ""}
+                              onChange={(e) => {
+                                field.onChange(Number(e.target.value));
+                              }}
+                            />
+                          </FormItem>
+                        )}
+                      />
                     )}
                   </div>
                 );

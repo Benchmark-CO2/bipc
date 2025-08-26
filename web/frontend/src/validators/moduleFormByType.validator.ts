@@ -26,6 +26,21 @@ const steelMassItemSchema = z.object({
     message: "CA deve ser 50 ou 60",
   }),
   mass: z.number().nonnegative("A massa deve ser um número não negativo"),
+  customCa: z.boolean().optional(),
+}).superRefine((data, ctx) => {
+  if (!data.customCa) {
+    if (data.ca < 50 || data.ca > 60) {
+      ctx.addIssue({
+        path: ["ca"],
+        code: "custom",
+        message: "CA deve estar entre 50 e 60",
+      });
+    }
+  }
+})
+.transform((data) => {
+  const { customCa, ...rest } = data;
+  return rest;
 });
 
 const concreteElementSchema = z.object({

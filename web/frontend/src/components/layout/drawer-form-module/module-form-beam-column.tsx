@@ -169,6 +169,10 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                       ...prev,
                                       [fieldKey]: true,
                                     }));
+                                    form.setValue(
+                                      `${fieldKey}.customFck` as any,
+                                      true
+                                    );
                                     fckField.onChange(70);
                                   } else {
                                     setCustomFckSelected((prev) => ({
@@ -247,23 +251,25 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                     </div>
 
                     {isCustomFck && (
-                      <div>
-                        <FormLabel className="text-xs">
-                          Outro FCK (MPa)
-                        </FormLabel>
-                        <Input
-                          type="number"
-                          placeholder="70"
-                          value={currentFck || ""}
-                          onChange={(e) => {
-                            const value = Number(e.target.value);
-                            form.setValue(
-                              `${fieldName}.volumes.${index}.fck` as any,
-                              value
-                            );
-                          }}
-                        />
-                      </div>
+                      <FormField
+                        control={form.control}
+                        name={`${fieldKey}.fck` as any}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">
+                              Outro FCK (MPa)
+                            </FormLabel>
+                            <Input
+                              type="number"
+                              placeholder="70"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(Number(e.target.value))
+                              }
+                            />
+                          </FormItem>
+                        )}
+                      />
                     )}
                   </div>
                 );
@@ -341,6 +347,10 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                       ...prev,
                                       [steelFieldKey]: true,
                                     }));
+                                    form.setValue(
+                                      `${fieldName}.steel.${index}.customCa` as any,
+                                      true
+                                    );
                                     caField.onChange(60);
                                   } else {
                                     setCustomCaSelected((prev) => ({
@@ -419,21 +429,24 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                     </div>
 
                     {isCustomCa && (
-                      <div>
-                        <FormLabel className="text-xs">Outro CA</FormLabel>
-                        <Input
-                          type="number"
-                          placeholder="CA60"
-                          value={currentCa || ""}
-                          onChange={(e) => {
-                            const value = Number(e.target.value);
-                            form.setValue(
-                              `${fieldName}.steel.${index}.ca` as any,
-                              value
-                            );
-                          }}
-                        />
-                      </div>
+                      <FormField
+                        control={form.control}
+                        name={`${fieldName}.steel.${index}.ca` as any}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Outro CA</FormLabel>
+                            <Input
+                              {...field}
+                              type="number"
+                              placeholder="CA60"
+                              // value={currentCa || ""}
+                              onChange={(e) => {
+                                field.onChange(Number(e.target.value));
+                              }}
+                            />
+                          </FormItem>
+                        )}
+                      />
                     )}
                   </div>
                 );
