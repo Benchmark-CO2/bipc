@@ -128,7 +128,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
     return (
       <div
         className={cn(
-          "sticky top-0 left-0 w-full h-30 bg-white dark:bg-dark-950 flex justify-between items-center px-6 shadow-dark-950 shadow-md",
+          "sticky top-0 left-0 w-full h-30 bg-sidebar flex justify-between items-center px-6 shadow-dark-950 shadow-md",
           {
             "relative ": sidebarStatus === "open",
           }
@@ -136,7 +136,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
       >
         <div>
           <img
-            src={theme === "light" ? LogoWhite : LogoDark}
+            src={LogoDark}
             alt=""
             className="h-10 mb-4"
           />
@@ -145,20 +145,20 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           <Notifications size={24} />
           <MenuSquare
             size={24}
-            className="text-accent-foreground"
+            className="text-white"
             onClick={toggleSidebar}
           />
         </div>
         <div
           onClick={toggleSidebar}
           className={cn(
-            "absolute w-full z-10 top-0 left-0 h-screen backdrop-blur-sm  bg-zinc-900/70 -translate-x-220 p-2 transition-transform duration-300",
+            "absolute w-full top-0 left-0 h-screen backdrop-blur-sm  bg-zinc-900/70 -translate-x-220 p-2 transition-transform duration-300 z-60",
             { "translate-x-0": sidebarStatus === "open" }
           )}
         ></div>
         <div
           className={cn(
-            "fixed w-2/3 z-10 top-0 left-0 h-screen bg-white dark:bg-dark-950 -translate-x-200 p-6 transition-transform duration-300",
+            "fixed w-2/3 z-60 top-0 left-0 h-screen bg-sidebar text-white -translate-x-200 p-6 transition-transform duration-300",
             { "translate-x-0": sidebarStatus === "open" }
           )}
         >
@@ -170,7 +170,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
   return (
     <div
       data-sidebar={sidebarStatus}
-      className="flex h-screen flex-col bg-white dark:bg-dark-950/90 p-6 text-zinc-900  dark:text-white inset-y-0 left-0 z-50 w-64 "
+      className="flex h-screen flex-col bg-sidebar p-6 text-white inset-y-0 left-0 z-50 w-64 "
     >
       {sidemenuContent}
     </div>

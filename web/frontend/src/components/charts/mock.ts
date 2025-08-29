@@ -4,6 +4,7 @@ export interface DataPoint {
   fill: boolean;
   label?: string;
   isGlobal?: boolean; // Indica se o ponto é de uma simulação global
+  fillColor?: string; // Cor personalizada para pontos preenchidos
 };
 
 export function generateDescendingMockData(

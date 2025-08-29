@@ -11,7 +11,7 @@
   --card-foreground: hsl(240 10% 3.9%);
   --popover: hsl(0 0% 100%);
   --popover-foreground: hsl(240 10% 3.9%);
-  --primary: hsl(97, 56%, 45%);
+  --primary: hsl(188, 71%, 32%);
   --primary-foreground: hsl(355.7 100% 97.3%);
   --secondary: hsl(240 4.8% 95.9%);
   --secondary-foreground: hsl(240 5.9% 10%);
@@ -49,7 +49,7 @@
 --color-observatory-900: #0a5749;
 --color-observatory-950: #00352f;
 
-  --color-active: #64b333;
+  --color-active: hsl(97, 56%, 45%);
 
   --radius: 0.6rem;
   --chart-1: hsl(173 58% 39%);
@@ -57,6 +57,8 @@
   --chart-3: hsl(197 37% 24%);
   --chart-4: hsl(43 74% 66%);
   --chart-5: hsl(27 87% 67%);
+
+  --color-sidebar: hsl(188, 29%, 10%);
 }
 
 .dark {
@@ -66,7 +68,7 @@
   --card-foreground: hsl(0 0% 95%);
   --popover: hsl(0 0% 9%);
   --popover-foreground: hsl(0 0% 95%);
-  --primary: hsl(97, 56%, 45%);
+  --primary: hsl(188, 71%, 32%);
   --primary-foreground: hsl(144.9 80.4% 10%);
   --secondary: hsl(240 3.7% 15.9%);
   --secondary-foreground: hsl(0 0% 98%);
@@ -92,13 +94,15 @@
 --color-william-900: hsl(197, 35%, 20%);
 --color-william-950: hsl(198, 34%, 11%);
 
-  --color-active: #64b333;
+  --color-active: hsl(97, 56%, 45%);
 
   --chart-1: hsl(160 60% 45%);
   --chart-2: hsl(220 70% 50%);
   --chart-3: hsl(30 80% 55%);
   --chart-4: hsl(280 65% 60%);
   --chart-5: hsl(340 75% 55%);
+
+  --color-sidebar: hsl(188, 29%, 10%);
 }
 
 @theme inline {
@@ -143,6 +147,7 @@
   --color-dark-950: var(--color-william-950);
 
   --color-active: var(--color-active);
+  --color-sidebar: var(--color-sidebar);
   --color-active-text: var(--color-white);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

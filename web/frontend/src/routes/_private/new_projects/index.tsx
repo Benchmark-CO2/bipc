@@ -1,15 +1,17 @@
 import { deleteProject } from "@/actions/projects/deleteProjects";
 import { getAllProjectsByUser } from "@/actions/projects/getProjects";
 import { DrawerFormProject, ProjectTable } from "@/components/layout";
+import ProjectsSummary from '@/components/summaryVariants/projects';
 import { Button } from "@/components/ui/button";
 import CustomCard from "@/components/ui/customCard";
-import { ProjectContext } from "@/context/projectContext";
+import { useSummary } from '@/context/summaryContext';
+import { useProjects } from '@/hooks/useProjects';
 import { mockProject } from "@/utils/mockProject";
 import { queryClient } from "@/utils/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { LayoutGrid, List, Plus } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
+import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -31,9 +33,9 @@ export const Route = createFileRoute("/_private/new_projects/")({
 function RouteComponent() {
   const [viewMode, setViewMode] = useState<"table" | "grid">("grid");
   const { t } = useTranslation();
-
+  const {projects, selectedProjects, setSelectedProjects} = useProjects()
   const navigate = useNavigate({ from: "/projects" });
-
+  const { setSummaryContext } = useSummary()
   const { data } = useQuery({
     queryKey: ["projects"],
     queryFn: getAllProjectsByUser,
@@ -81,59 +83,47 @@ function RouteComponent() {
         {t("projects.addProject")}
       </Button>
     ) : (
-      <div className="flex h-60 w-full flex-col items-center justify-center overflow-hidden rounded-lg bg-white p-4 shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-xl md:w-1/3 lg:w-1/4 xl:max-w-100 dark:bg-zinc-800 dark:shadow-zinc-900">
+      <div className="flex h-[100px] w-full flex-col items-center justify-center overflow-hidden rounded-lg bg-primary text-white p-4 shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-lg md:w-1/3 lg:w-1/4 xl:max-w-100 dark:shadow-zinc-900">
         <Plus className="size-8" />
         <span className="text-lg font-medium">{t("projects.addProject")}</span>
       </div>
     );
 
-  const { props, type } = useContext(ProjectContext)!;
+  const handleSelectProject = (projectUid: string, isSelected: boolean) => {
+    setSelectedProjects((prev) => new Map(prev).set(projectUid, isSelected));
+  };
 
   useEffect(() => {
-    if (type === "projects") {
-      props.actions.setProjects([
-        {
-          id: "12312-12312-12312-12312",
-          name: "Projeto 1",
-          pink: 240,
-          yellow: 320,
-          green: 470,
-        },
-        {
-          id: "12312-12312-12312-12313",
-          name: "Projeto 2",
-          pink: 180,
-          yellow: 400,
-          green: 250,
-        },
-        {
-          id: "12312-12312-12312-12314",
-          name: "Projeto 3",
-          pink: 390,
-          yellow: 210,
-          green: 500,
-        },
-      ]);
-    }
-  }, [type]);
+    setSummaryContext({
+      title: 'Projects Comparison',
+      component: <ProjectsSummary projects={projects.filter(project => selectedProjects.get(project.id))} />
+    });
+  }, [selectedProjects]);
+
+
   return (
     <div>
-      <div className="mb-2 flex justify-end gap-1">
-        {viewMode === "table" && (
-          <DrawerFormProject componentTrigger={componentTrigger} />
-        )}
-        <Button
-          variant={viewMode !== "table" ? "default" : "outline"}
-          onClick={toggleViewMode}
-        >
-          <LayoutGrid className="h-4 w-4" />
-        </Button>
-        <Button
-          variant={viewMode !== "grid" ? "default" : "outline"}
-          onClick={toggleViewMode}
-        >
-          <List className="h-4 w-4" />
-        </Button>
+      <div className="mb-6 mt-2 flex justify-between gap-1">
+        <h1 className='text-4xl font-bold font-["helvetica"] text-primary '>
+          Projetos
+        </h1>
+        <div className="flex justify-end gap-1">
+          {/* {viewMode === "table" && (
+            <DrawerFormProject componentTrigger={componentTrigger} />
+          )}
+          <Button
+            variant={viewMode !== "table" ? "default" : "outline"}
+            onClick={toggleViewMode}
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode !== "grid" ? "default" : "outline"}
+            onClick={toggleViewMode}
+          >
+            <List className="h-4 w-4" />
+          </Button> */}
+        </div>
       </div>
       {viewMode === "table" ? (
         <ProjectTable
@@ -144,8 +134,8 @@ function RouteComponent() {
       ) : (
         <div className="flex w-full flex-wrap items-center gap-4">
           <DrawerFormProject componentTrigger={componentTrigger} />
-          {[...(data?.data.projects ?? []), mockProject].length ? (
-            [...(data?.data.projects ?? []), mockProject].map((project) => (
+          {[...(projects ?? []), mockProject].length ? (
+            [...(projects ?? []), mockProject].map((project) => (
               <>
                 <CustomCard
                   key={project.id}
@@ -154,6 +144,8 @@ function RouteComponent() {
                     onClickProject(project.id);
                   }}
                   onDeleteProject={onDeleteProject}
+                  selectedProjects={selectedProjects}
+                  handleSelectProject={handleSelectProject}
                 />
               </>
             ))

@@ -26,6 +26,9 @@ export interface IProject {
   created_at: string;
   updated_at: string;
   units: TProjectUnit[];
+  co?: number;
+  mj?: number;
+  density?: number;
 }
 
 export type TProjectsTemp = {
