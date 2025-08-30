@@ -689,10 +689,10 @@ components:
             version:
               type: integer
               readOnly: true
-            floor_groups:
+            floors:
               type: array
               items:
-                $ref: '#/components/schemas/FloorGroup'
+                $ref: '#/components/schemas/Floor'
 
     FloorGroup:
       type: object

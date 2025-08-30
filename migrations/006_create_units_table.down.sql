@@ -1,5 +1,12 @@
--- Active: 1748393261038@@127.0.0.1@5432
-DROP TRIGGER IF EXISTS units_updated_at ON units;
-DROP FUNCTION IF EXISTS units_set_updated_at();
-DROP INDEX IF EXISTS units_project_id_idx;
+DROP TABLE IF EXISTS module_beam_column;
+DROP TABLE IF EXISTS module_concrete_wall;
+DROP TABLE IF EXISTS module_floor;
+DROP TABLE IF EXISTS module;
+DROP TABLE IF EXISTS concrete_volume;
+DROP TABLE IF EXISTS steel_mass;
+DROP TABLE IF EXISTS concrete;
+DROP TABLE IF EXISTS floor;
+DROP TABLE IF EXISTS floor_group;
+DROP TABLE IF EXISTS tower_option;
+DROP TABLE IF EXISTS tower;
 DROP TABLE IF EXISTS units;
