@@ -76,6 +76,8 @@ paths:
           description: Bad Request. The request body is invalid or malformed.
         '401':
           description: Unauthorized. The user is not authenticated.
+        '404':
+          description: Not Found. The requested user does not exist.
         '409':
           description: Conflict. A conflicting edit occurred.
         '422':
@@ -494,13 +496,19 @@ paths:
         '500':
           description: Internal Server Error.
 
-  /v1/towers/{towerID}/options:
+  /v1/projects/{projectID}/units/{unitID}/tower-options:
     post:
       summary: Create a new engineering option for a tower
       tags:
           - Modules
       parameters:
-        - name: towerID
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
           in: path
           required: true
           schema:
@@ -515,13 +523,78 @@ paths:
       responses:
         '201':
           description: Tower option created successfully
+  /v1/projects/{projectID}/units/{unitID}/tower-options/{optionID}:
+    get:
+      summary: Get a tower option by ID
+      tags:
+        - Modules
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: optionID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: A single tower option
+    delete:
+      summary: Delete a tower option
+      tags:
+        - Modules
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: optionID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successfully deleted
 
-  /v1/tower-options/{optionID}/modules:
+  /v1/projects/{projectID}/units/{unitID}/tower-options/{optionID}/modules:
     post:
       summary: Create a new module for a tower option
       tags:
         - Modules
       parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
         - name: optionID
           in: path
           required: true
@@ -538,12 +611,30 @@ paths:
         '201':
           description: Module created successfully
 
-  /v1/modules/{moduleID}:
+  /v1/projects/{projectID}/units/{unitID}/tower-options/{optionID}/modules/{moduleID}:
     get:
       summary: Get a module by ID
       tags:
         - Modules
       parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: optionID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
         - name: moduleID
           in: path
           required: true
@@ -558,6 +649,24 @@ paths:
       tags:
         - Modules
       parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: optionID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
         - name: moduleID
           in: path
           required: true
@@ -728,6 +837,10 @@ components:
           type: number
           format: float
           example: 2.8
+        group_name:
+          type: string
+          description: "The name of the floor group this floor belongs to."
+          example: "Basement Floors"
 
     UnitCreate:
       type: object
@@ -761,18 +874,13 @@ components:
       type: object
       required:
         - name
-        - color
         - area
         - height
         - repetition
-        - is_basement
       properties:
         name:
           type: string
-          example: "Typical Floor"
-        color:
-          type: string
-          example: "#FF0000"
+        example: "Typical Floor"
         area:
           type: number
           format: float
@@ -784,9 +892,9 @@ components:
         repetition:
           type: integer
           example: 10
-        is_basement:
-          type: boolean
-          example: false
+        category:
+          type: string
+          enum: [basement_floor, penthouse_floor, ground_floor, standard_floor]
 
     TowerOptionCreateRequest:
       type: object

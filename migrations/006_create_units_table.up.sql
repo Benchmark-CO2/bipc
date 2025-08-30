@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS tower_option (
 CREATE TABLE IF NOT EXISTS floor_group (
     id UUID PRIMARY KEY,
     tower_id UUID NOT NULL REFERENCES tower(id) ON DELETE CASCADE,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    category TEXT
 );
 
 CREATE TABLE IF NOT EXISTS floor (

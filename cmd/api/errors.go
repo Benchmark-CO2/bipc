@@ -84,3 +84,8 @@ func (app *application) notPermittedResponse(w http.ResponseWriter, r *http.Requ
 	message := "your user account doesn`t have the necessary permissions to access this resource"
 	app.errorResponse(w, r, http.StatusForbidden, message)
 }
+
+func (app *application) notImplementedResponse(w http.ResponseWriter, r *http.Request) {
+	message := "the requested feature is not implemented yet"
+	app.errorResponse(w, r, http.StatusNotImplemented, message)
+}
