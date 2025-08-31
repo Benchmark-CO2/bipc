@@ -22,6 +22,8 @@ tags:
     description: User invitations to projects
   - name: Units
     description: Unit management within projects
+  - name: Tower Options
+    description: Tower option management within units
   - name: Modules
     description: "Management of structural modules. A module represents a specific engineering solution (e.g., a beam-column system or a concrete wall system) for a set of floors within a tower. Modules are used to calculate CO2 emissions and other metrics."
 
@@ -500,7 +502,9 @@ paths:
     post:
       summary: Create a new engineering option for a tower
       tags:
-          - Modules
+          - Tower Options
+      security:
+        - bearerAuth: []
       parameters:
         - name: projectID
           in: path
@@ -523,11 +527,35 @@ paths:
       responses:
         '201':
           description: Tower option created successfully
+    get:
+      summary: List all tower options for a unit
+      tags:
+        - Tower Options
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: A list of tower options
   /v1/projects/{projectID}/units/{unitID}/tower-options/{optionID}:
     get:
       summary: Get a tower option by ID
       tags:
-        - Modules
+        - Tower Options
+      security:
+        - bearerAuth: []
       parameters:
         - name: projectID
           in: path
@@ -550,10 +578,52 @@ paths:
       responses:
         '200':
           description: A single tower option
+        '404':
+          description: Not Found.
+    patch:
+      summary: Update a tower option
+      tags:
+        - Tower Options
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: optionID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TowerOptionCreateRequest'
+      responses:
+        '200':
+          description: Successfully updated
+        '404':
+          description: Not Found.
+        '409':
+          description: Conflict. A conflicting edit occurred.
     delete:
       summary: Delete a tower option
       tags:
-        - Modules
+        - Tower Options
+      security:
+        - bearerAuth: []
       parameters:
         - name: projectID
           in: path
@@ -576,6 +646,8 @@ paths:
       responses:
         '200':
           description: Successfully deleted
+        '404':
+          description: Not Found.
 
   /v1/projects/{projectID}/units/{unitID}/tower-options/{optionID}/modules:
     post:
@@ -901,8 +973,11 @@ components:
       properties:
         name:
           type: string
+        active:
+          type: boolean
       required:
         - name
+        - active
 
     # --- Module Schemas ---
     ModuleCreateRequest:
