@@ -41,6 +41,7 @@ import ModuleFormConcreteWall from "./module-form-concrete-wall";
 import { mockUnit } from "@/utils/mockUnit";
 import BuildingVisualizer from "../building-visualizer";
 import { getDefaultValuesByType } from "./module-default-values";
+import { FloorSchema } from "@/validators/unitForm.validator";
 // import { postModuleVersion } from "@/actions/modules/postModuleVersion"; // comentado temporariamente
 
 interface DrawerFormModuleProps {
@@ -63,7 +64,7 @@ const DrawerFormModule = ({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
 
-  const floors = mockUnit.floors;
+  const floors = mockUnit.floors as FloorSchema[];
   const { t } = useTranslation();
   // const queryClient = useQueryClient(); // comentado temporariamente
 
@@ -286,7 +287,7 @@ const DrawerFormModule = ({
               <div className="flex-shrink-0 h-full overflow-y-auto">
                 <div className="sticky top-0">
                   <BuildingVisualizer
-                    key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ color: f.color, repetition: f.repetition_number, underground: f.underground })))}`}
+                    key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ color: f.color, repetition: f.repetition_number, category: f.category })))}`} // Força re-render quando andares mudam
                     floors={floors || []}
                     isSelectable={true}
                     selectedFloors={selectedFloors}
