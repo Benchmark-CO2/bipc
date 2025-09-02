@@ -15,16 +15,28 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   selectedFloors = [],
   onCheckFloor,
 }) => {
-  const undergroundFloors = floors.filter((floor) => floor.underground);
-  const aboveGroundFloors = floors.filter((floor) => !floor.underground);
+  // Separar andares por categoria
+  const roofFloors = floors.filter((floor) => floor.category === "roof");
+  const typicalFloors = floors.filter((floor) => floor.category === "typical");
+  const groundFloors = floors.filter((floor) => floor.category === "ground");
+  const basementFloors = floors.filter(
+    (floor) => floor.category === "basement"
+  );
 
   const maxArea = Math.max(...floors.map((floor) => floor.area), 1);
 
-  const sortedUndergroundFloors = undergroundFloors.sort(
-    (a, b) => a.position - b.position
-  );
-  const sortedAboveGroundFloors = aboveGroundFloors.sort(
+  // Ordenar cada categoria por posição
+  // Para andares acima do solo (roof, typical, ground): ordem decrescente (topo para baixo)
+  const sortedRoofFloors = roofFloors.sort((a, b) => b.position - a.position);
+  const sortedTypicalFloors = typicalFloors.sort(
     (a, b) => b.position - a.position
+  );
+  const sortedGroundFloors = groundFloors.sort(
+    (a, b) => b.position - a.position
+  );
+  // Para subsolo: ordem crescente (mais profundo primeiro)
+  const sortedBasementFloors = basementFloors.sort(
+    (a, b) => a.position - b.position
   );
 
   const handleFloorSelection = (towerName: string, isChecked: boolean) => {
@@ -88,26 +100,44 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
       </h4>
 
       <div className="flex flex-col items-center w-full max-w-40">
-        <div className="flex flex-col-reverse w-full">
-          {sortedAboveGroundFloors.map((floor, index) => (
-            <div key={`above-${index}`} className="w-full max-w-35 mx-auto">
+        {/* Estrutura de cima para baixo: Cobertura -> Tipo -> Térreo -> Subsolo */}
+        <div className="flex flex-col w-full">
+          {/* Cobertura (topo) */}
+          {sortedRoofFloors.map((floor, index) => (
+            <div key={`roof-${index}`} className="w-full max-w-35 mx-auto">
+              {renderFloorBlocks(floor)}
+            </div>
+          ))}
+
+          {/* Tipo */}
+          {sortedTypicalFloors.map((floor, index) => (
+            <div key={`typical-${index}`} className="w-full max-w-35 mx-auto">
+              {renderFloorBlocks(floor)}
+            </div>
+          ))}
+
+          {/* Térreo */}
+          {sortedGroundFloors.map((floor, index) => (
+            <div key={`ground-${index}`} className="w-full max-w-35 mx-auto">
               {renderFloorBlocks(floor)}
             </div>
           ))}
         </div>
 
-        {(aboveGroundFloors.length > 0 || undergroundFloors.length > 0) && (
+        {/* Linha do solo - só aparece se houver andares acima e/ou subsolo */}
+        {(roofFloors.length > 0 ||
+          typicalFloors.length > 0 ||
+          groundFloors.length > 0 ||
+          basementFloors.length > 0) && (
           <div className="w-full h-0.5 bg-black my-3 relative">
             <div className="absolute -bottom-1 left-0 w-full h-2 bg-gray-400"></div>
           </div>
         )}
 
+        {/* Subsolo (abaixo da linha do solo) */}
         <div className="flex flex-col w-full">
-          {sortedUndergroundFloors.map((floor, index) => (
-            <div
-              key={`underground-${index}`}
-              className="w-full max-w-35 mx-auto"
-            >
+          {sortedBasementFloors.map((floor, index) => (
+            <div key={`basement-${index}`} className="w-full max-w-35 mx-auto">
               {renderFloorBlocks(floor)}
             </div>
           ))}

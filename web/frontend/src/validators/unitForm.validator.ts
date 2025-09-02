@@ -16,8 +16,11 @@ export const floorSchema = z.object({
     .number()
     .int()
     .positive("Número de repetições deve ser um número positivo"),
-  underground: z.boolean(),
   color: z.string().min(1, "Cor é obrigatória"),
+  category: z.enum(["roof", "typical", "ground", "basement"], {
+    required_error: "Selecione uma categoria",
+    invalid_type_error: "Categoria inválida",
+  }),
   position: z
     .number()
     .int()
