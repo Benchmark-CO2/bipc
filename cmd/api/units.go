@@ -16,11 +16,10 @@ type TowerCreateData struct {
 }
 
 type UnitCreate struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
-	Data json.RawMessage `json:"data"` // Use json.RawMessage for polymorphic data
+	Name string          `json:"name"`
+	Type string          `json:"type"`
+	Data json.RawMessage `json:"data"`
 }
-
 
 func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request) {
 	projectID, err := app.readIDParam(r, "projectID")
@@ -76,7 +75,8 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 	err = app.models.Units.Insert(unit, floorGroups)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
-		return	}
+		return
+	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"unit": unit}, nil)
 	if err != nil {

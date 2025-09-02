@@ -988,13 +988,6 @@ components:
           type: string
           description: "The type of structural module."
           enum: [beam_column, concrete_wall]
-        floor_ids:
-          type: array
-          description: "Array of floor IDs to which this module will be applied. These floors must belong to the tower associated with this tower option."
-          items:
-            type: string
-            format: uuid
-            example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
         data:
           description: "Polymorphic data containing the specific details for the chosen module type. The structure of this object depends on the 'type' field."
           oneOf:
@@ -1106,6 +1099,13 @@ components:
       type: object
       description: "Data for a 'beam_column' type module."
       properties:
+        floor_ids:
+            type: array
+            description: "Array of floor IDs to which this module will be applied. These floors must belong to the tower associated with this tower option."
+            items:
+              type: string
+              format: uuid
+              example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
         concrete_columns:
           description: "Concrete and steel composition for all columns in the specified floors."
           allOf:
@@ -1151,6 +1151,13 @@ components:
       type: object
       description: "Data for a 'concrete_wall' type module."
       properties:
+        floor_ids:
+            type: array
+            description: "Array of floor IDs to which this module will be applied. These floors must belong to the tower associated with this tower option."
+            items:
+              type: string
+              format: uuid
+              example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
         concrete_walls:
           description: "Concrete and steel composition for all walls in the specified floors."
           allOf:
