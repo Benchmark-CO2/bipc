@@ -76,7 +76,6 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
     const currentVolumes = form.getValues(`${fieldName}.volumes` as any) || [];
     const currentSteel = form.getValues(`${fieldName}.steel` as any) || [];
 
-  
     const isFckUsed = (fck: number, currentIndex: number) => {
       return currentVolumes.some(
         (volume: any, index: number) =>
@@ -235,17 +234,16 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                   }}
                                 />
                               </FormControl>
-                              {volumeFields.length > 1 && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => removeVolume(index)}
-                                  className="px-2"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
-                                </Button>
-                              )}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => removeVolume(index)}
+                                className="px-2"
+                                disabled={volumeFields.length <= 1}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
                             </div>
                             <FormMessage />
                           </FormItem>
@@ -421,17 +419,16 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                   }}
                                 />
                               </FormControl>
-                              {steelFields.length > 1 && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => removeSteel(index)}
-                                  className="px-2"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
-                                </Button>
-                              )}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => removeSteel(index)}
+                                className="px-2"
+                                disabled={steelFields.length <= 1}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
                             </div>
                             <FormMessage />
                           </FormItem>
@@ -483,8 +480,12 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
     title: string,
     isFormSection: boolean = false
   ) => {
-    const [volumes, setVolumes] = useState([{ fck: 50, volume: 100 }]);
-    const [steels, setSteels] = useState([{ ca: 50, mass: 800 }]);
+    const [volumes, setVolumes] = useState<
+      Array<{ fck: number; volume: number }>
+    >([]);
+    const [steels, setSteels] = useState<Array<{ ca: number; mass: number }>>(
+      []
+    );
 
     const totalVolume = volumes.reduce(
       (total, item) => total + (item.volume || 0),
@@ -587,21 +588,19 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                   setVolumes(newVolumes);
                                 }}
                               />
-                              {volumes.length > 1 && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setVolumes(
-                                      volumes.filter((_, i) => i !== index)
-                                    );
-                                  }}
-                                  className="px-2"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
-                                </Button>
-                              )}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setVolumes(
+                                    volumes.filter((_, i) => i !== index)
+                                  );
+                                }}
+                                className="px-2"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
                             </div>
                           </div>
                         </div>
@@ -706,21 +705,19 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                   setSteels(newSteels);
                                 }}
                               />
-                              {steels.length > 1 && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSteels(
-                                      steels.filter((_, i) => i !== index)
-                                    );
-                                  }}
-                                  className="px-2"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
-                                </Button>
-                              )}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSteels(
+                                    steels.filter((_, i) => i !== index)
+                                  );
+                                }}
+                                className="px-2"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
                             </div>
                           </div>
                         </div>

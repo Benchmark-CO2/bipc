@@ -232,17 +232,16 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                   }}
                                 />
                               </FormControl>
-                              {volumeFields.length > 1 && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => removeVolume(index)}
-                                  className="px-2"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
-                                </Button>
-                              )}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => removeVolume(index)}
+                                className="px-2"
+                                disabled={volumeFields.length <= 1}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
                             </div>
                             <FormMessage />
                           </FormItem>
@@ -410,17 +409,16 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                   }}
                                 />
                               </FormControl>
-                              {steelFields.length > 1 && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => removeSteel(index)}
-                                  className="px-2"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-500" />
-                                </Button>
-                              )}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => removeSteel(index)}
+                                className="px-2"
+                                disabled={steelFields.length <= 1}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
                             </div>
                             <FormMessage />
                           </FormItem>
