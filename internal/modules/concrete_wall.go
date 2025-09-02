@@ -1,8 +1,6 @@
 package modules
 
 import (
-	"fmt"
-
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/gofrs/uuid"
@@ -24,6 +22,7 @@ func (w *ConcreteWall) GetType() string { return w.Type }
 func (w *ConcreteWall) Validate(v *validator.Validator) {
 	v.Check(w.Type != "", "type", "must be provided")
 	v.Check(len(w.FloorIDs) > 0, "floor_ids", "must be provided")
+	v.Check(validator.Unique(w.FloorIDs), "floor_ids", "must not contain duplicate values")
 
 	validateConcreteElement(v, w.ConcreteWalls, "concrete_walls")
 	validateConcreteElement(v, w.ConcreteSlabs, "concrete_slabs")

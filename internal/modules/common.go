@@ -43,22 +43,12 @@ func (c *Consuption) sum(value Consuption) {
 	c.EnergyMax += value.EnergyMax
 }
 
-func (c *Consuption) divideByArea(area float64) {
-	if area == 0 {
-		return
-	}
-	c.CO2Min /= area
-	c.CO2Max /= area
-	c.EnergyMin /= area
-	c.EnergyMax /= area
-}
-
 func ParseModuleType(t string) (Module, error) {
 	switch t {
 	case "beam_column":
 		return &BeamColumn{BasicModuleData: BasicModuleData{Type: t}}, nil
-	// case "concrete_wall":
-	// 	return &ConcreteWall{BasicModuleData: BasicModuleData{Type: t}}, nil
+	case "concrete_wall":
+		return &ConcreteWall{BasicModuleData: BasicModuleData{Type: t}}, nil
 	default:
 		return nil, errors.New("invalid module type")
 	}

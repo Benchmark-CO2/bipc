@@ -6,9 +6,11 @@ import (
 )
 
 var (
-	ErrRecordNotFound = errors.New("record not found")
-	ErrEditConflict   = errors.New("edit conflict")
-	ErrNoRowsDeleted  = errors.New("no rows were deleted")
+	ErrRecordNotFound       = errors.New("record not found")
+	ErrEditConflict         = errors.New("edit conflict")
+	ErrNoRowsDeleted        = errors.New("no rows were deleted")
+	ErrInvalidTowerOptionID = errors.New("tower_option_id does not exist or is invalid")
+	ErrInvalidFloorID       = errors.New("one or more floor_ids are invalid or do not exist")
 )
 
 type Models struct {

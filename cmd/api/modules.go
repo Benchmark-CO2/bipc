@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/modules"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
@@ -63,15 +64,14 @@ func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Reque
 
 	err = module.Insert(app.models, optionID, result)
 	if err != nil {
-		if err.Error() == `pq: insert or update on table "module" violates foreign key constraint "module_tower_option_id_fkey"` {
-			app.badRequestResponse(w, r, errors.New("tower_option_id does not exist or is invalid"))
-			return
+		switch {
+		case errors.Is(err, data.ErrInvalidTowerOptionID):
+			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrInvalidFloorID):
+			app.badRequestResponse(w, r, err)
+		default:
+			app.serverErrorResponse(w, r, err)
 		}
-		if err.Error() == `pq: insert or update on table "module_floor" violates foreign key constraint "module_floor_floor_id_fkey"` {
-			app.badRequestResponse(w, r, errors.New("one or more floor_ids are invalid or do not exist"))
-			return
-		}
-		app.serverErrorResponse(w, r, err)
 		return
 	}
 

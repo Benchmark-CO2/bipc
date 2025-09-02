@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"fmt"
 
 	"github.com/gofrs/uuid"
 
@@ -28,6 +29,7 @@ func (b *BeamColumn) GetType() string { return b.Type }
 func (b *BeamColumn) Validate(v *validator.Validator) {
 	v.Check(b.Type != "", "type", "must be provided")
 	v.Check(len(b.FloorIDs) > 0, "floor_ids", "must be provided")
+	v.Check(validator.Unique(b.FloorIDs), "floor_ids", "must not contain duplicate values")
 
 	validateConcreteElement(v, b.ConcreteColumns, "concrete_columns")
 	validateConcreteElement(v, b.ConcreteBeams, "concrete_beams")

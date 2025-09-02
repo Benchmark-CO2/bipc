@@ -3,7 +3,9 @@ package data
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"time"
+
 	"github.com/gofrs/uuid"
 )
 
@@ -60,11 +62,24 @@ type dbExecutor interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
+func checkForeignKeyError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if strings.Contains(err.Error(), "module_tower_option_id_fkey") {
+		return ErrInvalidTowerOptionID
+	}
+	if strings.Contains(err.Error(), "module_floor_floor_id_fkey") {
+		return ErrInvalidFloorID
+	}
+	return err
+}
+
 func insertModuleFloor(db dbExecutor, moduleID uuid.UUID, floorIDs []uuid.UUID) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	for i, floorID := range floorIDs {
+	for _, floorID := range floorIDs {
 		_, err := db.ExecContext(ctx,
 			`INSERT INTO module_floor (module_id, floor_id) VALUES ($1, $2)`,
 			moduleID, floorID,
@@ -108,7 +123,7 @@ func (m BeamColumnModuleModel) Insert(module *BeamColumnModule) error {
 
 	err = insertModule(tx, module.ID, module.TowerOptionID, "beam_column")
 	if err != nil {
-		return err
+		return checkForeignKeyError(err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -133,7 +148,7 @@ func (m BeamColumnModuleModel) Insert(module *BeamColumnModule) error {
 	}
 
 	if err := insertModuleFloor(tx, module.ID, module.FloorIDs); err != nil {
-		return err
+		return checkForeignKeyError(err)
 	}
 	return tx.Commit()
 }
@@ -156,7 +171,7 @@ func (m ConcreteWallModuleModel) Insert(module *ConcreteWallModule) error {
 
 	err = insertModule(tx, module.ID, module.TowerOptionID, "concrete_wall")
 	if err != nil {
-		return err
+		return checkForeignKeyError(err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -181,7 +196,7 @@ func (m ConcreteWallModuleModel) Insert(module *ConcreteWallModule) error {
 	}
 
 	if err := insertModuleFloor(tx, module.ID, module.FloorIDs); err != nil {
-		return err
+		return checkForeignKeyError(err)
 	}
 	return tx.Commit()
 }
