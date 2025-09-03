@@ -3,6 +3,7 @@ module github.com/Benchmark-CO2/bipc
 go 1.24.3
 
 require (
+	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/uuid v1.6.0
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/lib/pq v1.10.9

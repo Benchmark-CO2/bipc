@@ -110,6 +110,11 @@ compose/build-up: docker/build compose/up
 compose/down:
 	cd ./zarf/compose/ && docker compose -f docker_compose.yaml -p bipc down
 
+## compose/down-volume: stop and remove the Docker Compose services and volumes
+.PHONY: compose/down-volume
+compose/down-volume:
+	cd ./zarf/compose/ && docker compose -f docker_compose.yaml -p bipc down --volumes
+
 ## compose/logs: view the logs of the Docker Compose services
 .PHONY: compose/logs
 compose/logs:

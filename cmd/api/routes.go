@@ -43,13 +43,13 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID", app.requirePermission("project:edit", app.updateUnitHandler))
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID", app.requirePermission("project:edit", app.deleteUnitHandler))
 
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/modules", app.requirePermission("project:edit" ,app.createModuleHandler))
-	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/modules/:moduleID", app.requirePermission("project:view", app.readModuleHandler))
-	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID/modules/:moduleID", app.requirePermission("project:edit", app.updateModuleHandler))
-	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/modules/:moduleID", app.requirePermission("project:edit", app.deleteModuleHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/options", app.requirePermission("project:view", app.listTowerOptionsHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options", app.requirePermission("project:edit", app.createTowerOptionHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.requirePermission("project:view", app.readTowerOptionHandler))
+	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.requirePermission("project:edit", app.updateTowerOptionHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.requirePermission("project:edit", app.deleteTowerOptionHandler))
 
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/modules/:moduleID", app.requirePermission("project:edit" , app.createVersionHandler))
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/modules/:moduleID/version", app.requirePermission("project:edit", app.updateModuleInUseHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules", app.requirePermission("project:edit", app.createModuleHandler))
 
 	return app.metrics(app.recoverPanic(app.commonHeaders(app.enableCORS(app.rateLimit(app.authenticate(router))))))
 }

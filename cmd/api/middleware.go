@@ -304,7 +304,7 @@ func (app *application) requirePermission(code string, next http.HandlerFunc) ht
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		user := app.contextGetUser(r)
 
-		projectID, err := app.readIDParam(r, "projectID")
+		projectID, err := app.readUUIDParam(r, "projectID")
 		if err != nil {
 			switch {
 			case strings.HasPrefix(err.Error(), "required path parameter"):
