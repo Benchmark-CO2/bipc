@@ -67,7 +67,7 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	headers := make(http.Header)
-	headers.Set("Location", fmt.Sprintf("/project/%d", project.ID))
+	headers.Set("Location", fmt.Sprintf("/project/%s", project.ID))
 
 	err = app.writeJSON(w, http.StatusCreated, envelope{"project": project}, headers)
 	if err != nil {
@@ -76,7 +76,7 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (app *application) showProjectHandler(w http.ResponseWriter, r *http.Request) {
-	projectID, _ := app.readIDParam(r, "projectID")
+	projectID, _ := app.readUUIDParam(r, "projectID")
 
 	project, err := app.models.Projects.GetByID(projectID)
 	if err != nil {
@@ -97,7 +97,7 @@ func (app *application) showProjectHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Request) {
-	projectID, _ := app.readIDParam(r, "projectID")
+	projectID, _ := app.readUUIDParam(r, "projectID")
 
 	project, err := app.models.Projects.GetByID(projectID)
 	if err != nil {
@@ -197,7 +197,7 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (app *application) deleteProjectHandler(w http.ResponseWriter, r *http.Request) {
-	projectID, _ := app.readIDParam(r, "projectID")
+	projectID, _ := app.readUUIDParam(r, "projectID")
 
 	err := app.models.Projects.Delete(projectID)
 	if err != nil {
@@ -263,7 +263,7 @@ func (app *application) listProjectsHandler(w http.ResponseWriter, r *http.Reque
 
 func (app *application) inviteUserHandler(w http.ResponseWriter, r *http.Request) {
 	user := app.contextGetUser(r)
-	projectID, _ := app.readIDParam(r, "projectID")
+	projectID, _ := app.readUUIDParam(r, "projectID")
 
 	var input struct {
 		Email       string   `json:"email"`

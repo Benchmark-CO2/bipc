@@ -13,7 +13,7 @@ import (
 
 type Unit struct {
 	ID        uuid.UUID `json:"id"`
-	ProjectID int64     `json:"project_id"`
+	ProjectID uuid.UUID `json:"project_id"`
 	Name      string    `json:"name"`
 	Type      string    `json:"type"`
 	Tower     *Tower    `json:"tower,omitempty"`
@@ -52,7 +52,7 @@ type FloorGroupCreate struct {
 }
 
 func ValidateUnit(v *validator.Validator, unit *Unit) {
-	v.Check(unit.ProjectID > 0, "project_id", "must be provided and greater than zero")
+	v.Check(!unit.ProjectID.IsNil(), "project_id", "must be provided")
 	v.Check(unit.Name != "", "name", "must be provided")
 	v.Check(unit.Type != "", "type", "must be provided")
 }
@@ -253,6 +253,7 @@ func (m UnitModel) getFloorsByTowerID(towerID uuid.UUID) ([]Floor, error) {
 	return floors, nil
 }
 
+// TODO: Update this function to work with the new structure
 func (m UnitModel) Update(unit *Unit) error {
 	return errors.New("Update not implemented yet")
 }

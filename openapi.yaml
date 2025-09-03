@@ -22,8 +22,8 @@ tags:
     description: User invitations to projects
   - name: Units
     description: Unit management within projects
-  - name: Tower Options
-    description: Tower option management within units
+  - name: Options
+    description: unit option management within units
   - name: Modules
     description: "Management of structural modules. A module represents a specific engineering solution (e.g., a beam-column system or a concrete wall system) for a set of floors within a tower. Modules are used to calculate CO2 emissions and other metrics."
 
@@ -498,11 +498,11 @@ paths:
         '500':
           description: Internal Server Error.
 
-  /v1/projects/{projectID}/units/{unitID}/tower-options:
+  /v1/projects/{projectID}/units/{unitID}/options:
     post:
       summary: Create a new engineering option for a tower
       tags:
-          - Tower Options
+          - Options
       security:
         - bearerAuth: []
       parameters:
@@ -523,14 +523,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TowerOptionCreateRequest'
+              $ref: '#/components/schemas/OptionCreateRequest'
       responses:
         '201':
-          description: Tower option created successfully
+          description: unit option created successfully
     get:
-      summary: List all tower options for a unit
+      summary: List all options for a unit
       tags:
-        - Tower Options
+        - Options
       security:
         - bearerAuth: []
       parameters:
@@ -548,12 +548,12 @@ paths:
             format: uuid
       responses:
         '200':
-          description: A list of tower options
-  /v1/projects/{projectID}/units/{unitID}/tower-options/{optionID}:
+          description: A list of options
+  /v1/projects/{projectID}/units/{unitID}/options/{optionID}:
     get:
-      summary: Get a tower option by ID
+      summary: Get a unit option by ID
       tags:
-        - Tower Options
+        - Options
       security:
         - bearerAuth: []
       parameters:
@@ -577,13 +577,13 @@ paths:
             format: uuid
       responses:
         '200':
-          description: A single tower option
+          description: A single unit option
         '404':
           description: Not Found.
     patch:
-      summary: Update a tower option
+      summary: Update a unit option
       tags:
-        - Tower Options
+        - Options
       security:
         - bearerAuth: []
       parameters:
@@ -610,7 +610,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TowerOptionCreateRequest'
+              $ref: '#/components/schemas/OptionCreateRequest'
       responses:
         '200':
           description: Successfully updated
@@ -619,9 +619,9 @@ paths:
         '409':
           description: Conflict. A conflicting edit occurred.
     delete:
-      summary: Delete a tower option
+      summary: Delete a unit option
       tags:
-        - Tower Options
+        - Options
       security:
         - bearerAuth: []
       parameters:
@@ -649,9 +649,9 @@ paths:
         '404':
           description: Not Found.
 
-  /v1/projects/{projectID}/units/{unitID}/tower-options/{optionID}/modules:
+  /v1/projects/{projectID}/units/{unitID}/options/{optionID}/modules:
     post:
-      summary: Create a new module for a tower option
+      summary: Create a new module for a unit option
       tags:
         - Modules
       parameters:
@@ -683,7 +683,7 @@ paths:
         '201':
           description: Module created successfully
 
-  /v1/projects/{projectID}/units/{unitID}/tower-options/{optionID}/modules/{moduleID}:
+  /v1/projects/{projectID}/units/{unitID}/options/{optionID}/modules/{moduleID}:
     get:
       summary: Get a module by ID
       tags:
@@ -968,7 +968,7 @@ components:
           type: string
           enum: [basement_floor, penthouse_floor, ground_floor, standard_floor]
 
-    TowerOptionCreateRequest:
+    OptionCreateRequest:
       type: object
       properties:
         name:
@@ -982,7 +982,7 @@ components:
     # --- Module Schemas ---
     ModuleCreateRequest:
       type: object
-      description: "Request body for creating a new structural module. A module represents a specific structural system (e.g., beam-column or concrete wall) applied to a set of floors within a tower option."
+      description: "Request body for creating a new structural module. A module represents a specific structural system (e.g., beam-column or concrete wall) applied to a set of floors within a unit option."
       properties:
         type:
           type: string
@@ -1101,7 +1101,7 @@ components:
       properties:
         floor_ids:
             type: array
-            description: "Array of floor IDs to which this module will be applied. These floors must belong to the tower associated with this tower option."
+            description: "Array of floor IDs to which this module will be applied. These floors must belong to the tower associated with this unit option."
             items:
               type: string
               format: uuid
@@ -1153,7 +1153,7 @@ components:
       properties:
         floor_ids:
             type: array
-            description: "Array of floor IDs to which this module will be applied. These floors must belong to the tower associated with this tower option."
+            description: "Array of floor IDs to which this module will be applied. These floors must belong to the tower associated with this unit option."
             items:
               type: string
               format: uuid

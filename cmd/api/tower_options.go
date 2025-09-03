@@ -42,7 +42,14 @@ func (app *application) createTowerOptionHandler(w http.ResponseWriter, r *http.
 
 	err = app.models.TowerOptions.Insert(towerOption)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		switch {
+		case errors.Is(err, data.ErrInvalidUnitID):
+			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrUnitIsNotTower):
+			app.badRequestResponse(w, r, err)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 

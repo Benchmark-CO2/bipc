@@ -22,7 +22,7 @@ type UnitCreate struct {
 }
 
 func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request) {
-	projectID, err := app.readIDParam(r, "projectID")
+	projectID, err := app.readUUIDParam(r, "projectID")
 	if err != nil {
 		app.notFoundResponse(w, r)
 		return

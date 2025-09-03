@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS units (
     id UUID PRIMARY KEY,
-    project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     type TEXT NOT NULL
 );

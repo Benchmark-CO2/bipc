@@ -11,6 +11,8 @@ var (
 	ErrNoRowsDeleted        = errors.New("no rows were deleted")
 	ErrInvalidTowerOptionID = errors.New("tower_option_id does not exist or is invalid")
 	ErrInvalidFloorID       = errors.New("one or more floor_ids are invalid or do not exist")
+	ErrInvalidUnitID        = errors.New("unit_id does not exist or is invalid")
+	ErrUnitIsNotTower       = errors.New("the specified unit is not a tower")
 )
 
 type Models struct {

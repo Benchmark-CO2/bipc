@@ -28,6 +28,26 @@ type TowerOptionModel struct {
 }
 
 func (m TowerOptionModel) Insert(towerOption *TowerOption) error {
+	tx, err := m.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var unitType string
+	queryCheck := `SELECT type FROM units WHERE id = $1`
+	err = tx.QueryRow(queryCheck, towerOption.TowerID).Scan(&unitType)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrInvalidUnitID
+		}
+		return err
+	}
+
+	if unitType != "tower" {
+		return ErrUnitIsNotTower
+	}
+
 	query := `
         INSERT INTO tower_option (id, tower_id, name, active)
         VALUES ($1, $2, $3, $4)`
@@ -43,12 +63,12 @@ func (m TowerOptionModel) Insert(towerOption *TowerOption) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err = m.DB.ExecContext(ctx, query, args...)
+	_, err = tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return tx.Commit()
 }
 
 func (m TowerOptionModel) GetByID(id uuid.UUID) (*TowerOption, error) {

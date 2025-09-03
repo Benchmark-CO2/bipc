@@ -1,8 +1,6 @@
 package modules
 
 import (
-	"fmt"
-
 	"github.com/gofrs/uuid"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
