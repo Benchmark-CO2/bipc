@@ -8,7 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Benchmark-CO2/bipc/internal/utils"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
+	"github.com/gofrs/uuid"
 	"github.com/lib/pq"
 )
 
@@ -23,13 +25,13 @@ var (
 )
 
 type UnitBasic struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+	Type string    `json:"type"`
 }
 
 type Project struct {
-	ID           int64       `json:"id"`
+	ID           uuid.UUID   `json:"id"`
 	CreatedAt    time.Time   `json:"created_at"`
 	UpdatedAt    time.Time   `json:"updated_at"`
 	UserID       int64       `json:"user_id"`
@@ -104,15 +106,21 @@ func (m ProjectModel) Insert(project *Project) error {
 	}
 	defer tx.Rollback()
 
-	query1 := `
-		INSERT INTO projects (user_id, name, cep, state, city, neighborhood, street, number, phase, description, image_url)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-		RETURNING id, created_at, updated_at`
+	projectID, err := utils.NewUUIDv7()
+	if err != nil {
+		return err
+	}
+	project.ID = projectID
 
-	args := []any{project.UserID, project.Name, project.CEP, project.State, project.City, project.Neighborhood,
+	query1 := `
+		INSERT INTO projects (id, user_id, name, cep, state, city, neighborhood, street, number, phase, description, image_url)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		RETURNING created_at, updated_at`
+
+	args := []any{project.ID, project.UserID, project.Name, project.CEP, project.State, project.City, project.Neighborhood,
 		project.Street, project.Number, project.Phase, project.Description, project.ImageURL}
 
-	err = tx.QueryRow(query1, args...).Scan(&project.ID, &project.CreatedAt, &project.UpdatedAt)
+	err = tx.QueryRow(query1, args...).Scan(&project.CreatedAt, &project.UpdatedAt)
 	if err != nil {
 		switch {
 		case err.Error() == `pq: duplicate key value violates unique constraint "projects_user_id_name_key"`:
@@ -138,7 +146,7 @@ func (m ProjectModel) Insert(project *Project) error {
 	return nil
 }
 
-func (m ProjectModel) GetByID(id int64) (*Project, error) {
+func (m ProjectModel) GetByID(id uuid.UUID) (*Project, error) {
 	query := `
 		SELECT id, created_at, updated_at, user_id, name, cep, state, city, neighborhood, street, number, phase, description, image_url
 		FROM projects
@@ -248,7 +256,7 @@ func (m ProjectModel) Update(project *Project) error {
 	return nil
 }
 
-func (m ProjectModel) Delete(projectID int64) error {
+func (m ProjectModel) Delete(projectID uuid.UUID) error {
 	query := `
 	DELETE FROM projects
 	WHERE id = $1`

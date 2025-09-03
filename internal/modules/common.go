@@ -2,31 +2,31 @@ package modules
 
 import (
 	"errors"
+	"fmt"
+
+	"github.com/gofrs/uuid"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
-type Concrete struct {
-	Fck    string  `json:"fck"`
+type SteelMassItem struct {
+	CA   int     `json:"ca"`
+	Mass float64 `json:"mass"`
+}
+
+type ConcreteVolumeItem struct {
+	Fck    int     `json:"fck"`
 	Volume float64 `json:"volume"`
 }
 
-type BasicModuleData struct {
-	Name            string  `json:"name"`
-	Type            string  `json:"type"`
-	FloorRepetition int     `json:"floor_repetition"`
-	FloorArea       float64 `json:"floor_area"`
-	FloorHeight     float64 `json:"floor_height"`
+type ConcreteElement struct {
+	Volumes []ConcreteVolumeItem `json:"volumes"`
+	Steel   []SteelMassItem      `json:"steel"`
 }
 
-type ModuleResponseData struct {
-	CO2Min    *float64 `json:"co2_min,omitempty"`
-	CO2Max    *float64 `json:"co2_max,omitempty"`
-	EnergyMin *float64 `json:"energy_min,omitempty"`
-	EnergyMax *float64 `json:"energy_max,omitempty"`
-	InUse     bool     `json:"in_use"`
-	Version   int32    `json:"version"`
+type BasicModuleData struct {
+	Type string `json:"type"`
 }
 
 type Consuption struct {
@@ -43,22 +43,12 @@ func (c *Consuption) sum(value Consuption) {
 	c.EnergyMax += value.EnergyMax
 }
 
-func (c *Consuption) divideByArea(area float64) {
-	if area == 0 {
-		return
-	}
-	c.CO2Min /= area
-	c.CO2Max /= area
-	c.EnergyMin /= area
-	c.EnergyMax /= area
-}
-
 func ParseModuleType(t string) (Module, error) {
 	switch t {
 	case "beam_column":
-		return &BeamColumn{}, nil
+		return &BeamColumn{BasicModuleData: BasicModuleData{Type: t}}, nil
 	case "concrete_wall":
-		return &ConcreteWall{}, nil
+		return &ConcreteWall{BasicModuleData: BasicModuleData{Type: t}}, nil
 	default:
 		return nil, errors.New("invalid module type")
 	}
@@ -67,28 +57,34 @@ func ParseModuleType(t string) (Module, error) {
 type Module interface {
 	GetType() string
 	Validate(v *validator.Validator)
-	ValidateVersion(v *validator.Validator)
 	Calculate() (Consuption, error)
-	Insert(models data.Models, unitID int64, result Consuption, opts *InsertOptions) error
-	GetVersions(models data.Models, moduleID int64) (any, error)
-	MergeModuleData(models data.Models, moduleID int64) (*int32, error)
-	Delete(models data.Models, moduleID int64) error
-	UpdateName(models data.Models, moduleID int64, newName string) error
-	UpdateInUse(models data.Models, moduleID int64, version int32) error
+	Insert(models data.Models, optionID uuid.UUID, result Consuption) error
 }
 
-func validateConcreteList(v *validator.Validator, list []Concrete, fieldPrefix string) {
-	fckSet := make(map[string]struct{})
-	for _, c := range list {
-		v.Check(c.Volume > 0, fieldPrefix+".volume", "must be greater than 0")
-		v.Check(c.Fck != "", fieldPrefix+".fck", "must be provided")
+func validateConcreteElement(v *validator.Validator, el ConcreteElement, fieldPrefix string) {
+	fckSet := make(map[int]struct{})
+	for _, c := range el.Volumes {
+		v.Check(c.Volume > 0, fieldPrefix+".volumes.volume", "must be greater than 0")
+		v.Check(c.Fck != 0, fieldPrefix+".volumes.fck", "must be provided")
 		if _, exists := fckSet[c.Fck]; exists {
-			v.Check(false, fieldPrefix+".fck", "duplicate fck value: "+c.Fck)
+			v.Check(false, fieldPrefix+".volumes.fck", fmt.Sprintf("duplicate fck value: %d", c.Fck))
 		} else {
 			fckSet[c.Fck] = struct{}{}
 		}
 	}
-	v.Check(len(list) > 0, fieldPrefix, "must have at least one item")
+	v.Check(len(el.Volumes) > 0, fieldPrefix+".volumes", "must have at least one item")
+
+	caSet := make(map[int]struct{})
+	for _, s := range el.Steel {
+		v.Check(s.Mass > 0, fieldPrefix+".steel.mass", "must be greater than 0")
+		v.Check(s.CA != 0, fieldPrefix+".steel.ca", "must be provided")
+		if _, exists := caSet[s.CA]; exists {
+			v.Check(false, fieldPrefix+".steel.ca", fmt.Sprintf("duplicate ca value: %d", s.CA))
+		} else {
+			caSet[s.CA] = struct{}{}
+		}
+	}
+	v.Check(len(el.Steel) > 0, fieldPrefix+".steel", "must have at least one item")
 }
 
 type SidacValue struct {
@@ -97,95 +93,98 @@ type SidacValue struct {
 }
 
 type SidacMaterial struct {
-	KgCO2 map[string]SidacValue `json:"kgCO2"`
-	MJ    map[string]SidacValue `json:"MJ"`
+	KgCO2 map[int]SidacValue `json:"kgCO2"`
+	MJ    map[int]SidacValue `json:"MJ"`
 }
 
 var sidacConcreteData = SidacMaterial{
-	KgCO2: map[string]SidacValue{
-		"20": {Min: 168.8, Max: 283.5},
-		"25": {Min: 200.0, Max: 306.4},
-		"30": {Min: 228.2, Max: 339.4},
-		"35": {Min: 256.6, Max: 373.6},
-		"40": {Min: 283.4, Max: 395.5},
+	KgCO2: map[int]SidacValue{
+		20: {Min: 168.8, Max: 283.5},
+		25: {Min: 200.0, Max: 306.4},
+		30: {Min: 228.2, Max: 339.4},
+		35: {Min: 256.6, Max: 373.6},
+		40: {Min: 283.4, Max: 395.5},
 	},
-	MJ: map[string]SidacValue{
-		"20": {Min: 1325, Max: 2244},
-		"25": {Min: 1488, Max: 2408},
-		"30": {Min: 1650, Max: 2629},
-		"35": {Min: 1797, Max: 2849},
-		"40": {Min: 1928, Max: 3002},
+	MJ: map[int]SidacValue{
+		20: {Min: 1325, Max: 2244},
+		25: {Min: 1488, Max: 2408},
+		30: {Min: 1650, Max: 2629},
+		35: {Min: 1797, Max: 2849},
+		40: {Min: 1928, Max: 3002},
 	},
 }
 
 var sidacSteelData = SidacMaterial{
-	KgCO2: map[string]SidacValue{
-		"50": {Min: 0.4259, Max: 1.061},
-		"60": {Min: 0.5, Max: 1.1},
+	KgCO2: map[int]SidacValue{
+		50: {Min: 0.4259, Max: 1.061},
+		60: {Min: 0.5, Max: 1.1},
 	},
-	MJ: map[string]SidacValue{
-		"50": {Min: 8.025, Max: 16.05},
-		"60": {Min: 8.1, Max: 16.1},
+	MJ: map[int]SidacValue{
+		50: {Min: 8.025, Max: 16.05},
+		60: {Min: 8.1, Max: 16.1},
 	},
 }
 
-func calculateConcrete(list []Concrete, sidac SidacMaterial) (Consuption, error) {
+func (ce *ConcreteElement) calculate(sidacConcrete, sidacSteel SidacMaterial) (Consuption, error) {
 	var result Consuption
-	for _, c := range list {
-		val, ok := sidac.KgCO2[c.Fck]
+	for _, c := range ce.Volumes {
+		val, ok := sidacConcrete.KgCO2[c.Fck]
 		if !ok {
-			return result, errors.New("fck not found in sidacConcreteData: " + c.Fck)
+			return result, fmt.Errorf("fck not found in sidacConcreteData: %d", c.Fck)
 		}
 		result.CO2Min += val.Min * c.Volume
 		result.CO2Max += val.Max * c.Volume
-	}
-	for _, c := range list {
-		val, ok := sidac.MJ[c.Fck]
+
+		val, ok = sidacConcrete.MJ[c.Fck]
 		if !ok {
-			return result, errors.New("fck not found in sidacConcreteData: " + c.Fck)
+			return result, fmt.Errorf("fck not found in sidacConcreteData: %d", c.Fck)
 		}
 		result.EnergyMin += val.Min * c.Volume
 		result.EnergyMax += val.Max * c.Volume
 	}
-	return result, nil
-}
 
-func calculateSteel(ca50, ca60 float64, sidac SidacMaterial) (Consuption, error) {
-	var result Consuption
+	for _, s := range ce.Steel {
+		val, ok := sidacSteel.KgCO2[s.CA]
+		if !ok {
+			return result, fmt.Errorf("steel type not found in sidacSteelData: %d", s.CA)
+		}
+		result.CO2Min += val.Min * s.Mass
+		result.CO2Max += val.Max * s.Mass
 
-	val, ok := sidac.KgCO2["50"]
-	if !ok {
-		return result, errors.New("steel type not found in sidacSteelData: 50")
+		val, ok = sidacSteel.MJ[s.CA]
+		if !ok {
+			return result, fmt.Errorf("steel type not found in sidacSteelData: %d", s.CA)
+		}
+		result.EnergyMin += val.Min * s.Mass
+		result.EnergyMax += val.Max * s.Mass
 	}
-	result.CO2Min += val.Min * ca50
-	result.CO2Max += val.Max * ca50
-
-	val, ok = sidac.MJ["50"]
-	if !ok {
-		return result, errors.New("steel type not found in sidacSteelData: 50")
-	}
-	result.EnergyMin += val.Min * ca50
-	result.EnergyMax += val.Max * ca50
-
-	val, ok = sidac.KgCO2["60"]
-	if !ok {
-		return result, errors.New("steel type not found in sidacSteelData: 60")
-	}
-	result.CO2Min += val.Min * ca60
-	result.CO2Max += val.Max * ca60
-
-	val, ok = sidac.MJ["60"]
-	if !ok {
-		return result, errors.New("steel type not found in sidacSteelData: 60")
-	}
-	result.EnergyMin += val.Min * ca60
-	result.EnergyMax += val.Max * ca60
 
 	return result, nil
 }
 
-func addConcreteList(total *Consuption, list []Concrete, sidac SidacMaterial) error {
-	result, err := calculateConcrete(list, sidac)
+func toDataConcrete(el ConcreteElement) data.Concrete {
+	var vols []data.ConcreteVolume
+	for _, v := range el.Volumes {
+		vols = append(vols, data.ConcreteVolume{
+			Fck:    v.Fck,
+			Volume: v.Volume,
+		})
+	}
+	var steels []data.SteelMass
+	for _, s := range el.Steel {
+		steels = append(steels, data.SteelMass{
+			CA:   s.CA,
+			Mass: s.Mass,
+		})
+	}
+	return data.Concrete{
+		Volumes: vols,
+		Steel:   steels,
+	}
+}
+
+func addConcreteElement(total *Consuption, ce ConcreteElement, sidacConcrete, sidacSteel SidacMaterial) error {
+	result, err := ce.calculate(sidacConcrete, sidacSteel)
 	if err != nil {
 		return err
 	}
@@ -193,51 +192,23 @@ func addConcreteList(total *Consuption, list []Concrete, sidac SidacMaterial) er
 	return nil
 }
 
-type InsertOptions struct {
-	Version *int32
-	ID      *int64
-}
-
-func aggregateConcreteVolumes(list []Concrete) *data.Concrete {
-	c := &data.Concrete{}
-	for _, item := range list {
-		switch item.Fck {
-		case "20":
-			c.VolumeFck20 += item.Volume
-		case "25":
-			c.VolumeFck25 += item.Volume
-		case "30":
-			c.VolumeFck30 += item.Volume
-		case "35":
-			c.VolumeFck35 += item.Volume
-		case "40":
-			c.VolumeFck40 += item.Volume
-		case "45":
-			c.VolumeFck45 += item.Volume
-		}
+func toConcreteElement(c data.Concrete) ConcreteElement {
+	var vols []ConcreteVolumeItem
+	for _, v := range c.Volumes {
+		vols = append(vols, ConcreteVolumeItem{
+			Fck:    v.Fck,
+			Volume: v.Volume,
+		})
 	}
-	return c
-}
-
-func toConcrete(c data.Concrete) []Concrete {
-	var concretes []Concrete
-	if c.VolumeFck20 > 0 {
-		concretes = append(concretes, Concrete{Fck: "20", Volume: c.VolumeFck20})
+	var steels []SteelMassItem
+	for _, s := range c.Steel {
+		steels = append(steels, SteelMassItem{
+			CA:   s.CA,
+			Mass: s.Mass,
+		})
 	}
-	if c.VolumeFck25 > 0 {
-		concretes = append(concretes, Concrete{Fck: "25", Volume: c.VolumeFck25})
+	return ConcreteElement{
+		Volumes: vols,
+		Steel:   steels,
 	}
-	if c.VolumeFck30 > 0 {
-		concretes = append(concretes, Concrete{Fck: "30", Volume: c.VolumeFck30})
-	}
-	if c.VolumeFck35 > 0 {
-		concretes = append(concretes, Concrete{Fck: "35", Volume: c.VolumeFck35})
-	}
-	if c.VolumeFck40 > 0 {
-		concretes = append(concretes, Concrete{Fck: "40", Volume: c.VolumeFck40})
-	}
-	if c.VolumeFck45 > 0 {
-		concretes = append(concretes, Concrete{Fck: "45", Volume: c.VolumeFck45})
-	}
-	return concretes
 }

@@ -1,64 +1,78 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
-type BaseUnit struct {
-	ProjectID int64  `json:"project_id"`
-	Name      string `json:"name"`
-	Type      string `json:"type"`
+// New struct to match the TowerCreateData schema in openapi.yaml
+type TowerCreateData struct {
+	FloorGroups []data.FloorGroupCreate `json:"floor_groups"`
 }
 
-type Tower struct {
-	TotalFloors    int     `json:"total_floors"`
-	TowerFloors    int     `json:"tower_floors"`
-	BaseFloors     int     `json:"base_floors"`
-	BasementFloors int     `json:"basement_floors"`
-	TypeFloors     int     `json:"type_floors"`
-	TotalArea      float64 `json:"total_area"`
-}
-
-type CreateUnit struct {
-	BaseUnit
-	Tower
+type UnitCreate struct {
+	Name string          `json:"name"`
+	Type string          `json:"type"`
+	Data json.RawMessage `json:"data"`
 }
 
 func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request) {
-	projectID, _ := app.readIDParam(r, "projectID")
+	projectID, err := app.readUUIDParam(r, "projectID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
 
-	var input CreateUnit
+	var input UnitCreate
 
-	err := app.readJSON(w, r, &input)
+	err = app.readJSON(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
 	unit := &data.Unit{
-		ProjectID:      projectID,
-		Name:           input.Name,
-		Type:           input.Type,
-		TotalFloors:    &input.TotalFloors,
-		TowerFloors:    &input.TowerFloors,
-		BaseFloors:     &input.BaseFloors,
-		BasementFloors: &input.BasementFloors,
-		TypeFloors:     &input.TypeFloors,
-		TotalArea:      &input.TotalArea,
+		ProjectID: projectID,
+		Name:      input.Name,
+		Type:      input.Type,
 	}
 
 	v := validator.New()
 	data.ValidateUnit(v, unit)
+
+	var floorGroups []data.FloorGroupCreate
+
+	switch input.Type {
+	case "tower":
+		var towerData TowerCreateData
+		err = json.Unmarshal(input.Data, &towerData)
+		if err != nil {
+			app.badRequestResponse(w, r, err)
+			return
+		}
+		floorGroups = towerData.FloorGroups
+
+		// Validate floor groups
+		allowedCategories := []string{"basement_floor", "penthouse_floor", "ground_floor", "standard_floor"}
+		for i, floorGroup := range floorGroups {
+			v.Check(validator.PermittedValue(floorGroup.Category, allowedCategories...), "floor_groups."+strconv.Itoa(i)+".category", "invalid category")
+		}
+
+	default:
+		v.AddError("type", "invalid unit type")
+	}
+
 	if !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	err = app.models.Units.Insert(unit)
+	err = app.models.Units.Insert(unit, floorGroups)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -71,7 +85,11 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) readUnitHandler(w http.ResponseWriter, r *http.Request) {
-	unitID, _ := app.readIDParam(r, "unitID")
+	unitID, err := app.readUUIDParam(r, "unitID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
 
 	unit, err := app.models.Units.GetByID(unitID)
 	if err != nil {
@@ -91,93 +109,11 @@ func (app *application) readUnitHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (app *application) updateUnitHandler(w http.ResponseWriter, r *http.Request) {
-	unitID, err := app.readIDParam(r, "unitID")
-	if err != nil {
-		app.notFoundResponse(w, r)
-		return
-	}
-
-	unit, err := app.models.Units.GetByID(unitID)
-	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
-		default:
-			app.serverErrorResponse(w, r, err)
-		}
-		return
-	}
-
-	var input struct {
-		Name           *string  `json:"name"`
-		Type           *string  `json:"type"`
-		TotalFloors    *int     `json:"total_floors"`
-		TowerFloors    *int     `json:"tower_floors"`
-		BaseFloors     *int     `json:"base_floors"`
-		BasementFloors *int     `json:"basement_floors"`
-		TypeFloors     *int     `json:"type_floors"`
-		TotalArea      *float64 `json:"total_area"`
-	}
-
-	err = app.readJSON(w, r, &input)
-	if err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
-	if input.Name != nil {
-		unit.Name = *input.Name
-	}
-	if input.Type != nil {
-		unit.Type = *input.Type
-	}
-	if input.TotalFloors != nil {
-		unit.TotalFloors = input.TotalFloors
-	}
-	if input.TowerFloors != nil {
-		unit.TowerFloors = input.TowerFloors
-	}
-	if input.BaseFloors != nil {
-		unit.BaseFloors = input.BaseFloors
-	}
-	if input.BasementFloors != nil {
-		unit.BasementFloors = input.BasementFloors
-	}
-	if input.TypeFloors != nil {
-		unit.TypeFloors = input.TypeFloors
-	}
-	if input.TotalArea != nil {
-		unit.TotalArea = input.TotalArea
-	}
-
-	v := validator.New()
-
-	data.ValidateUnit(v, unit)
-
-	if !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
-		return
-	}
-
-	err = app.models.Units.Update(unit)
-	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrEditConflict):
-			app.editConflictResponse(w, r)
-		default:
-			app.serverErrorResponse(w, r, err)
-		}
-		return
-	}
-
-	err = app.writeJSON(w, http.StatusOK, envelope{"unit": unit}, nil)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-	}
+	app.notImplementedResponse(w, r)
 }
 
 func (app *application) deleteUnitHandler(w http.ResponseWriter, r *http.Request) {
-	unitID, err := app.readIDParam(r, "unitID")
+	unitID, err := app.readUUIDParam(r, "unitID")
 	if err != nil {
 		app.notFoundResponse(w, r)
 		return
