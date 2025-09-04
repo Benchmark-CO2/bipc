@@ -61,17 +61,17 @@ const DrawerFormUnit = ({
     defaultValues: {
       name: "",
       type: "tower" as const,
-      floors: [
-        {
-          tower_name: "",
-          area: 100,
-          height: 0,
-          repetition_number: 1,
-          underground: false,
-          color: "#c9c9c9",
-          position: 0,
-        },
-      ],
+      data: {
+        floor_groups: [
+          {
+            name: "",
+            area: 100,
+            height: 3.0,
+            repetition: 1,
+            category: "standard_floor",
+          },
+        ],
+      },
     },
   });
 
@@ -100,7 +100,7 @@ const DrawerFormUnit = ({
 
       if (data.data.unit) {
         navigate({
-          to: `/projects/${data.data.unit.project_id}/${data.data.unit.id}`,
+          to: `/projects/${data.data.unit.project_id}/`,
           from: "/projects",
         })
           .then(() => null)
@@ -163,13 +163,19 @@ const DrawerFormUnit = ({
 
   useEffect(() => {
     if (unitData) {
+      console.log(unitData);
       form.reset({
         name: unitData.name,
         type: unitData.type,
-        // floors: unitData.floors || [],
+        data: {
+          floor_groups: unitData.tower?.floors || [],
+        },
+        // data: unitData.data || {
+        //   floor_groups: [],
+        // },
       });
     }
-  }, [unitData]);
+  }, [unitData, form]);
 
   const unitTypes = [
     { value: "tower", label: t("drawerFormUnit.unitTypeOptions.tower") },
@@ -193,7 +199,7 @@ const DrawerFormUnit = ({
           </Button>
         )}
       </DrawerTrigger>
-      <DrawerContent className="min-w-3/5">
+      <DrawerContent className="min-w-4/5">
         <DrawerHeader className="px-8">
           <DrawerTitle>
             {unitId

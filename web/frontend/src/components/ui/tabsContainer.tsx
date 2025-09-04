@@ -5,7 +5,7 @@ import { DrawerFormUnit } from "../layout";
 interface TabsContainerProps {
   units: TProjectUnit[];
   projectId: string;
-  selectedTab?: number;
+  selectedTab?: string;
   hasAddButton?: boolean;
 }
 
@@ -17,7 +17,7 @@ export function TabsContainer({
 }: TabsContainerProps) {
   const router = useRouter();
 
-  const handleTabClick = (unitId: number) => {
+  const handleTabClick = (unitId: string) => {
     void router.navigate({
       to: `/new_projects/${projectId}/unit/${unitId}`,
     });

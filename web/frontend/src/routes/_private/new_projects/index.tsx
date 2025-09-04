@@ -1,12 +1,11 @@
 import { deleteProject } from "@/actions/projects/deleteProjects";
 import { getAllProjectsByUser } from "@/actions/projects/getProjects";
 import { DrawerFormProject, ProjectTable } from "@/components/layout";
-import ProjectsSummary from '@/components/summaryVariants/projects';
+import ProjectsSummary from "@/components/summaryVariants/projects";
 import { Button } from "@/components/ui/button";
 import CustomCard from "@/components/ui/customCard";
-import { useSummary } from '@/context/summaryContext';
-import { useProjects } from '@/hooks/useProjects';
-import { mockProject } from "@/utils/mockProject";
+import { useSummary } from "@/context/summaryContext";
+import { useProjects } from "@/hooks/useProjects";
 import { queryClient } from "@/utils/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -33,9 +32,9 @@ export const Route = createFileRoute("/_private/new_projects/")({
 function RouteComponent() {
   const [viewMode, setViewMode] = useState<"table" | "grid">("grid");
   const { t } = useTranslation();
-  const {projects, selectedProjects, setSelectedProjects} = useProjects()
+  const { projects, selectedProjects, setSelectedProjects } = useProjects();
   const navigate = useNavigate({ from: "/projects" });
-  const { setSummaryContext } = useSummary()
+  const { setSummaryContext } = useSummary();
   const { data } = useQuery({
     queryKey: ["projects"],
     queryFn: getAllProjectsByUser,
@@ -95,11 +94,16 @@ function RouteComponent() {
 
   useEffect(() => {
     setSummaryContext({
-      title: 'Projects Comparison',
-      component: <ProjectsSummary projects={projects.filter(project => selectedProjects.get(project.id))} />
+      title: "Projects Comparison",
+      component: (
+        <ProjectsSummary
+          projects={projects.filter((project) =>
+            selectedProjects.get(project.id)
+          )}
+        />
+      ),
     });
   }, [selectedProjects]);
-
 
   return (
     <div>
@@ -127,15 +131,15 @@ function RouteComponent() {
       </div>
       {viewMode === "table" ? (
         <ProjectTable
-          projects={[...(data?.data.projects ?? []), mockProject]}
+          projects={[...(data?.data.projects ?? [])]}
           onClickProject={onClickProject}
           onDeleteProject={onDeleteProject}
         />
       ) : (
         <div className="flex w-full flex-wrap items-center gap-4">
           <DrawerFormProject componentTrigger={componentTrigger} />
-          {[...(projects ?? []), mockProject].length ? (
-            [...(projects ?? []), mockProject].map((project) => (
+          {[...(projects ?? [])].length ? (
+            [...(projects ?? [])].map((project) => (
               <>
                 <CustomCard
                   key={project.id}

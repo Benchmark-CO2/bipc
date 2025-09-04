@@ -16,42 +16,40 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   onCheckFloor,
 }) => {
   // Separar andares por categoria
-  const roofFloors = floors.filter((floor) => floor.category === "roof");
-  const typicalFloors = floors.filter((floor) => floor.category === "typical");
-  const groundFloors = floors.filter((floor) => floor.category === "ground");
+  const roofFloors = floors.filter(
+    (floor) => floor.category === "penthouse_floor"
+  );
+  const typicalFloors = floors.filter(
+    (floor) => floor.category === "standard_floor"
+  );
+  const groundFloors = floors.filter(
+    (floor) => floor.category === "ground_floor"
+  );
   const basementFloors = floors.filter(
-    (floor) => floor.category === "basement"
+    (floor) => floor.category === "basement_floor"
   );
 
   const maxArea = Math.max(...floors.map((floor) => floor.area), 1);
 
-  // Ordenar cada categoria por posição
-  // Para andares acima do solo (roof, typical, ground): ordem decrescente (topo para baixo)
-  const sortedRoofFloors = roofFloors.sort((a, b) => b.position - a.position);
-  const sortedTypicalFloors = typicalFloors.sort(
-    (a, b) => b.position - a.position
-  );
-  const sortedGroundFloors = groundFloors.sort(
-    (a, b) => b.position - a.position
-  );
-  // Para subsolo: ordem crescente (mais profundo primeiro)
-  const sortedBasementFloors = basementFloors.sort(
-    (a, b) => a.position - b.position
-  );
+  // Ordenar cada categoria por posição (agora só pela ordem natural do array)
+  const sortedRoofFloors = roofFloors;
+  const sortedTypicalFloors = typicalFloors;
+  const sortedGroundFloors = groundFloors;
+  const sortedBasementFloors = basementFloors;
 
-  const handleFloorSelection = (towerName: string, isChecked: boolean) => {
+  const handleFloorSelection = (floorName: string, isChecked: boolean) => {
     if (!onCheckFloor) return;
 
     let newSelectedFloors: string[];
 
     if (isChecked) {
-      // Adiciona o tower_name se não estiver na lista
-      newSelectedFloors = selectedFloors.includes(towerName)
+      // Adiciona o name se não estiver na lista
+      newSelectedFloors = selectedFloors.includes(floorName)
         ? selectedFloors
-        : [...selectedFloors, towerName];
+        : [...selectedFloors, floorName];
     } else {
-      // Remove o tower_name da lista
-      newSelectedFloors = selectedFloors.filter((name) => name !== towerName);
+      // Remove o name da lista
+      newSelectedFloors = selectedFloors.filter((name) => name !== floorName);
     }
 
     onCheckFloor(newSelectedFloors);
@@ -60,29 +58,37 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   const renderFloorBlocks = (floor: FloorSchema) => {
     const blocks = [];
     const widthPercentage = (floor.area / maxArea) * 100;
-    const isFloorSelected = selectedFloors.includes(floor.tower_name);
+    const isFloorSelected = selectedFloors.includes(floor.name);
 
-    for (let i = 0; i < floor.repetition_number; i++) {
+    // Cores baseadas na categoria
+    const categoryColors = {
+      penthouse_floor: "#8B5CF6", // Roxo
+      standard_floor: "#3B82F6", // Azul
+      ground_floor: "#10B981", // Verde
+      basement_floor: "#F59E0B", // Laranja
+    };
+
+    for (let i = 0; i < floor.repetition; i++) {
       blocks.push(
         <div
-          key={`${floor.tower_name}-${i}`}
+          key={`${floor.name}-${i}`}
           className={`h-6 mb-1 flex items-center text-xs font-medium text-white shadow-sm mx-auto ${
             isSelectable ? "justify-end pr-2" : "justify-center"
           }`}
           style={{
-            backgroundColor: floor.color,
+            backgroundColor: categoryColors[floor.category],
             height: `${Math.max(24, floor.height * 6)}px`,
             width: `${widthPercentage}%`,
             textShadow: "1px 1px 2px rgba(0,0,0,0.5)",
           }}
-          title={`${floor.tower_name} - ${floor.area}m² - ${floor.height}m`}
+          title={`${floor.name} - ${floor.area}m² - ${floor.height}m`}
         >
-          <span className={isSelectable ? "mr-2" : ""}>{floor.tower_name}</span>
+          <span className={isSelectable ? "mr-2" : ""}>{floor.name}</span>
           {isSelectable && (
             <Checkbox
               checked={isFloorSelected}
               onCheckedChange={(checked) =>
-                handleFloorSelection(floor.tower_name, checked === true)
+                handleFloorSelection(floor.name, checked === true)
               }
               className=" border-white data-[state=checked]:bg-white data-[state=checked]:text-black"
             />
@@ -157,10 +163,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
           <div className="text-xs space-y-1 text-gray-600 dark:text-gray-400">
             <div>
               <span className="font-medium">
-                {floors.reduce(
-                  (sum, floor) => sum + floor.repetition_number,
-                  0
-                )}
+                {floors.reduce((sum, floor) => sum + floor.repetition, 0)}
               </span>{" "}
               andares
             </div>
@@ -168,7 +171,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
               <span className="font-medium">
                 {floors
                   .reduce(
-                    (sum, floor) => sum + floor.area * floor.repetition_number,
+                    (sum, floor) => sum + floor.area * floor.repetition,
                     0
                   )
                   .toFixed(0)}

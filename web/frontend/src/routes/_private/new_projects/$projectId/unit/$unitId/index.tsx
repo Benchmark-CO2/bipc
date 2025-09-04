@@ -1,8 +1,11 @@
+import { getUnitByUUID } from "@/actions/units/getUnit";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import { floorsColumns } from "@/components/columns/floors";
 import { CommonTable, DrawerFormUnit } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
+import { IUnit } from "@/types/units";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 
 const fakeUnit = {
@@ -59,96 +62,76 @@ export const Route = createFileRoute(
   "/_private/new_projects/$projectId/unit/$unitId/"
 )({
   component: RouteComponent,
-  // loader: async ({ params }) => {
-  //   const { unitId, projectId } = params as {
-  //     unitId: string;
-  //     projectId: string;
-  //   };
-
-  //   if (!projectId) {
-  //     throw new Error("Project ID is required");
-  //   }
-  //   const { data } = await getProjectByUUID(projectId);
-  //   const project = data.project;
-
-  //   const units = getFromStorage(
-  //     `${UNIT_MODULES}/${projectId}`,
-  //     {} as TProjectUnitModule
-  //   );
-  //   return {
-  //     modules: units[unitId] ? units[unitId] : [],
-  //     project,
-  //   };
-  // },
 });
 
+// Type guard to check if the unit has tower property
+function isUnitWithTower(unit: any): unit is IUnit {
+  return unit && typeof unit === "object" && "tower" in unit;
+}
+
 function RouteComponent() {
-  // const { t } = useTranslation();
   const { projectId, unitId } = useParams({
     from: "/_private/new_projects/$projectId/unit/$unitId/",
   });
 
+  const { data: unitData, isLoading } = useQuery({
+    queryKey: ["unit", projectId, unitId],
+    queryFn: () => getUnitByUUID(projectId, unitId),
+    enabled: !!projectId && !!unitId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: false,
+  });
+
+  const unit = unitData?.data?.unit || unitData?.data || unitData;
+
+  // Use type guard to safely access tower property
+  const unitWithTower = isUnitWithTower(unit) ? unit : null;
+
   const navigate = Route.useNavigate();
 
-  // const handleClickNew = async () => {
-  //   navigate({
-  //     to: "/unit/new",
-  //     search: {
-  //       projectId: "12312-12312-12312-12312",
-  //     },
-  //     mask: {
-  //       to: "/new_projects/$projectId/unit",
-  //     },
-  //   });
-  // };
-  // const handleClickEdit = async () => {
-  //   navigate({
-  //     to: "/unit/edit",
-  //     search: {
-  //       projectId: "12312-12312-12312-12312",
-  //       unitId: "45645-45645-45645-45645",
-  //     },
-  //     mask: {
-  //       to: "/new_projects/$projectId/unit/$unitId",
-  //     },
-  //   });
-  // };
-  // const handleClickNewLayer = async () => {
-  //   navigate({
-  //     to: "/layers/new",
-  //     search: {
-  //       projectId: "12312-12312-12312-12312",
-  //       unitId: "45645-45645-45645-45645",
-  //     },
-  //     mask: {
-  //       to: "/new_projects/$projectId/unit/$unitId",
-  //     },
-  //   });
-  // };
-  // const handleClickEditLayer = async () => {
-  //   navigate({
-  //     to: "/layers/edit",
-  //     search: {
-  //       projectId: "12312-12312-12312-12312",
-  //       unitId: "45645-45645-45645-45645",
-  //     },
-  //     mask: {
-  //       to: "/new_projects/$projectId/unit/$unitId",
-  //     },
-  //   });
-  // };
+  if (isLoading) {
+    return <div>Carregando unidade...</div>;
+  }
+
+  if (!unit) {
+    return <div>Unidade não encontrada</div>;
+  }
+
   const handleClickConstructiveTechnologies = async () => {
     navigate({
       to: "./constuctive-technologies",
     });
   };
 
+  // Agrupa pavimentos com mesmo group_id e adiciona repetitions
+  const groupedFloors = unitWithTower?.tower?.floors ? 
+    Object.values(
+      unitWithTower.tower.floors.reduce((acc, floor) => {
+        const groupId = floor.group_id;
+        
+        if (!acc[groupId]) {
+          // Primeira ocorrência do group_id, cria o grupo
+          acc[groupId] = {
+            ...floor,
+            repetitions: 1
+          };
+        } else {
+          // Incrementa as repetições para o group_id existente
+          acc[groupId].repetitions += 1;
+        }
+        
+        return acc;
+      }, {} as Record<string, any>)
+    ) : [];
+
   return (
     <div className="flex flex-col gap-4">
       <CommonTable
         tableName="Pavimentos"
         columns={floorsColumns}
-        data={fakeUnit.floors}
+        data={groupedFloors}
         isSelectable={true}
         onSelectionChange={console.log}
         actions={

@@ -16,12 +16,12 @@ export const mockProject: IProject = {
   updated_at: new Date().toISOString(),
   units: [
     {
-      id: 1,
+      id: "1",
       name: "Unidade 1",
       type: "tower",
     },
     {
-      id: 2,
+      id: "2",
       name: "Unidade 2",
       type: "tower",
     },

@@ -9,30 +9,30 @@ const baseUnitSchema = z.object({
 });
 
 export const floorSchema = z.object({
-  tower_name: z.string().min(1, "Nome da torre é obrigatório"),
+  name: z.string().min(1, "Nome é obrigatório"),
   area: z.number().positive("Área deve ser um número positivo"),
   height: z.number().positive("Altura deve ser um número positivo"),
-  repetition_number: z
+  repetition: z
     .number()
     .int()
     .positive("Número de repetições deve ser um número positivo"),
-  color: z.string().min(1, "Cor é obrigatória"),
-  category: z.enum(["roof", "typical", "ground", "basement"], {
-    required_error: "Selecione uma categoria",
-    invalid_type_error: "Categoria inválida",
-  }),
-  position: z
-    .number()
-    .int()
-    .nonnegative("Posição deve ser um número não negativo"),
+  category: z.enum(
+    ["standard_floor", "ground_floor", "basement_floor", "penthouse_floor"],
+    {
+      required_error: "Selecione uma categoria",
+      invalid_type_error: "Categoria inválida",
+    }
+  ),
 });
 
 export type FloorSchema = z.infer<typeof floorSchema>;
 
 const towerFieldsSchema = z.object({
-  floors: z
-    .array(floorSchema)
-    .min(1, "Pelo menos um pavimento deve ser adicionado"),
+  data: z.object({
+    floor_groups: z
+      .array(floorSchema)
+      .min(1, "Pelo menos um pavimento deve ser adicionado"),
+  }),
 });
 
 // Schema principal com validação condicional
@@ -40,14 +40,14 @@ export const unitFormSchema = baseUnitSchema.merge(towerFieldsSchema).refine(
   (data) => {
     // Se o tipo for "tower", deve ter pelo menos um pavimento
     if (data.type === "tower") {
-      return data.floors && data.floors.length > 0;
+      return data.data.floor_groups && data.data.floor_groups.length > 0;
     }
     return true;
   },
   {
     message:
       "Pelo menos um pavimento deve ser adicionado para unidades do tipo Tower",
-    path: ["floors"], // Associa o erro ao campo floors
+    path: ["data.floor_groups"], // Associa o erro ao campo correto
   }
 );
 

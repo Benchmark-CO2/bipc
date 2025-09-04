@@ -1,9 +1,9 @@
 // import { getProjectByUUID } from "@/actions/projects/getProject";
+import { getProjectByUUID } from "@/actions/projects/getProject";
 import { DrawerFormUnit } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import NotFoundList from "@/components/ui/not-found-list";
 import { TabsContainer } from "@/components/ui/tabsContainer";
-import { mockProject } from "@/utils/mockProject";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
@@ -17,11 +17,6 @@ export const Route = createFileRoute("/_private/new_projects/$projectId/unit")({
     if (!projectId) {
       throw new Error("Project ID is required");
     }
-
-    // await context.queryClient.ensureQueryData({
-    //   queryKey: ["project", projectId],
-    //   queryFn: () => getProjectByUUID(projectId),
-    // });
 
     return {
       projectId,
@@ -41,12 +36,7 @@ function RouteComponent() {
     error,
   } = useQuery({
     queryKey: ["project", projectId],
-    // queryFn: () => getProjectByUUID(projectId),
-    queryFn: () => {
-      return {
-        data: { project: mockProject },
-      };
-    },
+    queryFn: () => getProjectByUUID(projectId),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -54,7 +44,7 @@ function RouteComponent() {
   const units = project?.units || [];
 
   const [tabs, setTabs] = useState(units);
-  const [selectedTab, setSelectedTab] = useState(0);
+  const [selectedTab, setSelectedTab] = useState("");
 
   useEffect(() => {
     setTabs(units);
@@ -70,16 +60,16 @@ function RouteComponent() {
       );
       setSelectedTab(tabs[0].id);
     } else if (params.unitId) {
-      const paramUnit = Number(params.unitId);
+      const paramUnit = params.unitId;
       const unit = tabs.find((unit: any) => unit.id === paramUnit);
       if (unit) {
         setSelectedTab(unit.id);
       } else {
         history.pushState({}, "", `/new_projects/${projectId}`);
-        setSelectedTab(0);
+        setSelectedTab("");
       }
     } else {
-      setSelectedTab(0);
+      setSelectedTab("");
     }
   }, [tabs, params, projectId]);
 

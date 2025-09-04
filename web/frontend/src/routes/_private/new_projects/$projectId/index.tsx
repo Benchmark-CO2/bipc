@@ -1,30 +1,15 @@
+import { getProjectByUUID } from "@/actions/projects/getProject";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import { unitsColumns } from "@/components/columns/units";
 import { CommonTable, DrawerFormUnit } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_private/new_projects/$projectId/")({
   component: RouteComponent,
 });
-
-const fakeUnits = [
-  {
-    id: "1",
-    name: "Unidade 1",
-    co2: "100 KgCO2/m²",
-    energy: "200 MJ/m²",
-    density: "50 m³/m²",
-  },
-  {
-    id: "2",
-    name: "Unidade 2",
-    co2: "150 KgCO2/m²",
-    energy: "250 MJ/m²",
-    density: "60 m³/m²",
-  },
-];
 
 const fakeTechnologies = [
   {
@@ -55,15 +40,20 @@ function RouteComponent() {
     from: "/_private/new_projects/$projectId",
   });
 
+  const { data: projectData } = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: () => getProjectByUUID(projectId),
+  });
+
   const handleSelectionChange = (selectedItems: any[]) => {
-    console.log("Selected items:", selectedItems);
+    // console.log("Selected items:", selectedItems);
   };
 
   return (
     <div className="flex flex-col gap-4">
       <CommonTable
         tableName="Unidades"
-        data={fakeUnits}
+        data={projectData?.data?.project?.units || []}
         columns={unitsColumns}
         isSelectable={true}
         isInteractive={true}

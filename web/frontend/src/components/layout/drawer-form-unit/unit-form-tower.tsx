@@ -25,31 +25,33 @@ interface UnitFormTowerProps {
   form: UseFormReturn<UnitFormSchema>;
 }
 
-const predefinedColors = [
-  "#FF6B6B",
-  "#45B7D1",
-  "#FFEAA7",
-  "#DDA0DD",
-  "#98D8C8",
-];
+// Cores pré-definidas para cada categoria
+const categoryColors = {
+  penthouse_floor: "#8B5CF6", // Roxo
+  standard_floor: "#3B82F6", // Azul
+  ground_floor: "#10B981", // Verde
+  basement_floor: "#F59E0B", // Laranja
+};
 
 const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
-  const { fields, append, remove, move } = useFieldArray({
+  const { fields, remove, move } = useFieldArray({
     control: form.control,
-    name: "floors",
+    name: "data.floor_groups",
   });
 
   // Usar useWatch para reagir a mudanças em tempo real
   const watchedFloors = useWatch({
     control: form.control,
-    name: "floors",
+    name: "data.floor_groups",
     defaultValue: [],
   });
 
+  console.log(watchedFloors);
+
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = React.useState<
-    "roof" | "typical" | "ground" | "basement"
-  >("typical");
+    "penthouse_floor" | "standard_floor" | "ground_floor" | "basement_floor"
+  >("standard_floor");
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
@@ -81,122 +83,60 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
       // Só permite mover se for da mesma categoria
       if (draggedFloor.category === dropFloor.category) {
         move(draggedIndex, dropIndex);
-
-        // Atualiza apenas as posições sem forçar validação
-        setTimeout(() => {
-          const floors = form.getValues("floors");
-          floors.forEach((_, index) => {
-            form.setValue(`floors.${index}.position`, index, {
-              shouldValidate: false,
-            });
-          });
-        }, 0);
       }
     }
     setDraggedIndex(null);
   };
 
   const addFloor = (
-    category: "roof" | "typical" | "ground" | "basement" = "typical"
+    category:
+      | "penthouse_floor"
+      | "standard_floor"
+      | "ground_floor"
+      | "basement_floor" = "standard_floor"
   ) => {
-    const newColor = predefinedColors[fields.length % predefinedColors.length];
-
-    // Encontrar a posição correta para inserir no topo da categoria
-    const floors = form.getValues("floors");
+    // Encontrar a posição correta para inserir baseada na categoria
+    const floor_groups = form.getValues("data.floor_groups");
     const categoryOrder = {
-      roof: 0,
-      typical: 1,
-      ground: 2,
-      basement: 3,
+      penthouse_floor: 0,
+      standard_floor: 1,
+      ground_floor: 2,
+      basement_floor: 3,
     };
 
-    // Encontrar floors da mesma categoria
-    const sameCategoryFloors = floors.filter(
-      (floor) => floor.category === category
-    );
-    let newPosition = floors.length; // posição padrão no final
+    // Encontrar onde inserir baseado na hierarquia das categorias
+    let insertIndex = floor_groups.length;
 
-    if (sameCategoryFloors.length > 0) {
-      // Se existem floors da mesma categoria, inserir no topo dessa categoria
-      const positions = sameCategoryFloors.map((floor) => floor.position);
-      newPosition = Math.min(...positions);
-    } else {
-      // Se não existe nenhum floor dessa categoria, encontrar posição baseada na hierarquia
-      for (const [cat, order] of Object.entries(categoryOrder)) {
-        if (categoryOrder[category] <= order) {
-          const categoryFloors = floors.filter(
-            (floor) => floor.category === cat
-          );
-          if (categoryFloors.length > 0) {
-            const positions = categoryFloors.map((floor) => floor.position);
-            newPosition = Math.min(...positions);
-            break;
-          }
-        }
+    for (let i = 0; i < floor_groups.length; i++) {
+      const floorCategoryOrder = categoryOrder[floor_groups[i].category];
+      const newCategoryOrder = categoryOrder[category];
+
+      if (newCategoryOrder < floorCategoryOrder) {
+        insertIndex = i;
+        break;
       }
     }
 
-    // Ajustar posições dos floors existentes
-    floors.forEach((floor, index) => {
-      if (floor.position >= newPosition) {
-        form.setValue(`floors.${index}.position`, floor.position + 1, {
-          shouldValidate: false,
-        });
-      }
-    });
-
-    append({
-      tower_name: "",
+    // Criar novo pavimento
+    const newFloor = {
+      name: "",
       area: 100,
-      height: 0,
-      repetition_number: 1,
+      height: 3.0,
+      repetition: 1,
       category: category,
-      color: newColor,
-      position: newPosition,
-    });
+    };
 
-    // Reorganizar após adicionar
-    setTimeout(reorganizeByCategory, 0);
+    // Inserir na posição correta
+    const updatedFloors = [...floor_groups];
+    updatedFloors.splice(insertIndex, 0, newFloor);
+
+    form.setValue("data.floor_groups", updatedFloors, {
+      shouldValidate: false,
+    });
   };
 
   const removeFloor = (index: number) => {
     remove(index);
-  };
-
-  const reorganizeByCategory = () => {
-    const floors = form.getValues("floors");
-
-    // Agrupar por categoria e manter ordem interna
-    const floorsByCategory = {
-      roof: floors
-        .filter((f) => f.category === "roof")
-        .sort((a, b) => a.position - b.position),
-      typical: floors
-        .filter((f) => f.category === "typical")
-        .sort((a, b) => a.position - b.position),
-      ground: floors
-        .filter((f) => f.category === "ground")
-        .sort((a, b) => a.position - b.position),
-      basement: floors
-        .filter((f) => f.category === "basement")
-        .sort((a, b) => a.position - b.position),
-    };
-
-    // Reorganizar em ordem: roof -> typical -> ground -> basement
-    const sortedFloors = [
-      ...floorsByCategory.roof,
-      ...floorsByCategory.typical,
-      ...floorsByCategory.ground,
-      ...floorsByCategory.basement,
-    ];
-
-    // Atualizar posições
-    sortedFloors.forEach((floor, index) => {
-      floor.position = index;
-    });
-
-    // Definir novos valores no formulário
-    form.setValue("floors", sortedFloors, { shouldValidate: false });
   };
 
   return (
@@ -204,8 +144,13 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
       {/* Visualizador da torre */}
       <div className="flex-shrink-0">
         <BuildingVisualizer
-          key={`building-${watchedFloors?.length || 0}-${JSON.stringify(watchedFloors?.map((f) => ({ color: f.color, repetition: f.repetition_number, category: f.category })))}`}
-          floors={watchedFloors || []}
+          key={`building-${watchedFloors?.length || 0}-${JSON.stringify(watchedFloors?.map((f) => ({ color: categoryColors[f.category], repetition: f.repetition, category: f.category })))}`}
+          floors={
+            watchedFloors?.map((floor) => ({
+              ...floor,
+              color: categoryColors[floor.category],
+            })) || []
+          }
         />
       </div>
       {/* Formulário de pavimentos */}
@@ -219,7 +164,11 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
               value={selectedCategory}
               onValueChange={(value) =>
                 setSelectedCategory(
-                  value as "roof" | "typical" | "ground" | "basement"
+                  value as
+                    | "penthouse_floor"
+                    | "standard_floor"
+                    | "ground_floor"
+                    | "basement_floor"
                 )
               }
             >
@@ -227,10 +176,10 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="roof">Cobertura</SelectItem>
-                <SelectItem value="typical">Tipo</SelectItem>
-                <SelectItem value="ground">Térreo</SelectItem>
-                <SelectItem value="basement">Subsolo</SelectItem>
+                <SelectItem value="penthouse_floor">Cobertura</SelectItem>
+                <SelectItem value="standard_floor">Tipo</SelectItem>
+                <SelectItem value="ground_floor">Térreo</SelectItem>
+                <SelectItem value="basement_floor">Subsolo</SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -277,40 +226,21 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
                 <Card className="relative w-full">
                   <CardContent className="px-4">
                     <div className="flex items-center gap-4">
-                      <FormField
-                        control={form.control}
-                        name={`floors.${index}.color`}
-                        render={({ field }) => (
-                          <FormItem className="flex-shrink-0 absolute left-4 rounded-md">
-                            <FormControl>
-                              <Input
-                                type="color"
-                                className="w-4 h-20 p-0 cursor-pointer shadow-none border-none"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                      {/* Indicador de cor da categoria */}
+                      <div
+                        className="w-4 h-16 rounded-md flex-shrink-0"
+                        style={{
+                          backgroundColor:
+                            categoryColors[
+                              watchedFloors[index]?.category || "standard_floor"
+                            ],
+                        }}
                       />
 
-                      <div className="flex-1 grid grid-cols-5 gap-3 items-end pl-8">
-                        {/* Campo oculto para position */}
+                      <div className="flex-1 grid grid-cols-4 gap-3 items-end">
                         <FormField
                           control={form.control}
-                          name={`floors.${index}.position`}
-                          render={({ field }) => (
-                            <FormItem className="hidden">
-                              <FormControl>
-                                <Input type="hidden" {...field} value={index} />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name={`floors.${index}.tower_name`}
+                          name={`data.floor_groups.${index}.name`}
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel className="text-sm">Nome *</FormLabel>
@@ -328,7 +258,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
 
                         <FormField
                           control={form.control}
-                          name={`floors.${index}.area`}
+                          name={`data.floor_groups.${index}.area`}
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel className="text-sm">
@@ -357,7 +287,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
 
                         <FormField
                           control={form.control}
-                          name={`floors.${index}.height`}
+                          name={`data.floor_groups.${index}.height`}
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel className="text-sm">
@@ -386,7 +316,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
 
                         <FormField
                           control={form.control}
-                          name={`floors.${index}.repetition_number`}
+                          name={`data.floor_groups.${index}.repetition`}
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel className="text-sm">
@@ -415,37 +345,30 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
 
                         <FormField
                           control={form.control}
-                          name={`floors.${index}.category`}
+                          name={`data.floor_groups.${index}.category`}
                           render={({ field }) => (
-                            <FormItem>
+                            <FormItem className="col-span-4 mt-2">
                               <FormLabel>Categoria *</FormLabel>
                               <FormControl className="w-full">
                                 <Select
-                                  onValueChange={(value) => {
-                                    field.onChange(value);
-                                    // Reorganizar após mudança de categoria
-                                    setTimeout(reorganizeByCategory, 0);
-                                  }}
+                                  onValueChange={field.onChange}
                                   defaultValue={field.value}
                                 >
                                   <SelectTrigger className="w-full">
-                                    <SelectValue
-                                      placeholder="Selecione a categoria"
-                                      {...field}
-                                    />
+                                    <SelectValue placeholder="Selecione a categoria" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="roof">
-                                      Cobertura
+                                    <SelectItem value="penthouse_floor">
+                                      🏢 Cobertura
                                     </SelectItem>
-                                    <SelectItem value="typical">
-                                      Tipo
+                                    <SelectItem value="standard_floor">
+                                      🏗️ Tipo
                                     </SelectItem>
-                                    <SelectItem value="ground">
-                                      Térreo
+                                    <SelectItem value="ground_floor">
+                                      🌍 Térreo
                                     </SelectItem>
-                                    <SelectItem value="basement">
-                                      Subsolo
+                                    <SelectItem value="basement_floor">
+                                      🔸 Subsolo
                                     </SelectItem>
                                   </SelectContent>
                                 </Select>
