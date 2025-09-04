@@ -105,26 +105,27 @@ function RouteComponent() {
     });
   };
 
-  // Agrupa pavimentos com mesmo group_id e adiciona repetitions
-  const groupedFloors = unitWithTower?.tower?.floors ? 
-    Object.values(
-      unitWithTower.tower.floors.reduce((acc, floor) => {
-        const groupId = floor.group_id;
-        
-        if (!acc[groupId]) {
-          // Primeira ocorrência do group_id, cria o grupo
-          acc[groupId] = {
-            ...floor,
-            repetitions: 1
-          };
-        } else {
-          // Incrementa as repetições para o group_id existente
-          acc[groupId].repetitions += 1;
-        }
-        
-        return acc;
-      }, {} as Record<string, any>)
-    ) : [];
+  const groupedFloors = unitWithTower?.tower?.floors
+    ? Object.values(
+        unitWithTower.tower.floors.reduce(
+          (acc, floor) => {
+            const groupId = floor.group_id;
+
+            if (!acc[groupId]) {
+              acc[groupId] = {
+                ...floor,
+                repetitions: 1,
+              };
+            } else {
+              acc[groupId].repetitions += 1;
+            }
+
+            return acc;
+          },
+          {} as Record<string, any>
+        )
+      )
+    : [];
 
   return (
     <div className="flex flex-col gap-4">
