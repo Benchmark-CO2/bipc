@@ -19,6 +19,15 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 
 import { DialogSuccessSignup } from "@/components/layout/dialogs/dialog-success-signup";
+import Divider from "@/components/ui/divider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { masks } from "@/utils/masks";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
@@ -83,19 +92,18 @@ const SignUp = () => {
   };
 
   return (
-    <div className="w-full h-full flex transition-all justify-center items-center">
-      <div className="w-2/3 h-full max-lg:hidden max-xl:w-1/2"></div>
-      <div className="flex w-1/3 flex-col items-center justify-center gap-4 max-xl:w-1/2 max-lg:w-full px-4">
-        <div className="w-full max-w-md">
+    <div className="flex flex-col h-full w-full items-center justify-start transition-all pt-12">
+      <h1 className="font-bold text-5xl mb-6 w-full text-left max-w-2/3 text-primary max-md:max-w-full max-md:px-6">
+        {t("signUp.title")}
+      </h1>
+      <div className="w-2/3 flex px-6 flex-col items-center justify-center gap-4 max-xl:w-1/2 max-lg:w-full border border-zinc-200 dark:border-zinc-800 rounded-md py-4">
+        <div className="w-full">
           <Form {...form}>
             <form
               className="flex flex-col gap-4"
               onSubmit={form.handleSubmit(handleSubmit)}
             >
-              <h1 className="font-bold text-3xl mb-6 w-full text-center">
-                {t("signUp.title")}
-              </h1>
-
+              <p className="font-bold text-lg">Informações pessoais</p>
               <FormField
                 control={form.control}
                 name="name"
@@ -114,18 +122,172 @@ const SignUp = () => {
                   </FormItem>
                 )}
               />
+              <div className="grid grid-cols-3 gap-4 max-md:grid-cols-1">
+                <FormField
+                  control={form.control}
+                  name="crea"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("signUp.crea")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          placeholder={t("signUp.crea")}
+                          disabled={isPending}
+                          autoComplete="none"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="birthDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("signUp.birthDate")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="string"
+                          placeholder={"xx/xx/xxxx"}
+                          disabled={isPending}
+                          autoComplete="bday-day"
+                          value={masks.date(field.value || "")}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("signUp.city")}</FormLabel>
+                      <FormControl>
+                        <Input type="text" disabled={isPending} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("signUp.password")}</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder={t("signUp.password")}
+                            disabled={isPending}
+                            autoComplete="new-password"
+                            className="pr-10"
+                            {...field}
+                          />
+                          <button
+                            type="button"
+                            onClick={togglePasswordVisibility}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                            disabled={isPending}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("signUp.confirmPassword")}</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder={t("signUp.confirmPassword")}
+                            disabled={isPending}
+                            autoComplete="new-password"
+                            className="pr-10"
+                            {...field}
+                          />
+                          <button
+                            type="button"
+                            onClick={toggleConfirmPasswordVisibility}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                            disabled={isPending}
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <Divider className="bg-accent-foreground/10" />
+              <p className="font-bold text-lg">Informações profissionais</p>
               <FormField
                 control={form.control}
-                name="email"
+                name="activityArea"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("signUp.email")}</FormLabel>
+                    <FormLabel>{t("signUp.activityArea")}</FormLabel>
+                    <FormControl>
+                      <Select>
+                        <SelectTrigger className="w-full" disabled={isPending}>
+                          <SelectValue
+                            placeholder={t("signUp.activityArea")}
+                            {...field}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Arquitetura">
+                            Arquitetura
+                          </SelectItem>
+                          <SelectItem value="Engenharia Civil">
+                            Engenharia Civil
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="professionalEmail"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("signUp.professionalEmail")}</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder={t("signUp.email")}
                         disabled={isPending}
+                        placeholder={"example@domain.com"}
                         autoComplete="email"
                         {...field}
                       />
@@ -134,71 +296,19 @@ const SignUp = () => {
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
-                name="password"
+                name="companyName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("signUp.password")}</FormLabel>
+                    <FormLabel>{t("signUp.companyName")}</FormLabel>
                     <FormControl>
-                      <div className="relative">
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          placeholder={t("signUp.password")}
-                          disabled={isPending}
-                          autoComplete="new-password"
-                          className="pr-10"
-                          {...field}
-                        />
-                        <button
-                          type="button"
-                          onClick={togglePasswordVisibility}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-                          disabled={isPending}
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("signUp.confirmPassword")}</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          type={showConfirmPassword ? "text" : "password"}
-                          placeholder={t("signUp.confirmPassword")}
-                          disabled={isPending}
-                          autoComplete="new-password"
-                          className="pr-10"
-                          {...field}
-                        />
-                        <button
-                          type="button"
-                          onClick={toggleConfirmPasswordVisibility}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-                          disabled={isPending}
-                        >
-                          {showConfirmPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </button>
-                      </div>
+                      <Input
+                        type="text"
+                        placeholder={t("signUp.companyName")}
+                        disabled={isPending}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -206,9 +316,10 @@ const SignUp = () => {
               />
 
               <Button
+                variant={"bipc"}
                 type="submit"
-                className="w-full mt-6 bg-zinc-600 text-white hover:bg-zinc-700 disabled:opacity-50"
                 disabled={isPending}
+                className="w-1/8 max-md:w-full px-2 text-base ml-auto mt-4"
               >
                 {isPending ? (
                   <>
@@ -220,7 +331,7 @@ const SignUp = () => {
                 )}
               </Button>
 
-              <Button
+              {/* <Button
                 type="button"
                 variant="outline"
                 className="w-full mt-2 bg-transparent border border-zinc-600 text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800"
@@ -228,7 +339,7 @@ const SignUp = () => {
                 disabled={isPending}
               >
                 {t("signUp.buttonHaveAccount")}
-              </Button>
+              </Button> */}
             </form>
           </Form>
         </div>
