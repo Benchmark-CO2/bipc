@@ -111,7 +111,7 @@ const CustomCard = ({
     <div
       data-action="open-project"
       onClick={handleClickCard}
-      className="card w-full md:max-w-md flex-col items-center justify-center overflow-hidden rounded-lg bg-primary shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-lg md:w-1/3 lg:w-1/4 xl:max-w-100 dark:shadow-dark-900 h-[100px]"
+      className="card w-full relative md:max-w-md flex-col items-center justify-center overflow-hidden rounded-lg bg-primary shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-lg md:w-1/3 lg:w-1/4 xl:max-w-100 dark:shadow-dark-900 h-[100px]"
     >
       <div className="group w-full h-full">
         <CardMenu onDeleteProject={onDeleteProject} project={project} />
