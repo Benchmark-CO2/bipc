@@ -22,7 +22,6 @@ const activeProps = {
   style: {
     fontWeight: "bold",
     borderRadius: ".5rem",
-    backgroundColor: "var(--color-active)",
     height: "40px",
     color: "var(--color-active-text)",
   },
@@ -59,7 +58,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         <li>
           <SidemenuItem>
             <Link
-              to="/projects"
+              to="/new_projects"
               className="hover:opacity-80 rounded-md flex gap-2 items-center w-full justify-between"
               activeProps={activeProps}
             >
