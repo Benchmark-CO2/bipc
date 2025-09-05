@@ -112,6 +112,7 @@ function RouteComponent() {
           Projetos
         </h1>
         <div className="flex justify-end gap-1">
+           <DrawerFormProject componentTrigger={<Button variant={'bipc'}>{t('projects.addProject')}</Button>} />
           {/* {viewMode === "table" && (
             <DrawerFormProject componentTrigger={componentTrigger} />
           )}
@@ -137,7 +138,7 @@ function RouteComponent() {
         />
       ) : (
         <div className="flex w-full flex-wrap items-center gap-4">
-          <DrawerFormProject componentTrigger={componentTrigger} />
+         
           {[...(projects ?? [])].length ? (
             [...(projects ?? [])].map((project) => (
               <>
