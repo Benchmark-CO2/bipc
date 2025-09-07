@@ -1,3 +1,4 @@
+import { deleteOption } from "@/actions/options/deleteOption";
 import { getOptions } from "@/actions/options/getOptions";
 import { patchOption } from "@/actions/options/patchOption";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
@@ -6,15 +7,16 @@ import {
   DialogCreateSimulation,
   DrawerFormModule,
 } from "@/components/layout";
+import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import NotFoundList from "@/components/ui/not-found-list";
 import { TOption } from "@/types/options";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
 import { createFileRoute } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
-import { Copy, Star, Trash } from "lucide-react";
+import { Copy, Loader2, Star, Trash } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export const Route = createFileRoute(
@@ -216,6 +218,20 @@ function RouteComponent() {
     from: "/_private/new_projects/$projectId/unit/$unitId/constuctive-technologies",
   });
 
+  const queryClient = useQueryClient();
+
+  const { mutate: deleteSimulation, isPending: isDeleting } = useMutation({
+    mutationFn: (optionId: string) => deleteOption(projectId, unitId, optionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["options", projectId, unitId],
+      });
+    },
+    onError: () => {
+      console.error("Erro ao deletar opção");
+    },
+  });
+
   const { data: optionsData, isLoading } = useQuery({
     queryKey: ["options", projectId, unitId],
     queryFn: () => getOptions(projectId, unitId),
@@ -280,16 +296,26 @@ function RouteComponent() {
                   <Button variant="ghost" size="icon">
                     <Copy className="h-4 w-4 text-primary" />
                   </Button>
-                  <Button variant="ghost" size="icon">
-                    <Trash className="h-4 w-4 text-red-700" />
-                  </Button>
+                  <ModalConfirmDelete
+                    componentTrigger={
+                      <Button variant="ghost" size="icon" disabled={isDeleting}>
+                        {isDeleting ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash className="h-4 w-4 text-red-700" />
+                        )}
+                      </Button>
+                    }
+                    title="Excluir Simulação"
+                    onConfirm={() => deleteSimulation(option.id)}
+                  />
                 </>
               }
             />
           </div>
         </div>
       ))}
-      <DialogCreateSimulation />
+      <DialogCreateSimulation projectId={projectId} unitId={unitId} />
     </div>
   );
 }

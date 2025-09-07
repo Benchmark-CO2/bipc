@@ -21,6 +21,8 @@ import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "../ui/input";
 import { Switch } from "../ui/switch";
+import { postOption } from "@/actions/options/postOption";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 
 const createSimulationSchema = z.object({
   name: z.string().min(1, "O nome é obrigatório"),
@@ -29,8 +31,32 @@ const createSimulationSchema = z.object({
 
 type CreateSimulationFormSchema = z.infer<typeof createSimulationSchema>;
 
-const DialogCreateSimulation: React.FC = () => {
+interface DialogCreateSimulationProps {
+  projectId: string;
+  unitId: string;
+}
+
+const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
+  projectId,
+  unitId,
+}) => {
   const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  const createSimulationMutation = useMutation({
+    mutationFn: (data: { name: string; active: boolean }) =>
+      postOption(projectId, unitId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["options", projectId, unitId],
+      });
+      form.reset();
+      setOpen(false);
+    },
+    onError: (error) => {
+      console.error("Erro ao criar simulação:", error);
+    },
+  });
 
   const form = useForm<CreateSimulationFormSchema>({
     resolver: zodResolver(createSimulationSchema),
@@ -41,8 +67,10 @@ const DialogCreateSimulation: React.FC = () => {
   });
 
   const handleCreateSimulation = (data: CreateSimulationFormSchema) => {
-    // toast.error(t('drawerAddModule.featureNotIntegrated'))
-    console.log(data);
+    createSimulationMutation.mutate({
+      name: data.name,
+      active: data.active || false,
+    });
   };
 
   return (
@@ -111,8 +139,9 @@ const DialogCreateSimulation: React.FC = () => {
             type="submit"
             form="create-simulation-form"
             className="text-white"
+            disabled={createSimulationMutation.isPending}
           >
-            Criar
+            {createSimulationMutation.isPending ? "Criando..." : "Criar"}
           </Button>
         </DialogFooter>
       </DialogContent>
