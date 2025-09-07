@@ -74,7 +74,7 @@ export default function CommonTable({
     <div className="space-y-4 w-full">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <h3 className="text-md font-semibold text-primary dark:text-gray-100">
             {tableName}
           </h3>
         </div>
@@ -114,13 +114,25 @@ export default function CommonTable({
           >
             <Table>
               <TableHeader
-                className={isInteractive ? "bg-gray-50 dark:bg-gray-800" : ""}
+                className={
+                  isInteractive
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-gray-50 dark:bg-gray-800"
+                }
               >
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
+                  <TableRow
+                    key={headerGroup.id}
+                    className="hover:bg-transparent"
+                  >
                     {isSelectable && (
-                      <TableHead>
+                      <TableHead className="text-inherit">
                         <Checkbox
+                          className={
+                            isInteractive
+                              ? "border-2 border-white bg-white data-[state=checked]:bg-secondary data-[state=checked]:border-secondary data-[state=checked]:text-white"
+                              : "data-[state=checked]:bg-secondary data-[state=checked]:border-secondary"
+                          }
                           checked={
                             Object.keys(rowSelection).length ===
                               table.getRowModel().rows.length &&
@@ -150,7 +162,7 @@ export default function CommonTable({
                       </TableHead>
                     )}
                     {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id}>
+                      <TableHead key={header.id} className="text-inherit">
                         {flexRender(
                           header.column.columnDef.header,
                           header.getContext()
@@ -161,16 +173,28 @@ export default function CommonTable({
                 ))}
               </TableHeader>
               <TableBody>
-                {table.getRowModel().rows.map((row) => (
+                {table.getRowModel().rows.map((row, index) => (
                   <TableRow
                     data-action="open-module"
                     key={row.id}
-                    className="hover:cursor-pointer hover:bg-dark-100 dark:hover:bg-dark-950"
+                    className={
+                      isInteractive
+                        ? "hover:cursor-pointer hover:bg-dark-100 dark:hover:bg-dark-950"
+                        : ""
+                    }
+                    style={{
+                      backgroundColor: index % 2 === 0 ? "#FBFEFE" : "#E3F3F6",
+                    }}
                     data-state={row.getIsSelected() && "selected"}
                   >
                     {isSelectable && (
                       <TableCell>
                         <Checkbox
+                          className={
+                            isInteractive
+                              ? "border-2 border-gray-400 bg-white data-[state=checked]:bg-secondary data-[state=checked]:border-secondary data-[state=checked]:text-white"
+                              : "border border-gray-300 bg-white data-[state=checked]:bg-secondary data-[state=checked]:border-secondary"
+                          }
                           checked={!!rowSelection[row.id]}
                           onCheckedChange={(checked) => {
                             setRowSelection((prev) => {
