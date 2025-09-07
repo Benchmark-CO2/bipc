@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import NotFoundList from "@/components/ui/not-found-list";
 import { TabsContainer } from "@/components/ui/tabsContainer";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -25,6 +25,7 @@ export const Route = createFileRoute("/_private/new_projects/$projectId/unit")({
 });
 
 function RouteComponent() {
+  const router = useRouter();
   const { t } = useTranslation();
   const { projectId } = Route.useLoaderData();
   const params: { projectId: string; unitId: string; moduleId: string } =
@@ -46,6 +47,12 @@ function RouteComponent() {
   const [tabs, setTabs] = useState(units);
   const [selectedTab, setSelectedTab] = useState("");
 
+  const handleTabClick = (unitId: string) => {
+    void router.navigate({
+      to: `/new_projects/${projectId}/unit/${unitId}`,
+    });
+  };
+
   useEffect(() => {
     setTabs(units);
   }, [units]);
@@ -58,12 +65,12 @@ function RouteComponent() {
         "",
         `/new_projects/${projectId}/unit/${tabs[0].id}`
       );
-      setSelectedTab(tabs[0].id);
+      setSelectedTab(tabs[0].name);
     } else if (params.unitId) {
       const paramUnit = params.unitId;
       const unit = tabs.find((unit: any) => unit.id === paramUnit);
       if (unit) {
-        setSelectedTab(unit.id);
+        setSelectedTab(unit.name);
       } else {
         history.pushState({}, "", `/new_projects/${projectId}`);
         setSelectedTab("");
@@ -110,14 +117,16 @@ function RouteComponent() {
   return (
     <div className="flex flex-col gap-4">
       {tabs.length > 0 && (
-        <TabsContainer
-          projectId={projectId}
-          units={tabs}
-          selectedTab={selectedTab}
-          hasAddButton={
-            !window.location.pathname.includes("constuctive-technologies")
-          }
-        />
+        <div className="flex items-center gap-2">
+          <TabsContainer
+            tabs={tabs.map((unit) => unit.name)}
+            selectedTab={selectedTab}
+            handleTabClick={handleTabClick}
+          />
+          {!window.location.pathname.includes("constructive-technologies") && (
+            <DrawerFormUnit projectId={projectId} />
+          )}
+        </div>
       )}
       <Outlet />
     </div>

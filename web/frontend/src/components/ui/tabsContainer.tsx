@@ -1,50 +1,31 @@
-import { TProjectUnit } from "@/types/projects";
-import { useRouter } from "@tanstack/react-router";
-import { DrawerFormUnit } from "../layout";
-
 interface TabsContainerProps {
-  units: TProjectUnit[];
-  projectId: string;
+  tabs: string[];
   selectedTab?: string;
-  hasAddButton?: boolean;
+  handleTabClick: (tab: string) => void;
 }
 
 export function TabsContainer({
-  units,
-  projectId,
+  tabs,
   selectedTab,
-  hasAddButton = true,
+  handleTabClick,
 }: TabsContainerProps) {
-  const router = useRouter();
-
-  const handleTabClick = (unitId: string) => {
-    void router.navigate({
-      to: `/new_projects/${projectId}/unit/${unitId}`,
-    });
-  };
-
-  const unitId = selectedTab ?? "";
-
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-4 w-fit dark:border-gray-700 dark:bg-gray-800">
-        {units.map((unit) => (
-          <button
-            key={unit.id}
-            onClick={() => {
-              handleTabClick(unit.id);
-            }}
-            className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-6 py-2 text-sm font-medium transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
-              unitId === unit.id
-                ? "bg-green-500 text-white shadow-sm dark:bg-green-600 dark:text-white"
-                : "text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20"
-            }`}
-          >
-            {unit.name}
-          </button>
-        ))}
-      </div>
-      {hasAddButton && <DrawerFormUnit projectId={projectId} />}
+    <div className="flex items-center gap-2 rounded-sm border border-gray-200 bg-white p-4 w-fit dark:border-gray-700 dark:bg-gray-800">
+      {tabs.map((tab) => (
+        <button
+          key={tab}
+          onClick={() => {
+            handleTabClick(tab);
+          }}
+          className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-6 py-2 text-sm font-medium transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
+            selectedTab === tab
+              ? "bg-secondary text-white shadow-sm dark:bg-secondary dark:text-white"
+              : "text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20"
+          }`}
+        >
+          {tab}
+        </button>
+      ))}
     </div>
   );
 }
