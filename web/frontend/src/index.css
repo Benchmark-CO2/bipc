@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -13,7 +13,7 @@
   --popover-foreground: hsl(240 10% 3.9%);
   --primary: hsl(188, 71%, 32%);
   --primary-foreground: hsl(355.7 100% 97.3%);
-  --secondary: hsl(240 4.8% 95.9%);
+  --secondary: hsl(97, 56%, 45%);
   --secondary-foreground: hsl(240 5.9% 10%);
   --muted: hsl(240 4.8% 95.9%);
   --muted-foreground: hsl(240 3.8% 46.1%);
@@ -26,28 +26,28 @@
   --ring: hsl(142.1 76.2% 36.3%);
   --color-william-50: hsl(180, 47%, 96%);
 
---color-william-100: hsl(180, 43%, 90%);
---color-william-200: hsl(182, 42%, 82%);
---color-william-300: hsl(184, 41%, 74%);
---color-william-400: hsl(186, 40%, 66%);
---color-william-500: hsl(188, 39%, 58%);
---color-william-600: hsl(190, 38%, 50%);
---color-william-700: hsl(192, 37%, 42%);
---color-william-800: hsl(194, 36%, 34%);
---color-william-900: hsl(197, 35%, 20%);
---color-william-950: hsl(198, 34%, 11%);
+  --color-william-100: hsl(180, 43%, 90%);
+  --color-william-200: hsl(182, 42%, 82%);
+  --color-william-300: hsl(184, 41%, 74%);
+  --color-william-400: hsl(186, 40%, 66%);
+  --color-william-500: hsl(188, 39%, 58%);
+  --color-william-600: hsl(190, 38%, 50%);
+  --color-william-700: hsl(192, 37%, 42%);
+  --color-william-800: hsl(194, 36%, 34%);
+  --color-william-900: hsl(197, 35%, 20%);
+  --color-william-950: hsl(198, 34%, 11%);
 
---color-observatory-50: #eefff9;
---color-observatory-100: #c5ffef;
---color-observatory-200: #8bffe1;
---color-observatory-300: #4afed0;
---color-observatory-400: #15ecbc;
---color-observatory-500: #00d0a5;
---color-observatory-600: #00a888;
---color-observatory-700: #008971;
---color-observatory-800: #066959;
---color-observatory-900: #0a5749;
---color-observatory-950: #00352f;
+  --color-observatory-50: #eefff9;
+  --color-observatory-100: #c5ffef;
+  --color-observatory-200: #8bffe1;
+  --color-observatory-300: #4afed0;
+  --color-observatory-400: #15ecbc;
+  --color-observatory-500: #00d0a5;
+  --color-observatory-600: #00a888;
+  --color-observatory-700: #008971;
+  --color-observatory-800: #066959;
+  --color-observatory-900: #0a5749;
+  --color-observatory-950: #00352f;
 
   --color-active: hsl(97, 56%, 45%);
 
@@ -83,16 +83,16 @@
   --ring: hsl(142.4 71.8% 29.2%);
   --color-william-50: hsl(180, 47%, 96%);
 
---color-william-100: hsl(180, 43%, 90%);
---color-william-200: hsl(182, 42%, 82%);
---color-william-300: hsl(184, 41%, 74%);
---color-william-400: hsl(186, 40%, 66%);
---color-william-500: hsl(188, 39%, 58%);
---color-william-600: hsl(190, 38%, 50%);
---color-william-700: hsl(192, 37%, 42%);
---color-william-800: hsl(194, 36%, 34%);
---color-william-900: hsl(197, 35%, 20%);
---color-william-950: hsl(198, 34%, 11%);
+  --color-william-100: hsl(180, 43%, 90%);
+  --color-william-200: hsl(182, 42%, 82%);
+  --color-william-300: hsl(184, 41%, 74%);
+  --color-william-400: hsl(186, 40%, 66%);
+  --color-william-500: hsl(188, 39%, 58%);
+  --color-william-600: hsl(190, 38%, 50%);
+  --color-william-700: hsl(192, 37%, 42%);
+  --color-william-800: hsl(194, 36%, 34%);
+  --color-william-900: hsl(197, 35%, 20%);
+  --color-william-950: hsl(198, 34%, 11%);
 
   --color-active: hsl(97, 56%, 45%);
 
@@ -106,8 +106,8 @@
 }
 
 @theme inline {
-  --font-montserrat: 'Montserrat', var(--font-serif);
-  --font-inter: 'Inter', var(--font-sans);
+  --font-montserrat: "Montserrat", var(--font-serif);
+  --font-inter: "Inter", var(--font-sans);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -215,83 +215,99 @@
 
 /* latin-ext */
 @font-face {
-  font-family: 'Inter';
+  font-family: "Inter";
   font-style: italic;
   font-weight: 100 900;
   font-display: swap;
-  src: url('./assets/fonts/Inter-italic-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
-    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  src: url("./assets/fonts/Inter-italic-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 /* latin */
 @font-face {
-  font-family: 'Inter';
+  font-family: "Inter";
   font-style: italic;
   font-weight: 100 900;
   font-display: swap;
-  src: url('./assets/fonts/Inter-italic-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
-    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url("./assets/fonts/Inter-italic-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
 }
 /* latin-ext */
 @font-face {
-  font-family: 'Inter';
+  font-family: "Inter";
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url('./assets/fonts/Inter-normal-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
-    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  src: url("./assets/fonts/Inter-normal-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 /* latin */
 @font-face {
-  font-family: 'Inter';
+  font-family: "Inter";
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url('./assets/fonts/Inter-normal-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
-    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url("./assets/fonts/Inter-normal-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
 }
 /* latin-ext */
 @font-face {
-  font-family: 'Montserrat';
+  font-family: "Montserrat";
   font-style: italic;
   font-weight: 100 900;
   font-display: swap;
-  src: url('./assets/fonts/Montserrat-italic-latin-ext') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
-    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  src: url("./assets/fonts/Montserrat-italic-latin-ext") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 /* latin */
 @font-face {
-  font-family: 'Montserrat';
+  font-family: "Montserrat";
   font-style: italic;
   font-weight: 100 900;
   font-display: swap;
-  src: url('./assets/fonts/Montserrat-italic-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
-    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url("./assets/fonts/Montserrat-italic-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
 }
 /* latin-ext */
 @font-face {
-  font-family: 'Montserrat';
+  font-family: "Montserrat";
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url('./assets/fonts/Montserrat-normal-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
-    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  src: url("./assets/fonts/Montserrat-normal-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 /* latin */
 @font-face {
-  font-family: 'Montserrat';
+  font-family: "Montserrat";
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url('./assets/fonts/Montserrat-normal-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
-    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url("./assets/fonts/Montserrat-normal-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
 }
 
 @layer base {

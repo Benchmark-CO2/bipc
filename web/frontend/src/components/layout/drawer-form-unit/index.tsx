@@ -192,8 +192,8 @@ const DrawerFormUnit = ({
       <DrawerTrigger asChild>
         {triggerComponent ?? (
           <Button
-            variant={"outline"}
-            className="cursor-pointer rounded-t-lg bg-muted px-4 py-2 hover:bg-accent"
+            variant={"secondary"}
+            className="cursor-pointer rounded-t-lg px-4 py-2 text-white"
           >
             <Plus />
           </Button>

@@ -4,9 +4,11 @@ import { floorsColumns } from "@/components/columns/floors";
 import { CommonTable, DrawerFormUnit } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
+import { TabsContainer } from "@/components/ui/tabsContainer";
 import { IUnit } from "@/types/units";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
+import { Plus } from "lucide-react";
 
 const fakeUnit = {
   id: "1",
@@ -134,6 +136,7 @@ function RouteComponent() {
         columns={floorsColumns}
         data={groupedFloors}
         isSelectable={true}
+        isInteractive={true}
         onSelectionChange={console.log}
         actions={
           <DrawerFormUnit
@@ -148,19 +151,33 @@ function RouteComponent() {
         }
       />
       <Divider />
+      <div className="flex items-center gap-2">
+        <TabsContainer
+          tabs={["Todas"]}
+          selectedTab="Todas"
+          handleTabClick={console.log}
+        />
+        <Button
+          variant={"secondary"}
+          className="cursor-pointer rounded-t-lg px-4 py-2 text-white"
+          onClick={() => console.log("Go to add new constructive technology")}
+        >
+          <Plus />
+        </Button>
+      </div>
       <CommonTable
-        tableName="Tecnologias Construtivas"
+        tableName="Tecnologia Construtiva (módulo de cálculo)"
         data={fakeUnit.constructiveTechnologies}
         columns={constructiveTechnologies}
         isSelectable={false}
-        isInteractive={true}
+        isInteractive={false}
         actions={
           <Button
             variant="outline"
             className="mt-4"
             onClick={handleClickConstructiveTechnologies}
           >
-            Ver Tecnologias Construtivas
+            Editar Tecnologias
           </Button>
         }
       />
