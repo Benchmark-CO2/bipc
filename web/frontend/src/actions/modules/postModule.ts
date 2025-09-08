@@ -1,13 +1,5 @@
 import api from "@/service/api";
-import { TModuleStructure, TModulesTypes } from "@/types/modules";
-import { ModuleFormSchema } from "@/validators/moduleForm.validator";
-
-type ModuleParamsProps = {
-  type: TModulesTypes;
-  data: Omit<ModuleFormSchema, "type"> & {
-    floor_ids?: string[];
-  };
-};
+import { ModuleParamsProps, TModuleStructure } from "@/types/modules";
 
 export const postModule = (
   moduleParams: ModuleParamsProps,

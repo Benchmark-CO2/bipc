@@ -305,6 +305,9 @@ function RouteComponent() {
                     }
                     type="concrete_wall"
                     floors={unitTowerFloors}
+                    projectId={projectId}
+                    unitId={unitId}
+                    optionId={option.id}
                   />
                   <Button variant="ghost" size="icon">
                     <Copy className="h-4 w-4 text-primary" />

@@ -1,16 +1,19 @@
 // import { postModule } from "@/actions/modules/postModule"; // comentado temporariamente
-import { TModuleStructure, TModulesTypes } from "@/types/modules";
+import {
+  ModuleParamsProps,
+  TModuleStructure,
+  TModulesTypes,
+} from "@/types/modules";
 import {
   ModuleFormSchema,
   moduleFormSchema,
 } from "@/validators/moduleFormByType.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
-// import { useMutation, useQueryClient } from "@tanstack/react-query"; // comentado temporariamente
-import { /*Loader2,*/ Plus, X } from "lucide-react";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { /*Loader2,*/ Loader2, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-// import { toast } from "sonner"; // comentado temporariamente
 import { Button } from "../../ui/button";
 import {
   Drawer,
@@ -41,12 +44,15 @@ import ModuleFormConcreteWall from "./module-form-concrete-wall";
 import BuildingVisualizer from "../building-visualizer";
 import { getDefaultValuesByType } from "./module-default-values";
 import { TTowerFloorCategory } from "@/types/units";
+import { postModule } from "@/actions/modules/postModule";
+import { toast } from "sonner";
 // import { postModuleVersion } from "@/actions/modules/postModuleVersion"; // comentado temporariamente
 
 interface DrawerFormModuleProps {
   triggerComponent?: React.ReactNode;
-  // projectId: string; // comentado temporariamente
-  // unitId: string; // comentado temporariamente
+  projectId: string;
+  unitId: string;
+  optionId: string;
   moduleId?: string;
   moduleData?: TModuleStructure | null;
   type: TModulesTypes;
@@ -55,8 +61,9 @@ interface DrawerFormModuleProps {
 
 const DrawerFormModule = ({
   triggerComponent,
-  // projectId, // comentado temporariamente
-  // unitId, // comentado temporariamente
+  projectId,
+  unitId,
+  optionId,
   moduleId,
   type,
   moduleData,
@@ -66,7 +73,7 @@ const DrawerFormModule = ({
   const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
 
   const { t } = useTranslation();
-  // const queryClient = useQueryClient(); // comentado temporariamente
+  const queryClient = useQueryClient();
 
   const form = useForm<ModuleFormSchema>({
     resolver: zodResolver(moduleFormSchema),
@@ -103,38 +110,37 @@ const DrawerFormModule = ({
   //     },
   //   });
 
-  // const {
-  //   // isSuccess: isCreationSuccess,
-  //   isPending: isCreationPending,
-  //   mutate: mutateCreation,
-  // } = useMutation({
-  //   mutationFn: (data: TModuleStructure) => postModule(data, projectId, unitId),
-  //   onError: (error) => {
-  //     toast.error(t("error.errorCreateModule"), {
-  //       description:
-  //         error instanceof Error ? error.message : t("error.errorUnknown"),
-  //       duration: 5000,
-  //     });
-  //   },
-  //   onSuccess: () => {
-  //     toast.success(t("success.moduleCreated"), {
-  //       duration: 5000,
-  //     });
-  //     queryClient.invalidateQueries({
-  //       queryKey: ["project", projectId],
-  //     });
-  //     queryClient.invalidateQueries({
-  //       queryKey: ["unit", projectId, unitId],
-  //     });
-  //     if (moduleId) {
-  //       queryClient.invalidateQueries({
-  //         queryKey: ["modules", projectId, unitId],
-  //       });
-  //     }
-  //     form.reset();
-  //     setIsOpen(false);
-  //   },
-  // });
+  const {
+    // isSuccess: isCreationSuccess,
+    isPending: isCreationPending,
+    mutate: mutateCreation,
+  } = useMutation({
+    mutationFn: (data: ModuleParamsProps) =>
+      postModule(data, projectId, unitId, optionId),
+    onError: (error) => {
+      toast.error(t("error.errorCreateModule"), {
+        description:
+          error instanceof Error ? error.message : t("error.errorUnknown"),
+        duration: 5000,
+      });
+    },
+    onSuccess: () => {
+      toast.success(t("success.moduleCreated"), {
+        duration: 5000,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project", projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["unit", projectId, unitId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["options", projectId, unitId],
+      });
+      form.reset();
+      setIsOpen(false);
+    },
+  });
 
   useEffect(() => {
     const ensureArraysInitialized = () => {
@@ -214,7 +220,7 @@ const DrawerFormModule = ({
     //   };
     // }
 
-    const baseFields = {
+    const baseFields: ModuleParamsProps = {
       type: data.type,
       data: {
         ...filteredData,
@@ -223,7 +229,7 @@ const DrawerFormModule = ({
     };
 
     console.log("Create data:", baseFields);
-    // mutateCreation(filteredData);
+    mutateCreation(baseFields);
   };
 
   const handleClose = () => {
@@ -395,16 +401,17 @@ const DrawerFormModule = ({
                       type="submit"
                       variant="bipc"
                       className="flex-1"
-                      // disabled={isCreationPending || isUpdatePending} // comentado
+                      disabled={
+                        isCreationPending || selectedFloors.length === 0
+                      }
                     >
-                      {/* {isCreationPending || isUpdatePending ? ( // comentado
-                      <Loader2 className="animate-spin h-4 w-4" />
-                    ) : moduleId ? (
-                      t("common.update")
-                    ) : (
-                      t("common.add")
-                    )} */}
-                      {moduleId ? t("common.update") : t("common.add")}
+                      {isCreationPending ? (
+                        <Loader2 className="animate-spin h-4 w-4" />
+                      ) : moduleId ? (
+                        t("common.update")
+                      ) : (
+                        t("common.add")
+                      )}
                     </Button>
                   </div>
                 </div>

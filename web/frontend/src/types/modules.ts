@@ -1,3 +1,5 @@
+import { ModuleFormSchema } from "@/validators/moduleFormByType.validator";
+
 export interface IModule {
   module_uuid: string;
   name: string;
@@ -126,6 +128,13 @@ export interface ISidacMaterial {
 }
 
 export type TModuleStructure = IBeamColumn | IConcreteWall | IStructuralMasonry;
+
+export type ModuleParamsProps = {
+  type: TModulesTypes;
+  data: Omit<ModuleFormSchema, "type"> & {
+    floor_ids?: string[];
+  };
+};
 
 // export type TModuleData = {
 //   total_co2_min: number;
