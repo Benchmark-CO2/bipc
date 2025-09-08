@@ -1,6 +1,7 @@
 import { deleteOption } from "@/actions/options/deleteOption";
 import { getOptions } from "@/actions/options/getOptions";
 import { patchOption } from "@/actions/options/patchOption";
+import { getUnitByUUID } from "@/actions/units/getUnit";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import {
   CommonTable,
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import NotFoundList from "@/components/ui/not-found-list";
 import { TOption } from "@/types/options";
+import { IUnit } from "@/types/units";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
 import { createFileRoute } from "@tanstack/react-router";
@@ -187,6 +189,7 @@ const OptionMenu = ({
         value={localName}
         onChange={handleNameChange}
         onBlur={handleBlur}
+        className="font-medium text-accent-foreground focus:border-primary focus:ring-primary"
       />
     </div>
   );
@@ -232,7 +235,7 @@ function RouteComponent() {
     },
   });
 
-  const { data: optionsData, isLoading } = useQuery({
+  const { data: optionsData, isLoading: isLoadingOptions } = useQuery({
     queryKey: ["options", projectId, unitId],
     queryFn: () => getOptions(projectId, unitId),
     enabled: !!projectId && !!unitId,
@@ -242,7 +245,13 @@ function RouteComponent() {
     retry: false,
   });
 
-  if (isLoading) {
+  const { data: unitData, isLoading: isLoadingUnit } = useQuery({
+    queryKey: ["unit", projectId, unitId],
+    queryFn: () => getUnitByUUID(projectId, unitId),
+    enabled: !!projectId && !!unitId,
+  });
+
+  if (isLoadingOptions || isLoadingUnit) {
     return (
       <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 w-full">
         Carregando tecnologias construtivas...
@@ -262,12 +271,15 @@ function RouteComponent() {
 
   const options = optionsData.data.tower_options;
 
+  const unit = unitData?.data?.unit as IUnit;
+  const unitTowerFloors = unit?.tower?.floors || [];
+
   return (
     <div className="flex flex-col gap-4">
       {options.map((option) => (
         <div
           key={option.id}
-          className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 w-full"
+          className={`flex items-center gap-2 rounded-xl border-2 ${option.active ? "border-primary" : "border-gray-200"} bg-white p-4 dark:border-gray-700 dark:bg-gray-800 w-full`}
         >
           <div className="flex items-center gap-2 justify-between w-full">
             <CommonTable
@@ -292,6 +304,7 @@ function RouteComponent() {
                       </Button>
                     }
                     type="concrete_wall"
+                    floors={unitTowerFloors}
                   />
                   <Button variant="ghost" size="icon">
                     <Copy className="h-4 w-4 text-primary" />

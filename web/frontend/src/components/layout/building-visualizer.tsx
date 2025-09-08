@@ -1,35 +1,99 @@
 import React from "react";
 import { FloorSchema } from "@/validators/unitForm.validator";
+import { TTowerFloorCategory } from "@/types/units";
 import { Checkbox } from "@/components/ui/checkbox";
 
+// Tipo unificado para representar um andar no visualizador
+type UnifiedFloor = {
+  id: string;
+  name: string;
+  area: number;
+  height: number;
+  category:
+    | "penthouse_floor"
+    | "standard_floor"
+    | "ground_floor"
+    | "basement_floor";
+  repetition: number;
+};
+
 interface BuildingVisualizerProps {
-  floors: FloorSchema[];
+  // Modo visualização apenas - usando FloorSchema
+  floors?: FloorSchema[];
+
+  // Modo selecionável - usando TTowerFloorCategory
+  towerFloors?: TTowerFloorCategory[];
   isSelectable?: boolean;
-  selectedFloors?: string[];
-  onCheckFloor?: (selectedFloors: string[]) => void;
+  selectedFloorIds?: string[];
+  onCheckFloorId?: (selectedFloorIds: string[]) => void;
 }
 
 const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   floors,
+  towerFloors,
   isSelectable = false,
-  selectedFloors = [],
-  onCheckFloor,
+  selectedFloorIds = [],
+  onCheckFloorId,
 }) => {
+  // Converter TTowerFloorCategory para UnifiedFloor
+  const convertTowerFloors = (
+    towerFloors: TTowerFloorCategory[]
+  ): UnifiedFloor[] => {
+    return towerFloors.map((floor) => ({
+      id: floor.id,
+      name: floor.group_name,
+      area: floor.area,
+      height: floor.height,
+      repetition: 1, // TTowerFloorCategory não tem repetição
+      category: getCategoryFromIndex(floor.index),
+    }));
+  };
+
+  // Determinar categoria baseada no índice
+  const getCategoryFromIndex = (index: number): UnifiedFloor["category"] => {
+    if (index < 0) return "basement_floor";
+    if (index === 0) return "ground_floor";
+    if (index > 0 && index <= 10) return "standard_floor"; // Assumindo andares típicos até o 10º
+    return "penthouse_floor"; // Andares superiores como cobertura
+  };
+
+  // Converter FloorSchema para UnifiedFloor
+  const convertFloorSchema = (floors: FloorSchema[]): UnifiedFloor[] => {
+    return floors.map((floor, index) => ({
+      id: `floor-${index}`, // Gerar ID para FloorSchema
+      name: floor.name,
+      area: floor.area,
+      height: floor.height,
+      repetition: floor.repetition,
+      category: floor.category,
+    }));
+  };
+
+  // Determinar qual conjunto de dados usar
+  const unifiedFloors: UnifiedFloor[] = towerFloors
+    ? convertTowerFloors(towerFloors)
+    : floors
+      ? convertFloorSchema(floors)
+      : [];
+
+  // Se for selecionável, sempre usa towerFloors mode
+  const selectedItems = isSelectable ? selectedFloorIds : [];
+  const onSelectionChange = isSelectable ? onCheckFloorId : undefined;
   // Separar andares por categoria
-  const roofFloors = floors.filter(
+  const roofFloors = unifiedFloors.filter(
     (floor) => floor.category === "penthouse_floor"
   );
-  const typicalFloors = floors.filter(
+  const typicalFloors = unifiedFloors.filter(
     (floor) => floor.category === "standard_floor"
   );
-  const groundFloors = floors.filter(
+  const groundFloors = unifiedFloors.filter(
     (floor) => floor.category === "ground_floor"
   );
-  const basementFloors = floors.filter(
+  const basementFloors = unifiedFloors.filter(
     (floor) => floor.category === "basement_floor"
   );
 
-  const maxArea = Math.max(...floors.map((floor) => floor.area), 1);
+  const maxArea = Math.max(...unifiedFloors.map((floor) => floor.area), 1);
 
   // Ordenar cada categoria por posição (agora só pela ordem natural do array)
   const sortedRoofFloors = roofFloors;
@@ -37,28 +101,35 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   const sortedGroundFloors = groundFloors;
   const sortedBasementFloors = basementFloors;
 
-  const handleFloorSelection = (floorName: string, isChecked: boolean) => {
-    if (!onCheckFloor) return;
+  const handleFloorSelection = (
+    floorIdentifier: string,
+    isChecked: boolean
+  ) => {
+    if (!onSelectionChange) return;
 
-    let newSelectedFloors: string[];
+    let newSelectedItems: string[];
 
     if (isChecked) {
-      // Adiciona o name se não estiver na lista
-      newSelectedFloors = selectedFloors.includes(floorName)
-        ? selectedFloors
-        : [...selectedFloors, floorName];
+      // Adiciona o identificador se não estiver na lista
+      newSelectedItems = selectedItems.includes(floorIdentifier)
+        ? selectedItems
+        : [...selectedItems, floorIdentifier];
     } else {
-      // Remove o name da lista
-      newSelectedFloors = selectedFloors.filter((name) => name !== floorName);
+      // Remove o identificador da lista
+      newSelectedItems = selectedItems.filter(
+        (item: string) => item !== floorIdentifier
+      );
     }
 
-    onCheckFloor(newSelectedFloors);
+    onSelectionChange(newSelectedItems);
   };
 
-  const renderFloorBlocks = (floor: FloorSchema) => {
+  const renderFloorBlocks = (floor: UnifiedFloor) => {
     const blocks = [];
     const widthPercentage = (floor.area / maxArea) * 100;
-    const isFloorSelected = selectedFloors.includes(floor.name);
+    // Se for selecionável, sempre usar ID (towerFloors mode); senão usar name
+    const floorIdentifier = isSelectable ? floor.id : floor.name;
+    const isFloorSelected = selectedItems.includes(floorIdentifier);
 
     // Cores baseadas na categoria
     const categoryColors = {
@@ -88,9 +159,9 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
             <Checkbox
               checked={isFloorSelected}
               onCheckedChange={(checked) =>
-                handleFloorSelection(floor.name, checked === true)
+                handleFloorSelection(floorIdentifier, checked === true)
               }
-              className=" border-white data-[state=checked]:bg-white data-[state=checked]:text-black"
+              className=" border border-gray-300 bg-white data-[state=checked]:bg-secondary data-[state=checked]:border-secondary"
             />
           )}
         </div>
@@ -149,7 +220,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
           ))}
         </div>
 
-        {floors.length === 0 && (
+        {unifiedFloors.length === 0 && (
           <div className="flex items-center justify-center h-32 text-gray-500 dark:text-gray-400 text-xs text-center">
             Adicione pavimentos
             <br />
@@ -158,18 +229,21 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
         )}
       </div>
 
-      {floors.length > 0 && (
+      {unifiedFloors.length > 0 && (
         <div className="mt-6 p-2 bg-gray-100 dark:bg-gray-800 rounded-md w-full text-center">
           <div className="text-xs space-y-1 text-gray-600 dark:text-gray-400">
             <div>
               <span className="font-medium">
-                {floors.reduce((sum, floor) => sum + floor.repetition, 0)}
+                {unifiedFloors.reduce(
+                  (sum, floor) => sum + floor.repetition,
+                  0
+                )}
               </span>{" "}
               andares
             </div>
             <div>
               <span className="font-medium">
-                {floors
+                {unifiedFloors
                   .reduce(
                     (sum, floor) => sum + floor.area * floor.repetition,
                     0

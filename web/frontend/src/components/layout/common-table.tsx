@@ -117,7 +117,7 @@ export default function CommonTable({
                 className={
                   isInteractive
                     ? "bg-primary text-primary-foreground"
-                    : "bg-gray-50 dark:bg-gray-800"
+                    : "bg-[#E4E4E7] dark:bg-gray-800 text-primary"
                 }
               >
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -183,7 +183,7 @@ export default function CommonTable({
                         : ""
                     }
                     style={{
-                      backgroundColor: index % 2 === 0 ? "#FBFEFE" : "#E3F3F6",
+                      backgroundColor: index % 2 === 0 ? "#E3F3F6" : "#FBFEFE",
                     }}
                     data-state={row.getIsSelected() && "selected"}
                   >

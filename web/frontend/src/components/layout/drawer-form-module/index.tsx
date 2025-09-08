@@ -38,10 +38,9 @@ import {
 import ModuleFormBeamColumn from "./module-form-beam-column";
 import ModuleFormConcreteWall from "./module-form-concrete-wall";
 // import ModuleFormStructuralMasonry from "./module-form-structural-masonry"; // comentado por enquanto
-import { mockUnit } from "@/utils/mockUnit";
 import BuildingVisualizer from "../building-visualizer";
 import { getDefaultValuesByType } from "./module-default-values";
-import { FloorSchema } from "@/validators/unitForm.validator";
+import { TTowerFloorCategory } from "@/types/units";
 // import { postModuleVersion } from "@/actions/modules/postModuleVersion"; // comentado temporariamente
 
 interface DrawerFormModuleProps {
@@ -51,6 +50,7 @@ interface DrawerFormModuleProps {
   moduleId?: string;
   moduleData?: TModuleStructure | null;
   type: TModulesTypes;
+  floors?: TTowerFloorCategory[];
 }
 
 const DrawerFormModule = ({
@@ -60,11 +60,11 @@ const DrawerFormModule = ({
   moduleId,
   type,
   moduleData,
+  floors = [],
 }: DrawerFormModuleProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
 
-  const floors = mockUnit.floors as FloorSchema[];
   const { t } = useTranslation();
   // const queryClient = useQueryClient(); // comentado temporariamente
 
@@ -287,11 +287,11 @@ const DrawerFormModule = ({
               <div className="flex-shrink-0 h-full overflow-y-auto">
                 <div className="sticky top-0">
                   <BuildingVisualizer
-                    key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ color: f.color, repetition: f.repetition_number, category: f.category })))}`} // Força re-render quando andares mudam
-                    floors={floors || []}
+                    key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ index: f.index })))}`} // Força re-render quando andares mudam
+                    towerFloors={floors || []}
                     isSelectable={true}
-                    selectedFloors={selectedFloors}
-                    onCheckFloor={setSelectedFloors}
+                    selectedFloorIds={selectedFloors}
+                    onCheckFloorId={setSelectedFloors}
                   />
                 </div>
               </div>
