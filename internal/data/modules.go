@@ -201,4 +201,291 @@ func (m ConcreteWallModuleModel) Insert(module *ConcreteWallModule) error {
 	return tx.Commit()
 }
 
+func (m BeamColumnModuleModel) Get(id uuid.UUID) (*BeamColumnModule, error) {
+	query := `
+		SELECT
+			m.id, m.tower_option_id,
+			bc.concrete_columns, bc.concrete_beams, bc.concrete_slabs,
+			bc.form_columns, bc.form_beams, bc.form_slabs, bc.form_total,
+			bc.column_number, bc.avg_beam_span, bc.avg_slab_span,
+			bc.total_co2_min, bc.total_co2_max, bc.total_energy_min, bc.total_energy_max,
+			bc.created_at, bc.updated_at
+		FROM module m
+		JOIN module_beam_column bc ON m.id = bc.id
+		WHERE m.id = $1`
 
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var module BeamColumnModule
+	var colID, beamID, slabID uuid.UUID
+
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(
+		&module.ID, &module.TowerOptionID,
+		&colID, &beamID, &slabID,
+		&module.FormColumns, &module.FormBeams, &module.FormSlabs, &module.FormTotal,
+		&module.ColumnNumber, &module.AvgBeamSpan, &module.AvgSlabSpan,
+		&module.TotalCO2Min, &module.TotalCO2Max, &module.TotalEnergyMin, &module.TotalEnergyMax,
+		&module.CreatedAt, &module.UpdatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrRecordNotFound
+		}
+		return nil, err
+	}
+
+	module.ConcreteColumns, err = GetConcrete(m.DB, colID)
+	if err != nil {
+		return nil, err
+	}
+	module.ConcreteBeams, err = GetConcrete(m.DB, beamID)
+	if err != nil {
+		return nil, err
+	}
+	module.ConcreteSlabs, err = GetConcrete(m.DB, slabID)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := m.DB.QueryContext(ctx, `SELECT floor_id FROM module_floor WHERE module_id = $1`, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var floorIDs []uuid.UUID
+	for rows.Next() {
+		var floorID uuid.UUID
+		if err := rows.Scan(&floorID); err != nil {
+			return nil, err
+		}
+		floorIDs = append(floorIDs, floorID)
+	}
+	module.FloorIDs = floorIDs
+
+	return &module, nil
+}
+
+func (m ConcreteWallModuleModel) Get(id uuid.UUID) (*ConcreteWallModule, error) {
+	query := `
+		SELECT
+			m.id, m.tower_option_id,
+			cw.concrete_walls, cw.concrete_slabs,
+			cw.wall_thickness, cw.slab_thickness, cw.form_area, cw.wall_area,
+			cw.total_co2_min, cw.total_co2_max, cw.total_energy_min, cw.total_energy_max,
+			cw.created_at, cw.updated_at
+		FROM module m
+		JOIN module_concrete_wall cw ON m.id = cw.id
+		WHERE m.id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var module ConcreteWallModule
+	var wallID, slabID uuid.UUID
+
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(
+		&module.ID, &module.TowerOptionID,
+		&wallID, &slabID,
+		&module.WallThickness, &module.SlabThickness, &module.FormArea, &module.WallArea,
+		&module.TotalCO2Min, &module.TotalCO2Max, &module.TotalEnergyMin, &module.TotalEnergyMax,
+		&module.CreatedAt, &module.UpdatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrRecordNotFound
+		}
+		return nil, err
+	}
+
+	module.ConcreteWalls, err = GetConcrete(m.DB, wallID)
+	if err != nil {
+		return nil, err
+	}
+	module.ConcreteSlabs, err = GetConcrete(m.DB, slabID)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := m.DB.QueryContext(ctx, `SELECT floor_id FROM module_floor WHERE module_id = $1`, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var floorIDs []uuid.UUID
+	for rows.Next() {
+		var floorID uuid.UUID
+		if err := rows.Scan(&floorID); err != nil {
+			return nil, err
+		}
+		floorIDs = append(floorIDs, floorID)
+	}
+	module.FloorIDs = floorIDs
+
+	return &module, nil
+}
+
+func (m BeamColumnModuleModel) Delete(id uuid.UUID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx, err := m.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var colID, beamID, slabID uuid.UUID
+	query := `
+		SELECT concrete_columns, concrete_beams, concrete_slabs
+		FROM module_beam_column
+		WHERE id = $1`
+
+	err = tx.QueryRowContext(ctx, query, id).Scan(&colID, &beamID, &slabID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return ErrRecordNotFound
+		}
+		return err
+	}
+
+	query = `DELETE FROM module WHERE id = $1`
+	result, err := tx.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	concreteIDs := []uuid.UUID{colID, beamID, slabID}
+	for _, concreteID := range concreteIDs {
+		var count int
+		query = `
+			SELECT COUNT(*) FROM (
+				SELECT concrete_columns AS id FROM module_beam_column
+				UNION ALL
+				SELECT concrete_beams FROM module_beam_column
+				UNION ALL
+				SELECT concrete_slabs FROM module_beam_column
+				UNION ALL
+				SELECT concrete_walls FROM module_concrete_wall
+				UNION ALL
+				SELECT concrete_slabs FROM module_concrete_wall
+			) AS concrete_usage WHERE id = $1
+		`
+		err := tx.QueryRowContext(ctx, query, concreteID).Scan(&count)
+		if err != nil {
+			return err
+		}
+
+		if count == 0 {
+			query = `DELETE FROM concrete WHERE id = $1`
+			_, err = tx.ExecContext(ctx, query, concreteID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return tx.Commit()
+}
+
+func (m ConcreteWallModuleModel) Delete(id uuid.UUID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx, err := m.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var wallID, slabID uuid.UUID
+	query := `
+		SELECT concrete_walls, concrete_slabs
+		FROM module_concrete_wall
+		WHERE id = $1`
+
+	err = tx.QueryRowContext(ctx, query, id).Scan(&wallID, &slabID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return ErrRecordNotFound
+		}
+		return err
+	}
+
+	query = `DELETE FROM module WHERE id = $1`
+	result, err := tx.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	concreteIDs := []uuid.UUID{wallID, slabID}
+	for _, concreteID := range concreteIDs {
+		var count int
+		query = `
+			SELECT COUNT(*) FROM (
+				SELECT concrete_columns AS id FROM module_beam_column
+				UNION ALL
+				SELECT concrete_beams FROM module_beam_column
+				UNION ALL
+				SELECT concrete_slabs FROM module_beam_column
+				UNION ALL
+				SELECT concrete_walls FROM module_concrete_wall
+				UNION ALL
+				SELECT concrete_slabs FROM module_concrete_wall
+			) AS concrete_usage WHERE id = $1
+		`
+		err := tx.QueryRowContext(ctx, query, concreteID).Scan(&count)
+		if err != nil {
+			return err
+		}
+
+		if count == 0 {
+			query = `DELETE FROM concrete WHERE id = $1`
+			_, err = tx.ExecContext(ctx, query, concreteID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return tx.Commit()
+}
+
+func (m BeamColumnModuleModel) GetModuleType(id uuid.UUID) (string, error) {
+	query := `
+		SELECT type
+		FROM module
+		WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var moduleType string
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(&moduleType)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", ErrRecordNotFound
+		}
+		return "", err
+	}
+
+	return moduleType, nil
+}

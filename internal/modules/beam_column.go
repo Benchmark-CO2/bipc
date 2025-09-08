@@ -25,6 +25,7 @@ type BeamColumn struct {
 func (b *BeamColumn) GetType() string { return b.Type }
 
 func (b *BeamColumn) Validate(v *validator.Validator) {
+	// v.Check(b.Name != "", "name", "must be provided")
 	v.Check(b.Type != "", "type", "must be provided")
 	v.Check(len(b.FloorIDs) > 0, "floor_ids", "must be provided")
 	v.Check(validator.Unique(b.FloorIDs), "floor_ids", "must not contain duplicate values")
@@ -89,6 +90,18 @@ func (b *BeamColumn) Insert(models data.Models, optionID uuid.UUID, result Consu
 	return nil
 }
 
+func (b *BeamColumn) Delete(models data.Models, moduleID uuid.UUID) error {
+	return models.BeamColumnModules.Delete(moduleID)
+}
+
+func (b *BeamColumn) Get(models data.Models, moduleID uuid.UUID) (Module, error) {
+	dataModule, err := models.BeamColumnModules.Get(moduleID)
+	if err != nil {
+		return nil, err
+	}
+	return b.toModule(dataModule), nil
+}
+
 func toBeamColumnModule(b *BeamColumn, moduleID uuid.UUID, optionID uuid.UUID, result Consuption) *data.BeamColumnModule {
 	return &data.BeamColumnModule{
 		ID:              moduleID,
@@ -108,5 +121,22 @@ func toBeamColumnModule(b *BeamColumn, moduleID uuid.UUID, optionID uuid.UUID, r
 		TotalEnergyMin:  &result.EnergyMin,
 		TotalEnergyMax:  &result.EnergyMax,
 		FloorIDs:        b.FloorIDs,
+	}
+}
+
+func (b *BeamColumn) toModule(d *data.BeamColumnModule) Module {
+	return &BeamColumn{
+		BasicModuleData: BasicModuleData{Type: "beam_column"},
+		ConcreteColumns: ToConcreteElement(d.ConcreteColumns),
+		ConcreteBeams:   ToConcreteElement(d.ConcreteBeams),
+		ConcreteSlabs:   ToConcreteElement(d.ConcreteSlabs),
+		FormColumns:     d.FormColumns,
+		FormBeams:       d.FormBeams,
+		FormSlabs:       d.FormSlabs,
+		FormTotal:       d.FormTotal,
+		ColumnNumber:    d.ColumnNumber,
+		AvgBeamSpan:     d.AvgBeamSpan,
+		AvgSlabSpan:     d.AvgSlabSpan,
+		FloorIDs:        d.FloorIDs,
 	}
 }

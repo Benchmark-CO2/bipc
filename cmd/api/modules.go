@@ -81,3 +81,84 @@ func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+func (app *application) readModuleHandler(w http.ResponseWriter, r *http.Request) {
+	moduleID, err := app.readUUIDParam(r, "moduleID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	moduleType, err := app.models.BeamColumnModules.GetModuleType(moduleID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	moduleAPI, err := modules.ParseModuleType(moduleType)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	module, err := moduleAPI.Get(app.models, moduleID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"module": module}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) deleteModuleHandler(w http.ResponseWriter, r *http.Request) {
+	moduleID, err := app.readUUIDParam(r, "moduleID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	moduleType, err := app.models.BeamColumnModules.GetModuleType(moduleID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	module, err := modules.ParseModuleType(moduleType)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	err = module.Delete(app.models, moduleID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "module successfully deleted"}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}

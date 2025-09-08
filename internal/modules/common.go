@@ -59,6 +59,8 @@ type Module interface {
 	Validate(v *validator.Validator)
 	Calculate() (Consuption, error)
 	Insert(models data.Models, optionID uuid.UUID, result Consuption) error
+	Delete(models data.Models, moduleID uuid.UUID) error
+	Get(models data.Models, moduleID uuid.UUID) (Module, error)
 }
 
 func validateConcreteElement(v *validator.Validator, el ConcreteElement, fieldPrefix string) {
@@ -192,7 +194,7 @@ func addConcreteElement(total *Consuption, ce ConcreteElement, sidacConcrete, si
 	return nil
 }
 
-func toConcreteElement(c data.Concrete) ConcreteElement {
+func ToConcreteElement(c data.Concrete) ConcreteElement {
 	var vols []ConcreteVolumeItem
 	for _, v := range c.Volumes {
 		vols = append(vols, ConcreteVolumeItem{

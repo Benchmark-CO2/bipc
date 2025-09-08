@@ -83,3 +83,28 @@ func (w *ConcreteWall) Insert(models data.Models, optionID uuid.UUID, result Con
 
 	return nil
 }
+
+func (w *ConcreteWall) Delete(models data.Models, moduleID uuid.UUID) error {
+	return models.ConcreteWallModules.Delete(moduleID)
+}
+
+func (w *ConcreteWall) Get(models data.Models, moduleID uuid.UUID) (Module, error) {
+	dataModule, err := models.ConcreteWallModules.Get(moduleID)
+	if err != nil {
+		return nil, err
+	}
+	return w.toModule(dataModule), nil
+}
+
+func (w *ConcreteWall) toModule(d *data.ConcreteWallModule) Module {
+	return &ConcreteWall{
+		BasicModuleData: BasicModuleData{Type: "concrete_wall"},
+		ConcreteWalls:  ToConcreteElement(d.ConcreteWalls),
+		ConcreteSlabs:  ToConcreteElement(d.ConcreteSlabs),
+		WallThickness:  d.WallThickness,
+		SlabThickness:  d.SlabThickness,
+		FormArea:       d.FormArea,
+		WallArea:       d.WallArea,
+		FloorIDs:       d.FloorIDs,
+	}
+}
