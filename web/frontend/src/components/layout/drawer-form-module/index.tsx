@@ -139,10 +139,10 @@ const DrawerFormModule = ({
   useEffect(() => {
     const ensureArraysInitialized = () => {
       const fieldsToInit = [
-        "concreteColumns",
-        "concreteBeams",
-        "concreteSlabs",
-        "concreteWalls",
+        "concrete_columns",
+        "concrete_beams",
+        "concrete_slabs",
+        "concrete_walls",
         // "vertical_grout", // comentado: structural masonry
         // "horizontal_grout", // comentado: structural masonry
         // "blocks", // comentado: structural masonry
@@ -179,37 +179,31 @@ const DrawerFormModule = ({
       return;
     }
 
-    const baseFields = {
-      // name: data.name,
-      type: data.type,
-    };
+    let filteredData = {};
 
-    let filteredData: any = baseFields; // Changed to any to avoid type conflicts for now
-
-    if (baseFields.type === "beam_column") {
+    if (data.type === "beam_column") {
       filteredData = {
-        ...baseFields,
-        concreteColumns: data.concreteColumns || { volumes: [], steel: [] },
-        concreteBeams: data.concreteBeams || { volumes: [], steel: [] },
-        concreteSlabs: data.concreteSlabs || { volumes: [], steel: [] },
-        formColumns: data.formColumns,
-        formBeams: data.formBeams,
-        formSlabs: data.formSlabs,
-        columnNumber: data.columnNumber,
-        avgBeamSpan: data.avgBeamSpan,
-        avgSlabSpan: data.avgSlabSpan,
+        concrete_columns: data.concrete_columns || { volumes: [], steel: [] },
+        concrete_beams: data.concrete_beams || { volumes: [], steel: [] },
+        concrete_slabs: data.concrete_slabs || { volumes: [], steel: [] },
+        form_columns: data.form_columns,
+        form_beams: data.form_beams,
+        form_slabs: data.form_slabs,
+        column_number: data.column_number,
+        avg_beam_span: data.avg_beam_span,
+        avg_slab_span: data.avg_slab_span,
       };
-    } else if (baseFields.type === "concrete_wall") {
+    } else if (data.type === "concrete_wall") {
       filteredData = {
-        ...baseFields,
-        concreteWalls: data.concreteWalls || { volumes: [], steel: [] },
-        concreteSlabs: data.concreteSlabs || { volumes: [], steel: [] },
-        wallThickness: data.wallThickness,
-        slabThickness: data.slabThickness,
-        formArea: data.formArea,
-        wallArea: data.wallArea,
+        concrete_walls: data.concrete_walls || { volumes: [], steel: [] },
+        concrete_slabs: data.concrete_slabs || { volumes: [], steel: [] },
+        wall_thickness: data.wall_thickness,
+        slab_thickness: data.slab_thickness,
+        form_area: data.form_area,
+        wall_area: data.wall_area,
       };
     }
+
     // Comentado: structural masonry
     // else if (baseFields.type === "structural_masonry") {
     //   filteredData = {
@@ -220,7 +214,15 @@ const DrawerFormModule = ({
     //   };
     // }
 
-    console.log("Create data:", filteredData);
+    const baseFields = {
+      type: data.type,
+      data: {
+        ...filteredData,
+        floor_ids: selectedFloors,
+      },
+    };
+
+    console.log("Create data:", baseFields);
     // mutateCreation(filteredData);
   };
 
@@ -372,81 +374,6 @@ const DrawerFormModule = ({
                       )}
                     />
                   </div>
-
-                  {/* Campos de andar
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="floor_repetition"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          {t("drawerFormModule.commonForm.floorRepetitionLabel")}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="0"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="floor_area"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          {t("drawerFormModule.commonForm.floorAreaLabel")}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="floor_height"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          {t("drawerFormModule.commonForm.floorHeightLabel")}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div> */}
-
                   {/* Campos específicos por tipo de estrutura */}
                   {(() => {
                     const structureType = form.watch("type");

@@ -1,6 +1,6 @@
 import { ModuleFormSchema } from "@/validators/moduleFormByType.validator";
 import { AlertTriangle, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import { Button } from "../../ui/button";
 import { Card, CardContent } from "../../ui/card";
@@ -35,6 +35,27 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
     Record<string, boolean>
   >({});
 
+  useEffect(() => {
+    const requiredFields = ["concrete_walls", "concrete_slabs"];
+
+    requiredFields.forEach((fieldName) => {
+      const volumes = form.getValues(`${fieldName}.volumes` as any);
+      const steel = form.getValues(`${fieldName}.steel` as any);
+
+      if (!volumes || volumes.length === 0) {
+        form.setValue(`${fieldName}.volumes` as any, [
+          { fck: fckOptions[0], volume: 0 },
+        ]);
+      }
+
+      if (!steel || steel.length === 0) {
+        form.setValue(`${fieldName}.steel` as any, [
+          { ca: caOptions[0], mass: 0 },
+        ]);
+      }
+    });
+  }, [form, fckOptions, caOptions]);
+
   const calculateTotalVolume = (
     volumes: Array<{ fck: number; volume: number }>
   ) => {
@@ -46,7 +67,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
   };
 
   const renderCompleteSection = (
-    fieldName: "concreteWalls" | "concreteSlabs",
+    fieldName: "concrete_walls" | "concrete_slabs",
     title: string,
     isRequired: boolean = true,
     showCustomFckWarning: boolean = false
@@ -118,11 +139,11 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
             <div>
               <FormLabel className="text-sm text-gray-600">
                 Volume total de{" "}
-                {fieldName === "concreteWalls" ? "parede" : "laje"} (m³)
+                {fieldName === "concrete_walls" ? "parede" : "laje"} (m³)
               </FormLabel>
               <FormField
                 control={form.control}
-                name={`${fieldName}.totalVolume` as any}
+                name={`${fieldName}.total_volume` as any}
                 render={({ field }) => {
                   return (
                     <FormItem>
@@ -305,7 +326,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
               </FormLabel>
               <FormField
                 control={form.control}
-                name={`${fieldName}.totalMass` as any}
+                name={`${fieldName}.total_mass` as any}
                 render={({ field }) => {
                   return (
                     <FormItem>
@@ -796,7 +817,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
       <div className="grid grid-cols-4 gap-4">
         <FormField
           control={form.control}
-          name="wallThickness"
+          name="wall_thickness"
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Espessura da parede (m)</FormLabel>
@@ -816,7 +837,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
 
         <FormField
           control={form.control}
-          name="slabThickness"
+          name="slab_thickness"
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Espessura da laje (m)</FormLabel>
@@ -836,7 +857,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
 
         <FormField
           control={form.control}
-          name="formArea"
+          name="form_area"
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Área de laje (m²)</FormLabel>
@@ -856,7 +877,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
 
         <FormField
           control={form.control}
-          name="wallArea"
+          name="wall_area"
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Área de parede (m²)</FormLabel>
@@ -876,10 +897,10 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
       </div>
 
       {/* Parede de concreto */}
-      {renderCompleteSection("concreteWalls", "Parede de concreto", true)}
+      {renderCompleteSection("concrete_walls", "Parede de concreto", true)}
 
       {/* Laje de concreto */}
-      {renderCompleteSection("concreteSlabs", "Laje de concreto", true, true)}
+      {renderCompleteSection("concrete_slabs", "Laje de concreto", true, true)}
 
       {/* Escada (opcional) */}
       {renderOptionalSection("Escada (opcional)")}

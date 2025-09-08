@@ -1,47 +1,51 @@
 import { z } from "zod";
 
 // Schemas baseados na nova tipagem type2.ts
-const concreteVolumeItemSchema = z.object({
-  fck: z.number(),
-  volume: z.number().positive("O volume deve ser um número positivo"),
-  customFck: z.boolean().optional(),
-}).superRefine((data, ctx) => {
-  if (!data.customFck) {
-    if (data.fck < 20 || data.fck > 45) {
-      ctx.addIssue({
-        path: ["fck"],
-        code: "custom",
-        message: "Fck deve estar entre 20 e 45",
-      });
+const concreteVolumeItemSchema = z
+  .object({
+    fck: z.number(),
+    volume: z.number().positive("O volume deve ser um número positivo"),
+    customFck: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.customFck) {
+      if (data.fck < 20 || data.fck > 45) {
+        ctx.addIssue({
+          path: ["fck"],
+          code: "custom",
+          message: "Fck deve estar entre 20 e 45",
+        });
+      }
     }
-  }
-})
-.transform((data) => {
-  const { customFck, ...rest } = data;
-  return rest;
-})
+  })
+  .transform((data) => {
+    const { customFck, ...rest } = data;
+    return rest;
+  });
 
-const steelMassItemSchema = z.object({
-  ca: z.number().refine((val) => val === 50 || val === 60, {
-    message: "CA deve ser 50 ou 60",
-  }),
-  mass: z.number().nonnegative("A massa deve ser um número não negativo"),
-  customCa: z.boolean().optional(),
-}).superRefine((data, ctx) => {
-  if (!data.customCa) {
-    if (data.ca < 50 || data.ca > 60) {
-      ctx.addIssue({
-        path: ["ca"],
-        code: "custom",
-        message: "CA deve estar entre 50 e 60",
-      });
+const steelMassItemSchema = z
+  .object({
+    ca: z.number().refine((val) => val === 50 || val === 60, {
+      message: "CA deve ser 50 ou 60",
+    }),
+    mass: z.number().nonnegative("A massa deve ser um número não negativo"),
+    customCa: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.customCa) {
+      if (data.ca < 50 || data.ca > 60) {
+        ctx.addIssue({
+          path: ["ca"],
+          code: "custom",
+          message: "CA deve estar entre 50 e 60",
+        });
+      }
     }
-  }
-})
-.transform((data) => {
-  const { customCa, ...rest } = data;
-  return rest;
-});
+  })
+  .transform((data) => {
+    const { customCa, ...rest } = data;
+    return rest;
+  });
 
 const concreteElementSchema = z.object({
   volumes: z.array(concreteVolumeItemSchema).optional().default([]),
@@ -70,22 +74,22 @@ export const moduleFormSchema = z
     }),
 
     // Beam Column - seguindo a nova tipagem
-    concreteColumns: concreteElementSchema.optional(),
-    concreteBeams: concreteElementSchema.optional(),
-    concreteSlabs: concreteElementSchema.optional(),
-    formColumns: z.number().nonnegative().optional(),
-    formBeams: z.number().nonnegative().optional(),
-    formSlabs: z.number().nonnegative().optional(),
-    columnNumber: z.number().int().nonnegative().optional(),
-    avgBeamSpan: z.number().nonnegative().optional(),
-    avgSlabSpan: z.number().nonnegative().optional(),
+    concrete_columns: concreteElementSchema.optional(),
+    concrete_beams: concreteElementSchema.optional(),
+    concrete_slabs: concreteElementSchema.optional(),
+    form_columns: z.number().nonnegative().optional(),
+    form_beams: z.number().nonnegative().optional(),
+    form_slabs: z.number().nonnegative().optional(),
+    column_number: z.number().int().nonnegative().optional(),
+    avg_beam_span: z.number().nonnegative().optional(),
+    avg_slab_span: z.number().nonnegative().optional(),
 
     // Concrete Wall - seguindo a nova tipagem
-    concreteWalls: concreteElementSchema.optional(),
-    wallThickness: z.number().nonnegative().optional(),
-    slabThickness: z.number().nonnegative().optional(),
-    formArea: z.number().nonnegative().optional(),
-    wallArea: z.number().nonnegative().optional(),
+    concrete_walls: concreteElementSchema.optional(),
+    wall_thickness: z.number().nonnegative().optional(),
+    slab_thickness: z.number().nonnegative().optional(),
+    form_area: z.number().nonnegative().optional(),
+    wall_area: z.number().nonnegative().optional(),
 
     // Structural Masonry (comentado por enquanto)
     // vertical_grout: concreteElementSchema.optional(),
@@ -96,15 +100,15 @@ export const moduleFormSchema = z
     (data) => {
       if (data.type === "beam_column") {
         return (
-          data.concreteColumns !== undefined &&
-          data.concreteBeams !== undefined &&
-          data.concreteSlabs !== undefined &&
-          data.formColumns !== undefined &&
-          data.formBeams !== undefined &&
-          data.formSlabs !== undefined &&
-          data.columnNumber !== undefined &&
-          data.avgBeamSpan !== undefined &&
-          data.avgSlabSpan !== undefined
+          data.concrete_columns !== undefined &&
+          data.concrete_beams !== undefined &&
+          data.concrete_slabs !== undefined &&
+          data.form_columns !== undefined &&
+          data.form_beams !== undefined &&
+          data.form_slabs !== undefined &&
+          data.column_number !== undefined &&
+          data.avg_beam_span !== undefined &&
+          data.avg_slab_span !== undefined
         );
       }
       return true;
@@ -119,12 +123,12 @@ export const moduleFormSchema = z
     (data) => {
       if (data.type === "concrete_wall") {
         return (
-          data.concreteWalls !== undefined &&
-          data.concreteSlabs !== undefined &&
-          data.wallThickness !== undefined &&
-          data.slabThickness !== undefined &&
-          data.formArea !== undefined &&
-          data.wallArea !== undefined
+          data.concrete_walls !== undefined &&
+          data.concrete_slabs !== undefined &&
+          data.wall_thickness !== undefined &&
+          data.slab_thickness !== undefined &&
+          data.form_area !== undefined &&
+          data.wall_area !== undefined
         );
       }
       return true;
@@ -161,27 +165,27 @@ export type ModuleFormSchema = z.infer<typeof moduleFormSchema>;
 export const validateBeamColumnData = (data: Partial<ModuleFormSchema>) => {
   return (
     data.type === "beam_column" &&
-    data.concreteColumns?.volumes?.length &&
-    data.concreteBeams?.volumes?.length &&
-    data.concreteSlabs?.volumes?.length &&
-    data.formColumns !== undefined &&
-    data.formBeams !== undefined &&
-    data.formSlabs !== undefined &&
-    data.columnNumber !== undefined &&
-    data.avgBeamSpan !== undefined &&
-    data.avgSlabSpan !== undefined
+    data.concrete_columns?.volumes?.length &&
+    data.concrete_beams?.volumes?.length &&
+    data.concrete_slabs?.volumes?.length &&
+    data.form_columns !== undefined &&
+    data.form_beams !== undefined &&
+    data.form_slabs !== undefined &&
+    data.column_number !== undefined &&
+    data.avg_beam_span !== undefined &&
+    data.avg_slab_span !== undefined
   );
 };
 
 export const validateConcreteWallData = (data: Partial<ModuleFormSchema>) => {
   return (
     data.type === "concrete_wall" &&
-    data.concreteWalls?.volumes?.length &&
-    data.concreteSlabs?.volumes?.length &&
-    data.wallThickness !== undefined &&
-    data.slabThickness !== undefined &&
-    data.formArea !== undefined &&
-    data.wallArea !== undefined
+    data.concrete_walls?.volumes?.length &&
+    data.concrete_slabs?.volumes?.length &&
+    data.wall_thickness !== undefined &&
+    data.slab_thickness !== undefined &&
+    data.form_area !== undefined &&
+    data.wall_area !== undefined
   );
 };
 

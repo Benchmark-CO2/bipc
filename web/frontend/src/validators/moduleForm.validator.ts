@@ -39,22 +39,22 @@ export const moduleFormSchema = z
     }),
 
     // Beam Column - seguindo a nova tipagem
-    concreteColumns: concreteElementSchema.optional(),
-    concreteBeams: concreteElementSchema.optional(),
-    concreteSlabs: concreteElementSchema.optional(),
-    formColumns: z.number().nonnegative().optional(),
-    formBeams: z.number().nonnegative().optional(),
-    formSlabs: z.number().nonnegative().optional(),
-    columnNumber: z.number().int().nonnegative().optional(),
-    avgBeamSpan: z.number().nonnegative().optional(),
-    avgSlabSpan: z.number().nonnegative().optional(),
+    concrete_columns: concreteElementSchema.optional(),
+    concrete_beams: concreteElementSchema.optional(),
+    concrete_slabs: concreteElementSchema.optional(),
+    form_columns: z.number().nonnegative().optional(),
+    form_beams: z.number().nonnegative().optional(),
+    form_slabs: z.number().nonnegative().optional(),
+    column_number: z.number().int().nonnegative().optional(),
+    avg_beam_span: z.number().nonnegative().optional(),
+    avg_slab_span: z.number().nonnegative().optional(),
 
     // Concrete Wall - seguindo a nova tipagem
-    concreteWalls: concreteElementSchema.optional(),
-    wallThickness: z.number().nonnegative().optional(),
-    slabThickness: z.number().nonnegative().optional(),
-    formArea: z.number().nonnegative().optional(),
-    wallArea: z.number().nonnegative().optional(),
+    concrete_walls: concreteElementSchema.optional(),
+    wall_thickness: z.number().nonnegative().optional(),
+    slab_thickness: z.number().nonnegative().optional(),
+    form_area: z.number().nonnegative().optional(),
+    wall_area: z.number().nonnegative().optional(),
 
     // Structural Masonry (comentado por enquanto)
     // descomentei pra parar de dar erro, mas ta tudo como any
@@ -68,15 +68,15 @@ export const moduleFormSchema = z
     (data) => {
       if (data.type === "beam_column") {
         return (
-          data.concreteColumns !== undefined &&
-          data.concreteBeams !== undefined &&
-          data.concreteSlabs !== undefined &&
-          data.formColumns !== undefined &&
-          data.formBeams !== undefined &&
-          data.formSlabs !== undefined &&
-          data.columnNumber !== undefined &&
-          data.avgBeamSpan !== undefined &&
-          data.avgSlabSpan !== undefined
+          data.concrete_columns !== undefined &&
+          data.concrete_beams !== undefined &&
+          data.concrete_slabs !== undefined &&
+          data.form_columns !== undefined &&
+          data.form_beams !== undefined &&
+          data.form_slabs !== undefined &&
+          data.column_number !== undefined &&
+          data.avg_beam_span !== undefined &&
+          data.avg_slab_span !== undefined
         );
       }
       return true;
@@ -91,12 +91,12 @@ export const moduleFormSchema = z
     (data) => {
       if (data.type === "concrete_wall") {
         return (
-          data.concreteWalls !== undefined &&
-          data.concreteSlabs !== undefined &&
-          data.wallThickness !== undefined &&
-          data.slabThickness !== undefined &&
-          data.formArea !== undefined &&
-          data.wallArea !== undefined
+          data.concrete_walls !== undefined &&
+          data.concrete_slabs !== undefined &&
+          data.wall_thickness !== undefined &&
+          data.slab_thickness !== undefined &&
+          data.form_area !== undefined &&
+          data.wall_area !== undefined
         );
       }
       return true;

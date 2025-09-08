@@ -1,7 +1,7 @@
 import { ModuleFormSchema } from "@/validators/moduleFormByType.validator";
 import { Trash2 } from "lucide-react";
-import { useState } from "react";
-import { useFieldArray, UseFormReturn } from "react-hook-form";
+import { useState, useEffect } from "react";
+import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import { Button } from "../../ui/button";
 import { Card, CardContent } from "../../ui/card";
 import {
@@ -35,6 +35,31 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
     Record<string, boolean>
   >({});
 
+  useEffect(() => {
+    const requiredFields = [
+      "concrete_columns",
+      "concrete_beams",
+      "concrete_slabs",
+    ];
+
+    requiredFields.forEach((fieldName) => {
+      const volumes = form.getValues(`${fieldName}.volumes` as any);
+      const steel = form.getValues(`${fieldName}.steel` as any);
+
+      if (!volumes || volumes.length === 0) {
+        form.setValue(`${fieldName}.volumes` as any, [
+          { fck: fckOptions[0], volume: 0 },
+        ]);
+      }
+
+      if (!steel || steel.length === 0) {
+        form.setValue(`${fieldName}.steel` as any, [
+          { ca: caOptions[0], mass: 0 },
+        ]);
+      }
+    });
+  }, [form, fckOptions, caOptions]);
+
   const calculateTotalVolume = (
     volumes: Array<{ fck: number; volume: number }>
   ) => {
@@ -46,7 +71,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
   };
 
   const renderCompleteSection = (
-    fieldName: "concreteColumns" | "concreteBeams" | "concreteSlabs",
+    fieldName: "concrete_columns" | "concrete_beams" | "concrete_slabs",
     title: string,
     isRequired: boolean = true
   ) => {
@@ -70,8 +95,10 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
     const borderColor = isRequired ? "border-blue-500" : "border-gray-300";
 
-    const currentVolumes = form.watch(`${fieldName}.volumes` as any) || [];
-    const currentSteel = form.watch(`${fieldName}.steel` as any) || [];
+    useWatch({ control: form.control, name: `${fieldName}.volumes` as any });
+    useWatch({ control: form.control, name: `${fieldName}.steel` as any });
+    const currentVolumes = form.getValues(`${fieldName}.volumes` as any) || [];
+    const currentSteel = form.getValues(`${fieldName}.steel` as any) || [];
 
     const isFckUsed = (fck: number, currentIndex: number) => {
       return currentVolumes.some(
@@ -118,7 +145,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
               </FormLabel>
               <FormField
                 control={form.control}
-                name={`${fieldName}.totalVolume` as any}
+                name={`${fieldName}.total_volume` as any}
                 render={({ field }) => {
                   return (
                     <FormItem>
@@ -295,7 +322,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
               </FormLabel>
               <FormField
                 control={form.control}
-                name={`${fieldName}.totalMass` as any}
+                name={`${fieldName}.total_mass` as any}
                 render={({ field }) => {
                   return (
                     <FormItem>
@@ -471,7 +498,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
       <div className="grid grid-cols-3 gap-4">
         <FormField
           control={form.control}
-          name="columnNumber"
+          name="column_number"
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Número de pilares</FormLabel>
@@ -490,7 +517,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
         <FormField
           control={form.control}
-          name="avgBeamSpan"
+          name="avg_beam_span"
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Vão médio das vigas (m)</FormLabel>
@@ -510,7 +537,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
         <FormField
           control={form.control}
-          name="avgSlabSpan"
+          name="avg_slab_span"
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Vão médio das lajes (m)</FormLabel>
@@ -530,13 +557,13 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
       </div>
 
       {/* Pilares */}
-      {renderCompleteSection("concreteColumns", "Pilar de concreto", true)}
+      {renderCompleteSection("concrete_columns", "Pilar de concreto", true)}
 
       {/* Vigas */}
-      {renderCompleteSection("concreteBeams", "Viga de concreto", true)}
+      {renderCompleteSection("concrete_beams", "Viga de concreto", true)}
 
       {/* Lajes */}
-      {renderCompleteSection("concreteSlabs", "Laje de concreto", true)}
+      {renderCompleteSection("concrete_slabs", "Laje de concreto", true)}
 
       {/* Formas */}
       <div className="space-y-3">
@@ -549,7 +576,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
             <div className="grid grid-cols-4 gap-4">
               <FormField
                 control={form.control}
-                name="formColumns"
+                name="form_columns"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">
@@ -571,7 +598,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
               <FormField
                 control={form.control}
-                name="formBeams"
+                name="form_beams"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">
@@ -593,7 +620,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
               <FormField
                 control={form.control}
-                name="formSlabs"
+                name="form_slabs"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">
@@ -616,9 +643,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
               <div>
                 <FormLabel className="text-xs">Forma total (m²)</FormLabel>
                 {(() => {
-                  const formColumns = form.watch("formColumns") || 0;
-                  const formBeams = form.watch("formBeams") || 0;
-                  const formSlabs = form.watch("formSlabs") || 0;
+                  const formColumns = form.watch("form_columns") || 0;
+                  const formBeams = form.watch("form_beams") || 0;
+                  const formSlabs = form.watch("form_slabs") || 0;
                   const totalArea = formColumns + formBeams + formSlabs;
 
                   return (
