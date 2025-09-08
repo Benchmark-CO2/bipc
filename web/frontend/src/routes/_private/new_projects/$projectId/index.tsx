@@ -1,87 +1,72 @@
-import { getProjectByUUID } from "@/actions/projects/getProject";
-import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
-import { unitsColumns } from "@/components/columns/units";
-import { CommonTable, DrawerFormUnit } from "@/components/layout";
-import { Button } from "@/components/ui/button";
-import Divider from "@/components/ui/divider";
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useParams } from "@tanstack/react-router";
+import { CollaboratorsView, ProjectView } from "@/components/layout";
+import { TabsContainer } from "@/components/ui/tabsContainer";
+import {
+  createFileRoute,
+  useParams,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
+import { useState, useEffect } from "react";
+
+type ProjectSearch = {
+  tab?: "projeto" | "colaboradores";
+};
 
 export const Route = createFileRoute("/_private/new_projects/$projectId/")({
   component: RouteComponent,
+  validateSearch: (search: Record<string, unknown>): ProjectSearch => {
+    return {
+      tab: search.tab as "projeto" | "colaboradores",
+    };
+  },
 });
-
-const fakeTechnologies = [
-  {
-    id: "1",
-    name: "Bloco Estrutural",
-    co2: "50 KgCO2/m²",
-    energy: "100 MJ/m²",
-    density: "30 m³/m²",
-  },
-  {
-    id: "2",
-    name: "Alvenaria",
-    co2: "70 KgCO2/m²",
-    energy: "150 MJ/m²",
-    density: "40 m³/m²",
-  },
-  {
-    id: "3",
-    name: "Viga Pilar",
-    co2: "90 KgCO2/m²",
-    energy: "200 MJ/m²",
-    density: "70 m³/m²",
-  },
-];
 
 function RouteComponent() {
   const { projectId } = useParams({
     from: "/_private/new_projects/$projectId",
   });
-
-  const { data: projectData } = useQuery({
-    queryKey: ["project", projectId],
-    queryFn: () => getProjectByUUID(projectId),
+  const navigate = useNavigate();
+  const searchParams = useSearch({
+    from: "/_private/new_projects/$projectId/",
   });
 
-  const handleSelectionChange = (selectedItems: any[]) => {
-    // console.log("Selected items:", selectedItems);
+  const [selectedTab, setSelectedTab] = useState("Projeto");
+
+  const tabs = ["Projeto", "Colaboradores"];
+
+  useEffect(() => {
+    if (searchParams.tab === "colaboradores") {
+      setSelectedTab("Colaboradores");
+    } else {
+      setSelectedTab("Projeto");
+    }
+  }, [searchParams.tab]);
+
+  const handleTabClick = (tab: string) => {
+    const tabParam = tab === "Colaboradores" ? "colaboradores" : "projeto";
+
+    navigate({
+      to: ".",
+      search: { tab: tabParam },
+      replace: true,
+    });
+
+    setSelectedTab(tab);
   };
 
   return (
     <div className="flex flex-col gap-4">
-      <CommonTable
-        tableName="Unidades"
-        data={projectData?.data?.project?.units || []}
-        columns={unitsColumns}
-        isSelectable={true}
-        isInteractive={true}
-        onSelectionChange={handleSelectionChange}
-        actions={
-          <>
-            <DrawerFormUnit
-              triggerComponent={
-                <Button variant="outline" size="sm">
-                  Adicionar Unidade
-                </Button>
-              }
-              projectId={projectId}
-            />
-            <Button variant="outline" size="sm">
-              Editar Colaboradores
-            </Button>
-          </>
-        }
+      <TabsContainer
+        tabs={tabs}
+        selectedTab={selectedTab}
+        handleTabClick={handleTabClick}
+        fullWidth
       />
-      <Divider />
-      <CommonTable
-        tableName="Tecnologias Construtivas"
-        data={fakeTechnologies}
-        columns={constructiveTechnologies}
-        isSelectable={false}
-        isInteractive={false}
-      />
+
+      {selectedTab === "Projeto" && <ProjectView projectId={projectId} />}
+      {selectedTab === "Colaboradores" && (
+        <CollaboratorsView projectId={projectId} />
+      )}
     </div>
   );
 }

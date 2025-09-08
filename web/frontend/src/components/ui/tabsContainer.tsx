@@ -2,15 +2,19 @@ interface TabsContainerProps {
   tabs: string[];
   selectedTab?: string;
   handleTabClick: (tab: string) => void;
+  fullWidth?: boolean;
 }
 
 export function TabsContainer({
   tabs,
   selectedTab,
   handleTabClick,
+  fullWidth = false,
 }: TabsContainerProps) {
   return (
-    <div className="flex items-center gap-2 rounded-sm border border-gray-200 bg-white p-4 w-fit dark:border-gray-700 dark:bg-gray-800">
+    <div
+      className={`flex items-center gap-2 rounded-sm border border-gray-200 bg-white p-4 ${fullWidth ? "w-full" : "w-fit"} dark:border-gray-700 dark:bg-gray-800`}
+    >
       {tabs.map((tab) => (
         <button
           key={tab}
