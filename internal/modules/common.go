@@ -58,9 +58,10 @@ type Module interface {
 	GetType() string
 	Validate(v *validator.Validator)
 	Calculate() (Consuption, error)
-	Insert(models data.Models, optionID uuid.UUID, result Consuption) error
+	Insert(models data.Models, optionID uuid.UUID, result Consuption) (Module, error)
 	Delete(models data.Models, moduleID uuid.UUID) error
 	Get(models data.Models, moduleID uuid.UUID) (Module, error)
+	Update(models data.Models, moduleID, optionID uuid.UUID, result Consuption) error
 }
 
 func validateConcreteElement(v *validator.Validator, el ConcreteElement, fieldPrefix string) {

@@ -8,6 +8,7 @@ import (
 )
 
 type BeamColumn struct {
+	ID              uuid.UUID       `json:"id"`
 	BasicModuleData
 	ConcreteColumns ConcreteElement `json:"concrete_columns"`
 	ConcreteBeams   ConcreteElement `json:"concrete_beams"`
@@ -73,21 +74,20 @@ func (b *BeamColumn) Calculate() (Consuption, error) {
 	return total, nil
 }
 
-func (b *BeamColumn) Insert(models data.Models, optionID uuid.UUID, result Consuption) error {
+func (b *BeamColumn) Insert(models data.Models, optionID uuid.UUID, result Consuption) (Module, error) {
 	moduleID, err := uuid.NewV7()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	module := toBeamColumnModule(b, moduleID, optionID, result)
-	module.TowerOptionID = optionID
+	moduleToInsert := toBeamColumnModule(b, moduleID, optionID, result)
 
-	err = models.BeamColumnModules.Insert(module)
+	insertedModule, err := models.BeamColumnModules.Insert(moduleToInsert)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return b.toModule(insertedModule), nil
 }
 
 func (b *BeamColumn) Delete(models data.Models, moduleID uuid.UUID) error {
@@ -100,6 +100,11 @@ func (b *BeamColumn) Get(models data.Models, moduleID uuid.UUID) (Module, error)
 		return nil, err
 	}
 	return b.toModule(dataModule), nil
+}
+
+func (b *BeamColumn) Update(models data.Models, moduleID, optionID uuid.UUID, result Consuption) error {
+	module := toBeamColumnModule(b, moduleID, optionID, result)
+	return models.BeamColumnModules.Update(module)
 }
 
 func toBeamColumnModule(b *BeamColumn, moduleID uuid.UUID, optionID uuid.UUID, result Consuption) *data.BeamColumnModule {
@@ -126,6 +131,7 @@ func toBeamColumnModule(b *BeamColumn, moduleID uuid.UUID, optionID uuid.UUID, r
 
 func (b *BeamColumn) toModule(d *data.BeamColumnModule) Module {
 	return &BeamColumn{
+		ID:              d.ID,
 		BasicModuleData: BasicModuleData{Type: "beam_column"},
 		ConcreteColumns: ToConcreteElement(d.ConcreteColumns),
 		ConcreteBeams:   ToConcreteElement(d.ConcreteBeams),

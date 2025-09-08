@@ -7,6 +7,7 @@ import (
 )
 
 type ConcreteWall struct {
+	ID            uuid.UUID       `json:"id"`
 	BasicModuleData
 	ConcreteWalls ConcreteElement `json:"concrete_walls"`
 	ConcreteSlabs ConcreteElement `json:"concrete_slabs"`
@@ -54,34 +55,20 @@ func (w *ConcreteWall) Calculate() (Consuption, error) {
 	return total, nil
 }
 
-func (w *ConcreteWall) Insert(models data.Models, optionID uuid.UUID, result Consuption) error {
+func (w *ConcreteWall) Insert(models data.Models, optionID uuid.UUID, result Consuption) (Module, error) {
 	moduleID, err := uuid.NewV7()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	module := &data.ConcreteWallModule{
-		ID:             moduleID,
-		TowerOptionID:  optionID,
-		ConcreteWalls:  toDataConcrete(w.ConcreteWalls),
-		ConcreteSlabs:  toDataConcrete(w.ConcreteSlabs),
-		WallThickness:  w.WallThickness,
-		SlabThickness:  w.SlabThickness,
-		FormArea:       w.FormArea,
-		WallArea:       w.WallArea,
-		FloorIDs:       w.FloorIDs,
-		TotalCO2Min:    &result.CO2Min,
-		TotalCO2Max:    &result.CO2Max,
-		TotalEnergyMin: &result.EnergyMin,
-		TotalEnergyMax: &result.EnergyMax,
-	}
+	moduleToInsert := toConcreteWallModule(w, moduleID, optionID, result)
 
-	err = models.ConcreteWallModules.Insert(module)
+	insertedModule, err := models.ConcreteWallModules.Insert(moduleToInsert)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return w.toModule(insertedModule), nil
 }
 
 func (w *ConcreteWall) Delete(models data.Models, moduleID uuid.UUID) error {
@@ -96,8 +83,14 @@ func (w *ConcreteWall) Get(models data.Models, moduleID uuid.UUID) (Module, erro
 	return w.toModule(dataModule), nil
 }
 
+func (w *ConcreteWall) Update(models data.Models, moduleID, optionID uuid.UUID, result Consuption) error {
+	module := toConcreteWallModule(w, moduleID, optionID, result)
+	return models.ConcreteWallModules.Update(module)
+}
+
 func (w *ConcreteWall) toModule(d *data.ConcreteWallModule) Module {
 	return &ConcreteWall{
+		ID:             d.ID,
 		BasicModuleData: BasicModuleData{Type: "concrete_wall"},
 		ConcreteWalls:  ToConcreteElement(d.ConcreteWalls),
 		ConcreteSlabs:  ToConcreteElement(d.ConcreteSlabs),
@@ -106,5 +99,23 @@ func (w *ConcreteWall) toModule(d *data.ConcreteWallModule) Module {
 		FormArea:       d.FormArea,
 		WallArea:       d.WallArea,
 		FloorIDs:       d.FloorIDs,
+	}
+}
+
+func toConcreteWallModule(w *ConcreteWall, moduleID, optionID uuid.UUID, result Consuption) *data.ConcreteWallModule {
+	return &data.ConcreteWallModule{
+		ID:             moduleID,
+		TowerOptionID:  optionID,
+		ConcreteWalls:  toDataConcrete(w.ConcreteWalls),
+		ConcreteSlabs:  toDataConcrete(w.ConcreteSlabs),
+		WallThickness:  w.WallThickness,
+		SlabThickness:  w.SlabThickness,
+		FormArea:       w.FormArea,
+		WallArea:       w.WallArea,
+		FloorIDs:       w.FloorIDs,
+		TotalCO2Min:    &result.CO2Min,
+		TotalCO2Max:    &result.CO2Max,
+		TotalEnergyMin: &result.EnergyMin,
+		TotalEnergyMax: &result.EnergyMax,
 	}
 }

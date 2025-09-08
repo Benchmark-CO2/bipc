@@ -748,6 +748,44 @@ paths:
       responses:
         '200':
           description: Successfully deleted
+    patch:
+      summary: Update a module
+      tags:
+        - Modules
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: optionID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: moduleID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModuleCreateRequest'
+      responses:
+        '200':
+          description: module successfully updated
 
 components:
   securitySchemes:
