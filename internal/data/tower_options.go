@@ -11,11 +11,21 @@ import (
 	"github.com/gofrs/uuid"
 )
 
+type ModuleInfo struct {
+	ID             uuid.UUID `json:"id"`
+	Type           string    `json:"type"`
+	TotalCO2Min    *float64  `json:"total_co2_min,omitempty"`
+	TotalCO2Max    *float64  `json:"total_co2_max,omitempty"`
+	TotalEnergyMin *float64  `json:"total_energy_min,omitempty"`
+	TotalEnergyMax *float64  `json:"total_energy_max,omitempty"`
+}
+
 type TowerOption struct {
-	ID      uuid.UUID `json:"id"`
-	TowerID uuid.UUID `json:"tower_id"`
-	Name    string    `json:"name"`
-	Active  bool      `json:"active"`
+	ID      uuid.UUID    `json:"id"`
+	TowerID uuid.UUID    `json:"tower_id"`
+	Name    string       `json:"name"`
+	Active  bool         `json:"active"`
+	Modules []ModuleInfo `json:"modules,omitempty"`
 }
 
 func ValidateTowerOption(v *validator.Validator, towerOption *TowerOption) {
@@ -152,6 +162,39 @@ func (m TowerOptionModel) GetAll(towerID uuid.UUID) ([]*TowerOption, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		modulesQuery := `
+            SELECT id, type, total_co2_min, total_co2_max, total_energy_min, total_energy_max
+            FROM module
+            WHERE tower_option_id = $1`
+
+		moduleRows, err := m.DB.QueryContext(ctx, modulesQuery, towerOption.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		var modules []ModuleInfo
+		for moduleRows.Next() {
+			var module ModuleInfo
+			err := moduleRows.Scan(
+				&module.ID,
+				&module.Type,
+				&module.TotalCO2Min,
+				&module.TotalCO2Max,
+				&module.TotalEnergyMin,
+				&module.TotalEnergyMax,
+			)
+			if err != nil {
+				moduleRows.Close()
+				return nil, err
+			}
+			modules = append(modules, module)
+		}
+		moduleRows.Close()
+		if err = moduleRows.Err(); err != nil {
+			return nil, err
+		}
+		towerOption.Modules = modules
 
 		towerOptions = append(towerOptions, &towerOption)
 	}
