@@ -9,37 +9,9 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-type BeamColumnModule struct {
-	ID              uuid.UUID   `json:"id"`
-	TowerOptionID   uuid.UUID   `json:"tower_option_id"`
-	ConcreteColumns Concrete    `json:"concrete_columns"`
-	ConcreteBeams   Concrete    `json:"concrete_beams"`
-	ConcreteSlabs   Concrete    `json:"concrete_slabs"`
-	FormColumns     *float64    `json:"form_columns,omitempty"`
-	FormBeams       *float64    `json:"form_beams,omitempty"`
-	FormSlabs       *float64    `json:"form_slabs,omitempty"`
-	FormTotal       *float64    `json:"form_total,omitempty"`
-	ColumnNumber    *int        `json:"column_number,omitempty"`
-	AvgBeamSpan     *int        `json:"avg_beam_span,omitempty"`
-	AvgSlabSpan     *int        `json:"avg_slab_span,omitempty"`
-	TotalCO2Min     *float64    `json:"total_co2_min,omitempty"`
-	TotalCO2Max     *float64    `json:"total_co2_max,omitempty"`
-	TotalEnergyMin  *float64    `json:"total_energy_min,omitempty"`
-	TotalEnergyMax  *float64    `json:"total_energy_max,omitempty"`
-	FloorIDs        []uuid.UUID `json:"floor_ids"`
-	CreatedAt       time.Time   `json:"created_at"`
-	UpdatedAt       time.Time   `json:"updated_at"`
-}
-
-type ConcreteWallModule struct {
+type Module struct {
 	ID             uuid.UUID   `json:"id"`
 	TowerOptionID  uuid.UUID   `json:"tower_option_id"`
-	ConcreteWalls  Concrete    `json:"concrete_walls"`
-	ConcreteSlabs  Concrete    `json:"concrete_slabs"`
-	WallThickness  *float64    `json:"wall_thickness,omitempty"`
-	SlabThickness  *float64    `json:"slab_thickness,omitempty"`
-	FormArea       *float64    `json:"form_area,omitempty"`
-	WallArea       *float64    `json:"wall_area,omitempty"`
 	TotalCO2Min    *float64    `json:"total_co2_min,omitempty"`
 	TotalCO2Max    *float64    `json:"total_co2_max,omitempty"`
 	TotalEnergyMin *float64    `json:"total_energy_min,omitempty"`
@@ -47,6 +19,30 @@ type ConcreteWallModule struct {
 	FloorIDs       []uuid.UUID `json:"floor_ids"`
 	CreatedAt      time.Time   `json:"created_at"`
 	UpdatedAt      time.Time   `json:"updated_at"`
+}
+
+type BeamColumnModule struct {
+	Module
+	ConcreteColumns Concrete `json:"concrete_columns"`
+	ConcreteBeams   Concrete `json:"concrete_beams"`
+	ConcreteSlabs   Concrete `json:"concrete_slabs"`
+	FormColumns     *float64 `json:"form_columns,omitempty"`
+	FormBeams       *float64 `json:"form_beams,omitempty"`
+	FormSlabs       *float64 `json:"form_slabs,omitempty"`
+	FormTotal       *float64 `json:"form_total,omitempty"`
+	ColumnNumber    *int     `json:"column_number,omitempty"`
+	AvgBeamSpan     *int     `json:"avg_beam_span,omitempty"`
+	AvgSlabSpan     *int     `json:"avg_slab_span,omitempty"`
+}
+
+type ConcreteWallModule struct {
+	Module
+	ConcreteWalls  Concrete `json:"concrete_walls"`
+	ConcreteSlabs  Concrete `json:"concrete_slabs"`
+	WallThickness  *float64 `json:"wall_thickness,omitempty"`
+	SlabThickness  *float64 `json:"slab_thickness,omitempty"`
+	FormArea       *float64 `json:"form_area,omitempty"`
+	WallArea       *float64 `json:"wall_area,omitempty"`
 }
 
 type BeamColumnModuleModel struct {
@@ -91,13 +87,13 @@ func insertModuleFloor(db dbExecutor, moduleID uuid.UUID, floorIDs []uuid.UUID) 
 	return nil
 }
 
-func insertModule(db dbExecutor, moduleID uuid.UUID, towerOptionID uuid.UUID, moduleType string) error {
+func insertModule(db dbExecutor, module *Module, moduleType string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	_, err := db.ExecContext(ctx, `
-		INSERT INTO module (id, tower_option_id, type)
-		VALUES ($1, $2, $3)
-	`, moduleID, towerOptionID, moduleType)
+		INSERT INTO module (id, tower_option_id, type, total_co2_min, total_co2_max, total_energy_min, total_energy_max)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`, module.ID, module.TowerOptionID, moduleType, module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax)
 	return err
 }
 
@@ -121,7 +117,7 @@ func (m BeamColumnModuleModel) Insert(module *BeamColumnModule) (*BeamColumnModu
 		return nil, err
 	}
 
-	err = insertModule(tx, module.ID, module.TowerOptionID, "beam_column")
+	err = insertModule(tx, &module.Module, "beam_column")
 	if err != nil {
 		return nil, checkForeignKeyError(err)
 	}
@@ -132,16 +128,14 @@ func (m BeamColumnModuleModel) Insert(module *BeamColumnModule) (*BeamColumnModu
 	query := `
 		INSERT INTO module_beam_column (
 			id, concrete_columns, concrete_beams, concrete_slabs,
-			form_columns, form_beams, form_slabs, form_total, column_number, avg_beam_span, avg_slab_span,
-			total_co2_min, total_co2_max, total_energy_min, total_energy_max
+			form_columns, form_beams, form_slabs, form_total, column_number, avg_beam_span, avg_slab_span
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 		)
 		RETURNING created_at, updated_at`
 	err = tx.QueryRowContext(ctx, query,
 		module.ID, colID, beamID, slabID,
 		module.FormColumns, module.FormBeams, module.FormSlabs, module.FormTotal, module.ColumnNumber, module.AvgBeamSpan, module.AvgSlabSpan,
-		module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax,
 	).Scan(&module.CreatedAt, &module.UpdatedAt)
 	if err != nil {
 		return nil, err
@@ -150,6 +144,11 @@ func (m BeamColumnModuleModel) Insert(module *BeamColumnModule) (*BeamColumnModu
 	if err := insertModuleFloor(tx, module.ID, module.FloorIDs); err != nil {
 		return nil, checkForeignKeyError(err)
 	}
+
+	if err := updateFloorMetricsById(tx, module.FloorIDs); err != nil {
+		return nil, err
+	}
+
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
@@ -172,7 +171,7 @@ func (m ConcreteWallModuleModel) Insert(module *ConcreteWallModule) (*ConcreteWa
 		return nil, err
 	}
 
-	err = insertModule(tx, module.ID, module.TowerOptionID, "concrete_wall")
+	err = insertModule(tx, &module.Module, "concrete_wall")
 	if err != nil {
 		return nil, checkForeignKeyError(err)
 	}
@@ -183,16 +182,14 @@ func (m ConcreteWallModuleModel) Insert(module *ConcreteWallModule) (*ConcreteWa
 	query := `
 		INSERT INTO module_concrete_wall (
 			id, concrete_walls, concrete_slabs,
-			wall_thickness, slab_thickness, form_area, wall_area,
-			total_co2_min, total_co2_max, total_energy_min, total_energy_max
+			wall_thickness, slab_thickness, form_area, wall_area
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+			$1, $2, $3, $4, $5, $6, $7
 		)
 		RETURNING created_at, updated_at`
 	err = tx.QueryRowContext(ctx, query,
 		module.ID, wallsID, slabsID,
 		module.WallThickness, module.SlabThickness, module.FormArea, module.WallArea,
-		module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax,
 	).Scan(&module.CreatedAt, &module.UpdatedAt)
 	if err != nil {
 		return nil, err
@@ -201,6 +198,11 @@ func (m ConcreteWallModuleModel) Insert(module *ConcreteWallModule) (*ConcreteWa
 	if err := insertModuleFloor(tx, module.ID, module.FloorIDs); err != nil {
 		return nil, checkForeignKeyError(err)
 	}
+
+	if err := updateFloorMetricsById(tx, module.FloorIDs); err != nil {
+		return nil, err
+	}
+
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
@@ -214,7 +216,7 @@ func (m BeamColumnModuleModel) Get(id uuid.UUID) (*BeamColumnModule, error) {
 			bc.concrete_columns, bc.concrete_beams, bc.concrete_slabs,
 			bc.form_columns, bc.form_beams, bc.form_slabs, bc.form_total,
 			bc.column_number, bc.avg_beam_span, bc.avg_slab_span,
-			bc.total_co2_min, bc.total_co2_max, bc.total_energy_min, bc.total_energy_max,
+			m.total_co2_min, m.total_co2_max, m.total_energy_min, m.total_energy_max,
 			bc.created_at, bc.updated_at
 		FROM module m
 		JOIN module_beam_column bc ON m.id = bc.id
@@ -453,13 +455,11 @@ func (m ConcreteWallModuleModel) Update(module *ConcreteWallModule) error {
 		UPDATE module_concrete_wall SET
 			concrete_walls = $1, concrete_slabs = $2,
 			wall_thickness = $3, slab_thickness = $4, form_area = $5, wall_area = $6,
-			total_co2_min = $7, total_co2_max = $8, total_energy_min = $9, total_energy_max = $10,
 			updated_at = NOW()
-		WHERE id = $11`
+		WHERE id = $7`
 	_, err = tx.ExecContext(context.Background(), query,
 		newWallID, newSlabID,
 		module.WallThickness, module.SlabThickness, module.FormArea, module.WallArea,
-		module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax,
 		module.ID)
 	if err != nil {
 		return err
@@ -471,40 +471,17 @@ func (m ConcreteWallModuleModel) Update(module *ConcreteWallModule) error {
 	}
 	err = insertModuleFloor(tx, module.ID, module.FloorIDs)
 	if err != nil {
+		return checkForeignKeyError(err)
+	}
+
+	if err := updateFloorMetricsById(tx, module.FloorIDs); err != nil {
 		return err
 	}
 
-	oldConcreteIDs := []uuid.UUID{oldWallID, oldSlabID}
-	for _, concreteID := range oldConcreteIDs {
-		var count int
-		query = `
-			SELECT COUNT(*) FROM (
-				SELECT concrete_columns AS id FROM module_beam_column
-				UNION ALL
-				SELECT concrete_beams FROM module_beam_column
-				UNION ALL
-				SELECT concrete_slabs FROM module_beam_column
-				UNION ALL
-				SELECT concrete_walls FROM module_concrete_wall
-				UNION ALL
-				SELECT concrete_slabs FROM module_concrete_wall
-			) AS concrete_usage WHERE id = $1
-		`
-		err := tx.QueryRowContext(context.Background(), query, concreteID).Scan(&count)
-		if err != nil {
-			return err
-		}
-
-		if count == 0 {
-			query = `DELETE FROM concrete WHERE id = $1`
-			_, err = tx.ExecContext(context.Background(), query, concreteID)
-			if err != nil {
-				return err
-			}
-		}
+	if err := tx.Commit(); err != nil {
+		return err
 	}
-
-	return tx.Commit()
+	return nil
 }
 
 func (m BeamColumnModuleModel) Delete(id uuid.UUID) error {

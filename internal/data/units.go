@@ -9,6 +9,7 @@ import (
 	"github.com/Benchmark-CO2/bipc/internal/utils"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/gofrs/uuid"
+	"github.com/lib/pq"
 )
 
 type Unit struct {
@@ -285,6 +286,171 @@ func (m UnitModel) Delete(id uuid.UUID) error {
 	return nil
 }
 
+func (m UnitModel) UpdateTowerFloorsMetrics(towerID uuid.UUID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx, err := m.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	query := `
+		SELECT f.id
+		FROM floor f
+		INNER JOIN floor_group fg ON f.group_id = fg.id
+		WHERE fg.tower_id = $1`
+
+	rows, err := tx.QueryContext(ctx, query, towerID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	var floorIDs []uuid.UUID
+	for rows.Next() {
+		var floorID uuid.UUID
+		if err := rows.Scan(&floorID); err != nil {
+			return err
+		}
+		floorIDs = append(floorIDs, floorID)
+	}
+
+	if err = rows.Err(); err != nil {
+		return err
+	}
+
+	if len(floorIDs) > 0 {
+		err = updateFloorMetricsById(tx, floorIDs)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
 type UnitModel struct {
 	DB *sql.DB
+}
+
+type FloorMetrics struct {
+	FloorID   uuid.UUID
+	Area      float64
+	ModuleIDs []uuid.UUID
+}
+
+type ModuleMetrics struct {
+	ModuleID       uuid.UUID
+	Active         bool
+	TotalCO2Min    float64
+	TotalCO2Max    float64
+	TotalEnergyMin float64
+	TotalEnergyMax float64
+}
+
+func loadFloorsAndModules(tx *sql.Tx, floorIDs []uuid.UUID) (map[uuid.UUID]*FloorMetrics, map[uuid.UUID]*ModuleMetrics, error) {
+	rows, err := tx.Query(`
+		SELECT 
+			f.id, f.area,
+			m.id, topt.active,
+			m.total_co2_min, m.total_co2_max,
+			m.total_energy_min, m.total_energy_max
+		FROM floor f
+		LEFT JOIN module_floor mf ON f.id = mf.floor_id
+		LEFT JOIN module m ON mf.module_id = m.id
+		LEFT JOIN tower_option topt ON m.tower_option_id = topt.id
+		WHERE f.id = ANY($1)`, pq.Array(floorIDs))
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	floors := make(map[uuid.UUID]*FloorMetrics)
+	modules := make(map[uuid.UUID]*ModuleMetrics)
+
+	for rows.Next() {
+		var (
+			floorID                              uuid.UUID
+			area                                 float64
+			moduleID                             sql.NullString
+			active                               sql.NullBool
+			co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+		)
+
+		if err := rows.Scan(&floorID, &area, &moduleID, &active, &co2Min, &co2Max, &energyMin, &energyMax); err != nil {
+			return nil, nil, err
+		}
+
+		if _, ok := floors[floorID]; !ok {
+			floors[floorID] = &FloorMetrics{
+				FloorID:   floorID,
+				Area:      area,
+				ModuleIDs: []uuid.UUID{},
+			}
+		}
+
+		if moduleID.Valid && active.Valid && active.Bool {
+			mid, err := uuid.FromString(moduleID.String)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			floors[floorID].ModuleIDs = append(floors[floorID].ModuleIDs, mid)
+
+			if _, ok := modules[mid]; !ok {
+				modules[mid] = &ModuleMetrics{
+					ModuleID:       mid,
+					Active:         true,
+					TotalCO2Min:    co2Min.Float64,
+					TotalCO2Max:    co2Max.Float64,
+					TotalEnergyMin: energyMin.Float64,
+					TotalEnergyMax: energyMax.Float64,
+				}
+			}
+		}
+	}
+
+	return floors, modules, nil
+}
+
+func updateFloorMetricsById(tx *sql.Tx, floorIDs []uuid.UUID) error {
+	floors, modules, err := loadFloorsAndModules(tx, floorIDs)
+	if err != nil {
+		return err
+	}
+
+	for _, floor := range floors {
+		var totalCO2Min, totalCO2Max, totalEnergyMin, totalEnergyMax float64
+
+		for _, moduleID := range floor.ModuleIDs {
+			m := modules[moduleID]
+			totalCO2Min += m.TotalCO2Min
+			totalCO2Max += m.TotalCO2Max
+			totalEnergyMin += m.TotalEnergyMin
+			totalEnergyMax += m.TotalEnergyMax
+		}
+
+		if floor.Area == 0 {
+			continue
+		}
+
+		floorCO2Min := totalCO2Min / floor.Area
+		floorCO2Max := totalCO2Max / floor.Area
+		floorEnergyMin := totalEnergyMin / floor.Area
+		floorEnergyMax := totalEnergyMax / floor.Area
+
+		_, err := tx.Exec(`
+			UPDATE floor
+			SET co2_min=$1, co2_max=$2, energy_min=$3, energy_max=$4
+			WHERE id=$5`,
+			floorCO2Min, floorCO2Max, floorEnergyMin, floorEnergyMax, floor.FloorID,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

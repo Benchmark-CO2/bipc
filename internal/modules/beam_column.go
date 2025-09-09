@@ -10,6 +10,7 @@ import (
 type BeamColumn struct {
 	ID              uuid.UUID       `json:"id"`
 	BasicModuleData
+	Consumption     *Consuption     `json:"consumption,omitempty"`
 	ConcreteColumns ConcreteElement `json:"concrete_columns"`
 	ConcreteBeams   ConcreteElement `json:"concrete_beams"`
 	ConcreteSlabs   ConcreteElement `json:"concrete_slabs"`
@@ -109,8 +110,15 @@ func (b *BeamColumn) Update(models data.Models, moduleID, optionID uuid.UUID, re
 
 func toBeamColumnModule(b *BeamColumn, moduleID uuid.UUID, optionID uuid.UUID, result Consuption) *data.BeamColumnModule {
 	return &data.BeamColumnModule{
-		ID:              moduleID,
-		TowerOptionID:   optionID,
+		Module: data.Module{
+			ID:             moduleID,
+			TowerOptionID:  optionID,
+			TotalCO2Min:    &result.CO2Min,
+			TotalCO2Max:    &result.CO2Max,
+			TotalEnergyMin: &result.EnergyMin,
+			TotalEnergyMax: &result.EnergyMax,
+			FloorIDs:       b.FloorIDs,
+		},
 		ConcreteColumns: toDataConcrete(b.ConcreteColumns),
 		ConcreteBeams:   toDataConcrete(b.ConcreteBeams),
 		ConcreteSlabs:   toDataConcrete(b.ConcreteSlabs),
@@ -121,18 +129,24 @@ func toBeamColumnModule(b *BeamColumn, moduleID uuid.UUID, optionID uuid.UUID, r
 		ColumnNumber:    b.ColumnNumber,
 		AvgBeamSpan:     b.AvgBeamSpan,
 		AvgSlabSpan:     b.AvgSlabSpan,
-		TotalCO2Min:     &result.CO2Min,
-		TotalCO2Max:     &result.CO2Max,
-		TotalEnergyMin:  &result.EnergyMin,
-		TotalEnergyMax:  &result.EnergyMax,
-		FloorIDs:        b.FloorIDs,
 	}
 }
 
 func (b *BeamColumn) toModule(d *data.BeamColumnModule) Module {
+	var consumption *Consuption
+	if d.TotalCO2Min != nil {
+		consumption = &Consuption{
+			CO2Min:    *d.TotalCO2Min,
+			CO2Max:    *d.TotalCO2Max,
+			EnergyMin: *d.TotalEnergyMin,
+			EnergyMax: *d.TotalEnergyMax,
+		}
+	}
+
 	return &BeamColumn{
 		ID:              d.ID,
 		BasicModuleData: BasicModuleData{Type: "beam_column"},
+		Consumption:     consumption,
 		ConcreteColumns: ToConcreteElement(d.ConcreteColumns),
 		ConcreteBeams:   ToConcreteElement(d.ConcreteBeams),
 		ConcreteSlabs:   ToConcreteElement(d.ConcreteSlabs),

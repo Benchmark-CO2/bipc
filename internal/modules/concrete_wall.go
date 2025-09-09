@@ -9,6 +9,7 @@ import (
 type ConcreteWall struct {
 	ID            uuid.UUID       `json:"id"`
 	BasicModuleData
+	Consumption   *Consuption     `json:"consumption,omitempty"`
 	ConcreteWalls ConcreteElement `json:"concrete_walls"`
 	ConcreteSlabs ConcreteElement `json:"concrete_slabs"`
 	WallThickness *float64        `json:"wall_thickness,omitempty"`
@@ -89,9 +90,19 @@ func (w *ConcreteWall) Update(models data.Models, moduleID, optionID uuid.UUID, 
 }
 
 func (w *ConcreteWall) toModule(d *data.ConcreteWallModule) Module {
+	var consumption *Consuption
+	if d.TotalCO2Min != nil {
+		consumption = &Consuption{
+			CO2Min:    *d.TotalCO2Min,
+			CO2Max:    *d.TotalCO2Max,
+			EnergyMin: *d.TotalEnergyMin,
+			EnergyMax: *d.TotalEnergyMax,
+		}
+	}
 	return &ConcreteWall{
 		ID:             d.ID,
 		BasicModuleData: BasicModuleData{Type: "concrete_wall"},
+		Consumption:    consumption,
 		ConcreteWalls:  ToConcreteElement(d.ConcreteWalls),
 		ConcreteSlabs:  ToConcreteElement(d.ConcreteSlabs),
 		WallThickness:  d.WallThickness,
@@ -104,18 +115,20 @@ func (w *ConcreteWall) toModule(d *data.ConcreteWallModule) Module {
 
 func toConcreteWallModule(w *ConcreteWall, moduleID, optionID uuid.UUID, result Consuption) *data.ConcreteWallModule {
 	return &data.ConcreteWallModule{
-		ID:             moduleID,
-		TowerOptionID:  optionID,
+		Module: data.Module{
+			ID:             moduleID,
+			TowerOptionID:  optionID,
+			TotalCO2Min:    &result.CO2Min,
+			TotalCO2Max:    &result.CO2Max,
+			TotalEnergyMin: &result.EnergyMin,
+			TotalEnergyMax: &result.EnergyMax,
+			FloorIDs:       w.FloorIDs,
+		},
 		ConcreteWalls:  toDataConcrete(w.ConcreteWalls),
 		ConcreteSlabs:  toDataConcrete(w.ConcreteSlabs),
 		WallThickness:  w.WallThickness,
 		SlabThickness:  w.SlabThickness,
 		FormArea:       w.FormArea,
 		WallArea:       w.WallArea,
-		FloorIDs:       w.FloorIDs,
-		TotalCO2Min:    &result.CO2Min,
-		TotalCO2Max:    &result.CO2Max,
-		TotalEnergyMin: &result.EnergyMin,
-		TotalEnergyMax: &result.EnergyMax,
 	}
 }
