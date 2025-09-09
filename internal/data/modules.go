@@ -281,7 +281,7 @@ func (m ConcreteWallModuleModel) Get(id uuid.UUID) (*ConcreteWallModule, error) 
 			m.id, m.tower_option_id,
 			cw.concrete_walls, cw.concrete_slabs,
 			cw.wall_thickness, cw.slab_thickness, cw.form_area, cw.wall_area,
-			cw.total_co2_min, cw.total_co2_max, cw.total_energy_min, cw.total_energy_max,
+			m.total_co2_min, m.total_co2_max, m.total_energy_min, m.total_energy_max,
 			cw.created_at, cw.updated_at
 		FROM module m
 		JOIN module_concrete_wall cw ON m.id = cw.id

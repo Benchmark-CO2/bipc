@@ -35,13 +35,21 @@ type FloorGroup struct {
 	Category string    `json:"category"`
 }
 
+type Consumption struct {
+	CO2Min    *float64 `json:"co2_min,omitempty"`
+	CO2Max    *float64 `json:"co2_max,omitempty"`
+	EnergyMin *float64 `json:"energy_min,omitempty"`
+	EnergyMax *float64 `json:"energy_max,omitempty"`
+}
+
 type Floor struct {
-	ID        uuid.UUID `json:"id"`
-	GroupID   uuid.UUID `json:"group_id"`
-	GroupName string    `json:"group_name"`
-	Area      float64   `json:"area"`
-	Height    float64   `json:"height"`
-	Index     int       `json:"index"`
+	ID          uuid.UUID    `json:"id"`
+	GroupID     uuid.UUID    `json:"group_id"`
+	GroupName   string       `json:"group_name"`
+	Area        float64      `json:"area"`
+	Height      float64      `json:"height"`
+	Index       int          `json:"index"`
+	Consumption *Consumption `json:"consumption,omitempty"`
 }
 
 type FloorGroupCreate struct {
@@ -215,7 +223,8 @@ func (m UnitModel) getTowerByUnitID(unitID uuid.UUID) (*Tower, error) {
 
 func (m UnitModel) getFloorsByTowerID(towerID uuid.UUID) ([]Floor, error) {
 	query := `
-		SELECT f.id, f.group_id, fg.name, f.area, f.height, f.index
+		SELECT f.id, f.group_id, fg.name, f.area, f.height, f.index,
+		       f.co2_min, f.co2_max, f.energy_min, f.energy_max
 		FROM floor f
 		INNER JOIN floor_group fg ON f.group_id = fg.id
 		WHERE fg.tower_id = $1
@@ -233,6 +242,7 @@ func (m UnitModel) getFloorsByTowerID(towerID uuid.UUID) ([]Floor, error) {
 	var floors []Floor
 	for rows.Next() {
 		var floor Floor
+		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
 		err := rows.Scan(
 			&floor.ID,
 			&floor.GroupID,
@@ -240,10 +250,24 @@ func (m UnitModel) getFloorsByTowerID(towerID uuid.UUID) ([]Floor, error) {
 			&floor.Area,
 			&floor.Height,
 			&floor.Index,
+			&co2Min,
+			&co2Max,
+			&energyMin,
+			&energyMax,
 		)
 		if err != nil {
 			return nil, err
 		}
+
+		if co2Min.Valid {
+			floor.Consumption = &Consumption{
+				CO2Min:    &co2Min.Float64,
+				CO2Max:    &co2Max.Float64,
+				EnergyMin: &energyMin.Float64,
+				EnergyMax: &energyMax.Float64,
+			}
+		}
+
 		floors = append(floors, floor)
 	}
 
