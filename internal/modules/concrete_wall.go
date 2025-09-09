@@ -7,7 +7,9 @@ import (
 )
 
 type ConcreteWall struct {
+	ID            uuid.UUID       `json:"id"`
 	BasicModuleData
+	Consumption   *Consumption     `json:"consumption,omitempty"`
 	ConcreteWalls ConcreteElement `json:"concrete_walls"`
 	ConcreteSlabs ConcreteElement `json:"concrete_slabs"`
 	WallThickness *float64        `json:"wall_thickness,omitempty"`
@@ -41,45 +43,92 @@ func (w *ConcreteWall) Validate(v *validator.Validator) {
 	}
 }
 
-func (w *ConcreteWall) Calculate() (Consuption, error) {
-	total := Consuption{}
+func (w *ConcreteWall) Calculate() (Consumption, error) {
+	total := Consumption{}
 
 	if err := addConcreteElement(&total, w.ConcreteWalls, sidacConcreteData, sidacSteelData); err != nil {
-		return Consuption{}, err
+		return Consumption{}, err
 	}
 	if err := addConcreteElement(&total, w.ConcreteSlabs, sidacConcreteData, sidacSteelData); err != nil {
-		return Consuption{}, err
+		return Consumption{}, err
 	}
 
 	return total, nil
 }
 
-func (w *ConcreteWall) Insert(models data.Models, optionID uuid.UUID, result Consuption) error {
+func (w *ConcreteWall) Insert(models data.Models, optionID uuid.UUID, result Consumption) (Module, error) {
 	moduleID, err := uuid.NewV7()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	module := &data.ConcreteWallModule{
-		ID:             moduleID,
-		TowerOptionID:  optionID,
+	moduleToInsert := toConcreteWallModule(w, moduleID, optionID, result)
+
+	insertedModule, err := models.ConcreteWallModules.Insert(moduleToInsert)
+	if err != nil {
+		return nil, err
+	}
+
+	return w.toModule(insertedModule), nil
+}
+
+func (w *ConcreteWall) Delete(models data.Models, moduleID uuid.UUID) error {
+	return models.ConcreteWallModules.Delete(moduleID)
+}
+
+func (w *ConcreteWall) Get(models data.Models, moduleID uuid.UUID) (Module, error) {
+	dataModule, err := models.ConcreteWallModules.Get(moduleID)
+	if err != nil {
+		return nil, err
+	}
+	return w.toModule(dataModule), nil
+}
+
+func (w *ConcreteWall) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
+	module := toConcreteWallModule(w, moduleID, optionID, result)
+	return models.ConcreteWallModules.Update(module)
+}
+
+func (w *ConcreteWall) toModule(d *data.ConcreteWallModule) Module {
+	var consumption *Consumption
+	if d.TotalCO2Min != nil {
+		consumption = &Consumption{
+			CO2Min:    *d.TotalCO2Min,
+			CO2Max:    *d.TotalCO2Max,
+			EnergyMin: *d.TotalEnergyMin,
+			EnergyMax: *d.TotalEnergyMax,
+		}
+	}
+	return &ConcreteWall{
+		ID:             d.ID,
+		BasicModuleData: BasicModuleData{Type: "concrete_wall"},
+		Consumption:    consumption,
+		ConcreteWalls:  ToConcreteElement(d.ConcreteWalls),
+		ConcreteSlabs:  ToConcreteElement(d.ConcreteSlabs),
+		WallThickness:  d.WallThickness,
+		SlabThickness:  d.SlabThickness,
+		FormArea:       d.FormArea,
+		WallArea:       d.WallArea,
+		FloorIDs:       d.FloorIDs,
+	}
+}
+
+func toConcreteWallModule(w *ConcreteWall, moduleID, optionID uuid.UUID, result Consumption) *data.ConcreteWallModule {
+	return &data.ConcreteWallModule{
+		Module: data.Module{
+			ID:             moduleID,
+			TowerOptionID:  optionID,
+			TotalCO2Min:    &result.CO2Min,
+			TotalCO2Max:    &result.CO2Max,
+			TotalEnergyMin: &result.EnergyMin,
+			TotalEnergyMax: &result.EnergyMax,
+			FloorIDs:       w.FloorIDs,
+		},
 		ConcreteWalls:  toDataConcrete(w.ConcreteWalls),
 		ConcreteSlabs:  toDataConcrete(w.ConcreteSlabs),
 		WallThickness:  w.WallThickness,
 		SlabThickness:  w.SlabThickness,
 		FormArea:       w.FormArea,
 		WallArea:       w.WallArea,
-		FloorIDs:       w.FloorIDs,
-		TotalCO2Min:    &result.CO2Min,
-		TotalCO2Max:    &result.CO2Max,
-		TotalEnergyMin: &result.EnergyMin,
-		TotalEnergyMax: &result.EnergyMax,
 	}
-
-	err = models.ConcreteWallModules.Insert(module)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

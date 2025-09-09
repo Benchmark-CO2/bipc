@@ -24,28 +24,30 @@ var (
 	ErrDuplicateProjectName = errors.New("duplicate project name")
 )
 
-type UnitBasic struct {
-	ID   uuid.UUID `json:"id"`
-	Name string    `json:"name"`
-	Type string    `json:"type"`
+type ProjectUnit struct {
+	ID          uuid.UUID    `json:"id"`
+	Name        string       `json:"name"`
+	Type        string       `json:"type"`
+	Consumption *Consumption `json:"consumption,omitempty"`
 }
 
 type Project struct {
-	ID           uuid.UUID   `json:"id"`
-	CreatedAt    time.Time   `json:"created_at"`
-	UpdatedAt    time.Time   `json:"updated_at"`
-	UserID       int64       `json:"user_id"`
-	Name         string      `json:"name"`
-	CEP          *string     `json:"cep,omitzero"`
-	State        string      `json:"state"`
-	City         string      `json:"city"`
-	Neighborhood *string     `json:"neighborhood,omitzero"`
-	Street       *string     `json:"street,omitzero"`
-	Number       *string     `json:"number,omitzero"`
-	Phase        string      `json:"phase"`
-	Description  *string     `json:"description,omitzero"`
-	ImageURL     *string     `json:"image_url,omitzero"`
-	Units        []UnitBasic `json:"units,omitempty"`
+	ID           uuid.UUID     `json:"id"`
+	CreatedAt    time.Time     `json:"created_at"`
+	UpdatedAt    time.Time     `json:"updated_at"`
+	UserID       int64         `json:"user_id"`
+	Name         string        `json:"name"`
+	CEP          *string       `json:"cep,omitzero"`
+	State        string        `json:"state"`
+	City         string        `json:"city"`
+	Neighborhood *string       `json:"neighborhood,omitzero"`
+	Street       *string       `json:"street,omitzero"`
+	Number       *string       `json:"number,omitzero"`
+	Phase        string        `json:"phase"`
+	Description  *string       `json:"description,omitzero"`
+	ImageURL     *string       `json:"image_url,omitzero"`
+	Units        []ProjectUnit `json:"units,omitempty"`
+	Consumption  *Consumption  `json:"consumption,omitempty"`
 }
 
 func ValidateProject(v *validator.Validator, project *Project) {
@@ -183,10 +185,29 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*Project, error) {
 	}
 
 	unitsQuery := `
-        SELECT id, name, type
-        FROM units
-        WHERE project_id = $1
-        ORDER BY id
+		WITH tower_consumption AS (
+			SELECT
+				fg.tower_id,
+				SUM(f.co2_min * f.area) / SUM(f.area) as co2_min,
+				SUM(f.co2_max * f.area) / SUM(f.area) as co2_max,
+				SUM(f.energy_min * f.area) / SUM(f.area) as energy_min,
+				SUM(f.energy_max * f.area) / SUM(f.area) as energy_max
+			FROM floor f
+			INNER JOIN floor_group fg ON f.group_id = fg.id
+			GROUP BY fg.tower_id
+		)
+		SELECT
+			u.id,
+			u.name,
+			u.type,
+			tc.co2_min,
+			tc.co2_max,
+			tc.energy_min,
+			tc.energy_max
+		FROM units u
+		LEFT JOIN tower_consumption tc ON u.id = tc.tower_id
+		WHERE u.project_id = $1
+		ORDER BY u.id
     `
 	rows, err := m.DB.QueryContext(ctx, unitsQuery, project.ID)
 	if err != nil {
@@ -194,11 +215,20 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*Project, error) {
 	}
 	defer rows.Close()
 
-	var units []UnitBasic
+	var units []ProjectUnit
 	for rows.Next() {
-		var u UnitBasic
-		if err := rows.Scan(&u.ID, &u.Name, &u.Type); err != nil {
+		var u ProjectUnit
+		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+		if err := rows.Scan(&u.ID, &u.Name, &u.Type, &co2Min, &co2Max, &energyMin, &energyMax); err != nil {
 			return nil, err
+		}
+		if co2Min.Valid {
+			u.Consumption = &Consumption{
+				CO2Min:    &co2Min.Float64,
+				CO2Max:    &co2Max.Float64,
+				EnergyMin: &energyMin.Float64,
+				EnergyMax: &energyMax.Float64,
+			}
 		}
 		units = append(units, u)
 	}
@@ -284,10 +314,24 @@ func (m ProjectModel) Delete(projectID uuid.UUID) error {
 
 func (m ProjectModel) GetAll(name string, filters Filters, userID int64) ([]*Project, Metadata, error) {
 	query := fmt.Sprintf(`
+		WITH project_consumption AS (
+			SELECT
+				u.project_id,
+				SUM(f.co2_min * f.area) / SUM(f.area) as co2_min,
+				SUM(f.co2_max * f.area) / SUM(f.area) as co2_max,
+				SUM(f.energy_min * f.area) / SUM(f.area) as energy_min,
+				SUM(f.energy_max * f.area) / SUM(f.area) as energy_max
+			FROM floor f
+			INNER JOIN floor_group fg ON f.group_id = fg.id
+			INNER JOIN units u ON fg.tower_id = u.id
+			GROUP BY u.project_id
+		)
  		SELECT COUNT(*) OVER(), p.id, p.created_at, p.updated_at, p.user_id, p.name,
-		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description, p.image_url
+		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description, p.image_url,
+		pc.co2_min, pc.co2_max, pc.energy_min, pc.energy_max
  		FROM projects p
 		INNER JOIN users_projects_permissions upp ON upp.project_id = p.id
+		LEFT JOIN project_consumption pc ON p.id = pc.project_id
  		WHERE (to_tsvector('simple', p.name) @@ plainto_tsquery('simple', $1) OR $1 = '')
 		AND upp.user_id = $2
 		AND upp.permission_id = (SELECT permissions.id FROM permissions WHERE code = 'project:view')
@@ -310,6 +354,7 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID int64) ([]*Pro
 
 	for rows.Next() {
 		var project Project
+		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
 
 		err := rows.Scan(
 			&totalRecords,
@@ -327,9 +372,22 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID int64) ([]*Pro
 			&project.Phase,
 			&project.Description,
 			&project.ImageURL,
+			&co2Min,
+			&co2Max,
+			&energyMin,
+			&energyMax,
 		)
 		if err != nil {
 			return nil, Metadata{}, err
+		}
+
+		if co2Min.Valid {
+			project.Consumption = &Consumption{
+				CO2Min:    &co2Min.Float64,
+				CO2Max:    &co2Max.Float64,
+				EnergyMin: &energyMin.Float64,
+				EnergyMax: &energyMax.Float64,
+			}
 		}
 
 		projects = append(projects, &project)

@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/utils"
@@ -49,4 +50,46 @@ func InsertConcrete(db dbExecutor, c *Concrete) (uuid.UUID, error) {
 		}
 	}
 	return concreteID, nil
+}
+
+func GetConcrete(db *sql.DB, id uuid.UUID) (Concrete, error) {
+	var concrete Concrete
+	concrete.ID = id
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := db.QueryContext(ctx, `SELECT fck, volume FROM concrete_volume WHERE concrete_id = $1`, id)
+	if err != nil {
+		return concrete, err
+	}
+	defer rows.Close()
+
+	var volumes []ConcreteVolume
+	for rows.Next() {
+		var vol ConcreteVolume
+		if err := rows.Scan(&vol.Fck, &vol.Volume); err != nil {
+			return concrete, err
+		}
+		volumes = append(volumes, vol)
+	}
+	concrete.Volumes = volumes
+
+	rows, err = db.QueryContext(ctx, `SELECT ca, mass FROM steel_mass WHERE concrete_id = $1`, id)
+	if err != nil {
+		return concrete, err
+	}
+	defer rows.Close()
+
+	var steels []SteelMass
+	for rows.Next() {
+		var s SteelMass
+		if err := rows.Scan(&s.CA, &s.Mass); err != nil {
+			return concrete, err
+		}
+		steels = append(steels, s)
+	}
+	concrete.Steel = steels
+
+	return concrete, nil
 }

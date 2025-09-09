@@ -31,7 +31,11 @@ CREATE TABLE IF NOT EXISTS floor (
     group_id UUID NOT NULL REFERENCES floor_group(id) ON DELETE CASCADE,
     area FLOAT8 NOT NULL,
     height FLOAT8 NOT NULL,
-    "index" INTEGER NOT NULL
+    "index" INTEGER NOT NULL,
+    co2_min FLOAT8 NOT NULL DEFAULT 0,
+    co2_max FLOAT8 NOT NULL DEFAULT 0,
+    energy_min FLOAT8 NOT NULL DEFAULT 0,
+    energy_max FLOAT8 NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS concrete (
@@ -55,7 +59,11 @@ CREATE TABLE IF NOT EXISTS concrete_volume (
 CREATE TABLE IF NOT EXISTS module (
     id UUID PRIMARY KEY,
     tower_option_id UUID NOT NULL REFERENCES tower_option(id) ON DELETE CASCADE,
-    type TEXT NOT NULL
+    type TEXT NOT NULL,
+    total_co2_min FLOAT8 NOT NULL DEFAULT 0,
+    total_co2_max FLOAT8 NOT NULL DEFAULT 0,
+    total_energy_min FLOAT8 NOT NULL DEFAULT 0,
+    total_energy_max FLOAT8 NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS module_floor (
@@ -72,10 +80,6 @@ CREATE TABLE IF NOT EXISTS module_concrete_wall (
     slab_thickness FLOAT8,
     form_area FLOAT8,
     wall_area FLOAT8,
-    total_co2_min FLOAT8,
-    total_co2_max FLOAT8,
-    total_energy_min FLOAT8,
-    total_energy_max FLOAT8,
     created_at TIMESTAMPTZ(0) NOT NULL DEFAULT (CURRENT_TIMESTAMP),
     updated_at TIMESTAMPTZ(0) NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
@@ -92,10 +96,6 @@ CREATE TABLE IF NOT EXISTS module_beam_column (
     column_number INTEGER,
     avg_beam_span INTEGER,
     avg_slab_span INTEGER,
-    total_co2_min FLOAT8,
-    total_co2_max FLOAT8,
-    total_energy_min FLOAT8,
-    total_energy_max FLOAT8,
     created_at TIMESTAMPTZ(0) NOT NULL DEFAULT (CURRENT_TIMESTAMP),
     updated_at TIMESTAMPTZ(0) NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
