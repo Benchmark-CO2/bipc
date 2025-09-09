@@ -10,7 +10,7 @@ import (
 type BeamColumn struct {
 	ID              uuid.UUID       `json:"id"`
 	BasicModuleData
-	Consumption     *Consuption     `json:"consumption,omitempty"`
+	Consumption     *Consumption     `json:"consumption,omitempty"`
 	ConcreteColumns ConcreteElement `json:"concrete_columns"`
 	ConcreteBeams   ConcreteElement `json:"concrete_beams"`
 	ConcreteSlabs   ConcreteElement `json:"concrete_slabs"`
@@ -59,23 +59,23 @@ func (b *BeamColumn) Validate(v *validator.Validator) {
 	}
 }
 
-func (b *BeamColumn) Calculate() (Consuption, error) {
-	total := Consuption{}
+func (b *BeamColumn) Calculate() (Consumption, error) {
+	total := Consumption{}
 
 	if err := addConcreteElement(&total, b.ConcreteColumns, sidacConcreteData, sidacSteelData); err != nil {
-		return Consuption{}, err
+		return Consumption{}, err
 	}
 	if err := addConcreteElement(&total, b.ConcreteBeams, sidacConcreteData, sidacSteelData); err != nil {
-		return Consuption{}, err
+		return Consumption{}, err
 	}
 	if err := addConcreteElement(&total, b.ConcreteSlabs, sidacConcreteData, sidacSteelData); err != nil {
-		return Consuption{}, err
+		return Consumption{}, err
 	}
 
 	return total, nil
 }
 
-func (b *BeamColumn) Insert(models data.Models, optionID uuid.UUID, result Consuption) (Module, error) {
+func (b *BeamColumn) Insert(models data.Models, optionID uuid.UUID, result Consumption) (Module, error) {
 	moduleID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -103,12 +103,12 @@ func (b *BeamColumn) Get(models data.Models, moduleID uuid.UUID) (Module, error)
 	return b.toModule(dataModule), nil
 }
 
-func (b *BeamColumn) Update(models data.Models, moduleID, optionID uuid.UUID, result Consuption) error {
+func (b *BeamColumn) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
 	module := toBeamColumnModule(b, moduleID, optionID, result)
 	return models.BeamColumnModules.Update(module)
 }
 
-func toBeamColumnModule(b *BeamColumn, moduleID uuid.UUID, optionID uuid.UUID, result Consuption) *data.BeamColumnModule {
+func toBeamColumnModule(b *BeamColumn, moduleID uuid.UUID, optionID uuid.UUID, result Consumption) *data.BeamColumnModule {
 	return &data.BeamColumnModule{
 		Module: data.Module{
 			ID:             moduleID,
@@ -133,9 +133,9 @@ func toBeamColumnModule(b *BeamColumn, moduleID uuid.UUID, optionID uuid.UUID, r
 }
 
 func (b *BeamColumn) toModule(d *data.BeamColumnModule) Module {
-	var consumption *Consuption
+	var consumption *Consumption
 	if d.TotalCO2Min != nil {
-		consumption = &Consuption{
+		consumption = &Consumption{
 			CO2Min:    *d.TotalCO2Min,
 			CO2Max:    *d.TotalCO2Max,
 			EnergyMin: *d.TotalEnergyMin,

@@ -12,12 +12,9 @@ import (
 )
 
 type ModuleInfo struct {
-	ID             uuid.UUID `json:"id"`
-	Type           string    `json:"type"`
-	TotalCO2Min    *float64  `json:"total_co2_min,omitempty"`
-	TotalCO2Max    *float64  `json:"total_co2_max,omitempty"`
-	TotalEnergyMin *float64  `json:"total_energy_min,omitempty"`
-	TotalEnergyMax *float64  `json:"total_energy_max,omitempty"`
+	ID          uuid.UUID    `json:"id"`
+	Type        string       `json:"type"`
+	Consumption *Consumption `json:"consumption,omitempty"`
 }
 
 type TowerOption struct {
@@ -144,16 +141,25 @@ func (m TowerOptionModel) GetByID(id uuid.UUID) (*TowerOption, error) {
 	modules := []ModuleInfo{}
 	for moduleRows.Next() {
 		var module ModuleInfo
+		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
 		err := moduleRows.Scan(
 			&module.ID,
 			&module.Type,
-			&module.TotalCO2Min,
-			&module.TotalCO2Max,
-			&module.TotalEnergyMin,
-			&module.TotalEnergyMax,
+			&co2Min,
+			&co2Max,
+			&energyMin,
+			&energyMax,
 		)
 		if err != nil {
 			return nil, err
+		}
+		if co2Min.Valid {
+			module.Consumption = &Consumption{
+				CO2Min:    &co2Min.Float64,
+				CO2Max:    &co2Max.Float64,
+				EnergyMin: &energyMin.Float64,
+				EnergyMax: &energyMax.Float64,
+			}
 		}
 		modules = append(modules, module)
 	}
@@ -208,17 +214,26 @@ func (m TowerOptionModel) GetAll(towerID uuid.UUID) ([]*TowerOption, error) {
 		modules := []ModuleInfo{}
 		for moduleRows.Next() {
 			var module ModuleInfo
+			var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
 			err := moduleRows.Scan(
 				&module.ID,
 				&module.Type,
-				&module.TotalCO2Min,
-				&module.TotalCO2Max,
-				&module.TotalEnergyMin,
-				&module.TotalEnergyMax,
+				&co2Min,
+				&co2Max,
+				&energyMin,
+				&energyMax,
 			)
 			if err != nil {
 				moduleRows.Close()
 				return nil, err
+			}
+			if co2Min.Valid {
+				module.Consumption = &Consumption{
+					CO2Min:    &co2Min.Float64,
+					CO2Max:    &co2Max.Float64,
+					EnergyMin: &energyMin.Float64,
+					EnergyMax: &energyMax.Float64,
+				}
 			}
 			modules = append(modules, module)
 		}

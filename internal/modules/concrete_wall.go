@@ -9,7 +9,7 @@ import (
 type ConcreteWall struct {
 	ID            uuid.UUID       `json:"id"`
 	BasicModuleData
-	Consumption   *Consuption     `json:"consumption,omitempty"`
+	Consumption   *Consumption     `json:"consumption,omitempty"`
 	ConcreteWalls ConcreteElement `json:"concrete_walls"`
 	ConcreteSlabs ConcreteElement `json:"concrete_slabs"`
 	WallThickness *float64        `json:"wall_thickness,omitempty"`
@@ -43,20 +43,20 @@ func (w *ConcreteWall) Validate(v *validator.Validator) {
 	}
 }
 
-func (w *ConcreteWall) Calculate() (Consuption, error) {
-	total := Consuption{}
+func (w *ConcreteWall) Calculate() (Consumption, error) {
+	total := Consumption{}
 
 	if err := addConcreteElement(&total, w.ConcreteWalls, sidacConcreteData, sidacSteelData); err != nil {
-		return Consuption{}, err
+		return Consumption{}, err
 	}
 	if err := addConcreteElement(&total, w.ConcreteSlabs, sidacConcreteData, sidacSteelData); err != nil {
-		return Consuption{}, err
+		return Consumption{}, err
 	}
 
 	return total, nil
 }
 
-func (w *ConcreteWall) Insert(models data.Models, optionID uuid.UUID, result Consuption) (Module, error) {
+func (w *ConcreteWall) Insert(models data.Models, optionID uuid.UUID, result Consumption) (Module, error) {
 	moduleID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -84,15 +84,15 @@ func (w *ConcreteWall) Get(models data.Models, moduleID uuid.UUID) (Module, erro
 	return w.toModule(dataModule), nil
 }
 
-func (w *ConcreteWall) Update(models data.Models, moduleID, optionID uuid.UUID, result Consuption) error {
+func (w *ConcreteWall) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
 	module := toConcreteWallModule(w, moduleID, optionID, result)
 	return models.ConcreteWallModules.Update(module)
 }
 
 func (w *ConcreteWall) toModule(d *data.ConcreteWallModule) Module {
-	var consumption *Consuption
+	var consumption *Consumption
 	if d.TotalCO2Min != nil {
-		consumption = &Consuption{
+		consumption = &Consumption{
 			CO2Min:    *d.TotalCO2Min,
 			CO2Max:    *d.TotalCO2Max,
 			EnergyMin: *d.TotalEnergyMin,
@@ -113,7 +113,7 @@ func (w *ConcreteWall) toModule(d *data.ConcreteWallModule) Module {
 	}
 }
 
-func toConcreteWallModule(w *ConcreteWall, moduleID, optionID uuid.UUID, result Consuption) *data.ConcreteWallModule {
+func toConcreteWallModule(w *ConcreteWall, moduleID, optionID uuid.UUID, result Consumption) *data.ConcreteWallModule {
 	return &data.ConcreteWallModule{
 		Module: data.Module{
 			ID:             moduleID,

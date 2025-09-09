@@ -29,14 +29,14 @@ type BasicModuleData struct {
 	Type string `json:"type"`
 }
 
-type Consuption struct {
+type Consumption struct {
 	CO2Min    float64 `json:"co2_min"`
 	CO2Max    float64 `json:"co2_max"`
 	EnergyMin float64 `json:"energy_min"`
 	EnergyMax float64 `json:"energy_max"`
 }
 
-func (c *Consuption) sum(value Consuption) {
+func (c *Consumption) sum(value Consumption) {
 	c.CO2Min += value.CO2Min
 	c.CO2Max += value.CO2Max
 	c.EnergyMin += value.EnergyMin
@@ -57,11 +57,11 @@ func ParseModuleType(t string) (Module, error) {
 type Module interface {
 	GetType() string
 	Validate(v *validator.Validator)
-	Calculate() (Consuption, error)
-	Insert(models data.Models, optionID uuid.UUID, result Consuption) (Module, error)
+	Calculate() (Consumption, error)
+	Insert(models data.Models, optionID uuid.UUID, result Consumption) (Module, error)
 	Delete(models data.Models, moduleID uuid.UUID) error
 	Get(models data.Models, moduleID uuid.UUID) (Module, error)
-	Update(models data.Models, moduleID, optionID uuid.UUID, result Consuption) error
+	Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error
 }
 
 func validateConcreteElement(v *validator.Validator, el ConcreteElement, fieldPrefix string) {
@@ -128,8 +128,8 @@ var sidacSteelData = SidacMaterial{
 	},
 }
 
-func (ce *ConcreteElement) calculate(sidacConcrete, sidacSteel SidacMaterial) (Consuption, error) {
-	var result Consuption
+func (ce *ConcreteElement) calculate(sidacConcrete, sidacSteel SidacMaterial) (Consumption, error) {
+	var result Consumption
 	for _, c := range ce.Volumes {
 		val, ok := sidacConcrete.KgCO2[c.Fck]
 		if !ok {
@@ -186,7 +186,7 @@ func toDataConcrete(el ConcreteElement) data.Concrete {
 	}
 }
 
-func addConcreteElement(total *Consuption, ce ConcreteElement, sidacConcrete, sidacSteel SidacMaterial) error {
+func addConcreteElement(total *Consumption, ce ConcreteElement, sidacConcrete, sidacSteel SidacMaterial) error {
 	result, err := ce.calculate(sidacConcrete, sidacSteel)
 	if err != nil {
 		return err
