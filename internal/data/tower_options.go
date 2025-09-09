@@ -25,7 +25,7 @@ type TowerOption struct {
 	TowerID uuid.UUID    `json:"tower_id"`
 	Name    string       `json:"name"`
 	Active  bool         `json:"active"`
-	Modules []ModuleInfo `json:"modules,omitempty"`
+	Modules []ModuleInfo `json:"modules"`
 }
 
 func ValidateTowerOption(v *validator.Validator, towerOption *TowerOption) {
@@ -130,6 +130,38 @@ func (m TowerOptionModel) GetByID(id uuid.UUID) (*TowerOption, error) {
 		}
 	}
 
+	modulesQuery := `
+        SELECT id, type, total_co2_min, total_co2_max, total_energy_min, total_energy_max
+        FROM module
+        WHERE tower_option_id = $1`
+
+	moduleRows, err := m.DB.QueryContext(ctx, modulesQuery, towerOption.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer moduleRows.Close()
+
+	modules := []ModuleInfo{}
+	for moduleRows.Next() {
+		var module ModuleInfo
+		err := moduleRows.Scan(
+			&module.ID,
+			&module.Type,
+			&module.TotalCO2Min,
+			&module.TotalCO2Max,
+			&module.TotalEnergyMin,
+			&module.TotalEnergyMax,
+		)
+		if err != nil {
+			return nil, err
+		}
+		modules = append(modules, module)
+	}
+	if err = moduleRows.Err(); err != nil {
+		return nil, err
+	}
+	towerOption.Modules = modules
+
 	return &towerOption, nil
 }
 
@@ -173,7 +205,7 @@ func (m TowerOptionModel) GetAll(towerID uuid.UUID) ([]*TowerOption, error) {
 			return nil, err
 		}
 
-		var modules []ModuleInfo
+		modules := []ModuleInfo{}
 		for moduleRows.Next() {
 			var module ModuleInfo
 			err := moduleRows.Scan(
