@@ -10,9 +10,17 @@ import { Input } from "../../ui/input";
 import { UseFormReturn, useFieldArray, useWatch } from "react-hook-form";
 import { UnitFormSchema } from "@/validators/unitForm.validator";
 import { Button } from "../../ui/button";
-import { Plus, GripVertical } from "lucide-react";
+import { Plus, GripVertical, Trash2 } from "lucide-react";
 import { Card, CardContent } from "../../ui/card";
 import BuildingVisualizer from "../building-visualizer";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../../ui/table";
 import {
   Select,
   SelectContent,
@@ -20,6 +28,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface UnitFormTowerProps {
   form: UseFormReturn<UnitFormSchema>;
@@ -195,225 +208,300 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
           </div>
         </div>
 
-        {fields.length === 0 && (
+        {fields.length === 0 ? (
           <Card className="p-6 text-center text-muted-foreground">
             <p>Nenhum pavimento adicionado ainda.</p>
             <p className="text-sm mt-1">
               Selecione uma categoria e clique em "Adicionar" para começar.
             </p>
           </Card>
-        )}
+        ) : (
+          <div className="border rounded-md">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-8"></TableHead>
+                  <TableHead className="w-4"></TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead className="w-24">Área (m²)</TableHead>
+                  <TableHead className="w-24">Altura (m)</TableHead>
+                  <TableHead className="w-20">Qtd.</TableHead>
+                  <TableHead className="w-32">Categoria</TableHead>
+                  <TableHead className="w-16">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {fields.map((field, index) => {
+                  const canDropHere =
+                    draggedIndex !== null &&
+                    watchedFloors[draggedIndex]?.category ===
+                      watchedFloors[index]?.category;
 
-        <div className="space-y-4">
-          {fields.map((field, index) => {
-            const canDropHere =
-              draggedIndex !== null &&
-              watchedFloors[draggedIndex]?.category ===
-                watchedFloors[index]?.category;
-
-            return (
-              <div
-                key={field.id}
-                className={`flex gap-2 items-center transition-opacity ${
-                  draggedIndex === index ? "opacity-50" : ""
-                } ${draggedIndex !== null && !canDropHere ? "opacity-30" : ""}`}
-                draggable
-                onDragStart={(e) => handleDragStart(e, index)}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDrop={(e) => handleDrop(e, index)}
-              >
-                <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
-                <Card className="relative w-full">
-                  <CardContent className="px-4">
-                    <div className="flex items-center gap-4">
-                      {/* Indicador de cor da categoria */}
-                      <div
-                        className="w-4 h-16 rounded-md flex-shrink-0"
-                        style={{
-                          backgroundColor:
-                            categoryColors[
-                              watchedFloors[index]?.category || "standard_floor"
-                            ],
-                        }}
-                      />
-
-                      <div className="flex-1 grid grid-cols-4 gap-3 items-end">
+                  return (
+                    <TableRow
+                      key={field.id}
+                      className={`transition-opacity ${
+                        draggedIndex === index ? "opacity-50" : ""
+                      } ${draggedIndex !== null && !canDropHere ? "opacity-30" : ""}`}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDrop={(e) => handleDrop(e, index)}
+                    >
+                      <TableCell>
+                        <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                      </TableCell>
+                      <TableCell>
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{
+                            backgroundColor:
+                              categoryColors[
+                                watchedFloors[index]?.category ||
+                                  "standard_floor"
+                              ],
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
                         <FormField
                           control={form.control}
                           name={`data.floor_groups.${index}.name`}
-                          render={({ field }) => (
+                          render={({ field, fieldState }) => (
                             <FormItem>
-                              <FormLabel className="text-sm">Nome *</FormLabel>
                               <FormControl>
-                                <Input
-                                  placeholder="Ex: Cobertura"
-                                  className="h-10"
-                                  {...field}
-                                />
+                                <Tooltip open={!!fieldState.error}>
+                                  <TooltipTrigger asChild>
+                                    <Input
+                                      placeholder="Ex: Cobertura"
+                                      className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
+                                        fieldState.error
+                                          ? "border border-red-500"
+                                          : "border-0"
+                                      }`}
+                                      {...field}
+                                    />
+                                  </TooltipTrigger>
+                                  {fieldState.error && (
+                                    <TooltipContent
+                                      className="bg-red-600 border-red-700 text-white"
+                                      arrowClassName="bg-red-600 fill-red-600"
+                                    >
+                                      <p className="text-sm">
+                                        {fieldState.error.message}
+                                      </p>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
                               </FormControl>
-                              <FormMessage />
                             </FormItem>
                           )}
                         />
-
+                      </TableCell>
+                      <TableCell>
                         <FormField
                           control={form.control}
                           name={`data.floor_groups.${index}.area`}
-                          render={({ field }) => (
+                          render={({ field, fieldState }) => (
                             <FormItem>
-                              <FormLabel className="text-sm">
-                                Área (m²) *
-                              </FormLabel>
                               <FormControl>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  placeholder="100"
-                                  className="h-10"
-                                  {...field}
-                                  onChange={(e) =>
-                                    field.onChange(
-                                      e.target.value
-                                        ? Number(e.target.value)
-                                        : 0
-                                    )
-                                  }
-                                />
+                                <Tooltip open={!!fieldState.error}>
+                                  <TooltipTrigger asChild>
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      placeholder="100"
+                                      className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
+                                        fieldState.error
+                                          ? "border border-red-500"
+                                          : "border-0"
+                                      }`}
+                                      {...field}
+                                      onChange={(e) =>
+                                        field.onChange(
+                                          e.target.value
+                                            ? Number(e.target.value)
+                                            : 0
+                                        )
+                                      }
+                                    />
+                                  </TooltipTrigger>
+                                  {fieldState.error && (
+                                    <TooltipContent
+                                      className="bg-red-600 border-red-700 text-white"
+                                      arrowClassName="bg-red-600 fill-red-600"
+                                    >
+                                      <p className="text-sm">
+                                        {fieldState.error.message}
+                                      </p>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
                               </FormControl>
-                              <FormMessage />
                             </FormItem>
                           )}
                         />
-
+                      </TableCell>
+                      <TableCell>
                         <FormField
                           control={form.control}
                           name={`data.floor_groups.${index}.height`}
-                          render={({ field }) => (
+                          render={({ field, fieldState }) => (
                             <FormItem>
-                              <FormLabel className="text-sm">
-                                Altura (m) *
-                              </FormLabel>
                               <FormControl>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  placeholder="3"
-                                  className="h-10"
-                                  {...field}
-                                  onChange={(e) =>
-                                    field.onChange(
-                                      e.target.value
-                                        ? Number(e.target.value)
-                                        : 0
-                                    )
-                                  }
-                                />
+                                <Tooltip open={!!fieldState.error}>
+                                  <TooltipTrigger asChild>
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      placeholder="3"
+                                      className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
+                                        fieldState.error
+                                          ? "border border-red-500"
+                                          : "border-0"
+                                      }`}
+                                      {...field}
+                                      onChange={(e) =>
+                                        field.onChange(
+                                          e.target.value
+                                            ? Number(e.target.value)
+                                            : 0
+                                        )
+                                      }
+                                    />
+                                  </TooltipTrigger>
+                                  {fieldState.error && (
+                                    <TooltipContent
+                                      className="bg-red-600 border-red-700 text-white"
+                                      arrowClassName="bg-red-600 fill-red-600"
+                                    >
+                                      <p className="text-sm">
+                                        {fieldState.error.message}
+                                      </p>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
                               </FormControl>
-                              <FormMessage />
                             </FormItem>
                           )}
                         />
-
+                      </TableCell>
+                      <TableCell>
                         <FormField
                           control={form.control}
                           name={`data.floor_groups.${index}.repetition`}
-                          render={({ field }) => (
+                          render={({ field, fieldState }) => (
                             <FormItem>
-                              <FormLabel className="text-sm">
-                                Quantidade *
-                              </FormLabel>
                               <FormControl>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  placeholder="1"
-                                  className="h-10"
-                                  {...field}
-                                  onChange={(e) =>
-                                    field.onChange(
-                                      e.target.value
-                                        ? Number(e.target.value)
-                                        : 1
-                                    )
-                                  }
-                                />
+                                <Tooltip open={!!fieldState.error}>
+                                  <TooltipTrigger asChild>
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      placeholder="1"
+                                      className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
+                                        fieldState.error
+                                          ? "border border-red-500"
+                                          : "border-0"
+                                      }`}
+                                      {...field}
+                                      onChange={(e) =>
+                                        field.onChange(
+                                          e.target.value
+                                            ? Number(e.target.value)
+                                            : 1
+                                        )
+                                      }
+                                    />
+                                  </TooltipTrigger>
+                                  {fieldState.error && (
+                                    <TooltipContent
+                                      className="bg-red-600 border-red-700 text-white"
+                                      arrowClassName="bg-red-600 fill-red-600"
+                                    >
+                                      <p className="text-sm">
+                                        {fieldState.error.message}
+                                      </p>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
                               </FormControl>
-                              <FormMessage />
                             </FormItem>
                           )}
                         />
-
+                      </TableCell>
+                      <TableCell>
                         <FormField
                           control={form.control}
                           name={`data.floor_groups.${index}.category`}
-                          render={({ field }) => (
-                            <FormItem className="col-span-4 mt-2">
-                              <FormLabel>Categoria *</FormLabel>
-                              <FormControl className="w-full">
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                >
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Selecione a categoria" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="penthouse_floor">
-                                      🏢 Cobertura
-                                    </SelectItem>
-                                    <SelectItem value="standard_floor">
-                                      🏗️ Tipo
-                                    </SelectItem>
-                                    <SelectItem value="ground_floor">
-                                      🌍 Térreo
-                                    </SelectItem>
-                                    <SelectItem value="basement_floor">
-                                      🔸 Subsolo
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
+                          render={({ field, fieldState }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Tooltip open={!!fieldState.error}>
+                                  <TooltipTrigger asChild>
+                                    <Select
+                                      onValueChange={field.onChange}
+                                      defaultValue={field.value}
+                                    >
+                                      <SelectTrigger
+                                        className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
+                                          fieldState.error
+                                            ? "border border-red-500"
+                                            : "border-0"
+                                        }`}
+                                      >
+                                        <SelectValue placeholder="Categoria" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="penthouse_floor">
+                                          Cobertura
+                                        </SelectItem>
+                                        <SelectItem value="standard_floor">
+                                          Tipo
+                                        </SelectItem>
+                                        <SelectItem value="ground_floor">
+                                          Térreo
+                                        </SelectItem>
+                                        <SelectItem value="basement_floor">
+                                          Subsolo
+                                        </SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </TooltipTrigger>
+                                  {fieldState.error && (
+                                    <TooltipContent
+                                      className="bg-red-600 border-red-700 text-white"
+                                      arrowClassName="bg-red-600 fill-red-600"
+                                    >
+                                      <p className="text-sm">
+                                        {fieldState.error.message}
+                                      </p>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
                               </FormControl>
-                              <FormMessage />
                             </FormItem>
                           )}
                         />
-
-                        {/* <FormField
-                        control={form.control}
-                        name={`floors.${index}.underground`}
-                        render={({ field }) => (
-                          <FormItem className="flex items-center space-y-2">
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                className="mb-0"
-                              />
-                            </FormControl>
-                            <FormLabel className="text-sm text-center">
-                              Subsolo
-                            </FormLabel>
-                          </FormItem>
-                        )}
-                      /> */}
-                      </div>
-
-                      <Button
-                        type="button"
-                        onClick={() => removeFloor(index)}
-                        variant="destructive"
-                        size="sm"
-                        className="flex-shrink-0 h-10"
-                      >
-                        Remover
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            );
-          })}
-        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          type="button"
+                          onClick={() => removeFloor(index)}
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </div>
     </div>
   );

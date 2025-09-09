@@ -161,21 +161,40 @@ const DrawerFormUnit = ({
     enabled: !!unitId,
   });
 
+  const groupedUnitData = unitData?.tower?.floors.reduce(
+    (acc, floor) => {
+      const groupName = floor.group_name;
+      if (!acc[groupName]) {
+        acc[groupName] = {
+          name: floor.group_name,
+          area: floor.area,
+          height: floor.height,
+          repetition: 1,
+          category: "standard_floor", // você pode ajustar a lógica para determinar a categoria
+        };
+      } else {
+        acc[groupName].repetition += 1;
+      }
+      return acc;
+    },
+    {} as Record<string, any>
+  );
+
+  const floorGroups = groupedUnitData ? Object.values(groupedUnitData) : [];
+
   useEffect(() => {
-    if (unitData) {
+    if (unitData && floorGroups.length > 0) {
       console.log(unitData);
+      console.log("Floor groups:", floorGroups);
       form.reset({
         name: unitData.name,
         type: unitData.type,
         data: {
-          floor_groups: unitData.tower?.floors || [],
+          floor_groups: floorGroups,
         },
-        // data: unitData.data || {
-        //   floor_groups: [],
-        // },
       });
     }
-  }, [unitData, form]);
+  }, [unitData, floorGroups, form]);
 
   const unitTypes = [
     { value: "tower", label: t("drawerFormUnit.unitTypeOptions.tower") },
@@ -229,7 +248,7 @@ const DrawerFormUnit = ({
                 onSubmit={form.handleSubmit(handleSubmit)}
                 className="flex max-h-[calc(100vh-100px)] flex-col gap-3 overflow-y-auto p-8"
               >
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 items-baseline">
                   <FormField
                     control={form.control}
                     name="name"
@@ -291,7 +310,7 @@ const DrawerFormUnit = ({
                 )}
                 {unitId ? (
                   <Button
-                    disabled={isUpdatePending || isUpdateSuccess}
+                    disabled={Boolean(unitId)}
                     type="submit"
                     variant="bipc"
                     className="mt-6 w-full"
