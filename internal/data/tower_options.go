@@ -11,11 +11,18 @@ import (
 	"github.com/gofrs/uuid"
 )
 
+type ModuleInfo struct {
+	ID          uuid.UUID    `json:"id"`
+	Type        string       `json:"type"`
+	Consumption *Consumption `json:"consumption,omitempty"`
+}
+
 type TowerOption struct {
-	ID      uuid.UUID `json:"id"`
-	TowerID uuid.UUID `json:"tower_id"`
-	Name    string    `json:"name"`
-	Active  bool      `json:"active"`
+	ID      uuid.UUID    `json:"id"`
+	TowerID uuid.UUID    `json:"tower_id"`
+	Name    string       `json:"name"`
+	Active  bool         `json:"active"`
+	Modules []ModuleInfo `json:"modules"`
 }
 
 func ValidateTowerOption(v *validator.Validator, towerOption *TowerOption) {
@@ -48,6 +55,13 @@ func (m TowerOptionModel) Insert(towerOption *TowerOption) error {
 		return ErrUnitIsNotTower
 	}
 
+	if towerOption.Active {
+		err = m.DeactivateTowerOptions(towerOption.TowerID)
+		if err != nil {
+			return err
+		}
+	}
+
 	query := `
         INSERT INTO tower_option (id, tower_id, name, active)
         VALUES ($1, $2, $3, $4)`
@@ -68,7 +82,18 @@ func (m TowerOptionModel) Insert(towerOption *TowerOption) error {
 		return err
 	}
 
-	return tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	unitModel := UnitModel{DB: m.DB}
+	err = unitModel.UpdateTowerFloorsMetrics(towerOption.TowerID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (m TowerOptionModel) GetByID(id uuid.UUID) (*TowerOption, error) {
@@ -101,6 +126,47 @@ func (m TowerOptionModel) GetByID(id uuid.UUID) (*TowerOption, error) {
 			return nil, err
 		}
 	}
+
+	modulesQuery := `
+        SELECT id, type, total_co2_min, total_co2_max, total_energy_min, total_energy_max
+        FROM module
+        WHERE tower_option_id = $1`
+
+	moduleRows, err := m.DB.QueryContext(ctx, modulesQuery, towerOption.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer moduleRows.Close()
+
+	modules := []ModuleInfo{}
+	for moduleRows.Next() {
+		var module ModuleInfo
+		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+		err := moduleRows.Scan(
+			&module.ID,
+			&module.Type,
+			&co2Min,
+			&co2Max,
+			&energyMin,
+			&energyMax,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if co2Min.Valid {
+			module.Consumption = &Consumption{
+				CO2Min:    &co2Min.Float64,
+				CO2Max:    &co2Max.Float64,
+				EnergyMin: &energyMin.Float64,
+				EnergyMax: &energyMax.Float64,
+			}
+		}
+		modules = append(modules, module)
+	}
+	if err = moduleRows.Err(); err != nil {
+		return nil, err
+	}
+	towerOption.Modules = modules
 
 	return &towerOption, nil
 }
@@ -135,6 +201,48 @@ func (m TowerOptionModel) GetAll(towerID uuid.UUID) ([]*TowerOption, error) {
 			return nil, err
 		}
 
+		modulesQuery := `
+            SELECT id, type, total_co2_min, total_co2_max, total_energy_min, total_energy_max
+            FROM module
+            WHERE tower_option_id = $1`
+
+		moduleRows, err := m.DB.QueryContext(ctx, modulesQuery, towerOption.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		modules := []ModuleInfo{}
+		for moduleRows.Next() {
+			var module ModuleInfo
+			var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+			err := moduleRows.Scan(
+				&module.ID,
+				&module.Type,
+				&co2Min,
+				&co2Max,
+				&energyMin,
+				&energyMax,
+			)
+			if err != nil {
+				moduleRows.Close()
+				return nil, err
+			}
+			if co2Min.Valid {
+				module.Consumption = &Consumption{
+					CO2Min:    &co2Min.Float64,
+					CO2Max:    &co2Max.Float64,
+					EnergyMin: &energyMin.Float64,
+					EnergyMax: &energyMax.Float64,
+				}
+			}
+			modules = append(modules, module)
+		}
+		moduleRows.Close()
+		if err = moduleRows.Err(); err != nil {
+			return nil, err
+		}
+		towerOption.Modules = modules
+
 		towerOptions = append(towerOptions, &towerOption)
 	}
 
@@ -146,6 +254,13 @@ func (m TowerOptionModel) GetAll(towerID uuid.UUID) ([]*TowerOption, error) {
 }
 
 func (m TowerOptionModel) Update(towerOption *TowerOption) error {
+	if towerOption.Active {
+		err := m.DeactivateTowerOptions(towerOption.TowerID)
+		if err != nil {
+			return err
+		}
+	}
+
 	query := `
         UPDATE tower_option
         SET name = $1, active = $2
@@ -172,6 +287,12 @@ func (m TowerOptionModel) Update(towerOption *TowerOption) error {
 
 	if rowsAffected == 0 {
 		return ErrRecordNotFound
+	}
+
+	unitModel := UnitModel{DB: m.DB}
+	err = unitModel.UpdateTowerFloorsMetrics(towerOption.TowerID)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -204,4 +325,17 @@ func (m TowerOptionModel) Delete(id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (m TowerOptionModel) DeactivateTowerOptions(towerID uuid.UUID) error {
+	query := `
+        UPDATE tower_option
+        SET active = FALSE
+        WHERE tower_id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := m.DB.ExecContext(ctx, query, towerID)
+	return err
 }

@@ -8,7 +8,9 @@ import (
 )
 
 type BeamColumn struct {
+	ID              uuid.UUID       `json:"id"`
 	BasicModuleData
+	Consumption     *Consumption     `json:"consumption,omitempty"`
 	ConcreteColumns ConcreteElement `json:"concrete_columns"`
 	ConcreteBeams   ConcreteElement `json:"concrete_beams"`
 	ConcreteSlabs   ConcreteElement `json:"concrete_slabs"`
@@ -25,6 +27,7 @@ type BeamColumn struct {
 func (b *BeamColumn) GetType() string { return b.Type }
 
 func (b *BeamColumn) Validate(v *validator.Validator) {
+	// v.Check(b.Name != "", "name", "must be provided")
 	v.Check(b.Type != "", "type", "must be provided")
 	v.Check(len(b.FloorIDs) > 0, "floor_ids", "must be provided")
 	v.Check(validator.Unique(b.FloorIDs), "floor_ids", "must not contain duplicate values")
@@ -56,43 +59,66 @@ func (b *BeamColumn) Validate(v *validator.Validator) {
 	}
 }
 
-func (b *BeamColumn) Calculate() (Consuption, error) {
-	total := Consuption{}
+func (b *BeamColumn) Calculate() (Consumption, error) {
+	total := Consumption{}
 
 	if err := addConcreteElement(&total, b.ConcreteColumns, sidacConcreteData, sidacSteelData); err != nil {
-		return Consuption{}, err
+		return Consumption{}, err
 	}
 	if err := addConcreteElement(&total, b.ConcreteBeams, sidacConcreteData, sidacSteelData); err != nil {
-		return Consuption{}, err
+		return Consumption{}, err
 	}
 	if err := addConcreteElement(&total, b.ConcreteSlabs, sidacConcreteData, sidacSteelData); err != nil {
-		return Consuption{}, err
+		return Consumption{}, err
 	}
 
 	return total, nil
 }
 
-func (b *BeamColumn) Insert(models data.Models, optionID uuid.UUID, result Consuption) error {
+func (b *BeamColumn) Insert(models data.Models, optionID uuid.UUID, result Consumption) (Module, error) {
 	moduleID, err := uuid.NewV7()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	module := toBeamColumnModule(b, moduleID, optionID, result)
-	module.TowerOptionID = optionID
+	moduleToInsert := toBeamColumnModule(b, moduleID, optionID, result)
 
-	err = models.BeamColumnModules.Insert(module)
+	insertedModule, err := models.BeamColumnModules.Insert(moduleToInsert)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return b.toModule(insertedModule), nil
 }
 
-func toBeamColumnModule(b *BeamColumn, moduleID uuid.UUID, optionID uuid.UUID, result Consuption) *data.BeamColumnModule {
+func (b *BeamColumn) Delete(models data.Models, moduleID uuid.UUID) error {
+	return models.BeamColumnModules.Delete(moduleID)
+}
+
+func (b *BeamColumn) Get(models data.Models, moduleID uuid.UUID) (Module, error) {
+	dataModule, err := models.BeamColumnModules.Get(moduleID)
+	if err != nil {
+		return nil, err
+	}
+	return b.toModule(dataModule), nil
+}
+
+func (b *BeamColumn) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
+	module := toBeamColumnModule(b, moduleID, optionID, result)
+	return models.BeamColumnModules.Update(module)
+}
+
+func toBeamColumnModule(b *BeamColumn, moduleID uuid.UUID, optionID uuid.UUID, result Consumption) *data.BeamColumnModule {
 	return &data.BeamColumnModule{
-		ID:              moduleID,
-		TowerOptionID:   optionID,
+		Module: data.Module{
+			ID:             moduleID,
+			TowerOptionID:  optionID,
+			TotalCO2Min:    &result.CO2Min,
+			TotalCO2Max:    &result.CO2Max,
+			TotalEnergyMin: &result.EnergyMin,
+			TotalEnergyMax: &result.EnergyMax,
+			FloorIDs:       b.FloorIDs,
+		},
 		ConcreteColumns: toDataConcrete(b.ConcreteColumns),
 		ConcreteBeams:   toDataConcrete(b.ConcreteBeams),
 		ConcreteSlabs:   toDataConcrete(b.ConcreteSlabs),
@@ -103,10 +129,34 @@ func toBeamColumnModule(b *BeamColumn, moduleID uuid.UUID, optionID uuid.UUID, r
 		ColumnNumber:    b.ColumnNumber,
 		AvgBeamSpan:     b.AvgBeamSpan,
 		AvgSlabSpan:     b.AvgSlabSpan,
-		TotalCO2Min:     &result.CO2Min,
-		TotalCO2Max:     &result.CO2Max,
-		TotalEnergyMin:  &result.EnergyMin,
-		TotalEnergyMax:  &result.EnergyMax,
-		FloorIDs:        b.FloorIDs,
+	}
+}
+
+func (b *BeamColumn) toModule(d *data.BeamColumnModule) Module {
+	var consumption *Consumption
+	if d.TotalCO2Min != nil {
+		consumption = &Consumption{
+			CO2Min:    *d.TotalCO2Min,
+			CO2Max:    *d.TotalCO2Max,
+			EnergyMin: *d.TotalEnergyMin,
+			EnergyMax: *d.TotalEnergyMax,
+		}
+	}
+
+	return &BeamColumn{
+		ID:              d.ID,
+		BasicModuleData: BasicModuleData{Type: "beam_column"},
+		Consumption:     consumption,
+		ConcreteColumns: ToConcreteElement(d.ConcreteColumns),
+		ConcreteBeams:   ToConcreteElement(d.ConcreteBeams),
+		ConcreteSlabs:   ToConcreteElement(d.ConcreteSlabs),
+		FormColumns:     d.FormColumns,
+		FormBeams:       d.FormBeams,
+		FormSlabs:       d.FormSlabs,
+		FormTotal:       d.FormTotal,
+		ColumnNumber:    d.ColumnNumber,
+		AvgBeamSpan:     d.AvgBeamSpan,
+		AvgSlabSpan:     d.AvgSlabSpan,
+		FloorIDs:        d.FloorIDs,
 	}
 }
