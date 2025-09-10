@@ -69,19 +69,12 @@ const ProjectView = ({ projectId }: { projectId: string }) => {
           <>
             <DrawerFormUnit
               triggerComponent={
-                <Button variant="outline" size="sm">
+                <Button variant="bipc" size="sm">
                   Adicionar Unidade
                 </Button>
               }
               projectId={projectId}
             />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleGoToCollaborators}
-            >
-              Editar Colaboradores
-            </Button>
           </>
         }
       />

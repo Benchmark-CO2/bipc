@@ -200,7 +200,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                 onClick={() => addFloor(selectedCategory)}
                 variant="outline"
                 size="sm"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-green-600 border-green-600 hover:bg-green-50"
               >
                 <Plus className="h-4 w-4" />
                 Adicionar
@@ -243,8 +243,15 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                       key={field.id}
                       className={`transition-opacity ${
                         draggedIndex === index ? "opacity-50" : ""
-                      } ${draggedIndex !== null && !canDropHere ? "opacity-30" : ""}`}
-                      draggable
+                      } ${draggedIndex !== null && !canDropHere ? "opacity-30" : ""}
+                      `}
+                      draggable={!isEditMode}
+                      style={{
+                        cursor: !isEditMode ? "grab" : "default",
+                        backgroundColor: canDropHere
+                          ? "rgba(147, 197, 253, 0.2)" // Azul claro quando pode dar drop
+                          : "transparent",
+                      }}
                       onDragStart={(e) => handleDragStart(e, index)}
                       onDragOver={(e) => handleDragOver(e, index)}
                       onDrop={(e) => handleDrop(e, index)}

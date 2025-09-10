@@ -267,7 +267,7 @@ function RouteComponent() {
           <div className="flex items-center gap-2">
             <DrawerFormModule
               triggerComponent={
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="ml-auto">
                   Editar
                 </Button>
               }
@@ -315,7 +315,7 @@ function RouteComponent() {
                   <>
                     <DrawerFormModule
                       triggerComponent={
-                        <Button variant="outline" size="sm">
+                        <Button variant="bipc" size="sm">
                           Adicionar Tecnologia
                         </Button>
                       }
@@ -325,7 +325,7 @@ function RouteComponent() {
                       unitId={unitId}
                       optionId={option.id}
                     />
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" disabled>
                       <Copy className="h-4 w-4 text-primary" />
                     </Button>
                     <ModalConfirmDelete

@@ -144,7 +144,7 @@ function RouteComponent() {
             projectId={projectId}
             unitId={unitId}
             triggerComponent={
-              <Button variant="outline" className="mt-4">
+              <Button variant="bipc" className="mt-4" size="sm">
                 Editar Unidade
               </Button>
             }
@@ -154,17 +154,17 @@ function RouteComponent() {
       <Divider />
       <div className="flex items-center gap-2">
         <TabsContainer
-          tabs={["Todas"]}
-          selectedTab="Todas"
+          tabs={["Em uso"]}
+          selectedTab="Em uso"
           handleTabClick={console.log}
         />
-        <Button
-          variant={"secondary"}
-          className="cursor-pointer rounded-t-lg px-4 py-2 text-white"
+        {/* <Button
+          variant="bipc"
+          className="cursor-pointer rounded-t-lg px-4 py-2"
           onClick={() => console.log("Go to add new constructive technology")}
         >
           <Plus />
-        </Button>
+        </Button> */}
       </div>
       <CommonTable
         tableName="Tecnologia Construtiva (módulo de cálculo)"
@@ -174,8 +174,8 @@ function RouteComponent() {
         isInteractive={false}
         actions={
           <Button
-            variant="outline"
-            className="mt-4"
+            variant="bipc"
+            size="sm"
             onClick={handleClickConstructiveTechnologies}
           >
             Editar Tecnologias

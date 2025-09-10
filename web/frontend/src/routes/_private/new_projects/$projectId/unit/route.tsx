@@ -124,7 +124,14 @@ function RouteComponent() {
             handleTabClick={handleTabClick}
           />
           {!window.location.pathname.includes("constructive-technologies") && (
-            <DrawerFormUnit projectId={projectId} />
+            <DrawerFormUnit
+              projectId={projectId}
+              triggerComponent={
+                <Button variant="bipc" size="lg">
+                  Nova Unidade <Plus className="ml-1 w-16 h-16" />
+                </Button>
+              }
+            />
           )}
         </div>
       )}
