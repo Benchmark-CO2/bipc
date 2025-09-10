@@ -45,17 +45,19 @@ const fakeUnit = {
   constructiveTechnologies: [
     {
       id: "1",
-      name: "Bloco Estrutural 1",
-      co2: "50 KgCO2/m²",
-      energy: "100 MJ/m²",
-      density: "30 m³/m²",
+      type: "concrete_wall",
+      co2_min: 50,
+      co2_max: 100,
+      energy_min: 200,
+      energy_max: 400,
     },
     {
       id: "2",
-      name: "Alvenaria 1",
-      co2: "70 KgCO2/m²",
-      energy: "150 MJ/m²",
-      density: "40 m³/m²",
+      type: "beam_column",
+      co2_min: 30,
+      co2_max: 80,
+      energy_min: 150,
+      energy_max: 300,
     },
   ],
 };
