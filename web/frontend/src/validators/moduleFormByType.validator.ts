@@ -25,9 +25,7 @@ const concreteVolumeItemSchema = z
 
 const steelMassItemSchema = z
   .object({
-    ca: z.number().refine((val) => val === 50 || val === 60, {
-      message: "CA deve ser 50 ou 60",
-    }),
+    ca: z.number().nonnegative("O CA deve ser um número não negativo"),
     mass: z.number().nonnegative("A massa deve ser um número não negativo"),
     customCa: z.boolean().optional(),
   })
