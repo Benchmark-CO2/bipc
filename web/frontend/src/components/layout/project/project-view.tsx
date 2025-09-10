@@ -1,6 +1,5 @@
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
 import CommonTable from "../common-table";
 import { unitsColumns } from "@/components/columns/units";
 import DrawerFormUnit from "../drawer-form-unit";
@@ -32,18 +31,9 @@ const ProjectView = ({ projectId }: { projectId: string }) => {
     queryKey: ["project", projectId],
     queryFn: () => getProjectByUUID(projectId),
   });
-  const navigate = useNavigate();
 
   const handleSelectionChange = () => {
     // console.log("Selected items:", selectedItems);
-  };
-
-  const handleGoToCollaborators = () => {
-    navigate({
-      to: ".",
-      search: { tab: "colaboradores" },
-      replace: true,
-    });
   };
 
   const units = projectData?.data?.project?.units.map((unit) => ({

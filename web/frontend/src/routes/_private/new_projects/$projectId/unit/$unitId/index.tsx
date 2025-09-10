@@ -8,7 +8,6 @@ import { TabsContainer } from "@/components/ui/tabsContainer";
 import { IUnit } from "@/types/units";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
 
 const fakeUnit = {
   id: "1",
