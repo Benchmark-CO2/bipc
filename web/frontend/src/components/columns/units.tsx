@@ -10,27 +10,45 @@ export const unitsColumns: ColumnDef<
   {
     accessorKey: "name",
     header: "Nome",
-    cell: ({ row }) => row.original.name || "-",
+    cell: ({ row }) => (
+      <div className="text-left">{row.original.name || "-"}</div>
+    ),
   },
   {
     accessorKey: "co2_max",
-    header: "CO2 max",
-    cell: ({ row }) => row.original?.co2_max || "-",
+    header: () => <div className="text-center">CO2 max</div>,
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original?.co2_max.toFixed(2) || "-"}
+      </div>
+    ),
   },
   {
     accessorKey: "co2_min",
-    header: "CO2 min",
-    cell: ({ row }) => row.original?.co2_min || "-",
+    header: () => <div className="text-center">CO2 min</div>,
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original?.co2_min.toFixed(2) || "-"}
+      </div>
+    ),
   },
   {
     accessorKey: "energy_max",
-    header: "Energia max",
-    cell: ({ row }) => row.original?.energy_max || "-",
+    header: () => <div className="text-center">Energia max</div>,
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original?.energy_max.toFixed(2) || "-"}
+      </div>
+    ),
   },
   {
     accessorKey: "energy_min",
-    header: "Energia min",
-    cell: ({ row }) => row.original?.energy_min || "-",
+    header: () => <div className="text-center">Energia min</div>,
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original?.energy_min.toFixed(2) || "-"}
+      </div>
+    ),
   },
   {
     id: "actions",
@@ -42,7 +60,7 @@ export const unitsColumns: ColumnDef<
       });
 
       return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-end">
           <Button
             variant="outline"
             size="sm"

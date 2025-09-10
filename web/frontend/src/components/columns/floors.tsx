@@ -8,31 +8,51 @@ export const floorsColumns: ColumnDef<
   {
     accessorKey: "group_name",
     header: "Nome",
-    cell: ({ row }) => row.original.group_name || "-",
+    cell: ({ row }) => (
+      <div className="text-left">{row.original.group_name || "-"}</div>
+    ),
   },
   {
     accessorKey: "co2_min",
-    header: "CO2 min",
-    cell: ({ row }) => row.original.co2_min?.toFixed(2) || "-",
+    header: () => <div className="text-center">CO2 min</div>,
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original.co2_min?.toFixed(2) || "-"}
+      </div>
+    ),
   },
   {
     accessorKey: "co2_max",
-    header: "CO2 max",
-    cell: ({ row }) => row.original.co2_max?.toFixed(2) || "-",
+    header: () => <div className="text-center">CO2 max</div>,
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original.co2_max?.toFixed(2) || "-"}
+      </div>
+    ),
   },
   {
     accessorKey: "energy_min",
-    header: "Energia min",
-    cell: ({ row }) => row.original.energy_min?.toFixed(2) || "-",
+    header: () => <div className="text-center">Energia min</div>,
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original.energy_min?.toFixed(2) || "-"}
+      </div>
+    ),
   },
   {
     accessorKey: "energy_max",
-    header: "Energia max",
-    cell: ({ row }) => row.original.energy_max?.toFixed(2) || "-",
+    header: () => <div className="text-center">Energia max</div>,
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original.energy_max?.toFixed(2) || "-"}
+      </div>
+    ),
   },
   {
     accessorKey: "repetitions",
-    header: "Quantidade",
-    cell: ({ row }) => row.original.repetitions || "-",
+    header: () => <div className="text-center">Quantidade</div>,
+    cell: ({ row }) => (
+      <div className="text-center">{row.original.repetitions || "-"}</div>
+    ),
   },
 ];

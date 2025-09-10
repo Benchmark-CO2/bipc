@@ -9,26 +9,46 @@ export const constructiveTechnologies: ColumnDef<
   {
     accessorKey: "type",
     header: "Tipo",
-    cell: ({ row }) => structureTypes[row.original.type] || "-",
+    cell: ({ row }) => (
+      <div className="text-left">
+        {structureTypes[row.original.type] || "-"}
+      </div>
+    ),
   },
   {
     accessorKey: "co2_min",
-    header: "CO2 Min",
-    cell: ({ row }) => row.original.co2_min?.toFixed(2) || "-",
+    header: () => <div className="text-center">CO2 Min</div>,
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original.co2_min?.toFixed(2) || "-"}
+      </div>
+    ),
   },
   {
     accessorKey: "co2_max",
-    header: "CO2 Max",
-    cell: ({ row }) => row.original.co2_max?.toFixed(2) || "-",
+    header: () => <div className="text-center">CO2 Max</div>,
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original.co2_max?.toFixed(2) || "-"}
+      </div>
+    ),
   },
   {
     accessorKey: "energy_min",
-    header: "Energia Min",
-    cell: ({ row }) => row.original.energy_min?.toFixed(2) || "-",
+    header: () => <div className="text-center">Energia Min</div>,
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original.energy_min?.toFixed(2) || "-"}
+      </div>
+    ),
   },
   {
     accessorKey: "energy_max",
-    header: "Energia Max",
-    cell: ({ row }) => row.original.energy_max?.toFixed(2) || "-",
+    header: () => <div className="text-center">Energia Max</div>,
+    cell: ({ row }) => (
+      <div className="text-center">
+        {row.original.energy_max?.toFixed(2) || "-"}
+      </div>
+    ),
   },
 ];
