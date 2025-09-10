@@ -9,7 +9,7 @@ import {
   moduleFormSchema,
 } from "@/validators/moduleFormByType.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { /*Loader2,*/ Loader2, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -46,6 +46,7 @@ import { getDefaultValuesByType } from "./module-default-values";
 import { TTowerFloorCategory } from "@/types/units";
 import { postModule } from "@/actions/modules/postModule";
 import { toast } from "sonner";
+import { getModule } from "@/actions/modules/getModule";
 // import { postModuleVersion } from "@/actions/modules/postModuleVersion"; // comentado temporariamente
 
 interface DrawerFormModuleProps {
@@ -54,7 +55,6 @@ interface DrawerFormModuleProps {
   unitId: string;
   optionId: string;
   moduleId?: string;
-  moduleData?: TModuleStructure | null;
   type: TModulesTypes;
   floors?: TTowerFloorCategory[];
 }
@@ -66,7 +66,6 @@ const DrawerFormModule = ({
   optionId,
   moduleId,
   type,
-  moduleData,
   floors = [],
 }: DrawerFormModuleProps) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -142,6 +141,18 @@ const DrawerFormModule = ({
     },
   });
 
+  const { data: moduleData, isLoading: isLoadingModule } = useQuery({
+    queryKey: ["module", projectId, unitId, optionId, moduleId],
+    queryFn: async () => {
+      if (moduleId) {
+        const res = await getModule(projectId, unitId, optionId, moduleId);
+        return res.data.module;
+      }
+      return null;
+    },
+    enabled: !!moduleId && isOpen,
+  });
+
   useEffect(() => {
     const ensureArraysInitialized = () => {
       const fieldsToInit = [
@@ -168,6 +179,7 @@ const DrawerFormModule = ({
     if (moduleData) {
       // Comentado temporariamente devido a incompatibilidade de tipos
       // form.reset(moduleData || getDefaultValuesByType(type));
+      setSelectedFloors(moduleData.floor_ids || []);
       console.log("Module data:", moduleData);
     }
   }, [moduleData, moduleId, type, form]);

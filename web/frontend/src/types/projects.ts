@@ -31,10 +31,18 @@ export type TProjectsTemp = {
   [key: string]: TProjectUnit[];
 };
 
+export type TConsumption = {
+  co2_max: number;
+  co2_min: number;
+  energy_max: number;
+  energy_min: number;
+};
+
 export type TProjectUnit = {
   name: string;
   id: string;
   type: TUnitType;
+  consumption: TConsumption;
 };
 
 export type TProjectUnitModule = {

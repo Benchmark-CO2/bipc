@@ -31,14 +31,16 @@ export const registerFormSchema = z
         message: t("forms.customRequiredField", {
           field: t("signUp.confirmPassword"),
         }),
-      }),
+      })
+      .optional(),
     crea: z
       .string({
         message: t("forms.customRequiredField", { field: t("signUp.crea") }),
       })
       .min(1, {
         message: t("forms.customRequiredField", { field: t("signUp.crea") }),
-      }),
+      })
+      .optional(),
     birthDate: z
       .string({
         message: t("forms.customRequiredField", {
@@ -62,14 +64,16 @@ export const registerFormSchema = z
           );
         },
         { message: t("forms.minimumAge", { age: 18 }) }
-      ),
+      )
+      .optional(),
     city: z
       .string({
         message: t("forms.customRequiredField", { field: t("signUp.city") }),
       })
       .min(1, {
         message: t("forms.customRequiredField", { field: t("signUp.city") }),
-      }),
+      })
+      .optional(),
     activityArea: z
       .string({
         message: t("forms.customRequiredField", {
@@ -80,7 +84,8 @@ export const registerFormSchema = z
         message: t("forms.customRequiredField", {
           field: t("signUp.activityArea"),
         }),
-      }),
+      })
+      .optional(),
     professionalEmail: z
       .string({
         message: t("forms.customRequiredField", {
@@ -92,7 +97,8 @@ export const registerFormSchema = z
           field: t("signUp.professionalEmail"),
         }),
       })
-      .email({ message: t("forms.invalidEmail") }),
+      .email({ message: t("forms.invalidEmail") })
+      .optional(),
     companyName: z
       .string({
         message: t("forms.customRequiredField", {
@@ -103,7 +109,8 @@ export const registerFormSchema = z
         message: t("forms.customRequiredField", {
           field: t("signUp.companyName"),
         }),
-      }),
+      })
+      .optional(),
   })
   .superRefine((data, ctx) => {
     const { password, confirmPassword } = data;

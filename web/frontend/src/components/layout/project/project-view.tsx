@@ -51,11 +51,16 @@ const ProjectView = ({ projectId }: { projectId: string }) => {
     });
   };
 
+  const units = projectData?.data?.project?.units.map((unit) => ({
+    ...unit,
+    ...unit.consumption,
+  }));
+
   return (
     <div className="flex flex-col gap-4">
       <CommonTable
         tableName="Unidades"
-        data={projectData?.data?.project?.units || []}
+        data={units || []}
         columns={unitsColumns}
         isSelectable={true}
         isInteractive={true}

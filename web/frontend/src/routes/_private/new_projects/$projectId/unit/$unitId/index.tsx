@@ -116,6 +116,7 @@ function RouteComponent() {
             if (!acc[groupId]) {
               acc[groupId] = {
                 ...floor,
+                ...floor.consumption,
                 repetitions: 1,
               };
             } else {

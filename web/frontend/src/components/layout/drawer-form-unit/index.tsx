@@ -109,11 +109,7 @@ const DrawerFormUnit = ({
     },
   });
 
-  const {
-    isSuccess: isUpdateSuccess,
-    isPending: isUpdatePending,
-    mutate: mutateUpdate,
-  } = useMutation({
+  const { isPending: isUpdatePending, mutate: mutateUpdate } = useMutation({
     mutationFn: (data: UnitFormSchema) => patchUnit(data, projectId, unitId!),
     onError: (error) => {
       toast.error(t("error.errorUpdateUnit"), {
@@ -161,7 +157,12 @@ const DrawerFormUnit = ({
     enabled: !!unitId,
   });
 
-  const groupedUnitData = unitData?.tower?.floors.reduce(
+  // primeiro, ordenar os floors pelo índice
+  const sortedFloors = unitData?.tower?.floors
+    .slice()
+    .sort((a, b) => a.index - b.index);
+
+  const groupedUnitData = sortedFloors?.reduce(
     (acc, floor) => {
       const groupName = floor.group_name;
       if (!acc[groupName]) {
@@ -184,8 +185,6 @@ const DrawerFormUnit = ({
 
   useEffect(() => {
     if (unitData && floorGroups.length > 0) {
-      console.log(unitData);
-      console.log("Floor groups:", floorGroups);
       form.reset({
         name: unitData.name,
         type: unitData.type,
@@ -262,6 +261,7 @@ const DrawerFormUnit = ({
                             placeholder={t(
                               "drawerFormUnit.unitNamePlaceholder"
                             )}
+                            disabled={Boolean(unitId)}
                             {...field}
                           />
                         </FormControl>
@@ -306,21 +306,9 @@ const DrawerFormUnit = ({
                   />
                 </div>
                 {form.watch("type") === "tower" && (
-                  <UnitFormTower form={form} />
+                  <UnitFormTower form={form} isEditMode={Boolean(unitId)} />
                 )}
-                {unitId ? (
-                  <Button
-                    disabled={Boolean(unitId)}
-                    type="submit"
-                    variant="bipc"
-                    className="mt-6 w-full"
-                  >
-                    {t("drawerFormUnit.editUnitButton")}
-                    {isUpdatePending && (
-                      <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
-                    )}
-                  </Button>
-                ) : (
+                {!Boolean(unitId) && (
                   <Button
                     type="submit"
                     variant="bipc"

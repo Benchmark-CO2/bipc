@@ -1,4 +1,5 @@
 import { IModule } from "./modules";
+import { TConsumption } from "./projects";
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type Unit = {
@@ -16,6 +17,12 @@ export type TTowerFloorCategory = {
   area: number;
   height: number;
   index: number;
+  consumption: TConsumption;
+  category?:
+    | "penthouse_floor"
+    | "standard_floor"
+    | "ground_floor"
+    | "basement_floor"; // Opcional por enquanto
 };
 
 export type TTowerType = {

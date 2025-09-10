@@ -12,7 +12,9 @@ import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import NotFoundList from "@/components/ui/not-found-list";
+import { IModuleItem } from "@/types/modules";
 import { TOption } from "@/types/options";
+import { TConsumption } from "@/types/projects";
 import { IUnit } from "@/types/units";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
@@ -195,27 +197,6 @@ const OptionMenu = ({
   );
 };
 
-const newColumns: ColumnDef<any>[] = [
-  ...constructiveTechnologies,
-  {
-    id: "actions",
-    header: "",
-    cell: ({ row }) => {
-      return (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => console.log(row.original)}
-          >
-            Editar
-          </Button>
-        </div>
-      );
-    },
-  },
-];
-
 function RouteComponent() {
   const { projectId, unitId } = useParams({
     from: "/_private/new_projects/$projectId/unit/$unitId/constuctive-technologies",
@@ -274,63 +255,103 @@ function RouteComponent() {
   const unit = unitData?.data?.unit as IUnit;
   const unitTowerFloors = unit?.tower?.floors || [];
 
-  return (
-    <div className="flex flex-col gap-4">
-      {options.map((option) => (
-        <div
-          key={option.id}
-          className={`flex items-center gap-2 rounded-xl border-2 ${option.active ? "border-primary" : "border-gray-200"} bg-white p-4 dark:border-gray-700 dark:bg-gray-800 w-full`}
-        >
-          <div className="flex items-center gap-2 justify-between w-full">
-            <CommonTable
-              tableName={
-                <OptionMenu
-                  option={option}
-                  projectId={projectId}
-                  unitId={unitId}
-                />
+  const newColumns: ColumnDef<
+    Omit<IModuleItem, "consumption"> & TConsumption & { option_id: string }
+  >[] = [
+    ...constructiveTechnologies,
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => {
+        return (
+          <div className="flex items-center gap-2">
+            <DrawerFormModule
+              triggerComponent={
+                <Button variant="outline" size="sm">
+                  Editar
+                </Button>
               }
-              data={[]}
-              columns={newColumns}
-              isSelectable={true}
-              isInteractive={true}
-              onSelectionChange={console.log}
-              actions={
-                <>
-                  <DrawerFormModule
-                    triggerComponent={
-                      <Button variant="outline" size="sm">
-                        Adicionar Tecnologia
-                      </Button>
-                    }
-                    type="concrete_wall"
-                    floors={unitTowerFloors}
-                    projectId={projectId}
-                    unitId={unitId}
-                    optionId={option.id}
-                  />
-                  <Button variant="ghost" size="icon">
-                    <Copy className="h-4 w-4 text-primary" />
-                  </Button>
-                  <ModalConfirmDelete
-                    componentTrigger={
-                      <Button variant="ghost" size="icon" disabled={isDeleting}>
-                        {isDeleting ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash className="h-4 w-4 text-red-700" />
-                        )}
-                      </Button>
-                    }
-                    title="Excluir Simulação"
-                    onConfirm={() => deleteSimulation(option.id)}
-                  />
-                </>
-              }
+              type={row.original.type}
+              projectId={projectId}
+              unitId={unitId}
+              optionId={row.original.option_id}
+              moduleId={row.original.id}
+              floors={unitTowerFloors}
             />
           </div>
-        </div>
-      ))}
+        );
+      },
+    },
+  ];
+
+  return (
+    <div className="flex flex-col gap-4">
+      {options.map((option) => {
+        const modules = option.modules.map((mod) => ({
+          ...mod,
+          ...mod.consumption,
+          option_id: option.id,
+        }));
+        return (
+          <div
+            key={option.id}
+            className={`flex items-center gap-2 rounded-xl border-2 ${option.active ? "border-primary" : "border-gray-200"} bg-white p-4 dark:border-gray-700 dark:bg-gray-800 w-full`}
+          >
+            <div className="flex items-center gap-2 justify-between w-full">
+              <CommonTable
+                tableName={
+                  <OptionMenu
+                    option={option}
+                    projectId={projectId}
+                    unitId={unitId}
+                  />
+                }
+                data={modules}
+                columns={newColumns}
+                isSelectable={true}
+                isInteractive={true}
+                onSelectionChange={console.log}
+                actions={
+                  <>
+                    <DrawerFormModule
+                      triggerComponent={
+                        <Button variant="outline" size="sm">
+                          Adicionar Tecnologia
+                        </Button>
+                      }
+                      type="concrete_wall"
+                      floors={unitTowerFloors}
+                      projectId={projectId}
+                      unitId={unitId}
+                      optionId={option.id}
+                    />
+                    <Button variant="ghost" size="icon">
+                      <Copy className="h-4 w-4 text-primary" />
+                    </Button>
+                    <ModalConfirmDelete
+                      componentTrigger={
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash className="h-4 w-4 text-red-700" />
+                          )}
+                        </Button>
+                      }
+                      title="Excluir Simulação"
+                      onConfirm={() => deleteSimulation(option.id)}
+                    />
+                  </>
+                }
+              />
+            </div>
+          </div>
+        );
+      })}
       <DialogCreateSimulation projectId={projectId} unitId={unitId} />
     </div>
   );

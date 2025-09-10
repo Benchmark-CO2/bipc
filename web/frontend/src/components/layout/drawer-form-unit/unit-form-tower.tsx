@@ -36,6 +36,7 @@ import {
 
 interface UnitFormTowerProps {
   form: UseFormReturn<UnitFormSchema>;
+  isEditMode?: boolean;
 }
 
 // Cores pré-definidas para cada categoria
@@ -46,7 +47,7 @@ const categoryColors = {
   basement_floor: "#F59E0B", // Laranja
 };
 
-const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
+const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
   const { fields, remove, move } = useFieldArray({
     control: form.control,
     name: "data.floor_groups",
@@ -58,8 +59,6 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
     name: "data.floor_groups",
     defaultValue: [],
   });
-
-  console.log(watchedFloors);
 
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = React.useState<
@@ -172,40 +171,42 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             Pavimentos
           </h4>
-          <div className="flex items-center gap-2">
-            <Select
-              value={selectedCategory}
-              onValueChange={(value) =>
-                setSelectedCategory(
-                  value as
-                    | "penthouse_floor"
-                    | "standard_floor"
-                    | "ground_floor"
-                    | "basement_floor"
-                )
-              }
-            >
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="penthouse_floor">Cobertura</SelectItem>
-                <SelectItem value="standard_floor">Tipo</SelectItem>
-                <SelectItem value="ground_floor">Térreo</SelectItem>
-                <SelectItem value="basement_floor">Subsolo</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              onClick={() => addFloor(selectedCategory)}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Adicionar
-            </Button>
-          </div>
+          {!isEditMode && (
+            <div className="flex items-center gap-2">
+              <Select
+                value={selectedCategory}
+                onValueChange={(value) =>
+                  setSelectedCategory(
+                    value as
+                      | "penthouse_floor"
+                      | "standard_floor"
+                      | "ground_floor"
+                      | "basement_floor"
+                  )
+                }
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="penthouse_floor">Cobertura</SelectItem>
+                  <SelectItem value="standard_floor">Tipo</SelectItem>
+                  <SelectItem value="ground_floor">Térreo</SelectItem>
+                  <SelectItem value="basement_floor">Subsolo</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                onClick={() => addFloor(selectedCategory)}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Adicionar
+              </Button>
+            </div>
+          )}
         </div>
 
         {fields.length === 0 ? (
@@ -274,6 +275,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
                                   <TooltipTrigger asChild>
                                     <Input
                                       placeholder="Ex: Cobertura"
+                                      disabled={isEditMode}
                                       className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
                                         fieldState.error
                                           ? "border border-red-500"
@@ -311,6 +313,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
                                       type="number"
                                       step="0.01"
                                       placeholder="100"
+                                      disabled={isEditMode}
                                       className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
                                         fieldState.error
                                           ? "border border-red-500"
@@ -355,6 +358,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
                                       type="number"
                                       step="0.01"
                                       placeholder="3"
+                                      disabled={isEditMode}
                                       className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
                                         fieldState.error
                                           ? "border border-red-500"
@@ -399,6 +403,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
                                       type="number"
                                       min="1"
                                       placeholder="1"
+                                      disabled={isEditMode}
                                       className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
                                         fieldState.error
                                           ? "border border-red-500"
@@ -442,6 +447,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
                                     <Select
                                       onValueChange={field.onChange}
                                       defaultValue={field.value}
+                                      disabled={isEditMode}
                                     >
                                       <SelectTrigger
                                         className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
@@ -491,6 +497,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form }) => {
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0"
+                          disabled={isEditMode}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

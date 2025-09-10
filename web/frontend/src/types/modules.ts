@@ -47,33 +47,17 @@ export type TModulesTypes =
   | "structural_masonry";
 
 export interface IModuleItem {
-  id: number;
-  name: string;
+  id: string;
   type: TModulesTypes;
-  floor_repetition: number;
-  floor_area: number;
-  total_concrete?: number;
-  total_steel?: number;
-  co2_min?: number;
-  co2_max?: number;
-  energy_min?: number;
-  energy_max?: number;
-  version?: number;
+  consumption: IConsumption;
 }
 
 export interface IBasicModule {
-  id?: number;
   name: string;
   type: TModulesTypes;
-  // floor_repetition: number;
-  // floor_area: number;
-  // floor_height: number;
-  co2_min?: number;
-  co2_max?: number;
-  energy_min?: number;
-  energy_max?: number;
-  in_use?: boolean;
-  version?: number;
+  id?: string;
+  consumption?: IConsumption;
+  floor_ids?: string[];
 }
 
 export interface IBeamColumn extends IBasicModule {

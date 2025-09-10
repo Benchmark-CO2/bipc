@@ -122,60 +122,77 @@ const SignUp = () => {
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-3 gap-4 max-md:grid-cols-1">
-                <FormField
-                  control={form.control}
-                  name="crea"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("signUp.crea")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          placeholder={t("signUp.crea")}
-                          disabled={isPending}
-                          autoComplete="none"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="birthDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("signUp.birthDate")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="string"
-                          placeholder={"xx/xx/xxxx"}
-                          disabled={isPending}
-                          autoComplete="bday-day"
-                          value={masks.date(field.value || "")}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("signUp.city")}</FormLabel>
-                      <FormControl>
-                        <Input type="text" disabled={isPending} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="Email"
+                        disabled={isPending}
+                        autoComplete="email"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="crea"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("signUp.crea")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder={t("signUp.crea")}
+                        disabled={isPending}
+                        autoComplete="none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="birthDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("signUp.birthDate")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="string"
+                        placeholder={"xx/xx/xxxx"}
+                        disabled={isPending}
+                        autoComplete="bday-day"
+                        value={masks.date(field.value || "")}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("signUp.city")}</FormLabel>
+                    <FormControl>
+                      <Input type="text" disabled={isPending} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
                 <FormField
                   control={form.control}

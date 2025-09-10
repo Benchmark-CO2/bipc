@@ -74,7 +74,7 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
   };
 
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild data-action="delete-project">
         <Button
           variant="secondary"
