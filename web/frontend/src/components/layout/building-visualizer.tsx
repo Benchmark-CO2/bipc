@@ -154,7 +154,9 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
           }}
           title={`${floor.name} - ${floor.area}m² - ${floor.height}m`}
         >
-          <span className={isSelectable ? "mr-2" : ""}>{floor.name}</span>
+          <span className={isSelectable ? "mr-2 text-shadow-black" : ""}>
+            {floor.name}
+          </span>
           {isSelectable && (
             <Checkbox
               checked={isFloorSelected}
@@ -172,16 +174,15 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
 
   return (
     <div className="flex flex-col items-center px-4 min-h-96 w-48">
-      <h4 className="text-sm font-semibold mb-6 text-gray-700 dark:text-gray-300 h-[32px] content-center">
-        Visualização da Torre
-      </h4>
-
       <div className="flex flex-col items-center w-full max-w-40">
         {/* Estrutura de cima para baixo: Cobertura -> Tipo -> Térreo -> Subsolo */}
         <div className="flex flex-col w-full">
           {/* Cobertura (topo) */}
           {sortedRoofFloors.map((floor, index) => (
-            <div key={`roof-${index}`} className="w-full max-w-35 mx-auto">
+            <div
+              key={`roof-${index}`}
+              className={`w-full max-w-35 ${isSelectable ? "ml-auto" : "mx-auto"} `}
+            >
               {renderFloorBlocks(floor)}
             </div>
           ))}
