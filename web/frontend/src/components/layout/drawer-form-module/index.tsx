@@ -47,7 +47,8 @@ import { TTowerFloorCategory } from "@/types/units";
 import { postModule } from "@/actions/modules/postModule";
 import { toast } from "sonner";
 import { getModule } from "@/actions/modules/getModule";
-// import { postModuleVersion } from "@/actions/modules/postModuleVersion"; // comentado temporariamente
+import { patchModule } from "@/actions/modules/patchModule"; // comentado temporariamente
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DrawerFormModuleProps {
   triggerComponent?: React.ReactNode;
@@ -80,34 +81,36 @@ const DrawerFormModule = ({
   });
 
   // Comentado: mutations para evitar conflitos de tipo durante a transição
-  // const { mutate: mutateModuleVersion, isPending: isUpdatePending } =
-  //   useMutation({
-  //     mutationFn: (data: TModuleStructure) =>
-  //       postModuleVersion(data, projectId, unitId, moduleId!),
-  //     onError: (error) => {
-  //       toast.error(t("error.errorUpdateModule"), {
-  //         description:
-  //           error instanceof Error ? error.message : t("error.errorUnknown"),
-  //         duration: 5000,
-  //       });
-  //     },
-  //     onSuccess: () => {
-  //       toast.success(t("success.moduleUpdated"), {
-  //         duration: 5000,
-  //       });
-  //       queryClient.invalidateQueries({
-  //         queryKey: ["project", projectId],
-  //       });
-  //       queryClient.invalidateQueries({
-  //         queryKey: ["unit", projectId, unitId],
-  //       });
-  //       queryClient.invalidateQueries({
-  //         queryKey: ["module", projectId, unitId, moduleId!],
-  //       });
-  //       form.reset();
-  //       setIsOpen(false);
-  //     },
-  //   });
+  const { mutate: mutateModule, isPending: isUpdatePending } = useMutation({
+    mutationFn: (data: ModuleParamsProps) =>
+      patchModule(data, projectId, unitId, optionId, moduleId!),
+    onError: (error) => {
+      toast.error(t("error.errorUpdateModule"), {
+        description:
+          error instanceof Error ? error.message : t("error.errorUnknown"),
+        duration: 5000,
+      });
+    },
+    onSuccess: () => {
+      toast.success(t("success.moduleUpdated"), {
+        duration: 5000,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project", projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["unit", projectId, unitId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["options", projectId, unitId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["module", projectId, unitId, moduleId!],
+      });
+      form.reset();
+      setIsOpen(false);
+    },
+  });
 
   const {
     // isSuccess: isCreationSuccess,
@@ -177,23 +180,29 @@ const DrawerFormModule = ({
 
   useEffect(() => {
     if (moduleData) {
-      // Comentado temporariamente devido a incompatibilidade de tipos
-      // form.reset(moduleData || getDefaultValuesByType(type));
-      setSelectedFloors(moduleData.floor_ids || []);
-      console.log("Module data:", moduleData);
+      const { floor_ids, id, ...rest } = moduleData;
+
+      setSelectedFloors(floor_ids || []);
+
+      if (rest.type === "beam_column" || rest.type === "concrete_wall") {
+        form.reset(rest as ModuleFormSchema);
+      } else {
+        form.reset(getDefaultValuesByType(type));
+      }
     }
   }, [moduleData, moduleId, type, form]);
 
   const handleSubmit = (data: ModuleFormSchema) => {
-    console.log(data);
     if (moduleId) {
-      const completeData = {
-        ...data,
-        // name: data.name || form.getValues("name") || moduleData?.name,
-        type: data.type || form.getValues("type") || moduleData?.type,
+      const { type: typeFromData, ...rest } = data;
+      const baseFields: ModuleParamsProps = {
+        type,
+        data: {
+          ...rest,
+          floor_ids: selectedFloors,
+        },
       };
-      console.log("Update data:", completeData);
-      // mutateModuleVersion(completeData as TModuleStructure);
+      mutateModule(baseFields);
       return;
     }
 
@@ -240,7 +249,6 @@ const DrawerFormModule = ({
       },
     };
 
-    console.log("Create data:", baseFields);
     mutateCreation(baseFields);
   };
 
@@ -292,144 +300,141 @@ const DrawerFormModule = ({
             <X className="h-4 w-4" />
           </Button>
         </DrawerHeader>
-        <DrawerDescription className="px-6">
-          {t("drawerFormModule.description")}
-        </DrawerDescription>
-        <div className="mx-auto w-full p-6 h-[calc(100vh-78px)] flex">
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(handleSubmit, (errors) => {
-                console.log("Form validation errors:", errors);
-                console.log("Current form values:", form.getValues());
-              })}
-              className="w-full flex gap-6 h-full"
-            >
-              <div className="flex-shrink-0 h-full overflow-y-auto">
-                <div className="sticky top-0">
-                  <BuildingVisualizer
-                    key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ index: f.index })))}`} // Força re-render quando andares mudam
-                    towerFloors={floors || []}
-                    isSelectable={true}
-                    selectedFloorIds={selectedFloors}
-                    onCheckFloorId={setSelectedFloors}
-                  />
-                </div>
+        <div className="mx-auto w-full p-6 pr-0 h-[calc(100vh-56px)] flex">
+          {isLoadingModule ? (
+            <div className="grid w-full grid-cols-3 gap-4">
+              <div className="flex flex-col w-full h-auto space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
               </div>
-              <div className="flex-1 overflow-y-auto pr-2">
-                <div className="p-4 border rounded-lg border-muted space-y-4">
-                  {/* Campos básicos */}
-                  <div className="grid grid-cols-1 gap-4">
-                    {/* <FormField
-                      control={form.control}
-                      name="name"
-                      disabled={Boolean(moduleId)}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            {t("drawerFormModule.commonForm.nameLabel")}
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder={t(
-                                "drawerFormModule.commonForm.namePlaceholder"
-                              )}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    /> */}
-
-                    <FormField
-                      control={form.control}
-                      name="type"
-                      disabled={Boolean(moduleId)}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            {t(
-                              "drawerFormModule.commonForm.structureTypeLabel"
-                            )}
-                          </FormLabel>
-                          <FormControl>
-                            <Select
-                              onValueChange={(value) => {
-                                field.onChange(value);
-                                if (
-                                  value === "beam_column" ||
-                                  value === "concrete_wall"
-                                ) {
-                                  form.reset(
-                                    getDefaultValuesByType(value as any)
-                                  );
-                                }
-                              }}
-                              value={field.value}
-                              disabled={Boolean(moduleId)}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue
-                                  placeholder={t(
-                                    "drawerFormModule.commonForm.structureTypePlaceholder"
-                                  )}
-                                />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {structureTypes.map((type) => (
-                                  <SelectItem
-                                    key={type.value}
-                                    value={type.value}
-                                  >
-                                    {type.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+              <div className="flex flex-col col-span-2 w-full h-auto space-y-2 p-4 border rounded-lg border-muted ">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            </div>
+          ) : (
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(handleSubmit, (errors) => {
+                  console.log("Form validation errors:", errors);
+                  console.log("Current form values:", form.getValues());
+                })}
+                className="w-full flex gap-6 h-full"
+              >
+                <div className="flex-shrink-0 h-full overflow-y-auto">
+                  <div className="sticky top-0">
+                    <BuildingVisualizer
+                      key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ index: f.index })))}`} // Força re-render quando andares mudam
+                      towerFloors={floors || []}
+                      isSelectable={true}
+                      selectedFloorIds={selectedFloors}
+                      onCheckFloorId={setSelectedFloors}
                     />
                   </div>
-                  {/* Campos específicos por tipo de estrutura */}
-                  {(() => {
-                    const structureType = form.watch("type");
+                </div>
+                <div className="flex-1 overflow-y-auto pr-2">
+                  <div className="p-4 border rounded-lg border-muted space-y-4">
+                    {/* Campos básicos */}
+                    <div className="grid grid-cols-1 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="type"
+                        disabled={Boolean(moduleId)}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              {t(
+                                "drawerFormModule.commonForm.structureTypeLabel"
+                              )}
+                            </FormLabel>
+                            <FormControl>
+                              <Select
+                                onValueChange={(value) => {
+                                  field.onChange(value);
+                                  if (
+                                    value === "beam_column" ||
+                                    value === "concrete_wall"
+                                  ) {
+                                    form.reset(
+                                      getDefaultValuesByType(value as any)
+                                    );
+                                  }
+                                }}
+                                value={field.value}
+                                disabled={Boolean(moduleId)}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue
+                                    placeholder={t(
+                                      "drawerFormModule.commonForm.structureTypePlaceholder"
+                                    )}
+                                  />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {structureTypes.map((type) => (
+                                    <SelectItem
+                                      key={type.value}
+                                      value={type.value}
+                                    >
+                                      {type.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    {/* Campos específicos por tipo de estrutura */}
+                    {(() => {
+                      const structureType = form.watch("type");
 
-                    switch (structureType) {
-                      case "beam_column":
-                        return <ModuleFormBeamColumn form={form as any} />;
-                      case "concrete_wall":
-                        return <ModuleFormConcreteWall form={form as any} />;
-                      // case "structural_masonry": // comentado por enquanto
-                      //   return <ModuleFormStructuralMasonry form={form} />;
-                      default:
-                        return null;
-                    }
-                  })()}
-
-                  <div className="flex gap-2 mt-6">
-                    <Button
-                      type="submit"
-                      variant="bipc"
-                      className="flex-1"
-                      disabled={
-                        isCreationPending || selectedFloors.length === 0
+                      switch (structureType) {
+                        case "beam_column":
+                          return <ModuleFormBeamColumn form={form as any} />;
+                        case "concrete_wall":
+                          return <ModuleFormConcreteWall form={form as any} />;
+                        // case "structural_masonry": // comentado por enquanto
+                        //   return <ModuleFormStructuralMasonry form={form} />;
+                        default:
+                          return null;
                       }
-                    >
-                      {isCreationPending ? (
-                        <Loader2 className="animate-spin h-4 w-4" />
-                      ) : moduleId ? (
-                        t("common.update")
-                      ) : (
-                        t("common.add")
-                      )}
-                    </Button>
+                    })()}
+
+                    <div className="flex gap-2 mt-6">
+                      <Button
+                        type="submit"
+                        variant="bipc"
+                        className="flex-1"
+                        disabled={
+                          isCreationPending || selectedFloors.length === 0
+                        }
+                      >
+                        {isCreationPending ? (
+                          <Loader2 className="animate-spin h-4 w-4" />
+                        ) : moduleId ? (
+                          t("common.update")
+                        ) : (
+                          t("common.add")
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </form>
-          </Form>
+              </form>
+            </Form>
+          )}
         </div>
       </DrawerContent>
     </Drawer>
