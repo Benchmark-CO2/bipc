@@ -113,7 +113,7 @@
     "placeholderEmail": "Correo electrónico",
     "placeholderPassword": "Contraseña",
     "buttonLogin": "Iniciar Sesión",
-    "askRegister": "¿No tienes una cuenta?",
+    "askRegister": "¿Aún no tienes una cuenta? Regístrate aquí.",
     "buttonRegister": "Registrarse",
     "buttonForgotPassword": "¿Olvidaste tu contraseña?"
   },
@@ -183,11 +183,16 @@
     }
   },
   "signUp": {
-    "title": "REGISTRARSE",
+    "title": "Nueva Cuenta",
     "name": "Nombre",
-    "email": "Correo electrónico",
+    "crea": "CREA o CAU",
+    "birthDate": "Fecha de Nacimiento",
+    "city": "Ciudad que reside",
+    "activityArea": "Área de Actividad",
+    "professionalEmail": "Correo Electrónico Profesional",
+    "companyName": "Nombre de la Empresa",
     "password": "Contraseña",
-    "confirmPassword": "Confirmar Contraseña",
+    "confirmPassword": "Ingresa la contraseña nuevamente",
     "buttonSignUp": "Registrarse",
     "buttonHaveAccount": "¿Ya tienes una cuenta? Inicia sesión",
     "errorEmailExists": "Correo electrónico ya registrado",
@@ -508,6 +513,7 @@
     "fullNameRequired": "Por favor, introduce tu nombre completo",
     "passwordsDoNotMatch": "Las contraseñas no coinciden",
     "emailAlreadyExists": "El correo electrónico ya está registrado",
+    "minimumAge": "Debes tener al menos {{age}} años",
     "fields": {
       "name": "Nombre",
       "email": "Correo electrónico",

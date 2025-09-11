@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { PublicHeader, Sidebar } from "@/components/layout";
+import PublicSidebar from '@/components/layout/public-sidebar';
 import Screen from "@/components/layout/screen";
 import UserActiveWarning from "@/components/layout/user-active-warning";
 import BreadCrumbs from "@/components/ui/breadcrumbs";
@@ -13,10 +14,14 @@ import { QueryClient } from "@tanstack/react-query";
 import {
   createRootRouteWithContext,
   Outlet,
+  useLocation,
   useNavigate,
 } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
+// import { AuthProvider } from "@/providers/authProvider";
+// import { ProjectProvider } from "@/providers/projectProvider";
+// import Summary from "@/components/ui/summary";
 
 const TanStackRouterDevtools = import.meta.env.PROD
   ? () => null
@@ -33,7 +38,7 @@ export const Route = createRootRouteWithContext<{
   component: () => {
     const { logout, isAuthenticated, activated } = useAuth();
     const navigate = useNavigate();
-
+    const path = useLocation()
     const handleLogout = () => {
       logout();
       navigate({
@@ -58,13 +63,18 @@ export const Route = createRootRouteWithContext<{
             <Screen>
               {activated === false && <UserActiveWarning />}
               <BreadCrumbs />
-              <Outlet />
+              <div className="flex-1 overflow-auto p-6 pt-0">
+                <Outlet />
+              </div>
+              {/* <ModeToggle /> */}
             </Screen>
           </div>
         )}
         {!isAuthenticated && (
-          <div className="flex flex-1 flex-col">
-            <PublicHeader />
+          <div className={cn("flex flex-1", {
+            "flex-col": path.pathname === '/login' || isMobile,
+          })}>
+            {path.pathname === '/login' ? <PublicHeader /> : <PublicSidebar />}
             <Outlet />
           </div>
         )}

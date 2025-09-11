@@ -1,123 +1,98 @@
 import { z } from "zod";
 
-// Schemas base compartilhados
-const concreteSchema = z
-  .array(
-    z.object({
-      fck: z.enum(["20", "25", "30", "35", "40", "45"], {
-        required_error: "Selecione um valor de Fck",
-        invalid_type_error: "Valor de Fck inválido",
-      }),
-      volume: z.number().positive("O volume deve ser um número positivo"),
-    })
-  )
-  .optional()
-  .refine(
-    (items) => {
-      if (!items || items.length === 0) return true;
-      const fcks = items.map((item) => item.fck);
-      return new Set(fcks).size === fcks.length;
-    },
-    {
-      message: "Não deve haver valores de Fck repetidos",
+// Schemas baseados na nova tipagem type2.ts
+const concreteVolumeItemSchema = z
+  .object({
+    fck: z.number(),
+    volume: z.number().positive("O volume deve ser um número positivo"),
+    customFck: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.customFck) {
+      if (data.fck < 20 || data.fck > 45) {
+        ctx.addIssue({
+          path: ["fck"],
+          code: "custom",
+          message: "Fck deve estar entre 20 e 45",
+        });
+      }
     }
-  );
+  })
+  .transform((data) => {
+    const { customFck, ...rest } = data;
+    return rest;
+  });
 
-const blockSchema = z
-  .array(
-    z.object({
-      type: z.enum(
-        [
-          "BL 14x4",
-          "BL 14x19",
-          "BL 14x34",
-          "BL 14x39",
-          "BL 14x54",
-          "BL 19x4",
-          "BL 19x19",
-          "BL 19x39",
-          "CL 14x19",
-          "CL 14x34",
-          "CL 14x14",
-          "CL 14x39",
-          "CL 19x19",
-          "CL 19x39",
-          "COMP 14x19",
-          "COMP 14x39",
-          "JOTA 14 x 39 x 19/9",
-          "JOTA 14 x 19 x 19/9",
-        ],
-        {
-          required_error: "Selecione um tipo de bloco",
-          invalid_type_error: "Tipo de bloco inválido",
-        }
-      ),
-      fbk: z.enum(["02", "04", "06", "08", "10", "12"], {
-        required_error: "Selecione um valor de Fbk",
-        invalid_type_error: "Valor de Fbk inválido",
-      }),
-      quantity: z
-        .number()
-        .int()
-        .positive("A quantidade deve ser um número inteiro positivo"),
-    })
-  )
-  .optional()
-  .refine(
-    (items) => {
-      if (!items || items.length === 0) return true;
-      const fbks = items.map((item) => item.fbk);
-      return new Set(fbks).size === fbks.length;
-    },
-    {
-      message: "Não deve haver valores de Fbk repetidos",
+const steelMassItemSchema = z
+  .object({
+    ca: z.number().nonnegative("O CA deve ser um número não negativo"),
+    mass: z.number().nonnegative("A massa deve ser um número não negativo"),
+    customCa: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.customCa) {
+      if (data.ca < 50 || data.ca > 60) {
+        ctx.addIssue({
+          path: ["ca"],
+          code: "custom",
+          message: "CA deve estar entre 50 e 60",
+        });
+      }
     }
-  );
+  })
+  .transform((data) => {
+    const { customCa, ...rest } = data;
+    return rest;
+  });
+
+const concreteElementSchema = z.object({
+  volumes: z.array(concreteVolumeItemSchema).optional().default([]),
+  steel: z.array(steelMassItemSchema).optional().default([]),
+});
+
+// Schemas para structural masonry (comentado pois ainda não foi definido)
+// const blockSchema = z
+//   .array(
+//     z.object({
+//       type: z.enum([...]), // será definido depois
+//       fbk: z.number(),
+//       quantity: z.number().int().positive(),
+//     })
+//   )
+//   .optional();
 
 // Schema flexível que aceita todos os campos
 export const moduleFormSchema = z
   .object({
-    name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
-    type: z.enum(["beam_column", "concrete_wall", "structural_masonry"], {
+    // name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
+    type: z.enum(["beam_column", "concrete_wall"], {
+      // removed structural_masonry for now
       required_error: "Selecione um tipo de estrutura",
       invalid_type_error: "Tipo de estrutura inválido",
     }),
-    floor_repetition: z
-      .number()
-      .int()
-      .positive("A repetição de andares deve ser um número positivo"),
-    floor_area: z
-      .number()
-      .positive("A área do andar deve ser um número positivo"),
-    floor_height: z
-      .number()
-      .positive("A altura do andar deve ser um número positivo"),
 
-    // Beam Column
-    concrete_columns: concreteSchema.optional(),
-    concrete_beams: concreteSchema.optional(),
-    concrete_slabs: concreteSchema.optional(),
-    steel_ca50: z.number().nonnegative().optional(),
-    steel_ca60: z.number().nonnegative().optional(),
+    // Beam Column - seguindo a nova tipagem
+    concrete_columns: concreteElementSchema.optional(),
+    concrete_beams: concreteElementSchema.optional(),
+    concrete_slabs: concreteElementSchema.optional(),
     form_columns: z.number().nonnegative().optional(),
     form_beams: z.number().nonnegative().optional(),
     form_slabs: z.number().nonnegative().optional(),
-    form_total: z.number().nonnegative().optional(),
     column_number: z.number().int().nonnegative().optional(),
     avg_beam_span: z.number().nonnegative().optional(),
     avg_slab_span: z.number().nonnegative().optional(),
 
-    // Concrete Wall
-    concrete_walls: concreteSchema.optional(),
+    // Concrete Wall - seguindo a nova tipagem
+    concrete_walls: concreteElementSchema.optional(),
     wall_thickness: z.number().nonnegative().optional(),
     slab_thickness: z.number().nonnegative().optional(),
     form_area: z.number().nonnegative().optional(),
     wall_area: z.number().nonnegative().optional(),
 
-    // Structural Masonry
-    vertical_grout: concreteSchema.optional(),
-    horizontal_grout: concreteSchema.optional(),
-    blocks: blockSchema.optional(),
+    // Structural Masonry (comentado por enquanto)
+    // vertical_grout: concreteElementSchema.optional(),
+    // horizontal_grout: concreteElementSchema.optional(),
+    // blocks: blockSchema.optional(),
   })
   .refine(
     (data) => {
@@ -126,12 +101,9 @@ export const moduleFormSchema = z
           data.concrete_columns !== undefined &&
           data.concrete_beams !== undefined &&
           data.concrete_slabs !== undefined &&
-          data.steel_ca50 !== undefined &&
-          data.steel_ca60 !== undefined &&
           data.form_columns !== undefined &&
           data.form_beams !== undefined &&
           data.form_slabs !== undefined &&
-          data.form_total !== undefined &&
           data.column_number !== undefined &&
           data.avg_beam_span !== undefined &&
           data.avg_slab_span !== undefined
@@ -141,7 +113,7 @@ export const moduleFormSchema = z
     },
     {
       message:
-        "Para Viga Pilar são obrigatórios: concreto (colunas, vigas, lajes), aços (CA50, CA60), formas (colunas, vigas, lajes, total), número de colunas e vãos médios",
+        "Para Viga Pilar são obrigatórios: concreto (colunas, vigas, lajes), formas (colunas, vigas, lajes), número de colunas e vãos médios",
       path: ["type"],
     }
   )
@@ -151,8 +123,6 @@ export const moduleFormSchema = z
         return (
           data.concrete_walls !== undefined &&
           data.concrete_slabs !== undefined &&
-          data.steel_ca50 !== undefined &&
-          data.steel_ca60 !== undefined &&
           data.wall_thickness !== undefined &&
           data.slab_thickness !== undefined &&
           data.form_area !== undefined &&
@@ -163,29 +133,28 @@ export const moduleFormSchema = z
     },
     {
       message:
-        "Para Parede de Concreto são obrigatórios: concreto (paredes, lajes), aços (CA50, CA60), espessuras (parede, laje) e áreas (forma, parede)",
-      path: ["type"],
-    }
-  )
-  .refine(
-    (data) => {
-      if (data.type === "structural_masonry") {
-        return (
-          data.vertical_grout !== undefined &&
-          data.horizontal_grout !== undefined &&
-          data.steel_ca50 !== undefined &&
-          data.steel_ca60 !== undefined &&
-          data.blocks !== undefined
-        );
-      }
-      return true;
-    },
-    {
-      message:
-        "Para Alvenaria Estrutural são obrigatórios: graute (vertical, horizontal), aços (CA50, CA60) e blocos",
+        "Para Parede de Concreto são obrigatórios: concreto (paredes, lajes), espessuras (parede, laje) e áreas (forma, parede)",
       path: ["type"],
     }
   );
+// Comentado: validação para structural masonry
+// .refine(
+//   (data) => {
+//     if (data.type === "structural_masonry") {
+//       return (
+//         data.vertical_grout !== undefined &&
+//         data.horizontal_grout !== undefined &&
+//         data.blocks !== undefined
+//       );
+//     }
+//     return true;
+//   },
+//   {
+//     message:
+//       "Para Alvenaria Estrutural são obrigatórios: graute (vertical, horizontal) e blocos",
+//     path: ["type"],
+//   }
+// );
 
 // Tipos inferred
 export type ModuleFormSchema = z.infer<typeof moduleFormSchema>;
@@ -194,15 +163,12 @@ export type ModuleFormSchema = z.infer<typeof moduleFormSchema>;
 export const validateBeamColumnData = (data: Partial<ModuleFormSchema>) => {
   return (
     data.type === "beam_column" &&
-    data.concrete_columns?.length &&
-    data.concrete_beams?.length &&
-    data.concrete_slabs?.length &&
-    data.steel_ca50 !== undefined &&
-    data.steel_ca60 !== undefined &&
+    data.concrete_columns?.volumes?.length &&
+    data.concrete_beams?.volumes?.length &&
+    data.concrete_slabs?.volumes?.length &&
     data.form_columns !== undefined &&
     data.form_beams !== undefined &&
     data.form_slabs !== undefined &&
-    data.form_total !== undefined &&
     data.column_number !== undefined &&
     data.avg_beam_span !== undefined &&
     data.avg_slab_span !== undefined
@@ -212,10 +178,8 @@ export const validateBeamColumnData = (data: Partial<ModuleFormSchema>) => {
 export const validateConcreteWallData = (data: Partial<ModuleFormSchema>) => {
   return (
     data.type === "concrete_wall" &&
-    data.concrete_walls?.length &&
-    data.concrete_slabs?.length &&
-    data.steel_ca50 !== undefined &&
-    data.steel_ca60 !== undefined &&
+    data.concrete_walls?.volumes?.length &&
+    data.concrete_slabs?.volumes?.length &&
     data.wall_thickness !== undefined &&
     data.slab_thickness !== undefined &&
     data.form_area !== undefined &&
@@ -223,18 +187,17 @@ export const validateConcreteWallData = (data: Partial<ModuleFormSchema>) => {
   );
 };
 
-export const validateStructuralMasonryData = (
-  data: Partial<ModuleFormSchema>
-) => {
-  return (
-    data.type === "structural_masonry" &&
-    data.vertical_grout?.length &&
-    data.horizontal_grout?.length &&
-    data.blocks?.length &&
-    data.steel_ca50 !== undefined &&
-    data.steel_ca60 !== undefined
-  );
-};
+// Comentado: validação para structural masonry
+// export const validateStructuralMasonryData = (
+//   data: Partial<ModuleFormSchema>
+// ) => {
+//   return (
+//     data.type === "structural_masonry" &&
+//     data.vertical_grout?.volumes?.length &&
+//     data.horizontal_grout?.volumes?.length &&
+//     data.blocks?.length
+//   );
+// };
 
 // Schema para adicionar módulo (apenas nome)
 export const addModuleFormSchema = z.object({

@@ -88,7 +88,7 @@ const ModuleFormStructuralMasonry = ({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => append({ fck: "25" as const, volume: 0 })}
+              onClick={() => append({ fck: 25 as const, volume: 0 })}
             >
               <Plus className="h-4 w-4" />
             </Button>

@@ -208,8 +208,8 @@ export default function ModuleTable({
               {t("drawerFormModule.createButtonTrigger")}
             </Button>
           }
-          projectId={projectId}
-          unitId={unitId}
+          // projectId={projectId}
+          // unitId={unitId}
           type={tableId}
         />
       </div>
@@ -289,8 +289,8 @@ export default function ModuleTable({
                         />
                       }
                       moduleId={row.original.id.toString()}
-                      projectId={projectId}
-                      unitId={unitId}
+                      // projectId={projectId}
+                      // unitId={unitId}
                       moduleData={moduleData}
                       type={row.original.type}
                     />

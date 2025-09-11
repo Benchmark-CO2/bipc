@@ -7,3 +7,6 @@ export { default as ModuleTotalsSummary } from "./module-totals-summary";
 export { default as ProjectTable } from "./project-table";
 export { default as PublicHeader } from "./public-header";
 export { default as Sidebar } from "./sidebar";
+export { default as CommonTable } from "./common-table";
+export { default as DialogCreateSimulation } from "./dialog-create-simulation";
+export * from "./project";

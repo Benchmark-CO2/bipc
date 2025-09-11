@@ -1,15 +1,32 @@
 import { cn } from '@/lib/utils';
-import React from 'react';
+import { cva, VariantProps } from 'class-variance-authority';
+import React, { ComponentClass } from 'react';
 
 interface SidemenuItemProps {
   children?: React.ReactNode
   title?: string
   hide?: boolean
 }
-const SidemenuItem = ({ children, title, hide = false}: SidemenuItemProps) => {
+
+const SidemenuItemsVariants = cva(
+  'flex items-center justify-between  transition-all rounded-md h-10 p-2 group',
+  {
+    variants: {
+      variant: {
+        default: 'has-[a[data-status="active"]]:bg-active!',
+        link: 'flex items-center justify-between has-[a[data-status="active"]]:bg-transparent! transition-all rounded-md h-10 p-2 group'
+      }
+    },
+    defaultVariants: {
+      variant: 'default',
+    }
+  }
+)
+
+const SidemenuItem = ({ children, title, hide = false, variant, className }: SidemenuItemProps & VariantProps<typeof SidemenuItemsVariants> & { className?: ComponentClass}) => {
   return (
     <div className={
-      cn('flex items-center justify-between has-[a[data-status="active"]]:bg-active! transition-all rounded-md h-10 p-2 group', {
+      cn(SidemenuItemsVariants({ variant, className }), {
         'hidden': hide
       })
     }>

@@ -1,14 +1,14 @@
 import api from "@/service/api";
-import { TModuleStructure } from "@/types/modules";
-import { ModuleFormSchema } from "@/validators/moduleForm.validator";
+import { ModuleParamsProps, TModuleStructure } from "@/types/modules";
 
 export const postModule = (
-  moduleParams: ModuleFormSchema,
+  moduleParams: ModuleParamsProps,
   projectId: string,
-  unitId: string
+  unitId: string,
+  optionId: string
 ) => {
-  return api.post<{ result: TModuleStructure }>(
-    `/v1/projects/${projectId}/units/${unitId}/modules`,
+  return api.post<{ module: TModuleStructure }>(
+    `/v1/projects/${projectId}/units/${unitId}/options/${optionId}/modules`,
     moduleParams
   );
 };

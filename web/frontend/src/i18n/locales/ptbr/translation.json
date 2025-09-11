@@ -118,8 +118,8 @@
     "error": "Email ou senha incorretos",
     "placeholderEmail": "Email",
     "placeholderPassword": "Senha",
-    "buttonLogin": "Login",
-    "askRegister": "Não tem uma conta?",
+    "buttonLogin": "Entrar",
+    "askRegister": "Ainda não tem cadastro? Cadastre-se aqui!",
     "buttonRegister": "Cadastrar",
     "buttonForgotPassword": "Esqueci minha senha"
   },
@@ -189,11 +189,16 @@
     }
   },
   "signUp": {
-    "title": "CADASTRO",
+    "title": "Novo usuário",
     "name": "Nome",
-    "email": "Email",
+    "crea": "CREA ou CAU",
+    "birthDate": "Data de Nascimento",
+    "city": "Cidade que reside",
+    "activityArea": "Área de Atuação",
+    "professionalEmail": "Email Profissional",
+    "companyName": "Nome da Empresa",
     "password": "Senha",
-    "confirmPassword": "Confirmar Senha",
+    "confirmPassword": "Digite novamente a senha",
     "buttonSignUp": "Cadastrar",
     "buttonHaveAccount": "Já tem uma conta? Faça login",
     "errorEmailExists": "Email já cadastrado",
@@ -503,6 +508,7 @@
     "fullNameRequired": "Por favor, insira seu nome completo",
     "passwordsDoNotMatch": "As senhas não coincidem",
     "emailAlreadyExists": "Email já cadastrado",
+    "minimumAge": "Você deve ter pelo menos {{age}} anos",
     "fields": {
       "name": "Nome",
       "email": "Email",

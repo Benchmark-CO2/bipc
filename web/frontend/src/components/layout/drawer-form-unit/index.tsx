@@ -61,12 +61,17 @@ const DrawerFormUnit = ({
     defaultValues: {
       name: "",
       type: "tower" as const,
-      total_floors: undefined,
-      tower_floors: undefined,
-      base_floors: undefined,
-      basement_floors: undefined,
-      type_floors: undefined,
-      total_area: undefined,
+      data: {
+        floor_groups: [
+          {
+            name: "",
+            area: 100,
+            height: 3.0,
+            repetition: 1,
+            category: "standard_floor",
+          },
+        ],
+      },
     },
   });
 
@@ -95,7 +100,7 @@ const DrawerFormUnit = ({
 
       if (data.data.unit) {
         navigate({
-          to: `/projects/${data.data.unit.project_id}/${data.data.unit.id}`,
+          to: `/projects/${data.data.unit.project_id}/`,
           from: "/projects",
         })
           .then(() => null)
@@ -104,11 +109,7 @@ const DrawerFormUnit = ({
     },
   });
 
-  const {
-    isSuccess: isUpdateSuccess,
-    isPending: isUpdatePending,
-    mutate: mutateUpdate,
-  } = useMutation({
+  const { isPending: isUpdatePending, mutate: mutateUpdate } = useMutation({
     mutationFn: (data: UnitFormSchema) => patchUnit(data, projectId, unitId!),
     onError: (error) => {
       toast.error(t("error.errorUpdateUnit"), {
@@ -156,20 +157,43 @@ const DrawerFormUnit = ({
     enabled: !!unitId,
   });
 
+  // primeiro, ordenar os floors pelo índice
+  const sortedFloors = unitData?.tower?.floors
+    .slice()
+    .sort((a, b) => a.index - b.index);
+
+  const groupedUnitData = sortedFloors?.reduce(
+    (acc, floor) => {
+      const groupName = floor.group_name;
+      if (!acc[groupName]) {
+        acc[groupName] = {
+          name: floor.group_name,
+          area: floor.area,
+          height: floor.height,
+          repetition: 1,
+          category: "standard_floor", // você pode ajustar a lógica para determinar a categoria
+        };
+      } else {
+        acc[groupName].repetition += 1;
+      }
+      return acc;
+    },
+    {} as Record<string, any>
+  );
+
+  const floorGroups = groupedUnitData ? Object.values(groupedUnitData) : [];
+
   useEffect(() => {
-    if (unitData) {
+    if (unitData && floorGroups.length > 0) {
       form.reset({
         name: unitData.name,
         type: unitData.type,
-        total_floors: unitData.total_floors,
-        tower_floors: unitData.tower_floors,
-        base_floors: unitData.base_floors,
-        basement_floors: unitData.basement_floors,
-        type_floors: unitData.type_floors,
-        total_area: unitData.total_area,
+        data: {
+          floor_groups: floorGroups,
+        },
       });
     }
-  }, [unitData]);
+  }, [unitData, floorGroups, form]);
 
   const unitTypes = [
     { value: "tower", label: t("drawerFormUnit.unitTypeOptions.tower") },
@@ -186,14 +210,14 @@ const DrawerFormUnit = ({
       <DrawerTrigger asChild>
         {triggerComponent ?? (
           <Button
-            variant={"outline"}
-            className="cursor-pointer rounded-t-lg bg-muted px-4 py-2 hover:bg-accent"
+            variant={"secondary"}
+            className="cursor-pointer rounded-t-lg px-4 py-2 text-white"
           >
             <Plus />
           </Button>
         )}
       </DrawerTrigger>
-      <DrawerContent className="min-w-2/5">
+      <DrawerContent className="min-w-4/5">
         <DrawerHeader className="px-8">
           <DrawerTitle>
             {unitId
@@ -223,7 +247,7 @@ const DrawerFormUnit = ({
                 onSubmit={form.handleSubmit(handleSubmit)}
                 className="flex max-h-[calc(100vh-100px)] flex-col gap-3 overflow-y-auto p-8"
               >
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 items-baseline">
                   <FormField
                     control={form.control}
                     name="name"
@@ -237,6 +261,7 @@ const DrawerFormUnit = ({
                             placeholder={t(
                               "drawerFormUnit.unitNamePlaceholder"
                             )}
+                            disabled={Boolean(unitId)}
                             {...field}
                           />
                         </FormControl>
@@ -281,21 +306,9 @@ const DrawerFormUnit = ({
                   />
                 </div>
                 {form.watch("type") === "tower" && (
-                  <UnitFormTower form={form} />
+                  <UnitFormTower form={form} isEditMode={Boolean(unitId)} />
                 )}
-                {unitId ? (
-                  <Button
-                    disabled={isUpdatePending || isUpdateSuccess}
-                    type="submit"
-                    variant="bipc"
-                    className="mt-6 w-full"
-                  >
-                    {t("drawerFormUnit.editUnitButton")}
-                    {isUpdatePending && (
-                      <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
-                    )}
-                  </Button>
-                ) : (
+                {!Boolean(unitId) && (
                   <Button
                     type="submit"
                     variant="bipc"

@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Schema base para campos comuns
 const baseUnitSchema = z.object({
   name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
   type: z.enum(["tower"], {
@@ -9,60 +8,46 @@ const baseUnitSchema = z.object({
   }),
 });
 
-// Schema para campos específicos do tipo tower (opcionais por padrão)
+export const floorSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  area: z.number().positive("Área deve ser um número positivo"),
+  height: z.number().positive("Altura deve ser um número positivo"),
+  repetition: z
+    .number()
+    .int()
+    .positive("Número de repetições deve ser um número positivo"),
+  category: z.enum(
+    ["standard_floor", "ground_floor", "basement_floor", "penthouse_floor"],
+    {
+      required_error: "Selecione uma categoria",
+      invalid_type_error: "Categoria inválida",
+    }
+  ),
+});
+
+export type FloorSchema = z.infer<typeof floorSchema>;
+
 const towerFieldsSchema = z.object({
-  total_floors: z
-    .number()
-    .int()
-    .positive("O número total de andares deve ser um número positivo")
-    .optional(),
-  tower_floors: z
-    .number()
-    .int()
-    .nonnegative("O número de andares da torre deve ser um número não negativo")
-    .optional(),
-  base_floors: z
-    .number()
-    .int()
-    .nonnegative("O número de andares da base deve ser um número não negativo")
-    .optional(),
-  basement_floors: z
-    .number()
-    .int()
-    .nonnegative(
-      "O número de andares do subsolo deve ser um número não negativo"
-    )
-    .optional(),
-  type_floors: z
-    .number()
-    .int()
-    .nonnegative("O número de andares do tipo deve ser um número não negativo")
-    .optional(),
-  total_area: z
-    .number()
-    .positive("A área total deve ser um número positivo")
-    .optional(),
+  data: z.object({
+    floor_groups: z
+      .array(floorSchema)
+      .min(1, "Pelo menos um pavimento deve ser adicionado"),
+  }),
 });
 
 // Schema principal com validação condicional
 export const unitFormSchema = baseUnitSchema.merge(towerFieldsSchema).refine(
   (data) => {
-    // Se o tipo for "tower", todos os campos específicos são obrigatórios
+    // Se o tipo for "tower", deve ter pelo menos um pavimento
     if (data.type === "tower") {
-      return (
-        data.total_floors !== undefined &&
-        data.tower_floors !== undefined &&
-        data.base_floors !== undefined &&
-        data.basement_floors !== undefined &&
-        data.type_floors !== undefined &&
-        data.total_area !== undefined
-      );
+      return data.data.floor_groups && data.data.floor_groups.length > 0;
     }
     return true;
   },
   {
-    message: "Todos os campos são obrigatórios para unidades do tipo Tower",
-    path: ["type"], // Associa o erro ao campo type
+    message:
+      "Pelo menos um pavimento deve ser adicionado para unidades do tipo Tower",
+    path: ["data.floor_groups"], // Associa o erro ao campo correto
   }
 );
 

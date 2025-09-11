@@ -115,7 +115,7 @@
     "placeholderEmail": "Email",
     "placeholderPassword": "Password",
     "buttonLogin": "Login",
-    "askRegister": "Don't have an account?",
+    "askRegister": "Until you don't have an account? Register here!",
     "buttonRegister": "Register",
     "buttonForgotPassword": "Forgot Password?"
   },
@@ -185,11 +185,16 @@
     }
   },
   "signUp": {
-    "title": "SIGN UP",
+    "title": "New Account",
+    "crea": "CREA or CAU",
+    "birthDate": "Birth Date",
+    "city": "City you reside",
+    "activityArea": "Activity Area",
+    "professionalEmail": "Professional Email",
+    "companyName": "Company Name",
     "name": "Name",
-    "email": "Email",
     "password": "Password",
-    "confirmPassword": "Confirm Password",
+    "confirmPassword": "Type the password again",
     "buttonSignUp": "Sign Up",
     "buttonHaveAccount": "Already have an account? Login",
     "errorEmailExists": "Email already registered",
@@ -510,6 +515,7 @@
     "fullNameRequired": "Please enter your full name",
     "passwordsDoNotMatch": "Passwords do not match",
     "emailAlreadyExists": "Email already registered",
+    "minimumAge": "You must be at least {{age}} years old",
     "fields": {
       "name": "Name",
       "email": "Email",
