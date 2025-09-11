@@ -92,7 +92,7 @@ const SignUp = () => {
   };
 
   return (
-    <div className="flex flex-col h-full w-full items-center justify-start transition-all pt-12">
+    <div className="flex flex-col h-full w-full items-center justify-start transition-all pt-12 overflow-auto">
       <h1 className="font-bold text-5xl mb-6 w-full text-left max-w-2/3 text-primary max-md:max-w-full max-md:px-6">
         {t("signUp.title")}
       </h1>
@@ -109,7 +109,7 @@ const SignUp = () => {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("signUp.name")}</FormLabel>
+                    <FormLabel>{t("signUp.name")} *</FormLabel>
                     <FormControl>
                       <Input
                         placeholder={t("signUp.name")}
@@ -127,7 +127,7 @@ const SignUp = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Email *</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
@@ -199,7 +199,7 @@ const SignUp = () => {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("signUp.password")}</FormLabel>
+                      <FormLabel>{t("signUp.password")} *</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
@@ -234,7 +234,7 @@ const SignUp = () => {
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("signUp.confirmPassword")}</FormLabel>
+                      <FormLabel>{t("signUp.confirmPassword")} *</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
@@ -296,25 +296,6 @@ const SignUp = () => {
               />
               <FormField
                 control={form.control}
-                name="professionalEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("signUp.professionalEmail")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        disabled={isPending}
-                        placeholder={"example@domain.com"}
-                        autoComplete="email"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
                 name="companyName"
                 render={({ field }) => (
                   <FormItem>
@@ -336,7 +317,7 @@ const SignUp = () => {
                 variant={"bipc"}
                 type="submit"
                 disabled={isPending}
-                className="w-1/8 max-md:w-full px-2 text-base ml-auto mt-4"
+                className="w-auto max-md:w-full px-2 text-base ml-auto mt-4"
               >
                 {isPending ? (
                   <>

@@ -34,13 +34,13 @@ export const registerFormSchema = z
       })
       .optional(),
     crea: z
-      .string({
-        message: t("forms.customRequiredField", { field: t("signUp.crea") }),
-      })
+      .string()
       .min(1, {
         message: t("forms.customRequiredField", { field: t("signUp.crea") }),
       })
+      .or(z.literal(""))
       .optional(),
+
     birthDate: z
       .string({
         message: t("forms.customRequiredField", {
@@ -54,17 +54,27 @@ export const registerFormSchema = z
       })
       .refine(
         (value) => {
+          if (!value) return false;
           const date = new Date(value);
           const now = new Date();
-          return (
-            date instanceof Date &&
-            !isNaN(date.getTime()) &&
-            date < now &&
-            now.getFullYear() - date.getFullYear() >= 18
-          );
+          if (!(date instanceof Date) || isNaN(date.getTime()) || date >= now) {
+            return false;
+          }
+
+          const age = now.getFullYear() - date.getFullYear();
+          const monthDiff = now.getMonth() - date.getMonth();
+          const dayDiff = now.getDate() - date.getDate();
+
+          // Check if birthday has occurred this year
+          const hasHadBirthdayThisYear =
+            monthDiff > 0 || (monthDiff === 0 && dayDiff >= 0);
+          const actualAge = hasHadBirthdayThisYear ? age : age - 1;
+
+          return actualAge >= 18;
         },
         { message: t("forms.minimumAge", { age: 18 }) }
       )
+      .or(z.literal(""))
       .optional(),
     city: z
       .string({
@@ -73,6 +83,7 @@ export const registerFormSchema = z
       .min(1, {
         message: t("forms.customRequiredField", { field: t("signUp.city") }),
       })
+      .or(z.literal(""))
       .optional(),
     activityArea: z
       .string({
@@ -85,19 +96,7 @@ export const registerFormSchema = z
           field: t("signUp.activityArea"),
         }),
       })
-      .optional(),
-    professionalEmail: z
-      .string({
-        message: t("forms.customRequiredField", {
-          field: t("signUp.professionalEmail"),
-        }),
-      })
-      .min(1, {
-        message: t("forms.customRequiredField", {
-          field: t("signUp.professionalEmail"),
-        }),
-      })
-      .email({ message: t("forms.invalidEmail") })
+      .or(z.literal(""))
       .optional(),
     companyName: z
       .string({
@@ -110,6 +109,7 @@ export const registerFormSchema = z
           field: t("signUp.companyName"),
         }),
       })
+      .or(z.literal(""))
       .optional(),
   })
   .superRefine((data, ctx) => {
