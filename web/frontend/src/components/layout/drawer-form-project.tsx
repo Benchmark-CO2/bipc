@@ -114,8 +114,8 @@ export default function DrawerFormProject({
 
       if (data.data.project?.id) {
         navigate({
-          to: `/projects/${data.data.project.id}`,
-          from: "/projects",
+          to: `/new_projects/${data.data.project.id}`,
+          from: "/new_projects",
         })
           .then(() => null)
           .catch((err: unknown) => err);

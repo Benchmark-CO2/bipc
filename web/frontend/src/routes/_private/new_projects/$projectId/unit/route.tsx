@@ -4,8 +4,14 @@ import { DrawerFormUnit } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import NotFoundList from "@/components/ui/not-found-list";
 import { TabsContainer } from "@/components/ui/tabsContainer";
+import { TProjectUnit } from "@/types/projects";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Outlet,
+  useRouter,
+  useLocation,
+} from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -26,6 +32,7 @@ export const Route = createFileRoute("/_private/new_projects/$projectId/unit")({
 
 function RouteComponent() {
   const router = useRouter();
+  const location = useLocation();
   const { t } = useTranslation();
   const { projectId } = Route.useLoaderData();
   const params: { projectId: string; unitId: string; moduleId: string } =
@@ -48,9 +55,12 @@ function RouteComponent() {
   const [selectedTab, setSelectedTab] = useState("");
 
   const handleTabClick = (unitId: string) => {
-    void router.navigate({
-      to: `/new_projects/${projectId}/unit/${unitId}`,
-    });
+    const unit = tabs.find((unit: TProjectUnit) => unit.name === unitId);
+    if (unit) {
+      void router.navigate({
+        to: `/new_projects/${projectId}/unit/${unit?.id}`,
+      });
+    }
   };
 
   useEffect(() => {
@@ -58,7 +68,6 @@ function RouteComponent() {
   }, [units]);
 
   useEffect(() => {
-    console.log(tabs);
     if (tabs.length > 0 && !params.unitId) {
       history.pushState(
         {},
@@ -123,8 +132,9 @@ function RouteComponent() {
             tabs={tabs.map((unit) => unit?.name || 'Desconhecido') }
             selectedTab={selectedTab}
             handleTabClick={handleTabClick}
+            fullWidth={location.pathname.includes("constructive-technologies")}
           />
-          {!window.location.pathname.includes("constructive-technologies") && (
+          {!location.pathname.includes("constructive-technologies") && (
             <DrawerFormUnit
               projectId={projectId}
               triggerComponent={

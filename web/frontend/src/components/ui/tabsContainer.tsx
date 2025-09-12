@@ -16,7 +16,7 @@ export function TabsContainer({
     <div
       className={`flex items-center gap-2 rounded-sm border border-gray-200 bg-white p-4 ${fullWidth ? "w-full" : "w-fit"} dark:border-gray-700 dark:bg-gray-800`}
     >
-      {tabs.map((tab) => (
+      {tabs?.map((tab) => (
         <button
           key={tab}
           onClick={() => {

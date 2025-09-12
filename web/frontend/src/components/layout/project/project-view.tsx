@@ -41,6 +41,7 @@ const ProjectView = ({ projectId }: { projectId: string }) => {
     setSelectedUnits(el)
     console.log("Selected items:", el);
   };
+
   const units = projectData?.data?.project?.units?.map((unit) => ({
     ...unit,
     ...unit.consumption,

@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute(
-  "/_private/new_projects/$projectId/unit/$unitId/constuctive-technologies"
+  "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies"
 )({
   component: RouteComponent,
   loader: async () => {

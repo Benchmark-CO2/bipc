@@ -100,7 +100,8 @@ const DrawerFormUnit = ({
 
       if (data.data.unit) {
         navigate({
-          to: `/new_projects/${data.data.unit.project_id}/unit/${data.data.unit.id}`,
+          to: `/new_projects/${data.data.unit.project_id}/`,
+          from: "/new_projects",
         })
           .then(() => null)
           .catch((err: unknown) => err);
