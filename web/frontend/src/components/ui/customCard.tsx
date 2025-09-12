@@ -111,7 +111,7 @@ const CustomCard = ({
     <div
       data-action="open-project"
       onClick={handleClickCard}
-      className="card w-full relative md:max-w-md flex-col items-center justify-center overflow-hidden rounded-lg bg-primary shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-lg md:w-1/3 lg:w-1/4 xl:max-w-100 dark:shadow-dark-900 h-[100px]"
+      className="card w-full relative md:max-w-md flex-col items-center justify-center overflow-hidden rounded-lg bg-primary shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-lg md:w-1/3 lg:w-1/4 xl:max-w-100 dark:shadow-dark-900 h-[120px]"
     >
       <div className="group w-full h-full">
         <CardMenu onDeleteProject={onDeleteProject} project={project} />
@@ -123,11 +123,13 @@ const CustomCard = ({
               checked={selectedProjects.get(project.id!)}
               className="data-[checked=true]:bg-white! data-[checked=true]:text-primary! scale-125 border-white bg-primary!"
             />
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xl whitespace-nowrap font-bold text-left">
+              {name}
+            </span>
             <span className="text-sm">{description}</span>
           </div>
-          <span className="text-xl whitespace-nowrap font-bold text-left">
-            {name}
-          </span>
         </div>
       </div>
     </div>
