@@ -104,7 +104,7 @@ function RouteComponent() {
 
   const handleClickConstructiveTechnologies = async () => {
     navigate({
-      to: "./constuctive-technologies",
+      to: "./constructive-technologies",
     });
   };
 

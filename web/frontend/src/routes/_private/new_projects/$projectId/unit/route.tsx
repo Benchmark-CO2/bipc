@@ -6,7 +6,12 @@ import NotFoundList from "@/components/ui/not-found-list";
 import { TabsContainer } from "@/components/ui/tabsContainer";
 import { TProjectUnit } from "@/types/projects";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Outlet,
+  useRouter,
+  useLocation,
+} from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -27,6 +32,7 @@ export const Route = createFileRoute("/_private/new_projects/$projectId/unit")({
 
 function RouteComponent() {
   const router = useRouter();
+  const location = useLocation();
   const { t } = useTranslation();
   const { projectId } = Route.useLoaderData();
   const params: { projectId: string; unitId: string; moduleId: string } =
@@ -125,8 +131,9 @@ function RouteComponent() {
             tabs={tabs.map((unit) => unit.name)}
             selectedTab={selectedTab}
             handleTabClick={handleTabClick}
+            fullWidth={location.pathname.includes("constructive-technologies")}
           />
-          {!window.location.pathname.includes("constructive-technologies") && (
+          {!location.pathname.includes("constructive-technologies") && (
             <DrawerFormUnit
               projectId={projectId}
               triggerComponent={
