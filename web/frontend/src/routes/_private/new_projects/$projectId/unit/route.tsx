@@ -4,6 +4,7 @@ import { DrawerFormUnit } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import NotFoundList from "@/components/ui/not-found-list";
 import { TabsContainer } from "@/components/ui/tabsContainer";
+import { TProjectUnit } from "@/types/projects";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
@@ -48,9 +49,12 @@ function RouteComponent() {
   const [selectedTab, setSelectedTab] = useState("");
 
   const handleTabClick = (unitId: string) => {
-    void router.navigate({
-      to: `/new_projects/${projectId}/unit/${unitId}`,
-    });
+    const unit = tabs.find((unit: TProjectUnit) => unit.name === unitId);
+    if (unit) {
+      void router.navigate({
+        to: `/new_projects/${projectId}/unit/${unit?.id}`,
+      });
+    }
   };
 
   useEffect(() => {
@@ -58,7 +62,6 @@ function RouteComponent() {
   }, [units]);
 
   useEffect(() => {
-    console.log(tabs);
     if (tabs.length > 0 && !params.unitId) {
       history.pushState(
         {},
