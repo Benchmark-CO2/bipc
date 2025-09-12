@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { PublicHeader, Sidebar } from "@/components/layout";
-import PublicSidebar from '@/components/layout/public-sidebar';
 import Screen from "@/components/layout/screen";
 import UserActiveWarning from "@/components/layout/user-active-warning";
 import BreadCrumbs from "@/components/ui/breadcrumbs";
@@ -38,7 +37,7 @@ export const Route = createRootRouteWithContext<{
   component: () => {
     const { logout, isAuthenticated, activated } = useAuth();
     const navigate = useNavigate();
-    const path = useLocation()
+    const path = useLocation();
     const handleLogout = () => {
       logout();
       navigate({
@@ -71,10 +70,12 @@ export const Route = createRootRouteWithContext<{
           </div>
         )}
         {!isAuthenticated && (
-          <div className={cn("flex flex-1", {
-            "flex-col": path.pathname === '/login' || isMobile,
-          })}>
-            {path.pathname === '/login' ? <PublicHeader /> : <PublicSidebar />}
+          <div
+            className={cn("flex flex-1", {
+              "flex-col": path.pathname === "/login" || isMobile,
+            })}
+          >
+            {path.pathname === "/login" ? <PublicHeader /> : <Sidebar />}
             <Outlet />
           </div>
         )}
