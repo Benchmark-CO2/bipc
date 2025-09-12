@@ -255,6 +255,42 @@ function RouteComponent() {
   const unit = unitData?.data?.unit as IUnit;
   const unitTowerFloors = unit?.tower?.floors || [];
 
+  const calculateSumMetrics = (modules: IModuleItem[]) => {
+    const totalModules = modules.length;
+    if (totalModules === 0) {
+      return {
+        co2_min: "0 KgCO2/m²",
+        co2_max: "0 KgCO2/m²",
+        energy_min: "0 MJ/m²",
+        energy_max: "0 MJ/m²",
+      };
+    }
+
+    const sumCO2Min = modules.reduce(
+      (acc, curr) => acc + (curr.consumption.co2_min || 0),
+      0
+    );
+    const sumCO2Max = modules.reduce(
+      (acc, curr) => acc + (curr.consumption.co2_max || 0),
+      0
+    );
+    const sumEnergyMin = modules.reduce(
+      (acc, curr) => acc + (curr.consumption.energy_min || 0),
+      0
+    );
+    const sumEnergyMax = modules.reduce(
+      (acc, curr) => acc + (curr.consumption.energy_max || 0),
+      0
+    );
+
+    return {
+      co2_min: `${sumCO2Min.toFixed(2)} KgCO2`,
+      co2_max: `${sumCO2Max.toFixed(2)} KgCO2`,
+      energy_min: `${sumEnergyMin.toFixed(2)} MJ`,
+      energy_max: `${sumEnergyMax.toFixed(2)} MJ`,
+    };
+  };
+
   const newColumns: ColumnDef<
     Omit<IModuleItem, "consumption"> & TConsumption & { option_id: string }
   >[] = [
@@ -324,6 +360,7 @@ function RouteComponent() {
                 isSelectable={true}
                 isInteractive={true}
                 onSelectionChange={console.log}
+                lastRow={{ type: "Total", data: calculateSumMetrics(modules) }}
                 actions={
                   <>
                     <DrawerFormModule
