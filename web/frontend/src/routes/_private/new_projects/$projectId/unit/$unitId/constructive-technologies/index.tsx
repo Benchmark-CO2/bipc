@@ -24,7 +24,7 @@ import { Copy, Loader2, Star, Trash } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export const Route = createFileRoute(
-  "/_private/new_projects/$projectId/unit/$unitId/constuctive-technologies/"
+  "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies/"
 )({
   component: RouteComponent,
 });
@@ -199,7 +199,7 @@ const OptionMenu = ({
 
 function RouteComponent() {
   const { projectId, unitId } = useParams({
-    from: "/_private/new_projects/$projectId/unit/$unitId/constuctive-technologies",
+    from: "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies",
   });
 
   const queryClient = useQueryClient();
@@ -283,6 +283,19 @@ function RouteComponent() {
       },
     },
   ];
+
+  if (options.length === 0) {
+    return (
+      <NotFoundList
+        message="Nenhuma simulação encontrada"
+        showIcon={false}
+        description="Nenhum dado disponível nesta tabela. Crie uma nova simulação para começar a adicionar dados."
+        button={
+          <DialogCreateSimulation projectId={projectId} unitId={unitId} />
+        }
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">
