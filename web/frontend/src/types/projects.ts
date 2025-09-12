@@ -25,6 +25,7 @@ export interface IProject {
   phase: TProjectPhase;
   description: string;
   units: TProjectUnit[];
+  consumption: TConsumption;
 }
 
 export type TProjectsTemp = {

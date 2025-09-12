@@ -7,22 +7,9 @@ import D3GradientRangeChart from "../charts/d3chart";
 import { TabsContainer } from "../ui/tabsContainer";
 
 type ProjectsSummaryProps = {
-  projects: (IProject & {
-    co: number;
-    mj: number;
-    density: number;
-  })[];
+  projects: IProject[];
 };
-const calculateProgress = (
-  project: ProjectsSummaryProps["projects"][number]
-) => {
-  const total = project.co + project.mj + project.density;
-  return {
-    co: (project.co / total) * 100,
-    mj: (project.mj / total) * 100,
-    density: (project.density / total) * 100,
-  };
-};
+
 const data = [
   { id: "1", y: 0.0, min: 10, max: 40, label: "projeto 1" },
   { id: "2", y: 0.1, min: 15, max: 55, label: "projeto 2" },
@@ -35,15 +22,15 @@ const generateFakeData = (projects: ProjectsSummaryProps["projects"]) => {
   return projects.map((el, idx) => ({
     id: el.id,
     y: 0.2 * (idx + 1),
-    min: 3 * 10 * (idx + 1),
-    max: 3 * 10 + 12 * (idx + 1),
+    min: el.consumption.co2_min,
+    max: el.consumption.co2_max,
     label: el.name,
   }));
 };
 const ProjectsSummary = ({ projects }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co" | "mj" | "density">("co");
-  const coSum = data.reduce((acc, project) => acc + project.min, 0);
-  const mjSum = data.reduce((acc, project) => acc + project.max, 0);
+  // const coSum = data.reduce((acc, project) => acc + project.min, 0);
+  // const mjSum = data.reduce((acc, project) => acc + project.max, 0);
   const [selectedProjects, setSelectedProjects] = useState<string[]>(
     projects.map((project) => project.id)
   );
