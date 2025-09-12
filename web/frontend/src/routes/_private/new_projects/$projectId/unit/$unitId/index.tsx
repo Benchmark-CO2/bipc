@@ -7,10 +7,16 @@ import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
 import { TabsContainer } from "@/components/ui/tabsContainer";
 import { useSummary } from "@/context/summaryContext";
-import { IUnit } from "@/types/units";
+import { IUnit, TTowerFloorCategory } from "@/types/units";
+import { IConsumption } from "@/types/modules";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+
+type TGroupedFloor = IConsumption &
+  Omit<TTowerFloorCategory, "consumption"> & {
+    repetitions: number;
+  };
 
 const fakeUnit = {
   id: "1",
@@ -106,6 +112,62 @@ function RouteComponent() {
       title: "Floor Comparison",
     });
   }, [setSummaryContext, selectedFloors]);
+
+  const groupedFloors = unitWithTower?.tower?.floors
+    ? Object.values(
+        unitWithTower.tower.floors.reduce(
+          (acc, floor) => {
+            const groupId = floor.group_id;
+            const { consumption, ...restFloor } = floor;
+
+            if (!acc[groupId]) {
+              acc[groupId] = {
+                ...restFloor,
+                ...consumption,
+                repetitions: 1,
+              };
+            } else {
+              acc[groupId].repetitions += 1;
+            }
+
+            return acc;
+          },
+          {} as Record<string, any>
+        )
+      )
+    : [];
+
+  const calculateAverageMetrics = (floors: TGroupedFloor[]) => {
+    const floorTotal = floors.reduce(
+      (acc, curr) => acc + curr.repetitions * curr.area,
+      0
+    );
+
+    const sumCO2Min = floors.reduce(
+      (acc, curr) => acc + curr.co2_min * curr.area * curr.repetitions,
+      0
+    );
+    const sumCO2Max = floors.reduce(
+      (acc, curr) => acc + curr.co2_max * curr.area * curr.repetitions,
+      0
+    );
+    const sumEnergyMin = floors.reduce(
+      (acc, curr) => acc + curr.energy_min * curr.area * curr.repetitions,
+      0
+    );
+    const sumEnergyMax = floors.reduce(
+      (acc, curr) => acc + curr.energy_max * curr.area * curr.repetitions,
+      0
+    );
+
+    return {
+      co2_min: `${(sumCO2Min / floorTotal).toFixed(2)} KgCO2/m²`,
+      co2_max: `${(sumCO2Max / floorTotal).toFixed(2)} KgCO2/m²`,
+      energy_min: `${(sumEnergyMin / floorTotal).toFixed(2)} MJ/m²`,
+      energy_max: `${(sumEnergyMax / floorTotal).toFixed(2)} MJ/m²`,
+    };
+  };
+
   if (isLoading) {
     return <div>Carregando unidade...</div>;
   }
@@ -120,28 +182,7 @@ function RouteComponent() {
     });
   };
 
-  const groupedFloors = unitWithTower?.tower?.floors
-    ? Object.values(
-        unitWithTower.tower.floors.reduce(
-          (acc, floor) => {
-            const groupId = floor.group_id;
-
-            if (!acc[groupId]) {
-              acc[groupId] = {
-                ...floor,
-                ...floor.consumption,
-                repetitions: 1,
-              };
-            } else {
-              acc[groupId].repetitions += 1;
-            }
-
-            return acc;
-          },
-          {} as Record<string, any>
-        )
-      )
-    : [];
+  const averageMetrics = calculateAverageMetrics(groupedFloors);
 
   return (
     <div className="flex flex-col gap-4">
@@ -152,6 +193,7 @@ function RouteComponent() {
         isSelectable={true}
         isInteractive={true}
         onSelectionChange={handleSelectionChange}
+        lastRow={{ type: "Média", data: averageMetrics }}
         actions={
           <DrawerFormUnit
             projectId={projectId}
