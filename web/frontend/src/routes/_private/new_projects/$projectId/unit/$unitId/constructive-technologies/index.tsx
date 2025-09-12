@@ -9,11 +9,11 @@ import {
   DrawerFormModule,
 } from "@/components/layout";
 import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
-import TechnologiesSummary from '@/components/summaryVariants/technologies';
+import TechnologiesSummary from "@/components/summaryVariants/technologies";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import NotFoundList from "@/components/ui/not-found-list";
-import { useSummary } from '@/context/summaryContext';
+import { useSummary } from "@/context/summaryContext";
 import { IModuleItem } from "@/types/modules";
 import { TOption } from "@/types/options";
 import { TConsumption } from "@/types/projects";
@@ -205,20 +205,21 @@ function RouteComponent() {
 
   const queryClient = useQueryClient();
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
-  const { setSummaryContext } = useSummary()
+  const { setSummaryContext } = useSummary();
 
-  
   const handleSelectItem = (item: any[]) => {
     setSelectedItems(item);
     console.log("Selected item:", item);
-  }
+  };
 
   useEffect(() => {
     setSummaryContext({
-      component: <TechnologiesSummary techs={selectedItems as any} title='Andar(s)' />,
+      component: (
+        <TechnologiesSummary techs={selectedItems as any} title="Andar(s)" />
+      ),
       title: `${selectedItems.length} andar(s) selecionado(s)`,
-    })
-  }, [selectedItems, setSummaryContext])
+    });
+  }, [selectedItems, setSummaryContext]);
 
   const { mutate: deleteSimulation, isPending: isDeleting } = useMutation({
     mutationFn: (optionId: string) => deleteOption(projectId, unitId, optionId),
@@ -271,6 +272,42 @@ function RouteComponent() {
   const unit = unitData?.data?.unit as IUnit;
   const unitTowerFloors = unit?.tower?.floors || [];
 
+  const calculateSumMetrics = (modules: IModuleItem[]) => {
+    const totalModules = modules.length;
+    if (totalModules === 0) {
+      return {
+        co2_min: "0 KgCO2/m²",
+        co2_max: "0 KgCO2/m²",
+        energy_min: "0 MJ/m²",
+        energy_max: "0 MJ/m²",
+      };
+    }
+
+    const sumCO2Min = modules.reduce(
+      (acc, curr) => acc + (curr.consumption.co2_min || 0),
+      0
+    );
+    const sumCO2Max = modules.reduce(
+      (acc, curr) => acc + (curr.consumption.co2_max || 0),
+      0
+    );
+    const sumEnergyMin = modules.reduce(
+      (acc, curr) => acc + (curr.consumption.energy_min || 0),
+      0
+    );
+    const sumEnergyMax = modules.reduce(
+      (acc, curr) => acc + (curr.consumption.energy_max || 0),
+      0
+    );
+
+    return {
+      co2_min: `${sumCO2Min.toFixed(2)} KgCO2`,
+      co2_max: `${sumCO2Max.toFixed(2)} KgCO2`,
+      energy_min: `${sumEnergyMin.toFixed(2)} MJ`,
+      energy_max: `${sumEnergyMax.toFixed(2)} MJ`,
+    };
+  };
+
   const newColumns: ColumnDef<
     Omit<IModuleItem, "consumption"> & TConsumption & { option_id: string }
   >[] = [
@@ -313,8 +350,6 @@ function RouteComponent() {
     );
   }
 
-  
-
   return (
     <div className="flex flex-col gap-4">
       {options.map((option) => {
@@ -342,6 +377,7 @@ function RouteComponent() {
                 isSelectable={true}
                 isInteractive={true}
                 onSelectionChange={handleSelectItem}
+                lastRow={{ type: "Total", data: calculateSumMetrics(modules) }}
                 actions={
                   <>
                     <DrawerFormModule

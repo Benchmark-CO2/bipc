@@ -1,125 +1,245 @@
 import LogoDark from "@/assets/logo-dark.svg";
-import LogoWhite from "@/assets/logo.svg";
+import LogoFull from "@/assets/logo_full.svg";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useSidebar } from "@/hooks/useSidebar";
 import { cn } from "@/lib/utils";
 import { stringUtils } from "@/utils/string";
 import { Link } from "@tanstack/react-router";
-import { File, Home, MenuSquare, Settings, User } from "lucide-react";
+import {
+  Bell,
+  File,
+  Home,
+  MenuSquare,
+  Settings,
+  User,
+  UserPlus,
+  LogIn,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { LanguageToggle } from "../language-toggle";
-import { ModeToggle } from "../mode-toggle";
+import { SidebarLanguageToggle } from "../sidebar-language-toggle";
+import { SidebarThemeToggle } from "../sidebar-theme-toggle";
 import { Notifications } from "../notifications";
-import { useTheme } from "../theme-provider";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Button } from "../ui/button";
+import Divider from "../ui/divider";
 import SidemenuItem from "../ui/sidemenu-item";
+
 interface ISidebar {
-  handleLogout: () => void;
+  handleLogout?: () => void;
 }
 
 const activeProps = {
-  style: {
-    fontWeight: "bold",
-    borderRadius: ".5rem",
-    height: "40px",
-    color: "var(--color-active-text)",
-  },
+  className: "bg-zinc-700/30 rounded-md",
 };
 
 const Sidebar = ({ handleLogout }: ISidebar) => {
-  const { user, sidebarStatus, toggleSidebar } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const { sidebarStatus, toggleSidebar } = useSidebar();
   const { t } = useTranslation();
-  const { theme } = useTheme();
   const isMobile = useIsMobile();
 
   const sidemenuContent = (
-    <div className="h-full flex flex-col justify-between gap-4">
-      <div>
-        <img
-          src={theme === "light" ? LogoWhite : LogoDark}
-          alt=""
-          className="h-10 mb-4"
-        />
+    <div className="h-full flex flex-col">
+      {/* Header com Logo */}
+      <div className="flex items-center mb-6 p-4">
+        <img src={LogoFull} alt="Logo" className="w-full" />
       </div>
-      <ul className={cn("mt-4 flex h-full flex-col gap-2")}>
-        <li>
-          <SidemenuItem>
-            <Link
-              to="/"
-              className="hover:opacity-80 rounded-md flex gap-2 items-center w-full justify-between"
-              activeProps={activeProps}
-            >
-              <span>{t(["home.title"])}</span>
-              <Home size={18} />
-            </Link>
-          </SidemenuItem>
-        </li>
-        <li>
-          <SidemenuItem>
-            <Link
-              to="/new_projects"
-              className="hover:opacity-80 rounded-md flex gap-2 items-center w-full justify-between"
-              activeProps={activeProps}
-            >
-              <span>{t("projects.title")}</span>
-              <File size={18} className="group-[.closed]:mx-auto" />
-            </Link>
-          </SidemenuItem>
-        </li>
-        <li className="mt-auto">
-          <SidemenuItem title={t("sidebar.notifications")} hide={isMobile}>
-            <Notifications />
-          </SidemenuItem>
-          <SidemenuItem>
-            <Link
-              to="/profile"
-              className="hover:text-gray-400 flex justify-between items-center w-full group"
-              activeProps={activeProps}
-            >
-              <span>{t("sidebar.profile")}</span>
-              <Settings
-                size={16}
-                className="group-hover:rotate-180 transition-transform duration-1000"
-              />
-            </Link>
-          </SidemenuItem>
-          <SidemenuItem title={t("sidebar.theme")}>
-            <ModeToggle />
-          </SidemenuItem>
-          <SidemenuItem title={t("sidebar.language")}>
-            <LanguageToggle />
-          </SidemenuItem>
-        </li>
 
-        <li className="flex items-center gap-4 border-t border-zinc-700 pt-4">
-          <div className="flex items-center gap-2 group-[.closed]:mx-auto">
-            <Avatar>
-              {/* <AvatarImage src='https://github.com/shadcn.png' /> */}
-              <AvatarFallback className="bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">
-                {stringUtils.getInitials(user?.name || "") || (
-                  <User className="w-4 h-4" />
-                )}
-              </AvatarFallback>
-            </Avatar>
-            <div className="group-[.closed]:animate-sidebar-items-close animate-sidebar-items-open">
-              <p className="text-sm font-medium">{user?.name}</p>
-              <p className="text-xs text-gray-400">{user?.email}</p>
+      {/* Menu Items - Seção Principal */}
+      <div className="flex-1 flex flex-col p-4">
+        <ul className="flex flex-col gap-1 mt-auto mb-2">
+          {/* PD&I */}
+          <li>
+            <SidemenuItem variant="link">
+              <Link
+                to={isAuthenticated ? "/" : "/login"}
+                className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+              >
+                <Home size={18} />
+                <span>PD&I</span>
+              </Link>
+            </SidemenuItem>
+          </li>
+
+          {/* Institucional */}
+          <li>
+            <SidemenuItem variant="link">
+              <Link
+                to={isAuthenticated ? "/" : "/login"}
+                className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+              >
+                <Settings size={18} />
+                <span>Institucional</span>
+              </Link>
+            </SidemenuItem>
+          </li>
+
+          {/* Ações (apenas se logado) / Consultoria (apenas se não logado) */}
+          {isAuthenticated ? (
+            <li>
+              <SidemenuItem variant="link">
+                <Link
+                  to="/"
+                  className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+                >
+                  <MenuSquare size={18} />
+                  <span>Ações</span>
+                </Link>
+              </SidemenuItem>
+            </li>
+          ) : (
+            <li>
+              <SidemenuItem variant="link">
+                <Link
+                  to="/login"
+                  className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+                >
+                  <Home size={18} />
+                  <span>Consultoria</span>
+                </Link>
+              </SidemenuItem>
+            </li>
+          )}
+
+          <Divider className="my-1" />
+
+          {/* Seção específica para usuários logados */}
+          {isAuthenticated ? (
+            <>
+              {/* Benchmark - Home (apenas se logado) */}
+              <li>
+                <SidemenuItem variant="link">
+                  <Link
+                    to="/"
+                    activeProps={activeProps}
+                    className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+                  >
+                    <Home size={18} />
+                    <span>{t("home.title")}</span>
+                  </Link>
+                </SidemenuItem>
+              </li>
+              {/* Projetos */}
+              <li>
+                <SidemenuItem variant="link">
+                  <Link
+                    to="/new_projects"
+                    activeProps={activeProps}
+                    className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+                  >
+                    <File size={18} />
+                    <span>{t("projects.title")}</span>
+                  </Link>
+                </SidemenuItem>
+              </li>
+
+              {/* Perfil */}
+              <li>
+                <SidemenuItem variant="link">
+                  <Link
+                    to="/profile"
+                    activeProps={activeProps}
+                    className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+                  >
+                    <User size={18} />
+                    <span>{t("sidebar.profile")}</span>
+                  </Link>
+                </SidemenuItem>
+              </li>
+            </>
+          ) : (
+            <>
+              {/* Seção para usuários não logados */}
+              {/* Cadastre-se */}
+              <li>
+                <SidemenuItem variant="link">
+                  <Link
+                    to="/sign-up"
+                    activeProps={activeProps}
+                    className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+                  >
+                    <UserPlus size={18} />
+                    <span>Cadastre-se</span>
+                  </Link>
+                </SidemenuItem>
+              </li>
+
+              {/* Login */}
+              <li>
+                <SidemenuItem variant="link">
+                  <Link
+                    to="/login"
+                    activeProps={activeProps}
+                    className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+                  >
+                    <LogIn size={18} />
+                    <span>Login</span>
+                  </Link>
+                </SidemenuItem>
+              </li>
+            </>
+          )}
+        </ul>
+
+        {/* Seção inferior - sempre no final */}
+        <div>
+          {isAuthenticated && (
+            <div className="flex flex-col gap-2">
+              <Divider className="my-1" />
+
+              {/* Notificações */}
+              <SidemenuItem variant="link" hide={isMobile}>
+                <div className="flex gap-3 items-center w-full p-2">
+                  <Bell size={18} />
+                  <div className="flex-1">
+                    <Notifications />
+                  </div>
+                </div>
+              </SidemenuItem>
+
+              {/* Configurações - Tema e Idioma */}
+              <div className="p-2">
+                <SidebarThemeToggle />
+              </div>
+              <div className="px-2">
+                <SidebarLanguageToggle />
+              </div>
+
+              <Divider className="my-1" />
+
+              {/* Container do usuário */}
+              <div className="flex items-center gap-3 p-2 pt-4 mb-4">
+                <Avatar className="w-8 h-8">
+                  <AvatarFallback className="bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">
+                    {stringUtils.getInitials(user?.name || "") || (
+                      <User className="w-4 h-4" />
+                    )}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{user?.name}</p>
+                  <p className="text-xs text-gray-400 truncate">
+                    {user?.email}
+                  </p>
+                </div>
+              </div>
+
+              {/* Botão de sair */}
+              {handleLogout && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="w-full"
+                >
+                  <span>{t("common.logout")}</span>
+                </Button>
+              )}
             </div>
-          </div>
-        </li>
-
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            className="mt-2 ml-auto bg-destructive text-white rounded-br-none max-md:w-full"
-          >
-            <span>{t("common.logout")}</span>
-          </Button>
+          )}
         </div>
-      </ul>
+      </div>
     </div>
   );
 
@@ -127,38 +247,49 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
     return (
       <div
         className={cn(
-          "sticky top-0 left-0 w-full h-30 bg-sidebar flex justify-between items-center px-6 shadow-dark-950 shadow-md",
+          "sticky top-0 left-0 w-full h-16 bg-sidebar flex justify-between items-center px-6 shadow-md z-50",
           {
-            "relative ": sidebarStatus === "open",
+            relative: sidebarStatus === "open",
           }
         )}
       >
         <div>
-          <img
-            src={LogoDark}
-            alt=""
-            className="h-10 mb-4"
-          />
+          <img src={LogoDark} alt="Logo" className="h-8" />
         </div>
         <div className="flex gap-4 items-center">
-          <Notifications size={24} />
+          {isAuthenticated && <Notifications size={24} />}
           <MenuSquare
             size={24}
-            className="text-white"
-            onClick={toggleSidebar}
+            className="text-white cursor-pointer"
+            onClick={() => {
+              toggleSidebar();
+              localStorage.setItem(
+                "sidebarStatus",
+                sidebarStatus === "open" ? "closed" : "open"
+              );
+            }}
           />
         </div>
+
+        {/* Overlay */}
         <div
-          onClick={toggleSidebar}
+          onClick={() => {
+            toggleSidebar();
+            localStorage.setItem("sidebarStatus", "closed");
+          }}
           className={cn(
-            "absolute w-full top-0 left-0 h-screen backdrop-blur-sm  bg-zinc-900/70 -translate-x-220 p-2 transition-transform duration-300 z-60",
-            { "translate-x-0": sidebarStatus === "open" }
+            "fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 z-40",
+            sidebarStatus === "open"
+              ? "opacity-100"
+              : "opacity-0 pointer-events-none"
           )}
-        ></div>
+        />
+
+        {/* Mobile Sidebar */}
         <div
           className={cn(
-            "fixed w-2/3 z-60 top-0 left-0 h-screen bg-sidebar text-white -translate-x-200 p-6 transition-transform duration-300",
-            { "translate-x-0": sidebarStatus === "open" }
+            "fixed top-0 left-0 h-screen w-80 bg-sidebar text-white p-6 transition-transform duration-300 z-50",
+            sidebarStatus === "open" ? "translate-x-0" : "-translate-x-full"
           )}
         >
           {sidemenuContent}
@@ -166,11 +297,9 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
       </div>
     );
   }
+
   return (
-    <div
-      data-sidebar={sidebarStatus}
-      className="flex h-screen flex-col bg-sidebar p-6 text-white inset-y-0 left-0 z-50 w-64 "
-    >
+    <div className="flex h-screen flex-col bg-sidebar text-white w-80">
       {sidemenuContent}
     </div>
   );

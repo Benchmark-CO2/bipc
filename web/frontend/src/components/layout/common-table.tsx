@@ -30,6 +30,10 @@ interface ICommonTableProps {
   expanded?: boolean;
   isInteractive?: boolean;
   actions?: React.ReactNode;
+  lastRow?: {
+    type: "Total" | "Média";
+    data: Record<string, string | number>;
+  };
 }
 
 export default function CommonTable({
@@ -40,6 +44,7 @@ export default function CommonTable({
   isSelectable,
   isInteractive,
   actions,
+  lastRow,
 }: ICommonTableProps) {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -221,6 +226,27 @@ export default function CommonTable({
                     ))}
                   </TableRow>
                 ))}
+                {lastRow && (
+                  <TableRow className="bg-secondary/20 hover:bg-secondary/30 font-semibold">
+                    {isSelectable && <TableCell></TableCell>}
+                    <TableCell className="font-semibold text-left">
+                      {lastRow.type}
+                    </TableCell>
+                    {table
+                      .getHeaderGroups()[0]
+                      .headers.slice(1)
+                      .map((header, index) => (
+                        <TableCell
+                          key={index}
+                          className="font-normal text-center"
+                        >
+                          {lastRow.data[
+                            header.column.id as keyof typeof lastRow.data
+                          ] || "-"}
+                        </TableCell>
+                      ))}
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
