@@ -6,11 +6,12 @@ interface TabsContainerProps {
 }
 
 export function TabsContainer({
-  tabs,
+  tabs = [],
   selectedTab,
   handleTabClick,
   fullWidth = false,
 }: TabsContainerProps) {
+  console.log('tabs', tabs);
   return (
     <div
       className={`flex items-center gap-2 rounded-sm border border-gray-200 bg-white p-4 ${fullWidth ? "w-full" : "w-fit"} dark:border-gray-700 dark:bg-gray-800`}

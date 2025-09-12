@@ -1,12 +1,13 @@
 import { CollaboratorsView, ProjectView } from "@/components/layout";
 import { TabsContainer } from "@/components/ui/tabsContainer";
+import { useSummary } from '@/context/summaryContext';
 import {
   createFileRoute,
-  useParams,
   useNavigate,
+  useParams,
   useSearch,
 } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 type ProjectSearch = {
   tab?: "projeto" | "colaboradores";
@@ -31,7 +32,7 @@ function RouteComponent() {
   });
 
   const [selectedTab, setSelectedTab] = useState("Projeto");
-
+  const { setSummaryContext } = useSummary()
   const tabs = ["Projeto", "Colaboradores"];
 
   useEffect(() => {

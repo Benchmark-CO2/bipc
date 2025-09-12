@@ -140,10 +140,10 @@ function RouteComponent() {
         <div className="flex w-full flex-wrap items-center gap-4">
          
           {[...(projects ?? [])].length ? (
-            [...(projects ?? [])].map((project) => (
+            [...(projects ?? [])].map((project, ix) => (
               <>
                 <CustomCard
-                  key={project.id}
+                  key={project.id + ix}
                   project={project}
                   onClick={() => {
                     onClickProject(project.id);

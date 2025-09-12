@@ -113,13 +113,14 @@ function RouteComponent() {
       </div>
     );
   }
-
+  
+      console.debug("🚀 ~ tabs:", tabs)
   return (
     <div className="flex flex-col gap-4">
       {tabs.length > 0 && (
         <div className="flex items-center gap-2">
           <TabsContainer
-            tabs={tabs.map((unit) => unit.name)}
+            tabs={tabs.map((unit) => unit?.name || 'Desconhecido') }
             selectedTab={selectedTab}
             handleTabClick={handleTabClick}
           />

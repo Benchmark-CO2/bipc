@@ -2,12 +2,15 @@ import { getUnitByUUID } from "@/actions/units/getUnit";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import { floorsColumns } from "@/components/columns/floors";
 import { CommonTable, DrawerFormUnit } from "@/components/layout";
+import FloorSummary from "@/components/summaryVariants/floors";
 import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
 import { TabsContainer } from "@/components/ui/tabsContainer";
+import { useSummary } from "@/context/summaryContext";
 import { IUnit } from "@/types/units";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
 const fakeUnit = {
   id: "1",
@@ -76,7 +79,7 @@ function RouteComponent() {
   const { projectId, unitId } = useParams({
     from: "/_private/new_projects/$projectId/unit/$unitId/",
   });
-
+  const { setSummaryContext } = useSummary();
   const { data: unitData, isLoading } = useQuery({
     queryKey: ["unit", projectId, unitId],
     queryFn: () => getUnitByUUID(projectId, unitId),
@@ -93,7 +96,16 @@ function RouteComponent() {
   const unitWithTower = isUnitWithTower(unit) ? unit : null;
 
   const navigate = Route.useNavigate();
-
+  const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
+  const handleSelectionChange = (selected: any) => {
+    setSelectedFloors(selected);
+  };
+  useEffect(() => {
+    setSummaryContext({
+      component: <FloorSummary floors={selectedFloors} />,
+      title: "Floor Comparison",
+    });
+  }, [setSummaryContext, selectedFloors]);
   if (isLoading) {
     return <div>Carregando unidade...</div>;
   }
@@ -139,7 +151,7 @@ function RouteComponent() {
         data={groupedFloors}
         isSelectable={true}
         isInteractive={true}
-        onSelectionChange={console.log}
+        onSelectionChange={handleSelectionChange}
         actions={
           <DrawerFormUnit
             projectId={projectId}

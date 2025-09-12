@@ -1,11 +1,15 @@
 import { getProjectByUUID } from "@/actions/projects/getProject";
-import { useQuery } from "@tanstack/react-query";
-import CommonTable from "../common-table";
+import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import { unitsColumns } from "@/components/columns/units";
-import DrawerFormUnit from "../drawer-form-unit";
+import UnitsSummary from '@/components/summaryVariants/units';
 import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
-import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
+import { useSummary } from '@/context/summaryContext';
+import { TProjectUnit } from '@/types/projects';
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from 'react';
+import CommonTable from "../common-table";
+import DrawerFormUnit from "../drawer-form-unit";
 
 const fakeTechnologies = [
   {
@@ -31,15 +35,25 @@ const ProjectView = ({ projectId }: { projectId: string }) => {
     queryKey: ["project", projectId],
     queryFn: () => getProjectByUUID(projectId),
   });
-
-  const handleSelectionChange = () => {
-    // console.log("Selected items:", selectedItems);
+  const [selectedUnits, setSelectedUnits] = useState<TProjectUnit[]>([])
+  const { setSummaryContext } = useSummary()
+  const handleSelectionChange = (el: any) => {
+    setSelectedUnits(el)
+    console.log("Selected items:", el);
   };
-
-  const units = projectData?.data?.project?.units.map((unit) => ({
+  const units = projectData?.data?.project?.units?.map((unit) => ({
     ...unit,
     ...unit.consumption,
-  }));
+  })) || [];
+
+  useEffect(() => {
+    setSummaryContext({
+      component: <UnitsSummary 
+        units={selectedUnits as any}
+      />,
+      title:'Unidade Comparison',
+    });
+  }, [setSummaryContext, selectedUnits]);
 
   return (
     <div className="flex flex-col gap-4">

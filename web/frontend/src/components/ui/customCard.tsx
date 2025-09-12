@@ -119,8 +119,8 @@ const CustomCard = ({
           <div className="flex w-full justify-between items-start">
             <Checkbox
               onClick={handleClickCheck}
-              data-checked={selectedProjects.get(project.id!)}
-              checked={selectedProjects.get(project.id!)}
+              data-checked={selectedProjects?.get(project.id!) || false}
+              checked={selectedProjects?.get(project.id!) || false}
               className="data-[checked=true]:bg-white! data-[checked=true]:text-primary! scale-125 border-white bg-primary!"
             />
             <span className="text-sm">{description}</span>
