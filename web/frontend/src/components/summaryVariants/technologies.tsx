@@ -6,44 +6,31 @@ import D3GradientRangeChart from "../charts/d3chart";
 import { TabsContainer } from "../ui/tabsContainer";
 
 type ProjectsSummaryProps = {
-  units: (any & {
+  techs: (any & {
     co: number;
     mj: number;
     density: number;
   })[];
+  title?: string;
 };
-const calculateProgress = (project: ProjectsSummaryProps["units"][number]) => {
-  const total = project.co + project.mj + project.density;
-  return {
-    co: (project.co / total) * 100,
-    mj: (project.mj / total) * 100,
-    density: (project.density / total) * 100,
-  };
-};
-const data = [
-  { id: "1", y: 0.0, min: 10, max: 40, label: "unidade 1" },
-  { id: "2", y: 0.1, min: 15, max: 55, label: "unidade 2" },
-  { id: "3", y: 0.2, min: 20, max: 60, label: "unidade 3" },
-  { id: "4", y: 0.3, min: 25, max: 80, label: "unidade 4" },
-  { id: "5", y: 0.4, min: 35, max: 85, label: "unidade 5" },
-];
 
-const generateFakeData = (units: ProjectsSummaryProps["units"]) => {
-  return units.map((el, idx) => ({
+const manageData = (floors: ProjectsSummaryProps["techs"]) => {
+  return floors.map((el, idx) => ({
     id: el.id,
     y: 0.2 * (idx + 1),
     min: el.co2_min,
     max: el.co2_max,
-    label: el.name,
+    label: el?.type,
   }));
 };
 
-const UnitsSummary = ({ units }: ProjectsSummaryProps) => {
+const TechnologiesSummary = ({ techs }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co" | "mj" | "density">("co");
   const [selectedProjects, setSelectedProjects] = useState<string[]>(
-    units?.map((unit) => unit.id) || []
+    techs?.map((tech) => tech.id) || []
   );
-  const fakeUnits = generateFakeData(units);
+  
+  const fakeFloors = manageData(techs);
   const { isExpanded } = useSummary();
   const isMobile = useIsMobile();
   const screenWidth = window.innerWidth;
@@ -61,10 +48,10 @@ const UnitsSummary = ({ units }: ProjectsSummaryProps) => {
     return 220;
   };
 
-  if (!units.length)
+  if (!techs.length)
     return (
       <div className="w-full flex flex-col justify-center items-center">
-        <p className="text-2xl">Nenhuma unidade selecionada.</p>
+        <p className="text-2xl">Nenhuma Tecnologia construtiva selecionada.</p>
       </div>
     );
 
@@ -87,7 +74,7 @@ const UnitsSummary = ({ units }: ProjectsSummaryProps) => {
           />
         </div>
         <ul className="flex flex-col gap-2 text-xl w-full text-black">
-          {fakeUnits.map((unit) => {
+          {fakeFloors.map((unit) => {
             const sum = unit.min + unit.max;
             return (
               <li
@@ -120,11 +107,11 @@ const UnitsSummary = ({ units }: ProjectsSummaryProps) => {
       <D3GradientRangeChart
         width={width()}
         height={height()}
-        data={fakeUnits}
+        data={fakeFloors}
         selectedBars={selectedProjects}
       />
     </div>
   );
 };
 
-export default UnitsSummary;
+export default TechnologiesSummary;

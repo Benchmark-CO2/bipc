@@ -9,19 +9,20 @@ import {
   DrawerFormModule,
 } from "@/components/layout";
 import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
+import TechnologiesSummary from '@/components/summaryVariants/technologies';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import NotFoundList from "@/components/ui/not-found-list";
+import { useSummary } from '@/context/summaryContext';
 import { IModuleItem } from "@/types/modules";
 import { TOption } from "@/types/options";
 import { TConsumption } from "@/types/projects";
 import { IUnit } from "@/types/units";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "@tanstack/react-router";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useParams } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
 import { Copy, Loader2, Star, Trash } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute(
   "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies/"
@@ -203,6 +204,21 @@ function RouteComponent() {
   });
 
   const queryClient = useQueryClient();
+  const [selectedItems, setSelectedItems] = useState<any[]>([]);
+  const { setSummaryContext } = useSummary()
+
+  
+  const handleSelectItem = (item: any[]) => {
+    setSelectedItems(item);
+    console.log("Selected item:", item);
+  }
+
+  useEffect(() => {
+    setSummaryContext({
+      component: <TechnologiesSummary techs={selectedItems as any} title='Andar(s)' />,
+      title: `${selectedItems.length} andar(s) selecionado(s)`,
+    })
+  }, [selectedItems, setSummaryContext])
 
   const { mutate: deleteSimulation, isPending: isDeleting } = useMutation({
     mutationFn: (optionId: string) => deleteOption(projectId, unitId, optionId),
@@ -297,6 +313,8 @@ function RouteComponent() {
     );
   }
 
+  
+
   return (
     <div className="flex flex-col gap-4">
       {options.map((option) => {
@@ -323,7 +341,7 @@ function RouteComponent() {
                 columns={newColumns}
                 isSelectable={true}
                 isInteractive={true}
-                onSelectionChange={console.log}
+                onSelectionChange={handleSelectItem}
                 actions={
                   <>
                     <DrawerFormModule

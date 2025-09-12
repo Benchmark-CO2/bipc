@@ -11,15 +11,16 @@ type ProjectsSummaryProps = {
     mj: number;
     density: number;
   })[];
+  title?: string;
 };
 
 const generateFakeData = (floors: ProjectsSummaryProps["floors"]) => {
   return floors.map((el, idx) => ({
     id: el.id,
     y: 0.2 * (idx + 1),
-    min: el.co2_min + 1 * (idx + 1),
-    max: el.co2_max + 5 * (idx + 1),
-    label: el.group_name,
+    min: el.co2_min,
+    max: el.co2_max,
+    label: el?.group_name,
   }));
 };
 
@@ -62,7 +63,6 @@ const FloorSummary = ({ floors }: ProjectsSummaryProps) => {
     }
   };
 
-  console.log("selectedProjects", floors);
   return (
     <div className="w-full flex justify-between gap-10 max-md:flex-col">
       <div className="flex flex-col items-start w-full">
