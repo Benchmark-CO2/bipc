@@ -42,9 +42,16 @@ function RouteComponent() {
       <div className="flex flex-col gap-4">
         {!isEditPath && (
           <CustomBanner
+            name={project?.name || ""}
             description={project?.description || ""}
-            title={project?.name || ""}
+            city={project?.city || ""}
+            state={project?.state || ""}
+            phase={project?.phase || "not_defined"}
             image={""}
+            neighborhood={project?.neighborhood}
+            street={project?.street}
+            number={project?.number}
+            unitsCount={project?.units?.length}
           />
         )}
         <Outlet />
