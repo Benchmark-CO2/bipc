@@ -46,6 +46,7 @@ type Floor struct {
 	ID          uuid.UUID    `json:"id"`
 	GroupID     uuid.UUID    `json:"group_id"`
 	GroupName   string       `json:"group_name"`
+	Category    string       `json:"category"`
 	Area        float64      `json:"area"`
 	Height      float64      `json:"height"`
 	Index       int          `json:"index"`
@@ -282,7 +283,7 @@ func (m UnitModel) getTowerByUnitID(unitID uuid.UUID) (*Tower, error) {
 
 func (m UnitModel) getFloorsByTowerID(towerID uuid.UUID) ([]Floor, error) {
 	query := `
-		SELECT f.id, f.group_id, fg.name, f.area, f.height, f.index,
+		SELECT f.id, f.group_id, fg.name, fg.category, f.area, f.height, f.index,
 		       f.co2_min, f.co2_max, f.energy_min, f.energy_max
 		FROM floor f
 		INNER JOIN floor_group fg ON f.group_id = fg.id
@@ -306,6 +307,7 @@ func (m UnitModel) getFloorsByTowerID(towerID uuid.UUID) ([]Floor, error) {
 			&floor.ID,
 			&floor.GroupID,
 			&floor.GroupName,
+			&floor.Category,
 			&floor.Area,
 			&floor.Height,
 			&floor.Index,
