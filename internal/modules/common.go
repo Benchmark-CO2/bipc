@@ -133,14 +133,16 @@ func (ce *ConcreteElement) calculate(sidacConcrete, sidacSteel SidacMaterial) (C
 	for _, c := range ce.Volumes {
 		val, ok := sidacConcrete.KgCO2[c.Fck]
 		if !ok {
-			return result, fmt.Errorf("fck not found in sidacConcreteData: %d", c.Fck)
+			// return result, fmt.Errorf("fck not found in sidacConcreteData: %d", c.Fck)
+			val = sidacConcrete.KgCO2[40]
 		}
 		result.CO2Min += val.Min * c.Volume
 		result.CO2Max += val.Max * c.Volume
 
 		val, ok = sidacConcrete.MJ[c.Fck]
 		if !ok {
-			return result, fmt.Errorf("fck not found in sidacConcreteData: %d", c.Fck)
+			// return result, fmt.Errorf("fck not found in sidacConcreteData: %d", c.Fck)
+			val = sidacConcrete.MJ[40]
 		}
 		result.EnergyMin += val.Min * c.Volume
 		result.EnergyMax += val.Max * c.Volume
@@ -149,14 +151,16 @@ func (ce *ConcreteElement) calculate(sidacConcrete, sidacSteel SidacMaterial) (C
 	for _, s := range ce.Steel {
 		val, ok := sidacSteel.KgCO2[s.CA]
 		if !ok {
-			return result, fmt.Errorf("steel type not found in sidacSteelData: %d", s.CA)
+			val = sidacSteel.KgCO2[60]
+			// return result, fmt.Errorf("steel type not found in sidacSteelData: %d", s.CA)
 		}
 		result.CO2Min += val.Min * s.Mass
 		result.CO2Max += val.Max * s.Mass
 
 		val, ok = sidacSteel.MJ[s.CA]
 		if !ok {
-			return result, fmt.Errorf("steel type not found in sidacSteelData: %d", s.CA)
+			val = sidacSteel.MJ[60]
+			// return result, fmt.Errorf("steel type not found in sidacSteelData: %d", s.CA)
 		}
 		result.EnergyMin += val.Min * s.Mass
 		result.EnergyMax += val.Max * s.Mass
