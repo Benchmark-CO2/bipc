@@ -300,7 +300,7 @@ const DrawerFormModule = ({
             <X className="h-4 w-4" />
           </Button>
         </DrawerHeader>
-        <div className="mx-auto w-full p-6 pr-0 h-[calc(100vh-56px)] flex">
+        <div className="mx-auto w-full p-6 pr-0 pt-0 h-[calc(100vh-56px)] flex">
           {isLoadingModule ? (
             <div className="grid w-full grid-cols-3 gap-4">
               <div className="flex flex-col w-full h-auto space-y-2">
@@ -342,6 +342,11 @@ const DrawerFormModule = ({
                   </div>
                 </div>
                 <div className="flex-1 overflow-y-auto pr-2">
+                  <div className="px-0 pt-4 pb-2">
+                    <span className="text-md font-semibold leading-2 text-primary dark:text-gray-300">
+                      Dados da tecnologia
+                    </span>
+                  </div>
                   <div className="p-4 border rounded-lg border-muted space-y-4">
                     {/* Campos básicos */}
                     <div className="grid grid-cols-1 gap-4">

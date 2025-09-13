@@ -23,6 +23,7 @@ export const floorSchema = z.object({
       invalid_type_error: "Categoria inválida",
     }
   ),
+  index: z.number().int().optional(), // Índice para ordenação, opcional
 });
 
 export type FloorSchema = z.infer<typeof floorSchema>;

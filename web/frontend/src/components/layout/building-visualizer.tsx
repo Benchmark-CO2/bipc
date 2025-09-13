@@ -2,20 +2,13 @@ import React from "react";
 import { FloorSchema } from "@/validators/unitForm.validator";
 import { TTowerFloorCategory } from "@/types/units";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  UnifiedFloor,
+  convertTowerFloorsToUnified,
+  convertFloorSchemaToUnified,
+} from "@/utils/unitConversions";
 
 // Tipo unificado para representar um andar no visualizador
-type UnifiedFloor = {
-  id: string;
-  name: string;
-  area: number;
-  height: number;
-  category:
-    | "penthouse_floor"
-    | "standard_floor"
-    | "ground_floor"
-    | "basement_floor";
-  repetition: number;
-};
 
 interface BuildingVisualizerProps {
   // Modo visualização apenas - usando FloorSchema
@@ -35,45 +28,11 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   selectedFloorIds = [],
   onCheckFloorId,
 }) => {
-  // Converter TTowerFloorCategory para UnifiedFloor
-  const convertTowerFloors = (
-    towerFloors: TTowerFloorCategory[]
-  ): UnifiedFloor[] => {
-    return towerFloors.map((floor) => ({
-      id: floor.id,
-      name: floor.group_name,
-      area: floor.area,
-      height: floor.height,
-      repetition: 1, // TTowerFloorCategory não tem repetição
-      category: getCategoryFromIndex(floor.index),
-    }));
-  };
-
-  // Determinar categoria baseada no índice
-  const getCategoryFromIndex = (index: number): UnifiedFloor["category"] => {
-    if (index < 0) return "basement_floor";
-    if (index === 0) return "ground_floor";
-    if (index > 0 && index <= 10) return "standard_floor"; // Assumindo andares típicos até o 10º
-    return "penthouse_floor"; // Andares superiores como cobertura
-  };
-
-  // Converter FloorSchema para UnifiedFloor
-  const convertFloorSchema = (floors: FloorSchema[]): UnifiedFloor[] => {
-    return floors.map((floor, index) => ({
-      id: `floor-${index}`, // Gerar ID para FloorSchema
-      name: floor.name,
-      area: floor.area,
-      height: floor.height,
-      repetition: floor.repetition,
-      category: floor.category,
-    }));
-  };
-
-  // Determinar qual conjunto de dados usar
+  // Determinar qual conjunto de dados usar e converter para UnifiedFloor
   const unifiedFloors: UnifiedFloor[] = towerFloors
-    ? convertTowerFloors(towerFloors)
+    ? convertTowerFloorsToUnified(towerFloors)
     : floors
-      ? convertFloorSchema(floors)
+      ? convertFloorSchemaToUnified(floors)
       : [];
 
   // Se for selecionável, sempre usa towerFloors mode
@@ -95,11 +54,21 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
 
   const maxArea = Math.max(...unifiedFloors.map((floor) => floor.area), 1);
 
-  // Ordenar cada categoria por posição (agora só pela ordem natural do array)
-  const sortedRoofFloors = roofFloors;
-  const sortedTypicalFloors = typicalFloors;
-  const sortedGroundFloors = groundFloors;
-  const sortedBasementFloors = basementFloors;
+  // Ordenar cada categoria por ordem lógica
+  // Para penthouse e standard: do mais alto para o mais baixo
+  // Para ground e basement: manter ordem natural
+  const sortedRoofFloors = roofFloors.sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+  const sortedTypicalFloors = typicalFloors.sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+  const sortedGroundFloors = groundFloors.sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+  const sortedBasementFloors = basementFloors.sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
 
   const handleFloorSelection = (
     floorIdentifier: string,
@@ -143,8 +112,8 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
       blocks.push(
         <div
           key={`${floor.name}-${i}`}
-          className={`h-6 mb-1 flex items-center text-xs font-medium text-white shadow-sm mx-auto ${
-            isSelectable ? "justify-end pr-2" : "justify-center"
+          className={`h-6 mb-1 flex items-center text-xs font-medium text-white shadow-sm ${
+            isSelectable ? "justify-end pr-2 ml-auto" : "justify-center mx-auto"
           }`}
           style={{
             backgroundColor: categoryColors[floor.category],
@@ -154,7 +123,14 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
           }}
           title={`${floor.name} - ${floor.area}m² - ${floor.height}m`}
         >
-          <span className={isSelectable ? "mr-2 text-shadow-black" : ""}>
+          <span
+            className={`${isSelectable ? "mr-2" : ""} font-bold drop-shadow-lg`}
+            style={{
+              textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
+              fontSize: widthPercentage < 40 ? "10px" : "12px",
+              fontWeight: "700",
+            }}
+          >
             {floor.name}
           </span>
           {isSelectable && (
@@ -173,15 +149,22 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center px-4 min-h-96 w-48">
-      <div className="flex flex-col items-center w-full max-w-40">
-        {/* Estrutura de cima para baixo: Cobertura -> Tipo -> Térreo -> Subsolo */}
+    <div className="flex flex-col items-center p-4 min-h-96 w-80">
+      {isSelectable && (
+        <div className="w-full mb-4 text-left">
+          <span className="text-md font-semibold leading-2 text-primary dark:text-gray-300">
+            Selecione os pavimentos em que esta tecnologia construtiva será
+            aplicada
+          </span>
+        </div>
+      )}
+      <div className="flex flex-col items-center w-full max-w-72">
         <div className="flex flex-col w-full">
           {/* Cobertura (topo) */}
           {sortedRoofFloors.map((floor, index) => (
             <div
               key={`roof-${index}`}
-              className={`w-full max-w-35 ${isSelectable ? "ml-auto" : "mx-auto"} `}
+              className={`w-full max-w-64 ${isSelectable ? "ml-auto" : "mx-auto"} `}
             >
               {renderFloorBlocks(floor)}
             </div>
@@ -189,14 +172,20 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
 
           {/* Tipo */}
           {sortedTypicalFloors.map((floor, index) => (
-            <div key={`typical-${index}`} className="w-full max-w-35 mx-auto">
+            <div
+              key={`typical-${index}`}
+              className={`w-full max-w-64 ${isSelectable ? "ml-auto" : "mx-auto"}`}
+            >
               {renderFloorBlocks(floor)}
             </div>
           ))}
 
           {/* Térreo */}
           {sortedGroundFloors.map((floor, index) => (
-            <div key={`ground-${index}`} className="w-full max-w-35 mx-auto">
+            <div
+              key={`ground-${index}`}
+              className={`w-full max-w-64 ${isSelectable ? "ml-auto" : "mx-auto"}`}
+            >
               {renderFloorBlocks(floor)}
             </div>
           ))}
@@ -215,7 +204,10 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
         {/* Subsolo (abaixo da linha do solo) */}
         <div className="flex flex-col w-full">
           {sortedBasementFloors.map((floor, index) => (
-            <div key={`basement-${index}`} className="w-full max-w-35 mx-auto">
+            <div
+              key={`basement-${index}`}
+              className={`w-full max-w-64 ${isSelectable ? "ml-auto" : "mx-auto"}`}
+            >
               {renderFloorBlocks(floor)}
             </div>
           ))}
@@ -231,7 +223,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
       </div>
 
       {unifiedFloors.length > 0 && (
-        <div className="mt-6 p-2 bg-gray-100 dark:bg-gray-800 rounded-md w-full text-center">
+        <div className="mt-4 p-2 bg-gray-100 dark:bg-gray-800 rounded-md w-full text-center">
           <div className="text-xs space-y-1 text-gray-600 dark:text-gray-400">
             <div>
               <span className="font-medium">
