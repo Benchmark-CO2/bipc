@@ -66,11 +66,13 @@ func (m TowerOptionModel) Insert(towerOption *TowerOption) error {
         INSERT INTO tower_option (id, tower_id, name, active)
         VALUES ($1, $2, $3, $4)`
 
-	id, err := utils.NewUUIDv7()
-	if err != nil {
-		return err
+	if towerOption.ID.IsNil() {
+		towerOptionID, err := utils.NewUUIDv7()
+		if err != nil {
+			return err
+		}
+		towerOption.ID = towerOptionID
 	}
-	towerOption.ID = id
 
 	args := []interface{}{towerOption.ID, towerOption.TowerID, towerOption.Name, towerOption.Active}
 

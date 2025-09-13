@@ -46,6 +46,7 @@ type Floor struct {
 	ID          uuid.UUID    `json:"id"`
 	GroupID     uuid.UUID    `json:"group_id"`
 	GroupName   string       `json:"group_name"`
+	Category    string       `json:"category"`
 	Area        float64      `json:"area"`
 	Height      float64      `json:"height"`
 	Index       int          `json:"index"`
@@ -64,6 +65,65 @@ func ValidateUnit(v *validator.Validator, unit *Unit) {
 	v.Check(!unit.ProjectID.IsNil(), "project_id", "must be provided")
 	v.Check(unit.Name != "", "name", "must be provided")
 	v.Check(unit.Type != "", "type", "must be provided")
+}
+
+func (m UnitModel) InsertWithExistingFloors(unit *Unit) error {
+	tx, err := m.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	if unit.ID.IsNil() {
+		tx.Rollback()
+		return errors.New("unit.ID must be provided")
+	}
+
+	queryUnit := `
+		INSERT INTO units (id, project_id, name, type)
+		VALUES ($1, $2, $3, $4)`
+	_, err = tx.Exec(queryUnit, unit.ID, unit.ProjectID, unit.Name, unit.Type)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if unit.Type == "tower" {
+		queryTower := `INSERT INTO tower (id) VALUES ($1)`
+		_, err = tx.Exec(queryTower, unit.ID)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		insertedGroups := make(map[uuid.UUID]bool)
+
+		for _, floor := range unit.Tower.Floors {
+			if !insertedGroups[floor.GroupID] {
+				queryFloorGroup := `
+					INSERT INTO floor_group (id, tower_id, name, category)
+					VALUES ($1, $2, $3, $4)
+					ON CONFLICT (id) DO NOTHING`
+				_, err = tx.Exec(queryFloorGroup, floor.GroupID, unit.ID, floor.GroupName, "default_category")
+				if err != nil {
+					tx.Rollback()
+					return err
+				}
+				insertedGroups[floor.GroupID] = true
+			}
+
+			queryFloor := `
+				INSERT INTO floor (id, group_id, area, height, "index")
+				VALUES ($1, $2, $3, $4, $5)
+				ON CONFLICT (id) DO NOTHING`
+			_, err = tx.Exec(queryFloor, floor.ID, floor.GroupID, floor.Area, floor.Height, floor.Index)
+			if err != nil {
+				tx.Rollback()
+				return err
+			}
+		}
+	}
+
+	return tx.Commit()
 }
 
 func (m UnitModel) Insert(unit *Unit, floorGroups []FloorGroupCreate) error {
@@ -223,7 +283,7 @@ func (m UnitModel) getTowerByUnitID(unitID uuid.UUID) (*Tower, error) {
 
 func (m UnitModel) getFloorsByTowerID(towerID uuid.UUID) ([]Floor, error) {
 	query := `
-		SELECT f.id, f.group_id, fg.name, f.area, f.height, f.index,
+		SELECT f.id, f.group_id, fg.name, fg.category, f.area, f.height, f.index,
 		       f.co2_min, f.co2_max, f.energy_min, f.energy_max
 		FROM floor f
 		INNER JOIN floor_group fg ON f.group_id = fg.id
@@ -247,6 +307,7 @@ func (m UnitModel) getFloorsByTowerID(towerID uuid.UUID) ([]Floor, error) {
 			&floor.ID,
 			&floor.GroupID,
 			&floor.GroupName,
+			&floor.Category,
 			&floor.Area,
 			&floor.Height,
 			&floor.Index,
