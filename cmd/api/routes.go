@@ -55,5 +55,9 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requirePermission("project:edit", app.deleteModuleHandler))
 	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requirePermission("project:edit", app.updateModuleHandler))
 
+	router.HandlerFunc(http.MethodGet, "/v1/benchmark/floors", app.getFloorsBenchmarkHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/benchmark/units", app.getUnitsBenchmarkHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/benchmark/projects", app.getProjectsBenchmarkHandler)
+
 	return app.metrics(app.recoverPanic(app.commonHeaders(app.enableCORS(app.rateLimit(app.authenticate(router))))))
 }
