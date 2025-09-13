@@ -108,11 +108,13 @@ func (m ProjectModel) Insert(project *Project) error {
 	}
 	defer tx.Rollback()
 
-	projectID, err := utils.NewUUIDv7()
-	if err != nil {
-		return err
+	if project.ID.IsNil() {
+		projectID, err := utils.NewUUIDv7()
+		if err != nil {
+			return err
+		}
+		project.ID = projectID
 	}
-	project.ID = projectID
 
 	query1 := `
 		INSERT INTO projects (id, user_id, name, cep, state, city, neighborhood, street, number, phase, description, image_url)
