@@ -25,6 +25,7 @@ type Models struct {
 	Invitations         InvitationModel
 	BeamColumnModules   BeamColumnModuleModel
 	ConcreteWallModules ConcreteWallModuleModel
+	Benchmark           BenchmarkModel
 }
 
 func NewModels(db *sql.DB) Models {
@@ -38,5 +39,6 @@ func NewModels(db *sql.DB) Models {
 		Invitations:         InvitationModel{DB: db},
 		BeamColumnModules:   BeamColumnModuleModel{DB: db},
 		ConcreteWallModules: ConcreteWallModuleModel{DB: db},
+		Benchmark:           BenchmarkModel{DB: db},
 	}
 }
