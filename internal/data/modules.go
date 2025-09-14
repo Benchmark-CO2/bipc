@@ -39,10 +39,14 @@ type ConcreteWallModule struct {
 	Module
 	ConcreteWalls  Concrete `json:"concrete_walls"`
 	ConcreteSlabs  Concrete `json:"concrete_slabs"`
-	WallThickness  *float64 `json:"wall_thickness,omitempty"`
-	SlabThickness  *float64 `json:"slab_thickness,omitempty"`
-	FormArea       *float64 `json:"form_area,omitempty"`
-	WallArea       *float64 `json:"wall_area,omitempty"`
+		
+	WallThickness *float64 `json:"wall_thickness,omitempty"`
+	SlabThickness *float64 `json:"slab_thickness,omitempty"`
+	WallArea      *float64 `json:"wall_area,omitempty"`
+	SlabArea      *float64 `json:"slab_area,omitempty"`
+
+	WallFormArea *float64    `json:"wall_form_area,omitempty"`
+	SlabFormArea *float64    `json:"slab_form_area,omitempty"`
 }
 
 type BeamColumnModuleModel struct {
@@ -182,14 +186,14 @@ func (m ConcreteWallModuleModel) Insert(module *ConcreteWallModule) (*ConcreteWa
 	query := `
 		INSERT INTO module_concrete_wall (
 			id, concrete_walls, concrete_slabs,
-			wall_thickness, slab_thickness, form_area, wall_area
+			wall_thickness, slab_thickness, wall_area, slab_area, wall_form_area, slab_form_area
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7
+			$1, $2, $3, $4, $5, $6, $7, $8, $9
 		)
 		RETURNING created_at, updated_at`
 	err = tx.QueryRowContext(ctx, query,
 		module.ID, wallsID, slabsID,
-		module.WallThickness, module.SlabThickness, module.FormArea, module.WallArea,
+		module.WallThickness, module.SlabThickness, module.WallArea, module.SlabArea, module.WallFormArea, module.SlabFormArea,
 	).Scan(&module.CreatedAt, &module.UpdatedAt)
 	if err != nil {
 		return nil, err
@@ -280,7 +284,7 @@ func (m ConcreteWallModuleModel) Get(id uuid.UUID) (*ConcreteWallModule, error) 
 		SELECT
 			m.id, m.tower_option_id,
 			cw.concrete_walls, cw.concrete_slabs,
-			cw.wall_thickness, cw.slab_thickness, cw.form_area, cw.wall_area,
+			cw.wall_thickness, cw.slab_thickness, cw.wall_area, cw.slab_area, cw.wall_form_area, cw.slab_form_area,
 			m.total_co2_min, m.total_co2_max, m.total_energy_min, m.total_energy_max,
 			cw.created_at, cw.updated_at
 		FROM module m
@@ -296,7 +300,7 @@ func (m ConcreteWallModuleModel) Get(id uuid.UUID) (*ConcreteWallModule, error) 
 	err := m.DB.QueryRowContext(ctx, query, id).Scan(
 		&module.ID, &module.TowerOptionID,
 		&wallID, &slabID,
-		&module.WallThickness, &module.SlabThickness, &module.FormArea, &module.WallArea,
+		&module.WallThickness, &module.SlabThickness, &module.WallArea, &module.SlabArea, &module.WallFormArea, &module.SlabFormArea,
 		&module.TotalCO2Min, &module.TotalCO2Max, &module.TotalEnergyMin, &module.TotalEnergyMax,
 		&module.CreatedAt, &module.UpdatedAt,
 	)
@@ -454,12 +458,12 @@ func (m ConcreteWallModuleModel) Update(module *ConcreteWallModule) error {
 	query = `
 		UPDATE module_concrete_wall SET
 			concrete_walls = $1, concrete_slabs = $2,
-			wall_thickness = $3, slab_thickness = $4, form_area = $5, wall_area = $6,
+			wall_thickness = $3, slab_thickness = $4, wall_area = $5, slab_area = $6, wall_form_area = $7, slab_form_area = $8,
 			updated_at = NOW()
-		WHERE id = $7`
+		WHERE id = $9`
 	_, err = tx.ExecContext(context.Background(), query,
 		newWallID, newSlabID,
-		module.WallThickness, module.SlabThickness, module.FormArea, module.WallArea,
+		module.WallThickness, module.SlabThickness, module.WallArea, module.SlabArea, module.WallFormArea, module.SlabFormArea,
 		module.ID)
 	if err != nil {
 		return err

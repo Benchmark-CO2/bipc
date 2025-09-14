@@ -7,16 +7,20 @@ import (
 )
 
 type ConcreteWall struct {
-	ID            uuid.UUID       `json:"id"`
+	ID uuid.UUID `json:"id"`
 	BasicModuleData
-	Consumption   *Consumption     `json:"consumption,omitempty"`
+	Consumption   *Consumption    `json:"consumption,omitempty"`
 	ConcreteWalls ConcreteElement `json:"concrete_walls"`
 	ConcreteSlabs ConcreteElement `json:"concrete_slabs"`
-	WallThickness *float64        `json:"wall_thickness,omitempty"`
-	SlabThickness *float64        `json:"slab_thickness,omitempty"`
-	FormArea      *float64        `json:"form_area,omitempty"`
-	WallArea      *float64        `json:"wall_area,omitempty"`
-	FloorIDs      []uuid.UUID     `json:"floor_ids"`
+
+	WallThickness *float64 `json:"wall_thickness,omitempty"`
+	SlabThickness *float64 `json:"slab_thickness,omitempty"`
+	WallArea      *float64 `json:"wall_area,omitempty"`
+	SlabArea      *float64 `json:"slab_area,omitempty"`
+
+	WallFormArea *float64    `json:"wall_form_area,omitempty"`
+	SlabFormArea *float64    `json:"slab_form_area,omitempty"`
+	FloorIDs     []uuid.UUID `json:"floor_ids"`
 }
 
 func (w *ConcreteWall) GetType() string { return w.Type }
@@ -35,11 +39,18 @@ func (w *ConcreteWall) Validate(v *validator.Validator) {
 	if w.SlabThickness != nil {
 		v.Check(*w.SlabThickness >= 0, "slab_thickness", "cannot be negative")
 	}
-	if w.FormArea != nil {
-		v.Check(*w.FormArea >= 0, "form_area", "cannot be negative")
-	}
 	if w.WallArea != nil {
 		v.Check(*w.WallArea >= 0, "wall_area", "cannot be negative")
+	}
+	if w.SlabArea != nil {
+		v.Check(*w.SlabArea >= 0, "slab_area", "cannot be negative")
+	}
+
+	if w.WallFormArea != nil {
+		v.Check(*w.WallFormArea >= 0, "wall_form_area", "cannot be negative")
+	}
+	if w.SlabFormArea != nil {
+		v.Check(*w.SlabFormArea >= 0, "slab_form_area", "cannot be negative")
 	}
 }
 
@@ -100,16 +111,18 @@ func (w *ConcreteWall) toModule(d *data.ConcreteWallModule) Module {
 		}
 	}
 	return &ConcreteWall{
-		ID:             d.ID,
+		ID:              d.ID,
 		BasicModuleData: BasicModuleData{Type: "concrete_wall"},
-		Consumption:    consumption,
-		ConcreteWalls:  ToConcreteElement(d.ConcreteWalls),
-		ConcreteSlabs:  ToConcreteElement(d.ConcreteSlabs),
-		WallThickness:  d.WallThickness,
-		SlabThickness:  d.SlabThickness,
-		FormArea:       d.FormArea,
-		WallArea:       d.WallArea,
-		FloorIDs:       d.FloorIDs,
+		Consumption:     consumption,
+		ConcreteWalls:   ToConcreteElement(d.ConcreteWalls),
+		ConcreteSlabs:   ToConcreteElement(d.ConcreteSlabs),
+		WallThickness:   d.WallThickness,
+		SlabThickness:   d.SlabThickness,
+		WallArea:        d.WallArea,
+		SlabArea:        d.SlabArea,
+		WallFormArea:    d.WallFormArea,
+		SlabFormArea:    d.SlabFormArea,
+		FloorIDs:        d.FloorIDs,
 	}
 }
 
@@ -124,11 +137,13 @@ func toConcreteWallModule(w *ConcreteWall, moduleID, optionID uuid.UUID, result 
 			TotalEnergyMax: &result.EnergyMax,
 			FloorIDs:       w.FloorIDs,
 		},
-		ConcreteWalls:  toDataConcrete(w.ConcreteWalls),
-		ConcreteSlabs:  toDataConcrete(w.ConcreteSlabs),
-		WallThickness:  w.WallThickness,
-		SlabThickness:  w.SlabThickness,
-		FormArea:       w.FormArea,
-		WallArea:       w.WallArea,
+		ConcreteWalls: toDataConcrete(w.ConcreteWalls),
+		ConcreteSlabs: toDataConcrete(w.ConcreteSlabs),
+		WallThickness: w.WallThickness,
+		SlabThickness: w.SlabThickness,
+		WallArea:      w.WallArea,
+		SlabArea:      w.SlabArea,
+		WallFormArea:  w.WallFormArea,
+		SlabFormArea:  w.SlabFormArea,
 	}
 }
