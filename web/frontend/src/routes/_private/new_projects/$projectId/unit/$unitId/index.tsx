@@ -109,13 +109,18 @@ function RouteComponent() {
   const handleSelectionChange = (selected: any) => {
     setSelectedFloors(selected);
   };
-    const { data: benchmarkData } = useQuery({
-      queryKey: ["floor-benchmarks"],
-      queryFn: getFloorsBenchmark,
-    });
+  const { data: benchmarkData } = useQuery({
+    queryKey: ["floor-benchmarks"],
+    queryFn: getFloorsBenchmark,
+  });
   useEffect(() => {
     setSummaryContext({
-      component: <FloorSummary floors={selectedFloors} data={benchmarkData?.data || {} as IBenchmarkResponse} />,
+      component: (
+        <FloorSummary
+          floors={selectedFloors}
+          data={benchmarkData?.data || ({} as IBenchmarkResponse)}
+        />
+      ),
       title: "Floor Comparison",
     });
   }, [setSummaryContext, selectedFloors, benchmarkData]);
@@ -135,6 +140,22 @@ function RouteComponent() {
               };
             } else {
               acc[groupId].repetitions += 1;
+              acc[groupId].co2_min =
+                (acc[groupId].co2_min * (acc[groupId].repetitions - 1) +
+                  consumption.co2_min) /
+                acc[groupId].repetitions;
+              acc[groupId].co2_max =
+                (acc[groupId].co2_max * (acc[groupId].repetitions - 1) +
+                  consumption.co2_max) /
+                acc[groupId].repetitions;
+              acc[groupId].energy_min =
+                (acc[groupId].energy_min * (acc[groupId].repetitions - 1) +
+                  consumption.energy_min) /
+                acc[groupId].repetitions;
+              acc[groupId].energy_max =
+                (acc[groupId].energy_max * (acc[groupId].repetitions - 1) +
+                  consumption.energy_max) /
+                acc[groupId].repetitions;
             }
 
             return acc;
@@ -142,7 +163,6 @@ function RouteComponent() {
           {} as Record<string, any>
         )
       ).sort((a, b) => {
-        // Ordenação por categoria seguindo a hierarquia arquitetônica
         const categoryOrder = {
           penthouse_floor: 0,
           standard_floor: 1,
@@ -150,7 +170,6 @@ function RouteComponent() {
           basement_floor: 3,
         };
 
-        // Determinar categoria de cada floor baseado no índice se não tiver category
         const aCategory = a.category || getCategoryFromIndex(a.index || 0);
         const bCategory = b.category || getCategoryFromIndex(b.index || 0);
 
@@ -163,12 +182,10 @@ function RouteComponent() {
           return aCategoryOrder - bCategoryOrder;
         }
 
-        // Se mesma categoria, ordenar por índice decrescente (pisos mais altos primeiro)
         if (a.index !== undefined && b.index !== undefined) {
           return b.index - a.index;
         }
 
-        // Fallback: ordenar por nome
         return (a.name || "").localeCompare(b.name || "");
       })
     : [];
