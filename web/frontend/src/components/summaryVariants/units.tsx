@@ -7,6 +7,7 @@ import { TabsContainer } from "../ui/tabsContainer";
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { stackData } from "./utils";
 import { Checkbox } from "../ui/checkbox";
+import NotFoundList from "../ui/not-found-list";
 
 type ProjectsSummaryProps = {
   units: (any & {
@@ -14,7 +15,7 @@ type ProjectsSummaryProps = {
     mj: number;
     density: number;
   })[];
-  data: IBenchmarkResponse
+  data: IBenchmarkResponse;
 };
 const calculateProgress = (project: ProjectsSummaryProps["units"][number]) => {
   const total = project.co + project.mj + project.density;
@@ -45,11 +46,12 @@ const UnitsSummary = ({ units, data }: ProjectsSummaryProps) => {
   const [selectedProjects, setSelectedProjects] = useState<string[]>(
     units?.map((unit) => unit.id) || []
   );
-  const fakeUnits = generateFakeData(data.benchmark?.[type as "co2" | "energy"] || []).map(el => ({
-        ...el,
-        label: units.find(f => f.id === el.id)?.name || ''
-      })
-  );
+  const fakeUnits = generateFakeData(
+    data.benchmark?.[type as "co2" | "energy"] || []
+  ).map((el) => ({
+    ...el,
+    label: units.find((f) => f.id === el.id)?.name || "",
+  }));
   const { isExpanded } = useSummary();
   const isMobile = useIsMobile();
   const screenWidth = window.innerWidth;
@@ -63,7 +65,7 @@ const UnitsSummary = ({ units, data }: ProjectsSummaryProps) => {
   const height = () => {
     if (isMobile && !isExpanded) return 250;
     if (isMobile && isExpanded) return 320;
-    if (isExpanded) return 800;
+    if (isExpanded) return 700;
     return 220;
   };
   const stackedData = stackData(units, data);
@@ -75,9 +77,13 @@ const UnitsSummary = ({ units, data }: ProjectsSummaryProps) => {
   //   );
 
   useEffect(() => {
-    setSelectedProjects(selectedProjects.filter(id => units.find(u => u.id === id) !== undefined))
-  }, [units])
-  
+    setSelectedProjects(
+      selectedProjects.filter(
+        (id) => units.find((u) => u.id === id) !== undefined
+      )
+    );
+  }, [units]);
+
   const handleAddProject = (projectId: string) => {
     if (selectedProjects.includes(projectId)) {
       setSelectedProjects(selectedProjects.filter((id) => id !== projectId));
@@ -87,61 +93,71 @@ const UnitsSummary = ({ units, data }: ProjectsSummaryProps) => {
   };
 
   return (
-    <div className="w-full flex justify-between gap-10 max-md:flex-col">
-      <div className="flex flex-col items-start w-full">
-        <div className="w-full flex gap-2 mb-10">
-          <TabsContainer
-            tabs={["co2", "energy"]}
-            handleTabClick={(tab) => setType(tab as "co2" | "energy")}
-            selectedTab={type}
-          />
-        </div>
-        <ul className="flex flex-col gap-2 text-xl w-full text-black">
-          {stackedData.length === 0 && (
-            <div className="w-full flex flex-col justify-center items-center">
-              <p className="text-gray-500">Nenhuma unidade selecionada.</p>
-            </div>
-          )}
-          {stackedData.map((unit) => {
-            if (!unit) return null;
-            return (
-              <li
-                key={unit.id}
-                className={cn("flex flex-col w-full items-start gap-3", {
-                  "text-sm": isExpanded,
-                })}
-                onClick={() => handleAddProject(unit.id)}
-              >
-                <div className="flex items-center gap-3 cursor-pointer">
-                  <Checkbox checked={selectedProjects.includes(unit.id)} onClick={() => handleAddProject(unit.id)} />
-                  <h4 className="whitespace-nowrap flex items-center gap-3 cursor-pointer">{unit.label}</h4>
-                </div>
-                <div className="flex w-full h-2 col-span-4">
-                  <div
-                    style={{
-                      width: `${unit.co2}%`,
-                    }}
-                    className={`bg-pink-500  h-2 rounded-l-md`}
-                  />
-                  <div
-                    style={{
-                      width: `${unit.energy}%`,
-                    }}
-                    className={`bg-yellow-500 h-2 rounded-r-full`}
-                  />
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+    <>
+      <div className="w-full flex gap-2 mb-4">
+        <TabsContainer
+          tabs={["co2", "energy"]}
+          handleTabClick={(tab) => setType(tab as "co2" | "energy")}
+          selectedTab={type}
+          fullWidth
+        />
       </div>
-      <D3GradientRangeChart
-        width={width()}
-        height={height()}
-        data={fakeUnits}
-        selectedBars={selectedProjects}
-      />
-    </div>
+      <div className="w-full flex justify-between gap-4 max-md:flex-col">
+        <div className="flex flex-col items-start w-full">
+          <ul className="flex flex-col gap-2 text-xl w-full text-black">
+            {stackedData.length === 0 && (
+              <NotFoundList
+                message="Nenhuma unidade selecionada."
+                description="Por favor, selecione ao menos uma unidade para visualizar o resumo."
+                className="bg-transparent border-0 shadow-none"
+              />
+            )}
+            {stackedData.map((unit) => {
+              if (!unit) return null;
+              return (
+                <li
+                  key={unit.id}
+                  className={cn("flex flex-col w-full items-start gap-3", {
+                    "text-sm": isExpanded,
+                  })}
+                  onClick={() => handleAddProject(unit.id)}
+                >
+                  <div className="flex items-center gap-3 cursor-pointer">
+                    <Checkbox
+                      checked={selectedProjects.includes(unit.id)}
+                      onClick={() => handleAddProject(unit.id)}
+                    />
+                    <h4 className="whitespace-nowrap flex items-center gap-3 cursor-pointer">
+                      {unit.label}
+                    </h4>
+                  </div>
+                  <div className="flex w-full h-2 col-span-4">
+                    <div
+                      style={{
+                        width: `${unit.co2}%`,
+                      }}
+                      className={`bg-pink-500  h-2 rounded-l-md`}
+                    />
+                    <div
+                      style={{
+                        width: `${unit.energy}%`,
+                      }}
+                      className={`bg-yellow-500 h-2 rounded-r-full`}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+        <D3GradientRangeChart
+          width={width()}
+          height={height()}
+          data={fakeUnits}
+          selectedBars={selectedProjects}
+        />
+      </div>
+    </>
   );
 };
 

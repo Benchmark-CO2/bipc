@@ -1,48 +1,58 @@
-import { useSummary } from '@/context/summaryContext';
+import { useSummary } from "@/context/summaryContext";
 import { ArrowUp, Expand } from "lucide-react";
 import { Button } from "./button";
 
-
 const Summary = () => {
-  const { isOpen, toggleSummary, context, isExpanded, toggleExpanded,  } = useSummary();
+  const { isOpen, toggleSummary, context, isExpanded, toggleExpanded } =
+    useSummary();
 
   if (context?.hide) return null;
   return (
     <section
       data-open={isOpen}
       data-expanded={isExpanded}
-      className='absolute bottom-0 right-0 bg-white p-2 h-[50px] w-full max-md:mx-auto max-md:left-0 transition-all data-[open="true"]:h-[450px] z-50 data-[expanded=true]:data-[open=true]:h-3/4! border-t-2 border-t-sidebar/20'
+      className="absolute bottom-0 right-0 bg-gray-50 w-full max-md:mx-auto max-md:left-0 transition-all z-50 border-t border-gray-200 shadow-lg"
+      style={{
+        height: isOpen ? (isExpanded ? "75vh" : "550px") : "50px",
+      }}
     >
-      <div className="relative flex justify-between flex-col w-full items-start">
-        <div className="flex items-center justify-between w-full">
-          <div className='flex gap-1'>
-            <Button
-            variant="noStyles"
-            className="flex items-center gap-2"
-            onClick={toggleSummary}
-          >
-            <ArrowUp
-              data-open={isOpen}
-              className="h-4 w-4 data-[open='true']:rotate-180 transition-transform"
-            />
-          </Button>
-          {isOpen && <Button
-            variant="noStyles"
-            className="flex items-center gap-2"
-            onClick={toggleExpanded}
-          >
-            <Expand
-              data-open={isExpanded}
-              className="h-4 w-4 data-[open='true']:rotate-180 transition-transform"
-            />
-          </Button>}
-          </div>
-          <span>
-            {context?.title}
+      <div className="relative flex flex-col w-full h-full">
+        {/* Header */}
+        <div
+          className={`flex items-center justify-between w-full px-4 ${isOpen ? "pt-3" : "my-auto"} `}
+        >
+          <span className="text-sm font-bold text-primary">
+            {"Visão geral"}
           </span>
+          <div className="flex gap-0 absolute right-4 top-[-18px]">
+            {isOpen && (
+              <Button
+                variant="noStyles"
+                className="flex items-center justify-center w-8 h-8 p-0 hover:bg-gray-200 rounded-full border border-gray-300 bg-white shadow-sm"
+                onClick={toggleExpanded}
+              >
+                <Expand
+                  data-expanded={isExpanded}
+                  className="h-4 w-4 text-gray-600 data-[expanded='true']:rotate-180 transition-transform"
+                />
+              </Button>
+            )}
+            <Button
+              variant="noStyles"
+              className="flex items-center justify-center w-8 h-8 p-0 hover:bg-gray-200 rounded-full border border-gray-300 bg-white shadow-sm"
+              onClick={toggleSummary}
+            >
+              <ArrowUp
+                data-open={isOpen}
+                className="h-4 w-4 text-gray-600 data-[open='true']:rotate-180 transition-transform"
+              />
+            </Button>
+          </div>
         </div>
+
+        {/* Content */}
         {isOpen && context && (
-          <div className='w-full mt-6 p-4'>
+          <div className="w-full flex-1 px-4 py-3 overflow-auto">
             {context.component || null}
           </div>
         )}
