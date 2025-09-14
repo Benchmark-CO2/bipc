@@ -11,6 +11,14 @@ export function TabsContainer({
   handleTabClick,
   fullWidth = false,
 }: TabsContainerProps) {
+  if (tabs.length === 0) return null;
+
+  const convertTabName = (tab: string) => {
+    if (tab.toLowerCase() === "co2") return "CO₂";
+    if (tab.toLowerCase() === "energy") return "Energia";
+    return tab;
+  };
+
   return (
     <div
       className={`flex items-center gap-2 rounded-sm border border-gray-200 bg-white p-4 ${fullWidth ? "w-full" : "w-fit"} dark:border-gray-700 dark:bg-gray-800`}
@@ -27,7 +35,7 @@ export function TabsContainer({
               : "cursor-pointer text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20"
           }`}
         >
-          {tab}
+          {convertTabName(tab)}
         </button>
       ))}
     </div>
