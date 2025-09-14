@@ -6,6 +6,7 @@ import { DrawerFormProject, ProjectTable } from "@/components/layout";
 import ProjectsSummary from "@/components/summaryVariants/projects";
 import { Button } from "@/components/ui/button";
 import CustomCard from "@/components/ui/customCard";
+import NotFoundList from "@/components/ui/not-found-list";
 import { useSummary } from "@/context/summaryContext";
 import { useProjects } from "@/hooks/useProjects";
 import { queryClient } from "@/utils/queryClient";
@@ -170,7 +171,10 @@ function RouteComponent() {
             })
           ) : (
             <div className="flex h-full w-full flex-col gap-4">
-              <p>{t("projects.noProjects")}</p>
+              <NotFoundList
+                message="Nenhum projeto encontrado"
+                description="Crie seu primeiro projeto clicando no botão acima"
+              />
             </div>
           )}
         </div>
