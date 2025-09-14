@@ -47,7 +47,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
       </div>
 
       {/* Menu Items - Seção Principal */}
-      <div className="flex-1 flex flex-col p-4">
+      <div className="flex-1 flex flex-col p-4 overflow-auto">
         <ul className="flex flex-col gap-1 mt-auto mb-2">
           {/* PD&I */}
           <li>
