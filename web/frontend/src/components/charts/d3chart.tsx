@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSummary } from "@/context/summaryContext";
-import { useIsMobile } from '@/hooks/useIsMobile';
+import { useIsMobile } from "@/hooks/useIsMobile";
 import * as d3 from "d3";
 import React, { useEffect, useRef } from "react";
 
@@ -19,7 +19,7 @@ const data = [
 
 type D3GradientRangeChartProps = {
   selectedBars?: string[]; // IDs das barras selecionadas
-  data?: { id: string; y: number; min: number; max: number, label: string }[];
+  data?: { id: string; y: number; min: number; max: number; label: string }[];
   width?: number;
   height?: number;
 };
@@ -32,13 +32,19 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   const { isExpanded } = useSummary();
   const svgRef = useRef<SVGSVGElement>(null);
   const isMobile = useIsMobile();
-  
+
   // Dimensões
-  const margin = { top: isMobile ? 10 : 20, right: 20, bottom: 40, left: isMobile ? 50 : 60 };
-  const _width = (isExpanded ? width  : width) - margin.left - margin.right;
-  const _height = (isExpanded ? height * 1 : height * 1.25) - (margin.top + margin.bottom);
+  const margin = {
+    top: isMobile ? 10 : 20,
+    right: 20,
+    bottom: 40,
+    left: isMobile ? 50 : 60,
+  };
+  const _width = (isExpanded ? width : width) - margin.left - margin.right;
+  const _height =
+    (isExpanded ? height * 1 : height * 1.25) - (margin.top + margin.bottom);
   const maxValue =
-        data?.map((d) => d.max).reduce((a, b) => Math.max(a, b), 0) || 170;
+    data?.map((d) => d.max).reduce((a, b) => Math.max(a, b), 0) || 170;
   const xScale = d3.scaleLinear().domain([0, maxValue]).range([0, _width]);
 
   const yScale = d3.scaleLinear().domain([0, 1]).range([_height, 0]);
@@ -151,7 +157,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         .attr("x2", "100%")
         .attr("y1", "50%")
         .attr("y2", "50%");
-      
+
       // Função simples: de amarelo até vermelho baseado em X global
       const colorScale = d3
         .scaleLinear<string>()
@@ -250,26 +256,30 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
             if (no.attr("id") === `bar-${d.id}`) {
               no.remove();
             }
-            
           });
         g.selectAll("text")
           .nodes()
           .forEach((rect) => {
             if (!rect) return;
             const no = d3.select(rect);
-            if (no.attr("id") === `bar-label-min-${d.id}` || no.attr("id") === `bar-label-max-${d.id}` || no.attr("id") === `bar-label-name-${d.id}`) {
+            if (
+              no.attr("id") === `bar-label-min-${d.id}` ||
+              no.attr("id") === `bar-label-max-${d.id}` ||
+              no.attr("id") === `bar-label-name-${d.id}`
+            ) {
               no.remove();
             }
-
           });
       }
     });
   }, [selectedBars, isExpanded, data]);
 
   return (
-    <Card className="w-full">
+    <Card className="w-full shadow-none">
       <CardHeader>
-        <CardTitle className='block w-full text-center'>Cumulative x KgCO2/m2</CardTitle>
+        <CardTitle className="block w-full text-center">
+          Cumulative x KgCO2/m2
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="w-full overflow-x-auto">
