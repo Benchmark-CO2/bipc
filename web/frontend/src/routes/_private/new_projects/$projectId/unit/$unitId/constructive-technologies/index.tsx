@@ -41,6 +41,7 @@ const OptionMenu = ({
 }) => {
   const queryClient = useQueryClient();
   const [localName, setLocalName] = useState(option.name);
+  const { setSummaryContext } = useSummary();
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -79,6 +80,12 @@ const OptionMenu = ({
     setLocalName(option.name);
   }, [option.name]);
 
+  useEffect(() => {
+    setSummaryContext({
+      component: null,
+      title: "Simulação",
+    })
+  }, [setSummaryContext])
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLocalName(e.target.value);
   };
@@ -215,9 +222,10 @@ function RouteComponent() {
   useEffect(() => {
     setSummaryContext({
       component: (
-        <TechnologiesSummary techs={selectedItems as any} title="Andar(s)" />
+        null
       ),
       title: `${selectedItems.length} andar(s) selecionado(s)`,
+      hide: true
     });
   }, [selectedItems, setSummaryContext]);
 

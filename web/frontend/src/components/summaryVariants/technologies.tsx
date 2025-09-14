@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import { TabsContainer } from "../ui/tabsContainer";
+import { Checkbox } from "../ui/checkbox";
 
 type ProjectsSummaryProps = {
   techs: (any & {
@@ -48,6 +49,7 @@ const TechnologiesSummary = ({ techs }: ProjectsSummaryProps) => {
     return 220;
   };
 
+  
   if (!techs.length)
     return (
       <div className="w-full flex flex-col justify-center items-center">
@@ -74,7 +76,7 @@ const TechnologiesSummary = ({ techs }: ProjectsSummaryProps) => {
           />
         </div>
         <ul className="flex flex-col gap-2 text-xl w-full text-black">
-          {fakeFloors.map((unit) => {
+          {techs.map((unit) => {
             const sum = unit.min + unit.max;
             return (
               <li
@@ -84,7 +86,10 @@ const TechnologiesSummary = ({ techs }: ProjectsSummaryProps) => {
                 })}
                 onClick={() => handleAddProject(unit.id)}
               >
-                <h4 className="whitespace-nowrap flex items-center gap-3 cursor-pointer">{unit.label} {selectedProjects.includes(unit.id) && <span className='w-2 h-2 bg-active rounded-full' />}</h4>
+                <div className="flex items-center gap-3 cursor-pointer">
+                  <Checkbox checked={selectedProjects.includes(unit.id)} onClick={() => handleAddProject(unit.id)} />
+                  <h4 className="whitespace-nowrap flex items-center gap-3 cursor-pointer">{unit.label}</h4>
+                </div>
                 <div className="flex w-full h-2 col-span-4">
                   <div
                     style={{

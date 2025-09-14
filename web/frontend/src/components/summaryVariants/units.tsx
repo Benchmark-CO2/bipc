@@ -1,9 +1,12 @@
 import { useSummary } from "@/context/summaryContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import { TabsContainer } from "../ui/tabsContainer";
+import { IBenchmarkResponse } from "@/actions/benchmarks/types";
+import { stackData } from "./utils";
+import { Checkbox } from "../ui/checkbox";
 
 type ProjectsSummaryProps = {
   units: (any & {
@@ -11,6 +14,7 @@ type ProjectsSummaryProps = {
     mj: number;
     density: number;
   })[];
+  data: IBenchmarkResponse
 };
 const calculateProgress = (project: ProjectsSummaryProps["units"][number]) => {
   const total = project.co + project.mj + project.density;
@@ -29,21 +33,23 @@ const data = [
 ];
 
 const generateFakeData = (units: ProjectsSummaryProps["units"]) => {
+  if (!units.length) return [];
   return units.map((el, idx) => ({
-    id: el.id,
-    y: 0.2 * (idx + 1),
-    min: el.co2_min,
-    max: el.co2_max,
-    label: el.name,
+    ...el,
+    label: ``,
   }));
 };
 
-const UnitsSummary = ({ units }: ProjectsSummaryProps) => {
-  const [type, setType] = useState<"co" | "mj" | "density">("co");
+const UnitsSummary = ({ units, data }: ProjectsSummaryProps) => {
+  const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>(
     units?.map((unit) => unit.id) || []
   );
-  const fakeUnits = generateFakeData(units);
+  const fakeUnits = generateFakeData(data.benchmark?.[type as "co2" | "energy"] || []).map(el => ({
+        ...el,
+        label: units.find(f => f.id === el.id)?.name || ''
+      })
+  );
   const { isExpanded } = useSummary();
   const isMobile = useIsMobile();
   const screenWidth = window.innerWidth;
@@ -60,14 +66,18 @@ const UnitsSummary = ({ units }: ProjectsSummaryProps) => {
     if (isExpanded) return 800;
     return 220;
   };
+  const stackedData = stackData(units, data);
+  // if (!units.length)
+  //   return (
+  //     <div className="w-full flex flex-col justify-center items-center">
+  //       <p className="text-2xl">Nenhuma unidade selecionada.</p>
+  //     </div>
+  //   );
 
-  if (!units.length)
-    return (
-      <div className="w-full flex flex-col justify-center items-center">
-        <p className="text-2xl">Nenhuma unidade selecionada.</p>
-      </div>
-    );
-
+  useEffect(() => {
+    setSelectedProjects(selectedProjects.filter(id => units.find(u => u.id === id) !== undefined))
+  }, [units])
+  
   const handleAddProject = (projectId: string) => {
     if (selectedProjects.includes(projectId)) {
       setSelectedProjects(selectedProjects.filter((id) => id !== projectId));
@@ -81,14 +91,19 @@ const UnitsSummary = ({ units }: ProjectsSummaryProps) => {
       <div className="flex flex-col items-start w-full">
         <div className="w-full flex gap-2 mb-10">
           <TabsContainer
-            tabs={["co", "mj", "density"]}
-            handleTabClick={(tab) => setType(tab as "co" | "mj" | "density")}
+            tabs={["co2", "energy"]}
+            handleTabClick={(tab) => setType(tab as "co2" | "energy")}
             selectedTab={type}
           />
         </div>
         <ul className="flex flex-col gap-2 text-xl w-full text-black">
-          {fakeUnits.map((unit) => {
-            const sum = unit.min + unit.max;
+          {stackedData.length === 0 && (
+            <div className="w-full flex flex-col justify-center items-center">
+              <p className="text-gray-500">Nenhuma unidade selecionada.</p>
+            </div>
+          )}
+          {stackedData.map((unit) => {
+            if (!unit) return null;
             return (
               <li
                 key={unit.id}
@@ -97,17 +112,20 @@ const UnitsSummary = ({ units }: ProjectsSummaryProps) => {
                 })}
                 onClick={() => handleAddProject(unit.id)}
               >
-                <h4 className="whitespace-nowrap flex items-center gap-3 cursor-pointer">{unit.label} {selectedProjects.includes(unit.id) && <span className='w-2 h-2 bg-active rounded-full' />}</h4>
+                <div className="flex items-center gap-3 cursor-pointer">
+                  <Checkbox checked={selectedProjects.includes(unit.id)} onClick={() => handleAddProject(unit.id)} />
+                  <h4 className="whitespace-nowrap flex items-center gap-3 cursor-pointer">{unit.label}</h4>
+                </div>
                 <div className="flex w-full h-2 col-span-4">
                   <div
                     style={{
-                      width: `${(sum / 2 / sum) * 100}%`,
+                      width: `${unit.co2}%`,
                     }}
                     className={`bg-pink-500  h-2 rounded-l-md`}
                   />
                   <div
                     style={{
-                      width: `${(sum / 2 / sum) * 100}%`,
+                      width: `${unit.energy}%`,
                     }}
                     className={`bg-yellow-500 h-2 rounded-r-full`}
                   />

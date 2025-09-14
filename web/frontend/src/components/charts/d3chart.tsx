@@ -264,7 +264,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           });
       }
     });
-  }, [selectedBars, isExpanded]);
+  }, [selectedBars, isExpanded, data]);
 
   return (
     <Card className="w-full">
