@@ -42,10 +42,10 @@ function RouteComponent() {
     queryFn: getAllProjectsByUser,
   });
 
-  const {data: benchmarkData } = useQuery({
+  const { data: benchmarkData } = useQuery({
     queryKey: ["projects-benchmarks"],
-    queryFn: getProjectsBenchmark
-  })
+    queryFn: getProjectsBenchmark,
+  });
 
   const toggleViewMode = () => {
     setViewMode((prev) => (prev === "table" ? "grid" : "table"));
@@ -104,16 +104,15 @@ function RouteComponent() {
       title: "Projects Comparison",
       component: (
         <ProjectsSummary
-          projects={projects.filter((project) =>
-            selectedProjects.get(project.id)
-          )}
-          data={benchmarkData?.data || {} as IBenchmarkResponse}
+          projects={projects
+            .filter((project) => selectedProjects.get(project.id))
+            .map(({ co, mj, density, ...project }) => project)}
+          data={benchmarkData?.data || ({} as IBenchmarkResponse)}
         />
       ),
     });
   }, [selectedProjects, benchmarkData]);
 
-  
   return (
     <div>
       <div className="mb-6 mt-2 flex justify-between gap-1">
@@ -121,7 +120,11 @@ function RouteComponent() {
           Projetos
         </h1>
         <div className="flex justify-end gap-1">
-           <DrawerFormProject componentTrigger={<Button variant={'bipc'}>{t('projects.addProject')}</Button>} />
+          <DrawerFormProject
+            componentTrigger={
+              <Button variant={"bipc"}>{t("projects.addProject")}</Button>
+            }
+          />
           {/* {viewMode === "table" && (
             <DrawerFormProject componentTrigger={componentTrigger} />
           )}
@@ -147,22 +150,24 @@ function RouteComponent() {
         />
       ) : (
         <div className="flex w-full flex-wrap items-center gap-4">
-         
           {[...(projects ?? [])].length ? (
-            [...(projects ?? [])].map((project, ix) => (
-              <>
-                <CustomCard
-                  key={project.id + ix}
-                  project={project}
-                  onClick={() => {
-                    onClickProject(project.id);
-                  }}
-                  onDeleteProject={onDeleteProject}
-                  selectedProjects={selectedProjects}
-                  handleSelectProject={handleSelectProject}
-                />
-              </>
-            ))
+            [...(projects ?? [])].map((project, ix) => {
+              const { co, mj, density, ...projectData } = project;
+              return (
+                <>
+                  <CustomCard
+                    key={project.id + ix}
+                    project={projectData}
+                    onClick={() => {
+                      onClickProject(project.id);
+                    }}
+                    onDeleteProject={onDeleteProject}
+                    selectedProjects={selectedProjects}
+                    handleSelectProject={handleSelectProject}
+                  />
+                </>
+              );
+            })
           ) : (
             <div className="flex h-full w-full flex-col gap-4">
               <p>{t("projects.noProjects")}</p>

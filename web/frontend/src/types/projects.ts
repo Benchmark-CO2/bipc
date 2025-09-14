@@ -10,12 +10,25 @@ export type TProjectPhase =
   | "executive_project"
   | "released_for_construction";
 
+export type TConsumption = {
+  co2_max: number;
+  co2_min: number;
+  energy_max: number;
+  energy_min: number;
+};
+
+export type TProjectUnit = {
+  name: string;
+  id: string;
+  type: TUnitType;
+  consumption: TConsumption;
+};
+
 export interface IProject {
-  [x: string]: string;
+  [x: string]: string | TProjectUnit[] | TConsumption | TProjectPhase;
   id: string;
   created_at: string;
   updated_at: string;
-  user_id: number;
   name: string;
   cep: string;
   state: string;
@@ -31,20 +44,6 @@ export interface IProject {
 
 export type TProjectsTemp = {
   [key: string]: TProjectUnit[];
-};
-
-export type TConsumption = {
-  co2_max: number;
-  co2_min: number;
-  energy_max: number;
-  energy_min: number;
-};
-
-export type TProjectUnit = {
-  name: string;
-  id: string;
-  type: TUnitType;
-  consumption: TConsumption;
 };
 
 export type TProjectUnitModule = {
