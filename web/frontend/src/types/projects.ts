@@ -11,6 +11,7 @@ export type TProjectPhase =
   | "released_for_construction";
 
 export interface IProject {
+  [x: string]: string;
   id: string;
   created_at: string;
   updated_at: string;

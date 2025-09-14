@@ -10,6 +10,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from 'react';
 import CommonTable from "../common-table";
 import DrawerFormUnit from "../drawer-form-unit";
+import { getUnitsBenchmark } from "@/actions/benchmarks/getUnits";
+import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 
 const fakeTechnologies = [
   {
@@ -35,6 +37,10 @@ const ProjectView = ({ projectId }: { projectId: string }) => {
     queryKey: ["project", projectId],
     queryFn: () => getProjectByUUID(projectId),
   });
+  const { data: benchmarkData } = useQuery({
+    queryKey: ["units-benchmarks"],
+    queryFn: getUnitsBenchmark,
+  });
   const [selectedUnits, setSelectedUnits] = useState<TProjectUnit[]>([])
   const { setSummaryContext } = useSummary()
   const handleSelectionChange = (el: any) => {
@@ -51,10 +57,11 @@ const ProjectView = ({ projectId }: { projectId: string }) => {
     setSummaryContext({
       component: <UnitsSummary 
         units={selectedUnits as any}
+        data={benchmarkData?.data || {} as IBenchmarkResponse}
       />,
       title:'Unidade Comparison',
     });
-  }, [setSummaryContext, selectedUnits]);
+  }, [setSummaryContext, selectedUnits, benchmarkData]);
 
   return (
     <div className="flex flex-col gap-4">

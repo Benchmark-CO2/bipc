@@ -6,6 +6,7 @@ import { Button } from "./button";
 const Summary = () => {
   const { isOpen, toggleSummary, context, isExpanded, toggleExpanded,  } = useSummary();
 
+  if (context?.hide) return null;
   return (
     <section
       data-open={isOpen}

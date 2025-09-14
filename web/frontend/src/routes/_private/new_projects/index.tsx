@@ -1,3 +1,5 @@
+import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
+import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { deleteProject } from "@/actions/projects/deleteProjects";
 import { getAllProjectsByUser } from "@/actions/projects/getProjects";
 import { DrawerFormProject, ProjectTable } from "@/components/layout";
@@ -39,6 +41,11 @@ function RouteComponent() {
     queryKey: ["projects"],
     queryFn: getAllProjectsByUser,
   });
+
+  const {data: benchmarkData } = useQuery({
+    queryKey: ["projects-benchmarks"],
+    queryFn: getProjectsBenchmark
+  })
 
   const toggleViewMode = () => {
     setViewMode((prev) => (prev === "table" ? "grid" : "table"));
@@ -100,11 +107,13 @@ function RouteComponent() {
           projects={projects.filter((project) =>
             selectedProjects.get(project.id)
           )}
+          data={benchmarkData?.data || {} as IBenchmarkResponse}
         />
       ),
     });
-  }, [selectedProjects]);
+  }, [selectedProjects, benchmarkData]);
 
+  
   return (
     <div>
       <div className="mb-6 mt-2 flex justify-between gap-1">

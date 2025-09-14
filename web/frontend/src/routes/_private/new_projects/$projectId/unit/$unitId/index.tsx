@@ -13,6 +13,8 @@ import { getCategoryFromIndex } from "@/utils/unitConversions";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { getFloorsBenchmark } from "@/actions/benchmarks/getFloors";
+import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 
 type TGroupedFloor = IConsumption &
   Omit<TTowerFloorCategory, "consumption"> & {
@@ -107,12 +109,16 @@ function RouteComponent() {
   const handleSelectionChange = (selected: any) => {
     setSelectedFloors(selected);
   };
+    const { data: benchmarkData } = useQuery({
+      queryKey: ["floor-benchmarks"],
+      queryFn: getFloorsBenchmark,
+    });
   useEffect(() => {
     setSummaryContext({
-      component: <FloorSummary floors={selectedFloors} />,
+      component: <FloorSummary floors={selectedFloors} data={benchmarkData?.data || {} as IBenchmarkResponse} />,
       title: "Floor Comparison",
     });
-  }, [setSummaryContext, selectedFloors]);
+  }, [setSummaryContext, selectedFloors, benchmarkData]);
 
   const groupedFloors: TGroupedFloor[] = unitWithTower?.tower?.floors
     ? Object.values(
