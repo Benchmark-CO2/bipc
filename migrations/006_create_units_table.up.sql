@@ -78,8 +78,10 @@ CREATE TABLE IF NOT EXISTS module_concrete_wall (
     concrete_slabs UUID NOT NULL REFERENCES concrete(id),
     wall_thickness FLOAT8,
     slab_thickness FLOAT8,
-    form_area FLOAT8,
     wall_area FLOAT8,
+    slab_area FLOAT8,
+    wall_form_area FLOAT8,
+    slab_form_area FLOAT8,
     created_at TIMESTAMPTZ(0) NOT NULL DEFAULT (CURRENT_TIMESTAMP),
     updated_at TIMESTAMPTZ(0) NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );

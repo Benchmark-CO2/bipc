@@ -1212,14 +1212,22 @@ components:
           type: number
           description: "Average thickness of the concrete slabs in meters (m)."
           example: 0.15
-        form_area:
-          type: number
-          description: "Total area of concrete forms for walls and slabs in square meters (m²)."
-          example: 15000
         wall_area:
           type: number
           description: "Total area of the concrete walls in square meters (m²)."
           example: 3000
+        slab_area:
+          type: number
+          description: "Total area of the concrete slabs in square meters (m²)."
+          example: 15000
+        wall_form_area:
+          type: number
+          description: "Total area of concrete forms for walls in square meters (m²)."
+          example: 6000
+        slab_form_area:
+          type: number
+          description: "Total area of concrete forms for slabs in square meters (m²)."
+          example: 30000
       required:
         - concrete_walls
         - concrete_slabs

@@ -34,8 +34,10 @@ var requiredHeaders = []string{
 
 	"module_wall_thickness",
 	"module_slab_thickness",
-	"module_form_area",
 	"module_wall_area",
+	"module_slab_area",
+	"module_wall_form_area",
+	"module_slab_form_area",
 
 	"module_wall_concrete_20",
 	"module_wall_concrete_25",
@@ -83,8 +85,10 @@ type CSVRowData struct {
 	// Module fields
 	ModuleWallThickness float64 `json:"module_wall_thickness,omitempty"`
 	ModuleSlabThickness float64 `json:"module_slab_thickness,omitempty"`
-	ModuleFormArea      float64 `json:"module_form_area,omitempty"`
 	ModuleWallArea      float64 `json:"module_wall_area,omitempty"`
+	ModuleSlabArea      float64 `json:"module_slab_area,omitempty"`
+	ModuleWallFormArea  float64 `json:"module_wall_form_area,omitempty"`
+	ModuleSlabFormArea  float64 `json:"module_slab_form_area,omitempty"`
 
 	// Aggregated data
 	WallConcrete data.Concrete `json:"wall_concrete"`
@@ -168,8 +172,10 @@ func (app *application) generateRowData(dataRows [][]string, headerMap map[strin
 			// Module fields
 			ModuleWallThickness: parseFieldFloat("module_wall_thickness"),
 			ModuleSlabThickness: parseFieldFloat("module_slab_thickness"),
-			ModuleFormArea:      parseFieldFloat("module_form_area"),
 			ModuleWallArea:      parseFieldFloat("module_wall_area"),
+			ModuleSlabArea:      parseFieldFloat("module_slab_area"),
+			ModuleWallFormArea:  parseFieldFloat("module_wall_form_area"),
+			ModuleSlabFormArea:  parseFieldFloat("module_slab_form_area"),
 
 			// Aggregated data
 			WallConcrete: data.Concrete{
@@ -305,12 +311,12 @@ func toProjectsFromCSVData(rows []CSVRowData, userID int64) ([]ProjectFromCSV, e
 		// Floor Handling
 		floorID, err := uuid.NewV7()
 		if err != nil {
-			return nil, fmt.Errorf("failed to generate floor ID: %w", err)
+				return nil, fmt.Errorf("failed to generate floor ID: %w", err)
 		}
 		groupID, err := uuid.NewV7()
 		if err != nil {
-			return nil, fmt.Errorf("failed to generate floor group ID: %w", err)
-		}
+				return nil, fmt.Errorf("failed to generate floor group ID: %w", err)
+			}
 
 		// Cria o Floor
 		floor := data.Floor{
@@ -329,8 +335,10 @@ func toProjectsFromCSVData(rows []CSVRowData, userID int64) ([]ProjectFromCSV, e
 			ConcreteSlabs:   modules.ToConcreteElement(row.SlabConcrete),
 			WallThickness:   &row.ModuleWallThickness,
 			SlabThickness:   &row.ModuleSlabThickness,
-			FormArea:        &row.ModuleFormArea,
 			WallArea:        &row.ModuleWallArea,
+			SlabArea:        &row.ModuleSlabArea,
+			WallFormArea:    &row.ModuleWallFormArea,
+			SlabFormArea:    &row.ModuleSlabFormArea,
 			FloorIDs:        []uuid.UUID{floorID},
 		}
 		currentProjectFormCSV.Modules = append(currentProjectFormCSV.Modules, &module)

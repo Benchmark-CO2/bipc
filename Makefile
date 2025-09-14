@@ -147,6 +147,11 @@ migrations/up: confirm
 migrations/down:
 	migrate -path ./migrations -database $(DB_DSN) down
 
+## migrations/down-one: apply one down database migration
+.PHONY: migrations/down-one
+migrations/down-one:
+	migrate -path ./migrations -database $(DB_DSN) down 1
+
 ## minio/local: setup MinIO local storage
 .PHONY: minio/local
 minio/local:
