@@ -5,6 +5,7 @@ import {
   UnitFormSchema,
   unitFormSchema,
 } from "@/validators/unitForm.validator";
+import { convertUnitToFormData } from "@/utils/unitConversions";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -69,6 +70,7 @@ const DrawerFormUnit = ({
             height: 3.0,
             repetition: 1,
             category: "standard_floor",
+            index: 1,
           },
         ],
       },
@@ -157,43 +159,12 @@ const DrawerFormUnit = ({
     enabled: !!unitId,
   });
 
-  // primeiro, ordenar os floors pelo índice
-  const sortedFloors = unitData?.tower?.floors
-    .slice()
-    .sort((a, b) => a.index - b.index);
-
-  const groupedUnitData = sortedFloors?.reduce(
-    (acc, floor) => {
-      const groupName = floor.group_name;
-      if (!acc[groupName]) {
-        acc[groupName] = {
-          name: floor.group_name,
-          area: floor.area,
-          height: floor.height,
-          repetition: 1,
-          category: "standard_floor", // você pode ajustar a lógica para determinar a categoria
-        };
-      } else {
-        acc[groupName].repetition += 1;
-      }
-      return acc;
-    },
-    {} as Record<string, any>
-  );
-
-  const floorGroups = groupedUnitData ? Object.values(groupedUnitData) : [];
-
   useEffect(() => {
-    if (unitData && floorGroups.length > 0) {
-      form.reset({
-        name: unitData.name,
-        type: unitData.type,
-        data: {
-          floor_groups: floorGroups,
-        },
-      });
+    if (unitData) {
+      const formData = convertUnitToFormData(unitData);
+      form.reset(formData);
     }
-  }, [unitData, floorGroups, form]);
+  }, [unitData, form]);
 
   const unitTypes = [
     { value: "tower", label: t("drawerFormUnit.unitTypeOptions.tower") },
@@ -317,6 +288,19 @@ const DrawerFormUnit = ({
                   >
                     {t("drawerFormUnit.addUnitButton")}
                     {isCreationPending && (
+                      <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                    )}
+                  </Button>
+                )}
+                {Boolean(unitId) && (
+                  <Button
+                    type="submit"
+                    variant="bipc"
+                    className="mt-6 w-full"
+                    disabled={isUpdatePending}
+                  >
+                    {t("drawerFormUnit.editUnitButton")}
+                    {isUpdatePending && (
                       <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
                     )}
                   </Button>

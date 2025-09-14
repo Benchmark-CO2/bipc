@@ -9,6 +9,7 @@ import { TabsContainer } from "@/components/ui/tabsContainer";
 import { useSummary } from "@/context/summaryContext";
 import { IUnit, TTowerFloorCategory } from "@/types/units";
 import { IConsumption } from "@/types/modules";
+import { getCategoryFromIndex } from "@/utils/unitConversions";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -113,7 +114,7 @@ function RouteComponent() {
     });
   }, [setSummaryContext, selectedFloors]);
 
-  const groupedFloors = unitWithTower?.tower?.floors
+  const groupedFloors: TGroupedFloor[] = unitWithTower?.tower?.floors
     ? Object.values(
         unitWithTower.tower.floors.reduce(
           (acc, floor) => {
@@ -134,7 +135,36 @@ function RouteComponent() {
           },
           {} as Record<string, any>
         )
-      )
+      ).sort((a, b) => {
+        // Ordenação por categoria seguindo a hierarquia arquitetônica
+        const categoryOrder = {
+          penthouse_floor: 0,
+          standard_floor: 1,
+          ground_floor: 2,
+          basement_floor: 3,
+        };
+
+        // Determinar categoria de cada floor baseado no índice se não tiver category
+        const aCategory = a.category || getCategoryFromIndex(a.index || 0);
+        const bCategory = b.category || getCategoryFromIndex(b.index || 0);
+
+        const aCategoryOrder =
+          categoryOrder[aCategory as keyof typeof categoryOrder];
+        const bCategoryOrder =
+          categoryOrder[bCategory as keyof typeof categoryOrder];
+
+        if (aCategoryOrder !== bCategoryOrder) {
+          return aCategoryOrder - bCategoryOrder;
+        }
+
+        // Se mesma categoria, ordenar por índice decrescente (pisos mais altos primeiro)
+        if (a.index !== undefined && b.index !== undefined) {
+          return b.index - a.index;
+        }
+
+        // Fallback: ordenar por nome
+        return (a.name || "").localeCompare(b.name || "");
+      })
     : [];
 
   const calculateAverageMetrics = (floors: TGroupedFloor[]) => {

@@ -1,17 +1,11 @@
 import React from "react";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../../ui/form";
+import { FormControl, FormField, FormItem } from "../../ui/form";
 import { Input } from "../../ui/input";
 import { UseFormReturn, useFieldArray, useWatch } from "react-hook-form";
 import { UnitFormSchema } from "@/validators/unitForm.validator";
 import { Button } from "../../ui/button";
 import { Plus, GripVertical, Trash2 } from "lucide-react";
-import { Card, CardContent } from "../../ui/card";
+import { Card } from "../../ui/card";
 import BuildingVisualizer from "../building-visualizer";
 import {
   Table,
@@ -60,10 +54,86 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
     defaultValue: [],
   });
 
+  console.log(watchedFloors);
+
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = React.useState<
     "penthouse_floor" | "standard_floor" | "ground_floor" | "basement_floor"
   >("standard_floor");
+  const [focusedRowIndex, setFocusedRowIndex] = React.useState<number | null>(
+    null
+  );
+
+  // Função para recalcular índices automaticamente
+  const recalculateIndices = React.useCallback(() => {
+    const floorGroups = form.getValues("data.floor_groups");
+
+    // Separar por categoria
+    const categories = {
+      penthouse_floor: floorGroups.filter(
+        (f) => f.category === "penthouse_floor"
+      ),
+      standard_floor: floorGroups.filter(
+        (f) => f.category === "standard_floor"
+      ),
+      ground_floor: floorGroups.filter((f) => f.category === "ground_floor"),
+      basement_floor: floorGroups.filter(
+        (f) => f.category === "basement_floor"
+      ),
+    };
+
+    // Calcular índices para cada categoria
+    const updatedFloors = floorGroups.map((floor) => {
+      const floorsInCategory = categories[floor.category];
+      const indexInCategory = floorsInCategory.indexOf(floor);
+
+      let newIndex: number;
+
+      switch (floor.category) {
+        case "basement_floor":
+          // Subsolo: índices negativos (-1, -2, -3...)
+          newIndex = -(indexInCategory + 1);
+          break;
+        case "ground_floor":
+          // Térreo: índices a partir de 0 (0, 1, 2...)
+          newIndex = indexInCategory;
+          break;
+        case "standard_floor":
+          // Tipo: índices acima do térreo
+          const maxGroundIndex =
+            categories.ground_floor.length > 0
+              ? categories.ground_floor.length - 1
+              : -1;
+          newIndex = maxGroundIndex + 1 + indexInCategory;
+          break;
+        case "penthouse_floor":
+          // Cobertura: índices acima de todos
+          const maxStandardIndex =
+            categories.standard_floor.length > 0
+              ? (categories.ground_floor.length > 0
+                  ? categories.ground_floor.length - 1
+                  : -1) + categories.standard_floor.length
+              : categories.ground_floor.length > 0
+                ? categories.ground_floor.length - 1
+                : -1;
+          newIndex = Math.max(maxStandardIndex + 1, 1) + indexInCategory;
+          break;
+        default:
+          newIndex = 0;
+      }
+
+      return { ...floor, index: newIndex };
+    });
+
+    form.setValue("data.floor_groups", updatedFloors, {
+      shouldValidate: false,
+    });
+  }, [form]);
+
+  // Recalcular índices sempre que os floors mudarem
+  React.useEffect(() => {
+    recalculateIndices();
+  }, [watchedFloors.length, recalculateIndices]);
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
@@ -95,6 +165,8 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
       // Só permite mover se for da mesma categoria
       if (draggedFloor.category === dropFloor.category) {
         move(draggedIndex, dropIndex);
+        // Recalcular índices após o movimento
+        setTimeout(() => recalculateIndices(), 0);
       }
     }
     setDraggedIndex(null);
@@ -116,6 +188,10 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
       basement_floor: 3,
     };
 
+    // Calcular índice apropriado baseado na categoria e floors existentes
+    // (será recalculado automaticamente pela função recalculateIndices)
+    const newIndex = 0; // Temporário
+
     // Encontrar onde inserir baseado na hierarquia das categorias
     let insertIndex = floor_groups.length;
 
@@ -136,6 +212,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
       height: 3.0,
       repetition: 1,
       category: category,
+      index: newIndex,
     };
 
     // Inserir na posição correta
@@ -145,10 +222,15 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
     form.setValue("data.floor_groups", updatedFloors, {
       shouldValidate: false,
     });
+
+    // Recalcular índices após adicionar
+    setTimeout(() => recalculateIndices(), 0);
   };
 
   const removeFloor = (index: number) => {
     remove(index);
+    // Recalcular índices após remover
+    setTimeout(() => recalculateIndices(), 0);
   };
 
   return (
@@ -241,16 +323,19 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                   return (
                     <TableRow
                       key={field.id}
-                      className={`transition-opacity ${
+                      className={`transition-all duration-200 ${
                         draggedIndex === index ? "opacity-50" : ""
                       } ${draggedIndex !== null && !canDropHere ? "opacity-30" : ""}
+                      ${focusedRowIndex === index ? "shadow-sm shadow-blue-200 dark:shadow-blue-900 bg-blue-50 dark:bg-blue-950/20" : ""}
                       `}
                       draggable={!isEditMode}
                       style={{
                         cursor: !isEditMode ? "grab" : "default",
                         backgroundColor: canDropHere
                           ? "rgba(147, 197, 253, 0.2)" // Azul claro quando pode dar drop
-                          : "transparent",
+                          : focusedRowIndex === index
+                            ? undefined // Deixa o CSS className cuidar da cor de foco
+                            : "transparent",
                       }}
                       onDragStart={(e) => handleDragStart(e, index)}
                       onDragOver={(e) => handleDragOver(e, index)}
@@ -289,6 +374,8 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                           : "border-0"
                                       }`}
                                       {...field}
+                                      onFocus={() => setFocusedRowIndex(index)}
+                                      onBlur={() => setFocusedRowIndex(null)}
                                     />
                                   </TooltipTrigger>
                                   {fieldState.error && (
@@ -334,6 +421,8 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                             : 0
                                         )
                                       }
+                                      onFocus={() => setFocusedRowIndex(index)}
+                                      onBlur={() => setFocusedRowIndex(null)}
                                     />
                                   </TooltipTrigger>
                                   {fieldState.error && (
@@ -379,6 +468,8 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                             : 0
                                         )
                                       }
+                                      onFocus={() => setFocusedRowIndex(index)}
+                                      onBlur={() => setFocusedRowIndex(null)}
                                     />
                                   </TooltipTrigger>
                                   {fieldState.error && (
@@ -424,6 +515,8 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                             : 1
                                         )
                                       }
+                                      onFocus={() => setFocusedRowIndex(index)}
+                                      onBlur={() => setFocusedRowIndex(null)}
                                     />
                                   </TooltipTrigger>
                                   {fieldState.error && (
@@ -462,6 +555,10 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                             ? "border border-red-500"
                                             : "border-0"
                                         }`}
+                                        onFocus={() =>
+                                          setFocusedRowIndex(index)
+                                        }
+                                        onBlur={() => setFocusedRowIndex(null)}
                                       >
                                         <SelectValue placeholder="Categoria" />
                                       </SelectTrigger>
