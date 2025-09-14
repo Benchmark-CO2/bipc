@@ -29,17 +29,6 @@ const steelMassItemSchema = z
     mass: z.number().nonnegative("A massa deve ser um número não negativo"),
     customCa: z.boolean().optional(),
   })
-  .superRefine((data, ctx) => {
-    if (!data.customCa) {
-      if (data.ca < 50 || data.ca > 60) {
-        ctx.addIssue({
-          path: ["ca"],
-          code: "custom",
-          message: "CA deve estar entre 50 e 60",
-        });
-      }
-    }
-  })
   .transform((data) => {
     const { customCa, ...rest } = data;
     return rest;
@@ -86,8 +75,10 @@ export const moduleFormSchema = z
     concrete_walls: concreteElementSchema.optional(),
     wall_thickness: z.number().nonnegative().optional(),
     slab_thickness: z.number().nonnegative().optional(),
-    form_area: z.number().nonnegative().optional(),
     wall_area: z.number().nonnegative().optional(),
+    slab_area: z.number().nonnegative().optional(),
+    wall_form_area: z.number().nonnegative().optional(),
+    slab_form_area: z.number().nonnegative().optional(),
 
     // Structural Masonry (comentado por enquanto)
     // vertical_grout: concreteElementSchema.optional(),
@@ -124,16 +115,14 @@ export const moduleFormSchema = z
           data.concrete_walls !== undefined &&
           data.concrete_slabs !== undefined &&
           data.wall_thickness !== undefined &&
-          data.slab_thickness !== undefined &&
-          data.form_area !== undefined &&
-          data.wall_area !== undefined
+          data.slab_thickness !== undefined
         );
       }
       return true;
     },
     {
       message:
-        "Para Parede de Concreto são obrigatórios: concreto (paredes, lajes), espessuras (parede, laje) e áreas (forma, parede)",
+        "Para Parede de Concreto são obrigatórios: concreto (paredes, lajes) e espessuras (parede, laje)",
       path: ["type"],
     }
   );
@@ -181,9 +170,7 @@ export const validateConcreteWallData = (data: Partial<ModuleFormSchema>) => {
     data.concrete_walls?.volumes?.length &&
     data.concrete_slabs?.volumes?.length &&
     data.wall_thickness !== undefined &&
-    data.slab_thickness !== undefined &&
-    data.form_area !== undefined &&
-    data.wall_area !== undefined
+    data.slab_thickness !== undefined
   );
 };
 

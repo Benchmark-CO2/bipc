@@ -54,6 +54,17 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
         ]);
       }
     });
+
+    // Initialize form area fields if not set
+    const wallFormArea = form.getValues("wall_form_area");
+    const slabFormArea = form.getValues("slab_form_area");
+
+    if (wallFormArea === undefined) {
+      form.setValue("wall_form_area", 0);
+    }
+    if (slabFormArea === undefined) {
+      form.setValue("slab_form_area", 0);
+    }
   }, [form, fckOptions, caOptions]);
 
   const calculateTotalVolume = (
@@ -501,21 +512,258 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
     title: string,
     isFormSection: boolean = false
   ) => {
-    const [volumes, setVolumes] = useState<
-      Array<{ fck: number; volume: number }>
-    >([]);
-    const [steels, setSteels] = useState<Array<{ ca: number; mass: number }>>(
-      []
-    );
+    if (!isFormSection) {
+      const [volumes, setVolumes] = useState<
+        Array<{ fck: number; volume: number }>
+      >([]);
+      const [steels, setSteels] = useState<Array<{ ca: number; mass: number }>>(
+        []
+      );
 
-    const totalVolume = volumes.reduce(
-      (total, item) => total + (item.volume || 0),
-      0
-    );
-    const totalMass = steels.reduce(
-      (total, item) => total + (item.mass || 0),
-      0
-    );
+      const totalVolume = volumes.reduce(
+        (total, item) => total + (item.volume || 0),
+        0
+      );
+      const totalMass = steels.reduce(
+        (total, item) => total + (item.mass || 0),
+        0
+      );
+
+      return (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-700">{title}</h3>
+
+          <Card className="border-2 border-gray-300">
+            <CardContent className="space-y-4">
+              <div>
+                <FormLabel className="text-sm text-gray-600">
+                  Volume total de concreto (m³)
+                </FormLabel>
+                <Input
+                  value={totalVolume.toFixed(2)}
+                  disabled
+                  className="bg-gray-50 text-gray-700 font-medium"
+                />
+              </div>
+
+              <div className="space-y-3">
+                {volumes.map((volume, index) => {
+                  const isCustomFck = !fckOptions.includes(volume.fck);
+
+                  return (
+                    <div
+                      key={index}
+                      className="border border-gray-200 rounded-md p-3 space-y-3"
+                    >
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <FormLabel className="text-xs">FCK (MPa)</FormLabel>
+                          <Select
+                            defaultValue={
+                              isCustomFck ? "other" : volume.fck.toString()
+                            }
+                            onValueChange={(value) => {
+                              const newVolumes = [...volumes];
+                              if (value === "other") {
+                                newVolumes[index].fck = 70;
+                              } else {
+                                newVolumes[index].fck = Number(value);
+                              }
+                              setVolumes(newVolumes);
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {fckOptions.map((fck) => (
+                                <SelectItem key={fck} value={fck.toString()}>
+                                  {fck}
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="other">Outro</SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          {isCustomFck && (
+                            <Input
+                              type="number"
+                              placeholder="70"
+                              value={volume.fck}
+                              onChange={(e) => {
+                                const newVolumes = [...volumes];
+                                newVolumes[index].fck = Number(e.target.value);
+                                setVolumes(newVolumes);
+                              }}
+                              className="mt-2"
+                            />
+                          )}
+                        </div>
+
+                        <div>
+                          <FormLabel className="text-xs">Volume (m³)</FormLabel>
+                          <div className="flex gap-1">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={volume.volume}
+                              onChange={(e) => {
+                                const newVolumes = [...volumes];
+                                newVolumes[index].volume = Number(
+                                  e.target.value
+                                );
+                                setVolumes(newVolumes);
+                              }}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setVolumes(
+                                  volumes.filter((_, i) => i !== index)
+                                );
+                              }}
+                              className="px-2"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setVolumes([...volumes, { fck: 50, volume: 0 }])}
+                className="w-full text-green-600 border-green-600 hover:bg-green-50"
+              >
+                Adicionar
+              </Button>
+
+              <div className="border-t border-gray-200 my-4"></div>
+
+              <div>
+                <FormLabel className="text-sm text-gray-600">
+                  Aço total (kg)
+                </FormLabel>
+                <Input
+                  value={totalMass.toFixed(0)}
+                  disabled
+                  className="bg-gray-50 text-gray-700 font-medium"
+                />
+              </div>
+
+              <div className="space-y-3">
+                {steels.map((steel, index) => {
+                  const isCustomCa = !caOptions.includes(steel.ca);
+
+                  return (
+                    <div
+                      key={index}
+                      className="border border-gray-200 rounded-md p-3 space-y-3"
+                    >
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <FormLabel className="text-xs">CA</FormLabel>
+                          <Select
+                            defaultValue={
+                              isCustomCa ? "other" : steel.ca.toString()
+                            }
+                            onValueChange={(value) => {
+                              const newSteels = [...steels];
+                              if (value === "other") {
+                                newSteels[index].ca = 60;
+                              } else {
+                                newSteels[index].ca = Number(value);
+                              }
+                              setSteels(newSteels);
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {caOptions.map((ca) => (
+                                <SelectItem key={ca} value={ca.toString()}>
+                                  CA{ca}
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="other">Outro</SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          {isCustomCa && (
+                            <Input
+                              type="number"
+                              placeholder="CA60"
+                              value={steel.ca}
+                              onChange={(e) => {
+                                const newSteels = [...steels];
+                                newSteels[index].ca = Number(e.target.value);
+                                setSteels(newSteels);
+                              }}
+                              className="mt-2"
+                            />
+                          )}
+                        </div>
+
+                        <div>
+                          <FormLabel className="text-xs">Massa (kg)</FormLabel>
+                          <div className="flex gap-1">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={steel.mass}
+                              onChange={(e) => {
+                                const newSteels = [...steels];
+                                newSteels[index].mass = Number(e.target.value);
+                                setSteels(newSteels);
+                              }}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSteels(steels.filter((_, i) => i !== index));
+                              }}
+                              className="px-2"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setSteels([...steels, { ca: 50, mass: 0 }])}
+                className="w-full text-green-600 border-green-600 hover:bg-green-50"
+              >
+                Adicionar
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Form section implementation
+    const wallFormArea = form.watch("wall_form_area") || 0;
+    const slabFormArea = form.watch("slab_form_area") || 0;
+    const totalFormArea = wallFormArea + slabFormArea;
 
     return (
       <div className="space-y-3">
@@ -523,289 +771,86 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
 
         <Card className="border-2 border-gray-300">
           <CardContent className="space-y-4">
-            {!isFormSection && (
-              <>
-                <div>
-                  <FormLabel className="text-sm text-gray-600">
-                    Volume total de concreto (m³)
-                  </FormLabel>
-                  <Input
-                    value={totalVolume.toFixed(2)}
-                    disabled
-                    className="bg-gray-50 text-gray-700 font-medium"
-                  />
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <FormLabel className="text-sm text-gray-600">
+                  Tipo de forma
+                </FormLabel>
+                <Select defaultValue="metalica">
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="metalica">Metálica</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <div className="space-y-3">
-                  {volumes.map((volume, index) => {
-                    const isCustomFck = !fckOptions.includes(volume.fck);
+              <div>
+                <FormLabel className="text-sm text-gray-600">
+                  Forma total (m²)
+                </FormLabel>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={totalFormArea.toFixed(2)}
+                  readOnly
+                  className="bg-gray-50 text-gray-700 font-medium"
+                />
+              </div>
+            </div>
 
-                    return (
-                      <div
-                        key={index}
-                        className="border border-gray-200 rounded-md p-3 space-y-3"
-                      >
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <FormLabel className="text-xs">FCK (MPa)</FormLabel>
-                            <Select
-                              defaultValue={
-                                isCustomFck ? "other" : volume.fck.toString()
-                              }
-                              onValueChange={(value) => {
-                                const newVolumes = [...volumes];
-                                if (value === "other") {
-                                  newVolumes[index].fck = 70;
-                                } else {
-                                  newVolumes[index].fck = Number(value);
-                                }
-                                setVolumes(newVolumes);
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {fckOptions.map((fck) => (
-                                  <SelectItem key={fck} value={fck.toString()}>
-                                    {fck}
-                                  </SelectItem>
-                                ))}
-                                <SelectItem value="other">Outro</SelectItem>
-                              </SelectContent>
-                            </Select>
-
-                            {isCustomFck && (
-                              <Input
-                                type="number"
-                                placeholder="70"
-                                value={volume.fck}
-                                onChange={(e) => {
-                                  const newVolumes = [...volumes];
-                                  newVolumes[index].fck = Number(
-                                    e.target.value
-                                  );
-                                  setVolumes(newVolumes);
-                                }}
-                                className="mt-2"
-                              />
-                            )}
-                          </div>
-
-                          <div>
-                            <FormLabel className="text-xs">
-                              Volume (m³)
-                            </FormLabel>
-                            <div className="flex gap-1">
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={volume.volume}
-                                onChange={(e) => {
-                                  const newVolumes = [...volumes];
-                                  newVolumes[index].volume = Number(
-                                    e.target.value
-                                  );
-                                  setVolumes(newVolumes);
-                                }}
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setVolumes(
-                                    volumes.filter((_, i) => i !== index)
-                                  );
-                                }}
-                                className="px-2"
-                              >
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setVolumes([...volumes, { fck: 50, volume: 0 }])
-                  }
-                  className="w-full text-green-600 border-green-600 hover:bg-green-50"
-                >
-                  Adicionar
-                </Button>
-
-                <div className="border-t border-gray-200 my-4"></div>
-
-                <div>
-                  <FormLabel className="text-sm text-gray-600">
-                    Aço total (kg)
-                  </FormLabel>
-                  <Input
-                    value={totalMass.toFixed(0)}
-                    disabled
-                    className="bg-gray-50 text-gray-700 font-medium"
-                  />
-                </div>
-
-                <div className="space-y-3">
-                  {steels.map((steel, index) => {
-                    const isCustomCa = !caOptions.includes(steel.ca);
-
-                    return (
-                      <div
-                        key={index}
-                        className="border border-gray-200 rounded-md p-3 space-y-3"
-                      >
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <FormLabel className="text-xs">CA</FormLabel>
-                            <Select
-                              defaultValue={
-                                isCustomCa ? "other" : steel.ca.toString()
-                              }
-                              onValueChange={(value) => {
-                                const newSteels = [...steels];
-                                if (value === "other") {
-                                  newSteels[index].ca = 60;
-                                } else {
-                                  newSteels[index].ca = Number(value);
-                                }
-                                setSteels(newSteels);
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {caOptions.map((ca) => (
-                                  <SelectItem key={ca} value={ca.toString()}>
-                                    CA{ca}
-                                  </SelectItem>
-                                ))}
-                                <SelectItem value="other">Outro</SelectItem>
-                              </SelectContent>
-                            </Select>
-
-                            {isCustomCa && (
-                              <Input
-                                type="number"
-                                placeholder="CA60"
-                                value={steel.ca}
-                                onChange={(e) => {
-                                  const newSteels = [...steels];
-                                  newSteels[index].ca = Number(e.target.value);
-                                  setSteels(newSteels);
-                                }}
-                                className="mt-2"
-                              />
-                            )}
-                          </div>
-
-                          <div>
-                            <FormLabel className="text-xs">
-                              Massa (kg)
-                            </FormLabel>
-                            <div className="flex gap-1">
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={steel.mass}
-                                onChange={(e) => {
-                                  const newSteels = [...steels];
-                                  newSteels[index].mass = Number(
-                                    e.target.value
-                                  );
-                                  setSteels(newSteels);
-                                }}
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setSteels(
-                                    steels.filter((_, i) => i !== index)
-                                  );
-                                }}
-                                className="px-2"
-                              >
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSteels([...steels, { ca: 50, mass: 0 }])}
-                  className="w-full text-green-600 border-green-600 hover:bg-green-50"
-                >
-                  Adicionar
-                </Button>
-              </>
-            )}
-
-            {isFormSection && (
-              <>
-                <div>
-                  <FormLabel className="text-sm text-gray-600">
-                    Tipo de forma
-                  </FormLabel>
-                  <Select defaultValue="metalica">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="metalica">Metálica</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="wall_form_area"
+                render={({ field }) => (
+                  <FormItem>
                     <FormLabel className="text-xs">
                       Forma de parede (m²)
                     </FormLabel>
-                    <Input type="number" step="0.01" placeholder="1000" />
-                  </div>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="1000"
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = Number(e.target.value);
+                          field.onChange(value);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                  <div>
+              <FormField
+                control={form.control}
+                name="slab_form_area"
+                render={({ field }) => (
+                  <FormItem>
                     <FormLabel className="text-xs">
                       Forma de laje (m²)
                     </FormLabel>
-                    <Input type="number" step="0.01" placeholder="400" />
-                  </div>
-
-                  <div>
-                    <FormLabel className="text-xs">Forma total (m²)</FormLabel>
-                    <Input type="number" step="0.01" placeholder="1400" />
-                  </div>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-green-600 border-green-600 hover:bg-green-50"
-                >
-                  Adicionar
-                </Button>
-              </>
-            )}
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="400"
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = Number(e.target.value);
+                          field.onChange(value);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -857,7 +902,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
 
         <FormField
           control={form.control}
-          name="form_area"
+          name="slab_area"
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">Área de laje (m²)</FormLabel>
@@ -903,7 +948,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
       {renderCompleteSection("concrete_slabs", "Laje de concreto", true, true)}
 
       {/* Escada (opcional) */}
-      {renderOptionalSection("Escada (opcional)")}
+      {/* {renderOptionalSection("Escada (opcional)")} */}
 
       {/* Área de formas (opcional) */}
       {renderOptionalSection("Área de formas (opcional)", true)}

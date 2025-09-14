@@ -226,8 +226,10 @@ const DrawerFormModule = ({
         concrete_slabs: data.concrete_slabs || { volumes: [], steel: [] },
         wall_thickness: data.wall_thickness,
         slab_thickness: data.slab_thickness,
-        form_area: data.form_area,
         wall_area: data.wall_area,
+        slab_area: data.slab_area,
+        wall_form_area: data.wall_form_area,
+        slab_form_area: data.slab_form_area,
       };
     }
 
