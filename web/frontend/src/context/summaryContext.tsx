@@ -3,6 +3,7 @@ import { createContext, useContext, useState } from 'react';
 type SummaryContextProps = {
   title: string;
   component: React.ReactNode;
+  hide?: boolean;
 }
 
 type SummaryContextType = {

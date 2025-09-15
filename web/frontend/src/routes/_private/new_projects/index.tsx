@@ -1,5 +1,4 @@
 import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
-import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { deleteProject } from "@/actions/projects/deleteProjects";
 import { getAllProjectsByUser } from "@/actions/projects/getProjects";
 import { DrawerFormProject, ProjectTable } from "@/components/layout";
@@ -101,14 +100,13 @@ function RouteComponent() {
   };
 
   useEffect(() => {
+    if (!benchmarkData?.data) return;
     setSummaryContext({
       title: "Projects Comparison",
       component: (
         <ProjectsSummary
-          projects={projects
-            .filter((project) => selectedProjects.get(project.id))
-            .map(({ co, mj, density, ...project }) => project)}
-          data={benchmarkData?.data || ({} as IBenchmarkResponse)}
+          projects={projects}
+          data={benchmarkData.data}
         />
       ),
     });
@@ -126,21 +124,6 @@ function RouteComponent() {
               <Button variant={"bipc"}>{t("projects.addProject")}</Button>
             }
           />
-          {/* {viewMode === "table" && (
-            <DrawerFormProject componentTrigger={componentTrigger} />
-          )}
-          <Button
-            variant={viewMode !== "table" ? "default" : "outline"}
-            onClick={toggleViewMode}
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode !== "grid" ? "default" : "outline"}
-            onClick={toggleViewMode}
-          >
-            <List className="h-4 w-4" />
-          </Button> */}
         </div>
       </div>
       {viewMode === "table" ? (

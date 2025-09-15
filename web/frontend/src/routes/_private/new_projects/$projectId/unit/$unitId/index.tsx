@@ -1,3 +1,4 @@
+import { getFloorsBenchmark } from "@/actions/benchmarks/getFloors";
 import { getUnitByUUID } from "@/actions/units/getUnit";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import { floorsColumns } from "@/components/columns/floors";
@@ -7,14 +8,12 @@ import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
 import { TabsContainer } from "@/components/ui/tabsContainer";
 import { useSummary } from "@/context/summaryContext";
-import { IUnit, TTowerFloorCategory } from "@/types/units";
 import { IConsumption } from "@/types/modules";
+import { IUnit, TTowerFloorCategory } from "@/types/units";
 import { getCategoryFromIndex } from "@/utils/unitConversions";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { getFloorsBenchmark } from "@/actions/benchmarks/getFloors";
-import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 
 type TGroupedFloor = IConsumption &
   Omit<TTowerFloorCategory, "consumption"> & {
@@ -114,11 +113,12 @@ function RouteComponent() {
     queryFn: getFloorsBenchmark,
   });
   useEffect(() => {
+    if (!benchmarkData?.data) return;
     setSummaryContext({
       component: (
         <FloorSummary
           floors={selectedFloors}
-          data={benchmarkData?.data || ({} as IBenchmarkResponse)}
+          data={benchmarkData.data}
         />
       ),
       title: "Floor Comparison",
