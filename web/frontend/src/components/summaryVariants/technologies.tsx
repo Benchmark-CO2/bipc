@@ -3,8 +3,8 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
-import { TabsContainer } from "../ui/tabsContainer";
 import { Checkbox } from "../ui/checkbox";
+import { TabsContainer } from "../ui/tabsContainer";
 
 type ProjectsSummaryProps = {
   techs: (any & {

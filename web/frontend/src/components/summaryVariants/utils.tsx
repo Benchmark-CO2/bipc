@@ -1,6 +1,5 @@
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { IProject } from "@/types/projects";
-import { Checkbox } from "../ui/checkbox";
 
 export const stackData = <T extends IProject>(item: T[], data: IBenchmarkResponse) => {
   return (item || [])
@@ -23,3 +22,12 @@ export const stackData = <T extends IProject>(item: T[], data: IBenchmarkRespons
     })
     .filter(Boolean);
 };
+
+export const barColors = [
+  "#FFE8A3",
+  "#F4AFEE",
+  "#B2F4AF",
+  "bg-blue-500",
+  "bg-purple-500",
+  "bg-red-500",
+];

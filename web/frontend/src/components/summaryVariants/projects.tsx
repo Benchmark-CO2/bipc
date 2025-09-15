@@ -1,32 +1,25 @@
+import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { IProject } from "@/types/projects";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
-import { TabsContainer } from "../ui/tabsContainer";
-import { IBenchmarkResponse } from "@/actions/benchmarks/types";
-import { stackData } from "./utils";
-import { Checkbox } from "../ui/checkbox";
 import NotFoundList from "../ui/not-found-list";
+import { TabsContainer } from "../ui/tabsContainer";
+import ItemCard from "./components/ItemCard";
+import ListItem from "./components/ListItem";
+import Subtitle from './components/Subtitle';
+import { stackData } from "./utils";
 
 type ProjectsSummaryProps = {
   projects: IProject[];
   data: IBenchmarkResponse;
 };
 
-const colors = [
-  "bg-pink-500",
-  "bg-yellow-500",
-  "bg-green-500",
-  "bg-blue-500",
-  "bg-purple-500",
-  "bg-red-500",
-];
-
 const manageData = (data: ProjectsSummaryProps["data"]["benchmark"]["co2"]) => {
   if (!data) return [];
-  return data.map((el, idx) => ({
+  return data.map((el) => ({
     ...el,
     label: "",
   }));
@@ -44,7 +37,7 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
   ).map((el) => ({
     ...el,
     label: projects.find((f) => f.id === el.id)?.name || "",
-  }));
+  })).filter(f => f.min && f.max);
   const { isExpanded } = useSummary();
   const isMobile = useIsMobile();
   const screenWidth = window.innerWidth;
@@ -55,7 +48,16 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
     return screenWidth / 2.5;
   };
 
-  const stackedData = stackData(projects, data);
+  const stackedData = useMemo(
+    () =>
+      stackData(projects, data)?.map((el) => ({
+        ...el,
+        concreteWall: Math.random() * (10000 - 800) + 800,
+        beamColumn: Math.random() * (10000 - 800) + 800,
+        structural: Math.random() * (10000 - 800) + 800,
+      })),
+    [projects, data]
+  );
 
   const height = () => {
     if (isMobile && !isExpanded) return 250;
@@ -79,6 +81,7 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
       )
     );
   }, [projects]);
+  const [subTabs, setSubTabs] = useState<"Projetos">("Projetos");
 
   return (
     <>
@@ -88,11 +91,23 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
           handleTabClick={(tab) => setType(tab as "co2" | "energy")}
           selectedTab={type}
           fullWidth
+          handleClickSubTab={(tab) => setSubTabs(tab as "Projetos")}
+          subTabs={["Projetos"]}
+          selectedSubTab={subTabs}
         />
       </div>
-      <div className="w-full flex justify-between gap-10 max-md:flex-col">
+      <div
+        className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
+          "flex flex-col": isExpanded,
+        })}
+      >
         <div className="flex flex-col items-start w-full">
-          <ul className="flex flex-col gap-2 text-xl w-full text-black">
+          <ul
+            className={cn("flex flex-col gap-10 text-xl w-full text-black", {
+              "flex-row gap-2 flex-wrap": isExpanded,
+            })}
+          >
+            {" "}
             {(!stackedData || stackedData.length === 0) && (
               <NotFoundList
                 message="Nenhum projeto selecionado."
@@ -102,55 +117,32 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
             )}
             {(stackedData || []).map((project) => {
               if (!project) return null;
-              return (
-                <li
+              const sum =
+                (project.beamColumn || 0) +
+                (project.concreteWall || 0) +
+                (project.structural || 0);
+              return isExpanded ? (
+                <ItemCard
                   key={project.id}
-                  className={cn("flex flex-col w-full items-start gap-3", {
-                    "text-sm": isExpanded,
-                  })}
-                  onClick={() => handleAddProject(project.id)}
-                >
-                  <div className="flex items-center gap-3 cursor-pointer">
-                    <Checkbox
-                      checked={selectedProjects.includes(project.id)}
-                      onClick={() => handleAddProject(project.id)}
-                    />
-                    <h4 className="whitespace-nowrap flex items-center gap-3 cursor-pointer">
-                      {project.label}
-                    </h4>
-                  </div>
-
-                  <div className="flex w-full h-2 col-span-4">
-                    <div
-                      style={{
-                        width: `${project.co2 || 0}%`,
-                      }}
-                      className={cn(`h-2 rounded-r-full`, colors[0])}
-                    />
-                    <div
-                      style={{
-                        width: `${project.energy || 0}%`,
-                      }}
-                      className={cn(`h-2 rounded-r-full`, colors[1])}
-                    />
-                  </div>
-                </li>
+                  item={project as any}
+                  selectedProjects={selectedProjects}
+                  handleAddProject={handleAddProject}
+                  sum={sum}
+                />
+              ) : (
+                <ListItem
+                  key={project.id}
+                  item={project as any}
+                  selectedProjects={selectedProjects}
+                  handleAddProject={handleAddProject}
+                  sum={sum}
+                />
               );
             })}
           </ul>
-        </div>
-        {/* <CustomChart 
-            maxWidth={width()}
-            maxHeight={height()}
-            datachart={projects.reduce((acc, project) => {
-              acc['gray'] = [
-                ...(acc['gray'] || []),
-                { y: (project[type] / (type === 'co' ? coSum : type === 'mj' ? mjSum : densitySum)) * 10, x: project[type], fill: true, label: type + project.name, fillColor: 'hsl(340 75% 55%)' },
-              ];
-              return acc;
-            }, {} as Record<string, DataPoint[]>)} 
+          {!isExpanded && <Subtitle  />}
 
-          /> */}
+        </div>
         <D3GradientRangeChart
           width={width()}
           height={height()}

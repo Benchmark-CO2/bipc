@@ -13,7 +13,7 @@ const Summary = () => {
       data-expanded={isExpanded}
       className="absolute bottom-0 right-0 bg-gray-50 dark:bg-sidebar w-full max-md:mx-auto max-md:left-0 transition-all z-50 border-t border-gray-200 dark:border-gray-700 shadow-lg"
       style={{
-        height: isOpen ? (isExpanded ? "75vh" : "550px") : "50px",
+        height: isOpen ? (isExpanded ? "96vh" : "550px") : "50px",
       }}
     >
       <div className="relative flex flex-col w-full h-full">

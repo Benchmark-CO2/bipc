@@ -1,3 +1,4 @@
+import { getUnitsBenchmark } from "@/actions/benchmarks/getUnits";
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import { unitsColumns } from "@/components/columns/units";
@@ -10,8 +11,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from 'react';
 import CommonTable from "../common-table";
 import DrawerFormUnit from "../drawer-form-unit";
-import { getUnitsBenchmark } from "@/actions/benchmarks/getUnits";
-import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 
 const fakeTechnologies = [
   {
@@ -54,10 +53,11 @@ const ProjectView = ({ projectId }: { projectId: string }) => {
   })) || [];
 
   useEffect(() => {
+    if (!benchmarkData?.data) return;
     setSummaryContext({
       component: <UnitsSummary 
         units={selectedUnits as any}
-        data={benchmarkData?.data || {} as IBenchmarkResponse}
+        data={benchmarkData.data}
       />,
       title:'Unidade Comparison',
     });
