@@ -6,7 +6,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
@@ -20,7 +20,7 @@ type PermissionModel struct {
 	DB *sql.DB
 }
 
-func (m PermissionModel) GetAllForUser(userID int64, projectID uuid.UUID) (Permissions, error) {
+func (m PermissionModel) GetAllForUser(userID uuid.UUID, projectID uuid.UUID) (Permissions, error) {
 	query := `
         SELECT p.code
         FROM permissions p
@@ -55,7 +55,7 @@ func (m PermissionModel) GetAllForUser(userID int64, projectID uuid.UUID) (Permi
 	return permissions, nil
 }
 
-func (m PermissionModel) SetForUser(userID int64, projectID uuid.UUID, codes ...string) error {
+func (m PermissionModel) SetForUser(userID uuid.UUID, projectID uuid.UUID, codes ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 

@@ -8,9 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Benchmark-CO2/bipc/internal/utils"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
@@ -35,7 +34,7 @@ type Project struct {
 	ID           uuid.UUID     `json:"id"`
 	CreatedAt    time.Time     `json:"created_at"`
 	UpdatedAt    time.Time     `json:"updated_at"`
-	UserID       int64         `json:"user_id"`
+	UserID       uuid.UUID     `json:"user_id"`
 	Name         string        `json:"name"`
 	CEP          *string       `json:"cep,omitzero"`
 	State        string        `json:"state"`
@@ -87,11 +86,6 @@ func ValidateProject(v *validator.Validator, project *Project) {
 		v.Check(*project.Description != "", "description", "empty description is not allowed")
 		v.Check(len(*project.Description) <= 500, "description", "must not be more than 500 bytes long")
 	}
-
-	if project.ImageURL != nil {
-		v.Check(*project.ImageURL != "", "image_url", "empty image URL is not allowed")
-		v.Check(validator.IsValidHTTPURL(*project.ImageURL), "image_url", "must be a valid URL")
-	}
 }
 
 type ProjectModel struct {
@@ -99,6 +93,13 @@ type ProjectModel struct {
 }
 
 func (m ProjectModel) Insert(project *Project) error {
+	projectID, err := uuid.NewV7()
+	if err != nil {
+		return err
+	}
+
+	project.ID = projectID
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -107,14 +108,6 @@ func (m ProjectModel) Insert(project *Project) error {
 		return err
 	}
 	defer tx.Rollback()
-
-	if project.ID.IsNil() {
-		projectID, err := utils.NewUUIDv7()
-		if err != nil {
-			return err
-		}
-		project.ID = projectID
-	}
 
 	query1 := `
 		INSERT INTO projects (id, user_id, name, cep, state, city, neighborhood, street, number, phase, description, image_url)
@@ -314,7 +307,7 @@ func (m ProjectModel) Delete(projectID uuid.UUID) error {
 	return nil
 }
 
-func (m ProjectModel) GetAll(name string, filters Filters, userID int64) ([]*Project, Metadata, error) {
+func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]*Project, Metadata, error) {
 	query := fmt.Sprintf(`
 		WITH project_consumption AS (
 			SELECT

@@ -5,7 +5,7 @@ import (
 	"sort"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 )
 
 type BenchmarkPoint struct {
@@ -129,19 +129,19 @@ func (app *application) getProjectsBenchmarkHandler(w http.ResponseWriter, r *ht
 		CO2:    []BenchmarkPoint{},
 		Energy: []BenchmarkPoint{},
 	}
-	
-	if len(projects) != 0 {	
+
+	if len(projects) != 0 {
 		co2Points, energyPoints := separateConsumption(projects)
-		
+
 		calculateGiniAndSort(co2Points)
 		calculateGiniAndSort(energyPoints)
-		
+
 		benchmarkData = BenchmarkData{
 			CO2:    co2Points,
 			Energy: energyPoints,
-		}	
+		}
 	}
-	
+
 	err = app.writeJSON(w, http.StatusOK, envelope{"benchmark": benchmarkData}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

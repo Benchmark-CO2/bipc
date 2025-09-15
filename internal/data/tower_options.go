@@ -6,9 +6,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Benchmark-CO2/bipc/internal/utils"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 )
 
 type ModuleInfo struct {
@@ -35,6 +34,13 @@ type TowerOptionModel struct {
 }
 
 func (m TowerOptionModel) Insert(towerOption *TowerOption) error {
+	towerOptionID, err := uuid.NewV7()
+	if err != nil {
+		return err
+	}
+
+	towerOption.ID = towerOptionID
+
 	tx, err := m.DB.Begin()
 	if err != nil {
 		return err
@@ -65,14 +71,6 @@ func (m TowerOptionModel) Insert(towerOption *TowerOption) error {
 	query := `
         INSERT INTO tower_option (id, tower_id, name, active)
         VALUES ($1, $2, $3, $4)`
-
-	if towerOption.ID.IsNil() {
-		towerOptionID, err := utils.NewUUIDv7()
-		if err != nil {
-			return err
-		}
-		towerOption.ID = towerOptionID
-	}
 
 	args := []interface{}{towerOption.ID, towerOption.TowerID, towerOption.Name, towerOption.Active}
 

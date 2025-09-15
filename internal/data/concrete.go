@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/utils"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 )
 
 type ConcreteVolume struct {

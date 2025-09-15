@@ -1,16 +1,16 @@
 package modules
 
 import (
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
 type BeamColumn struct {
-	ID              uuid.UUID       `json:"id"`
+	ID uuid.UUID `json:"id"`
 	BasicModuleData
-	Consumption     *Consumption     `json:"consumption,omitempty"`
+	Consumption     *Consumption    `json:"consumption,omitempty"`
 	ConcreteColumns ConcreteElement `json:"concrete_columns"`
 	ConcreteBeams   ConcreteElement `json:"concrete_beams"`
 	ConcreteSlabs   ConcreteElement `json:"concrete_slabs"`

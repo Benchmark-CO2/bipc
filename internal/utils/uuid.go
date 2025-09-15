@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 )
 
 // NewUUIDv7 generates a new UUID version 7.

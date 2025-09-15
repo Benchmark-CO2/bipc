@@ -8,7 +8,7 @@ import (
 
 	"github.com/Benchmark-CO2/bipc/internal/utils"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
@@ -62,7 +62,6 @@ type FloorGroupCreate struct {
 }
 
 func ValidateUnit(v *validator.Validator, unit *Unit) {
-	v.Check(!unit.ProjectID.IsNil(), "project_id", "must be provided")
 	v.Check(unit.Name != "", "name", "must be provided")
 	v.Check(unit.Type != "", "type", "must be provided")
 }
@@ -73,7 +72,7 @@ func (m UnitModel) InsertWithExistingFloors(unit *Unit) error {
 		return err
 	}
 
-	if unit.ID.IsNil() {
+	if unit.ID == uuid.Nil {
 		tx.Rollback()
 		return errors.New("unit.ID must be provided")
 	}
@@ -209,7 +208,7 @@ func (m UnitModel) Insert(unit *Unit, floorGroups []FloorGroupCreate) error {
 }
 
 func (m UnitModel) GetByID(id uuid.UUID) (*Unit, error) {
-	if id.IsNil() {
+	if id == uuid.Nil {
 		return nil, ErrRecordNotFound
 	}
 
@@ -345,7 +344,7 @@ func (m UnitModel) Update(unit *Unit) error {
 }
 
 func (m UnitModel) Delete(id uuid.UUID) error {
-	if id.IsNil() {
+	if id == uuid.Nil {
 		return ErrRecordNotFound
 	}
 
@@ -477,7 +476,7 @@ func loadFloorsAndModules(tx *sql.Tx, floorIDs []uuid.UUID) (map[uuid.UUID]*Floo
 		}
 
 		if moduleID.Valid && active.Valid && active.Bool {
-			mid, err := uuid.FromString(moduleID.String)
+			mid, err := uuid.Parse(moduleID.String)
 			if err != nil {
 				return nil, nil, err
 			}
