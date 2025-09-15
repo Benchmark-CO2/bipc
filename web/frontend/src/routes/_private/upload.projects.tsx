@@ -1,4 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
+import api from '@/service/api';
+import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_private/upload/projects')({
@@ -41,19 +42,15 @@ function CsvUploadPage() {
     setResponse('Uploading...');
 
     try {
-      const res = await fetch('/v1/projects-upload', {
-        method: 'POST',
+      
+      const res = await api.post('/v1/projects-upload', formData, {
         headers: {
-            'Authorization': 'Bearer ' + token,
-        },
-        body: formData,
+          'Content-Type': 'multipart/form-data',
+        }
       });
 
-      const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || 'HTTP error! status: ' + res.status);
-      }
+      const data = await res.data;
 
       setResponse(JSON.stringify(data, null, 2));
     } catch (err) {

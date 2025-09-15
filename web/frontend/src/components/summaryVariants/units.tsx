@@ -65,6 +65,14 @@ const UnitsSummary = ({ units, data }: ProjectsSummaryProps) => {
     }
   };
   const [selectedSubTab, setSelectedSubTab] = useState<"Unidades">("Unidades");
+    const selectAll = () => {
+    if (selectedProjects.length === units.length) {
+      setSelectedProjects([]);
+    } else {
+      setSelectedProjects(units.map((f) => f.id));
+    }
+  };
+        
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
       <div className="w-full flex gap-2 mb-4">
@@ -73,10 +81,13 @@ const UnitsSummary = ({ units, data }: ProjectsSummaryProps) => {
           handleTabClick={(tab) => setType(tab as "co2" | "energy")}
           selectedTab={type}
           fullWidth
-          subTabs={["Unidades"]}
-          handleClickSubTab={(tab) =>
-            setSelectedSubTab(tab as "Unidades")
-          }
+          subTabs={["Unidades", selectedProjects.length === units.length
+          ? "Desmarcar Todos"
+          : "Selecionar Todos"]}
+          handleClickSubTab={(tab) => {
+            if (tab === "Unidades") setSelectedSubTab(tab as "Unidades");
+            if (tab === "Selecionar Todos" || tab === "Desmarcar Todos") selectAll();
+          }}
           selectedSubTab={selectedSubTab}
         />
       </div>

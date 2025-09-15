@@ -1,20 +1,3 @@
-import React from "react";
-import { FormControl, FormField, FormItem } from "../../ui/form";
-import { Input } from "../../ui/input";
-import { UseFormReturn, useFieldArray, useWatch } from "react-hook-form";
-import { UnitFormSchema } from "@/validators/unitForm.validator";
-import { Button } from "../../ui/button";
-import { Plus, GripVertical, Trash2 } from "lucide-react";
-import { Card } from "../../ui/card";
-import BuildingVisualizer from "../building-visualizer";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../../ui/table";
 import {
   Select,
   SelectContent,
@@ -27,6 +10,23 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { UnitFormSchema } from "@/validators/unitForm.validator";
+import { GripVertical, Plus, Trash2 } from "lucide-react";
+import React from "react";
+import { UseFormReturn, useFieldArray, useWatch } from "react-hook-form";
+import { Button } from "../../ui/button";
+import { Card } from "../../ui/card";
+import { FormControl, FormField, FormItem } from "../../ui/form";
+import { Input } from "../../ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../../ui/table";
+import BuildingVisualizer from "../building-visualizer";
 
 interface UnitFormTowerProps {
   form: UseFormReturn<UnitFormSchema>;

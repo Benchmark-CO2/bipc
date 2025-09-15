@@ -62,7 +62,13 @@ const FloorSummary = ({ floors, data }: ProjectsSummaryProps) => {
   }, [floors]);
 
   const [subTabs, setSubTabs] = useState<"Pavimentos">("Pavimentos");
-
+  const selectAll = () => {
+    if (selectedProjects.length === floors.length) {
+      setSelectedProjects([]);
+    } else {
+      setSelectedProjects(floors.map((f) => f.id));
+    }
+  };
   return (
     <>
       <div className="w-full flex gap-2 mb-4">
@@ -71,8 +77,13 @@ const FloorSummary = ({ floors, data }: ProjectsSummaryProps) => {
           handleTabClick={(tab) => setType(tab as "co2" | "energy")}
           selectedTab={type}
           fullWidth
-          handleClickSubTab={(tab) => setSubTabs(tab as "Pavimentos")}
-          subTabs={["Pavimentos"]}
+          handleClickSubTab={(tab) => {
+            if (tab === "Pavimentos") setSubTabs(tab as "Pavimentos");
+            if (tab === "Selecionar Todos" || tab === "Desmarcar Todos") selectAll();
+          }}
+          subTabs={["Pavimentos", selectedProjects.length === floors.length
+            ? "Desmarcar Todos"
+            : "Selecionar Todos"]}
           selectedSubTab={subTabs}
         />
       </div>
