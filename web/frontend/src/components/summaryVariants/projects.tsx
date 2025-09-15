@@ -2,18 +2,17 @@ import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
-import { IProject } from "@/types/projects";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import NotFoundList from "../ui/not-found-list";
 import { TabsContainer } from "../ui/tabsContainer";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
-import Subtitle from './components/Subtitle';
+import Subtitle from "./components/Subtitle";
 import { stackData } from "./utils";
 
 type ProjectsSummaryProps = {
-  projects: IProject[];
+  projects: any[];
   data: IBenchmarkResponse;
 };
 
@@ -28,16 +27,16 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   // const coSum = data.reduce((acc, project) => acc + project.min, 0);
   // const mjSum = data.reduce((acc, project) => acc + project.max, 0);
-  const [selectedProjects, setSelectedProjects] = useState<string[]>(
-    projects.map((project) => project.id)
-  );
+  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
 
   const managedData = manageData(
     data.benchmark?.[type as "co2" | "energy"] || []
-  ).map((el) => ({
-    ...el,
-    label: projects.find((f) => f.id === el.id)?.name || "",
-  })).filter(f => f.min && f.max);
+  )
+    .map((el) => ({
+      ...el,
+      label: projects.find((f) => f.id === el.id)?.name || "",
+    }))
+    .filter((f) => f.min && f.max);
   const { isExpanded } = useSummary();
   const isMobile = useIsMobile();
   const screenWidth = window.innerWidth;
@@ -103,8 +102,9 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
       >
         <div className="flex flex-col items-start w-full">
           <ul
-            className={cn("flex flex-col gap-10 text-xl w-full text-black", {
+            className={cn("flex flex-col gap-2 text-xl w-full text-black", {
               "flex-row gap-2 flex-wrap": isExpanded,
+              "max-h-[300px] overflow-y-auto ": !isExpanded,
             })}
           >
             {" "}
@@ -140,8 +140,7 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
               );
             })}
           </ul>
-          {!isExpanded && <Subtitle  />}
-
+          {!isExpanded && <Subtitle />}
         </div>
         <D3GradientRangeChart
           width={width()}

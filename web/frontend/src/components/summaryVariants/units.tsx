@@ -29,9 +29,7 @@ const generateFakeData = (units: ProjectsSummaryProps["units"]) => {
 
 const UnitsSummary = ({ units, data }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
-  const [selectedProjects, setSelectedProjects] = useState<string[]>(
-    units?.map((unit) => unit.id) || []
-  );
+  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const fakeUnits = generateFakeData(
     data.benchmark?.[type as "co2" | "energy"] || []
   ).map((el) => ({
