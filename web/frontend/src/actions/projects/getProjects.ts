@@ -4,3 +4,4 @@ import { IProject } from "@/types/projects";
 export const getAllProjectsByUser = () => {
   return api.get<{ projects: IProject[] }>("/v1/projects/?page_size=50");
 };
+

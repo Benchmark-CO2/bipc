@@ -105,7 +105,9 @@ function RouteComponent() {
       title: "Projects Comparison",
       component: (
         <ProjectsSummary
-          projects={[...(projects ?? [])].filter((project) => selectedProjects.get(project.id))}
+          projects={[...(projects ?? [])].filter((project) =>
+            selectedProjects.get(project.id)
+          )}
           data={benchmarkData.data}
         />
       ),
@@ -133,23 +135,21 @@ function RouteComponent() {
           onDeleteProject={onDeleteProject}
         />
       ) : (
-        <div className="flex w-full flex-wrap items-center gap-4">
+        <div className="grid grid-cols-3 w-full flex-wrap items-center gap-6 max-md:grid-cols-2 max-sm:grid-cols-1">
           {[...(projects ?? [])].length ? (
             [...(projects ?? [])].map((project, ix) => {
               const { co, mj, density, ...projectData } = project;
               return (
-                <>
-                  <CustomCard
-                    key={project.id + ix}
-                    project={projectData}
-                    onClick={() => {
-                      onClickProject(project.id);
-                    }}
-                    onDeleteProject={onDeleteProject}
-                    selectedProjects={selectedProjects}
-                    handleSelectProject={handleSelectProject}
-                  />
-                </>
+                <CustomCard
+                  key={project.id + ix}
+                  project={projectData}
+                  onClick={() => {
+                    onClickProject(project.id);
+                  }}
+                  onDeleteProject={onDeleteProject}
+                  selectedProjects={selectedProjects}
+                  handleSelectProject={handleSelectProject}
+                />
               );
             })
           ) : (
