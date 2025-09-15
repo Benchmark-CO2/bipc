@@ -105,7 +105,7 @@ function RouteComponent() {
       title: "Projects Comparison",
       component: (
         <ProjectsSummary
-          projects={projects}
+          projects={[...(projects ?? [])].filter((project) => selectedProjects.get(project.id))}
           data={benchmarkData.data}
         />
       ),

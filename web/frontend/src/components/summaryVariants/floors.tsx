@@ -11,11 +11,7 @@ import Subtitle from './components/Subtitle';
 import { stackData } from "./utils";
 
 type ProjectsSummaryProps = {
-  floors: (any & {
-    co: number;
-    mj: number;
-    density: number;
-  })[];
+  floors: (any)[];
   title?: string;
   data: IBenchmarkResponse;
 };
@@ -32,9 +28,7 @@ const generateFakeData = (floors: IBenchmarkResponse["benchmark"]["co2"]) => {
 
 const FloorSummary = ({ floors, data }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
-  const [selectedProjects, setSelectedProjects] = useState<string[]>(
-    (floors)?.map((floor) => floor.id) || []
-  );
+  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
 
   const fakeFloors = generateFakeData(
     data.benchmark?.[type as "co2" | "energy"]
