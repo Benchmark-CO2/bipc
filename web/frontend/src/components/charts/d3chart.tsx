@@ -214,65 +214,65 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     });
   }, [isExpanded, data, isResized]);
 
-  useEffect(() => {
-    if (!svgRef.current) return;
-    if (!data) return;
-    const g = d3.select(svgRef.current).select("g");
-    data.forEach(d => {
+  // useEffect(() => {
+  //   if (!svgRef.current) return;
+  //   if (!data) return;
+  //   const g = d3.select(svgRef.current).select("g");
+  //   data.forEach(d => {
 
-      g.on("mouseover", function (event) {
-          const { left, top, width } = svgRef.current!.getBoundingClientRect();
+  //     g.on("mouseover", function (event) {
+  //         const { left, top, width } = svgRef.current!.getBoundingClientRect();
   
-            const mouseX = event.clientX - left;
-            const mouseY = event.clientY - top;
+  //           const mouseX = event.clientX - left;
+  //           const mouseY = event.clientY - top;
   
-            const tooltipWidth = 120;
-            const offset = 10;
+  //           const tooltipWidth = 120;
+  //           const offset = 10;
   
-            let x = mouseX + offset; 
-            if (mouseX + tooltipWidth + offset > width) {
-              x = mouseX - tooltipWidth - offset;
-            }
+  //           let x = mouseX + offset; 
+  //           if (mouseX + tooltipWidth + offset > width) {
+  //             x = mouseX - tooltipWidth - offset;
+  //           }
   
-            setTooltip({
-              x,
-              y: mouseY - 20,
-              value: {
-                min: d.min,
-                max: d.max,
-                label: selectedBars?.includes(d.id) ? d.label : undefined
-              },
-            });
-        })
-          .on("mousemove", function (event) {
-            const { left, top, width } = svgRef.current!.getBoundingClientRect();
+  //           setTooltip({
+  //             x,
+  //             y: mouseY - 20,
+  //             value: {
+  //               min: d.min,
+  //               max: d.max,
+  //               label: selectedBars?.includes(d.id) ? d.label : undefined
+  //             },
+  //           });
+  //       })
+  //         .on("mousemove", function (event) {
+  //           const { left, top, width } = svgRef.current!.getBoundingClientRect();
   
-            const mouseX = event.clientX - left;
-            const mouseY = event.clientY - top;
+  //           const mouseX = event.clientX - left;
+  //           const mouseY = event.clientY - top;
   
-            const tooltipWidth = 120;
-            const offset = 10;
+  //           const tooltipWidth = 120;
+  //           const offset = 10;
   
-            let x = mouseX + offset; 
-            if (mouseX + tooltipWidth + offset > width) {
-              x = mouseX - tooltipWidth - offset;
-            }
+  //           let x = mouseX + offset; 
+  //           if (mouseX + tooltipWidth + offset > width) {
+  //             x = mouseX - tooltipWidth - offset;
+  //           }
   
-            setTooltip({
-              x,
-              y: mouseY - 20,
-              value: {
-                min: d.min,
-                max: d.max,
-                label: selectedBars?.includes(d.id) ? d.label : undefined
-              },
-            });
-          })
-          .on("mouseout", function () {
-            setTooltip(null);
-          });
-    })
-  }, [data, selectedBars]);
+  //           setTooltip({
+  //             x,
+  //             y: mouseY - 20,
+  //             value: {
+  //               min: d.min,
+  //               max: d.max,
+  //               label: selectedBars?.includes(d.id) ? d.label : undefined
+  //             },
+  //           });
+  //         })
+  //         .on("mouseout", function () {
+  //           setTooltip(null);
+  //         });
+  //   })
+  // }, [data, selectedBars]);
 
   useEffect(() => {
     if (!svgRef.current) return;
