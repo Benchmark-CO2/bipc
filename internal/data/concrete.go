@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/Benchmark-CO2/bipc/internal/utils"
 	"github.com/google/uuid"
 )
 
@@ -29,7 +28,7 @@ func InsertConcrete(db dbExecutor, c *Concrete) (uuid.UUID, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	concreteID, err := utils.NewUUIDv7()
+	concreteID, err := uuid.NewV7()
 	if err != nil {
 		return uuid.Nil, err
 	}

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Benchmark-CO2/bipc/internal/utils"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -131,7 +130,7 @@ func (m UnitModel) Insert(unit *Unit, floorGroups []FloorGroupCreate) error {
 		return err
 	}
 
-	unit.ID, err = utils.NewUUIDv7()
+	unit.ID, err = uuid.NewV7()
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -165,7 +164,7 @@ func (m UnitModel) Insert(unit *Unit, floorGroups []FloorGroupCreate) error {
 		currentAboveGroundIndex := 0
 
 		for _, fg := range floorGroups {
-			floorGroupID, err := utils.NewUUIDv7()
+			floorGroupID, err := uuid.NewV7()
 			if err != nil {
 				tx.Rollback()
 				return err
@@ -179,7 +178,7 @@ func (m UnitModel) Insert(unit *Unit, floorGroups []FloorGroupCreate) error {
 			}
 
 			for i := 0; i < fg.Repetition; i++ {
-				floorID, err := utils.NewUUIDv7()
+				floorID, err := uuid.NewV7()
 				if err != nil {
 					tx.Rollback()
 					return err
