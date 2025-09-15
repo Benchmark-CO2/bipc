@@ -68,23 +68,37 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
   const recalculateIndices = React.useCallback(() => {
     const floorGroups = form.getValues("data.floor_groups");
 
+    const validFloorGroups = floorGroups.filter(
+      (f) =>
+        f &&
+        f.category &&
+        [
+          "penthouse_floor",
+          "standard_floor",
+          "ground_floor",
+          "basement_floor",
+        ].includes(f.category)
+    );
+
     // Separar por categoria
     const categories = {
-      penthouse_floor: floorGroups.filter(
+      penthouse_floor: validFloorGroups.filter(
         (f) => f.category === "penthouse_floor"
       ),
-      standard_floor: floorGroups.filter(
+      standard_floor: validFloorGroups.filter(
         (f) => f.category === "standard_floor"
       ),
-      ground_floor: floorGroups.filter((f) => f.category === "ground_floor"),
-      basement_floor: floorGroups.filter(
+      ground_floor: validFloorGroups.filter(
+        (f) => f.category === "ground_floor"
+      ),
+      basement_floor: validFloorGroups.filter(
         (f) => f.category === "basement_floor"
       ),
     };
 
     // Calcular índices para cada categoria
-    const updatedFloors = floorGroups.map((floor) => {
-      const floorsInCategory = categories[floor.category];
+    const updatedFloors = validFloorGroups.map((floor) => {
+      const floorsInCategory = categories[floor.category] || [];
       const indexInCategory = floorsInCategory.indexOf(floor);
 
       let newIndex: number;
