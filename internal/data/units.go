@@ -103,7 +103,7 @@ func (m UnitModel) InsertWithExistingFloors(unit *Unit) error {
 					INSERT INTO floor_group (id, tower_id, name, category)
 					VALUES ($1, $2, $3, $4)
 					ON CONFLICT (id) DO NOTHING`
-				_, err = tx.Exec(queryFloorGroup, floor.GroupID, unit.ID, floor.GroupName, "default_category")
+				_, err = tx.Exec(queryFloorGroup, floor.GroupID, unit.ID, floor.GroupName, "standard_floor")
 				if err != nil {
 					tx.Rollback()
 					return err
