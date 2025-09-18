@@ -101,6 +101,21 @@ func insertModule(db dbExecutor, module *Module, moduleType string) error {
 	return err
 }
 
+func updateModule(db dbExecutor, module *Module) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	_, err := db.ExecContext(ctx, `
+		UPDATE module SET
+			tower_option_id = $1,
+			total_co2_min = $2,
+			total_co2_max = $3,
+			total_energy_min = $4,
+			total_energy_max = $5
+		WHERE id = $6
+	`, module.TowerOptionID, module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax, module.ID)
+	return err
+}
+
 func (m BeamColumnModuleModel) Insert(module *BeamColumnModule) (*BeamColumnModule, error) {
 	tx, err := m.DB.Begin()
 	if err != nil {
@@ -374,17 +389,19 @@ func (m BeamColumnModuleModel) Update(module *BeamColumnModule) error {
 			concrete_columns = $1, concrete_beams = $2, concrete_slabs = $3,
 			form_columns = $4, form_beams = $5, form_slabs = $6, form_total = $7,
 			column_number = $8, avg_beam_span = $9, avg_slab_span = $10,
-			total_co2_min = $11, total_co2_max = $12, total_energy_min = $13, total_energy_max = $14,
 			updated_at = NOW()
-		WHERE id = $15`
+		WHERE id = $11`
 	_, err = tx.ExecContext(context.Background(), query,
 		newColID, newBeamID, newSlabID,
 		module.FormColumns, module.FormBeams, module.FormSlabs, module.FormTotal,
 		module.ColumnNumber, module.AvgBeamSpan, module.AvgSlabSpan,
-		module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax,
 		module.ID)
 	if err != nil {
 		return err
+	}
+
+	if err := updateModule(tx, &module.Module); err != nil {
+		return checkForeignKeyError(err)
 	}
 
 	_, err = tx.ExecContext(context.Background(), `DELETE FROM module_floor WHERE module_id = $1`, module.ID)
@@ -393,6 +410,10 @@ func (m BeamColumnModuleModel) Update(module *BeamColumnModule) error {
 	}
 	err = insertModuleFloor(tx, module.ID, module.FloorIDs)
 	if err != nil {
+		return checkForeignKeyError(err)
+	}
+
+	if err := updateFloorMetricsById(tx, module.FloorIDs); err != nil {
 		return err
 	}
 
@@ -469,6 +490,10 @@ func (m ConcreteWallModuleModel) Update(module *ConcreteWallModule) error {
 		return err
 	}
 
+	if err := updateModule(tx, &module.Module); err != nil {
+		return checkForeignKeyError(err)
+	}
+
 	_, err = tx.ExecContext(context.Background(), `DELETE FROM module_floor WHERE module_id = $1`, module.ID)
 	if err != nil {
 		return err
@@ -480,6 +505,36 @@ func (m ConcreteWallModuleModel) Update(module *ConcreteWallModule) error {
 
 	if err := updateFloorMetricsById(tx, module.FloorIDs); err != nil {
 		return err
+	}
+
+	oldConcreteIDs := []uuid.UUID{oldWallID, oldSlabID}
+	for _, concreteID := range oldConcreteIDs {
+		var count int
+		query = `
+			SELECT COUNT(*) FROM (
+				SELECT concrete_columns AS id FROM module_beam_column
+				UNION ALL
+				SELECT concrete_beams FROM module_beam_column
+				UNION ALL
+				SELECT concrete_slabs FROM module_beam_column
+				UNION ALL
+				SELECT concrete_walls FROM module_concrete_wall
+				UNION ALL
+				SELECT concrete_slabs FROM module_concrete_wall
+			) AS concrete_usage WHERE id = $1
+		`
+		err := tx.QueryRowContext(context.Background(), query, concreteID).Scan(&count)
+		if err != nil {
+			return err
+		}
+
+		if count == 0 {
+			query = `DELETE FROM concrete WHERE id = $1`
+			_, err = tx.ExecContext(context.Background(), query, concreteID)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	if err := tx.Commit(); err != nil {

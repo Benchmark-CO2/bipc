@@ -141,6 +141,22 @@ func (app *application) updateModuleHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	existingModuleType, err := app.models.BeamColumnModules.GetModuleType(moduleID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	if module.GetType() != existingModuleType {
+		app.badRequestResponse(w, r, fmt.Errorf("module type mismatch: existing type is '%s', but received '%s'", existingModuleType, module.GetType()))
+		return
+	}
+
 	v := validator.New()
 	module.Validate(v)
 	if !v.Valid() {
