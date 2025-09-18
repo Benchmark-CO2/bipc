@@ -567,6 +567,23 @@ func (m BeamColumnModuleModel) Delete(id uuid.UUID) error {
 		return err
 	}
 
+	var floorIDs []uuid.UUID
+	rows, err := tx.QueryContext(ctx, `SELECT floor_id FROM module_floor WHERE module_id = $1`, id)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var floorID uuid.UUID
+		if err := rows.Scan(&floorID); err != nil {
+			return err
+		}
+		floorIDs = append(floorIDs, floorID)
+	}
+	if err = rows.Err(); err != nil {
+		return err
+	}
+
 	query = `DELETE FROM module WHERE id = $1`
 	result, err := tx.ExecContext(ctx, query, id)
 	if err != nil {
@@ -611,6 +628,10 @@ func (m BeamColumnModuleModel) Delete(id uuid.UUID) error {
 		}
 	}
 
+	if err := updateFloorMetricsById(tx, floorIDs); err != nil {
+		return err
+	}
+
 	return tx.Commit()
 }
 
@@ -635,6 +656,23 @@ func (m ConcreteWallModuleModel) Delete(id uuid.UUID) error {
 		if err == sql.ErrNoRows {
 			return ErrRecordNotFound
 		}
+		return err
+	}
+
+	var floorIDs []uuid.UUID
+	rows, err := tx.QueryContext(ctx, `SELECT floor_id FROM module_floor WHERE module_id = $1`, id)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var floorID uuid.UUID
+		if err := rows.Scan(&floorID); err != nil {
+			return err
+		}
+		floorIDs = append(floorIDs, floorID)
+	}
+	if err = rows.Err(); err != nil {
 		return err
 	}
 
@@ -680,6 +718,10 @@ func (m ConcreteWallModuleModel) Delete(id uuid.UUID) error {
 				return err
 			}
 		}
+	}
+
+	if err := updateFloorMetricsById(tx, floorIDs); err != nil {
+		return err
 	}
 
 	return tx.Commit()
