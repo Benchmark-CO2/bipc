@@ -147,6 +147,11 @@ func (app *application) generateRowData(dataRows [][]string, headerMap map[strin
 		if FloorName == "" {
 			FloorName = "unique_floor"
 		}
+		
+		unitName := record[headerMap["unit_name"]]
+		if unitName == "" {
+			unitName = "unit"
+		}
 
 		row := CSVRowData{
 			// Project fields
@@ -160,7 +165,7 @@ func (app *application) generateRowData(dataRows [][]string, headerMap map[strin
 			ProjectPhase:        record[headerMap["project_phase"]],
 
 			// Unit fields
-			UnitName: record[headerMap["unit_name"]],
+			UnitName: unitName,
 
 			// Floor fields
 			FloorName:       FloorName,
