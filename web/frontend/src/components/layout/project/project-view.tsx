@@ -2,13 +2,13 @@ import { getUnitsBenchmark } from "@/actions/benchmarks/getUnits";
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import { unitsColumns } from "@/components/columns/units";
-import UnitsSummary from '@/components/summaryVariants/units';
+import UnitsSummary from "@/components/summaryVariants/units";
 import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
-import { useSummary } from '@/context/summaryContext';
-import { TProjectUnit } from '@/types/projects';
+import { useSummary } from "@/context/summaryContext";
+import { TProjectUnit } from "@/types/projects";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import CommonTable from "../common-table";
 import DrawerFormUnit from "../drawer-form-unit";
 
@@ -40,26 +40,26 @@ const ProjectView = ({ projectId }: { projectId: string }) => {
     queryKey: ["units-benchmarks"],
     queryFn: getUnitsBenchmark,
   });
-  const [selectedUnits, setSelectedUnits] = useState<TProjectUnit[]>([])
-  const { setSummaryContext } = useSummary()
+  const [selectedUnits, setSelectedUnits] = useState<TProjectUnit[]>([]);
+  const { setSummaryContext } = useSummary();
   const handleSelectionChange = (el: any) => {
-    setSelectedUnits(el)
+    setSelectedUnits(el);
     console.log("Selected items:", el);
   };
 
-  const units = projectData?.data?.project?.units?.map((unit) => ({
-    ...unit,
-    ...unit.consumption,
-  })) || [];
+  const units =
+    projectData?.data?.project?.units?.map((unit) => ({
+      ...unit,
+      ...unit.consumption,
+    })) || [];
 
   useEffect(() => {
     if (!benchmarkData?.data) return;
     setSummaryContext({
-      component: <UnitsSummary 
-        units={selectedUnits as any}
-        data={benchmarkData.data}
-      />,
-      title:'Unidade Comparison',
+      component: (
+        <UnitsSummary units={selectedUnits as any} data={benchmarkData.data} />
+      ),
+      title: "Unidade Comparison",
     });
   }, [setSummaryContext, selectedUnits, benchmarkData]);
 
@@ -92,6 +92,7 @@ const ProjectView = ({ projectId }: { projectId: string }) => {
         columns={constructiveTechnologies}
         isSelectable={false}
         isInteractive={false}
+        collapsed={true}
       />
     </div>
   );

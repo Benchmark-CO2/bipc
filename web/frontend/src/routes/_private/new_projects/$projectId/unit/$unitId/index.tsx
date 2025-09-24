@@ -116,10 +116,7 @@ function RouteComponent() {
     if (!benchmarkData?.data) return;
     setSummaryContext({
       component: (
-        <FloorSummary
-          floors={selectedFloors}
-          data={benchmarkData.data}
-        />
+        <FloorSummary floors={selectedFloors} data={benchmarkData.data} />
       ),
       title: "Floor Comparison",
     });
@@ -280,6 +277,7 @@ function RouteComponent() {
         columns={constructiveTechnologies}
         isSelectable={false}
         isInteractive={false}
+        collapsed={true}
         actions={
           <Button
             variant="bipc"
