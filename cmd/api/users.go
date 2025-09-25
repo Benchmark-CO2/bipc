@@ -8,6 +8,7 @@ import (
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
+	"github.com/google/uuid"
 )
 
 func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -15,7 +16,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		Name       string     `json:"name"`
 		Email      string     `json:"email"`
 		Password   string     `json:"password"`
-		ImageURL   *string    `json:"image_url"`
+		ImageURL   *uuid.UUID `json:"image_url"`
 		Crea_Cau   *string    `json:"crea_cau"`
 		Birthdate  *time.Time `json:"birthdate"`
 		City       *string    `json:"city"`
@@ -94,10 +95,10 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 	user := app.contextGetUser(r)
 
 	var input struct {
-		Name     *string `json:"name"`
-		Email    *string `json:"email"`
-		Password *string `json:"password"`
-		ImageURL *string `json:"image_url"`
+		Name     *string    `json:"name"`
+		Email    *string    `json:"email"`
+		Password *string    `json:"password"`
+		ImageURL *uuid.UUID `json:"image_url"`
 	}
 
 	err := app.readJSON(w, r, &input)

@@ -25,7 +25,7 @@ type User struct {
 	Email      string     `json:"email"`
 	Password   password   `json:"-"`
 	Activated  bool       `json:"activated"`
-	ImageURL   *string    `json:"image_url,omitzero"`
+	ImageURL   *uuid.UUID `json:"image_url,omitzero"`
 	Crea_Cau   *string    `json:"crea_cau,omitzero"`
 	Birthdate  *time.Time `json:"birthdate,omitzero"`
 	City       *string    `json:"city,omitzero"`
@@ -62,6 +62,25 @@ func ValidateUser(v *validator.Validator, user *User) {
 		panic("missing password hash for user")
 	}
 
+	if user.Crea_Cau != nil {
+		v.Check(*user.Crea_Cau != "", "crea_cau", "must not be empty if provided")
+		v.Check(len(*user.Crea_Cau) <= 100, "crea_cau", "must not be more than 100 bytes long")
+	}
+
+	if user.City != nil {
+		v.Check(*user.City != "", "city", "must not be empty if provided")
+		v.Check(len(*user.City) <= 100, "city", "must not be more than 100 bytes long")
+	}
+
+	if user.Activity != nil {
+		v.Check(*user.Activity != "", "activity", "must not be empty if provided")
+		v.Check(len(*user.Activity) <= 100, "activity", "must not be more than 100 bytes long")
+	}
+
+	if user.Enterprise != nil {
+		v.Check(*user.Enterprise != "", "enterprise", "must not be empty if provided")
+		v.Check(len(*user.Enterprise) <= 100, "enterprise", "must not be more than 100 bytes long")
+	}
 }
 
 type password struct {
