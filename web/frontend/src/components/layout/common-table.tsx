@@ -34,6 +34,7 @@ interface ICommonTableProps {
     type: "Total" | "Média";
     data: Record<string, string | number>;
   };
+  collapsed?: boolean;
 }
 
 export default function CommonTable({
@@ -45,9 +46,10 @@ export default function CommonTable({
   isInteractive,
   actions,
   lastRow,
+  collapsed = false,
 }: ICommonTableProps) {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(collapsed);
 
   // Reset selection when isSelectable changes
   useEffect(() => {

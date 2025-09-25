@@ -20,7 +20,7 @@ export const constructiveTechnologies: ColumnDef<
     header: () => <div className="text-center">CO2 Min</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original.co2_min?.toFixed(2)} KgCO₂` || "-"}
+        {`${row.original.co2_min?.toFixed(1)} KgCO₂` || "-"}
       </div>
     ),
   },
@@ -29,7 +29,7 @@ export const constructiveTechnologies: ColumnDef<
     header: () => <div className="text-center">CO2 Max</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original.co2_max?.toFixed(2)} KgCO₂` || "-"}
+        {`${row.original.co2_max?.toFixed(1)} KgCO₂` || "-"}
       </div>
     ),
   },
@@ -38,7 +38,7 @@ export const constructiveTechnologies: ColumnDef<
     header: () => <div className="text-center">Energia Min</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original.energy_min?.toFixed(2)} MJ` || "-"}
+        {`${row.original.energy_min?.toFixed(1)} MJ` || "-"}
       </div>
     ),
   },
@@ -47,7 +47,7 @@ export const constructiveTechnologies: ColumnDef<
     header: () => <div className="text-center">Energia Max</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original.energy_max?.toFixed(2)} MJ` || "-"}
+        {`${row.original.energy_max?.toFixed(1)} MJ` || "-"}
       </div>
     ),
   },

@@ -116,7 +116,7 @@ function RouteComponent() {
 
   return (
     <div>
-      <div className="mb-6 mt-2 flex justify-between gap-1">
+      <div className="mb-6 mt-6 flex justify-between gap-1">
         <h1 className='text-4xl font-bold font-["helvetica"] text-primary '>
           Projetos
         </h1>
@@ -153,12 +153,10 @@ function RouteComponent() {
               );
             })
           ) : (
-            <div className="flex h-full w-full flex-col gap-4">
-              <NotFoundList
-                message="Nenhum projeto encontrado"
-                description="Crie seu primeiro projeto clicando no botão acima"
-              />
-            </div>
+            <NotFoundList
+              message="Nenhum projeto encontrado"
+              description="Crie seu primeiro projeto clicando no botão acima"
+            />
           )}
         </div>
       )}

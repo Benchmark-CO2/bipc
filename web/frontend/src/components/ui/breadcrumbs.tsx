@@ -48,6 +48,10 @@ const BreadCrumbs = () => {
     );
   });
 
+  if (crumbs.length <= 1) {
+    return null;
+  }
+
   return (
     <nav
       className={`w-full mb-0 flex h-auto items-center ${crumbsList.length > 0 ? "p-4" : "p-0"}`}

@@ -8,9 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Benchmark-CO2/bipc/internal/utils"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
@@ -29,13 +28,14 @@ type ProjectUnit struct {
 	Name        string       `json:"name"`
 	Type        string       `json:"type"`
 	Consumption *Consumption `json:"consumption,omitempty"`
+	Area        float64      `json:"area"`
 }
 
 type Project struct {
 	ID           uuid.UUID     `json:"id"`
 	CreatedAt    time.Time     `json:"created_at"`
 	UpdatedAt    time.Time     `json:"updated_at"`
-	UserID       int64         `json:"user_id"`
+	UserID       uuid.UUID     `json:"user_id"`
 	Name         string        `json:"name"`
 	CEP          *string       `json:"cep,omitzero"`
 	State        string        `json:"state"`
@@ -48,6 +48,7 @@ type Project struct {
 	ImageURL     *string       `json:"image_url,omitzero"`
 	Units        []ProjectUnit `json:"units,omitempty"`
 	Consumption  *Consumption  `json:"consumption,omitempty"`
+	Area         float64       `json:"area,omitempty"`
 }
 
 func ValidateProject(v *validator.Validator, project *Project) {
@@ -87,11 +88,6 @@ func ValidateProject(v *validator.Validator, project *Project) {
 		v.Check(*project.Description != "", "description", "empty description is not allowed")
 		v.Check(len(*project.Description) <= 500, "description", "must not be more than 500 bytes long")
 	}
-
-	if project.ImageURL != nil {
-		v.Check(*project.ImageURL != "", "image_url", "empty image URL is not allowed")
-		v.Check(validator.IsValidHTTPURL(*project.ImageURL), "image_url", "must be a valid URL")
-	}
 }
 
 type ProjectModel struct {
@@ -99,6 +95,15 @@ type ProjectModel struct {
 }
 
 func (m ProjectModel) Insert(project *Project) error {
+
+	if project.ID == uuid.Nil {
+		projectID, err := uuid.NewV7()
+		if err != nil {
+			return err
+		}
+		project.ID = projectID
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -107,14 +112,6 @@ func (m ProjectModel) Insert(project *Project) error {
 		return err
 	}
 	defer tx.Rollback()
-
-	if project.ID.IsNil() {
-		projectID, err := utils.NewUUIDv7()
-		if err != nil {
-			return err
-		}
-		project.ID = projectID
-	}
 
 	query1 := `
 		INSERT INTO projects (id, user_id, name, cep, state, city, neighborhood, street, number, phase, description, image_url)
@@ -193,7 +190,8 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*Project, error) {
 				SUM(f.co2_min * f.area) / SUM(f.area) as co2_min,
 				SUM(f.co2_max * f.area) / SUM(f.area) as co2_max,
 				SUM(f.energy_min * f.area) / SUM(f.area) as energy_min,
-				SUM(f.energy_max * f.area) / SUM(f.area) as energy_max
+				SUM(f.energy_max * f.area) / SUM(f.area) as energy_max,
+				SUM(f.area) as area
 			FROM floor f
 			INNER JOIN floor_group fg ON f.group_id = fg.id
 			GROUP BY fg.tower_id
@@ -205,7 +203,8 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*Project, error) {
 			tc.co2_min,
 			tc.co2_max,
 			tc.energy_min,
-			tc.energy_max
+			tc.energy_max,
+			tc.area
 		FROM units u
 		LEFT JOIN tower_consumption tc ON u.id = tc.tower_id
 		WHERE u.project_id = $1
@@ -221,7 +220,7 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*Project, error) {
 	for rows.Next() {
 		var u ProjectUnit
 		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
-		if err := rows.Scan(&u.ID, &u.Name, &u.Type, &co2Min, &co2Max, &energyMin, &energyMax); err != nil {
+		if err := rows.Scan(&u.ID, &u.Name, &u.Type, &co2Min, &co2Max, &energyMin, &energyMax, &u.Area); err != nil {
 			return nil, err
 		}
 		if co2Min.Valid {
@@ -314,7 +313,7 @@ func (m ProjectModel) Delete(projectID uuid.UUID) error {
 	return nil
 }
 
-func (m ProjectModel) GetAll(name string, filters Filters, userID int64) ([]*Project, Metadata, error) {
+func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]*Project, Metadata, error) {
 	query := fmt.Sprintf(`
 		WITH project_consumption AS (
 			SELECT
@@ -322,7 +321,8 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID int64) ([]*Pro
 				SUM(f.co2_min * f.area) / SUM(f.area) as co2_min,
 				SUM(f.co2_max * f.area) / SUM(f.area) as co2_max,
 				SUM(f.energy_min * f.area) / SUM(f.area) as energy_min,
-				SUM(f.energy_max * f.area) / SUM(f.area) as energy_max
+				SUM(f.energy_max * f.area) / SUM(f.area) as energy_max,
+				SUM(f.area) as area
 			FROM floor f
 			INNER JOIN floor_group fg ON f.group_id = fg.id
 			INNER JOIN units u ON fg.tower_id = u.id
@@ -330,7 +330,7 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID int64) ([]*Pro
 		)
  		SELECT COUNT(*) OVER(), p.id, p.created_at, p.updated_at, p.user_id, p.name,
 		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description, p.image_url,
-		pc.co2_min, pc.co2_max, pc.energy_min, pc.energy_max
+		pc.co2_min, pc.co2_max, pc.energy_min, pc.energy_max, pc.area
  		FROM projects p
 		INNER JOIN users_projects_permissions upp ON upp.project_id = p.id
 		LEFT JOIN project_consumption pc ON p.id = pc.project_id
@@ -378,6 +378,7 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID int64) ([]*Pro
 			&co2Max,
 			&energyMin,
 			&energyMax,
+			&project.Area,
 		)
 		if err != nil {
 			return nil, Metadata{}, err

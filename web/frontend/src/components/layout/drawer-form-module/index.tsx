@@ -80,7 +80,6 @@ const DrawerFormModule = ({
     defaultValues: getDefaultValuesByType(type),
   });
 
-  // Comentado: mutations para evitar conflitos de tipo durante a transição
   const { mutate: mutateModule, isPending: isUpdatePending } = useMutation({
     mutationFn: (data: ModuleParamsProps) =>
       patchModule(data, projectId, unitId, optionId, moduleId!),
@@ -425,10 +424,12 @@ const DrawerFormModule = ({
                         variant="bipc"
                         className="flex-1"
                         disabled={
-                          isCreationPending || selectedFloors.length === 0
+                          isCreationPending ||
+                          isUpdatePending ||
+                          selectedFloors.length === 0
                         }
                       >
-                        {isCreationPending ? (
+                        {isCreationPending || isUpdatePending ? (
                           <Loader2 className="animate-spin h-4 w-4" />
                         ) : moduleId ? (
                           t("common.update")

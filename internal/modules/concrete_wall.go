@@ -3,7 +3,7 @@ package modules
 import (
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 )
 
 type ConcreteWall struct {

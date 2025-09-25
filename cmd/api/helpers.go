@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/Benchmark-CO2/bipc/internal/validator"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -23,7 +23,7 @@ func (app *application) readUUIDParam(r *http.Request, name string) (uuid.UUID, 
 		return uuid.Nil, fmt.Errorf("required path parameter %q is missing from the request URL", name)
 	}
 
-	id, err := uuid.FromString(raw)
+	id, err := uuid.Parse(raw)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("invalid %q parameter", name)
 	}

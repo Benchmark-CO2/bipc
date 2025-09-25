@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/validator"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
@@ -25,7 +25,7 @@ type Invitation struct {
 	CreatedAt   time.Time `json:"created_at"`
 	ExpiresAt   time.Time `json:"expires_at"`
 	Status      string    `json:"status"`
-	InviterID   int64     `json:"inviter_id"`
+	InviterID   uuid.UUID `json:"inviter_id"`
 	ProjectID   uuid.UUID `json:"project_id"`
 	Email       string    `json:"email"`
 	Permissions []string  `json:"permissions"`

@@ -84,8 +84,8 @@ const OptionMenu = ({
     setSummaryContext({
       component: null,
       title: "Simulação",
-    })
-  }, [setSummaryContext])
+    });
+  }, [setSummaryContext]);
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLocalName(e.target.value);
   };
@@ -221,11 +221,9 @@ function RouteComponent() {
 
   useEffect(() => {
     setSummaryContext({
-      component: (
-        null
-      ),
+      component: null,
       title: `${selectedItems.length} andar(s) selecionado(s)`,
-      hide: true
+      hide: true,
     });
   }, [selectedItems, setSummaryContext]);
 
@@ -309,10 +307,10 @@ function RouteComponent() {
     );
 
     return {
-      co2_min: `${sumCO2Min.toFixed(2)} KgCO2`,
-      co2_max: `${sumCO2Max.toFixed(2)} KgCO2`,
-      energy_min: `${sumEnergyMin.toFixed(2)} MJ`,
-      energy_max: `${sumEnergyMax.toFixed(2)} MJ`,
+      co2_min: `${sumCO2Min.toFixed(1)} KgCO2`,
+      co2_max: `${sumCO2Max.toFixed(1)} KgCO2`,
+      energy_min: `${sumEnergyMin.toFixed(1)} MJ`,
+      energy_max: `${sumEnergyMax.toFixed(1)} MJ`,
     };
   };
 

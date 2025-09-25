@@ -1,7 +1,6 @@
 package validator
 
 import (
-	"net/url"
 	"regexp"
 	"slices"
 )
@@ -53,10 +52,4 @@ func Unique[T comparable](values []T) bool {
 	}
 
 	return len(values) == len(uniqueValues)
-}
-
-func IsValidHTTPURL(value string) bool {
-	u, err := url.ParseRequestURI(value)
-
-	return err == nil && (u.Scheme == "http" || u.Scheme == "https") && u.Host != ""
 }

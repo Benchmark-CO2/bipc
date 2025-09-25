@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS permissions (
 );
 
 CREATE TABLE IF NOT EXISTS users_projects_permissions (
-    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
     permission_id SMALLINT REFERENCES permissions(id) ON DELETE CASCADE,
     PRIMARY KEY (user_id, project_id, permission_id)
