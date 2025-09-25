@@ -22,10 +22,11 @@ export type TProjectUnit = {
   id: string;
   type: TUnitType;
   consumption: TConsumption;
+  area: number;
 };
 
 export interface IProject {
-  [x: string]: string | TProjectUnit[] | TConsumption | TProjectPhase;
+  [x: string]: string | TProjectUnit[] | TConsumption | TProjectPhase | number;
   id: string;
   created_at: string;
   updated_at: string;
@@ -40,6 +41,8 @@ export interface IProject {
   description: string;
   units: TProjectUnit[];
   consumption: TConsumption;
+  area: number;
+  user_id: number;
 }
 
 export type TProjectsTemp = {
