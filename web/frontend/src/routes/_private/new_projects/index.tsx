@@ -135,7 +135,7 @@ function RouteComponent() {
           onDeleteProject={onDeleteProject}
         />
       ) : (
-        <div className="grid grid-cols-3 w-full flex-wrap items-center gap-6 max-md:grid-cols-2 max-sm:grid-cols-1">
+        <div className="grid grid-cols-3 min-[1280px]:grid-cols-4 min-[2000px]:grid-cols-6 w-full flex-wrap items-center gap-6 max-md:grid-cols-2 max-sm:grid-cols-1 transition-all">
           {[...(projects ?? [])].length ? (
             [...(projects ?? [])].map((project, ix) => {
               const { co, mj, density, ...projectData } = project;

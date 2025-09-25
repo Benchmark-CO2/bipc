@@ -117,8 +117,11 @@ function RouteComponent() {
     setSummaryContext({
       component: (
         <FloorSummary
-          floors={selectedFloors}
+          selectedFloors={selectedFloors}
+          floors={groupedFloors}
           data={benchmarkData.data}
+          unit={unit as IUnit}
+
         />
       ),
       title: "Floor Comparison",

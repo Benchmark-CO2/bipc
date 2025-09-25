@@ -55,9 +55,11 @@ const ProjectView = ({ projectId }: { projectId: string }) => {
   useEffect(() => {
     if (!benchmarkData?.data) return;
     setSummaryContext({
-      component: <UnitsSummary 
-        units={selectedUnits as any}
+      component: <UnitsSummary
+        selectedUnits={selectedUnits as any}
+        project={projectData?.data?.project as any}
         data={benchmarkData.data}
+        units={units || []}
       />,
       title:'Unidade Comparison',
     });
