@@ -859,7 +859,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <FormField
           control={form.control}
           name="wall_thickness"
@@ -891,26 +891,6 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                   type="number"
                   step="0.01"
                   placeholder="0,10"
-                  value={field.value || ""}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="slab_area"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-xs">Área de laje (m²)</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="400"
                   value={field.value || ""}
                   onChange={(e) => field.onChange(Number(e.target.value))}
                 />
