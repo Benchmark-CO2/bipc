@@ -8,14 +8,20 @@ import (
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
+	"github.com/google/uuid"
 )
 
 func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Name     string  `json:"name"`
-		Email    string  `json:"email"`
-		Password string  `json:"password"`
-		ImageURL *string `json:"image_url"`
+		Name       string     `json:"name"`
+		Email      string     `json:"email"`
+		Password   string     `json:"password"`
+		ImageURL   *uuid.UUID `json:"image_url"`
+		Crea_Cau   *string    `json:"crea_cau"`
+		Birthdate  *time.Time `json:"birthdate"`
+		City       *string    `json:"city"`
+		Activity   *string    `json:"activity"`
+		Enterprise *string    `json:"enterprise"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -25,10 +31,15 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	user := &data.User{
-		Name:      input.Name,
-		Email:     input.Email,
-		Activated: false,
-		ImageURL:  input.ImageURL,
+		Name:       input.Name,
+		Email:      input.Email,
+		Activated:  false,
+		ImageURL:   input.ImageURL,
+		Crea_Cau:   input.Crea_Cau,
+		Birthdate:  input.Birthdate,
+		City:       input.City,
+		Activity:   input.Activity,
+		Enterprise: input.Enterprise,
 	}
 
 	err = user.Password.Set(input.Password)
@@ -84,10 +95,10 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 	user := app.contextGetUser(r)
 
 	var input struct {
-		Name     *string `json:"name"`
-		Email    *string `json:"email"`
-		Password *string `json:"password"`
-		ImageURL *string `json:"image_url"`
+		Name     *string    `json:"name"`
+		Email    *string    `json:"email"`
+		Password *string    `json:"password"`
+		ImageURL *uuid.UUID `json:"image_url"`
 	}
 
 	err := app.readJSON(w, r, &input)

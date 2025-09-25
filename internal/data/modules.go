@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 )
 
 type Module struct {
@@ -37,16 +37,16 @@ type BeamColumnModule struct {
 
 type ConcreteWallModule struct {
 	Module
-	ConcreteWalls  Concrete `json:"concrete_walls"`
-	ConcreteSlabs  Concrete `json:"concrete_slabs"`
-		
+	ConcreteWalls Concrete `json:"concrete_walls"`
+	ConcreteSlabs Concrete `json:"concrete_slabs"`
+
 	WallThickness *float64 `json:"wall_thickness,omitempty"`
 	SlabThickness *float64 `json:"slab_thickness,omitempty"`
 	WallArea      *float64 `json:"wall_area,omitempty"`
 	SlabArea      *float64 `json:"slab_area,omitempty"`
 
-	WallFormArea *float64    `json:"wall_form_area,omitempty"`
-	SlabFormArea *float64    `json:"slab_form_area,omitempty"`
+	WallFormArea *float64 `json:"wall_form_area,omitempty"`
+	SlabFormArea *float64 `json:"slab_form_area,omitempty"`
 }
 
 type BeamColumnModuleModel struct {

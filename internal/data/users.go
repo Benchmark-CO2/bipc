@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/validator"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -18,13 +19,18 @@ var (
 var AnonymousUser = &User{}
 
 type User struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	Password  password  `json:"-"`
-	Activated bool      `json:"activated"`
-	ImageURL  *string   `json:"image_url,omitzero"`
+	ID         uuid.UUID  `json:"id"`
+	CreatedAt  time.Time  `json:"created_at"`
+	Name       string     `json:"name"`
+	Email      string     `json:"email"`
+	Password   password   `json:"-"`
+	Activated  bool       `json:"activated"`
+	ImageURL   *uuid.UUID `json:"image_url,omitzero"`
+	Crea_Cau   *string    `json:"crea_cau,omitzero"`
+	Birthdate  *time.Time `json:"birthdate,omitzero"`
+	City       *string    `json:"city,omitzero"`
+	Activity   *string    `json:"activity,omitzero"`
+	Enterprise *string    `json:"enterprise,omitzero"`
 }
 
 func (u *User) IsAnonymous() bool {
@@ -56,8 +62,24 @@ func ValidateUser(v *validator.Validator, user *User) {
 		panic("missing password hash for user")
 	}
 
-	if user.ImageURL != nil {
-		v.Check(validator.IsValidHTTPURL(*user.ImageURL), "image_url", "must be a valid URL")
+	if user.Crea_Cau != nil {
+		v.Check(*user.Crea_Cau != "", "crea_cau", "must not be empty if provided")
+		v.Check(len(*user.Crea_Cau) <= 100, "crea_cau", "must not be more than 100 bytes long")
+	}
+
+	if user.City != nil {
+		v.Check(*user.City != "", "city", "must not be empty if provided")
+		v.Check(len(*user.City) <= 100, "city", "must not be more than 100 bytes long")
+	}
+
+	if user.Activity != nil {
+		v.Check(*user.Activity != "", "activity", "must not be empty if provided")
+		v.Check(len(*user.Activity) <= 100, "activity", "must not be more than 100 bytes long")
+	}
+
+	if user.Enterprise != nil {
+		v.Check(*user.Enterprise != "", "enterprise", "must not be empty if provided")
+		v.Check(len(*user.Enterprise) <= 100, "enterprise", "must not be more than 100 bytes long")
 	}
 }
 
@@ -97,17 +119,24 @@ type UserModel struct {
 }
 
 func (m UserModel) Insert(user *User) error {
-	query := `
-        INSERT INTO users (name, email, password_hash, activated, image_url) 
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id, created_at`
+	userID, err := uuid.NewV7()
+	if err != nil {
+		return err
+	}
 
-	args := []any{user.Name, user.Email, user.Password.hash, user.Activated, user.ImageURL}
+	user.ID = userID
+
+	query := `
+        INSERT INTO users (id, name, email, password_hash, activated, image_url, crea_cau, birthdate, city, activity, enterprise) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        RETURNING created_at`
+
+	args := []any{user.ID, user.Name, user.Email, user.Password.hash, user.Activated, user.ImageURL, user.Crea_Cau, user.Birthdate, user.City, user.Activity, user.Enterprise}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt)
+	err = m.DB.QueryRowContext(ctx, query, args...).Scan(&user.CreatedAt)
 	if err != nil {
 		switch {
 		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
@@ -233,7 +262,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 	return &user, nil
 }
 
-func (m UserModel) Collaborators(userID int64) ([]*User, error) {
+func (m UserModel) Collaborators(userID uuid.UUID) ([]*User, error) {
 	query := `
 		SELECT users.id, users.created_at, users.name, users.email, users.activated, users.image_url
 		FROM users

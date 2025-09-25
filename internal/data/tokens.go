@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/validator"
+	"github.com/google/uuid"
 )
 
 const (
@@ -19,7 +20,7 @@ const (
 type Token struct {
 	Plaintext string    `json:"token"`
 	Hash      []byte    `json:"-"`
-	UserID    int64     `json:"-"`
+	UserID    uuid.UUID `json:"-"`
 	Expiry    time.Time `json:"expiry"`
 	Scope     string    `json:"-"`
 }
@@ -29,7 +30,7 @@ func ValidateTokenPlaintext(v *validator.Validator, tokenPlaintext string) {
 	v.Check(len(tokenPlaintext) == 26, "token", "must be 26 bytes long") // rand.Text() generates 26 byte strings
 }
 
-func generateToken(userID int64, ttl time.Duration, scope string) *Token {
+func generateToken(userID uuid.UUID, ttl time.Duration, scope string) *Token {
 	token := &Token{
 		Plaintext: rand.Text(),
 		UserID:    userID,
@@ -47,7 +48,7 @@ type TokenModel struct {
 	DB *sql.DB
 }
 
-func (m TokenModel) New(userID int64, ttl time.Duration, scope string) (*Token, error) {
+func (m TokenModel) New(userID uuid.UUID, ttl time.Duration, scope string) (*Token, error) {
 	token := generateToken(userID, ttl, scope)
 
 	err := m.Insert(token)
@@ -68,7 +69,7 @@ func (m TokenModel) Insert(token *Token) error {
 	return err
 }
 
-func (m TokenModel) DeleteAllForUser(scope string, userID int64) error {
+func (m TokenModel) DeleteAllForUser(scope string, userID uuid.UUID) error {
 	query := `
         DELETE FROM tokens 
         WHERE scope = $1 AND user_id = $2`

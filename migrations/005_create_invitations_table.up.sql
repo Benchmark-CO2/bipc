@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS invitations (
     created_at TIMESTAMPTZ(0) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMPTZ(0) NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '7 days'),
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined')),
-    inviter_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    inviter_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     email citext NOT NULL,
     permissions TEXT[] NOT NULL

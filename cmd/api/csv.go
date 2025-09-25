@@ -10,7 +10,7 @@ import (
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/modules"
-	"github.com/gofrs/uuid" // Import uuid package
+	"github.com/google/uuid" // Import uuid package
 )
 
 // Define a slice of required header names
@@ -239,7 +239,7 @@ func (app *application) generateRowData(dataRows [][]string, headerMap map[strin
 	return allCSVRows
 }
 
-func toProjectsFromCSVData(rows []CSVRowData, userID int64) ([]ProjectFromCSV, error) {
+func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCSV, error) {
 	projects := []ProjectFromCSV{}
 	var currentProjectFormCSV *ProjectFromCSV
 	projectNameToUnit := make(map[string]*data.Unit) // To store the Unit associated with each ProjectName
@@ -316,12 +316,12 @@ func toProjectsFromCSVData(rows []CSVRowData, userID int64) ([]ProjectFromCSV, e
 		// Floor Handling
 		floorID, err := uuid.NewV7()
 		if err != nil {
-				return nil, fmt.Errorf("failed to generate floor ID: %w", err)
+			return nil, fmt.Errorf("failed to generate floor ID: %w", err)
 		}
 		groupID, err := uuid.NewV7()
 		if err != nil {
-				return nil, fmt.Errorf("failed to generate floor group ID: %w", err)
-			}
+			return nil, fmt.Errorf("failed to generate floor group ID: %w", err)
+		}
 
 		// Cria o Floor
 		floor := data.Floor{

@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 )
 
 type BenchmarkModel struct {
