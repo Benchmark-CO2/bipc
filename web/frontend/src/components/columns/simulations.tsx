@@ -3,7 +3,7 @@ import { TSimulation } from "@/types/projects";
 import { ColumnDef } from "@tanstack/react-table";
 import { t } from "i18next";
 import { Check, X } from "lucide-react";
-import { Checkbox } from '../ui/checkbox';
+import { Checkbox } from "../ui/checkbox";
 
 export const simulationColumns: ColumnDef<TSimulation>[] = [
   {
@@ -34,22 +34,22 @@ export const simulationColumns: ColumnDef<TSimulation>[] = [
   {
     accessorKey: "co2_min",
     header: t("modulesTable.headers.co2Min"),
-    cell: ({ row }) => row.original.co2_min?.toFixed(2) || "-",
+    cell: ({ row }) => row.original.co2_min?.toFixed(1) || "-",
   },
   {
     accessorKey: "co2_max",
     header: t("modulesTable.headers.co2Max"),
-    cell: ({ row }) => row.original.co2_max?.toFixed(2) || "-",
+    cell: ({ row }) => row.original.co2_max?.toFixed(1) || "-",
   },
   {
     accessorKey: "energy_min",
     header: t("modulesTable.headers.energyMin"),
-    cell: ({ row }) => row.original.energy_min?.toFixed(2) || "-",
+    cell: ({ row }) => row.original.energy_min?.toFixed(1) || "-",
   },
   {
     accessorKey: "energy_max",
     header: t("modulesTable.headers.energyMax"),
-    cell: ({ row }) => row.original.energy_max?.toFixed(2) || "-",
+    cell: ({ row }) => row.original.energy_max?.toFixed(1) || "-",
   },
   {
     accessorKey: "version",
