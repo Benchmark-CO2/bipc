@@ -65,7 +65,6 @@ const ProjectView = ({ projectId }: { projectId: string }) => {
       title:'Unidade Comparison',
     });
   }, [setSummaryContext, selectedUnits, benchmarkData]);
-
   return (
     <div className="flex flex-col gap-4">
       <CommonTable

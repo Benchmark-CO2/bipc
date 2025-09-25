@@ -23,12 +23,13 @@ type D3GradientRangeChartProps = {
   data?: { id: string; y: number; min: number; max: number; label: string }[];
   width?: number;
   height?: number;
+  overrideDimensions?: boolean;
 };
 const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   selectedBars,
   data,
-  // width = 600,
-  // height = 290,
+  overrideDimensions = false,
+  ...props
 }) => {
   const { isExpanded } = useSummary();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -41,7 +42,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
   const screenWidth = window.innerWidth;
   const width = () => {
-    console.log('screenWidth', screenWidth)
+    if (props.width && overrideDimensions) return props.width;
+
     if (isMobile) return screenWidth - 340;
     if (isExpanded) return screenWidth * 0.8;
     if (screenWidth < 1300) return screenWidth * 0.35;
@@ -49,6 +51,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   };
 
   const height = () => {
+    if (props.height && overrideDimensions) return props.height;
+
     if (isMobile && !isExpanded) return 250;
     if (isMobile && isExpanded) return 320;
     if (isExpanded) return 900;
@@ -60,7 +64,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     top: isExpanded ? 15 : 20,
     right: 20,
     bottom: 35,
-    left: isMobile ? 50 : 60,
+    left: isMobile ? 50 : 80,
   };
   const _width = width();
   const _height = height() - (margin.top + margin.bottom);
@@ -87,6 +91,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -120,7 +125,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .attr("y1", 0)
       .attr("y2", _height)
       .attr("stroke", "#e2e8f0")
-      .attr("stroke-width", 1);
+      .attr("stroke-width", 1)
 
     // Linhas horizontais do grid
     g.selectAll(".grid-line-y")
@@ -148,7 +153,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .call(d3.axisLeft(yScale).ticks(8))
       .selectAll("text")
       .style("font-size", "12px")
-      .style("fill", "#64748b");
+      .style("fill", "#64748b")
 
     // Remover linhas dos eixos
     g.selectAll(".domain").remove();
@@ -205,7 +210,75 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         .attr("r", isExpanded ? 6 : 3)
         .attr("fill", "#3b82f6")
         .attr("stroke", "white")
-        .attr("stroke-width", isExpanded ? 2 : 0);
+        .attr("stroke-width", isExpanded ? 2 : 0).on("mouseover", function (event) {
+          const { left, top, width, height } =
+            svgRef.current!.getBoundingClientRect();
+
+          const mouseX = event.clientX - left;
+          const mouseY = event.clientY - top;
+
+          const tooltipWidth = 120;
+          const tooltipHeight = 40;
+          const offset = 10;
+
+          let x = mouseX + offset;
+          if (mouseX + tooltipWidth + offset > width) {
+            x = mouseX - tooltipWidth - offset;
+          }
+
+          let y = mouseY;
+          if (mouseY + tooltipHeight > height) {
+            y = height - tooltipHeight - offset;
+          }
+          if (mouseY < offset) {
+            y = offset;
+          }
+          setTooltip({
+            x,
+            y,
+            value: {
+              min: d.min,
+              max: d.max,
+              label: selectedBars?.includes(d.id) ? d.label : undefined,
+            },
+          });
+        })
+          .on("mousemove", function (event) {
+            const { left, top, width, height } =
+              svgRef.current!.getBoundingClientRect();
+
+            const mouseX = event.clientX - left;
+            const mouseY = event.clientY - top;
+
+            const tooltipWidth = 120;
+            const tooltipHeight = 40;
+            const offset = 10;
+
+            let x = mouseX + offset;
+            if (mouseX + tooltipWidth + offset > width) {
+              x = mouseX - tooltipWidth - offset;
+            }
+
+            let y = mouseY - offset;
+            if (mouseY + tooltipHeight > height) {
+              y = height - tooltipHeight - (offset + 20);
+            }
+            if (mouseY < offset) {
+              y = offset;
+            }
+            setTooltip({
+              x,
+              y,
+              value: {
+                min: d.min,
+                max: d.max,
+                label: selectedBars?.includes(d.id) ? d.label : undefined,
+              },
+            });
+          })
+          .on("mouseout", function () {
+            setTooltip(null);
+          });
 
       // Círculo final (cor baseada na posição)
       // const endColor = getColor(d.end, d.y);
@@ -216,7 +289,76 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         .attr("r", isExpanded ? 6 : 3)
         .attr("fill", "#E36F35")
         .attr("stroke", "white")
-        .attr("stroke-width", isExpanded ? 2 : 0);
+        .attr("stroke-width", isExpanded ? 2 : 0).on("mouseover", function (event) {
+          const { left, top, width, height } =
+            svgRef.current!.getBoundingClientRect();
+
+          const mouseX = event.clientX - left;
+          const mouseY = event.clientY - top;
+
+          const tooltipWidth = 120;
+          const tooltipHeight = 40;
+          const offset = 10;
+
+          let x = mouseX + offset;
+          if (mouseX + tooltipWidth + offset > width) {
+            x = mouseX - tooltipWidth - offset;
+          }
+
+          let y = mouseY;
+          if (mouseY + tooltipHeight > height) {
+            y = height - tooltipHeight - offset;
+          }
+          if (mouseY < offset) {
+            y = offset;
+          }
+          setTooltip({
+            x,
+            y,
+            value: {
+              min: d.min,
+              max: d.max,
+              label: selectedBars?.includes(d.id) ? d.label : undefined,
+            },
+          });
+        })
+          .on("mousemove", function (event) {
+            const { left, top, width, height } =
+              svgRef.current!.getBoundingClientRect();
+
+            const mouseX = event.clientX - left;
+            const mouseY = event.clientY - top;
+
+            const tooltipWidth = 120;
+            const tooltipHeight = 40;
+            const offset = 10;
+
+            let x = mouseX + offset;
+            if (mouseX + tooltipWidth + offset > width) {
+              x = mouseX - tooltipWidth - offset;
+            }
+
+            let y = mouseY - offset;
+            if (mouseY + tooltipHeight > height) {
+              y = height - tooltipHeight - (offset + 20);
+            }
+            if (mouseY < offset) {
+              y = offset;
+            }
+            setTooltip({
+              x,
+              y,
+              value: {
+                min: d.min,
+                max: d.max,
+                label: selectedBars?.includes(d.id) ? d.label : undefined,
+              },
+            });
+          })
+          .on("mouseout", function () {
+            setTooltip(null);
+          });
+
     });
   }, [isExpanded, data, isResized]);
 
@@ -305,7 +447,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
             .attr("stroke", "#2563eb")
             .attr("stroke-width", 2);
         } else {
-          const minimalBarHeight = 8;
+          const minimalBarHeight = 5;
           g.append("rect")
             .attr("x", x1)
             .attr("y", y - minimalBarHeight / 2)
@@ -316,82 +458,13 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
             .attr("ry", 5)
             .attr("id", `bar-${d.id}`)
             .attr("stroke", "#2563eb")
-            .attr("stroke-width", 1);
+            .attr("stroke-width", 0.1);
         }
-        g.on("mouseover", function (event) {
-          const { left, top, width, height } =
-            svgRef.current!.getBoundingClientRect();
-
-          const mouseX = event.clientX - left;
-          const mouseY = event.clientY - top;
-
-          const tooltipWidth = 120;
-          const tooltipHeight = 40;
-          const offset = 10;
-
-          let x = mouseX + offset;
-          if (mouseX + tooltipWidth + offset > width) {
-            x = mouseX - tooltipWidth - offset;
-          }
-
-          let y = mouseY;
-          if (mouseY + tooltipHeight > height) {
-            y = height - tooltipHeight - offset;
-          }
-          if (mouseY < offset) {
-            y = offset;
-          }
-          setTooltip({
-            x,
-            y,
-            value: {
-              min: d.min,
-              max: d.max,
-              label: selectedBars?.includes(d.id) ? d.label : undefined,
-            },
-          });
-        })
-          .on("mousemove", function (event) {
-            const { left, top, width, height } =
-              svgRef.current!.getBoundingClientRect();
-
-            const mouseX = event.clientX - left;
-            const mouseY = event.clientY - top;
-
-            const tooltipWidth = 120;
-            const tooltipHeight = 40;
-            const offset = 10;
-
-            let x = mouseX + offset;
-            if (mouseX + tooltipWidth + offset > width) {
-              x = mouseX - tooltipWidth - offset;
-            }
-
-            let y = mouseY - offset;
-            if (mouseY + tooltipHeight > height) {
-              y = height - tooltipHeight - (offset + 20);
-            }
-            if (mouseY < offset) {
-              y = offset;
-            }
-            setTooltip({
-              x,
-              y,
-              value: {
-                min: d.min,
-                max: d.max,
-                label: selectedBars?.includes(d.id) ? d.label : undefined,
-              },
-            });
-          })
-          .on("mouseout", function () {
-            setTooltip(null);
-          });
-
+        
         g.append("circle")
           .attr("cx", x1)
           .attr("cy", y)
-          .attr("r", isExpanded ? 6 : 4)
+          .attr("r", isExpanded ? 6 : 5)
           .attr("fill", "#3b82f6")
           .attr("stroke", "white")
           .attr("stroke-width", isExpanded ? 2 : 1)
@@ -400,7 +473,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         g.append("circle")
           .attr("cx", x2)
           .attr("cy", y)
-          .attr("r", isExpanded ? 6 : 4)
+          .attr("r", isExpanded ? 6 : 5)
           .attr("fill", "#E36F35")
           .attr("stroke", "white")
           .attr("stroke-width", isExpanded ? 2 : 0.5)
@@ -475,7 +548,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         </CardTitle>
       </CardHeader> */}
       <CardContent>
-        <div className="w-full overflow-x-hidden relative">
+        <div className="w-full overflow-hidden relative">
+          <span className='absolute w-full text-center text-black/70 block rotate-270  left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0'>potencial de mitigação</span>
           <svg ref={svgRef} className="bg-white dark:bg-sidebar"></svg>
           {tooltip && (
             <div
@@ -499,8 +573,11 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
               </span>
             </div>
           )}
-          <span>N: {data?.length}</span>
         </div>
+          <div className='flex'>
+            <span>N: {data?.length}</span>
+            <span className='flex-1 text-center w-full text-black/70'>Carbono Incorporado (Kg CO₂/m²)</span>
+          </div>
       </CardContent>
     </Card>
   );
