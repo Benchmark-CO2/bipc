@@ -1,8 +1,10 @@
 import { getFloorsBenchmark } from "@/actions/benchmarks/getFloors";
+import { deleteUnit } from "@/actions/units/deleteUnit";
 import { getUnitByUUID } from "@/actions/units/getUnit";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import { floorsColumns } from "@/components/columns/floors";
 import { CommonTable, DrawerFormUnit } from "@/components/layout";
+import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
 import FloorSummary from "@/components/summaryVariants/floors";
 import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
@@ -11,13 +13,15 @@ import { useSummary } from "@/context/summaryContext";
 import { IConsumption } from "@/types/modules";
 import { IUnit, TTowerFloorCategory } from "@/types/units";
 import { getCategoryFromIndex } from "@/utils/unitConversions";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 type TGroupedFloor = IConsumption &
   Omit<TTowerFloorCategory, "consumption"> & {
     repetitions: number;
+    area: number;
   };
 
 const fakeUnit = {
@@ -112,6 +116,20 @@ function RouteComponent() {
     queryKey: ["floor-benchmarks"],
     queryFn: getFloorsBenchmark,
   });
+
+  const { mutate: mutateDeleteUnit, isPending: isDeleting } = useMutation({
+    mutationFn: () => deleteUnit(projectId, unitId),
+    onSuccess: () => {
+      toast.success("Unidade excluída com sucesso");
+      navigate({ to: `/new_projects/${projectId}` });
+    },
+    onError: (error) => {
+      toast.error("Erro ao excluir unidade", {
+        description: error.message,
+      });
+    },
+  });
+
   useEffect(() => {
     if (!benchmarkData?.data) return;
     setSummaryContext({
@@ -133,10 +151,15 @@ function RouteComponent() {
               acc[groupId] = {
                 ...restFloor,
                 ...consumption,
+                area: restFloor.area,
                 repetitions: 1,
               };
             } else {
               acc[groupId].repetitions += 1;
+              acc[groupId].area =
+                (acc[groupId].area * (acc[groupId].repetitions - 1) +
+                  restFloor.area) /
+                acc[groupId].repetitions;
               acc[groupId].co2_min =
                 (acc[groupId].co2_min * (acc[groupId].repetitions - 1) +
                   consumption.co2_min) /
@@ -211,10 +234,11 @@ function RouteComponent() {
     );
 
     return {
-      co2_min: `${(sumCO2Min / floorTotal).toFixed(2)} KgCO2/m²`,
-      co2_max: `${(sumCO2Max / floorTotal).toFixed(2)} KgCO2/m²`,
-      energy_min: `${(sumEnergyMin / floorTotal).toFixed(2)} MJ/m²`,
-      energy_max: `${(sumEnergyMax / floorTotal).toFixed(2)} MJ/m²`,
+      co2_min: `${(sumCO2Min / floorTotal).toFixed(1)} KgCO2/m²`,
+      co2_max: `${(sumCO2Max / floorTotal).toFixed(1)} KgCO2/m²`,
+      energy_min: `${(sumEnergyMin / floorTotal).toFixed(1)} MJ/m²`,
+      energy_max: `${(sumEnergyMax / floorTotal).toFixed(1)} MJ/m²`,
+      area: `-`,
     };
   };
 
@@ -245,15 +269,26 @@ function RouteComponent() {
         onSelectionChange={handleSelectionChange}
         lastRow={{ type: "Média", data: averageMetrics }}
         actions={
-          <DrawerFormUnit
-            projectId={projectId}
-            unitId={unitId}
-            triggerComponent={
-              <Button variant="bipc" className="mt-4" size="sm">
-                Editar Unidade
-              </Button>
-            }
-          />
+          <div className="flex items-center gap-2">
+            <ModalConfirmDelete
+              title="Excluir Unidade"
+              onConfirm={mutateDeleteUnit}
+              componentTrigger={
+                <Button variant="outline" size="sm">
+                  Excluir Unidade
+                </Button>
+              }
+            />
+            <DrawerFormUnit
+              projectId={projectId}
+              unitId={unitId}
+              triggerComponent={
+                <Button variant="bipc" size="sm">
+                  Editar Unidade
+                </Button>
+              }
+            />
+          </div>
         }
       />
       <Divider />
@@ -263,13 +298,6 @@ function RouteComponent() {
           selectedTab="Em uso"
           handleTabClick={console.log}
         />
-        {/* <Button
-          variant="bipc"
-          className="cursor-pointer rounded-t-lg px-4 py-2"
-          onClick={() => console.log("Go to add new constructive technology")}
-        >
-          <Plus />
-        </Button> */}
       </div>
       <CommonTable
         tableName="Tecnologia Construtiva (módulo de cálculo)"
