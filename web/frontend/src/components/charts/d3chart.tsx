@@ -205,7 +205,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         .attr("r", isExpanded ? 6 : 3)
         .attr("fill", "#3b82f6")
         .attr("stroke", "white")
-        .attr("stroke-width", isExpanded ? 2 : 0.5);
+        .attr("stroke-width", isExpanded ? 2 : 0);
 
       // Círculo final (cor baseada na posição)
       // const endColor = getColor(d.end, d.y);
@@ -216,7 +216,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         .attr("r", isExpanded ? 6 : 3)
         .attr("fill", "#E36F35")
         .attr("stroke", "white")
-        .attr("stroke-width", isExpanded ? 2 : 0.5);
+        .attr("stroke-width", isExpanded ? 2 : 0);
     });
   }, [isExpanded, data, isResized]);
 
@@ -394,7 +394,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           .attr("r", isExpanded ? 6 : 4)
           .attr("fill", "#3b82f6")
           .attr("stroke", "white")
-          .attr("stroke-width", isExpanded ? 2 : 0.5)
+          .attr("stroke-width", isExpanded ? 2 : 1)
           .attr("id", `bar-circle-start-${d.id}`);
 
         g.append("circle")
