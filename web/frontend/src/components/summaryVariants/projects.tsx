@@ -9,7 +9,7 @@ import { TabsContainer } from "../ui/tabsContainer";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
 import Subtitle from "./components/Subtitle";
-import { stackData } from "./utils";
+import { barColors, stackData } from "./utils";
 
 type ProjectsSummaryProps = {
   projects: any[];
@@ -25,8 +25,6 @@ const manageData = (data: ProjectsSummaryProps["data"]["benchmark"]["co2"]) => {
 };
 const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
-  // const coSum = data.reduce((acc, project) => acc + project.min, 0);
-  // const mjSum = data.reduce((acc, project) => acc + project.max, 0);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
 
   const managedData = manageData(
@@ -51,9 +49,6 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
     () =>
       stackData(projects, data)?.map((el) => ({
         ...el,
-        concreteWall: Math.random() * (10000 - 800) + 800,
-        beamColumn: Math.random() * (10000 - 800) + 800,
-        structural: Math.random() * (10000 - 800) + 800,
       })),
     [projects, data]
   );
@@ -88,6 +83,8 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
       setSelectedProjects(projects.map((p) => p.id));
     }
   };
+  const sum = stackedData.reduce((acc, b) => acc + ((b[type as keyof typeof b] as number) || 0), 0);
+
   return (
     <>
       <div className="w-full flex gap-2 mb-4">
@@ -126,12 +123,9 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
                 className="bg-transparent border-0 shadow-none"
               />
             )}
-            {(stackedData || []).map((project) => {
+            {(stackedData || []).map((project, idx) => {
               if (!project) return null;
-              const sum =
-                (project.beamColumn || 0) +
-                (project.concreteWall || 0) +
-                (project.structural || 0);
+              console.log({ sum });
               return isExpanded ? (
                 <ItemCard
                   key={project.id}
@@ -139,6 +133,8 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
                   selectedProjects={selectedProjects}
                   handleAddProject={handleAddProject}
                   sum={sum}
+                  color={barColors[idx]}
+                  type={type}
                 />
               ) : (
                 <ListItem
@@ -147,6 +143,8 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
                   selectedProjects={selectedProjects}
                   handleAddProject={handleAddProject}
                   sum={sum}
+                  color={barColors[idx]}
+                  type={type}
                 />
               );
             })}
@@ -154,8 +152,6 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
           {!isExpanded && <Subtitle />}
         </div>
         <D3GradientRangeChart
-          width={width()}
-          height={height()}
           data={managedData}
           selectedBars={selectedProjects}
         />

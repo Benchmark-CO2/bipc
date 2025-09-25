@@ -134,7 +134,13 @@ function RouteComponent() {
     if (!benchmarkData?.data) return;
     setSummaryContext({
       component: (
-        <FloorSummary floors={selectedFloors} data={benchmarkData.data} />
+        <FloorSummary
+          selectedFloors={selectedFloors}
+          floors={groupedFloors}
+          data={benchmarkData.data}
+          unit={unit as IUnit}
+
+        />
       ),
       title: "Floor Comparison",
     });

@@ -3,19 +3,21 @@ import { useSummary } from "@/context/summaryContext";
 import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
-import NotFoundList from "../ui/not-found-list";
 import { TabsContainer } from "../ui/tabsContainer";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
-import Subtitle from './components/Subtitle';
-import { stackData } from "./utils";
+import Subtitle from "./components/Subtitle";
+import { barColors, stackData } from "./utils";
 
 type ProjectsSummaryProps = {
-  units: (any & {
+  selectedUnits: (any & {
     co: number;
     mj: number;
     density: number;
   })[];
+  project: any;
+  units: any[];
   data: IBenchmarkResponse;
 };
 
@@ -27,35 +29,39 @@ const generateFakeData = (units: ProjectsSummaryProps["units"]) => {
   }));
 };
 
-const UnitsSummary = ({ units, data }: ProjectsSummaryProps) => {
+const UnitsSummary = ({
+  units,
+  data,
+  selectedUnits,
+  project,
+}: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const fakeUnits = generateFakeData(
     data.benchmark?.[type as "co2" | "energy"] || []
-  ).map((el) => ({
-    ...el,
-    label: units.find((f) => f.id === el.id)?.name || "",
-  })).filter(f => f.min && f.max);
+  )
+    .map((el) => ({
+      ...el,
+      label: selectedUnits.find((f) => f.id === el.id)?.name || "",
+    }))
+    .filter((f) => f.min && f.max);
   const { isExpanded } = useSummary();
 
   const stackedData = useMemo(
     () =>
-      stackData(units, data)?.map((el) => ({
+      stackData(selectedUnits, data)?.map((el) => ({
         ...el,
-        concreteWall: Math.random() * (8000 - 1000) + 1000,
-        beamColumn: Math.random() * (8000 - 1000) + 1000,
-        structural: Math.random() * (8000 - 1000) + 1000,
       })),
-    [units, data]
+    [selectedUnits, data]
   );
 
   useEffect(() => {
     setSelectedProjects(
       selectedProjects.filter(
-        (id) => units.find((u) => u.id === id) !== undefined
+        (id) => selectedUnits.find((u) => u.id === id) !== undefined
       )
     );
-  }, [units]);
+  }, [selectedUnits]);
 
   const handleAddProject = (projectId: string) => {
     if (selectedProjects.includes(projectId)) {
@@ -65,14 +71,43 @@ const UnitsSummary = ({ units, data }: ProjectsSummaryProps) => {
     }
   };
   const [selectedSubTab, setSelectedSubTab] = useState<"Unidades">("Unidades");
-    const selectAll = () => {
-    if (selectedProjects.length === units.length) {
+  const selectAll = () => {
+    if (selectedProjects.length === selectedUnits.length) {
       setSelectedProjects([]);
     } else {
-      setSelectedProjects(units.map((f) => f.id));
+      setSelectedProjects(selectedUnits.map((f) => f.id));
     }
   };
-        
+
+  const avgByUnit = useMemo(() => {
+    if (!units.length || !project) return 0;
+    console.log("units", units);
+    return units.reduce(
+      (acc, unit) => {
+        if (!acc[unit.id]) {
+          acc[unit.id] = { name: "", avg: 0, id: "" };
+        }
+        acc[unit.id] = {
+          name: unit.name,
+          avg:
+            (unit[type === "co2" ? "co2_max" : "energy_max"] +
+              unit[type === "co2" ? "co2_min" : "energy_min"]) /
+            2,
+          id: unit.id,
+        };
+        if (!acc[unit.id].avg) delete acc[unit.id];
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+  }, [units, project, fakeUnits]);
+
+  const sum = (Object.values(avgByUnit) as Array<{ avg: number }>).reduce(
+    (acc: number, b: { avg: number }) => acc + b.avg,
+    0 as number
+  );
+  console.log("avgByUnit", sum);
+
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
       <div className="w-full flex gap-2 mb-4">
@@ -81,38 +116,79 @@ const UnitsSummary = ({ units, data }: ProjectsSummaryProps) => {
           handleTabClick={(tab) => setType(tab as "co2" | "energy")}
           selectedTab={type}
           fullWidth
-          subTabs={["Unidades", selectedProjects.length === units.length
-          ? "Desmarcar Todos"
-          : "Selecionar Todos"]}
+          subTabs={[
+            "Unidades",
+            selectedProjects.length === units.length
+              ? "Desmarcar Todos"
+              : "Selecionar Todos",
+          ]}
           handleClickSubTab={(tab) => {
             if (tab === "Unidades") setSelectedSubTab(tab as "Unidades");
-            if (tab === "Selecionar Todos" || tab === "Desmarcar Todos") selectAll();
+            if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
+              selectAll();
           }}
           selectedSubTab={selectedSubTab}
         />
       </div>
+
       <div
         className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
-          "flex flex-col": isExpanded,
+          "flex flex-col h-full justify-between": isExpanded,
         })}
       >
         <div className="flex flex-col items-start w-full">
+          <div className="w-full mb-2">
+            <div className="mb-2 text-lg text-gray-600">{project.name}</div>
+            <div className="flex w-auto">
+              {(
+                Object.values(avgByUnit) as Array<{
+                  name: string;
+                  avg: number;
+                  id: string;
+                }>
+              ).map((f, idx) => {
+                return f.avg > 0 ? (
+                  <div
+                    key={f.id}
+                      className={cn("mb-2 flex flex-col items-start", {
+                      "rounded-l-md": idx === 0,
+                      "rounded-r-md": idx === units.length - 1,
+                    })}
+                    style={{
+                      width: `${((f.avg || 0) / sum) * 100}%`,
+                    }}
+                    >
+                   
+                     
+                      <Tooltip>
+                        <TooltipTrigger style={{ backgroundColor: barColors[idx] }} className='w-full'>
+                             <div
+                                className="w-full h-[16px]"
+                              ></div>
+                        </TooltipTrigger>
+                        <TooltipContent arrowClassName='bg-white opacity-0' className={cn('bg-white text-black border-2 border-active shadow-md', {
+                          'ml-30': idx === 0,
+                        })}>
+                          <span className="text-black text-base p-2">
+                            {f.name}: {Math.round((f.avg || 0) * 10) / 10}{" "}
+                            KgCO₂/m²
+                          </span>
+                        </TooltipContent>
+                      </Tooltip>
+                    
+                  </div>
+                ) : null;
+              })}
+            </div>
+          </div>
           <ul
             className={cn("flex flex-col gap-2 text-xl w-full text-black", {
-              "flex-row gap-2 flex-wrap": isExpanded,
-              "max-h-[300px] overflow-y-auto ": !isExpanded
+              "flex-row gap-2 flex-wrap my-4": isExpanded,
+              "max-h-[350px] overflow-y-auto ": !isExpanded,
             })}
           >
-            {stackedData.length === 0 && (
-              <NotFoundList
-                message="Nenhuma unidade selecionada."
-                description="Por favor, selecione ao menos uma unidade para visualizar o resumo."
-                className="bg-transparent border-0 shadow-none"
-              />
-            )}
-            {stackedData.map((unit) => {
+            {stackedData.map((unit, idx) => {
               if (!unit) return null;
-              const sum = unit.concreteWall + unit.beamColumn + unit.structural;
 
               return isExpanded ? (
                 <ItemCard
@@ -121,6 +197,8 @@ const UnitsSummary = ({ units, data }: ProjectsSummaryProps) => {
                   handleAddProject={handleAddProject}
                   selectedProjects={selectedProjects}
                   sum={sum}
+                  color={barColors[idx]}
+                  type={type}
                 />
               ) : (
                 <ListItem
@@ -129,11 +207,13 @@ const UnitsSummary = ({ units, data }: ProjectsSummaryProps) => {
                   selectedProjects={selectedProjects}
                   handleAddProject={handleAddProject}
                   sum={sum}
+                  color={barColors[idx]}
+                  type={type}
                 />
               );
             })}
           </ul>
-          {!isExpanded && <Subtitle  />}
+          {!isExpanded && <Subtitle />}
         </div>
         <D3GradientRangeChart
           data={fakeUnits}
