@@ -1,7 +1,7 @@
-import { ColumnDef } from "@tanstack/react-table";
-import { useNavigate, useParams } from "@tanstack/react-router";
-import { Button } from "../ui/button";
 import { TConsumption, TProjectUnit } from "@/types/projects";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { ColumnDef } from "@tanstack/react-table";
+import { Button } from "../ui/button";
 
 export const unitsColumns: ColumnDef<
   Pick<TProjectUnit, "name" | "id" | "area"> & TConsumption
@@ -18,7 +18,7 @@ export const unitsColumns: ColumnDef<
     header: () => <div className="text-center">Área Total (m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original?.area.toFixed(1)} m²` || "-"}
+        {`${row.original?.area?.toFixed(1)} m²` || "-"}
       </div>
     ),
   },

@@ -23,12 +23,13 @@ type D3GradientRangeChartProps = {
   data?: { id: string; y: number; min: number; max: number; label: string }[];
   width?: number;
   height?: number;
+  overrideDimensions?: boolean;
 };
 const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   selectedBars,
   data,
-  // width = 600,
-  // height = 290,
+  overrideDimensions = false,
+  ...props
 }) => {
   const { isExpanded } = useSummary();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -41,7 +42,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
   const screenWidth = window.innerWidth;
   const width = () => {
-    console.log('screenWidth', screenWidth)
+    if (props.width && overrideDimensions) return props.width;
+
     if (isMobile) return screenWidth - 340;
     if (isExpanded) return screenWidth * 0.8;
     if (screenWidth < 1300) return screenWidth * 0.35;
@@ -49,6 +51,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   };
 
   const height = () => {
+    if (props.height && overrideDimensions) return props.height;
+
     if (isMobile && !isExpanded) return 250;
     if (isMobile && isExpanded) return 320;
     if (isExpanded) return 900;
@@ -60,7 +64,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     top: isExpanded ? 15 : 20,
     right: 20,
     bottom: 35,
-    left: isMobile ? 50 : 60,
+    left: isMobile ? 50 : 80,
   };
   const _width = width();
   const _height = height() - (margin.top + margin.bottom);
@@ -87,6 +91,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -120,7 +125,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .attr("y1", 0)
       .attr("y2", _height)
       .attr("stroke", "#e2e8f0")
-      .attr("stroke-width", 1);
+      .attr("stroke-width", 1)
 
     // Linhas horizontais do grid
     g.selectAll(".grid-line-y")
@@ -148,7 +153,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .call(d3.axisLeft(yScale).ticks(8))
       .selectAll("text")
       .style("font-size", "12px")
-      .style("fill", "#64748b");
+      .style("fill", "#64748b")
 
     // Remover linhas dos eixos
     g.selectAll(".domain").remove();
@@ -476,6 +481,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       </CardHeader> */}
       <CardContent>
         <div className="w-full overflow-x-hidden relative">
+          <span className='absolute w-full text-center text-black/70 block rotate-270  left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0'>potencial de mitigação</span>
           <svg ref={svgRef} className="bg-white dark:bg-sidebar"></svg>
           {tooltip && (
             <div
@@ -499,8 +505,11 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
               </span>
             </div>
           )}
-          <span>N: {data?.length}</span>
         </div>
+          <div className='flex'>
+            <span>N: {data?.length}</span>
+            <span className='flex-1 text-center w-full text-black/70'>Carbono Incorporado (Kg CO₂/m²)</span>
+          </div>
       </CardContent>
     </Card>
   );
