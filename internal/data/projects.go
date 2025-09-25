@@ -93,12 +93,14 @@ type ProjectModel struct {
 }
 
 func (m ProjectModel) Insert(project *Project) error {
-	projectID, err := uuid.NewV7()
-	if err != nil {
-		return err
-	}
 
-	project.ID = projectID
+	if project.ID == uuid.Nil {
+		projectID, err := uuid.NewV7()
+		if err != nil {
+			return err
+		}
+		project.ID = projectID
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
