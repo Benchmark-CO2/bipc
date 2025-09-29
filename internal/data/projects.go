@@ -187,24 +187,25 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*Project, error) {
 		WITH tower_consumption AS (
 			SELECT
 				fg.tower_id,
-				SUM(f.co2_min * f.area) / SUM(f.area) as co2_min,
-				SUM(f.co2_max * f.area) / SUM(f.area) as co2_max,
-				SUM(f.energy_min * f.area) / SUM(f.area) as energy_min,
-				SUM(f.energy_max * f.area) / SUM(f.area) as energy_max,
-				SUM(f.area) as area
+				COALESCE(SUM(f.co2_min * f.area) / NULLIF(SUM(f.area), 0), 0) as co2_min,
+				COALESCE(SUM(f.co2_max * f.area) / NULLIF(SUM(f.area), 0), 0) as co2_max,
+				COALESCE(SUM(f.energy_min * f.area) / NULLIF(SUM(f.area), 0), 0) as energy_min,
+				COALESCE(SUM(f.energy_max * f.area) / NULLIF(SUM(f.area), 0), 0) as energy_max,
+				COALESCE(SUM(f.area), 0) as area
 			FROM floor f
 			INNER JOIN floor_group fg ON f.group_id = fg.id
+			WHERE f.area IS NOT NULL
 			GROUP BY fg.tower_id
 		)
 		SELECT
 			u.id,
 			u.name,
 			u.type,
-			tc.co2_min,
-			tc.co2_max,
-			tc.energy_min,
-			tc.energy_max,
-			tc.area
+			COALESCE(tc.co2_min, 0),
+			COALESCE(tc.co2_max, 0),
+			COALESCE(tc.energy_min, 0),
+			COALESCE(tc.energy_max, 0),
+			COALESCE(tc.area, 0)
 		FROM units u
 		LEFT JOIN tower_consumption tc ON u.id = tc.tower_id
 		WHERE u.project_id = $1
@@ -316,30 +317,32 @@ func (m ProjectModel) Delete(projectID uuid.UUID) error {
 func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]*Project, Metadata, error) {
 	query := fmt.Sprintf(`
 		WITH project_consumption AS (
-			SELECT
-				u.project_id,
-				SUM(f.co2_min * f.area) / SUM(f.area) as co2_min,
-				SUM(f.co2_max * f.area) / SUM(f.area) as co2_max,
-				SUM(f.energy_min * f.area) / SUM(f.area) as energy_min,
-				SUM(f.energy_max * f.area) / SUM(f.area) as energy_max,
-				SUM(f.area) as area
-			FROM floor f
-			INNER JOIN floor_group fg ON f.group_id = fg.id
-			INNER JOIN units u ON fg.tower_id = u.id
-			GROUP BY u.project_id
-		)
- 		SELECT COUNT(*) OVER(), p.id, p.created_at, p.updated_at, p.user_id, p.name,
-		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description, p.image_url,
-		pc.co2_min, pc.co2_max, pc.energy_min, pc.energy_max, pc.area
- 		FROM projects p
-		INNER JOIN users_projects_permissions upp ON upp.project_id = p.id
-		LEFT JOIN project_consumption pc ON p.id = pc.project_id
- 		WHERE (to_tsvector('simple', p.name) @@ plainto_tsquery('simple', $1) OR $1 = '')
-		AND upp.user_id = $2
-		AND upp.permission_id = (SELECT permissions.id FROM permissions WHERE code = 'project:view')
- 		ORDER BY %s %s, p.id DESC
- 		LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
+		SELECT
+			u.project_id,
+			COALESCE(SUM(f.co2_min * f.area) / NULLIF(SUM(f.area), 0), 0) AS co2_min,
+			COALESCE(SUM(f.co2_max * f.area) / NULLIF(SUM(f.area), 0), 0) AS co2_max,
+			COALESCE(SUM(f.energy_min * f.area) / NULLIF(SUM(f.area), 0), 0) AS energy_min,
+			COALESCE(SUM(f.energy_max * f.area) / NULLIF(SUM(f.area), 0), 0) AS energy_max,
+			COALESCE(SUM(f.area), 0) AS area
+		FROM units u 
+		LEFT JOIN floor_group fg ON fg.tower_id = u.id
+		LEFT JOIN floor f ON f.group_id = fg.id AND f.area IS NOT NULL
+		GROUP BY u.project_id
+	)
+	SELECT 
+			COUNT(*) OVER(), p.id, p.created_at, p.updated_at, p.user_id, p.name,
+			p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description, p.image_url,
+			COALESCE(pc.co2_min, 0), COALESCE(pc.co2_max, 0), COALESCE(pc.energy_min, 0), COALESCE(pc.energy_max, 0), COALESCE(pc.area, 0)
+	FROM projects p
+	INNER JOIN users_projects_permissions upp ON upp.project_id = p.id
+	LEFT JOIN project_consumption pc ON p.id = pc.project_id -- Essencial para não descartar projetos sem consumo
+	WHERE (to_tsvector('simple', p.name) @@ plainto_tsquery('simple', $1) OR $1 = '')
+	AND upp.user_id = $2
+	AND upp.permission_id = (SELECT permissions.id FROM permissions WHERE code = 'project:view')
+	ORDER BY %s %s, p.id DESC
+	LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
 
+		
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
