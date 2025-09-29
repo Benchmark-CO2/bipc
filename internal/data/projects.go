@@ -45,7 +45,7 @@ type Project struct {
 	Number       *string       `json:"number,omitzero"`
 	Phase        string        `json:"phase"`
 	Description  *string       `json:"description,omitzero"`
-	ImageURL     *string       `json:"image_url,omitzero"`
+	ImageID      *string       `json:"image_id,omitzero"`
 	Units        []ProjectUnit `json:"units,omitempty"`
 	Consumption  *Consumption  `json:"consumption,omitempty"`
 	Area         float64       `json:"area,omitempty"`
@@ -114,12 +114,12 @@ func (m ProjectModel) Insert(project *Project) error {
 	defer tx.Rollback()
 
 	query1 := `
-		INSERT INTO projects (id, user_id, name, cep, state, city, neighborhood, street, number, phase, description, image_url)
+		INSERT INTO projects (id, user_id, name, cep, state, city, neighborhood, street, number, phase, description, image_id)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		RETURNING created_at, updated_at`
 
 	args := []any{project.ID, project.UserID, project.Name, project.CEP, project.State, project.City, project.Neighborhood,
-		project.Street, project.Number, project.Phase, project.Description, project.ImageURL}
+		project.Street, project.Number, project.Phase, project.Description, project.ImageID}
 
 	err = tx.QueryRow(query1, args...).Scan(&project.CreatedAt, &project.UpdatedAt)
 	if err != nil {
@@ -149,7 +149,7 @@ func (m ProjectModel) Insert(project *Project) error {
 
 func (m ProjectModel) GetByID(id uuid.UUID) (*Project, error) {
 	query := `
-		SELECT id, created_at, updated_at, user_id, name, cep, state, city, neighborhood, street, number, phase, description, image_url
+		SELECT id, created_at, updated_at, user_id, name, cep, state, city, neighborhood, street, number, phase, description, image_id
 		FROM projects
 		WHERE id = $1`
 
@@ -172,7 +172,7 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*Project, error) {
 		&project.Number,
 		&project.Phase,
 		&project.Description,
-		&project.ImageURL,
+		&project.ImageID,
 	)
 	if err != nil {
 		switch {
@@ -245,7 +245,7 @@ func (m ProjectModel) Update(project *Project) error {
 	query := `
 		UPDATE projects
 		SET name = $1, cep = $2, state = $3, city = $4, neighborhood = $5, street = $6,
-		number = $7, phase = $8, description = $9, image_url = $10
+		number = $7, phase = $8, description = $9, image_id = $10
 		WHERE id = $11`
 
 	args := []any{
@@ -258,7 +258,7 @@ func (m ProjectModel) Update(project *Project) error {
 		project.Number,
 		project.Phase,
 		project.Description,
-		project.ImageURL,
+		project.ImageID,
 		project.ID,
 	}
 
@@ -329,7 +329,7 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 			GROUP BY u.project_id
 		)
  		SELECT COUNT(*) OVER(), p.id, p.created_at, p.updated_at, p.user_id, p.name,
-		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description, p.image_url,
+		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description, p.image_id,
 		pc.co2_min, pc.co2_max, pc.energy_min, pc.energy_max, pc.area
  		FROM projects p
 		INNER JOIN users_projects_permissions upp ON upp.project_id = p.id
@@ -373,7 +373,7 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 			&project.Number,
 			&project.Phase,
 			&project.Description,
-			&project.ImageURL,
+			&project.ImageID,
 			&co2Min,
 			&co2Max,
 			&energyMin,

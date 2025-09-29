@@ -24,7 +24,7 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 		Number       *string `json:"number"`
 		Phase        string  `json:"phase"`
 		Description  *string `json:"description"`
-		ImageURL     *string `json:"image_url"`
+		ImageID      *string `json:"image_id"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -44,7 +44,7 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 		Number:       input.Number,
 		Phase:        input.Phase,
 		Description:  input.Description,
-		ImageURL:     input.ImageURL,
+		ImageID:      input.ImageID,
 	}
 
 	v := validator.New()
@@ -120,7 +120,7 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 		Number       *string `json:"number"`
 		Phase        *string `json:"phase"`
 		Description  *string `json:"description"`
-		ImageURL     *string `json:"image_url"`
+		ImageID      *string `json:"image_id"`
 	}
 
 	err = app.readJSON(w, r, &input)
@@ -165,8 +165,8 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 		project.Description = input.Description
 	}
 
-	if input.ImageURL != nil {
-		project.ImageURL = input.ImageURL
+	if input.ImageID != nil {
+		project.ImageID = input.ImageID
 	}
 
 	v := validator.New()
