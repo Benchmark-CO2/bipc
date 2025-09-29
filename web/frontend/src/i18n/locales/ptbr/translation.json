@@ -231,7 +231,8 @@
     "errorEditProject": "Erro ao editar projeto",
     "errorEditModuleName": "Erro ao editar nome do módulo",
     "errorUnknown": "Erro desconhecido",
-    "errorUploadFile": "Erro ao fazer upload do arquivo"
+    "errorUploadFile": "Erro ao fazer upload do arquivo",
+    "unexpectedError": "Erro inesperado. Tente novamente mais tarde."
   },
   "warn": {
     "verifyZipCode": "Por favor, verifique o CEP"
