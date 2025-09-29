@@ -236,7 +236,8 @@
     "errorEditProject": "Error al editar el proyecto",
     "errorEditModuleName": "Error al editar el nombre del módulo",
     "errorUnknown": "Error desconocido",
-    "errorUploadFile": "Error al subir el archivo"
+    "errorUploadFile": "Error al subir el archivo",
+    "unexpectedError": "Error inesperado. Inténtalo nuevamente más tarde."
   },
   "warn": {
     "verifyZipCode": "Por favor, verifica el código postal"

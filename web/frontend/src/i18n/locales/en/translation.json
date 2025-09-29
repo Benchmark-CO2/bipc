@@ -238,7 +238,8 @@
     "errorEditProject": "Error editing project",
     "errorEditModuleName": "Error editing module name",
     "errorUnknown": "An unknown error occurred",
-    "errorUploadFile": "Error uploading file"
+    "errorUploadFile": "Error uploading file",
+    "unexpectedError": "Unexpected error. Please try again later."
   },
   "warn": {
     "verifyZipCode": "Please verify the ZIP code"

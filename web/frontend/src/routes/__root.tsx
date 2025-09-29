@@ -3,12 +3,12 @@ import { PublicHeader, Sidebar } from "@/components/layout";
 import Screen from "@/components/layout/screen";
 import UserActiveWarning from "@/components/layout/user-active-warning";
 import BreadCrumbs from "@/components/ui/breadcrumbs";
-import { Button } from "@/components/ui/button";
 // import { ModeToggle } from '@/components/mode-toggle'
 import { AuthContext } from "@/context/authContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
+import { ENV } from "@/utils/constants";
 import { QueryClient } from "@tanstack/react-query";
 import {
   createRootRouteWithContext,
@@ -54,7 +54,7 @@ export const Route = createRootRouteWithContext<{
       <div className="flex h-screen w-full transition-all">
         {isAuthenticated && (
           <div
-            className={cn("flex w-full", {
+            className={cn("flex w-full ", {
               "flex-col": isMobile,
             })}
           >
@@ -85,23 +85,20 @@ export const Route = createRootRouteWithContext<{
       </div>
     );
   },
-  errorComponent: () => {
+  errorComponent: ({ error }) => {
     const { t } = useTranslation();
-    const navigate = useNavigate();
-    const auth = useAuth();
-    const handleLogout = () => {
-      auth.logout();
-      void navigate({
-        to: "/login",
-        replace: true,
-      });
-    };
+  
     return (
       <div className="flex flex-col items-center justify-center h-screen w-full">
-        <h1 className="text-2xl font-bold">{t("error.sessionExpired")}</h1>
-        <Button onClick={handleLogout} className="mt-6" variant="link">
-          {t("error.goToLogin")}
-        </Button>
+        <h1 className="text-2xl font-bold">{t("error.unexpectedError")}</h1>
+
+        {ENV === "development" && (
+          <div className="mt-4 text-base text-red-500 bg-red-300/40 p-4 flex flex-col font-semibold font-mono">
+            <div className="flex justify-between items-center">
+              <pre>{JSON.stringify(error, null, 2)}</pre>
+            </div>
+          </div>
+        )}
       </div>
     );
   },
