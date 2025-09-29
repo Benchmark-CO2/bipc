@@ -151,7 +151,7 @@ func (m UserModel) Insert(user *User) error {
 
 func (m UserModel) GetByEmail(email string) (*User, error) {
 	query := `
-        SELECT id, created_at, name, email, password_hash, activated, image_id
+        SELECT id, created_at, name, email, password_hash, activated, image_id, crea_cau, birthdate, city, activity, enterprise
         FROM users
         WHERE email = $1`
 
@@ -168,6 +168,11 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 		&user.Password.hash,
 		&user.Activated,
 		&user.ImageID,
+		&user.Crea_Cau,
+		&user.Birthdate,
+		&user.City,
+		&user.Activity,
+		&user.Enterprise,
 	)
 
 	if err != nil {
@@ -274,7 +279,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 
 func (m UserModel) Collaborators(userID uuid.UUID) ([]*User, error) {
 	query := `
-		SELECT users.id, users.created_at, users.name, users.email, users.activated, users.image_id
+		SELECT users.id, users.created_at, users.name, users.email, users.activated, users.image_id, users.crea_cau, users.birthdate, users.city, users.activity, users.enterprise
 		FROM users
 		INNER JOIN (
 			SELECT DISTINCT user_id
@@ -308,6 +313,11 @@ func (m UserModel) Collaborators(userID uuid.UUID) ([]*User, error) {
 			&user.Email,
 			&user.Activated,
 			&user.ImageID,
+			&user.Crea_Cau,
+			&user.Birthdate,
+			&user.City,
+			&user.Activity,
+			&user.Enterprise,
 		)
 		if err != nil {
 			return nil, err
