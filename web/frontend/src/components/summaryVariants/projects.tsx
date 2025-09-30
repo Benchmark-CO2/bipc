@@ -83,7 +83,10 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
       setSelectedProjects(projects.map((p) => p.id));
     }
   };
-  const sum = stackedData.reduce((acc, b) => acc + ((b[type as keyof typeof b] as number) || 0), 0);
+  const sum = stackedData.reduce(
+    (acc, b) => acc + ((b[type as keyof typeof b] as number) || 0),
+    0
+  );
 
   return (
     <>
@@ -95,11 +98,15 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
           fullWidth
           handleClickSubTab={(tab) => {
             if (tab === "Projetos") setSubTabs(tab as "Projetos");
-            if (tab === "Selecionar Todos" || tab === "Desmarcar Todos") selectAll();
+            if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
+              selectAll();
           }}
-          subTabs={["Projetos", selectedProjects.length === projects.length
-            ? "Desmarcar Todos"
-            : "Selecionar Todos"]}
+          subTabs={[
+            "Projetos",
+            selectedProjects.length === projects.length
+              ? "Desmarcar Todos"
+              : "Selecionar Todos",
+          ]}
           selectedSubTab={subTabs}
         />
       </div>
@@ -149,7 +156,7 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
               );
             })}
           </ul>
-          {!isExpanded && <Subtitle />}
+          {/* {!isExpanded && <Subtitle />} */}
         </div>
         <D3GradientRangeChart
           data={managedData}

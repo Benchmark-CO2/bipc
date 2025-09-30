@@ -5,7 +5,7 @@ import { IUnit } from "@/types/units";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import { TabsContainer } from "../ui/tabsContainer";
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
 import Subtitle from "./components/Subtitle";
@@ -86,27 +86,28 @@ const FloorSummary = ({
     return floors.reduce(
       (acc, floor) => {
         if (!acc[floor.group_id]) {
-          acc[floor.group_id] = { name: "", avg: 0, id: ""};
+          acc[floor.group_id] = { name: "", avg: 0, id: "" };
         }
         acc[floor.group_id] = {
           name: floor.group_name,
-          avg:(floor[type === "co2" ? "co2_max" : "energy_max"] +
-            floor[type === "co2" ? "co2_min" : "energy_min"]) /
-          2,
+          avg:
+            (floor[type === "co2" ? "co2_max" : "energy_max"] +
+              floor[type === "co2" ? "co2_min" : "energy_min"]) /
+            2,
           id: floor.group_id,
-        }
+        };
         return acc;
       },
       {} as Record<string, number>
     );
   }, [floors, unit, fakeFloors]);
 
-  const sum = (Object.values(avgByUnit) as Array<{avg: number}>).reduce(
+  const sum = (Object.values(avgByUnit) as Array<{ avg: number }>).reduce(
     (acc: number, b: { avg: number }) => acc + b.avg,
     0 as number
   );
 
-  console.log('floors', stackedData, avgByUnit)
+  console.log("floors", stackedData, avgByUnit);
   return (
     <>
       <div className="w-full flex gap-2 mb-4">
@@ -138,7 +139,13 @@ const FloorSummary = ({
           <div className="w-full mb-2">
             <div className="mb-2 text-lg text-gray-600">{unit.name}</div>
             <div className="flex w-auto">
-              {(Object.values(avgByUnit) as Array<{name: string, avg: number, id: string}>).map((f, idx) => {
+              {(
+                Object.values(avgByUnit) as Array<{
+                  name: string;
+                  avg: number;
+                  id: string;
+                }>
+              ).map((f, idx) => {
                 return (
                   <div
                     key={f.id}
@@ -150,28 +157,35 @@ const FloorSummary = ({
                       width: `${((f.avg || 0) / sum) * 100}%`,
                     }}
                   >
-                     <Tooltip>
-                        <TooltipTrigger style={{ backgroundColor: barColors[idx] }} className='w-full'>
-                             <div
-                                className="w-full h-[16px]"
-                              ></div>
-                        </TooltipTrigger>
-                        <TooltipContent arrowClassName='bg-white opacity-0' className={cn('bg-white text-black border-2 border-active shadow-md', {
-                          'ml-30': idx === 0,
-                        })}>
-                          <span className="text-black text-base p-2">
-                            {f.name}: {Math.round((f.avg || 0) * 10) / 10}{" "}
-                            KgCO₂/m²
-                          </span>
-                        </TooltipContent>
-                      </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger
+                        style={{ backgroundColor: barColors[idx] }}
+                        className="w-full"
+                      >
+                        <div className="w-full h-[16px]"></div>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        arrowClassName="bg-white opacity-0"
+                        className={cn(
+                          "bg-white text-black border-2 border-active shadow-md",
+                          {
+                            "ml-30": idx === 0,
+                          }
+                        )}
+                      >
+                        <span className="text-black text-base p-2">
+                          {f.name}: {Math.round((f.avg || 0) * 10) / 10}{" "}
+                          KgCO₂/m²
+                        </span>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 );
               })}
             </div>
           </div>
           <ul
-           className={cn("flex flex-col gap-2 text-xl w-full text-black", {
+            className={cn("flex flex-col gap-2 text-xl w-full text-black", {
               "flex-row gap-2 flex-wrap my-4": isExpanded,
               "max-h-[350px] overflow-y-auto ": !isExpanded,
             })}
@@ -201,7 +215,7 @@ const FloorSummary = ({
               );
             })}
           </ul>
-          {!isExpanded && <Subtitle />}
+          {/* {!isExpanded && <Subtitle />} */}
         </div>
         <D3GradientRangeChart
           data={fakeFloors}

@@ -150,32 +150,36 @@ const UnitsSummary = ({
                 return f.avg > 0 ? (
                   <div
                     key={f.id}
-                      className={cn("mb-2 flex flex-col items-start", {
+                    className={cn("mb-2 flex flex-col items-start", {
                       "rounded-l-md": idx === 0,
                       "rounded-r-md": idx === units.length - 1,
                     })}
                     style={{
                       width: `${((f.avg || 0) / sum) * 100}%`,
                     }}
-                    >
-                   
-                     
-                      <Tooltip>
-                        <TooltipTrigger style={{ backgroundColor: barColors[idx] }} className='w-full'>
-                             <div
-                                className="w-full h-[16px]"
-                              ></div>
-                        </TooltipTrigger>
-                        <TooltipContent arrowClassName='bg-white opacity-0' className={cn('bg-white text-black border-2 border-active shadow-md', {
-                          'ml-30': idx === 0,
-                        })}>
-                          <span className="text-black text-base p-2">
-                            {f.name}: {Math.round((f.avg || 0) * 10) / 10}{" "}
-                            KgCO₂/m²
-                          </span>
-                        </TooltipContent>
-                      </Tooltip>
-                    
+                  >
+                    <Tooltip>
+                      <TooltipTrigger
+                        style={{ backgroundColor: barColors[idx] }}
+                        className="w-full"
+                      >
+                        <div className="w-full h-[16px]"></div>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        arrowClassName="bg-white opacity-0"
+                        className={cn(
+                          "bg-white text-black border-2 border-active shadow-md",
+                          {
+                            "ml-30": idx === 0,
+                          }
+                        )}
+                      >
+                        <span className="text-black text-base p-2">
+                          {f.name}: {Math.round((f.avg || 0) * 10) / 10}{" "}
+                          KgCO₂/m²
+                        </span>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 ) : null;
               })}
@@ -213,7 +217,7 @@ const UnitsSummary = ({
               );
             })}
           </ul>
-          {!isExpanded && <Subtitle />}
+          {/* {!isExpanded && <Subtitle />} */}
         </div>
         <D3GradientRangeChart
           data={fakeUnits}
