@@ -1,6 +1,6 @@
 import LogoDark from "@/assets/logo-dark.svg";
 import LogoFull from "@/assets/logo_full.svg";
-import { useSummary } from '@/context/summaryContext';
+import { useSummary } from "@/context/summaryContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useSidebar } from "@/hooks/useSidebar";
@@ -44,7 +44,9 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
     <div className="h-full flex flex-col">
       {/* Header com Logo */}
       <div className="flex items-center mb-6 p-4">
-        <img src={LogoFull} alt="Logo" className="w-full" />
+        <Link to={isAuthenticated ? "/" : "/login"}>
+          <img src={LogoFull} alt="Logo" className="w-full" />
+        </Link>
       </div>
 
       {/* Menu Items - Seção Principal */}
@@ -248,17 +250,17 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
     if (sidebarStatus === "open") {
       setTimeout(() => {
         setSummaryContext({
-        ...context,
-        hide: false
-      });
-      }, 200)
+          ...context,
+          hide: false,
+        });
+      }, 200);
     } else {
       setSummaryContext({
         ...context,
-        hide: true
-    }); 
-  }
-}
+        hide: true,
+      });
+    }
+  };
   if (isMobile) {
     return (
       <div

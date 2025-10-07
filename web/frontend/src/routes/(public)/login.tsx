@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
-import { cn } from '@/lib/utils';
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
@@ -24,6 +25,7 @@ const Login = () => {
   });
 
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
 
   const { data, mutate, isPending, isError } = useMutation({
     mutationFn: login,
@@ -67,7 +69,14 @@ const Login = () => {
   }, [data, navigate]);
 
   return (
-    <div className="flex h-full w-full items-center justify-center transition-all">
+    <div
+      className={cn(
+        "flex h-full w-full items-center justify-center transition-all overflow-auto",
+        {
+          block: isMobile,
+        }
+      )}
+    >
       <div className=" flex px-6 flex-col items-center justify-center gap-4 max-xl:w-1/2 max-lg:w-full border border-zinc-200 dark:border-zinc-800 rounded-md py-8">
         <div className="w-full max-w-md">
           <div>
@@ -94,7 +103,12 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={t("loginPage.placeholderEmail")}
-                className={cn("text-lg", fieldsError.email ? "border-red-500 focus-visible:border-red-500" : "")}
+                className={cn(
+                  "text-lg",
+                  fieldsError.email
+                    ? "border-red-500 focus-visible:border-red-500"
+                    : ""
+                )}
                 disabled={isPending}
                 autoComplete="email"
               />
@@ -113,7 +127,12 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={t("loginPage.placeholderPassword")}
-                  className={cn("pr-10 text-md", fieldsError.password ? "border-red-500 focus-visible:border-red-500" : "")}
+                  className={cn(
+                    "pr-10 text-md",
+                    fieldsError.password
+                      ? "border-red-500 focus-visible:border-red-500"
+                      : ""
+                  )}
                   disabled={isPending}
                   autoComplete="current-password"
                 />
@@ -164,7 +183,7 @@ const Login = () => {
               {t("loginPage.askRegister")}
             </p>
             <Button
-              className='w-full'
+              className="w-full"
               variant="bipc"
               onClick={() => navigateTo("/sign-up")}
               disabled={isPending}
