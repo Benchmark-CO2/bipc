@@ -19,6 +19,7 @@ import {
   Drawer,
   DrawerContent,
   DrawerDescription,
+  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
@@ -288,7 +289,7 @@ const DrawerFormModule = ({
       </DrawerTrigger>
       <DrawerContent className="min-w-4/6">
         <DrawerHeader className="px-8">
-          <DrawerTitle>
+          <DrawerTitle className="text-2xl font-bold text-primary">
             {moduleId
               ? t("drawerFormModule.editTitle")
               : t("drawerFormModule.addTitle")}
@@ -301,7 +302,7 @@ const DrawerFormModule = ({
             <X className="h-4 w-4" />
           </Button>
         </DrawerHeader>
-        <div className="mx-auto w-full p-6 pr-0 pt-0 h-[calc(100vh-56px)] flex">
+        <div className="mx-auto w-full p-6 pr-0 pt-0 flex overflow-auto">
           {isLoadingModule ? (
             <div className="grid w-full grid-cols-3 gap-4">
               <div className="flex flex-col w-full h-auto space-y-2">
@@ -329,6 +330,7 @@ const DrawerFormModule = ({
                   console.log("Form validation errors:", errors);
                   console.log("Current form values:", form.getValues());
                 })}
+                id="module-form"
                 className="w-full flex gap-6 h-full"
               >
                 <div className="flex-shrink-0 h-full overflow-y-auto">
@@ -417,33 +419,33 @@ const DrawerFormModule = ({
                           return null;
                       }
                     })()}
-
-                    <div className="flex gap-2 mt-6">
-                      <Button
-                        type="submit"
-                        variant="bipc"
-                        className="flex-1"
-                        disabled={
-                          isCreationPending ||
-                          isUpdatePending ||
-                          selectedFloors.length === 0
-                        }
-                      >
-                        {isCreationPending || isUpdatePending ? (
-                          <Loader2 className="animate-spin h-4 w-4" />
-                        ) : moduleId ? (
-                          t("common.update")
-                        ) : (
-                          t("common.add")
-                        )}
-                      </Button>
-                    </div>
                   </div>
                 </div>
               </form>
             </Form>
           )}
         </div>
+        <DrawerFooter className="px-8">
+          <Button
+            type="submit"
+            variant="bipc"
+            className="w-full"
+            form="module-form"
+            disabled={
+              isCreationPending ||
+              isUpdatePending ||
+              selectedFloors.length === 0
+            }
+          >
+            {isCreationPending || isUpdatePending ? (
+              <Loader2 className="animate-spin h-4 w-4" />
+            ) : moduleId ? (
+              t("common.update")
+            ) : (
+              t("common.add")
+            )}
+          </Button>
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   );

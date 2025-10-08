@@ -29,6 +29,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
+  DrawerFooter,
 } from "../ui/drawer";
 import {
   Form,
@@ -316,6 +317,7 @@ export default function DrawerFormProject({
         </DrawerDescription>
         <Form {...form}>
           <form
+            id="project-form"
             className="flex max-h-[calc(100vh-100px)] flex-col gap-3 overflow-y-auto p-8"
             onSubmit={form.handleSubmit(onSubmit)}
           >
@@ -549,33 +551,35 @@ export default function DrawerFormProject({
                 </FormItem>
               )}
             />
-            {isEditMode ? (
-              <Button
-                disabled={isUpdatePending || isUpdateSuccess}
-                type="submit"
-                className="mt-6"
-                variant={"bipc"}
-              >
-                {t("drawerFormProject.editProjectButton")}
-                {isUpdatePending && (
-                  <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
-                )}
-              </Button>
-            ) : (
-              <Button
-                variant={"bipc"}
-                disabled={isCreationPending || isCreationSuccess}
-                type="submit"
-                className="mt-6"
-              >
-                {t("drawerFormProject.addProjectButton")}
-                {isCreationPending && (
-                  <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
-                )}
-              </Button>
-            )}
           </form>
         </Form>
+        <DrawerFooter className="px-8 py-4">
+          {isEditMode ? (
+            <Button
+              disabled={isUpdatePending || isUpdateSuccess}
+              type="submit"
+              form="project-form"
+              variant={"bipc"}
+            >
+              {t("drawerFormProject.editProjectButton")}
+              {isUpdatePending && (
+                <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+              )}
+            </Button>
+          ) : (
+            <Button
+              variant={"bipc"}
+              disabled={isCreationPending || isCreationSuccess}
+              type="submit"
+              form="project-form"
+            >
+              {t("drawerFormProject.addProjectButton")}
+              {isCreationPending && (
+                <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+              )}
+            </Button>
+          )}
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   );
