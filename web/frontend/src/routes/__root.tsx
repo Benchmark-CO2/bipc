@@ -76,7 +76,9 @@ export const Route = createRootRouteWithContext<{
             })}
           >
             {path.pathname === "/login" ? <PublicHeader /> : <Sidebar />}
-            <Outlet />
+            <Screen>
+              <Outlet />
+            </Screen>
           </div>
         )}
         <Suspense>
