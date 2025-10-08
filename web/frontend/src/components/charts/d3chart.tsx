@@ -24,6 +24,7 @@ type D3GradientRangeChartProps = {
   width?: number;
   height?: number;
   overrideDimensions?: boolean;
+  unit?: string;
 };
 const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   selectedBars,
