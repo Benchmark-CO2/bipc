@@ -30,6 +30,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   selectedBars,
   data,
   overrideDimensions = false,
+  unit = "",
   ...props
 }) => {
   const { isExpanded } = useSummary();
@@ -541,6 +542,11 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     });
   }, [selectedBars, isExpanded, data, isResized, tooltip]);
 
+  const labelX = {
+    "KgCO₂/m²": "Carbono Incorporado (Kg CO₂/m²)",
+    "MJ/m²": "Energia Incorporada (MJ/m²)",
+  } as any;
+
   return (
     <Card className={cn("shadow-none w-min-content")}>
       {/* <CardHeader>
@@ -569,10 +575,16 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
                 </>
               )} */}
               <span>
-                Min: <b>{tooltip.value.min.toFixed(3)} Kg/m2</b>
+                Min:{" "}
+                <b>
+                  {tooltip.value.min.toFixed(3)} {unit}
+                </b>
               </span>
               <span>
-                Max: <b>{tooltip.value.max.toFixed(3)} Kg/m2</b>
+                Max:{" "}
+                <b>
+                  {tooltip.value.max.toFixed(3)} {unit}
+                </b>
               </span>
             </div>
           )}
@@ -580,7 +592,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         <div className="flex">
           <span>N: {data?.length}</span>
           <span className="flex-1 text-center w-full text-black/70">
-            Carbono Incorporado (Kg CO₂/m²)
+            {/* Carbono Incorporado (Kg CO₂/m²) */}
+            {labelX[unit] || "Carbono Incorporado"}
           </span>
         </div>
       </CardContent>
