@@ -105,7 +105,20 @@
   },
   "settings": {
     "title": "Configurações",
-    "theme": "Tema"
+    "theme": "Tema",
+    "language": "Idioma",
+    "userInfo": {
+      "title": "Informações do Usuário",
+      "name": "Nome",
+      "email": "Email",
+      "memberSince": "Membro desde",
+      "accountActivated": "Conta ativada"
+    },
+    "appearance": {
+      "title": "Aparência",
+      "themeDescription": "Escolha o tema da aplicação",
+      "languageDescription": "Selecione o idioma preferido"
+    }
   },
   "public": {
     "comingSoonTitle": "Em Construção 🚧",

@@ -99,7 +99,20 @@
   },
   "settings": {
     "title": "Configuraciones",
-    "theme": "Tema"
+    "theme": "Tema",
+    "language": "Idioma",
+    "userInfo": {
+      "title": "Información del Usuario",
+      "name": "Nombre",
+      "email": "Email",
+      "memberSince": "Miembro desde",
+      "accountActivated": "Cuenta activada"
+    },
+    "appearance": {
+      "title": "Apariencia",
+      "themeDescription": "Elige el tema de la aplicación",
+      "languageDescription": "Selecciona tu idioma preferido"
+    }
   },
   "public": {
     "comingSoonTitle": "En Construcción 🚧",

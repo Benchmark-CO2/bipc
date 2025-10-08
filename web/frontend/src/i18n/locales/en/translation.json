@@ -101,7 +101,20 @@
   },
   "settings": {
     "title": "Settings",
-    "theme": "Theme"
+    "theme": "Theme",
+    "language": "Language",
+    "userInfo": {
+      "title": "User Information",
+      "name": "Name",
+      "email": "Email",
+      "memberSince": "Member since",
+      "accountActivated": "Account activated"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "themeDescription": "Choose the application theme",
+      "languageDescription": "Select your preferred language"
+    }
   },
   "public": {
     "comingSoonTitle": "Under Construction 🚧",
