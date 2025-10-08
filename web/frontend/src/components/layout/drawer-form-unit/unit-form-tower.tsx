@@ -16,7 +16,13 @@ import React from "react";
 import { UseFormReturn, useFieldArray, useWatch } from "react-hook-form";
 import { Button } from "../../ui/button";
 import { Card } from "../../ui/card";
-import { FormControl, FormField, FormItem } from "../../ui/form";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../../ui/form";
 import { Input } from "../../ui/input";
 import {
   Table,
@@ -27,6 +33,7 @@ import {
   TableRow,
 } from "../../ui/table";
 import BuildingVisualizer from "../building-visualizer";
+import { useTranslation } from "react-i18next";
 
 interface UnitFormTowerProps {
   form: UseFormReturn<UnitFormSchema>;
@@ -42,6 +49,7 @@ const categoryColors = {
 };
 
 const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
+  const { t } = useTranslation();
   const { fields, remove, move } = useFieldArray({
     control: form.control,
     name: "data.floor_groups",
@@ -53,8 +61,6 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
     name: "data.floor_groups",
     defaultValue: [],
   });
-
-  console.log(watchedFloors);
 
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = React.useState<
@@ -247,6 +253,10 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
     setTimeout(() => recalculateIndices(), 0);
   };
 
+  const unitTypes = [
+    { value: "tower", label: t("drawerFormUnit.unitTypeOptions.tower") },
+  ];
+
   return (
     <div className="flex gap-6">
       {/* Visualizador da torre */}
@@ -263,6 +273,56 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
       </div>
       {/* Formulário de pavimentos */}
       <div className="flex-1 space-y-4">
+        <div className="grid grid-cols-2 gap-4 items-baseline">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("drawerFormUnit.unitNameLabel")}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t("drawerFormUnit.unitNamePlaceholder")}
+                    disabled={isEditMode}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("drawerFormUnit.unitTypeLabel")}</FormLabel>
+                <FormControl>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={unitTypes.length <= 1}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue
+                        placeholder={t("drawerFormUnit.unitTypePlaceholder")}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {unitTypes.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             Pavimentos
