@@ -80,7 +80,7 @@ const Login = () => {
       <div className=" flex px-6 flex-col items-center justify-center gap-4 max-xl:w-1/2 max-lg:w-full border border-zinc-200 dark:border-zinc-800 rounded-md py-8">
         <div className="w-full max-w-md">
           <div>
-            <img src={FullLogo} alt="" />
+            <img src={FullLogo} alt="" className="w-[75%] mx-auto mb-2" />
           </div>
 
           <Divider className="bg-accent-foreground/10" />
@@ -168,7 +168,7 @@ const Login = () => {
 
           <div className="flex justify-center mt-2 mb-4">
             <Button
-              className="text-md text-active underline"
+              className="text-sm text-active underline"
               variant="link"
               onClick={() => navigateTo("/forget")}
               disabled={isPending}
@@ -179,7 +179,7 @@ const Login = () => {
 
           <Divider className="bg-accent-foreground/10" />
           <div className="flex flex-col justify-end items-center gap-4">
-            <p className="text-md font-semibold text-zinc-600 dark:text-zinc-400">
+            <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">
               {t("loginPage.askRegister")}
             </p>
             <Button
