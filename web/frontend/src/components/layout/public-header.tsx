@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import LogoFull from "@/assets/logo_full.svg";
+import Logo from "@/assets/logo.svg";
 import Divider from "../ui/divider";
 import {
   Activity,
@@ -37,7 +37,7 @@ export default function PublicHeader() {
         onClick={() => setIsMenuOpen(false)}
       >
         <Info size={18} />
-        <span className="text-md">Sobre</span>
+        <span className="text-sm">Sobre</span>
       </Link>
       <Link
         to={"#" as any}
@@ -46,7 +46,7 @@ export default function PublicHeader() {
         onClick={() => setIsMenuOpen(false)}
       >
         <FlaskConical size={18} />
-        <span className="text-md">PD&I</span>
+        <span className="text-sm">PD&I</span>
       </Link>
       <Link
         to={"#" as any}
@@ -55,7 +55,7 @@ export default function PublicHeader() {
         onClick={() => setIsMenuOpen(false)}
       >
         <Activity size={18} />
-        <span className="text-md">Ações</span>
+        <span className="text-sm">Ações</span>
       </Link>
       <Divider
         className={cn("h-[28px] w-0.5 my-0", {
@@ -70,7 +70,7 @@ export default function PublicHeader() {
         onClick={() => setIsMenuOpen(false)}
       >
         <BarChart3 size={18} />
-        <span className="text-md">Benchmark</span>
+        <span className="text-sm">Benchmark</span>
       </Link>
       <Link
         to="/login"
@@ -79,27 +79,27 @@ export default function PublicHeader() {
         onClick={() => setIsMenuOpen(false)}
       >
         <User size={18} />
-        <span className="text-md">Entrar na Plataforma</span>
+        <span className="text-sm">Entrar na Plataforma</span>
       </Link>
     </>
   );
 
   return (
     <nav className="bg-sidebar text-white relative">
-      <div className="flex items-center justify-between px-4 md:px-8 py-2">
-        <Link to={"/"} className="p-1">
+      <div className="flex items-center justify-between px-4 md:px-8 py-0">
+        <Link to={"/"} className="p-0">
           <img
-            src={LogoFull}
+            src={Logo}
             alt="Logo"
-            className={cn("h-[48px]", {
-              "h-[40px]": isMobile,
+            className={cn("h-[30px]", {
+              "h-[30px]": isMobile,
             })}
           />
         </Link>
 
         {/* Desktop Navigation */}
         {!isMobile && (
-          <div className="flex gap-6 items-center py-4 ml-auto">
+          <div className="flex gap-6 items-center py-2 ml-auto">
             <NavLinks />
           </div>
         )}
