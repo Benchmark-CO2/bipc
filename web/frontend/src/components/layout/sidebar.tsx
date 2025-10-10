@@ -1,6 +1,6 @@
 import LogoDark from "@/assets/logo-dark.svg";
 import LogoFull from "@/assets/logo_full.svg";
-import { useSummary } from '@/context/summaryContext';
+import { useSummary } from "@/context/summaryContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useSidebar } from "@/hooks/useSidebar";
@@ -8,9 +8,13 @@ import { cn } from "@/lib/utils";
 import { stringUtils } from "@/utils/string";
 import { Link } from "@tanstack/react-router";
 import {
+  Activity,
+  BarChart3,
   Bell,
+  Contact,
   File,
-  Home,
+  FlaskConical,
+  Info,
   LogIn,
   MenuSquare,
   Settings,
@@ -44,25 +48,14 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
     <div className="h-full flex flex-col">
       {/* Header com Logo */}
       <div className="flex items-center mb-6 p-4">
-        <img src={LogoFull} alt="Logo" className="w-full" />
+        <Link to={isAuthenticated ? "/" : "/login"}>
+          <img src={LogoFull} alt="Logo" className="w-full" />
+        </Link>
       </div>
 
       {/* Menu Items - Seção Principal */}
       <div className="flex-1 flex flex-col p-4 overflow-auto custom-scrollbar">
         <ul className="flex flex-col gap-1 mt-auto mb-2">
-          {/* PD&I */}
-          <li>
-            <SidemenuItem variant="link">
-              <Link
-                to={isAuthenticated ? "/" : "/login"}
-                className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-              >
-                <Home size={18} />
-                <span>PD&I</span>
-              </Link>
-            </SidemenuItem>
-          </li>
-
           {/* Institucional */}
           <li>
             <SidemenuItem variant="link">
@@ -70,57 +63,55 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 to={isAuthenticated ? "/" : "/login"}
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
-                <Settings size={18} />
-                <span>Institucional</span>
+                <Info size={18} />
+                <span>Sobre</span>
               </Link>
             </SidemenuItem>
           </li>
 
-          {/* Ações (apenas se logado) / Consultoria (apenas se não logado) */}
-          {isAuthenticated ? (
-            <li>
-              <SidemenuItem variant="link">
-                <Link
-                  to="/"
-                  className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-                >
-                  <MenuSquare size={18} />
-                  <span>Ações</span>
-                </Link>
-              </SidemenuItem>
-            </li>
-          ) : (
-            <li>
-              <SidemenuItem variant="link">
-                <Link
-                  to="/login"
-                  className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-                >
-                  <Home size={18} />
-                  <span>Consultoria</span>
-                </Link>
-              </SidemenuItem>
-            </li>
-          )}
+          {/* PD&I */}
+          <li>
+            <SidemenuItem variant="link">
+              <Link
+                to={isAuthenticated ? "/" : "/login"}
+                className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+              >
+                <FlaskConical size={18} />
+                <span>PD&I</span>
+              </Link>
+            </SidemenuItem>
+          </li>
+
+          <li>
+            <SidemenuItem variant="link">
+              <Link
+                to="/"
+                className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+              >
+                <Activity size={18} />
+                <span>Ações</span>
+              </Link>
+            </SidemenuItem>
+          </li>
 
           <Divider className="my-1" />
+
+          <li>
+            <SidemenuItem variant="link">
+              <Link
+                to="/"
+                activeProps={activeProps}
+                className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+              >
+                <BarChart3 size={18} />
+                <span>Benchmark</span>
+              </Link>
+            </SidemenuItem>
+          </li>
 
           {/* Seção específica para usuários logados */}
           {isAuthenticated ? (
             <>
-              {/* Benchmark - Home (apenas se logado) */}
-              <li>
-                <SidemenuItem variant="link">
-                  <Link
-                    to="/"
-                    activeProps={activeProps}
-                    className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-                  >
-                    <Home size={18} />
-                    <span>{t("home.title")}</span>
-                  </Link>
-                </SidemenuItem>
-              </li>
               {/* Projetos */}
               <li>
                 <SidemenuItem variant="link">
@@ -130,22 +121,46 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                     className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
                   >
                     <File size={18} />
-                    <span>{t("projects.title")}</span>
+                    <span>Projetos</span>
                   </Link>
                 </SidemenuItem>
               </li>
 
-              {/* Perfil */}
               <li>
                 <SidemenuItem variant="link">
                   <Link
-                    to="/profile"
+                    to={"/contacts" as any}
                     activeProps={activeProps}
                     className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
                   >
-                    <User size={18} />
-                    <span>{t("sidebar.profile")}</span>
+                    <Contact size={18} />
+                    <span>Contatos</span>
                   </Link>
+                </SidemenuItem>
+              </li>
+
+              <li>
+                <SidemenuItem variant="link">
+                  <Link
+                    to={"/settings"}
+                    activeProps={activeProps}
+                    className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+                  >
+                    <Settings size={18} />
+                    <span>Configurações</span>
+                  </Link>
+                </SidemenuItem>
+              </li>
+
+              {/* Notificações */}
+              <li>
+                <SidemenuItem variant="link" hide={isMobile}>
+                  <div className="flex gap-3 items-center w-full p-2">
+                    <Bell size={18} />
+                    <div className="flex-1">
+                      <Notifications />
+                    </div>
+                  </div>
                 </SidemenuItem>
               </li>
             </>
@@ -187,46 +202,33 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         <div>
           {isAuthenticated && (
             <div className="flex flex-col gap-2">
-              <Divider className="my-1" />
+              {/* <Divider className="my-1" />
 
-              {/* Notificações */}
-              <SidemenuItem variant="link" hide={isMobile}>
-                <div className="flex gap-3 items-center w-full p-2">
-                  <Bell size={18} />
-                  <div className="flex-1">
-                    <Notifications />
+                  <div className="p-2">
+                    <SidebarThemeToggle />
                   </div>
-                </div>
-              </SidemenuItem>
+                  <div className="px-2">
+                    <SidebarLanguageToggle />
+                  </div>
 
-              {/* Configurações - Tema e Idioma */}
-              <div className="p-2">
-                <SidebarThemeToggle />
-              </div>
-              <div className="px-2">
-                <SidebarLanguageToggle />
-              </div>
+                  <Divider className="my-1" />
 
-              <Divider className="my-1" />
+                  <div className="flex items-center gap-3 p-2 pt-4 mb-4">
+                    <Avatar className="w-8 h-8">
+                      <AvatarFallback className="bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">
+                        {stringUtils.getInitials(user?.name || "") || (
+                          <User className="w-4 h-4" />
+                        )}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{user?.name}</p>
+                      <p className="text-xs text-gray-400 truncate">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </div> */}
 
-              {/* Container do usuário */}
-              <div className="flex items-center gap-3 p-2 pt-4 mb-4">
-                <Avatar className="w-8 h-8">
-                  <AvatarFallback className="bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">
-                    {stringUtils.getInitials(user?.name || "") || (
-                      <User className="w-4 h-4" />
-                    )}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{user?.name}</p>
-                  <p className="text-xs text-gray-400 truncate">
-                    {user?.email}
-                  </p>
-                </div>
-              </div>
-
-              {/* Botão de sair */}
               {handleLogout && (
                 <Button
                   variant="destructive"
@@ -248,17 +250,17 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
     if (sidebarStatus === "open") {
       setTimeout(() => {
         setSummaryContext({
-        ...context,
-        hide: false
-      });
-      }, 200)
+          ...context,
+          hide: false,
+        });
+      }, 200);
     } else {
       setSummaryContext({
         ...context,
-        hide: true
-    }); 
-  }
-}
+        hide: true,
+      });
+    }
+  };
   if (isMobile) {
     return (
       <div
@@ -318,7 +320,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-sidebar text-white w-80">
+    <div className="flex h-screen flex-col bg-sidebar text-white max-w-80 w-full">
       {sidemenuContent}
     </div>
   );

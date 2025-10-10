@@ -76,7 +76,9 @@ export const Route = createRootRouteWithContext<{
             })}
           >
             {path.pathname === "/login" ? <PublicHeader /> : <Sidebar />}
-            <Outlet />
+            <Screen>
+              <Outlet />
+            </Screen>
           </div>
         )}
         <Suspense>
@@ -87,7 +89,7 @@ export const Route = createRootRouteWithContext<{
   },
   errorComponent: ({ error }) => {
     const { t } = useTranslation();
-  
+
     return (
       <div className="flex flex-col items-center justify-center h-screen w-full">
         <h1 className="text-2xl font-bold">{t("error.unexpectedError")}</h1>

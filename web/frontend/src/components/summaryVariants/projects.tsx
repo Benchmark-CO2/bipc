@@ -10,6 +10,7 @@ import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
 import Subtitle from "./components/Subtitle";
 import { barColors, stackData } from "./utils";
+import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 
 type ProjectsSummaryProps = {
   projects: any[];
@@ -161,6 +162,7 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
         <D3GradientRangeChart
           data={managedData}
           selectedBars={selectedProjects}
+          unit={unitsOfMeasure[type] || ""}
         />
       </div>
     </>

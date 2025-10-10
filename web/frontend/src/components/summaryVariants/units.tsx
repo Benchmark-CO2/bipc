@@ -9,6 +9,7 @@ import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
 import Subtitle from "./components/Subtitle";
 import { barColors, stackData } from "./utils";
+import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 
 type ProjectsSummaryProps = {
   selectedUnits: (any & {
@@ -222,6 +223,7 @@ const UnitsSummary = ({
         <D3GradientRangeChart
           data={fakeUnits}
           selectedBars={selectedProjects}
+          unit={unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""}
         />
       </div>
     </div>
