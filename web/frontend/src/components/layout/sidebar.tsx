@@ -320,7 +320,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-sidebar text-white w-80">
+    <div className="flex h-screen flex-col bg-sidebar text-white max-w-80 w-full">
       {sidemenuContent}
     </div>
   );
