@@ -31,11 +31,7 @@ CREATE TABLE IF NOT EXISTS floor (
     group_id UUID NOT NULL REFERENCES floor_group(id) ON DELETE CASCADE,
     area FLOAT8 NOT NULL,
     height FLOAT8 NOT NULL,
-    "index" INTEGER NOT NULL,
-    co2_min FLOAT8 NOT NULL DEFAULT 0,
-    co2_max FLOAT8 NOT NULL DEFAULT 0,
-    energy_min FLOAT8 NOT NULL DEFAULT 0,
-    energy_max FLOAT8 NOT NULL DEFAULT 0
+    "index" INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS concrete (
@@ -100,4 +96,14 @@ CREATE TABLE IF NOT EXISTS module_beam_column (
     avg_slab_span INTEGER,
     created_at TIMESTAMPTZ(0) NOT NULL DEFAULT (CURRENT_TIMESTAMP),
     updated_at TIMESTAMPTZ(0) NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+);
+
+CREATE TABLE IF NOT EXISTS floors_consumption (
+    floor_id UUID NOT NULL REFERENCES floor(id) ON DELETE CASCADE,
+    technology TEXT NOT NULL,
+    co2_min FLOAT8 NOT NULL DEFAULT 0,
+    co2_max FLOAT8 NOT NULL DEFAULT 0,
+    energy_min FLOAT8 NOT NULL DEFAULT 0,
+    energy_max FLOAT8 NOT NULL DEFAULT 0,
+    PRIMARY KEY (floor_id, technology)
 );

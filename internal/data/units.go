@@ -42,14 +42,14 @@ type Consumption struct {
 }
 
 type Floor struct {
-	ID          uuid.UUID    `json:"id"`
-	GroupID     uuid.UUID    `json:"group_id"`
-	GroupName   string       `json:"group_name"`
-	Category    string       `json:"category"`
-	Area        float64      `json:"area"`
-	Height      float64      `json:"height"`
-	Index       int          `json:"index"`
-	Consumption *Consumption `json:"consumption,omitempty"`
+	ID           uuid.UUID              `json:"id"`
+	GroupID      uuid.UUID              `json:"group_id"`
+	GroupName    string                 `json:"group_name"`
+	Category     string                 `json:"category"`
+	Area         float64                `json:"area"`
+	Height       float64                `json:"height"`
+	Index        int                    `json:"index"`
+	Consumptions map[string]*Consumption `json:"consumptions,omitempty"`
 }
 
 type FloorGroupCreate struct {
@@ -282,9 +282,10 @@ func (m UnitModel) getTowerByUnitID(unitID uuid.UUID) (*Tower, error) {
 func (m UnitModel) getFloorsByTowerID(towerID uuid.UUID) ([]Floor, error) {
 	query := `
 		SELECT f.id, f.group_id, fg.name, fg.category, f.area, f.height, f.index,
-		       f.co2_min, f.co2_max, f.energy_min, f.energy_max
+		       ftm.technology, ftm.co2_min, ftm.co2_max, ftm.energy_min, ftm.energy_max
 		FROM floor f
 		INNER JOIN floor_group fg ON f.group_id = fg.id
+		LEFT JOIN floors_consumption ftm ON f.id = ftm.floor_id
 		WHERE fg.tower_id = $1
 		ORDER BY f.index`
 
@@ -297,41 +298,56 @@ func (m UnitModel) getFloorsByTowerID(towerID uuid.UUID) ([]Floor, error) {
 	}
 	defer rows.Close()
 
-	var floors []Floor
+	floorsMap := make(map[uuid.UUID]*Floor)
+	var orderedFloorIDs []uuid.UUID
+
 	for rows.Next() {
-		var floor Floor
+		var floorID, groupID uuid.UUID
+		var groupName, category string
+		var area, height float64
+		var index int
+		var tech sql.NullString
 		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+
 		err := rows.Scan(
-			&floor.ID,
-			&floor.GroupID,
-			&floor.GroupName,
-			&floor.Category,
-			&floor.Area,
-			&floor.Height,
-			&floor.Index,
-			&co2Min,
-			&co2Max,
-			&energyMin,
-			&energyMax,
+			&floorID, &groupID, &groupName, &category, &area, &height, &index,
+			&tech, &co2Min, &co2Max, &energyMin, &energyMax,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		if co2Min.Valid {
-			floor.Consumption = &Consumption{
+		if _, ok := floorsMap[floorID]; !ok {
+			floorsMap[floorID] = &Floor{
+				ID:           floorID,
+				GroupID:      groupID,
+				GroupName:    groupName,
+				Category:     category,
+				Area:         area,
+				Height:       height,
+				Index:        index,
+				Consumptions: make(map[string]*Consumption),
+			}
+			orderedFloorIDs = append(orderedFloorIDs, floorID)
+		}
+
+		if tech.Valid && co2Min.Valid {
+			floorsMap[floorID].Consumptions[tech.String] = &Consumption{
 				CO2Min:    &co2Min.Float64,
 				CO2Max:    &co2Max.Float64,
 				EnergyMin: &energyMin.Float64,
 				EnergyMax: &energyMax.Float64,
 			}
 		}
-
-		floors = append(floors, floor)
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, err
+	}
+
+	var floors []Floor
+	for _, id := range orderedFloorIDs {
+		floors = append(floors, *floorsMap[id])
 	}
 
 	return floors, nil
@@ -427,6 +443,7 @@ type FloorMetrics struct {
 type ModuleMetrics struct {
 	ModuleID       uuid.UUID
 	Active         bool
+	Type           string
 	TotalCO2Min    float64
 	TotalCO2Max    float64
 	TotalEnergyMin float64
@@ -435,9 +452,9 @@ type ModuleMetrics struct {
 
 func loadFloorsAndModules(tx *sql.Tx, floorIDs []uuid.UUID) (map[uuid.UUID]*FloorMetrics, map[uuid.UUID]*ModuleMetrics, error) {
 	rows, err := tx.Query(`
-		SELECT 
+		SELECT
 			f.id, f.area,
-			m.id, topt.active,
+			m.id, m.type, topt.active,
 			m.total_co2_min, m.total_co2_max,
 			m.total_energy_min, m.total_energy_max
 		FROM floor f
@@ -457,12 +474,12 @@ func loadFloorsAndModules(tx *sql.Tx, floorIDs []uuid.UUID) (map[uuid.UUID]*Floo
 		var (
 			floorID                              uuid.UUID
 			area                                 float64
-			moduleID                             sql.NullString
+			moduleID, moduleType                 sql.NullString
 			active                               sql.NullBool
 			co2Min, co2Max, energyMin, energyMax sql.NullFloat64
 		)
 
-		if err := rows.Scan(&floorID, &area, &moduleID, &active, &co2Min, &co2Max, &energyMin, &energyMax); err != nil {
+		if err := rows.Scan(&floorID, &area, &moduleID, &moduleType, &active, &co2Min, &co2Max, &energyMin, &energyMax); err != nil {
 			return nil, nil, err
 		}
 
@@ -486,6 +503,7 @@ func loadFloorsAndModules(tx *sql.Tx, floorIDs []uuid.UUID) (map[uuid.UUID]*Floo
 				modules[mid] = &ModuleMetrics{
 					ModuleID:       mid,
 					Active:         true,
+					Type:           moduleType.String,
 					TotalCO2Min:    co2Min.Float64,
 					TotalCO2Max:    co2Max.Float64,
 					TotalEnergyMin: energyMin.Float64,
@@ -504,34 +522,49 @@ func updateFloorMetricsById(tx *sql.Tx, floorIDs []uuid.UUID) error {
 		return err
 	}
 
+	// Clear old metrics
+	_, err = tx.Exec(`DELETE FROM floors_consumption WHERE floor_id = ANY($1)`, pq.Array(floorIDs))
+	if err != nil {
+		return err
+	}
+
 	for _, floor := range floors {
-		var totalCO2Min, totalCO2Max, totalEnergyMin, totalEnergyMax float64
-
-		for _, moduleID := range floor.ModuleIDs {
-			m := modules[moduleID]
-			totalCO2Min += m.TotalCO2Min
-			totalCO2Max += m.TotalCO2Max
-			totalEnergyMin += m.TotalEnergyMin
-			totalEnergyMax += m.TotalEnergyMax
-		}
-
 		if floor.Area == 0 {
 			continue
 		}
 
-		floorCO2Min := totalCO2Min / floor.Area
-		floorCO2Max := totalCO2Max / floor.Area
-		floorEnergyMin := totalEnergyMin / floor.Area
-		floorEnergyMax := totalEnergyMax / floor.Area
+		techMetrics := make(map[string]*Consumption)
 
-		_, err := tx.Exec(`
-			UPDATE floor
-			SET co2_min=$1, co2_max=$2, energy_min=$3, energy_max=$4
-			WHERE id=$5`,
-			floorCO2Min, floorCO2Max, floorEnergyMin, floorEnergyMax, floor.FloorID,
-		)
-		if err != nil {
-			return err
+		for _, moduleID := range floor.ModuleIDs {
+			m := modules[moduleID]
+			if _, ok := techMetrics[m.Type]; !ok {
+				techMetrics[m.Type] = &Consumption{
+					CO2Min:    new(float64),
+					CO2Max:    new(float64),
+					EnergyMin: new(float64),
+					EnergyMax: new(float64),
+				}
+			}
+			*techMetrics[m.Type].CO2Min += m.TotalCO2Min
+			*techMetrics[m.Type].CO2Max += m.TotalCO2Max
+			*techMetrics[m.Type].EnergyMin += m.TotalEnergyMin
+			*techMetrics[m.Type].EnergyMax += m.TotalEnergyMax
+		}
+
+		for tech, metrics := range techMetrics {
+			floorCO2Min := *metrics.CO2Min / floor.Area
+			floorCO2Max := *metrics.CO2Max / floor.Area
+			floorEnergyMin := *metrics.EnergyMin / floor.Area
+			floorEnergyMax := *metrics.EnergyMax / floor.Area
+
+			_, err := tx.Exec(`
+				INSERT INTO floors_consumption (floor_id, technology, co2_min, co2_max, energy_min, energy_max)
+				VALUES ($1, $2, $3, $4, $5, $6)`,
+				floor.FloorID, tech, floorCO2Min, floorCO2Max, floorEnergyMin, floorEnergyMax,
+			)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
