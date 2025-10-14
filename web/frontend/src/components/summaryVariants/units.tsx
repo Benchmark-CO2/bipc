@@ -7,7 +7,6 @@ import { TabsContainer } from "../ui/tabsContainer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
-import Subtitle from "./components/Subtitle";
 import { barColors, stackData } from "./utils";
 
 type ProjectsSummaryProps = {
@@ -55,13 +54,37 @@ const UnitsSummary = ({
     [selectedUnits, data]
   );
 
+ const [previousProjects, setPreviousProjects] = useState<any[]>([]);
+
   useEffect(() => {
-    setSelectedProjects(
-      selectedProjects.filter(
-        (id) => selectedUnits.find((u) => u.id === id) !== undefined
-      )
+    setPreviousProjects(
+      selectedUnits.map(el => el.id)
     );
   }, [selectedUnits]);
+
+  useEffect(() => {
+    if (previousProjects.length < selectedUnits.length) {
+      const diff = selectedUnits.filter(
+        (p) => !previousProjects.includes(p.id)
+      );
+      if (diff.length > 0) {
+        setSelectedProjects((prev) => [
+          ...prev,
+          ...diff.map((d) => d.id),
+        ]);
+      }
+    } else if (previousProjects.length > selectedUnits.length) {
+      const diff = previousProjects.filter(
+        (p) => !selectedUnits.map((u) => u.id).includes(p)
+      );
+      if (diff.length > 0) {
+        setSelectedProjects((prev) =>
+          prev.filter((p) => !diff.includes(p))
+        );
+      }
+    }
+  }, [previousProjects, selectedUnits]);
+  
 
   const handleAddProject = (projectId: string) => {
     if (selectedProjects.includes(projectId)) {
@@ -106,7 +129,6 @@ const UnitsSummary = ({
     (acc: number, b: { avg: number }) => acc + b.avg,
     0 as number
   );
-  console.log("avgByUnit", sum);
 
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>

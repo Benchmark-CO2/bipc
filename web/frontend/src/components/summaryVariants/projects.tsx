@@ -1,6 +1,5 @@
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
-import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
@@ -8,7 +7,6 @@ import NotFoundList from "../ui/not-found-list";
 import { TabsContainer } from "../ui/tabsContainer";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
-import Subtitle from "./components/Subtitle";
 import { barColors, stackData } from "./utils";
 
 type ProjectsSummaryProps = {
@@ -26,7 +24,6 @@ const manageData = (data: ProjectsSummaryProps["data"]["benchmark"]["co2"]) => {
 const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-
   const managedData = manageData(
     data.benchmark?.[type as "co2" | "energy"] || []
   )
@@ -36,14 +33,6 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
     }))
     .filter((f) => f.min && f.max);
   const { isExpanded } = useSummary();
-  const isMobile = useIsMobile();
-  const screenWidth = window.innerWidth;
-
-  const width = () => {
-    if (isMobile) return screenWidth * 0.7;
-    if (isExpanded) return screenWidth / 2;
-    return screenWidth / 2.5;
-  };
 
   const stackedData = useMemo(
     () =>
@@ -53,13 +42,6 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
     [projects, data]
   );
 
-  const height = () => {
-    if (isMobile && !isExpanded) return 250;
-    if (isMobile && isExpanded) return 320;
-    if (isExpanded) return 700;
-    return 220;
-  };
-
   const handleAddProject = (projectId: string) => {
     if (selectedProjects.includes(projectId)) {
       setSelectedProjects(selectedProjects.filter((id) => id !== projectId));
@@ -67,14 +49,38 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
       setSelectedProjects([...selectedProjects, projectId]);
     }
   };
+  const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
-    setSelectedProjects(
-      selectedProjects.filter(
-        (id) => projects.find((u) => u.id === id) !== undefined
-      )
+    setPreviousProjects(
+      projects.map(el => el.id)
     );
   }, [projects]);
+
+
+  useEffect(() => {
+    if (previousProjects.length < projects.length) {
+      const diff = projects.filter(
+        (p) => !previousProjects.includes(p.id)
+      );
+      if (diff.length > 0) {
+        setSelectedProjects((prev) => [
+          ...prev,
+          ...diff.map((d) => d.id),
+        ]);
+      }
+    } else if (previousProjects.length > projects.length) {
+      const diff = previousProjects.filter(
+        (p) => !projects.map((u) => u.id).includes(p)
+      );
+      if (diff.length > 0) {
+        setSelectedProjects((prev) =>
+          prev.filter((p) => !diff.includes(p))
+        );
+      }
+    }
+  }, [previousProjects, projects]);
+
   const [subTabs, setSubTabs] = useState<"Projetos">("Projetos");
   const selectAll = () => {
     if (selectedProjects.length === projects.length) {
@@ -132,7 +138,6 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
             )}
             {(stackedData || []).map((project, idx) => {
               if (!project) return null;
-              console.log({ sum });
               return isExpanded ? (
                 <ItemCard
                   key={project.id}
