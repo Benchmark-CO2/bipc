@@ -345,6 +345,25 @@ func (m UnitModel) getFloorsByTowerID(towerID uuid.UUID) ([]Floor, error) {
 		return nil, err
 	}
 
+	// Calculate totals
+	for _, floor := range floorsMap {
+		if len(floor.Consumptions) > 0 {
+			total := &Consumption{
+				CO2Min:    new(float64),
+				CO2Max:    new(float64),
+				EnergyMin: new(float64),
+				EnergyMax: new(float64),
+			}
+			for _, consumption := range floor.Consumptions {
+				*total.CO2Min += *consumption.CO2Min
+				*total.CO2Max += *consumption.CO2Max
+				*total.EnergyMin += *consumption.EnergyMin
+				*total.EnergyMax += *consumption.EnergyMax
+			}
+			floor.Consumptions["total"] = total
+		}
+	}
+
 	var floors []Floor
 	for _, id := range orderedFloorIDs {
 		floors = append(floors, *floorsMap[id])

@@ -24,31 +24,31 @@ var (
 )
 
 type ProjectUnit struct {
-	ID          uuid.UUID    `json:"id"`
-	Name        string       `json:"name"`
-	Type        string       `json:"type"`
-	Consumption *Consumption `json:"consumption,omitempty"`
-	Area        float64      `json:"area"`
+	ID           uuid.UUID              `json:"id"`
+	Name         string                 `json:"name"`
+	Type         string                 `json:"type"`
+	Consumptions map[string]*Consumption `json:"consumptions,omitempty"`
+	Area         float64                `json:"area"`
 }
 
 type Project struct {
-	ID           uuid.UUID     `json:"id"`
-	CreatedAt    time.Time     `json:"created_at"`
-	UpdatedAt    time.Time     `json:"updated_at"`
-	UserID       uuid.UUID     `json:"user_id"`
-	Name         string        `json:"name"`
-	CEP          *string       `json:"cep,omitzero"`
-	State        string        `json:"state"`
-	City         string        `json:"city"`
-	Neighborhood *string       `json:"neighborhood,omitzero"`
-	Street       *string       `json:"street,omitzero"`
-	Number       *string       `json:"number,omitzero"`
-	Phase        string        `json:"phase"`
-	Description  *string       `json:"description,omitzero"`
-	ImageURL     *string       `json:"image_url,omitzero"`
-	Units        []ProjectUnit `json:"units,omitempty"`
-	Consumption  *Consumption  `json:"consumption,omitempty"`
-	Area         float64       `json:"area,omitempty"`
+	ID           uuid.UUID              `json:"id"`
+	CreatedAt    time.Time              `json:"created_at"`
+	UpdatedAt    time.Time              `json:"updated_at"`
+	UserID       uuid.UUID              `json:"user_id"`
+	Name         string                 `json:"name"`
+	CEP          *string                `json:"cep,omitzero"`
+	State        string                 `json:"state"`
+	City         string                 `json:"city"`
+	Neighborhood *string                `json:"neighborhood,omitzero"`
+	Street       *string                `json:"street,omitzero"`
+	Number       *string                `json:"number,omitzero"`
+	Phase        string                 `json:"phase"`
+	Description  *string                `json:"description,omitzero"`
+	ImageURL     *string                `json:"image_url,omitzero"`
+	Units        []ProjectUnit          `json:"units,omitempty"`
+	Consumptions map[string]*Consumption `json:"consumptions,omitempty"`
+	Area         float64                `json:"area,omitempty"`
 }
 
 func ValidateProject(v *validator.Validator, project *Project) {
@@ -184,13 +184,22 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*Project, error) {
 	}
 
 	unitsQuery := `
-		WITH tower_consumption AS (
+		WITH tower_consumption_by_tech AS (
 			SELECT
 				fg.tower_id,
-				SUM(f.co2_min * f.area) / SUM(f.area) as co2_min,
-				SUM(f.co2_max * f.area) / SUM(f.area) as co2_max,
-				SUM(f.energy_min * f.area) / SUM(f.area) as energy_min,
-				SUM(f.energy_max * f.area) / SUM(f.area) as energy_max,
+				fc.technology,
+				SUM(fc.co2_min * f.area) / NULLIF(SUM(f.area), 0) as co2_min,
+				SUM(fc.co2_max * f.area) / NULLIF(SUM(f.area), 0) as co2_max,
+				SUM(fc.energy_min * f.area) / NULLIF(SUM(f.area), 0) as energy_min,
+				SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max
+			FROM floor f
+			INNER JOIN floor_group fg ON f.group_id = fg.id
+			INNER JOIN floors_consumption fc ON f.id = fc.floor_id
+			GROUP BY fg.tower_id, fc.technology
+		),
+		tower_area AS (
+			SELECT
+				fg.tower_id,
 				SUM(f.area) as area
 			FROM floor f
 			INNER JOIN floor_group fg ON f.group_id = fg.id
@@ -200,41 +209,85 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*Project, error) {
 			u.id,
 			u.name,
 			u.type,
-			COALESCE(tc.co2_min, 0),
-			COALESCE(tc.co2_max, 0),
-			COALESCE(tc.energy_min, 0),
-			COALESCE(tc.energy_max, 0),
-			COALESCE(tc.area, 0)
+			ta.area,
+			tct.technology,
+			tct.co2_min,
+			tct.co2_max,
+			tct.energy_min,
+			tct.energy_max
 		FROM units u
-		LEFT JOIN tower_consumption tc ON u.id = tc.tower_id
+		LEFT JOIN tower_consumption_by_tech tct ON u.id = tct.tower_id
+		LEFT JOIN tower_area ta ON u.id = ta.tower_id
 		WHERE u.project_id = $1
-		ORDER BY u.id
-    `
+		ORDER BY u.id, tct.technology
+	`
 	rows, err := m.DB.QueryContext(ctx, unitsQuery, project.ID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var units []ProjectUnit
+	unitsMap := make(map[uuid.UUID]*ProjectUnit)
+	var orderedUnitIDs []uuid.UUID
+
 	for rows.Next() {
-		var u ProjectUnit
+		var unitID uuid.UUID
+		var unitName, unitType string
+		var area sql.NullFloat64
+		var tech sql.NullString
 		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
-		if err := rows.Scan(&u.ID, &u.Name, &u.Type, &co2Min, &co2Max, &energyMin, &energyMax, &u.Area); err != nil {
+
+		if err := rows.Scan(&unitID, &unitName, &unitType, &area, &tech, &co2Min, &co2Max, &energyMin, &energyMax); err != nil {
 			return nil, err
 		}
-		if co2Min.Valid {
-			u.Consumption = &Consumption{
+
+		if _, ok := unitsMap[unitID]; !ok {
+			unitsMap[unitID] = &ProjectUnit{
+				ID:           unitID,
+				Name:         unitName,
+				Type:         unitType,
+				Area:         area.Float64,
+				Consumptions: make(map[string]*Consumption),
+			}
+			orderedUnitIDs = append(orderedUnitIDs, unitID)
+		}
+
+		if tech.Valid && co2Min.Valid {
+			unitsMap[unitID].Consumptions[tech.String] = &Consumption{
 				CO2Min:    &co2Min.Float64,
 				CO2Max:    &co2Max.Float64,
 				EnergyMin: &energyMin.Float64,
 				EnergyMax: &energyMax.Float64,
 			}
 		}
-		units = append(units, u)
 	}
+
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+
+	// Calculate totals for each unit
+	for _, unit := range unitsMap {
+		if len(unit.Consumptions) > 0 {
+			total := &Consumption{
+				CO2Min:    new(float64),
+				CO2Max:    new(float64),
+				EnergyMin: new(float64),
+				EnergyMax: new(float64),
+			}
+			for _, consumption := range unit.Consumptions {
+				*total.CO2Min += *consumption.CO2Min
+				*total.CO2Max += *consumption.CO2Max
+				*total.EnergyMin += *consumption.EnergyMin
+				*total.EnergyMax += *consumption.EnergyMax
+			}
+			unit.Consumptions["total"] = total
+		}
+	}
+
+	var units []ProjectUnit
+	for _, id := range orderedUnitIDs {
+		units = append(units, *unitsMap[id])
 	}
 	project.Units = units
 
@@ -315,30 +368,15 @@ func (m ProjectModel) Delete(projectID uuid.UUID) error {
 
 func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]*Project, Metadata, error) {
 	query := fmt.Sprintf(`
-		WITH project_consumption AS (
-			SELECT
-				u.project_id,
-				SUM(f.co2_min * f.area) / SUM(f.area) as co2_min,
-				SUM(f.co2_max * f.area) / SUM(f.area) as co2_max,
-				SUM(f.energy_min * f.area) / SUM(f.area) as energy_min,
-				SUM(f.energy_max * f.area) / SUM(f.area) as energy_max,
-				SUM(f.area) as area
-			FROM floor f
-			INNER JOIN floor_group fg ON f.group_id = fg.id
-			INNER JOIN units u ON fg.tower_id = u.id
-			GROUP BY u.project_id
-		)
- 		SELECT COUNT(*) OVER(), p.id, p.created_at, p.updated_at, p.user_id, p.name,
-		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description, p.image_url,
-		COALESCE(pc.co2_min, 0), COALESCE(pc.co2_max, 0), COALESCE(pc.energy_min, 0), COALESCE(pc.energy_max, 0), COALESCE(pc.area, 0)
- 		FROM projects p
+		SELECT COUNT(*) OVER(), p.id, p.created_at, p.updated_at, p.user_id, p.name,
+		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description, p.image_url
+		FROM projects p
 		INNER JOIN users_projects_permissions upp ON upp.project_id = p.id
-		LEFT JOIN project_consumption pc ON p.id = pc.project_id
- 		WHERE (to_tsvector('simple', p.name) @@ plainto_tsquery('simple', $1) OR $1 = '')
+		WHERE (to_tsvector('simple', p.name) @@ plainto_tsquery('simple', $1) OR $1 = '')
 		AND upp.user_id = $2
 		AND upp.permission_id = (SELECT permissions.id FROM permissions WHERE code = 'project:view')
- 		ORDER BY %s %s, p.id DESC
- 		LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
+		ORDER BY %s %s, p.id DESC
+		LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -352,11 +390,12 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 	defer rows.Close()
 
 	totalRecords := 0
-	projects := []*Project{}
+	var projects []*Project
+	projectIDs := []uuid.UUID{}
+	projectsMap := make(map[uuid.UUID]*Project)
 
 	for rows.Next() {
 		var project Project
-		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
 
 		err := rows.Scan(
 			&totalRecords,
@@ -374,29 +413,177 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 			&project.Phase,
 			&project.Description,
 			&project.ImageURL,
-			&co2Min,
-			&co2Max,
-			&energyMin,
-			&energyMax,
-			&project.Area,
 		)
 		if err != nil {
 			return nil, Metadata{}, err
 		}
+		projects = append(projects, &project)
+		projectIDs = append(projectIDs, project.ID)
+		projectsMap[project.ID] = &project
+	}
 
-		if co2Min.Valid {
-			project.Consumption = &Consumption{
-				CO2Min:    &co2Min.Float64,
-				CO2Max:    &co2Max.Float64,
-				EnergyMin: &energyMin.Float64,
-				EnergyMax: &energyMax.Float64,
+	if err = rows.Err(); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	if len(projects) > 0 {
+		unitsQuery := `
+		WITH tower_consumption_by_tech AS (
+			SELECT
+				fg.tower_id,
+				fc.technology,
+				SUM(fc.co2_min * f.area) / NULLIF(SUM(f.area), 0) as co2_min,
+				SUM(fc.co2_max * f.area) / NULLIF(SUM(f.area), 0) as co2_max,
+				SUM(fc.energy_min * f.area) / NULLIF(SUM(f.area), 0) as energy_min,
+				SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max
+			FROM floor f
+			INNER JOIN floor_group fg ON f.group_id = fg.id
+			INNER JOIN floors_consumption fc ON f.id = fc.floor_id
+			GROUP BY fg.tower_id, fc.technology
+		),
+		tower_area AS (
+			SELECT
+				fg.tower_id,
+				SUM(f.area) as area
+			FROM floor f
+			INNER JOIN floor_group fg ON f.group_id = fg.id
+			GROUP BY fg.tower_id
+		)
+		SELECT
+			u.project_id,
+			u.id,
+			u.name,
+			u.type,
+			ta.area,
+			tct.technology,
+			tct.co2_min,
+			tct.co2_max,
+			tct.energy_min,
+			tct.energy_max
+		FROM units u
+		LEFT JOIN tower_consumption_by_tech tct ON u.id = tct.tower_id
+		LEFT JOIN tower_area ta ON u.id = ta.tower_id
+		WHERE u.project_id = ANY($1)
+		ORDER BY u.project_id, u.id, tct.technology
+	`
+		unitRows, err := m.DB.QueryContext(ctx, unitsQuery, pq.Array(projectIDs))
+		if err != nil {
+			return nil, Metadata{}, err
+		}
+		defer unitRows.Close()
+
+		projectUnits := make(map[uuid.UUID]map[uuid.UUID]*ProjectUnit)
+		orderedProjectUnitIDs := make(map[uuid.UUID][]uuid.UUID)
+
+		for unitRows.Next() {
+			var projectID, unitID uuid.UUID
+			var unitName, unitType string
+			var area sql.NullFloat64
+			var tech sql.NullString
+			var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+
+			if err := unitRows.Scan(&projectID, &unitID, &unitName, &unitType, &area, &tech, &co2Min, &co2Max, &energyMin, &energyMax); err != nil {
+				return nil, Metadata{}, err
+			}
+
+			if _, ok := projectUnits[projectID]; !ok {
+				projectUnits[projectID] = make(map[uuid.UUID]*ProjectUnit)
+				orderedProjectUnitIDs[projectID] = []uuid.UUID{}
+			}
+
+			if _, ok := projectUnits[projectID][unitID]; !ok {
+				projectUnits[projectID][unitID] = &ProjectUnit{
+					ID:           unitID,
+					Name:         unitName,
+					Type:         unitType,
+					Area:         area.Float64,
+					Consumptions: make(map[string]*Consumption),
+				}
+				orderedProjectUnitIDs[projectID] = append(orderedProjectUnitIDs[projectID], unitID)
+			}
+
+			if tech.Valid && co2Min.Valid {
+				projectUnits[projectID][unitID].Consumptions[tech.String] = &Consumption{
+					CO2Min:    &co2Min.Float64,
+					CO2Max:    &co2Max.Float64,
+					EnergyMin: &energyMin.Float64,
+					EnergyMax: &energyMax.Float64,
+				}
 			}
 		}
 
-		projects = append(projects, &project)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, Metadata{}, err
+		if err := unitRows.Err(); err != nil {
+			return nil, Metadata{}, err
+		}
+
+		for projectID, unitsMap := range projectUnits {
+			var units []ProjectUnit
+			var projectArea float64
+
+			for _, unitID := range orderedProjectUnitIDs[projectID] {
+				unit := unitsMap[unitID]
+				if len(unit.Consumptions) > 0 {
+					total := &Consumption{
+						CO2Min:    new(float64),
+						CO2Max:    new(float64),
+						EnergyMin: new(float64),
+						EnergyMax: new(float64),
+					}
+					for _, consumption := range unit.Consumptions {
+						*total.CO2Min += *consumption.CO2Min
+						*total.CO2Max += *consumption.CO2Max
+						*total.EnergyMin += *consumption.EnergyMin
+						*total.EnergyMax += *consumption.EnergyMax
+					}
+					unit.Consumptions["total"] = total
+				}
+				projectArea += unit.Area
+				units = append(units, *unit)
+			}
+
+			if p, ok := projectsMap[projectID]; ok {
+				p.Units = units
+				p.Area = projectArea
+				p.Consumptions = make(map[string]*Consumption)
+
+				// Recalculate project consumptions from units
+				for _, unit := range p.Units {
+					for tech, cons := range unit.Consumptions {
+						if tech == "total" {
+							continue
+						}
+						if _, ok := p.Consumptions[tech]; !ok {
+							p.Consumptions[tech] = &Consumption{
+								CO2Min:    new(float64),
+								CO2Max:    new(float64),
+								EnergyMin: new(float64),
+								EnergyMax: new(float64),
+							}
+						}
+						*p.Consumptions[tech].CO2Min += *cons.CO2Min
+						*p.Consumptions[tech].CO2Max += *cons.CO2Max
+						*p.Consumptions[tech].EnergyMin += *cons.EnergyMin
+						*p.Consumptions[tech].EnergyMax += *cons.EnergyMax
+					}
+				}
+
+				if len(p.Consumptions) > 0 {
+					projectTotalConsumption := &Consumption{
+						CO2Min:    new(float64),
+						CO2Max:    new(float64),
+						EnergyMin: new(float64),
+						EnergyMax: new(float64),
+					}
+					for _, cons := range p.Consumptions {
+						*projectTotalConsumption.CO2Min += *cons.CO2Min
+						*projectTotalConsumption.CO2Max += *cons.CO2Max
+						*projectTotalConsumption.EnergyMin += *cons.EnergyMin
+						*projectTotalConsumption.EnergyMax += *cons.EnergyMax
+					}
+					p.Consumptions["total"] = projectTotalConsumption
+				}
+			}
+		}
 	}
 
 	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
