@@ -3,25 +3,15 @@ import { useSummary } from "@/context/summaryContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import * as d3 from "d3";
-import { regressionPoly } from 'd3-regression';
+import { regressionPoly } from "d3-regression";
 import React, { useEffect, useRef, useState } from "react";
+import Divider from "../ui/divider";
 
-// Dados baseados na imagem
-const data = [
-  { id: 0, y: 0.0, start: 10, end: 40 },
-  { id: 1, y: 0.1, start: 15, end: 55 },
-  { id: 2, y: 0.2, start: 20, end: 60 },
-  { id: 3, y: 0.3, start: 25, end: 80 },
-  { id: 4, y: 0.4, start: 35, end: 85 },
-  { id: 5, y: 0.5, start: 40, end: 95 },
-  { id: 6, y: 0.6, start: 35, end: 90 },
-  { id: 7, y: 0.7, start: 60, end: 125 },
-  { id: 8, y: 0.8, start: 65, end: 165 },
-];
+type DataPoint = { x: number; y: number };
 
 type D3GradientRangeChartProps = {
   selectedBars?: string[]; // IDs das barras selecionadas
-  data?: { id: string; y: number; min: number; max: number; label: string; }[];
+  data?: { id: string; y: number; min: number; max: number; label: string }[];
   width?: number;
   height?: number;
   overrideDimensions?: boolean;
@@ -35,12 +25,18 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   const { isExpanded } = useSummary();
   const svgRef = useRef<SVGSVGElement>(null);
   const isMobile = useIsMobile();
-  const [tooltip, setTooltip] = useState<{
+  const [tooltip, _setTooltip] = useState<{
     x: number;
     y: number;
-    value: { min: number; max: number; label?: string; };
+    value: {
+      min: number;
+      max: number;
+      label?: string;
+    };
   } | null>();
-  const reversedData = data?.map(f => ({ ...f, y: 1 - f.y })).sort((a, b) => a.min - b.min);
+  const reversedData = data
+    ?.map((f) => ({ ...f, y: 1 - f.y }))
+    .sort((a, b) => a.min - b.min);
   const screenWidth = window.innerWidth;
   const width = () => {
     if (props.width && overrideDimensions) return props.width;
@@ -70,10 +66,9 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   const _width = width();
   const _height = height() - (margin.top + margin.bottom);
 
-
-  // const maxYValue =
-  //   reversedData?.map((d) => d.y).reduce((a, b) => Math.max(a, b), 0) || 1;
-  const yScale = d3.scaleLinear().domain([1, 0]).range([0, _height]);
+  const revertData = (data || [])
+    .map((d) => ({ ...d, y: 1 - d.y }))
+    .sort((a, b) => a.min - b.min);
 
   const barHeight = 18;
 
@@ -88,54 +83,66 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     };
   }, []);
 
-  // Escalas para o gráfico
-
-  const yValues = (data || []).map(d => d.y);
-  const maxValues = (data || []).map(d => d.max);
-  const minValues = (data || []).map(d => d.min);
+  const maxValues = (revertData || []).map((d) => d.max);
+  const minValues = (revertData || []).map((d) => d.min);
 
   const minValue = Math.min(...maxValues);
   const maxValue = Math.max(...maxValues);
 
   // Normaliza os valores de max
-  const normalized = (data || []).map(d => ({
+  const normalized = (revertData || []).map((d) => ({
     x: d.y,
     y: (d.max - minValue) / (maxValue - minValue),
   }));
-  const normalizedMin = (data || []).map(d => ({
+  const normalizedMin = (revertData || []).map((d) => ({
     x: d.y,
-    y: (d.min - Math.min(...minValues)) / (Math.max(...minValues) - Math.min(...minValues)),
+    y:
+      (d.min - Math.min(...minValues)) /
+      (Math.max(...minValues) - Math.min(...minValues)),
   }));
 
+  const normalizeX = (x: number) => (x - xMin) / (xMax - xMin);
+
   // Ajuste polinomial de ordem 4
-  const poly = regressionPoly().x(d => d.x).y(d => d.y).order(3);
+  const poly = regressionPoly()
+    .x((d: DataPoint) => d.x)
+    .y((d: DataPoint) => d.y)
+    .order(3);
   const fittedMax = poly(normalized);
   const fittedMin = poly(normalizedMin);
 
-  // Combina os valores mínimos e máximos ajustados
-  // Desnormaliza o eixo Y (volta para escala original)
-  const denormalizedMax = fittedMax.map(([x, y]) => ({
+  let denormalizedMax = fittedMax.map(([x, y]: [number, number]) => ({
     x,
     y: y * (maxValue - minValue) + minValue,
   }));
 
-  const denormalizedMin = fittedMin.map(([x, y]) => ({
+  let denormalizedMin = fittedMin.map(([x, y]: [number, number]) => ({
     x,
-    y: y * (Math.max(...minValues) - Math.min(...minValues)) + Math.min(...minValues),
+    y:
+      y * (Math.max(...minValues) - Math.min(...minValues)) +
+      Math.min(...minValues),
   }));
+  const xMin =
+    d3.min([...denormalizedMin, ...denormalizedMax], (d: DataPoint) => d.x) ??
+    0;
+  const xMax =
+    d3.max([...denormalizedMin, ...denormalizedMax], (d: DataPoint) => d.x) ??
+    1;
 
-const xScale2 = d3.scaleLinear()
-  .domain([0, maxValue * 1.05])
-  .range([margin.left, _width - margin.right]);
+  denormalizedMax = denormalizedMax.map((d: DataPoint) => ({
+    x: normalizeX(d.x),
+    y: d.y,
+  }));
+  denormalizedMin = denormalizedMin.map((d: DataPoint) => {
+    return {
+      ...d,
+      x: normalizeX(d.x),
+    };
+  });
 
-const yScale2 = d3.scaleLinear()
-  .domain([0, 1])
-  .range([_height - margin.bottom, margin.top]);
-  console.log({ denormalizedMax, denormalizedMin });
-  const xScale = d3
-    .scaleLinear()
-    .domain([0, maxValue])
-    .range([0, _width * 1.05]);
+  const xScale = d3.scaleLinear().domain([0, 1]).range([0, _width]);
+
+  const yScale = d3.scaleLinear().domain([0, maxValue]).range([0, _height]);
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -154,10 +161,93 @@ const yScale2 = d3.scaleLinear()
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
+    const verticalLine = g
+      .append("line")
+      .attr("class", "tooltip-line")
+      .attr("stroke", "#aaa")
+      .attr("stroke-width", 1)
+      .attr("y1", 0)
+      .attr("y2", _height)
+      .style("opacity", 0);
+
+    const horizontalLine = g
+      .append("line")
+      .attr("class", "tooltip-line")
+      .attr("stroke", "#aaa")
+      .attr("stroke-width", 1)
+      .attr("x1", 0)
+      .attr("x2", _width)
+      .style("opacity", 0);
+    const horizontalLine2 = g
+      .append("line")
+      .attr("class", "tooltip-line")
+      .attr("stroke", "#aaa")
+      .attr("stroke-width", 1)
+      .attr("x1", 0)
+      .attr("x2", _width)
+      .style("opacity", 0);
+
+    svg
+      .append("rect")
+      .attr("x", margin.left)
+      .attr("y", margin.top)
+      .attr("width", _width)
+      .attr("height", _height)
+      .attr("fill", "none")
+      .attr("pointer-events", "all")
+      .on("mousemove", (event) => {
+        const [mx] = d3.pointer(event);
+        const x0 = xScale.invert(mx - margin.left);
+
+        const bisect = d3.bisector((d: DataPoint) => d.x).left;
+        const bisectMin = d3.bisector((d: DataPoint) => d.x).left;
+
+        const i = bisect(denormalizedMax, x0);
+        
+        const clampIndex = (arr: any[], idx: number) =>
+          Math.max(0, Math.min(idx, arr.length - 1));
+        
+        const idx = clampIndex(denormalizedMax, i);
+        const iMin = clampIndex(denormalizedMin, bisectMin(denormalizedMin, x0));
+
+        const dMax = denormalizedMax[idx];
+        const dMin = denormalizedMin[iMin];
+
+        verticalLine
+          .attr("x1", xScale(dMax.x))
+          .attr("x2", xScale(dMax.x))
+          .style("opacity", 1);
+
+        horizontalLine
+          .attr("y1", yScale(dMax.y) - margin.top)
+          .attr("y2", yScale(dMax.y) - margin.top)
+          .style("opacity", 1);
+        horizontalLine2
+          .attr("y1", yScale(dMin.y) - margin.top)
+          .attr("y2", yScale(dMin.y) - margin.top)
+          .style("opacity", 1);
+        // Atualiza tooltip
+        _setTooltip({
+          x: xScale(dMax.x) > _width/2 ? xScale(dMax.x) - 100 : xScale(dMax.x) + 100,
+          y: Math.min(yScale(dMax.y), yScale(dMin.y)),
+          value: {
+            min: dMin.y,
+            max: dMax.y,
+            label: ``,
+          },
+        });
+      })
+      .on("mouseleave", () => {
+        verticalLine.style("opacity", 0);
+        horizontalLine.style("opacity", 0);
+        horizontalLine2.style("opacity", 0);
+        _setTooltip(null);
+      });
+
     // Grid de fundo
     const xTicks = xScale.ticks(isExpanded ? 30 : 10);
     const yTicks = yScale.ticks(8);
-    
+
     g.selectAll(".grid-line-x")
       .data(xTicks)
       .enter()
@@ -198,41 +288,57 @@ const yScale2 = d3.scaleLinear()
       .style("font-size", "12px")
       .style("fill", "#64748b");
 
-    const procelColors = ["#028", "#7CFC00", "#FFFF00", "#FFA500", "#FF0000"];
+    const procelColors = [
+      "#14400D",
+      "#6B9215",
+      "#F2E530",
+      "#F28C0F",
+      "#D90D0D",
+    ];
     const faixaCount = procelColors.length;
-    const faixaHeight = (_width * 1.05) / faixaCount; // altura de cada faixa
-    
+    const faixaHeight = _width / faixaCount;
+
     procelColors.reverse().forEach((color, i) => {
       g.append("rect")
-        .attr("y", _height - 4)
+        .attr("y", 0)
         .attr("x", i * faixaHeight)
         .attr("width", faixaHeight)
-        .attr("height", 8)
+        .attr("height", _height)
         .attr("fill", color)
-        .attr("opacity", 0.7); // suaviza o fundo
+        .attr("opacity", 0.5); // suaviza o fundo
     });
 
-    svg.append("path")
+    svg
+      .append("path")
       .datum(denormalizedMin)
       .attr("fill", "none")
       .attr("stroke", "#3b82f6")
-      .attr("stroke-width", 2)
-      .attr("d", d3.line<{ x: number; y: number; }>()
-        .x(d => xScale2(d.y)) // usa o eixo de carbono incorporado
-        .y(d => yScale2(d.x)) // se o seu y for o potencial de mitigação
-        .curve(d3.curveBasis)
+      .attr("stroke-width", 4)
+      .attr("transform", `translate(${margin.left},0)`)
+      .attr(
+        "d",
+        d3
+          .line<{ x: number; y: number }>()
+          .x((d) => xScale(d.x)) // usa o eixo de carbono incorporado
+          .y((d) => yScale(d.y)) // se o seu y for o potencial de mitigação
+          .curve(d3.curveBasis)
       );
-    svg.append("path")
+    svg
+      .append("path")
       .datum(denormalizedMax)
       .attr("fill", "none")
       .attr("stroke", "#E36F35")
-      .attr("stroke-width", 2)
-      .attr("d", d3.line<{ x: number; y: number; }>()
-        .x(d => xScale2(d.y)) // usa o eixo de carbono incorporado
-        .y(d => yScale2(d.x)) // se o seu y for o potencial de mitigação
-        .curve(d3.curveBasis)
+      .attr("stroke-width", 4)
+      .attr("stroke-dasharray", "6 3")
+      .attr("transform", `translate(${margin.left},0)`)
+      .attr(
+        "d",
+        d3
+          .line<{ x: number; y: number }>()
+          .y((d) => yScale(d.y))
+          .x((d) => xScale(d.x))
+          .curve(d3.curveBasis)
       );
-
   }, [isExpanded, reversedData, isResized, data]);
 
   useEffect(() => {
@@ -244,8 +350,8 @@ const yScale2 = d3.scaleLinear()
       const gradientId = `gradient-${i}`;
       if ((selectedBars || []).includes(d.id)) {
         const y = yScale(d.y);
-        const x1 = xScale2(d.min);
-        const x2 = xScale2(d.max);
+        const x1 = xScale(d.min);
+        const x2 = xScale(d.max);
 
         if (isExpanded) {
           g.append("rect")
@@ -363,7 +469,7 @@ const yScale2 = d3.scaleLinear()
       <CardContent>
         <div className="w-full overflow-hidden relative">
           <span className="absolute w-full text-center text-black/70 block rotate-270  left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
-            potencial de mitigação
+            Carbono Incorporado (Kg CO₂/m²)
           </span>
           <svg ref={svgRef} className="bg-white dark:bg-sidebar"></svg>
           {tooltip && (
@@ -374,12 +480,12 @@ const yScale2 = d3.scaleLinear()
                 top: tooltip.y + 10,
               }}
             >
-              {/* {tooltip.value.id && (
+              {tooltip.value.label && (
                 <>
                   <span className="font-bold">{tooltip.value.label}</span>
-                <Divider  />
+                  <Divider />
                 </>
-              )} */}
+              )}
               <span>
                 Min: <b>{tooltip.value.min.toFixed(3)} Kg/m2</b>
               </span>
@@ -392,7 +498,7 @@ const yScale2 = d3.scaleLinear()
         <div className="flex">
           <span>N: {data?.length}</span>
           <span className="flex-1 text-center w-full text-black/70">
-            Carbono Incorporado (Kg CO₂/m²)
+            potencial de mitigação
           </span>
         </div>
       </CardContent>

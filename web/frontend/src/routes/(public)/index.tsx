@@ -1,5 +1,6 @@
 import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
 import Logo from "@/assets/logo_full.svg";
+import D3GradientRangeChart from '@/components/charts/d3chart';
 import D3GradientRangeLineChart from '@/components/charts/d3chartLine';
 import {
   Select,
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { regressionPoly } from 'd3-regression';
+import { useState } from 'react';
 import { useTranslation } from "react-i18next";
 export const Route = createFileRoute("/(public)/")({
   component: RouteComponent,
@@ -35,30 +36,9 @@ function RouteComponent() {
   const width = (window.innerWidth - 221) * 0.5;
   const height = (window.innerHeight) * 0.5;
 
-  const normalizedData = (data: {max: number}[]) => {
-  const minValue = Math.min(...data.map(d => d.max));
-  const maxValue = Math.max(...data.map(d => d.max));
 
-  return data.map(d => ({
-    ...d,
-    normalizedMax: (d.max - minValue) / (maxValue - minValue),
-  }));
-};
+const [selectedChart, setSelectedChart] = useState('trend');
 
-  const fitPolynomial = (data: { y: number; normalizedMax: number }[]) => {
-  const x = data.map(d => d.y);
-  const y = data.map(d => d.normalizedMax);
-
-  // Regressão polinomial de ordem 4
-  const coefficients = regressionPoly()
-    .order(4)
-    .x((d: { y: number; }) => d.y)
-    .y((d: { normalizedMax: number; }) => d.normalizedMax)(data);
-
-  return coefficients;
-};
-
-console.log(fitPolynomial(normalizedData(chartData || []) as any));
   return (
     <div className="h-full w-full flex items-start pt-40 justify-between max-md:flex-col">
       <div className="flex flex-col  gap-4 w-1/3 px-16 max-w-[500px] mx-auto max-md:w-full max-md:p-8">
@@ -89,16 +69,16 @@ console.log(fitPolynomial(normalizedData(chartData || []) as any));
         </p>
       </div>
       <div className="w-2/3 flex flex-col items-start">
-        <Select>
+        <Select onValueChange={setSelectedChart} value={selectedChart}>
           <SelectTrigger className="w-[200px] self-start mb-4">
             <SelectValue placeholder="Gráfico" />
           </SelectTrigger>
           <SelectContent defaultValue={"co2"}>
+            <SelectItem value='trend'>Tendência</SelectItem>
             <SelectItem value="co2">Fração Acumuladas</SelectItem>
-            {/* <SelectItem value='energia'>Energia</SelectItem> */}
           </SelectContent>
         </Select>
-        <D3GradientRangeLineChart width={width} height={height} data={chartData} overrideDimensions/>
+        {selectedChart === 'trend' ? <D3GradientRangeLineChart width={width} height={height} data={chartData} overrideDimensions /> : <D3GradientRangeChart width={width} height={height} data={chartData} overrideDimensions />}
         <div className="w-[95%] flex items-center gap-2 justify-between my-4">
           <Select>
             <SelectTrigger className="w-[200px]">
