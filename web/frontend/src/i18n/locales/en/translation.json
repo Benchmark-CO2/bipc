@@ -101,7 +101,20 @@
   },
   "settings": {
     "title": "Settings",
-    "theme": "Theme"
+    "theme": "Theme",
+    "language": "Language",
+    "userInfo": {
+      "title": "User Information",
+      "name": "Name",
+      "email": "Email",
+      "memberSince": "Member since",
+      "accountActivated": "Account activated"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "themeDescription": "Choose the application theme",
+      "languageDescription": "Select your preferred language"
+    }
   },
   "public": {
     "comingSoonTitle": "Under Construction 🚧",
@@ -238,7 +251,8 @@
     "errorEditProject": "Error editing project",
     "errorEditModuleName": "Error editing module name",
     "errorUnknown": "An unknown error occurred",
-    "errorUploadFile": "Error uploading file"
+    "errorUploadFile": "Error uploading file",
+    "unexpectedError": "Unexpected error. Please try again later."
   },
   "warn": {
     "verifyZipCode": "Please verify the ZIP code"

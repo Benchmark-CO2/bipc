@@ -5,11 +5,12 @@ import { useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import { Checkbox } from "../ui/checkbox";
 import { TabsContainer } from "../ui/tabsContainer";
+import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 
 type ProjectsSummaryProps = {
   techs: (any & {
-    co: number;
-    mj: number;
+    co2: number;
+    energy: number;
     density: number;
   })[];
   title?: string;
@@ -26,11 +27,11 @@ const manageData = (floors: ProjectsSummaryProps["techs"]) => {
 };
 
 const TechnologiesSummary = ({ techs }: ProjectsSummaryProps) => {
-  const [type, setType] = useState<"co" | "mj" | "density">("co");
+  const [type, setType] = useState<"co2" | "energy" | "density">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>(
     techs?.map((tech) => tech.id) || []
   );
-  
+
   const fakeFloors = manageData(techs);
   const { isExpanded } = useSummary();
   const isMobile = useIsMobile();
@@ -49,7 +50,6 @@ const TechnologiesSummary = ({ techs }: ProjectsSummaryProps) => {
     return 220;
   };
 
-  
   if (!techs.length)
     return (
       <div className="w-full flex flex-col justify-center items-center">
@@ -70,8 +70,10 @@ const TechnologiesSummary = ({ techs }: ProjectsSummaryProps) => {
       <div className="flex flex-col items-start w-full">
         <div className="w-full flex gap-2 mb-10">
           <TabsContainer
-            tabs={["co", "mj", "density"]}
-            handleTabClick={(tab) => setType(tab as "co" | "mj" | "density")}
+            tabs={["co2", "energy", "density"]}
+            handleTabClick={(tab) =>
+              setType(tab as "co2" | "energy" | "density")
+            }
             selectedTab={type}
           />
         </div>
@@ -87,8 +89,13 @@ const TechnologiesSummary = ({ techs }: ProjectsSummaryProps) => {
                 onClick={() => handleAddProject(unit.id)}
               >
                 <div className="flex items-center gap-3 cursor-pointer">
-                  <Checkbox checked={selectedProjects.includes(unit.id)} onClick={() => handleAddProject(unit.id)} />
-                  <h4 className="whitespace-nowrap flex items-center gap-3 cursor-pointer">{unit.label}</h4>
+                  <Checkbox
+                    checked={selectedProjects.includes(unit.id)}
+                    onClick={() => handleAddProject(unit.id)}
+                  />
+                  <h4 className="whitespace-nowrap flex items-center gap-3 cursor-pointer">
+                    {unit.label}
+                  </h4>
                 </div>
                 <div className="flex w-full h-2 col-span-4">
                   <div
@@ -114,6 +121,7 @@ const TechnologiesSummary = ({ techs }: ProjectsSummaryProps) => {
         height={height()}
         data={fakeFloors}
         selectedBars={selectedProjects}
+        unit={unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""}
       />
     </div>
   );

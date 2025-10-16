@@ -24,11 +24,13 @@ type D3GradientRangeChartProps = {
   width?: number;
   height?: number;
   overrideDimensions?: boolean;
+  unit?: string;
 };
 const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   selectedBars,
   data,
   overrideDimensions = false,
+  unit = "",
   ...props
 }) => {
   const { isExpanded } = useSummary();
@@ -55,8 +57,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
     if (isMobile && !isExpanded) return 250;
     if (isMobile && isExpanded) return 320;
-    if (isExpanded) return 900;
-    return 220 * 1.55;
+    if (isExpanded) return window.innerHeight * 0.96 - 130;
+    return 550 - 230;
   };
 
   // Dimensões
@@ -92,7 +94,6 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     };
   }, []);
 
-
   useEffect(() => {
     if (!svgRef.current) return;
 
@@ -125,7 +126,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .attr("y1", 0)
       .attr("y2", _height)
       .attr("stroke", "#e2e8f0")
-      .attr("stroke-width", 1)
+      .attr("stroke-width", 1);
 
     // Linhas horizontais do grid
     g.selectAll(".grid-line-y")
@@ -153,7 +154,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .call(d3.axisLeft(yScale).ticks(8))
       .selectAll("text")
       .style("font-size", "12px")
-      .style("fill", "#64748b")
+      .style("fill", "#64748b");
 
     // Remover linhas dos eixos
     g.selectAll(".domain").remove();
@@ -210,7 +211,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         .attr("r", isExpanded ? 6 : 3)
         .attr("fill", "#3b82f6")
         .attr("stroke", "white")
-        .attr("stroke-width", isExpanded ? 2 : 0).on("mouseover", function (event) {
+        .attr("stroke-width", isExpanded ? 2 : 0)
+        .on("mouseover", function (event) {
           const { left, top, width, height } =
             svgRef.current!.getBoundingClientRect();
 
@@ -243,42 +245,42 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
             },
           });
         })
-          .on("mousemove", function (event) {
-            const { left, top, width, height } =
-              svgRef.current!.getBoundingClientRect();
+        .on("mousemove", function (event) {
+          const { left, top, width, height } =
+            svgRef.current!.getBoundingClientRect();
 
-            const mouseX = event.clientX - left;
-            const mouseY = event.clientY - top;
+          const mouseX = event.clientX - left;
+          const mouseY = event.clientY - top;
 
-            const tooltipWidth = 120;
-            const tooltipHeight = 40;
-            const offset = 10;
+          const tooltipWidth = 120;
+          const tooltipHeight = 40;
+          const offset = 10;
 
-            let x = mouseX + offset;
-            if (mouseX + tooltipWidth + offset > width) {
-              x = mouseX - tooltipWidth - offset;
-            }
+          let x = mouseX + offset;
+          if (mouseX + tooltipWidth + offset > width) {
+            x = mouseX - tooltipWidth - offset;
+          }
 
-            let y = mouseY - offset;
-            if (mouseY + tooltipHeight > height) {
-              y = height - tooltipHeight - (offset + 20);
-            }
-            if (mouseY < offset) {
-              y = offset;
-            }
-            setTooltip({
-              x,
-              y,
-              value: {
-                min: d.min,
-                max: d.max,
-                label: selectedBars?.includes(d.id) ? d.label : undefined,
-              },
-            });
-          })
-          .on("mouseout", function () {
-            setTooltip(null);
+          let y = mouseY - offset;
+          if (mouseY + tooltipHeight > height) {
+            y = height - tooltipHeight - (offset + 20);
+          }
+          if (mouseY < offset) {
+            y = offset;
+          }
+          setTooltip({
+            x,
+            y,
+            value: {
+              min: d.min,
+              max: d.max,
+              label: selectedBars?.includes(d.id) ? d.label : undefined,
+            },
           });
+        })
+        .on("mouseout", function () {
+          setTooltip(null);
+        });
 
       // Círculo final (cor baseada na posição)
       // const endColor = getColor(d.end, d.y);
@@ -289,7 +291,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         .attr("r", isExpanded ? 6 : 3)
         .attr("fill", "#E36F35")
         .attr("stroke", "white")
-        .attr("stroke-width", isExpanded ? 2 : 0).on("mouseover", function (event) {
+        .attr("stroke-width", isExpanded ? 2 : 0)
+        .on("mouseover", function (event) {
           const { left, top, width, height } =
             svgRef.current!.getBoundingClientRect();
 
@@ -322,43 +325,42 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
             },
           });
         })
-          .on("mousemove", function (event) {
-            const { left, top, width, height } =
-              svgRef.current!.getBoundingClientRect();
+        .on("mousemove", function (event) {
+          const { left, top, width, height } =
+            svgRef.current!.getBoundingClientRect();
 
-            const mouseX = event.clientX - left;
-            const mouseY = event.clientY - top;
+          const mouseX = event.clientX - left;
+          const mouseY = event.clientY - top;
 
-            const tooltipWidth = 120;
-            const tooltipHeight = 40;
-            const offset = 10;
+          const tooltipWidth = 120;
+          const tooltipHeight = 40;
+          const offset = 10;
 
-            let x = mouseX + offset;
-            if (mouseX + tooltipWidth + offset > width) {
-              x = mouseX - tooltipWidth - offset;
-            }
+          let x = mouseX + offset;
+          if (mouseX + tooltipWidth + offset > width) {
+            x = mouseX - tooltipWidth - offset;
+          }
 
-            let y = mouseY - offset;
-            if (mouseY + tooltipHeight > height) {
-              y = height - tooltipHeight - (offset + 20);
-            }
-            if (mouseY < offset) {
-              y = offset;
-            }
-            setTooltip({
-              x,
-              y,
-              value: {
-                min: d.min,
-                max: d.max,
-                label: selectedBars?.includes(d.id) ? d.label : undefined,
-              },
-            });
-          })
-          .on("mouseout", function () {
-            setTooltip(null);
+          let y = mouseY - offset;
+          if (mouseY + tooltipHeight > height) {
+            y = height - tooltipHeight - (offset + 20);
+          }
+          if (mouseY < offset) {
+            y = offset;
+          }
+          setTooltip({
+            x,
+            y,
+            value: {
+              min: d.min,
+              max: d.max,
+              label: selectedBars?.includes(d.id) ? d.label : undefined,
+            },
           });
-
+        })
+        .on("mouseout", function () {
+          setTooltip(null);
+        });
     });
   }, [isExpanded, data, isResized]);
 
@@ -460,7 +462,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
             .attr("stroke", "#2563eb")
             .attr("stroke-width", 0.1);
         }
-        
+
         g.append("circle")
           .attr("cx", x1)
           .attr("cy", y)
@@ -540,6 +542,11 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     });
   }, [selectedBars, isExpanded, data, isResized, tooltip]);
 
+  const labelX = {
+    "KgCO₂/m²": "Carbono Incorporado (Kg CO₂/m²)",
+    "MJ/m²": "Energia Incorporada (MJ/m²)",
+  } as any;
+
   return (
     <Card className={cn("shadow-none w-min-content")}>
       {/* <CardHeader>
@@ -549,7 +556,9 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       </CardHeader> */}
       <CardContent>
         <div className="w-full overflow-hidden relative">
-          <span className='absolute w-full text-center text-black/70 block rotate-270  left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0'>potencial de mitigação</span>
+          <span className="absolute w-full text-center text-black/70 block rotate-270  left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
+            potencial de mitigação
+          </span>
           <svg ref={svgRef} className="bg-white dark:bg-sidebar"></svg>
           {tooltip && (
             <div
@@ -566,18 +575,27 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
                 </>
               )} */}
               <span>
-                Min: <b>{tooltip.value.min.toFixed(3)} Kg/m2</b>
+                Min:{" "}
+                <b>
+                  {tooltip.value.min.toFixed(3)} {unit}
+                </b>
               </span>
               <span>
-                Max: <b>{tooltip.value.max.toFixed(3)} Kg/m2</b>
+                Max:{" "}
+                <b>
+                  {tooltip.value.max.toFixed(3)} {unit}
+                </b>
               </span>
             </div>
           )}
         </div>
-          <div className='flex'>
-            <span>N: {data?.length}</span>
-            <span className='flex-1 text-center w-full text-black/70'>Carbono Incorporado (Kg CO₂/m²)</span>
-          </div>
+        <div className="flex">
+          <span>N: {data?.length}</span>
+          <span className="flex-1 text-center w-full text-black/70">
+            {/* Carbono Incorporado (Kg CO₂/m²) */}
+            {labelX[unit] || "Carbono Incorporado"}
+          </span>
+        </div>
       </CardContent>
     </Card>
   );

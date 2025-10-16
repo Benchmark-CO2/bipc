@@ -18,27 +18,12 @@ import { Button } from "../../ui/button";
 import {
   Drawer,
   DrawerContent,
-  DrawerDescription,
+  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
 } from "../../ui/drawer";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../../ui/form";
-import { Input } from "../../ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../ui/select";
+import { Form } from "../../ui/form";
 import UnitFormTower from "./unit-form-tower";
 
 interface DrawerFormUnitProps {
@@ -166,10 +151,6 @@ const DrawerFormUnit = ({
     }
   }, [unitData, form]);
 
-  const unitTypes = [
-    { value: "tower", label: t("drawerFormUnit.unitTypeOptions.tower") },
-  ];
-
   return (
     <Drawer
       direction="right"
@@ -190,7 +171,7 @@ const DrawerFormUnit = ({
       </DrawerTrigger>
       <DrawerContent className="min-w-4/5">
         <DrawerHeader className="px-8">
-          <DrawerTitle>
+          <DrawerTitle className="text-2xl font-bold text-primary">
             {unitId
               ? t("drawerFormUnit.editTitle")
               : t("drawerFormUnit.addTitle")}
@@ -203,10 +184,6 @@ const DrawerFormUnit = ({
             <X className="h-4 w-4" />
           </Button>
         </DrawerHeader>
-        <DrawerDescription className="px-8">
-          {t("drawerFormUnit.description")} <br />
-          {t("drawerFormUnit.example")}
-        </DrawerDescription>
         <>
           {isLoadingUnitFields ? (
             <div className="flex h-20 w-full items-center justify-center">
@@ -216,99 +193,46 @@ const DrawerFormUnit = ({
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(handleSubmit)}
-                className="flex max-h-[calc(100vh-100px)] flex-col gap-3 overflow-y-auto p-8"
+                className="flex flex-col gap-3 overflow-y-auto p-8"
+                id="unit-form"
               >
-                <div className="grid grid-cols-2 gap-4 items-baseline">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          {t("drawerFormUnit.unitNameLabel")}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder={t(
-                              "drawerFormUnit.unitNamePlaceholder"
-                            )}
-                            disabled={Boolean(unitId)}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          {t("drawerFormUnit.unitTypeLabel")}
-                        </FormLabel>
-                        <FormControl>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                            disabled={unitTypes.length <= 1}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue
-                                placeholder={t(
-                                  "drawerFormUnit.unitTypePlaceholder"
-                                )}
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {unitTypes.map((type) => (
-                                <SelectItem key={type.value} value={type.value}>
-                                  {type.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
                 {form.watch("type") === "tower" && (
                   <UnitFormTower form={form} isEditMode={Boolean(unitId)} />
-                )}
-                {!Boolean(unitId) && (
-                  <Button
-                    type="submit"
-                    variant="bipc"
-                    className="mt-6 w-full"
-                    disabled={isCreationPending || isCreationSuccess}
-                  >
-                    {t("drawerFormUnit.addUnitButton")}
-                    {isCreationPending && (
-                      <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
-                    )}
-                  </Button>
-                )}
-                {Boolean(unitId) && (
-                  <Button
-                    type="submit"
-                    variant="bipc"
-                    className="mt-6 w-full"
-                    disabled={isUpdatePending}
-                  >
-                    {t("drawerFormUnit.editUnitButton")}
-                    {isUpdatePending && (
-                      <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
-                    )}
-                  </Button>
                 )}
               </form>
             </Form>
           )}
         </>
+        <DrawerFooter className="px-8">
+          {!Boolean(unitId) && (
+            <Button
+              type="submit"
+              variant="bipc"
+              className="w-full"
+              form="unit-form"
+              disabled={isCreationPending || isCreationSuccess}
+            >
+              {t("drawerFormUnit.addUnitButton")}
+              {isCreationPending && (
+                <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+              )}
+            </Button>
+          )}
+          {Boolean(unitId) && (
+            <Button
+              type="submit"
+              variant="bipc"
+              className="w-full"
+              form="unit-form"
+              disabled={isUpdatePending}
+            >
+              {t("drawerFormUnit.editUnitButton")}
+              {isUpdatePending && (
+                <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+              )}
+            </Button>
+          )}
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   );

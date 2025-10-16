@@ -30,11 +30,12 @@ import {
 import { masks } from "@/utils/masks";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Info, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const SignUp = () => {
   const [successModal, setSuccessModal] = useState(false);
@@ -92,12 +93,17 @@ const SignUp = () => {
   };
 
   return (
-    <div className="flex flex-col h-full w-full items-center justify-start transition-all pt-12 overflow-auto">
-      <h1 className="font-bold text-5xl mb-6 w-full text-left max-w-2/3 text-primary max-md:max-w-full max-md:px-6">
-        {t("signUp.title")}
-      </h1>
-      <div className="w-2/3 flex px-6 flex-col items-center justify-center gap-4 max-xl:w-1/2 max-lg:w-full border border-zinc-200 dark:border-zinc-800 rounded-md py-4">
-        <div className="w-full">
+    <div className="container mx-auto p-6 max-w-4xl">
+      <div className="space-y-2 mb-8">
+        <h1 className="text-3xl font-bold tracking-tight text-primary">
+          Novo Usuário
+        </h1>
+        <p className="text-muted-foreground">
+          Crie sua conta para começar a usar a plataforma
+        </p>
+      </div>
+      <Card>
+        <CardContent className="space-y-6">
           <Form {...form}>
             <form
               className="flex flex-col gap-4"
@@ -340,8 +346,8 @@ const SignUp = () => {
               </Button> */}
             </form>
           </Form>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
       {successModal && <DialogSuccessSignup handleClose={handleClose} />}
     </div>
   );

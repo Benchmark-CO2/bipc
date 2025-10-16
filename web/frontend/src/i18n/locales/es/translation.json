@@ -99,7 +99,20 @@
   },
   "settings": {
     "title": "Configuraciones",
-    "theme": "Tema"
+    "theme": "Tema",
+    "language": "Idioma",
+    "userInfo": {
+      "title": "Información del Usuario",
+      "name": "Nombre",
+      "email": "Email",
+      "memberSince": "Miembro desde",
+      "accountActivated": "Cuenta activada"
+    },
+    "appearance": {
+      "title": "Apariencia",
+      "themeDescription": "Elige el tema de la aplicación",
+      "languageDescription": "Selecciona tu idioma preferido"
+    }
   },
   "public": {
     "comingSoonTitle": "En Construcción 🚧",
@@ -236,7 +249,8 @@
     "errorEditProject": "Error al editar el proyecto",
     "errorEditModuleName": "Error al editar el nombre del módulo",
     "errorUnknown": "Error desconocido",
-    "errorUploadFile": "Error al subir el archivo"
+    "errorUploadFile": "Error al subir el archivo",
+    "unexpectedError": "Error inesperado. Inténtalo nuevamente más tarde."
   },
   "warn": {
     "verifyZipCode": "Por favor, verifica el código postal"

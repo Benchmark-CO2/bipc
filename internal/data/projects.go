@@ -200,11 +200,11 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*Project, error) {
 			u.id,
 			u.name,
 			u.type,
-			tc.co2_min,
-			tc.co2_max,
-			tc.energy_min,
-			tc.energy_max,
-			tc.area
+			COALESCE(tc.co2_min, 0),
+			COALESCE(tc.co2_max, 0),
+			COALESCE(tc.energy_min, 0),
+			COALESCE(tc.energy_max, 0),
+			COALESCE(tc.area, 0)
 		FROM units u
 		LEFT JOIN tower_consumption tc ON u.id = tc.tower_id
 		WHERE u.project_id = $1
@@ -330,7 +330,7 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 		)
  		SELECT COUNT(*) OVER(), p.id, p.created_at, p.updated_at, p.user_id, p.name,
 		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description, p.image_id,
-		pc.co2_min, pc.co2_max, pc.energy_min, pc.energy_max, pc.area
+		COALESCE(pc.co2_min, 0), COALESCE(pc.co2_max, 0), COALESCE(pc.energy_min, 0), COALESCE(pc.energy_max, 0), COALESCE(pc.area, 0)
  		FROM projects p
 		INNER JOIN users_projects_permissions upp ON upp.project_id = p.id
 		LEFT JOIN project_consumption pc ON p.id = pc.project_id

@@ -7,8 +7,8 @@ import { TabsContainer } from "../ui/tabsContainer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
-import Subtitle from "./components/Subtitle";
 import { barColors, stackData } from "./utils";
+import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 
 type ProjectsSummaryProps = {
   selectedUnits: (any & {
@@ -55,13 +55,37 @@ const UnitsSummary = ({
     [selectedUnits, data]
   );
 
+ const [previousProjects, setPreviousProjects] = useState<any[]>([]);
+
   useEffect(() => {
-    setSelectedProjects(
-      selectedProjects.filter(
-        (id) => selectedUnits.find((u) => u.id === id) !== undefined
-      )
+    setPreviousProjects(
+      selectedUnits.map(el => el.id)
     );
   }, [selectedUnits]);
+
+  useEffect(() => {
+    if (previousProjects.length < selectedUnits.length) {
+      const diff = selectedUnits.filter(
+        (p) => !previousProjects.includes(p.id)
+      );
+      if (diff.length > 0) {
+        setSelectedProjects((prev) => [
+          ...prev,
+          ...diff.map((d) => d.id),
+        ]);
+      }
+    } else if (previousProjects.length > selectedUnits.length) {
+      const diff = previousProjects.filter(
+        (p) => !selectedUnits.map((u) => u.id).includes(p)
+      );
+      if (diff.length > 0) {
+        setSelectedProjects((prev) =>
+          prev.filter((p) => !diff.includes(p))
+        );
+      }
+    }
+  }, [previousProjects, selectedUnits]);
+  
 
   const handleAddProject = (projectId: string) => {
     if (selectedProjects.includes(projectId)) {
@@ -106,7 +130,6 @@ const UnitsSummary = ({
     (acc: number, b: { avg: number }) => acc + b.avg,
     0 as number
   );
-  console.log("avgByUnit", sum);
 
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
@@ -150,32 +173,36 @@ const UnitsSummary = ({
                 return f.avg > 0 ? (
                   <div
                     key={f.id}
-                      className={cn("mb-2 flex flex-col items-start", {
+                    className={cn("mb-2 flex flex-col items-start", {
                       "rounded-l-md": idx === 0,
                       "rounded-r-md": idx === units.length - 1,
                     })}
                     style={{
                       width: `${((f.avg || 0) / sum) * 100}%`,
                     }}
-                    >
-                   
-                     
-                      <Tooltip>
-                        <TooltipTrigger style={{ backgroundColor: barColors[idx] }} className='w-full'>
-                             <div
-                                className="w-full h-[16px]"
-                              ></div>
-                        </TooltipTrigger>
-                        <TooltipContent arrowClassName='bg-white opacity-0' className={cn('bg-white text-black border-2 border-active shadow-md', {
-                          'ml-30': idx === 0,
-                        })}>
-                          <span className="text-black text-base p-2">
-                            {f.name}: {Math.round((f.avg || 0) * 10) / 10}{" "}
-                            KgCO₂/m²
-                          </span>
-                        </TooltipContent>
-                      </Tooltip>
-                    
+                  >
+                    <Tooltip>
+                      <TooltipTrigger
+                        style={{ backgroundColor: barColors[idx] }}
+                        className="w-full"
+                      >
+                        <div className="w-full h-[16px]"></div>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        arrowClassName="bg-white opacity-0"
+                        className={cn(
+                          "bg-white text-black border-2 border-active shadow-md",
+                          {
+                            "ml-30": idx === 0,
+                          }
+                        )}
+                      >
+                        <span className="text-black text-base p-2">
+                          {f.name}: {Math.round((f.avg || 0) * 10) / 10}{" "}
+                          KgCO₂/m²
+                        </span>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 ) : null;
               })}
@@ -213,11 +240,12 @@ const UnitsSummary = ({
               );
             })}
           </ul>
-          {!isExpanded && <Subtitle />}
+          {/* {!isExpanded && <Subtitle />} */}
         </div>
         <D3GradientRangeChart
           data={fakeUnits}
           selectedBars={selectedProjects}
+          unit={unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""}
         />
       </div>
     </div>

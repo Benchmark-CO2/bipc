@@ -54,7 +54,7 @@ const ListItem = ({
             "border-[0.5px] border-gray-300 rounded-md p-2": !item[type] && !isExpanded,
           })}
         ></div>
-        <span className="text-sm whitespace-nowrap">{(item[type] || 0).toFixed(1)} Kg/m2</span>
+        <span className="text-sm whitespace-nowrap">{(item[type] || 0).toFixed(1)} {type === "co2" ? "KgCO₂/m²" : "MJ/m²"}</span>
       </div>
     </li>
   );

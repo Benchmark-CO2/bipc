@@ -44,7 +44,7 @@ const UserActiveWarning = () => {
   };
 
   return (
-    <div className="w-[calc(100%+48px)] p-2 bg-amber-500 text-white border m-[-24px] mb-4">
+    <div className="w-full p-2 bg-amber-500 text-white border mb-4">
       <p className="text-sm">
         <strong>{t("common.activeUserWarning.title")} - </strong>
         {t("common.activeUserWarning.description")}{" "}
