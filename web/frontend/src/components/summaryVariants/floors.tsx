@@ -8,7 +8,6 @@ import { TabsContainer } from "../ui/tabsContainer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
-import Subtitle from "./components/Subtitle";
 import { barColors, stackData } from "./utils";
 
 type ProjectsSummaryProps = {
@@ -63,13 +62,37 @@ const FloorSummary = ({
     }
   };
 
+  const [previousProjects, setPreviousProjects] = useState<any[]>([]);
+
   useEffect(() => {
-    setSelectedProjects(
-      selectedProjects.filter(
-        (id) => selectedFloors.find((u) => u.id === id) !== undefined
-      )
+    setPreviousProjects(
+      selectedFloors.map(el => el.id)
     );
   }, [selectedFloors]);
+
+
+  useEffect(() => {
+    if (previousProjects.length < selectedFloors.length) {
+      const diff = selectedFloors.filter(
+        (p) => !previousProjects.includes(p.id)
+      );
+      if (diff.length > 0) {
+        setSelectedProjects((prev) => [
+          ...prev,
+          ...diff.map((d) => d.id),
+        ]);
+      }
+    } else if (previousProjects.length > selectedFloors.length) {
+      const diff = previousProjects.filter(
+        (p) => !selectedFloors.map((u) => u.id).includes(p)
+      );
+      if (diff.length > 0) {
+        setSelectedProjects((prev) =>
+          prev.filter((p) => !diff.includes(p))
+        );
+      }
+    }
+  }, [previousProjects, selectedFloors]);
 
   const [subTabs, setSubTabs] = useState<"Pavimentos">("Pavimentos");
   const selectAll = () => {
@@ -175,7 +198,7 @@ const FloorSummary = ({
                       >
                         <span className="text-black text-base p-2">
                           {f.name}: {Math.round((f.avg || 0) * 10) / 10}{" "}
-                          KgCO₂/m²
+                          {type === "co2" ? "KgCO₂/m²" : "MJ/m²"}
                         </span>
                       </TooltipContent>
                     </Tooltip>

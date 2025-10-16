@@ -1,6 +1,7 @@
 import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
 import Logo from "@/assets/logo_full.svg";
-import D3GradientRangeChart from "@/components/charts/d3chart";
+import D3GradientRangeChart from '@/components/charts/d3chart';
+import D3GradientRangeLineChart from '@/components/charts/d3chartLine';
 import {
   Select,
   SelectContent,
@@ -10,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from 'react';
 import { useTranslation } from "react-i18next";
 export const Route = createFileRoute("/(public)/")({
   component: RouteComponent,
@@ -19,7 +21,6 @@ export const Route = createFileRoute("/(public)/")({
     };
   },
 });
-
 function RouteComponent() {
   const { auth } = Route.useLoaderData();
   const { t } = useTranslation();
@@ -34,6 +35,10 @@ function RouteComponent() {
   }));
   const width = (window.innerWidth - 221) * 0.5;
   const height = (window.innerHeight) * 0.5;
+
+
+const [selectedChart, setSelectedChart] = useState('trend');
+
   return (
     <div className="h-full w-full flex items-start pt-40 justify-between max-md:flex-col">
       <div className="flex flex-col  gap-4 w-1/3 px-16 max-w-[500px] mx-auto max-md:w-full max-md:p-8">
@@ -64,16 +69,16 @@ function RouteComponent() {
         </p>
       </div>
       <div className="w-2/3 flex flex-col items-start">
-        <Select>
+        <Select onValueChange={setSelectedChart} value={selectedChart}>
           <SelectTrigger className="w-[200px] self-start mb-4">
             <SelectValue placeholder="Gráfico" />
           </SelectTrigger>
           <SelectContent defaultValue={"co2"}>
+            <SelectItem value='trend'>Tendência</SelectItem>
             <SelectItem value="co2">Fração Acumuladas</SelectItem>
-            {/* <SelectItem value='energia'>Energia</SelectItem> */}
           </SelectContent>
         </Select>
-        <D3GradientRangeChart width={width} height={height} data={chartData} overrideDimensions/>
+        {selectedChart === 'trend' ? <D3GradientRangeLineChart width={width} height={height} data={chartData} overrideDimensions /> : <D3GradientRangeChart width={width} height={height} data={chartData} overrideDimensions />}
         <div className="w-[95%] flex items-center gap-2 justify-between my-4">
           <Select>
             <SelectTrigger className="w-[200px]">
