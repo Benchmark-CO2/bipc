@@ -77,6 +77,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		data := map[string]any{
 			"activationToken": token.Plaintext,
 			"userID":          user.ID,
+			"url":             app.config.url,
 		}
 
 		err = app.mailer.Send(user.Email, "user_welcome.gohtml", data)

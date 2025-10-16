@@ -9,12 +9,11 @@ StartLimitBurst=5
 
 [Service]
 Type=exec
-User=bipc
-Group=bipc
+User=ubuntu
+Group=ubuntu
 EnvironmentFile=/etc/environment
-WorkingDirectory=/home/bipc
-ExecStart=/home/bipc/api -port=4000 -env=production -db-dsn=${DB_DSN} -smtp-host=${SMTP_HOST} -smtp-port=${SMTP_PORT} -smtp-username=${SMTP_USERNAME} -smtp-password=${SMTP_PASSWORD} -smtp-sender=${SMTP_SENDER} \
-    -s3-endpoint=${S3_ENDPOINT} -s3-access-key=${S3_ACCESS_KEY} -s3-secret-key=${S3_SECRET_KEY} -s3-secure=${S3_SECURE} -s3-region=${S3_REGION} -s3-bucket=${S3_BUCKET} -s3-base-url=${S3_BASE_URL}
+WorkingDirectory=/home/ubuntu
+ExecStart=/home/ubuntu/api -port=4000 -env=production -url=${URL} -db-dsn=${DB_DSN} -smtp-host=${SMTP_HOST} -smtp-port=${SMTP_PORT} -smtp-username=${SMTP_USERNAME} -smtp-password=${SMTP_PASSWORD} -smtp-sender=${SMTP_SENDER}
 
 Restart=on-failure
 RestartSec=5

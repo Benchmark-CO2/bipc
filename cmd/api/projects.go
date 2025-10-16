@@ -336,6 +336,7 @@ func (app *application) inviteUserHandler(w http.ResponseWriter, r *http.Request
 		data := map[string]any{
 			"projectName": project.Name,
 			"inviterName": user.Name,
+			"url":         app.config.url,
 		}
 
 		err = app.mailer.Send(input.Email, "invitation.gohtml", data)

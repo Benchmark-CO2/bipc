@@ -2,7 +2,7 @@
   email bruno.souza.avelino2@gmail.com
 }
 
-bip.software {
+bipc.org.br {
   respond /v1/metrics "Not Permitted" 403
   reverse_proxy localhost:4000
 }

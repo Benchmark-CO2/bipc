@@ -6,13 +6,13 @@ set -eu
 
 TIMEZONE=America/Sao_Paulo
 
-USERNAME=bipc
-
 export LC_ALL=en_US.UTF-8
 
 # ==================================================================================== #
 # SCRIPT LOGIC
 # ==================================================================================== #
+
+apt --yes install software-properties-common
 
 add-apt-repository --yes universe
 
@@ -20,13 +20,6 @@ apt update
 
 timedatectl set-timezone ${TIMEZONE}
 apt --yes install locales-all
-
-useradd --create-home --shell "/bin/bash" --groups sudo "${USERNAME}"
-
-passwd --delete "${USERNAME}"
-chage --lastday 0 "${USERNAME}"
-
-rsync --archive --chown=${USERNAME}:${USERNAME} /root/.ssh /home/${USERNAME}
 
 ufw allow 22
 ufw allow 80/tcp
