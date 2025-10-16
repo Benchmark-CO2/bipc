@@ -142,7 +142,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
   const xScale = d3.scaleLinear().domain([0, 1]).range([0, _width]);
 
-  const yScale = d3.scaleLinear().domain([0, maxValue]).range([0, _height]);
+  const yScale = d3.scaleLinear().domain([0, maxValue * 1.05]).range([0, _height]);
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -166,14 +166,14 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       .attr("class", "tooltip-line")
       .attr("stroke", "#aaa")
       .attr("stroke-width", 1)
-      .attr("y1", 0)
-      .attr("y2", _height)
+      .attr("y1", margin.top)
+      .attr("y2", _height + margin.top)
       .style("opacity", 0);
 
     const horizontalLine = g
       .append("line")
       .attr("class", "tooltip-line")
-      .attr("stroke", "#aaa")
+      .attr("stroke", "#333")
       .attr("stroke-width", 1)
       .attr("x1", 0)
       .attr("x2", _width)
@@ -181,7 +181,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     const horizontalLine2 = g
       .append("line")
       .attr("class", "tooltip-line")
-      .attr("stroke", "#aaa")
+      .attr("stroke", "#333")
       .attr("stroke-width", 1)
       .attr("x1", 0)
       .attr("x2", _width)
@@ -196,40 +196,46 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       .attr("fill", "none")
       .attr("pointer-events", "all")
       .on("mousemove", (event) => {
-        const [mx] = d3.pointer(event);
-        const x0 = xScale.invert(mx - margin.left);
+        const [mx, my] = d3.pointer(event, g.node());
+        const x0 = xScale.invert(mx);
+        const y0 = yScale.invert(my);
+        // função pra achar o ponto mais próximo em um dataset
+        const getClosest = (data: DataPoint[], x: number) => {
+          const bisect = d3.bisector((d: DataPoint) => d.x).center;
+          const i = bisect(data, x);
+          const clamp = (idx: number) =>
+            Math.max(0, Math.min(idx, data.length - 1));
+          return data[clamp(i)];
+        };
 
-        const bisect = d3.bisector((d: DataPoint) => d.x).left;
-        const bisectMin = d3.bisector((d: DataPoint) => d.x).left;
-
-        const i = bisect(denormalizedMax, x0);
-        
-        const clampIndex = (arr: any[], idx: number) =>
-          Math.max(0, Math.min(idx, arr.length - 1));
-        
-        const idx = clampIndex(denormalizedMax, i);
-        const iMin = clampIndex(denormalizedMin, bisectMin(denormalizedMin, x0));
-
-        const dMax = denormalizedMax[idx];
-        const dMin = denormalizedMin[iMin];
+        const dMax = getClosest(denormalizedMax, x0);
+        const dMin = getClosest(denormalizedMin, x0);
 
         verticalLine
-          .attr("x1", xScale(dMax.x))
-          .attr("x2", xScale(dMax.x))
+          .attr("x1", xScale(x0))
+          .attr("x2", xScale(x0))
           .style("opacity", 1);
 
         horizontalLine
-          .attr("y1", yScale(dMax.y) - margin.top)
-          .attr("y2", yScale(dMax.y) - margin.top)
+          .attr("x1", 0)
+          .attr("x2", _width)
+          .attr("y1", yScale(dMax.y))
+          .attr("y2", yScale(dMax.y))
           .style("opacity", 1);
+
         horizontalLine2
-          .attr("y1", yScale(dMin.y) - margin.top)
-          .attr("y2", yScale(dMin.y) - margin.top)
+          .attr("x1", 0)
+          .attr("x2", _width)
+          .attr("y1", yScale(dMin.y))
+          .attr("y2", yScale(dMin.y))
           .style("opacity", 1);
-        // Atualiza tooltip
+
         _setTooltip({
-          x: xScale(dMax.x) > _width/2 ? xScale(dMax.x) - 100 : xScale(dMax.x) + 100,
-          y: Math.min(yScale(dMax.y), yScale(dMin.y)),
+          x:
+            xScale(dMax.x) > _width / 2
+              ? xScale(dMax.x) - 100
+              : xScale(dMax.x) + 100,
+          y: yScale(y0),
           value: {
             min: dMin.y,
             max: dMax.y,
@@ -246,7 +252,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
     // Grid de fundo
     const xTicks = xScale.ticks(isExpanded ? 30 : 10);
-    const yTicks = yScale.ticks(8);
+    const yTicks = yScale.ticks(12);
 
     g.selectAll(".grid-line-x")
       .data(xTicks)
@@ -314,7 +320,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       .attr("fill", "none")
       .attr("stroke", "#3b82f6")
       .attr("stroke-width", 4)
-      .attr("transform", `translate(${margin.left},0)`)
+      .attr("transform", `translate(${margin.left},${margin.top})`)
       .attr(
         "d",
         d3
@@ -330,7 +336,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       .attr("stroke", "#E36F35")
       .attr("stroke-width", 4)
       .attr("stroke-dasharray", "6 3")
-      .attr("transform", `translate(${margin.left},0)`)
+      .attr("transform", `translate(${margin.left},${margin.top})`)
       .attr(
         "d",
         d3
