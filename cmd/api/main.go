@@ -16,8 +16,6 @@ import (
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/mailer"
 	"github.com/Benchmark-CO2/bipc/internal/vcs"
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 
 	_ "github.com/lib/pq"
 )
@@ -29,6 +27,7 @@ var (
 type config struct {
 	port int
 	env  string
+	url  string
 	db   struct {
 		dsn          string
 		maxOpenConns int
@@ -50,24 +49,14 @@ type config struct {
 	cors struct {
 		trustedOrigins []string
 	}
-	S3 struct {
-		endpoint  string
-		accessKey string
-		secretKey string
-		secure    bool
-		region    string
-		bucket    string
-		baseURL   string
-	}
 }
 
 type application struct {
-	config       config
-	logger       *slog.Logger
-	models       data.Models
-	mailer       *mailer.Mailer
-	S3LikeClient *minio.Client
-	wg           sync.WaitGroup
+	config config
+	logger *slog.Logger
+	models data.Models
+	mailer *mailer.Mailer
+	wg     sync.WaitGroup
 }
 
 func main() {
@@ -75,6 +64,7 @@ func main() {
 
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|production)")
+	flag.StringVar(&cfg.url, "url", "", "Base URL")
 
 	flag.StringVar(&cfg.db.dsn, "db-dsn", "", "PostgreSQL DSN")
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 22, "PostgreSQL max open connections")
@@ -90,14 +80,6 @@ func main() {
 	flag.StringVar(&cfg.smtp.username, "smtp-username", "", "SMTP username")
 	flag.StringVar(&cfg.smtp.password, "smtp-password", "", "SMTP password")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "", "SMTP sender")
-
-	flag.StringVar(&cfg.S3.endpoint, "s3-endpoint", "", "S3 endpoint")
-	flag.StringVar(&cfg.S3.accessKey, "s3-access-key", "", "S3 access key")
-	flag.StringVar(&cfg.S3.secretKey, "s3-secret-key", "", "S3 secret key")
-	flag.BoolVar(&cfg.S3.secure, "s3-secure", true, "Use secure connection for S3")
-	flag.StringVar(&cfg.S3.region, "s3-region", "", "S3 region")
-	flag.StringVar(&cfg.S3.bucket, "s3-bucket", "", "S3 bucket name")
-	flag.StringVar(&cfg.S3.baseURL, "s3-base-url", "", "Origin or CDN Endpoint")
 
 	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {
 		cfg.cors.trustedOrigins = strings.Fields(val)
@@ -129,16 +111,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	minioClient, err := minio.New(cfg.S3.endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(cfg.S3.accessKey, cfg.S3.secretKey, ""),
-		Secure: cfg.S3.secure,
-		Region: cfg.S3.region,
-	})
-	if err != nil {
-		logger.Error("minio.New: " + err.Error())
-		os.Exit(1)
-	}
-
 	expvar.NewString("version").Set(version)
 
 	expvar.Publish("goroutines", expvar.Func(func() any {
@@ -154,11 +126,10 @@ func main() {
 	}))
 
 	app := &application{
-		config:       cfg,
-		logger:       logger,
-		models:       data.NewModels(db),
-		mailer:       mailer,
-		S3LikeClient: minioClient,
+		config: cfg,
+		logger: logger,
+		models: data.NewModels(db),
+		mailer: mailer,
 	}
 
 	err = app.serve()

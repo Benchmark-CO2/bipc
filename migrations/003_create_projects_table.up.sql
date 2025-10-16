@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS projects (
     number TEXT,
     phase TEXT NOT NULL,
     description TEXT,
-    image_url TEXT,
+    image_id UUID,
     UNIQUE (user_id, name)
 );
 

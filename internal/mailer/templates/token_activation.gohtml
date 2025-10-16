@@ -2,7 +2,7 @@
 
 {{define "plainBody"}}
 Hi, 
-Access this link http://bipc.com.br/activate?tkn={{.activationToken}} to activate your account.
+Access this link {{.url}}/activate?tkn={{.activationToken}} to activate your account.
 Please note that this is a one-time use token and it will expire in 3 days.
 Thanks, The BIPC Team
 {{ end }}
@@ -16,7 +16,7 @@ Thanks, The BIPC Team
   </head>
   <body>
     <p>Hi,</p>
-    <p>Access <a href="http://bipc.com.br/activate?tkn={{.activationToken}}">this link</a> to activate your account.</p>
+    <p>Access <a href="{{.url}}/activate?tkn={{.activationToken}}">this link</a> to activate your account.</p>
     <p>
       Please note that this is a one-time use token and it will expire in 3 days.
     </p>

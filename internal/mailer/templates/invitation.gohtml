@@ -3,7 +3,7 @@
 {{define "plainBody"}}
 Hi, 
 You`ve been invited by {{.inviterName}} to join the project "{{.projectName}}".
-To accept the invitation, log in to the platform: https://bipc.com.br/login
+To accept the invitation, log in to the platform: {{.url}}/login
 This invitation will expire in 7 days.
 Thanks,
 The BIPC Team
@@ -20,7 +20,7 @@ The BIPC Team
     <p>Hi,</p>
     <p>You`ve been invited by <strong>{{.inviterName}}</strong> to join the project "<strong>{{.projectName}}</strong>".</p>
     <p>
-      To accept the invitation, log in to the platform: <a href="http://bipc.com.br/login">log in here</a>.
+      To accept the invitation, log in to the platform: <a href="{{.url}}/login">log in here</a>.
     </p>
     <p>This invitation will expire in 7 days.</p>
     <p>

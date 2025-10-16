@@ -16,7 +16,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		Name       string     `json:"name"`
 		Email      string     `json:"email"`
 		Password   string     `json:"password"`
-		ImageURL   *uuid.UUID `json:"image_url"`
+		ImageID    *uuid.UUID `json:"image_id"`
 		Crea_Cau   *string    `json:"crea_cau"`
 		Birthdate  *time.Time `json:"birthdate"`
 		City       *string    `json:"city"`
@@ -34,7 +34,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		Name:       input.Name,
 		Email:      input.Email,
 		Activated:  false,
-		ImageURL:   input.ImageURL,
+		ImageID:    input.ImageID,
 		Crea_Cau:   input.Crea_Cau,
 		Birthdate:  input.Birthdate,
 		City:       input.City,
@@ -77,6 +77,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		data := map[string]any{
 			"activationToken": token.Plaintext,
 			"userID":          user.ID,
+			"url":             app.config.url,
 		}
 
 		err = app.mailer.Send(user.Email, "user_welcome.gohtml", data)
@@ -95,10 +96,15 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 	user := app.contextGetUser(r)
 
 	var input struct {
-		Name     *string    `json:"name"`
-		Email    *string    `json:"email"`
-		Password *string    `json:"password"`
-		ImageURL *uuid.UUID `json:"image_url"`
+		Name       *string    `json:"name"`
+		Email      *string    `json:"email"`
+		Password   *string    `json:"password"`
+		ImageID    *uuid.UUID `json:"image_id"`
+		Crea_Cau   *string    `json:"crea_cau"`
+		Birthdate  *time.Time `json:"birthdate"`
+		City       *string    `json:"city"`
+		Activity   *string    `json:"activity"`
+		Enterprise *string    `json:"enterprise"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -124,8 +130,28 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	if input.ImageURL != nil {
-		user.ImageURL = input.ImageURL
+	if input.ImageID != nil {
+		user.ImageID = input.ImageID
+	}
+
+	if input.Crea_Cau != nil {
+		user.Crea_Cau = input.Crea_Cau
+	}
+
+	if input.Birthdate != nil {
+		user.Birthdate = input.Birthdate
+	}
+
+	if input.City != nil {
+		user.City = input.City
+	}
+
+	if input.Activity != nil {
+		user.Activity = input.Activity
+	}
+
+	if input.Enterprise != nil {
+		user.Enterprise = input.Enterprise
 	}
 
 	v := validator.New()

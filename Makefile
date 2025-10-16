@@ -8,14 +8,6 @@
 # export SMTP_USERNAME=
 # export SMTP_PASSWORD=
 # export SMTP_SENDER=
-#
-# export S3_ENDPOINT=
-# export S3_ACCESS_KEY=
-# export S3_SECRET_KEY=
-# export S3_SECURE=
-# export S3_REGION=
-# export S3_BUCKET=
-# export S3_BASE_URL=
 
 include .envrc
 
@@ -48,7 +40,6 @@ ALPINE     := alpine:3.22
 POSTGRES   := postgres:17.5
 NODE       := node:24-slim
 MAILHOG    := mailhog/mailhog:v1.0.1
-MINIO      := minio/minio:RELEASE.2025-04-22T22-12-26Z
 BIPC_IMAGE := localhost/bipc:latest
 	
 # ==================================================================================== #
@@ -75,7 +66,6 @@ dev/gotooling:
 	 go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 	 go install honnef.co/go/tools/cmd/staticcheck@latest
 	 go install golang.org/x/vuln/cmd/govulncheck@latest
-	 go install github.com/minio/mc@latest
 
 ## dev/docker: pull all required Docker images for development
 .PHONY: dev/docker
@@ -85,7 +75,6 @@ dev/docker:
 	docker pull $(POSTGRES) & \
 	docker pull $(NODE) & \
 	docker pull $(MAILHOG) & \
-	docker pull $(MINIO) & \
 	wait;
 
 ## docker/build: build the Docker image for the application
@@ -128,9 +117,7 @@ run/help:
 ## run/api: run the cmd/api application
 .PHONY: run/api
 run/api:
-	go run ./cmd/api -port=4000 -env=development -db-dsn=$(DB_DSN) -limiter-enabled=false \
-	-smtp-host=$(SMTP_HOST) -smtp-port=$(SMTP_PORT) -smtp-username=$(SMTP_USERNAME) -smtp-password=$(SMTP_PASSWORD) -smtp-sender=$(SMTP_SENDER) \
-	-s3-endpoint=$(S3_ENDPOINT) -s3-access-key=$(S3_ACCESS_KEY) -s3-secret-key=$(S3_SECRET_KEY) -s3-secure=$(S3_SECURE) -s3-region=$(S3_REGION) -s3-bucket=$(S3_BUCKET) -s3-base-url=$(S3_BASE_URL)
+	go run ./cmd/api -url=$(URL) -db-dsn=$(DB_DSN) -smtp-host=$(SMTP_HOST) -smtp-port=$(SMTP_PORT) -smtp-sender=$(SMTP_SENDER)
 
 ## migrations/new name=$1: create a new database migration
 .PHONY: migrations/new
@@ -151,13 +138,6 @@ migrations/down:
 .PHONY: migrations/down-one
 migrations/down-one:
 	migrate -path ./migrations -database $(DB_DSN) down 1
-
-## minio/local: setup MinIO local storage
-.PHONY: minio/local
-minio/local:
-	mc alias set local http://localhost:9000 minioadmin minioadmin
-	mc mb local/bipc
-	mc anonymous set download local/bipc
 
 # ==================================================================================== #
 # QUALITY CONTROL
@@ -199,22 +179,22 @@ build/api:
 # PRODUCTION
 # ==================================================================================== #
 
-production_host_ip = 68.183.24.32
+production_host_ip = 54.232.135.165
 
 ## production/connect: connect to the production server
 .PHONY: production/connect
 production/connect:
-	ssh -i ~/.ssh/id_rsa_bipc bipc@$(production_host_ip)
+	ssh -i ~/.ssh/mestra.pem ubuntu@$(production_host_ip)
 
 ## production/deploy/api: deploy the api to production
 .PHONY: production/deploy/api
 production/deploy/api:
-	rsync -P -e "ssh -i ~/.ssh/id_rsa_bipc" ./bin/linux_amd64/api bipc@$(production_host_ip):~
-	rsync -rP --delete -e "ssh -i ~/.ssh/id_rsa_bipc" ./migrations bipc@$(production_host_ip):~
-	rsync -P -e "ssh -i ~/.ssh/id_rsa_bipc" .envrc bipc@$(production_host_ip):~
-	rsync -P -e "ssh -i ~/.ssh/id_rsa_bipc" ./remote/production/api.service bipc@$(production_host_ip):~
-	rsync -P -e "ssh -i ~/.ssh/id_rsa_bipc" ./remote/production/Caddyfile bipc@$(production_host_ip):~
-	ssh -t -i ~/.ssh/id_rsa_bipc bipc@$(production_host_ip) '\
+	rsync -P -e "ssh -i ~/.ssh/mestra.pem" ./bin/linux_amd64/api ubuntu@$(production_host_ip):~
+	rsync -rP --delete -e "ssh -i ~/.ssh/mestra.pem" ./migrations ubuntu@$(production_host_ip):~
+	rsync -P -e "ssh -i ~/.ssh/mestra.pem" .envrc ubuntu@$(production_host_ip):~
+	rsync -P -e "ssh -i ~/.ssh/mestra.pem" ./remote/production/api.service ubuntu@$(production_host_ip):~
+	rsync -P -e "ssh -i ~/.ssh/mestra.pem" ./remote/production/Caddyfile ubuntu@$(production_host_ip):~
+	ssh -t -i ~/.ssh/mestra.pem ubuntu@$(production_host_ip) '\
 		migrate -path ~/migrations -database $(DB_DSN) up \
 		&& sudo mv ~/.envrc /etc/environment \
 		&& sudo systemctl daemon-reload \
@@ -227,6 +207,6 @@ production/deploy/api:
 
 # journalctl -xeu api.service
 # sudo systemctl status api.service
-# ssh -L :9999:$(production_host_ip):4000 -i ~/.ssh/id_rsa_bipc bipc@$(production_host_ip)
+# ssh -L :9999:$(production_host_ip):4000 -i ~/.ssh/mestra.pem ubuntu@$(production_host_ip)
 
 
