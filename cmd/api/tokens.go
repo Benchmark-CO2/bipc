@@ -109,6 +109,7 @@ func (app *application) createPasswordResetTokenHandler(w http.ResponseWriter, r
 	app.background(func() {
 		data := map[string]any{
 			"passwordResetToken": token.Plaintext,
+			"url":                app.config.url,
 		}
 
 		err := app.mailer.Send(user.Email, "token_password_reset.gohtml", data)
@@ -170,6 +171,7 @@ func (app *application) createActivationTokenHandler(w http.ResponseWriter, r *h
 	app.background(func() {
 		data := map[string]any{
 			"activationToken": token.Plaintext,
+			"url":             app.config.url,
 		}
 
 		err := app.mailer.Send(user.Email, "token_activation.gohtml", data)

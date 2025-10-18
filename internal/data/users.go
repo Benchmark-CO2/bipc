@@ -25,7 +25,7 @@ type User struct {
 	Email      string     `json:"email"`
 	Password   password   `json:"-"`
 	Activated  bool       `json:"activated"`
-	ImageURL   *uuid.UUID `json:"image_url,omitzero"`
+	ImageID    *uuid.UUID `json:"image_id,omitzero"`
 	Crea_Cau   *string    `json:"crea_cau,omitzero"`
 	Birthdate  *time.Time `json:"birthdate,omitzero"`
 	City       *string    `json:"city,omitzero"`
@@ -127,11 +127,11 @@ func (m UserModel) Insert(user *User) error {
 	user.ID = userID
 
 	query := `
-        INSERT INTO users (id, name, email, password_hash, activated, image_url, crea_cau, birthdate, city, activity, enterprise) 
+        INSERT INTO users (id, name, email, password_hash, activated, image_id, crea_cau, birthdate, city, activity, enterprise) 
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING created_at`
 
-	args := []any{user.ID, user.Name, user.Email, user.Password.hash, user.Activated, user.ImageURL, user.Crea_Cau, user.Birthdate, user.City, user.Activity, user.Enterprise}
+	args := []any{user.ID, user.Name, user.Email, user.Password.hash, user.Activated, user.ImageID, user.Crea_Cau, user.Birthdate, user.City, user.Activity, user.Enterprise}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -151,7 +151,7 @@ func (m UserModel) Insert(user *User) error {
 
 func (m UserModel) GetByEmail(email string) (*User, error) {
 	query := `
-        SELECT id, created_at, name, email, password_hash, activated, image_url
+        SELECT id, created_at, name, email, password_hash, activated, image_id, crea_cau, birthdate, city, activity, enterprise
         FROM users
         WHERE email = $1`
 
@@ -167,7 +167,12 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 		&user.Email,
 		&user.Password.hash,
 		&user.Activated,
-		&user.ImageURL,
+		&user.ImageID,
+		&user.Crea_Cau,
+		&user.Birthdate,
+		&user.City,
+		&user.Activity,
+		&user.Enterprise,
 	)
 
 	if err != nil {
@@ -185,15 +190,20 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 func (m UserModel) Update(user *User) error {
 	query := `
         UPDATE users 
-        SET name = $1, email = $2, password_hash = $3, activated = $4, image_url = $5
-        WHERE id = $6`
+        SET name = $1, email = $2, password_hash = $3, activated = $4, image_id = $5, crea_cau = $6, birthdate = $7, city = $8, activity = $9, enterprise = $10
+        WHERE id = $11`
 
 	args := []any{
 		user.Name,
 		user.Email,
 		user.Password.hash,
 		user.Activated,
-		user.ImageURL,
+		user.ImageID,
+		user.Crea_Cau,
+		user.Birthdate,
+		user.City,
+		user.Activity,
+		user.Enterprise,
 		user.ID,
 	}
 
@@ -226,7 +236,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 
 	query := `
-        SELECT users.id, users.created_at, users.name, users.email, users.password_hash, users.activated, users.image_url
+        SELECT users.id, users.created_at, users.name, users.email, users.password_hash, users.activated, users.image_id, users.crea_cau, users.birthdate, users.city, users.activity, users.enterprise
         FROM users
         INNER JOIN tokens
         ON users.id = tokens.user_id
@@ -248,7 +258,12 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 		&user.Email,
 		&user.Password.hash,
 		&user.Activated,
-		&user.ImageURL,
+		&user.ImageID,
+		&user.Crea_Cau,
+		&user.Birthdate,
+		&user.City,
+		&user.Activity,
+		&user.Enterprise,
 	)
 	if err != nil {
 		switch {
@@ -264,7 +279,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 
 func (m UserModel) Collaborators(userID uuid.UUID) ([]*User, error) {
 	query := `
-		SELECT users.id, users.created_at, users.name, users.email, users.activated, users.image_url
+		SELECT users.id, users.created_at, users.name, users.email, users.activated, users.image_id, users.crea_cau, users.birthdate, users.city, users.activity, users.enterprise
 		FROM users
 		INNER JOIN (
 			SELECT DISTINCT user_id
@@ -297,7 +312,12 @@ func (m UserModel) Collaborators(userID uuid.UUID) ([]*User, error) {
 			&user.Name,
 			&user.Email,
 			&user.Activated,
-			&user.ImageURL,
+			&user.ImageID,
+			&user.Crea_Cau,
+			&user.Birthdate,
+			&user.City,
+			&user.Activity,
+			&user.Enterprise,
 		)
 		if err != nil {
 			return nil, err

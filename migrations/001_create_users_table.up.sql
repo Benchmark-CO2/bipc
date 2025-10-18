@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     email citext UNIQUE NOT NULL,
     password_hash BYTEA NOT NULL,
     activated BOOLEAN NOT NULL,
-    image_url UUID,
+    image_id UUID,
     crea_cau TEXT,
     birthdate DATE,
     city TEXT,
