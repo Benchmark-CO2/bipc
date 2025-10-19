@@ -1,4 +1,6 @@
 import { TProjectPhase } from "@/types/projects";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
 
 interface ICustomBanner {
   name: string;
@@ -11,6 +13,7 @@ interface ICustomBanner {
   street?: string;
   number?: string;
   unitsCount?: number;
+  collapsed?: boolean;
 }
 
 const phaseLabels: Record<TProjectPhase, string> = {
@@ -40,11 +43,61 @@ const CustomBanner = ({
   street,
   number,
   unitsCount,
+  collapsed = false,
 }: ICustomBanner) => {
   const fullAddress = [street, number, neighborhood].filter(Boolean).join(", ");
+  const [isCollapsed, setIsCollapsed] = useState(collapsed);
 
+  const handleCollapseToggle = () => {
+    setIsCollapsed((prev) => {
+      const newState = !prev;
+      localStorage.setItem("@banner/collapsed", String(newState));
+      return newState;
+    });
+  };
+
+  // Modo colapsado - apenas name e phase
+  if (isCollapsed) {
+    return (
+      <div className="w-full max-md:w-11/12 h-16 shadow-md shadow-zinc-600 dark:shadow-zinc-900 rounded-lg mx-auto relative overflow-hidden transition-all duration-300">
+        {image && (
+          <img
+            className="h-full w-full object-cover z-1 absolute right-0 top-0 rounded-lg opacity-30"
+            src={image}
+            alt={name}
+          />
+        )}
+
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-800/85 to-slate-900/70 text-white rounded-lg">
+          <div className="h-full px-6 max-md:px-4 flex items-center justify-between">
+            <h1 className="text-lg max-md:text-base font-bold text-white truncate flex-1">
+              {name}
+            </h1>
+
+            <div className="flex items-center gap-3">
+              <span
+                className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-white shadow-md ${phaseColors[phase]}`}
+              >
+                {phaseLabels[phase]}
+              </span>
+
+              <button
+                onClick={handleCollapseToggle}
+                className="text-slate-300 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
+                aria-label="Expandir banner"
+              >
+                <ChevronDown className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Modo expandido - layout completo
   return (
-    <div className="w-full max-md:w-11/12 h-48 shadow-lg shadow-zinc-600 dark:shadow-zinc-900 rounded-lg mx-auto relative overflow-hidden">
+    <div className="w-full max-md:w-11/12 h-48 shadow-lg shadow-zinc-600 dark:shadow-zinc-900 rounded-lg mx-auto relative overflow-hidden transition-all duration-300">
       {image && (
         <img
           className="h-full w-full object-cover z-1 absolute right-0 top-0 rounded-lg"
@@ -75,13 +128,23 @@ const CustomBanner = ({
                 )}
               </div>
 
-              {/* Badges Section - Phase + Units */}
+              {/* Badges Section - Phase + Units + Collapse Button */}
               <div className="flex-shrink-0 flex flex-col gap-2 items-end">
-                <span
-                  className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-white shadow-md ${phaseColors[phase]}`}
-                >
-                  {phaseLabels[phase]}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-white shadow-md ${phaseColors[phase]}`}
+                  >
+                    {phaseLabels[phase]}
+                  </span>
+
+                  <button
+                    onClick={handleCollapseToggle}
+                    className="text-slate-300 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
+                    aria-label="Colapsar banner"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                  </button>
+                </div>
 
                 {unitsCount && unitsCount > 0 && (
                   <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-md px-3 py-1.5">

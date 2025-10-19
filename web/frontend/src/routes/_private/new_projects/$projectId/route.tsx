@@ -25,15 +25,21 @@ export const Route = createFileRoute("/_private/new_projects/$projectId")({
 
     const project: IProject = projectData?.data?.project;
 
+    const bannerCollapsed =
+      typeof window !== "undefined"
+        ? localStorage.getItem("@banner/collapsed") === "true"
+        : false;
+
     return {
       project,
       crumb: project?.name || "Projeto",
+      bannerCollapsed,
     };
   },
 });
 
 function RouteComponent() {
-  const { project } = Route.useLoaderData();
+  const { project, bannerCollapsed } = Route.useLoaderData();
 
   const isEditPath = window.location.pathname.includes("edit");
 
@@ -52,6 +58,7 @@ function RouteComponent() {
             street={project?.street}
             number={project?.number}
             unitsCount={project?.units?.length}
+            collapsed={bannerCollapsed}
           />
         )}
         <Outlet />
