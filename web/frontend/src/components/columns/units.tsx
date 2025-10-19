@@ -18,7 +18,9 @@ export const unitsColumns: ColumnDef<
     header: () => <div className="text-center">Área Total (m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original?.area?.toFixed(1)} m²` || "-"}
+        {row.original?.area?.toFixed(1)
+          ? `${row.original?.area?.toFixed(1)} m²`
+          : "-"}
       </div>
     ),
   },
@@ -27,7 +29,9 @@ export const unitsColumns: ColumnDef<
     header: () => <div className="text-center">CO2 max</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original?.co2_max.toFixed(1)} KgCO₂/m²` || "-"}
+        {row.original?.co2_max?.toFixed(1)
+          ? `${row.original?.co2_max?.toFixed(1)} KgCO₂/m²`
+          : "-"}
       </div>
     ),
   },
@@ -36,7 +40,9 @@ export const unitsColumns: ColumnDef<
     header: () => <div className="text-center">CO2 min</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original?.co2_min.toFixed(1)} KgCO₂/m²` || "-"}
+        {row.original?.co2_min?.toFixed(1)
+          ? `${row.original?.co2_min?.toFixed(1)} KgCO₂/m²`
+          : "-"}
       </div>
     ),
   },
@@ -45,7 +51,9 @@ export const unitsColumns: ColumnDef<
     header: () => <div className="text-center">Energia max</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original?.energy_max.toFixed(1)} MJ/m²` || "-"}
+        {row.original?.energy_max?.toFixed(1)
+          ? `${row.original?.energy_max?.toFixed(1)} MJ/m²`
+          : "-"}
       </div>
     ),
   },
@@ -54,7 +62,9 @@ export const unitsColumns: ColumnDef<
     header: () => <div className="text-center">Energia min</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original?.energy_min.toFixed(1)} MJ/m²` || "-"}
+        {row.original?.energy_min?.toFixed(1)
+          ? `${row.original?.energy_min?.toFixed(1)} MJ/m²`
+          : "-"}
       </div>
     ),
   },

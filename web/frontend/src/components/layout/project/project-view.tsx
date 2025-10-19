@@ -6,32 +6,19 @@ import UnitsSummary from "@/components/summaryVariants/units";
 import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
 import { useSummary } from "@/context/summaryContext";
-import { TProjectUnit } from "@/types/projects";
+import { TConsumption, TProjectUnit } from "@/types/projects";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import CommonTable from "../common-table";
 import DrawerFormUnit from "../drawer-form-unit";
 
-const fakeTechnologies = [
-  {
-    id: "1",
-    type: "concrete_wall",
-    co2_min: 50,
-    co2_max: 100,
-    energy_min: 200,
-    energy_max: 400,
-  },
-  {
-    id: "2",
-    type: "beam_column",
-    co2_min: 30,
-    co2_max: 80,
-    energy_min: 150,
-    energy_max: 300,
-  },
-];
-
-const ProjectView = ({ projectId }: { projectId: string }) => {
+const ProjectView = ({
+  projectId,
+  projectConsumptions,
+}: {
+  projectId: string;
+  projectConsumptions: TConsumption[];
+}) => {
   const { data: projectData } = useQuery({
     queryKey: ["project", projectId],
     queryFn: () => getProjectByUUID(projectId),
@@ -50,19 +37,21 @@ const ProjectView = ({ projectId }: { projectId: string }) => {
   const units =
     projectData?.data?.project?.units?.map((unit) => ({
       ...unit,
-      ...unit.consumption,
+      ...(unit?.consumptions?.total || {}),
     })) || [];
 
   useEffect(() => {
     if (!benchmarkData?.data) return;
     setSummaryContext({
-      component: <UnitsSummary
-        selectedUnits={selectedUnits as any}
-        project={projectData?.data?.project as any}
-        data={benchmarkData.data}
-        units={units || []}
-      />,
-      title:'Unidade Comparison',
+      component: (
+        <UnitsSummary
+          selectedUnits={selectedUnits as any}
+          project={projectData?.data?.project as any}
+          data={benchmarkData.data}
+          units={units || []}
+        />
+      ),
+      title: "Unidade Comparison",
     });
   }, [setSummaryContext, selectedUnits, benchmarkData]);
   return (
@@ -90,11 +79,11 @@ const ProjectView = ({ projectId }: { projectId: string }) => {
       <Divider />
       <CommonTable
         tableName="Tecnologias Construtivas"
-        data={fakeTechnologies}
+        data={projectConsumptions || []}
         columns={constructiveTechnologies}
         isSelectable={false}
         isInteractive={false}
-        collapsed={true}
+        collapsed={false}
       />
     </div>
   );

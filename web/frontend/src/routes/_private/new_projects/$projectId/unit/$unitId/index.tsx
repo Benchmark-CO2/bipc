@@ -1,4 +1,5 @@
 import { getFloorsBenchmark } from "@/actions/benchmarks/getFloors";
+import { getProjectByUUID } from "@/actions/projects/getProject";
 import { deleteUnit } from "@/actions/units/deleteUnit";
 import { getUnitByUUID } from "@/actions/units/getUnit";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
@@ -11,75 +12,53 @@ import Divider from "@/components/ui/divider";
 import { TabsContainer } from "@/components/ui/tabsContainer";
 import { useSummary } from "@/context/summaryContext";
 import { IConsumption } from "@/types/modules";
+import { TConsumptionPerModule } from "@/types/projects";
 import { IUnit, TTowerFloorCategory } from "@/types/units";
 import { getCategoryFromIndex } from "@/utils/unitConversions";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute, useParams } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useLoaderData,
+  useParams,
+} from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type TGroupedFloor = IConsumption &
-  Omit<TTowerFloorCategory, "consumption"> & {
+  Omit<TTowerFloorCategory, "consumptions"> & {
     repetitions: number;
     area: number;
   };
-
-const fakeUnit = {
-  id: "1",
-  name: "Unidade 1",
-  co2: "100 KgCO2/m²",
-  energy: "200 MJ/m²",
-  density: "50 m³/m²",
-  floors: [
-    {
-      id: "1",
-      co2: "50 KgCO2/m²",
-      energy: "100 MJ/m²",
-      density: "30 m³/m²",
-      repetitions: 1,
-      area: 100,
-      height: 3,
-      tower_name: "Torre A",
-      underground: false,
-      color: "#c9c9c9",
-    },
-    {
-      id: "2",
-      co2: "70 KgCO2/m²",
-      energy: "150 MJ/m²",
-      density: "40 m³/m²",
-      repetitions: 2,
-      area: 120,
-      height: 3,
-      tower_name: "Torre B",
-      underground: false,
-      color: "#d0d0d0",
-    },
-  ],
-  constructiveTechnologies: [
-    {
-      id: "1",
-      type: "concrete_wall",
-      co2_min: 50,
-      co2_max: 100,
-      energy_min: 200,
-      energy_max: 400,
-    },
-    {
-      id: "2",
-      type: "beam_column",
-      co2_min: 30,
-      co2_max: 80,
-      energy_min: 150,
-      energy_max: 300,
-    },
-  ],
-};
 
 export const Route = createFileRoute(
   "/_private/new_projects/$projectId/unit/$unitId/"
 )({
   component: RouteComponent,
+  loader: async ({ params, context }) => {
+    const { projectId, unitId } = params;
+
+    await context.queryClient.ensureQueryData({
+      queryKey: ["project", projectId],
+      queryFn: () => getProjectByUUID(projectId),
+    });
+
+    const projectData = context.queryClient.getQueryData<any>([
+      "project",
+      projectId,
+    ]);
+    const project = projectData?.data?.project;
+
+    const unit = project.units.find((u: IUnit) => u.id === unitId);
+    const unitConsumptions = Object.keys(unit?.consumptions)
+      .filter((key) => key !== "total")
+      .map((key) => ({
+        type: key,
+        ...(unit?.consumptions as TConsumptionPerModule)[
+          key as keyof TConsumptionPerModule
+        ],
+      }));
+    return { unitConsumptions };
+  },
 });
 
 // Type guard to check if the unit has tower property
@@ -89,6 +68,9 @@ function isUnitWithTower(unit: any): unit is IUnit {
 
 function RouteComponent() {
   const { projectId, unitId } = useParams({
+    from: "/_private/new_projects/$projectId/unit/$unitId/",
+  });
+  const { unitConsumptions } = useLoaderData({
     from: "/_private/new_projects/$projectId/unit/$unitId/",
   });
   const { setSummaryContext } = useSummary();
@@ -139,7 +121,6 @@ function RouteComponent() {
           floors={groupedFloors}
           data={benchmarkData.data}
           unit={unit as IUnit}
-
         />
       ),
       title: "Floor Comparison",
@@ -151,12 +132,20 @@ function RouteComponent() {
         unitWithTower.tower.floors.reduce(
           (acc, floor) => {
             const groupId = floor.group_id;
-            const { consumption, ...restFloor } = floor;
+            const { consumptions, ...restFloor } = floor;
+
+            // Provide default consumption values if consumption is undefined
+            const safeConsumption = consumptions?.total || {
+              co2_min: 0,
+              co2_max: 0,
+              energy_min: 0,
+              energy_max: 0,
+            };
 
             if (!acc[groupId]) {
               acc[groupId] = {
                 ...restFloor,
-                ...consumption,
+                ...safeConsumption,
                 area: restFloor.area,
                 repetitions: 1,
               };
@@ -168,19 +157,19 @@ function RouteComponent() {
                 acc[groupId].repetitions;
               acc[groupId].co2_min =
                 (acc[groupId].co2_min * (acc[groupId].repetitions - 1) +
-                  consumption.co2_min) /
+                  (safeConsumption.co2_min || 0)) /
                 acc[groupId].repetitions;
               acc[groupId].co2_max =
                 (acc[groupId].co2_max * (acc[groupId].repetitions - 1) +
-                  consumption.co2_max) /
+                  (safeConsumption.co2_max || 0)) /
                 acc[groupId].repetitions;
               acc[groupId].energy_min =
                 (acc[groupId].energy_min * (acc[groupId].repetitions - 1) +
-                  consumption.energy_min) /
+                  (safeConsumption.energy_min || 0)) /
                 acc[groupId].repetitions;
               acc[groupId].energy_max =
                 (acc[groupId].energy_max * (acc[groupId].repetitions - 1) +
-                  consumption.energy_max) /
+                  (safeConsumption.energy_max || 0)) /
                 acc[groupId].repetitions;
             }
 
@@ -307,11 +296,11 @@ function RouteComponent() {
       </div>
       <CommonTable
         tableName="Tecnologia Construtiva (módulo de cálculo)"
-        data={fakeUnit.constructiveTechnologies}
+        data={unitConsumptions}
         columns={constructiveTechnologies}
         isSelectable={false}
         isInteractive={false}
-        collapsed={true}
+        collapsed={false}
         actions={
           <Button
             variant="bipc"

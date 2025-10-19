@@ -11,22 +11,33 @@ export type TProjectPhase =
   | "released_for_construction";
 
 export type TConsumption = {
+  type?: TModulesTypes;
   co2_max: number;
   co2_min: number;
   energy_max: number;
   energy_min: number;
 };
 
+export type TConsumptionPerModule = {
+  [key in TModulesTypes | "total"]: TConsumption;
+};
+
 export type TProjectUnit = {
   name: string;
   id: string;
   type: TUnitType;
-  consumption: TConsumption;
+  consumptions?: TConsumptionPerModule;
   area: number;
 };
 
 export interface IProject {
-  [x: string]: string | TProjectUnit[] | TConsumption | TProjectPhase | number;
+  [x: string]:
+    | string
+    | TProjectUnit[]
+    | TProjectPhase
+    | number
+    | TConsumptionPerModule
+    | undefined;
   id: string;
   created_at: string;
   updated_at: string;
@@ -40,7 +51,7 @@ export interface IProject {
   phase: TProjectPhase;
   description: string;
   units: TProjectUnit[];
-  consumption: TConsumption;
+  consumptions?: TConsumptionPerModule;
   area: number;
   user_id: number;
 }
