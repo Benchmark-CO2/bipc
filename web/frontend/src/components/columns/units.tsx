@@ -106,7 +106,7 @@ export const unitsColumns: ColumnDef<
             unitId={row.original.id}
             triggerComponent={
               <Button variant="ghost" size="icon" disabled={isDeleting}>
-                <Edit className="h-4 w-4 text-blue-700" />
+                <Edit className="h-4 w-4 text-primary" />
               </Button>
             }
           />

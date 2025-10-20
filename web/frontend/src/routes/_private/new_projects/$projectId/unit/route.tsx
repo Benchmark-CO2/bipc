@@ -134,14 +134,30 @@ function RouteComponent() {
             fullWidth={location.pathname.includes("constructive-technologies")}
           />
           {!location.pathname.includes("constructive-technologies") && (
-            <DrawerFormUnit
-              projectId={projectId}
-              triggerComponent={
-                <Button variant="bipc" size="sm">
-                  <Plus className="w-16 h-16" />
-                </Button>
-              }
-            />
+            <>
+              <DrawerFormUnit
+                projectId={projectId}
+                triggerComponent={
+                  <Button variant="bipc" size="sm">
+                    <Plus className="w-16 h-16" />
+                  </Button>
+                }
+              />
+              <Button variant="outline-bipc" size="sm">
+                Importar
+              </Button>
+              {params.unitId && (
+                <DrawerFormUnit
+                  projectId={projectId}
+                  unitId={params.unitId}
+                  triggerComponent={
+                    <Button variant="outline-bipc" size="sm">
+                      Editar Unidade
+                    </Button>
+                  }
+                />
+              )}
+            </>
           )}
         </div>
       )}
