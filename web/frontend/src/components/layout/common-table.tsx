@@ -35,6 +35,7 @@ interface ICommonTableProps {
     data: Record<string, string | number>;
   };
   collapsed?: boolean;
+  onClickRow?: (rowData: any) => void;
 }
 
 export default function CommonTable({
@@ -47,6 +48,7 @@ export default function CommonTable({
   actions,
   lastRow,
   collapsed = false,
+  onClickRow,
 }: ICommonTableProps) {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
@@ -193,9 +195,10 @@ export default function CommonTable({
                       backgroundColor: index % 2 === 0 ? "#E3F3F6" : "#FBFEFE",
                     }}
                     data-state={row.getIsSelected() && "selected"}
+                    onClick={() => onClickRow && onClickRow(row.original)}
                   >
                     {isSelectable && (
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <Checkbox
                           className={
                             isInteractive

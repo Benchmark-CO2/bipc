@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import CommonTable from "../common-table";
 import DrawerFormUnit from "../drawer-form-unit";
+import { useNavigate } from "@tanstack/react-router";
 
 const ProjectView = ({
   projectId,
@@ -19,6 +20,7 @@ const ProjectView = ({
   projectId: string;
   projectConsumptions: TConsumption[];
 }) => {
+  const navigate = useNavigate();
   const { data: projectData } = useQuery({
     queryKey: ["project", projectId],
     queryFn: () => getProjectByUUID(projectId),
@@ -31,7 +33,6 @@ const ProjectView = ({
   const { setSummaryContext } = useSummary();
   const handleSelectionChange = (el: any) => {
     setSelectedUnits(el);
-    console.log("Selected items:", el);
   };
 
   const units =
@@ -39,6 +40,42 @@ const ProjectView = ({
       ...unit,
       ...(unit?.consumptions?.total || {}),
     })) || [];
+
+  const avgConsumptions = units.reduce(
+    (acc, unit) => {
+      const total = unit.consumptions?.total;
+      if (total) {
+        acc.co2_min += total.co2_min || 0;
+        acc.co2_max += total.co2_max || 0;
+        acc.energy_min += total.energy_min || 0;
+        acc.energy_max += total.energy_max || 0;
+        acc.area += unit.area || 0;
+      }
+      return acc;
+    },
+    {
+      co2_min: 0,
+      co2_max: 0,
+      energy_min: 0,
+      energy_max: 0,
+      area: 0,
+    }
+  );
+
+  if (units.length > 0) {
+    avgConsumptions.co2_min /= units.length;
+    avgConsumptions.co2_max /= units.length;
+    avgConsumptions.energy_min /= units.length;
+    avgConsumptions.energy_max /= units.length;
+    avgConsumptions.area /= units.length;
+  }
+
+  const finalAvgConsumptions = {
+    co2_min: `${avgConsumptions.co2_min.toFixed(1)} KgCO2/m²`,
+    co2_max: `${avgConsumptions.co2_max.toFixed(1)} KgCO2/m²`,
+    energy_min: `${avgConsumptions.energy_min.toFixed(1)} MJ/m²`,
+    energy_max: `${avgConsumptions.energy_max.toFixed(1)} MJ/m²`,
+  };
 
   useEffect(() => {
     if (!benchmarkData?.data) return;
@@ -63,18 +100,22 @@ const ProjectView = ({
         isSelectable={true}
         isInteractive={true}
         onSelectionChange={handleSelectionChange}
-        actions={
-          <>
-            <DrawerFormUnit
-              triggerComponent={
-                <Button variant="bipc" size="sm">
-                  Adicionar Unidade
-                </Button>
-              }
-              projectId={projectId}
-            />
-          </>
+        onClickRow={(rowData: TProjectUnit) =>
+          navigate({
+            to: `/new_projects/${projectId}/unit/${rowData.id}`,
+          })
         }
+        actions={
+          <DrawerFormUnit
+            triggerComponent={
+              <Button variant="bipc" size="sm">
+                Adicionar Unidade
+              </Button>
+            }
+            projectId={projectId}
+          />
+        }
+        lastRow={{ type: "Média", data: finalAvgConsumptions }}
       />
       <Divider />
       <CommonTable
