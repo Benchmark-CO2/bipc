@@ -1,7 +1,7 @@
 import { postEmailToResetPassword } from "@/actions/users/postEmailToResetPassword";
+import FullLogo from "@/assets/logo_full.svg";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import FullLogo from "@/assets/logo_full.svg";
 import {
   Card,
   CardContent,
@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Divider from "@/components/ui/divider";
-import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
@@ -20,18 +19,19 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { CheckCircle, Loader2, Mail, XCircle } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "@/components/ui/input";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
 import {
   forgetPasswordFormSchema,
   type ForgetPasswordFormSchema,
 } from "@/validators/forgetPasswordForm.validator";
-import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { CheckCircle, Loader2, Mail, XCircle } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/(public)/forget")({
   component: RouteComponent,
@@ -179,7 +179,7 @@ function RouteComponent() {
   return (
     <div
       className={cn(
-        "flex h-full w-full items-center justify-center transition-all overflow-auto",
+        "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar",
         {
           block: isMobile,
         }

@@ -1,7 +1,7 @@
 import { putResetPassword } from "@/actions/users/putResetPassword";
+import FullLogo from "@/assets/logo_full.svg";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import FullLogo from "@/assets/logo_full.svg";
 import {
   Card,
   CardContent,
@@ -10,8 +10,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import Divider from "@/components/ui/divider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
+import {
+  resetPasswordFormSchema,
+  type ResetPasswordFormSchema,
+} from "@/validators/resetPasswordForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import {
@@ -30,13 +37,6 @@ import {
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import {
-  resetPasswordFormSchema,
-  type ResetPasswordFormSchema,
-} from "@/validators/resetPasswordForm.validator";
-import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/useIsMobile";
-import Divider from "@/components/ui/divider";
 
 type ActivateSearch = {
   tkn?: string;
@@ -102,7 +102,7 @@ function RouteComponent() {
     return (
       <div
         className={cn(
-          "flex h-full w-full items-center justify-center transition-all overflow-auto",
+          "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar",
           {
             block: isMobile,
           }
@@ -125,7 +125,7 @@ function RouteComponent() {
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
-            <Button variant="outline" onClick={handleNavigateToLogin}>
+            <Button variant="outline" onClick={handleNavigateToLogin} className="w-full">
               {t("resetPassword.invalid.goToLogin")}
             </Button>
           </CardFooter>
