@@ -306,10 +306,10 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
     procelColors.reverse().forEach((color, i) => {
       g.append("rect")
-        .attr("y", 0)
+        .attr("y", _height - 10)
         .attr("x", i * faixaHeight)
         .attr("width", faixaHeight)
-        .attr("height", _height)
+        .attr("height", 10)
         .attr("fill", color)
         .attr("opacity", 0.5); // suaviza o fundo
     });
