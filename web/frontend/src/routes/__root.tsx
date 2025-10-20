@@ -70,12 +70,12 @@ export const Route = createRootRouteWithContext<{
           </div>
         )}
         {!isAuthenticated && (
-          <div
-            className={cn("flex flex-1", {
-              "flex-col": path.pathname === "/login" || isMobile,
-            })}
-          >
-            {path.pathname === "/login" ? <PublicHeader /> : <Sidebar />}
+          <div className={"flex flex-1 flex-col"}>
+            {isMobile ? (
+              <Sidebar handleLogout={handleLogout} />
+            ) : (
+              <PublicHeader />
+            )}
             <Screen>
               <Outlet />
             </Screen>

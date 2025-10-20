@@ -1,11 +1,10 @@
-import LogoDark from "@/assets/logo-dark.svg";
+import Logo from "@/assets/logo.svg";
 import LogoFull from "@/assets/logo_full.svg";
 import { useSummary } from "@/context/summaryContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useSidebar } from "@/hooks/useSidebar";
 import { cn } from "@/lib/utils";
-import { stringUtils } from "@/utils/string";
 import { Link } from "@tanstack/react-router";
 import {
   Activity,
@@ -16,16 +15,12 @@ import {
   FlaskConical,
   Info,
   LogIn,
-  MenuSquare,
+  Menu,
   Settings,
-  User,
   UserPlus,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Notifications } from "../notifications";
-import { SidebarLanguageToggle } from "../sidebar-language-toggle";
-import { SidebarThemeToggle } from "../sidebar-theme-toggle";
-import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Button } from "../ui/button";
 import Divider from "../ui/divider";
 import SidemenuItem from "../ui/sidemenu-item";
@@ -272,11 +267,11 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         )}
       >
         <div>
-          <img src={LogoDark} alt="Logo" className="h-8" />
+          <img src={Logo} alt="Logo" className="h-8" />
         </div>
-        <div className="flex gap-4 items-center">
+        <div className="flex gap-4 items-center text-accent">
           {isAuthenticated && <Notifications size={24} />}
-          <MenuSquare
+          <Menu
             size={24}
             className="text-white cursor-pointer"
             onClick={() => {
