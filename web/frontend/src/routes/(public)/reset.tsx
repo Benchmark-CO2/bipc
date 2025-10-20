@@ -125,7 +125,11 @@ function RouteComponent() {
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
-            <Button variant="outline" onClick={handleNavigateToLogin} className="w-full">
+            <Button
+              variant="outline"
+              onClick={handleNavigateToLogin}
+              className="w-full"
+            >
               {t("resetPassword.invalid.goToLogin")}
             </Button>
           </CardFooter>

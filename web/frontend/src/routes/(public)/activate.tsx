@@ -85,7 +85,11 @@ function RouteComponent() {
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
-            <Button variant="outline" onClick={handleNavigateToLogin} className="w-full">
+            <Button
+              variant="outline"
+              onClick={handleNavigateToLogin}
+              className="w-full"
+            >
               {t("activateUser.invalid.goToLogin")}
             </Button>
           </CardFooter>
@@ -121,7 +125,11 @@ function RouteComponent() {
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
-            <Button onClick={handleNavigateToLogin} variant="bipc" className="w-full">
+            <Button
+              onClick={handleNavigateToLogin}
+              variant="bipc"
+              className="w-full"
+            >
               {t("activateUser.success.goToLogin")}
             </Button>
           </CardFooter>
@@ -164,7 +172,11 @@ function RouteComponent() {
             </Alert>
           </CardContent>
           <CardFooter className="flex gap-2 justify-center">
-            <Button variant="outline" onClick={handleTryAgain} className="w-full">
+            <Button
+              variant="outline"
+              onClick={handleTryAgain}
+              className="w-full"
+            >
               {t("activateUser.error.retry")}
             </Button>
             {/* <Button variant="outline" onClick={handleNavigateToContact}>
@@ -233,7 +245,12 @@ function RouteComponent() {
           </CardDescription>
         </CardHeader>
         <CardFooter className="flex justify-center">
-          <Button onClick={handleActivateAccount} size="lg" variant="bipc" className="w-full">
+          <Button
+            onClick={handleActivateAccount}
+            size="lg"
+            variant="bipc"
+            className="w-full"
+          >
             {t("activateUser.confirm.confirmAction")}
           </Button>
         </CardFooter>
