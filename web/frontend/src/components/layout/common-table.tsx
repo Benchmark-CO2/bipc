@@ -232,7 +232,7 @@ export default function CommonTable({
                   </TableRow>
                 ))}
                 {lastRow && (
-                  <TableRow className="bg-secondary/20 hover:bg-secondary/30 font-semibold">
+                  <TableRow className="bg-gray-shade-300 hover:bg-gray-shade-300/30 font-semibold">
                     {isSelectable && <TableCell></TableCell>}
                     <TableCell className="font-semibold text-left">
                       {lastRow.type}
