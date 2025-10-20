@@ -1,6 +1,7 @@
 import { putResetPassword } from "@/actions/users/putResetPassword";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import FullLogo from "@/assets/logo_full.svg";
 import {
   Card,
   CardContent,
@@ -33,6 +34,9 @@ import {
   resetPasswordFormSchema,
   type ResetPasswordFormSchema,
 } from "@/validators/resetPasswordForm.validator";
+import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import Divider from "@/components/ui/divider";
 
 type ActivateSearch = {
   tkn?: string;
@@ -54,6 +58,7 @@ export const Route = createFileRoute("/(public)/reset")({
 
 function RouteComponent() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { t } = useTranslation();
   const { tkn: token } = useSearch({ from: "/(public)/reset" });
   const [showPassword, setShowPassword] = useState(false);
@@ -95,9 +100,20 @@ function RouteComponent() {
 
   if (!token) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-50 px-4">
-        <Card className="w-full max-w-md">
+      <div
+        className={cn(
+          "flex h-full w-full items-center justify-center transition-all overflow-auto",
+          {
+            block: isMobile,
+          }
+        )}
+      >
+        <Card className="w-full max-w-md rounded-md">
           <CardHeader className="text-center">
+            <div>
+              <img src={FullLogo} alt="" className="w-full mx-auto mb-2" />
+            </div>
+            <Divider className="bg-accent-foreground/10" />
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
               <XCircle className="h-6 w-6 text-red-600" />
             </div>
@@ -120,9 +136,20 @@ function RouteComponent() {
 
   if (resetPassMutation.isSuccess) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-50 px-4">
+      <div
+        className={cn(
+          "flex h-full w-full items-center justify-center transition-all overflow-auto",
+          {
+            block: isMobile,
+          }
+        )}
+      >
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
+            <div>
+              <img src={FullLogo} alt="" className="w-full mx-auto mb-2" />
+            </div>
+            <Divider className="bg-accent-foreground/10" />
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
@@ -134,7 +161,11 @@ function RouteComponent() {
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
-            <Button onClick={handleNavigateToLogin}>
+            <Button
+              variant="bipc"
+              className="w-full"
+              onClick={handleNavigateToLogin}
+            >
               {t("resetPassword.success.goToLogin")}
             </Button>
           </CardFooter>
@@ -145,9 +176,20 @@ function RouteComponent() {
 
   if (resetPassMutation.isError) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-50 px-4">
+      <div
+        className={cn(
+          "flex h-full w-full items-center justify-center transition-all overflow-auto",
+          {
+            block: isMobile,
+          }
+        )}
+      >
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
+            <div>
+              <img src={FullLogo} alt="" className="w-full mx-auto mb-2" />
+            </div>
+            <Divider className="bg-accent-foreground/10" />
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
               <XCircle className="h-6 w-6 text-red-600" />
             </div>
@@ -166,7 +208,11 @@ function RouteComponent() {
             </Alert>
           </CardContent>
           <CardFooter className="flex gap-2 justify-center">
-            <Button variant="outline" onClick={handleTryAgain}>
+            <Button
+              variant="outline"
+              onClick={handleTryAgain}
+              className="w-full"
+            >
               {t("resetPassword.error.retry")}
             </Button>
             {/* <Button variant="outline" onClick={handleNavigateToContact}>
@@ -180,9 +226,20 @@ function RouteComponent() {
 
   if (resetPassMutation.isPending) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-50 px-4">
+      <div
+        className={cn(
+          "flex h-full w-full items-center justify-center transition-all overflow-auto",
+          {
+            block: isMobile,
+          }
+        )}
+      >
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
+            <div>
+              <img src={FullLogo} alt="" className="w-full mx-auto mb-2" />
+            </div>
+            <Divider className="bg-accent-foreground/10" />
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
               <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
             </div>
@@ -199,9 +256,20 @@ function RouteComponent() {
   }
 
   return (
-    <div className="h-full flex items-center justify-center bg-gray-50 px-4">
+    <div
+      className={cn(
+        "flex h-full w-full items-center justify-center transition-all overflow-auto",
+        {
+          block: isMobile,
+        }
+      )}
+    >
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          <div>
+            <img src={FullLogo} alt="" className="w-full mx-auto mb-2" />
+          </div>
+          <Divider className="bg-accent-foreground/10" />
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
             <KeyRound className="h-6 w-6 text-blue-600" />
           </div>
@@ -284,7 +352,9 @@ function RouteComponent() {
             <Button
               type="submit"
               size="lg"
+              variant="bipc"
               disabled={resetPassMutation.isPending}
+              className="w-full"
             >
               {resetPassMutation.isPending ? (
                 <>

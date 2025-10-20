@@ -124,11 +124,11 @@ function RouteComponent() {
 
   return (
     <div>
-      <div className="mb-6 mt-6 flex justify-between gap-1">
+      <div className="mb-6 mt-6 flex justify-between gap-1 flex-wrap">
         <h1 className='text-4xl font-bold font-["helvetica"] text-primary '>
           Projetos
         </h1>
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2 ml-auto">
           {viewMode === "grid" && projects && projects.length > 0 && (
             <>
               <Button

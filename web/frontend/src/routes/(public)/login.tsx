@@ -77,10 +77,10 @@ const Login = () => {
         }
       )}
     >
-      <div className=" flex px-6 flex-col items-center justify-center gap-4 max-xl:w-1/2 max-lg:w-full border border-zinc-200 dark:border-zinc-800 rounded-md py-8">
+      <div className="flex px-6 flex-col items-center justify-center gap-4 max-xl:w-1/2 max-lg:w-full border border-zinc-200 dark:border-zinc-800 rounded-md py-8 bg-card">
         <div className="w-full max-w-md">
           <div>
-            <img src={FullLogo} alt="" className="w-[75%] mx-auto mb-2" />
+            <img src={FullLogo} alt="" className="w-full mx-auto mb-2" />
           </div>
 
           <Divider className="bg-accent-foreground/10" />
