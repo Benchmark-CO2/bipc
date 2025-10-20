@@ -2,6 +2,12 @@ import { TConsumption, TProjectUnit } from "@/types/projects";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "../ui/button";
+import ModalConfirmDelete from "../layout/modal-confirm-delete";
+import { useMutation } from "@tanstack/react-query";
+import { deleteUnit } from "@/actions/units/deleteUnit";
+import { toast } from "sonner";
+import { Edit, Loader2, Trash } from "lucide-react";
+import { DrawerFormUnit } from "../layout";
 
 export const unitsColumns: ColumnDef<
   Pick<TProjectUnit, "name" | "id" | "area"> & TConsumption
@@ -77,19 +83,46 @@ export const unitsColumns: ColumnDef<
         from: "/_private/new_projects/$projectId/",
       });
 
+      const { mutate: mutateDeleteUnit, isPending: isDeleting } = useMutation({
+        mutationFn: () => deleteUnit(projectId, row.original.id),
+        onSuccess: () => {
+          toast.success("Unidade excluída com sucesso");
+          navigate({ to: `/new_projects/${projectId}` });
+        },
+        onError: (error) => {
+          toast.error("Erro ao excluir unidade", {
+            description: error.message,
+          });
+        },
+      });
+
       return (
-        <div className="flex items-center gap-2 justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              navigate({
-                to: `/new_projects/${projectId}/unit/${row.original.id}`,
-              })
+        <div
+          className="flex items-center gap-1 justify-end"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <DrawerFormUnit
+            projectId={projectId}
+            unitId={row.original.id}
+            triggerComponent={
+              <Button variant="ghost" size="icon" disabled={isDeleting}>
+                <Edit className="h-4 w-4 text-blue-700" />
+              </Button>
             }
-          >
-            Detalhes
-          </Button>
+          />
+          <ModalConfirmDelete
+            title="Excluir Unidade"
+            onConfirm={mutateDeleteUnit}
+            componentTrigger={
+              <Button variant="ghost" size="icon" disabled={isDeleting}>
+                {isDeleting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash className="h-4 w-4 text-red-700" />
+                )}
+              </Button>
+            }
+          />
         </div>
       );
     },

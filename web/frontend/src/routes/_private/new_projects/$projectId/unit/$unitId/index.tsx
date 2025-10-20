@@ -1,11 +1,9 @@
 import { getFloorsBenchmark } from "@/actions/benchmarks/getFloors";
 import { getProjectByUUID } from "@/actions/projects/getProject";
-import { deleteUnit } from "@/actions/units/deleteUnit";
 import { getUnitByUUID } from "@/actions/units/getUnit";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import { floorsColumns } from "@/components/columns/floors";
 import { CommonTable, DrawerFormUnit } from "@/components/layout";
-import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
 import FloorSummary from "@/components/summaryVariants/floors";
 import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
@@ -15,14 +13,13 @@ import { IConsumption } from "@/types/modules";
 import { TConsumptionPerModule } from "@/types/projects";
 import { IUnit, TTowerFloorCategory } from "@/types/units";
 import { getCategoryFromIndex } from "@/utils/unitConversions";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
   useLoaderData,
   useParams,
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
 type TGroupedFloor = IConsumption &
   Omit<TTowerFloorCategory, "consumptions"> & {
@@ -97,19 +94,6 @@ function RouteComponent() {
   const { data: benchmarkData } = useQuery({
     queryKey: ["floor-benchmarks"],
     queryFn: getFloorsBenchmark,
-  });
-
-  const { mutate: mutateDeleteUnit, isPending: isDeleting } = useMutation({
-    mutationFn: () => deleteUnit(projectId, unitId),
-    onSuccess: () => {
-      toast.success("Unidade excluída com sucesso");
-      navigate({ to: `/new_projects/${projectId}` });
-    },
-    onError: (error) => {
-      toast.error("Erro ao excluir unidade", {
-        description: error.message,
-      });
-    },
   });
 
   useEffect(() => {
@@ -263,28 +247,6 @@ function RouteComponent() {
         isInteractive={true}
         onSelectionChange={handleSelectionChange}
         lastRow={{ type: "Média", data: averageMetrics }}
-        actions={
-          <div className="flex items-center gap-2">
-            <ModalConfirmDelete
-              title="Excluir Unidade"
-              onConfirm={mutateDeleteUnit}
-              componentTrigger={
-                <Button variant="outline" size="sm">
-                  Excluir Unidade
-                </Button>
-              }
-            />
-            <DrawerFormUnit
-              projectId={projectId}
-              unitId={unitId}
-              triggerComponent={
-                <Button variant="bipc" size="sm">
-                  Editar Unidade
-                </Button>
-              }
-            />
-          </div>
-        }
       />
       <Divider />
       <div className="flex items-center gap-2">
