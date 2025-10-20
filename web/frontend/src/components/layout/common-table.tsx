@@ -126,7 +126,7 @@ export default function CommonTable({
                 className={
                   isInteractive
                     ? "bg-primary text-primary-foreground"
-                    : "bg-[#E4E4E7] dark:bg-gray-800 text-primary"
+                    : "bg-gray-shade-300 dark:bg-gray-800 text-primary"
                 }
               >
                 {table.getHeaderGroups().map((headerGroup) => (
