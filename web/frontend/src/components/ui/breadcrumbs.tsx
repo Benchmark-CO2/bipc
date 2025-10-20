@@ -1,4 +1,5 @@
 import { Link, useMatches } from "@tanstack/react-router";
+import { ChevronRight } from "lucide-react";
 
 const BreadCrumbs = () => {
   const matches = useMatches({
@@ -18,31 +19,25 @@ const BreadCrumbs = () => {
   const crumbsLength = crumbs.length;
 
   const crumbsList = crumbs.map((crumb, index) => {
+    const isLast = index === crumbsLength - 1;
+
     return (
       <li
         key={index}
-        className="inline-flex items-center justify-between gap-2"
+        className="inline-flex items-center justify-between gap-1"
       >
         <Link
           to={matches[index].pathname}
-          className="inline-flex items-center text-sm font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+          className={`inline-flex items-center text-sm font-medium ${
+            isLast
+              ? "text-secondary font-bold dark:text-secondary-300"
+              : "text-zinc-700 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+          }`}
         >
           {crumb}
         </Link>
         {index < crumbsLength - 1 && (
-          <svg
-            className="h-6 w-6 text-zinc-400 dark:text-zinc-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 7l5 5-5 5m6-5H6"
-            />
-          </svg>
+          <ChevronRight className="w-4 h-4 text-gray-shade-300 flex-shrink-0" />
         )}
       </li>
     );
@@ -54,11 +49,9 @@ const BreadCrumbs = () => {
 
   return (
     <nav
-      className={`w-full mb-0 flex h-auto items-center ${crumbsList.length > 0 ? "p-4" : "p-0"}`}
+      className={`w-full mb-0 flex h-auto items-center ${crumbsList.length > 0 ? "py-4 px-6" : "p-0"}`}
     >
-      <ol className="inline-flex items-center space-x-1 md:space-x-3">
-        {crumbsList}
-      </ol>
+      <ol className="inline-flex items-center md:space-x-1">{crumbsList}</ol>
     </nav>
   );
 };
