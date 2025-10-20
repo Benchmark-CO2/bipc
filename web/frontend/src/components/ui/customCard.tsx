@@ -1,17 +1,10 @@
 import { IProject, TProjectPhase } from "@/types/projects";
-import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
-import { Edit, EllipsisVertical, Clock } from "lucide-react";
+import { Calendar, Pencil, Trash2 } from "lucide-react";
 import React, { useRef } from "react";
-import { useTranslation } from "react-i18next";
 import { DrawerFormProject } from "../layout";
-import DrawerInvite from "../layout/drawer-invite";
+import { Button } from "./button";
 import ModalConfirmDelete from "../layout/modal-confirm-delete";
 import { Checkbox } from "./checkbox";
-import {
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "./dropdown-menu";
 
 const phaseLabels: Record<TProjectPhase, string> = {
   preliminary_study: "Estudo Preliminar",
@@ -28,48 +21,6 @@ const phaseColors: Record<TProjectPhase, string> = {
   executive_project: "bg-orange-500/90",
   released_for_construction: "bg-green-500/90",
 };
-
-const CardMenu = ({
-  onDeleteProject,
-  project,
-  onEditClick,
-}: {
-  onDeleteProject?: (projectUid: string) => void;
-  project: IProject;
-  onEditClick: () => void;
-}) => {
-  const { t } = useTranslation();
-  return (
-    <DropdownMenu dir="ltr" modal={false} key={project.id}>
-      <DropdownMenuTrigger asChild>
-        <button
-          data-action="card-menu"
-          className="z-10 absolute right-3 top-3 p-1 hover:bg-white/10 rounded transition-colors"
-        >
-          <EllipsisVertical className="w-5 h-5" color="#FFF" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="relative flex flex-col w-[200px]">
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-          <DrawerInvite projectId={project.id} />
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={onEditClick}>
-          <div className="w-full flex items-center justify-between">
-            {t("common.edit")}
-            <Edit size={20} className="delete-project hover:shadow-md" />
-          </div>
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-          <ModalConfirmDelete
-            key={project.id}
-            title={t("modalConfirmDelete.projectTitle")}
-            onConfirm={() => onDeleteProject?.(project.id)}
-          />
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
 interface CustomCardProps {
   project: IProject;
   onClick: () => void;
@@ -84,8 +35,9 @@ const CustomCard = ({
   selectedProjects,
   handleSelectProject,
 }: CustomCardProps) => {
-  const { description, name, updated_at, phase } = project;
+  const { name, updated_at, phase, description } = project;
   const editButtonRef = useRef<HTMLButtonElement>(null);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleClickCard = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
@@ -95,13 +47,12 @@ const CustomCard = ({
     if (
       dataType === "delete-project" ||
       dataType === "edit-project" ||
-      dataType === "card-menu"
+      dataType === "card-menu" ||
+      dataType === "checkbox"
     ) {
-      console.log("Action not handled for:", dataType);
       return;
-    } else if (dataType === "open-project") {
-      onClick();
     }
+    onClick();
   };
 
   const handleClickCheck = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -109,8 +60,14 @@ const CustomCard = ({
     handleSelectProject(project.id!, !selectedProjects.get(project.id!));
   };
 
-  const handleEditClick = () => {
+  const handleEditClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
     editButtonRef.current?.click();
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    deleteButtonRef.current?.click();
   };
 
   const formatDate = (dateString: string) => {
@@ -130,48 +87,65 @@ const CustomCard = ({
   return (
     <>
       <div
-        data-action="open-project"
         onClick={handleClickCard}
-        className="card w-full relative md:max-w-md flex-col items-center justify-center overflow-hidden rounded-lg bg-primary shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-lg hover:scale-[1.02] dark:shadow-dark-900 h-[160px]"
+        className="card w-full relative md:max-w-md overflow-hidden rounded-lg border border-secondary bg-transparent transition-all duration-300 hover:cursor-pointer hover:shadow-md hover:border-secondary/80"
       >
-        <div className="group w-full h-full">
-          <CardMenu
-            onDeleteProject={onDeleteProject}
-            project={project}
-            onEditClick={handleEditClick}
-          />
-          <div className="flex h-full w-full max-w-md flex-col justify-between gap-2 p-3 py-4 text-white">
-            <div className="flex w-full justify-between items-start pr-8">
-              <Checkbox
-                onClick={handleClickCheck}
-                data-checked={selectedProjects?.get(project.id!) || false}
-                checked={selectedProjects?.get(project.id!) || false}
-                className="data-[checked=true]:bg-white data-[checked=true]:text-primary scale-125 border-white bg-primary transition-all"
-              />
-              <span
-                className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold text-white shadow-md ${phaseColors[phase]}`}
-              >
-                {phaseLabels[phase]}
-              </span>
-            </div>
+        <div className="w-full h-full p-4">
+          {/* Header with checkbox and name */}
+          <div className="flex w-full items-center mb-3 gap-2">
+            <Checkbox
+              data-action="checkbox"
+              onClick={handleClickCheck}
+              checked={selectedProjects?.get(project.id!) || false}
+              className="data-[state=checked]:bg-secondary data-[state=checked]:border-secondary scale-110 transition-all flex-shrink-0"
+            />
+            <h3 className="text-lg font-semibold text-primary line-clamp-1 flex-1">
+              {name}
+            </h3>
+          </div>
 
-            {/* Project Name and Description */}
-            <div className="flex flex-col gap-1 flex-1 min-h-0">
-              <span className="text-xl font-bold text-left line-clamp-1">
-                {name}
-              </span>
-              <span className="text-sm text-slate-200 line-clamp-2 leading-snug">
-                {description}
-              </span>
-            </div>
+          {/* Phase Badge */}
+          <div className="mb-3">
+            <span
+              className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm ${phaseColors[phase]}`}
+            >
+              {phaseLabels[phase]}
+            </span>
+          </div>
 
-            {/* Footer with Date */}
-            <div className="flex items-center gap-1.5 text-slate-300 flex-shrink-0">
-              <Clock className="w-3.5 h-3.5" />
-              <span className="text-xs font-medium">
-                {formatDate(updated_at)}
-              </span>
-            </div>
+          {/* Last Modified Date */}
+          <div className="flex items-center gap-1.5 text-muted-foreground mb-4">
+            <Calendar className="w-3.5 h-3.5" />
+            <span className="text-xs">
+              Última modificação {formatDate(updated_at)}
+            </span>
+          </div>
+
+          {/* Project Description */}
+          <div className="mb-4 min-h-[2.5rem]">
+            <p className="text-sm text-muted-foreground line-clamp-2 leading-snug">
+              {description || "Sem descrição"}
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2 justify-end">
+            <Button
+              data-action="delete-project"
+              onClick={handleDeleteClick}
+              variant="outline-destructive"
+              size="icon-lg"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+            <Button
+              data-action="edit-project"
+              onClick={handleEditClick}
+              variant="bipc"
+              size="icon-lg"
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>
@@ -182,15 +156,43 @@ const CustomCard = ({
         }
         projectData={project}
       />
+
+      <ModalConfirmDelete
+        componentTrigger={
+          <button ref={deleteButtonRef} className="hidden" aria-hidden="true" />
+        }
+        title="Confirmar exclusão do projeto"
+        onConfirm={() => onDeleteProject?.(project.id)}
+      />
     </>
   );
 };
 
 export const CustomCardSkeleton = () => {
   return (
-    <div className="relative h-[160px] w-full">
-      <div className="h-full w-full animate-pulse rounded-lg bg-gray-300"></div>
-      <div className="absolute top-0 left-0 h-full w-full rounded-lg bg-black opacity-50"></div>
+    <div className="w-full md:max-w-md rounded-lg border border-zinc-200 dark:border-zinc-800 bg-card overflow-hidden">
+      <div className="p-4 space-y-4">
+        {/* Header skeleton */}
+        <div className="flex justify-between items-start">
+          <div className="w-4 h-4 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+          <div className="w-24 h-6 bg-zinc-200 dark:bg-zinc-700 rounded-full animate-pulse"></div>
+        </div>
+
+        {/* Title skeleton */}
+        <div className="w-3/4 h-6 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+
+        {/* Date skeleton */}
+        <div className="w-1/2 h-4 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+
+        {/* Status badge skeleton */}
+        <div className="w-28 h-6 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+
+        {/* Buttons skeleton */}
+        <div className="flex gap-2">
+          <div className="flex-1 h-8 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+          <div className="flex-1 h-8 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+        </div>
+      </div>
     </div>
   );
 };
