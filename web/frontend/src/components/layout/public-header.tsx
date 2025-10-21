@@ -1,18 +1,18 @@
-import { Link } from "@tanstack/react-router";
-import { useState } from "react";
 import Logo from "@/assets/logo.svg";
-import Divider from "../ui/divider";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
+import { Link } from "@tanstack/react-router";
 import {
   Activity,
   BarChart3,
   FlaskConical,
   Info,
-  User,
   Menu,
+  User,
   X,
 } from "lucide-react";
-import { useIsMobile } from "@/hooks/useIsMobile";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
+import Divider from "../ui/divider";
 
 const activeProps = {
   style: {
@@ -31,7 +31,7 @@ export default function PublicHeader() {
   const NavLinks = () => (
     <>
       <Link
-        to={"#" as any}
+        to={"/about"}
         activeProps={activeProps}
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
         onClick={() => setIsMenuOpen(false)}
@@ -64,7 +64,7 @@ export default function PublicHeader() {
         })}
       />
       <Link
-        to="/"
+        to="/benchmark"
         activeProps={activeProps}
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
         onClick={() => setIsMenuOpen(false)}
@@ -87,7 +87,7 @@ export default function PublicHeader() {
   return (
     <nav className="bg-sidebar text-white relative">
       <div className="flex items-center justify-between px-4 md:px-8 py-0">
-        <Link to={"/"} className="p-0">
+        <Link to={"/benchmark"} className="p-0">
           <img
             src={Logo}
             alt="Logo"

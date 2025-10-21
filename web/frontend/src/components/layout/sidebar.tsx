@@ -43,7 +43,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
     <div className="h-full flex flex-col">
       {/* Header com Logo */}
       <div className="flex items-center mb-6 p-4">
-        <Link to={isAuthenticated ? "/" : "/login"}>
+        <Link to={isAuthenticated ? "/benchmark" : "/login"}>
           <img src={LogoFull} alt="Logo" className="w-full" />
         </Link>
       </div>
@@ -68,7 +68,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           <li>
             <SidemenuItem variant="link">
               <Link
-                to={isAuthenticated ? "/" : "/login"}
+                to={isAuthenticated ? "/benchmark" : "/login"}
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
                 <FlaskConical size={18} />
@@ -80,7 +80,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           <li>
             <SidemenuItem variant="link">
               <Link
-                to="/"
+                to="/benchmark"
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
                 <Activity size={18} />
@@ -94,7 +94,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           <li>
             <SidemenuItem variant="link">
               <Link
-                to="/"
+                to="/benchmark"
                 activeProps={activeProps}
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
