@@ -5,7 +5,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useSidebar } from "@/hooks/useSidebar";
 import { cn } from "@/lib/utils";
-import { stringUtils } from "@/utils/string";
 import { Link } from "@tanstack/react-router";
 import {
   Activity,
@@ -18,14 +17,10 @@ import {
   LogIn,
   MenuSquare,
   Settings,
-  User,
-  UserPlus,
+  UserPlus
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Notifications } from "../notifications";
-import { SidebarLanguageToggle } from "../sidebar-language-toggle";
-import { SidebarThemeToggle } from "../sidebar-theme-toggle";
-import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Button } from "../ui/button";
 import Divider from "../ui/divider";
 import SidemenuItem from "../ui/sidemenu-item";
@@ -48,7 +43,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
     <div className="h-full flex flex-col">
       {/* Header com Logo */}
       <div className="flex items-center mb-6 p-4">
-        <Link to={isAuthenticated ? "/" : "/login"}>
+        <Link to={isAuthenticated ? "/benchmark" : "/login"}>
           <img src={LogoFull} alt="Logo" className="w-full" />
         </Link>
       </div>
@@ -60,7 +55,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           <li>
             <SidemenuItem variant="link">
               <Link
-                to={isAuthenticated ? "/" : "/login"}
+                to={"/about"}
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
                 <Info size={18} />
@@ -73,7 +68,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           <li>
             <SidemenuItem variant="link">
               <Link
-                to={isAuthenticated ? "/" : "/login"}
+                to={isAuthenticated ? "/benchmark" : "/login"}
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
                 <FlaskConical size={18} />
@@ -85,7 +80,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           <li>
             <SidemenuItem variant="link">
               <Link
-                to="/"
+                to="/benchmark"
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
                 <Activity size={18} />
@@ -99,7 +94,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           <li>
             <SidemenuItem variant="link">
               <Link
-                to="/"
+                to="/benchmark"
                 activeProps={activeProps}
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >

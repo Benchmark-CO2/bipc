@@ -1,18 +1,19 @@
-import { Link } from "@tanstack/react-router";
-import { useState } from "react";
 import Logo from "@/assets/logo.svg";
-import Divider from "../ui/divider";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
+import { Link } from "@tanstack/react-router";
 import {
   Activity,
   BarChart3,
   FlaskConical,
+  Headset,
   Info,
-  User,
   Menu,
-  X,
+  User,
+  X
 } from "lucide-react";
-import { useIsMobile } from "@/hooks/useIsMobile";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
+import Divider from "../ui/divider";
 
 const activeProps = {
   style: {
@@ -30,15 +31,37 @@ export default function PublicHeader() {
 
   const NavLinks = () => (
     <>
-      <Link
-        to={"#" as any}
+    <Link
+        to={"/about"}
         activeProps={activeProps}
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
         onClick={() => setIsMenuOpen(false)}
       >
         <Info size={18} />
-        <span className="text-sm">Sobre</span>
+        <span className="text-sm">Sobre o BIPc</span>
       </Link>
+       <Divider
+        className={cn("h-[28px] w-0.5 my-0", {
+          hidden: isMobile,
+          "mx-4": !isMobile,
+        })}
+      />
+    <Link
+        to="/benchmark"
+        activeProps={activeProps}
+        className="flex items-center gap-2 hover:text-gray-300 transition-colors"
+        onClick={() => setIsMenuOpen(false)}
+      >
+        <BarChart3 size={18} />
+        <span className="text-sm">Benchmark</span>
+      </Link>
+      <Divider
+        className={cn("h-[28px] w-0.5 my-0", {
+          hidden: isMobile,
+          "mx-4": !isMobile,
+        })}
+      />
+      
       <Link
         to={"#" as any}
         activeProps={activeProps}
@@ -47,6 +70,15 @@ export default function PublicHeader() {
       >
         <FlaskConical size={18} />
         <span className="text-sm">PD&I</span>
+      </Link>
+      <Link
+        to={"/contact"}
+        activeProps={activeProps}
+        className="flex items-center gap-2 hover:text-gray-300 transition-colors"
+        onClick={() => setIsMenuOpen(false)}
+      >
+        <Headset size={18} />
+        <span className="text-sm">Comunicação</span>
       </Link>
       <Link
         to={"#" as any}
@@ -63,15 +95,7 @@ export default function PublicHeader() {
           "mx-4": !isMobile,
         })}
       />
-      <Link
-        to="/"
-        activeProps={activeProps}
-        className="flex items-center gap-2 hover:text-gray-300 transition-colors"
-        onClick={() => setIsMenuOpen(false)}
-      >
-        <BarChart3 size={18} />
-        <span className="text-sm">Benchmark</span>
-      </Link>
+      
       <Link
         to="/login"
         activeProps={activeProps}
@@ -87,7 +111,7 @@ export default function PublicHeader() {
   return (
     <nav className="bg-sidebar text-white relative">
       <div className="flex items-center justify-between px-4 md:px-8 py-0">
-        <Link to={"/"} className="p-0">
+        <Link to={"/benchmark"} className="p-0">
           <img
             src={Logo}
             alt="Logo"
