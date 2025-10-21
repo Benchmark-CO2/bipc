@@ -183,7 +183,7 @@ const [selectedChart, setSelectedChart] = useState('trend');
           <h3 className='text-primary'>Unidades habitacionais divididas pelas tipologias</h3>
           <div className='flex items-center mt-10'>
             <span className='text-primary font-bold min-w-[100px]'>Menor pegada de carbono</span>
-            <img src={Arrow} alt="" className='mx-6' />
+            <img src={Arrow} alt="" className='mx-6 self-start' />
             <img src={InventoryChart} alt="" className='mx-10 self-end' />
             <div className='flex flex-col justify-between self-start gap-4'>
               <div className='w-[22px] h-[130px] border-2 border-primary border-l-0 rounded-r-md' ></div>
