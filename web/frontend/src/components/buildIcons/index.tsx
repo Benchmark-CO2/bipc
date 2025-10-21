@@ -16,7 +16,7 @@ const Icons = {
           <path
             d="M0 7.09561V9.60686H0.768994V37.9893H41.1332V38H42.284V9.60686H43V7.09561L21.5 0L0 7.09561ZM14.6533 36.8512H7.25506V18.7756H14.6533V36.8512ZM29.0149 26.6994H21.5V18.3909H29.0149V26.6994Z"
             stroke="#A1A1AA"
-            className={cn("fill-white", {
+            className={cn("fill-white transition-colors duration-200", {
               "fill-primary": isActive,
             })}
           />
@@ -42,7 +42,7 @@ const Icons = {
       >
         <path
           d="M10.8774 37.2024V66.5168H51.6109V66.5271H52.7722V37.2024H10.8774ZM33.0504 65.4173H25.5845V47.9546H33.0504V65.4173ZM48.8707 55.6097H37.7708V47.583H48.8707V55.6097Z"
-          className={cn("fill-white stroke-gray-400", {
+          className={cn("fill-white stroke-gray-400 transition-colors duration-200", {
             "fill-primary": isActive,
           })}
           stroke="#A1A1AA"
@@ -119,7 +119,7 @@ const Icons = {
       >
         <path
           d="M41.8007 66.5287V39.0985H42.5V36.6724H0.5V39.0985H1.25111V66.5184H40.6766V66.5287H41.8007ZM14.8125 65.4189H7.58633V47.9563H14.8125V65.4189Z"
-          className={cn("fill-white stroke-gray-400", {
+          className={cn("fill-white stroke-gray-400 transition-colors duration-200", {
             "fill-primary": isActive,
           })}
           stroke="#A1A1AA"
@@ -147,7 +147,7 @@ const Icons = {
       >
         <path
           d="M0.5 82.8796V114.67H53.5053V82.8796H0.5ZM33.1268 112.748V93.7727H47.6594V112.748H33.1268Z"
-          className={cn("fill-white stroke-gray-400", {
+          className={cn("fill-white stroke-gray-400 transition-colors duration-200", {
             "fill-primary": isActive,
           })}
           stroke="#A1A1AA"
@@ -205,7 +205,7 @@ const Icons = {
       >
         <path
           d="M0.5 82.8799V114.67H54.5054V82.8799H0.5ZM33.7424 112.748V93.7729H48.5492V112.748H33.7424Z"
-          className={cn("fill-white stroke-gray-400", {
+          className={cn("fill-white stroke-gray-400 transition-colors duration-200", {
             "fill-primary": isActive,
           })}
           stroke="#A1A1AA"
@@ -285,7 +285,7 @@ const Icons = {
       >
         <path
           d="M0.5 82.8799V114.67H53.5053V82.8799H0.5ZM33.1268 112.748V93.7729H47.6594V112.748H33.1268Z"
-          className={cn("fill-white stroke-gray-400", {
+          className={cn("fill-white stroke-gray-400 transition-colors duration-200", {
             "fill-primary": isActive,
           })}
           stroke="#A1A1AA"

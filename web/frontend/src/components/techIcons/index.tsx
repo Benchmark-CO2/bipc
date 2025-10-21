@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils';
 
 const Icons = {
   frame: {
-    label: "Frame",
+    label: "Pórtico",
     render: (isActive: boolean, onClick: () => void) => (
       <svg width="113" height="76" viewBox="0 0 113 76" fill="none" xmlns="http://www.w3.org/2000/svg" onClick={onClick}>
         <path d="M10 0.5H103C108.247 0.5 112.5 4.75329 112.5 10V66C112.5 71.2467 108.247 75.5 103 75.5H10C4.75329 75.5 0.5 71.2467 0.5 66V10C0.5 4.7533 4.7533 0.5 10 0.5Z" 
@@ -22,7 +22,7 @@ const Icons = {
     ),
   },
   concrete: {
-    label: "Icon 2",
+    label: "Parede de concreto",
     render: (isActive: boolean, onClick: () => void) => (
       <svg width="113" height="76" viewBox="0 0 113 76" fill="none" xmlns="http://www.w3.org/2000/svg" onClick={onClick}>
         <path d="M103 0H10C4.47715 0 0 4.47715 0 10V66C0 71.5229 4.47715 76 10 76H103C108.523 76 113 71.5229 113 66V10C113 4.47715 108.523 0 103 0Z" className={
@@ -45,7 +45,7 @@ const Icons = {
     ),
   },
   structural: {
-    label: "Icon 3",
+    label: "Alvenaria estrutural",
     render: (isActive: boolean, onClick: () => void) => (
       <svg width="114" height="76" viewBox="0 0 114 76" fill="none" xmlns="http://www.w3.org/2000/svg" onClick={onClick}>
         <path d="M104 0H10C4.47715 0 0 4.47715 0 10V66C0 71.5229 4.47716 76 10 76H104C109.523 76 114 71.5229 114 66V10C114 4.47715 109.523 0 104 0Z" className={

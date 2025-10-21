@@ -14,12 +14,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from 'react';
-import { useTranslation } from "react-i18next";
 
-import Arrow from '@/assets/Arrow.svg';
-import InventoryChart from '@/assets/inventoryChart.svg';
+import InventoryChart from '@/assets/inventoryChart.png';
 import { regions, states } from '@/utils/states';
 export const Route = createFileRoute("/(public)/benchmark")({
   component: RouteComponent,
@@ -85,14 +83,11 @@ const FilterSection = () => {
             <TechIcon name='concrete' isActive={activeBuildFilter.includes('concrete')} onClick={() => handleBuildFilterChange('concrete')} />
           </div>
       </div>
-
     </section>
   )
 }
 
 function RouteComponent() {
-  const { auth } = Route.useLoaderData();
-  const { t } = useTranslation();
   const { data } = useQuery({
     queryKey: ["units-benchmarks"],
     queryFn: getProjectsBenchmark,
@@ -102,11 +97,9 @@ function RouteComponent() {
     ...f,
     label: "",
   }));
-  const width = (window.innerWidth - 221) * 0.5;
+  const width = (window.innerWidth - 421) * 0.5;
   const height = (window.innerHeight) * 0.5;
-
-
-const [selectedChart, setSelectedChart] = useState('trend');
+  const [selectedChart, setSelectedChart] = useState('trend');
 
   return (
     <div className='flex flex-col p-10'>
@@ -182,49 +175,39 @@ const [selectedChart, setSelectedChart] = useState('trend');
           <h2 className='text-2xl text-primary font-semibold'>Composição atual do inventário do Benchmark</h2>
           <h3 className='text-primary'>Unidades habitacionais divididas pelas tipologias</h3>
           <div className='flex items-center mt-10'>
-            <span className='text-primary font-bold min-w-[100px]'>Menor pegada de carbono</span>
-            <img src={Arrow} alt="" className='mx-6 self-start' />
+           
             <img src={InventoryChart} alt="" className='mx-10 self-end' />
-            <div className='flex flex-col justify-between self-start gap-4'>
-              <div className='w-[22px] h-[130px] border-2 border-primary border-l-0 rounded-r-md' ></div>
-              <div className='w-[22px] h-[130px] border-2 border-primary border-l-0 rounded-r-md' ></div>
-              <div className='w-[22px] h-[130px] border-2 border-primary border-l-0 rounded-r-md' ></div>
-            </div>
-            <div className='flex flex-col justify-between self-start h-[415px] ml-4 text-primary font-bold'>
-              <span className='flex items-center justify-center h-full min-w-[120px]'>Muito potencial de impacto</span>
-              <span className='flex items-center justify-center h-full min-w-[120px]'>Médio potencial de impacto</span>
-              <span className='flex items-center justify-center h-full min-w-[120px]'>Pouco potencial de impacto</span>
-            </div>
+           
           </div>
         </section>
     </div>
   );
 
-  return (
-    <div className="flex h-full w-full flex-col items-center justify-center">
-      <h1 className="text-4xl font-bold sm:text-6xl">
-        {t("public.comingSoonTitle")}
-      </h1>
-      <p className="mt-4 text-lg text-gray-600 sm:text-xl">
-        {t("public.comingSoonDescription")}
-      </p>
-      <div className="mt-8 flex items-center gap-4">
-        {auth.isAuthenticated ? (
-          <Link
-            to="/new_projects"
-            className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white shadow-lg transition sm:text-base"
-          >
-            {t("public.accessProjects")}
-          </Link>
-        ) : (
-          <Link
-            to="/login"
-            className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white shadow-lg transition sm:text-base"
-          >
-            {t("public.login")}
-          </Link>
-        )}
-      </div>
-    </div>
-  );
+  // return (
+  //   <div className="flex h-full w-full flex-col items-center justify-center">
+  //     <h1 className="text-4xl font-bold sm:text-6xl">
+  //       {t("public.comingSoonTitle")}
+  //     </h1>
+  //     <p className="mt-4 text-lg text-gray-600 sm:text-xl">
+  //       {t("public.comingSoonDescription")}
+  //     </p>
+  //     <div className="mt-8 flex items-center gap-4">
+  //       {auth.isAuthenticated ? (
+  //         <Link
+  //           to="/new_projects"
+  //           className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white shadow-lg transition sm:text-base"
+  //         >
+  //           {t("public.accessProjects")}
+  //         </Link>
+  //       ) : (
+  //         <Link
+  //           to="/login"
+  //           className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white shadow-lg transition sm:text-base"
+  //         >
+  //           {t("public.login")}
+  //         </Link>
+  //       )}
+  //     </div>
+  //   </div>
+  // );
 }

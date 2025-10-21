@@ -33,7 +33,7 @@ const team = [
   {
     name: 'Vanderley Moacyr John',
     role: 'Coordenação',
-    photo: `${BUCKET_URL}/Vanderley+John.png`,
+    photo: `${BUCKET_URL}/Vanderley+John+2.jpg`,
   },
   {
     name: 'Mayara Munaro',
@@ -144,12 +144,12 @@ const team = [
    {
     name: 'Carlos Massucato',
     role: 'Comitê Consultivo Ferramenta',
-    photo: '',
+    photo: `${BUCKET_URL}/CarlosMassucato.png`,
   },
    {
     name: 'Clarisse Degani',
     role: 'Comitê Consultivo Ferramenta',
-    photo: '',
+    photo: `${BUCKET_URL}/Clarisse+Degani.png`,
   },
    {
     name: 'Gabriela Lopes Barroso',
@@ -184,7 +184,7 @@ const team = [
    {
     name: 'Anderson Alvarenga',
     role: 'Desenvolvedor',
-    photo: '',
+    photo: `${BUCKET_URL}/Anderson+Alvarenga.jpg`,
   },
    {
     name: 'Igor Vac',
@@ -199,7 +199,7 @@ const team = [
    {
     name: 'Bruna Diniz Franqueira',
     role: 'Transparência em Proteção de Dados',
-    photo: '',
+    photo: `${BUCKET_URL}/Bruna+Diniz+Franqueira+1.jpg`,
   },
 ]
 
@@ -214,32 +214,30 @@ const TopSection = () => {
         />
         <div className="max-w-[500px] flex flex-col gap-6 items-center ">
           <p>
-            No Brasil, onde a matriz elétrica está entre as mais limpas do
-            mundo, estudos mostram que a construção civil é uma importante
-            emissora de CO2. Ignorar isso é como deixar escapar uma oportunidade
-            de mitigação.  
+            Em contraposição à matriz elétrica brasileira, uma das mais limpas do
+            mundo, a nossa construção civil é uma importante emissora de CO2,
+            representando uma oportunidade de mitigação.
           </p>
           <p>
-            Materiais como concreto, o aço e vidro carregam consigo uma pegada
+            Materiais como cimento, o aço e vidro carregam consigo uma pegada
             de carbono significativa para o canteiro de obras, pois já emitiram
             carbono durante a sua produção. Para entender como se dão essas
-            emissões nas construções formais precisamos de um diagnóstico
+            emissões nas construções formais e informais precisamos de um diagnóstico
             apurado, que reflita a complexidade da construção civil brasileira.
           </p>
-
           <p>
             Por esse motivo foi desenvolvido o Benchmark Iterativo para Projetos
             de baixo Carbono: a plataforma BIPc – onde é possível estimar o
             consumo de materiais e a pegada de CO2 embutido nas moradias, de
             forma prática, inteligente e escalável. Projetistas e construtoras
-            podem comparar o desempenho estimado de seu projeto com outros
-            projetos já executados no setor.
+            podem comparar o desempenho estimado de seu projeto com o de outros
+            projetos já executados.
           </p>
 
           <p>
-            A ferramenta permite à equipe ter uma ideia do impacto de carbono,
+            A ferramenta permite à equipe ter uma ideia do impacto de carbono da construção na emissao de carbono,
             verificar em tempo real o benchmark dos projetos existentes no
-            mercado, e saber as tendências de evolução das emissões de carbono,
+            mercado e conhecer as tendências de evolução das emissões de carbono,
             tudo antes de concluir o projeto.
           </p>
 
