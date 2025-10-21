@@ -1,3 +1,5 @@
+import { BUCKET_URL } from '@/utils/constants';
+import { stringUtils } from '@/utils/string';
 import { createFileRoute } from "@tanstack/react-router";
 import aboutImage from "../../assets/city-about.png";
 import logoFull from "../../assets/logo_full.svg";
@@ -31,163 +33,173 @@ const team = [
   {
     name: 'Vanderley Moacyr John',
     role: 'Coordenação',
-    photo: 'link-ou-caminho-para-foto-1',
+    photo: `${BUCKET_URL}/Vanderley+John.png`,
   },
   {
     name: 'Mayara Munaro',
     role: 'Coordenação adjunta',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: `${BUCKET_URL}/Mayara+Munaro.jpg`,
   },
   {
     name: 'Lucas Melchiori Pereira',
     role: 'Liderança plataforma',
-    photo: 'link-ou-caminho-para-foto-1',
+    photo: `${BUCKET_URL}/Lucas+M+1.jpg`,
   },
   {
     name: 'Ercília Hirota Pereira',
     role: 'Gestão operacional',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: `${BUCKET_URL}/Ercilia+Hirota+2.png`,
   },
   {
     name: 'Rubiane Antunes',
     role: 'Gestão operacional',
-    photo: 'link-ou-caminho-para-foto-1',
+    photo: `${BUCKET_URL}/Rubiane+Antunes.jpg`,
   },
   {
     name: 'Maria Alice Gonzales',
     role: 'Gestão operacional',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: `${BUCKET_URL}/Maria+Alice+Camargo.jpg`,
   },
   {
     name: 'Cassio Oliveira',
     role: 'Pesquisador plataforma',
-    photo: 'link-ou-caminho-para-foto-1',
+    photo: `${BUCKET_URL}/Cassio+Oliveira.jpg`,
   },
   {
     name: 'Rhonner Politzer Ramírez Flores',
     role: 'Pesquisador plataforma',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: `${BUCKET_URL}/Rhonner+Politzer+Ram%C3%ADrez+Flores.jpg`,
   },
   {
     name: 'Heloisa Cristina Fernandes',
     role: 'Pesquisadora vedações',
-    photo: 'link-ou-caminho-para-foto-1',
+    photo: `${BUCKET_URL}/Heloisa+Cristina+Fernandes.png`,
   },
   {
     name: 'Carolina M. De Freitas M.De Souza',
     role: 'Pesquisadora telhados',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: `${BUCKET_URL}/Carolina+Souza.jpg`,
   },
   {
     name: 'Kamilla Vasconcelos Savasini',
     role: 'Pesquisadora pavimentação',
-    photo: 'link-ou-caminho-para-foto-1',
+    photo: `${BUCKET_URL}/Kamilla+Vasconcelos.jpg`,
   },
   {
     name: 'Jean Appel',
     role: 'Pesquisador BIM/IFC',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: `${BUCKET_URL}/Jean+Apel.jpg`,
   },
   {
     name: 'Katia Regina Garcia Punhagui',
     role: 'Pesquisador  mobilização do setor',
-    photo: 'link-ou-caminho-para-foto-1',
+    photo: `${BUCKET_URL}/Katia-Punhagui.jpg`,
   },
   {
     name: 'Lucas Caldas',
     role: 'Pesquisador  mobilização do setor',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: `${BUCKET_URL}/Lucas+Caldas+1.jpg`,
   },
   {
     name: 'Karine Hilgenber',
     role: 'Pesquisadora rotas de mitigação',
-    photo: 'link-ou-caminho-para-foto-1',
+    photo: `${BUCKET_URL}/Karine+Hilgenberg.jpg`,
   },
   {
     name: 'Arthur Ferreira De Araujo',
     role: 'Pesquisadora rotas de mitigação',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: `${BUCKET_URL}/Arthur+Ferreira.jpg`,
   },
 
    {
     name: 'Cristina de Hollanda Cavalcanti Tsuha',
     role: 'Pesquisadora difusão e inovação',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: `${BUCKET_URL}/Cristina+Tsuha.jpg`,
   },
    {
     name: 'Zila Maria Garcia Mascarenhas',
     role: 'Pesquisadora difusão e inovação',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: `${BUCKET_URL}/Zila+Garcia.jpg`,
   },
    {
     name: 'Danielly Letícia Rebelatto',
     role: 'Pesquisadora difusão e inovação',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: `${BUCKET_URL}/Danielly+Let%C3%ADcia+Rebelatto+1.jpg`,
   },
    {
     name: 'Manuele Harnisch',
     role: 'Pesquisadora difusão e inovação',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: `${BUCKET_URL}/Manuele+Harnisch.jpg`,
   },
    {
     name: 'Adam Belk',
     role: 'Comitê Consultivo Ferramenta',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: '',
   },
    {
     name: 'Ana Cecília Sestak',
     role: 'Comitê Consultivo Ferramenta',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: '',
   },
    {
     name: 'Carlos Massucato',
     role: 'Comitê Consultivo Ferramenta',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: '',
   },
    {
     name: 'Clarisse Degani',
     role: 'Comitê Consultivo Ferramenta',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: '',
   },
    {
-    name: 'Gabriela',
-    role: 'role',
-    photo: 'link-ou-caminho-para-foto-2',
+    name: 'Gabriela Lopes Barroso',
+    role: 'Gestão da Rotina',
+    photo: `${BUCKET_URL}/Gabriela+Lopes+Barroso.jpg`,
   },
    {
-    name: 'Jonas',
-    role: 'role',
-    photo: 'link-ou-caminho-para-foto-2',
+    name: 'Jonas Firmino',
+    role: 'Administrativo',
+    photo: `${BUCKET_URL}/Jonas+Firmino.jpg`,
   },
    {
-    name: 'Eder',
-    role: 'role',
-    photo: 'link-ou-caminho-para-foto-2',
+    name: 'Eder Santin',
+    role: 'Jornalista Científico',
+    photo: `${BUCKET_URL}/Eder+Santin.jpg`,
   },
    {
     name: 'Felipe Okino',
     role: 'Desenvolvedor',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: `${BUCKET_URL}/Felipe+Okino.png`,
   },
    {
     name: 'Mateus Canali de Miranda',
     role: 'Desenvolvedor',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: `${BUCKET_URL}/Mateus+Miranda.png`,
   },
    {
     name: 'Bruno de Souza Avelino',
     role: 'Desenvolvedor',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: `${BUCKET_URL}/Bruno+Souza.jpg`,
   },
    {
-    name: 'Anderson Alves Alcará',
+    name: 'Anderson Alvarenga',
     role: 'Desenvolvedor',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: '',
   },
    {
-    name: 'Igor',
+    name: 'Igor Vac',
     role: 'Design UX/UI',
-    photo: 'link-ou-caminho-para-foto-2',
+    photo: `${BUCKET_URL}/Igor+Vac.jpg`,
+  },
+   {
+    name: 'Alessandra Petrecca',
+    role: 'Design UX/UI',
+    photo: `${BUCKET_URL}/Alessandra+Petrecca.jpg`,
+  },
+   {
+    name: 'Bruna Diniz Franqueira',
+    role: 'Transparência em Proteção de Dados',
+    photo: '',
   },
 ]
 
@@ -282,14 +294,16 @@ const TeamSection = () => {
           {
             team.map((member) => (
               <div key={member.name} className="flex flex-col items-center gap-4 mb-6 ">
-                {/* <img
+                {member.photo ? <img
                   src={member.photo}
                   alt={member.name}
                   className="w-40 h-40 rounded-full object-cover"
-                /> */}
-                <div
-                  className="w-40 h-40 rounded-full object-cover bg-gray-400"
-                />
+                /> : (
+                  <div
+                    className="w-40 h-40 rounded-full object-cover bg-gray-400 flex items-center justify-center text-white text-3xl font-bold"
+                  >{stringUtils.getInitials(member.name)}</div>
+                )}
+
                 <div>
                   <h2 className="text-base font-semibold text-center text-primary">{member.name}</h2>
                   <p className="text-primary text-center">{member.role}</p>

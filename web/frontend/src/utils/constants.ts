@@ -1,6 +1,6 @@
-const { VITE_BASE_URL:BASE_URL, VITE_SITE_URL: PORTAL_URL, VITE_ENV:ENV='production' } = import.meta.env
+const { VITE_BASE_URL:BASE_URL, VITE_SITE_URL: PORTAL_URL, VITE_ENV:ENV='production', VITE_S3_BUCKET:BUCKET_URL } = import.meta.env
 
 export {
-  BASE_URL, ENV, PORTAL_URL
+  BASE_URL, BUCKET_URL, ENV, PORTAL_URL
 };
 
