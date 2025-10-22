@@ -10,7 +10,7 @@ import {
   Info,
   Menu,
   User,
-  X
+  X,
 } from "lucide-react";
 import { useState } from "react";
 import Divider from "../ui/divider";
@@ -31,7 +31,7 @@ export default function PublicHeader() {
 
   const NavLinks = () => (
     <>
-    <Link
+      <Link
         to={"/about"}
         activeProps={activeProps}
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
@@ -40,13 +40,13 @@ export default function PublicHeader() {
         <Info size={18} />
         <span className="text-sm">Sobre o BIPc</span>
       </Link>
-       <Divider
+      {/* <Divider
         className={cn("h-[28px] w-0.5 my-0", {
           hidden: isMobile,
           "mx-4": !isMobile,
         })}
-      />
-    <Link
+      /> */}
+      <Link
         to="/benchmark"
         activeProps={activeProps}
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
@@ -55,14 +55,14 @@ export default function PublicHeader() {
         <BarChart3 size={18} />
         <span className="text-sm">Benchmark</span>
       </Link>
-      <Divider
+      {/* <Divider
         className={cn("h-[28px] w-0.5 my-0", {
           hidden: isMobile,
           "mx-4": !isMobile,
         })}
-      />
-      
-      <Link
+      /> */}
+
+      {/* <Link
         to={"#" as any}
         activeProps={activeProps}
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
@@ -70,7 +70,7 @@ export default function PublicHeader() {
       >
         <FlaskConical size={18} />
         <span className="text-sm">PD&I</span>
-      </Link>
+      </Link> */}
       <Link
         to={"/contact"}
         activeProps={activeProps}
@@ -80,7 +80,7 @@ export default function PublicHeader() {
         <Headset size={18} />
         <span className="text-sm">Comunicação</span>
       </Link>
-      <Link
+      {/* <Link
         to={"#" as any}
         activeProps={activeProps}
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
@@ -88,14 +88,14 @@ export default function PublicHeader() {
       >
         <Activity size={18} />
         <span className="text-sm">Ações</span>
-      </Link>
+      </Link> */}
       <Divider
         className={cn("h-[28px] w-0.5 my-0", {
           hidden: isMobile,
           "mx-4": !isMobile,
         })}
       />
-      
+
       <Link
         to="/login"
         activeProps={activeProps}
