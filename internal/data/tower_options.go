@@ -128,7 +128,7 @@ func (m TowerOptionModel) GetByID(id uuid.UUID) (*TowerOption, error) {
 	}
 
 	modulesQuery := `
-        SELECT id, type, total_co2_min, total_co2_max, total_energy_min, total_energy_max
+        SELECT id, type, relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max
         FROM module
         WHERE tower_option_id = $1`
 
@@ -202,7 +202,7 @@ func (m TowerOptionModel) GetAll(towerID uuid.UUID) ([]*TowerOption, error) {
 		}
 
 		modulesQuery := `
-            SELECT id, type, total_co2_min, total_co2_max, total_energy_min, total_energy_max
+            SELECT id, type, relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max
             FROM module
             WHERE tower_option_id = $1`
 

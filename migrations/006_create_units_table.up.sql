@@ -59,7 +59,11 @@ CREATE TABLE IF NOT EXISTS module (
     total_co2_min FLOAT8 NOT NULL DEFAULT 0,
     total_co2_max FLOAT8 NOT NULL DEFAULT 0,
     total_energy_min FLOAT8 NOT NULL DEFAULT 0,
-    total_energy_max FLOAT8 NOT NULL DEFAULT 0
+    total_energy_max FLOAT8 NOT NULL DEFAULT 0,
+    relative_co2_min FLOAT8 DEFAULT 0,
+    relative_co2_max FLOAT8 DEFAULT 0,
+    relative_energy_min FLOAT8 DEFAULT 0,
+    relative_energy_max FLOAT8 DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS module_floor (

@@ -547,6 +547,41 @@ func updateFloorMetricsById(tx *sql.Tx, floorIDs []uuid.UUID) error {
 		return err
 	}
 
+	// Calculate average floor area
+	moduleFloors := make(map[uuid.UUID][]float64) // map[moduleID][]floorArea
+	for _, floor := range floors {
+		for _, moduleID := range floor.ModuleIDs {
+			moduleFloors[moduleID] = append(moduleFloors[moduleID], floor.Area)
+		}
+	}
+
+	// Update relative metrics for each module
+	for moduleID, floorAreas := range moduleFloors {
+		var avgArea float64
+		for _, area := range floorAreas {
+			avgArea += area
+		}
+		avgArea /= float64(len(floorAreas))
+
+		m := modules[moduleID]
+		_, err = tx.Exec(`
+			UPDATE module SET
+				relative_co2_min = $1,
+				relative_co2_max = $2,
+				relative_energy_min = $3,
+				relative_energy_max = $4
+			WHERE id = $5`,
+			m.TotalCO2Min/avgArea,
+			m.TotalCO2Max/avgArea,
+			m.TotalEnergyMin/avgArea,
+			m.TotalEnergyMax/avgArea,
+			moduleID,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
 	for _, floor := range floors {
 		if floor.Area == 0 {
 			continue
