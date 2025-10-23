@@ -8,7 +8,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, User } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 const Login = () => {
@@ -71,19 +71,18 @@ const Login = () => {
   return (
     <div
       className={cn(
-        "flex h-full w-full items-center justify-center transition-all overflow-auto",
+        "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar",
         {
           block: isMobile,
         }
       )}
     >
-      <div className=" flex px-6 flex-col items-center justify-center gap-4 max-xl:w-1/2 max-lg:w-full border border-zinc-200 dark:border-zinc-800 rounded-md py-8">
-        <div className="w-full max-w-md">
+      <div className="flex px-10 flex-col items-center justify-center gap-4 max-xl:w-1/2 max-lg:w-full border border-zinc-200 dark:border-zinc-800 rounded-md py-8 bg-card">
+        <div className="w-full">
           <div>
-            <img src={FullLogo} alt="" className="w-[75%] mx-auto mb-2" />
+            <img src={FullLogo} alt="" className="w-full mx-auto mb-2" />
           </div>
 
-          <Divider className="bg-accent-foreground/10" />
           {isError && (
             <div className="mb-4 p-3 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
               <h3 className="text-red-600 dark:text-red-400 text-sm font-medium">
@@ -92,92 +91,114 @@ const Login = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-2">
             <div className="space-y-2">
-              <label className="text-sm" htmlFor="email">
-                {t("common.user")}
-              </label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={t("loginPage.placeholderEmail")}
-                className={cn(
-                  "text-lg",
-                  fieldsError.email
-                    ? "border-red-500 focus-visible:border-red-500"
-                    : ""
-                )}
-                disabled={isPending}
-                autoComplete="email"
-              />
-              {fieldsError.email && (
-                <p className="text-red-500 text-xs">Email é obrigatório</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <div className="relative">
-                <label className="text-sm" htmlFor="password">
-                  {t("loginPage.placeholderPassword")}
-                </label>
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t("loginPage.placeholderPassword")}
-                  className={cn(
-                    "pr-10 text-md",
-                    fieldsError.password
-                      ? "border-red-500 focus-visible:border-red-500"
-                      : ""
-                  )}
-                  disabled={isPending}
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  onClick={togglePasswordVisibility}
-                  className="absolute right-3 top-3/4 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-                  disabled={isPending}
+              <div className="space-y-2 relative">
+                <label
+                  className="text-xs font-semibold mb-1 text-gray-shade-500"
+                  htmlFor="email"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
+                  {t("common.user")}
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-2/4 -translate-y-1/2 text-gray-400 size-5 pointer-events-none" />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t("loginPage.placeholderEmail")}
+                    className={cn(
+                      "text-lg pl-10",
+                      fieldsError.email
+                        ? "border-red-500 focus-visible:border-red-500"
+                        : ""
+                    )}
+                    disabled={isPending}
+                    autoComplete="email"
+                  />
+                  {fieldsError.email && (
+                    <p className="text-red-500 text-xs">Email é obrigatório</p>
                   )}
-                </button>
+                </div>
               </div>
-              {fieldsError.password && (
-                <p className="text-red-500 text-xs">Senha é obrigatória</p>
-              )}
+
+              <div className="space-y-2">
+                <div className="relative">
+                  <label
+                    className="text-xs font-semibold mb-1 text-gray-shade-500"
+                    htmlFor="password"
+                  >
+                    {t("loginPage.placeholderPassword")}
+                  </label>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder={t("loginPage.placeholderPassword")}
+                      className={cn(
+                        "pr-10 text-md",
+                        fieldsError.password
+                          ? "border-red-500 focus-visible:border-red-500"
+                          : ""
+                      )}
+                      disabled={isPending}
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={togglePasswordVisibility}
+                      className="absolute right-3 top-2/4 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                      disabled={isPending}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                {fieldsError.password && (
+                  <p className="text-red-500 text-xs">Senha é obrigatória</p>
+                )}
+              </div>
             </div>
 
-            <Button variant={"bipc"} type="submit" disabled={isPending}>
-              {isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Carregando...
-                </>
-              ) : (
-                t("loginPage.buttonLogin")
-              )}
-            </Button>
+            <Divider className="w-[90%] mx-auto" />
+
+            <div className="space-y-4">
+              <Button
+                className="w-full"
+                variant={"bipc"}
+                type="submit"
+                disabled={isPending}
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Carregando...
+                  </>
+                ) : (
+                  t("loginPage.buttonLogin")
+                )}
+              </Button>
+              <Button
+                variant="outline-bipc"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigateTo("/forget");
+                }}
+                disabled={isPending}
+                className="w-full"
+              >
+                {t("loginPage.buttonForgotPassword")}
+              </Button>
+            </div>
           </form>
 
-          <div className="flex justify-center mt-2 mb-4">
-            <Button
-              className="text-sm text-active underline"
-              variant="link"
-              onClick={() => navigateTo("/forget")}
-              disabled={isPending}
-            >
-              {t("loginPage.buttonForgotPassword")}
-            </Button>
-          </div>
-
-          <Divider className="bg-accent-foreground/10" />
+          <Divider className="w-[90%] mx-auto" />
           <div className="flex flex-col justify-end items-center gap-4">
             <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">
               {t("loginPage.askRegister")}

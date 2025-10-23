@@ -386,26 +386,11 @@ function RouteComponent() {
                 lastRow={{ type: "Total", data: calculateSumMetrics(modules) }}
                 actions={
                   <>
-                    <DrawerFormModule
-                      triggerComponent={
-                        <Button variant="bipc" size="sm">
-                          Adicionar Tecnologia
-                        </Button>
-                      }
-                      type="concrete_wall"
-                      floors={unitTowerFloors}
-                      projectId={projectId}
-                      unitId={unitId}
-                      optionId={option.id}
-                    />
-                    <Button variant="ghost" size="icon" disabled>
-                      <Copy className="h-4 w-4 text-primary" />
-                    </Button>
                     <ModalConfirmDelete
                       componentTrigger={
                         <Button
-                          variant="ghost"
-                          size="icon"
+                          variant="outline-destructive"
+                          size="icon-lg"
                           disabled={isDeleting}
                         >
                           {isDeleting ? (
@@ -417,6 +402,21 @@ function RouteComponent() {
                       }
                       title="Excluir Simulação"
                       onConfirm={() => deleteSimulation(option.id)}
+                    />
+                    <Button variant="outline-bipc" size="icon-lg" disabled>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <DrawerFormModule
+                      triggerComponent={
+                        <Button variant="outline-bipc">
+                          Adicionar Tecnologia
+                        </Button>
+                      }
+                      type="concrete_wall"
+                      floors={unitTowerFloors}
+                      projectId={projectId}
+                      unitId={unitId}
+                      optionId={option.id}
                     />
                   </>
                 }

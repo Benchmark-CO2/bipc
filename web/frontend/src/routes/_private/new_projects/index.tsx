@@ -35,7 +35,7 @@ function RouteComponent() {
   const [viewMode, setViewMode] = useState<"table" | "grid">("grid");
   const { t } = useTranslation();
   const { projects, selectedProjects, setSelectedProjects } = useProjects();
-  const navigate = useNavigate({ from: "/projects" });
+  const navigate = useNavigate({ from: "/new_projects" });
   const { setSummaryContext } = useSummary();
   const { data } = useQuery({
     queryKey: ["projects"],
@@ -82,22 +82,30 @@ function RouteComponent() {
       });
   };
 
-  const componentTrigger =
-    viewMode === "table" ? (
-      <Button variant="outline">
-        <Plus className="h-4 w-4" />
-        {t("projects.addProject")}
-      </Button>
-    ) : (
-      <div className="flex h-[100px] w-full flex-col items-center justify-center overflow-hidden rounded-lg bg-primary text-white p-4 shadow-md shadow-zinc-600 transition-all duration-500 hover:cursor-pointer hover:shadow-lg md:w-1/3 lg:w-1/4 xl:max-w-100 dark:shadow-zinc-900">
-        <Plus className="size-8" />
-        <span className="text-lg font-medium">{t("projects.addProject")}</span>
-      </div>
-    );
-
   const handleSelectProject = (projectUid: string, isSelected: boolean) => {
     setSelectedProjects((prev) => new Map(prev).set(projectUid, isSelected));
   };
+
+  const handleSelectAll = () => {
+    const allProjects = projects ?? [];
+    const allSelected = allProjects.every((project) =>
+      selectedProjects.get(project.id)
+    );
+
+    if (allSelected) {
+      setSelectedProjects(new Map());
+    } else {
+      const newMap = new Map<string, boolean>();
+      allProjects.forEach((project) => {
+        newMap.set(project.id, true);
+      });
+      setSelectedProjects(newMap);
+    }
+  };
+
+  const allSelected =
+    (projects ?? []).length > 0 &&
+    (projects ?? []).every((project) => selectedProjects.get(project.id));
 
   useEffect(() => {
     if (!benchmarkData?.data) return;
@@ -116,11 +124,23 @@ function RouteComponent() {
 
   return (
     <div>
-      <div className="mb-6 mt-6 flex justify-between gap-1">
+      <div className="mb-6 mt-6 flex justify-between gap-1 flex-wrap">
         <h1 className='text-4xl font-bold font-["helvetica"] text-primary '>
           Projetos
         </h1>
-        <div className="flex justify-end gap-1">
+        <div className="flex justify-end gap-2 ml-auto">
+          {viewMode === "grid" && projects && projects.length > 0 && (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleSelectAll}
+                className="min-w-[140px]"
+              >
+                {allSelected ? "Desmarcar Todos" : "Selecionar Todos"} (
+                {projects.length})
+              </Button>
+            </>
+          )}
           <DrawerFormProject
             componentTrigger={
               <Button variant={"bipc"}>{t("projects.addProject")}</Button>

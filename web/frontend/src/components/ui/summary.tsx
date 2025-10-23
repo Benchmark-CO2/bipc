@@ -11,7 +11,7 @@ const Summary = () => {
     <section
       data-open={isOpen}
       data-expanded={isExpanded}
-      className="absolute bottom-0 right-0 bg-gray-50 dark:bg-sidebar w-full max-md:mx-auto max-md:left-0 transition-all z-50 border-t border-gray-200 dark:border-gray-700 shadow-lg"
+      className="absolute z-[2] bottom-0 right-0 bg-gray-50 dark:bg-sidebar w-full max-md:mx-auto max-md:left-0 transition-all z-50 border-t border-gray-200 dark:border-gray-700 shadow-lg"
       style={{
         height: isOpen ? (isExpanded ? "96vh" : "550px") : "50px",
       }}

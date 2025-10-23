@@ -1,5 +1,5 @@
 import { IModule } from "./modules";
-import { TConsumption } from "./projects";
+import { TConsumptionPerModule } from "./projects";
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type Unit = {
@@ -17,7 +17,7 @@ export type TTowerFloorCategory = {
   area: number;
   height: number;
   index: number;
-  consumption: TConsumption;
+  consumptions?: TConsumptionPerModule;
   category?:
     | "penthouse_floor"
     | "standard_floor"
@@ -34,7 +34,7 @@ export type TTowerType = {
 };
 
 export interface IUnit {
-  id: number;
+  id: string;
   project_id: number;
   name: string;
   type: TUnitType;

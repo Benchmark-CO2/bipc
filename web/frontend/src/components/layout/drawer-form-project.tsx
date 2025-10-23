@@ -145,6 +145,9 @@ export default function DrawerFormProject({
       queryClient.invalidateQueries({
         queryKey: ["projects"],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["project", projectData!.id],
+      });
       setOpenDrawer(false);
       form.reset();
     },

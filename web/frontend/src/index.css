@@ -5,27 +5,27 @@
 @plugin 'tailwindcss-animate';
 
 :root {
-  --background: hsl(0 0% 100%);
+  --background: hsla(189, 68%, 99%, 1);
   --foreground: hsl(240 10% 3.9%);
-  --card: hsl(0 0% 100%);
+  --card: hsla(0, 0%, 100%, 1);
   --card-foreground: hsl(240 10% 3.9%);
-  --popover: hsl(0 0% 100%);
+  --popover: hsla(0, 0%, 100%, 1);
   --popover-foreground: hsl(240 10% 3.9%);
   --primary: hsl(188, 71%, 32%);
   --primary-foreground: hsl(355.7 100% 97.3%);
-  --secondary: hsl(97, 56%, 45%);
+  --secondary: hsla(97, 56%, 45%, 1);
   --secondary-foreground: hsl(240 5.9% 10%);
   --muted: hsl(240 4.8% 95.9%);
   --muted-foreground: hsl(240 3.8% 46.1%);
   --accent: hsl(240 4.8% 95.9%);
   --accent-foreground: hsl(240 5.9% 10%);
   --destructive: hsl(10, 78%, 55%);
-  --destructive-foreground: hsl(0 0% 98%);
+  --destructive-foreground: hsla(189, 68%, 99%, 1);
   --border: hsl(240 5.9% 90%);
-  --input: hsl(240 5.9% 90%);
+  --input: hsla(240, 6%, 90%, 1);
   --ring: hsl(142.1 76.2% 36.3%);
-  --color-william-50: hsl(180, 47%, 96%);
 
+  --color-william-50: hsl(180, 47%, 96%);
   --color-william-100: hsl(180, 43%, 90%);
   --color-william-200: hsl(182, 42%, 82%);
   --color-william-300: hsl(184, 41%, 74%);
@@ -49,9 +49,15 @@
   --color-observatory-900: #0a5749;
   --color-observatory-950: #00352f;
 
-  --color-active: hsl(97, 56%, 45%);
+  --color-active: hsla(97, 56%, 45%, 1);
 
-  --radius: 0.6rem;
+  --color-gray-shade-100: hsla(240, 5%, 96%, 1);
+  --color-gray-shade-200: hsla(240, 6%, 90%, 1);
+  --color-gray-shade-300: hsla(240, 5%, 84%, 1);
+  --color-gray-shade-400: hsla(240, 5%, 65%, 1);
+  --color-gray-shade-500: hsla(240, 4%, 46%, 1);
+
+  --radius: 0.8rem;
   --chart-1: hsl(173 58% 39%);
   --chart-2: hsl(12 76% 61%);
   --chart-3: hsl(197 37% 24%);
@@ -81,8 +87,8 @@
   --border: hsl(240 3.7% 15.9%);
   --input: hsl(240 3.7% 15.9%);
   --ring: hsl(142.4 71.8% 29.2%);
-  --color-william-50: hsl(180, 47%, 96%);
 
+  --color-william-50: hsl(180, 47%, 96%);
   --color-william-100: hsl(180, 43%, 90%);
   --color-william-200: hsl(182, 42%, 82%);
   --color-william-300: hsl(184, 41%, 74%);
@@ -95,6 +101,12 @@
   --color-william-950: hsl(198, 34%, 11%);
 
   --color-active: hsl(97, 56%, 45%);
+
+  --color-gray-shade-100: hsla(240, 5%, 96%, 1);
+  --color-gray-shade-200: hsla(240, 6%, 90%, 1);
+  --color-gray-shade-300: hsla(240, 5%, 84%, 1);
+  --color-gray-shade-400: hsla(240, 5%, 65%, 1);
+  --color-gray-shade-500: hsla(240, 4%, 46%, 1);
 
   --chart-1: hsl(160 60% 45%);
   --chart-2: hsl(220 70% 50%);
@@ -133,6 +145,12 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
+  --color-gray-shade-100: var(--color-gray-shade-100);
+  --color-gray-shade-200: var(--color-gray-shade-200);
+  --color-gray-shade-300: var(--color-gray-shade-300);
+  --color-gray-shade-400: var(--color-gray-shade-400);
+  --color-gray-shade-500: var(--color-gray-shade-500);
 
   --color-dark-50: var(--color-william-50);
   --color-dark-100: var(--color-william-100);

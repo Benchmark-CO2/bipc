@@ -1,4 +1,4 @@
-import LogoDark from "@/assets/logo-dark.svg";
+import Logo from "@/assets/logo.svg";
 import LogoFull from "@/assets/logo_full.svg";
 import { useSummary } from "@/context/summaryContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,9 +15,9 @@ import {
   FlaskConical,
   Info,
   LogIn,
-  MenuSquare,
+  Menu,
   Settings,
-  UserPlus
+  UserPlus,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Notifications } from "../notifications";
@@ -267,11 +267,11 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         )}
       >
         <div>
-          <img src={LogoDark} alt="Logo" className="h-8" />
+          <img src={Logo} alt="Logo" className="h-8" />
         </div>
-        <div className="flex gap-4 items-center">
+        <div className="flex gap-4 items-center text-accent">
           {isAuthenticated && <Notifications size={24} />}
-          <MenuSquare
+          <Menu
             size={24}
             className="text-white cursor-pointer"
             onClick={() => {

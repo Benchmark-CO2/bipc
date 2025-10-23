@@ -35,6 +35,7 @@ interface ICommonTableProps {
     data: Record<string, string | number>;
   };
   collapsed?: boolean;
+  onClickRow?: (rowData: any) => void;
 }
 
 export default function CommonTable({
@@ -47,6 +48,7 @@ export default function CommonTable({
   actions,
   lastRow,
   collapsed = false,
+  onClickRow,
 }: ICommonTableProps) {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
@@ -124,7 +126,7 @@ export default function CommonTable({
                 className={
                   isInteractive
                     ? "bg-primary text-primary-foreground"
-                    : "bg-[#E4E4E7] dark:bg-gray-800 text-primary"
+                    : "bg-gray-shade-300 dark:bg-gray-800 text-primary"
                 }
               >
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -193,9 +195,10 @@ export default function CommonTable({
                       backgroundColor: index % 2 === 0 ? "#E3F3F6" : "#FBFEFE",
                     }}
                     data-state={row.getIsSelected() && "selected"}
+                    onClick={() => onClickRow && onClickRow(row.original)}
                   >
                     {isSelectable && (
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <Checkbox
                           className={
                             isInteractive
@@ -229,7 +232,7 @@ export default function CommonTable({
                   </TableRow>
                 ))}
                 {lastRow && (
-                  <TableRow className="bg-secondary/20 hover:bg-secondary/30 font-semibold">
+                  <TableRow className="bg-gray-shade-300 hover:bg-gray-shade-300/30 font-semibold">
                     {isSelectable && <TableCell></TableCell>}
                     <TableCell className="font-semibold text-left">
                       {lastRow.type}

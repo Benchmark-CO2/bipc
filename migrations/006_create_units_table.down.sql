@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS floors_consumption;
 DROP TABLE IF EXISTS module_beam_column;
 DROP TABLE IF EXISTS module_concrete_wall;
 DROP TABLE IF EXISTS module_floor;
