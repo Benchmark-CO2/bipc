@@ -21,11 +21,12 @@ func (m BenchmarkModel) GetFloorsBenchmark() ([]*BenchmarkData, error) {
 	query := `
 		SELECT
 			f.id,
-			f.co2_min,
-			f.co2_max,
-			f.energy_min,
-			f.energy_max
+			SUM(fc.co2_min) as co2_min,
+			SUM(fc.co2_max) as co2_max,
+			SUM(fc.energy_min) as energy_min,
+			SUM(fc.energy_max) as energy_max
 		FROM floor f
+		LEFT JOIN floors_consumption fc ON f.id = fc.floor_id
 		GROUP BY f.id`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -75,26 +76,36 @@ func (m BenchmarkModel) GetFloorsBenchmark() ([]*BenchmarkData, error) {
 
 func (m BenchmarkModel) GetUnitsBenchmark() ([]*BenchmarkData, error) {
 	query := `
-		WITH tower_consumption AS (
+		WITH tower_consumption_by_tech AS (
 			SELECT
 				fg.tower_id,
-				SUM(f.co2_min * f.area) / SUM(f.area) as co2_min,
-				SUM(f.co2_max * f.area) / SUM(f.area) as co2_max,
-				SUM(f.energy_min * f.area) / SUM(f.area) as energy_min,
-				SUM(f.energy_max * f.area) / SUM(f.area) as energy_max
+				SUM(fc.co2_min * f.area) / NULLIF(SUM(f.area), 0) as co2_min,
+				SUM(fc.co2_max * f.area) / NULLIF(SUM(f.area), 0) as co2_max,
+				SUM(fc.energy_min * f.area) / NULLIF(SUM(f.area), 0) as energy_min,
+				SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max
 			FROM floor f
 			INNER JOIN floor_group fg ON f.group_id = fg.id
-			GROUP BY fg.tower_id
+			INNER JOIN floors_consumption fc ON f.id = fc.floor_id
+			GROUP BY fg.tower_id, fc.technology
+		),
+		tower_total_consumption AS (
+			SELECT
+				tower_id,
+				SUM(co2_min) as co2_min,
+				SUM(co2_max) as co2_max,
+				SUM(energy_min) as energy_min,
+				SUM(energy_max) as energy_max
+			FROM tower_consumption_by_tech
+			GROUP BY tower_id
 		)
 		SELECT
 			u.id,
-			tc.co2_min,
-			tc.co2_max,
-			tc.energy_min,
-			tc.energy_max
+			ttc.co2_min,
+			ttc.co2_max,
+			ttc.energy_min,
+			ttc.energy_max
 		FROM units u
-		LEFT JOIN tower_consumption tc ON u.id = tc.tower_id
-		GROUP BY u.id, tc.co2_min, tc.co2_max, tc.energy_min, tc.energy_max`
+		LEFT JOIN tower_total_consumption ttc ON u.id = ttc.tower_id`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -144,16 +155,37 @@ func (m BenchmarkModel) GetUnitsBenchmark() ([]*BenchmarkData, error) {
 
 func (m BenchmarkModel) GetProjectsBenchmark() ([]*BenchmarkData, error) {
 	query := `
-		WITH project_consumption AS (
+		WITH tower_consumption_by_tech AS (
 			SELECT
-				u.project_id,
-				SUM(f.co2_min * f.area) / SUM(f.area) as co2_min,
-				SUM(f.co2_max * f.area) / SUM(f.area) as co2_max,
-				SUM(f.energy_min * f.area) / SUM(f.area) as energy_min,
-				SUM(f.energy_max * f.area) / SUM(f.area) as energy_max
+				fg.tower_id,
+				SUM(fc.co2_min * f.area) / NULLIF(SUM(f.area), 0) as co2_min,
+				SUM(fc.co2_max * f.area) / NULLIF(SUM(f.area), 0) as co2_max,
+				SUM(fc.energy_min * f.area) / NULLIF(SUM(f.area), 0) as energy_min,
+				SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max
 			FROM floor f
 			INNER JOIN floor_group fg ON f.group_id = fg.id
-			INNER JOIN units u ON fg.tower_id = u.id
+			INNER JOIN floors_consumption fc ON f.id = fc.floor_id
+			GROUP BY fg.tower_id, fc.technology
+		),
+		tower_total_consumption AS (
+			SELECT
+				tower_id,
+				SUM(co2_min) as co2_min,
+				SUM(co2_max) as co2_max,
+				SUM(energy_min) as energy_min,
+				SUM(energy_max) as energy_max
+			FROM tower_consumption_by_tech
+			GROUP BY tower_id
+		),
+		project_consumption AS (
+			SELECT
+				u.project_id,
+				SUM(ttc.co2_min) as co2_min,
+				SUM(ttc.co2_max) as co2_max,
+				SUM(ttc.energy_min) as energy_min,
+				SUM(ttc.energy_max) as energy_max
+			FROM units u
+			INNER JOIN tower_total_consumption ttc ON u.id = ttc.tower_id
 			GROUP BY u.project_id
 		)
 		SELECT
@@ -163,8 +195,7 @@ func (m BenchmarkModel) GetProjectsBenchmark() ([]*BenchmarkData, error) {
 			pc.energy_min,
 			pc.energy_max
 		FROM projects p
-		LEFT JOIN project_consumption pc ON p.id = pc.project_id
-		GROUP BY p.id, pc.co2_min, pc.co2_max, pc.energy_min, pc.energy_max`
+		LEFT JOIN project_consumption pc ON p.id = pc.project_id`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
