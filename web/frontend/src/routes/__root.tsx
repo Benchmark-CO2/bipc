@@ -21,7 +21,7 @@ import { useTranslation } from "react-i18next";
 // import { AuthProvider } from "@/providers/authProvider";
 // import { ProjectProvider } from "@/providers/projectProvider";
 // import Summary from "@/components/ui/summary";
-
+const publicPathnames = ["/login", "/about", "/contact", "/faqs", "/benchmark"];
 const TanStackRouterDevtools = import.meta.env.PROD
   ? () => null
   : lazy(() =>
@@ -49,7 +49,7 @@ export const Route = createRootRouteWithContext<{
     };
 
     const isMobile = useIsMobile();
-
+    const isPublicRoute = publicPathnames.includes(path.pathname);
     return (
       <div className="flex h-screen w-full transition-all">
         {isAuthenticated && (
