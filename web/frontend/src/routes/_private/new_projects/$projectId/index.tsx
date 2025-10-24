@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_private/new_projects/$projectId/")({
       queryFn: getAllProjectsByUser,
     });
 
-    const project = projects?.data?.projects.find((p) => p.id === projectId);
+    const project = projects?.data?.projects?.find((p) => p.id === projectId);
     const projectConsumptions: TConsumption[] = Object.keys(
       project?.consumptions || {}
     )

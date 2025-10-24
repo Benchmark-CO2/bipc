@@ -77,7 +77,6 @@ export default function DrawerFormProject({
       phase: projectData?.phase || "not_defined",
       street: projectData?.street || "",
       number: projectData?.number || "",
-      image_url: undefined,
     },
   });
 
@@ -245,7 +244,6 @@ export default function DrawerFormProject({
           phase: projectData.phase || "not_defined",
           street: projectData.street || "",
           number: projectData.number || "",
-          image_url: undefined,
         });
       } else {
         form.reset({
@@ -258,7 +256,6 @@ export default function DrawerFormProject({
           phase: "not_defined",
           street: "",
           number: "",
-          image_url: undefined,
         });
       }
     }
@@ -380,6 +377,7 @@ export default function DrawerFormProject({
                     <FormControl>
                       <Input
                         placeholder={t("drawerFormProject.statePlaceholder")}
+                        disabled={locationLoading}
                         {...field}
                       />
                     </FormControl>
@@ -396,6 +394,7 @@ export default function DrawerFormProject({
                     <FormControl>
                       <Input
                         placeholder={t("drawerFormProject.cityPlaceholder")}
+                        disabled={locationLoading}
                         {...field}
                       />
                     </FormControl>
@@ -417,6 +416,7 @@ export default function DrawerFormProject({
                       placeholder={t(
                         "drawerFormProject.neighborhoodPlaceholder"
                       )}
+                      disabled={locationLoading}
                       {...field}
                     />
                   </FormControl>
@@ -434,6 +434,7 @@ export default function DrawerFormProject({
                     <FormControl>
                       <Input
                         placeholder={t("drawerFormProject.streetPlaceholder")}
+                        disabled={locationLoading}
                         {...field}
                       />
                     </FormControl>
@@ -522,32 +523,6 @@ export default function DrawerFormProject({
                       rows={4}
                       className="resize-none"
                       {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="image_url"
-              render={({ field: { onChange, ...rest } }) => (
-                <FormItem>
-                  <FormLabel>{t("drawerFormProject.imageLabel")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t("drawerFormProject.imagePlaceholder")}
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          onChange(file);
-                          handleChangeImage(file);
-                        }
-                      }}
-                      {...rest}
-                      value={undefined}
                     />
                   </FormControl>
                   <FormMessage />
