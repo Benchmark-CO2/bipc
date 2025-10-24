@@ -30,12 +30,12 @@ import {
 import { masks } from "@/utils/masks";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
-import { Eye, EyeOff, Info, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 const SignUp = () => {
   const [successModal, setSuccessModal] = useState(false);
@@ -48,6 +48,11 @@ const SignUp = () => {
       email: "",
       password: "",
       confirmPassword: "",
+      crea_cau: "",
+      birthdate: "",
+      city: "",
+      activity: "",
+      enterprise: "",
     },
   });
   const navigate = useNavigate();
@@ -62,6 +67,9 @@ const SignUp = () => {
           message: "Email já cadastrado",
         });
       }
+      toast.error("Algo deu errado", {
+        description: error.message || "Não foi possível completar o cadastro",
+      });
     },
     onSuccess() {
       toast.success(t("signUp.dialog.success.title"), {
@@ -71,11 +79,37 @@ const SignUp = () => {
     },
   });
   const handleSubmit = (data: RegisterFormSchema) => {
-    const { name, email, password } = data;
+    const {
+      name,
+      email,
+      password,
+      birthdate,
+      crea_cau,
+      city,
+      activity,
+      enterprise,
+    } = data;
+
+    // Converte a data de DD/MM/YYYY para ISO format com timezone (RFC3339)
+    let birthdateISO: string | undefined;
+    if (birthdate && birthdate.trim() !== "") {
+      const cleanDate = birthdate.replace(/\D/g, "");
+      const day = cleanDate.substring(0, 2);
+      const month = cleanDate.substring(2, 4);
+      const year = cleanDate.substring(4, 8);
+      // Formato: YYYY-MM-DDTHH:MM:SSZ (usando meia-noite UTC)
+      birthdateISO = `${year}-${month}-${day}T00:00:00Z`;
+    }
+
     mutate({
       name,
       email,
       password,
+      ...(crea_cau && crea_cau.trim() !== "" && { crea_cau }),
+      ...(birthdateISO && { birthdate: birthdateISO }),
+      ...(city && city.trim() !== "" && { city }),
+      ...(activity && activity.trim() !== "" && { activity }),
+      ...(enterprise && enterprise.trim() !== "" && { enterprise }),
     });
   };
 
@@ -149,7 +183,7 @@ const SignUp = () => {
               />
               <FormField
                 control={form.control}
-                name="crea"
+                name="crea_cau"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("signUp.crea")}</FormLabel>
@@ -168,18 +202,21 @@ const SignUp = () => {
               />
               <FormField
                 control={form.control}
-                name="birthDate"
+                name="birthdate"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("signUp.birthDate")}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        type="string"
-                        placeholder={"xx/xx/xxxx"}
+                        type="text"
+                        placeholder={"DD/MM/AAAA"}
                         disabled={isPending}
-                        autoComplete="bday-day"
+                        autoComplete="bday"
                         value={masks.date(field.value || "")}
+                        onChange={(e) =>
+                          field.onChange(masks.date(e.target.value))
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -274,17 +311,18 @@ const SignUp = () => {
               <p className="font-bold text-lg">Informações profissionais</p>
               <FormField
                 control={form.control}
-                name="activityArea"
+                name="activity"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("signUp.activityArea")}</FormLabel>
                     <FormControl>
-                      <Select>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
                         <SelectTrigger className="w-full" disabled={isPending}>
-                          <SelectValue
-                            placeholder={t("signUp.activityArea")}
-                            {...field}
-                          />
+                          <SelectValue placeholder={t("signUp.activityArea")} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Arquitetura">
@@ -302,7 +340,7 @@ const SignUp = () => {
               />
               <FormField
                 control={form.control}
-                name="companyName"
+                name="enterprise"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t("signUp.companyName")}</FormLabel>
