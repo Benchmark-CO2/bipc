@@ -3,11 +3,11 @@ import { getProjectByUUID } from "@/actions/projects/getProject";
 import { getUnitByUUID } from "@/actions/units/getUnit";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import { floorsColumns } from "@/components/columns/floors";
-import { CommonTable, DrawerFormUnit } from "@/components/layout";
+import { CommonTable } from "@/components/layout";
 import FloorSummary from "@/components/summaryVariants/floors";
 import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
-import { TabsContainer } from "@/components/ui/tabsContainer";
+import { FilterTabs } from "@/components/ui/filter-tabs";
 import { useSummary } from "@/context/summaryContext";
 import { IConsumption } from "@/types/modules";
 import { TConsumptionPerModule } from "@/types/projects";
@@ -250,10 +250,10 @@ function RouteComponent() {
       />
       <Divider />
       <div className="flex items-center gap-2">
-        <TabsContainer
-          tabs={["Em uso"]}
-          selectedTab="Em uso"
-          handleTabClick={console.log}
+        <FilterTabs
+          tabs={["Todas as Unidades"]}
+          selectedTab="Todas as Unidades"
+          onTabSelect={console.log}
         />
       </div>
       <CommonTable

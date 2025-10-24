@@ -4,11 +4,11 @@ import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import NotFoundList from "../ui/not-found-list";
-import { TabsContainer } from "../ui/tabsContainer";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
 import { barColors, stackData } from "./utils";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
+import { FilterTabs } from "../ui/filter-tabs";
 
 type ProjectsSummaryProps = {
   projects: any[];
@@ -53,31 +53,21 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
   const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
-    setPreviousProjects(
-      projects.map(el => el.id)
-    );
+    setPreviousProjects(projects.map((el) => el.id));
   }, [projects]);
-
 
   useEffect(() => {
     if (previousProjects.length < projects.length) {
-      const diff = projects.filter(
-        (p) => !previousProjects.includes(p.id)
-      );
+      const diff = projects.filter((p) => !previousProjects.includes(p.id));
       if (diff.length > 0) {
-        setSelectedProjects((prev) => [
-          ...prev,
-          ...diff.map((d) => d.id),
-        ]);
+        setSelectedProjects((prev) => [...prev, ...diff.map((d) => d.id)]);
       }
     } else if (previousProjects.length > projects.length) {
       const diff = previousProjects.filter(
         (p) => !projects.map((u) => u.id).includes(p)
       );
       if (diff.length > 0) {
-        setSelectedProjects((prev) =>
-          prev.filter((p) => !diff.includes(p))
-        );
+        setSelectedProjects((prev) => prev.filter((p) => !diff.includes(p)));
       }
     }
   }, [previousProjects, projects]);
@@ -98,12 +88,12 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
   return (
     <>
       <div className="w-full flex gap-2 mb-4">
-        <TabsContainer
+        <FilterTabs
           tabs={["co2", "energy"]}
-          handleTabClick={(tab) => setType(tab as "co2" | "energy")}
+          onTabSelect={(tab) => setType(tab as "co2" | "energy")}
           selectedTab={type}
           fullWidth
-          handleClickSubTab={(tab) => {
+          onSubTabSelect={(tab) => {
             if (tab === "Projetos") setSubTabs(tab as "Projetos");
             if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
               selectAll();

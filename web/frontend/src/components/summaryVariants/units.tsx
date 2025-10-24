@@ -3,12 +3,12 @@ import { useSummary } from "@/context/summaryContext";
 import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
-import { TabsContainer } from "../ui/tabsContainer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
 import { barColors, stackData } from "./utils";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
+import { FilterTabs } from "../ui/filter-tabs";
 
 type ProjectsSummaryProps = {
   selectedUnits: (any & {
@@ -55,12 +55,10 @@ const UnitsSummary = ({
     [selectedUnits, data]
   );
 
- const [previousProjects, setPreviousProjects] = useState<any[]>([]);
+  const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
-    setPreviousProjects(
-      selectedUnits.map(el => el.id)
-    );
+    setPreviousProjects(selectedUnits.map((el) => el.id));
   }, [selectedUnits]);
 
   useEffect(() => {
@@ -69,23 +67,17 @@ const UnitsSummary = ({
         (p) => !previousProjects.includes(p.id)
       );
       if (diff.length > 0) {
-        setSelectedProjects((prev) => [
-          ...prev,
-          ...diff.map((d) => d.id),
-        ]);
+        setSelectedProjects((prev) => [...prev, ...diff.map((d) => d.id)]);
       }
     } else if (previousProjects.length > selectedUnits.length) {
       const diff = previousProjects.filter(
         (p) => !selectedUnits.map((u) => u.id).includes(p)
       );
       if (diff.length > 0) {
-        setSelectedProjects((prev) =>
-          prev.filter((p) => !diff.includes(p))
-        );
+        setSelectedProjects((prev) => prev.filter((p) => !diff.includes(p)));
       }
     }
   }, [previousProjects, selectedUnits]);
-  
 
   const handleAddProject = (projectId: string) => {
     if (selectedProjects.includes(projectId)) {
@@ -134,9 +126,9 @@ const UnitsSummary = ({
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
       <div className="w-full flex gap-2 mb-4">
-        <TabsContainer
+        <FilterTabs
           tabs={["co2", "energy"]}
-          handleTabClick={(tab) => setType(tab as "co2" | "energy")}
+          onTabSelect={(tab) => setType(tab as "co2" | "energy")}
           selectedTab={type}
           fullWidth
           subTabs={[
@@ -145,7 +137,7 @@ const UnitsSummary = ({
               ? "Desmarcar Todos"
               : "Selecionar Todos",
           ]}
-          handleClickSubTab={(tab) => {
+          onSubTabSelect={(tab) => {
             if (tab === "Unidades") setSelectedSubTab(tab as "Unidades");
             if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
               selectAll();

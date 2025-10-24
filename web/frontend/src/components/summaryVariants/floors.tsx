@@ -4,11 +4,11 @@ import { cn } from "@/lib/utils";
 import { IUnit } from "@/types/units";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
-import { TabsContainer } from "../ui/tabsContainer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
 import { barColors, stackData } from "./utils";
+import { FilterTabs } from "../ui/filter-tabs";
 
 type ProjectsSummaryProps = {
   floors: any[];
@@ -65,11 +65,8 @@ const FloorSummary = ({
   const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
-    setPreviousProjects(
-      selectedFloors.map(el => el.id)
-    );
+    setPreviousProjects(selectedFloors.map((el) => el.id));
   }, [selectedFloors]);
-
 
   useEffect(() => {
     if (previousProjects.length < selectedFloors.length) {
@@ -77,19 +74,14 @@ const FloorSummary = ({
         (p) => !previousProjects.includes(p.id)
       );
       if (diff.length > 0) {
-        setSelectedProjects((prev) => [
-          ...prev,
-          ...diff.map((d) => d.id),
-        ]);
+        setSelectedProjects((prev) => [...prev, ...diff.map((d) => d.id)]);
       }
     } else if (previousProjects.length > selectedFloors.length) {
       const diff = previousProjects.filter(
         (p) => !selectedFloors.map((u) => u.id).includes(p)
       );
       if (diff.length > 0) {
-        setSelectedProjects((prev) =>
-          prev.filter((p) => !diff.includes(p))
-        );
+        setSelectedProjects((prev) => prev.filter((p) => !diff.includes(p)));
       }
     }
   }, [previousProjects, selectedFloors]);
@@ -134,12 +126,12 @@ const FloorSummary = ({
   return (
     <>
       <div className="w-full flex gap-2 mb-4">
-        <TabsContainer
+        <FilterTabs
           tabs={["co2", "energy"]}
-          handleTabClick={(tab) => setType(tab as "co2" | "energy")}
+          onTabSelect={(tab) => setType(tab as "co2" | "energy")}
           selectedTab={type}
           fullWidth
-          handleClickSubTab={(tab) => {
+          onSubTabSelect={(tab) => {
             if (tab === "Pavimentos") setSubTabs(tab as "Pavimentos");
             if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
               selectAll();
