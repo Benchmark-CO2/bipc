@@ -1,6 +1,11 @@
 import { getAllProjectsByUser } from "@/actions/projects/getProjects";
-import { CollaboratorsView, ProjectView } from "@/components/layout";
-import { TabsContainer } from "@/components/ui/tabsContainer";
+import {
+  CollaboratorsView,
+  DrawerFormUnit,
+  ProjectView,
+} from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import { Tabs } from "@/components/ui/tabs";
 import { useSummary } from "@/context/summaryContext";
 import { TModulesTypes } from "@/types/modules";
 import { TConsumption, TConsumptionPerModule } from "@/types/projects";
@@ -10,6 +15,7 @@ import {
   useParams,
   useSearch,
 } from "@tanstack/react-router";
+import { Plus, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type ProjectSearch = {
@@ -88,12 +94,29 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-col gap-4">
-      <TabsContainer
-        tabs={tabs}
-        selectedTab={selectedTab}
-        handleTabClick={handleTabClick}
-        fullWidth
-      />
+      <div className="flex items-center gap-2">
+        <Tabs
+          tabs={tabs}
+          selectedTab={selectedTab}
+          handleTabClick={handleTabClick}
+          fullWidth
+        />
+        {selectedTab === "Projeto" && (
+          <>
+            <Button variant="outline-bipc" size="icon-lg" disabled>
+              <Upload />
+            </Button>
+            <DrawerFormUnit
+              triggerComponent={
+                <Button variant="bipc" size="icon-lg">
+                  <Plus />
+                </Button>
+              }
+              projectId={projectId}
+            />
+          </>
+        )}
+      </div>
 
       {selectedTab === "Projeto" && (
         <ProjectView
