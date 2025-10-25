@@ -9,7 +9,6 @@ import {
   DrawerFormModule,
 } from "@/components/layout";
 import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
-import TechnologiesSummary from "@/components/summaryVariants/technologies";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import NotFoundList from "@/components/ui/not-found-list";
@@ -21,7 +20,7 @@ import { IUnit } from "@/types/units";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
-import { Copy, Loader2, Star, Trash } from "lucide-react";
+import { Copy, Loader2, Plus, Star, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute(
@@ -199,7 +198,7 @@ const OptionMenu = ({
         value={localName}
         onChange={handleNameChange}
         onBlur={handleBlur}
-        className="font-medium text-accent-foreground focus:border-primary focus:ring-primary"
+        className="font-medium text-accent-foreground focus:border-primary focus:ring-primary max-w-[240px]"
       />
     </div>
   );
@@ -410,6 +409,7 @@ function RouteComponent() {
                       triggerComponent={
                         <Button variant="outline-bipc">
                           Adicionar Tecnologia
+                          <Plus className="ml-1 h-4 w-4" />
                         </Button>
                       }
                       type="concrete_wall"
