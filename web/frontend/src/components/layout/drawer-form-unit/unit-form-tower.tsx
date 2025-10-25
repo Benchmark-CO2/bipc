@@ -373,7 +373,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
             </p>
           </Card>
         ) : (
-          <div className="border rounded-md">
+          <div className="border rounded-md border-gray-shade-200 bg-card">
             <Table>
               <TableHeader>
                 <TableRow>

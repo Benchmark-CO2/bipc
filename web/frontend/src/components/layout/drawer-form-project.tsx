@@ -316,7 +316,7 @@ export default function DrawerFormProject({
           <div className="max-h-[calc(100vh-100px)] overflow-y-auto px-8">
             <form
               id="project-form"
-              className="flex flex-col gap-3 rounded-md px-4 py-2 border-gray-shade-200 border"
+              className="flex flex-col gap-3 rounded-md px-4 py-2 border-gray-shade-200 border bg-card"
               onSubmit={form.handleSubmit(onSubmit)}
             >
               <FormField

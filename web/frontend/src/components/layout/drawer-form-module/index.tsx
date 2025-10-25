@@ -345,12 +345,12 @@ const DrawerFormModule = ({
                   </div>
                 </div>
                 <div className="flex-1 overflow-y-auto pr-2">
-                  <div className="px-0 pt-4 pb-2">
-                    <span className="text-md font-semibold leading-2 text-primary dark:text-gray-300">
-                      Dados da tecnologia
-                    </span>
-                  </div>
-                  <div className="p-4 border rounded-lg border-muted space-y-4">
+                  <div className="p-4 border rounded-lg border-gray-shade-200 space-y-4 bg-card">
+                    <div>
+                      <span className="text-md font-semibold leading-2 text-primary dark:text-gray-300">
+                        Dados da tecnologia
+                      </span>
+                    </div>
                     {/* Campos básicos */}
                     <div className="grid grid-cols-1 gap-4">
                       <FormField
