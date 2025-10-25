@@ -26,7 +26,7 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 
 const createSimulationSchema = z.object({
   name: z.string().min(1, "O nome é obrigatório"),
-  active: z.boolean().default(false).optional(),
+  active: z.boolean().default(true).optional(),
 });
 
 type CreateSimulationFormSchema = z.infer<typeof createSimulationSchema>;
