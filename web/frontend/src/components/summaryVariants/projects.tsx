@@ -10,6 +10,7 @@ import { TabsContainer } from "../ui/tabsContainer";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
+import { useMinMax } from "./hooks/useMinMax";
 import { barColors, stackData } from "./utils";
 
 type ProjectsSummaryProps = {
@@ -28,8 +29,10 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
+  const { filteredData, MinMaxComponent } = useMinMax(data.benchmark?.[type as "co2" | "energy"], el => el.min, el => el.max, type);
+
   const managedData = manageData(
-    data.benchmark?.[type as "co2" | "energy"] || []
+    filteredData || []
   )
     .map((el) => ({
       ...el,
@@ -119,6 +122,7 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
           ]}
           selectedSubTab={subTabs}
         />
+        {MinMaxComponent}
         {ChartSelector}
       </div>
       <div

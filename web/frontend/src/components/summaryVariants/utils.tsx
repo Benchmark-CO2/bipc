@@ -31,3 +31,19 @@ export const barColors = [
   "bg-purple-500",
   "bg-red-500",
 ];
+
+export function recalculateY(points: any, xMin: number, xMax: number): any[] {
+  const filtered = points.filter(p => (p.min) >= xMin && p.max <= xMax);
+
+  if (filtered.length === 0) return [];
+
+  const minX = Math.min(...filtered.map(p => (p.min + p.max) / 2));
+  const maxX = Math.max(...filtered.map(p => (p.min + p.max) / 2));
+
+  return filtered.map(p => ({
+    min: p.min,
+    max: p.max,
+    id: p.id,
+    y: maxX === minX ? 0 : ((p.min + p.max) / 2 - minX) / (maxX - minX)
+  }));
+}

@@ -507,7 +507,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
         // text with project identifier
         g.append("text")
-          .attr("x", isMoreThenHalf ? x2 + 100 : x1 - 100)
+          .attr("x", isMoreThenHalf ? x2 + 150 : x1 - 150)
           .attr("y", y + 4)
           .attr("text-anchor", "start")
           .attr("font-size", 12)

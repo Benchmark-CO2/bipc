@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
+import { useMinMax } from "./hooks/useMinMax";
 import { barColors, stackData } from "./utils";
 
 type ProjectsSummaryProps = {
@@ -40,8 +41,10 @@ const UnitsSummary = ({
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
+  const { filteredData, MinMaxComponent } = useMinMax(data.benchmark?.[type as "co2" | "energy"], el => el.min, el => el.max, type);
+
   const fakeUnits = generateFakeData(
-    data.benchmark?.[type as "co2" | "energy"] || []
+    filteredData || []
   )
     .map((el) => ({
       ...el,
@@ -155,6 +158,7 @@ const UnitsSummary = ({
           }}
           selectedSubTab={selectedSubTab}
         />
+        {MinMaxComponent}
         {ChartSelector}
       </div>
 
