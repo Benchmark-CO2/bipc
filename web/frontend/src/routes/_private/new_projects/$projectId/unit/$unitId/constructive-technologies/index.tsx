@@ -1,3 +1,4 @@
+import { deleteModule } from "@/actions/modules/deleteModule";
 import { deleteOption } from "@/actions/options/deleteOption";
 import { getOptions } from "@/actions/options/getOptions";
 import { patchOption } from "@/actions/options/patchOption";
@@ -20,8 +21,9 @@ import { IUnit } from "@/types/units";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
-import { Copy, Loader2, Plus, Star, Trash } from "lucide-react";
+import { Copy, Edit, Loader2, Plus, Star, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute(
   "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies/"
@@ -248,6 +250,27 @@ function RouteComponent() {
     retry: false,
   });
 
+  const { mutate: mutateDeleteTec, isPending: isDeletingTec } = useMutation({
+    mutationFn: ({
+      optionId,
+      moduleId,
+    }: {
+      optionId: string;
+      moduleId: string;
+    }) => deleteModule(projectId, unitId, optionId, moduleId),
+    onSuccess: () => {
+      toast.success("Tecnologia Construtiva excluída com sucesso");
+      queryClient.invalidateQueries({
+        queryKey: ["options", projectId, unitId],
+      });
+    },
+    onError: (error) => {
+      toast.error("Erro ao excluir tecnologia construtiva", {
+        description: error.message,
+      });
+    },
+  });
+
   const { data: unitData, isLoading: isLoadingUnit } = useQuery({
     queryKey: ["unit", projectId, unitId],
     queryFn: () => getUnitByUUID(projectId, unitId),
@@ -322,11 +345,11 @@ function RouteComponent() {
       header: "",
       cell: ({ row }) => {
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2">
             <DrawerFormModule
               triggerComponent={
-                <Button variant="outline" size="sm" className="ml-auto">
-                  Editar
+                <Button variant="ghost" size="icon" disabled={isDeleting}>
+                  <Edit className="h-4 w-4 text-primary" />
                 </Button>
               }
               type={row.original.type}
@@ -335,6 +358,24 @@ function RouteComponent() {
               optionId={row.original.option_id}
               moduleId={row.original.id}
               floors={unitTowerFloors}
+            />
+            <ModalConfirmDelete
+              title="Excluir Tecnologia Construtiva"
+              onConfirm={() =>
+                mutateDeleteTec({
+                  optionId: row.original.option_id,
+                  moduleId: row.original.id,
+                })
+              }
+              componentTrigger={
+                <Button variant="ghost" size="icon" disabled={isDeletingTec}>
+                  {isDeletingTec ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash className="h-4 w-4 text-red-700" />
+                  )}
+                </Button>
+              }
             />
           </div>
         );
