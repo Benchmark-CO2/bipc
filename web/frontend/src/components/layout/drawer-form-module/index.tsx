@@ -265,8 +265,7 @@ const DrawerFormModule = ({
       },
     };
 
-    console.log(baseFields);
-    // mutateCreation(baseFields);
+    mutateCreation(baseFields);
   };
 
   const handleClose = () => {
