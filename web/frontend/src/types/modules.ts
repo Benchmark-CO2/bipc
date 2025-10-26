@@ -13,7 +13,7 @@ export interface IModule {
 }
 
 export interface IConcrete {
-  fck: "20" | "25" | "30" | "35" | "40" | "45";
+  fck: number;
   volume: number;
 }
 
@@ -37,8 +37,29 @@ export interface IBlock {
     | "COMP 14x39"
     | "JOTA 14 x 39 x 19/9"
     | "JOTA 14 x 19 x 19/9";
-  fbk: "02" | "04" | "06" | "08" | "10" | "12";
+  fbk: number;
   quantity: number;
+}
+
+export interface IGroutItem {
+  fgk: number;
+  volume: number;
+}
+
+export interface ISteelItem {
+  ca: number;
+  mass: number;
+}
+
+export interface IGrout {
+  type: "vertical" | "horizontal" | "general";
+  volumes: IGroutItem[];
+  steel: ISteelItem[];
+}
+
+export interface IMortar {
+  fak: number;
+  volume: number;
 }
 
 export type TModulesTypes =
@@ -87,11 +108,16 @@ export interface IConcreteWall extends IBasicModule {
 }
 
 export interface IStructuralMasonry extends IBasicModule {
-  vertical_grout: IConcrete[];
-  horizontal_grout: IConcrete[];
   blocks: IBlock[];
-  steel_ca50: number;
-  steel_ca60: number;
+  grout: IGrout[];
+  mortar: IMortar[];
+  concrete_slabs: IConcrete[];
+  concrete_columns?: IConcrete[];
+  concrete_beams?: IConcrete[];
+  form_slabs?: number;
+  form_columns?: number;
+  form_beams?: number;
+  avg_slab_span?: number;
 }
 
 export interface IConsumption {

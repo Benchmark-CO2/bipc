@@ -1,9 +1,5 @@
 // import { postModule } from "@/actions/modules/postModule"; // comentado temporariamente
-import {
-  ModuleParamsProps,
-  TModuleStructure,
-  TModulesTypes,
-} from "@/types/modules";
+import { ModuleParamsProps, TModulesTypes } from "@/types/modules";
 import {
   ModuleFormSchema,
   moduleFormSchema,
@@ -18,7 +14,6 @@ import { Button } from "../../ui/button";
 import {
   Drawer,
   DrawerContent,
-  DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
@@ -41,7 +36,7 @@ import {
 } from "../../ui/select";
 import ModuleFormBeamColumn from "./module-form-beam-column";
 import ModuleFormConcreteWall from "./module-form-concrete-wall";
-// import ModuleFormStructuralMasonry from "./module-form-structural-masonry"; // comentado por enquanto
+import ModuleFormStructuralMasonry from "./module-form-structural-masonry";
 import BuildingVisualizer from "../building-visualizer";
 import { getDefaultValuesByType } from "./module-default-values";
 import { TTowerFloorCategory } from "@/types/units";
@@ -163,9 +158,6 @@ const DrawerFormModule = ({
         "concrete_beams",
         "concrete_slabs",
         "concrete_walls",
-        // "vertical_grout", // comentado: structural masonry
-        // "horizontal_grout", // comentado: structural masonry
-        // "blocks", // comentado: structural masonry
       ] as const;
 
       fieldsToInit.forEach((field) => {
@@ -184,8 +176,12 @@ const DrawerFormModule = ({
 
       setSelectedFloors(floor_ids || []);
 
-      if (rest.type === "beam_column" || rest.type === "concrete_wall") {
-        form.reset(rest as ModuleFormSchema);
+      if (
+        rest.type === "beam_column" ||
+        rest.type === "concrete_wall" ||
+        rest.type === "structural_masonry"
+      ) {
+        form.reset(rest as unknown as ModuleFormSchema);
       } else {
         form.reset(getDefaultValuesByType(type));
       }
@@ -231,17 +227,35 @@ const DrawerFormModule = ({
         wall_form_area: data.wall_form_area,
         slab_form_area: data.slab_form_area,
       };
-    }
+    } else if (data.type === "structural_masonry") {
+      // Separar grout por tipo para o backend
+      const groutByType: any = {};
+      data.grout?.forEach((g) => {
+        const key = `${g.type}_grout`;
+        if (!groutByType[key]) {
+          groutByType[key] = [];
+        }
+        groutByType[key].push({
+          volumes: g.volumes,
+          steel: g.steel,
+        });
+      });
 
-    // Comentado: structural masonry
-    // else if (baseFields.type === "structural_masonry") {
-    //   filteredData = {
-    //     ...baseFields,
-    //     vertical_grout: data.vertical_grout || [],
-    //     horizontal_grout: data.horizontal_grout || [],
-    //     blocks: data.blocks || [],
-    //   };
-    // }
+      filteredData = {
+        masonry: {
+          blocks: data.blocks || [],
+          ...groutByType,
+          mortar: data.mortar || [],
+        },
+        concrete_slabs: data.concrete_slabs || { volumes: [], steel: [] },
+        concrete_columns: data.concrete_columns,
+        concrete_beams: data.concrete_beams,
+        form_slabs: data.form_slabs,
+        form_columns: data.form_columns,
+        form_beams: data.form_beams,
+        avg_slab_span: data.avg_slab_span,
+      };
+    }
 
     const baseFields: ModuleParamsProps = {
       type: data.type,
@@ -251,7 +265,8 @@ const DrawerFormModule = ({
       },
     };
 
-    mutateCreation(baseFields);
+    console.log(baseFields);
+    // mutateCreation(baseFields);
   };
 
   const handleClose = () => {
@@ -262,7 +277,7 @@ const DrawerFormModule = ({
   const structureTypes = [
     { value: "beam_column", label: t("common.structureType.beamColumn") },
     { value: "concrete_wall", label: t("common.structureType.concreteWall") },
-    // { value: "structural_masonry", label: t("common.structureType.masonry") }, // comentado por enquanto
+    { value: "structural_masonry", label: t("common.structureType.masonry") },
   ];
 
   return (
@@ -273,7 +288,12 @@ const DrawerFormModule = ({
       onOpenChange={(open) => {
         if (open) {
           setIsOpen(true);
-          if (type && (type === "beam_column" || type === "concrete_wall")) {
+          if (
+            type &&
+            (type === "beam_column" ||
+              type === "concrete_wall" ||
+              type === "structural_masonry")
+          ) {
             form.setValue("type", type);
           }
         }
@@ -370,7 +390,8 @@ const DrawerFormModule = ({
                                   field.onChange(value);
                                   if (
                                     value === "beam_column" ||
-                                    value === "concrete_wall"
+                                    value === "concrete_wall" ||
+                                    value === "structural_masonry"
                                   ) {
                                     form.reset(
                                       getDefaultValuesByType(value as any)
@@ -413,8 +434,10 @@ const DrawerFormModule = ({
                           return <ModuleFormBeamColumn form={form as any} />;
                         case "concrete_wall":
                           return <ModuleFormConcreteWall form={form as any} />;
-                        // case "structural_masonry": // comentado por enquanto
-                        //   return <ModuleFormStructuralMasonry form={form} />;
+                        case "structural_masonry":
+                          return (
+                            <ModuleFormStructuralMasonry form={form as any} />
+                          );
                         default:
                           return null;
                       }
