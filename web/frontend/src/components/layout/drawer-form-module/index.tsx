@@ -291,8 +291,8 @@ const DrawerFormModule = ({
         <DrawerHeader className="px-8">
           <DrawerTitle className="text-2xl font-bold text-primary">
             {moduleId
-              ? t("drawerFormModule.editTitle")
-              : t("drawerFormModule.addTitle")}
+              ? "Editar Módulo de Cálculo"
+              : "Adicionar Módulo de Cálculo"}
           </DrawerTitle>
           <Button
             onClick={handleClose}
