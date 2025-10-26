@@ -4,10 +4,13 @@ import { cn } from "@/lib/utils";
 import { IUnit } from "@/types/units";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
+import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { TabsContainer } from "../ui/tabsContainer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
+import { useChartType } from "./hooks/useChartType";
+import { useMinMax } from "./hooks/useMinMax";
 import { barColors, stackData } from "./utils";
 
 type ProjectsSummaryProps = {
@@ -28,6 +31,8 @@ const generateFakeData = (floors: IBenchmarkResponse["benchmark"]["co2"]) => {
   }));
 };
 
+
+
 const FloorSummary = ({
   floors,
   data,
@@ -36,9 +41,11 @@ const FloorSummary = ({
 }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+  const { chartType, ChartSelector } = useChartType();
+  const { filteredData, MinMaxComponent } = useMinMax(data.benchmark?.[type as "co2" | "energy"], el => el.min, el => el.max, type);
 
   const fakeFloors = generateFakeData(
-    data.benchmark?.[type as "co2" | "energy"]
+    filteredData
   )
     ?.map((el) => ({
       ...el,
@@ -130,7 +137,7 @@ const FloorSummary = ({
     0 as number
   );
 
-  console.log("floors", stackedData, avgByUnit);
+
   return (
     <>
       <div className="w-full flex gap-2 mb-4">
@@ -152,6 +159,8 @@ const FloorSummary = ({
           ]}
           selectedSubTab={subTabs}
         />
+        {MinMaxComponent}
+        {ChartSelector}
       </div>
       <div
         className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
@@ -240,10 +249,19 @@ const FloorSummary = ({
           </ul>
           {/* {!isExpanded && <Subtitle />} */}
         </div>
-        <D3GradientRangeChart
-          data={fakeFloors}
-          selectedBars={selectedProjects}
-        />
+        {
+          chartType == 'scatter' ? (
+            <D3GradientRangeChart
+              data={fakeFloors}
+              selectedBars={selectedProjects}
+            />
+          ) : (
+            <D3GradientRangeLineChart
+              data={fakeFloors}
+              selectedBars={selectedProjects}
+            />
+          )
+        }
       </div>
     </>
   );

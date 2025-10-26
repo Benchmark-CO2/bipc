@@ -1,14 +1,17 @@
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
 import { cn } from "@/lib/utils";
+import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
+import D3GradientRangeLineChart from "../charts/d3chartLine";
 import NotFoundList from "../ui/not-found-list";
 import { TabsContainer } from "../ui/tabsContainer";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
+import { useChartType } from "./hooks/useChartType";
+import { useMinMax } from "./hooks/useMinMax";
 import { barColors, stackData } from "./utils";
-import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 
 type ProjectsSummaryProps = {
   projects: any[];
@@ -25,8 +28,11 @@ const manageData = (data: ProjectsSummaryProps["data"]["benchmark"]["co2"]) => {
 const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+  const { chartType, ChartSelector } = useChartType();
+  const { filteredData, MinMaxComponent } = useMinMax(data.benchmark?.[type as "co2" | "energy"], el => el.min, el => el.max, type);
+
   const managedData = manageData(
-    data.benchmark?.[type as "co2" | "energy"] || []
+    filteredData || []
   )
     .map((el) => ({
       ...el,
@@ -116,6 +122,8 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
           ]}
           selectedSubTab={subTabs}
         />
+        {MinMaxComponent}
+        {ChartSelector}
       </div>
       <div
         className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
@@ -164,11 +172,20 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
           </ul>
           {/* {!isExpanded && <Subtitle />} */}
         </div>
-        <D3GradientRangeChart
-          data={managedData}
-          selectedBars={selectedProjects}
-          unit={unitsOfMeasure[type] || ""}
-        />
+
+        {
+          chartType === 'scatter' ? (
+            <D3GradientRangeChart
+              data={managedData}
+              selectedBars={selectedProjects}
+              unit={unitsOfMeasure[type] || ""}
+            />
+          ) : (
+            <D3GradientRangeLineChart
+              data={managedData}
+              selectedBars={selectedProjects}
+            />
+          )}
       </div>
     </>
   );
