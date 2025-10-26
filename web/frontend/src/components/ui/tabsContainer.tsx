@@ -6,6 +6,7 @@ interface TabsContainerProps {
   subTabs?: string[]
   handleClickSubTab?: (tab: string) => void;
   selectedSubTab?: string;
+  tabsLabel?: { [key: string]: string };
 }
 
 export function TabsContainer({
@@ -16,6 +17,7 @@ export function TabsContainer({
   subTabs = [],
   handleClickSubTab,
   selectedSubTab,
+  tabsLabel,
 }: TabsContainerProps) {
   if (tabs.length === 0) return null;
 
@@ -35,13 +37,12 @@ export function TabsContainer({
           onClick={() => {
             handleTabClick(tab);
           }}
-          className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-6 py-2 text-sm font-medium transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
-            selectedTab === tab
+          className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-6 py-2 text-sm font-medium transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${selectedTab === tab
               ? "bg-secondary text-white shadow-sm dark:bg-secondary dark:text-white"
               : "cursor-pointer text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20"
-          }`}
+            }`}
         >
-          {convertTabName(tab)}
+          {convertTabName(tabsLabel?.[tab] || tab)}
         </button>
       ))}
       {subTabs.length > 0 && (
@@ -52,11 +53,10 @@ export function TabsContainer({
               onClick={() => {
                 handleClickSubTab!(tab);
               }}
-              className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-6 py-2 text-sm font-medium transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
-                selectedSubTab === tab
+              className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-6 py-2 text-sm font-medium transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${selectedSubTab === tab
                   ? "bg-secondary text-white shadow-sm dark:bg-secondary dark:text-white"
                   : "cursor-pointer text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20"
-              }`}
+                }`}
             >
               {convertTabName(tab)}
             </button>
