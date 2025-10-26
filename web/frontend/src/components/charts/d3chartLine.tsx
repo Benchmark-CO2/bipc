@@ -428,18 +428,18 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
 
         g.append("circle")
-          .attr("cx", x + (isExpanded ? barHeight : minimalBarHeight) / 2)
+          .attr("cx", x + (isExpanded ? 0 : minimalBarHeight) / 2)
           .attr("cy", y1)
-          .attr("r", isExpanded ? 6 : 5)
+          .attr("r", isExpanded ? 8 : 5)
           .attr("fill", "#3b82f6")
           .attr("stroke", "white")
           .attr("stroke-width", isExpanded ? 2 : 1)
           .attr("id", `bar-circle-start-${d.id}`);
 
         g.append("circle")
-          .attr("cx", x + (isExpanded ? barHeight : minimalBarHeight) / 2)
+          .attr("cx", x + (isExpanded ? 0 : minimalBarHeight) / 2)
           .attr("cy", y2)
-          .attr("r", isExpanded ? 6 : 5)
+          .attr("r", isExpanded ? 8 : 5)
           .attr("fill", "#E36F35")
           .attr("stroke", "white")
           .attr("stroke-width", isExpanded ? 2 : 0.5)
@@ -457,7 +457,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
         //   .attr("id", `bar-label-min-${d.id}`);
         g.append("text")
           .attr("x", x + (isExpanded ? barHeight : minimalBarHeight) - 20)
-          .attr("y", y1 + (isExpanded ? barHeight : minimalBarHeight))
+          .attr("y", y1 + (isExpanded ? barHeight + 4 : minimalBarHeight))
           .attr("text-anchor", "end")
           .attr("font-size", 12)
           .attr("font-weight", "normal")
