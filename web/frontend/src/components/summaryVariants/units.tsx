@@ -1,13 +1,16 @@
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
 import { cn } from "@/lib/utils";
+import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
+import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
+import { useChartType } from "./hooks/useChartType";
+import { useMinMax } from "./hooks/useMinMax";
 import { barColors, stackData } from "./utils";
-import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { FilterTabs } from "../ui/filter-tabs";
 
 type ProjectsSummaryProps = {
@@ -37,9 +40,15 @@ const UnitsSummary = ({
 }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-  const fakeUnits = generateFakeData(
-    data.benchmark?.[type as "co2" | "energy"] || []
-  )
+  const { chartType, ChartSelector } = useChartType();
+  const { filteredData, MinMaxComponent } = useMinMax(
+    data.benchmark?.[type as "co2" | "energy"],
+    (el) => el.min,
+    (el) => el.max,
+    type
+  );
+
+  const fakeUnits = generateFakeData(filteredData || [])
     .map((el) => ({
       ...el,
       label: selectedUnits.find((f) => f.id === el.id)?.name || "",
@@ -144,6 +153,8 @@ const UnitsSummary = ({
           }}
           selectedSubTab={selectedSubTab}
         />
+        {MinMaxComponent}
+        {ChartSelector}
       </div>
 
       <div
@@ -234,11 +245,18 @@ const UnitsSummary = ({
           </ul>
           {/* {!isExpanded && <Subtitle />} */}
         </div>
-        <D3GradientRangeChart
-          data={fakeUnits}
-          selectedBars={selectedProjects}
-          unit={unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""}
-        />
+        {chartType === "scatter" ? (
+          <D3GradientRangeChart
+            data={fakeUnits}
+            selectedBars={selectedProjects}
+            unit={unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""}
+          />
+        ) : (
+          <D3GradientRangeLineChart
+            data={fakeUnits}
+            selectedBars={selectedProjects}
+          />
+        )}
       </div>
     </div>
   );

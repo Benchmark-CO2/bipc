@@ -15,6 +15,7 @@ type D3GradientRangeChartProps = {
   width?: number;
   height?: number;
   overrideDimensions?: boolean;
+  customData?: any;
 };
 const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   selectedBars,
@@ -345,6 +346,8 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
           .x((d) => xScale(d.x))
           .curve(d3.curveBasis)
       );
+
+
   }, [isExpanded, reversedData, isResized, data]);
 
   useEffect(() => {
@@ -354,17 +357,54 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     if (g.empty()) return;
     (reversedData || []).forEach((d, i) => {
       const gradientId = `gradient-${i}`;
+      const gradient = g
+        .append("defs")
+        .append("linearGradient")
+        .attr("id", gradientId)
+        .attr("x1", "50%")
+        .attr("x2", "50%")
+        .attr("y1", "0%")
+        .attr("y2", "100%");
+
+      // Função simples: de amarelo até vermelho baseado em X global
+      const colorScale = d3
+        .scaleLinear<string>()
+        .domain([maxValue * 0.20, maxValue * 0.40, maxValue * 0.60, maxValue * 0.80, maxValue]) // mesmo domínio do seu xScale
+        .range([
+          "#14400D",
+          "#6B9215",
+          "#F2E530",
+          "#F28C0F",
+          "#D90D0D",
+        ]);
+
+      // Cores do início e fim
+      const startColor = colorScale(d.min);
+      const endColor = colorScale(d.max);
+
+      // Adicionar stops (apenas dois bastam nesse caso)
+      gradient
+        .append("stop")
+        .attr("offset", "0%")
+        .attr("stop-color", startColor);
+
+      gradient
+        .append("stop")
+        .attr("offset", "100%")
+        .attr("stop-color", endColor);
+      // const gradientId = `gradient-${i}`;
       if ((selectedBars || []).includes(d.id)) {
-        const y = yScale(d.y);
-        const x1 = xScale(d.min);
-        const x2 = xScale(d.max);
+        const x = xScale(d.y);
+        const y1 = yScale(d.min);
+        const y2 = yScale(d.max);
+        const minimalBarHeight = 8;
 
         if (isExpanded) {
           g.append("rect")
-            .attr("x", x1 - 12)
-            .attr("y", y - (barHeight + 4) / 2)
-            .attr("width", x2 - x1 + 24)
-            .attr("height", barHeight + 4)
+            .attr("x", x - 12)
+            .attr("y", y1 - (barHeight + 4) / 2)
+            .attr("width", 24)
+            .attr("height", y2 - y1 + barHeight + 4)
             .attr("fill", `url(#${gradientId})`)
             .attr("rx", 15)
             .attr("ry", 15)
@@ -372,12 +412,12 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
             .attr("stroke", "#2563eb")
             .attr("stroke-width", 2);
         } else {
-          const minimalBarHeight = 5;
           g.append("rect")
-            .attr("x", x1)
-            .attr("y", y - minimalBarHeight / 2)
-            .attr("width", x2 - x1)
-            .attr("height", minimalBarHeight)
+            .attr("x", x)
+            .attr("y", y1 - minimalBarHeight / 2 - 2)
+            // .attr("y2", y2)
+            .attr("width", minimalBarHeight)
+            .attr("height", y2 - y1 + 4)
             .attr("fill", `url(#${gradientId})`)
             .attr("rx", 5)
             .attr("ry", 5)
@@ -386,50 +426,64 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
             .attr("stroke-width", 0.1);
         }
 
+
         g.append("circle")
-          .attr("cx", x1)
-          .attr("cy", y)
-          .attr("r", isExpanded ? 6 : 5)
+          .attr("cx", x + (isExpanded ? 0 : minimalBarHeight) / 2)
+          .attr("cy", y1)
+          .attr("r", isExpanded ? 8 : 5)
           .attr("fill", "#3b82f6")
           .attr("stroke", "white")
           .attr("stroke-width", isExpanded ? 2 : 1)
           .attr("id", `bar-circle-start-${d.id}`);
 
         g.append("circle")
-          .attr("cx", x2)
-          .attr("cy", y)
-          .attr("r", isExpanded ? 6 : 5)
+          .attr("cx", x + (isExpanded ? 0 : minimalBarHeight) / 2)
+          .attr("cy", y2)
+          .attr("r", isExpanded ? 8 : 5)
           .attr("fill", "#E36F35")
           .attr("stroke", "white")
           .attr("stroke-width", isExpanded ? 2 : 0.5)
           .attr("id", `bar-circle-end-${d.id}`);
 
         // add text label with min and max values
+        // g.append("text")
+        //   .attr("x", x + (isExpanded ? barHeight : minimalBarHeight) + 4)
+        //   .attr("y", y1 - 8)
+        //   .attr("text-anchor", "end")
+        //   .attr("font-size", 12)
+        //   .attr("font-weight", "normal")
+        //   .attr("fill", "var(--primary)")
+        //   .text(d.min.toFixed(0))
+        //   .attr("id", `bar-label-min-${d.id}`);
         g.append("text")
-          .attr("x", x1 - 18)
-          .attr("y", y + 4)
+          .attr("x", x + (isExpanded ? barHeight : minimalBarHeight) - 20)
+          .attr("y", y1 + (isExpanded ? barHeight + 4 : minimalBarHeight))
           .attr("text-anchor", "end")
-          .attr("font-size", 14)
-          .attr("font-weight", "bold")
+          .attr("font-size", 12)
+          .attr("font-weight", "normal")
           .attr("fill", "var(--primary)")
-          .text(d.min.toFixed(0))
+          .attr(
+            "transform",
+            `rotate(90, ${x + (isExpanded ? barHeight : minimalBarHeight)}, ${y1})`
+          )
+          .text(`${d.label} -> `)
           .attr("id", `bar-label-min-${d.id}`);
 
-        g.append("text")
-          .attr("x", x2 + 18)
-          .attr("y", y + 4)
-          .attr("text-anchor", "start")
-          .attr("font-size", 14)
-          .attr("font-weight", "bold")
-          .attr("fill", "var(--primary)")
-          .text(d.max.toFixed(0))
-          .attr("id", `bar-label-max-${d.id}`);
+        // g.append("text")
+        //   .attr("x", x + 18)
+        //   .attr("y", y2)
+        //   .attr("text-anchor", "start")
+        //   .attr("font-size", 12)
+        //   .attr("font-weight", "normal")
+        //   .attr("fill", "var(--primary)")
+        //   .text(d.max.toFixed(0))
+        //   .attr("id", `bar-label-max-${d.id}`);
 
         // add project name label inside the bar
         if (isExpanded)
           g.append("text")
-            .attr("x", (x1 + x2) / 2)
-            .attr("y", y + 5)
+            .attr("x", (y1 + y2) / 2)
+            .attr("y", x + 5)
             .attr("text-anchor", "middle")
             .attr("font-size", 14)
             .attr("font-weight", "bold")

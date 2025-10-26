@@ -6,6 +6,7 @@ interface IFilterTabsProps {
   selectedSubTab?: string;
   onSubTabSelect?: (tab: string) => void;
   fullWidth?: boolean;
+  tabsLabel?: { [key: string]: string };
 }
 
 export function FilterTabs({
@@ -16,6 +17,7 @@ export function FilterTabs({
   selectedSubTab,
   onSubTabSelect,
   fullWidth = false,
+  tabsLabel,
 }: IFilterTabsProps) {
   if (tabs.length === 0) return null;
 
@@ -43,7 +45,7 @@ export function FilterTabs({
                 : "cursor-pointer text-active border border-active hover:bg-active/10"
             }`}
           >
-            {convertTabName(tab)}
+            {convertTabName(tabsLabel?.[tab] || tab)}
           </button>
         ))}
       </div>
