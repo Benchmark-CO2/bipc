@@ -62,14 +62,14 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
     resolver: zodResolver(createSimulationSchema),
     defaultValues: {
       name: "",
-      active: false,
+      active: true,
     },
   });
 
   const handleCreateSimulation = (data: CreateSimulationFormSchema) => {
     createSimulationMutation.mutate({
       name: data.name,
-      active: data.active || false,
+      active: data.active || true,
     });
   };
 
