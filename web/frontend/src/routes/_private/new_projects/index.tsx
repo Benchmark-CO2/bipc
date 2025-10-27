@@ -106,17 +106,18 @@ function RouteComponent() {
     (projects ?? []).length > 0 &&
     (projects ?? []).every((project) => selectedProjects.get(project.id));
 
+  const someSelected = [...selectedProjects.values()].some((value => value === true));
   useEffect(() => {
     if (!benchmarkData?.data) return;
     setSummaryContext({
       title: "Projects Comparison",
       component: (
         <ProjectsSummary
-          projects={selectedProjects.size > 0 ? [...(projects ?? [])].filter((project) =>
+          projects={someSelected ? [...(projects ?? [])].filter((project) =>
             selectedProjects.get(project.id)
           ) : projects}
           data={benchmarkData.data}
-          someSelected={selectedProjects.size > 0}
+          someSelected={someSelected}
         />
       ),
     });

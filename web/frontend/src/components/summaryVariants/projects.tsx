@@ -32,7 +32,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
   const { filteredData, MinMaxComponent } = useMinMax(data.benchmark?.[type as "co2" | "energy"], el => el.min, el => el.max, type);
-
+  console.log({ someSelected, projects });
   const managedData = manageData(
     filteredData || []
   )
@@ -61,7 +61,10 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
   const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!someSelected) return
+    if (!someSelected) {
+      setSelectedProjects([]);
+      return;
+    }
     setPreviousProjects(
       projects.map(el => el.id)
     );

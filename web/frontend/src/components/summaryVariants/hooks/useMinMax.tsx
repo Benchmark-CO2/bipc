@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { posLaunchFeatures } from '@/utils/posLaunchFeatures';
 import { Info, RefreshCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { recalculateY } from "../utils";
@@ -60,5 +61,5 @@ export const useMinMax = (data: { min: number; max: number }[], accessorMin: (el
       </Tooltip>
     </div>
   )
-  return { min, max, filteredData, MinMaxComponent };
+  return { min, max, filteredData, MinMaxComponent: posLaunchFeatures.filterChartMinMax.enabled ? MinMaxComponent : null  };
 }
