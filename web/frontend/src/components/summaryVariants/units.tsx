@@ -5,13 +5,14 @@ import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
+import { FilterTabs } from "../ui/filter-tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ItemCard from "./components/ItemCard";
+import Legend from './components/Legend';
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
 import { useMinMax } from "./hooks/useMinMax";
 import { barColors, stackData } from "./utils";
-import { FilterTabs } from "../ui/filter-tabs";
 
 type ProjectsSummaryProps = {
   selectedUnits: (any & {
@@ -22,6 +23,7 @@ type ProjectsSummaryProps = {
   project: any;
   units: any[];
   data: IBenchmarkResponse;
+  someSelected: boolean;
 };
 
 const generateFakeData = (units: ProjectsSummaryProps["units"]) => {
@@ -37,6 +39,7 @@ const UnitsSummary = ({
   data,
   selectedUnits,
   project,
+  someSelected,
 }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
@@ -67,10 +70,14 @@ const UnitsSummary = ({
   const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
-    setPreviousProjects(selectedUnits.map((el) => el.id));
-  }, [selectedUnits]);
+    if (!someSelected) return
+    setPreviousProjects(
+      selectedUnits.map(el => el.id)
+    );
+  }, [selectedUnits, someSelected]);
 
   useEffect(() => {
+    if (!someSelected) return
     if (previousProjects.length < selectedUnits.length) {
       const diff = selectedUnits.filter(
         (p) => !previousProjects.includes(p.id)
@@ -86,7 +93,7 @@ const UnitsSummary = ({
         setSelectedProjects((prev) => prev.filter((p) => !diff.includes(p)));
       }
     }
-  }, [previousProjects, selectedUnits]);
+  }, [previousProjects, selectedUnits, someSelected]);
 
   const handleAddProject = (projectId: string) => {
     if (selectedProjects.includes(projectId)) {
@@ -154,15 +161,15 @@ const UnitsSummary = ({
           selectedSubTab={selectedSubTab}
         />
         {MinMaxComponent}
-        {ChartSelector}
       </div>
 
       <div
         className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
           "flex flex-col h-full justify-between": isExpanded,
         })}
-      >
+        >
         <div className="flex flex-col items-start w-full">
+        {ChartSelector}
           <div className="w-full mb-2">
             <div className="mb-2 text-lg text-gray-600">{project.name}</div>
             <div className="flex w-auto">
@@ -186,7 +193,7 @@ const UnitsSummary = ({
                   >
                     <Tooltip>
                       <TooltipTrigger
-                        style={{ backgroundColor: barColors[idx] }}
+                        style={{ backgroundColor: barColors }}
                         className="w-full"
                       >
                         <div className="w-full h-[16px]"></div>
@@ -227,7 +234,7 @@ const UnitsSummary = ({
                   handleAddProject={handleAddProject}
                   selectedProjects={selectedProjects}
                   sum={sum}
-                  color={barColors[idx]}
+                  color={barColors}
                   type={type}
                 />
               ) : (
@@ -237,12 +244,13 @@ const UnitsSummary = ({
                   selectedProjects={selectedProjects}
                   handleAddProject={handleAddProject}
                   sum={sum}
-                  color={barColors[idx]}
+                  color={barColors}
                   type={type}
                 />
               );
             })}
           </ul>
+          <Legend  />
           {/* {!isExpanded && <Subtitle />} */}
         </div>
         {chartType === "scatter" ? (

@@ -24,7 +24,11 @@ const ListItem = ({
   type
 }: ListItemProps) => {
   const { isExpanded } = useSummary();
-  console.log({ item });
+  console.log({
+    item,
+    sum,
+    percentage: (Number(item[type]) / Number(sum)) * 100
+  })
   return (
     <li
       key={item.id}
@@ -48,7 +52,7 @@ const ListItem = ({
       <div className="flex flex-col gap-2 justify-between h-10 w-full">
         <div
           style={{
-            backgroundColor: item[type] ? color : 'transparent',
+            backgroundColor: item[type] ? color : '#f00',
           }}
           className={cn(`h-[10px] rounded-l-md w-full`, {
             "border-[0.5px] border-gray-300 rounded-md p-2": !item[type] && !isExpanded,

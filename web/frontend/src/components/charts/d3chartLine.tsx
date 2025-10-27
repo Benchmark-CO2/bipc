@@ -54,7 +54,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     if (isMobile && !isExpanded) return 250;
     if (isMobile && isExpanded) return 320;
     if (isExpanded) return window.innerHeight * 0.96 - 130;
-    return 550 - 230;
+    return (window.innerHeight * 0.7) - 230;
   };
 
   // Dimensões
@@ -108,7 +108,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   const poly = regressionPoly()
     .x((d: DataPoint) => d.x)
     .y((d: DataPoint) => d.y)
-    .order(3);
+    .order(4);
   const fittedMax = poly(normalized);
   const fittedMin = poly(normalizedMin);
 
@@ -329,7 +329,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
           .x((d) => xScale(d.x)) // usa o eixo de carbono incorporado
           .y((d) => yScale(d.y)) // se o seu y for o potencial de mitigação
           .curve(d3.curveBasis)
-      );
+      ).lower();
     svg
       .append("path")
       .datum(denormalizedMax)
@@ -345,7 +345,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
           .y((d) => yScale(d.y))
           .x((d) => xScale(d.x))
           .curve(d3.curveBasis)
-      );
+      ).lower();
 
 
   }, [isExpanded, reversedData, isResized, data]);
@@ -401,49 +401,49 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
         if (isExpanded) {
           g.append("rect")
-            .attr("x", x - 12)
-            .attr("y", y1 - (barHeight + 4) / 2)
-            .attr("width", 24)
-            .attr("height", y2 - y1 + barHeight + 4)
+            .attr("x", x - 11)
+            .attr("y", y1)
+            .attr("width", 22)
+            .attr("height", (y2 - y1))
             .attr("fill", `url(#${gradientId})`)
-            .attr("rx", 15)
-            .attr("ry", 15)
+            // .attr("rx", 15)
+            // .attr("ry", 15)
             .attr("id", `bar-${d.id}`)
-            .attr("stroke", "#2563eb")
-            .attr("stroke-width", 2);
+            .attr("stroke", "#999999cc")
+            .attr("stroke-width", 2).raise();
         } else {
           g.append("rect")
             .attr("x", x)
             .attr("y", y1 - minimalBarHeight / 2 - 2)
-            // .attr("y2", y2)
             .attr("width", minimalBarHeight)
             .attr("height", y2 - y1 + 4)
             .attr("fill", `url(#${gradientId})`)
             .attr("rx", 5)
             .attr("ry", 5)
             .attr("id", `bar-${d.id}`)
-            .attr("stroke", "#2563eb")
-            .attr("stroke-width", 0.1);
+            .attr("stroke", "#999999cc")
+            .attr("stroke-width", 0.1).raise();
         }
 
 
         g.append("circle")
           .attr("cx", x + (isExpanded ? 0 : minimalBarHeight) / 2)
           .attr("cy", y1)
-          .attr("r", isExpanded ? 8 : 5)
+          .attr("r", isExpanded ? 10 : 5)
           .attr("fill", "#3b82f6")
           .attr("stroke", "white")
-          .attr("stroke-width", isExpanded ? 2 : 1)
-          .attr("id", `bar-circle-start-${d.id}`);
+          .attr("stroke-width", isExpanded ? 4 : 2)
+          .attr("id", `bar-circle-start-${d.id}`).raise();
 
         g.append("circle")
           .attr("cx", x + (isExpanded ? 0 : minimalBarHeight) / 2)
           .attr("cy", y2)
-          .attr("r", isExpanded ? 8 : 5)
+          .attr("r", isExpanded ? 10 : 5)
           .attr("fill", "#E36F35")
           .attr("stroke", "white")
-          .attr("stroke-width", isExpanded ? 2 : 0.5)
-          .attr("id", `bar-circle-end-${d.id}`);
+          .attr("stroke-width", isExpanded ? 4 : 2)
+          .attr("z-index", 10)
+          .attr("id", `bar-circle-end-${d.id}`).raise();
 
         // add text label with min and max values
         // g.append("text")
