@@ -4,7 +4,7 @@ import { z } from "zod";
 const concreteVolumeItemSchema = z
   .object({
     fck: z.number(),
-    volume: z.number().positive("O volume deve ser um número positivo"),
+    volume: z.number().nonnegative("O volume não pode ser negativo"),
     customFck: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
@@ -108,7 +108,7 @@ const groutVolumeItemSchema = z
   });
 
 const groutItemSchema = z.object({
-  type: z.enum(["vertical", "horizontal"]),
+  position: z.enum(["vertical", "horizontal"]),
   volumes: z
     .array(groutVolumeItemSchema)
     .min(1, "Adicione pelo menos um volume"),

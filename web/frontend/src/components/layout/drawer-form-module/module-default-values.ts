@@ -1,6 +1,5 @@
 import { TModulesTypes } from "@/types/modules";
 
-// Valores padrão seguindo a nova tipagem type2.ts
 export const concreteWallDefaultValues = {
   type: "concrete_wall" as const,
   concrete_walls: {
@@ -46,7 +45,7 @@ export const structuralMasonryDefaultValues = {
   blocks: [{ type: "inteiro (14x19x29)" as const, fbk: 6, quantity: 0 }],
   grout: [
     {
-      type: "vertical" as const,
+      position: "vertical" as const,
       volumes: [{ fgk: 20, volume: 0 }],
       steel: [{ ca: 50 as const, mass: 0 }],
     },
@@ -56,17 +55,7 @@ export const structuralMasonryDefaultValues = {
     volumes: [{ fck: 30, volume: 0 }],
     steel: [{ ca: 50 as const, mass: 0 }],
   },
-  concrete_columns: {
-    volumes: [{ fck: 25, volume: 0 }],
-    steel: [{ ca: 50 as const, mass: 0 }],
-  },
-  concrete_beams: {
-    volumes: [{ fck: 30, volume: 0 }],
-    steel: [{ ca: 50 as const, mass: 0 }],
-  },
   form_slabs: 0,
-  form_columns: 0,
-  form_beams: 0,
   avg_slab_span: 0,
 };
 

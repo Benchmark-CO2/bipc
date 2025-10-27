@@ -24,7 +24,6 @@ interface ModuleFormStructuralMasonryProps {
   form: UseFormReturn<ModuleFormSchema>;
 }
 
-// Componente separado para cada item de graute
 interface GroutItemProps {
   groutIndex: number;
   groutField: any;
@@ -89,7 +88,7 @@ const GroutItem = ({
         <div className="flex items-center justify-between">
           <FormField
             control={form.control}
-            name={`grout.${groutIndex}.type`}
+            name={`grout.${groutIndex}.position`}
             render={({ field }) => (
               <FormItem className="flex-1">
                 <FormLabel className="text-xs font-medium">
@@ -475,9 +474,8 @@ const ModuleFormStructuralMasonry = ({
 
   useEffect(() => {
     const requiredFields = ["concrete_slabs"];
-    const optionalFields = ["concrete_columns", "concrete_beams"];
 
-    [...requiredFields, ...optionalFields].forEach((fieldName) => {
+    requiredFields.forEach((fieldName) => {
       const volumes = form.getValues(`${fieldName}.volumes` as any);
       const steel = form.getValues(`${fieldName}.steel` as any);
 
@@ -507,7 +505,7 @@ const ModuleFormStructuralMasonry = ({
     if (!grout || grout.length === 0) {
       form.setValue("grout", [
         {
-          type: "vertical" as const,
+          position: "vertical" as const,
           volumes: [{ fgk: 20, volume: 0 }],
           steel: [{ ca: 50, mass: 0 }],
         },
@@ -519,17 +517,9 @@ const ModuleFormStructuralMasonry = ({
     }
 
     const formSlabs = form.getValues("form_slabs");
-    const formColumns = form.getValues("form_columns");
-    const formBeams = form.getValues("form_beams");
 
     if (formSlabs === undefined) {
       form.setValue("form_slabs", 0);
-    }
-    if (formColumns === undefined) {
-      form.setValue("form_columns", 0);
-    }
-    if (formBeams === undefined) {
-      form.setValue("form_beams", 0);
     }
   }, [form, fckOptions, caOptions]);
 
@@ -846,7 +836,7 @@ const ModuleFormStructuralMasonry = ({
               size="sm"
               onClick={() =>
                 appendGrout({
-                  type: getNextAvailableGroutType() as any,
+                  position: getNextAvailableGroutType() as any,
                   volumes: [{ fgk: 20, volume: 0 }],
                   steel: [{ ca: 50, mass: 0 }],
                 })
