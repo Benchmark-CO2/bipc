@@ -11,7 +11,6 @@ import { useProjects } from "@/hooks/useProjects";
 import { queryClient } from "@/utils/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -113,10 +112,11 @@ function RouteComponent() {
       title: "Projects Comparison",
       component: (
         <ProjectsSummary
-          projects={[...(projects ?? [])].filter((project) =>
+          projects={selectedProjects.size > 0 ? [...(projects ?? [])].filter((project) =>
             selectedProjects.get(project.id)
-          )}
+          ) : projects}
           data={benchmarkData.data}
+          someSelected={selectedProjects.size > 0}
         />
       ),
     });

@@ -3,7 +3,7 @@ import { getProjectByUUID } from "@/actions/projects/getProject";
 import { getUnitByUUID } from "@/actions/units/getUnit";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import { floorsColumns } from "@/components/columns/floors";
-import { CommonTable, DrawerFormUnit } from "@/components/layout";
+import { CommonTable } from "@/components/layout";
 import FloorSummary from "@/components/summaryVariants/floors";
 import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
@@ -101,10 +101,11 @@ function RouteComponent() {
     setSummaryContext({
       component: (
         <FloorSummary
-          selectedFloors={selectedFloors}
+          selectedFloors={selectedFloors.length ? selectedFloors : (groupedFloors as any)}
           floors={groupedFloors}
           data={benchmarkData.data}
           unit={unit as IUnit}
+          someSelected={selectedFloors.length > 0}
         />
       ),
       title: "Floor Comparison",

@@ -8,6 +8,7 @@ import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { TabsContainer } from "../ui/tabsContainer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ItemCard from "./components/ItemCard";
+import Legend from './components/Legend';
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
 import { useMinMax } from "./hooks/useMinMax";
@@ -19,6 +20,7 @@ type ProjectsSummaryProps = {
   data: IBenchmarkResponse;
   unit: IUnit;
   selectedFloors: any[];
+  someSelected: boolean;
 };
 
 const generateFakeData = (floors: IBenchmarkResponse["benchmark"]["co2"]) => {
@@ -38,6 +40,7 @@ const FloorSummary = ({
   data,
   unit,
   selectedFloors,
+  someSelected,
 }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
@@ -72,13 +75,15 @@ const FloorSummary = ({
   const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
+    if (!someSelected) return
     setPreviousProjects(
       selectedFloors.map(el => el.id)
     );
-  }, [selectedFloors]);
+  }, [selectedFloors, someSelected]);
 
 
   useEffect(() => {
+    if (!someSelected) return
     if (previousProjects.length < selectedFloors.length) {
       const diff = selectedFloors.filter(
         (p) => !previousProjects.includes(p.id)
@@ -99,7 +104,7 @@ const FloorSummary = ({
         );
       }
     }
-  }, [previousProjects, selectedFloors]);
+  }, [previousProjects, selectedFloors, someSelected]);
 
   const [subTabs, setSubTabs] = useState<"Pavimentos">("Pavimentos");
   const selectAll = () => {
@@ -160,7 +165,6 @@ const FloorSummary = ({
           selectedSubTab={subTabs}
         />
         {MinMaxComponent}
-        {ChartSelector}
       </div>
       <div
         className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
@@ -168,6 +172,8 @@ const FloorSummary = ({
         })}
       >
         <div className="flex flex-col items-start w-full">
+                  {ChartSelector}
+
           <div className="w-full mb-2">
             <div className="mb-2 text-lg text-gray-600">{unit.name}</div>
             <div className="flex w-auto">
@@ -247,6 +253,8 @@ const FloorSummary = ({
               );
             })}
           </ul>
+                    {<Legend  />}
+
           {/* {!isExpanded && <Subtitle />} */}
         </div>
         {

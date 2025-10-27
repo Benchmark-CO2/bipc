@@ -8,6 +8,7 @@ import D3GradientRangeLineChart from "../charts/d3chartLine";
 import NotFoundList from "../ui/not-found-list";
 import { TabsContainer } from "../ui/tabsContainer";
 import ItemCard from "./components/ItemCard";
+import Legend from './components/Legend';
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
 import { useMinMax } from "./hooks/useMinMax";
@@ -16,6 +17,7 @@ import { barColors, stackData } from "./utils";
 type ProjectsSummaryProps = {
   projects: any[];
   data: IBenchmarkResponse;
+  someSelected: boolean;
 };
 
 const manageData = (data: ProjectsSummaryProps["data"]["benchmark"]["co2"]) => {
@@ -25,7 +27,7 @@ const manageData = (data: ProjectsSummaryProps["data"]["benchmark"]["co2"]) => {
     label: "",
   }));
 };
-const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
+const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
@@ -59,13 +61,16 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
   const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
+    if (!someSelected) return
     setPreviousProjects(
       projects.map(el => el.id)
     );
-  }, [projects]);
+  }, [projects, someSelected]);
 
 
   useEffect(() => {
+    if (!someSelected) return 
+
     if (previousProjects.length < projects.length) {
       const diff = projects.filter(
         (p) => !previousProjects.includes(p.id)
@@ -86,7 +91,7 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
         );
       }
     }
-  }, [previousProjects, projects]);
+  }, [previousProjects, projects, someSelected]);
 
   const [subTabs, setSubTabs] = useState<"Projetos">("Projetos");
   const selectAll = () => {
@@ -123,7 +128,7 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
           selectedSubTab={subTabs}
         />
         {MinMaxComponent}
-        {ChartSelector}
+        
       </div>
       <div
         className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
@@ -131,6 +136,7 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
         })}
       >
         <div className="flex flex-col items-start w-full">
+        {ChartSelector}
           <ul
             className={cn("flex flex-col gap-2 text-xl w-full text-black", {
               "flex-row gap-2 flex-wrap": isExpanded,
@@ -170,6 +176,7 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
               );
             })}
           </ul>
+          {<Legend  />}
           {/* {!isExpanded && <Subtitle />} */}
         </div>
 
