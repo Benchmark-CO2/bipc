@@ -48,7 +48,6 @@ export const Route = createFileRoute(
       "project",
       projectId,
     ]);
-    console.log(projectData);
     const project: IProject = projectData?.data?.project;
 
     const unit = project.units.find((u: TProjectUnit) => u.id === unitId);
