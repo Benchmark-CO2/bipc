@@ -106,16 +106,6 @@ const ProjectView = ({
             to: `/new_projects/${projectId}/unit/${rowData.id}`,
           })
         }
-        actions={
-          <DrawerFormUnit
-            triggerComponent={
-              <Button variant="bipc" size="sm">
-                Adicionar Unidade
-              </Button>
-            }
-            projectId={projectId}
-          />
-        }
         lastRow={{ type: "Média", data: finalAvgConsumptions }}
       />
       <Divider />

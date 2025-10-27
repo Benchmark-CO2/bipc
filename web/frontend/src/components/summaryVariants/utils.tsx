@@ -40,10 +40,10 @@ export function recalculateY(points: any, xMin: number, xMax: number): any[] {
   const minX = Math.min(...filtered.map(p => (p.min + p.max) / 2));
   const maxX = Math.max(...filtered.map(p => (p.min + p.max) / 2));
 
-  return filtered.map(p => ({
+  return filtered.map((p, idx) => ({
     min: p.min,
     max: p.max,
     id: p.id,
-    y: maxX === minX ? 0 : ((p.min + p.max) / 2 - minX) / (maxX - minX)
+    y: (idx + 1) / (filtered.length || 1)
   }));
 }

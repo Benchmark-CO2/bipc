@@ -7,10 +7,14 @@ import { CommonTable } from "@/components/layout";
 import FloorSummary from "@/components/summaryVariants/floors";
 import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
-import { TabsContainer } from "@/components/ui/tabsContainer";
+import { FilterTabs } from "@/components/ui/filter-tabs";
 import { useSummary } from "@/context/summaryContext";
 import { IConsumption } from "@/types/modules";
-import { TConsumptionPerModule } from "@/types/projects";
+import {
+  IProject,
+  TConsumptionPerModule,
+  TProjectUnit,
+} from "@/types/projects";
 import { IUnit, TTowerFloorCategory } from "@/types/units";
 import { getCategoryFromIndex } from "@/utils/unitConversions";
 import { useQuery } from "@tanstack/react-query";
@@ -19,6 +23,7 @@ import {
   useLoaderData,
   useParams,
 } from "@tanstack/react-router";
+import { Plus, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type TGroupedFloor = IConsumption &
@@ -43,10 +48,10 @@ export const Route = createFileRoute(
       "project",
       projectId,
     ]);
-    const project = projectData?.data?.project;
+    const project: IProject = projectData?.data?.project;
 
-    const unit = project.units.find((u: IUnit) => u.id === unitId);
-    const unitConsumptions = Object.keys(unit?.consumptions)
+    const unit = project.units.find((u: TProjectUnit) => u.id === unitId);
+    const unitConsumptions = Object.keys(unit?.consumptions || {})
       .filter((key) => key !== "total")
       .map((key) => ({
         type: key,
@@ -250,29 +255,35 @@ function RouteComponent() {
         lastRow={{ type: "Média", data: averageMetrics }}
       />
       <Divider />
-      <div className="flex items-center gap-2">
-        <TabsContainer
-          tabs={["Em uso"]}
-          selectedTab="Em uso"
-          handleTabClick={console.log}
-        />
-      </div>
       <CommonTable
-        tableName="Tecnologia Construtiva (módulo de cálculo)"
+        tableName={
+          <div>
+            Tecnologia Construtiva (módulo de cálculo)
+            <div className="flex items-center gap-2 mt-4">
+              <FilterTabs
+                tabs={["Todas as Unidades"]}
+                selectedTab="Todas as Unidades"
+                onTabSelect={console.log}
+                fullWidth
+              />
+              <Button variant="outline-bipc" size="icon-lg" disabled>
+                <Upload />
+              </Button>
+              <Button
+                variant="bipc"
+                size="icon-lg"
+                onClick={handleClickConstructiveTechnologies}
+              >
+                <Plus />
+              </Button>
+            </div>
+          </div>
+        }
         data={unitConsumptions}
         columns={constructiveTechnologies}
         isSelectable={false}
         isInteractive={false}
         collapsed={false}
-        actions={
-          <Button
-            variant="bipc"
-            size="sm"
-            onClick={handleClickConstructiveTechnologies}
-          >
-            Editar Tecnologias
-          </Button>
-        }
       />
     </div>
   );

@@ -54,7 +54,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     if (isMobile && !isExpanded) return 250;
     if (isMobile && isExpanded) return 320;
     if (isExpanded) return window.innerHeight * 0.96 - 130;
-    return 550 - 230;
+    return (window.innerHeight * 0.7) - 230;
   };
 
   // Dimensões
@@ -108,7 +108,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   const poly = regressionPoly()
     .x((d: DataPoint) => d.x)
     .y((d: DataPoint) => d.y)
-    .order(3);
+    .order(4);
   const fittedMax = poly(normalized);
   const fittedMin = poly(normalizedMin);
 

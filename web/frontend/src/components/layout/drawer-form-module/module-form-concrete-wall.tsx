@@ -147,26 +147,21 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
 
         <Card className={`border-2 ${borderColor}`}>
           <CardContent className="space-y-4">
-            <div>
-              <FormLabel className="text-sm text-gray-600">
+            <div className="flex items-center justify-between py-2 px-1">
+              <FormLabel className="text-xs text-gray-500">
                 Volume total de{" "}
                 {fieldName === "concrete_walls" ? "parede" : "laje"} (m³)
               </FormLabel>
               <FormField
                 control={form.control}
                 name={`${fieldName}.total_volume` as any}
-                render={({ field }) => {
+                render={() => {
                   return (
                     <FormItem>
                       <FormControl>
-                        <Input
-                          {...field}
-                          type="number"
-                          step="0.01"
-                          value={totalVolume.toFixed(2)}
-                          readOnly
-                          className="bg-gray-50 text-gray-700 font-medium"
-                        />
+                        <span className="text-sm font-medium text-gray-600">
+                          {totalVolume.toFixed(2)}
+                        </span>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -331,25 +326,20 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
 
             <div className="border-t border-gray-200 my-4"></div>
 
-            <div>
-              <FormLabel className="text-sm text-gray-600">
+            <div className="flex items-center justify-between py-2 px-1">
+              <FormLabel className="text-xs text-gray-500">
                 Aço total (kg)
               </FormLabel>
               <FormField
                 control={form.control}
                 name={`${fieldName}.total_mass` as any}
-                render={({ field }) => {
+                render={() => {
                   return (
                     <FormItem>
                       <FormControl>
-                        <Input
-                          {...field}
-                          type="number"
-                          step="0.01"
-                          value={totalMass.toFixed(0)}
-                          readOnly
-                          className="bg-gray-50 text-gray-700 font-medium"
-                        />
+                        <span className="text-sm font-medium text-gray-600">
+                          {totalMass.toFixed(0)}
+                        </span>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
