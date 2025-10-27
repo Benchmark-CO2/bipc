@@ -35,9 +35,7 @@ export function recalculateY(points: {
   if (filtered.length === 0) return [];
 
   return filtered.map((p, idx) => ({
-    min: p.min,
-    max: p.max,
-    id: p.id,
+    ...p,
     y: (idx + 1) / (filtered.length || 1)
   }));
 }
