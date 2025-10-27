@@ -25,13 +25,14 @@ export const stackData = <T extends IProject>(item: T[], data: IBenchmarkRespons
 
 export const barColors = "#FFE8A3";
 
-export function recalculateY(points: any, xMin: number, xMax: number): any[] {
+export function recalculateY(points: {
+  min: number, 
+  max: number,
+  id: string
+}[], xMin: number, xMax: number): any[] {
   const filtered = points.filter(p => (p.min) >= xMin && p.max <= xMax);
 
   if (filtered.length === 0) return [];
-
-  const minX = Math.min(...filtered.map(p => (p.min + p.max) / 2));
-  const maxX = Math.max(...filtered.map(p => (p.min + p.max) / 2));
 
   return filtered.map((p, idx) => ({
     min: p.min,

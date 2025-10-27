@@ -415,7 +415,6 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
           g.append("rect")
             .attr("x", x)
             .attr("y", y1 - minimalBarHeight / 2 - 2)
-            // .attr("y2", y2)
             .attr("width", minimalBarHeight)
             .attr("height", y2 - y1 + 4)
             .attr("fill", `url(#${gradientId})`)
