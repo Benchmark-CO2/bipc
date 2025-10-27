@@ -8,10 +8,10 @@ import Divider from "@/components/ui/divider";
 import { useSummary } from "@/context/summaryContext";
 import { TConsumption, TProjectUnit } from "@/types/projects";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import CommonTable from "../common-table";
 import DrawerFormUnit from "../drawer-form-unit";
-import { useNavigate } from "@tanstack/react-router";
 
 const ProjectView = ({
   projectId,
@@ -82,10 +82,11 @@ const ProjectView = ({
     setSummaryContext({
       component: (
         <UnitsSummary
-          selectedUnits={selectedUnits as any}
+          selectedUnits={selectedUnits.length ? selectedUnits : (units as any)}
           project={projectData?.data?.project as any}
           data={benchmarkData.data}
           units={units || []}
+          someSelected={selectedUnits.length > 0}
         />
       ),
       title: "Unidade Comparison",

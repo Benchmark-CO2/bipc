@@ -106,10 +106,11 @@ function RouteComponent() {
     setSummaryContext({
       component: (
         <FloorSummary
-          selectedFloors={selectedFloors}
+          selectedFloors={selectedFloors.length ? selectedFloors : (groupedFloors as any)}
           floors={groupedFloors}
           data={benchmarkData.data}
           unit={unit as IUnit}
+          someSelected={selectedFloors.length > 0}
         />
       ),
       title: "Floor Comparison",

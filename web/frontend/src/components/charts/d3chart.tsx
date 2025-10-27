@@ -58,7 +58,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     if (isMobile && !isExpanded) return 250;
     if (isMobile && isExpanded) return 320;
     if (isExpanded) return window.innerHeight * 0.96 - 130;
-    return 550 - 230;
+    return (window.innerHeight * 0.7) - 230;
   };
 
   // Dimensões

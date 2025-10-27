@@ -5,13 +5,14 @@ import { IUnit } from "@/types/units";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
+import { FilterTabs } from "../ui/filter-tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ItemCard from "./components/ItemCard";
+import Legend from './components/Legend';
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
 import { useMinMax } from "./hooks/useMinMax";
 import { barColors, stackData } from "./utils";
-import { FilterTabs } from "../ui/filter-tabs";
 
 type ProjectsSummaryProps = {
   floors: any[];
@@ -19,6 +20,7 @@ type ProjectsSummaryProps = {
   data: IBenchmarkResponse;
   unit: IUnit;
   selectedFloors: any[];
+  someSelected: boolean;
 };
 
 const generateFakeData = (floors: IBenchmarkResponse["benchmark"]["co2"]) => {
@@ -36,6 +38,7 @@ const FloorSummary = ({
   data,
   unit,
   selectedFloors,
+  someSelected,
 }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
@@ -73,10 +76,14 @@ const FloorSummary = ({
   const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
-    setPreviousProjects(selectedFloors.map((el) => el.id));
-  }, [selectedFloors]);
+    if (!someSelected) return
+    setPreviousProjects(
+      selectedFloors.map(el => el.id)
+    );
+  }, [selectedFloors, someSelected]);
 
   useEffect(() => {
+    if (!someSelected) return
     if (previousProjects.length < selectedFloors.length) {
       const diff = selectedFloors.filter(
         (p) => !previousProjects.includes(p.id)
@@ -92,7 +99,7 @@ const FloorSummary = ({
         setSelectedProjects((prev) => prev.filter((p) => !diff.includes(p)));
       }
     }
-  }, [previousProjects, selectedFloors]);
+  }, [previousProjects, selectedFloors, someSelected]);
 
   const [subTabs, setSubTabs] = useState<"Pavimentos">("Pavimentos");
   const selectAll = () => {
@@ -152,7 +159,6 @@ const FloorSummary = ({
           selectedSubTab={subTabs}
         />
         {MinMaxComponent}
-        {ChartSelector}
       </div>
       <div
         className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
@@ -160,6 +166,8 @@ const FloorSummary = ({
         })}
       >
         <div className="flex flex-col items-start w-full">
+                  {ChartSelector}
+
           <div className="w-full mb-2">
             <div className="mb-2 text-lg text-gray-600">{unit.name}</div>
             <div className="flex w-auto">
@@ -183,7 +191,7 @@ const FloorSummary = ({
                   >
                     <Tooltip>
                       <TooltipTrigger
-                        style={{ backgroundColor: barColors[idx] }}
+                        style={{ backgroundColor: barColors }}
                         className="w-full"
                       >
                         <div className="w-full h-[16px]"></div>
@@ -223,7 +231,7 @@ const FloorSummary = ({
                   selectedProjects={selectedProjects}
                   handleAddProject={handleAddProject}
                   sum={sum}
-                  color={barColors[idx]}
+                  color={barColors}
                   type={type}
                 />
               ) : (
@@ -233,12 +241,14 @@ const FloorSummary = ({
                   selectedProjects={selectedProjects}
                   handleAddProject={handleAddProject}
                   sum={sum}
-                  color={barColors[idx]}
+                  color={barColors}
                   type={type}
                 />
               );
             })}
           </ul>
+                    {<Legend  />}
+
           {/* {!isExpanded && <Subtitle />} */}
         </div>
         {chartType == "scatter" ? (
