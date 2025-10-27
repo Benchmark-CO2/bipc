@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS module (
     id UUID PRIMARY KEY,
     tower_option_id UUID NOT NULL REFERENCES tower_option(id) ON DELETE CASCADE,
     type TEXT NOT NULL,
+    data JSONB NOT NULL DEFAULT '{}'::jsonb,
     total_co2_min FLOAT8 NOT NULL DEFAULT 0,
     total_co2_max FLOAT8 NOT NULL DEFAULT 0,
     total_energy_min FLOAT8 NOT NULL DEFAULT 0,
@@ -63,7 +64,9 @@ CREATE TABLE IF NOT EXISTS module (
     relative_co2_min FLOAT8 DEFAULT 0,
     relative_co2_max FLOAT8 DEFAULT 0,
     relative_energy_min FLOAT8 DEFAULT 0,
-    relative_energy_max FLOAT8 DEFAULT 0
+    relative_energy_max FLOAT8 DEFAULT 0,
+    created_at TIMESTAMPTZ(0) NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+    updated_at TIMESTAMPTZ(0) NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE IF NOT EXISTS module_floor (
