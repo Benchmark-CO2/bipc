@@ -11,6 +11,7 @@ import {
 } from "@/components/layout";
 import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import NotFoundList from "@/components/ui/not-found-list";
 import { useSummary } from "@/context/summaryContext";
@@ -35,10 +36,14 @@ const OptionMenu = ({
   option,
   projectId,
   unitId,
+  onSelectOption,
+  selectedOptions,
 }: {
   option: TOption;
   projectId: string;
   unitId: string;
+  onSelectOption?: (option: TOption) => void;
+  selectedOptions?: TOption[];
 }) => {
   const queryClient = useQueryClient();
   const [localName, setLocalName] = useState(option.name);
@@ -179,7 +184,12 @@ const OptionMenu = ({
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1">
+      <Checkbox
+        className="border-2 bg-white data-[state=checked]:bg-secondary data-[state=checked]:border-secondary data-[state=checked]:text-white"
+        checked={selectedOptions?.some((opt) => opt.id === option.id) || false}
+        onCheckedChange={() => (onSelectOption ? onSelectOption(option) : null)}
+      />
       <Button
         variant="ghost"
         size="icon"
@@ -213,11 +223,11 @@ function RouteComponent() {
 
   const queryClient = useQueryClient();
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
+  const [selectedOptions, setSelectedOptions] = useState<TOption[]>([]);
   const { setSummaryContext } = useSummary();
 
   const handleSelectItem = (item: any[]) => {
     setSelectedItems(item);
-    console.log("Selected item:", item);
   };
 
   useEffect(() => {
@@ -336,6 +346,15 @@ function RouteComponent() {
     };
   };
 
+  const onSelectOption = (option: TOption) => {
+    const isSelected = selectedOptions.some((opt) => opt.id === option.id);
+    if (isSelected) {
+      setSelectedOptions((prev) => prev.filter((opt) => opt.id !== option.id));
+    } else {
+      setSelectedOptions((prev) => [...prev, option]);
+    }
+  };
+
   const newColumns: ColumnDef<
     Omit<IModuleItem, "consumption"> & TConsumption & { option_id: string }
   >[] = [
@@ -416,11 +435,13 @@ function RouteComponent() {
                     option={option}
                     projectId={projectId}
                     unitId={unitId}
+                    onSelectOption={onSelectOption}
+                    selectedOptions={selectedOptions}
                   />
                 }
                 data={modules}
                 columns={newColumns}
-                isSelectable={true}
+                isSelectable={false}
                 isInteractive={true}
                 onSelectionChange={handleSelectItem}
                 lastRow={{ type: "Total", data: calculateSumMetrics(modules) }}
