@@ -5,13 +5,13 @@ import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
-import { TabsContainer } from "../ui/tabsContainer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
 import { useMinMax } from "./hooks/useMinMax";
 import { barColors, stackData } from "./utils";
+import { FilterTabs } from "../ui/filter-tabs";
 
 type ProjectsSummaryProps = {
   selectedUnits: (any & {
@@ -41,11 +41,14 @@ const UnitsSummary = ({
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
-  const { filteredData, MinMaxComponent } = useMinMax(data.benchmark?.[type as "co2" | "energy"], el => el.min, el => el.max, type);
+  const { filteredData, MinMaxComponent } = useMinMax(
+    data.benchmark?.[type as "co2" | "energy"],
+    (el) => el.min,
+    (el) => el.max,
+    type
+  );
 
-  const fakeUnits = generateFakeData(
-    filteredData || []
-  )
+  const fakeUnits = generateFakeData(filteredData || [])
     .map((el) => ({
       ...el,
       label: selectedUnits.find((f) => f.id === el.id)?.name || "",
@@ -64,9 +67,7 @@ const UnitsSummary = ({
   const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
-    setPreviousProjects(
-      selectedUnits.map(el => el.id)
-    );
+    setPreviousProjects(selectedUnits.map((el) => el.id));
   }, [selectedUnits]);
 
   useEffect(() => {
@@ -75,23 +76,17 @@ const UnitsSummary = ({
         (p) => !previousProjects.includes(p.id)
       );
       if (diff.length > 0) {
-        setSelectedProjects((prev) => [
-          ...prev,
-          ...diff.map((d) => d.id),
-        ]);
+        setSelectedProjects((prev) => [...prev, ...diff.map((d) => d.id)]);
       }
     } else if (previousProjects.length > selectedUnits.length) {
       const diff = previousProjects.filter(
         (p) => !selectedUnits.map((u) => u.id).includes(p)
       );
       if (diff.length > 0) {
-        setSelectedProjects((prev) =>
-          prev.filter((p) => !diff.includes(p))
-        );
+        setSelectedProjects((prev) => prev.filter((p) => !diff.includes(p)));
       }
     }
   }, [previousProjects, selectedUnits]);
-
 
   const handleAddProject = (projectId: string) => {
     if (selectedProjects.includes(projectId)) {
@@ -140,9 +135,9 @@ const UnitsSummary = ({
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
       <div className="w-full flex gap-2 mb-4">
-        <TabsContainer
+        <FilterTabs
           tabs={["co2", "energy"]}
-          handleTabClick={(tab) => setType(tab as "co2" | "energy")}
+          onTabSelect={(tab) => setType(tab as "co2" | "energy")}
           selectedTab={type}
           fullWidth
           subTabs={[
@@ -151,7 +146,7 @@ const UnitsSummary = ({
               ? "Desmarcar Todos"
               : "Selecionar Todos",
           ]}
-          handleClickSubTab={(tab) => {
+          onSubTabSelect={(tab) => {
             if (tab === "Unidades") setSelectedSubTab(tab as "Unidades");
             if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
               selectAll();
@@ -250,20 +245,18 @@ const UnitsSummary = ({
           </ul>
           {/* {!isExpanded && <Subtitle />} */}
         </div>
-        {
-          chartType === "scatter" ? (
-            <D3GradientRangeChart
-              data={fakeUnits}
-              selectedBars={selectedProjects}
-              unit={unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""}
-            />
-          ) : (
-            <D3GradientRangeLineChart
-              data={fakeUnits}
-              selectedBars={selectedProjects}
-            />
-          )
-        }
+        {chartType === "scatter" ? (
+          <D3GradientRangeChart
+            data={fakeUnits}
+            selectedBars={selectedProjects}
+            unit={unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""}
+          />
+        ) : (
+          <D3GradientRangeLineChart
+            data={fakeUnits}
+            selectedBars={selectedProjects}
+          />
+        )}
       </div>
     </div>
   );

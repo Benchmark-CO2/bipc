@@ -6,12 +6,12 @@ import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import NotFoundList from "../ui/not-found-list";
-import { TabsContainer } from "../ui/tabsContainer";
 import ItemCard from "./components/ItemCard";
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
 import { useMinMax } from "./hooks/useMinMax";
 import { barColors, stackData } from "./utils";
+import { FilterTabs } from "../ui/filter-tabs";
 
 type ProjectsSummaryProps = {
   projects: any[];
@@ -29,11 +29,14 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
-  const { filteredData, MinMaxComponent } = useMinMax(data.benchmark?.[type as "co2" | "energy"], el => el.min, el => el.max, type);
+  const { filteredData, MinMaxComponent } = useMinMax(
+    data.benchmark?.[type as "co2" | "energy"],
+    (el) => el.min,
+    (el) => el.max,
+    type
+  );
 
-  const managedData = manageData(
-    filteredData || []
-  )
+  const managedData = manageData(filteredData || [])
     .map((el) => ({
       ...el,
       label: projects.find((f) => f.id === el.id)?.name || "",
@@ -59,31 +62,21 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
   const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
-    setPreviousProjects(
-      projects.map(el => el.id)
-    );
+    setPreviousProjects(projects.map((el) => el.id));
   }, [projects]);
-
 
   useEffect(() => {
     if (previousProjects.length < projects.length) {
-      const diff = projects.filter(
-        (p) => !previousProjects.includes(p.id)
-      );
+      const diff = projects.filter((p) => !previousProjects.includes(p.id));
       if (diff.length > 0) {
-        setSelectedProjects((prev) => [
-          ...prev,
-          ...diff.map((d) => d.id),
-        ]);
+        setSelectedProjects((prev) => [...prev, ...diff.map((d) => d.id)]);
       }
     } else if (previousProjects.length > projects.length) {
       const diff = previousProjects.filter(
         (p) => !projects.map((u) => u.id).includes(p)
       );
       if (diff.length > 0) {
-        setSelectedProjects((prev) =>
-          prev.filter((p) => !diff.includes(p))
-        );
+        setSelectedProjects((prev) => prev.filter((p) => !diff.includes(p)));
       }
     }
   }, [previousProjects, projects]);
@@ -104,12 +97,12 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
   return (
     <>
       <div className="w-full flex gap-2 mb-4">
-        <TabsContainer
+        <FilterTabs
           tabs={["co2", "energy"]}
-          handleTabClick={(tab) => setType(tab as "co2" | "energy")}
+          onTabSelect={(tab) => setType(tab as "co2" | "energy")}
           selectedTab={type}
           fullWidth
-          handleClickSubTab={(tab) => {
+          onSubTabSelect={(tab) => {
             if (tab === "Projetos") setSubTabs(tab as "Projetos");
             if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
               selectAll();
@@ -173,19 +166,18 @@ const ProjectsSummary = ({ projects, data }: ProjectsSummaryProps) => {
           {/* {!isExpanded && <Subtitle />} */}
         </div>
 
-        {
-          chartType === 'scatter' ? (
-            <D3GradientRangeChart
-              data={managedData}
-              selectedBars={selectedProjects}
-              unit={unitsOfMeasure[type] || ""}
-            />
-          ) : (
-            <D3GradientRangeLineChart
-              data={managedData}
-              selectedBars={selectedProjects}
-            />
-          )}
+        {chartType === "scatter" ? (
+          <D3GradientRangeChart
+            data={managedData}
+            selectedBars={selectedProjects}
+            unit={unitsOfMeasure[type] || ""}
+          />
+        ) : (
+          <D3GradientRangeLineChart
+            data={managedData}
+            selectedBars={selectedProjects}
+          />
+        )}
       </div>
     </>
   );

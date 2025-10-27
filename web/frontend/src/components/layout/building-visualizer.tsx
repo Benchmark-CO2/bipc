@@ -8,13 +8,9 @@ import {
   convertFloorSchemaToUnified,
 } from "@/utils/unitConversions";
 
-// Tipo unificado para representar um andar no visualizador
-
 interface BuildingVisualizerProps {
-  // Modo visualização apenas - usando FloorSchema
   floors?: FloorSchema[];
 
-  // Modo selecionável - usando TTowerFloorCategory
   towerFloors?: TTowerFloorCategory[];
   isSelectable?: boolean;
   selectedFloorIds?: string[];
@@ -28,17 +24,15 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   selectedFloorIds = [],
   onCheckFloorId,
 }) => {
-  // Determinar qual conjunto de dados usar e converter para UnifiedFloor
   const unifiedFloors: UnifiedFloor[] = towerFloors
     ? convertTowerFloorsToUnified(towerFloors)
     : floors
       ? convertFloorSchemaToUnified(floors)
       : [];
 
-  // Se for selecionável, sempre usa towerFloors mode
   const selectedItems = isSelectable ? selectedFloorIds : [];
   const onSelectionChange = isSelectable ? onCheckFloorId : undefined;
-  // Separar andares por categoria
+
   const roofFloors = unifiedFloors.filter(
     (floor) => floor.category === "penthouse_floor"
   );
@@ -54,9 +48,6 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
 
   const maxArea = Math.max(...unifiedFloors.map((floor) => floor.area), 1);
 
-  // Ordenar cada categoria por ordem lógica
-  // Para penthouse e standard: do mais alto para o mais baixo
-  // Para ground e basement: manter ordem natural
   const sortedRoofFloors = roofFloors.sort((a, b) =>
     a.name.localeCompare(b.name)
   );
@@ -79,12 +70,10 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
     let newSelectedItems: string[];
 
     if (isChecked) {
-      // Adiciona o identificador se não estiver na lista
       newSelectedItems = selectedItems.includes(floorIdentifier)
         ? selectedItems
         : [...selectedItems, floorIdentifier];
     } else {
-      // Remove o identificador da lista
       newSelectedItems = selectedItems.filter(
         (item: string) => item !== floorIdentifier
       );
@@ -93,54 +82,84 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
     onSelectionChange(newSelectedItems);
   };
 
+  const handleSelectAll = (isChecked: boolean) => {
+    if (!onSelectionChange) return;
+
+    if (isChecked) {
+      const allFloorIds = unifiedFloors.map((floor) => floor.id);
+      onSelectionChange(allFloorIds);
+    } else {
+      onSelectionChange([]);
+    }
+  };
+
+  const allFloorIds = unifiedFloors.map((floor) => floor.id);
+  const areAllSelected =
+    allFloorIds.length > 0 &&
+    allFloorIds.every((id) => selectedItems.includes(id));
+  const areSomeSelected =
+    selectedItems.length > 0 && selectedItems.length < allFloorIds.length;
+
   const renderFloorBlocks = (floor: UnifiedFloor) => {
     const blocks = [];
     const widthPercentage = (floor.area / maxArea) * 100;
-    // Se for selecionável, sempre usar ID (towerFloors mode); senão usar name
     const floorIdentifier = isSelectable ? floor.id : floor.name;
     const isFloorSelected = selectedItems.includes(floorIdentifier);
 
-    // Cores baseadas na categoria
     const categoryColors = {
-      penthouse_floor: "#8B5CF6", // Roxo
-      standard_floor: "#3B82F6", // Azul
-      ground_floor: "#10B981", // Verde
-      basement_floor: "#F59E0B", // Laranja
+      penthouse_floor: "#8B5CF6",
+      standard_floor: "#3B82F6",
+      ground_floor: "#10B981",
+      basement_floor: "#F59E0B",
     };
 
     for (let i = 0; i < floor.repetition; i++) {
       blocks.push(
         <div
           key={`${floor.name}-${i}`}
-          className={`h-6 mb-1 flex items-center text-xs font-medium text-white shadow-sm ${
-            isSelectable ? "justify-end pr-2 ml-auto" : "justify-center mx-auto"
+          className={`mb-2 ${
+            isSelectable
+              ? "grid grid-cols-[2fr_auto_minmax(0,100px)] gap-2 items-center w-full"
+              : "flex items-center"
           }`}
-          style={{
-            backgroundColor: categoryColors[floor.category],
-            height: `${Math.max(24, floor.height * 6)}px`,
-            width: `${widthPercentage}%`,
-            textShadow: "1px 1px 2px rgba(0,0,0,0.5)",
-          }}
-          title={`${floor.name} - ${floor.area}m² - ${floor.height}m`}
         >
-          <span
-            className={`${isSelectable ? "mr-2" : ""} font-bold drop-shadow-lg`}
+          {/* Bloco do andar */}
+          <div
+            className={`flex items-center text-xs font-medium text-white shadow-sm ${
+              isSelectable
+                ? "h-4 rounded-l-lg ml-auto"
+                : "justify-center mx-auto"
+            }`}
             style={{
-              textShadow: "2px 2px 4px rgba(0,0,0,0.8)",
-              fontSize: widthPercentage < 40 ? "10px" : "12px",
-              fontWeight: "700",
+              backgroundColor: categoryColors[floor.category],
+              height: isSelectable
+                ? "16px"
+                : `${Math.max(24, floor.height * 6)}px`,
+              width: isSelectable
+                ? `${widthPercentage}%`
+                : `${widthPercentage}%`,
+              textShadow: "1px 1px 2px rgba(0,0,0,0.5)",
             }}
-          >
-            {floor.name}
-          </span>
+            title={`${floor.name} - ${floor.area}m² - ${floor.height}m`}
+          ></div>
+
+          {/* Checkbox e nome */}
           {isSelectable && (
-            <Checkbox
-              checked={isFloorSelected}
-              onCheckedChange={(checked) =>
-                handleFloorSelection(floorIdentifier, checked === true)
-              }
-              className=" border border-gray-300 bg-white data-[state=checked]:bg-secondary data-[state=checked]:border-secondary"
-            />
+            <>
+              <Checkbox
+                checked={isFloorSelected}
+                onCheckedChange={(checked) =>
+                  handleFloorSelection(floorIdentifier, checked === true)
+                }
+                className="border border-gray-300 bg-white data-[state=checked]:bg-active data-[state=checked]:border-active flex-shrink-0"
+              />
+              <span
+                className="text-xs font-normal text-gray-700 dark:text-gray-300 truncate"
+                title={floor.name}
+              >
+                {floor.name}
+              </span>
+            </>
           )}
         </div>
       );
@@ -151,11 +170,34 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   return (
     <div className="flex flex-col items-center p-4 min-h-96 w-80">
       {isSelectable && (
-        <div className="w-full mb-4 text-left">
-          <span className="text-md font-semibold leading-2 text-primary dark:text-gray-300">
-            Selecione os pavimentos em que esta tecnologia construtiva será
-            aplicada
-          </span>
+        <div className="w-full mb-4 space-y-3">
+          <div className="text-left">
+            <span className="text-md font-normal leading-2 dark:text-gray-300">
+              Selecione os pavimentos em que esta tecnologia construtiva será
+              aplicada
+            </span>
+          </div>
+
+          {/* Selecionar todos */}
+          {unifiedFloors.length > 0 && (
+            <div className="grid grid-cols-[2fr_auto_minmax(0,100px)] gap-2 items-center w-full max-w-64 ml-auto pb-2 border-b border-gray-300 dark:border-gray-600">
+              <div className="flex items-center justify-end">
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                  Selecionar todos
+                </span>
+              </div>
+              <Checkbox
+                checked={areAllSelected}
+                onCheckedChange={(checked) => handleSelectAll(checked === true)}
+                className="border border-gray-300 bg-white data-[state=checked]:bg-active data-[state=checked]:border-active flex-shrink-0"
+              />
+              <div className="flex items-center">
+                <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
+                  {selectedItems.length} de {allFloorIds.length}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       )}
       <div className="flex flex-col items-center w-full max-w-72">

@@ -1,4 +1,4 @@
-import { TabsContainer } from "@/components/ui/tabsContainer";
+import { FilterTabs } from "@/components/ui/filter-tabs";
 import { useState } from "react";
 
 export const useChartType = () => {
@@ -9,17 +9,16 @@ export const useChartType = () => {
   };
 
   const ChartSelector = (
-    <TabsContainer
+    <FilterTabs
       tabs={["scatter", "line"]}
       tabsLabel={{
         line: "Tendência",
         scatter: "Fração acumulada",
       }}
       selectedTab={chartType}
-      handleTabClick={changeChartType}
+      onTabSelect={changeChartType}
     />
   );
 
-
   return { chartType, changeChartType, ChartSelector };
-}
+};

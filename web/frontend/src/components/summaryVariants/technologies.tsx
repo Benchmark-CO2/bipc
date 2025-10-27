@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import { Checkbox } from "../ui/checkbox";
-import { TabsContainer } from "../ui/tabsContainer";
+import { Tabs } from "../ui/tabs";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 
 type ProjectsSummaryProps = {
@@ -69,7 +69,7 @@ const TechnologiesSummary = ({ techs }: ProjectsSummaryProps) => {
     <div className="w-full flex justify-between gap-10 max-md:flex-col">
       <div className="flex flex-col items-start w-full">
         <div className="w-full flex gap-2 mb-10">
-          <TabsContainer
+          <Tabs
             tabs={["co2", "energy", "density"]}
             handleTabClick={(tab) =>
               setType(tab as "co2" | "energy" | "density")

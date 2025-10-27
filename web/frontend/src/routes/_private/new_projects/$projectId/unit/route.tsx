@@ -3,7 +3,7 @@ import { getProjectByUUID } from "@/actions/projects/getProject";
 import { DrawerFormUnit } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import NotFoundList from "@/components/ui/not-found-list";
-import { TabsContainer } from "@/components/ui/tabsContainer";
+import { Tabs } from "@/components/ui/tabs";
 import { TProjectUnit } from "@/types/projects";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -12,7 +12,7 @@ import {
   useRouter,
   useLocation,
 } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { Edit, Plus, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -127,36 +127,36 @@ function RouteComponent() {
     <div className="flex flex-col gap-4">
       {tabs.length > 0 && (
         <div className="flex items-center gap-2">
-          <TabsContainer
+          <Tabs
             tabs={tabs.map((unit) => unit?.name || "Desconhecido")}
             selectedTab={selectedTab}
             handleTabClick={handleTabClick}
-            fullWidth={location.pathname.includes("constructive-technologies")}
+            fullWidth
           />
           {!location.pathname.includes("constructive-technologies") && (
             <>
-              <DrawerFormUnit
-                projectId={projectId}
-                triggerComponent={
-                  <Button variant="bipc" size="sm">
-                    <Plus className="w-16 h-16" />
-                  </Button>
-                }
-              />
-              <Button variant="outline-bipc" size="sm">
-                Importar
+              <Button variant="outline-bipc" size="icon-lg" disabled>
+                <Upload />
               </Button>
               {params.unitId && (
                 <DrawerFormUnit
                   projectId={projectId}
                   unitId={params.unitId}
                   triggerComponent={
-                    <Button variant="outline-bipc" size="sm">
-                      Editar Unidade
+                    <Button variant="outline-bipc" size="icon-lg">
+                      <Edit />
                     </Button>
                   }
                 />
               )}
+              <DrawerFormUnit
+                projectId={projectId}
+                triggerComponent={
+                  <Button variant="bipc" size="icon-lg">
+                    <Plus className="w-16 h-16" />
+                  </Button>
+                }
+              />
             </>
           )}
         </div>

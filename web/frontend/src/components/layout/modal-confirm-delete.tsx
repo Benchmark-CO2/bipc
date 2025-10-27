@@ -44,7 +44,7 @@ const ModalConfirmDelete = ({
         <DialogHeader>
           <DialogTitle className="text-center">{title}</DialogTitle>
         </DialogHeader>
-        <p className="text-gray-400">{t("modalConfirmDelete.description")}</p>
+        <p className="text-gray-700">{t("modalConfirmDelete.description")}</p>
         <DialogFooter className="flex justify-between">
           <Button variant="outline" onClick={() => setOpen(false)}>
             {t("modalConfirmDelete.cancelButton")}

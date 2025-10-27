@@ -59,7 +59,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
                 <Info size={18} />
-                <span>Sobre</span>
+                <span>Sobre o BIPc</span>
               </Link>
             </SidemenuItem>
           </li>
