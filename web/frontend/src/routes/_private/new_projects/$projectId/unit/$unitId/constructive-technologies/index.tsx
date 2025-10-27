@@ -1,3 +1,4 @@
+import { deleteModule } from "@/actions/modules/deleteModule";
 import { deleteOption } from "@/actions/options/deleteOption";
 import { getOptions } from "@/actions/options/getOptions";
 import { patchOption } from "@/actions/options/patchOption";
@@ -9,8 +10,8 @@ import {
   DrawerFormModule,
 } from "@/components/layout";
 import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
-import TechnologiesSummary from "@/components/summaryVariants/technologies";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import NotFoundList from "@/components/ui/not-found-list";
 import { useSummary } from "@/context/summaryContext";
@@ -21,8 +22,9 @@ import { IUnit } from "@/types/units";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
-import { Copy, Loader2, Star, Trash } from "lucide-react";
+import { Copy, Edit, Loader2, Plus, Star, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute(
   "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies/"
@@ -34,10 +36,14 @@ const OptionMenu = ({
   option,
   projectId,
   unitId,
+  onSelectOption,
+  selectedOptions,
 }: {
   option: TOption;
   projectId: string;
   unitId: string;
+  onSelectOption?: (option: TOption) => void;
+  selectedOptions?: TOption[];
 }) => {
   const queryClient = useQueryClient();
   const [localName, setLocalName] = useState(option.name);
@@ -178,7 +184,12 @@ const OptionMenu = ({
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1">
+      <Checkbox
+        className="border-2 bg-white data-[state=checked]:bg-secondary data-[state=checked]:border-secondary data-[state=checked]:text-white"
+        checked={selectedOptions?.some((opt) => opt.id === option.id) || false}
+        onCheckedChange={() => (onSelectOption ? onSelectOption(option) : null)}
+      />
       <Button
         variant="ghost"
         size="icon"
@@ -199,7 +210,7 @@ const OptionMenu = ({
         value={localName}
         onChange={handleNameChange}
         onBlur={handleBlur}
-        className="font-medium text-accent-foreground focus:border-primary focus:ring-primary"
+        className="font-medium text-accent-foreground focus:border-primary focus:ring-primary max-w-[240px]"
       />
     </div>
   );
@@ -212,11 +223,11 @@ function RouteComponent() {
 
   const queryClient = useQueryClient();
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
+  const [selectedOptions, setSelectedOptions] = useState<TOption[]>([]);
   const { setSummaryContext } = useSummary();
 
   const handleSelectItem = (item: any[]) => {
     setSelectedItems(item);
-    console.log("Selected item:", item);
   };
 
   useEffect(() => {
@@ -247,6 +258,27 @@ function RouteComponent() {
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     retry: false,
+  });
+
+  const { mutate: mutateDeleteTec, isPending: isDeletingTec } = useMutation({
+    mutationFn: ({
+      optionId,
+      moduleId,
+    }: {
+      optionId: string;
+      moduleId: string;
+    }) => deleteModule(projectId, unitId, optionId, moduleId),
+    onSuccess: () => {
+      toast.success("Tecnologia Construtiva excluída com sucesso");
+      queryClient.invalidateQueries({
+        queryKey: ["options", projectId, unitId],
+      });
+    },
+    onError: (error) => {
+      toast.error("Erro ao excluir tecnologia construtiva", {
+        description: error.message,
+      });
+    },
   });
 
   const { data: unitData, isLoading: isLoadingUnit } = useQuery({
@@ -314,6 +346,15 @@ function RouteComponent() {
     };
   };
 
+  const onSelectOption = (option: TOption) => {
+    const isSelected = selectedOptions.some((opt) => opt.id === option.id);
+    if (isSelected) {
+      setSelectedOptions((prev) => prev.filter((opt) => opt.id !== option.id));
+    } else {
+      setSelectedOptions((prev) => [...prev, option]);
+    }
+  };
+
   const newColumns: ColumnDef<
     Omit<IModuleItem, "consumption"> & TConsumption & { option_id: string }
   >[] = [
@@ -323,11 +364,11 @@ function RouteComponent() {
       header: "",
       cell: ({ row }) => {
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2">
             <DrawerFormModule
               triggerComponent={
-                <Button variant="outline" size="sm" className="ml-auto">
-                  Editar
+                <Button variant="ghost" size="icon" disabled={isDeleting}>
+                  <Edit className="h-4 w-4 text-primary" />
                 </Button>
               }
               type={row.original.type}
@@ -336,6 +377,24 @@ function RouteComponent() {
               optionId={row.original.option_id}
               moduleId={row.original.id}
               floors={unitTowerFloors}
+            />
+            <ModalConfirmDelete
+              title="Excluir Tecnologia Construtiva"
+              onConfirm={() =>
+                mutateDeleteTec({
+                  optionId: row.original.option_id,
+                  moduleId: row.original.id,
+                })
+              }
+              componentTrigger={
+                <Button variant="ghost" size="icon" disabled={isDeletingTec}>
+                  {isDeletingTec ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash className="h-4 w-4 text-red-700" />
+                  )}
+                </Button>
+              }
             />
           </div>
         );
@@ -376,36 +435,23 @@ function RouteComponent() {
                     option={option}
                     projectId={projectId}
                     unitId={unitId}
+                    onSelectOption={onSelectOption}
+                    selectedOptions={selectedOptions}
                   />
                 }
                 data={modules}
                 columns={newColumns}
-                isSelectable={true}
+                isSelectable={false}
                 isInteractive={true}
                 onSelectionChange={handleSelectItem}
                 lastRow={{ type: "Total", data: calculateSumMetrics(modules) }}
                 actions={
                   <>
-                    <DrawerFormModule
-                      triggerComponent={
-                        <Button variant="bipc" size="sm">
-                          Adicionar Tecnologia
-                        </Button>
-                      }
-                      type="concrete_wall"
-                      floors={unitTowerFloors}
-                      projectId={projectId}
-                      unitId={unitId}
-                      optionId={option.id}
-                    />
-                    <Button variant="ghost" size="icon" disabled>
-                      <Copy className="h-4 w-4 text-primary" />
-                    </Button>
                     <ModalConfirmDelete
                       componentTrigger={
                         <Button
-                          variant="ghost"
-                          size="icon"
+                          variant="outline-destructive"
+                          size="icon-lg"
                           disabled={isDeleting}
                         >
                           {isDeleting ? (
@@ -417,6 +463,22 @@ function RouteComponent() {
                       }
                       title="Excluir Simulação"
                       onConfirm={() => deleteSimulation(option.id)}
+                    />
+                    <Button variant="outline-bipc" size="icon-lg" disabled>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <DrawerFormModule
+                      triggerComponent={
+                        <Button variant="outline-bipc">
+                          Adicionar Tecnologia
+                          <Plus className="ml-1 h-4 w-4" />
+                        </Button>
+                      }
+                      type="concrete_wall"
+                      floors={unitTowerFloors}
+                      projectId={projectId}
+                      unitId={unitId}
+                      optionId={option.id}
                     />
                   </>
                 }

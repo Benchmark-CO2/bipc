@@ -58,7 +58,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     if (isMobile && !isExpanded) return 250;
     if (isMobile && isExpanded) return 320;
     if (isExpanded) return window.innerHeight * 0.96 - 130;
-    return 550 - 230;
+    return (window.innerHeight * 0.7) - 230;
   };
 
   // Dimensões
@@ -481,6 +481,9 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           .attr("stroke-width", isExpanded ? 2 : 0.5)
           .attr("id", `bar-circle-end-${d.id}`);
 
+        const avgX = (x1 + x2) / 2;
+        const isMoreThenHalf = avgX < (maxValue ? maxValue * .5 : 0);
+
         // add text label with min and max values
         g.append("text")
           .attr("x", x1 - 18)
@@ -500,6 +503,17 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           .attr("font-weight", "bold")
           .attr("fill", "var(--primary)")
           .text(d.max.toFixed(0))
+          .attr("id", `bar-label-max-${d.id}`);
+
+        // text with project identifier
+        g.append("text")
+          .attr("x", isMoreThenHalf ? x2 + 150 : x1 - 150)
+          .attr("y", y + 4)
+          .attr("text-anchor", "start")
+          .attr("font-size", 12)
+          .attr("font-weight", "normal")
+          .attr("fill", "var(--primary)")
+          .text(`${!!isMoreThenHalf ? '<--' : ''} ${d.label} ${!isMoreThenHalf ? '-->' : ''}`)
           .attr("id", `bar-label-max-${d.id}`);
 
         // add project name label inside the bar

@@ -1,4 +1,5 @@
 import { useSummary } from "@/context/summaryContext";
+import { cn } from '@/lib/utils';
 import { ArrowUp, Expand } from "lucide-react";
 import { Button } from "./button";
 
@@ -11,10 +12,11 @@ const Summary = () => {
     <section
       data-open={isOpen}
       data-expanded={isExpanded}
-      className="absolute bottom-0 right-0 bg-gray-50 dark:bg-sidebar w-full max-md:mx-auto max-md:left-0 transition-all z-50 border-t border-gray-200 dark:border-gray-700 shadow-lg"
-      style={{
-        height: isOpen ? (isExpanded ? "96vh" : "550px") : "50px",
-      }}
+      className={cn("absolute bottom-0 right-0 bg-gray-50 dark:bg-sidebar w-full max-md:mx-auto max-md:left-0 transition-all z-50 border-t border-gray-200 dark:border-gray-700 shadow-lg", {
+        'h-[96vh]': isOpen && isExpanded,
+        'h-2/3': isOpen && !isExpanded,
+        'h-[50px]': !isOpen,
+      })}
     >
       <div className="relative flex flex-col w-full h-full">
         {/* Header */}
@@ -22,7 +24,7 @@ const Summary = () => {
           className={`flex items-center justify-between w-full px-4 ${isOpen ? "pt-3" : "my-auto"} `}
         >
           <span className="text-sm font-bold text-primary dark:text-blue-400">
-            {"Visão geral"}
+            {"Benchmark"}
           </span>
           <div className="flex gap-0 absolute right-4 top-[-18px]">
             {isOpen && (

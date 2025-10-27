@@ -33,39 +33,42 @@ export const registerFormSchema = z
         }),
       })
       .optional(),
-    crea: z
-      .string()
-      .min(1, {
-        message: t("forms.customRequiredField", { field: t("signUp.crea") }),
-      })
-      .or(z.literal(""))
-      .optional(),
+    crea_cau: z.string().optional(),
 
-    birthDate: z
-      .string({
-        message: t("forms.customRequiredField", {
-          field: t("signUp.birthDate"),
-        }),
-      })
-      .min(1, {
-        message: t("forms.customRequiredField", {
-          field: t("signUp.birthDate"),
-        }),
-      })
+    birthdate: z
+      .string()
+      .optional()
       .refine(
         (value) => {
-          if (!value) return false;
-          const date = new Date(value);
+          if (!value || value === "") return true; // Campo opcional
+
+          // Remove a máscara para validar
+          const cleanValue = value.replace(/\D/g, "");
+          if (cleanValue.length !== 8) return false;
+
+          // Parse da data DD/MM/YYYY
+          const day = parseInt(cleanValue.substring(0, 2), 10);
+          const month = parseInt(cleanValue.substring(2, 4), 10);
+          const year = parseInt(cleanValue.substring(4, 8), 10);
+
+          // Valida se é uma data válida
+          const date = new Date(year, month - 1, day);
           const now = new Date();
-          if (!(date instanceof Date) || isNaN(date.getTime()) || date >= now) {
+
+          if (
+            date.getDate() !== day ||
+            date.getMonth() !== month - 1 ||
+            date.getFullYear() !== year ||
+            date >= now
+          ) {
             return false;
           }
 
+          // Valida idade mínima de 18 anos
           const age = now.getFullYear() - date.getFullYear();
           const monthDiff = now.getMonth() - date.getMonth();
           const dayDiff = now.getDate() - date.getDate();
 
-          // Check if birthday has occurred this year
           const hasHadBirthdayThisYear =
             monthDiff > 0 || (monthDiff === 0 && dayDiff >= 0);
           const actualAge = hasHadBirthdayThisYear ? age : age - 1;
@@ -73,44 +76,10 @@ export const registerFormSchema = z
           return actualAge >= 18;
         },
         { message: t("forms.minimumAge", { age: 18 }) }
-      )
-      .or(z.literal(""))
-      .optional(),
-    city: z
-      .string({
-        message: t("forms.customRequiredField", { field: t("signUp.city") }),
-      })
-      .min(1, {
-        message: t("forms.customRequiredField", { field: t("signUp.city") }),
-      })
-      .or(z.literal(""))
-      .optional(),
-    activityArea: z
-      .string({
-        message: t("forms.customRequiredField", {
-          field: t("signUp.activityArea"),
-        }),
-      })
-      .min(1, {
-        message: t("forms.customRequiredField", {
-          field: t("signUp.activityArea"),
-        }),
-      })
-      .or(z.literal(""))
-      .optional(),
-    companyName: z
-      .string({
-        message: t("forms.customRequiredField", {
-          field: t("signUp.companyName"),
-        }),
-      })
-      .min(1, {
-        message: t("forms.customRequiredField", {
-          field: t("signUp.companyName"),
-        }),
-      })
-      .or(z.literal(""))
-      .optional(),
+      ),
+    city: z.string().optional(),
+    activity: z.string().optional(),
+    enterprise: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     const { password, confirmPassword } = data;

@@ -1,4 +1,5 @@
 import { putActivateUser } from "@/actions/users/putActivateUser";
+import FullLogo from "@/assets/logo_full.svg";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +10,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import Divider from "@/components/ui/divider";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import {
   createFileRoute,
@@ -34,6 +38,7 @@ export const Route = createFileRoute("/(public)/activate")({
 function RouteComponent() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const { tkn: token } = useSearch({ from: "/(public)/activate" });
 
   const activationMutation = useMutation({
@@ -55,9 +60,20 @@ function RouteComponent() {
 
   if (!token) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-50 px-4">
-        <Card className="w-full max-w-md">
+      <div
+        className={cn(
+          "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar",
+          {
+            block: isMobile,
+          }
+        )}
+      >
+        <Card className="w-full max-w-md rounded-md">
           <CardHeader className="text-center">
+            <div>
+              <img src={FullLogo} alt="" className="w-full mx-auto mb-2" />
+            </div>
+            <Divider className="bg-accent-foreground/10" />
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
               <XCircle className="h-6 w-6 text-red-600" />
             </div>
@@ -69,7 +85,11 @@ function RouteComponent() {
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
-            <Button variant="outline" onClick={handleNavigateToLogin}>
+            <Button
+              variant="outline"
+              onClick={handleNavigateToLogin}
+              className="w-full"
+            >
               {t("activateUser.invalid.goToLogin")}
             </Button>
           </CardFooter>
@@ -80,9 +100,20 @@ function RouteComponent() {
 
   if (activationMutation.isSuccess) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-50 px-4">
-        <Card className="w-full max-w-md">
+      <div
+        className={cn(
+          "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar",
+          {
+            block: isMobile,
+          }
+        )}
+      >
+        <Card className="w-full max-w-md rounded-md">
           <CardHeader className="text-center">
+            <div>
+              <img src={FullLogo} alt="" className="w-full mx-auto mb-2" />
+            </div>
+            <Divider className="bg-accent-foreground/10" />
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
@@ -94,7 +125,11 @@ function RouteComponent() {
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
-            <Button onClick={handleNavigateToLogin} variant="bipc">
+            <Button
+              onClick={handleNavigateToLogin}
+              variant="bipc"
+              className="w-full"
+            >
               {t("activateUser.success.goToLogin")}
             </Button>
           </CardFooter>
@@ -105,9 +140,20 @@ function RouteComponent() {
 
   if (activationMutation.isError) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-50 px-4">
-        <Card className="w-full max-w-md">
+      <div
+        className={cn(
+          "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar",
+          {
+            block: isMobile,
+          }
+        )}
+      >
+        <Card className="w-full max-w-md rounded-md">
           <CardHeader className="text-center">
+            <div>
+              <img src={FullLogo} alt="" className="w-full mx-auto mb-2" />
+            </div>
+            <Divider className="bg-accent-foreground/10" />
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
               <XCircle className="h-6 w-6 text-red-600" />
             </div>
@@ -126,7 +172,11 @@ function RouteComponent() {
             </Alert>
           </CardContent>
           <CardFooter className="flex gap-2 justify-center">
-            <Button variant="outline" onClick={handleTryAgain}>
+            <Button
+              variant="outline"
+              onClick={handleTryAgain}
+              className="w-full"
+            >
               {t("activateUser.error.retry")}
             </Button>
             {/* <Button variant="outline" onClick={handleNavigateToContact}>
@@ -140,9 +190,20 @@ function RouteComponent() {
 
   if (activationMutation.isPending) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-50 px-4">
-        <Card className="w-full max-w-md">
+      <div
+        className={cn(
+          "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar",
+          {
+            block: isMobile,
+          }
+        )}
+      >
+        <Card className="w-full max-w-md rounded-md">
           <CardHeader className="text-center">
+            <div>
+              <img src={FullLogo} alt="" className="w-full mx-auto mb-2" />
+            </div>
+            <Divider className="bg-accent-foreground/10" />
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
               <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
             </div>
@@ -159,9 +220,20 @@ function RouteComponent() {
   }
 
   return (
-    <div className="w-full h-full flex items-center justify-center bg-gray-50 px-4">
-      <Card className="w-full max-w-md">
+    <div
+      className={cn(
+        "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar",
+        {
+          block: isMobile,
+        }
+      )}
+    >
+      <Card className="w-full max-w-md rounded-md">
         <CardHeader className="text-center">
+          <div>
+            <img src={FullLogo} alt="" className="w-full mx-auto mb-2" />
+          </div>
+          <Divider className="bg-accent-foreground/10" />
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
             <Mail className="h-6 w-6 text-blue-600" />
           </div>
@@ -173,7 +245,12 @@ function RouteComponent() {
           </CardDescription>
         </CardHeader>
         <CardFooter className="flex justify-center">
-          <Button onClick={handleActivateAccount} size="lg" variant="bipc">
+          <Button
+            onClick={handleActivateAccount}
+            size="lg"
+            variant="bipc"
+            className="w-full"
+          >
             {t("activateUser.confirm.confirmAction")}
           </Button>
         </CardFooter>
