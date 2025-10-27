@@ -193,7 +193,7 @@ const UnitsSummary = ({
                   >
                     <Tooltip>
                       <TooltipTrigger
-                        style={{ backgroundColor: barColors[idx] }}
+                        style={{ backgroundColor: barColors }}
                         className="w-full"
                       >
                         <div className="w-full h-[16px]"></div>
@@ -234,7 +234,7 @@ const UnitsSummary = ({
                   handleAddProject={handleAddProject}
                   selectedProjects={selectedProjects}
                   sum={sum}
-                  color={barColors[idx]}
+                  color={barColors}
                   type={type}
                 />
               ) : (
@@ -244,7 +244,7 @@ const UnitsSummary = ({
                   selectedProjects={selectedProjects}
                   handleAddProject={handleAddProject}
                   sum={sum}
-                  color={barColors[idx]}
+                  color={barColors}
                   type={type}
                 />
               );

@@ -191,7 +191,7 @@ const FloorSummary = ({
                   >
                     <Tooltip>
                       <TooltipTrigger
-                        style={{ backgroundColor: barColors[idx] }}
+                        style={{ backgroundColor: barColors }}
                         className="w-full"
                       >
                         <div className="w-full h-[16px]"></div>
@@ -231,7 +231,7 @@ const FloorSummary = ({
                   selectedProjects={selectedProjects}
                   handleAddProject={handleAddProject}
                   sum={sum}
-                  color={barColors[idx]}
+                  color={barColors}
                   type={type}
                 />
               ) : (
@@ -241,7 +241,7 @@ const FloorSummary = ({
                   selectedProjects={selectedProjects}
                   handleAddProject={handleAddProject}
                   sum={sum}
-                  color={barColors[idx]}
+                  color={barColors}
                   type={type}
                 />
               );

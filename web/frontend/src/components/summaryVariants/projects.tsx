@@ -158,7 +158,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
                   selectedProjects={selectedProjects}
                   handleAddProject={handleAddProject}
                   sum={sum}
-                  color={barColors[idx]}
+                  color={barColors}
                   type={type}
                 />
               ) : (
@@ -168,7 +168,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
                   selectedProjects={selectedProjects}
                   handleAddProject={handleAddProject}
                   sum={sum}
-                  color={barColors[idx]}
+                  color={barColors}
                   type={type}
                 />
               );
