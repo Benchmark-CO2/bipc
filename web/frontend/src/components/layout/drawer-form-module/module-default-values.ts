@@ -43,7 +43,7 @@ export const beamColumnDefaultValues = {
 
 export const structuralMasonryDefaultValues = {
   type: "structural_masonry" as const,
-  blocks: [{ type: "BL 14x19" as const, fbk: 6, quantity: 0 }],
+  blocks: [{ type: "inteiro (14x19x29)" as const, fbk: 6, quantity: 0 }],
   grout: [
     {
       type: "vertical" as const,
@@ -51,7 +51,7 @@ export const structuralMasonryDefaultValues = {
       steel: [{ ca: 50 as const, mass: 0 }],
     },
   ],
-  mortar: [{ fak: 5, volume: 0 }],
+  mortar: [{ fak: 4.5, volume: 0 }],
   concrete_slabs: {
     volumes: [{ fck: 30, volume: 0 }],
     steel: [{ ca: 50 as const, mass: 0 }],

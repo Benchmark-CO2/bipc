@@ -19,24 +19,26 @@ export interface IConcrete {
 
 export interface IBlock {
   type:
-    | "BL 14x4"
-    | "BL 14x19"
-    | "BL 14x34"
-    | "BL 14x39"
-    | "BL 14x54"
-    | "BL 19x4"
-    | "BL 19x19"
-    | "BL 19x39"
-    | "CL 14x19"
-    | "CL 14x34"
-    | "CL 14x14"
-    | "CL 14x39"
-    | "CL 19x19"
-    | "CL 19x39"
-    | "COMP 14x19"
-    | "COMP 14x39"
-    | "JOTA 14 x 39 x 19/9"
-    | "JOTA 14 x 19 x 19/9";
+    | "inteiro (14x19x29)"
+    | "meio (14x19x14)"
+    | "amarração T (14x19x44)"
+    | "canaleta inteira (14x19x29)"
+    | "meia canaleta (14x19x14)"
+    | "inteiro (14x19x39)"
+    | "meio (14x19x19)"
+    | "amarração T (14x19x54)"
+    | "amarração L (14x19x34)"
+    | "canaleta  inteira (14x19x39)"
+    | "canaleta de amarração (14x19x34)"
+    | "meia canaleta (14x19x19)"
+    | "compensador 1/4 (14x19x9)"
+    | "compensador 1/8 (14x19x4)"
+    | "inteiro (19x19x39)"
+    | "meio (19x19x19)"
+    | "canaleta inteira (19x19x39)"
+    | "meia canaleta (19x19x19)"
+    | "compensador 1/4 (19x19x9)"
+    | "compensador 1/8 (19x19x4)";
   fbk: number;
   quantity: number;
 }

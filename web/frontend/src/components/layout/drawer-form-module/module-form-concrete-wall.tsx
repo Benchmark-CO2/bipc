@@ -217,7 +217,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                     : fckField.value?.toString() || ""
                                 }
                               >
-                                <SelectTrigger>
+                                <SelectTrigger className="w-full">
                                   <SelectValue placeholder="Selecione FCK" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -397,7 +397,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                     : caField.value?.toString() || ""
                                 }
                               >
-                                <SelectTrigger>
+                                <SelectTrigger className="w-full">
                                   <SelectValue placeholder="Selecione CA" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -767,7 +767,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                   Tipo de forma
                 </FormLabel>
                 <Select defaultValue="metalica">
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

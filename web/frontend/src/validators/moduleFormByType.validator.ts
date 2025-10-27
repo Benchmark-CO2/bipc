@@ -42,24 +42,26 @@ const concreteElementSchema = z.object({
 const blockItemSchema = z
   .object({
     type: z.enum([
-      "BL 14x4",
-      "BL 14x19",
-      "BL 14x34",
-      "BL 14x39",
-      "BL 14x54",
-      "BL 19x4",
-      "BL 19x19",
-      "BL 19x39",
-      "CL 14x19",
-      "CL 14x34",
-      "CL 14x14",
-      "CL 14x39",
-      "CL 19x19",
-      "CL 19x39",
-      "COMP 14x19",
-      "COMP 14x39",
-      "JOTA 14 x 39 x 19/9",
-      "JOTA 14 x 19 x 19/9",
+      "inteiro (14x19x29)",
+      "meio (14x19x14)",
+      "amarração T (14x19x44)",
+      "canaleta inteira (14x19x29)",
+      "meia canaleta (14x19x14)",
+      "inteiro (14x19x39)",
+      "meio (14x19x19)",
+      "amarração T (14x19x54)",
+      "amarração L (14x19x34)",
+      "canaleta  inteira (14x19x39)",
+      "canaleta de amarração (14x19x34)",
+      "meia canaleta (14x19x19)",
+      "compensador 1/4 (14x19x9)",
+      "compensador 1/8 (14x19x4)",
+      "inteiro (19x19x39)",
+      "meio (19x19x19)",
+      "canaleta inteira (19x19x39)",
+      "meia canaleta (19x19x19)",
+      "compensador 1/4 (19x19x9)",
+      "compensador 1/8 (19x19x4)",
     ]),
     fbk: z.number(),
     quantity: z.number().int().positive("A quantidade deve ser positiva"),
@@ -67,12 +69,12 @@ const blockItemSchema = z
   })
   .superRefine((data, ctx) => {
     if (!data.customFbk) {
-      const validFbks = [2, 4, 6, 8, 10, 12];
+      const validFbks = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26];
       if (!validFbks.includes(data.fbk)) {
         ctx.addIssue({
           path: ["fbk"],
           code: "custom",
-          message: "Fbk deve ser 2, 4, 6, 8, 10 ou 12",
+          message: "Fbk deve ser 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24 ou 26",
         });
       }
     }
@@ -106,7 +108,7 @@ const groutVolumeItemSchema = z
   });
 
 const groutItemSchema = z.object({
-  type: z.enum(["vertical", "horizontal", "general"]),
+  type: z.enum(["vertical", "horizontal"]),
   volumes: z
     .array(groutVolumeItemSchema)
     .min(1, "Adicione pelo menos um volume"),
@@ -123,12 +125,12 @@ const mortarItemSchema = z
   })
   .superRefine((data, ctx) => {
     if (!data.customFak) {
-      const validFaks = [2, 4, 5, 7, 10, 15, 20];
+      const validFaks = [4.5, 8, 14];
       if (!validFaks.includes(data.fak)) {
         ctx.addIssue({
           path: ["fak"],
           code: "custom",
-          message: "Fak deve ser 2, 4, 5, 7, 10, 15 ou 20",
+          message: "Fak deve ser 4.5, 8 ou 14",
         });
       }
     }

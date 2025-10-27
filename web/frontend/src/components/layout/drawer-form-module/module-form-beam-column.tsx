@@ -210,7 +210,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                     : fckField.value?.toString() || ""
                                 }
                               >
-                                <SelectTrigger>
+                                <SelectTrigger className="w-full">
                                   <SelectValue placeholder="Selecione FCK" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -382,7 +382,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                     : caField.value?.toString() || ""
                                 }
                               >
-                                <SelectTrigger>
+                                <SelectTrigger className="w-full">
                                   <SelectValue placeholder="Selecione CA" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -485,7 +485,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-4 items-end">
         <FormField
           control={form.control}
           name="column_number"
@@ -563,7 +563,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
         <Card className="border-2 border-gray-300">
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-4 gap-4 items-end">
               <FormField
                 control={form.control}
                 name="form_columns"
