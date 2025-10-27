@@ -1,4 +1,3 @@
-// import { postModule } from "@/actions/modules/postModule"; // comentado temporariamente
 import { ModuleParamsProps, TModulesTypes } from "@/types/modules";
 import {
   ModuleFormSchema,
@@ -43,7 +42,7 @@ import { TTowerFloorCategory } from "@/types/units";
 import { postModule } from "@/actions/modules/postModule";
 import { toast } from "sonner";
 import { getModule } from "@/actions/modules/getModule";
-import { patchModule } from "@/actions/modules/patchModule"; // comentado temporariamente
+import { patchModule } from "@/actions/modules/patchModule";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface DrawerFormModuleProps {
@@ -107,11 +106,7 @@ const DrawerFormModule = ({
     },
   });
 
-  const {
-    // isSuccess: isCreationSuccess,
-    isPending: isCreationPending,
-    mutate: mutateCreation,
-  } = useMutation({
+  const { isPending: isCreationPending, mutate: mutateCreation } = useMutation({
     mutationFn: (data: ModuleParamsProps) =>
       postModule(data, projectId, unitId, optionId),
     onError: (error) => {
@@ -153,18 +148,33 @@ const DrawerFormModule = ({
 
   useEffect(() => {
     const ensureArraysInitialized = () => {
-      const fieldsToInit = [
-        "concrete_columns",
-        "concrete_beams",
-        "concrete_slabs",
-        "concrete_walls",
-      ] as const;
+      const currentType = form.getValues("type");
 
-      fieldsToInit.forEach((field) => {
-        if (!form.getValues(field)) {
-          form.setValue(field, { volumes: [], steel: [] });
+      if (currentType === "beam_column") {
+        const fieldsToInit = [
+          "concrete_columns",
+          "concrete_beams",
+          "concrete_slabs",
+        ] as const;
+
+        fieldsToInit.forEach((field) => {
+          if (!form.getValues(field)) {
+            form.setValue(field, { volumes: [], steel: [] });
+          }
+        });
+      } else if (currentType === "concrete_wall") {
+        const fieldsToInit = ["concrete_walls", "concrete_slabs"] as const;
+
+        fieldsToInit.forEach((field) => {
+          if (!form.getValues(field)) {
+            form.setValue(field, { volumes: [], steel: [] });
+          }
+        });
+      } else if (currentType === "structural_masonry") {
+        if (!form.getValues("concrete_slabs")) {
+          form.setValue("concrete_slabs", { volumes: [], steel: [] });
         }
-      });
+      }
     };
 
     ensureArraysInitialized();
@@ -228,32 +238,22 @@ const DrawerFormModule = ({
         slab_form_area: data.slab_form_area,
       };
     } else if (data.type === "structural_masonry") {
-      // Separar grout por tipo para o backend
-      const groutByType: any = {};
-      data.grout?.forEach((g) => {
-        const key = `${g.type}_grout`;
-        if (!groutByType[key]) {
-          groutByType[key] = [];
-        }
-        groutByType[key].push({
-          volumes: g.volumes,
-          steel: g.steel,
-        });
-      });
-
       filteredData = {
         masonry: {
           blocks: data.blocks || [],
-          ...groutByType,
+          grout: data.grout || [],
           mortar: data.mortar || [],
         },
         concrete_slabs: data.concrete_slabs || { volumes: [], steel: [] },
-        concrete_columns: data.concrete_columns,
-        concrete_beams: data.concrete_beams,
-        form_slabs: data.form_slabs,
-        form_columns: data.form_columns,
-        form_beams: data.form_beams,
-        avg_slab_span: data.avg_slab_span,
+        ...(data.concrete_columns && {
+          concrete_columns: data.concrete_columns,
+        }),
+        ...(data.concrete_beams && { concrete_beams: data.concrete_beams }),
+        form_slabs: data.form_slabs || 0,
+        ...(data.form_columns !== undefined && {
+          form_columns: data.form_columns,
+        }),
+        ...(data.form_beams !== undefined && { form_beams: data.form_beams }),
       };
     }
 
@@ -355,7 +355,7 @@ const DrawerFormModule = ({
                 <div className="flex-shrink-0 h-full overflow-y-auto">
                   <div className="sticky top-0">
                     <BuildingVisualizer
-                      key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ index: f.index })))}`} // Força re-render quando andares mudam
+                      key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ index: f.index })))}`}
                       towerFloors={floors || []}
                       isSelectable={true}
                       selectedFloorIds={selectedFloors}

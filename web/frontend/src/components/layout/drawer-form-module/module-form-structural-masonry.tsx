@@ -24,7 +24,6 @@ interface ModuleFormStructuralMasonryProps {
   form: UseFormReturn<ModuleFormSchema>;
 }
 
-// Componente separado para cada item de graute
 interface GroutItemProps {
   groutIndex: number;
   groutField: any;
@@ -86,10 +85,10 @@ const GroutItem = ({
     <Card key={groutField.id} className="border-2 border-blue-500">
       <CardContent className="space-y-4">
         {/* Header com tipo e botão remover */}
-        <div className="flex items-center justify-between pt-4">
+        <div className="flex items-center justify-between">
           <FormField
             control={form.control}
-            name={`grout.${groutIndex}.type`}
+            name={`grout.${groutIndex}.position`}
             render={({ field }) => (
               <FormItem className="flex-1">
                 <FormLabel className="text-xs font-medium">
@@ -97,7 +96,7 @@ const GroutItem = ({
                 </FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
                     <SelectContent>
@@ -131,12 +130,12 @@ const GroutItem = ({
           )}
         </div>
 
+        <div className="border-t border-gray-200 my-4"></div>
+
         {/* Volumes Section */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between py-2 px-1 border-b">
-            <FormLabel className="text-xs font-medium text-gray-700">
-              Volumes de graute
-            </FormLabel>
+          <div className="flex items-center justify-between py-2 px-1">
+            <FormLabel className="text-xs text-gray-700">Graute</FormLabel>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500">Total:</span>
               <span className="text-sm font-semibold text-gray-900">
@@ -151,110 +150,115 @@ const GroutItem = ({
               false;
 
             return (
-              <div key={volumeField.id} className="flex items-end gap-2">
-                <FormField
-                  control={form.control}
-                  name={`grout.${groutIndex}.volumes.${volumeIndex}.fgk`}
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel className="text-xs">Fgk (MPa)</FormLabel>
-                      <FormControl>
-                        {isCustomFgk ? (
-                          <div className="flex gap-1">
-                            <Input
-                              type="number"
-                              step="0.1"
-                              placeholder="Outro"
-                              value={field.value || ""}
-                              onChange={(e) =>
-                                field.onChange(Number(e.target.value))
-                              }
-                              className="flex-1"
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setCustomFgkSelected((prev) => ({
-                                  ...prev,
-                                  [`grout-${groutIndex}-volume-${volumeIndex}`]:
-                                    false,
-                                }));
-                                field.onChange(fgkOptions[0]);
+              <div
+                key={volumeField.id}
+                className="border border-gray-200 rounded-md p-3 space-y-3"
+              >
+                <div className="flex items-end gap-2">
+                  <FormField
+                    control={form.control}
+                    name={`grout.${groutIndex}.volumes.${volumeIndex}.fgk`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel className="text-xs">Fgk (MPa)</FormLabel>
+                        <FormControl>
+                          {isCustomFgk ? (
+                            <div className="flex gap-1">
+                              <Input
+                                type="number"
+                                step="0.1"
+                                placeholder="Outro"
+                                value={field.value || ""}
+                                onChange={(e) =>
+                                  field.onChange(Number(e.target.value))
+                                }
+                                className="flex-1 w-full"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setCustomFgkSelected((prev) => ({
+                                    ...prev,
+                                    [`grout-${groutIndex}-volume-${volumeIndex}`]:
+                                      false,
+                                  }));
+                                  field.onChange(fgkOptions[0]);
+                                }}
+                                className="text-xs"
+                              >
+                                ✕
+                              </Button>
+                            </div>
+                          ) : (
+                            <Select
+                              onValueChange={(value) => {
+                                if (value === "custom") {
+                                  setCustomFgkSelected((prev) => ({
+                                    ...prev,
+                                    [`grout-${groutIndex}-volume-${volumeIndex}`]:
+                                      true,
+                                  }));
+                                  field.onChange(0);
+                                } else {
+                                  field.onChange(Number(value));
+                                }
                               }}
-                              className="text-xs"
+                              value={field.value?.toString()}
                             >
-                              ✕
-                            </Button>
-                          </div>
-                        ) : (
-                          <Select
-                            onValueChange={(value) => {
-                              if (value === "custom") {
-                                setCustomFgkSelected((prev) => ({
-                                  ...prev,
-                                  [`grout-${groutIndex}-volume-${volumeIndex}`]:
-                                    true,
-                                }));
-                                field.onChange(0);
-                              } else {
-                                field.onChange(Number(value));
-                              }
-                            }}
-                            value={field.value?.toString()}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Fgk" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {fgkOptions.map((fgk) => (
-                                <SelectItem key={fgk} value={fgk.toString()}>
-                                  {fgk}
-                                </SelectItem>
-                              ))}
-                              <SelectItem value="custom">Outro</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Fgk" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {fgkOptions.map((fgk) => (
+                                  <SelectItem key={fgk} value={fgk.toString()}>
+                                    {fgk}
+                                  </SelectItem>
+                                ))}
+                                <SelectItem value="custom">Outro</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name={`grout.${groutIndex}.volumes.${volumeIndex}.volume`}
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel className="text-xs">Volume (m³)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={field.value || ""}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name={`grout.${groutIndex}.volumes.${volumeIndex}.volume`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel className="text-xs">Volume (m³)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={field.value || ""}
+                            onChange={(e) =>
+                              field.onChange(Number(e.target.value))
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => volumesFieldArray.remove(volumeIndex)}
-                  className="shrink-0"
-                  disabled={volumesFieldArray.fields.length === 1}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => volumesFieldArray.remove(volumeIndex)}
+                    className="shrink-0"
+                    disabled={volumesFieldArray.fields.length === 1}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-600" />
+                  </Button>
+                </div>
               </div>
             );
           })}
@@ -266,16 +270,16 @@ const GroutItem = ({
             onClick={() => volumesFieldArray.append({ fgk: 20, volume: 0 })}
             className="w-full text-green-600 border-green-600 hover:bg-green-50"
           >
-            Adicionar Volume
+            Adicionar
           </Button>
         </div>
 
+        <div className="border-t border-gray-200 my-4"></div>
+
         {/* Steel Section */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between py-2 px-1 border-b">
-            <FormLabel className="text-xs font-medium text-gray-700">
-              Armadura
-            </FormLabel>
+          <div className="flex items-center justify-between py-2 px-1">
+            <FormLabel className="text-xs text-gray-500">Aço (kg)</FormLabel>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500">Total:</span>
               <span className="text-sm font-semibold text-gray-900">
@@ -290,110 +294,117 @@ const GroutItem = ({
               false;
 
             return (
-              <div key={steelField.id} className="flex items-end gap-2">
-                <FormField
-                  control={form.control}
-                  name={`grout.${groutIndex}.steel.${steelIndex}.ca`}
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel className="text-xs">Categoria (MPa)</FormLabel>
-                      <FormControl>
-                        {isCustomCa ? (
-                          <div className="flex gap-1">
-                            <Input
-                              type="number"
-                              step="1"
-                              placeholder="Outro"
-                              value={field.value || ""}
-                              onChange={(e) =>
-                                field.onChange(Number(e.target.value))
-                              }
-                              className="flex-1"
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setCustomCaSelected((prev) => ({
-                                  ...prev,
-                                  [`grout-${groutIndex}-steel-${steelIndex}`]:
-                                    false,
-                                }));
-                                field.onChange(caOptions[0]);
+              <div
+                key={steelField.id}
+                className="border border-gray-200 rounded-md p-3 space-y-3"
+              >
+                <div className="flex items-end gap-2">
+                  <FormField
+                    control={form.control}
+                    name={`grout.${groutIndex}.steel.${steelIndex}.ca`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel className="text-xs">
+                          Categoria (MPa)
+                        </FormLabel>
+                        <FormControl>
+                          {isCustomCa ? (
+                            <div className="flex gap-1">
+                              <Input
+                                type="number"
+                                step="1"
+                                placeholder="Outro"
+                                value={field.value || ""}
+                                onChange={(e) =>
+                                  field.onChange(Number(e.target.value))
+                                }
+                                className="flex-1 w-full"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setCustomCaSelected((prev) => ({
+                                    ...prev,
+                                    [`grout-${groutIndex}-steel-${steelIndex}`]:
+                                      false,
+                                  }));
+                                  field.onChange(caOptions[0]);
+                                }}
+                                className="text-xs"
+                              >
+                                ✕
+                              </Button>
+                            </div>
+                          ) : (
+                            <Select
+                              onValueChange={(value) => {
+                                if (value === "custom") {
+                                  setCustomCaSelected((prev) => ({
+                                    ...prev,
+                                    [`grout-${groutIndex}-steel-${steelIndex}`]:
+                                      true,
+                                  }));
+                                  field.onChange(0);
+                                } else {
+                                  field.onChange(Number(value));
+                                }
                               }}
-                              className="text-xs"
+                              value={field.value?.toString()}
                             >
-                              ✕
-                            </Button>
-                          </div>
-                        ) : (
-                          <Select
-                            onValueChange={(value) => {
-                              if (value === "custom") {
-                                setCustomCaSelected((prev) => ({
-                                  ...prev,
-                                  [`grout-${groutIndex}-steel-${steelIndex}`]:
-                                    true,
-                                }));
-                                field.onChange(0);
-                              } else {
-                                field.onChange(Number(value));
-                              }
-                            }}
-                            value={field.value?.toString()}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="CA" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {caOptions.map((ca) => (
-                                <SelectItem key={ca} value={ca.toString()}>
-                                  {ca}
-                                </SelectItem>
-                              ))}
-                              <SelectItem value="custom">Outro</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="CA" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {caOptions.map((ca) => (
+                                  <SelectItem key={ca} value={ca.toString()}>
+                                    {ca}
+                                  </SelectItem>
+                                ))}
+                                <SelectItem value="custom">Outro</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name={`grout.${groutIndex}.steel.${steelIndex}.mass`}
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel className="text-xs">Massa (kg)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={field.value || ""}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name={`grout.${groutIndex}.steel.${steelIndex}.mass`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel className="text-xs">Massa (kg)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={field.value || ""}
+                            onChange={(e) =>
+                              field.onChange(Number(e.target.value))
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => steelFieldArray.remove(steelIndex)}
-                  className="shrink-0"
-                  disabled={steelFieldArray.fields.length === 1}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => steelFieldArray.remove(steelIndex)}
+                    className="shrink-0"
+                    disabled={steelFieldArray.fields.length === 1}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-600" />
+                  </Button>
+                </div>
               </div>
             );
           })}
@@ -405,7 +416,7 @@ const GroutItem = ({
             onClick={() => steelFieldArray.append({ ca: 50, mass: 0 })}
             className="w-full text-green-600 border-green-600 hover:bg-green-50"
           >
-            Adicionar Armadura
+            Adicionar
           </Button>
         </div>
       </CardContent>
@@ -418,29 +429,31 @@ const ModuleFormStructuralMasonry = ({
 }: ModuleFormStructuralMasonryProps) => {
   const fckOptions = [20, 25, 30, 35, 40, 45];
   const caOptions = [50, 60];
-  const fbkOptions = [2, 4, 6, 8, 10, 12];
+  const fbkOptions = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26];
   const fgkOptions = [15, 20, 25, 30];
-  const fakOptions = [2, 4, 5, 7, 10, 15, 20];
+  const fakOptions = [4.5, 8, 14];
 
   const blockTypes = [
-    "BL 14x4",
-    "BL 14x19",
-    "BL 14x34",
-    "BL 14x39",
-    "BL 14x54",
-    "BL 19x4",
-    "BL 19x19",
-    "BL 19x39",
-    "CL 14x19",
-    "CL 14x34",
-    "CL 14x14",
-    "CL 14x39",
-    "CL 19x19",
-    "CL 19x39",
-    "COMP 14x19",
-    "COMP 14x39",
-    "JOTA 14 x 39 x 19/9",
-    "JOTA 14 x 19 x 19/9",
+    "inteiro (14x19x29)",
+    "meio (14x19x14)",
+    "amarração T (14x19x44)",
+    "canaleta inteira (14x19x29)",
+    "meia canaleta (14x19x14)",
+    "inteiro (14x19x39)",
+    "meio (14x19x19)",
+    "amarração T (14x19x54)",
+    "amarração L (14x19x34)",
+    "canaleta  inteira (14x19x39)",
+    "canaleta de amarração (14x19x34)",
+    "meia canaleta (14x19x19)",
+    "compensador 1/4 (14x19x9)",
+    "compensador 1/8 (14x19x4)",
+    "inteiro (19x19x39)",
+    "meio (19x19x19)",
+    "canaleta inteira (19x19x39)",
+    "meia canaleta (19x19x19)",
+    "compensador 1/4 (19x19x9)",
+    "compensador 1/8 (19x19x4)",
   ] as const;
 
   const [customFckSelected, setCustomFckSelected] = useState<
@@ -461,9 +474,8 @@ const ModuleFormStructuralMasonry = ({
 
   useEffect(() => {
     const requiredFields = ["concrete_slabs"];
-    const optionalFields = ["concrete_columns", "concrete_beams"];
 
-    [...requiredFields, ...optionalFields].forEach((fieldName) => {
+    requiredFields.forEach((fieldName) => {
       const volumes = form.getValues(`${fieldName}.volumes` as any);
       const steel = form.getValues(`${fieldName}.steel` as any);
 
@@ -486,14 +498,14 @@ const ModuleFormStructuralMasonry = ({
 
     if (!blocks || blocks.length === 0) {
       form.setValue("blocks", [
-        { type: "BL 14x19" as const, fbk: 6, quantity: 0 },
+        { type: "inteiro (14x19x29)" as const, fbk: 6, quantity: 0 },
       ]);
     }
 
     if (!grout || grout.length === 0) {
       form.setValue("grout", [
         {
-          type: "vertical" as const,
+          position: "vertical" as const,
           volumes: [{ fgk: 20, volume: 0 }],
           steel: [{ ca: 50, mass: 0 }],
         },
@@ -501,21 +513,13 @@ const ModuleFormStructuralMasonry = ({
     }
 
     if (!mortar || mortar.length === 0) {
-      form.setValue("mortar", [{ fak: 5, volume: 0 }]);
+      form.setValue("mortar", [{ fak: 4.5, volume: 0 }]);
     }
 
     const formSlabs = form.getValues("form_slabs");
-    const formColumns = form.getValues("form_columns");
-    const formBeams = form.getValues("form_beams");
 
     if (formSlabs === undefined) {
       form.setValue("form_slabs", 0);
-    }
-    if (formColumns === undefined) {
-      form.setValue("form_columns", 0);
-    }
-    if (formBeams === undefined) {
-      form.setValue("form_beams", 0);
     }
   }, [form, fckOptions, caOptions]);
 
@@ -595,143 +599,153 @@ const ModuleFormStructuralMasonry = ({
                   customFbkSelected[`block-${index}`] || false;
 
                 return (
-                  <div key={field.id} className="flex items-end gap-2">
-                    <FormField
-                      control={form.control}
-                      name={`blocks.${index}.type`}
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="text-xs">Tipo *</FormLabel>
-                          <FormControl>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {blockTypes.map((type) => (
-                                  <SelectItem
-                                    key={type}
-                                    value={type}
-                                    disabled={isBlockTypeUsed(type, index)}
-                                  >
-                                    {type}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`blocks.${index}.fbk`}
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="text-xs">Fbk (MPa) *</FormLabel>
-                          <FormControl>
-                            {isCustomFbk ? (
-                              <div className="flex gap-1">
-                                <Input
-                                  type="number"
-                                  step="0.1"
-                                  placeholder="Outro"
-                                  value={field.value || ""}
-                                  onChange={(e) =>
-                                    field.onChange(Number(e.target.value))
-                                  }
-                                  className="flex-1"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setCustomFbkSelected((prev) => ({
-                                      ...prev,
-                                      [`block-${index}`]: false,
-                                    }));
-                                    field.onChange(fbkOptions[0]);
-                                  }}
-                                  className="text-xs"
-                                >
-                                  ✕
-                                </Button>
-                              </div>
-                            ) : (
+                  <div
+                    key={field.id}
+                    className="border border-gray-200 rounded-md p-3 space-y-3"
+                  >
+                    <div className="flex items-end gap-2">
+                      <FormField
+                        control={form.control}
+                        name={`blocks.${index}.type`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="text-xs">Tipo *</FormLabel>
+                            <FormControl>
                               <Select
-                                onValueChange={(value) => {
-                                  if (value === "custom") {
-                                    setCustomFbkSelected((prev) => ({
-                                      ...prev,
-                                      [`block-${index}`]: true,
-                                    }));
-                                    field.onChange(0);
-                                  } else {
-                                    field.onChange(Number(value));
-                                  }
-                                }}
-                                value={field.value?.toString()}
+                                onValueChange={field.onChange}
+                                value={field.value}
                               >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Fbk" />
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Selecione" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {fbkOptions.map((fbk) => (
+                                  {blockTypes.map((type) => (
                                     <SelectItem
-                                      key={fbk}
-                                      value={fbk.toString()}
+                                      key={type}
+                                      value={type}
+                                      disabled={isBlockTypeUsed(type, index)}
                                     >
-                                      {fbk}
+                                      {type}
                                     </SelectItem>
                                   ))}
-                                  <SelectItem value="custom">Outro</SelectItem>
                                 </SelectContent>
                               </Select>
-                            )}
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={form.control}
-                      name={`blocks.${index}.quantity`}
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="text-xs">
-                            Quantidade *
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="0"
-                              value={field.value || ""}
-                              onChange={(e) =>
-                                field.onChange(Number(e.target.value))
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        control={form.control}
+                        name={`blocks.${index}.fbk`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="text-xs">
+                              Fbk (MPa) *
+                            </FormLabel>
+                            <FormControl>
+                              {isCustomFbk ? (
+                                <div className="flex gap-1">
+                                  <Input
+                                    type="number"
+                                    step="0.1"
+                                    placeholder="Outro"
+                                    value={field.value || ""}
+                                    onChange={(e) =>
+                                      field.onChange(Number(e.target.value))
+                                    }
+                                    className="flex-1"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setCustomFbkSelected((prev) => ({
+                                        ...prev,
+                                        [`block-${index}`]: false,
+                                      }));
+                                      field.onChange(fbkOptions[0]);
+                                    }}
+                                    className="text-xs"
+                                  >
+                                    ✕
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Select
+                                  onValueChange={(value) => {
+                                    if (value === "custom") {
+                                      setCustomFbkSelected((prev) => ({
+                                        ...prev,
+                                        [`block-${index}`]: true,
+                                      }));
+                                      field.onChange(0);
+                                    } else {
+                                      field.onChange(Number(value));
+                                    }
+                                  }}
+                                  value={field.value?.toString()}
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Fbk" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {fbkOptions.map((fbk) => (
+                                      <SelectItem
+                                        key={fbk}
+                                        value={fbk.toString()}
+                                      >
+                                        {fbk}
+                                      </SelectItem>
+                                    ))}
+                                    <SelectItem value="custom">
+                                      Outro
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeBlock(index)}
-                      className="shrink-0"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <FormField
+                        control={form.control}
+                        name={`blocks.${index}.quantity`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="text-xs">
+                              Quantidade *
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                placeholder="0"
+                                value={field.value || ""}
+                                onChange={(e) =>
+                                  field.onChange(Number(e.target.value))
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeBlock(index)}
+                        className="shrink-0"
+                        disabled={blockFields.length === 1}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
@@ -774,7 +788,6 @@ const ModuleFormStructuralMasonry = ({
     const groutTypes = [
       { value: "vertical", label: "Vertical" },
       { value: "horizontal", label: "Horizontal" },
-      { value: "general", label: "Geral" },
     ];
 
     const isGroutTypeUsed = (groutType: string, currentIndex: number) => {
@@ -796,7 +809,7 @@ const ModuleFormStructuralMasonry = ({
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-gray-900">Graute *</h3>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {groutFields.map((groutField, groutIndex) => (
             <GroutItem
               key={groutField.id}
@@ -816,22 +829,24 @@ const ModuleFormStructuralMasonry = ({
             />
           ))}
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              appendGrout({
-                type: getNextAvailableGroutType() as any,
-                volumes: [{ fgk: 20, volume: 0 }],
-                steel: [{ ca: 50, mass: 0 }],
-              })
-            }
-            className="w-full text-green-600 border-green-600 hover:bg-green-50"
-            disabled={groutFields.length >= 3}
-          >
-            Adicionar tipo de graute
-          </Button>
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                appendGrout({
+                  position: getNextAvailableGroutType() as any,
+                  volumes: [{ fgk: 20, volume: 0 }],
+                  steel: [{ ca: 50, mass: 0 }],
+                })
+              }
+              className="ml-auto text-green-600 border-green-600 hover:bg-green-50"
+              disabled={groutFields.length >= 3}
+            >
+              Adicionar Graute
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -875,112 +890,122 @@ const ModuleFormStructuralMasonry = ({
                   customFakSelected[`mortar-${index}`] || false;
 
                 return (
-                  <div key={field.id} className="flex items-end gap-2">
-                    <FormField
-                      control={form.control}
-                      name={`mortar.${index}.fak`}
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="text-xs">Fak (MPa) *</FormLabel>
-                          <FormControl>
-                            {isCustomFak ? (
-                              <div className="flex gap-1">
-                                <Input
-                                  type="number"
-                                  step="0.1"
-                                  placeholder="Outro"
-                                  value={field.value || ""}
-                                  onChange={(e) =>
-                                    field.onChange(Number(e.target.value))
-                                  }
-                                  className="flex-1"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setCustomFakSelected((prev) => ({
-                                      ...prev,
-                                      [`mortar-${index}`]: false,
-                                    }));
-                                    field.onChange(fakOptions[0]);
+                  <div
+                    key={field.id}
+                    className="border border-gray-200 rounded-md p-3 space-y-3"
+                  >
+                    <div className="flex items-end gap-2">
+                      <FormField
+                        control={form.control}
+                        name={`mortar.${index}.fak`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="text-xs">
+                              Fak (MPa) *
+                            </FormLabel>
+                            <FormControl>
+                              {isCustomFak ? (
+                                <div className="flex gap-1">
+                                  <Input
+                                    type="number"
+                                    step="0.1"
+                                    placeholder="Outro"
+                                    value={field.value || ""}
+                                    onChange={(e) =>
+                                      field.onChange(Number(e.target.value))
+                                    }
+                                    className="flex-1 w-full"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setCustomFakSelected((prev) => ({
+                                        ...prev,
+                                        [`mortar-${index}`]: false,
+                                      }));
+                                      field.onChange(fakOptions[0]);
+                                    }}
+                                    className="text-xs"
+                                  >
+                                    ✕
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Select
+                                  onValueChange={(value) => {
+                                    if (value === "custom") {
+                                      setCustomFakSelected((prev) => ({
+                                        ...prev,
+                                        [`mortar-${index}`]: true,
+                                      }));
+                                      field.onChange(0);
+                                    } else {
+                                      field.onChange(Number(value));
+                                    }
                                   }}
-                                  className="text-xs"
+                                  value={field.value?.toString()}
                                 >
-                                  ✕
-                                </Button>
-                              </div>
-                            ) : (
-                              <Select
-                                onValueChange={(value) => {
-                                  if (value === "custom") {
-                                    setCustomFakSelected((prev) => ({
-                                      ...prev,
-                                      [`mortar-${index}`]: true,
-                                    }));
-                                    field.onChange(0);
-                                  } else {
-                                    field.onChange(Number(value));
-                                  }
-                                }}
-                                value={field.value?.toString()}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Fak" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {fakOptions.map((fak) => (
-                                    <SelectItem
-                                      key={fak}
-                                      value={fak.toString()}
-                                    >
-                                      {fak}
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Fak" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {fakOptions.map((fak) => (
+                                      <SelectItem
+                                        key={fak}
+                                        value={fak.toString()}
+                                      >
+                                        {fak}
+                                      </SelectItem>
+                                    ))}
+                                    <SelectItem value="custom">
+                                      Outro
                                     </SelectItem>
-                                  ))}
-                                  <SelectItem value="custom">Outro</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            )}
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={form.control}
-                      name={`mortar.${index}.volume`}
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="text-xs">
-                            Volume (m³) *
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0.00"
-                              value={field.value || ""}
-                              onChange={(e) =>
-                                field.onChange(Number(e.target.value))
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        control={form.control}
+                        name={`mortar.${index}.volume`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="text-xs">
+                              Volume (m³) *
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                value={field.value || ""}
+                                onChange={(e) =>
+                                  field.onChange(Number(e.target.value))
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeMortar(index)}
-                      className="shrink-0"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeMortar(index)}
+                        className="shrink-0"
+                        disabled={mortarFields.length === 1}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
@@ -1092,111 +1117,121 @@ const ModuleFormStructuralMasonry = ({
                   customFckSelected[`${fieldName}-volume-${index}`] || false;
 
                 return (
-                  <div key={field.id} className="flex items-end gap-2">
-                    <FormField
-                      control={form.control}
-                      name={`${fieldName}.volumes.${index}.fck`}
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="text-xs">Fck (MPa)</FormLabel>
-                          <FormControl>
-                            {isCustomFck ? (
-                              <div className="flex gap-1">
-                                <Input
-                                  type="number"
-                                  step="0.1"
-                                  placeholder="Outro"
-                                  value={field.value || ""}
-                                  onChange={(e) =>
-                                    field.onChange(Number(e.target.value))
-                                  }
-                                  className="flex-1"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setCustomFckSelected((prev) => ({
-                                      ...prev,
-                                      [`${fieldName}-volume-${index}`]: false,
-                                    }));
-                                    field.onChange(fckOptions[0]);
+                  <div
+                    key={field.id}
+                    className="border border-gray-200 rounded-md p-3 space-y-3"
+                  >
+                    <div className="flex items-end gap-2">
+                      <FormField
+                        control={form.control}
+                        name={`${fieldName}.volumes.${index}.fck`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="text-xs">Fck (MPa)</FormLabel>
+                            <FormControl>
+                              {isCustomFck ? (
+                                <div className="flex gap-1">
+                                  <Input
+                                    type="number"
+                                    step="0.1"
+                                    placeholder="Outro"
+                                    value={field.value || ""}
+                                    onChange={(e) =>
+                                      field.onChange(Number(e.target.value))
+                                    }
+                                    className="flex-1"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setCustomFckSelected((prev) => ({
+                                        ...prev,
+                                        [`${fieldName}-volume-${index}`]: false,
+                                      }));
+                                      field.onChange(fckOptions[0]);
+                                    }}
+                                    className="text-xs"
+                                  >
+                                    ✕
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Select
+                                  onValueChange={(value) => {
+                                    if (value === "custom") {
+                                      setCustomFckSelected((prev) => ({
+                                        ...prev,
+                                        [`${fieldName}-volume-${index}`]: true,
+                                      }));
+                                      field.onChange(0);
+                                    } else {
+                                      field.onChange(Number(value));
+                                    }
                                   }}
-                                  className="text-xs"
+                                  value={field.value?.toString()}
                                 >
-                                  ✕
-                                </Button>
-                              </div>
-                            ) : (
-                              <Select
-                                onValueChange={(value) => {
-                                  if (value === "custom") {
-                                    setCustomFckSelected((prev) => ({
-                                      ...prev,
-                                      [`${fieldName}-volume-${index}`]: true,
-                                    }));
-                                    field.onChange(0);
-                                  } else {
-                                    field.onChange(Number(value));
-                                  }
-                                }}
-                                value={field.value?.toString()}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Fck" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {fckOptions.map((fck) => (
-                                    <SelectItem
-                                      key={fck}
-                                      value={fck.toString()}
-                                      disabled={isFckUsed(fck, index)}
-                                    >
-                                      {fck}
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Fck" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {fckOptions.map((fck) => (
+                                      <SelectItem
+                                        key={fck}
+                                        value={fck.toString()}
+                                        disabled={isFckUsed(fck, index)}
+                                      >
+                                        {fck}
+                                      </SelectItem>
+                                    ))}
+                                    <SelectItem value="custom">
+                                      Outro
                                     </SelectItem>
-                                  ))}
-                                  <SelectItem value="custom">Outro</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            )}
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={form.control}
-                      name={`${fieldName}.volumes.${index}.volume`}
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="text-xs">Volume (m³)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0.00"
-                              value={field.value || ""}
-                              onChange={(e) =>
-                                field.onChange(Number(e.target.value))
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        control={form.control}
+                        name={`${fieldName}.volumes.${index}.volume`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="text-xs">
+                              Volume (m³)
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                value={field.value || ""}
+                                onChange={(e) =>
+                                  field.onChange(Number(e.target.value))
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeVolume(index)}
-                      className="shrink-0"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeVolume(index)}
+                        className="shrink-0"
+                        disabled={volumeFields.length === 1}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
@@ -1233,111 +1268,121 @@ const ModuleFormStructuralMasonry = ({
                   customCaSelected[`${fieldName}-steel-${index}`] || false;
 
                 return (
-                  <div key={field.id} className="flex items-end gap-2">
-                    <FormField
-                      control={form.control}
-                      name={`${fieldName}.steel.${index}.ca`}
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="text-xs">CA</FormLabel>
-                          <FormControl>
-                            {isCustomCa ? (
-                              <div className="flex gap-1">
-                                <Input
-                                  type="number"
-                                  step="0.1"
-                                  placeholder="Outro"
-                                  value={field.value || ""}
-                                  onChange={(e) =>
-                                    field.onChange(Number(e.target.value))
-                                  }
-                                  className="flex-1"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setCustomCaSelected((prev) => ({
-                                      ...prev,
-                                      [`${fieldName}-steel-${index}`]: false,
-                                    }));
-                                    field.onChange(caOptions[0]);
+                  <div
+                    key={field.id}
+                    className="border border-gray-200 rounded-md p-3 space-y-3"
+                  >
+                    <div className="flex items-end gap-2">
+                      <FormField
+                        control={form.control}
+                        name={`${fieldName}.steel.${index}.ca`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="text-xs">CA</FormLabel>
+                            <FormControl>
+                              {isCustomCa ? (
+                                <div className="flex gap-1">
+                                  <Input
+                                    type="number"
+                                    step="0.1"
+                                    placeholder="Outro"
+                                    value={field.value || ""}
+                                    onChange={(e) =>
+                                      field.onChange(Number(e.target.value))
+                                    }
+                                    className="flex-1"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setCustomCaSelected((prev) => ({
+                                        ...prev,
+                                        [`${fieldName}-steel-${index}`]: false,
+                                      }));
+                                      field.onChange(caOptions[0]);
+                                    }}
+                                    className="text-xs"
+                                  >
+                                    ✕
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Select
+                                  onValueChange={(value) => {
+                                    if (value === "custom") {
+                                      setCustomCaSelected((prev) => ({
+                                        ...prev,
+                                        [`${fieldName}-steel-${index}`]: true,
+                                      }));
+                                      field.onChange(0);
+                                    } else {
+                                      field.onChange(Number(value));
+                                    }
                                   }}
-                                  className="text-xs"
+                                  value={field.value?.toString()}
                                 >
-                                  ✕
-                                </Button>
-                              </div>
-                            ) : (
-                              <Select
-                                onValueChange={(value) => {
-                                  if (value === "custom") {
-                                    setCustomCaSelected((prev) => ({
-                                      ...prev,
-                                      [`${fieldName}-steel-${index}`]: true,
-                                    }));
-                                    field.onChange(0);
-                                  } else {
-                                    field.onChange(Number(value));
-                                  }
-                                }}
-                                value={field.value?.toString()}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="CA" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {caOptions.map((ca) => (
-                                    <SelectItem
-                                      key={ca}
-                                      value={ca.toString()}
-                                      disabled={isCaUsed(ca, index)}
-                                    >
-                                      {ca}
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="CA" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {caOptions.map((ca) => (
+                                      <SelectItem
+                                        key={ca}
+                                        value={ca.toString()}
+                                        disabled={isCaUsed(ca, index)}
+                                      >
+                                        {ca}
+                                      </SelectItem>
+                                    ))}
+                                    <SelectItem value="custom">
+                                      Outro
                                     </SelectItem>
-                                  ))}
-                                  <SelectItem value="custom">Outro</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            )}
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={form.control}
-                      name={`${fieldName}.steel.${index}.mass`}
-                      render={({ field }) => (
-                        <FormItem className="flex-1">
-                          <FormLabel className="text-xs">Massa (kg)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0.00"
-                              value={field.value || ""}
-                              onChange={(e) =>
-                                field.onChange(Number(e.target.value))
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        control={form.control}
+                        name={`${fieldName}.steel.${index}.mass`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="text-xs">
+                              Massa (kg)
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                value={field.value || ""}
+                                onChange={(e) =>
+                                  field.onChange(Number(e.target.value))
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeSteel(index)}
-                      className="shrink-0"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeSteel(index)}
+                        className="shrink-0"
+                        disabled={steelFields.length === 1}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
                   </div>
                 );
               })}
@@ -1372,7 +1417,7 @@ const ModuleFormStructuralMasonry = ({
 
         <Card className="border-2 border-gray-300">
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-4 gap-4 items-end">
               <FormField
                 control={form.control}
                 name="form_slabs"
