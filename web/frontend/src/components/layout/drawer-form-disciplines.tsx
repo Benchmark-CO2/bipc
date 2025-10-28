@@ -20,13 +20,13 @@ import {
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Checkbox } from "../ui/checkbox";
-import { useForm } from "react-hook-form";
+import { Switch } from "../ui/switch";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   disciplineFormSchema,
   DisciplineFormSchema,
 } from "@/validators/disciplineForm.validator";
-import { cn } from "@/lib/utils";
 
 interface IDrawerFormDisciplines {
   componentTrigger: React.ReactNode;
@@ -43,15 +43,26 @@ const mockCollaborators = [
   { id: "2", name: "Lorem Ipsum", email: "lorem2@example.com", initials: "LI" },
 ];
 
+// Mock data for permissions - will be provided by backend
+const mockPermissions = {
+  management: [
+    { id: 1, label: "Editar propriedades do projeto" },
+    { id: 2, label: "Criar disciplina" },
+    { id: 3, label: "Criar unidades" },
+    { id: 4, label: "Gerar relatórios do projeto" },
+  ],
+  simulation: [
+    { id: 5, label: "Criar unidades" },
+    { id: 6, label: "Gerar relatórios das unidades" },
+  ],
+};
+
 export default function DrawerFormDisciplines({
   componentTrigger,
 }: IDrawerFormDisciplines) {
   const [openDrawer, setOpenDrawer] = useState(false);
-  const [disciplineType, setDisciplineType] = useState<
-    "management" | "simulations"
-  >("management");
   const [managementExpanded, setManagementExpanded] = useState(true);
-  const [simulationsExpanded, setSimulationsExpanded] = useState(true);
+  const [simulationExpanded, setSimulationExpanded] = useState(true);
   const [selectedCollaborators, setSelectedCollaborators] = useState<string[]>(
     []
   );
@@ -61,19 +72,19 @@ export default function DrawerFormDisciplines({
     defaultValues: {
       name: "",
       description: "",
-      management: {
-        edit_project: false,
-        create_discipline: false,
-        create_unit: false,
-        generate_project_report: false,
-      },
-      simulations: {
-        create_unit: false,
-        generate_unit_report: false,
-      },
+      simulation: false,
+      permissions_ids: [],
       collaborators: [],
     },
+    mode: "onChange",
   });
+
+  const selectedPermissions =
+    useWatch({
+      control: form.control,
+      name: "permissions_ids",
+      defaultValue: [],
+    }) || [];
 
   const onSubmit = async (data: DisciplineFormSchema) => {
     console.log(data);
@@ -98,17 +109,66 @@ export default function DrawerFormDisciplines({
     form.setValue("collaborators", newCollaborators);
   };
 
-  const toggleDisciplineType = (type: "management" | "simulations") => {
-    setDisciplineType(type);
-    // Update checkboxes based on selected type
-    if (type === "management") {
-      form.setValue("simulations.create_unit", false);
-      form.setValue("simulations.generate_unit_report", false);
+  const togglePermission = (permissionId: number, checked: boolean) => {
+    const currentPermissions = form.getValues("permissions_ids");
+    const newPermissions = checked
+      ? [...currentPermissions, permissionId]
+      : currentPermissions.filter((id) => id !== permissionId);
+    form.setValue("permissions_ids", newPermissions, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  };
+
+  const toggleAllManagement = (checked: boolean) => {
+    const currentPermissions = form.getValues("permissions_ids");
+    const managementIds = mockPermissions.management.map((p) => p.id);
+
+    if (!checked) {
+      // Remove all management permissions
+      const newPermissions = currentPermissions.filter(
+        (id) => !managementIds.includes(id)
+      );
+      form.setValue("permissions_ids", newPermissions, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
     } else {
-      form.setValue("management.edit_project", false);
-      form.setValue("management.create_discipline", false);
-      form.setValue("management.create_unit", false);
-      form.setValue("management.generate_project_report", false);
+      // Add all management permissions
+      const newPermissions = [
+        ...currentPermissions.filter((id) => !managementIds.includes(id)),
+        ...managementIds,
+      ];
+      form.setValue("permissions_ids", newPermissions, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+  };
+
+  const toggleAllSimulation = (checked: boolean) => {
+    const currentPermissions = form.getValues("permissions_ids");
+    const simulationIds = mockPermissions.simulation.map((p) => p.id);
+
+    if (!checked) {
+      // Remove all simulation permissions
+      const newPermissions = currentPermissions.filter(
+        (id) => !simulationIds.includes(id)
+      );
+      form.setValue("permissions_ids", newPermissions, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    } else {
+      // Add all simulation permissions
+      const newPermissions = [
+        ...currentPermissions.filter((id) => !simulationIds.includes(id)),
+        ...simulationIds,
+      ];
+      form.setValue("permissions_ids", newPermissions, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
     }
   };
 
@@ -178,56 +238,29 @@ export default function DrawerFormDisciplines({
                 )}
               />
 
-              {/* Tipo de disciplina */}
-              <div className="flex flex-col gap-2">
-                <FormLabel>Tipo de disciplina</FormLabel>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant={
-                      disciplineType === "management" ? "bipc" : "outline"
-                    }
-                    className={cn(
-                      "flex items-center gap-2",
-                      disciplineType === "management" &&
-                        "bg-[#00796B] hover:bg-[#00796B]/90"
-                    )}
-                    onClick={() => toggleDisciplineType("management")}
-                  >
-                    <div
-                      className={cn(
-                        "w-3 h-3 rounded-full",
-                        disciplineType === "management"
-                          ? "bg-white"
-                          : "bg-[#00796B]"
-                      )}
-                    />
-                    Gestão
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={
-                      disciplineType === "simulations" ? "bipc" : "outline"
-                    }
-                    className={cn(
-                      "flex items-center gap-2",
-                      disciplineType === "simulations" &&
-                        "bg-[#00796B] hover:bg-[#00796B]/90"
-                    )}
-                    onClick={() => toggleDisciplineType("simulations")}
-                  >
-                    <div
-                      className={cn(
-                        "w-3 h-3 rounded-full",
-                        disciplineType === "simulations"
-                          ? "bg-white"
-                          : "bg-[#00796B]"
-                      )}
-                    />
-                    Simulação
-                  </Button>
-                </div>
-              </div>
+              {/* Visualizar na simulação - Switch */}
+              <FormField
+                control={form.control}
+                name="simulation"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between space-y-0 rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Visualizar na simulação
+                      </FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Habilita esta disciplina para aparecer nas simulações
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
               {/* Gestão Section */}
               <div className="flex flex-col border rounded-md overflow-hidden">
@@ -245,74 +278,36 @@ export default function DrawerFormDisciplines({
                 </button>
                 {managementExpanded && (
                   <div className="flex flex-col gap-3 p-4 bg-card">
-                    <FormField
-                      control={form.control}
-                      name="management.edit_project"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="font-normal cursor-pointer">
-                            Editar propriedades do projeto
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="management.create_discipline"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="font-normal cursor-pointer">
-                            Criar disciplina
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="management.create_unit"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="font-normal cursor-pointer">
-                            Criar unidades
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="management.generate_project_report"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="font-normal cursor-pointer">
-                            Gerar relatórios do projeto
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
+                    {/* Adicionar/Remover tudo */}
+                    <div className="flex items-center justify-between pb-2 border-b">
+                      <span className="text-sm font-medium">
+                        Selecionar todas
+                      </span>
+                      <Checkbox
+                        checked={mockPermissions.management.every((p) =>
+                          selectedPermissions.includes(p.id)
+                        )}
+                        onCheckedChange={toggleAllManagement}
+                      />
+                    </div>
+
+                    {/* Lista de permissões */}
+                    {mockPermissions.management.map((permission) => (
+                      <div
+                        key={permission.id}
+                        className="flex items-center justify-between gap-2"
+                      >
+                        <span className="text-sm font-normal flex-1">
+                          {permission.label}
+                        </span>
+                        <Checkbox
+                          checked={selectedPermissions.includes(permission.id)}
+                          onCheckedChange={(checked) =>
+                            togglePermission(permission.id, checked as boolean)
+                          }
+                        />
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -322,51 +317,47 @@ export default function DrawerFormDisciplines({
                 <button
                   type="button"
                   className="flex items-center justify-between p-3 bg-[#00796B] text-white hover:bg-[#00796B]/90"
-                  onClick={() => setSimulationsExpanded(!simulationsExpanded)}
+                  onClick={() => setSimulationExpanded(!simulationExpanded)}
                 >
                   <span className="font-medium">Simulação</span>
-                  {simulationsExpanded ? (
+                  {simulationExpanded ? (
                     <ChevronUp className="w-5 h-5" />
                   ) : (
                     <ChevronDown className="w-5 h-5" />
                   )}
                 </button>
-                {simulationsExpanded && (
+                {simulationExpanded && (
                   <div className="flex flex-col gap-3 p-4 bg-card">
-                    <FormField
-                      control={form.control}
-                      name="simulations.create_unit"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="font-normal cursor-pointer">
-                            Criar unidades
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="simulations.generate_unit_report"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="font-normal cursor-pointer">
-                            Gerar relatórios das unidades
-                          </FormLabel>
-                        </FormItem>
-                      )}
-                    />
+                    {/* Adicionar/Remover tudo */}
+                    <div className="flex items-center justify-between pb-2 border-b">
+                      <span className="text-sm font-medium">
+                        Selecionar todas
+                      </span>
+                      <Checkbox
+                        checked={mockPermissions.simulation.every((p) =>
+                          selectedPermissions.includes(p.id)
+                        )}
+                        onCheckedChange={toggleAllSimulation}
+                      />
+                    </div>
+
+                    {/* Lista de permissões */}
+                    {mockPermissions.simulation.map((permission) => (
+                      <div
+                        key={permission.id}
+                        className="flex items-center justify-between gap-2"
+                      >
+                        <span className="text-sm font-normal flex-1">
+                          {permission.label}
+                        </span>
+                        <Checkbox
+                          checked={selectedPermissions.includes(permission.id)}
+                          onCheckedChange={(checked) =>
+                            togglePermission(permission.id, checked as boolean)
+                          }
+                        />
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
