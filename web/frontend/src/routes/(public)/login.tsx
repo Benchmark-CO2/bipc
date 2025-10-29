@@ -71,13 +71,15 @@ const Login = () => {
   return (
     <div
       className={cn(
-        "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar",
-        {
-          block: isMobile,
-        }
+        "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar"
       )}
     >
-      <div className="flex px-10 flex-col items-center justify-center gap-4 max-xl:w-1/2 max-lg:w-full border border-zinc-200 dark:border-zinc-800 rounded-md py-8 bg-card">
+      <div
+        className={cn(
+          "flex px-10 flex-col items-center justify-center gap-4 w-full max-w-[440px] border border-zinc-200 dark:border-zinc-800 rounded-md py-8 bg-card",
+          { "h-full": isMobile }
+        )}
+      >
         <div className="w-full">
           <div>
             <img src={FullLogo} alt="" className="w-full mx-auto mb-2" />
