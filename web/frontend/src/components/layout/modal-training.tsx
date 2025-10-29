@@ -159,14 +159,15 @@ const ModalTraining = ({
             ) : (
               <>
                 <Button
-                  variant="default"
+                  variant="bipc"
+                  size="lg"
                   onClick={handleNavigateToSignUp}
                   className="w-full"
                 >
                   Cadastre-se na plataforma
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="default"
                   onClick={handleHasAccount}
                   className="mx-auto border-none shadow-none"
                 >
