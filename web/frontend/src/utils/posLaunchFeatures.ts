@@ -1,6 +1,6 @@
 export const posLaunchFeatures = {
   filterChartMinMax: {
-    enabled: false,
+    enabled: true,
     description: "Ativa o filtro de valores mínimos e máximos no gráfico.",
   }
 }

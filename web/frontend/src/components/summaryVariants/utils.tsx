@@ -30,6 +30,7 @@ export function recalculateY(points: {
   max: number,
   id: string
 }[], xMin: number, xMax: number): any[] {
+  return points
   const filtered = points.filter(p => (p.min) >= xMin && p.max <= xMax);
 
   if (filtered.length === 0) return [];

@@ -11,7 +11,6 @@ import ItemCard from "./components/ItemCard";
 import Legend from './components/Legend';
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
-import { useMinMax } from "./hooks/useMinMax";
 import { barColors, stackData } from "./utils";
 
 type ProjectsSummaryProps = {
@@ -44,14 +43,9 @@ const UnitsSummary = ({
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
-  const { filteredData, MinMaxComponent } = useMinMax(
-    data.benchmark?.[type as "co2" | "energy"],
-    (el) => el.min,
-    (el) => el.max,
-    type
-  );
 
-  const fakeUnits = generateFakeData(filteredData || [])
+
+  const fakeUnits = generateFakeData(data.benchmark?.[type as "co2" | "energy"] || [])
     .map((el) => ({
       ...el,
       label: selectedUnits.find((f) => f.id === el.id)?.name || "",
@@ -139,6 +133,11 @@ const UnitsSummary = ({
     0 as number
   );
 
+  
+  const minData = useMemo(() => fakeUnits.map(d => d.min), [fakeUnits]);
+  const maxData = useMemo(() => fakeUnits.map(d => d.max), [fakeUnits]);
+
+
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
       <div className="w-full flex gap-2 mb-4">
@@ -160,7 +159,6 @@ const UnitsSummary = ({
           }}
           selectedSubTab={selectedSubTab}
         />
-        {MinMaxComponent}
       </div>
 
       <div
@@ -258,6 +256,9 @@ const UnitsSummary = ({
             data={fakeUnits}
             selectedBars={selectedProjects}
             unit={unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""}
+            minData={minData}
+            maxData={maxData}
+            totalProjects={data?.benchmark[type].length || 0}
           />
         ) : (
           <D3GradientRangeLineChart
