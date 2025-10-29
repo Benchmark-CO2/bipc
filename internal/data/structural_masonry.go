@@ -27,7 +27,7 @@ type GroutVolume struct {
 }
 
 type MortarInfo struct {
-	Fak    int     `json:"fak"`
+	Fak    float64 `json:"fak"`
 	Volume float64 `json:"volume"`
 }
 
@@ -369,7 +369,7 @@ func masonryFromMap(data map[string]interface{}) Masonry {
 		for _, m := range mortarData {
 			if mortarMap, ok := m.(map[string]interface{}); ok {
 				mortar := MortarInfo{
-					Fak:    int(mortarMap["fak"].(float64)),
+					Fak:    mortarMap["fak"].(float64),
 					Volume: mortarMap["volume"].(float64),
 				}
 				masonry.Mortar = append(masonry.Mortar, mortar)

@@ -21,7 +21,7 @@ type GroutVolumeItem struct {
 }
 
 type MortarItem struct {
-	Fak    int     `json:"fak"`
+	Fak    float64 `json:"fak"`
 	Volume float64 `json:"volume"`
 }
 
@@ -61,8 +61,12 @@ func (s *StructuralMasonry) Validate(v *validator.Validator) {
 	v.Check(len(s.FloorIDs) > 0, "floor_ids", "must be provided")
 	v.Check(validator.Unique(s.FloorIDs), "floor_ids", "must not contain duplicate values")
 
-	validateConcreteElement(v, s.ConcreteColumns, "concrete_columns")
-	validateConcreteElement(v, s.ConcreteBeams, "concrete_beams")
+	if len(s.ConcreteColumns.Volumes) > 0 || len(s.ConcreteColumns.Steel) > 0 {
+		validateConcreteElement(v, s.ConcreteColumns, "concrete_columns")
+	}
+	if len(s.ConcreteBeams.Volumes) > 0 || len(s.ConcreteBeams.Steel) > 0 {
+		validateConcreteElement(v, s.ConcreteBeams, "concrete_beams")
+	}
 	validateConcreteElement(v, s.ConcreteSlabs, "concrete_slabs")
 
 	fgkSet := make(map[int]struct{})
@@ -88,7 +92,7 @@ func (s *StructuralMasonry) Validate(v *validator.Validator) {
 	}
 
 	v.Check(len(s.Masonry.Mortar) > 0, "masonry.mortar", "must have at least one item")
-	fakSet := make(map[int]struct{})
+	fakSet := make(map[float64]struct{})
 	for i, mortar := range s.Masonry.Mortar {
 		prefix := fmt.Sprintf("masonry.mortar[%d]", i)
 		v.Check(mortar.Volume > 0, prefix+".volume", "must be greater than 0")
@@ -194,11 +198,15 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 func (s *StructuralMasonry) Calculate() (Consumption, error) {
 	total := Consumption{}
 
-	if err := addConcreteElement(&total, s.ConcreteColumns, sidacConcreteData, sidacSteelData); err != nil {
-		return Consumption{}, err
+	if len(s.ConcreteColumns.Volumes) > 0 || len(s.ConcreteColumns.Steel) > 0 {
+		if err := addConcreteElement(&total, s.ConcreteColumns, sidacConcreteData, sidacSteelData); err != nil {
+			return Consumption{}, err
+		}
 	}
-	if err := addConcreteElement(&total, s.ConcreteBeams, sidacConcreteData, sidacSteelData); err != nil {
-		return Consumption{}, err
+	if len(s.ConcreteBeams.Volumes) > 0 || len(s.ConcreteBeams.Steel) > 0 {
+		if err := addConcreteElement(&total, s.ConcreteBeams, sidacConcreteData, sidacSteelData); err != nil {
+			return Consumption{}, err
+		}
 	}
 	if err := addConcreteElement(&total, s.ConcreteSlabs, sidacConcreteData, sidacSteelData); err != nil {
 		return Consumption{}, err
