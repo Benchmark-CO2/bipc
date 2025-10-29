@@ -27,56 +27,28 @@ const ModalTraining = ({
 
   const formUrl = posLaunchFeatures.trainingModal.formUrl;
 
-  // Verificar se o modal deve ser exibido
   useEffect(() => {
     const completed = trainingModalStorage.isCompleted(isAuthenticated);
     const minimized = trainingModalStorage.isMinimized(isAuthenticated);
 
-    // Debug info (remover em produção se desejar)
-    if (import.meta.env.DEV) {
-      console.log(
-        "[TrainingModal] useEffect executado:",
-        trainingModalStorage.getDebugInfo(isAuthenticated),
-        { open, showMiniature }
-      );
-    }
-
-    // Se o usuário já completou o processo, não mostra nada
     if (completed) {
-      if (import.meta.env.DEV) {
-        console.log("[TrainingModal] Usuário já completou - escondendo tudo");
-      }
       setOpen(false);
       setShowMiniature(false);
       return;
     }
 
-    // Se o usuário minimizou, mostra a miniatura
     if (minimized) {
-      if (import.meta.env.DEV) {
-        console.log("[TrainingModal] Modal minimizado - mostrando miniatura");
-      }
       setOpen(false);
       setShowMiniature(true);
       return;
-    }
-
-    // Se não completou e não minimizou, mostra o modal
-    if (import.meta.env.DEV) {
-      console.log("[TrainingModal] Primeira visita - mostrando modal");
     }
     setOpen(true);
     setShowMiniature(false);
   }, [isAuthenticated]);
 
   const handleHasAccount = () => {
-    if (import.meta.env.DEV) {
-      console.log("[TrainingModal] Usuário confirmou que tem conta");
-    }
-    // Completar a ação no localStorage
     trainingModalStorage.setCompleted(isAuthenticated);
 
-    // Desabilitar minimização usando ref (valor imediato, sem re-render)
     shouldMinimizeOnCloseRef.current = false;
 
     setOpen(false);
@@ -84,13 +56,8 @@ const ModalTraining = ({
   };
 
   const handleAlreadyRegistered = () => {
-    if (import.meta.env.DEV) {
-      console.log("[TrainingModal] Usuário confirmou que já se inscreveu");
-    }
-    // Completar a ação no localStorage
     trainingModalStorage.setCompleted(isAuthenticated);
 
-    // Desabilitar minimização usando ref (valor imediato, sem re-render)
     shouldMinimizeOnCloseRef.current = false;
 
     setOpen(false);
@@ -98,10 +65,6 @@ const ModalTraining = ({
   };
 
   const handleNavigateToSignUp = () => {
-    if (import.meta.env.DEV) {
-      console.log("[TrainingModal] Navegando para sign-up");
-    }
-    // Desabilitar minimização usando ref (valor imediato, sem re-render)
     shouldMinimizeOnCloseRef.current = false;
 
     onNavigateToSignUp();
@@ -113,73 +76,26 @@ const ModalTraining = ({
   };
 
   const handleMinimize = () => {
-    if (import.meta.env.DEV) {
-      console.log("[TrainingModal] Minimizando modal...");
-    }
     trainingModalStorage.setMinimized(isAuthenticated);
     setOpen(false);
     setShowMiniature(true);
-
-    if (import.meta.env.DEV) {
-      console.log("[TrainingModal] Estado após minimizar:", {
-        open: false,
-        showMiniature: true,
-        storage: trainingModalStorage.getDebugInfo(isAuthenticated),
-      });
-    }
   };
 
   const handleRestoreFromMiniature = () => {
-    if (import.meta.env.DEV) {
-      console.log("[TrainingModal] Restaurando modal da miniatura...");
-    }
     trainingModalStorage.clearMinimized(isAuthenticated);
 
-    // Resetar o ref para garantir que minimiza novamente se fechar
     shouldMinimizeOnCloseRef.current = true;
 
     setShowMiniature(false);
     setOpen(true);
-
-    if (import.meta.env.DEV) {
-      console.log("[TrainingModal] Estado após restaurar:", {
-        open: true,
-        showMiniature: false,
-        shouldMinimizeOnClose: shouldMinimizeOnCloseRef.current,
-        storage: trainingModalStorage.getDebugInfo(isAuthenticated),
-      });
-    }
   };
 
-  // Handler para quando o Dialog é fechado (por qualquer meio)
   const handleDialogOpenChange = (newOpen: boolean) => {
-    if (import.meta.env.DEV) {
-      console.log(
-        "[TrainingModal] Dialog onOpenChange:",
-        newOpen,
-        "shouldMinimizeOnClose:",
-        shouldMinimizeOnCloseRef.current
-      );
-    }
-
     if (!newOpen) {
-      // Se está fechando, verifica se deve minimizar
       if (shouldMinimizeOnCloseRef.current) {
-        if (import.meta.env.DEV) {
-          console.log(
-            "[TrainingModal] Dialog está sendo fechado - minimizando..."
-          );
-        }
         handleMinimize();
       } else {
-        // Apenas fecha sem minimizar (usuário completou a ação)
-        if (import.meta.env.DEV) {
-          console.log(
-            "[TrainingModal] Dialog está sendo fechado - sem minimizar (ação completada)"
-          );
-        }
         setOpen(false);
-        // Resetar para o próximo uso
         shouldMinimizeOnCloseRef.current = true;
       }
     } else {
