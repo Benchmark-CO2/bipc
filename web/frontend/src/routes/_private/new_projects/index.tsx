@@ -106,16 +106,22 @@ function RouteComponent() {
     (projects ?? []).length > 0 &&
     (projects ?? []).every((project) => selectedProjects.get(project.id));
 
-  const someSelected = [...selectedProjects.values()].some((value => value === true));
+  const someSelected = [...selectedProjects.values()].some(
+    (value) => value === true
+  );
   useEffect(() => {
     if (!benchmarkData?.data) return;
     setSummaryContext({
       title: "Projects Comparison",
       component: (
         <ProjectsSummary
-          projects={someSelected ? [...(projects ?? [])].filter((project) =>
-            selectedProjects.get(project.id)
-          ) : projects}
+          projects={
+            someSelected
+              ? [...(projects ?? [])].filter((project) =>
+                  selectedProjects.get(project.id)
+                )
+              : projects
+          }
           data={benchmarkData.data}
           someSelected={someSelected}
         />
@@ -156,7 +162,7 @@ function RouteComponent() {
           onDeleteProject={onDeleteProject}
         />
       ) : (
-        <div className="grid grid-cols-3 min-[1280px]:grid-cols-4 min-[2000px]:grid-cols-6 w-full flex-wrap items-center gap-6 max-md:grid-cols-2 max-sm:grid-cols-1 transition-all">
+        <div className="grid grid-cols-2 min-[1280px]:grid-cols-4 min-[2000px]:grid-cols-6 w-full flex-wrap items-center gap-6 max-md:grid-cols-2 max-sm:grid-cols-1 transition-all">
           {[...(projects ?? [])].length ? (
             [...(projects ?? [])].map((project, ix) => {
               const { co, mj, density, ...projectData } = project;
