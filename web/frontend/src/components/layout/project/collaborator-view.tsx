@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { PencilIcon, TrashIcon } from "lucide-react";
+import DrawerFormDisciplines from "../drawer-form-disciplines";
 const collaborators = [
   {
     id: "1",
@@ -34,14 +35,18 @@ const disciplines = [
 const CollaboratorsView = ({ projectId }: { projectId: string }) => {
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg dark:border-gray-700">
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-md font-semibold text-primary dark:text-gray-200">
             Disciplinas
           </h2>
-          <Button variant="secondary" size="lg" className="text-white">
-            Nova Disciplina
-          </Button>
+          <DrawerFormDisciplines
+            componentTrigger={
+              <Button variant="bipc" className="text-white">
+                Nova Disciplina
+              </Button>
+            }
+          />
         </div>
 
         <div className="space-y-2">
@@ -61,17 +66,15 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-red-600 hover:text-red-700"
-                >
-                  Remover
-                  <TrashIcon className="ml-1 h-4 w-4" />
+                <Button variant="outline-destructive" size="icon-lg">
+                  <TrashIcon className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="sm" className="text-secondary">
-                  Editar
-                  <PencilIcon className="ml-1 h-4 w-4" />
+                <Button
+                  variant="outline-bipc"
+                  size="icon-lg"
+                  className="text-primary border-primary"
+                >
+                  <PencilIcon className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -79,12 +82,12 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg dark:border-gray-700">
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-md font-semibold text-primary dark:text-gray-200">
             Todos os Colaboradores
           </h2>
-          <Button variant="secondary" size="lg" className="text-white">
+          <Button variant="bipc" className="text-white">
             Novo colaborador
           </Button>
         </div>
@@ -119,17 +122,15 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-red-600 hover:text-red-700"
-                >
-                  Remover
-                  <TrashIcon className="ml-1 h-4 w-4" />
+                <Button variant="outline-destructive" size="icon-lg">
+                  <TrashIcon className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="sm" className="text-secondary">
-                  Editar
-                  <PencilIcon className="ml-1 h-4 w-4" />
+                <Button
+                  variant="outline-bipc"
+                  size="icon-lg"
+                  className="text-primary border-primary"
+                >
+                  <PencilIcon className="h-4 w-4" />
                 </Button>
               </div>
             </div>
