@@ -10,15 +10,19 @@ import (
 )
 
 type Module struct {
-	ID             uuid.UUID   `json:"id"`
-	TowerOptionID  uuid.UUID   `json:"tower_option_id"`
-	TotalCO2Min    *float64    `json:"total_co2_min,omitempty"`
-	TotalCO2Max    *float64    `json:"total_co2_max,omitempty"`
-	TotalEnergyMin *float64    `json:"total_energy_min,omitempty"`
-	TotalEnergyMax *float64    `json:"total_energy_max,omitempty"`
-	FloorIDs       []uuid.UUID `json:"floor_ids"`
-	CreatedAt      time.Time   `json:"created_at"`
-	UpdatedAt      time.Time   `json:"updated_at"`
+	ID                uuid.UUID   `json:"id"`
+	TowerOptionID     uuid.UUID   `json:"tower_option_id"`
+	TotalCO2Min       *float64    `json:"total_co2_min,omitempty"`
+	TotalCO2Max       *float64    `json:"total_co2_max,omitempty"`
+	TotalEnergyMin    *float64    `json:"total_energy_min,omitempty"`
+	TotalEnergyMax    *float64    `json:"total_energy_max,omitempty"`
+	RelativeCO2Min    *float64    `json:"relative_co2_min,omitempty"`
+	RelativeCO2Max    *float64    `json:"relative_co2_max,omitempty"`
+	RelativeEnergyMin *float64    `json:"relative_energy_min,omitempty"`
+	RelativeEnergyMax *float64    `json:"relative_energy_max,omitempty"`
+	FloorIDs          []uuid.UUID `json:"floor_ids"`
+	CreatedAt         time.Time   `json:"created_at"`
+	UpdatedAt         time.Time   `json:"updated_at"`
 }
 
 type BeamColumnModule struct {
@@ -95,9 +99,9 @@ func insertModule(db dbExecutor, module *Module, moduleType string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	_, err := db.ExecContext(ctx, `
-		INSERT INTO module (id, tower_option_id, type, total_co2_min, total_co2_max, total_energy_min, total_energy_max)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-	`, module.ID, module.TowerOptionID, moduleType, module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax)
+		INSERT INTO module (id, tower_option_id, type, total_co2_min, total_co2_max, total_energy_min, total_energy_max, relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+	`, module.ID, module.TowerOptionID, moduleType, module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax, module.RelativeCO2Min, module.RelativeCO2Max, module.RelativeEnergyMin, module.RelativeEnergyMax)
 	return err
 }
 
@@ -110,9 +114,13 @@ func updateModule(db dbExecutor, module *Module) error {
 			total_co2_min = $2,
 			total_co2_max = $3,
 			total_energy_min = $4,
-			total_energy_max = $5
-		WHERE id = $6
-	`, module.TowerOptionID, module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax, module.ID)
+			total_energy_max = $5,
+			relative_co2_min = $6,
+			relative_co2_max = $7,
+			relative_energy_min = $8,
+			relative_energy_max = $9
+		WHERE id = $10
+	`, module.TowerOptionID, module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax, module.RelativeCO2Min, module.RelativeCO2Max, module.RelativeEnergyMin, module.RelativeEnergyMax, module.ID)
 	return err
 }
 
@@ -236,6 +244,7 @@ func (m BeamColumnModuleModel) Get(id uuid.UUID) (*BeamColumnModule, error) {
 			bc.form_columns, bc.form_beams, bc.form_slabs, bc.form_total,
 			bc.column_number, bc.avg_beam_span, bc.avg_slab_span,
 			m.total_co2_min, m.total_co2_max, m.total_energy_min, m.total_energy_max,
+			m.relative_co2_min, m.relative_co2_max, m.relative_energy_min, m.relative_energy_max,
 			bc.created_at, bc.updated_at
 		FROM module m
 		JOIN module_beam_column bc ON m.id = bc.id
@@ -253,6 +262,7 @@ func (m BeamColumnModuleModel) Get(id uuid.UUID) (*BeamColumnModule, error) {
 		&module.FormColumns, &module.FormBeams, &module.FormSlabs, &module.FormTotal,
 		&module.ColumnNumber, &module.AvgBeamSpan, &module.AvgSlabSpan,
 		&module.TotalCO2Min, &module.TotalCO2Max, &module.TotalEnergyMin, &module.TotalEnergyMax,
+		&module.RelativeCO2Min, &module.RelativeCO2Max, &module.RelativeEnergyMin, &module.RelativeEnergyMax,
 		&module.CreatedAt, &module.UpdatedAt,
 	)
 	if err != nil {
@@ -301,6 +311,7 @@ func (m ConcreteWallModuleModel) Get(id uuid.UUID) (*ConcreteWallModule, error) 
 			cw.concrete_walls, cw.concrete_slabs,
 			cw.wall_thickness, cw.slab_thickness, cw.wall_area, cw.slab_area, cw.wall_form_area, cw.slab_form_area,
 			m.total_co2_min, m.total_co2_max, m.total_energy_min, m.total_energy_max,
+			m.relative_co2_min, m.relative_co2_max, m.relative_energy_min, m.relative_energy_max,
 			cw.created_at, cw.updated_at
 		FROM module m
 		JOIN module_concrete_wall cw ON m.id = cw.id
@@ -317,6 +328,7 @@ func (m ConcreteWallModuleModel) Get(id uuid.UUID) (*ConcreteWallModule, error) 
 		&wallID, &slabID,
 		&module.WallThickness, &module.SlabThickness, &module.WallArea, &module.SlabArea, &module.WallFormArea, &module.SlabFormArea,
 		&module.TotalCO2Min, &module.TotalCO2Max, &module.TotalEnergyMin, &module.TotalEnergyMax,
+		&module.RelativeCO2Min, &module.RelativeCO2Max, &module.RelativeEnergyMin, &module.RelativeEnergyMax,
 		&module.CreatedAt, &module.UpdatedAt,
 	)
 	if err != nil {
