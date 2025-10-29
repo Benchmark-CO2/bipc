@@ -10,7 +10,7 @@ export const useChartType = () => {
   };
 
   const ChartSelector = (
-    <div className='w-11/12'>
+    <div className='w-11/12 max-sm:w-full'>
       <Label className="mb-2">Tipo de Gráfico:</Label>
       <Select
       value={chartType}

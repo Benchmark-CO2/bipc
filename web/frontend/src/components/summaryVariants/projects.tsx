@@ -11,7 +11,6 @@ import ItemCard from "./components/ItemCard";
 import Legend from './components/Legend';
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
-import { useMinMax } from "./hooks/useMinMax";
 import { barColors, stackData } from "./utils";
 
 type ProjectsSummaryProps = {
@@ -31,14 +30,8 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
-  const { filteredData, MinMaxComponent } = useMinMax(
-    data.benchmark?.[type as "co2" | "energy"],
-    (el) => el.min,
-    (el) => el.max,
-    type
-  );
 
-  const managedData = manageData(filteredData || [])
+  const managedData = manageData(data.benchmark?.[type as "co2" | "energy"])
     .map((el) => ({
       ...el,
       label: projects.find((f) => f.id === el.id)?.name || "",
@@ -104,6 +97,9 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
     0
   );
 
+  const minData = useMemo(() => managedData.map(d => d.min), [managedData]);
+  const maxData = useMemo(() => managedData.map(d => d.max), [managedData]);
+
   return (
     <>
       <div className="w-full flex gap-2 mb-4">
@@ -124,9 +120,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
               : "Selecionar Todos",
           ]}
           selectedSubTab={subTabs}
-        />
-        {MinMaxComponent}
-        
+        />        
       </div>
       <div
         className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
@@ -183,6 +177,10 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
             data={managedData}
             selectedBars={selectedProjects}
             unit={unitsOfMeasure[type] || ""}
+            totalProjects={data?.benchmark[type].length || 0}
+            minData={minData}
+            maxData={maxData}
+            
           />
         ) : (
           <D3GradientRangeLineChart

@@ -11,7 +11,6 @@ import ItemCard from "./components/ItemCard";
 import Legend from './components/Legend';
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
-import { useMinMax } from "./hooks/useMinMax";
 import { barColors, stackData } from "./utils";
 
 type ProjectsSummaryProps = {
@@ -21,16 +20,6 @@ type ProjectsSummaryProps = {
   unit: IUnit;
   selectedFloors: any[];
   someSelected: boolean;
-};
-
-const generateFakeData = (floors: IBenchmarkResponse["benchmark"]["co2"]) => {
-  return floors.map((el, idx) => ({
-    id: el.id,
-    y: 0.2 * (idx + 1),
-    min: el.min,
-    max: el.max,
-    label: "",
-  }));
 };
 
 const FloorSummary = ({
@@ -43,14 +32,9 @@ const FloorSummary = ({
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
-  const { filteredData, MinMaxComponent } = useMinMax(
-    data.benchmark?.[type as "co2" | "energy"],
-    (el) => el.min,
-    (el) => el.max,
-    type
-  );
 
-  const fakeFloors = generateFakeData(filteredData)
+
+  const fakeFloors = data.benchmark?.[type as "co2" | "energy"]
     ?.map((el) => ({
       ...el,
       label: selectedFloors.find((f) => f.id === el.id)?.group_name || "",
@@ -59,9 +43,7 @@ const FloorSummary = ({
   const { isExpanded } = useSummary();
   const stackedData = useMemo(
     () =>
-      stackData(selectedFloors, data)?.map((el) => ({
-        ...el,
-      })),
+      stackData(selectedFloors, data),
     [selectedFloors, data]
   );
 
@@ -137,6 +119,9 @@ const FloorSummary = ({
     0 as number
   );
 
+  const minData = useMemo(() => fakeFloors.map(d => d.min), [fakeFloors]);
+  const maxData = useMemo(() => fakeFloors.map(d => d.max), [fakeFloors]);
+
   return (
     <>
       <div className="w-full flex gap-2 mb-4">
@@ -158,7 +143,6 @@ const FloorSummary = ({
           ]}
           selectedSubTab={subTabs}
         />
-        {MinMaxComponent}
       </div>
       <div
         className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
@@ -255,6 +239,9 @@ const FloorSummary = ({
           <D3GradientRangeChart
             data={fakeFloors}
             selectedBars={selectedProjects}
+            totalProjects={data?.benchmark[type].length || 0}
+            minData={minData}
+            maxData={maxData}
           />
         ) : (
           <D3GradientRangeLineChart
