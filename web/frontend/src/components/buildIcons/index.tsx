@@ -30,7 +30,7 @@ const Icons = {
     ),
   },
   townHouse: {
-    label: "Sobrado",
+    label: "Casa sobreposta",
     render: (isActive: boolean, onClick: () => void) => (
       <svg
         width="54"
@@ -107,7 +107,7 @@ const Icons = {
     ),
   },
   twofloors: {
-    label: "Casa sobreposta",
+    label: "Sobrado",
     render: (isActive: boolean, onClick: () => void) => (
       <svg
         width="43"

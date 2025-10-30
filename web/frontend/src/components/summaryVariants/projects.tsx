@@ -132,10 +132,10 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
           <ul
             className={cn("flex flex-col gap-2 text-xl w-full text-black", {
               "flex-row gap-2 flex-wrap": isExpanded,
-              "max-h-[300px] overflow-y-auto ": !isExpanded,
+              "max-h-[280px] overflow-y-auto ": !isExpanded,
+              "2xl:max-h-[600px]": !isExpanded,
             })}
           >
-            {" "}
             {(!stackedData || stackedData.length === 0) && (
               <NotFoundList
                 message="Nenhum projeto selecionado."

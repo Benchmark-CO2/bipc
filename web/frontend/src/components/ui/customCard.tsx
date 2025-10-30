@@ -2,8 +2,8 @@ import { IProject, TProjectPhase } from "@/types/projects";
 import { Calendar, Pencil, Trash2 } from "lucide-react";
 import React, { useRef } from "react";
 import { DrawerFormProject } from "../layout";
-import { Button } from "./button";
 import ModalConfirmDelete from "../layout/modal-confirm-delete";
+import { Button } from "./button";
 import { Checkbox } from "./checkbox";
 
 const phaseLabels: Record<TProjectPhase, string> = {
@@ -88,7 +88,7 @@ const CustomCard = ({
     <>
       <div
         onClick={handleClickCard}
-        className="card w-full relative md:max-w-md overflow-hidden rounded-lg border border-secondary bg-transparent transition-all duration-300 hover:cursor-pointer hover:shadow-md hover:border-secondary/80"
+        className="card w-full relative md:max-w-md overflow-hidden rounded-lg border border-secondary bg-transparent transition-all duration-300 hover:cursor-pointer hover:shadow-md hover:border-secondary/80 dark:border-zinc-500 "
       >
         <div className="w-full h-full p-4">
           {/* Header with checkbox and name */}
@@ -97,7 +97,7 @@ const CustomCard = ({
               data-action="checkbox"
               onClick={handleClickCheck}
               checked={selectedProjects?.get(project.id!) || false}
-              className="data-[state=checked]:bg-secondary data-[state=checked]:border-secondary scale-110 transition-all flex-shrink-0"
+              className="data-[state=checked]:bg-secondary data-[state=checked]:border-secondary scale-110 transition-all flex-shrink-0 dark:data-[state=checked]:bg-primary dark:border-primary dark:data-[state=checked]:text-white max-sm:scale-120"
             />
             <h3 className="text-lg font-semibold text-primary line-clamp-1 flex-1">
               {name}
