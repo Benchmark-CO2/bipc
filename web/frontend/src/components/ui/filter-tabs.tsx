@@ -32,7 +32,7 @@ export function FilterTabs({
 
   return (
     <div
-      className={`flex items-center gap-4 h-12 rounded-sm border border-gray-shade-300 px-4 ${fullWidth ? "w-full" : "w-fit"} max-sm:h-full max-sm:p-4 dark:border-gray-shade-300 dark:bg-gray-800 max-sm:flex-wrap max-sm:gap-2`}
+      className={`flex items-center gap-4 h-12 rounded-sm border border-gray-shade-300 dark:border-gray-shade-500 px-4 ${fullWidth ? "w-full" : "w-fit"} max-sm:h-full max-sm:p-4  dark:bg-sidebar max-sm:flex-wrap max-sm:gap-2`}
     >
       <div className="flex items-center gap-4 max-sm:w-full">
         {tabs.map((tab) => (
@@ -50,7 +50,7 @@ export function FilterTabs({
         ))}
       </div>
 
-      {hasSubTabs && <div className="h-6 w-px bg-gray-shade-300 max-sm:h-px max-sm:w-full max-sm:my-1" />}
+      {hasSubTabs && <div className="h-6 w-px bg-gray-shade-300 dark:bg-gray-shade-500 max-sm:h-px max-sm:w-full max-sm:my-1" />}
       {hasSubTabs && (
         <div className='max-sm:w-full flex max-sm:flex-col'>
           <div className="flex items-center gap-4">

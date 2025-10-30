@@ -78,7 +78,7 @@ const useChartDimensions = (
     
     const width = () => {
       if (props.width && overrideDimensions) return props.width;
-      if (isMobile) return screenWidth * 0.6;
+      if (isMobile) return screenWidth * 0.53;
       if (isExpanded) return screenWidth * 0.8;
       if (screenWidth < 1300) return screenWidth * 0.35;
       return screenWidth * 0.5;

@@ -18,6 +18,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
 import InventoryChart from "@/assets/inventoryChart.png";
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { regions, states } from "@/utils/states";
 export const Route = createFileRoute("/(public)/benchmark")({
   component: RouteComponent,
@@ -30,7 +31,7 @@ export const Route = createFileRoute("/(public)/benchmark")({
 
 const FilterSection = () => {
   const [activeBuildFilter, setActiveBuildFilter] = useState<string[]>([]);
-
+  const isMobile = window.innerWidth < 640;
   const handleBuildFilterChange = (buildType: string) => {
     if (activeBuildFilter.includes(buildType)) {
       setActiveBuildFilter(
@@ -42,38 +43,40 @@ const FilterSection = () => {
   };
 
   return (
-    <section className="w-11/12 flex flex-col items-center gap-4 mb-4">
+    <section className="w-11/12 flex flex-col items-center gap-4 mb-4 max-sm:self-center">
       <h2 className="w-full text-left font-semibold text-primary">
         Filtros de visualização:
       </h2>
-      <div className="min-xl:self-start">
-        <Input
-          placeholder="Número de projetos"
-          className="mb-4 w-full"
-          type="number"
-        />
+      <div className="min-xl:self-start max-sm:w-full max-sm:flex max-sm:justify-center max-sm:flex-col">
+        <div className="flex gap-2 w-full">
+          <Input
+            placeholder="Número de projetos"
+            className="mb-4 w-full"
+            type="number"
+          />
+        </div>
 
-        <Select>
-          <SelectTrigger className="w-full self-start mb-4">
-            <SelectValue placeholder="Região ou estado" />
-          </SelectTrigger>
-          <SelectContent defaultValue={"co2"}>
-            {regions.map((region) => (
-              <SelectItem value={region.value}>{region.label}</SelectItem>
-            ))}
-            {states.map((state) => (
-              <SelectItem value={state.value}>{state.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <div className="flex gap-2">
+          <Select>
+            <SelectTrigger className="w-full self-start mb-4">
+              <SelectValue placeholder="Região ou estado" />
+            </SelectTrigger>
+            <SelectContent defaultValue={"co2"} className=' max-sm:w-11/12  max-sm:self-center'>
+              {regions.map((region) => (
+                <SelectItem value={region.value}>{region.label}</SelectItem>
+              ))}
+              {states.map((state) => (
+                <SelectItem value={state.value}>{state.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        <div className="flex gap-2 max-sm:justify-center">
           <Input type={"date"} />
           <Input type={"date"} />
         </div>
-        <h3 className="my-10 font-semibold text-primary">
+        <h3 className="my-10 font-semibold text-primary ">
           Tipos de edificação:
         </h3>
-        <div className="flex items-baseline gap-6">
+        <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto max-sm:overflow-x-auto">
           <BuildIcon
             name="house"
             isActive={activeBuildFilter.includes("house")}
@@ -105,10 +108,11 @@ const FilterSection = () => {
             onClick={() => handleBuildFilterChange("tenMore")}
           />
         </div>
+
         <h3 className="my-10 font-semibold text-primary">
           Tipos de edificação:
         </h3>
-        <div className="flex items-baseline gap-6">
+        <div className="flex items-baseline gap-6  max-sm:max-w-full max-sm:mx-auto  max-sm:overflow-x-auto">
           <TechIcon
             name="frame"
             isActive={activeBuildFilter.includes("frame")}
@@ -135,6 +139,7 @@ function RouteComponent() {
     queryKey: ["units-benchmarks"],
     queryFn: getProjectsBenchmark,
   });
+  const isMobile = useIsMobile();
 
   const chartData =
     data?.data?.benchmark?.co2?.map((f) => ({
@@ -145,12 +150,15 @@ function RouteComponent() {
   const height = window.innerHeight * 0.5;
   const [selectedChart, setSelectedChart] = useState("trend");
 
+  const maxData = chartData.map((d) => (d.max !== undefined ? d.max : 0));
+  const minData = chartData.map((d) => (d.min !== undefined ? d.min : Infinity));
+
   return (
-    <div className="flex flex-col p-10">
+    <div className="flex flex-col py-10 px-4 max-sm:px-2 ">
       <h1 className="text-3xl font-bold text-primary ">
         Benchmark | Visualização dos dados
       </h1>
-      <div className="h-full w-full flex items-start pt-10 justify-between max-md:flex-col gap-10">
+      <div className="h-full w-full flex items-start pt-10 justify-between  max-sm:self-center max-md:flex-col gap-10 ">
         <FilterSection />
         <div className="w-2/3 flex flex-col items-start">
           <h2 className="text-primary font-semibold">Visualização:</h2>
@@ -169,14 +177,17 @@ function RouteComponent() {
               width={width}
               height={height}
               data={chartData}
-              overrideDimensions
+              overrideDimensions={!isMobile}
             />
           ) : (
             <D3GradientRangeChart
               width={width}
               height={height}
               data={chartData}
-              overrideDimensions
+              overrideDimensions={!isMobile}
+              minData={minData}
+              maxData={maxData}
+              totalProjects={chartData.length}
             />
           )}
 
@@ -199,7 +210,7 @@ function RouteComponent() {
         </h2>
         <div className="flex flex-col mt-20">
           <img src={Logo} alt="" className="max-w-[250px] mb-20 ml-20" />
-          <div className="flex flex-col gap-6 w-3/4">
+          <div className="flex flex-col gap-6 w-3/4 max-sm:w-full">
             <p>
               A plataforma BIPc foi desenvolvida para oferecer subsídios à
               projetistas e construtoras a melhorar a emissão de carbono
@@ -234,7 +245,7 @@ function RouteComponent() {
           </div>
         </div>
       </section>
-      <section className="w-3/4 self-start mt-10">
+      <section className="w-3/4 self-start mt-10 max-sm:w-11/12">
         <h2 className="text-2xl text-primary font-semibold">
           Composição do inventário do Benchmark
         </h2>
@@ -253,7 +264,7 @@ function RouteComponent() {
           Unidades habitacionais divididas pelas tipologias
         </h3>
         <div className="flex items-center mt-10">
-          <img src={InventoryChart} alt="" className="mx-10 self-end" />
+          <img src={InventoryChart} alt="" className="self-center" />
         </div>
       </section>
     </div>
