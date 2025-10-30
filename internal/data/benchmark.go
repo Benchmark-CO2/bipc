@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -153,39 +154,88 @@ func (m BenchmarkModel) GetUnitsBenchmark() ([]*BenchmarkData, error) {
 
 }
 
-func (m BenchmarkModel) GetProjectsBenchmark() ([]*BenchmarkData, error) {
+type GetProjectsBenchmarkFilters struct {
+	FloorsFrom *int    `json:"floors_from,omitempty"`
+	FloorsTo   *int    `json:"floors_to,omitempty"`
+	Technology *string `json:"technology,omitempty"`
+}
+
+func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters) ([]*BenchmarkData, error) {
+	var args []any
+	argPosition := 1
+
 	query := `
-		WITH tower_consumption_by_tech AS (
+		WITH floors_per_tower AS (
+			SELECT 
+				fg.tower_id,
+				COUNT(DISTINCT f.id) as floor_count
+			FROM floor f
+			INNER JOIN floor_group fg ON f.group_id = fg.id
+			GROUP BY fg.tower_id
+		),
+		filtered_towers AS (
+			SELECT DISTINCT tower_id
+			FROM floors_per_tower fpt
+			WHERE 1=1`
+
+	if filters.FloorsFrom != nil {
+		query += fmt.Sprintf(` AND floor_count >= $%d`, argPosition)
+		args = append(args, *filters.FloorsFrom)
+		argPosition++
+	}
+
+	if filters.FloorsTo != nil {
+		query += fmt.Sprintf(` AND floor_count <= $%d`, argPosition)
+		args = append(args, *filters.FloorsTo)
+		argPosition++
+	}
+
+	query += `),
+		tower_consumption_by_tech AS (
 			SELECT
 				fg.tower_id,
+				fc.technology,
 				SUM(fc.co2_min * f.area) / NULLIF(SUM(f.area), 0) as co2_min,
 				SUM(fc.co2_max * f.area) / NULLIF(SUM(f.area), 0) as co2_max,
 				SUM(fc.energy_min * f.area) / NULLIF(SUM(f.area), 0) as energy_min,
 				SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max
 			FROM floor f
 			INNER JOIN floor_group fg ON f.group_id = fg.id
-			INNER JOIN floors_consumption fc ON f.id = fc.floor_id
+			INNER JOIN floors_consumption fc ON f.id = fc.floor_id`
+
+	if filters.Technology != nil {
+		query += fmt.Sprintf(`
+			WHERE fc.technology = $%d`, argPosition)
+		args = append(args, *filters.Technology)
+		argPosition++
+	}
+
+	query += `
 			GROUP BY fg.tower_id, fc.technology
 		),
-		tower_total_consumption AS (
+		filtered_consumption AS (
 			SELECT
 				tower_id,
 				SUM(co2_min) as co2_min,
 				SUM(co2_max) as co2_max,
 				SUM(energy_min) as energy_min,
 				SUM(energy_max) as energy_max
-			FROM tower_consumption_by_tech
+			FROM tower_consumption_by_tech tct
+			WHERE EXISTS (
+				SELECT 1 FROM filtered_towers ft
+				WHERE ft.tower_id = tct.tower_id
+			)
 			GROUP BY tower_id
 		),
 		project_consumption AS (
 			SELECT
 				u.project_id,
-				SUM(ttc.co2_min) as co2_min,
-				SUM(ttc.co2_max) as co2_max,
-				SUM(ttc.energy_min) as energy_min,
-				SUM(ttc.energy_max) as energy_max
+				SUM(fc.co2_min) as co2_min,
+				SUM(fc.co2_max) as co2_max,
+				SUM(fc.energy_min) as energy_min,
+				SUM(fc.energy_max) as energy_max
 			FROM units u
-			INNER JOIN tower_total_consumption ttc ON u.id = ttc.tower_id
+			INNER JOIN filtered_consumption fc ON u.id = fc.tower_id
 			GROUP BY u.project_id
 		)
 		SELECT
@@ -200,7 +250,7 @@ func (m BenchmarkModel) GetProjectsBenchmark() ([]*BenchmarkData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := m.DB.QueryContext(ctx, query)
+	rows, err := m.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
