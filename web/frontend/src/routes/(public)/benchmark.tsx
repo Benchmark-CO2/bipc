@@ -1,11 +1,8 @@
 import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
 import Footprint from "@/assets/footprint.svg";
 import Logo from "@/assets/logo_full.svg";
-import { BuildIcon } from "@/components/buildIcons";
 import D3GradientRangeChart from "@/components/charts/d3chart";
 import D3GradientRangeLineChart from "@/components/charts/d3chartLine";
-import { TechIcon } from "@/components/techIcons";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -15,10 +12,10 @@ import {
 } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import InventoryChart from "@/assets/inventoryChart.png";
-import { regions, states } from "@/utils/states";
+import { useBenchmarkFilters } from '@/hooks/useBenchmarkFilters';
 export const Route = createFileRoute("/(public)/benchmark")({
   component: RouteComponent,
   loader: ({ context }) => {
@@ -28,109 +25,10 @@ export const Route = createFileRoute("/(public)/benchmark")({
   },
 });
 
-const FilterSection = () => {
-  const [activeBuildFilter, setActiveBuildFilter] = useState<string[]>([]);
 
-  const handleBuildFilterChange = (buildType: string) => {
-    if (activeBuildFilter.includes(buildType)) {
-      setActiveBuildFilter(
-        activeBuildFilter.filter((type) => type !== buildType)
-      );
-    } else {
-      setActiveBuildFilter([...activeBuildFilter, buildType]);
-    }
-  };
-
-  return (
-    <section className="w-11/12 flex flex-col items-center gap-4 mb-4">
-      <h2 className="w-full text-left font-semibold text-primary">
-        Filtros de visualização:
-      </h2>
-      <div className="min-xl:self-start">
-        <Input
-          placeholder="Número de projetos"
-          className="mb-4 w-full"
-          type="number"
-        />
-
-        <Select>
-          <SelectTrigger className="w-full self-start mb-4">
-            <SelectValue placeholder="Região ou estado" />
-          </SelectTrigger>
-          <SelectContent defaultValue={"co2"}>
-            {regions.map((region) => (
-              <SelectItem value={region.value}>{region.label}</SelectItem>
-            ))}
-            {states.map((state) => (
-              <SelectItem value={state.value}>{state.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <div className="flex gap-2">
-          <Input type={"date"} />
-          <Input type={"date"} />
-        </div>
-        <h3 className="my-10 font-semibold text-primary">
-          Tipos de edificação:
-        </h3>
-        <div className="flex items-baseline gap-6">
-          <BuildIcon
-            name="house"
-            isActive={activeBuildFilter.includes("house")}
-            onClick={() => handleBuildFilterChange("house")}
-          />
-          <BuildIcon
-            name="townHouse"
-            isActive={activeBuildFilter.includes("twohouses")}
-            onClick={() => handleBuildFilterChange("twohouses")}
-          />
-          <BuildIcon
-            name="twofloors"
-            isActive={activeBuildFilter.includes("twofloors")}
-            onClick={() => handleBuildFilterChange("twofloors")}
-          />
-          <BuildIcon
-            name="fourLess"
-            isActive={activeBuildFilter.includes("fourLess")}
-            onClick={() => handleBuildFilterChange("fourLess")}
-          />
-          <BuildIcon
-            name="tenLess"
-            isActive={activeBuildFilter.includes("tenLess")}
-            onClick={() => handleBuildFilterChange("tenLess")}
-          />
-          <BuildIcon
-            name="tenMore"
-            isActive={activeBuildFilter.includes("tenMore")}
-            onClick={() => handleBuildFilterChange("tenMore")}
-          />
-        </div>
-        <h3 className="my-10 font-semibold text-primary">
-          Tipos de edificação:
-        </h3>
-        <div className="flex items-baseline gap-6">
-          <TechIcon
-            name="frame"
-            isActive={activeBuildFilter.includes("frame")}
-            onClick={() => handleBuildFilterChange("frame")}
-          />
-          <TechIcon
-            name="structural"
-            isActive={activeBuildFilter.includes("structural")}
-            onClick={() => handleBuildFilterChange("structural")}
-          />
-          <TechIcon
-            name="concrete"
-            isActive={activeBuildFilter.includes("concrete")}
-            onClick={() => handleBuildFilterChange("concrete")}
-          />
-        </div>
-      </div>
-    </section>
-  );
-};
 
 function RouteComponent() {
+  const { FilterSection, activeBuildFilter } = useBenchmarkFilters();
   const { data } = useQuery({
     queryKey: ["units-benchmarks"],
     queryFn: getProjectsBenchmark,
@@ -145,13 +43,17 @@ function RouteComponent() {
   const height = window.innerHeight * 0.5;
   const [selectedChart, setSelectedChart] = useState("trend");
 
+  useEffect(() => {
+    console.log(activeBuildFilter)
+  }, [activeBuildFilter])
+
   return (
     <div className="flex flex-col p-10">
       <h1 className="text-3xl font-bold text-primary ">
         Benchmark | Visualização dos dados
       </h1>
       <div className="h-full w-full flex items-start pt-10 justify-between max-md:flex-col gap-10">
-        <FilterSection />
+        {FilterSection}
         <div className="w-2/3 flex flex-col items-start">
           <h2 className="text-primary font-semibold">Visualização:</h2>
 
