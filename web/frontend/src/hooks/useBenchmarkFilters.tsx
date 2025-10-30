@@ -31,6 +31,10 @@ export const useBenchmarkFilters = () => {
   const handleBuildFilterChange = (filterData: FilterFloors | string) => {
     if (filterData instanceof FilterFloors) {
       const { floors_from, floors_to } = filterData.get();
+      if (activeBuildFilter.floors_from === floors_from && activeBuildFilter.floors_to === floors_to) {
+        changeFromTo(undefined, undefined);
+        return;
+      }
       changeFromTo(floors_from, floors_to);
     } else {
       const technology = (activeBuildFilter.technology.includes(filterData as string)
@@ -44,38 +48,40 @@ export const useBenchmarkFilters = () => {
 
   };
   const FilterSection = (
-    <section className="w-11/12 flex flex-col items-center gap-4 mb-4">
+    <section className="w-11/12 flex flex-col items-center gap-4 mb-4 max-sm:self-center">
       <h2 className="w-full text-left font-semibold text-primary">
         Filtros de visualização:
       </h2>
-      <div className="min-xl:self-start">
-        <Input
-          placeholder="Número de projetos"
-          className="mb-4 w-full"
-          type="number"
-        />
+      <div className="min-xl:self-start max-sm:w-full max-sm:flex max-sm:justify-center max-sm:flex-col">
+        <div className="flex gap-2 w-full">
+          <Input
+            placeholder="Número de projetos"
+            className="mb-4 w-full"
+            type="number"
+          />
+        </div>
 
-        <Select>
-          <SelectTrigger className="w-full self-start mb-4">
-            <SelectValue placeholder="Região ou estado" />
-          </SelectTrigger>
-          <SelectContent defaultValue={"co2"}>
-            {regions.map((region) => (
-              <SelectItem value={region.value}>{region.label}</SelectItem>
-            ))}
-            {states.map((state) => (
-              <SelectItem value={state.value}>{state.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <div className="flex gap-2">
+          <Select>
+            <SelectTrigger className="w-full self-start mb-4">
+              <SelectValue placeholder="Região ou estado" />
+            </SelectTrigger>
+            <SelectContent defaultValue={"co2"} className=' max-sm:w-11/12  max-sm:self-center'>
+              {regions.map((region) => (
+                <SelectItem value={region.value}>{region.label}</SelectItem>
+              ))}
+              {states.map((state) => (
+                <SelectItem value={state.value}>{state.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        <div className="flex gap-2 max-sm:justify-center">
           <Input type={"date"} />
           <Input type={"date"} />
         </div>
-        <h3 className="my-10 font-semibold text-primary">
+        <h3 className="my-10 font-semibold text-primary ">
           Tipos de edificação:
         </h3>
-        <div className="flex items-baseline gap-6">
+        <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto max-sm:overflow-x-auto">
           <BuildIcon
             name="house"
             isActive={activeBuildFilter.floors_to === 1 || activeBuildFilter.floors_from === 1}
@@ -110,7 +116,7 @@ export const useBenchmarkFilters = () => {
         <h3 className="my-10 font-semibold text-primary">
           Tipos de edificação:
         </h3>
-        <div className="flex items-baseline gap-6">
+        <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto max-sm:overflow-x-auto">
           <TechIcon
             name="beam_column"
             isActive={activeBuildFilter.technology.includes("beam_column")}

@@ -136,7 +136,7 @@ const Icons = {
     ),
   },
   fourLess: {
-    label: "Até 4 pavimentos",
+    label: "De 3 até 4 pavimentos",
     render: (isActive: boolean, onClick: () => void) => (
       <svg
         width="54"
@@ -194,7 +194,7 @@ const Icons = {
     ),
   },
   tenLess: {
-    label: "Até 10 pavimentos",
+    label: "De 5 até 10 pavimentos",
     render: (isActive: boolean, onClick: () => void) => (
       <svg
         width="55"
