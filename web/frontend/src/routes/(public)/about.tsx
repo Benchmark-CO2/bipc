@@ -313,7 +313,7 @@ const TeamSection = () => {
       <h1 className="text-primary font-semibold text-xl md:text-2xl">
         Quem somos?
       </h1>
-      <div className="w-full grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-6 sm:gap-8 md:gap-12 lg:gap-16 justify-items-center">
+      <div className="w-full grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 sm:gap-8 md:gap-12 lg:gap-16 justify-items-center">
         {team.map((member) => (
           <div
             key={member.name}
