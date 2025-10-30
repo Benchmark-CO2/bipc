@@ -317,7 +317,7 @@ const TeamSection = () => {
         {team.map((member) => (
           <div
             key={member.name}
-            className="flex flex-col items-center gap-3 md:gap-4 w-full max-w-[180px]"
+            className="flex flex-col items-center gap-3 md:gap-4 w-full max-w-[200px]"
           >
             {member.photo ? (
               <img

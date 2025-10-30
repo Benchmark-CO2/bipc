@@ -15,6 +15,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
 import InventoryChart from "@/assets/inventoryChart.png";
+import { FilterTabs } from '@/components/ui/filter-tabs';
 import { useBenchmarkFilters } from '@/hooks/useBenchmarkFilters';
 import { useIsMobile } from '@/hooks/useIsMobile';
 export const Route = createFileRoute("/(public)/benchmark")({
@@ -34,9 +35,10 @@ function RouteComponent() {
     queryFn: () => getProjectsBenchmark(activeBuildFilter),
   });
   const isMobile = useIsMobile();
+  const [type, setType] = useState<"co2" | "energy">("co2");
 
   const chartData =
-    data?.data?.benchmark?.co2?.map((f) => ({
+    data?.data?.benchmark?.[type]?.map((f) => ({
       ...f,
       label: "",
     })) || [];
@@ -46,7 +48,6 @@ function RouteComponent() {
 
   const maxData = chartData.map((d) => (d.max !== undefined ? d.max : 0));
   const minData = chartData.map((d) => (d.min !== undefined ? d.min : Infinity));
-
   return (
     <div className="flex flex-col py-10 px-4 max-sm:px-2 ">
       <h1 className="text-3xl font-bold text-primary ">
@@ -55,6 +56,9 @@ function RouteComponent() {
       <div className="h-full w-full flex items-start pt-10 justify-between  max-sm:self-center max-md:flex-col gap-10">
         {FilterSection}
         <div className="w-2/3 flex flex-col items-start">
+        <div className='flex'>
+          <div className='flex flex-col'>
+
           <h2 className="text-primary font-semibold">Visualização:</h2>
 
           <Select onValueChange={setSelectedChart} value={selectedChart}>
@@ -66,12 +70,21 @@ function RouteComponent() {
               <SelectItem value="co2">Fração Acumulada</SelectItem>
             </SelectContent>
           </Select>
+          </div>
+          <FilterTabs
+                    tabs={["co2", "energy"]}
+                    onTabSelect={(tab) => setType(tab as "co2" | "energy")}
+                    selectedTab={type}
+                    fullWidth
+                  />   
+        </div>
           {selectedChart === "trend" ? (
             <D3GradientRangeLineChart
               width={width}
               height={height}
               data={chartData}
               overrideDimensions={!isMobile}
+              unit={type === "co2" ? "KgCO₂/m²" : "MJ/m²"}
             />
           ) : (
             <D3GradientRangeChart
@@ -82,6 +95,7 @@ function RouteComponent() {
               minData={minData}
               maxData={maxData}
               totalProjects={chartData.length}
+              unit={type === "co2" ? "KgCO₂/m²" : "MJ/m²"}
             />
           )}
 

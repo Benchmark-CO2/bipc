@@ -19,6 +19,11 @@ const debounce = <T extends (...args: any[]) => any>(
   };
 };
 
+const UNIT_LABELS = {
+  "KgCO₂/m²": "Carbono Incorporado (Kg CO₂/m²)",
+  "MJ/m²": "Energia Incorporada (MJ/m²)",
+} as const;
+
 // Constants
 const DEFAULT_COLORS = {
   START: "#3b82f6",
@@ -54,6 +59,7 @@ type D3GradientRangeChartProps = {
   height?: number;
   overrideDimensions?: boolean;
   customData?: any;
+  unit?: string;
 };
 
 type TooltipData = {
@@ -139,6 +145,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   selectedBars = [],
   data = [],
   overrideDimensions = false,
+  unit = "",
   ...props
 }) => {
   const { isExpanded } = useSummary();
@@ -604,6 +611,8 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     });
   }, [selectedBars, isExpanded, reversedData, isResized, xScale, yScale, colorScale]);
 
+    const labelX = UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Incorporado";
+
   return (
     <Card className={cn("shadow-none w-min-content")}>
       {/* <CardHeader>
@@ -614,7 +623,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       <CardContent>
         <div className="w-full overflow-hidden relative">
           <span className="absolute w-full text-center text-black/70 block rotate-270  left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
-            Carbono Incorporado (Kg CO₂/m²)
+            {labelX}
           </span>
           <svg ref={svgRef} className="bg-white dark:bg-sidebar"></svg>
           {tooltip && (
