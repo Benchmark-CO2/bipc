@@ -181,11 +181,6 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
       setSelectedProjects(projects.map((p) => p.id));
     }
   };
-  const sum = stackedData.reduce(
-    (acc, b) => acc + ((b[type as keyof typeof b] as number) || 0),
-    0
-  );
-
   const newData = [...managedData, ...(newItems.map(item => item[type]) || [])] as any
   const minData = useMemo(() => newData.map((d: Item) => d.min), [newData]);
   const maxData = useMemo(() => newData.map((d: Item) => d.max), [newData]);
