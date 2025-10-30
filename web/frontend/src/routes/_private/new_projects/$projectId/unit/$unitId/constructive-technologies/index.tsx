@@ -318,7 +318,6 @@ function RouteComponent() {
     });
   }, [selectedOptions, setSummaryContext, benchmarkData, unitData]);
 
-  console.log('unitData', unitData?.data, optionsData?.data);
 
 
   if (isLoadingOptions || isLoadingUnit) {
