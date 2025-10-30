@@ -4,6 +4,16 @@
 
 @plugin 'tailwindcss-animate';
 
+/* Custom breakpoints */
+@custom-media --xs (width >= 475px);
+@custom-media --sm (width >= 640px);
+@custom-media --md (width >= 768px);
+@custom-media --lg (width >= 1024px);
+@custom-media --xl (width >= 1280px);
+@custom-media --2xl (width >= 1536px);
+@custom-media --3xl (width >= 1920px);
+@custom-media --4xl (width >= 2560px);
+
 :root {
   --background: hsla(189, 68%, 99%, 1);
   --foreground: hsl(240 10% 3.9%);
@@ -118,6 +128,16 @@
 }
 
 @theme inline {
+  /* Custom Breakpoints */
+  --breakpoint-xs: 475px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  --breakpoint-3xl: 1920px;
+  --breakpoint-4xl: 2560px;
+
   --font-montserrat: "Montserrat", var(--font-serif);
   --font-inter: "Inter", var(--font-sans);
   --font-roboto-flex: "Roboto Flex", var(--font-sans);
@@ -332,6 +352,55 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    /* Global scrollbar - Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: hsl(240 4% 46%) transparent;
+  }
+
+  /* Global scrollbar - Webkit browsers (Chrome, Edge, Safari) */
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: hsl(240 4% 46% / 0.3);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    transition: background 0.2s ease;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: hsl(240 4% 46% / 0.6);
+    background-clip: padding-box;
+  }
+
+  *::-webkit-scrollbar-thumb:active {
+    background: hsl(240 4% 46% / 0.8);
+    background-clip: padding-box;
+  }
+
+  /* Dark mode scrollbar adjustments */
+  .dark * {
+    scrollbar-color: hsl(0 0% 64.9%) transparent;
+  }
+
+  .dark *::-webkit-scrollbar-thumb {
+    background: hsl(0 0% 64.9% / 0.3);
+  }
+
+  .dark *::-webkit-scrollbar-thumb:hover {
+    background: hsl(0 0% 64.9% / 0.6);
+  }
+
+  .dark *::-webkit-scrollbar-thumb:active {
+    background: hsl(0 0% 64.9% / 0.8);
   }
 
   body {

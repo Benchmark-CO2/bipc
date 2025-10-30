@@ -27,7 +27,7 @@ const ListItem = ({
   return (
     <li
       key={item.id}
-      className={cn("flex flex-col items-start gap-2 mb-2 max-sm:items-center max-sm:self-center", {
+      className={cn("flex flex-col items-start gap-2 mb-2 max-sm:items-center max-sm:self-start max-sm:w-full", {
         "text-sm": isExpanded,
       })}
       style={{

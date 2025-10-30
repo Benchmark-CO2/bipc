@@ -8,7 +8,7 @@ const Legend = () => {
       'w-1/3': isExpanded,
     })}>
       <div className='w-full'>
-        <div className='flex w-full items-end max-sm:flex-wrap max-sm:gap-2 max-sm:my-4'>
+        <div className='grid w-full items-end max-sm:grid-cols-1 max-2xl:grid-cols-2 3xl:grid-cols-4 max-sm:gap-2 max-sm:my-4'>
           <div className='w-full flex flex-col justify-center'>
             <h2 className='text-base font-bold'>Legenda:</h2>
             <div className='w-full flex items-center'>
@@ -19,7 +19,7 @@ const Legend = () => {
 
           <div className='w-full flex items-center'>
             <div className='w-3 h-3 border-1 border-white bg-[#E0756C] rounded-full'></div>
-            <span className='ml-2 italic'>Pior Fornecedor 2</span>
+            <span className='ml-2 italic'>Pior Fornecedor</span>
           </div>
           <div className='w-full flex items-center'>
             <div className='w-3 h-3 bg-[#F2CC5A] rounded-full'></div>
