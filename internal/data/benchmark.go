@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -204,10 +205,17 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 			INNER JOIN floors_consumption fc ON f.id = fc.floor_id`
 
 	if filters.Technology != nil {
+		technologies := strings.Split(*filters.Technology, ",")
+		techPlaceholders := make([]string, len(technologies))
+		
+		for i, _ := range technologies {
+			techPlaceholders[i] = fmt.Sprintf("$%d", argPosition)
+			args = append(args, strings.TrimSpace(technologies[i]))
+			argPosition++
+		}
+		
 		query += fmt.Sprintf(`
-			WHERE fc.technology = $%d`, argPosition)
-		args = append(args, *filters.Technology)
-		argPosition++
+			WHERE fc.technology = ANY(ARRAY[%s])`, strings.Join(techPlaceholders, ","))
 	}
 
 	query += `
