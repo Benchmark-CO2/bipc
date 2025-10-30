@@ -91,7 +91,7 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
       max: el.modules.reduce((acc, curr) => acc + curr.consumption.energy_max, 0),
       label: el.name
     }
-  }))
+  }));
   const newItems: Record<'co2' | 'energy', Item>[] = projects.flatMap(el => el.modules).reduce((acc, module) => {
     const existingItem = acc.find(item => item[type].id === module.id);
     if (existingItem) {
