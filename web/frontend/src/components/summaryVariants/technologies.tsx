@@ -39,14 +39,12 @@ type ProjectsSummaryProps = {
 };
 
 type Item = {
-  
-      id: string;
-      y: number;
-      min: number;
-      max: number;
-      label: string;
-    
-}
+  id: string;
+  y: number;
+  min: number;
+  max: number;
+  label: string;
+};
 
 const manageData = (data: ProjectsSummaryProps["data"]["benchmark"]["co2"]) => {
   if (!data) return [];
