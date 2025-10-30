@@ -11,7 +11,7 @@ import ItemCard from './components/ItemCard';
 import Legend from './components/Legend';
 import ListItem from './components/ListItem';
 import { useChartType } from "./hooks/useChartType";
-import { barColors, recalculateY, stackData } from "./utils";
+import { barColors, recalculateY } from "./utils";
 
 type TModules = {
   consumption: {
@@ -30,6 +30,7 @@ type SimulationData = {
   modules: TModules[]
   name: string
   tower_id: string
+  area: number
 };
 
 type ProjectsSummaryProps = {
@@ -58,7 +59,6 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
 
-  
   const newItemsTotals: {
     co2: {
       id: string;
@@ -78,45 +78,34 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
     co2: {
       id: el.id,
       y: 0,
-      min: el.modules.reduce((acc, curr) => acc + curr.consumption.co2_min, 0),
-      max: el.modules.reduce((acc, curr) => acc + curr.consumption.co2_max, 0),
+      min: el.modules.reduce((acc, curr) => acc + curr.consumption.co2_min, 0)/el.area,
+      max: el.modules.reduce((acc, curr) => acc + curr.consumption.co2_max, 0)/el.area,
       label: el.name
     },
     energy: {
       id: el.id,
       y: 0,
-      min: el.modules.reduce((acc, curr) => acc + curr.consumption.energy_min, 0),
-      max: el.modules.reduce((acc, curr) => acc + curr.consumption.energy_max, 0),
+      min: el.modules.reduce((acc, curr) => acc + curr.consumption.energy_min, 0)/el.area,
+      max: el.modules.reduce((acc, curr) => acc + curr.consumption.energy_max, 0)/el.area,
       label: el.name
     }
   }));
-  const newItems: Record<'co2' | 'energy', Item>[] = projects.flatMap(el => el.modules).reduce((acc, module) => {
-    const existingItem = acc.find(item => item[type].id === module.id);
-    if (existingItem) {
-      existingItem.co2.min += module.consumption.co2_min;
-      existingItem.co2.max += module.consumption.co2_max;
-      existingItem.energy.min += module.consumption.energy_min;
-      existingItem.energy.max += module.consumption.energy_max;
-    } else {
-      acc.push({
-        co2: {
-          id: module.id,
-          y: 0,
-          min: module.consumption.co2_min,
-          max: module.consumption.co2_max,
-          label: module.label
-        },
-        energy: {
-          id: module.id,
-          y: 0,
-          min: module.consumption.energy_min,
-          max: module.consumption.energy_max,
-          label: module.label
-        },
-      });
+  const newItems: Record<'co2' | 'energy', Item>[] = projects.map(el => ({
+    co2: {
+      id: el.id,
+      y: 0,
+      min: el.modules.reduce((acc, curr) => acc + curr.consumption.co2_min, 0)/el.area,
+      max: el.modules.reduce((acc, curr) => acc + curr.consumption.co2_max, 0)/el.area,
+      label: el.name
+    },
+    energy: {
+      id: el.id,
+      y: 0,
+      min: el.modules.reduce((acc, curr) => acc + curr.consumption.energy_min, 0)/el.area,
+      max: el.modules.reduce((acc, curr) => acc + curr.consumption.energy_max, 0)/el.area,
+      label: el.name
     }
-    return acc;
-  }, [] as Record<'co2' | 'energy', Item>[]);
+  }));
 
   const managedData = manageData((data.benchmark?.[type as "co2" | "energy"] || []))
     .map((el) => ({
@@ -126,13 +115,6 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
     .filter((f) => f.min && f.max);
   const { isExpanded } = useSummary();
 
-  const stackedData = useMemo(
-    () =>
-      stackData(projects, data)?.map((el) => ({
-        ...el,
-      })),
-    [projects, data]
-  );
 
   const handleAddProject = (projectId: string) => {
     if (selectedProjects.includes(projectId)) {
@@ -228,45 +210,38 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
               />
             )}
             {
-              projects.map(project => (
+              (newItems.map(el => el[type as 'co2' | 'energy'] || [])).map(project => (
                 <div key={project.id} className=''>
-                  <span className='font-semibold'>{project.name}</span>
-                  <div className='pl-4 mt-2'>
-
-                  {
-                    project.modules.map(module => !isExpanded ?(
-                      <ListItem
-                        key={module.id}
-                        item={{
-                          id: module.id,
-                          label: module.label,
-                          co2: (module.consumption.co2_min + module.consumption.co2_max) / 2,
-                          energy: (module.consumption.energy_min + module.consumption.energy_max) / 2,
-                        } as any}
-                        selectedProjects={selectedProjects}
-                        handleAddProject={handleAddProject}
-                        sum={project.modules.flatMap(el => el.consumption).reduce((acc, curr) => acc + ((type === 'co2' ? curr.co2_max + curr.co2_min : curr.energy_max + curr.energy_min) / 2), 0)}
+                  {!isExpanded ? (
+                    <ListItem
+                      key={project.id}
+                      item={{
+                        id: project.id,
+                        label: project.label,
+                        co2: (project.min + project.max) / 2,
+                        energy: (project.min + project.max) / 2,
+                      } as any}
+                      selectedProjects={selectedProjects}
+                      handleAddProject={handleAddProject}
+                      sum={newItems.flatMap(el => el[type]).reduce((acc, curr) => acc + curr.max, 0)}
                         color={barColors}
                         type={type}
                       />
                     ) : (
                       <ItemCard
-                        key={module.id}
+                        key={project.id}
                         item={{
-                          id: module.id,
-                          label: module.label,
-                          co2: (module.consumption.co2_min + module.consumption.co2_max) / 2,
-                          energy: (module.consumption.energy_min + module.consumption.energy_max) / 2,
+                          id: project.id,
+                          label: project.name,
+                          co2: project.modules.flatMap(el => el.consumption).reduce((acc, curr) => acc + ((type === 'co2' ? curr.co2_max + curr.co2_min : curr.energy_max + curr.energy_min) / 2), 0),
+                          energy: project.modules.flatMap(el => el.consumption).reduce((acc, curr) => acc + ((type === 'co2' ? curr.co2_max + curr.co2_min : curr.energy_max + curr.energy_min) / 2), 0),
                         } as any}
                         selectedProjects={selectedProjects}
                         handleAddProject={handleAddProject}
                         sum={newItemsTotals.flatMap(el => el[type]).reduce((acc, curr) => acc + curr.max, 0)}
                         color={barColors}
                         type={type}
-                      />
-                    ))
-                  }
-                  </div>
+                      />)}
                 </div>
               ))
             }

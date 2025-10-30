@@ -35,20 +35,9 @@ function mergeUnitAndOptions(unit: IUnit, towerOptions: TOption[]) {
     .filter(opt => opt.tower_id === unit.id)
     .map(opt => ({
       ...opt,
-      modules: opt.modules.map((module, idx) => ({
+      area: areaTotal,
+      modules: opt.modules.map((module) => ({
         ...module,
-        consumption: opt.modules.length === unit.tower?.floors.length ? {
-          co2_min: module.consumption.co2_min / (unit.tower?.floors?.[idx]?.area || 1),
-          co2_max: module.consumption.co2_max / (unit.tower?.floors?.[idx]?.area || 1),
-          energy_min: module.consumption.energy_min / (unit.tower?.floors?.[idx]?.area || 1),
-          energy_max: module.consumption.energy_max / (unit.tower?.floors?.[idx]?.area || 1),
-        } : {
-          co2_min: (module.consumption.co2_min / areaTotal) || 0,
-          co2_max: (module.consumption.co2_max / areaTotal) || 0,
-          energy_min: (module.consumption.energy_min / areaTotal) || 0,
-          energy_max: (module.consumption.energy_max / areaTotal) || 0,
-        },
-        label: unit.tower.floors.length === opt.modules.length ? unit.tower.floors?.[idx]?.group_name : 'sem nome'
       }))
     }));
 }
@@ -73,7 +62,6 @@ const OptionMenu = ({
 }) => {
   const queryClient = useQueryClient();
   const [localName, setLocalName] = useState(option.name);
-  const { setSummaryContext } = useSummary();
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -306,7 +294,7 @@ function RouteComponent() {
 
   useEffect(() => {
     if (!benchmarkData?.data || !unitData?.data?.unit) return;
-
+    console.log('selectedOptions', selectedOptions);
     setSummaryContext({
       component: <TechnologiesSummary
         projects={mergeUnitAndOptions(unitData.data.unit, selectedOptions) as any}
