@@ -12,10 +12,11 @@ import {
 } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import InventoryChart from "@/assets/inventoryChart.png";
 import { useBenchmarkFilters } from '@/hooks/useBenchmarkFilters';
+import { useIsMobile } from '@/hooks/useIsMobile';
 export const Route = createFileRoute("/(public)/benchmark")({
   component: RouteComponent,
   loader: ({ context }) => {
@@ -26,13 +27,13 @@ export const Route = createFileRoute("/(public)/benchmark")({
 });
 
 
-
 function RouteComponent() {
   const { FilterSection, activeBuildFilter } = useBenchmarkFilters();
   const { data } = useQuery({
     queryKey: ["units-benchmarks", JSON.stringify(activeBuildFilter)],
     queryFn: () => getProjectsBenchmark(activeBuildFilter),
   });
+  const isMobile = useIsMobile();
 
   const chartData =
     data?.data?.benchmark?.co2?.map((f) => ({
@@ -43,16 +44,15 @@ function RouteComponent() {
   const height = window.innerHeight * 0.5;
   const [selectedChart, setSelectedChart] = useState("trend");
 
-  useEffect(() => {
-    console.log(activeBuildFilter)
-  }, [activeBuildFilter])
+  const maxData = chartData.map((d) => (d.max !== undefined ? d.max : 0));
+  const minData = chartData.map((d) => (d.min !== undefined ? d.min : Infinity));
 
   return (
-    <div className="flex flex-col p-10">
+    <div className="flex flex-col py-10 px-4 max-sm:px-2 ">
       <h1 className="text-3xl font-bold text-primary ">
         Benchmark | Visualização dos dados
       </h1>
-      <div className="h-full w-full flex items-start pt-10 justify-between max-md:flex-col gap-10">
+      <div className="h-full w-full flex items-start pt-10 justify-between  max-sm:self-center max-md:flex-col gap-10">
         {FilterSection}
         <div className="w-2/3 flex flex-col items-start">
           <h2 className="text-primary font-semibold">Visualização:</h2>
@@ -71,14 +71,17 @@ function RouteComponent() {
               width={width}
               height={height}
               data={chartData}
-              overrideDimensions
+              overrideDimensions={!isMobile}
             />
           ) : (
             <D3GradientRangeChart
               width={width}
               height={height}
               data={chartData}
-              overrideDimensions
+              overrideDimensions={!isMobile}
+              minData={minData}
+              maxData={maxData}
+              totalProjects={chartData.length}
             />
           )}
 
@@ -101,7 +104,7 @@ function RouteComponent() {
         </h2>
         <div className="flex flex-col mt-20">
           <img src={Logo} alt="" className="max-w-[250px] mb-20 ml-20" />
-          <div className="flex flex-col gap-6 w-3/4">
+          <div className="flex flex-col gap-6 w-3/4 max-sm:w-full">
             <p>
               A plataforma BIPc foi desenvolvida para oferecer subsídios à
               projetistas e construtoras a melhorar a emissão de carbono
@@ -136,7 +139,7 @@ function RouteComponent() {
           </div>
         </div>
       </section>
-      <section className="w-3/4 self-start mt-10">
+      <section className="w-3/4 self-start mt-10 max-sm:w-11/12">
         <h2 className="text-2xl text-primary font-semibold">
           Composição do inventário do Benchmark
         </h2>
@@ -155,7 +158,7 @@ function RouteComponent() {
           Unidades habitacionais divididas pelas tipologias
         </h3>
         <div className="flex items-center mt-10">
-          <img src={InventoryChart} alt="" className="mx-10 self-end" />
+          <img src={InventoryChart} alt="" className="self-center" />
         </div>
       </section>
     </div>

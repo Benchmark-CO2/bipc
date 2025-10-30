@@ -79,6 +79,7 @@ const useChartDimensions = (
       if (isMobile) return screenWidth * 0.6;
       if (isExpanded) return screenWidth * 0.8;
       if (screenWidth < 1300) return screenWidth * 0.35;
+      if (screenWidth > 1300) return screenWidth * 0.4;
       return screenWidth * (hasLessValue || hasMoreValue ? 0.5 : 0.5);
     };
 
@@ -87,14 +88,14 @@ const useChartDimensions = (
       if (isMobile && !isExpanded) return 250;
       if (isMobile && isExpanded) return 320;
       if (isExpanded) return window.innerHeight * 0.96 - 130;
-      return (window.innerHeight * 0.6) - 230;
+      return (window.innerHeight * 0.65) - 230;
     };
 
     const margin = {
       top: isExpanded ? 15 : 20,
-      right: 20,
+      right: isMobile ? 0 : 20,
       bottom: isMobile ? 20 : 35,
-      left: isMobile ? 50 : 80,
+      left: isMobile ? 45 : 80,
     };
 
     const _width = width();
@@ -296,7 +297,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .attr("y1", 0)
       .attr("y2", _height)
       .attr("stroke", DEFAULT_COLORS.GRID)
-      .attr("stroke-width", 1);
+      .attr("stroke-width", 1)
 
     // Horizontal grid lines
     chartArea.selectAll(".grid-line-y")
@@ -318,7 +319,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .call(d3.axisBottom(xScale).ticks(10))
       .selectAll("text")
       .style("font-size", "12px")
-      .style("fill", DEFAULT_COLORS.TEXT);
+      .style("fill", DEFAULT_COLORS.TEXT)
+      
 
     g.append("g")
       .attr("class", "axis-y")
@@ -724,7 +726,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     <Card className={cn("shadow-none w-min-content")}>
       <CardContent>
         <div className="w-full overflow-hidden relative">
-          <span className="absolute w-full text-center text-black/70 block rotate-270 left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
+          <span className="absolute w-full text-center text-foreground/70 block rotate-270 left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
             potencial de mitigação
           </span>
 
@@ -732,16 +734,16 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
               'opacity-0': !(hasZoomed),
             })}>
               <div className="flex gap-2">
-                <span className='max-sm:text-sm text-black/70'>{maxLessDataValue.toFixed(2)}</span>
+                <span className='max-sm:text-sm text-foreground/70'>{maxLessDataValue.toFixed(2)}</span>
                 <Triangle className="w-6 h-6 fill-[#3b82f6] rotate-90 stroke-[#3b82f6] max-sm:w-4 max-sm:h-4 self-center" />
               </div>
               <div className="flex gap-2">
-                <span className='max-sm:text-sm text-black/70'>{maxMaxDataValue.toFixed(2)}</span>
+                <span className='max-sm:text-sm text-foreground/70'>{maxMaxDataValue.toFixed(2)}</span>
                 <Triangle className="w-6 h-6 fill-[#E36F35] rotate-90 stroke-[#E36F35] max-sm:w-4 max-sm:h-4 self-center" />
               </div>
             </div>
 
-          <svg ref={svgRef} className="bg-white dark:bg-sidebar" />
+          <svg ref={svgRef} className="bg-white dark:bg-zinc-900" />
             {!isMobile && (<div className={cn("mr-auto flex justify-start w-full my-2 mb-4 gap-10 pl-20 opacity-100 transition-opacity transform-gpu", {
               'opacity-0': !(hasZoomed),
             })}>
@@ -781,15 +783,15 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
               'opacity-0': !hasZoomed,
             })}>
               <div className="flex gap-1 flex-row-reverse">
-                <span className='text-sm text-black/70'>{minLessDataValue.toFixed(2)}</span>
+                <span className='text-sm text-foreground/70'>{minLessDataValue.toFixed(2)}</span>
                 <Triangle className="w-6 h-6 fill-[#3b82f6] -rotate-90 stroke-[#3b82f6]  max-sm:h-4 self-center" />
               </div>
               <div className="flex gap-1 flex-row-reverse">
-                <span className='text-sm text-black/70'>{minMaxDataValue.toFixed(2)}</span>
+                <span className='text-sm text-foreground/70'>{minMaxDataValue.toFixed(2)}</span>
                 <Triangle className="w-6 h-6 fill-[#E36F35] -rotate-90 stroke-[#E36F35]  max-sm:h-4 self-center" />
               </div>
             </div>)}
-          <span className="flex-1 text-center w-full text-black/70">
+          <span className="flex-1 text-center w-full text-foreground/70">
             {labelX}
           </span>
         </div>

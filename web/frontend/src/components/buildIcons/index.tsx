@@ -30,7 +30,7 @@ const Icons = {
     ),
   },
   townHouse: {
-    label: "Sobrado",
+    label: "Casa sobreposta",
     render: (isActive: boolean, onClick: () => void) => (
       
       <svg

@@ -23,7 +23,7 @@ const Summary = () => {
         <div
           className={`flex items-center justify-between w-full px-4 ${isOpen ? "pt-3" : "my-auto"} `}
         >
-          <span className="text-sm font-bold text-primary dark:text-blue-400">
+          <span className="text-md font-bold text-primary dark:text-blue-400">
             {"Benchmark"}
           </span>
           <div className="flex gap-0 absolute right-4 top-[-18px]">
