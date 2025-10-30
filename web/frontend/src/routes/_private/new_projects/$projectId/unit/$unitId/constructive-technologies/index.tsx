@@ -1,3 +1,4 @@
+import { getProjectsBenchmark } from '@/actions/benchmarks/getProjects';
 import { deleteModule } from "@/actions/modules/deleteModule";
 import { deleteOption } from "@/actions/options/deleteOption";
 import { getOptions } from "@/actions/options/getOptions";
@@ -10,6 +11,7 @@ import {
   DrawerFormModule,
 } from "@/components/layout";
 import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
+import TechnologiesSummary from '@/components/summaryVariants/technologies';
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -26,6 +28,30 @@ import { Copy, Edit, Loader2, Plus, Star, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+
+function mergeUnitAndOptions(unit: IUnit, towerOptions: TOption[]) {
+  const areaTotal = unit.tower?.floors.reduce((sum, floor) => sum + (floor.area || 0), 0) || 0;
+  return towerOptions
+    .filter(opt => opt.tower_id === unit.id)
+    .map(opt => ({
+      ...opt,
+      modules: opt.modules.map((module, idx) => ({
+        ...module,
+        consumption: opt.modules.length === unit.tower?.floors.length ? {
+          co2_min: module.consumption.co2_min / (unit.tower?.floors?.[idx]?.area || 1),
+          co2_max: module.consumption.co2_max / (unit.tower?.floors?.[idx]?.area || 1),
+          energy_min: module.consumption.energy_min / (unit.tower?.floors?.[idx]?.area || 1),
+          energy_max: module.consumption.energy_max / (unit.tower?.floors?.[idx]?.area || 1),
+        } : {
+          co2_min: (module.consumption.co2_min / areaTotal) || 0,
+          co2_max: (module.consumption.co2_max / areaTotal) || 0,
+          energy_min: (module.consumption.energy_min / areaTotal) || 0,
+          energy_max: (module.consumption.energy_max / areaTotal) || 0,
+        },
+        label: unit.tower.floors.length === opt.modules.length ? unit.tower.floors?.[idx]?.group_name : 'sem nome'
+      }))
+    }));
+}
 export const Route = createFileRoute(
   "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies/"
 )({
@@ -86,12 +112,6 @@ const OptionMenu = ({
     setLocalName(option.name);
   }, [option.name]);
 
-  useEffect(() => {
-    setSummaryContext({
-      component: null,
-      title: "Simulação",
-    });
-  }, [setSummaryContext]);
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLocalName(e.target.value);
   };
@@ -197,11 +217,10 @@ const OptionMenu = ({
         onClick={handleActiveChange}
       >
         <Star
-          className={`h-4 w-4 ${
-            option.active
+          className={`h-4 w-4 ${option.active
               ? "fill-yellow-500 text-yellow-500"
               : "text-gray-400 hover:text-yellow-500"
-          }`}
+            }`}
         />
       </Button>
       <Input
@@ -230,13 +249,11 @@ function RouteComponent() {
     setSelectedItems(item);
   };
 
-  useEffect(() => {
-    setSummaryContext({
-      component: null,
-      title: `${selectedItems.length} andar(s) selecionado(s)`,
-      hide: true,
-    });
-  }, [selectedItems, setSummaryContext]);
+  const { data: benchmarkData } = useQuery({
+    queryKey: ["projects-benchmarks"],
+    queryFn: getProjectsBenchmark,
+  });
+
 
   const { mutate: deleteSimulation, isPending: isDeleting } = useMutation({
     mutationFn: (optionId: string) => deleteOption(projectId, unitId, optionId),
@@ -286,6 +303,23 @@ function RouteComponent() {
     queryFn: () => getUnitByUUID(projectId, unitId),
     enabled: !!projectId && !!unitId,
   });
+
+  useEffect(() => {
+    if (!benchmarkData?.data || !unitData?.data?.unit) return;
+
+    setSummaryContext({
+      component: <TechnologiesSummary
+        projects={mergeUnitAndOptions(unitData.data.unit, selectedOptions) as any}
+        data={benchmarkData?.data}
+        someSelected={selectedOptions.length > 0}
+      />,
+      title: ``,
+      hide: false,
+    });
+  }, [selectedOptions, setSummaryContext, benchmarkData, unitData]);
+
+  console.log('unitData', unitData?.data, optionsData?.data);
+
 
   if (isLoadingOptions || isLoadingUnit) {
     return (
@@ -356,51 +390,51 @@ function RouteComponent() {
   };
 
   const newColumns: ColumnDef<
-    Omit<IModuleItem, "consumption"> & TConsumption & { option_id: string }
+    Omit<IModuleItem, "consumption"> & TConsumption & { option_id: string; }
   >[] = [
-    ...constructiveTechnologies,
-    {
-      id: "actions",
-      header: "",
-      cell: ({ row }) => {
-        return (
-          <div className="flex items-center justify-end gap-2">
-            <DrawerFormModule
-              triggerComponent={
-                <Button variant="ghost" size="icon" disabled={isDeleting}>
-                  <Edit className="h-4 w-4 text-primary" />
-                </Button>
-              }
-              type={row.original.type}
-              projectId={projectId}
-              unitId={unitId}
-              optionId={row.original.option_id}
-              moduleId={row.original.id}
-              floors={unitTowerFloors}
-            />
-            <ModalConfirmDelete
-              title="Excluir Tecnologia Construtiva"
-              onConfirm={() =>
-                mutateDeleteTec({
-                  optionId: row.original.option_id,
-                  moduleId: row.original.id,
-                })
-              }
-              componentTrigger={
-                <Button variant="ghost" size="icon" disabled={isDeletingTec}>
-                  {isDeletingTec ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash className="h-4 w-4 text-red-700" />
-                  )}
-                </Button>
-              }
-            />
-          </div>
-        );
+      ...constructiveTechnologies,
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => {
+          return (
+            <div className="flex items-center justify-end gap-2">
+              <DrawerFormModule
+                triggerComponent={
+                  <Button variant="ghost" size="icon" disabled={isDeleting}>
+                    <Edit className="h-4 w-4 text-primary" />
+                  </Button>
+                }
+                type={row.original.type}
+                projectId={projectId}
+                unitId={unitId}
+                optionId={row.original.option_id}
+                moduleId={row.original.id}
+                floors={unitTowerFloors}
+              />
+              <ModalConfirmDelete
+                title="Excluir Tecnologia Construtiva"
+                onConfirm={() =>
+                  mutateDeleteTec({
+                    optionId: row.original.option_id,
+                    moduleId: row.original.id,
+                  })
+                }
+                componentTrigger={
+                  <Button variant="ghost" size="icon" disabled={isDeletingTec}>
+                    {isDeletingTec ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash className="h-4 w-4 text-red-700" />
+                    )}
+                  </Button>
+                }
+              />
+            </div>
+          );
+        },
       },
-    },
-  ];
+    ];
 
   if (options.length === 0) {
     return (

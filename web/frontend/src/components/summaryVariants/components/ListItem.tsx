@@ -40,7 +40,7 @@ const ListItem = ({
           checked={selectedProjects.includes(item.id!)}
           onClick={() => handleAddProject(item.id!)}
         />
-        <h4 className="whitespace-nowrap flex items-center gap-3 cursor-pointer text-base">
+        <h4 className="whitespace-nowrap flex items-center gap-3 cursor-pointer text-sm">
           {item.label as string}
         </h4>
       </div>
