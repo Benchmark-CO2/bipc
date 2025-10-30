@@ -181,7 +181,7 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
       setSelectedProjects(projects.map((p) => p.id));
     }
   };
-  const newData = [...managedData, ...(newItems.map(item => item[type]) || [])] as any
+  const newData = [...managedData, ...(newItems.map(item => item[type]) || [])] as any;
   const minData = useMemo(() => newData.map((d: Item) => d.min), [newData]);
   const maxData = useMemo(() => newData.map((d: Item) => d.max), [newData]);
   const updateYs = recalculateY(newData, minData[0], maxData[maxData.length - 1]);
