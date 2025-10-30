@@ -130,7 +130,7 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
 
   const stackedData = useMemo(
     () =>
-      stackData(projects as any, data)?.map((el) => ({
+      stackData(projects, data)?.map((el) => ({
         ...el,
       })),
     [projects, data]
