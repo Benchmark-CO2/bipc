@@ -32,6 +32,35 @@ const Icons = {
   townHouse: {
     label: "Sobrado",
     render: (isActive: boolean, onClick: () => void) => (
+      
+      <svg
+        width="43"
+        height="68"
+        viewBox="0 0 43 68"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        onClick={onClick}
+      >
+        <path
+          d="M41.8007 66.5287V39.0985H42.5V36.6724H0.5V39.0985H1.25111V66.5184H40.6766V66.5287H41.8007ZM14.8125 65.4189H7.58633V47.9563H14.8125V65.4189Z"
+          className={cn("fill-white stroke-gray-400 transition-colors duration-200", {
+            "fill-primary": isActive,
+          })}
+          stroke="#A1A1AA"
+        />
+        <path
+          d="M0.5 7.76061V10.1867H1.25111V37.6067H40.6766V37.617H41.8007V10.1867H42.5V7.76061L21.5 0.528809L0.5 7.76061ZM14.8125 27.0712H7.58633V19.0445H14.8125V27.0712ZM34.5331 27.0712H21.5V19.0445H34.5331V27.0712Z"
+          className={cn("fill-white stroke-gray-400", {
+            "fill-primary": isActive,
+          })}
+          stroke="#A1A1AA"
+        />
+      </svg>
+    ),
+  },
+  twofloors: {
+    label: "Casa sobreposta",
+    render: (isActive: boolean, onClick: () => void) => (
       <svg
         width="54"
         height="68"
@@ -98,34 +127,6 @@ const Icons = {
         />
         <path
           d="M10.8774 64.3076H0.5V66.5272H10.8774V64.3076Z"
-          className={cn("fill-white stroke-gray-400", {
-            "fill-primary": isActive,
-          })}
-          stroke="#A1A1AA"
-        />
-      </svg>
-    ),
-  },
-  twofloors: {
-    label: "Casa sobreposta",
-    render: (isActive: boolean, onClick: () => void) => (
-      <svg
-        width="43"
-        height="68"
-        viewBox="0 0 43 68"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        onClick={onClick}
-      >
-        <path
-          d="M41.8007 66.5287V39.0985H42.5V36.6724H0.5V39.0985H1.25111V66.5184H40.6766V66.5287H41.8007ZM14.8125 65.4189H7.58633V47.9563H14.8125V65.4189Z"
-          className={cn("fill-white stroke-gray-400 transition-colors duration-200", {
-            "fill-primary": isActive,
-          })}
-          stroke="#A1A1AA"
-        />
-        <path
-          d="M0.5 7.76061V10.1867H1.25111V37.6067H40.6766V37.617H41.8007V10.1867H42.5V7.76061L21.5 0.528809L0.5 7.76061ZM14.8125 27.0712H7.58633V19.0445H14.8125V27.0712ZM34.5331 27.0712H21.5V19.0445H34.5331V27.0712Z"
           className={cn("fill-white stroke-gray-400", {
             "fill-primary": isActive,
           })}

@@ -30,8 +30,8 @@ export const Route = createFileRoute("/(public)/benchmark")({
 function RouteComponent() {
   const { FilterSection, activeBuildFilter } = useBenchmarkFilters();
   const { data } = useQuery({
-    queryKey: ["units-benchmarks"],
-    queryFn: getProjectsBenchmark,
+    queryKey: ["units-benchmarks", JSON.stringify(activeBuildFilter)],
+    queryFn: () => getProjectsBenchmark(activeBuildFilter),
   });
 
   const chartData =

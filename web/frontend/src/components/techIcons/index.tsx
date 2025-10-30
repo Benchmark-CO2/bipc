@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 
 const Icons = {
-  frame: {
+  beam_column: {
     label: "Pórtico",
     render: (isActive: boolean, onClick: () => void) => (
       <svg width="113" height="76" viewBox="0 0 113 76" fill="none" xmlns="http://www.w3.org/2000/svg" onClick={onClick}>
@@ -21,7 +21,7 @@ const Icons = {
 
     ),
   },
-  concrete: {
+  concrete_wall: {
     label: "Parede de concreto",
     render: (isActive: boolean, onClick: () => void) => (
       <svg width="113" height="76" viewBox="0 0 113 76" fill="none" xmlns="http://www.w3.org/2000/svg" onClick={onClick}>
@@ -44,7 +44,7 @@ const Icons = {
       </svg>
     ),
   },
-  structural: {
+  structural_masonry: {
     label: "Alvenaria estrutural",
     render: (isActive: boolean, onClick: () => void) => (
       <svg width="114" height="76" viewBox="0 0 114 76" fill="none" xmlns="http://www.w3.org/2000/svg" onClick={onClick}>
