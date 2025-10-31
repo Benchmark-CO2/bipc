@@ -3,12 +3,10 @@ package main
 import (
 	"errors"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
-	"github.com/google/uuid"
 )
 
 func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -16,7 +14,6 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		Name       string     `json:"name"`
 		Email      string     `json:"email"`
 		Password   string     `json:"password"`
-		ImageID    *uuid.UUID `json:"image_id"`
 		Crea_Cau   *string    `json:"crea_cau"`
 		Birthdate  *time.Time `json:"birthdate"`
 		City       *string    `json:"city"`
@@ -34,7 +31,6 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		Name:       input.Name,
 		Email:      input.Email,
 		Activated:  false,
-		ImageID:    input.ImageID,
 		Crea_Cau:   input.Crea_Cau,
 		Birthdate:  input.Birthdate,
 		City:       input.City,
@@ -99,7 +95,6 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 		Name       *string    `json:"name"`
 		Email      *string    `json:"email"`
 		Password   *string    `json:"password"`
-		ImageID    *uuid.UUID `json:"image_id"`
 		Crea_Cau   *string    `json:"crea_cau"`
 		Birthdate  *time.Time `json:"birthdate"`
 		City       *string    `json:"city"`
@@ -128,10 +123,6 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 			app.serverErrorResponse(w, r, err)
 			return
 		}
-	}
-
-	if input.ImageID != nil {
-		user.ImageID = input.ImageID
 	}
 
 	if input.Crea_Cau != nil {
@@ -336,16 +327,11 @@ func (app *application) pendingInvitationsHandler(w http.ResponseWriter, r *http
 func (app *application) replyInvitationHandler(w http.ResponseWriter, r *http.Request) {
 	user := app.contextGetUser(r)
 
-	invitationID, err := app.readIDParam(r, "invitationID")
+	invitationID, err := app.readUUIDParam(r, "invitationID")
 	if err != nil {
-		switch {
-		case strings.HasPrefix(err.Error(), "required path parameter"):
-			app.badRequestResponse(w, r, err)
-		default:
-			v := validator.New()
-			v.AddError("url", err.Error())
-			app.failedValidationResponse(w, r, v.Errors)
-		}
+		v := validator.New()
+		v.AddError("url", err.Error())
+		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
@@ -366,34 +352,28 @@ func (app *application) replyInvitationHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = app.models.Invitations.Reply(invitationID, input.Status, user.Email)
+	invitation, err := app.models.Invitations.GetByID(invitationID)
 	if err != nil {
 		switch {
-		case errors.Is(err, data.ErrEditConflict):
-			app.editConflictResponse(w, r)
+		case errors.Is(err, data.ErrRecordNotFound):
+			v.AddError("invitation", "no invitation found with the provided ID")
+			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
 		return
 	}
 
-	if input.Status == "accepted" {
-		invitation, err := app.models.Invitations.GetByID(invitationID)
-		if err != nil {
-			switch {
-			case errors.Is(err, data.ErrRecordNotFound):
-				app.notFoundResponse(w, r)
-			default:
-				app.serverErrorResponse(w, r, err)
-			}
-			return
-		}
-
-		err = app.models.Permissions.SetForUser(user.ID, invitation.ProjectID, invitation.Permissions...)
-		if err != nil {
+	err = app.models.Invitations.Reply(invitation, input.Status, user)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			v.AddError("invitation", "no pending invitation found")
+			app.failedValidationResponse(w, r, v.Errors)
+		default:
 			app.serverErrorResponse(w, r, err)
-			return
 		}
+		return
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"message": "invitation successfully replied"}, nil)

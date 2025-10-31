@@ -10,7 +10,6 @@ import (
 
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 )
 
 var (
@@ -20,7 +19,8 @@ var (
 
 	phases = []string{"preliminary_study", "not_defined", "basic_project", "executive_project", "released_for_construction"}
 
-	ErrDuplicateProjectName = errors.New("duplicate project name")
+	ErrInvalidProjectID     = errors.New("projectID does not exist")
+	ErrDuplicateUserProject = errors.New("duplicate user-project association")
 )
 
 type ProjectUnit struct {
@@ -32,23 +32,23 @@ type ProjectUnit struct {
 }
 
 type Project struct {
-	ID           uuid.UUID              `json:"id"`
-	CreatedAt    time.Time              `json:"created_at"`
-	UpdatedAt    time.Time              `json:"updated_at"`
-	UserID       uuid.UUID              `json:"user_id"`
-	Name         string                 `json:"name"`
-	CEP          *string                `json:"cep,omitzero"`
-	State        string                 `json:"state"`
-	City         string                 `json:"city"`
-	Neighborhood *string                `json:"neighborhood,omitzero"`
-	Street       *string                `json:"street,omitzero"`
-	Number       *string                `json:"number,omitzero"`
-	Phase        string                 `json:"phase"`
-	Description  *string                `json:"description,omitzero"`
-	ImageID      *string                `json:"image_id,omitzero"`
-	Units        []ProjectUnit          `json:"units,omitempty"`
-	Consumptions map[string]*Consumption `json:"consumptions,omitempty"`
-	Area         float64                `json:"area,omitempty"`
+	ID           uuid.UUID `json:"id"`
+	CreatedAt    time.Time `json:"created_at"`
+	Name         string    `json:"name"`
+	CEP          *string   `json:"cep,omitzero"`
+	State        string    `json:"state"`
+	City         string    `json:"city"`
+	Neighborhood *string   `json:"neighborhood,omitzero"`
+	Street       *string   `json:"street,omitzero"`
+	Number       *string   `json:"number,omitzero"`
+	Phase        string    `json:"phase"`
+}
+
+type ProjectsWithUnits struct {
+	Project
+	Units       []ProjectUnit `json:"units,omitempty"`
+	Consumption *Consumption  `json:"consumption,omitempty"`
+	Area        float64       `json:"area,omitempty"`
 }
 
 func ValidateProject(v *validator.Validator, project *Project) {
@@ -83,18 +83,13 @@ func ValidateProject(v *validator.Validator, project *Project) {
 
 	v.Check(project.Phase != "", "phase", "must be provided")
 	v.Check(validator.PermittedValue(project.Phase, phases...), "phase", fmt.Sprintf("must be a valid phase (allowed: %s)", strings.Join(phases, ", ")))
-
-	if project.Description != nil {
-		v.Check(*project.Description != "", "description", "empty description is not allowed")
-		v.Check(len(*project.Description) <= 500, "description", "must not be more than 500 bytes long")
-	}
 }
 
 type ProjectModel struct {
 	DB *sql.DB
 }
 
-func (m ProjectModel) Insert(project *Project) error {
+func (m ProjectModel) Insert(project *Project, userID uuid.UUID) error {
 
 	if project.ID == uuid.Nil {
 		projectID, err := uuid.NewV7()
@@ -102,6 +97,11 @@ func (m ProjectModel) Insert(project *Project) error {
 			return err
 		}
 		project.ID = projectID
+	}
+
+	roleID, err := uuid.NewV7()
+	if err != nil {
+		return err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -114,30 +114,86 @@ func (m ProjectModel) Insert(project *Project) error {
 	defer tx.Rollback()
 
 	query1 := `
-		INSERT INTO projects (id, user_id, name, cep, state, city, neighborhood, street, number, phase, description, image_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-		RETURNING created_at, updated_at`
+		INSERT INTO projects (id, name, cep, state, city, neighborhood, street, number, phase)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		RETURNING created_at`
 
-	args := []any{project.ID, project.UserID, project.Name, project.CEP, project.State, project.City, project.Neighborhood,
-		project.Street, project.Number, project.Phase, project.Description, project.ImageID}
+	args := []any{project.ID, project.Name, project.CEP, project.State, project.City, project.Neighborhood,
+		project.Street, project.Number, project.Phase}
 
-	err = tx.QueryRow(query1, args...).Scan(&project.CreatedAt, &project.UpdatedAt)
+	err = tx.QueryRow(query1, args...).Scan(&project.CreatedAt)
+	if err != nil {
+		return err
+	}
+
+	query2 := `
+		INSERT INTO users_projects (user_id, project_id)
+		VALUES ($1, $2)`
+
+	_, err = tx.Exec(query2, userID, project.ID)
 	if err != nil {
 		switch {
-		case err.Error() == `pq: duplicate key value violates unique constraint "projects_user_id_name_key"`:
-			return ErrDuplicateProjectName
+		case err.Error() == `pq: insert or update on table "users_projects" violates foreign key constraint "users_projects_project_id_fkey"`:
+			return ErrInvalidProjectID
+		case err.Error() == `pq: insert or update on table "users_projects" violates foreign key constraint "users_projects_user_id_fkey"`:
+			return ErrInvalidUserID
+		case err.Error() == `pq: duplicate key value violates unique constraint "users_projects_pkey"`:
+			return ErrDuplicateUserProject
 		default:
 			return err
 		}
 	}
 
-	query2 := `
-		INSERT INTO users_projects_permissions (user_id, project_id, permission_id)
-		SELECT $1, $2, permissions.id FROM permissions WHERE permissions.code = ANY($3)`
+	query3 := `
+		INSERT INTO roles (id, project_id, name, simulation, is_protected)
+		VALUES ($1, $2, $3, $4, $5)`
 
-	_, err = tx.Exec(query2, project.UserID, project.ID, pq.Array([]string{"project:owner", "project:view", "project:edit"}))
+	_, err = tx.Exec(query3, roleID, project.ID, "Administrador", false, true)
 	if err != nil {
-		return err
+		switch {
+		case err.Error() == `pq: insert or update on table "roles" violates foreign key constraint "roles_project_id_fkey"`:
+			return ErrInvalidProjectID
+		case err.Error() == `pq: duplicate key value violates unique constraint "roles_project_id_name_key"`:
+			return ErrDuplicateRoleName
+		default:
+			return err
+		}
+	}
+
+	query4 := `
+		INSERT INTO roles_permissions (role_id, permission_id)
+		VALUES ($1, $2)
+	`
+	_, err = tx.Exec(query4, roleID, 1)
+	if err != nil {
+		switch {
+		case err.Error() == `pq: insert or update on table "roles_permissions" violates foreign key constraint "roles_permissions_permission_id_fkey"`:
+			return ErrInvalidPermissionID
+		case err.Error() == `pq: insert or update on table "roles_permissions" violates foreign key constraint "roles_permissions_role_id_fkey"`:
+			return ErrInvalidRoleID
+		case err.Error() == `pq: duplicate key value violates unique constraint "roles_permissions_pkey"`:
+			return ErrDuplicateRolePermission
+		default:
+			return err
+		}
+	}
+
+	query5 := `
+		INSERT INTO users_roles (user_id, role_id)
+		VALUES ($1, $2)
+	`
+	_, err = tx.Exec(query5, userID, roleID)
+	if err != nil {
+		switch {
+		case err.Error() == `pq: insert or update on table "users_roles" violates foreign key constraint "users_roles_role_id_fkey"`:
+			return ErrInvalidRoleID
+		case err.Error() == `pq: insert or update on table "users_roles" violates foreign key constraint "users_roles_user_id_fkey"`:
+			return ErrInvalidUserID
+		case err.Error() == `pq: duplicate key value violates unique constraint "users_roles_pkey"`:
+			return ErrDuplicateUserRole
+		default:
+			return err
+		}
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -147,13 +203,13 @@ func (m ProjectModel) Insert(project *Project) error {
 	return nil
 }
 
-func (m ProjectModel) GetByID(id uuid.UUID) (*Project, error) {
+func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectsWithUnits, error) {
 	query := `
-		SELECT id, created_at, updated_at, user_id, name, cep, state, city, neighborhood, street, number, phase, description, image_id
+		SELECT id, created_at, name, cep, state, city, neighborhood, street, number, phase
 		FROM projects
 		WHERE id = $1`
 
-	var project Project
+	var project ProjectsWithUnits
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -161,8 +217,6 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*Project, error) {
 	err := m.DB.QueryRowContext(ctx, query, id).Scan(
 		&project.ID,
 		&project.CreatedAt,
-		&project.UpdatedAt,
-		&project.UserID,
 		&project.Name,
 		&project.CEP,
 		&project.State,
@@ -171,8 +225,6 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*Project, error) {
 		&project.Street,
 		&project.Number,
 		&project.Phase,
-		&project.Description,
-		&project.ImageID,
 	)
 	if err != nil {
 		switch {
@@ -297,9 +349,8 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*Project, error) {
 func (m ProjectModel) Update(project *Project) error {
 	query := `
 		UPDATE projects
-		SET name = $1, cep = $2, state = $3, city = $4, neighborhood = $5, street = $6,
-		number = $7, phase = $8, description = $9, image_id = $10
-		WHERE id = $11`
+		SET name = $1, cep = $2, state = $3, city = $4, neighborhood = $5, street = $6, number = $7, phase = $8
+		WHERE id = $9`
 
 	args := []any{
 		project.Name,
@@ -310,8 +361,6 @@ func (m ProjectModel) Update(project *Project) error {
 		project.Street,
 		project.Number,
 		project.Phase,
-		project.Description,
-		project.ImageID,
 		project.ID,
 	}
 
@@ -320,12 +369,7 @@ func (m ProjectModel) Update(project *Project) error {
 
 	result, err := m.DB.ExecContext(ctx, query, args...)
 	if err != nil {
-		switch {
-		case err.Error() == `pq: duplicate key value violates unique constraint "projects_user_id_name_key"`:
-			return ErrDuplicateProjectName
-		default:
-			return err
-		}
+		return err
 	}
 
 	rowsAffected, err := result.RowsAffected()
@@ -366,17 +410,31 @@ func (m ProjectModel) Delete(projectID uuid.UUID) error {
 	return nil
 }
 
-func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]*Project, Metadata, error) {
+func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]*ProjectsWithUnits, Metadata, error) {
 	query := fmt.Sprintf(`
-		SELECT COUNT(*) OVER(), p.id, p.created_at, p.updated_at, p.user_id, p.name,
-		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description, p.image_id
-		FROM projects p
-		INNER JOIN users_projects_permissions upp ON upp.project_id = p.id
-		WHERE (to_tsvector('simple', p.name) @@ plainto_tsquery('simple', $1) OR $1 = '')
-		AND upp.user_id = $2
-		AND upp.permission_id = (SELECT permissions.id FROM permissions WHERE code = 'project:view')
-		ORDER BY %s %s, p.id DESC
-		LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
+		WITH project_consumption AS (
+			SELECT
+				u.project_id,
+				SUM(f.co2_min * f.area) / SUM(f.area) as co2_min,
+				SUM(f.co2_max * f.area) / SUM(f.area) as co2_max,
+				SUM(f.energy_min * f.area) / SUM(f.area) as energy_min,
+				SUM(f.energy_max * f.area) / SUM(f.area) as energy_max,
+				SUM(f.area) as area
+			FROM floor f
+			INNER JOIN floor_group fg ON f.group_id = fg.id
+			INNER JOIN units u ON fg.tower_id = u.id
+			GROUP BY u.project_id
+		)
+ 		SELECT COUNT(*) OVER(), p.id, p.created_at, p.name,
+		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase,
+		COALESCE(pc.co2_min, 0), COALESCE(pc.co2_max, 0), COALESCE(pc.energy_min, 0), COALESCE(pc.energy_max, 0), COALESCE(pc.area, 0)
+ 		FROM projects p
+		INNER JOIN users_projects up ON up.project_id = p.id
+		LEFT JOIN project_consumption pc ON p.id = pc.project_id
+ 		WHERE (to_tsvector('simple', p.name) @@ plainto_tsquery('simple', $1) OR $1 = '')
+		AND up.user_id = $2
+ 		ORDER BY %s %s, p.id DESC
+ 		LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -390,19 +448,16 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 	defer rows.Close()
 
 	totalRecords := 0
-	var projects []*Project
-	projectIDs := []uuid.UUID{}
-	projectsMap := make(map[uuid.UUID]*Project)
+	projects := []*ProjectsWithUnits{}
 
 	for rows.Next() {
-		var project Project
+		var project ProjectsWithUnits
+		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
 
 		err := rows.Scan(
 			&totalRecords,
 			&project.ID,
 			&project.CreatedAt,
-			&project.UpdatedAt,
-			&project.UserID,
 			&project.Name,
 			&project.CEP,
 			&project.State,
@@ -411,8 +466,11 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 			&project.Street,
 			&project.Number,
 			&project.Phase,
-			&project.Description,
-			&project.ImageID,
+			&co2Min,
+			&co2Max,
+			&energyMin,
+			&energyMax,
+			&project.Area,
 		)
 		if err != nil {
 			return nil, Metadata{}, err
@@ -589,4 +647,25 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
 
 	return projects, metadata, nil
+}
+
+func (m ProjectModel) IsUserInProject(userID uuid.UUID, projectID uuid.UUID) (bool, error) {
+	query := `
+        SELECT EXISTS (
+            SELECT 1
+            FROM users_projects
+            WHERE user_id = $1 AND project_id = $2
+        )`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var exists bool
+
+	err := m.DB.QueryRowContext(ctx, query, userID, projectID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
 }

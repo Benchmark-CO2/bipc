@@ -306,24 +306,19 @@ func (app *application) requirePermission(code string, next http.HandlerFunc) ht
 
 		projectID, err := app.readUUIDParam(r, "projectID")
 		if err != nil {
-			switch {
-			case strings.HasPrefix(err.Error(), "required path parameter"):
-				app.badRequestResponse(w, r, err)
-			default:
-				v := validator.New()
-				v.AddError("url", err.Error())
-				app.failedValidationResponse(w, r, v.Errors)
-			}
+			v := validator.New()
+			v.AddError("url", err.Error())
+			app.failedValidationResponse(w, r, v.Errors)
 			return
 		}
 
-		permissions, err := app.models.Permissions.GetAllForUser(user.ID, projectID)
+		permissions, err := app.models.Roles.GetAllForUser(user.ID, projectID)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return
 		}
 
-		if !permissions.Include(code) {
+		if !permissions {
 			app.notPermittedResponse(w, r)
 			return
 		}

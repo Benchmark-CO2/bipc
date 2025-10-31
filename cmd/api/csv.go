@@ -147,7 +147,7 @@ func (app *application) generateRowData(dataRows [][]string, headerMap map[strin
 		if FloorName == "" {
 			FloorName = "unique_floor"
 		}
-		
+
 		unitName := record[headerMap["unit_name"]]
 		if unitName == "" {
 			unitName = "unit"
@@ -270,7 +270,6 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 			currentProjectFormCSV = &ProjectFromCSV{
 				Project: data.Project{
 					ID:           projectID,
-					UserID:       userID,
 					Name:         row.ProjectName,
 					CEP:          row.ProjectCEP,
 					State:        row.ProjectState,
@@ -429,13 +428,8 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 
 	for i, projectData := range projectsFormCSV {
 		// Insert Project
-		err = app.models.Projects.Insert(&projectData.Project)
+		err = app.models.Projects.Insert(&projectData.Project, user.ID)
 		if err != nil {
-			if errors.Is(err, data.ErrDuplicateProjectName) {
-				errWithProjectName := errors.New(err.Error() + ": " + projectData.Project.Name)
-				app.badRequestResponse(w, r, errWithProjectName)
-				return
-			}
 			app.serverErrorResponse(w, r, err)
 			return
 		}
