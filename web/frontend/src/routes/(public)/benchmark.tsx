@@ -111,9 +111,9 @@ function RouteComponent() {
             </div>
           </div>
         </div>
-        <section className="w-full mt-10">
+        <section className="w-full mt-30">
           <h2 className="mb-8 text-3xl text-primary font-semibold">
-            Benchmark | Como funciona
+            Como o Benchmark funciona
           </h2>
           <div className="flex flex-col lg:flex-row items-start gap-8 lg:gap-12 mt-10">
             {/* Logo column */}
@@ -144,7 +144,7 @@ function RouteComponent() {
                 plataforma disponibiliza a visualização de dados gerais a toda
                 sociedade.
               </p>
-              <p className="flex flex-col">
+              {/* <p className="flex flex-col">
                 Para compreender as variáveis apresentadas, acesse:
                 <a href="#" className="pl-2">
                   {" "}
@@ -157,11 +157,11 @@ function RouteComponent() {
                 <a href="#" className="pl-2">
                   &bull; PD&I
                 </a>
-              </p>
+              </p> */}
             </div>
           </div>
         </section>
-        <section className="w-full lg:w-3/4 mt-10">
+        {/* <section className="w-full lg:w-3/4 mt-10">
           <h2 className="text-2xl text-primary font-semibold">
             Composição do inventário do Benchmark
           </h2>
@@ -182,7 +182,7 @@ function RouteComponent() {
           <div className="flex items-center justify-center mt-10">
             <img src={InventoryChart} alt="" className="max-w-full h-auto" />
           </div>
-        </section>
+        </section> */}
       </div>
     </div>
   );
