@@ -60,9 +60,24 @@ const team = [
     photo: `${BUCKET_URL}/Maria+Gonzales.png`,
   },
   {
-    name: "Cassio Oliveira",
-    role: "Pesquisador",
-    photo: `${BUCKET_URL}/Cassio+Oliveira.png`,
+    name: "Gabriela Lopes Barroso",
+    role: "Gestão da Rotina",
+    photo: `${BUCKET_URL}/Gabriela+Barroso.png`,
+  },
+  {
+    name: "Jonas Firmino",
+    role: "Administrativo",
+    photo: `${BUCKET_URL}/Jonas+Firmino.png`,
+  },
+  {
+    name: "Eder Santin",
+    role: "Jornalista Científico",
+    photo: `${BUCKET_URL}/Eder+Santin.png`,
+  },
+  {
+    name: "Bruna Diniz Franqueira",
+    role: "Transparência em Proteção de Dados",
+    photo: `${BUCKET_URL}/Bruna+Franqueira.png`,
   },
   {
     name: "Felipe Okino",
@@ -93,6 +108,11 @@ const team = [
     name: "Alessandra Petrecca",
     role: "Design UX/UI",
     photo: `${BUCKET_URL}/Alessandra+Petrecca.png`,
+  },
+  {
+    name: "Cassio Oliveira",
+    role: "Pesquisador",
+    photo: `${BUCKET_URL}/Cassio+Oliveira.png`,
   },
   {
     name: "Rhonner Politzer Ramírez Flores",
@@ -161,46 +181,6 @@ const team = [
     photo: `${BUCKET_URL}/Manuele+Harnisch.png`,
   },
   {
-    name: "Abram Belk",
-    role: "Comitê Consultivo",
-    photo: `${BUCKET_URL}/Abram+Belk.png`,
-  },
-  {
-    name: "Ana Cecília Sestak",
-    role: "Comitê Consultivo",
-    photo: `${BUCKET_URL}/Ana+Sestak.png`,
-  },
-  {
-    name: "Carlos Massucato",
-    role: "Comitê Consultivo",
-    photo: `${BUCKET_URL}/Carlos+Massucato.png`,
-  },
-  {
-    name: "Clarisse Degani",
-    role: "Comitê Consultivo",
-    photo: `${BUCKET_URL}/Clarisse+Degani.png`,
-  },
-  {
-    name: "Gabriela Lopes Barroso",
-    role: "Gestão da Rotina",
-    photo: `${BUCKET_URL}/Gabriela+Barroso.png`,
-  },
-  {
-    name: "Jonas Firmino",
-    role: "Administrativo",
-    photo: `${BUCKET_URL}/Jonas+Firmino.png`,
-  },
-  {
-    name: "Eder Santin",
-    role: "Jornalista Científico",
-    photo: `${BUCKET_URL}/Eder+Santin.png`,
-  },
-  {
-    name: "Bruna Diniz Franqueira",
-    role: "Transparência em Proteção de Dados",
-    photo: `${BUCKET_URL}/Bruna+Franqueira.png`,
-  },
-  {
     name: "Lígia Pegorer",
     role: "Pesquisadora",
     photo: `${BUCKET_URL}/L%C3%ADgia+Pegorer.png`,
@@ -222,16 +202,39 @@ const team = [
   },
 ];
 
+const advisoryCommittee = [
+  {
+    name: "Abram Belk",
+    role: "",
+    photo: `${BUCKET_URL}/Abram+Belk.png`,
+  },
+  {
+    name: "Ana Cecília Sestak",
+    role: "",
+    photo: `${BUCKET_URL}/Ana+Sestak.png`,
+  },
+  {
+    name: "Carlos Massucato",
+    role: "",
+    photo: `${BUCKET_URL}/Carlos+Massucato.png`,
+  },
+  {
+    name: "Clarisse Degani",
+    role: "",
+    photo: `${BUCKET_URL}/Clarisse+Degani.png`,
+  },
+];
+
 const TopSection = () => {
   return (
-    <section className="flex flex-col lg:flex-row gap-8 lg:gap-0">
-      <div className="w-full lg:w-1/2 flex flex-col justify-start items-center gap-6 px-4 sm:px-6 md:px-10">
+    <section className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center gap-6">
         <img
           src={logoFull}
           alt="logo completa do BIPC"
-          className="max-w-[517px] w-full mb-6 md:mb-14"
+          className="w-full max-w-[420px] mb-6 lg:mb-10"
         />
-        <div className="max-w-[500px] flex flex-col gap-4 md:gap-6 items-center text-sm md:text-base">
+        <div className="w-full flex flex-col gap-4 md:gap-6 text-sm md:text-base">
           <p>
             Em contraposição à matriz elétrica brasileira, uma das mais limpas
             do mundo, a nossa construção civil é uma importante emissora de CO2,
@@ -269,11 +272,11 @@ const TopSection = () => {
           </p>
         </div>
       </div>
-      <div className="w-full lg:w-1/2 flex justify-center items-center px-4 sm:px-6 md:px-10">
+      <div className="w-full lg:w-1/2 flex justify-center items-center">
         <img
           src={aboutImage}
           alt="imagem sobre o BIPC"
-          className="max-w-[520px] w-full"
+          className="w-full max-w-[520px]"
         />
       </div>
     </section>
@@ -282,11 +285,11 @@ const TopSection = () => {
 
 const StackeholderSection = () => {
   return (
-    <section className="w-full md:w-3/4 mt-16 md:mt-30 flex flex-col items-center self-center gap-6 md:gap-10 px-4 sm:px-6 md:px-10">
+    <section className="w-full mt-20 mb-10 flex flex-col items-center gap-6 md:gap-10">
       <h1 className="text-primary font-semibold text-xl md:text-2xl">
         Realização
       </h1>
-      <div className="w-full md:w-3/4 flex flex-wrap justify-center md:justify-between items-center self-center gap-6">
+      <div className="w-full flex flex-col sm:flex-row flex-wrap lg:flex-nowrap justify-center items-center gap-8 md:gap-12 lg:gap-16">
         {stackeholders.map((stakehoder) => (
           <a
             key={stakehoder.name}
@@ -298,7 +301,7 @@ const StackeholderSection = () => {
             <img
               src={stakehoder.logo}
               alt={`${stakehoder.name} logo`}
-              className="h-12 md:h-16"
+              className="h-12 md:h-16 lg:h-20"
             />
           </a>
         ))}
@@ -307,50 +310,61 @@ const StackeholderSection = () => {
   );
 };
 
-const TeamSection = () => {
+const TeamSection = ({
+  people,
+  title,
+}: {
+  people: Array<{ name: string; role: string; photo?: string }>;
+  title: string;
+}) => {
   return (
-    <section className="w-full md:w-5/6 mt-20 md:mt-40 flex flex-col items-start self-center gap-6 md:gap-10 px-4 sm:px-6 md:px-10">
+    <section className="w-full mt-20 flex flex-col items-start gap-6 md:gap-10">
       <h1 className="text-primary font-semibold text-xl md:text-2xl">
-        Quem somos?
+        {title}
       </h1>
-      <div className="w-full grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 sm:gap-8 md:gap-12 lg:gap-16 justify-items-center">
-        {team.map((member) => (
-          <div
-            key={member.name}
-            className="flex flex-col items-center gap-3 md:gap-4 w-full max-w-[200px]"
-          >
-            {member.photo ? (
-              <img
-                src={member.photo}
-                alt={member.name}
-                className="w-32 h-32 md:w-40 md:h-40 aspect-square rounded-full object-cover flex-shrink-0"
-              />
-            ) : (
-              <div className="w-32 h-32 md:w-40 md:h-40 aspect-square rounded-full bg-gray-400 flex items-center justify-center text-white text-2xl md:text-3xl font-bold flex-shrink-0">
-                {stringUtils.getInitials(member.name)}
-              </div>
-            )}
+      <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8 lg:gap-10 justify-items-center">
+        {people.map(
+          (member: { name: string; role: string; photo?: string }) => (
+            <div
+              key={member.name}
+              className="flex flex-col items-center gap-3 md:gap-4 w-full max-w-[200px]"
+            >
+              {member.photo ? (
+                <img
+                  src={member.photo}
+                  alt={member.name}
+                  className="w-32 h-32 md:w-40 md:h-40 aspect-square rounded-full object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-32 h-32 md:w-40 md:h-40 aspect-square rounded-full bg-gray-400 flex items-center justify-center text-white text-2xl md:text-3xl font-bold flex-shrink-0">
+                  {stringUtils.getInitials(member.name)}
+                </div>
+              )}
 
-            <div className="w-full px-2">
-              <h2 className="text-sm md:text-base font-semibold text-center text-primary break-words line-clamp-2">
-                {member.name}
-              </h2>
-              <p className="text-xs sm:text-sm text-primary text-center line-clamp-2">
-                {member.role}
-              </p>
+              <div className="w-full px-2">
+                <h2 className="text-sm md:text-base font-semibold text-center text-primary break-words line-clamp-2">
+                  {member.name}
+                </h2>
+                <p className="text-xs sm:text-sm text-primary text-center line-clamp-2">
+                  {member.role}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        )}
       </div>
     </section>
   );
 };
 function RouteComponent() {
   return (
-    <div className="w-full flex flex-col mt-20 pb-10">
-      <TopSection />
-      <StackeholderSection />
-      <TeamSection />
+    <div className="w-full flex justify-center">
+      <div className="w-full max-w-7xl px-6 lg:px-12 py-10 flex flex-col">
+        <TopSection />
+        <StackeholderSection />
+        <TeamSection people={team} title="Quem Somos?" />
+        <TeamSection people={advisoryCommittee} title="Comitê Consultivo" />
+      </div>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 const Icons = {
   house: {
-    label: "Casa",
+    label: "1 pavimento",
     render: (isActive: boolean, onClick: () => void) => (
       <svg
         width="43"
@@ -61,7 +61,7 @@ const Icons = {
     ),
   },
   twofloors: {
-    label: "Casa sobreposta",
+    label: "2 pavimentos",
     render: (isActive: boolean, onClick: () => void) => (
       <svg
         width="54"

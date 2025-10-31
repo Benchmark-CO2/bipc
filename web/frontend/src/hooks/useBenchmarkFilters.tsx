@@ -97,7 +97,7 @@ export const useBenchmarkFilters = () => {
         </div>
         <Divider className="my-6" />
         <h3 className="mb-6 font-semibold text-primary ">
-          Tipos de edificação:
+          Números de pavimentos:
         </h3>
         <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto max-sm:overflow-x-auto">
           <BuildIcon
@@ -148,7 +148,7 @@ export const useBenchmarkFilters = () => {
         </div>
         <Divider className="my-6" />
         <h3 className="mb-6 font-semibold text-primary">
-          Tipos de Tecnologias Construtivas:
+          Técnologias Construtivas:
         </h3>
         <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto max-sm:overflow-x-auto">
           <TechIcon
