@@ -6,6 +6,7 @@ import * as d3 from "d3";
 import { regressionPoly } from "d3-regression";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Divider from "../ui/divider";
+import Indicators from "./components/indicators";
 
 // Utility: Debounce function
 const debounce = <T extends (...args: any[]) => any>(
@@ -81,7 +82,7 @@ const useChartDimensions = (
 ) => {
   return useMemo(() => {
     const screenWidth = window.innerWidth;
-    
+
     const width = () => {
       if (props.width && overrideDimensions) return props.width;
       if (isMobile) return screenWidth * 0.53;
@@ -143,7 +144,7 @@ const useTooltipPosition = () => {
 
 const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   selectedBars = [],
-  data = [],
+  data: _data = [],
   overrideDimensions = false,
   unit = "",
   ...props
@@ -153,7 +154,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   const isMobile = useIsMobile();
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [isResized, setIsResized] = useState(0);
-
+  const data = isMobile ? _data.map(el => ({ ...el, y: el.y * 10 })) : _data;
   const { width: _width, height: _height, margin } = useChartDimensions(
     props,
     overrideDimensions,
@@ -164,17 +165,17 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   const getTooltipPosition = useTooltipPosition();
 
   // Data transformations
-  const reversedData = useMemo(() => 
-    data
+  const reversedData = useMemo(() =>
+    _data
       ?.map((f) => ({ ...f, y: 1 - f.y }))
       .sort((a, b) => a.min - b.min) || [],
-    [data]
+    [_data]
   );
 
   const { minValue, maxValue, minOfMins, maxOfMins } = useMemo(() => {
     const maxValues = reversedData.map((d) => d.max);
     const minValues = reversedData.map((d) => d.min);
-    
+
     return {
       minValue: Math.min(...maxValues),
       maxValue: Math.max(...maxValues),
@@ -233,17 +234,17 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   }, [reversedData, minValue, maxValue, minOfMins, maxOfMins]);
 
   // Scales
-  const xScale = useMemo(() => 
-    d3.scaleLinear().domain([0, 1]).range([0, _width]),
+  const xScale = useMemo(() =>
+    d3.scaleLinear().domain([0, isMobile ? 10 : 1]).range([0, _width]),
     [_width]
   );
 
-  const yScale = useMemo(() => 
+  const yScale = useMemo(() =>
     d3.scaleLinear().domain([0, maxValue * 1.05]).range([0, _height]),
     [maxValue, _height]
   );
 
-  const colorScale = useMemo(() => 
+  const colorScale = useMemo(() =>
     d3.scaleLinear<string>()
       .domain([
         maxValue * 0.2,
@@ -259,7 +260,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   // Event handlers
   const handleMouseMove = useCallback((event: any) => {
     if (!svgRef.current) return;
-    
+
     const g = d3.select(svgRef.current).select("g");
     const [mx] = d3.pointer(event, g.node());
     const x0 = xScale.invert(mx);
@@ -303,7 +304,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
   const handleMouseOut = useCallback(() => {
     setTooltip(null);
-    
+
     const g = d3.select(svgRef.current).select("g");
     g.select(".tooltip-line-vertical").style("opacity", 0);
     g.select(".tooltip-line-horizontal").style("opacity", 0);
@@ -316,14 +317,40 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     []
   );
 
+  const debouncedResizeRef = useMemo(() => debounce(() => {
+    if (!svgRef.current) return;
+
+    const parent = svgRef.current.parentElement;
+    if (!parent) return;
+
+    svgRef.current.setAttribute("width", (parent.clientWidth + margin.left + margin.right).toString());
+    // svgRef.current.setAttribute("height", (parent.clientHeight + margin.top + margin.bottom).toString());
+    setIsResized((prev) => prev + 1);
+  }, 50), [svgRef]);
+
   useEffect(() => {
-    window.addEventListener("resize", debouncedResize);
-    return () => window.removeEventListener("resize", debouncedResize);
-  }, [debouncedResize]);
+    window.addEventListener("resize", debouncedResizeRef);
+    return () => window.removeEventListener("resize", debouncedResizeRef);
+  }, [debouncedResizeRef]);
+
+  // ResizeObserver to watch parent element changes
+  useEffect(() => {
+    if (!svgRef.current?.parentElement) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      debouncedResizeRef();
+    });
+
+    resizeObserver.observe(svgRef.current.parentElement);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [debouncedResizeRef]);
 
   // Main chart effect
   useEffect(() => {
-    if (!svgRef.current || !data.length) return;
+    if (!svgRef.current) return;
 
     // Clear previous SVG
     d3.select(svgRef.current).selectAll("*").remove();
@@ -331,7 +358,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     // Create SVG
     const svg = d3
       .select(svgRef.current)
-      .attr("width", _width + margin.left + margin.right + 20)
+      // .attr("width", _width + margin.left + margin.right + 20)
       .attr("height", _height + margin.top + margin.bottom);
 
     // Main group
@@ -478,7 +505,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   // Selected bars effect
   useEffect(() => {
     if (!svgRef.current || !reversedData.length) return;
-    
+
     const g = d3.select(svgRef.current).select("g");
     if (g.empty()) return;
 
@@ -544,7 +571,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
         // Circles
         const circleX = x + (isExpanded ? 0 : minimalBarHeight / 2);
-        
+
         g.append("circle")
           .attr("cx", circleX)
           .attr("cy", y1)
@@ -611,7 +638,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     });
   }, [selectedBars, isExpanded, reversedData, isResized, xScale, yScale, colorScale]);
 
-    const labelX = UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Incorporado";
+  const labelX = UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Incorporado";
 
   return (
     <Card className={cn("shadow-none w-min-content")}>
@@ -625,7 +652,19 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
           <span className="absolute w-full text-center text-black/70 block rotate-270  left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
             {labelX}
           </span>
-          <svg ref={svgRef} className="bg-white dark:bg-sidebar"></svg>
+          <Indicators
+            min={minValue}
+            max={maxValue}
+            position={isMobile ? 'center' : 'end'}
+            hasZoomed={false}
+          />
+          <svg ref={svgRef} className="bg-white dark:bg-zinc-900 w-full h-full" />
+          <Indicators
+            min={minValue}
+            max={maxValue}
+            position={isMobile ? 'center' : 'end'}
+            hasZoomed={false}
+          />
           {tooltip && (
             <div
               className="absolute bg-gray-800 text-white text-sm p-3 rounded pointer-events-none transition-opacity duration-200 flex flex-col gap-2 z-400"
@@ -651,6 +690,14 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
         </div>
         <div className="flex">
           <span>N: {data?.length}</span>
+          {isMobile && (
+            <Indicators
+              max={maxValue}
+              min={minValue}
+              hasZoomed={false}
+              position='start'
+            />
+          )}
           <span className="flex-1 text-center w-full text-black/70">
             potencial de mitigação
           </span>
