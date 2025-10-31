@@ -421,15 +421,14 @@ func (m ProjectModel) Delete(projectID uuid.UUID) error {
 
 func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]*ProjectsWithUnits, Metadata, error) {
 	query := fmt.Sprintf(`
- 		SELECT COUNT(*) OVER(), p.id, p.created_at, p.name,
-		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description,
-		COALESCE(pc.co2_min, 0), COALESCE(pc.co2_max, 0), COALESCE(pc.energy_min, 0), COALESCE(pc.energy_max, 0), COALESCE(pc.area, 0)
- 		FROM projects p
+		SELECT COUNT(*) OVER(), p.id, p.created_at, p.name,
+		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description
+		FROM projects p
 		INNER JOIN users_projects up ON up.project_id = p.id
- 		WHERE (to_tsvector('simple', p.name) @@ plainto_tsquery('simple', $1) OR $1 = '')
+		WHERE (to_tsvector('simple', p.name) @@ plainto_tsquery('simple', $1) OR $1 = '')
 		AND up.user_id = $2
- 		ORDER BY %s %s, p.id DESC
- 		LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
+		ORDER BY %s %s, p.id DESC
+		LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -449,6 +448,8 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 
 	for rows.Next() {
 		var project ProjectsWithUnits
+		project.Consumptions = make(map[string]*Consumption)
+		project.Units = []ProjectUnit{}
 
 		err := rows.Scan(
 			&totalRecords,
