@@ -1,29 +1,33 @@
 import { Button } from "@/components/ui/button";
 import { PencilIcon, TrashIcon } from "lucide-react";
 import DrawerFormDisciplines from "../drawer-form-disciplines";
-const collaborators = [
-  {
-    id: "1",
-    name: "Mariana Costa de Andrade",
-    role: "Arquitetura | Coordenação",
-    email: "marianaca@construtora.com",
-    status: "Ativo",
-  },
-  {
-    id: "2",
-    name: "Felipe Nogueira Bastos",
-    role: "Estrutura",
-    email: "felipehb@construtora.com",
-    status: "Ativo",
-  },
-  {
-    id: "3",
-    name: "Camila Rocha Tavares",
-    role: "Vedação",
-    email: "camilart@construtora.com",
-    status: "Ativo",
-  },
-];
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { getProjectCollaborators } from "@/actions/projectCollaborators/getProjectCollaborators";
+import DrawerInvite from "../drawer-invite";
+import ModalConfirmDelete from "../modal-confirm-delete";
+// const collaborators = [
+//   {
+//     id: "1",
+//     name: "Mariana Costa de Andrade",
+//     role: "Arquitetura | Coordenação",
+//     email: "marianaca@construtora.com",
+//     status: "Ativo",
+//   },
+//   {
+//     id: "2",
+//     name: "Felipe Nogueira Bastos",
+//     role: "Estrutura",
+//     email: "felipehb@construtora.com",
+//     status: "Ativo",
+//   },
+//   {
+//     id: "3",
+//     name: "Camila Rocha Tavares",
+//     role: "Vedação",
+//     email: "camilart@construtora.com",
+//     status: "Ativo",
+//   },
+// ];
 
 const disciplines = [
   { id: "1", name: "Administração", status: "Ativo" },
@@ -33,6 +37,14 @@ const disciplines = [
 ];
 
 const CollaboratorsView = ({ projectId }: { projectId: string }) => {
+  const { data: collaboratorsData } = useQuery({
+    queryKey: ["project-collaborators", projectId],
+    queryFn: () => getProjectCollaborators(projectId),
+  });
+
+  const collaborators = collaboratorsData?.data.data?.collaborators || [];
+  const roles = collaboratorsData?.data.data?.roles || [];
+
   return (
     <div className="flex flex-col gap-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg dark:border-gray-700">
@@ -50,7 +62,7 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
         </div>
 
         <div className="space-y-2">
-          {disciplines.map((discipline) => (
+          {roles.map((discipline) => (
             <div
               key={discipline.id}
               className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg"
@@ -66,9 +78,15 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline-destructive" size="icon-lg">
-                  <TrashIcon className="h-4 w-4" />
-                </Button>
+                <ModalConfirmDelete
+                  componentTrigger={
+                    <Button variant="outline-destructive" size="icon-lg">
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  }
+                  title="Remover Disciplina"
+                  onConfirm={() => console.log("remve")}
+                />
                 <Button
                   variant="outline-bipc"
                   size="icon-lg"
@@ -87,9 +105,8 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
           <h2 className="text-md font-semibold text-primary dark:text-gray-200">
             Todos os Colaboradores
           </h2>
-          <Button variant="bipc" className="text-white">
-            Novo colaborador
-          </Button>
+
+          <DrawerInvite projectId={projectId} />
         </div>
 
         <div className="space-y-2">
@@ -109,12 +126,9 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-gray-100">
                     {collaborator.name}
-                    <span className="ml-2 text-sm text-green-600 dark:text-green-400">
-                      ({collaborator.status})
-                    </span>
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {collaborator.role}
+                    {collaborator.roles.join(" | ")}
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     {collaborator.email}
@@ -122,9 +136,15 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline-destructive" size="icon-lg">
-                  <TrashIcon className="h-4 w-4" />
-                </Button>
+                <ModalConfirmDelete
+                  componentTrigger={
+                    <Button variant="outline-destructive" size="icon-lg">
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  }
+                  title="Remover Colaborador"
+                  onConfirm={() => console.log("remve")}
+                />
                 <Button
                   variant="outline-bipc"
                   size="icon-lg"

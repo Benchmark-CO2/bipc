@@ -78,9 +78,11 @@ const DrawerInvite = ({ projectId }: { projectId: string }) => {
         form.clearErrors();
       }}
     >
-      <DrawerTrigger ref={ref} className="flex w-full justify-between">
-        <span>{t("drawerInvite.title")}</span>
-        <UserPlus size={20} className="group-[.closed]:mx-auto" />
+      <DrawerTrigger ref={ref} asChild>
+        <Button variant="bipc" size="lg">
+          <UserPlus className="mr-2" />
+          Novo Colaborador
+        </Button>
       </DrawerTrigger>
       <DrawerContent className="min-w-2/5">
         <DrawerHeader className="px-6">
