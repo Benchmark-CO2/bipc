@@ -14,6 +14,7 @@ import (
 
 var (
 	ErrDuplicateEmail = errors.New("duplicate email")
+	ErrInvalidUserID  = errors.New("userID does not exist")
 )
 
 var AnonymousUser = &User{}
@@ -25,7 +26,6 @@ type User struct {
 	Email      string     `json:"email"`
 	Password   password   `json:"-"`
 	Activated  bool       `json:"activated"`
-	ImageID    *uuid.UUID `json:"image_id,omitzero"`
 	Crea_Cau   *string    `json:"crea_cau,omitzero"`
 	Birthdate  *time.Time `json:"birthdate,omitzero"`
 	City       *string    `json:"city,omitzero"`
@@ -127,11 +127,11 @@ func (m UserModel) Insert(user *User) error {
 	user.ID = userID
 
 	query := `
-        INSERT INTO users (id, name, email, password_hash, activated, image_id, crea_cau, birthdate, city, activity, enterprise) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        INSERT INTO users (id, name, email, password_hash, activated, crea_cau, birthdate, city, activity, enterprise) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING created_at`
 
-	args := []any{user.ID, user.Name, user.Email, user.Password.hash, user.Activated, user.ImageID, user.Crea_Cau, user.Birthdate, user.City, user.Activity, user.Enterprise}
+	args := []any{user.ID, user.Name, user.Email, user.Password.hash, user.Activated, user.Crea_Cau, user.Birthdate, user.City, user.Activity, user.Enterprise}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -151,7 +151,7 @@ func (m UserModel) Insert(user *User) error {
 
 func (m UserModel) GetByEmail(email string) (*User, error) {
 	query := `
-        SELECT id, created_at, name, email, password_hash, activated, image_id, crea_cau, birthdate, city, activity, enterprise
+        SELECT id, created_at, name, email, password_hash, activated, crea_cau, birthdate, city, activity, enterprise
         FROM users
         WHERE email = $1`
 
@@ -167,7 +167,6 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 		&user.Email,
 		&user.Password.hash,
 		&user.Activated,
-		&user.ImageID,
 		&user.Crea_Cau,
 		&user.Birthdate,
 		&user.City,
@@ -190,15 +189,14 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 func (m UserModel) Update(user *User) error {
 	query := `
         UPDATE users 
-        SET name = $1, email = $2, password_hash = $3, activated = $4, image_id = $5, crea_cau = $6, birthdate = $7, city = $8, activity = $9, enterprise = $10
-        WHERE id = $11`
+        SET name = $1, email = $2, password_hash = $3, activated = $4, crea_cau = $5, birthdate = $6, city = $7, activity = $8, enterprise = $9
+        WHERE id = $10`
 
 	args := []any{
 		user.Name,
 		user.Email,
 		user.Password.hash,
 		user.Activated,
-		user.ImageID,
 		user.Crea_Cau,
 		user.Birthdate,
 		user.City,
@@ -236,13 +234,12 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 
 	query := `
-        SELECT users.id, users.created_at, users.name, users.email, users.password_hash, users.activated, users.image_id, users.crea_cau, users.birthdate, users.city, users.activity, users.enterprise
-        FROM users
-        INNER JOIN tokens
-        ON users.id = tokens.user_id
-        WHERE tokens.hash = $1
-        AND tokens.scope = $2 
-        AND tokens.expiry > $3`
+        SELECT u.id, u.created_at, u.name, u.email, u.password_hash, u.activated, u.crea_cau, u.birthdate, u.city, u.activity, u.enterprise
+        FROM users u
+        INNER JOIN tokens t ON u.id = t.user_id
+        WHERE t.hash = $1
+        AND t.scope = $2 
+        AND t.expiry > $3`
 
 	args := []any{tokenHash[:], tokenScope, time.Now()}
 
@@ -258,7 +255,6 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 		&user.Email,
 		&user.Password.hash,
 		&user.Activated,
-		&user.ImageID,
 		&user.Crea_Cau,
 		&user.Birthdate,
 		&user.City,
@@ -279,18 +275,13 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 
 func (m UserModel) Collaborators(userID uuid.UUID) ([]*User, error) {
 	query := `
-		SELECT users.id, users.created_at, users.name, users.email, users.activated, users.image_id, users.crea_cau, users.birthdate, users.city, users.activity, users.enterprise
-		FROM users
-		INNER JOIN (
-			SELECT DISTINCT user_id
-			FROM users_projects_permissions
- 			WHERE project_id IN (
-    			SELECT DISTINCT project_id
-    			FROM users_projects_permissions
-   				WHERE user_id = $1
-			)
-			AND user_id <> $1
-		) collaborators ON users.id = collaborators.user_id`
+		SELECT u.id, u.created_at, u.name, u.email, u.activated, u.crea_cau, u.birthdate, u.city, u.activity, u.enterprise
+		FROM users u
+		JOIN users_projects up1 ON u.id = up1.user_id
+		JOIN users_projects up2 ON up1.project_id = up2.project_id
+		WHERE
+    	up2.user_id = $1
+    	AND up1.user_id != $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -312,7 +303,6 @@ func (m UserModel) Collaborators(userID uuid.UUID) ([]*User, error) {
 			&user.Name,
 			&user.Email,
 			&user.Activated,
-			&user.ImageID,
 			&user.Crea_Cau,
 			&user.Birthdate,
 			&user.City,

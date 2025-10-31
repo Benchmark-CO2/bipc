@@ -32,10 +32,17 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects", app.requireActivatedUser(app.createProjectHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects", app.requireAuthenticatedUser(app.listProjectsHandler))
-	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID", app.requirePermission("project:view", app.showProjectHandler))
-	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID", app.requirePermission("project:edit", app.updateProjectHandler))
-	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID", app.requirePermission("project:owner", app.deleteProjectHandler))
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/invite", app.requirePermission("project:owner", app.inviteUserHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID", app.showProjectHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID", app.updateProjectHandler)
+	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID", app.deleteProjectHandler)
+
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/invitations", app.inviteUserHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/roles", app.createRoleHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/roles/:roleID", app.updateRoleHandler)
+	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/roles/:roleID", app.deleteRoleHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/collaborators", app.listCollaboratorsHandler)
+
+	// ----------------------------------------------------------------------------------------------------------------------------------
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects-upload", app.requireActivatedUser(app.createProjectsFromCSVHandler))
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units", app.requirePermission("project:edit", app.createUnitHandler))

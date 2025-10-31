@@ -1,17 +1,36 @@
+CREATE TABLE IF NOT EXISTS roles (
+    id UUID PRIMARY KEY,
+    project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT,
+    simulation BOOLEAN NOT NULL,
+    is_protected BOOLEAN NOT NULL,
+    UNIQUE (project_id, name)
+);
+
 CREATE TABLE IF NOT EXISTS permissions (
     id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    code TEXT NOT NULL
+    action TEXT NOT NULL,
+    resource TEXT NOT NULL,
+    UNIQUE (action, resource)
 );
 
-CREATE TABLE IF NOT EXISTS users_projects_permissions (
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS roles_permissions (
+    role_id UUID REFERENCES roles(id) ON DELETE CASCADE,
     permission_id SMALLINT REFERENCES permissions(id) ON DELETE CASCADE,
-    PRIMARY KEY (user_id, project_id, permission_id)
+    PRIMARY KEY (role_id, permission_id)
 );
 
-INSERT INTO permissions (code)
-VALUES 
-    ('project:owner'),
-    ('project:view'),
-    ('project:edit');
+CREATE TABLE IF NOT EXISTS users_roles (
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    role_id UUID REFERENCES roles(id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, role_id)
+);
+
+INSERT INTO permissions (action, resource)
+VALUES
+    ('*','*'),
+    ('create', 'resource'),
+    ('read', 'resource'),
+    ('update', 'resource'),
+    ('delete', 'resource');

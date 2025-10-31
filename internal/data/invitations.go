@@ -10,30 +10,22 @@ import (
 
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 )
 
 var (
-	status = []string{"pending", "accepted", "declined"}
+	status = []string{"accepted", "declined"}
 
 	ErrDuplicatePendingInvitation = errors.New("a pending invitation already exists for this user in this project")
 )
 
 type Invitation struct {
-	ID          int64     `json:"id"`
-	Token       uuid.UUID `json:"token"`
-	CreatedAt   time.Time `json:"created_at"`
-	ExpiresAt   time.Time `json:"expires_at"`
-	Status      string    `json:"status"`
-	InviterID   uuid.UUID `json:"inviter_id"`
-	ProjectID   uuid.UUID `json:"project_id"`
-	Email       string    `json:"email"`
-	Permissions []string  `json:"permissions"`
-}
-
-func ValidateStatus(v *validator.Validator, s string) {
-	v.Check(s != "", "status", "must be provided")
-	v.Check(validator.PermittedValue(s, status...), "status", fmt.Sprintf("must be a valid state code (allowed: %s)", strings.Join(status, ", ")))
+	ID        uuid.UUID `json:"id"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
+	ExpiresAt time.Time `json:"expires_at"`
+	InviterID uuid.UUID `json:"inviter_id"`
+	ProjectID uuid.UUID `json:"project_id"`
+	Email     string    `json:"email"`
 }
 
 type InvitationWithDetails struct {
@@ -42,22 +34,33 @@ type InvitationWithDetails struct {
 	ProjectName string `json:"project_name"`
 }
 
+func ValidateStatus(v *validator.Validator, s string) {
+	v.Check(s != "", "status", "must be provided")
+	v.Check(validator.PermittedValue(s, status...), "status", fmt.Sprintf("must be a valid state code (allowed: %s)", strings.Join(status, ", ")))
+}
+
 type InvitationModel struct {
 	DB *sql.DB
 }
 
 func (m *InvitationModel) Insert(invitation *Invitation) error {
+	id, err := uuid.NewV7()
+	if err != nil {
+		return err
+	}
+	invitation.ID = id
+
 	query := `
-		INSERT INTO invitations (inviter_id, project_id, email, permissions)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, token, created_at, expires_at, status`
+		INSERT INTO invitations (id, expires_at, inviter_id, project_id, email)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING status,created_at`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	args := []any{invitation.InviterID, invitation.ProjectID, invitation.Email, pq.Array(invitation.Permissions)}
+	args := []any{invitation.ID, invitation.ExpiresAt, invitation.InviterID, invitation.ProjectID, invitation.Email}
 
-	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&invitation.ID, &invitation.Token, &invitation.CreatedAt, &invitation.ExpiresAt, &invitation.Status)
+	err = m.DB.QueryRowContext(ctx, query, args...).Scan(&invitation.Status, &invitation.CreatedAt)
 	if err != nil {
 		switch {
 		case err.Error() == `pq: duplicate key value violates unique constraint "invitations_project_id_email_pending_idx"`:
@@ -72,8 +75,8 @@ func (m *InvitationModel) Insert(invitation *Invitation) error {
 
 func (m *InvitationModel) GetPendingByEmail(email string) ([]*InvitationWithDetails, error) {
 	query := `
-		SELECT i.id, i.token, i.created_at, i.expires_at, i.status, i.inviter_id, u.name as inviter_name, i.project_id, p.name as project_name, i.email, i.permissions
-		FROM invitations i inner join projects p on p.id = i.project_id inner join users u on u.id = i.inviter_id
+		SELECT i.id, i.status , i.created_at, i.expires_at, i.inviter_id, i.project_id, i.email, u.name as inviter_name, p.name as project_name
+		FROM invitations i INNER JOIN projects p on p.id = i.project_id INNER JOIN users u on u.id = i.inviter_id
 		WHERE i.email = $1 AND i.status = 'pending' AND i.expires_at > $2
 		`
 
@@ -93,16 +96,14 @@ func (m *InvitationModel) GetPendingByEmail(email string) ([]*InvitationWithDeta
 
 		err := rows.Scan(
 			&invitation.ID,
-			&invitation.Token,
+			&invitation.Status,
 			&invitation.CreatedAt,
 			&invitation.ExpiresAt,
-			&invitation.Status,
 			&invitation.InviterID,
-			&invitation.InviterName,
 			&invitation.ProjectID,
-			&invitation.ProjectName,
 			&invitation.Email,
-			pq.Array(&invitation.Permissions),
+			&invitation.InviterName,
+			&invitation.ProjectName,
 		)
 		if err != nil {
 			return nil, err
@@ -117,16 +118,55 @@ func (m *InvitationModel) GetPendingByEmail(email string) ([]*InvitationWithDeta
 	return invitations, nil
 }
 
-func (m *InvitationModel) Reply(invitationID int64, status string, email string) error {
+func (m *InvitationModel) GetByID(id uuid.UUID) (*Invitation, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+	SELECT id, status, created_at, expires_at, inviter_id, project_id, email
+	FROM invitations
+	WHERE id = $1`
+
+	var invitation Invitation
+
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(
+		&invitation.ID,
+		&invitation.Status,
+		&invitation.CreatedAt,
+		&invitation.ExpiresAt,
+		&invitation.InviterID,
+		&invitation.ProjectID,
+		&invitation.Email,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &invitation, nil
+}
+
+func (m *InvitationModel) Reply(invitation *Invitation, status string, user *User) error {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	tx, err := m.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
 	query := `
 		UPDATE invitations
 		SET status = $1
 		WHERE id = $2 AND email = $3 AND status = 'pending' AND expires_at > $4`
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	result, err := m.DB.ExecContext(ctx, query, status, invitationID, email, time.Now())
+	result, err := tx.Exec(query, status, invitation.ID, user.Email, time.Now())
 	if err != nil {
 		return err
 	}
@@ -140,38 +180,20 @@ func (m *InvitationModel) Reply(invitationID int64, status string, email string)
 		return ErrEditConflict
 	}
 
-	return nil
-}
+	if status == "accepted" {
+		query2 := `
+		INSERT INTO users_projects (user_id, project_id)
+		VALUES ($1, $2)`
 
-func (m *InvitationModel) GetByID(id int64) (*Invitation, error) {
-	query := `
-		SELECT id, token, created_at, expires_at, status, inviter_id, project_id, email, permissions
-		FROM invitations
-		WHERE id = $1`
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	var invitation Invitation
-	err := m.DB.QueryRowContext(ctx, query, id).Scan(
-		&invitation.ID,
-		&invitation.Token,
-		&invitation.CreatedAt,
-		&invitation.ExpiresAt,
-		&invitation.Status,
-		&invitation.InviterID,
-		&invitation.ProjectID,
-		&invitation.Email,
-		pq.Array(&invitation.Permissions),
-	)
-	if err != nil {
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			return nil, ErrRecordNotFound
-		default:
-			return nil, err
+		_, err = tx.Exec(query2, user.ID, invitation.ProjectID)
+		if err != nil {
+			return err
 		}
 	}
 
-	return &invitation, nil
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
 }
