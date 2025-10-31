@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS projects (
     neighborhood TEXT,
     street TEXT,
     number TEXT,
-    phase TEXT NOT NULL
+    phase TEXT NOT NULL,
+    description TEXT
 );
 
 CREATE INDEX IF NOT EXISTS projects_name_idx ON projects USING GIN (to_tsvector('simple', name));

@@ -10,6 +10,7 @@ import (
 
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 var (
@@ -24,11 +25,11 @@ var (
 )
 
 type ProjectUnit struct {
-	ID           uuid.UUID              `json:"id"`
-	Name         string                 `json:"name"`
-	Type         string                 `json:"type"`
+	ID           uuid.UUID               `json:"id"`
+	Name         string                  `json:"name"`
+	Type         string                  `json:"type"`
 	Consumptions map[string]*Consumption `json:"consumptions,omitempty"`
-	Area         float64                `json:"area"`
+	Area         float64                 `json:"area"`
 }
 
 type Project struct {
@@ -42,13 +43,14 @@ type Project struct {
 	Street       *string   `json:"street,omitzero"`
 	Number       *string   `json:"number,omitzero"`
 	Phase        string    `json:"phase"`
+	Description  *string   `json:"description"`
 }
 
 type ProjectsWithUnits struct {
 	Project
-	Units       []ProjectUnit `json:"units,omitempty"`
-	Consumption *Consumption  `json:"consumption,omitempty"`
-	Area        float64       `json:"area,omitempty"`
+	Units        []ProjectUnit           `json:"units,omitempty"`
+	Consumptions map[string]*Consumption `json:"consumption,omitempty"`
+	Area         float64                 `json:"area,omitempty"`
 }
 
 func ValidateProject(v *validator.Validator, project *Project) {
@@ -83,6 +85,11 @@ func ValidateProject(v *validator.Validator, project *Project) {
 
 	v.Check(project.Phase != "", "phase", "must be provided")
 	v.Check(validator.PermittedValue(project.Phase, phases...), "phase", fmt.Sprintf("must be a valid phase (allowed: %s)", strings.Join(phases, ", ")))
+
+	if project.Description != nil {
+		v.Check(*project.Description != "", "description", "empty description is not allowed")
+		v.Check(len(*project.Description) <= 500, "description", "must not be more than 500 bytes long")
+	}
 }
 
 type ProjectModel struct {
@@ -114,12 +121,12 @@ func (m ProjectModel) Insert(project *Project, userID uuid.UUID) error {
 	defer tx.Rollback()
 
 	query1 := `
-		INSERT INTO projects (id, name, cep, state, city, neighborhood, street, number, phase)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO projects (id, name, cep, state, city, neighborhood, street, number, phase, description)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING created_at`
 
 	args := []any{project.ID, project.Name, project.CEP, project.State, project.City, project.Neighborhood,
-		project.Street, project.Number, project.Phase}
+		project.Street, project.Number, project.Phase, project.Description}
 
 	err = tx.QueryRow(query1, args...).Scan(&project.CreatedAt)
 	if err != nil {
@@ -205,7 +212,7 @@ func (m ProjectModel) Insert(project *Project, userID uuid.UUID) error {
 
 func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectsWithUnits, error) {
 	query := `
-		SELECT id, created_at, name, cep, state, city, neighborhood, street, number, phase
+		SELECT id, created_at, name, cep, state, city, neighborhood, street, number, phase, description
 		FROM projects
 		WHERE id = $1`
 
@@ -225,6 +232,7 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectsWithUnits, error) {
 		&project.Street,
 		&project.Number,
 		&project.Phase,
+		&project.Description,
 	)
 	if err != nil {
 		switch {
@@ -349,8 +357,8 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectsWithUnits, error) {
 func (m ProjectModel) Update(project *Project) error {
 	query := `
 		UPDATE projects
-		SET name = $1, cep = $2, state = $3, city = $4, neighborhood = $5, street = $6, number = $7, phase = $8
-		WHERE id = $9`
+		SET name = $1, cep = $2, state = $3, city = $4, neighborhood = $5, street = $6, number = $7, phase = $8, description = $9
+		WHERE id = $10`
 
 	args := []any{
 		project.Name,
@@ -361,6 +369,7 @@ func (m ProjectModel) Update(project *Project) error {
 		project.Street,
 		project.Number,
 		project.Phase,
+		project.Description,
 		project.ID,
 	}
 
@@ -412,25 +421,11 @@ func (m ProjectModel) Delete(projectID uuid.UUID) error {
 
 func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]*ProjectsWithUnits, Metadata, error) {
 	query := fmt.Sprintf(`
-		WITH project_consumption AS (
-			SELECT
-				u.project_id,
-				SUM(f.co2_min * f.area) / SUM(f.area) as co2_min,
-				SUM(f.co2_max * f.area) / SUM(f.area) as co2_max,
-				SUM(f.energy_min * f.area) / SUM(f.area) as energy_min,
-				SUM(f.energy_max * f.area) / SUM(f.area) as energy_max,
-				SUM(f.area) as area
-			FROM floor f
-			INNER JOIN floor_group fg ON f.group_id = fg.id
-			INNER JOIN units u ON fg.tower_id = u.id
-			GROUP BY u.project_id
-		)
  		SELECT COUNT(*) OVER(), p.id, p.created_at, p.name,
-		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase,
+		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description,
 		COALESCE(pc.co2_min, 0), COALESCE(pc.co2_max, 0), COALESCE(pc.energy_min, 0), COALESCE(pc.energy_max, 0), COALESCE(pc.area, 0)
  		FROM projects p
 		INNER JOIN users_projects up ON up.project_id = p.id
-		LEFT JOIN project_consumption pc ON p.id = pc.project_id
  		WHERE (to_tsvector('simple', p.name) @@ plainto_tsquery('simple', $1) OR $1 = '')
 		AND up.user_id = $2
  		ORDER BY %s %s, p.id DESC
@@ -449,10 +444,11 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 
 	totalRecords := 0
 	projects := []*ProjectsWithUnits{}
+	projectIDs := []uuid.UUID{}
+	projectsMap := make(map[uuid.UUID]*ProjectsWithUnits)
 
 	for rows.Next() {
 		var project ProjectsWithUnits
-		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
 
 		err := rows.Scan(
 			&totalRecords,
@@ -466,11 +462,7 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 			&project.Street,
 			&project.Number,
 			&project.Phase,
-			&co2Min,
-			&co2Max,
-			&energyMin,
-			&energyMax,
-			&project.Area,
+			&project.Description,
 		)
 		if err != nil {
 			return nil, Metadata{}, err
