@@ -156,6 +156,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   const [brushSelectionCount, setBrushSelectionCount] = useState<number>(0);
   const brushSelectionCountRef = useRef<number>(0);
   const [hasZoomed, setHasZoomed] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
 
   // Inicializar o contador com o total de dados
   useEffect(() => {
@@ -164,13 +165,12 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   }, [data.length]);
 
   // Função auxiliar para atualizar o contador
-  const updateBrushCount = (count: number) => {
+  const updateBrushCount = useCallback((count: number) => {
     brushSelectionCountRef.current = count;
     setBrushSelectionCount(count);
-  };
+  }, []);
 
   const minLessDataValue = useMemo(() => Math.min(...minData), [minData]);
-  const minMaxDataValue = useMemo(() => Math.min(...maxData), [maxData]);
   const maxLessDataValue = useMemo(() => Math.max(...minData), [minData]);
   const maxMaxDataValue = useMemo(() => Math.max(...maxData), [maxData]);
   const hasLessValue = totalProjects > 0 ? parseFloat((minData[0] || 0).toFixed(2)) < minLessDataValue : false;
@@ -193,10 +193,11 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     [data]
   );
 
-  const xScale = useMemo(() =>
-    d3.scaleLinear().domain([0, maxValue]).range([0, _width]),
-    [maxValue, _width]
-  );
+  const xScale = useMemo(() => {
+    // Ensure we have a valid width before creating the scale
+    const width = _width > 0 ? _width : 400; // fallback width
+    return d3.scaleLinear().domain([0, maxValue]).range([0, width]);
+  }, [maxValue, _width]);
 
   const yScale = useMemo(() => {
     // Y values are normalized between 0 and 1
@@ -221,7 +222,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         label: selectedBars?.includes(d.id) ? d.label : undefined,
       },
     });
-  }, [getTooltipPosition, selectedBars]);
+  }, [getTooltipPosition]); // Removed selectedBars dependency to prevent re-renders
 
   const handleMouseMove = useCallback((event: any, d: ChartData) => {
     const position = getTooltipPosition(event, svgRef);
@@ -233,29 +234,25 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         label: selectedBars?.includes(d.id) ? d.label : undefined,
       },
     });
-  }, [getTooltipPosition, selectedBars]);
+  }, [getTooltipPosition]); // Removed selectedBars dependency to prevent re-renders
 
   const handleMouseOut = useCallback(() => {
     setTooltip(null);
   }, []);
 
   // Resize handler - Debounced leve
-  const debouncedResize = useMemo(
-    () => debounce(() => setIsResized((prev) => prev + 1), 50),
-    []
-  );
-
-
   const debouncedResizeRef = useMemo(() => debounce(() => {
     if (!svgRef.current) return;
 
     const parent = svgRef.current.parentElement;
     if (!parent) return;
 
+    // Only update width attribute, don't trigger chart recreation
     svgRef.current.setAttribute("width", (parent.clientWidth + margin.left + margin.right).toString());
-    // svgRef.current.setAttribute("height", (parent.clientHeight + margin.top + margin.bottom).toString());
-    setIsResized((prev) => prev + 1);
-  }, 50), [svgRef]);
+
+    // Update internal width state without triggering full re-render
+    // This preserves zoom state and other interactions
+  }, 50), [svgRef, margin]);
 
   useEffect(() => {
     window.addEventListener("resize", debouncedResizeRef);
@@ -266,18 +263,61 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   useEffect(() => {
     if (!svgRef.current?.parentElement) return;
 
+    let resizeTimer: NodeJS.Timeout;
+    let isInitialized = false;
+
     const resizeObserver = new ResizeObserver(() => {
-      debouncedResizeRef();
+      // Skip the first resize event to avoid immediate re-render on mount
+      if (!isInitialized) {
+        isInitialized = true;
+        return;
+      }
+
+      // Clear previous timer
+      clearTimeout(resizeTimer);
+
+      // Debounce the resize to avoid excessive updates
+      resizeTimer = setTimeout(() => {
+        if (!svgRef.current) return;
+
+        const parent = svgRef.current.parentElement;
+        if (!parent) return;
+
+        const newWidth = parent.clientWidth + margin.left + margin.right;
+        const currentWidth = svgRef.current.getAttribute("width");
+
+        // Only update if there's a significant change in width (> 20px to be more conservative)
+        if (Math.abs(newWidth - parseFloat(currentWidth || "0")) > 20) {
+          setIsResizing(true);
+          svgRef.current.setAttribute("width", newWidth.toString());
+
+          // Check if we're in the middle of a zoom interaction
+          const svg = d3.select(svgRef.current);
+          const currentTransform = d3.zoomTransform(svg.node() as any);
+
+          // Only re-render if not zoomed and not during interaction
+          if (!currentTransform || (currentTransform.k === 1 && currentTransform.x === 0 && currentTransform.y === 0)) {
+            // Update clipping path width (should use internal width, not total width)
+            svg.select("#clip rect")
+              .attr("width", parent.clientWidth);
+
+            // Trigger controlled re-render only when safe
+            setIsResized((prev) => prev + 1);
+          }
+
+          // Clear resizing flag after a delay
+          setTimeout(() => setIsResizing(false), 300);
+        }
+      }, 200); // Increased debounce time
     });
 
     resizeObserver.observe(svgRef.current.parentElement);
 
     return () => {
+      clearTimeout(resizeTimer);
       resizeObserver.disconnect();
     };
-  }, [debouncedResizeRef]);
-
-  // Main chart effect
+  }, [margin]);  // Main chart effect
   useEffect(() => {
     if (!svgRef.current) return;
 
@@ -287,7 +327,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     // Create SVG
     const svg = d3
       .select(svgRef.current)
-      // .attr("width", _width + margin.left + margin.right + 20)
+      .attr("width", _width + margin.left + margin.right)
       .attr("height", _height + margin.top + margin.bottom);
 
     // Main group
@@ -343,7 +383,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     g.append("g")
       .attr("class", "axis-x")
       .attr("transform", `translate(0,${_height})`)
-      .call(d3.axisBottom(xScale).ticks(10))
+      .call(d3.axisBottom(xScale).ticks(Math.min(10, Math.floor(_width / 60))))
       .selectAll("text")
       .style("font-size", "12px")
       .style("fill", DEFAULT_COLORS.TEXT)
@@ -450,6 +490,9 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
     // Função de zoom - responsiva e imediata
     function zoomed(event: any) {
+      // Skip zoom during resize operations
+      if (isResizing) return;
+
       const transform = event.transform;
 
       // Criar novas escalas baseadas no transform
@@ -458,7 +501,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
       // Atualizar eixos imediatamente
       g.select<SVGGElement>(".axis-x")
-        .call(d3.axisBottom(newXScale).ticks(10) as any);
+        .call(d3.axisBottom(newXScale).ticks(Math.min(15, Math.floor(_width / 60))) as any);
 
       g.select<SVGGElement>(".axis-y")
         .call(d3.axisLeft(newYScale).ticks(8) as any);
@@ -497,6 +540,10 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     });
 
     function updateElementsPosition(newXScale = xScale, newYScale = yScale) {
+      // Get chartArea reference
+      const chartArea = g.select("g[clip-path='url(#clip)']");
+      if (chartArea.empty()) return;
+
       // Update all circles - simplificado e direto
       (data || []).forEach((d, i) => {
         const x1 = newXScale(d.min);
@@ -610,7 +657,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     return () => {
       // Nenhum cleanup necessário
     };
-  }, [isExpanded, data, isResized, _width, _height, margin, xScale, yScale, colorScale, handleMouseOver, handleMouseMove, handleMouseOut, updateBrushCount]);
+  }, [isExpanded, data, isResized, _width, _height, margin, xScale, yScale, colorScale, updateBrushCount]);
 
   // Selected bars effect
   useEffect(() => {

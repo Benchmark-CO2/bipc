@@ -323,10 +323,11 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     const parent = svgRef.current.parentElement;
     if (!parent) return;
 
+    // Only update width attribute, don't trigger chart recreation
     svgRef.current.setAttribute("width", (parent.clientWidth + margin.left + margin.right).toString());
-    // svgRef.current.setAttribute("height", (parent.clientHeight + margin.top + margin.bottom).toString());
-    setIsResized((prev) => prev + 1);
-  }, 50), [svgRef]);
+
+    // Don't trigger setIsResized to preserve zoom state and interactions
+  }, 50), [svgRef, margin]);
 
   useEffect(() => {
     window.addEventListener("resize", debouncedResizeRef);
@@ -337,18 +338,53 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   useEffect(() => {
     if (!svgRef.current?.parentElement) return;
 
+    let resizeTimer: NodeJS.Timeout;
+    let isInitialized = false;
+
     const resizeObserver = new ResizeObserver(() => {
-      debouncedResizeRef();
+      // Skip the first resize event to avoid immediate re-render on mount
+      if (!isInitialized) {
+        isInitialized = true;
+        return;
+      }
+
+      // Clear previous timer
+      clearTimeout(resizeTimer);
+
+      // Debounce the resize to avoid excessive updates
+      resizeTimer = setTimeout(() => {
+        if (!svgRef.current) return;
+
+        const parent = svgRef.current.parentElement;
+        if (!parent) return;
+
+        const newWidth = parent.clientWidth + margin.left + margin.right;
+        const currentWidth = svgRef.current.getAttribute("width");
+
+        // Only update if there's a significant change in width (> 20px to be more conservative)
+        if (Math.abs(newWidth - parseFloat(currentWidth || "0")) > 20) {
+          svgRef.current.setAttribute("width", newWidth.toString());
+
+          // Check if we're in the middle of a zoom interaction
+          const svg = d3.select(svgRef.current);
+          const currentTransform = d3.zoomTransform(svg.node() as any);
+
+          // Only re-render if not zoomed and not during interaction
+          if (!currentTransform || (currentTransform.k === 1 && currentTransform.x === 0 && currentTransform.y === 0)) {
+            // Trigger controlled re-render only when safe
+            setIsResized((prev) => prev + 1);
+          }
+        }
+      }, 200); // Increased debounce time
     });
 
     resizeObserver.observe(svgRef.current.parentElement);
 
     return () => {
+      clearTimeout(resizeTimer);
       resizeObserver.disconnect();
     };
-  }, [debouncedResizeRef]);
-
-  // Main chart effect
+  }, [margin]);  // Main chart effect
   useEffect(() => {
     if (!svgRef.current) return;
 
@@ -358,7 +394,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     // Create SVG
     const svg = d3
       .select(svgRef.current)
-      // .attr("width", _width + margin.left + margin.right + 20)
+      .attr("width", _width + margin.left + margin.right)
       .attr("height", _height + margin.top + margin.bottom);
 
     // Main group
@@ -658,7 +694,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
             position={isMobile ? 'center' : 'end'}
             hasZoomed={false}
           />
-          <svg ref={svgRef} className="bg-white dark:bg-zinc-900 w-full h-full" />
+          <svg ref={svgRef} className="bg-white dark:bg-zinc-900 w-full" />
           <Indicators
             min={minValue}
             max={maxValue}
