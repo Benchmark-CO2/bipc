@@ -6,9 +6,10 @@ import (
 )
 
 var (
-	ErrRecordNotFound       = errors.New("record not found")
-	ErrEditConflict         = errors.New("edit conflict")
-	ErrNoRowsDeleted        = errors.New("no rows were deleted")
+	ErrRecordNotFound = errors.New("record not found")
+	ErrEditConflict   = errors.New("edit conflict")
+	ErrNoRowsDeleted  = errors.New("no rows deleted")
+
 	ErrInvalidTowerOptionID = errors.New("tower_option_id does not exist or is invalid")
 	ErrInvalidFloorID       = errors.New("one or more floor_ids are invalid or do not exist")
 	ErrInvalidUnitID        = errors.New("unit_id does not exist or is invalid")
@@ -18,7 +19,7 @@ var (
 type Models struct {
 	Users               UserModel
 	Tokens              TokenModel
-	Permissions         PermissionModel
+	Roles               RoleModel
 	Projects            ProjectModel
 	Units               UnitModel
 	TowerOptions        TowerOptionModel
@@ -32,7 +33,7 @@ func NewModels(db *sql.DB) Models {
 	return Models{
 		Users:               UserModel{DB: db},
 		Tokens:              TokenModel{DB: db},
-		Permissions:         PermissionModel{DB: db},
+		Roles:               RoleModel{DB: db},
 		Projects:            ProjectModel{DB: db},
 		Units:               UnitModel{DB: db},
 		TowerOptions:        TowerOptionModel{DB: db},

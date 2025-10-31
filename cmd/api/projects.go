@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"slices"
 	"strings"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
@@ -23,8 +22,6 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 		Street       *string `json:"street"`
 		Number       *string `json:"number"`
 		Phase        string  `json:"phase"`
-		Description  *string `json:"description"`
-		ImageID      *string `json:"image_id"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -34,7 +31,6 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	project := &data.Project{
-		UserID:       user.ID,
 		Name:         input.Name,
 		CEP:          input.CEP,
 		State:        strings.ToUpper(input.State),
@@ -43,8 +39,6 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 		Street:       input.Street,
 		Number:       input.Number,
 		Phase:        input.Phase,
-		Description:  input.Description,
-		ImageID:      input.ImageID,
 	}
 
 	v := validator.New()
@@ -54,11 +48,32 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err = app.models.Projects.Insert(project)
+	err = app.models.Projects.Insert(project, user.ID)
 	if err != nil {
 		switch {
-		case errors.Is(err, data.ErrDuplicateProjectName):
-			v.AddError("name", "you already have a project with this name")
+		case errors.Is(err, data.ErrInvalidProjectID):
+			v.AddError("projects(id)", "the provided projectID does not exist")
+			app.failedValidationResponse(w, r, v.Errors)
+		case errors.Is(err, data.ErrInvalidUserID):
+			v.AddError("users(id)", "the provided userID does not exist")
+			app.failedValidationResponse(w, r, v.Errors)
+		case errors.Is(err, data.ErrDuplicateUserProject):
+			v.AddError("users_projects", "user is already associated with the project")
+			app.failedValidationResponse(w, r, v.Errors)
+		case errors.Is(err, data.ErrDuplicateRoleName):
+			v.AddError("roles(name)", "you already have a role with this name")
+			app.failedValidationResponse(w, r, v.Errors)
+		case errors.Is(err, data.ErrInvalidPermissionID):
+			v.AddError("permissions(id)", "the provided permissionID does not exist")
+			app.failedValidationResponse(w, r, v.Errors)
+		case errors.Is(err, data.ErrInvalidRoleID):
+			v.AddError("roles(id)", "the provided roleID does not exist")
+			app.failedValidationResponse(w, r, v.Errors)
+		case errors.Is(err, data.ErrDuplicateRolePermission):
+			v.AddError("roles_permissions", "role already has permission associated")
+			app.failedValidationResponse(w, r, v.Errors)
+		case errors.Is(err, data.ErrDuplicateUserRole):
+			v.AddError("users_roles", "user already has role associated")
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -99,7 +114,7 @@ func (app *application) showProjectHandler(w http.ResponseWriter, r *http.Reques
 func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Request) {
 	projectID, _ := app.readUUIDParam(r, "projectID")
 
-	project, err := app.models.Projects.GetByID(projectID)
+	projectWithUnits, err := app.models.Projects.GetByID(projectID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -110,6 +125,8 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	project := &projectWithUnits.Project
+
 	var input struct {
 		Name         *string `json:"name"`
 		CEP          *string `json:"cep"`
@@ -119,8 +136,6 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 		Street       *string `json:"street"`
 		Number       *string `json:"number"`
 		Phase        *string `json:"phase"`
-		Description  *string `json:"description"`
-		ImageID      *string `json:"image_id"`
 	}
 
 	err = app.readJSON(w, r, &input)
@@ -161,14 +176,6 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 		project.Phase = *input.Phase
 	}
 
-	if input.Description != nil {
-		project.Description = input.Description
-	}
-
-	if input.ImageID != nil {
-		project.ImageID = input.ImageID
-	}
-
 	v := validator.New()
 
 	if data.ValidateProject(v, project); !v.Valid() {
@@ -179,9 +186,6 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 	err = app.models.Projects.Update(project)
 	if err != nil {
 		switch {
-		case errors.Is(err, data.ErrDuplicateProjectName):
-			v.AddError("name", "you already have a project with this name")
-			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrEditConflict):
 			app.editConflictResponse(w, r)
 		default:
@@ -228,16 +232,15 @@ func (app *application) listProjectsHandler(w http.ResponseWriter, r *http.Reque
 	input.Filters.Page = app.readInt(qs, "page", 1, v)
 	input.Filters.PageSize = app.readInt(qs, "page_size", 10, v)
 	input.Filters.Sort = app.readString(qs, "sort", "-id")
-	input.Filters.SortSafelist = []string{"id",
+	input.Filters.SortSafelist = []string{
+		"id",
 		"created_at",
-		"updated_at",
 		"name",
 		"state",
 		"city",
 		"phase",
 		"-id",
 		"-created_at",
-		"-updated_at",
 		"-name",
 		"-state",
 		"-city",
@@ -256,96 +259,6 @@ func (app *application) listProjectsHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"projects": projects, "metadata": metadata}, nil)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-	}
-}
-
-func (app *application) inviteUserHandler(w http.ResponseWriter, r *http.Request) {
-	user := app.contextGetUser(r)
-	projectID, _ := app.readUUIDParam(r, "projectID")
-
-	var input struct {
-		Email       string   `json:"email"`
-		Permissions []string `json:"permissions"`
-	}
-
-	err := app.readJSON(w, r, &input)
-	if err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
-	input.Permissions = slices.DeleteFunc(input.Permissions, func(s string) bool {
-		return s == "project:owner"
-	})
-
-	v := validator.New()
-
-	if data.ValidateEmail(v, input.Email); !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
-		return
-	}
-
-	user_invited, err := app.models.Users.GetByEmail(input.Email)
-	if err != nil && !errors.Is(err, data.ErrRecordNotFound) {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
-	if user_invited != nil {
-		permissions, err := app.models.Permissions.GetAllForUser(user_invited.ID, projectID)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
-		}
-
-		if len(permissions) > 0 {
-			v.AddError("email", "this user is already a member of the project")
-			app.failedValidationResponse(w, r, v.Errors)
-			return
-		}
-	}
-
-	invitation := &data.Invitation{
-		InviterID:   user.ID,
-		ProjectID:   projectID,
-		Email:       input.Email,
-		Permissions: input.Permissions,
-	}
-
-	err = app.models.Invitations.Insert(invitation)
-	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrDuplicatePendingInvitation):
-			v.AddError("email", "a pending invitation already exists for this email in this project")
-			app.failedValidationResponse(w, r, v.Errors)
-		default:
-			app.serverErrorResponse(w, r, err)
-		}
-		return
-	}
-
-	app.background(func() {
-		project, err := app.models.Projects.GetByID(projectID)
-		if err != nil {
-			app.logger.Error(err.Error())
-			return
-		}
-
-		data := map[string]any{
-			"projectName": project.Name,
-			"inviterName": user.Name,
-			"url":         app.config.url,
-		}
-
-		err = app.mailer.Send(input.Email, "invitation.gohtml", data)
-		if err != nil {
-			app.logger.Error(err.Error())
-		}
-	})
-
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "invitation sent successfully"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

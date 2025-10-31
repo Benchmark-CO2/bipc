@@ -19,29 +19,10 @@ func (app *application) readUUIDParam(r *http.Request, name string) (uuid.UUID, 
 	params := httprouter.ParamsFromContext(r.Context())
 
 	raw := params.ByName(name)
-	if raw == "" {
-		return uuid.Nil, fmt.Errorf("required path parameter %q is missing from the request URL", name)
-	}
 
 	id, err := uuid.Parse(raw)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("invalid %q parameter", name)
-	}
-
-	return id, nil
-}
-
-func (app *application) readIDParam(r *http.Request, name string) (int64, error) {
-	params := httprouter.ParamsFromContext(r.Context())
-
-	raw := params.ByName(name)
-	if raw == "" {
-		return 0, fmt.Errorf("required path parameter %q is missing from the request URL", name)
-	}
-
-	id, err := strconv.ParseInt(raw, 10, 64)
-	if err != nil || id < 1 {
-		return 0, fmt.Errorf("invalid %q parameter", name)
+		return uuid.Nil, fmt.Errorf("invalid %q parameter: %w", name, err)
 	}
 
 	return id, nil

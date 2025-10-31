@@ -1,8 +1,6 @@
 CREATE TABLE IF NOT EXISTS projects (
     id UUID PRIMARY KEY,
     created_at TIMESTAMPTZ(0) NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    updated_at TIMESTAMPTZ(0) NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name citext NOT NULL,
     cep TEXT,
     state TEXT NOT NULL,
@@ -10,10 +8,13 @@ CREATE TABLE IF NOT EXISTS projects (
     neighborhood TEXT,
     street TEXT,
     number TEXT,
-    phase TEXT NOT NULL,
-    description TEXT,
-    image_id UUID,
-    UNIQUE (user_id, name)
+    phase TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS projects_name_idx ON projects USING GIN (to_tsvector('simple', name));
+
+CREATE TABLE IF NOT EXISTS users_projects (
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, project_id)
+);

@@ -117,7 +117,7 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 
 func (app *application) commonHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://brasilapi.com.br; img-src 'self' data:")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://brasilapi.com.br; img-src 'self'")
 		w.Header().Set("Referrer-Policy", "origin-when-cross-origin")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "deny")
@@ -306,24 +306,19 @@ func (app *application) requirePermission(code string, next http.HandlerFunc) ht
 
 		projectID, err := app.readUUIDParam(r, "projectID")
 		if err != nil {
-			switch {
-			case strings.HasPrefix(err.Error(), "required path parameter"):
-				app.badRequestResponse(w, r, err)
-			default:
-				v := validator.New()
-				v.AddError("url", err.Error())
-				app.failedValidationResponse(w, r, v.Errors)
-			}
+			v := validator.New()
+			v.AddError("url", err.Error())
+			app.failedValidationResponse(w, r, v.Errors)
 			return
 		}
 
-		permissions, err := app.models.Permissions.GetAllForUser(user.ID, projectID)
+		permissions, err := app.models.Roles.GetAllForUser(user.ID, projectID)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return
 		}
 
-		if !permissions.Include(code) {
+		if !permissions {
 			app.notPermittedResponse(w, r)
 			return
 		}
