@@ -23,11 +23,28 @@ export const stackData = <T extends IProject>(item: T[], data: IBenchmarkRespons
     .filter(Boolean);
 };
 
-export const barColors = [
-  "#FFE8A3",
-  "#F4AFEE",
-  "#B2F4AF",
-  "bg-blue-500",
-  "bg-purple-500",
-  "bg-red-500",
-];
+export const barColors = "#FFE8A3";
+
+export function recalculateY(points: {
+  min: number, 
+  max: number,
+  id: string
+}[], xMin: number, xMax: number): any[] {
+  // Filtrar pontos que estão visíveis (com overlap no range)
+  // const filtered = points.filter(p => {
+  //   // Incluir pontos que têm qualquer overlap com o range visível
+  //   return p.max >= xMin && p.min <= xMax;
+  // });
+
+  // if (filtered.length === 0) return points;
+
+  // Ordenar por min para ter uma distribuição consistente
+  const sorted = [...points].sort((a, b) => a.min - b.min);
+
+  // Distribuir uniformemente entre 0 e 1
+  // Usar (idx + 0.5) / length para centralizar os pontos
+  return sorted.map((p, idx) => ({
+    ...p,
+    y: (idx + 0.5) / sorted.length
+  }));
+}

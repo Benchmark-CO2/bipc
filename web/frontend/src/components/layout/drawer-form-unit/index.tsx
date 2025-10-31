@@ -203,20 +203,24 @@ const DrawerFormUnit = ({
             </Form>
           )}
         </>
-        <DrawerFooter className="px-8">
+        <DrawerFooter className="px-8 flex gap-2 justify-end flex-row">
           {!Boolean(unitId) && (
-            <Button
-              type="submit"
-              variant="bipc"
-              className="w-full"
-              form="unit-form"
-              disabled={isCreationPending || isCreationSuccess}
-            >
-              {t("drawerFormUnit.addUnitButton")}
-              {isCreationPending && (
-                <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
-              )}
-            </Button>
+            <>
+              <Button variant="outline-bipc" form="unit-form" disabled={true}>
+                Importar do IFC
+              </Button>
+              <Button
+                type="submit"
+                variant="bipc"
+                form="unit-form"
+                disabled={isCreationPending || isCreationSuccess}
+              >
+                {t("drawerFormUnit.addUnitButton")}
+                {isCreationPending && (
+                  <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                )}
+              </Button>
+            </>
           )}
           {Boolean(unitId) && (
             <Button
@@ -224,7 +228,7 @@ const DrawerFormUnit = ({
               variant="bipc"
               className="w-full"
               form="unit-form"
-              disabled={isUpdatePending}
+              disabled={true}
             >
               {t("drawerFormUnit.editUnitButton")}
               {isUpdatePending && (

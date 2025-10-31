@@ -1,5 +1,5 @@
-import api from '@/service/api';
+import api from "@/service/api";
 
-export const postSendInvite = async (projectId: string, email: string, permissions: string[]) => {
-  return api.post(`/v1/projects/${projectId}/invite`, { email, permissions })
-}
+export const postSendInvite = async (projectId: string, email: string) => {
+  return api.post(`/v1/projects/${projectId}/invite`, { email });
+};

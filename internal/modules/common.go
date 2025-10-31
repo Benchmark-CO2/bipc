@@ -21,8 +21,8 @@ type ConcreteVolumeItem struct {
 }
 
 type ConcreteElement struct {
-	Volumes []ConcreteVolumeItem `json:"volumes"`
-	Steel   []SteelMassItem      `json:"steel"`
+	Volumes []ConcreteVolumeItem `json:"volumes,omitempty"`
+	Steel   []SteelMassItem      `json:"steel,omitempty"`
 }
 
 type BasicModuleData struct {
@@ -49,6 +49,8 @@ func ParseModuleType(t string) (Module, error) {
 		return &BeamColumn{BasicModuleData: BasicModuleData{Type: t}}, nil
 	case "concrete_wall":
 		return &ConcreteWall{BasicModuleData: BasicModuleData{Type: t}}, nil
+	case "structural_masonry":
+		return &StructuralMasonry{BasicModuleData: BasicModuleData{Type: t}}, nil
 	default:
 		return nil, errors.New("invalid module type")
 	}
@@ -90,48 +92,10 @@ func validateConcreteElement(v *validator.Validator, el ConcreteElement, fieldPr
 	v.Check(len(el.Steel) > 0, fieldPrefix+".steel", "must have at least one item")
 }
 
-type SidacValue struct {
-	Min float64 `json:"min"`
-	Max float64 `json:"max"`
-}
-
-type SidacMaterial struct {
-	KgCO2 map[int]SidacValue `json:"kgCO2"`
-	MJ    map[int]SidacValue `json:"MJ"`
-}
-
-var sidacConcreteData = SidacMaterial{
-	KgCO2: map[int]SidacValue{
-		20: {Min: 168.8, Max: 283.5},
-		25: {Min: 200.0, Max: 306.4},
-		30: {Min: 228.2, Max: 339.4},
-		35: {Min: 256.6, Max: 373.6},
-		40: {Min: 283.4, Max: 395.5},
-	},
-	MJ: map[int]SidacValue{
-		20: {Min: 1325, Max: 2244},
-		25: {Min: 1488, Max: 2408},
-		30: {Min: 1650, Max: 2629},
-		35: {Min: 1797, Max: 2849},
-		40: {Min: 1928, Max: 3002},
-	},
-}
-
-var sidacSteelData = SidacMaterial{
-	KgCO2: map[int]SidacValue{
-		50: {Min: 0.4259, Max: 1.061},
-		60: {Min: 0.5, Max: 1.1},
-	},
-	MJ: map[int]SidacValue{
-		50: {Min: 8.025, Max: 16.05},
-		60: {Min: 8.1, Max: 16.1},
-	},
-}
-
 func (ce *ConcreteElement) calculate(sidacConcrete, sidacSteel SidacMaterial) (Consumption, error) {
 	var result Consumption
 	for _, c := range ce.Volumes {
-		val, ok := sidacConcrete.KgCO2[c.Fck]
+		val, ok := sidacConcrete.KgCO2[float64(c.Fck)]
 		if !ok {
 			// return result, fmt.Errorf("fck not found in sidacConcreteData: %d", c.Fck)
 			val = sidacConcrete.KgCO2[40]
@@ -139,7 +103,7 @@ func (ce *ConcreteElement) calculate(sidacConcrete, sidacSteel SidacMaterial) (C
 		result.CO2Min += val.Min * c.Volume
 		result.CO2Max += val.Max * c.Volume
 
-		val, ok = sidacConcrete.MJ[c.Fck]
+		val, ok = sidacConcrete.MJ[float64(c.Fck)]
 		if !ok {
 			// return result, fmt.Errorf("fck not found in sidacConcreteData: %d", c.Fck)
 			val = sidacConcrete.MJ[40]
@@ -149,7 +113,7 @@ func (ce *ConcreteElement) calculate(sidacConcrete, sidacSteel SidacMaterial) (C
 	}
 
 	for _, s := range ce.Steel {
-		val, ok := sidacSteel.KgCO2[s.CA]
+		val, ok := sidacSteel.KgCO2[float64(s.CA)]
 		if !ok {
 			val = sidacSteel.KgCO2[60]
 			// return result, fmt.Errorf("steel type not found in sidacSteelData: %d", s.CA)
@@ -157,7 +121,7 @@ func (ce *ConcreteElement) calculate(sidacConcrete, sidacSteel SidacMaterial) (C
 		result.CO2Min += val.Min * s.Mass
 		result.CO2Max += val.Max * s.Mass
 
-		val, ok = sidacSteel.MJ[s.CA]
+		val, ok = sidacSteel.MJ[float64(s.CA)]
 		if !ok {
 			val = sidacSteel.MJ[60]
 			// return result, fmt.Errorf("steel type not found in sidacSteelData: %d", s.CA)
@@ -189,6 +153,7 @@ func toDataConcrete(el ConcreteElement) data.Concrete {
 		Steel:   steels,
 	}
 }
+
 
 func addConcreteElement(total *Consumption, ce ConcreteElement, sidacConcrete, sidacSteel SidacMaterial) error {
 	result, err := ce.calculate(sidacConcrete, sidacSteel)

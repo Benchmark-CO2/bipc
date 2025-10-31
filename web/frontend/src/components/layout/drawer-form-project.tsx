@@ -77,7 +77,6 @@ export default function DrawerFormProject({
       phase: projectData?.phase || "not_defined",
       street: projectData?.street || "",
       number: projectData?.number || "",
-      image_url: undefined,
     },
   });
 
@@ -144,6 +143,9 @@ export default function DrawerFormProject({
       });
       queryClient.invalidateQueries({
         queryKey: ["projects"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project", projectData!.id],
       });
       setOpenDrawer(false);
       form.reset();
@@ -242,7 +244,6 @@ export default function DrawerFormProject({
           phase: projectData.phase || "not_defined",
           street: projectData.street || "",
           number: projectData.number || "",
-          image_url: undefined,
         });
       } else {
         form.reset({
@@ -255,7 +256,6 @@ export default function DrawerFormProject({
           phase: "not_defined",
           street: "",
           number: "",
-          image_url: undefined,
         });
       }
     }
@@ -312,246 +312,227 @@ export default function DrawerFormProject({
             <X className="h-4 w-4" />
           </Button>
         </DrawerHeader>
-        <DrawerDescription className="px-8">
-          {t("drawerFormProject.description")}
-        </DrawerDescription>
         <Form {...form}>
-          <form
-            id="project-form"
-            className="flex max-h-[calc(100vh-100px)] flex-col gap-3 overflow-y-auto p-8"
-            onSubmit={form.handleSubmit(onSubmit)}
-          >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {t("drawerFormProject.projectNameLabel")}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t(
-                        "drawerFormProject.projectNamePlaceholder"
-                      )}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="cep"
-              render={({ field }) => (
-                <FormItem className="flex-1/3">
-                  <FormLabel>{t("drawerFormProject.cepLabel")}</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        placeholder={t("drawerFormProject.cepPlaceholder")}
-                        value={masks.cep((field.value as string) || "")}
-                        onChange={(e) => {
-                          field.onChange(e.target.value);
-                          if (e.target.value.length > 8)
-                            searchCep(e.target.value);
-                        }}
-                      />
-                      {locationLoading && (
-                        <div className="h-4 w-4 animate-spin rounded-full border-1 border-primary border-t-transparent" />
-                      )}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex w-full gap-4">
+          <div className="max-h-[calc(100vh-100px)] overflow-y-auto px-8">
+            <form
+              id="project-form"
+              className="flex flex-col gap-3 rounded-md px-4 py-2 border-gray-shade-200 border bg-card"
+              onSubmit={form.handleSubmit(onSubmit)}
+            >
               <FormField
                 control={form.control}
-                name="state"
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("drawerFormProject.projectNameLabel")}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t(
+                          "drawerFormProject.projectNamePlaceholder"
+                        )}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="cep"
                 render={({ field }) => (
                   <FormItem className="flex-1/3">
-                    <FormLabel>{t("drawerFormProject.stateLabel")}</FormLabel>
+                    <FormLabel>{t("drawerFormProject.cepLabel")}</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder={t("drawerFormProject.statePlaceholder")}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem className="flex-2/3">
-                    <FormLabel>{t("drawerFormProject.cityLabel")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={t("drawerFormProject.cityPlaceholder")}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="neighborhood"
-              render={({ field }) => (
-                <FormItem className="flex-2/3">
-                  <FormLabel>
-                    {t("drawerFormProject.neighborhoodLabel")}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t(
-                        "drawerFormProject.neighborhoodPlaceholder"
-                      )}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex w-full gap-4">
-              <FormField
-                control={form.control}
-                name="street"
-                render={({ field }) => (
-                  <FormItem className="flex-2/3">
-                    <FormLabel>{t("drawerFormProject.streetLabel")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={t("drawerFormProject.streetPlaceholder")}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="number"
-                render={({ field }) => (
-                  <FormItem className="flex-1/3">
-                    <FormLabel>{t("drawerFormProject.numberLabel")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={t("drawerFormProject.numberPlaceholder")}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="phase"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {t("drawerFormProject.projectPhaseLabel")}
-                  </FormLabel>
-                  <FormControl>
-                    <Select
-                      defaultValue=""
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue
-                          placeholder={t(
-                            "drawerFormProject.projectPhasePlaceholder"
-                          )}
+                      <div className="flex items-center gap-2">
+                        <Input
+                          placeholder={t("drawerFormProject.cepPlaceholder")}
+                          value={masks.cep((field.value as string) || "")}
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
+                            if (e.target.value.length > 8)
+                              searchCep(e.target.value);
+                          }}
                         />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="not_defined">
-                          {t("common.projectPhaseOptions.not_defined")}
-                        </SelectItem>
-                        <SelectItem value="preliminary_study">
-                          {t("common.projectPhaseOptions.preliminary_study")}
-                        </SelectItem>
-                        <SelectItem value="basic_project">
-                          {t("common.projectPhaseOptions.basic_project")}
-                        </SelectItem>
-                        <SelectItem value="executive_project">
-                          {t("common.projectPhaseOptions.executive_project")}
-                        </SelectItem>
-                        <SelectItem value="released_for_construction">
-                          {t(
-                            "common.projectPhaseOptions.released_for_construction"
-                          )}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {t("drawerFormProject.descriptionLabel")}
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder={t(
-                        "drawerFormProject.descriptionPlaceholder"
-                      )}
-                      minLength={10}
-                      maxLength={200}
-                      rows={4}
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="image_url"
-              render={({ field: { onChange, ...rest } }) => (
-                <FormItem>
-                  <FormLabel>{t("drawerFormProject.imageLabel")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t("drawerFormProject.imagePlaceholder")}
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          onChange(file);
-                          handleChangeImage(file);
-                        }
-                      }}
-                      {...rest}
-                      value={undefined}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </form>
+                        {locationLoading && (
+                          <div className="h-4 w-4 animate-spin rounded-full border-1 border-primary border-t-transparent" />
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex w-full gap-4">
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem className="flex-1/3">
+                      <FormLabel>{t("drawerFormProject.stateLabel")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t("drawerFormProject.statePlaceholder")}
+                          disabled={locationLoading}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem className="flex-2/3">
+                      <FormLabel>{t("drawerFormProject.cityLabel")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t("drawerFormProject.cityPlaceholder")}
+                          disabled={locationLoading}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={form.control}
+                name="neighborhood"
+                render={({ field }) => (
+                  <FormItem className="flex-2/3">
+                    <FormLabel>
+                      {t("drawerFormProject.neighborhoodLabel")}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t(
+                          "drawerFormProject.neighborhoodPlaceholder"
+                        )}
+                        disabled={locationLoading}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex w-full gap-4">
+                <FormField
+                  control={form.control}
+                  name="street"
+                  render={({ field }) => (
+                    <FormItem className="flex-2/3">
+                      <FormLabel>
+                        {t("drawerFormProject.streetLabel")}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t("drawerFormProject.streetPlaceholder")}
+                          disabled={locationLoading}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="number"
+                  render={({ field }) => (
+                    <FormItem className="flex-1/3">
+                      <FormLabel>
+                        {t("drawerFormProject.numberLabel")}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t("drawerFormProject.numberPlaceholder")}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={form.control}
+                name="phase"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("drawerFormProject.projectPhaseLabel")}
+                    </FormLabel>
+                    <FormControl>
+                      <Select
+                        defaultValue=""
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue
+                            placeholder={t(
+                              "drawerFormProject.projectPhasePlaceholder"
+                            )}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="not_defined">
+                            {t("common.projectPhaseOptions.not_defined")}
+                          </SelectItem>
+                          <SelectItem value="preliminary_study">
+                            {t("common.projectPhaseOptions.preliminary_study")}
+                          </SelectItem>
+                          <SelectItem value="basic_project">
+                            {t("common.projectPhaseOptions.basic_project")}
+                          </SelectItem>
+                          <SelectItem value="executive_project">
+                            {t("common.projectPhaseOptions.executive_project")}
+                          </SelectItem>
+                          <SelectItem value="released_for_construction">
+                            {t(
+                              "common.projectPhaseOptions.released_for_construction"
+                            )}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("drawerFormProject.descriptionLabel")}
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={t(
+                          "drawerFormProject.descriptionPlaceholder"
+                        )}
+                        minLength={10}
+                        maxLength={200}
+                        rows={4}
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </form>
+          </div>
         </Form>
         <DrawerFooter className="px-8 py-4">
           {isEditMode ? (

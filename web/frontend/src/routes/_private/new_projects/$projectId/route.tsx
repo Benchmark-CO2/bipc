@@ -3,7 +3,9 @@
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import CustomBanner from "@/components/ui/customBanner";
 import { IProject } from "@/types/projects";
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Outlet, useParams } from "@tanstack/react-router";
+import { useState } from "react";
 
 export const Route = createFileRoute("/_private/new_projects/$projectId")({
   component: RouteComponent,
@@ -25,22 +27,44 @@ export const Route = createFileRoute("/_private/new_projects/$projectId")({
 
     const project: IProject = projectData?.data?.project;
 
+    const bannerCollapsed =
+      typeof window !== "undefined"
+        ? localStorage.getItem("@banner/collapsed") === "true"
+        : false;
+
     return {
       project,
       crumb: project?.name || "Projeto",
+      bannerCollapsed,
     };
   },
 });
 
 function RouteComponent() {
-  const { project } = Route.useLoaderData();
+  const { projectId } = useParams({
+    from: "/_private/new_projects/$projectId",
+  });
+  const { bannerCollapsed: initialCollapsed } = Route.useLoaderData();
+  const [bannerCollapsed] = useState(initialCollapsed);
+
+  const { data: projectData } = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: () => getProjectByUUID(projectId),
+  });
+
+  const project = projectData?.data?.project as IProject;
 
   const isEditPath = window.location.pathname.includes("edit");
+
+  const summedAreaOfUnits = project?.units?.reduce(
+    (sum, unit) => sum + (unit.area || 0),
+    0
+  );
 
   return (
     <>
       <div className="flex flex-col gap-4">
-        {!isEditPath && (
+        {!isEditPath && project && (
           <CustomBanner
             name={project?.name || ""}
             description={project?.description || ""}
@@ -51,7 +75,11 @@ function RouteComponent() {
             neighborhood={project?.neighborhood}
             street={project?.street}
             number={project?.number}
+            cep={project?.cep}
+            id={project?.id}
             unitsCount={project?.units?.length}
+            totalArea={summedAreaOfUnits}
+            collapsed={bannerCollapsed}
           />
         )}
         <Outlet />

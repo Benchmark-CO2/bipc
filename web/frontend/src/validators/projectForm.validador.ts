@@ -34,9 +34,6 @@ export const projectFormSchema = z.object({
     }
   ),
   description: z.string().optional(),
-  image_url: z
-    .instanceof(File, { message: "Selecione uma imagem válida" })
-    .optional(),
 });
 
 export type ProjectFormSchema = z.infer<typeof projectFormSchema>;

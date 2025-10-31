@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
+	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/google/uuid"
 )
 
@@ -32,8 +33,8 @@ func calculateGiniAndSort(points []BenchmarkPoint) {
 }
 
 func separateConsumption(points []*data.BenchmarkData) ([]BenchmarkPoint, []BenchmarkPoint) {
-	var co2Points []BenchmarkPoint
-	var energyPoints []BenchmarkPoint
+	co2Points := []BenchmarkPoint{}
+	energyPoints := []BenchmarkPoint{}
 
 	for _, point := range points {
 		if point.Consumption != nil {
@@ -119,27 +120,48 @@ func (app *application) getUnitsBenchmarkHandler(w http.ResponseWriter, r *http.
 }
 
 func (app *application) getProjectsBenchmarkHandler(w http.ResponseWriter, r *http.Request) {
-	projects, err := app.models.Benchmark.GetProjectsBenchmark()
+	var filters struct {
+		FloorsFrom *int    `json:"floors_from,omitempty"`
+		FloorsTo   *int    `json:"floors_to,omitempty"`
+		Technology *string `json:"technology,omitempty"`
+	}
+
+	v := validator.New()
+
+	floorsFrom := app.readInt(r.URL.Query(), "floors_from", -1, v)
+	if floorsFrom != -1 {
+		filters.FloorsFrom = &floorsFrom
+	}
+
+	floorsTo := app.readInt(r.URL.Query(), "floors_to", -1, v)
+	if floorsTo != -1 {
+		filters.FloorsTo = &floorsTo
+	}
+
+	technology := app.readString(r.URL.Query(), "technology", "")
+	if technology != "" {
+		filters.Technology = &technology
+	}
+
+	if !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	projects, err := app.models.Benchmark.GetProjectsBenchmark(filters)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
+	co2Points, energyPoints := separateConsumption(projects)
+
+	calculateGiniAndSort(co2Points)
+	calculateGiniAndSort(energyPoints)
+
 	benchmarkData := BenchmarkData{
-		CO2:    []BenchmarkPoint{},
-		Energy: []BenchmarkPoint{},
-	}
-
-	if len(projects) != 0 {
-		co2Points, energyPoints := separateConsumption(projects)
-
-		calculateGiniAndSort(co2Points)
-		calculateGiniAndSort(energyPoints)
-
-		benchmarkData = BenchmarkData{
-			CO2:    co2Points,
-			Energy: energyPoints,
-		}
+		CO2:    co2Points,
+		Energy: energyPoints,
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"benchmark": benchmarkData}, nil)

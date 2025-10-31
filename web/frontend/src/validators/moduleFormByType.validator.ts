@@ -4,7 +4,7 @@ import { z } from "zod";
 const concreteVolumeItemSchema = z
   .object({
     fck: z.number(),
-    volume: z.number().positive("O volume deve ser um número positivo"),
+    volume: z.number().nonnegative("O volume não pode ser negativo"),
     customFck: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
@@ -39,28 +39,114 @@ const concreteElementSchema = z.object({
   steel: z.array(steelMassItemSchema).optional().default([]),
 });
 
-// Schemas para structural masonry (comentado pois ainda não foi definido)
-// const blockSchema = z
-//   .array(
-//     z.object({
-//       type: z.enum([...]), // será definido depois
-//       fbk: z.number(),
-//       quantity: z.number().int().positive(),
-//     })
-//   )
-//   .optional();
+const blockItemSchema = z
+  .object({
+    type: z.enum([
+      "inteiro (14x19x29)",
+      "meio (14x19x14)",
+      "amarração T (14x19x44)",
+      "canaleta inteira (14x19x29)",
+      "meia canaleta (14x19x14)",
+      "inteiro (14x19x39)",
+      "meio (14x19x19)",
+      "amarração T (14x19x54)",
+      "amarração L (14x19x34)",
+      "canaleta  inteira (14x19x39)",
+      "canaleta de amarração (14x19x34)",
+      "meia canaleta (14x19x19)",
+      "compensador 1/4 (14x19x9)",
+      "compensador 1/8 (14x19x4)",
+      "inteiro (19x19x39)",
+      "meio (19x19x19)",
+      "canaleta inteira (19x19x39)",
+      "meia canaleta (19x19x19)",
+      "compensador 1/4 (19x19x9)",
+      "compensador 1/8 (19x19x4)",
+    ]),
+    fbk: z.number(),
+    quantity: z.number().int().positive("A quantidade deve ser positiva"),
+    customFbk: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.customFbk) {
+      const validFbks = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26];
+      if (!validFbks.includes(data.fbk)) {
+        ctx.addIssue({
+          path: ["fbk"],
+          code: "custom",
+          message: "Fbk deve ser 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24 ou 26",
+        });
+      }
+    }
+  })
+  .transform((data) => {
+    const { customFbk, ...rest } = data;
+    return rest;
+  });
 
-// Schema flexível que aceita todos os campos
+const groutVolumeItemSchema = z
+  .object({
+    fgk: z.number(),
+    volume: z.number().positive("O volume deve ser positivo"),
+    customFgk: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.customFgk) {
+      const validFgks = [15, 20, 25, 30];
+      if (!validFgks.includes(data.fgk)) {
+        ctx.addIssue({
+          path: ["fgk"],
+          code: "custom",
+          message: "Fgk deve ser 15, 20, 25 ou 30",
+        });
+      }
+    }
+  })
+  .transform((data) => {
+    const { customFgk, ...rest } = data;
+    return rest;
+  });
+
+const groutItemSchema = z.object({
+  position: z.enum(["vertical", "horizontal"]),
+  volumes: z
+    .array(groutVolumeItemSchema)
+    .min(1, "Adicione pelo menos um volume"),
+  steel: z
+    .array(steelMassItemSchema)
+    .min(1, "Adicione pelo menos uma armadura"),
+});
+
+const mortarItemSchema = z
+  .object({
+    fak: z.number(),
+    volume: z.number().positive("O volume deve ser positivo"),
+    customFak: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.customFak) {
+      const validFaks = [4.5, 8, 14];
+      if (!validFaks.includes(data.fak)) {
+        ctx.addIssue({
+          path: ["fak"],
+          code: "custom",
+          message: "Fak deve ser 4.5, 8 ou 14",
+        });
+      }
+    }
+  })
+  .transform((data) => {
+    const { customFak, ...rest } = data;
+    return rest;
+  });
+
 export const moduleFormSchema = z
   .object({
-    // name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
-    type: z.enum(["beam_column", "concrete_wall"], {
-      // removed structural_masonry for now
+    type: z.enum(["beam_column", "concrete_wall", "structural_masonry"], {
       required_error: "Selecione um tipo de estrutura",
       invalid_type_error: "Tipo de estrutura inválido",
     }),
 
-    // Beam Column - seguindo a nova tipagem
     concrete_columns: concreteElementSchema.optional(),
     concrete_beams: concreteElementSchema.optional(),
     concrete_slabs: concreteElementSchema.optional(),
@@ -71,7 +157,6 @@ export const moduleFormSchema = z
     avg_beam_span: z.number().nonnegative().optional(),
     avg_slab_span: z.number().nonnegative().optional(),
 
-    // Concrete Wall - seguindo a nova tipagem
     concrete_walls: concreteElementSchema.optional(),
     wall_thickness: z.number().nonnegative().optional(),
     slab_thickness: z.number().nonnegative().optional(),
@@ -80,10 +165,12 @@ export const moduleFormSchema = z
     wall_form_area: z.number().nonnegative().optional(),
     slab_form_area: z.number().nonnegative().optional(),
 
-    // Structural Masonry (comentado por enquanto)
-    // vertical_grout: concreteElementSchema.optional(),
-    // horizontal_grout: concreteElementSchema.optional(),
-    // blocks: blockSchema.optional(),
+    blocks: z.array(blockItemSchema).optional(),
+    grout: z
+      .array(groutItemSchema)
+      .min(1, "Adicione pelo menos um tipo de graute")
+      .optional(),
+    mortar: z.array(mortarItemSchema).optional(),
   })
   .refine(
     (data) => {
@@ -125,25 +212,25 @@ export const moduleFormSchema = z
         "Para Parede de Concreto são obrigatórios: concreto (paredes, lajes) e espessuras (parede, laje)",
       path: ["type"],
     }
+  )
+  .refine(
+    (data) => {
+      if (data.type === "structural_masonry") {
+        return (
+          data.blocks !== undefined &&
+          data.grout !== undefined &&
+          data.mortar !== undefined &&
+          data.concrete_slabs !== undefined
+        );
+      }
+      return true;
+    },
+    {
+      message:
+        "Para Alvenaria Estrutural são obrigatórios: blocos, graute, argamassa e laje de concreto",
+      path: ["type"],
+    }
   );
-// Comentado: validação para structural masonry
-// .refine(
-//   (data) => {
-//     if (data.type === "structural_masonry") {
-//       return (
-//         data.vertical_grout !== undefined &&
-//         data.horizontal_grout !== undefined &&
-//         data.blocks !== undefined
-//       );
-//     }
-//     return true;
-//   },
-//   {
-//     message:
-//       "Para Alvenaria Estrutural são obrigatórios: graute (vertical, horizontal) e blocos",
-//     path: ["type"],
-//   }
-// );
 
 // Tipos inferred
 export type ModuleFormSchema = z.infer<typeof moduleFormSchema>;

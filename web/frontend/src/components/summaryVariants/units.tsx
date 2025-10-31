@@ -1,14 +1,17 @@
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
 import { cn } from "@/lib/utils";
+import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
-import { TabsContainer } from "../ui/tabsContainer";
+import D3GradientRangeLineChart from "../charts/d3chartLine";
+import { FilterTabs } from "../ui/filter-tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ItemCard from "./components/ItemCard";
+import Legend from './components/Legend';
 import ListItem from "./components/ListItem";
+import { useChartType } from "./hooks/useChartType";
 import { barColors, stackData } from "./utils";
-import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 
 type ProjectsSummaryProps = {
   selectedUnits: (any & {
@@ -19,6 +22,7 @@ type ProjectsSummaryProps = {
   project: any;
   units: any[];
   data: IBenchmarkResponse;
+  someSelected: boolean;
 };
 
 const generateFakeData = (units: ProjectsSummaryProps["units"]) => {
@@ -34,12 +38,14 @@ const UnitsSummary = ({
   data,
   selectedUnits,
   project,
+  someSelected,
 }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-  const fakeUnits = generateFakeData(
-    data.benchmark?.[type as "co2" | "energy"] || []
-  )
+  const { chartType, ChartSelector } = useChartType();
+
+
+  const fakeUnits = generateFakeData(data.benchmark?.[type as "co2" | "energy"] || [])
     .map((el) => ({
       ...el,
       label: selectedUnits.find((f) => f.id === el.id)?.name || "",
@@ -55,37 +61,33 @@ const UnitsSummary = ({
     [selectedUnits, data]
   );
 
- const [previousProjects, setPreviousProjects] = useState<any[]>([]);
+  const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
+    if (!someSelected) return
     setPreviousProjects(
       selectedUnits.map(el => el.id)
     );
-  }, [selectedUnits]);
+  }, [selectedUnits, someSelected]);
 
   useEffect(() => {
+    if (!someSelected) return
     if (previousProjects.length < selectedUnits.length) {
       const diff = selectedUnits.filter(
         (p) => !previousProjects.includes(p.id)
       );
       if (diff.length > 0) {
-        setSelectedProjects((prev) => [
-          ...prev,
-          ...diff.map((d) => d.id),
-        ]);
+        setSelectedProjects((prev) => [...prev, ...diff.map((d) => d.id)]);
       }
     } else if (previousProjects.length > selectedUnits.length) {
       const diff = previousProjects.filter(
         (p) => !selectedUnits.map((u) => u.id).includes(p)
       );
       if (diff.length > 0) {
-        setSelectedProjects((prev) =>
-          prev.filter((p) => !diff.includes(p))
-        );
+        setSelectedProjects((prev) => prev.filter((p) => !diff.includes(p)));
       }
     }
-  }, [previousProjects, selectedUnits]);
-  
+  }, [previousProjects, selectedUnits, someSelected]);
 
   const handleAddProject = (projectId: string) => {
     if (selectedProjects.includes(projectId)) {
@@ -131,12 +133,17 @@ const UnitsSummary = ({
     0 as number
   );
 
+  
+  const minData = useMemo(() => fakeUnits.map(d => d.min), [fakeUnits]);
+  const maxData = useMemo(() => fakeUnits.map(d => d.max), [fakeUnits]);
+
+
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
       <div className="w-full flex gap-2 mb-4">
-        <TabsContainer
+        <FilterTabs
           tabs={["co2", "energy"]}
-          handleTabClick={(tab) => setType(tab as "co2" | "energy")}
+          onTabSelect={(tab) => setType(tab as "co2" | "energy")}
           selectedTab={type}
           fullWidth
           subTabs={[
@@ -145,7 +152,7 @@ const UnitsSummary = ({
               ? "Desmarcar Todos"
               : "Selecionar Todos",
           ]}
-          handleClickSubTab={(tab) => {
+          onSubTabSelect={(tab) => {
             if (tab === "Unidades") setSelectedSubTab(tab as "Unidades");
             if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
               selectAll();
@@ -158,8 +165,9 @@ const UnitsSummary = ({
         className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
           "flex flex-col h-full justify-between": isExpanded,
         })}
-      >
+        >
         <div className="flex flex-col items-start w-full">
+        {ChartSelector}
           <div className="w-full mb-2">
             <div className="mb-2 text-lg text-gray-600">{project.name}</div>
             <div className="flex w-auto">
@@ -183,7 +191,7 @@ const UnitsSummary = ({
                   >
                     <Tooltip>
                       <TooltipTrigger
-                        style={{ backgroundColor: barColors[idx] }}
+                        style={{ backgroundColor: barColors }}
                         className="w-full"
                       >
                         <div className="w-full h-[16px]"></div>
@@ -224,7 +232,7 @@ const UnitsSummary = ({
                   handleAddProject={handleAddProject}
                   selectedProjects={selectedProjects}
                   sum={sum}
-                  color={barColors[idx]}
+                  color={barColors}
                   type={type}
                 />
               ) : (
@@ -234,19 +242,30 @@ const UnitsSummary = ({
                   selectedProjects={selectedProjects}
                   handleAddProject={handleAddProject}
                   sum={sum}
-                  color={barColors[idx]}
+                  color={barColors}
                   type={type}
                 />
               );
             })}
           </ul>
+          <Legend  />
           {/* {!isExpanded && <Subtitle />} */}
         </div>
-        <D3GradientRangeChart
-          data={fakeUnits}
-          selectedBars={selectedProjects}
-          unit={unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""}
-        />
+        {chartType === "scatter" ? (
+          <D3GradientRangeChart
+            data={fakeUnits}
+            selectedBars={selectedProjects}
+            unit={unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""}
+            minData={minData}
+            maxData={maxData}
+            totalProjects={data?.benchmark[type].length || 0}
+          />
+        ) : (
+          <D3GradientRangeLineChart
+            data={fakeUnits}
+            selectedBars={selectedProjects}
+          />
+        )}
       </div>
     </div>
   );

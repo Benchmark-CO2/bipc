@@ -2,6 +2,7 @@
 import { PublicHeader, Sidebar } from "@/components/layout";
 import Screen from "@/components/layout/screen";
 import UserActiveWarning from "@/components/layout/user-active-warning";
+import ModalTraining from "@/components/layout/modal-training";
 import BreadCrumbs from "@/components/ui/breadcrumbs";
 // import { ModeToggle } from '@/components/mode-toggle'
 import { AuthContext } from "@/context/authContext";
@@ -9,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { ENV } from "@/utils/constants";
+import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
 import { QueryClient } from "@tanstack/react-query";
 import {
   createRootRouteWithContext,
@@ -21,7 +23,6 @@ import { useTranslation } from "react-i18next";
 // import { AuthProvider } from "@/providers/authProvider";
 // import { ProjectProvider } from "@/providers/projectProvider";
 // import Summary from "@/components/ui/summary";
-
 const TanStackRouterDevtools = import.meta.env.PROD
   ? () => null
   : lazy(() =>
@@ -50,6 +51,29 @@ export const Route = createRootRouteWithContext<{
 
     const isMobile = useIsMobile();
 
+    // Verificar se o modal de capacitação deve ser exibido
+    const shouldShowTrainingModal = () => {
+      const { enabled, endDate } = posLaunchFeatures.trainingModal;
+      if (!enabled) return false;
+
+      const now = new Date();
+      const deadline = new Date(endDate);
+
+      return now <= deadline;
+    };
+
+    // Verificar se está nas páginas de login ou sign-up
+    const isAuthPage =
+      path.pathname === "/login" || path.pathname === "/sign-up";
+
+    const handleNavigateToSignUp = () => {
+      navigate({
+        to: "/sign-up",
+      })
+        .then(() => null)
+        .catch((err: unknown) => err);
+    };
+
     return (
       <div className="flex h-screen w-full transition-all">
         {isAuthenticated && (
@@ -70,17 +94,36 @@ export const Route = createRootRouteWithContext<{
           </div>
         )}
         {!isAuthenticated && (
-          <div
-            className={cn("flex flex-1", {
-              "flex-col": path.pathname === "/login" || isMobile,
-            })}
-          >
-            {path.pathname === "/login" ? <PublicHeader /> : <Sidebar />}
+          <div className={"flex flex-1 flex-col"}>
+            {isMobile ? (
+              <Sidebar handleLogout={handleLogout} />
+            ) : (
+              <PublicHeader />
+            )}
             <Screen>
               <Outlet />
             </Screen>
           </div>
         )}
+
+        {/* Modal de Capacitação - não aparece nas páginas de login e sign-up */}
+        {shouldShowTrainingModal() && !isAuthPage && (
+          <ModalTraining
+            isAuthenticated={isAuthenticated}
+            onNavigateToSignUp={handleNavigateToSignUp}
+          />
+        )}
+
+        {/* 
+          DEBUG: Para facilitar o teste do modal de capacitação, descomente a linha abaixo:
+          
+          import { TrainingModalDebugPanel } from "@/components/layout/training-modal-debug-panel";
+          
+          {import.meta.env.DEV && (
+            <TrainingModalDebugPanel isAuthenticated={isAuthenticated} />
+          )}
+        */}
+
         <Suspense>
           <TanStackRouterDevtools position="bottom-right" />
         </Suspense>

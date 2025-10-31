@@ -6,10 +6,6 @@ export const AddUserToProjectFormSchema = z.object({
     .string()
     .email(t("forms.invalidEmail"))
     .min(1, t("forms.requiredField")),
-  projectId: z.coerce.string().nonempty(t("forms.requiredField")),
-  permissions: z
-    .array(z.string())
-    .min(1, t("forms.selectMinimumOnePermission")),
 });
 
 export type AddUserToProjectFormSchema = z.infer<
