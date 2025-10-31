@@ -48,9 +48,9 @@ type Project struct {
 
 type ProjectsWithUnits struct {
 	Project
-	Units       []ProjectUnit `json:"units,omitempty"`
-	Consumption *Consumption  `json:"consumption,omitempty"`
-	Area        float64       `json:"area,omitempty"`
+	Units        []ProjectUnit           `json:"units,omitempty"`
+	Consumptions map[string]*Consumption `json:"consumption,omitempty"`
+	Area         float64                 `json:"area,omitempty"`
 }
 
 func ValidateProject(v *validator.Validator, project *Project) {
@@ -421,25 +421,11 @@ func (m ProjectModel) Delete(projectID uuid.UUID) error {
 
 func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]*ProjectsWithUnits, Metadata, error) {
 	query := fmt.Sprintf(`
-		WITH project_consumption AS (
-			SELECT
-				u.project_id,
-				SUM(f.co2_min * f.area) / SUM(f.area) as co2_min,
-				SUM(f.co2_max * f.area) / SUM(f.area) as co2_max,
-				SUM(f.energy_min * f.area) / SUM(f.area) as energy_min,
-				SUM(f.energy_max * f.area) / SUM(f.area) as energy_max,
-				SUM(f.area) as area
-			FROM floor f
-			INNER JOIN floor_group fg ON f.group_id = fg.id
-			INNER JOIN units u ON fg.tower_id = u.id
-			GROUP BY u.project_id
-		)
  		SELECT COUNT(*) OVER(), p.id, p.created_at, p.name,
 		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description,
 		COALESCE(pc.co2_min, 0), COALESCE(pc.co2_max, 0), COALESCE(pc.energy_min, 0), COALESCE(pc.energy_max, 0), COALESCE(pc.area, 0)
  		FROM projects p
 		INNER JOIN users_projects up ON up.project_id = p.id
-		LEFT JOIN project_consumption pc ON p.id = pc.project_id
  		WHERE (to_tsvector('simple', p.name) @@ plainto_tsquery('simple', $1) OR $1 = '')
 		AND up.user_id = $2
  		ORDER BY %s %s, p.id DESC
@@ -458,10 +444,11 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 
 	totalRecords := 0
 	projects := []*ProjectsWithUnits{}
+	projectIDs := []uuid.UUID{}
+	projectsMap := make(map[uuid.UUID]*ProjectsWithUnits)
 
 	for rows.Next() {
 		var project ProjectsWithUnits
-		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
 
 		err := rows.Scan(
 			&totalRecords,
@@ -476,11 +463,6 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 			&project.Number,
 			&project.Phase,
 			&project.Description,
-			&co2Min,
-			&co2Max,
-			&energyMin,
-			&energyMax,
-			&project.Area,
 		)
 		if err != nil {
 			return nil, Metadata{}, err
