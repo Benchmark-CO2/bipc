@@ -15,9 +15,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
 import InventoryChart from "@/assets/inventoryChart.png";
-import { FilterTabs } from '@/components/ui/filter-tabs';
-import { useBenchmarkFilters } from '@/hooks/useBenchmarkFilters';
-import { useIsMobile } from '@/hooks/useIsMobile';
+import { FilterTabs } from "@/components/ui/filter-tabs";
+import { useBenchmarkFilters } from "@/hooks/useBenchmarkFilters";
+import { useIsMobile } from "@/hooks/useIsMobile";
 export const Route = createFileRoute("/(public)/benchmark")({
   component: RouteComponent,
   loader: ({ context }) => {
@@ -26,7 +26,6 @@ export const Route = createFileRoute("/(public)/benchmark")({
     };
   },
 });
-
 
 function RouteComponent() {
   const { FilterSection, activeBuildFilter } = useBenchmarkFilters();
@@ -47,37 +46,37 @@ function RouteComponent() {
   const [selectedChart, setSelectedChart] = useState("trend");
 
   const maxData = chartData.map((d) => (d.max !== undefined ? d.max : 0));
-  const minData = chartData.map((d) => (d.min !== undefined ? d.min : Infinity));
+  const minData = chartData.map((d) =>
+    d.min !== undefined ? d.min : Infinity
+  );
   return (
     <div className="flex flex-col py-10 px-4 max-sm:px-2 ">
       <h1 className="text-3xl font-bold text-primary ">
         Benchmark | Visualização dos dados
       </h1>
-      <div className="h-full w-full flex items-start pt-10 justify-between  max-sm:self-center max-md:flex-col gap-10">
+      <div className="h-full w-full flex items-start pt-10 justify-between  max-sm:self-center max-md:flex-col gap-6">
         {FilterSection}
         <div className="w-2/3 flex flex-col items-start">
-        <div className='flex'>
-          <div className='flex flex-col'>
+          <div className="flex items-center justify-between w-full gap-2">
+            <div className="flex flex-col">
+              <h2 className="text-primary font-semibold">Visualização:</h2>
 
-          <h2 className="text-primary font-semibold">Visualização:</h2>
-
-          <Select onValueChange={setSelectedChart} value={selectedChart}>
-            <SelectTrigger className="w-[200px] self-start mb-4">
-              <SelectValue placeholder="Gráfico" />
-            </SelectTrigger>
-            <SelectContent defaultValue={"co2"}>
-              <SelectItem value="trend">Classificação</SelectItem>
-              <SelectItem value="co2">Fração Acumulada</SelectItem>
-            </SelectContent>
-          </Select>
+              <Select onValueChange={setSelectedChart} value={selectedChart}>
+                <SelectTrigger className="w-[200px] self-start mb-4">
+                  <SelectValue placeholder="Gráfico" />
+                </SelectTrigger>
+                <SelectContent defaultValue={"co2"}>
+                  <SelectItem value="trend">Classificação</SelectItem>
+                  <SelectItem value="co2">Fração Acumulada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <FilterTabs
+              tabs={["co2", "energy"]}
+              onTabSelect={(tab) => setType(tab as "co2" | "energy")}
+              selectedTab={type}
+            />
           </div>
-          <FilterTabs
-                    tabs={["co2", "energy"]}
-                    onTabSelect={(tab) => setType(tab as "co2" | "energy")}
-                    selectedTab={type}
-                    fullWidth
-                  />   
-        </div>
           {selectedChart === "trend" ? (
             <D3GradientRangeLineChart
               width={width}
@@ -99,13 +98,13 @@ function RouteComponent() {
             />
           )}
 
-          <div className="flex flex-col gap-1">
-            <span>Legenda:</span>
-            <p className="flex items-center gap-2">
+          <div className="flex flex-col gap-1 mt-4">
+            <strong className="text-xs text-gray-shade-500">Legenda:</strong>
+            <p className="flex items-center gap-2 text-xs">
               <div className="w-3 h-3 block rounded-full bg-[#3b82f6]"></div>{" "}
               <i>Melhor fornecedor</i>
             </p>
-            <p className="flex items-center gap-2">
+            <p className="flex items-center gap-2 text-xs">
               <div className="w-3 h-3 block rounded-full bg-[#E36F35]"></div>{" "}
               <i>Pior fornecedor</i>
             </p>

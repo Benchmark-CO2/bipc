@@ -282,7 +282,7 @@ const TopSection = () => {
 
 const StackeholderSection = () => {
   return (
-    <section className="w-full md:w-3/4 mt-16 md:mt-30 flex flex-col items-start self-center gap-6 md:gap-10 px-4 sm:px-6 md:px-10">
+    <section className="w-full md:w-3/4 mt-16 md:mt-30 flex flex-col items-center self-center gap-6 md:gap-10 px-4 sm:px-6 md:px-10">
       <h1 className="text-primary font-semibold text-xl md:text-2xl">
         Realização
       </h1>
