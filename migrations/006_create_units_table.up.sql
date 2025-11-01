@@ -34,24 +34,6 @@ CREATE TABLE IF NOT EXISTS floor (
     "index" INTEGER NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS concrete (
-  id UUID PRIMARY KEY
-);
-
-CREATE TABLE IF NOT EXISTS steel_mass (
-  concrete_id UUID NOT NULL REFERENCES concrete(id) ON DELETE CASCADE,
-  ca TEXT NOT NULL,
-  mass FLOAT8 NOT NULL,
-  PRIMARY KEY (concrete_id, ca)
-);
-
-CREATE TABLE IF NOT EXISTS concrete_volume (
-  concrete_id UUID NOT NULL REFERENCES concrete(id) ON DELETE CASCADE,
-  fck INTEGER NOT NULL,
-  volume FLOAT8 NOT NULL,
-  PRIMARY KEY (concrete_id, fck)
-);
-
 CREATE TABLE IF NOT EXISTS module (
     id UUID PRIMARY KEY,
     tower_option_id UUID NOT NULL REFERENCES tower_option(id) ON DELETE CASCADE,
@@ -73,36 +55,6 @@ CREATE TABLE IF NOT EXISTS module_floor (
     module_id UUID NOT NULL REFERENCES module(id) ON DELETE CASCADE,
     floor_id UUID NOT NULL REFERENCES floor(id) ON DELETE CASCADE,
     PRIMARY KEY (module_id, floor_id)
-);
-
-CREATE TABLE IF NOT EXISTS module_concrete_wall (
-    id UUID PRIMARY KEY REFERENCES module(id) ON DELETE CASCADE,
-    concrete_walls UUID NOT NULL REFERENCES concrete(id),
-    concrete_slabs UUID NOT NULL REFERENCES concrete(id),
-    wall_thickness FLOAT8,
-    slab_thickness FLOAT8,
-    wall_area FLOAT8,
-    slab_area FLOAT8,
-    wall_form_area FLOAT8,
-    slab_form_area FLOAT8,
-    created_at TIMESTAMPTZ(0) NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    updated_at TIMESTAMPTZ(0) NOT NULL DEFAULT (CURRENT_TIMESTAMP)
-);
-
-CREATE TABLE IF NOT EXISTS module_beam_column (
-    id UUID PRIMARY KEY REFERENCES module(id) ON DELETE CASCADE,
-    concrete_columns UUID NOT NULL REFERENCES concrete(id),
-    concrete_beams UUID NOT NULL REFERENCES concrete(id),
-    concrete_slabs UUID NOT NULL REFERENCES concrete(id),
-    form_columns FLOAT8,
-    form_beams FLOAT8,
-    form_slabs FLOAT8,
-    form_total FLOAT8,
-    column_number INTEGER,
-    avg_beam_span INTEGER,
-    avg_slab_span INTEGER,
-    created_at TIMESTAMPTZ(0) NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    updated_at TIMESTAMPTZ(0) NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE IF NOT EXISTS floors_consumption (

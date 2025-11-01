@@ -1,11 +1,6 @@
 DROP TABLE IF EXISTS floors_consumption;
-DROP TABLE IF EXISTS module_beam_column;
-DROP TABLE IF EXISTS module_concrete_wall;
 DROP TABLE IF EXISTS module_floor;
 DROP TABLE IF EXISTS module;
-DROP TABLE IF EXISTS concrete_volume;
-DROP TABLE IF EXISTS steel_mass;
-DROP TABLE IF EXISTS concrete;
 DROP TABLE IF EXISTS floor;
 DROP TABLE IF EXISTS floor_group;
 DROP TABLE IF EXISTS tower_option;
