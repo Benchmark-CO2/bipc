@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS tower (
 CREATE TABLE IF NOT EXISTS tower_option (
     id UUID PRIMARY KEY,
     tower_id UUID NOT NULL REFERENCES tower(id) ON DELETE CASCADE,
+    role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     active BOOLEAN NOT NULL
 );
@@ -59,10 +60,12 @@ CREATE TABLE IF NOT EXISTS module_floor (
 
 CREATE TABLE IF NOT EXISTS floors_consumption (
     floor_id UUID NOT NULL REFERENCES floor(id) ON DELETE CASCADE,
+    role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    option_id UUID NOT NULL REFERENCES tower_option(id) ON DELETE CASCADE,
     technology TEXT NOT NULL,
     co2_min FLOAT8 NOT NULL DEFAULT 0,
     co2_max FLOAT8 NOT NULL DEFAULT 0,
     energy_min FLOAT8 NOT NULL DEFAULT 0,
     energy_max FLOAT8 NOT NULL DEFAULT 0,
-    PRIMARY KEY (floor_id, technology)
+    PRIMARY KEY (floor_id, role_id, option_id, technology)
 );
