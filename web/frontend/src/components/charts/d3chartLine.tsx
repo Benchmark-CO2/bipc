@@ -48,6 +48,7 @@ type D3GradientRangeChartProps = {
   overrideDimensions?: boolean;
   customData?: any;
   unit?: string;
+  summary?: boolean
 };
 
 type TooltipData = {
@@ -66,7 +67,7 @@ const useChartDimensions = (
   overrideDimensions: boolean,
   isMobile: boolean,
   isExpanded: boolean,
-  containerWidth?: number
+  containerWidth?: number,
 ) => {
   return useMemo(() => {
     const screenWidth = window.innerWidth;
@@ -88,10 +89,15 @@ const useChartDimensions = (
 
     const height = () => {
       if (props.height && overrideDimensions) return props.height;
+
+      // if (containerHeight && containerHeight > 0) {
+      //   return Math.max(300, containerHeight - 40); // Subtract some padding
+      // }
+
       if (isMobile && !isExpanded) return 250;
       if (isMobile && isExpanded) return 320;
       if (isExpanded) return window.innerHeight * 0.96 - 130;
-      return window.innerHeight * 0.7 - 230;
+      return window.innerHeight * 0.7 - 250;
     };
 
     const margin = {
@@ -136,9 +142,10 @@ const useChartDimensions = (
 
 const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   selectedBars = [],
-  data: _data = [],
+  data = [],
   overrideDimensions = false,
   unit = "",
+  summary = true,
   ...props
 }) => {
   const { isExpanded } = useSummary();
@@ -147,23 +154,25 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [isResized, setIsResized] = useState(0);
   const [containerWidth, setContainerWidth] = useState<number>(0);
-  const data = isMobile ? _data.map(el => ({ ...el, y: el.y * 10 })) : _data;
+  const [containerHeight, setContainerHeight] = useState<number>(0);
+  // const data = isMobile ? _data.map(el => ({ ...el, y: el.y * 10 })) : _data;
   const { width: _width, height: _height, margin } = useChartDimensions(
     props,
     overrideDimensions,
     isMobile,
     isExpanded,
-    containerWidth
+    containerWidth,
+    containerHeight
   );
 
   const getTooltipPosition = useTooltipPosition();
 
   // Data transformations
   const reversedData = useMemo(() =>
-    _data
+    data
       ?.map((f) => ({ ...f, y: 1 - f.y }))
       .sort((a, b) => a.min - b.min) || [],
-    [_data]
+    [data]
   );
 
   const { minValue, maxValue, minOfMins, maxOfMins } = useMemo(() => {
@@ -232,8 +241,8 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     const width = _width > 0 ? _width : 400; // fallback width
 
     const scale = d3.scaleLinear()
-      .domain([0, isMobile ? 10 : 1])
-      .range([0, width - margin.right - 20]);
+      .domain([0, 1])
+      .range([0, width - margin.right - (isMobile ? margin.left : 20)]);
 
     // Force the domain to always go to 1 (or 10 for mobile)
     // scale.domain([0, isMobile ? 10 : 1]);
@@ -241,7 +250,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   }, [_width, isMobile, isResized]);
 
   const yScale = useMemo(() =>
-    d3.scaleLinear().domain([0, maxValue * 1.05]).range([0, _height]),
+    d3.scaleLinear().domain([0, maxValue]).range([0, _height]),
     [maxValue, _height]
   );
 
@@ -331,9 +340,6 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
         const newWidth = parent.clientWidth;
         const currentContainerWidth = containerWidth;
-
-        console.log('ResizeObserver triggered:', { newWidth, currentContainerWidth });
-
         // Update if there's any significant change
         if (Math.abs(newWidth - currentContainerWidth) > 5) {
 
@@ -466,7 +472,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       .attr("transform", `translate(0,${_height})`)
       .call(d3.axisBottom(xScale)
         .ticks(tickCount)
-        .tickFormat((d) => d3.format(isMobile ? '.0f' : '.1f')(d))
+        .tickFormat((d) => d3.format(isMobile ? '.1f' : '.1f')(d))
         .tickSizeOuter(0))
       .selectAll("text")
       .style("font-size", "12px")
@@ -479,7 +485,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       .style("fill", DEFAULT_COLORS.TEXT);
 
     // Procel color bands
-    const faixaWidth = (_width - margin.right - 20) / DEFAULT_COLORS.PROCEL.length;
+    const faixaWidth = (_width - margin.right - (isMobile ? margin.left : 20)) / DEFAULT_COLORS.PROCEL.length;
 
     DEFAULT_COLORS.PROCEL.slice()
       .reverse()
@@ -696,7 +702,9 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
           </span>
           <svg
             ref={svgRef}
-            className="bg-white dark:bg-zinc-900"
+            className={cn("bg-white dark:bg-zinc-900", {
+              "mt-10": !summary
+            })}
             style={{ width: '100%' }}
           />
           {tooltip && (
@@ -722,7 +730,9 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
             </div>
           )}
         </div>
-        <div className="flex">
+        <div className={cn("flex", {
+          "mt-10": !summary
+        })}>
           <span>N: {data?.length}</span>
           <span className="flex-1 text-center w-full text-black/70">
             potencial de mitigação

@@ -88,7 +88,7 @@ const useChartDimensions = (
       if (isMobile && !isExpanded) return 250;
       if (isMobile && isExpanded) return 320;
       if (isExpanded) return window.innerHeight * 0.96 - 130;
-      return (window.innerHeight * 0.65) - 230;
+      return window.innerHeight * 0.7 - 340;
     };
 
     const margin = {
@@ -196,7 +196,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   const xScale = useMemo(() => {
     // Ensure we have a valid width before creating the scale
     const width = _width > 0 ? _width : 400; // fallback width
-    return d3.scaleLinear().domain([0, maxValue * 1.15]).range([0, width]);
+    return d3.scaleLinear().domain([0, maxValue * 1.15]).range([0, width * 1.1]);
   }, [maxValue, _width]);
 
   const yScale = useMemo(() => {

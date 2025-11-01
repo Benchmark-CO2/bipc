@@ -32,18 +32,17 @@ export function FilterTabs({
 
   return (
     <div
-      className={`flex items-center gap-4 h-12 rounded-sm border border-gray-shade-300 dark:border-gray-shade-500 px-4 ${fullWidth ? "w-full" : "w-fit"} max-sm:h-full max-sm:p-4  dark:bg-sidebar max-sm:flex-wrap max-sm:gap-2`}
+      className={`flex items-center gap-4 h-12 rounded-sm border border-gray-shade-300 dark:border-gray-shade-500 px-4 ${fullWidth ? "w-full" : "w-fit"} max-sm:h-fit max-sm:w-full! max-sm:p-4  dark:bg-sidebar max-sm:flex-wrap max-sm:gap-2`}
     >
       <div className="flex items-center gap-4 max-sm:w-full">
         {tabs.map((tab) => (
           <button
             key={tab}
             onClick={() => onTabSelect(tab)}
-            className={`inline-flex items-center justify-center whitespace-nowrap rounded-full h-6 px-3 text-xs font-medium transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-active focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 max-sm:w-full ${
-              selectedTab === tab
-                ? "bg-active text-white"
-                : "cursor-pointer text-active border border-active hover:bg-active/10"
-            }`}
+            className={`inline-flex items-center justify-center whitespace-nowrap rounded-full h-6 px-3 text-xs font-medium transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-active focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 max-sm:w-full ${selectedTab === tab
+              ? "bg-active text-white"
+              : "cursor-pointer text-active border border-active hover:bg-active/10"
+              }`}
           >
             {convertTabName(tabsLabel?.[tab] || tab)}
           </button>
@@ -58,11 +57,10 @@ export function FilterTabs({
               <button
                 key={subTab}
                 onClick={() => onSubTabSelect(subTab)}
-                className={`inline-flex items-center justify-center whitespace-nowrap rounded-full h-6 px-3 text-xs font-medium transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-active focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 max-sm:w-full ${
-                  selectedSubTab === subTab
-                    ? "bg-active text-white"
-                    : "cursor-pointer text-active border border-active hover:bg-active/10"
-                }`}
+                className={`inline-flex items-center justify-center whitespace-nowrap rounded-full h-6 px-3 text-xs font-medium transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-active focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 max-sm:w-full ${selectedSubTab === subTab
+                  ? "bg-active text-white"
+                  : "cursor-pointer text-active border border-active hover:bg-active/10"
+                  }`}
               >
                 {subTab}
               </button>

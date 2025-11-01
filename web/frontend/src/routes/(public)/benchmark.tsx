@@ -79,6 +79,7 @@ function RouteComponent() {
               <D3GradientRangeLineChart
                 data={chartData}
                 unit={type === "co2" ? "KgCO₂/m²" : "MJ/m²"}
+                summary={false}
               />
             ) : (
               <D3GradientRangeChart

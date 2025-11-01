@@ -4,11 +4,11 @@ import { cn } from '@/lib/utils';
 const Legend = () => {
   const { isExpanded } = useSummary();
   return (
-    <section className={cn('w-full mt-auto flex justify-between', {
-      'w-1/3': isExpanded,
+    <section className={cn('w-full flex justify-between', {
+      'w-2/3 my-6': isExpanded,
     })}>
       <div className='w-full'>
-        <div className='grid w-full items-end max-sm:grid-cols-1 max-2xl:grid-cols-2 3xl:grid-cols-4 max-sm:gap-2 max-sm:my-4'>
+        <div className='grid grid-cols-4 w-full items-end max-sm:grid-cols-1 max-2xl:grid-cols-2 3xl:grid-cols-4 max-sm:gap-2 max-sm:my-4'>
           <div className='w-full flex flex-col justify-center'>
             <h2 className='text-base font-bold'>Legenda:</h2>
             <div className='w-full flex items-center'>

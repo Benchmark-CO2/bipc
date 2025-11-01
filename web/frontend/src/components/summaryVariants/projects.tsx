@@ -127,13 +127,12 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
           "flex flex-col": isExpanded,
         })}
       >
-        <div className="flex flex-col items-start w-full">
+        <div className="flex flex-col items-start w-full justify-between h-full">
           {ChartSelector}
           <ul
             className={cn("flex flex-col gap-2 text-xl w-full text-black", {
               "flex-row gap-2 flex-wrap": isExpanded,
-              "max-h-[280px] overflow-y-auto xl:max-h-[200px]": !isExpanded,
-              "2xl:max-h-[550px]": !isExpanded,
+              "max-h-[280px] overflow-y-auto xl:max-h-[200px] 2xl:max-h-[420px]": !isExpanded,
             })}
           >
             {(!stackedData || stackedData.length === 0) && (
