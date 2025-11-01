@@ -399,3 +399,47 @@ func (m RoleModel) GetAllForUser(userID uuid.UUID, projectID uuid.UUID) (bool, e
 
 	return permissions, nil
 }
+
+func (m RoleModel) GetAllUserRoles(userID uuid.UUID, projectID uuid.UUID) ([]Role, error) {
+	query := `
+		SELECT r.id, r.project_id, r.name, r.description, r.simulation, r.is_protected
+		FROM roles r
+		INNER JOIN users_roles ur ON ur.role_id = r.id
+		WHERE ur.user_id = $1 AND r.project_id = $2
+		ORDER BY r.name`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, userID, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var roles []Role
+
+	for rows.Next() {
+		var role Role
+
+		err := rows.Scan(
+			&role.ID,
+			&role.ProjectID,
+			&role.Name,
+			&role.Description,
+			&role.Simulation,
+			&role.IsProtected,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		roles = append(roles, role)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return roles, nil
+}
