@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"slices"
 	"time"
 
@@ -67,7 +68,7 @@ type Collaborators struct {
 type Permissions []string
 
 func (p Permissions) Include(code string) bool {
-	return slices.Contains(p, code)
+	return slices.Contains(p, code) || slices.Contains(p, "*:*")
 }
 
 type RoleModel struct {
@@ -370,7 +371,7 @@ func (m RoleModel) Collaborators(projectID uuid.UUID) (Collaborators, error) {
 	return collaborators, nil
 }
 
-func (m RoleModel) GetAllForUser(userID uuid.UUID, projectID uuid.UUID) (Permissions, error) {
+func (m RoleModel) GetPermissionsForUser(userID uuid.UUID, projectID uuid.UUID) (Permissions, error) {
 	query := `
         SELECT DISTINCT p.action, p.resource
 		FROM permissions p
@@ -382,23 +383,24 @@ func (m RoleModel) GetAllForUser(userID uuid.UUID, projectID uuid.UUID) (Permiss
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	var permissions Permissions
-
 	rows, err := m.DB.QueryContext(ctx, query, userID, projectID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	for rows.Next() {
-		var permission string
+	var permissions Permissions
 
-		err := rows.Scan(&permission)
+	for rows.Next() {
+		var action string
+		var resource string
+
+		err := rows.Scan(&action, &resource)
 		if err != nil {
 			return nil, err
 		}
 
-		//permissions = append(permissions, permission)
+		permissions = append(permissions, fmt.Sprintf("%s:%s", action, resource))
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
