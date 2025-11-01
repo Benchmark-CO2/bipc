@@ -156,7 +156,6 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   const [brushSelectionCount, setBrushSelectionCount] = useState<number>(0);
   const brushSelectionCountRef = useRef<number>(0);
   const [hasZoomed, setHasZoomed] = useState(false);
-  const [isResizing, setIsResizing] = useState(false);
 
   // Inicializar o contador com o total de dados
   useEffect(() => {
@@ -165,12 +164,13 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   }, [data.length]);
 
   // Função auxiliar para atualizar o contador
-  const updateBrushCount = useCallback((count: number) => {
+  const updateBrushCount = (count: number) => {
     brushSelectionCountRef.current = count;
     setBrushSelectionCount(count);
-  }, []);
+  };
 
   const minLessDataValue = useMemo(() => Math.min(...minData), [minData]);
+  const minMaxDataValue = useMemo(() => Math.min(...maxData), [maxData]);
   const maxLessDataValue = useMemo(() => Math.max(...minData), [minData]);
   const maxMaxDataValue = useMemo(() => Math.max(...maxData), [maxData]);
   const hasLessValue = totalProjects > 0 ? parseFloat((minData[0] || 0).toFixed(2)) < minLessDataValue : false;
@@ -222,7 +222,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         label: selectedBars?.includes(d.id) ? d.label : undefined,
       },
     });
-  }, [getTooltipPosition]); // Removed selectedBars dependency to prevent re-renders
+  }, [getTooltipPosition, selectedBars]);
 
   const handleMouseMove = useCallback((event: any, d: ChartData) => {
     const position = getTooltipPosition(event, svgRef);
@@ -234,7 +234,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         label: selectedBars?.includes(d.id) ? d.label : undefined,
       },
     });
-  }, [getTooltipPosition]); // Removed selectedBars dependency to prevent re-renders
+  }, [getTooltipPosition, selectedBars]);
 
   const handleMouseOut = useCallback(() => {
     setTooltip(null);
@@ -264,15 +264,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     if (!svgRef.current?.parentElement) return;
 
     let resizeTimer: NodeJS.Timeout;
-    let isInitialized = false;
-
     const resizeObserver = new ResizeObserver(() => {
-      // Skip the first resize event to avoid immediate re-render on mount
-      if (!isInitialized) {
-        isInitialized = true;
-        return;
-      }
-
       // Clear previous timer
       clearTimeout(resizeTimer);
 
@@ -286,29 +278,25 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         const newWidth = parent.clientWidth + margin.left + margin.right;
         const currentWidth = svgRef.current.getAttribute("width");
 
-        // Only update if there's a significant change in width (> 20px to be more conservative)
-        if (Math.abs(newWidth - parseFloat(currentWidth || "0")) > 20) {
-          setIsResizing(true);
+        // Only update if there's a significant change in width (> 10px)
+        if (Math.abs(newWidth - parseFloat(currentWidth || "0")) > 10) {
           svgRef.current.setAttribute("width", newWidth.toString());
 
-          // Check if we're in the middle of a zoom interaction
+          // Update chart dimensions while preserving zoom state
           const svg = d3.select(svgRef.current);
           const currentTransform = d3.zoomTransform(svg.node() as any);
 
-          // Only re-render if not zoomed and not during interaction
-          if (!currentTransform || (currentTransform.k === 1 && currentTransform.x === 0 && currentTransform.y === 0)) {
-            // Update clipping path width (should use internal width, not total width)
+          if (currentTransform && (currentTransform.k !== 1 || currentTransform.x !== 0 || currentTransform.y !== 0)) {
+            // If zoomed, preserve the transform but update chart area
+            // Update clipping path
             svg.select("#clip rect")
               .attr("width", parent.clientWidth);
-
-            // Trigger controlled re-render only when safe
+          } else {
+            // If not zoomed, trigger a controlled re-render
             setIsResized((prev) => prev + 1);
           }
-
-          // Clear resizing flag after a delay
-          setTimeout(() => setIsResizing(false), 300);
         }
-      }, 200); // Increased debounce time
+      }, 100);
     });
 
     resizeObserver.observe(svgRef.current.parentElement);
@@ -317,7 +305,9 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       clearTimeout(resizeTimer);
       resizeObserver.disconnect();
     };
-  }, [margin]);  // Main chart effect
+  }, [margin]);
+
+  // Main chart effect
   useEffect(() => {
     if (!svgRef.current) return;
 
@@ -327,7 +317,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     // Create SVG
     const svg = d3
       .select(svgRef.current)
-      .attr("width", _width + margin.left + margin.right)
+      // .attr("width", width)
       .attr("height", _height + margin.top + margin.bottom);
 
     // Main group
@@ -490,9 +480,6 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
     // Função de zoom - responsiva e imediata
     function zoomed(event: any) {
-      // Skip zoom during resize operations
-      if (isResizing) return;
-
       const transform = event.transform;
 
       // Criar novas escalas baseadas no transform
@@ -540,10 +527,6 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     });
 
     function updateElementsPosition(newXScale = xScale, newYScale = yScale) {
-      // Get chartArea reference
-      const chartArea = g.select("g[clip-path='url(#clip)']");
-      if (chartArea.empty()) return;
-
       // Update all circles - simplificado e direto
       (data || []).forEach((d, i) => {
         const x1 = newXScale(d.min);
@@ -657,7 +640,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     return () => {
       // Nenhum cleanup necessário
     };
-  }, [isExpanded, data, isResized, _width, _height, margin, xScale, yScale, colorScale, updateBrushCount]);
+  }, [isExpanded, data, isResized, _width, _height, margin, xScale, yScale, colorScale, handleMouseOver, handleMouseMove, handleMouseOut, updateBrushCount]);
 
   // Selected bars effect
   useEffect(() => {

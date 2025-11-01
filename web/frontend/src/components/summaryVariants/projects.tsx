@@ -67,7 +67,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
   }, [projects, someSelected]);
 
   useEffect(() => {
-    if (!someSelected) return 
+    if (!someSelected) return
 
     if (previousProjects.length < projects.length) {
       const diff = projects.filter((p) => !previousProjects.includes(p.id));
@@ -120,7 +120,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
               : "Selecionar Todos",
           ]}
           selectedSubTab={subTabs}
-        />        
+        />
       </div>
       <div
         className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
@@ -128,7 +128,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
         })}
       >
         <div className="flex flex-col items-start w-full">
-        {ChartSelector}
+          {ChartSelector}
           <ul
             className={cn("flex flex-col gap-2 text-xl w-full text-black", {
               "flex-row gap-2 flex-wrap": isExpanded,
@@ -168,7 +168,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
               );
             })}
           </ul>
-          {<Legend  />}
+          {<Legend />}
           {/* {!isExpanded && <Subtitle />} */}
         </div>
 
@@ -180,7 +180,6 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
             totalProjects={data?.benchmark[type].length || 0}
             minData={minData}
             maxData={maxData}
-            
           />
         ) : (
           <D3GradientRangeLineChart
