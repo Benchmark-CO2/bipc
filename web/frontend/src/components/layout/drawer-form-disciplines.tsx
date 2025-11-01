@@ -532,7 +532,7 @@ export default function DrawerFormDisciplines({
                               className="cursor-pointer"
                             >
                               <div className="flex items-center gap-3 w-full">
-                                <div className="w-8 h-8 rounded-full bg-[#00796B] text-white flex items-center justify-center font-medium text-xs">
+                                <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-medium text-xs">
                                   {getInitials(user.name)}
                                 </div>
                                 <div className="flex flex-col flex-1 min-w-0">
