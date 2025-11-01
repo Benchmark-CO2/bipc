@@ -258,9 +258,9 @@ export default function CommonTable({
         </div>
       ) : (
         <NotFoundList
-          message="No data available"
+          message="Sem dado para exibir"
           showIcon={false}
-          description="No data available in this table"
+          description={`Sem dado de ${tableName} disponível nesta tabela no momento. ${isInteractive ? "Crie novos itens para que eles apareçam aqui." : ""}`}
         />
       )}
     </div>

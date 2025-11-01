@@ -30,7 +30,7 @@
     },
     "activeUserWarning": {
       "title": "Usuário não ativo",
-      "description": "Verifique seu e-mail para continuar usando o sistema. Se não recebeu, confira sua caixa de spam ou",
+      "description": "Verifique seu e-mail para continuar usando o sistema. Se já ativou, faça login novamente. Se não recebeu, confira sua caixa de spam ou",
       "button": "solicite um novo acesso.",
       "modalMessage": "Confirme abaixo para ativar sua conta. Você receberá um e-mail com o link de ativação.",
       "emailSentError": "Erro ao enviar o e-mail de ativação. Tente novamente mais tarde.",

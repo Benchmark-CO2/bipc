@@ -1,88 +1,193 @@
-import { IInvite } from '@/actions/invites/getInvites';
-import { PutReplyInviteRequest } from '@/actions/invites/putReplyInvite';
-import { Button } from '@/components/ui/button';
-import { dateUtils } from '@/utils/date';
-import { stringUtils } from '@/utils/string';
-import { Link } from '@tanstack/react-router';
-import { Calendar, User } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { IInvite } from "@/actions/invites/getInvites";
+import { PutReplyInviteRequest } from "@/actions/invites/putReplyInvite";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { dateUtils } from "@/utils/date";
+import { stringUtils } from "@/utils/string";
+import { Link } from "@tanstack/react-router";
+import {
+  Calendar,
+  User,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Mail,
+} from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
 
 const Skeleton = () => {
-  const { t } = useTranslation();
   return (
-    <div className="p-4 bg-white shadow-md rounded-lg dark:bg-zinc-800 dark:shadow-zinc-900 animate-pulse">
-      <div className='flex items-center gap-2'>
-        <h3 className="text-lg font-semibold bg-gray-300 dark:bg-gray-700 w-1/2 h-6"></h3>
-        <p className="text-gray-600 dark:text-gray-400 bg-gray-200 dark:bg-gray-600 w-3/4 h-4"></p>
-        <div className="mt-2 ml-auto">
-          <span className="text-sm text-blue-600 dark:text-blue-400">⏳</span>
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 space-y-2">
+            <div className="h-6 bg-muted rounded w-3/4 animate-pulse"></div>
+            <div className="h-4 bg-muted rounded w-24 animate-pulse"></div>
+          </div>
         </div>
-      </div>
-      <div className="mt-4 flex gap-2">
-          <Button disabled>
-            {t('common.accept')}{t('common.invite_other', { count: 1 })}
-          </Button>
-        <Button variant={'ghost'} disabled>
-          {t('common.reject')}{t('common.invite_other', { count: 1 })}
-        </Button>
-      </div>
-    </div>
-  )
-}
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg animate-pulse">
+          <div className="w-10 h-10 bg-muted rounded-full flex-shrink-0"></div>
+          <div className="flex-1 space-y-2">
+            <div className="h-3 bg-muted rounded w-20"></div>
+            <div className="h-4 bg-muted rounded w-32"></div>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <div className="h-10 bg-muted rounded flex-1"></div>
+          <div className="h-10 bg-muted rounded flex-1"></div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 const CardNotFound = () => {
   const { t } = useTranslation();
 
   return (
-    <div className="p-4 bg-white shadow-md rounded-lg dark:bg-zinc-800 dark:shadow-zinc-900 text-center">
-      <h3 className="text-lg font-semibold">{t('common.inviteNotFound')}</h3>
-      <p className="text-gray-600 dark:text-gray-400">{t('common.inviteNotFoundDescription')}</p>
-      <div className="mt-4">
-        <Link to="/profile/invites" className="text-blue-600 dark:text-blue-400 hover:underline">
-          <Button variant="outline">
-            {t('common.showAll')}
-          </Button>
+    <Card>
+      <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+          <Mail className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <h3 className="text-lg font-semibold mb-2">
+          {t("common.inviteNotFound")}
+        </h3>
+        <p className="text-muted-foreground text-sm mb-6 max-w-sm">
+          {t("common.inviteNotFoundDescription")}
+        </p>
+        <Link to="/notifications">
+          <Button variant="outline">{t("common.showAll")}</Button>
         </Link>
-      </div>
-    </div>
-  )
-}
+      </CardContent>
+    </Card>
+  );
+};
 
-const Card = ({ invite, handleSubmitReplyInvite, disabled }: {invite: IInvite, handleSubmitReplyInvite: (invitedId: number, status: PutReplyInviteRequest) => void, disabled: boolean }) => {
+const InviteCardItem = ({
+  invite,
+  handleSubmitReplyInvite,
+  disabled,
+}: {
+  invite: IInvite;
+  handleSubmitReplyInvite: (
+    invitedId: number,
+    status: PutReplyInviteRequest
+  ) => void;
+  disabled: boolean;
+}) => {
   const { t } = useTranslation();
+
+  const statusConfig = {
+    pending: {
+      icon: Clock,
+      variant: "default" as const,
+      label: "Em espera",
+    },
+    accepted: {
+      icon: CheckCircle2,
+      variant: "success" as const,
+      label: "Aceito",
+    },
+    declined: {
+      icon: XCircle,
+      variant: "destructive" as const,
+      label: "Recusado",
+    },
+  };
+
+  const status =
+    statusConfig[invite.status as keyof typeof statusConfig] ||
+    statusConfig.pending;
+  const StatusIcon = status.icon;
+  const isPending = invite.status === "pending";
+
   return (
-    <div className="p-4 bg-white shadow-md rounded-lg dark:bg-zinc-800 dark:shadow-zinc-900">
-      <div className='flex flex-col items-start gap-2 max-sm:flex-col'>
-        <h3 className="text-lg font-semibold max-sm:text-center mb-5">{invite.project_name}</h3>
-        <div className='flex flex-col'>
-          <div className='flex items-center gap-2'>
-            <div className='bg-primary/70 text-lg rounded-full w-10 h-10 flex items-center justify-center text-white font-semibold'>
-              {stringUtils.getInitials(invite.inviter_name) || <User className='w-4 h-4' />}
-            </div>
-            <div className='flex flex-col'>
-              <span className='text-xs text-accent-foreground/70'>{t('common.invitedBy')}</span>
-              <span>{invite.inviter_name}</span>
-            </div>
+    <Card
+      className={cn(
+        "transition-all duration-200",
+        isPending && "border-primary/50 shadow-sm hover:shadow-md"
+      )}
+    >
+      <CardHeader>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              {invite.project_name}
+            </CardTitle>
+            <CardDescription className="mt-2">
+              <Badge variant={status.variant} className="gap-1.5">
+                <StatusIcon className="w-3.5 h-3.5" />
+                {status.label}
+              </Badge>
+            </CardDescription>
           </div>
         </div>
-          <p className="text-gray-600 dark:text-gray-400 flex items-center gap-1 mt-2 pl-4">
-            <Calendar className='w-4 h-4' />
-            {dateUtils.calculateRelativeTime(new Date(invite.created_at))}</p>
-      </div>
-      <div className="mt-4 w-full flex gap-2 max-sm:flex-col">
-        <Button disabled={invite.status !== 'pending' || disabled} onClick={() => handleSubmitReplyInvite(invite.id, 'accepted')}>
-          {`${t('common.accept')} ${t('common.invite_one').toLowerCase()}`}
-        </Button>
-        <Button variant={'ghost'} disabled={invite.status !== 'pending' || disabled} onClick={() => handleSubmitReplyInvite(invite.id, 'declined')}>
-          {`${t('common.reject')} ${t('common.invite_one').toLowerCase()}`}
-        </Button>
-      </div>
-    </div>
-  )
-}
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Inviter Info */}
+        <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+          <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold text-sm flex-shrink-0">
+            {stringUtils.getInitials(invite.inviter_name) || (
+              <User className="w-5 h-5" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground">
+              {t("common.invitedBy")}
+            </p>
+            <p className="font-medium truncate">{invite.inviter_name}</p>
+          </div>
+        </div>
+
+        {/* Date */}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Calendar className="w-4 h-4" />
+          <span>
+            {dateUtils.calculateRelativeTime(new Date(invite.created_at))}
+          </span>
+        </div>
+
+        {/* Action Buttons */}
+        {isPending && (
+          <div className="flex gap-3 pt-2">
+            <Button
+              disabled={disabled}
+              onClick={() => handleSubmitReplyInvite(invite.id, "accepted")}
+              className="flex-1"
+              variant="bipc"
+            >
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              {t("common.accept")}
+            </Button>
+            <Button
+              variant="outline"
+              disabled={disabled}
+              onClick={() => handleSubmitReplyInvite(invite.id, "declined")}
+              className="flex-1"
+            >
+              <XCircle className="w-4 h-4 mr-2" />
+              {t("common.reject")}
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 export const InviteCard = {
-  Card,
+  Card: InviteCardItem,
   Skeleton,
-  CardNotFound
-}
+  CardNotFound,
+};

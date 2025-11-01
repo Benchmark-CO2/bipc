@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Drawer,
   DrawerContent,
@@ -27,21 +27,30 @@ import {
   disciplineFormSchema,
   DisciplineFormSchema,
 } from "@/validators/disciplineForm.validator";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { postDiscipline } from "@/actions/disciplines/postDiscipline";
+import { TRole } from "@/types/collaborators";
+import { TUser } from "@/types/user";
+import { queryClient } from "@/utils/queryClient";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "../ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import NotFoundList from "../ui/not-found-list";
+import { patchDiscipline } from "@/actions/disciplines/patchDiscipline";
 
 interface IDrawerFormDisciplines {
   componentTrigger: React.ReactNode;
+  projectId: string;
+  roleData?: TRole;
+  projectUsers?: TUser[];
 }
-
-// Mock data for collaborators - replace with real data later
-const mockCollaborators = [
-  {
-    id: "1",
-    name: "Lorem Ipsum",
-    email: "lorem.ipsum@example.com",
-    initials: "LI",
-  },
-  { id: "2", name: "Lorem Ipsum", email: "lorem2@example.com", initials: "LI" },
-];
 
 // Mock data for permissions - will be provided by backend
 const mockPermissions = {
@@ -59,13 +68,20 @@ const mockPermissions = {
 
 export default function DrawerFormDisciplines({
   componentTrigger,
+  projectId,
+  roleData,
+  projectUsers,
 }: IDrawerFormDisciplines) {
   const [openDrawer, setOpenDrawer] = useState(false);
   const [managementExpanded, setManagementExpanded] = useState(true);
   const [simulationExpanded, setSimulationExpanded] = useState(true);
-  const [selectedCollaborators, setSelectedCollaborators] = useState<string[]>(
+  const [selectedCollaborators, setSelectedCollaborators] = useState<TUser[]>(
     []
   );
+  const [searchTerm, setSearchTerm] = useState("");
+  const [openPopover, setOpenPopover] = useState(false);
+
+  const isEditMode = !!roleData;
 
   const form = useForm<DisciplineFormSchema>({
     resolver: zodResolver(disciplineFormSchema),
@@ -74,9 +90,58 @@ export default function DrawerFormDisciplines({
       description: "",
       simulation: false,
       permissions_ids: [],
-      collaborators: [],
+      users_ids: [],
     },
     mode: "onChange",
+  });
+
+  const {
+    mutate: createDiscipline,
+    isPending: isCreating,
+    reset: resetCreation,
+  } = useMutation({
+    mutationFn: (data: DisciplineFormSchema) => postDiscipline(projectId, data),
+    onSuccess: () => {
+      toast.success("Disciplina criada com sucesso!", {
+        duration: 5000,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project-collaborators", projectId],
+      });
+      form.reset();
+      setOpenDrawer(false);
+    },
+    onError: () => {
+      toast.error("Erro ao criar disciplina", {
+        description: "Ocorreu um erro ao criar a disciplina.",
+        duration: 5000,
+      });
+    },
+  });
+
+  const {
+    mutate: updateDiscipline,
+    isPending: isUpdating,
+    reset: resetUpdate,
+  } = useMutation({
+    mutationFn: (data: DisciplineFormSchema) =>
+      patchDiscipline(projectId, roleData!.id, data),
+    onSuccess: () => {
+      toast.success("Disciplina atualizada com sucesso!", {
+        duration: 5000,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project-collaborators", projectId],
+      });
+      form.reset();
+      setOpenDrawer(false);
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar disciplina", {
+        description: "Ocorreu um erro ao atualizar a disciplina.",
+        duration: 5000,
+      });
+    },
   });
 
   const selectedPermissions =
@@ -87,26 +152,63 @@ export default function DrawerFormDisciplines({
     }) || [];
 
   const onSubmit = async (data: DisciplineFormSchema) => {
-    console.log(data);
-    // TODO: Implement API call to create/update discipline
-  };
-
-  const isEditMode = false;
-
-  const addCollaborator = (collaboratorId: string) => {
-    if (!selectedCollaborators.includes(collaboratorId)) {
-      const newCollaborators = [...selectedCollaborators, collaboratorId];
-      setSelectedCollaborators(newCollaborators);
-      form.setValue("collaborators", newCollaborators);
+    if (isEditMode) {
+      updateDiscipline(data);
+      return;
     }
+    createDiscipline(data);
   };
 
-  const removeCollaborator = (collaboratorId: string) => {
+  const addCollaborator = (user: TUser) => {
+    if (!selectedCollaborators.some((c) => c.id === user.id)) {
+      const newCollaborators = [...selectedCollaborators, user];
+      setSelectedCollaborators(newCollaborators);
+      form.setValue(
+        "users_ids",
+        newCollaborators.map((c) => String(c.id))
+      );
+    }
+    setOpenPopover(false);
+    setSearchTerm("");
+  };
+
+  const removeCollaborator = (userId: string) => {
     const newCollaborators = selectedCollaborators.filter(
-      (id) => id !== collaboratorId
+      (c) => c.id !== userId
     );
     setSelectedCollaborators(newCollaborators);
-    form.setValue("collaborators", newCollaborators);
+    form.setValue(
+      "users_ids",
+      newCollaborators.map((c) => String(c.id))
+    );
+  };
+
+  const getFilteredUsers = () => {
+    if (!projectUsers) return [];
+
+    // Filter out already selected collaborators
+    const availableUsers = projectUsers.filter(
+      (user) => !selectedCollaborators.some((c) => c.id === user.id)
+    );
+
+    // Filter by search term
+    if (!searchTerm) return availableUsers;
+
+    const lowerSearch = searchTerm.toLowerCase();
+    return availableUsers.filter(
+      (user) =>
+        user.name.toLowerCase().includes(lowerSearch) ||
+        user.email.toLowerCase().includes(lowerSearch)
+    );
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   const togglePermission = (permissionId: number, checked: boolean) => {
@@ -171,6 +273,40 @@ export default function DrawerFormDisciplines({
       });
     }
   };
+
+  useEffect(() => {
+    if (openDrawer) {
+      resetCreation();
+      resetUpdate();
+
+      if (roleData) {
+        form.reset({
+          name: roleData.name || "",
+          description: roleData.description || "",
+          simulation: roleData.simulation || false,
+          permissions_ids: roleData.permissions_ids || [],
+          users_ids: roleData.users_ids || [],
+        });
+
+        // Set selected collaborators based on roleData
+        if (roleData.users_ids && projectUsers) {
+          const collaborators = projectUsers.filter((user) =>
+            roleData.users_ids.includes(String(user.id))
+          );
+          setSelectedCollaborators(collaborators);
+        }
+      } else {
+        form.reset({
+          name: "",
+          description: "",
+          simulation: false,
+          permissions_ids: [],
+          users_ids: [],
+        });
+        setSelectedCollaborators([]);
+      }
+    }
+  }, [roleData, openDrawer, form, resetCreation, projectUsers]);
 
   return (
     <Drawer direction="right" open={openDrawer} dismissible={false}>
@@ -365,62 +501,78 @@ export default function DrawerFormDisciplines({
               {/* Buscar colaboradores */}
               <div className="flex flex-col gap-2">
                 <FormLabel>Buscar colaboradores</FormLabel>
-                <Input placeholder="Colaborador..." className="w-full" />
+                <Popover open={openPopover} onOpenChange={setOpenPopover}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openPopover}
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      Colaborador...
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0" align="start">
+                    <Command shouldFilter={false}>
+                      <CommandInput
+                        placeholder="Buscar colaborador..."
+                        value={searchTerm}
+                        onValueChange={setSearchTerm}
+                      />
+                      <CommandList>
+                        <CommandEmpty>
+                          Nenhum colaborador encontrado.
+                        </CommandEmpty>
+                        <CommandGroup>
+                          {getFilteredUsers().map((user) => (
+                            <CommandItem
+                              key={user.id}
+                              value={String(user.id)}
+                              onSelect={() => addCollaborator(user)}
+                              className="cursor-pointer"
+                            >
+                              <div className="flex items-center gap-3 w-full">
+                                <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-medium text-xs">
+                                  {getInitials(user.name)}
+                                </div>
+                                <div className="flex flex-col flex-1 min-w-0">
+                                  <span className="font-medium text-sm truncate">
+                                    {user.name}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground truncate">
+                                    {user.email}
+                                  </span>
+                                </div>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Lista de colaboradores selecionados */}
-              {selectedCollaborators.length > 0 && (
+              {selectedCollaborators.length === 0 ? (
+                <NotFoundList
+                  message="Sem usuário"
+                  description="Adicione um usuário à disciplina"
+                  icon="file"
+                  showIcon={false}
+                />
+              ) : (
                 <div className="flex flex-col gap-2">
-                  {mockCollaborators
-                    .filter((c) => selectedCollaborators.includes(c.id))
-                    .map((collaborator) => (
-                      <div
-                        key={collaborator.id}
-                        className="flex items-center justify-between p-3 rounded-md border bg-card"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-[#00796B] text-white flex items-center justify-center font-medium">
-                            {collaborator.initials}
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="font-medium text-[#00796B]">
-                              {collaborator.name}
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                              {collaborator.email}
-                            </span>
-                          </div>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => removeCollaborator(collaborator.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
-                </div>
-              )}
-
-              {/* Colaboradores disponíveis (mock) */}
-              {mockCollaborators.length > 0 && (
-                <div className="flex flex-col gap-2">
-                  {mockCollaborators
-                    .filter((c) => !selectedCollaborators.includes(c.id))
-                    .map((collaborator) => (
-                      <button
-                        key={collaborator.id}
-                        type="button"
-                        className="flex items-center gap-3 p-3 rounded-md border bg-card hover:bg-accent transition-colors"
-                        onClick={() => addCollaborator(collaborator.id)}
-                      >
+                  {selectedCollaborators.map((collaborator) => (
+                    <div
+                      key={collaborator.id}
+                      className="flex items-center justify-between p-3 rounded-md border bg-card"
+                    >
+                      <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-[#00796B] text-white flex items-center justify-center font-medium">
-                          {collaborator.initials}
+                          {getInitials(collaborator.name)}
                         </div>
-                        <div className="flex flex-col text-left">
+                        <div className="flex flex-col">
                           <span className="font-medium text-[#00796B]">
                             {collaborator.name}
                           </span>
@@ -428,8 +580,18 @@ export default function DrawerFormDisciplines({
                             {collaborator.email}
                           </span>
                         </div>
-                      </button>
-                    ))}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => removeCollaborator(collaborator.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               )}
             </form>
@@ -439,10 +601,16 @@ export default function DrawerFormDisciplines({
           {isEditMode ? (
             <Button type="submit" form="disciplines-form" variant={"bipc"}>
               Salvar alterações
+              {isUpdating && (
+                <div className="ml-2 h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+              )}
             </Button>
           ) : (
             <Button variant={"bipc"} type="submit" form="disciplines-form">
               Adicionar disciplina
+              {isCreating && (
+                <div className="ml-2 h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+              )}
             </Button>
           )}
         </DrawerFooter>

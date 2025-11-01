@@ -106,7 +106,9 @@ function RouteComponent() {
     setSummaryContext({
       component: (
         <FloorSummary
-          selectedFloors={selectedFloors.length ? selectedFloors : (groupedFloors as any)}
+          selectedFloors={
+            selectedFloors.length ? selectedFloors : (groupedFloors as any)
+          }
           floors={groupedFloors}
           data={benchmarkData.data}
           unit={unit as IUnit}
@@ -261,8 +263,8 @@ function RouteComponent() {
             Tecnologia Construtiva (módulo de cálculo)
             <div className="flex items-center gap-2 mt-4">
               <FilterTabs
-                tabs={["Todas as Unidades"]}
-                selectedTab="Todas as Unidades"
+                tabs={["Todas as Disciplinas"]}
+                selectedTab="Todas as Disciplinas"
                 onTabSelect={console.log}
                 fullWidth
               />

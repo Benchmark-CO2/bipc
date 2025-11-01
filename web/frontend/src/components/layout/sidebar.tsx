@@ -7,12 +7,11 @@ import { useSidebar } from "@/hooks/useSidebar";
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
 import {
-  Activity,
   BarChart3,
   Bell,
+  Book,
   Contact,
   File,
-  FlaskConical,
   Info,
   LogIn,
   Menu,
@@ -24,6 +23,7 @@ import { Notifications } from "../notifications";
 import { Button } from "../ui/button";
 import Divider from "../ui/divider";
 import SidemenuItem from "../ui/sidemenu-item";
+import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
 
 interface ISidebar {
   handleLogout?: () => void;
@@ -64,32 +64,18 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             </SidemenuItem>
           </li>
 
-          {/* PD&I */}
           <li>
             <SidemenuItem variant="link">
               <Link
-                to={isAuthenticated ? "/benchmark" : "/login"}
+                to={posLaunchFeatures.trainingModal.formUrl}
+                target="_blank"
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
-                <FlaskConical size={18} />
-                <span>PD&I</span>
+                <Book size={18} />
+                <span>Capacitação</span>
               </Link>
             </SidemenuItem>
           </li>
-
-          <li>
-            <SidemenuItem variant="link">
-              <Link
-                to="/benchmark"
-                className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-              >
-                <Activity size={18} />
-                <span>Ações</span>
-              </Link>
-            </SidemenuItem>
-          </li>
-
-          <Divider className="my-1" />
 
           <li>
             <SidemenuItem variant="link">
@@ -104,6 +90,8 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             </SidemenuItem>
           </li>
 
+          <Divider className="my-4" />
+
           {/* Seção específica para usuários logados */}
           {isAuthenticated ? (
             <>
@@ -117,19 +105,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                   >
                     <File size={18} />
                     <span>Projetos</span>
-                  </Link>
-                </SidemenuItem>
-              </li>
-
-              <li>
-                <SidemenuItem variant="link">
-                  <Link
-                    to={"/contacts" as any}
-                    activeProps={activeProps}
-                    className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-                  >
-                    <Contact size={18} />
-                    <span>Contatos</span>
                   </Link>
                 </SidemenuItem>
               </li>
