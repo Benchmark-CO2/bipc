@@ -67,7 +67,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
   }, [projects, someSelected]);
 
   useEffect(() => {
-    if (!someSelected) return 
+    if (!someSelected) return
 
     if (previousProjects.length < projects.length) {
       const diff = projects.filter((p) => !previousProjects.includes(p.id));
@@ -120,20 +120,19 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
               : "Selecionar Todos",
           ]}
           selectedSubTab={subTabs}
-        />        
+        />
       </div>
       <div
         className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
           "flex flex-col": isExpanded,
         })}
       >
-        <div className="flex flex-col items-start w-full">
-        {ChartSelector}
+        <div className="flex flex-col items-start w-full justify-between h-full">
+          {ChartSelector}
           <ul
             className={cn("flex flex-col gap-2 text-xl w-full text-black", {
               "flex-row gap-2 flex-wrap": isExpanded,
-              "max-h-[280px] overflow-y-auto xl:max-h-[200px]": !isExpanded,
-              "2xl:max-h-[550px]": !isExpanded,
+              "max-h-[280px] overflow-y-auto xl:max-h-[200px] 2xl:max-h-[420px]": !isExpanded,
             })}
           >
             {(!stackedData || stackedData.length === 0) && (
@@ -168,9 +167,10 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
               );
             })}
           </ul>
-          {<Legend  />}
+          {<Legend />}
           {/* {!isExpanded && <Subtitle />} */}
         </div>
+
 
         {chartType === "scatter" ? (
           <D3GradientRangeChart
@@ -180,7 +180,6 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
             totalProjects={data?.benchmark[type].length || 0}
             minData={minData}
             maxData={maxData}
-            
           />
         ) : (
           <D3GradientRangeLineChart

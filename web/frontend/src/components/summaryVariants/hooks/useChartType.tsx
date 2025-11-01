@@ -13,23 +13,23 @@ export const useChartType = () => {
     <div className='w-11/12 max-sm:w-full'>
       <Label className="mb-2">Tipo de Gráfico:</Label>
       <Select
-      value={chartType}
-      onValueChange={changeChartType}
-    >
-      <SelectTrigger className="w-full mb-4">
-        <SelectValue
-          placeholder="Tipo de Gráfico"
-        />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="scatter">
-          Fração acumulada
-        </SelectItem>
-        <SelectItem value="line">
-          Gráfico de tendência
-        </SelectItem>
-      </SelectContent>
-    </Select>
+        value={chartType}
+        onValueChange={changeChartType}
+      >
+        <SelectTrigger className="w-full mb-4">
+          <SelectValue
+            placeholder="Tipo de Gráfico"
+          />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="scatter">
+            Fração acumulada
+          </SelectItem>
+          <SelectItem value="line">
+            Classificação
+          </SelectItem>
+        </SelectContent>
+      </Select>
     </div>
   );
 
