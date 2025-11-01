@@ -4,8 +4,8 @@ import { useSummary } from "@/context/summaryContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import * as d3 from "d3";
-import { Triangle } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Indicators from './components/indicators';
 
 // Utility: Debounce function
 const debounce = <T extends (...args: any[]) => any>(
@@ -47,7 +47,7 @@ const UNIT_LABELS = {
 } as const;
 
 // Types
-type ChartData = IBenchmarkItem &{
+type ChartData = IBenchmarkItem & {
   label: string;
 };
 
@@ -73,7 +73,7 @@ const useChartDimensions = (
 ) => {
   return useMemo(() => {
     const screenWidth = window.innerWidth;
-    
+
     const width = () => {
       if (props.width && overrideDimensions) return props.width;
       if (isMobile) return screenWidth * 0.6;
@@ -88,7 +88,7 @@ const useChartDimensions = (
       if (isMobile && !isExpanded) return 250;
       if (isMobile && isExpanded) return 320;
       if (isExpanded) return window.innerHeight * 0.96 - 130;
-      return (window.innerHeight * 0.65) - 230;
+      return window.innerHeight * 0.7 - 340;
     };
 
     const margin = {
@@ -164,10 +164,10 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   }, [data.length]);
 
   // Função auxiliar para atualizar o contador
-  const updateBrushCount = (count: number) => {
+  const updateBrushCount = useCallback((count: number) => {
     brushSelectionCountRef.current = count;
     setBrushSelectionCount(count);
-  };
+  }, []);
 
   const minLessDataValue = useMemo(() => Math.min(...minData), [minData]);
   const minMaxDataValue = useMemo(() => Math.min(...maxData), [maxData]);
@@ -188,22 +188,23 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   const getTooltipPosition = useTooltipPosition();
 
   // Scales and calculations
-  const maxValue = useMemo(() => 
+  const maxValue = useMemo(() =>
     (data?.map((d) => d.max).reduce((a, b) => Math.max(a, b), 0) || 170) * 1.1,
     [data]
   );
 
-  const xScale = useMemo(() => 
-    d3.scaleLinear().domain([0, maxValue]).range([0, _width]),
-    [maxValue, _width]
-  );
+  const xScale = useMemo(() => {
+    // Ensure we have a valid width before creating the scale
+    const width = _width > 0 ? _width : 400; // fallback width
+    return d3.scaleLinear().domain([0, maxValue * 1.15]).range([0, width * 1.1]);
+  }, [maxValue, _width]);
 
   const yScale = useMemo(() => {
     // Y values are normalized between 0 and 1
-    return d3.scaleLinear().domain([0, 1]).range([_height, 0]);
+    return d3.scaleLinear().domain([0, 1.01]).range([_height, 0]);
   }, [_height]);
 
-  const colorScale = useMemo(() => 
+  const colorScale = useMemo(() =>
     d3.scaleLinear<string>()
       .domain([0, maxValue * 0.25, maxValue * 0.5, maxValue])
       .range(DEFAULT_COLORS.GRADIENT_RANGE),
@@ -221,7 +222,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         label: selectedBars?.includes(d.id) ? d.label : undefined,
       },
     });
-  }, [getTooltipPosition, selectedBars]);
+  }, [getTooltipPosition]); // Removed selectedBars dependency to prevent re-renders
 
   const handleMouseMove = useCallback((event: any, d: ChartData) => {
     const position = getTooltipPosition(event, svgRef);
@@ -233,22 +234,78 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         label: selectedBars?.includes(d.id) ? d.label : undefined,
       },
     });
-  }, [getTooltipPosition, selectedBars]);
+  }, [getTooltipPosition]); // Removed selectedBars dependency to prevent re-renders
 
   const handleMouseOut = useCallback(() => {
     setTooltip(null);
   }, []);
 
   // Resize handler - Debounced leve
-  const debouncedResize = useMemo(
-    () => debounce(() => setIsResized((prev) => prev + 1), 50),
-    []
-  );
-  
+  const debouncedResizeRef = useMemo(() => debounce(() => {
+    if (!svgRef.current) return;
+
+    const parent = svgRef.current.parentElement;
+    if (!parent) return;
+
+    // Only update width attribute, don't trigger chart recreation
+    svgRef.current.setAttribute("width", (parent.clientWidth + margin.left + margin.right).toString());
+
+    // Update internal width state without triggering full re-render
+    // This preserves zoom state and other interactions
+  }, 50), [svgRef, margin]);
+
   useEffect(() => {
-    window.addEventListener("resize", debouncedResize);
-    return () => window.removeEventListener("resize", debouncedResize);
-  }, [debouncedResize]);
+    window.addEventListener("resize", debouncedResizeRef);
+    return () => window.removeEventListener("resize", debouncedResizeRef);
+  }, [debouncedResizeRef]);
+
+  // ResizeObserver to watch parent element changes
+  useEffect(() => {
+    if (!svgRef.current?.parentElement) return;
+
+    let resizeTimer: NodeJS.Timeout;
+    const resizeObserver = new ResizeObserver(() => {
+      // Clear previous timer
+      clearTimeout(resizeTimer);
+
+      // Debounce the resize to avoid excessive updates
+      resizeTimer = setTimeout(() => {
+        if (!svgRef.current) return;
+
+        const parent = svgRef.current.parentElement;
+        if (!parent) return;
+
+        const newWidth = parent.clientWidth + margin.left + margin.right;
+        const currentWidth = svgRef.current.getAttribute("width");
+
+        // Only update if there's a significant change in width (> 20px to be very conservative)
+        if (Math.abs(newWidth - parseFloat(currentWidth || "0")) > 20) {
+          svgRef.current.setAttribute("width", newWidth.toString());
+
+          // Update chart dimensions while preserving zoom state
+          const svg = d3.select(svgRef.current);
+          const currentTransform = d3.zoomTransform(svg.node() as any);
+
+          if (currentTransform && (currentTransform.k !== 1 || currentTransform.x !== 0 || currentTransform.y !== 0)) {
+            // If zoomed, preserve the transform but update chart area
+            // Update clipping path
+            svg.select("#clip rect")
+              .attr("width", parent.clientWidth);
+          } else {
+            // If not zoomed, trigger a controlled re-render
+            setIsResized((prev) => prev + 1);
+          }
+        }
+      }, 150); // Increased debounce time to be more conservative
+    });
+
+    resizeObserver.observe(svgRef.current.parentElement);
+
+    return () => {
+      clearTimeout(resizeTimer);
+      resizeObserver.disconnect();
+    };
+  }, [margin]);
 
   // Main chart effect
   useEffect(() => {
@@ -260,7 +317,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     // Create SVG
     const svg = d3
       .select(svgRef.current)
-      .attr("width", _width + margin.left + margin.right + 20)
+      .attr("width", _width + margin.left + margin.right)
       .attr("height", _height + margin.top + margin.bottom);
 
     // Main group
@@ -316,11 +373,11 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     g.append("g")
       .attr("class", "axis-x")
       .attr("transform", `translate(0,${_height})`)
-      .call(d3.axisBottom(xScale).ticks(10))
+      .call(d3.axisBottom(xScale).ticks(Math.min(10, Math.floor(_width / 60))))
       .selectAll("text")
       .style("font-size", "12px")
       .style("fill", DEFAULT_COLORS.TEXT)
-      
+
 
     g.append("g")
       .attr("class", "axis-y")
@@ -424,33 +481,33 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     // Função de zoom - responsiva e imediata
     function zoomed(event: any) {
       const transform = event.transform;
-      
+
       // Criar novas escalas baseadas no transform
       const newXScale = transform.rescaleX(xScale);
       const newYScale = transform.rescaleY(yScale);
-      
+
       // Atualizar eixos imediatamente
       g.select<SVGGElement>(".axis-x")
-        .call(d3.axisBottom(newXScale).ticks(10) as any);
+        .call(d3.axisBottom(newXScale).ticks(Math.min(15, Math.floor(_width / 60))) as any);
 
       g.select<SVGGElement>(".axis-y")
         .call(d3.axisLeft(newYScale).ticks(8) as any);
-      
+
       // Atualizar posições imediatamente
       updateElementsPosition(newXScale, newYScale);
-      
+
       // Contar elementos visíveis
       const [x0, x1] = newXScale.domain();
       const [y0, y1] = newYScale.domain();
-      
+
       const countInView = data.filter((d) => {
         const xInRange = d.min >= x0 && d.max <= x1;
         const yInRange = d.y >= y0 && d.y <= y1;
         return xInRange && yInRange;
       }).length;
-      
+
       updateBrushCount(countInView);
-      
+
       // Verificar se está com zoom ativo (qualquer transformação)
       const isZoomed = transform.k !== 1 || transform.x !== 0 || transform.y !== 0;
       setHasZoomed(isZoomed);
@@ -461,10 +518,10 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       svg.transition()
         .duration(750)
         .call(zoom.transform as any, d3.zoomIdentity);
-      
+
       // Reset contador para o total
       updateBrushCount(data.length);
-      
+
       // Reset indicador de zoom
       setHasZoomed(false);
     });
@@ -583,14 +640,14 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     return () => {
       // Nenhum cleanup necessário
     };
-  }, [isExpanded, data, isResized, _width, _height, margin, xScale, yScale, colorScale, handleMouseOver, handleMouseMove, handleMouseOut, updateBrushCount]);
+  }, [isExpanded, data, isResized, _width, _height, margin, xScale, yScale, colorScale, updateBrushCount]);
 
   // Selected bars effect
   useEffect(() => {
     if (!svgRef.current || !data) return;
     const g = d3.select(svgRef.current).select("g");
     if (g.empty()) return;
-    
+
     // Select the chartArea group (with clip-path)
     const chartArea = g.select("g[clip-path='url(#clip)']");
     if (chartArea.empty()) return;
@@ -723,39 +780,28 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   const labelX = UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Incorporado";
 
   return (
-    <Card className={cn("shadow-none w-min-content")}>
+    <Card className={cn("shadow-none w-min-content min-w-1/2")}>
       <CardContent>
         <div className="w-full overflow-hidden relative">
           <span className="absolute w-full text-center text-foreground/70 block rotate-270 left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
             potencial de mitigação
           </span>
 
-            <div className={cn("ml-auto flex justify-between w-[150px] my-2 transition-opacity", {
-              'opacity-0': !(hasZoomed),
-            })}>
-              <div className="flex gap-2">
-                <span className='max-sm:text-sm text-foreground/70'>{maxLessDataValue.toFixed(2)}</span>
-                <Triangle className="w-6 h-6 fill-[#3b82f6] rotate-90 stroke-[#3b82f6] max-sm:w-4 max-sm:h-4 self-center" />
-              </div>
-              <div className="flex gap-2">
-                <span className='max-sm:text-sm text-foreground/70'>{maxMaxDataValue.toFixed(2)}</span>
-                <Triangle className="w-6 h-6 fill-[#E36F35] rotate-90 stroke-[#E36F35] max-sm:w-4 max-sm:h-4 self-center" />
-              </div>
-            </div>
+          <Indicators
+            max={maxLessDataValue}
+            min={minLessDataValue}
+            hasZoomed={hasZoomed}
+            position='end'
+          />
 
-          <svg ref={svgRef} className="bg-white dark:bg-zinc-900" />
-            {!isMobile && (<div className={cn("mr-auto flex justify-start w-full my-2 mb-4 gap-10 pl-20 opacity-100 transition-opacity transform-gpu", {
-              'opacity-0': !(hasZoomed),
-            })}>
-              <div className="flex gap-2">
-                <span>{minLessDataValue.toFixed(2)}</span>
-                <Triangle className="w-6 h-6 fill-[#3b82f6] -rotate-90 stroke-[#3b82f6] max-sm:w-4" />
-              </div>
-              <div className="flex gap-2">
-                <span>{minMaxDataValue.toFixed(2)}</span>
-                <Triangle className="w-6 h-6 fill-[#E36F35] -rotate-90 stroke-[#E36F35] max-sm:w-4" />
-              </div>
-            </div>)}
+          <svg ref={svgRef} className="bg-white dark:bg-zinc-900 w-full" />
+
+          {!isMobile && (<Indicators
+            max={maxLessDataValue}
+            min={minLessDataValue}
+            hasZoomed={hasZoomed}
+            position='start'
+          />)}
 
           {tooltip && (
             <div
@@ -779,18 +825,14 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           <span>
             Exibindo: {brushSelectionCount} / {data?.length || 0}
           </span>
-          {isMobile && (<div className={cn("mr-auto flex justify-start w-full my-2 mb-4 gap-10 opacity-100 transition-opacity max-sm:w-full", {
-              'opacity-0': !hasZoomed,
-            })}>
-              <div className="flex gap-1 flex-row-reverse">
-                <span className='text-sm text-foreground/70'>{minLessDataValue.toFixed(2)}</span>
-                <Triangle className="w-6 h-6 fill-[#3b82f6] -rotate-90 stroke-[#3b82f6]  max-sm:h-4 self-center" />
-              </div>
-              <div className="flex gap-1 flex-row-reverse">
-                <span className='text-sm text-foreground/70'>{minMaxDataValue.toFixed(2)}</span>
-                <Triangle className="w-6 h-6 fill-[#E36F35] -rotate-90 stroke-[#E36F35]  max-sm:h-4 self-center" />
-              </div>
-            </div>)}
+          {isMobile && (
+            <Indicators
+              max={maxLessDataValue}
+              min={minLessDataValue}
+              hasZoomed={hasZoomed}
+              position='start'
+            />
+          )}
           <span className="flex-1 text-center w-full text-foreground/70">
             {labelX}
           </span>
