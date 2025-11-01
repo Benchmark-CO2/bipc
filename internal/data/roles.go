@@ -55,12 +55,12 @@ func ValidateRole(v *validator.Validator, role *RoleWithUsersPermissions) {
 
 type UserWithRoles struct {
 	User
-	Roles []string `json:"roles"`
+	Roles []string `json:"roles,omitempty"`
 }
 
 type Collaborators struct {
-	Roles         []Role          `json:"roles"`
-	Collaborators []UserWithRoles `json:"collaborators"`
+	Roles         []RoleWithUsersPermissions `json:"roles,omitempty"`
+	Collaborators []UserWithRoles            `json:"collaborators,omitempty"`
 }
 
 type RoleModel struct {
@@ -294,9 +294,19 @@ func (m RoleModel) Collaborators(projectID uuid.UUID) (Collaborators, error) {
 	defer cancel()
 
 	query := `
-	SELECT id, project_id, name, description, simulation, is_protected
-	FROM roles
-	WHERE project_id = $1`
+	SELECT r.id, r.project_id, r.name, r.description, r.simulation, r.is_protected,
+        COALESCE(
+            (SELECT ARRAY_AGG(rp.permission_id)
+             FROM roles_permissions rp
+             WHERE rp.role_id = r.id), '{}'
+        ) AS permission_ids,
+        COALESCE(
+            (SELECT ARRAY_AGG(ur.user_id)
+             FROM users_roles ur
+             WHERE ur.role_id = r.id), '{}'
+        ) AS user_ids
+    FROM roles r
+    WHERE r.project_id = $1`
 
 	var collaborators Collaborators
 
@@ -307,9 +317,9 @@ func (m RoleModel) Collaborators(projectID uuid.UUID) (Collaborators, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var role Role
+		var role RoleWithUsersPermissions
 
-		err := rows.Scan(&role.ID, &role.ProjectID, &role.Name, &role.Description, &role.Simulation, &role.IsProtected)
+		err := rows.Scan(&role.ID, &role.ProjectID, &role.Name, &role.Description, &role.Simulation, &role.IsProtected, pq.Array(&role.PermissionsIDs), pq.Array(&role.UsersIDs))
 		if err != nil {
 			return collaborators, err
 		}
@@ -355,10 +365,12 @@ func (m RoleModel) Collaborators(projectID uuid.UUID) (Collaborators, error) {
 
 func (m RoleModel) GetAllForUser(userID uuid.UUID, projectID uuid.UUID) (bool, error) {
 	query := `
-        SELECT p.code
-        FROM permissions p
-        INNER JOIN users_projects_permissions upp ON upp.permission_id = p.id
-        WHERE upp.user_id = $1 AND upp.project_id = $2`
+        SELECT DISTINCT p.action, p.resource
+		FROM permissions p
+		JOIN roles_permissions rp ON p.id = rp.permission_id
+		JOIN roles r ON rp.role_id = r.id
+		JOIN users_roles ur ON r.id = ur.role_id
+		WHERE ur.user_id = $1 AND r.project_id = $2`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
