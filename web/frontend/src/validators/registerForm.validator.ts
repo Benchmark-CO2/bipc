@@ -80,6 +80,17 @@ export const registerFormSchema = z
     city: z.string().optional(),
     activity: z.string().optional(),
     enterprise: z.string().optional(),
+    termsAccepted: z.literal(true, {
+      errorMap: () => ({
+        message: "Você deve aceitar os Termos de Uso para se registrar.",
+      }),
+    }),
+    privacyPolicyAccepted: z.literal(true, {
+      errorMap: () => ({
+        message:
+          "Você deve aceitar a Política de Privacidade para se registrar.",
+      }),
+    }),
   })
   .superRefine((data, ctx) => {
     const { password, confirmPassword } = data;
