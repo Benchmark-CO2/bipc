@@ -51,7 +51,7 @@ export interface IProject {
   phase: TProjectPhase;
   description: string;
   units: TProjectUnit[];
-  consumptions?: TConsumptionPerModule;
+  consumption?: TConsumptionPerModule;
   area: number;
   user_id: number;
 }

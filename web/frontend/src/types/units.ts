@@ -39,13 +39,4 @@ export interface IUnit {
   name: string;
   type: TUnitType;
   tower: TTowerType;
-  // total_floors?: number;
-  // tower_floors?: number;
-  // base_floors?: number;
-  // basement_floors?: number;
-  // type_floors?: number;
-  // total_area?: number;
-  // concrete_wall_modules?: IModuleItem[];
-  // beam_column_modules?: IModuleItem[];
-  // structural_masonry_modules?: IModuleItem[];
 }
