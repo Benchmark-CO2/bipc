@@ -10,9 +10,9 @@ import (
 )
 
 type BlockInfo struct {
-	Type  string `json:"type"`
-	Fbk   int    `json:"fbk"`
-	Count int    `json:"count"`
+	Type     string `json:"type"`
+	Fbk      int    `json:"fbk"`
+	Quantity int    `json:"quantity"`
 }
 
 type GroutVolumeItem struct {
@@ -108,7 +108,7 @@ func (s *StructuralMasonry) Validate(v *validator.Validator) {
 	for i, block := range s.Masonry.Blocks {
 		prefix := fmt.Sprintf("masonry.blocks[%d]", i)
 		v.Check(block.Type != "", prefix+".type", "must be provided")
-		v.Check(block.Count >= 0, prefix+".count", "cannot be negative")
+		v.Check(block.Quantity >= 0, prefix+".quantity", "cannot be negative")
 	}
 }
 
@@ -180,15 +180,15 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 		if !ok {
 			val = sidacBlockData.KgCO2[26]
 		}
-		result.CO2Min += val.Min * float64(b.Count) * massFactor
-		result.CO2Max += val.Max * float64(b.Count) * massFactor
+		result.CO2Min += val.Min * float64(b.Quantity) * massFactor
+		result.CO2Max += val.Max * float64(b.Quantity) * massFactor
 
 		val, ok = sidacBlockData.MJ[float64(b.Fbk)]
 		if !ok {
 			val = sidacBlockData.MJ[26]
 		}
-		result.EnergyMin += val.Min * float64(b.Count) * massFactor
-		result.EnergyMax += val.Max * float64(b.Count) * massFactor
+		result.EnergyMin += val.Min * float64(b.Quantity) * massFactor
+		result.EnergyMax += val.Max * float64(b.Quantity) * massFactor
 	}
 
 	total.sum(result)
@@ -225,96 +225,101 @@ func (s *StructuralMasonry) Insert(models data.Models, optionID uuid.UUID, resul
 		return nil, err
 	}
 
-	moduleToInsert := toStructuralMasonryModule(s, moduleID, optionID, result)
+	moduleToInsert := s.toDataModule(moduleID, optionID, result)
 
-	insertedModule, err := models.StructuralMasonryModules.Insert(moduleToInsert)
+	insertedModule, err := models.Modules.Insert(moduleToInsert)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.toModule(insertedModule), nil
+	return s.fromDataModule(insertedModule), nil
 }
 
 func (s *StructuralMasonry) Delete(models data.Models, moduleID uuid.UUID) error {
-	return models.StructuralMasonryModules.Delete(moduleID)
+	return models.Modules.Delete(moduleID)
 }
 
 func (s *StructuralMasonry) Get(models data.Models, moduleID uuid.UUID) (Module, error) {
-	dataModule, err := models.StructuralMasonryModules.Get(moduleID)
+	dataModule, err := models.Modules.Get(moduleID)
 	if err != nil {
 		return nil, err
 	}
-	return s.toModule(dataModule), nil
+	return s.fromDataModule(dataModule), nil
 }
 
 func (s *StructuralMasonry) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
-	module := toStructuralMasonryModule(s, moduleID, optionID, result)
-	return models.StructuralMasonryModules.Update(module)
+	module := s.toDataModule(moduleID, optionID, result)
+	return models.Modules.Update(module)
 }
 
-func toStructuralMasonryModule(s *StructuralMasonry, moduleID, optionID uuid.UUID, result Consumption) *data.StructuralMasonryModule {
-	col := toDataConcrete(s.ConcreteColumns)
-	beam := toDataConcrete(s.ConcreteBeams)
-	slab := toDataConcrete(s.ConcreteSlabs)
-
-	masonry := data.Masonry{}
+func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
+	masonry := map[string]interface{}{
+		"grout":  []map[string]interface{}{},
+		"mortar": []map[string]interface{}{},
+		"blocks": []map[string]interface{}{},
+	}
 
 	for _, grout := range s.Masonry.Grout {
-		groutInfo := data.GroutInfo{
-			Position: grout.Position,
+		groutData := map[string]interface{}{
+			"position": grout.Position,
+			"volumes":  []map[string]interface{}{},
+			"steel":    []map[string]interface{}{},
 		}
 		for _, vol := range grout.Volumes {
-			groutInfo.Volumes = append(groutInfo.Volumes, data.GroutVolume{
-				Fgk:    vol.Fgk,
-				Volume: vol.Volume,
+			groutData["volumes"] = append(groutData["volumes"].([]map[string]interface{}), map[string]interface{}{
+				"fgk":    vol.Fgk,
+				"volume": vol.Volume,
 			})
 		}
 		for _, steel := range grout.Steel {
-			groutInfo.Steel = append(groutInfo.Steel, data.SteelMass{
-				CA:   steel.CA,
-				Mass: steel.Mass,
+			groutData["steel"] = append(groutData["steel"].([]map[string]interface{}), map[string]interface{}{
+				"ca":   steel.CA,
+				"mass": steel.Mass,
 			})
 		}
-		masonry.Grout = append(masonry.Grout, groutInfo)
+		masonry["grout"] = append(masonry["grout"].([]map[string]interface{}), groutData)
 	}
 
 	for _, mortar := range s.Masonry.Mortar {
-		masonry.Mortar = append(masonry.Mortar, data.MortarInfo{
-			Fak:    mortar.Fak,
-			Volume: mortar.Volume,
+		masonry["mortar"] = append(masonry["mortar"].([]map[string]interface{}), map[string]interface{}{
+			"fak":    mortar.Fak,
+			"volume": mortar.Volume,
 		})
 	}
 
 	for _, block := range s.Masonry.Blocks {
-		masonry.Blocks = append(masonry.Blocks, data.BlockInfo{
-			Type:  block.Type,
-			Fbk:   block.Fbk,
-			Count: block.Count,
+		masonry["blocks"] = append(masonry["blocks"].([]map[string]interface{}), map[string]interface{}{
+			"type":     block.Type,
+			"fbk":      block.Fbk,
+			"quantity": block.Quantity,
 		})
 	}
 
-	return &data.StructuralMasonryModule{
-		Module: data.Module{
-			ID:             moduleID,
-			TowerOptionID:  optionID,
-			TotalCO2Min:    &result.CO2Min,
-			TotalCO2Max:    &result.CO2Max,
-			TotalEnergyMin: &result.EnergyMin,
-			TotalEnergyMax: &result.EnergyMax,
-			FloorIDs:       s.FloorIDs,
-		},
-		ConcreteColumns: col,
-		ConcreteBeams:   beam,
-		ConcreteSlabs:   slab,
-		FormColumns:     s.FormColumns,
-		FormBeams:       s.FormBeams,
-		FormSlabs:       s.FormSlabs,
-		FormTotal:       s.FormTotal,
-		Masonry:         masonry,
+	moduleData := map[string]interface{}{
+		"concrete_columns": toDataConcrete(s.ConcreteColumns),
+		"concrete_beams":   toDataConcrete(s.ConcreteBeams),
+		"concrete_slabs":   toDataConcrete(s.ConcreteSlabs),
+		"form_columns":     s.FormColumns,
+		"form_beams":       s.FormBeams,
+		"form_slabs":       s.FormSlabs,
+		"form_total":       s.FormTotal,
+		"masonry":          masonry,
+	}
+
+	return &data.Module{
+		ID:             moduleID,
+		Type:           "structural_masonry",
+		TowerOptionID:  optionID,
+		Data:           moduleData,
+		TotalCO2Min:    &result.CO2Min,
+		TotalCO2Max:    &result.CO2Max,
+		TotalEnergyMin: &result.EnergyMin,
+		TotalEnergyMax: &result.EnergyMax,
+		FloorIDs:       s.FloorIDs,
 	}
 }
 
-func (s *StructuralMasonry) toModule(d *data.StructuralMasonryModule) Module {
+func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 	var consumption *Consumption
 	if d.TotalCO2Min != nil {
 		consumption = &Consumption{
@@ -325,53 +330,113 @@ func (s *StructuralMasonry) toModule(d *data.StructuralMasonryModule) Module {
 		}
 	}
 
+	concreteColumns := data.Concrete{}
+	concreteBeams := data.Concrete{}
+	concreteSlabs := data.Concrete{}
+
+	if colData, ok := d.Data["concrete_columns"].(map[string]interface{}); ok {
+		concreteColumns = concreteFromMap(colData)
+	}
+	if beamData, ok := d.Data["concrete_beams"].(map[string]interface{}); ok {
+		concreteBeams = concreteFromMap(beamData)
+	}
+	if slabData, ok := d.Data["concrete_slabs"].(map[string]interface{}); ok {
+		concreteSlabs = concreteFromMap(slabData)
+	}
+
+	var formColumns, formBeams, formSlabs, formTotal *float64
+
+	if val, ok := d.Data["form_columns"].(float64); ok {
+		formColumns = &val
+	}
+	if val, ok := d.Data["form_beams"].(float64); ok {
+		formBeams = &val
+	}
+	if val, ok := d.Data["form_slabs"].(float64); ok {
+		formSlabs = &val
+	}
+	if val, ok := d.Data["form_total"].(float64); ok {
+		formTotal = &val
+	}
+
 	var masonry MasonryElement
 
-	for _, grout := range d.Masonry.Grout {
-		info := GroutInfo{
-			Position: grout.Position,
-		}
-		for _, vol := range grout.Volumes {
-			info.Volumes = append(info.Volumes, GroutVolumeItem{
-				Fgk:    vol.Fgk,
-				Volume: vol.Volume,
-			})
-		}
-		for _, steel := range grout.Steel {
-			info.Steel = append(info.Steel, SteelMassItem{
-				CA:   steel.CA,
-				Mass: steel.Mass,
-			})
-		}
-		masonry.Grout = append(masonry.Grout, info)
-	}
+	if masonryData, ok := d.Data["masonry"].(map[string]interface{}); ok {
+		if groutData, ok := masonryData["grout"].([]interface{}); ok {
+			for _, g := range groutData {
+				if groutMap, ok := g.(map[string]interface{}); ok {
+					grout := GroutInfo{
+						Position: groutMap["position"].(string),
+					}
 
-	for _, mortar := range d.Masonry.Mortar {
-		masonry.Mortar = append(masonry.Mortar, MortarItem{
-			Fak:    mortar.Fak,
-			Volume: mortar.Volume,
-		})
-	}
+					if volumesData, ok := groutMap["volumes"].([]interface{}); ok {
+						for _, v := range volumesData {
+							if volMap, ok := v.(map[string]interface{}); ok {
+								grout.Volumes = append(grout.Volumes, GroutVolumeItem{
+									Fgk:    int(volMap["fgk"].(float64)),
+									Volume: volMap["volume"].(float64),
+								})
+							}
+						}
+					}
 
-	for _, block := range d.Masonry.Blocks {
-		masonry.Blocks = append(masonry.Blocks, BlockInfo{
-			Type:  block.Type,
-			Fbk:   block.Fbk,
-			Count: block.Count,
-		})
+					if steelData, ok := groutMap["steel"].([]interface{}); ok {
+						for _, st := range steelData {
+							if steelMap, ok := st.(map[string]interface{}); ok {
+								grout.Steel = append(grout.Steel, SteelMassItem{
+									CA:   int(steelMap["ca"].(float64)),
+									Mass: steelMap["mass"].(float64),
+								})
+							}
+						}
+					}
+
+					masonry.Grout = append(masonry.Grout, grout)
+				}
+			}
+		}
+
+		if mortarData, ok := masonryData["mortar"].([]interface{}); ok {
+			for _, m := range mortarData {
+				if mortarMap, ok := m.(map[string]interface{}); ok {
+					masonry.Mortar = append(masonry.Mortar, MortarItem{
+						Fak:    mortarMap["fak"].(float64),
+						Volume: mortarMap["volume"].(float64),
+					})
+				}
+			}
+		}
+
+		if blocksData, ok := masonryData["blocks"].([]interface{}); ok {
+			for _, b := range blocksData {
+				if blockMap, ok := b.(map[string]interface{}); ok {
+					block := BlockInfo{}
+					if typeVal, ok := blockMap["type"].(string); ok {
+						block.Type = typeVal
+					}
+					if fbkVal, ok := blockMap["fbk"].(float64); ok {
+						block.Fbk = int(fbkVal)
+					}
+					if quantityVal, ok := blockMap["quantity"].(float64); ok {
+						block.Quantity = int(quantityVal)
+					}
+					masonry.Blocks = append(masonry.Blocks, block)
+				}
+			}
+		}
 	}
 
 	return &StructuralMasonry{
 		ID:              d.ID,
 		BasicModuleData: BasicModuleData{Type: "structural_masonry"},
 		Consumption:     consumption,
-		ConcreteColumns: ToConcreteElement(d.ConcreteColumns),
-		ConcreteBeams:   ToConcreteElement(d.ConcreteBeams),
-		ConcreteSlabs:   ToConcreteElement(d.ConcreteSlabs),
-		FormColumns:     d.FormColumns,
-		FormBeams:       d.FormBeams,
-		FormSlabs:       d.FormSlabs,
-		FormTotal:       d.FormTotal,
+		ConcreteColumns: ToConcreteElement(concreteColumns),
+		ConcreteBeams:   ToConcreteElement(concreteBeams),
+		ConcreteSlabs:   ToConcreteElement(concreteSlabs),
+		FormColumns:     formColumns,
+		FormBeams:       formBeams,
+		FormSlabs:       formSlabs,
+		FormTotal:       formTotal,
 		Masonry:         masonry,
 		FloorIDs:        d.FloorIDs,
 	}
