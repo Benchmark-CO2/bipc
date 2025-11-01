@@ -24,9 +24,8 @@ type Models struct {
 	Units                    UnitModel
 	TowerOptions             TowerOptionModel
 	Invitations              InvitationModel
-	BeamColumnModules        BeamColumnModuleModel
+	Modules                  ModuleModel
 	StructuralMasonryModules StructuralMasonryModuleModel
-	ConcreteWallModules      ConcreteWallModuleModel
 	Benchmark                BenchmarkModel
 }
 
@@ -39,9 +38,8 @@ func NewModels(db *sql.DB) Models {
 		Units:                    UnitModel{DB: db},
 		TowerOptions:             TowerOptionModel{DB: db},
 		Invitations:              InvitationModel{DB: db},
-		BeamColumnModules:        BeamColumnModuleModel{DB: db},
+		Modules:                  ModuleModel{DB: db},
 		StructuralMasonryModules: StructuralMasonryModuleModel{DB: db},
-		ConcreteWallModules:      ConcreteWallModuleModel{DB: db},
 		Benchmark:                BenchmarkModel{DB: db},
 	}
 }

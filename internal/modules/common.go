@@ -184,3 +184,33 @@ func ToConcreteElement(c data.Concrete) ConcreteElement {
 		Steel:   steels,
 	}
 }
+
+func concreteFromMap(dataMap map[string]interface{}) data.Concrete {
+	var concrete data.Concrete
+
+	if volumesData, ok := dataMap["volumes"].([]interface{}); ok {
+		for _, v := range volumesData {
+			if volMap, ok := v.(map[string]interface{}); ok {
+				volume := data.ConcreteVolume{
+					Fck:    int(volMap["fck"].(float64)),
+					Volume: volMap["volume"].(float64),
+				}
+				concrete.Volumes = append(concrete.Volumes, volume)
+			}
+		}
+	}
+
+	if steelData, ok := dataMap["steel"].([]interface{}); ok {
+		for _, s := range steelData {
+			if steelMap, ok := s.(map[string]interface{}); ok {
+				steel := data.SteelMass{
+					CA:   int(steelMap["ca"].(float64)),
+					Mass: steelMap["mass"].(float64),
+				}
+				concrete.Steel = append(concrete.Steel, steel)
+			}
+		}
+	}
+
+	return concrete
+}
