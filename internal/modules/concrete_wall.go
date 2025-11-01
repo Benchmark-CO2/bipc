@@ -102,8 +102,8 @@ func (w *ConcreteWall) Update(models data.Models, moduleID, optionID uuid.UUID, 
 
 func (w *ConcreteWall) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
 	moduleData := map[string]interface{}{
-		"concrete_walls": toDataConcrete(w.ConcreteWalls),
-		"concrete_slabs": toDataConcrete(w.ConcreteSlabs),
+		"concrete_walls": w.ConcreteWalls,
+		"concrete_slabs": w.ConcreteSlabs,
 		"wall_thickness": w.WallThickness,
 		"slab_thickness": w.SlabThickness,
 		"wall_area":      w.WallArea,
@@ -136,14 +136,13 @@ func (w *ConcreteWall) fromDataModule(d *data.Module) Module {
 		}
 	}
 
-	concreteWalls := data.Concrete{}
-	concreteSlabs := data.Concrete{}
+	var concreteWalls, concreteSlabs ConcreteElement
 
 	if wallData, ok := d.Data["concrete_walls"].(map[string]interface{}); ok {
-		concreteWalls = concreteFromMap(wallData)
+		concreteWalls = concreteElementFromMap(wallData)
 	}
 	if slabData, ok := d.Data["concrete_slabs"].(map[string]interface{}); ok {
-		concreteSlabs = concreteFromMap(slabData)
+		concreteSlabs = concreteElementFromMap(slabData)
 	}
 
 	var wallThickness, slabThickness, wallArea, slabArea, wallFormArea, slabFormArea *float64
@@ -171,8 +170,8 @@ func (w *ConcreteWall) fromDataModule(d *data.Module) Module {
 		ID:              d.ID,
 		BasicModuleData: BasicModuleData{Type: "concrete_wall"},
 		Consumption:     consumption,
-		ConcreteWalls:   ToConcreteElement(concreteWalls),
-		ConcreteSlabs:   ToConcreteElement(concreteSlabs),
+		ConcreteWalls:   concreteWalls,
+		ConcreteSlabs:   concreteSlabs,
 		WallThickness:   wallThickness,
 		SlabThickness:   slabThickness,
 		WallArea:        wallArea,

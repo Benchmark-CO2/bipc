@@ -11,9 +11,9 @@ type BeamColumn struct {
 	ID uuid.UUID `json:"id"`
 	BasicModuleData
 	Consumption     *Consumption    `json:"consumption,omitempty"`
-	ConcreteColumns ConcreteElement `json:"concrete_columns"`
-	ConcreteBeams   ConcreteElement `json:"concrete_beams"`
-	ConcreteSlabs   ConcreteElement `json:"concrete_slabs"`
+	ConcreteColumns ConcreteElement `json:"concrete_columns,omitempty"`
+	ConcreteBeams   ConcreteElement `json:"concrete_beams,omitempty"`
+	ConcreteSlabs   ConcreteElement `json:"concrete_slabs,omitempty"`
 	FormColumns     *float64        `json:"form_columns,omitempty"`
 	FormBeams       *float64        `json:"form_beams,omitempty"`
 	FormSlabs       *float64        `json:"form_slabs,omitempty"`
@@ -110,9 +110,9 @@ func (b *BeamColumn) Update(models data.Models, moduleID, optionID uuid.UUID, re
 
 func (b *BeamColumn) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
 	moduleData := map[string]interface{}{
-		"concrete_columns": toDataConcrete(b.ConcreteColumns),
-		"concrete_beams":   toDataConcrete(b.ConcreteBeams),
-		"concrete_slabs":   toDataConcrete(b.ConcreteSlabs),
+		"concrete_columns": b.ConcreteColumns,
+		"concrete_beams":   b.ConcreteBeams,
+		"concrete_slabs":   b.ConcreteSlabs,
 		"form_columns":     b.FormColumns,
 		"form_beams":       b.FormBeams,
 		"form_slabs":       b.FormSlabs,
@@ -146,18 +146,16 @@ func (b *BeamColumn) fromDataModule(d *data.Module) Module {
 		}
 	}
 
-	concreteColumns := data.Concrete{}
-	concreteBeams := data.Concrete{}
-	concreteSlabs := data.Concrete{}
+	var concreteColumns, concreteBeams, concreteSlabs ConcreteElement
 	
 	if colData, ok := d.Data["concrete_columns"].(map[string]interface{}); ok {
-		concreteColumns = concreteFromMap(colData)
+		concreteColumns = concreteElementFromMap(colData)
 	}
 	if beamData, ok := d.Data["concrete_beams"].(map[string]interface{}); ok {
-		concreteBeams = concreteFromMap(beamData)
+		concreteBeams = concreteElementFromMap(beamData)
 	}
 	if slabData, ok := d.Data["concrete_slabs"].(map[string]interface{}); ok {
-		concreteSlabs = concreteFromMap(slabData)
+		concreteSlabs = concreteElementFromMap(slabData)
 	}
 
 	var formColumns, formBeams, formSlabs, formTotal *float64
@@ -192,9 +190,9 @@ func (b *BeamColumn) fromDataModule(d *data.Module) Module {
 		ID:              d.ID,
 		BasicModuleData: BasicModuleData{Type: "beam_column"},
 		Consumption:     consumption,
-		ConcreteColumns: ToConcreteElement(concreteColumns),
-		ConcreteBeams:   ToConcreteElement(concreteBeams),
-		ConcreteSlabs:   ToConcreteElement(concreteSlabs),
+		ConcreteColumns: concreteColumns,
+		ConcreteBeams:   concreteBeams,
+		ConcreteSlabs:   concreteSlabs,
 		FormColumns:     formColumns,
 		FormBeams:       formBeams,
 		FormSlabs:       formSlabs,

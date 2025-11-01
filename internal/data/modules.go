@@ -107,7 +107,7 @@ func (m ModuleModel) Insert(module *Module) (*Module, error) {
 		return nil, err
 	}
 
-	return module, nil
+	return m.Get(module.ID)
 }
 
 func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
