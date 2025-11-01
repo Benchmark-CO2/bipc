@@ -52,14 +52,14 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/roles/:roleID/options", app.listTowerOptionsHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/roles/:roleID/options", app.createTowerOptionHandler)
-	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/roles/:roleID/options/:optionID", app.readTowerOptionHandler)
-	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID/roles/:roleID/options/:optionID", app.updateTowerOptionHandler)
-	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/roles/:roleID/options/:optionID", app.deleteTowerOptionHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.readTowerOptionHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.updateTowerOptionHandler)
+	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.deleteTowerOptionHandler)
 
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/roles/:roleID/options/:optionID/modules", app.createModuleHandler)
-	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/roles/:roleID/options/:optionID/modules/:moduleID", app.readModuleHandler)
-	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/roles/:roleID/options/:optionID/modules/:moduleID", app.deleteModuleHandler)
-	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID/roles/:roleID/options/:optionID/modules/:moduleID", app.updateModuleHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules", app.createModuleHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.readModuleHandler)
+	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.deleteModuleHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.updateModuleHandler)
 
 	router.HandlerFunc(http.MethodGet, "/v1/benchmark/floors", app.getFloorsBenchmarkHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/benchmark/units", app.getUnitsBenchmarkHandler)
