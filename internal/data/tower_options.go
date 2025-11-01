@@ -17,12 +17,13 @@ type ModuleInfo struct {
 }
 
 type TowerOption struct {
-	ID      uuid.UUID    `json:"id"`
-	TowerID uuid.UUID    `json:"tower_id"`
-	RoleID  uuid.UUID    `json:"role_id"`
-	Name    string       `json:"name"`
-	Active  bool         `json:"active"`
-	Modules []ModuleInfo `json:"modules"`
+	ID          uuid.UUID              `json:"id"`
+	TowerID     uuid.UUID              `json:"tower_id"`
+	RoleID      uuid.UUID              `json:"role_id"`
+	Name        string                 `json:"name"`
+	Active      bool                   `json:"active"`
+	Modules     []ModuleInfo           `json:"modules"`
+	Consumption map[string]*Consumption `json:"consumption,omitempty"`
 }
 
 func ValidateTowerOption(v *validator.Validator, towerOption *TowerOption) {
@@ -171,6 +172,14 @@ func (m TowerOptionModel) GetByID(id uuid.UUID) (*TowerOption, error) {
 	}
 	towerOption.Modules = modules
 
+	consumption, err := GetFullConsumption(m.DB, towerOption.TowerID, towerOption.RoleID, towerOption.ID)
+	if err != nil {
+		return nil, err
+	}
+	if len(consumption) > 0 {
+		towerOption.Consumption = consumption
+	}
+
 	return &towerOption, nil
 }
 
@@ -246,6 +255,14 @@ func (m TowerOptionModel) GetAll(towerID uuid.UUID) ([]*TowerOption, error) {
 			return nil, err
 		}
 		towerOption.Modules = modules
+
+		consumption, err := GetFullConsumption(m.DB, towerOption.TowerID, towerOption.RoleID, towerOption.ID)
+		if err != nil {
+			return nil, err
+		}
+		if len(consumption) > 0 {
+			towerOption.Consumption = consumption
+		}
 
 		towerOptions = append(towerOptions, &towerOption)
 	}
@@ -329,6 +346,14 @@ func (m TowerOptionModel) GetAllByRole(towerID, roleID uuid.UUID) ([]*TowerOptio
 			return nil, err
 		}
 		towerOption.Modules = modules
+
+		consumption, err := GetFullConsumption(m.DB, towerOption.TowerID, towerOption.RoleID, towerOption.ID)
+		if err != nil {
+			return nil, err
+		}
+		if len(consumption) > 0 {
+			towerOption.Consumption = consumption
+		}
 
 		towerOptions = append(towerOptions, &towerOption)
 	}

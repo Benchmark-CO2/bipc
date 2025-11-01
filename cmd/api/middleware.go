@@ -312,13 +312,13 @@ func (app *application) requirePermission(code string, next http.HandlerFunc) ht
 			return
 		}
 
-		permissions, err := app.models.Roles.GetAllForUser(user.ID, projectID)
+		permissions, err := app.models.Roles.GetPermissionsForUser(user.ID, projectID)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return
 		}
 
-		if !permissions {
+		if !permissions.Include(code) {
 			app.notPermittedResponse(w, r)
 			return
 		}

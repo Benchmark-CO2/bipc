@@ -3,98 +3,11 @@ package main
 import (
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/google/uuid"
 )
-
-func (app *application) inviteUserHandler(w http.ResponseWriter, r *http.Request) {
-	user := app.contextGetUser(r)
-
-	projectID, _ := app.readUUIDParam(r, "projectID")
-
-	var input struct {
-		Email string `json:"email"`
-	}
-
-	err := app.readJSON(w, r, &input)
-	if err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
-	v := validator.New()
-
-	if data.ValidateEmail(v, input.Email); !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
-		return
-	}
-
-	user_invited, err := app.models.Users.GetByEmail(input.Email)
-	if err != nil && !errors.Is(err, data.ErrRecordNotFound) {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
-	if user_invited != nil {
-		isMember, err := app.models.Projects.IsUserInProject(user_invited.ID, projectID)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
-		}
-
-		if isMember {
-			v.AddError("email", "this user is already a member of the project")
-			app.failedValidationResponse(w, r, v.Errors)
-			return
-		}
-	}
-
-	invitation := &data.Invitation{
-		ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
-		InviterID: user.ID,
-		ProjectID: projectID,
-		Email:     input.Email,
-	}
-
-	err = app.models.Invitations.Insert(invitation)
-	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrDuplicatePendingInvitation):
-			v.AddError("email", "a pending invitation already exists for this email in this project")
-			app.failedValidationResponse(w, r, v.Errors)
-		default:
-			app.serverErrorResponse(w, r, err)
-		}
-		return
-	}
-
-	app.background(func() {
-		project, err := app.models.Projects.GetByID(projectID)
-		if err != nil {
-			app.logger.Error(err.Error())
-			return
-		}
-
-		data := map[string]any{
-			"projectName": project.Name,
-			"inviterName": user.Name,
-			"url":         app.config.url,
-		}
-
-		err = app.mailer.Send(input.Email, "invitation.gohtml", data)
-		if err != nil {
-			app.logger.Error(err.Error())
-		}
-	})
-
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "invitation sent successfully"}, nil)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-	}
-}
 
 func (app *application) createRoleHandler(w http.ResponseWriter, r *http.Request) {
 	projectID, _ := app.readUUIDParam(r, "projectID")
@@ -327,6 +240,22 @@ func (app *application) listCollaboratorsHandler(w http.ResponseWriter, r *http.
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"data": collaborators}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) listUserPermissionsHandler(w http.ResponseWriter, r *http.Request) {
+	user := app.contextGetUser(r)
+	projectID, _ := app.readUUIDParam(r, "projectID")
+
+	permissions, err := app.models.Roles.GetPermissionsForUser(user.ID, projectID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"permissions": permissions}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
