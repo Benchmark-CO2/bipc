@@ -11,6 +11,8 @@ export type TRole = {
   description?: string;
   simulation: boolean;
   is_protected: boolean;
+  permissions_ids: number[];
+  users_ids: string[];
 };
 
 export type TCollaborator = TUser & {

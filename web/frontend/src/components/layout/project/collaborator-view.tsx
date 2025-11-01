@@ -5,6 +5,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { getProjectCollaborators } from "@/actions/projectCollaborators/getProjectCollaborators";
 import DrawerInvite from "../drawer-invite";
 import ModalConfirmDelete from "../modal-confirm-delete";
+import { useAuth } from "@/hooks/useAuth";
 // const collaborators = [
 //   {
 //     id: "1",
@@ -37,6 +38,7 @@ const disciplines = [
 ];
 
 const CollaboratorsView = ({ projectId }: { projectId: string }) => {
+  const { user } = useAuth();
   const { data: collaboratorsData } = useQuery({
     queryKey: ["project-collaborators", projectId],
     queryFn: () => getProjectCollaborators(projectId),
@@ -44,6 +46,8 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
 
   const collaborators = collaboratorsData?.data.data?.collaborators || [];
   const roles = collaboratorsData?.data.data?.roles || [];
+
+  console.log(user);
 
   return (
     <div className="flex flex-col gap-4">
@@ -58,6 +62,8 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
                 Nova Disciplina
               </Button>
             }
+            projectId={projectId}
+            projectUsers={collaborators}
           />
         </div>
 
@@ -77,24 +83,33 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
                   </h3>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <ModalConfirmDelete
-                  componentTrigger={
-                    <Button variant="outline-destructive" size="icon-lg">
-                      <TrashIcon className="h-4 w-4" />
-                    </Button>
-                  }
-                  title="Remover Disciplina"
-                  onConfirm={() => console.log("remve")}
-                />
-                <Button
-                  variant="outline-bipc"
-                  size="icon-lg"
-                  className="text-primary border-primary"
-                >
-                  <PencilIcon className="h-4 w-4" />
-                </Button>
-              </div>
+              {!discipline.is_protected && (
+                <div className="flex items-center gap-2">
+                  <ModalConfirmDelete
+                    componentTrigger={
+                      <Button variant="outline-destructive" size="icon-lg">
+                        <TrashIcon className="h-4 w-4" />
+                      </Button>
+                    }
+                    title="Remover Disciplina"
+                    onConfirm={() => console.log("remve")}
+                  />
+                  <DrawerFormDisciplines
+                    componentTrigger={
+                      <Button
+                        variant="outline-bipc"
+                        size="icon-lg"
+                        className="text-primary border-primary"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </Button>
+                    }
+                    projectId={projectId}
+                    roleData={discipline}
+                    projectUsers={collaborators}
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -116,7 +131,7 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
               className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg"
             >
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                <div className="w-10 h-10 bg-primary dark:bg-secondary rounded-full flex items-center justify-center text-sm font-medium text-accent dark:text-gray-300">
                   {collaborator.name
                     .split(" ")
                     .map((n) => n[0])
@@ -128,31 +143,33 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
                     {collaborator.name}
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {collaborator.roles.join(" | ")}
+                    {collaborator.email}
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {collaborator.email}
+                    {collaborator.roles.join(" | ")}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <ModalConfirmDelete
-                  componentTrigger={
-                    <Button variant="outline-destructive" size="icon-lg">
-                      <TrashIcon className="h-4 w-4" />
-                    </Button>
-                  }
-                  title="Remover Colaborador"
-                  onConfirm={() => console.log("remve")}
-                />
-                <Button
-                  variant="outline-bipc"
-                  size="icon-lg"
-                  className="text-primary border-primary"
-                >
-                  <PencilIcon className="h-4 w-4" />
-                </Button>
-              </div>
+              {user?.id !== collaborator.id && (
+                <div className="flex items-center gap-2">
+                  <ModalConfirmDelete
+                    componentTrigger={
+                      <Button variant="outline-destructive" size="icon-lg">
+                        <TrashIcon className="h-4 w-4" />
+                      </Button>
+                    }
+                    title="Remover Colaborador"
+                    onConfirm={() => console.log("remve")}
+                  />
+                  <Button
+                    variant="outline-bipc"
+                    size="icon-lg"
+                    className="text-primary border-primary"
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
         </div>

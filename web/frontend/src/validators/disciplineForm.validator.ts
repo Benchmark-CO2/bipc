@@ -5,7 +5,7 @@ export const disciplineFormSchema = z.object({
   description: z.string().optional(),
   simulation: z.boolean(),
   permissions_ids: z.array(z.number()),
-  collaborators: z.array(z.string()),
+  users_ids: z.array(z.string()),
 });
 
 export type DisciplineFormSchema = z.infer<typeof disciplineFormSchema>;

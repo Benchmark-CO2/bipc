@@ -15,7 +15,7 @@ const NotificationCard = ({
 }) => {
   return (
     <Link
-      to="/profile/invites"
+      to="/notifications"
       search={{ inviteId: notification.id.toString() }}
       onClick={onClick}
       className="p-2 pl-4 text-sm rounded-r-md my-1 bg-accent-foreground/20 hover:bg-accent/80 transition-colors flex justify-between flex-col gap-3 border-l-4 border-l-primary cursor-pointer"

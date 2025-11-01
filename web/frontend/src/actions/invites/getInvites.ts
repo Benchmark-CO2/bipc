@@ -12,9 +12,6 @@ export interface IInvite {
   created_at: string;
   expires_at: string | null;
 }
-
-export const getInvites = async (projectId: number) => {
-  return api.get<{ invitations: IInvite[] }>(
-    `/v1/projects/${projectId}/invitations`
-  );
+export const getInvites = async () => {
+  return api.get<{ invitations: IInvite[] }>(`/v1/users/pending-invitations`);
 };
