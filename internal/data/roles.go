@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"slices"
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/validator"
@@ -61,6 +62,12 @@ type UserWithRoles struct {
 type Collaborators struct {
 	Roles         []RoleWithUsersPermissions `json:"roles,omitempty"`
 	Collaborators []UserWithRoles            `json:"collaborators,omitempty"`
+}
+
+type Permissions []string
+
+func (p Permissions) Include(code string) bool {
+	return slices.Contains(p, code)
 }
 
 type RoleModel struct {
@@ -363,7 +370,7 @@ func (m RoleModel) Collaborators(projectID uuid.UUID) (Collaborators, error) {
 	return collaborators, nil
 }
 
-func (m RoleModel) GetAllForUser(userID uuid.UUID, projectID uuid.UUID) (bool, error) {
+func (m RoleModel) GetAllForUser(userID uuid.UUID, projectID uuid.UUID) (Permissions, error) {
 	query := `
         SELECT DISTINCT p.action, p.resource
 		FROM permissions p
@@ -375,26 +382,26 @@ func (m RoleModel) GetAllForUser(userID uuid.UUID, projectID uuid.UUID) (bool, e
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
+	var permissions Permissions
+
 	rows, err := m.DB.QueryContext(ctx, query, userID, projectID)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	defer rows.Close()
-
-	var permissions bool
 
 	for rows.Next() {
 		var permission string
 
 		err := rows.Scan(&permission)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 
 		//permissions = append(permissions, permission)
 	}
 	if err = rows.Err(); err != nil {
-		return false, err
+		return nil, err
 	}
 
 	return permissions, nil
