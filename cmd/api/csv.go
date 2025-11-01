@@ -91,8 +91,8 @@ type CSVRowData struct {
 	ModuleSlabFormArea  float64 `json:"module_slab_form_area,omitempty"`
 
 	// Aggregated data
-	WallConcrete data.Concrete `json:"wall_concrete"`
-	SlabConcrete data.Concrete `json:"slab_concrete"`
+	WallConcrete modules.ConcreteElement `json:"wall_concrete"`
+	SlabConcrete modules.ConcreteElement `json:"slab_concrete"`
 }
 
 type ProjectFromCSV struct {
@@ -183,13 +183,13 @@ func (app *application) generateRowData(dataRows [][]string, headerMap map[strin
 			ModuleSlabFormArea:  parseFieldFloat("module_slab_form_area"),
 
 			// Aggregated data
-			WallConcrete: data.Concrete{
-				Volumes: []data.ConcreteVolume{},
-				Steel:   []data.SteelMass{},
+			WallConcrete: modules.ConcreteElement{
+				Volumes: []modules.ConcreteVolumeItem{},
+				Steel:   []modules.SteelMassItem{},
 			},
-			SlabConcrete: data.Concrete{
-				Volumes: []data.ConcreteVolume{},
-				Steel:   []data.SteelMass{},
+			SlabConcrete: modules.ConcreteElement{
+				Volumes: []modules.ConcreteVolumeItem{},
+				Steel:   []modules.SteelMassItem{},
 			},
 		}
 
@@ -201,7 +201,7 @@ func (app *application) generateRowData(dataRows [][]string, headerMap map[strin
 				if fck > 0 {
 					volume := parseFieldFloat(headerName)
 					if volume > 0 {
-						row.WallConcrete.Volumes = append(row.WallConcrete.Volumes, data.ConcreteVolume{Fck: fck, Volume: volume})
+						row.WallConcrete.Volumes = append(row.WallConcrete.Volumes, modules.ConcreteVolumeItem{Fck: fck, Volume: volume})
 					}
 				}
 			} else if strings.HasPrefix(headerName, "module_slab_concrete_") {
@@ -210,7 +210,7 @@ func (app *application) generateRowData(dataRows [][]string, headerMap map[strin
 				if fck > 0 {
 					volume := parseFieldFloat(headerName)
 					if volume > 0 {
-						row.SlabConcrete.Volumes = append(row.SlabConcrete.Volumes, data.ConcreteVolume{Fck: fck, Volume: volume})
+						row.SlabConcrete.Volumes = append(row.SlabConcrete.Volumes, modules.ConcreteVolumeItem{Fck: fck, Volume: volume})
 					}
 				}
 			} else if strings.HasPrefix(headerName, "module_wall_steel_") {
@@ -219,7 +219,7 @@ func (app *application) generateRowData(dataRows [][]string, headerMap map[strin
 				if ca > 0 {
 					mass := parseFieldFloat(headerName)
 					if mass > 0 {
-						row.WallConcrete.Steel = append(row.WallConcrete.Steel, data.SteelMass{CA: ca, Mass: mass})
+						row.WallConcrete.Steel = append(row.WallConcrete.Steel, modules.SteelMassItem{CA: ca, Mass: mass})
 					}
 				}
 			} else if strings.HasPrefix(headerName, "module_slab_steel_") {
@@ -228,7 +228,7 @@ func (app *application) generateRowData(dataRows [][]string, headerMap map[strin
 				if ca > 0 {
 					mass := parseFieldFloat(headerName)
 					if mass > 0 {
-						row.SlabConcrete.Steel = append(row.SlabConcrete.Steel, data.SteelMass{CA: ca, Mass: mass})
+						row.SlabConcrete.Steel = append(row.SlabConcrete.Steel, modules.SteelMassItem{CA: ca, Mass: mass})
 					}
 				}
 			}
@@ -335,8 +335,8 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 
 		module := modules.ConcreteWall{
 			BasicModuleData: modules.BasicModuleData{Type: "concrete_wall"},
-			ConcreteWalls:   modules.ToConcreteElement(row.WallConcrete),
-			ConcreteSlabs:   modules.ToConcreteElement(row.SlabConcrete),
+			ConcreteWalls:   row.WallConcrete,
+			ConcreteSlabs:   row.SlabConcrete,
 			WallThickness:   &row.ModuleWallThickness,
 			SlabThickness:   &row.ModuleSlabThickness,
 			WallArea:        &row.ModuleWallArea,
