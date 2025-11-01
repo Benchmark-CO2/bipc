@@ -86,8 +86,9 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 }
 
 type RoleInfo struct {
-	ID   uuid.UUID `json:"id"`
-	Name string    `json:"name"`
+	ID          uuid.UUID              `json:"id"`
+	Name        string                 `json:"name"`
+	Consumption map[string]*data.Consumption `json:"consumption,omitempty"`
 }
 
 func (app *application) readUnitHandler(w http.ResponseWriter, r *http.Request) {
@@ -125,10 +126,23 @@ func (app *application) readUnitHandler(w http.ResponseWriter, r *http.Request) 
 	var simulationRoles []RoleInfo
 	for _, role := range allRoles {
 		if role.Simulation {
-			simulationRoles = append(simulationRoles, RoleInfo{
+			roleInfo := RoleInfo{
 				ID:   role.ID,
 				Name: role.Name,
-			})
+			}
+
+			if unit.Type == "tower" {
+				consumption, err := app.models.Units.GetConsumptionByRole(unitID, role.ID)
+				if err != nil {
+					app.serverErrorResponse(w, r, err)
+					return
+				}
+				if len(consumption) > 0 {
+					roleInfo.Consumption = consumption
+				}
+			}
+
+			simulationRoles = append(simulationRoles, roleInfo)
 		}
 	}
 

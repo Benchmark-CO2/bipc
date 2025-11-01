@@ -660,3 +660,99 @@ func updateFloorMetricsById(tx *sql.Tx, floorIDs []uuid.UUID) error {
 
 	return nil
 }
+
+func (m UnitModel) GetConsumptionByRole(towerID, roleID uuid.UUID) (map[string]*Consumption, error) {
+	query := `
+		SELECT 
+			fc.technology,
+			SUM(fc.co2_min * f.area) / NULLIF(SUM(f.area), 0) as co2_min,
+			SUM(fc.co2_max * f.area) / NULLIF(SUM(f.area), 0) as co2_max,
+			SUM(fc.energy_min * f.area) / NULLIF(SUM(f.area), 0) as energy_min,
+			SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max
+		FROM floors_consumption fc
+		INNER JOIN floor f ON fc.floor_id = f.id
+		INNER JOIN floor_group fg ON f.group_id = fg.id
+		INNER JOIN tower_option topt ON fc.option_id = topt.id
+		WHERE fg.tower_id = $1 
+		  AND fc.role_id = $2 
+		  AND topt.active = TRUE
+		GROUP BY fc.technology`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, towerID, roleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	consumptions := make(map[string]*Consumption)
+
+	for rows.Next() {
+		var tech string
+		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+
+		err := rows.Scan(&tech, &co2Min, &co2Max, &energyMin, &energyMax)
+		if err != nil {
+			return nil, err
+		}
+
+		if co2Min.Valid {
+			consumptions[tech] = &Consumption{
+				CO2Min:    &co2Min.Float64,
+				CO2Max:    &co2Max.Float64,
+				EnergyMin: &energyMin.Float64,
+				EnergyMax: &energyMax.Float64,
+			}
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	totalQuery := `
+		WITH floor_totals AS (
+			SELECT 
+				f.id,
+				f.area,
+				SUM(fc.co2_min) as co2_min,
+				SUM(fc.co2_max) as co2_max,
+				SUM(fc.energy_min) as energy_min,
+				SUM(fc.energy_max) as energy_max
+			FROM floors_consumption fc
+			INNER JOIN floor f ON fc.floor_id = f.id
+			INNER JOIN floor_group fg ON f.group_id = fg.id
+			INNER JOIN tower_option topt ON fc.option_id = topt.id
+			WHERE fg.tower_id = $1 
+			  AND fc.role_id = $2 
+			  AND topt.active = TRUE
+			GROUP BY f.id, f.area
+		)
+		SELECT 
+			SUM(co2_min * area) / NULLIF(SUM(area), 0) as co2_min,
+			SUM(co2_max * area) / NULLIF(SUM(area), 0) as co2_max,
+			SUM(energy_min * area) / NULLIF(SUM(area), 0) as energy_min,
+			SUM(energy_max * area) / NULLIF(SUM(area), 0) as energy_max
+		FROM floor_totals`
+
+	var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+	err = m.DB.QueryRowContext(ctx, totalQuery, towerID, roleID).Scan(
+		&co2Min, &co2Max, &energyMin, &energyMax,
+	)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+
+	if co2Min.Valid {
+		consumptions["total"] = &Consumption{
+			CO2Min:    &co2Min.Float64,
+			CO2Max:    &co2Max.Float64,
+			EnergyMin: &energyMin.Float64,
+			EnergyMax: &energyMax.Float64,
+		}
+	}
+
+	return consumptions, nil
+}
