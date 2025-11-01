@@ -425,6 +425,94 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       .attr("x2", _width)
       .style("opacity", 0);
 
+    const verticalLine = g
+      .append("line")
+      .attr("class", "tooltip-line")
+      .attr("stroke", "#aaa")
+      .attr("stroke-width", 1)
+      .attr("y1", margin.top)
+      .attr("y2", _height + margin.top)
+      .style("opacity", 0);
+
+    const horizontalLine = g
+      .append("line")
+      .attr("class", "tooltip-line")
+      .attr("stroke", "#333")
+      .attr("stroke-width", 1)
+      .attr("x1", 0)
+      .attr("x2", _width)
+      .style("opacity", 0);
+    const horizontalLine2 = g
+      .append("line")
+      .attr("class", "tooltip-line")
+      .attr("stroke", "#333")
+      .attr("stroke-width", 1)
+      .attr("x1", 0)
+      .attr("x2", _width)
+      .style("opacity", 0);
+
+    svg
+      .append("rect")
+      .attr("x", margin.left)
+      .attr("y", margin.top)
+      .attr("width", _width)
+      .attr("height", _height)
+      .attr("fill", "none")
+      .attr("pointer-events", "all")
+      .on("mousemove", (event) => {
+        const [mx, my] = d3.pointer(event, g.node());
+        const x0 = xScale.invert(mx);
+        const y0 = yScale.invert(my);
+        // função pra achar o ponto mais próximo em um dataset
+        const getClosest = (data: DataPoint[], x: number) => {
+          const bisect = d3.bisector((d: DataPoint) => d.x).center;
+          const i = bisect(data, x);
+          const clamp = (idx: number) =>
+            Math.max(0, Math.min(idx, data.length - 1));
+          return data[clamp(i)];
+        };
+
+        const dMax = getClosest(denormalizedMax, x0);
+        const dMin = getClosest(denormalizedMin, x0);
+
+        verticalLine
+          .attr("x1", xScale(x0))
+          .attr("x2", xScale(x0))
+          .style("opacity", 1);
+
+        horizontalLine
+          .attr("x1", 0)
+          .attr("x2", _width)
+          .attr("y1", yScale(dMax.y))
+          .attr("y2", yScale(dMax.y))
+          .style("opacity", 1);
+
+        horizontalLine2
+          .attr("x1", 0)
+          .attr("x2", _width)
+          .attr("y1", yScale(dMin.y))
+          .attr("y2", yScale(dMin.y))
+          .style("opacity", 1);
+
+        setTooltip({
+          x:
+            xScale(dMax.x) > _width / 2
+              ? xScale(dMax.x) - 100
+              : xScale(dMax.x) + 100,
+          y: yScale(y0),
+          value: {
+            min: dMin.y,
+            max: dMax.y,
+            label: ``,
+          },
+        });
+      })
+      .on("mouseleave", () => {
+        verticalLine.style("opacity", 0);
+        horizontalLine.style("opacity", 0);
+        horizontalLine2.style("opacity", 0);
+        setTooltip(null);
+      });
     // Interaction area (without clipping to cover entire chart area)
     axesGroup
       .append("rect")
