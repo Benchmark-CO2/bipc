@@ -1,5 +1,4 @@
 import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
-import Footprint from "@/assets/footprint.svg";
 import Logo from "@/assets/logo_full.svg";
 import D3GradientRangeChart from "@/components/charts/d3chart";
 import D3GradientRangeLineChart from "@/components/charts/d3chartLine";
@@ -14,7 +13,6 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
-import InventoryChart from "@/assets/inventoryChart.png";
 import { FilterTabs } from "@/components/ui/filter-tabs";
 import { useBenchmarkFilters } from "@/hooks/useBenchmarkFilters";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -79,10 +77,7 @@ function RouteComponent() {
             </div>
             {selectedChart === "trend" ? (
               <D3GradientRangeLineChart
-                width={width}
-                height={height}
                 data={chartData}
-                overrideDimensions={!isMobile}
                 unit={type === "co2" ? "KgCO₂/m²" : "MJ/m²"}
               />
             ) : (

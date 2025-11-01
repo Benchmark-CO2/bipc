@@ -172,6 +172,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
           {/* {!isExpanded && <Subtitle />} */}
         </div>
 
+
         {chartType === "scatter" ? (
           <D3GradientRangeChart
             data={managedData}

@@ -164,10 +164,10 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   }, [data.length]);
 
   // Função auxiliar para atualizar o contador
-  const updateBrushCount = (count: number) => {
+  const updateBrushCount = useCallback((count: number) => {
     brushSelectionCountRef.current = count;
     setBrushSelectionCount(count);
-  };
+  }, []);
 
   const minLessDataValue = useMemo(() => Math.min(...minData), [minData]);
   const minMaxDataValue = useMemo(() => Math.min(...maxData), [maxData]);
@@ -196,12 +196,12 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   const xScale = useMemo(() => {
     // Ensure we have a valid width before creating the scale
     const width = _width > 0 ? _width : 400; // fallback width
-    return d3.scaleLinear().domain([0, maxValue]).range([0, width]);
+    return d3.scaleLinear().domain([0, maxValue * 1.15]).range([0, width]);
   }, [maxValue, _width]);
 
   const yScale = useMemo(() => {
     // Y values are normalized between 0 and 1
-    return d3.scaleLinear().domain([0, 1]).range([_height, 0]);
+    return d3.scaleLinear().domain([0, 1.01]).range([_height, 0]);
   }, [_height]);
 
   const colorScale = useMemo(() =>
@@ -222,7 +222,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         label: selectedBars?.includes(d.id) ? d.label : undefined,
       },
     });
-  }, [getTooltipPosition, selectedBars]);
+  }, [getTooltipPosition]); // Removed selectedBars dependency to prevent re-renders
 
   const handleMouseMove = useCallback((event: any, d: ChartData) => {
     const position = getTooltipPosition(event, svgRef);
@@ -234,7 +234,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         label: selectedBars?.includes(d.id) ? d.label : undefined,
       },
     });
-  }, [getTooltipPosition, selectedBars]);
+  }, [getTooltipPosition]); // Removed selectedBars dependency to prevent re-renders
 
   const handleMouseOut = useCallback(() => {
     setTooltip(null);
@@ -278,8 +278,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         const newWidth = parent.clientWidth + margin.left + margin.right;
         const currentWidth = svgRef.current.getAttribute("width");
 
-        // Only update if there's a significant change in width (> 10px)
-        if (Math.abs(newWidth - parseFloat(currentWidth || "0")) > 10) {
+        // Only update if there's a significant change in width (> 20px to be very conservative)
+        if (Math.abs(newWidth - parseFloat(currentWidth || "0")) > 20) {
           svgRef.current.setAttribute("width", newWidth.toString());
 
           // Update chart dimensions while preserving zoom state
@@ -296,7 +296,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
             setIsResized((prev) => prev + 1);
           }
         }
-      }, 100);
+      }, 150); // Increased debounce time to be more conservative
     });
 
     resizeObserver.observe(svgRef.current.parentElement);
@@ -317,7 +317,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     // Create SVG
     const svg = d3
       .select(svgRef.current)
-      // .attr("width", width)
+      .attr("width", _width + margin.left + margin.right)
       .attr("height", _height + margin.top + margin.bottom);
 
     // Main group
@@ -640,7 +640,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     return () => {
       // Nenhum cleanup necessário
     };
-  }, [isExpanded, data, isResized, _width, _height, margin, xScale, yScale, colorScale, handleMouseOver, handleMouseMove, handleMouseOut, updateBrushCount]);
+  }, [isExpanded, data, isResized, _width, _height, margin, xScale, yScale, colorScale, updateBrushCount]);
 
   // Selected bars effect
   useEffect(() => {
@@ -780,7 +780,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   const labelX = UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Incorporado";
 
   return (
-    <Card className={cn("shadow-none w-min-content")}>
+    <Card className={cn("shadow-none w-min-content min-w-1/2")}>
       <CardContent>
         <div className="w-full overflow-hidden relative">
           <span className="absolute w-full text-center text-foreground/70 block rotate-270 left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
