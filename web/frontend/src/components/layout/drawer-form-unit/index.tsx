@@ -137,7 +137,7 @@ const DrawerFormUnit = ({
     queryFn: async () => {
       if (unitId) {
         const res = await getUnitByUUID(projectId, unitId);
-        return res.data.unit;
+        return { unit: res.data.unit, roles: res.data.roles };
       }
       return null;
     },
@@ -145,8 +145,8 @@ const DrawerFormUnit = ({
   });
 
   useEffect(() => {
-    if (unitData) {
-      const formData = convertUnitToFormData(unitData);
+    if (unitData?.unit) {
+      const formData = convertUnitToFormData(unitData?.unit);
       form.reset(formData);
     }
   }, [unitData, form]);

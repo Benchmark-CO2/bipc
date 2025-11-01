@@ -34,18 +34,20 @@ type CreateSimulationFormSchema = z.infer<typeof createSimulationSchema>;
 interface DialogCreateSimulationProps {
   projectId: string;
   unitId: string;
+  roleId: string;
 }
 
 const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
   projectId,
   unitId,
+  roleId,
 }) => {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const createSimulationMutation = useMutation({
     mutationFn: (data: { name: string; active: boolean }) =>
-      postOption(projectId, unitId, data),
+      postOption(projectId, unitId, roleId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["options", projectId, unitId],

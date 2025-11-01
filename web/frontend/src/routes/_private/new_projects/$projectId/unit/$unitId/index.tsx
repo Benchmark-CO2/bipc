@@ -4,14 +4,18 @@ import { getUnitByUUID } from "@/actions/units/getUnit";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import { floorsColumns } from "@/components/columns/floors";
 import { CommonTable } from "@/components/layout";
+import DrawerFormDisciplines from "@/components/layout/drawer-form-disciplines";
 import FloorSummary from "@/components/summaryVariants/floors";
 import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
 import { FilterTabs } from "@/components/ui/filter-tabs";
+import NotFoundList from "@/components/ui/not-found-list";
 import { useSummary } from "@/context/summaryContext";
+import { TRoleConsumptions } from "@/types/disciplines";
 import { IConsumption } from "@/types/modules";
 import {
   IProject,
+  TConsumption,
   TConsumptionPerModule,
   TProjectUnit,
 } from "@/types/projects";
@@ -22,6 +26,7 @@ import {
   createFileRoute,
   useLoaderData,
   useParams,
+  useSearch,
 } from "@tanstack/react-router";
 import { Plus, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -36,6 +41,11 @@ export const Route = createFileRoute(
   "/_private/new_projects/$projectId/unit/$unitId/"
 )({
   component: RouteComponent,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      dcp: (search.dcp as string) || undefined,
+    };
+  },
   loader: async ({ params, context }) => {
     const { projectId, unitId } = params;
 
@@ -63,7 +73,6 @@ export const Route = createFileRoute(
   },
 });
 
-// Type guard to check if the unit has tower property
 function isUnitWithTower(unit: any): unit is IUnit {
   return unit && typeof unit === "object" && "tower" in unit;
 }
@@ -75,10 +84,20 @@ function RouteComponent() {
   const { unitConsumptions } = useLoaderData({
     from: "/_private/new_projects/$projectId/unit/$unitId/",
   });
+  const search = useSearch({
+    from: "/_private/new_projects/$projectId/unit/$unitId/",
+  });
+
   const { setSummaryContext } = useSummary();
   const { data: unitData, isLoading } = useQuery({
     queryKey: ["unit", projectId, unitId],
-    queryFn: () => getUnitByUUID(projectId, unitId),
+    queryFn: async () => {
+      if (projectId && unitId) {
+        const res = await getUnitByUUID(projectId, unitId);
+        return { unit: res.data.unit, roles: res.data.roles };
+      }
+      return null;
+    },
     enabled: !!projectId && !!unitId,
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false,
@@ -86,13 +105,96 @@ function RouteComponent() {
     retry: false,
   });
 
-  const unit = unitData?.data?.unit || unitData?.data || unitData;
+  const unit = unitData?.unit;
+  const roles = unitData?.roles;
 
-  // Use type guard to safely access tower property
   const unitWithTower = isUnitWithTower(unit) ? unit : null;
 
   const navigate = Route.useNavigate();
   const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
+  const [selectedTab, setSelectedTab] = useState<string>(
+    "Todas as Disciplinas"
+  );
+
+  const getFilteredConsumptions = () => {
+    if (!roles || roles.length === 0) return unitConsumptions;
+
+    if (selectedTab === "Todas as Disciplinas") {
+      const moduleTypes = unitConsumptions.map((item) => item.type);
+
+      return moduleTypes.map((type) => {
+        const summedConsumption = roles.reduce(
+          (acc, role) => {
+            const roleConsumptions =
+              (role as any).consumptions || (role as any).consumption;
+
+            if (!roleConsumptions || !(type in roleConsumptions)) {
+              return acc;
+            }
+
+            const roleConsumption = roleConsumptions[
+              type as keyof TConsumptionPerModule
+            ] as TConsumption;
+
+            if (roleConsumption) {
+              return {
+                co2_min: acc.co2_min + (roleConsumption.co2_min || 0),
+                co2_max: acc.co2_max + (roleConsumption.co2_max || 0),
+                energy_min: acc.energy_min + (roleConsumption.energy_min || 0),
+                energy_max: acc.energy_max + (roleConsumption.energy_max || 0),
+              };
+            }
+            return acc;
+          },
+          { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0 }
+        );
+
+        return {
+          type,
+          ...summedConsumption,
+        };
+      });
+    } else {
+      const selectedRole = roles.find((role) => role.name === selectedTab);
+      if (!selectedRole) return unitConsumptions;
+
+      const roleConsumptions =
+        (selectedRole as any).consumptions || (selectedRole as any).consumption;
+      if (!roleConsumptions) return unitConsumptions;
+
+      return Object.keys(roleConsumptions)
+        .filter((key) => key !== "total")
+        .map((type) => {
+          const consumption = roleConsumptions[
+            type as keyof TConsumptionPerModule
+          ] as TConsumption;
+          return {
+            type,
+            co2_min: consumption?.co2_min || 0,
+            co2_max: consumption?.co2_max || 0,
+            energy_min: consumption?.energy_min || 0,
+            energy_max: consumption?.energy_max || 0,
+          };
+        });
+    }
+  };
+
+  const filteredConsumptions = getFilteredConsumptions();
+
+  const calculateTotalConsumptions = () => {
+    return filteredConsumptions.reduce(
+      (acc, curr) => ({
+        co2_min: acc.co2_min + (curr.co2_min || 0),
+        co2_max: acc.co2_max + (curr.co2_max || 0),
+        energy_min: acc.energy_min + (curr.energy_min || 0),
+        energy_max: acc.energy_max + (curr.energy_max || 0),
+      }),
+      { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0 }
+    );
+  };
+
+  const totalConsumptions = calculateTotalConsumptions();
+
   const handleSelectionChange = (selected: any) => {
     setSelectedFloors(selected);
   };
@@ -126,7 +228,6 @@ function RouteComponent() {
             const groupId = floor.group_id;
             const { consumptions, ...restFloor } = floor;
 
-            // Provide default consumption values if consumption is undefined
             const safeConsumption = consumptions?.total || {
               co2_min: 0,
               co2_max: 0,
@@ -229,6 +330,22 @@ function RouteComponent() {
     };
   };
 
+  const onSelectedTabChange = (tab: string) => {
+    let dcpId = "";
+    if (tab === "Todas as Disciplinas") {
+      dcpId = roles?.find((role) => role.is_protected)?.id || "";
+    } else {
+      const selectedRole = roles?.find((role) => role.name === tab);
+      dcpId = selectedRole ? selectedRole.id : "";
+    }
+
+    setSelectedTab(tab);
+    navigate({
+      search: dcpId ? { dcp: dcpId } : { dcp: undefined },
+      replace: true,
+    });
+  };
+
   if (isLoading) {
     return <div>Carregando unidade...</div>;
   }
@@ -240,10 +357,15 @@ function RouteComponent() {
   const handleClickConstructiveTechnologies = async () => {
     navigate({
       to: "./constructive-technologies",
+      search: search,
     });
   };
 
   const averageMetrics = calculateAverageMetrics(groupedFloors);
+  const roleTabs: string[] =
+    roles
+      ?.filter((el) => !el.is_protected)
+      .map((role: TRoleConsumptions) => role.name) || [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -264,8 +386,11 @@ function RouteComponent() {
             <div className="flex items-center gap-2 mt-4">
               <FilterTabs
                 tabs={["Todas as Disciplinas"]}
-                selectedTab="Todas as Disciplinas"
-                onTabSelect={console.log}
+                selectedTab={selectedTab}
+                onTabSelect={(tab) => onSelectedTabChange(tab)}
+                subTabs={roleTabs}
+                selectedSubTab={selectedTab}
+                onSubTabSelect={(tab) => onSelectedTabChange(tab)}
                 fullWidth
               />
               <Button variant="outline-bipc" size="icon-lg" disabled>
@@ -275,17 +400,48 @@ function RouteComponent() {
                 variant="bipc"
                 size="icon-lg"
                 onClick={handleClickConstructiveTechnologies}
+                disabled={
+                  selectedTab === "Todas as Disciplinas" &&
+                  roles?.some((role) => role.name !== "Administrador")
+                }
               >
                 <Plus />
               </Button>
             </div>
           </div>
         }
-        data={unitConsumptions}
+        data={filteredConsumptions}
         columns={constructiveTechnologies}
         isSelectable={false}
         isInteractive={false}
         collapsed={false}
+        lastRow={{
+          data: {
+            co2_min: `${totalConsumptions.co2_min.toFixed(1)} KgCO₂`,
+            co2_max: `${totalConsumptions.co2_max.toFixed(1)} KgCO₂`,
+            energy_min: `${totalConsumptions.energy_min.toFixed(1)} MJ`,
+            energy_max: `${totalConsumptions.energy_max.toFixed(1)} MJ`,
+          },
+          type: "Total",
+        }}
+        customEmptyComponent={
+          roleTabs.length === 0 ? (
+            <NotFoundList
+              message="Sem Disciplinas para exibir"
+              showIcon={false}
+              description={`Você ainda não criou nenhuma disciplina para esta unidade. Crie uma disciplina para começar a adicionar tecnologias construtivas.`}
+              button={
+                <DrawerFormDisciplines
+                  componentTrigger={
+                    <Button variant="bipc">Adicionar Disciplina</Button>
+                  }
+                  projectId={projectId}
+                  unitId={unitId}
+                />
+              }
+            />
+          ) : undefined
+        }
       />
     </div>
   );
