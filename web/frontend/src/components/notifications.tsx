@@ -15,7 +15,7 @@ const NotificationCard = ({
 }) => {
   return (
     <Link
-      to="/profile/invites"
+      to="/notifications"
       search={{ inviteId: notification.id.toString() }}
       onClick={onClick}
       className="p-2 pl-4 text-sm rounded-r-md my-1 bg-accent-foreground/20 hover:bg-accent/80 transition-colors flex justify-between flex-col gap-3 border-l-4 border-l-primary cursor-pointer"
@@ -55,7 +55,7 @@ export const Notifications = ({ size = 16 }: INotificationProps) => {
       <PopoverTrigger ref={ref} className="relative cursor-pointer">
         Notificações
         {notifications.length > 0 && (
-          <span className="absolute -top-1 -right-1 scale-75 bg-destructive text-white rounded-full px-1 text-xs">
+          <span className="absolute -top-1 -right-4 scale-90 bg-destructive text-white rounded-full px-1 text-xs">
             {notifications.length}
           </span>
         )}

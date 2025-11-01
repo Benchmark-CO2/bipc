@@ -31,7 +31,7 @@
     },
     "activeUserWarning": {
       "title": "User not active",
-      "description": "Check your email to continue using the system. If you didn't receive it, check your spam folder or",
+      "description": "Check your email to continue using the system. If you already activated it, please log in again. If you didn't receive it, check your spam folder or",
       "button": "request new access.",
       "modalMessage": "Confirm below to activate your account. You will receive an email with the activation link.",
       "emailSentError": "Error sending activation email. Please try again later.",
