@@ -21,10 +21,10 @@ const Legend = () => {
             <div className='w-3 h-3 border-1 border-white bg-[#E0756C] rounded-full'></div>
             <span className='ml-2 italic text-xs'>Pior Fornecedor</span>
           </div>
-          <div className='w-full flex items-center'>
+          {/* <div className='w-full flex items-center'>
             <div className='w-3 h-3 bg-[#F2CC5A] rounded-full'></div>
             <span className='ml-2 italic'>Quantidade de CO₂</span>
-          </div>
+          </div> */}
           <div className='w-full flex flex-col justify-center self-center'>
             <span className=' text-xs'>Intervalo em destaque:</span>
             <div className='flex items-center'>
