@@ -90,7 +90,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             </SidemenuItem>
           </li>
 
-          <Divider className="my-1" />
+          <Divider className="my-4" />
 
           {/* Seção específica para usuários logados */}
           {isAuthenticated ? (
