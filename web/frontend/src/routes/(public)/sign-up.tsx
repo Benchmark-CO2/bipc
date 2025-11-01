@@ -19,6 +19,8 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 
 import { DialogSuccessSignup } from "@/components/layout/dialogs/dialog-success-signup";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import Divider from "@/components/ui/divider";
 import {
   Select,
@@ -35,7 +37,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Card, CardContent } from "@/components/ui/card";
 
 const SignUp = () => {
   const [successModal, setSuccessModal] = useState(false);
@@ -357,6 +358,40 @@ const SignUp = () => {
                 )}
               />
 
+              <div className="space-y-3 mt-2">
+                <FormField
+                  control={form.control}
+                  name="privacyPolicyAccepted"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-2">
+                        <Checkbox className="self-start" checked={field.value} onCheckedChange={field.onChange} />
+                        <span className="text-sm text-foreground">
+                          Eu declaro estar ciente sobre o uso dos meus dados para as finalidades
+                          informadas no formulário de cadastro. <br /> <a className="underline text-blue-500 hover:text-blue-600" href="/Politica_de_privacidade.pdf">Política de Privacidade</a>
+                        </span>
+                      </div>
+                      <FormMessage className="ml-6" />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="termsAccepted"
+                  render={({ field }) => (
+                    <FormItem>
+
+                      <div className="flex items-center gap-2">
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        <span className="text-sm text-foreground">
+                          Eu declaro estar de acordo com os <a className="underline text-blue-500 hover:text-blue-600" target="_blank" href="/Termos_de_Uso.pdf">Termos de Uso</a> da plataforma
+                        </span>
+                      </div>
+                      <FormMessage className="ml-6" />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <Button
                 variant={"bipc"}
                 type="submit"
