@@ -77,8 +77,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             </SidemenuItem>
           </li>
 
-          <Divider className="my-1" />
-
           <li>
             <SidemenuItem variant="link">
               <Link
@@ -91,6 +89,8 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               </Link>
             </SidemenuItem>
           </li>
+
+          <Divider className="my-1" />
 
           {/* Seção específica para usuários logados */}
           {isAuthenticated ? (
@@ -105,19 +105,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                   >
                     <File size={18} />
                     <span>Projetos</span>
-                  </Link>
-                </SidemenuItem>
-              </li>
-
-              <li>
-                <SidemenuItem variant="link">
-                  <Link
-                    to={"/contacts" as any}
-                    activeProps={activeProps}
-                    className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-                  >
-                    <Contact size={18} />
-                    <span>Contatos</span>
                   </Link>
                 </SidemenuItem>
               </li>
