@@ -1,6 +1,6 @@
 import api from "@/service/api";
 
-interface IPostDiscipline {
+export interface IDiscipline {
   name: string;
   description?: string;
   simulation?: boolean;
@@ -8,9 +8,6 @@ interface IPostDiscipline {
   users_ids?: string[];
 }
 
-export const postDiscipline = async (
-  projectId: string,
-  data: IPostDiscipline
-) => {
+export const postDiscipline = async (projectId: string, data: IDiscipline) => {
   return api.post(`/v1/projects/${projectId}/roles`, data);
 };

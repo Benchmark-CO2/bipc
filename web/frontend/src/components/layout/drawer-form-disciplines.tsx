@@ -43,6 +43,7 @@ import {
 } from "../ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import NotFoundList from "../ui/not-found-list";
+import { patchDiscipline } from "@/actions/disciplines/patchDiscipline";
 
 interface IDrawerFormDisciplines {
   componentTrigger: React.ReactNode;
@@ -118,6 +119,31 @@ export default function DrawerFormDisciplines({
     },
   });
 
+  const {
+    mutate: updateDiscipline,
+    isPending: isUpdating,
+    reset: resetUpdate,
+  } = useMutation({
+    mutationFn: (data: DisciplineFormSchema) =>
+      patchDiscipline(projectId, roleData!.id, data),
+    onSuccess: () => {
+      toast.success("Disciplina atualizada com sucesso!", {
+        duration: 5000,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project-collaborators", projectId],
+      });
+      form.reset();
+      setOpenDrawer(false);
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar disciplina", {
+        description: "Ocorreu um erro ao atualizar a disciplina.",
+        duration: 5000,
+      });
+    },
+  });
+
   const selectedPermissions =
     useWatch({
       control: form.control,
@@ -126,6 +152,10 @@ export default function DrawerFormDisciplines({
     }) || [];
 
   const onSubmit = async (data: DisciplineFormSchema) => {
+    if (isEditMode) {
+      updateDiscipline(data);
+      return;
+    }
     createDiscipline(data);
   };
 
@@ -142,7 +172,7 @@ export default function DrawerFormDisciplines({
     setSearchTerm("");
   };
 
-  const removeCollaborator = (userId: number) => {
+  const removeCollaborator = (userId: string) => {
     const newCollaborators = selectedCollaborators.filter(
       (c) => c.id !== userId
     );
@@ -247,7 +277,7 @@ export default function DrawerFormDisciplines({
   useEffect(() => {
     if (openDrawer) {
       resetCreation();
-      // resetUpdate();
+      resetUpdate();
 
       if (roleData) {
         form.reset({
@@ -571,10 +601,16 @@ export default function DrawerFormDisciplines({
           {isEditMode ? (
             <Button type="submit" form="disciplines-form" variant={"bipc"}>
               Salvar alterações
+              {isUpdating && (
+                <div className="ml-2 h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+              )}
             </Button>
           ) : (
             <Button variant={"bipc"} type="submit" form="disciplines-form">
               Adicionar disciplina
+              {isCreating && (
+                <div className="ml-2 h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+              )}
             </Button>
           )}
         </DrawerFooter>

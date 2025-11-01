@@ -1,23 +1,66 @@
 import { Button } from "@/components/ui/button";
 import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
 import DrawerFormDisciplines from "../drawer-form-disciplines";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { getProjectCollaborators } from "@/actions/projectCollaborators/getProjectCollaborators";
 import DrawerInvite from "../drawer-invite";
 import ModalConfirmDelete from "../modal-confirm-delete";
-import { useAuth } from "@/hooks/useAuth";
+import { deleteProjectCollaborator } from "@/actions/projectCollaborators/deleteProjectCollaborator";
+import { deleteDiscipline } from "@/actions/disciplines/deleteDiscipline";
+import { toast } from "sonner";
+import { queryClient } from "@/utils/queryClient";
 
 const CollaboratorsView = ({ projectId }: { projectId: string }) => {
-  const { user } = useAuth();
   const { data: collaboratorsData } = useQuery({
     queryKey: ["project-collaborators", projectId],
     queryFn: () => getProjectCollaborators(projectId),
   });
 
+  const {
+    mutate: mutateDeleteCollaborator,
+    isPending: isDeletingCollaborator,
+  } = useMutation({
+    mutationFn: (collaboratorId: string) =>
+      deleteProjectCollaborator(projectId, collaboratorId),
+    onSuccess: () => {
+      toast.success("Colaborador removido com sucesso", {
+        duration: 5000,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project-collaborators", projectId],
+      });
+    },
+    onError: (error) => {
+      toast.error("Erro ao remover colaborador", {
+        description: error.message || "Erro desconhecido",
+        duration: 5000,
+      });
+    },
+  });
+
+  const { mutate: mutateDeleteDiscipline, isPending: isDeletingDiscipline } =
+    useMutation({
+      mutationFn: (disciplineId: string) =>
+        deleteDiscipline(projectId, disciplineId),
+      onSuccess: () => {
+        toast.success("Disciplina removida com sucesso", {
+          duration: 5000,
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["project-collaborators", projectId],
+        });
+      },
+      onError: (error) => {
+        toast.error("Erro ao remover disciplina", {
+          description: error.message || "Erro desconhecido",
+          duration: 5000,
+        });
+      },
+    });
+
   const collaborators = collaboratorsData?.data.data?.collaborators || [];
   const roles = collaboratorsData?.data.data?.roles || [];
 
-  // Ordenar colaboradores: Administradores primeiro
   const sortedCollaborators = [...collaborators].sort((a, b) => {
     const aIsAdmin = (a.roles as unknown as string[])?.some(
       (role) => role?.toLowerCase() === "administrador"
@@ -64,6 +107,9 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
                   <h3 className="font-medium text-gray-900 dark:text-gray-100">
                     {discipline.name}
                   </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {discipline.description || "Sem descrição"}
+                  </p>
                 </div>
               </div>
               {!discipline.is_protected && (
@@ -71,11 +117,15 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
                   <ModalConfirmDelete
                     componentTrigger={
                       <Button variant="outline-destructive" size="icon-lg">
-                        <TrashIcon className="h-4 w-4" />
+                        {isDeletingDiscipline ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                        ) : (
+                          <TrashIcon className="h-4 w-4" />
+                        )}
                       </Button>
                     }
                     title="Remover Disciplina"
-                    onConfirm={() => console.log("remve")}
+                    onConfirm={() => mutateDeleteDiscipline(discipline.id)}
                   />
                   <DrawerFormDisciplines
                     componentTrigger={
@@ -142,11 +192,15 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
                   <ModalConfirmDelete
                     componentTrigger={
                       <Button variant="outline-destructive" size="icon-lg">
-                        <TrashIcon className="h-4 w-4" />
+                        {isDeletingCollaborator ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                        ) : (
+                          <TrashIcon className="h-4 w-4" />
+                        )}
                       </Button>
                     }
                     title="Remover Colaborador"
-                    onConfirm={() => console.log("remve")}
+                    onConfirm={() => mutateDeleteCollaborator(collaborator.id)}
                   />
                 </div>
               )}
