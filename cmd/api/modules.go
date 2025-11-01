@@ -88,7 +88,7 @@ func (app *application) readModuleHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	moduleType, err := app.models.BeamColumnModules.GetModuleType(moduleID)
+	moduleType, err := app.models.Modules.GetModuleType(moduleID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -141,7 +141,7 @@ func (app *application) updateModuleHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	existingModuleType, err := app.models.BeamColumnModules.GetModuleType(moduleID)
+	existingModuleType, err := app.models.Modules.GetModuleType(moduleID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -200,7 +200,7 @@ func (app *application) deleteModuleHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	moduleType, err := app.models.BeamColumnModules.GetModuleType(moduleID)
+	moduleType, err := app.models.Modules.GetModuleType(moduleID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):

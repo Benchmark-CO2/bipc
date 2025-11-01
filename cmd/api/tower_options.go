@@ -16,6 +16,12 @@ func (app *application) createTowerOptionHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
+	roleID, err := app.readUUIDParam(r, "roleID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
 	var input struct {
 		Name   string `json:"name"`
 		Active bool   `json:"active"`
@@ -29,6 +35,7 @@ func (app *application) createTowerOptionHandler(w http.ResponseWriter, r *http.
 
 	towerOption := &data.TowerOption{
 		TowerID: unitID,
+		RoleID:  roleID,
 		Name:    input.Name,
 		Active:  input.Active,
 	}
@@ -93,7 +100,13 @@ func (app *application) listTowerOptionsHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	towerOptions, err := app.models.TowerOptions.GetAll(unitID)
+	roleID, err := app.readUUIDParam(r, "roleID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	towerOptions, err := app.models.TowerOptions.GetAllByRole(unitID, roleID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

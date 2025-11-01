@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -23,6 +24,14 @@ type ConcreteVolumeItem struct {
 type ConcreteElement struct {
 	Volumes []ConcreteVolumeItem `json:"volumes,omitempty"`
 	Steel   []SteelMassItem      `json:"steel,omitempty"`
+}
+
+func (c ConcreteElement) MarshalJSON() ([]byte, error) {
+	if len(c.Volumes) == 0 && len(c.Steel) == 0 {
+		return []byte("null"), nil
+	}
+	type Alias ConcreteElement
+	return json.Marshal((Alias)(c))
 }
 
 type BasicModuleData struct {
@@ -133,28 +142,6 @@ func (ce *ConcreteElement) calculate(sidacConcrete, sidacSteel SidacMaterial) (C
 	return result, nil
 }
 
-func toDataConcrete(el ConcreteElement) data.Concrete {
-	var vols []data.ConcreteVolume
-	for _, v := range el.Volumes {
-		vols = append(vols, data.ConcreteVolume{
-			Fck:    v.Fck,
-			Volume: v.Volume,
-		})
-	}
-	var steels []data.SteelMass
-	for _, s := range el.Steel {
-		steels = append(steels, data.SteelMass{
-			CA:   s.CA,
-			Mass: s.Mass,
-		})
-	}
-	return data.Concrete{
-		Volumes: vols,
-		Steel:   steels,
-	}
-}
-
-
 func addConcreteElement(total *Consumption, ce ConcreteElement, sidacConcrete, sidacSteel SidacMaterial) error {
 	result, err := ce.calculate(sidacConcrete, sidacSteel)
 	if err != nil {
@@ -164,23 +151,32 @@ func addConcreteElement(total *Consumption, ce ConcreteElement, sidacConcrete, s
 	return nil
 }
 
-func ToConcreteElement(c data.Concrete) ConcreteElement {
-	var vols []ConcreteVolumeItem
-	for _, v := range c.Volumes {
-		vols = append(vols, ConcreteVolumeItem{
-			Fck:    v.Fck,
-			Volume: v.Volume,
-		})
+func concreteElementFromMap(dataMap map[string]interface{}) ConcreteElement {
+	var element ConcreteElement
+
+	if volumesData, ok := dataMap["volumes"].([]interface{}); ok {
+		for _, v := range volumesData {
+			if volMap, ok := v.(map[string]interface{}); ok {
+				volume := ConcreteVolumeItem{
+					Fck:    int(volMap["fck"].(float64)),
+					Volume: volMap["volume"].(float64),
+				}
+				element.Volumes = append(element.Volumes, volume)
+			}
+		}
 	}
-	var steels []SteelMassItem
-	for _, s := range c.Steel {
-		steels = append(steels, SteelMassItem{
-			CA:   s.CA,
-			Mass: s.Mass,
-		})
+
+	if steelData, ok := dataMap["steel"].([]interface{}); ok {
+		for _, s := range steelData {
+			if steelMap, ok := s.(map[string]interface{}); ok {
+				steel := SteelMassItem{
+					CA:   int(steelMap["ca"].(float64)),
+					Mass: steelMap["mass"].(float64),
+				}
+				element.Steel = append(element.Steel, steel)
+			}
+		}
 	}
-	return ConcreteElement{
-		Volumes: vols,
-		Steel:   steels,
-	}
+
+	return element
 }

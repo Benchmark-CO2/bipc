@@ -73,34 +73,59 @@ func (w *ConcreteWall) Insert(models data.Models, optionID uuid.UUID, result Con
 		return nil, err
 	}
 
-	moduleToInsert := toConcreteWallModule(w, moduleID, optionID, result)
+	moduleToInsert := w.toDataModule(moduleID, optionID, result)
 
-	insertedModule, err := models.ConcreteWallModules.Insert(moduleToInsert)
+	insertedModule, err := models.Modules.Insert(moduleToInsert)
 	if err != nil {
 		return nil, err
 	}
 
-	return w.toModule(insertedModule), nil
+	return w.fromDataModule(insertedModule), nil
 }
 
 func (w *ConcreteWall) Delete(models data.Models, moduleID uuid.UUID) error {
-	return models.ConcreteWallModules.Delete(moduleID)
+	return models.Modules.Delete(moduleID)
 }
 
 func (w *ConcreteWall) Get(models data.Models, moduleID uuid.UUID) (Module, error) {
-	dataModule, err := models.ConcreteWallModules.Get(moduleID)
+	dataModule, err := models.Modules.Get(moduleID)
 	if err != nil {
 		return nil, err
 	}
-	return w.toModule(dataModule), nil
+	return w.fromDataModule(dataModule), nil
 }
 
 func (w *ConcreteWall) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
-	module := toConcreteWallModule(w, moduleID, optionID, result)
-	return models.ConcreteWallModules.Update(module)
+	module := w.toDataModule(moduleID, optionID, result)
+	return models.Modules.Update(module)
 }
 
-func (w *ConcreteWall) toModule(d *data.ConcreteWallModule) Module {
+func (w *ConcreteWall) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
+	moduleData := map[string]interface{}{
+		"concrete_walls": w.ConcreteWalls,
+		"concrete_slabs": w.ConcreteSlabs,
+		"wall_thickness": w.WallThickness,
+		"slab_thickness": w.SlabThickness,
+		"wall_area":      w.WallArea,
+		"slab_area":      w.SlabArea,
+		"wall_form_area": w.WallFormArea,
+		"slab_form_area": w.SlabFormArea,
+	}
+
+	return &data.Module{
+		ID:             moduleID,
+		Type:           "concrete_wall",
+		TowerOptionID:  optionID,
+		Data:           moduleData,
+		TotalCO2Min:    &result.CO2Min,
+		TotalCO2Max:    &result.CO2Max,
+		TotalEnergyMin: &result.EnergyMin,
+		TotalEnergyMax: &result.EnergyMax,
+		FloorIDs:       w.FloorIDs,
+	}
+}
+
+func (w *ConcreteWall) fromDataModule(d *data.Module) Module {
 	var consumption *Consumption
 	if d.TotalCO2Min != nil {
 		consumption = &Consumption{
@@ -110,40 +135,49 @@ func (w *ConcreteWall) toModule(d *data.ConcreteWallModule) Module {
 			EnergyMax: *d.TotalEnergyMax,
 		}
 	}
+
+	var concreteWalls, concreteSlabs ConcreteElement
+
+	if wallData, ok := d.Data["concrete_walls"].(map[string]interface{}); ok {
+		concreteWalls = concreteElementFromMap(wallData)
+	}
+	if slabData, ok := d.Data["concrete_slabs"].(map[string]interface{}); ok {
+		concreteSlabs = concreteElementFromMap(slabData)
+	}
+
+	var wallThickness, slabThickness, wallArea, slabArea, wallFormArea, slabFormArea *float64
+
+	if val, ok := d.Data["wall_thickness"].(float64); ok {
+		wallThickness = &val
+	}
+	if val, ok := d.Data["slab_thickness"].(float64); ok {
+		slabThickness = &val
+	}
+	if val, ok := d.Data["wall_area"].(float64); ok {
+		wallArea = &val
+	}
+	if val, ok := d.Data["slab_area"].(float64); ok {
+		slabArea = &val
+	}
+	if val, ok := d.Data["wall_form_area"].(float64); ok {
+		wallFormArea = &val
+	}
+	if val, ok := d.Data["slab_form_area"].(float64); ok {
+		slabFormArea = &val
+	}
+
 	return &ConcreteWall{
 		ID:              d.ID,
 		BasicModuleData: BasicModuleData{Type: "concrete_wall"},
 		Consumption:     consumption,
-		ConcreteWalls:   ToConcreteElement(d.ConcreteWalls),
-		ConcreteSlabs:   ToConcreteElement(d.ConcreteSlabs),
-		WallThickness:   d.WallThickness,
-		SlabThickness:   d.SlabThickness,
-		WallArea:        d.WallArea,
-		SlabArea:        d.SlabArea,
-		WallFormArea:    d.WallFormArea,
-		SlabFormArea:    d.SlabFormArea,
+		ConcreteWalls:   concreteWalls,
+		ConcreteSlabs:   concreteSlabs,
+		WallThickness:   wallThickness,
+		SlabThickness:   slabThickness,
+		WallArea:        wallArea,
+		SlabArea:        slabArea,
+		WallFormArea:    wallFormArea,
+		SlabFormArea:    slabFormArea,
 		FloorIDs:        d.FloorIDs,
-	}
-}
-
-func toConcreteWallModule(w *ConcreteWall, moduleID, optionID uuid.UUID, result Consumption) *data.ConcreteWallModule {
-	return &data.ConcreteWallModule{
-		Module: data.Module{
-			ID:             moduleID,
-			TowerOptionID:  optionID,
-			TotalCO2Min:    &result.CO2Min,
-			TotalCO2Max:    &result.CO2Max,
-			TotalEnergyMin: &result.EnergyMin,
-			TotalEnergyMax: &result.EnergyMax,
-			FloorIDs:       w.FloorIDs,
-		},
-		ConcreteWalls: toDataConcrete(w.ConcreteWalls),
-		ConcreteSlabs: toDataConcrete(w.ConcreteSlabs),
-		WallThickness: w.WallThickness,
-		SlabThickness: w.SlabThickness,
-		WallArea:      w.WallArea,
-		SlabArea:      w.SlabArea,
-		WallFormArea:  w.WallFormArea,
-		SlabFormArea:  w.SlabFormArea,
 	}
 }

@@ -17,31 +17,27 @@ var (
 )
 
 type Models struct {
-	Users                    UserModel
-	Tokens                   TokenModel
-	Roles                    RoleModel
-	Projects                 ProjectModel
-	Units                    UnitModel
-	TowerOptions             TowerOptionModel
-	Invitations              InvitationModel
-	BeamColumnModules        BeamColumnModuleModel
-	StructuralMasonryModules StructuralMasonryModuleModel
-	ConcreteWallModules      ConcreteWallModuleModel
-	Benchmark                BenchmarkModel
+	Users        UserModel
+	Tokens       TokenModel
+	Roles        RoleModel
+	Projects     ProjectModel
+	Units        UnitModel
+	TowerOptions TowerOptionModel
+	Invitations  InvitationModel
+	Modules      ModuleModel
+	Benchmark    BenchmarkModel
 }
 
 func NewModels(db *sql.DB) Models {
 	return Models{
-		Users:                    UserModel{DB: db},
-		Tokens:                   TokenModel{DB: db},
-		Roles:                    RoleModel{DB: db},
-		Projects:                 ProjectModel{DB: db},
-		Units:                    UnitModel{DB: db},
-		TowerOptions:             TowerOptionModel{DB: db},
-		Invitations:              InvitationModel{DB: db},
-		BeamColumnModules:        BeamColumnModuleModel{DB: db},
-		StructuralMasonryModules: StructuralMasonryModuleModel{DB: db},
-		ConcreteWallModules:      ConcreteWallModuleModel{DB: db},
-		Benchmark:                BenchmarkModel{DB: db},
+		Users:        UserModel{DB: db},
+		Tokens:       TokenModel{DB: db},
+		Roles:        RoleModel{DB: db},
+		Projects:     ProjectModel{DB: db},
+		Units:        UnitModel{DB: db},
+		TowerOptions: TowerOptionModel{DB: db},
+		Invitations:  InvitationModel{DB: db},
+		Modules:      ModuleModel{DB: db},
+		Benchmark:    BenchmarkModel{DB: db},
 	}
 }

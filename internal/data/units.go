@@ -282,7 +282,7 @@ func (m UnitModel) getTowerByUnitID(unitID uuid.UUID) (*Tower, error) {
 func (m UnitModel) getFloorsByTowerID(towerID uuid.UUID) ([]Floor, error) {
 	query := `
 		SELECT f.id, f.group_id, fg.name, fg.category, f.area, f.height, f.index,
-		       ftm.technology, ftm.co2_min, ftm.co2_max, ftm.energy_min, ftm.energy_max
+		       ftm.role_id, ftm.option_id, ftm.technology, ftm.co2_min, ftm.co2_max, ftm.energy_min, ftm.energy_max
 		FROM floor f
 		INNER JOIN floor_group fg ON f.group_id = fg.id
 		LEFT JOIN floors_consumption ftm ON f.id = ftm.floor_id
@@ -306,12 +306,12 @@ func (m UnitModel) getFloorsByTowerID(towerID uuid.UUID) ([]Floor, error) {
 		var groupName, category string
 		var area, height float64
 		var index int
-		var tech sql.NullString
+		var roleID, optionID, tech sql.NullString
 		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
 
 		err := rows.Scan(
 			&floorID, &groupID, &groupName, &category, &area, &height, &index,
-			&tech, &co2Min, &co2Max, &energyMin, &energyMax,
+			&roleID, &optionID, &tech, &co2Min, &co2Max, &energyMin, &energyMax,
 		)
 		if err != nil {
 			return nil, err
@@ -332,12 +332,18 @@ func (m UnitModel) getFloorsByTowerID(towerID uuid.UUID) ([]Floor, error) {
 		}
 
 		if tech.Valid && co2Min.Valid {
-			floorsMap[floorID].Consumptions[tech.String] = &Consumption{
-				CO2Min:    &co2Min.Float64,
-				CO2Max:    &co2Max.Float64,
-				EnergyMin: &energyMin.Float64,
-				EnergyMax: &energyMax.Float64,
+			if _, ok := floorsMap[floorID].Consumptions[tech.String]; !ok {
+				floorsMap[floorID].Consumptions[tech.String] = &Consumption{
+					CO2Min:    new(float64),
+					CO2Max:    new(float64),
+					EnergyMin: new(float64),
+					EnergyMax: new(float64),
+				}
 			}
+			*floorsMap[floorID].Consumptions[tech.String].CO2Min += co2Min.Float64
+			*floorsMap[floorID].Consumptions[tech.String].CO2Max += co2Max.Float64
+			*floorsMap[floorID].Consumptions[tech.String].EnergyMin += energyMin.Float64
+			*floorsMap[floorID].Consumptions[tech.String].EnergyMax += energyMax.Float64
 		}
 	}
 
@@ -461,6 +467,8 @@ type FloorMetrics struct {
 
 type ModuleMetrics struct {
 	ModuleID       uuid.UUID
+	RoleID         uuid.UUID
+	OptionID       uuid.UUID
 	Active         bool
 	Type           string
 	TotalCO2Min    float64
@@ -473,7 +481,7 @@ func loadFloorsAndModules(tx *sql.Tx, floorIDs []uuid.UUID) (map[uuid.UUID]*Floo
 	rows, err := tx.Query(`
 		SELECT
 			f.id, f.area,
-			m.id, m.type, topt.active,
+			m.id, m.type, topt.active, topt.role_id, topt.id,
 			m.total_co2_min, m.total_co2_max,
 			m.total_energy_min, m.total_energy_max
 		FROM floor f
@@ -493,12 +501,12 @@ func loadFloorsAndModules(tx *sql.Tx, floorIDs []uuid.UUID) (map[uuid.UUID]*Floo
 		var (
 			floorID                              uuid.UUID
 			area                                 float64
-			moduleID, moduleType                 sql.NullString
+			moduleID, moduleType, roleID, optionID sql.NullString
 			active                               sql.NullBool
 			co2Min, co2Max, energyMin, energyMax sql.NullFloat64
 		)
 
-		if err := rows.Scan(&floorID, &area, &moduleID, &moduleType, &active, &co2Min, &co2Max, &energyMin, &energyMax); err != nil {
+		if err := rows.Scan(&floorID, &area, &moduleID, &moduleType, &active, &roleID, &optionID, &co2Min, &co2Max, &energyMin, &energyMax); err != nil {
 			return nil, nil, err
 		}
 
@@ -516,11 +524,23 @@ func loadFloorsAndModules(tx *sql.Tx, floorIDs []uuid.UUID) (map[uuid.UUID]*Floo
 				return nil, nil, err
 			}
 
+			rid, err := uuid.Parse(roleID.String)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			oid, err := uuid.Parse(optionID.String)
+			if err != nil {
+				return nil, nil, err
+			}
+
 			floors[floorID].ModuleIDs = append(floors[floorID].ModuleIDs, mid)
 
 			if _, ok := modules[mid]; !ok {
 				modules[mid] = &ModuleMetrics{
 					ModuleID:       mid,
+					RoleID:         rid,
+					OptionID:       oid,
 					Active:         true,
 					Type:           moduleType.String,
 					TotalCO2Min:    co2Min.Float64,
@@ -582,45 +602,157 @@ func updateFloorMetricsById(tx *sql.Tx, floorIDs []uuid.UUID) error {
 		}
 	}
 
+	type metricsKey struct {
+		floorID  uuid.UUID
+		roleID   uuid.UUID
+		optionID uuid.UUID
+		tech     string
+	}
+	groupedMetrics := make(map[metricsKey]*Consumption)
+
 	for _, floor := range floors {
 		if floor.Area == 0 {
 			continue
 		}
 
-		techMetrics := make(map[string]*Consumption)
-
 		for _, moduleID := range floor.ModuleIDs {
 			m := modules[moduleID]
-			if _, ok := techMetrics[m.Type]; !ok {
-				techMetrics[m.Type] = &Consumption{
+			key := metricsKey{
+				floorID:  floor.FloorID,
+				roleID:   m.RoleID,
+				optionID: m.OptionID,
+				tech:     m.Type,
+			}
+
+			if _, ok := groupedMetrics[key]; !ok {
+				groupedMetrics[key] = &Consumption{
 					CO2Min:    new(float64),
 					CO2Max:    new(float64),
 					EnergyMin: new(float64),
 					EnergyMax: new(float64),
 				}
 			}
-			*techMetrics[m.Type].CO2Min += m.TotalCO2Min
-			*techMetrics[m.Type].CO2Max += m.TotalCO2Max
-			*techMetrics[m.Type].EnergyMin += m.TotalEnergyMin
-			*techMetrics[m.Type].EnergyMax += m.TotalEnergyMax
+
+			*groupedMetrics[key].CO2Min += m.TotalCO2Min
+			*groupedMetrics[key].CO2Max += m.TotalCO2Max
+			*groupedMetrics[key].EnergyMin += m.TotalEnergyMin
+			*groupedMetrics[key].EnergyMax += m.TotalEnergyMax
 		}
+	}
 
-		for tech, metrics := range techMetrics {
-			floorCO2Min := *metrics.CO2Min / floor.Area
-			floorCO2Max := *metrics.CO2Max / floor.Area
-			floorEnergyMin := *metrics.EnergyMin / floor.Area
-			floorEnergyMax := *metrics.EnergyMax / floor.Area
+	// Insert metrics into floors_consumption
+	for key, metrics := range groupedMetrics {
+		floor := floors[key.floorID]
+		floorCO2Min := *metrics.CO2Min / floor.Area
+		floorCO2Max := *metrics.CO2Max / floor.Area
+		floorEnergyMin := *metrics.EnergyMin / floor.Area
+		floorEnergyMax := *metrics.EnergyMax / floor.Area
 
-			_, err := tx.Exec(`
-				INSERT INTO floors_consumption (floor_id, technology, co2_min, co2_max, energy_min, energy_max)
-				VALUES ($1, $2, $3, $4, $5, $6)`,
-				floor.FloorID, tech, floorCO2Min, floorCO2Max, floorEnergyMin, floorEnergyMax,
-			)
-			if err != nil {
-				return err
-			}
+		_, err := tx.Exec(`
+			INSERT INTO floors_consumption (floor_id, role_id, option_id, technology, co2_min, co2_max, energy_min, energy_max)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+			key.floorID, key.roleID, key.optionID, key.tech, floorCO2Min, floorCO2Max, floorEnergyMin, floorEnergyMax,
+		)
+		if err != nil {
+			return err
 		}
 	}
 
 	return nil
+}
+
+func (m UnitModel) GetConsumptionByRole(towerID, roleID uuid.UUID) (map[string]*Consumption, error) {
+	query := `
+		SELECT 
+			fc.technology,
+			SUM(fc.co2_min * f.area) / NULLIF(SUM(f.area), 0) as co2_min,
+			SUM(fc.co2_max * f.area) / NULLIF(SUM(f.area), 0) as co2_max,
+			SUM(fc.energy_min * f.area) / NULLIF(SUM(f.area), 0) as energy_min,
+			SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max
+		FROM floors_consumption fc
+		INNER JOIN floor f ON fc.floor_id = f.id
+		INNER JOIN floor_group fg ON f.group_id = fg.id
+		INNER JOIN tower_option topt ON fc.option_id = topt.id
+		WHERE fg.tower_id = $1 
+		  AND fc.role_id = $2 
+		  AND topt.active = TRUE
+		GROUP BY fc.technology`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, towerID, roleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	consumptions := make(map[string]*Consumption)
+
+	for rows.Next() {
+		var tech string
+		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+
+		err := rows.Scan(&tech, &co2Min, &co2Max, &energyMin, &energyMax)
+		if err != nil {
+			return nil, err
+		}
+
+		if co2Min.Valid {
+			consumptions[tech] = &Consumption{
+				CO2Min:    &co2Min.Float64,
+				CO2Max:    &co2Max.Float64,
+				EnergyMin: &energyMin.Float64,
+				EnergyMax: &energyMax.Float64,
+			}
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	totalQuery := `
+		WITH floor_totals AS (
+			SELECT 
+				f.id,
+				f.area,
+				SUM(fc.co2_min) as co2_min,
+				SUM(fc.co2_max) as co2_max,
+				SUM(fc.energy_min) as energy_min,
+				SUM(fc.energy_max) as energy_max
+			FROM floors_consumption fc
+			INNER JOIN floor f ON fc.floor_id = f.id
+			INNER JOIN floor_group fg ON f.group_id = fg.id
+			INNER JOIN tower_option topt ON fc.option_id = topt.id
+			WHERE fg.tower_id = $1 
+			  AND fc.role_id = $2 
+			  AND topt.active = TRUE
+			GROUP BY f.id, f.area
+		)
+		SELECT 
+			SUM(co2_min * area) / NULLIF(SUM(area), 0) as co2_min,
+			SUM(co2_max * area) / NULLIF(SUM(area), 0) as co2_max,
+			SUM(energy_min * area) / NULLIF(SUM(area), 0) as energy_min,
+			SUM(energy_max * area) / NULLIF(SUM(area), 0) as energy_max
+		FROM floor_totals`
+
+	var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+	err = m.DB.QueryRowContext(ctx, totalQuery, towerID, roleID).Scan(
+		&co2Min, &co2Max, &energyMin, &energyMax,
+	)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+
+	if co2Min.Valid {
+		consumptions["total"] = &Consumption{
+			CO2Min:    &co2Min.Float64,
+			CO2Max:    &co2Max.Float64,
+			EnergyMin: &energyMin.Float64,
+			EnergyMax: &energyMax.Float64,
+		}
+	}
+
+	return consumptions, nil
 }

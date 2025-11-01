@@ -11,9 +11,9 @@ type BeamColumn struct {
 	ID uuid.UUID `json:"id"`
 	BasicModuleData
 	Consumption     *Consumption    `json:"consumption,omitempty"`
-	ConcreteColumns ConcreteElement `json:"concrete_columns"`
-	ConcreteBeams   ConcreteElement `json:"concrete_beams"`
-	ConcreteSlabs   ConcreteElement `json:"concrete_slabs"`
+	ConcreteColumns ConcreteElement `json:"concrete_columns,omitempty"`
+	ConcreteBeams   ConcreteElement `json:"concrete_beams,omitempty"`
+	ConcreteSlabs   ConcreteElement `json:"concrete_slabs,omitempty"`
 	FormColumns     *float64        `json:"form_columns,omitempty"`
 	FormBeams       *float64        `json:"form_beams,omitempty"`
 	FormSlabs       *float64        `json:"form_slabs,omitempty"`
@@ -81,58 +81,61 @@ func (b *BeamColumn) Insert(models data.Models, optionID uuid.UUID, result Consu
 		return nil, err
 	}
 
-	moduleToInsert := toBeamColumnModule(b, moduleID, optionID, result)
+	moduleToInsert := b.toDataModule(moduleID, optionID, result)
 
-	insertedModule, err := models.BeamColumnModules.Insert(moduleToInsert)
+	insertedModule, err := models.Modules.Insert(moduleToInsert)
 	if err != nil {
 		return nil, err
 	}
 
-	return b.toModule(insertedModule), nil
+	return b.fromDataModule(insertedModule), nil
 }
 
 func (b *BeamColumn) Delete(models data.Models, moduleID uuid.UUID) error {
-	return models.BeamColumnModules.Delete(moduleID)
+	return models.Modules.Delete(moduleID)
 }
 
 func (b *BeamColumn) Get(models data.Models, moduleID uuid.UUID) (Module, error) {
-	dataModule, err := models.BeamColumnModules.Get(moduleID)
+	dataModule, err := models.Modules.Get(moduleID)
 	if err != nil {
 		return nil, err
 	}
-	return b.toModule(dataModule), nil
+	return b.fromDataModule(dataModule), nil
 }
 
 func (b *BeamColumn) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
-	module := toBeamColumnModule(b, moduleID, optionID, result)
-	return models.BeamColumnModules.Update(module)
+	module := b.toDataModule(moduleID, optionID, result)
+	return models.Modules.Update(module)
 }
 
-func toBeamColumnModule(b *BeamColumn, moduleID uuid.UUID, optionID uuid.UUID, result Consumption) *data.BeamColumnModule {
-	return &data.BeamColumnModule{
-		Module: data.Module{
-			ID:             moduleID,
-			TowerOptionID:  optionID,
-			TotalCO2Min:    &result.CO2Min,
-			TotalCO2Max:    &result.CO2Max,
-			TotalEnergyMin: &result.EnergyMin,
-			TotalEnergyMax: &result.EnergyMax,
-			FloorIDs:       b.FloorIDs,
-		},
-		ConcreteColumns: toDataConcrete(b.ConcreteColumns),
-		ConcreteBeams:   toDataConcrete(b.ConcreteBeams),
-		ConcreteSlabs:   toDataConcrete(b.ConcreteSlabs),
-		FormColumns:     b.FormColumns,
-		FormBeams:       b.FormBeams,
-		FormSlabs:       b.FormSlabs,
-		FormTotal:       b.FormTotal,
-		ColumnNumber:    b.ColumnNumber,
-		AvgBeamSpan:     b.AvgBeamSpan,
-		AvgSlabSpan:     b.AvgSlabSpan,
+func (b *BeamColumn) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
+	moduleData := map[string]interface{}{
+		"concrete_columns": b.ConcreteColumns,
+		"concrete_beams":   b.ConcreteBeams,
+		"concrete_slabs":   b.ConcreteSlabs,
+		"form_columns":     b.FormColumns,
+		"form_beams":       b.FormBeams,
+		"form_slabs":       b.FormSlabs,
+		"form_total":       b.FormTotal,
+		"column_number":    b.ColumnNumber,
+		"avg_beam_span":    b.AvgBeamSpan,
+		"avg_slab_span":    b.AvgSlabSpan,
+	}
+
+	return &data.Module{
+		ID:                moduleID,
+		Type:              "beam_column",
+		TowerOptionID:     optionID,
+		Data:              moduleData,
+		TotalCO2Min:       &result.CO2Min,
+		TotalCO2Max:       &result.CO2Max,
+		TotalEnergyMin:    &result.EnergyMin,
+		TotalEnergyMax:    &result.EnergyMax,
+		FloorIDs:          b.FloorIDs,
 	}
 }
 
-func (b *BeamColumn) toModule(d *data.BeamColumnModule) Module {
+func (b *BeamColumn) fromDataModule(d *data.Module) Module {
 	var consumption *Consumption
 	if d.TotalCO2Min != nil {
 		consumption = &Consumption{
@@ -143,20 +146,60 @@ func (b *BeamColumn) toModule(d *data.BeamColumnModule) Module {
 		}
 	}
 
+	var concreteColumns, concreteBeams, concreteSlabs ConcreteElement
+	
+	if colData, ok := d.Data["concrete_columns"].(map[string]interface{}); ok {
+		concreteColumns = concreteElementFromMap(colData)
+	}
+	if beamData, ok := d.Data["concrete_beams"].(map[string]interface{}); ok {
+		concreteBeams = concreteElementFromMap(beamData)
+	}
+	if slabData, ok := d.Data["concrete_slabs"].(map[string]interface{}); ok {
+		concreteSlabs = concreteElementFromMap(slabData)
+	}
+
+	var formColumns, formBeams, formSlabs, formTotal *float64
+	var columnNumber, avgBeamSpan, avgSlabSpan *int
+
+	if val, ok := d.Data["form_columns"].(float64); ok {
+		formColumns = &val
+	}
+	if val, ok := d.Data["form_beams"].(float64); ok {
+		formBeams = &val
+	}
+	if val, ok := d.Data["form_slabs"].(float64); ok {
+		formSlabs = &val
+	}
+	if val, ok := d.Data["form_total"].(float64); ok {
+		formTotal = &val
+	}
+	if val, ok := d.Data["column_number"].(float64); ok {
+		intVal := int(val)
+		columnNumber = &intVal
+	}
+	if val, ok := d.Data["avg_beam_span"].(float64); ok {
+		intVal := int(val)
+		avgBeamSpan = &intVal
+	}
+	if val, ok := d.Data["avg_slab_span"].(float64); ok {
+		intVal := int(val)
+		avgSlabSpan = &intVal
+	}
+
 	return &BeamColumn{
 		ID:              d.ID,
 		BasicModuleData: BasicModuleData{Type: "beam_column"},
 		Consumption:     consumption,
-		ConcreteColumns: ToConcreteElement(d.ConcreteColumns),
-		ConcreteBeams:   ToConcreteElement(d.ConcreteBeams),
-		ConcreteSlabs:   ToConcreteElement(d.ConcreteSlabs),
-		FormColumns:     d.FormColumns,
-		FormBeams:       d.FormBeams,
-		FormSlabs:       d.FormSlabs,
-		FormTotal:       d.FormTotal,
-		ColumnNumber:    d.ColumnNumber,
-		AvgBeamSpan:     d.AvgBeamSpan,
-		AvgSlabSpan:     d.AvgSlabSpan,
+		ConcreteColumns: concreteColumns,
+		ConcreteBeams:   concreteBeams,
+		ConcreteSlabs:   concreteSlabs,
+		FormColumns:     formColumns,
+		FormBeams:       formBeams,
+		FormSlabs:       formSlabs,
+		FormTotal:       formTotal,
+		ColumnNumber:    columnNumber,
+		AvgBeamSpan:     avgBeamSpan,
+		AvgSlabSpan:     avgSlabSpan,
 		FloorIDs:        d.FloorIDs,
 	}
 }

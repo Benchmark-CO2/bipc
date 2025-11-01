@@ -8,6 +8,7 @@ import (
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
+	"github.com/google/uuid"
 )
 
 // New struct to match the TowerCreateData schema in openapi.yaml
@@ -84,8 +85,20 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
+type RoleInfo struct {
+	ID          uuid.UUID              `json:"id"`
+	Name        string                 `json:"name"`
+	Consumption map[string]*data.Consumption `json:"consumption,omitempty"`
+}
+
 func (app *application) readUnitHandler(w http.ResponseWriter, r *http.Request) {
 	unitID, err := app.readUUIDParam(r, "unitID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	projectID, err := app.readUUIDParam(r, "projectID")
 	if err != nil {
 		app.notFoundResponse(w, r)
 		return
@@ -102,7 +115,38 @@ func (app *application) readUnitHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"unit": unit}, nil)
+	user := app.contextGetUser(r)
+
+	allRoles, err := app.models.Roles.GetAllUserRoles(user.ID, projectID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	var simulationRoles []RoleInfo
+	for _, role := range allRoles {
+		if role.Simulation {
+			roleInfo := RoleInfo{
+				ID:   role.ID,
+				Name: role.Name,
+			}
+
+			if unit.Type == "tower" {
+				consumption, err := app.models.Units.GetConsumptionByRole(unitID, role.ID)
+				if err != nil {
+					app.serverErrorResponse(w, r, err)
+					return
+				}
+				if len(consumption) > 0 {
+					roleInfo.Consumption = consumption
+				}
+			}
+
+			simulationRoles = append(simulationRoles, roleInfo)
+		}
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"unit": unit, "roles": simulationRoles}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
