@@ -1,41 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { PencilIcon, TrashIcon } from "lucide-react";
+import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
 import DrawerFormDisciplines from "../drawer-form-disciplines";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getProjectCollaborators } from "@/actions/projectCollaborators/getProjectCollaborators";
 import DrawerInvite from "../drawer-invite";
 import ModalConfirmDelete from "../modal-confirm-delete";
 import { useAuth } from "@/hooks/useAuth";
-// const collaborators = [
-//   {
-//     id: "1",
-//     name: "Mariana Costa de Andrade",
-//     role: "Arquitetura | Coordenação",
-//     email: "marianaca@construtora.com",
-//     status: "Ativo",
-//   },
-//   {
-//     id: "2",
-//     name: "Felipe Nogueira Bastos",
-//     role: "Estrutura",
-//     email: "felipehb@construtora.com",
-//     status: "Ativo",
-//   },
-//   {
-//     id: "3",
-//     name: "Camila Rocha Tavares",
-//     role: "Vedação",
-//     email: "camilart@construtora.com",
-//     status: "Ativo",
-//   },
-// ];
-
-const disciplines = [
-  { id: "1", name: "Administração", status: "Ativo" },
-  { id: "2", name: "Arquitetura", status: "Ativo" },
-  { id: "3", name: "Estrutura", status: "Ativo" },
-  { id: "4", name: "Fundações", status: "Não ativo" },
-];
 
 const CollaboratorsView = ({ projectId }: { projectId: string }) => {
   const { user } = useAuth();
@@ -47,7 +17,19 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
   const collaborators = collaboratorsData?.data.data?.collaborators || [];
   const roles = collaboratorsData?.data.data?.roles || [];
 
-  console.log(user);
+  // Ordenar colaboradores: Administradores primeiro
+  const sortedCollaborators = [...collaborators].sort((a, b) => {
+    const aIsAdmin = (a.roles as unknown as string[])?.some(
+      (role) => role?.toLowerCase() === "administrador"
+    );
+    const bIsAdmin = (b.roles as unknown as string[])?.some(
+      (role) => role?.toLowerCase() === "administrador"
+    );
+
+    if (aIsAdmin && !bIsAdmin) return -1;
+    if (!aIsAdmin && bIsAdmin) return 1;
+    return 0;
+  });
 
   return (
     <div className="flex flex-col gap-4">
@@ -59,6 +41,7 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
           <DrawerFormDisciplines
             componentTrigger={
               <Button variant="bipc" className="text-white">
+                <PlusIcon className="mr-1 h-4 w-4" />
                 Nova Disciplina
               </Button>
             }
@@ -125,7 +108,7 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
         </div>
 
         <div className="space-y-2">
-          {collaborators.map((collaborator) => (
+          {sortedCollaborators.map((collaborator) => (
             <div
               key={collaborator.id}
               className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg"
@@ -145,12 +128,16 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     {collaborator.email}
                   </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {collaborator.roles.join(" | ")}
-                  </p>
+                  {collaborator?.roles && collaborator.roles.length > 0 && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {(collaborator.roles as unknown as string[]).join(" | ")}
+                    </p>
+                  )}
                 </div>
               </div>
-              {user?.id !== collaborator.id && (
+              {!collaborator?.roles?.some(
+                (role) => role?.toLowerCase() === "administrador"
+              ) && (
                 <div className="flex items-center gap-2">
                   <ModalConfirmDelete
                     componentTrigger={
@@ -161,13 +148,6 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
                     title="Remover Colaborador"
                     onConfirm={() => console.log("remve")}
                   />
-                  <Button
-                    variant="outline-bipc"
-                    size="icon-lg"
-                    className="text-primary border-primary"
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                  </Button>
                 </div>
               )}
             </div>

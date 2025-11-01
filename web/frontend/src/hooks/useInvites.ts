@@ -3,6 +3,7 @@ import {
   putReplyInvite,
   PutReplyInviteRequest,
 } from "@/actions/invites/putReplyInvite";
+import { queryClient } from "@/utils/queryClient";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { UseNavigateResult } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -43,6 +44,7 @@ export const useInvites = (props: {
           to: "/new_projects",
         });
       }
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: () => {
       toast.error(

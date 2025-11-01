@@ -16,5 +16,5 @@ export type TRole = {
 };
 
 export type TCollaborator = TUser & {
-  roles: TRole[];
+  roles: string[];
 };

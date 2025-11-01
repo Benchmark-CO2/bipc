@@ -55,7 +55,7 @@ export const Notifications = ({ size = 16 }: INotificationProps) => {
       <PopoverTrigger ref={ref} className="relative cursor-pointer">
         Notificações
         {notifications.length > 0 && (
-          <span className="absolute -top-1 -right-1 scale-75 bg-destructive text-white rounded-full px-1 text-xs">
+          <span className="absolute -top-1 -right-4 scale-90 bg-destructive text-white rounded-full px-1 text-xs">
             {notifications.length}
           </span>
         )}
