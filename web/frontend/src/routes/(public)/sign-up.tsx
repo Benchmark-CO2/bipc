@@ -368,7 +368,7 @@ const SignUp = () => {
                         <Checkbox className="self-start" checked={field.value} onCheckedChange={field.onChange} />
                         <span className="text-sm text-foreground">
                           Eu declaro estar ciente sobre o uso dos meus dados para as finalidades
-                          informadas no formulário de cadastro. <br /> <a className="underline text-blue-500 hover:text-blue-600" href="/Politica_de_privacidade.pdf">Política de Privacidade</a>
+                          informadas no formulário de cadastro. <br /> <a target="_blank" className="underline text-blue-500 hover:text-blue-600" href="/Politica_de_privacidade.pdf">Política de Privacidade</a>
                         </span>
                       </div>
                       <FormMessage className="ml-6" />

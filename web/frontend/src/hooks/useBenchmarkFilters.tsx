@@ -1,22 +1,14 @@
 import { BuildIcon } from "@/components/buildIcons";
 import { TechIcon } from "@/components/techIcons";
 import Divider from "@/components/ui/divider";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { regions, states } from "@/utils/states";
+import { FilterTabs } from "@/components/ui/filter-tabs";
 import { useState } from "react";
 
 class FilterFloors {
   constructor(
     private from: number | undefined,
     private to: number | undefined
-  ) {}
+  ) { }
   get() {
     return { floors_from: this.from, floors_to: this.to };
   }
@@ -31,6 +23,8 @@ export const useBenchmarkFilters = () => {
     floors_to: undefined,
     technology: [],
   });
+  const [type, setType] = useState<"co2" | "energy">("co2");
+
   const changeFromTo = (from: number | undefined, to: number | undefined) => {
     setActiveBuildFilter({
       ...activeBuildFilter,
@@ -67,7 +61,14 @@ export const useBenchmarkFilters = () => {
         Filtros de visualização:
       </h2>
       <div className="min-xl:self-start max-sm:w-full max-sm:flex max-sm:justify-center max-sm:flex-col">
-        <div className="flex gap-2 w-full">
+        <FilterTabs
+          tabs={["co2", "energy"]}
+          onTabSelect={(tab) => setType(tab as "co2" | "energy")}
+          selectedTab={type}
+          className="w-full"
+          tabsStyle="w-full"
+        />
+        {/* <div className="flex gap-2 w-full">
           <Input
             placeholder="Número de projetos"
             className="mb-4 w-full"
@@ -94,12 +95,12 @@ export const useBenchmarkFilters = () => {
         <div className="flex gap-2 max-sm:justify-center">
           <Input type={"date"} />
           <Input type={"date"} />
-        </div>
+        </div> */}
         <Divider className="my-6" />
         <h3 className="mb-6 font-semibold text-primary ">
           Números de pavimentos:
         </h3>
-        <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto max-sm:overflow-x-auto">
+        <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto overflow-x-auto max-w-[375px]">
           <BuildIcon
             name="house"
             isActive={
@@ -150,7 +151,7 @@ export const useBenchmarkFilters = () => {
         <h3 className="mb-6 font-semibold text-primary">
           Técnologias Construtivas:
         </h3>
-        <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto max-sm:overflow-x-auto">
+        <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto overflow-x-auto max-w-[375px]">
           <TechIcon
             name="beam_column"
             isActive={activeBuildFilter.technology.includes("beam_column")}
@@ -173,5 +174,5 @@ export const useBenchmarkFilters = () => {
     </section>
   );
 
-  return { FilterSection, activeBuildFilter };
+  return { FilterSection, activeBuildFilter, type };
 };

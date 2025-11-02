@@ -145,12 +145,12 @@ const FloorSummary = ({
         />
       </div>
       <div
-        className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
+        className={cn("w-full flex justify-between gap-4 max-md:flex-col max-md:flex-col 2xl:h-[85%] max-sm:h-max", {
           "flex flex-col": isExpanded,
         })}
       >
         <div className="flex flex-col items-start w-full">
-                  {ChartSelector}
+          {ChartSelector}
 
           <div className="w-full mb-2">
             <div className="mb-2 text-lg text-gray-600">{unit.name}</div>
@@ -231,7 +231,7 @@ const FloorSummary = ({
               );
             })}
           </ul>
-                    {<Legend  />}
+          {<Legend />}
 
           {/* {!isExpanded && <Subtitle />} */}
         </div>
