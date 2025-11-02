@@ -100,7 +100,7 @@ export default function DrawerFormDisciplines({
   });
 
   const { data: collaborators } = useQuery({
-    queryKey: ["project-collaborators", projectId],
+    queryKey: ["project-collaborators-list", projectId],
     queryFn: async () => {
       const response = await getProjectCollaborators(projectId);
       return await response.data.data.collaborators;

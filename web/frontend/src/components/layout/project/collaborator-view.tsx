@@ -11,9 +11,11 @@ import { toast } from "sonner";
 import { queryClient } from "@/utils/queryClient";
 
 const CollaboratorsView = ({ projectId }: { projectId: string }) => {
-  const { data: collaboratorsData } = useQuery({
+  const { data: collaboratorsData, isLoading } = useQuery({
     queryKey: ["project-collaborators", projectId],
     queryFn: () => getProjectCollaborators(projectId),
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   const {
@@ -73,6 +75,14 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
     if (!aIsAdmin && bIsAdmin) return 1;
     return 0;
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">

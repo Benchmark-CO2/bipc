@@ -58,8 +58,6 @@ function RouteComponent() {
     enabled: !!projectId,
   });
 
-  console.log(projectData);
-
   const projectConsumptions: TConsumption[] = Object.keys(
     projectData?.consumption || {}
   )
