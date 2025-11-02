@@ -248,7 +248,7 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectsWithUnits, error) {
 		FROM units
 		WHERE project_id = $1
 		ORDER BY id`
-	
+
 	rows, err := m.DB.QueryContext(ctx, unitsQuery, project.ID)
 	if err != nil {
 		return nil, err
@@ -413,7 +413,7 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 			FROM units
 			WHERE project_id = ANY($1)
 			ORDER BY project_id, id`
-		
+
 		unitRows, err := m.DB.QueryContext(ctx, unitsQuery, pq.Array(projectIDs))
 		if err != nil {
 			return nil, Metadata{}, err
@@ -479,4 +479,39 @@ func (m ProjectModel) IsUserInProject(userID uuid.UUID, projectID uuid.UUID) (bo
 	}
 
 	return exists, nil
+}
+
+func (m ProjectModel) RemoveUser(projectID uuid.UUID, userID uuid.UUID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	tx, err := m.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	query1 := `
+	DELETE FROM users_projects
+	WHERE project_id = $1 AND user_id = $2`
+
+	_, err = tx.Exec(query1, projectID, userID)
+	if err != nil {
+		return err
+	}
+
+	query2 := `
+	DELETE FROM users_roles
+	WHERE user_id = $1 AND role_id IN (SELECT id FROM roles WHERE project_id = $2)`
+
+	_, err = tx.Exec(query2, userID, projectID)
+	if err != nil {
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
 }
