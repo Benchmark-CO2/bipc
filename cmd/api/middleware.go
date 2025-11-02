@@ -300,7 +300,7 @@ func (app *application) requireActivatedUser(next http.HandlerFunc) http.Handler
 	return app.requireAuthenticatedUser(fn)
 }
 
-func (app *application) requirePermission(code string, next http.HandlerFunc) http.HandlerFunc {
+func (app *application) requireRolesPermission(code string, next http.HandlerFunc) http.HandlerFunc {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		user := app.contextGetUser(r)
 
@@ -319,6 +319,35 @@ func (app *application) requirePermission(code string, next http.HandlerFunc) ht
 		}
 
 		if !permissions.Include(code) {
+			app.notPermittedResponse(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	}
+
+	return app.requireActivatedUser(fn)
+}
+
+func (app *application) requireRoleAssociation(next http.HandlerFunc) http.HandlerFunc {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		user := app.contextGetUser(r)
+
+		roleID, err := app.readUUIDParam(r, "roleID")
+		if err != nil {
+			v := validator.New()
+			v.AddError("url", err.Error())
+			app.failedValidationResponse(w, r, v.Errors)
+			return
+		}
+
+		isAssociated, err := app.models.Roles.IsUserAssociated(user.ID, roleID)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		if !isAssociated {
 			app.notPermittedResponse(w, r)
 			return
 		}

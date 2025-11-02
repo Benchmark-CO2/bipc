@@ -198,6 +198,60 @@ func (m *InvitationModel) Reply(invitation *Invitation, status string, user *Use
 	return nil
 }
 
-func (m *InvitationModel) GetPendingByProject() ([]*Invitation, error) {
-	return nil, nil
+func (m *InvitationModel) GetPendingByProject(projectID uuid.UUID) ([]*Invitation, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+		SELECT id, status, created_at, expires_at, inviter_id, project_id, email
+		FROM invitations
+		WHERE project_id = $1 AND status = 'pending' AND expires_at > $2`
+
+	rows, err := m.DB.QueryContext(ctx, query, projectID, time.Now())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	invitations := []*Invitation{}
+
+	for rows.Next() {
+		var invitation Invitation
+
+		err := rows.Scan(
+			&invitation.ID,
+			&invitation.Status,
+			&invitation.CreatedAt,
+			&invitation.ExpiresAt,
+			&invitation.InviterID,
+			&invitation.ProjectID,
+			&invitation.Email,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		invitations = append(invitations, &invitation)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return invitations, nil
+}
+
+func (m *InvitationModel) Delete(invitationID uuid.UUID, projectID uuid.UUID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+		DELETE FROM invitations
+		WHERE id = $1 AND project_id = $2`
+
+	_, err := m.DB.ExecContext(ctx, query, invitationID, projectID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

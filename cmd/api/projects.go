@@ -396,6 +396,38 @@ func (app *application) removeCollaboratorHandler(w http.ResponseWriter, r *http
 }
 
 func (app *application) projectPendingInvitationsHandler(w http.ResponseWriter, r *http.Request) {
-	//projectID, _ := app.readUUIDParam(r, "projectID")
-	return
+	projectID, _ := app.readUUIDParam(r, "projectID")
+
+	invitations, err := app.models.Invitations.GetPendingByProject(projectID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"invitations": invitations}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) deleteInvitationHandler(w http.ResponseWriter, r *http.Request) {
+	projectID, _ := app.readUUIDParam(r, "projectID")
+	invitationID, err := app.readUUIDParam(r, "invitationID")
+	if err != nil {
+		v := validator.New()
+		v.AddError("url", err.Error())
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	err = app.models.Invitations.Delete(invitationID, projectID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "invitation deleted successfully"}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }

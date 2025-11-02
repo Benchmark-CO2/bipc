@@ -30,7 +30,10 @@ CREATE TABLE IF NOT EXISTS users_roles (
 INSERT INTO permissions (action, resource)
 VALUES
     ('*','*'),
-    ('create', 'resource'),
-    ('read', 'resource'),
-    ('update', 'resource'),
-    ('delete', 'resource');
+    ('update', 'project'),
+    ('create', 'invite'),
+    ('delete', 'collaborator'),
+    ('delete', 'invite'),
+    ('create', 'role'),
+    ('update', 'role'),
+    ('delete', 'role');

@@ -453,3 +453,24 @@ func (m RoleModel) GetAllUserRoles(userID uuid.UUID, projectID uuid.UUID) ([]Rol
 
 	return roles, nil
 }
+
+func (m RoleModel) IsUserAssociated(userID uuid.UUID, roleID uuid.UUID) (bool, error) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+	SELECT EXISTS (
+    SELECT 1
+    FROM users_roles
+    WHERE user_id = $1 AND role_id = $2)`
+
+	var exists bool
+
+	err := m.DB.QueryRowContext(ctx, query, userID, roleID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}

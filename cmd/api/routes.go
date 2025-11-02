@@ -18,6 +18,11 @@ func (app *application) routes() http.Handler {
 	router.Handler(http.MethodGet, "/v1/metrics", expvar.Handler())
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
 
+	// app.requireAuthenticatedUser()
+	// app.requireActivatedUser()
+	// app.requireRolesPermission()
+	// app.requireRoleAssociation()
+
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/users", app.requireAuthenticatedUser(app.updateUserHandler))
 	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)
@@ -32,22 +37,19 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects", app.requireActivatedUser(app.createProjectHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects", app.requireAuthenticatedUser(app.listProjectsHandler))
-	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID", app.showProjectHandler)
-	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID", app.updateProjectHandler)
-	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID", app.deleteProjectHandler)
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/invitations", app.inviteUserHandler)
-	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/collaborators/:collaboratorID", app.removeCollaboratorHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID", app.requireActivatedUser(app.showProjectHandler))
+	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID", app.requireRolesPermission("update:project", app.updateProjectHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID", app.requireRolesPermission("*:*", app.deleteProjectHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/invitations", app.requireRolesPermission("create:invite", app.inviteUserHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/collaborators/:collaboratorID", app.requireRolesPermission("delete:collaborator", app.removeCollaboratorHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/pending-invitations", app.projectPendingInvitationsHandler)
+	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/invitations/:invitationID", app.requireRolesPermission("delete:invite", app.deleteInvitationHandler))
 
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/roles", app.createRoleHandler)
-	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/roles/:roleID", app.updateRoleHandler)
-	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/roles/:roleID", app.deleteRoleHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/roles", app.requireRolesPermission("create:role", app.createRoleHandler))
+	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/roles/:roleID", app.requireRolesPermission("update:role", app.updateRoleHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/roles/:roleID", app.requireRolesPermission("delete:role", app.deleteRoleHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/collaborators", app.listCollaboratorsHandler)
-	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/user/permissions", app.listUserPermissionsHandler)
-
-	// todo
-	// pending invitations project
-	// cancel invitation
+	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/user/permissions", app.requireAuthenticatedUser(app.listUserPermissionsHandler))
 
 	// ----------------------------------------------------------------------------------------------------------------------------------
 
