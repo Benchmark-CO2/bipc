@@ -9,6 +9,7 @@ import (
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
+	"github.com/google/uuid"
 )
 
 func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Request) {
@@ -353,6 +354,45 @@ func (app *application) inviteUserHandler(w http.ResponseWriter, r *http.Request
 	})
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"message": "invitation sent successfully"}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) removeUserHandler(w http.ResponseWriter, r *http.Request) {
+
+	projectID, _ := app.readUUIDParam(r, "projectID")
+
+	var input struct {
+		UserID uuid.UUID `json:"user_id"`
+	}
+
+	err := app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	permissions, err := app.models.Roles.GetPermissionsForUser(input.UserID, projectID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if permissions.Include("*:*") {
+		v := validator.New()
+		v.AddError("user_id", "cannot remove a user with full permissions from the project")
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	err = app.models.Projects.RemoveUser(projectID, input.UserID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "user successfully removed from project"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

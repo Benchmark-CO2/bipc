@@ -36,6 +36,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID", app.updateProjectHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID", app.deleteProjectHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/invitations", app.inviteUserHandler)
+	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/user", app.removeUserHandler)
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/roles", app.createRoleHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/roles/:roleID", app.updateRoleHandler)
@@ -46,7 +47,6 @@ func (app *application) routes() http.Handler {
 	// todo
 	// pending invitations project
 	// cancel invitation
-	// permissions for user
 	// remove collaborator from project
 
 	// ----------------------------------------------------------------------------------------------------------------------------------
