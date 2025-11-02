@@ -1,6 +1,6 @@
 import api from "@/service/api";
 import { IDiscipline } from "./postDiscipline";
-import { TRole } from "@/types/collaborators";
+import { TRole } from "@/types/disciplines";
 
 export const patchDiscipline = (
   projectId: string,

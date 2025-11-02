@@ -1,4 +1,4 @@
-import { getProjectsBenchmark } from '@/actions/benchmarks/getProjects';
+import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
 import { deleteModule } from "@/actions/modules/deleteModule";
 import { deleteOption } from "@/actions/options/deleteOption";
 import { getOptions } from "@/actions/options/getOptions";
@@ -11,7 +11,7 @@ import {
   DrawerFormModule,
 } from "@/components/layout";
 import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
-import TechnologiesSummary from '@/components/summaryVariants/technologies';
+import TechnologiesSummary from "@/components/summaryVariants/technologies";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -22,29 +22,38 @@ import { TOption } from "@/types/options";
 import { TConsumption } from "@/types/projects";
 import { IUnit } from "@/types/units";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useParams } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useLocation,
+  useParams,
+} from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
 import { Copy, Edit, Loader2, Plus, Star, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-
 function mergeUnitAndOptions(unit: IUnit, towerOptions: TOption[]) {
-  const areaTotal = unit.tower?.floors.reduce((sum, floor) => sum + (floor.area || 0), 0) || 0;
+  const areaTotal =
+    unit.tower?.floors.reduce((sum, floor) => sum + (floor.area || 0), 0) || 0;
   return towerOptions
-    .filter(opt => opt.tower_id === unit.id)
-    .map(opt => ({
+    .filter((opt) => opt.tower_id === unit.id)
+    .map((opt) => ({
       ...opt,
       area: areaTotal,
       modules: opt.modules.map((module) => ({
         ...module,
-      }))
+      })),
     }));
 }
 export const Route = createFileRoute(
   "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies/"
 )({
   component: RouteComponent,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      dcp: (search.dcp as string) || undefined,
+    };
+  },
 });
 
 const OptionMenu = ({
@@ -205,10 +214,11 @@ const OptionMenu = ({
         onClick={handleActiveChange}
       >
         <Star
-          className={`h-4 w-4 ${option.active
+          className={`h-4 w-4 ${
+            option.active
               ? "fill-yellow-500 text-yellow-500"
               : "text-gray-400 hover:text-yellow-500"
-            }`}
+          }`}
         />
       </Button>
       <Input
@@ -227,11 +237,15 @@ function RouteComponent() {
   const { projectId, unitId } = useParams({
     from: "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies",
   });
+  const location = useLocation();
+  const { search } = location;
 
   const queryClient = useQueryClient();
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<TOption[]>([]);
   const { setSummaryContext } = useSummary();
+
+  const roleId = (search as { dcp?: string }).dcp || "";
 
   const handleSelectItem = (item: any[]) => {
     setSelectedItems(item);
@@ -239,9 +253,8 @@ function RouteComponent() {
 
   const { data: benchmarkData } = useQuery({
     queryKey: ["projects-benchmarks"],
-    queryFn: getProjectsBenchmark,
+    queryFn: () => getProjectsBenchmark({}),
   });
-
 
   const { mutate: deleteSimulation, isPending: isDeleting } = useMutation({
     mutationFn: (optionId: string) => deleteOption(projectId, unitId, optionId),
@@ -257,7 +270,7 @@ function RouteComponent() {
 
   const { data: optionsData, isLoading: isLoadingOptions } = useQuery({
     queryKey: ["options", projectId, unitId],
-    queryFn: () => getOptions(projectId, unitId),
+    queryFn: () => getOptions(projectId, unitId, roleId!),
     enabled: !!projectId && !!unitId,
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
@@ -288,25 +301,31 @@ function RouteComponent() {
 
   const { data: unitData, isLoading: isLoadingUnit } = useQuery({
     queryKey: ["unit", projectId, unitId],
-    queryFn: () => getUnitByUUID(projectId, unitId),
+    queryFn: async () => {
+      if (projectId && unitId) {
+        const res = await getUnitByUUID(projectId, unitId);
+        return { unit: res.data.unit, roles: res.data.roles };
+      }
+      return null;
+    },
     enabled: !!projectId && !!unitId,
   });
 
   useEffect(() => {
-    if (!benchmarkData?.data || !unitData?.data?.unit) return;
-    console.log('selectedOptions', selectedOptions);
+    if (!benchmarkData?.data || !unitData?.unit) return;
+    console.log("selectedOptions", selectedOptions);
     setSummaryContext({
-      component: <TechnologiesSummary
-        projects={mergeUnitAndOptions(unitData.data.unit, selectedOptions) as any}
-        data={benchmarkData?.data}
-        someSelected={selectedOptions.length > 0}
-      />,
+      component: (
+        <TechnologiesSummary
+          projects={mergeUnitAndOptions(unitData.unit, selectedOptions) as any}
+          data={benchmarkData?.data}
+          someSelected={selectedOptions.length > 0}
+        />
+      ),
       title: ``,
       hide: false,
     });
   }, [selectedOptions, setSummaryContext, benchmarkData, unitData]);
-
-
 
   if (isLoadingOptions || isLoadingUnit) {
     return (
@@ -328,7 +347,7 @@ function RouteComponent() {
 
   const options = optionsData.data.tower_options;
 
-  const unit = unitData?.data?.unit as IUnit;
+  const unit = unitData?.unit as IUnit;
   const unitTowerFloors = unit?.tower?.floors || [];
 
   const calculateSumMetrics = (modules: IModuleItem[]) => {
@@ -377,51 +396,51 @@ function RouteComponent() {
   };
 
   const newColumns: ColumnDef<
-    Omit<IModuleItem, "consumption"> & TConsumption & { option_id: string; }
+    Omit<IModuleItem, "consumption"> & TConsumption & { option_id: string }
   >[] = [
-      ...constructiveTechnologies,
-      {
-        id: "actions",
-        header: "",
-        cell: ({ row }) => {
-          return (
-            <div className="flex items-center justify-end gap-2">
-              <DrawerFormModule
-                triggerComponent={
-                  <Button variant="ghost" size="icon" disabled={isDeleting}>
-                    <Edit className="h-4 w-4 text-primary" />
-                  </Button>
-                }
-                type={row.original.type}
-                projectId={projectId}
-                unitId={unitId}
-                optionId={row.original.option_id}
-                moduleId={row.original.id}
-                floors={unitTowerFloors}
-              />
-              <ModalConfirmDelete
-                title="Excluir Tecnologia Construtiva"
-                onConfirm={() =>
-                  mutateDeleteTec({
-                    optionId: row.original.option_id,
-                    moduleId: row.original.id,
-                  })
-                }
-                componentTrigger={
-                  <Button variant="ghost" size="icon" disabled={isDeletingTec}>
-                    {isDeletingTec ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash className="h-4 w-4 text-red-700" />
-                    )}
-                  </Button>
-                }
-              />
-            </div>
-          );
-        },
+    ...constructiveTechnologies,
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => {
+        return (
+          <div className="flex items-center justify-end gap-2">
+            <DrawerFormModule
+              triggerComponent={
+                <Button variant="ghost" size="icon" disabled={isDeleting}>
+                  <Edit className="h-4 w-4 text-primary" />
+                </Button>
+              }
+              type={row.original.type}
+              projectId={projectId}
+              unitId={unitId}
+              optionId={row.original.option_id}
+              moduleId={row.original.id}
+              floors={unitTowerFloors}
+            />
+            <ModalConfirmDelete
+              title="Excluir Tecnologia Construtiva"
+              onConfirm={() =>
+                mutateDeleteTec({
+                  optionId: row.original.option_id,
+                  moduleId: row.original.id,
+                })
+              }
+              componentTrigger={
+                <Button variant="ghost" size="icon" disabled={isDeletingTec}>
+                  {isDeletingTec ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash className="h-4 w-4 text-red-700" />
+                  )}
+                </Button>
+              }
+            />
+          </div>
+        );
       },
-    ];
+    },
+  ];
 
   if (options.length === 0) {
     return (
@@ -430,7 +449,11 @@ function RouteComponent() {
         showIcon={false}
         description="Nenhum dado disponível nesta tabela. Crie uma nova simulação para começar a adicionar dados."
         button={
-          <DialogCreateSimulation projectId={projectId} unitId={unitId} />
+          <DialogCreateSimulation
+            projectId={projectId}
+            unitId={unitId}
+            roleId={roleId}
+          />
         }
       />
     );
@@ -508,7 +531,11 @@ function RouteComponent() {
           </div>
         );
       })}
-      <DialogCreateSimulation projectId={projectId} unitId={unitId} />
+      <DialogCreateSimulation
+        projectId={projectId}
+        unitId={unitId}
+        roleId={roleId}
+      />
     </div>
   );
 }

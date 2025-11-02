@@ -36,6 +36,7 @@ interface ICommonTableProps {
   };
   collapsed?: boolean;
   onClickRow?: (rowData: any) => void;
+  customEmptyComponent?: React.ReactNode;
 }
 
 export default function CommonTable({
@@ -49,6 +50,7 @@ export default function CommonTable({
   lastRow,
   collapsed = false,
   onClickRow,
+  customEmptyComponent,
 }: ICommonTableProps) {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
@@ -257,11 +259,13 @@ export default function CommonTable({
           </div>
         </div>
       ) : (
-        <NotFoundList
-          message="Sem dado para exibir"
-          showIcon={false}
-          description={`Sem dado de ${tableName} disponível nesta tabela no momento. ${isInteractive ? "Crie novos itens para que eles apareçam aqui." : ""}`}
-        />
+        customEmptyComponent || (
+          <NotFoundList
+            message="Sem dado para exibir"
+            showIcon={false}
+            description={`Sem dado de ${tableName} disponível nesta tabela no momento. ${isInteractive ? "Crie novos itens para que eles apareçam aqui." : ""}`}
+          />
+        )
       )}
     </div>
   );

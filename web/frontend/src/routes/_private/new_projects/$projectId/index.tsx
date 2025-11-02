@@ -1,3 +1,4 @@
+import { getProjectByUUID } from "@/actions/projects/getProject";
 import { getAllProjectsByUser } from "@/actions/projects/getProjects";
 import {
   CollaboratorsView,
@@ -15,6 +16,7 @@ import {
   useParams,
   useSearch,
 } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Plus, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -24,33 +26,6 @@ type ProjectSearch = {
 
 export const Route = createFileRoute("/_private/new_projects/$projectId/")({
   component: RouteComponent,
-  loader: async ({ context: { queryClient }, params }) => {
-    const { projectId } = params;
-
-    const projects = await queryClient.ensureQueryData({
-      queryKey: ["projects"],
-      queryFn: getAllProjectsByUser,
-    });
-
-    const project = projects?.data?.projects?.find((p) => p.id === projectId);
-    const projectConsumptions: TConsumption[] = Object.keys(
-      project?.consumptions || {}
-    )
-      .filter((key) => key !== "total")
-      .map((key) => {
-        const consumption =
-          project?.consumptions?.[key as keyof TConsumptionPerModule];
-        return {
-          type: key as TModulesTypes,
-          co2_max: consumption?.co2_max ?? 0,
-          co2_min: consumption?.co2_min ?? 0,
-          energy_max: consumption?.energy_max ?? 0,
-          energy_min: consumption?.energy_min ?? 0,
-        };
-      });
-
-    return { projectConsumptions };
-  },
   validateSearch: (search: Record<string, unknown>): ProjectSearch => {
     return {
       tab: search.tab as "projeto" | "colaboradores",
@@ -62,7 +37,7 @@ function RouteComponent() {
   const { projectId } = useParams({
     from: "/_private/new_projects/$projectId",
   });
-  const { projectConsumptions } = Route.useLoaderData({});
+  // const { projectConsumptions } = Route.useLoaderData({});
   const navigate = useNavigate();
   const searchParams = useSearch({
     from: "/_private/new_projects/$projectId/",
@@ -71,6 +46,35 @@ function RouteComponent() {
   const [selectedTab, setSelectedTab] = useState("Projeto");
   const { setSummaryContext } = useSummary();
   const tabs = ["Projeto", "Colaboradores"];
+
+  const { data: projectData } = useQuery({
+    queryKey: ["projects"],
+    queryFn: async () => {
+      const projectResponse = await getAllProjectsByUser();
+      const projects = await projectResponse.data.projects;
+      const project = projects.find((p) => p.id === projectId);
+      return project;
+    },
+    enabled: !!projectId,
+  });
+
+  console.log(projectData);
+
+  const projectConsumptions: TConsumption[] = Object.keys(
+    projectData?.consumption || {}
+  )
+    .filter((key) => key !== "total")
+    .map((key) => {
+      const consumption =
+        projectData?.consumption?.[key as keyof TConsumptionPerModule];
+      return {
+        type: key as TModulesTypes,
+        co2_max: consumption?.co2_max ?? 0,
+        co2_min: consumption?.co2_min ?? 0,
+        energy_max: consumption?.energy_max ?? 0,
+        energy_min: consumption?.energy_min ?? 0,
+      };
+    });
 
   useEffect(() => {
     if (searchParams.tab === "colaboradores") {

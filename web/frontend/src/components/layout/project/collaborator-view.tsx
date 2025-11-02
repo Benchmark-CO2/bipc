@@ -58,8 +58,8 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
       },
     });
 
-  const collaborators = collaboratorsData?.data.data?.collaborators || [];
-  const roles = collaboratorsData?.data.data?.roles || [];
+  const collaborators = collaboratorsData?.data?.data?.collaborators || [];
+  const roles = collaboratorsData?.data?.data?.roles || [];
 
   const sortedCollaborators = [...collaborators].sort((a, b) => {
     const aIsAdmin = (a.roles as unknown as string[])?.some(

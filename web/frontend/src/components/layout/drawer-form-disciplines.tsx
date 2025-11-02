@@ -27,10 +27,10 @@ import {
   disciplineFormSchema,
   DisciplineFormSchema,
 } from "@/validators/disciplineForm.validator";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { postDiscipline } from "@/actions/disciplines/postDiscipline";
-import { TRole } from "@/types/collaborators";
+import { TRole } from "@/types/disciplines";
 import { TUser } from "@/types/user";
 import { queryClient } from "@/utils/queryClient";
 import {
@@ -44,12 +44,15 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import NotFoundList from "../ui/not-found-list";
 import { patchDiscipline } from "@/actions/disciplines/patchDiscipline";
+import { getProjectCollaborators } from "@/actions/projectCollaborators/getProjectCollaborators";
+import { TCollaborator } from "@/types/collaborators";
 
 interface IDrawerFormDisciplines {
   componentTrigger: React.ReactNode;
   projectId: string;
+  unitId?: string;
   roleData?: TRole;
-  projectUsers?: TUser[];
+  projectUsers?: TCollaborator[];
 }
 
 // Mock data for permissions - will be provided by backend
@@ -69,6 +72,7 @@ const mockPermissions = {
 export default function DrawerFormDisciplines({
   componentTrigger,
   projectId,
+  unitId,
   roleData,
   projectUsers,
 }: IDrawerFormDisciplines) {
@@ -95,6 +99,15 @@ export default function DrawerFormDisciplines({
     mode: "onChange",
   });
 
+  const { data: collaborators } = useQuery({
+    queryKey: ["project-collaborators", projectId],
+    queryFn: async () => {
+      const response = await getProjectCollaborators(projectId);
+      return await response.data.data.collaborators;
+    },
+    enabled: !projectUsers && !!projectId,
+  });
+
   const {
     mutate: createDiscipline,
     isPending: isCreating,
@@ -107,6 +120,9 @@ export default function DrawerFormDisciplines({
       });
       queryClient.invalidateQueries({
         queryKey: ["project-collaborators", projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["unit", projectId, unitId],
       });
       form.reset();
       setOpenDrawer(false);
@@ -184,10 +200,11 @@ export default function DrawerFormDisciplines({
   };
 
   const getFilteredUsers = () => {
-    if (!projectUsers) return [];
+    const users = projectUsers || collaborators;
+    if (!users) return [];
 
     // Filter out already selected collaborators
-    const availableUsers = projectUsers.filter(
+    const availableUsers = users?.filter(
       (user) => !selectedCollaborators.some((c) => c.id === user.id)
     );
 

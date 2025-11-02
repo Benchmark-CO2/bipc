@@ -17,7 +17,7 @@ export const useProjects = () => {
     queryFn: getAllProjectsByUser,
   });
 
-  const modifiedProjects = data?.data.projects?.map((el) => ({
+  const modifiedProjects = data?.data?.projects?.map((el) => ({
     ...el,
     co: generateFakeCo2(),
     mj: generateFakeMJ(),
