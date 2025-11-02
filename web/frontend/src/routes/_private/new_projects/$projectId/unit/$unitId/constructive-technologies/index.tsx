@@ -272,10 +272,6 @@ function RouteComponent() {
     queryKey: ["options", projectId, unitId],
     queryFn: () => getOptions(projectId, unitId, roleId!),
     enabled: !!projectId && !!unitId,
-    staleTime: 1000 * 60 * 5,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    retry: false,
   });
 
   const { mutate: mutateDeleteTec, isPending: isDeletingTec } = useMutation({

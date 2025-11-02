@@ -264,7 +264,7 @@ export default function CommonTable({
           <NotFoundList
             message="Sem dado para exibir"
             showIcon={false}
-            description={`Sem dado de ${tableName} disponível nesta tabela no momento. ${isInteractive ? "Crie novos itens para que eles apareçam aqui." : ""}`}
+            description={`Sem dado ${typeof tableName === "string" ? `de ${tableName}` : ""} disponível nesta tabela no momento. ${isInteractive ? "Crie novos itens para que eles apareçam aqui." : ""}`}
           />
         )
       )}

@@ -117,7 +117,7 @@ function RouteComponent() {
   );
 
   const getFilteredConsumptions = () => {
-    if (!roles || roles.length === 0) return unitConsumptions;
+    if (!roles || roles.length === 0) return [];
 
     if (selectedTab === "Todas as Disciplinas") {
       const moduleTypes = unitConsumptions.map((item) => item.type);
@@ -156,11 +156,11 @@ function RouteComponent() {
       });
     } else {
       const selectedRole = roles.find((role) => role.name === selectedTab);
-      if (!selectedRole) return unitConsumptions;
+      if (!selectedRole) return [];
 
       const roleConsumptions =
         (selectedRole as any).consumptions || (selectedRole as any).consumption;
-      if (!roleConsumptions) return unitConsumptions;
+      if (!roleConsumptions) return [];
 
       return Object.keys(roleConsumptions)
         .filter((key) => key !== "total")
@@ -409,10 +409,7 @@ function RouteComponent() {
                 variant="bipc"
                 size="icon-lg"
                 onClick={handleClickConstructiveTechnologies}
-                disabled={
-                  selectedTab === "Todas as Disciplinas" &&
-                  roles?.some((role) => role.name !== "Administrador")
-                }
+                disabled={selectedTab === "Todas as Disciplinas"}
               >
                 <SquareArrowOutUpRight />
               </Button>

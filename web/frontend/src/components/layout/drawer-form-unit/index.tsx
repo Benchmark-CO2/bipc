@@ -63,9 +63,9 @@ const DrawerFormUnit = ({
   });
 
   const {
-    isSuccess: isCreationSuccess,
     isPending: isCreationPending,
     mutate: mutateCreation,
+    reset: resetCreation,
   } = useMutation({
     mutationFn: (data: UnitFormSchema) => postUnit(data, projectId),
     onError: (error) => {
@@ -129,6 +129,7 @@ const DrawerFormUnit = ({
 
   const handleClose = () => {
     form.reset();
+    resetCreation();
     setIsOpen(false);
   };
 
@@ -213,7 +214,7 @@ const DrawerFormUnit = ({
                 type="submit"
                 variant="bipc"
                 form="unit-form"
-                disabled={isCreationPending || isCreationSuccess}
+                disabled={isCreationPending}
               >
                 {t("drawerFormUnit.addUnitButton")}
                 {isCreationPending && (

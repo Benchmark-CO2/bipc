@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "../ui/button";
 import ModalConfirmDelete from "../layout/modal-confirm-delete";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteUnit } from "@/actions/units/deleteUnit";
 import { toast } from "sonner";
 import { Edit, Loader2, Trash } from "lucide-react";
@@ -79,6 +79,7 @@ export const unitsColumns: ColumnDef<
     header: "",
     cell: ({ row }) => {
       const navigate = useNavigate();
+      const queryClient = useQueryClient();
       const { projectId } = useParams({
         from: "/_private/new_projects/$projectId/",
       });
@@ -87,6 +88,12 @@ export const unitsColumns: ColumnDef<
         mutationFn: () => deleteUnit(projectId, row.original.id),
         onSuccess: () => {
           toast.success("Unidade excluída com sucesso");
+          queryClient.invalidateQueries({
+            queryKey: ["project", projectId],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["projects"],
+          });
           navigate({ to: `/new_projects/${projectId}` });
         },
         onError: (error) => {
