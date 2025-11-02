@@ -9,7 +9,6 @@ import (
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
-	"github.com/google/uuid"
 )
 
 func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Request) {
@@ -359,21 +358,19 @@ func (app *application) inviteUserHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
-func (app *application) removeUserHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) removeCollaboratorHandler(w http.ResponseWriter, r *http.Request) {
 
 	projectID, _ := app.readUUIDParam(r, "projectID")
 
-	var input struct {
-		UserID uuid.UUID `json:"user_id"`
-	}
-
-	err := app.readJSON(w, r, &input)
+	collaboratorID, err := app.readUUIDParam(r, "collaboratorID")
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		v := validator.New()
+		v.AddError("url", err.Error())
+		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	permissions, err := app.models.Roles.GetPermissionsForUser(input.UserID, projectID)
+	permissions, err := app.models.Roles.GetPermissionsForUser(collaboratorID, projectID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -386,7 +383,7 @@ func (app *application) removeUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.models.Projects.RemoveUser(projectID, input.UserID)
+	err = app.models.Projects.RemoveUser(projectID, collaboratorID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
