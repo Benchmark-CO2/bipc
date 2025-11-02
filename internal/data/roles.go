@@ -390,7 +390,7 @@ func (m RoleModel) GetPermissionsForUser(userID uuid.UUID, projectID uuid.UUID) 
 	}
 	defer rows.Close()
 
-	var permissions Permissions
+	permissions := Permissions{}
 
 	for rows.Next() {
 		var action string
