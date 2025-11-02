@@ -48,6 +48,7 @@ func ValidateRole(v *validator.Validator, role *RoleWithUsersPermissions) {
 
 	if len(role.PermissionsIDs) > 0 {
 		v.Check(validator.Unique(role.PermissionsIDs), "permissions_ids", "must not contain duplicate IDs")
+		v.Check(!slices.Contains(role.PermissionsIDs, 1), "permissions_ids", "cannot contain protected permissionsIDs")
 	}
 
 	if len(role.UsersIDs) > 0 {
