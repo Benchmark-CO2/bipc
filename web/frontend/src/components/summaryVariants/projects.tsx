@@ -123,7 +123,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
         />
       </div>
       <div
-        className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
+        className={cn("w-full flex justify-between gap-4 max-md:flex-col lg:h-2/3", {
           "flex flex-col": isExpanded,
         })}
       >
@@ -170,7 +170,6 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
           {<Legend />}
           {/* {!isExpanded && <Subtitle />} */}
         </div>
-
 
         {chartType === "scatter" ? (
           <D3GradientRangeChart
