@@ -122,7 +122,7 @@ const CustomCard = ({
           {/* Project Description */}
           <div className="mb-4 min-h-[2.5rem]">
             <p className="text-sm text-muted-foreground line-clamp-2 leading-snug">
-              {description || "Sem descrição"}
+              {description || ""}
             </p>
           </div>
 
