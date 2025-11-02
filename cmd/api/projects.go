@@ -394,3 +394,8 @@ func (app *application) removeCollaboratorHandler(w http.ResponseWriter, r *http
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) projectPendingInvitationsHandler(w http.ResponseWriter, r *http.Request) {
+	//projectID, _ := app.readUUIDParam(r, "projectID")
+	return
+}

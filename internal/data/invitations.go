@@ -197,3 +197,7 @@ func (m *InvitationModel) Reply(invitation *Invitation, status string, user *Use
 
 	return nil
 }
+
+func (m *InvitationModel) GetPendingByProject() ([]*Invitation, error) {
+	return nil, nil
+}

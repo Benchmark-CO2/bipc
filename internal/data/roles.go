@@ -42,7 +42,7 @@ func ValidateRole(v *validator.Validator, role *RoleWithUsersPermissions) {
 	v.Check(len(role.Name) <= 100, "name", "must not be more than 100 bytes long")
 
 	if role.Description != nil {
-		v.Check(*role.Description != "", "description", "must not be empty string")
+		//v.Check(*role.Description != "", "description", "must not be empty string")
 		v.Check(len(*role.Description) <= 500, "description", "must not be more than 500 bytes long")
 	}
 
