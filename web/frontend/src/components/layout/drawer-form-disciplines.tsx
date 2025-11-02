@@ -171,16 +171,11 @@ export default function DrawerFormDisciplines({
     }) || [];
 
   const onSubmit = async (data: DisciplineFormSchema) => {
-    const processedData = {
-      ...data,
-      ...(data.description?.trim() === "" && { description: undefined }),
-    };
-
     if (isEditMode) {
-      updateDiscipline(processedData);
+      updateDiscipline(data);
       return;
     }
-    createDiscipline(processedData);
+    createDiscipline(data);
   };
 
   const addCollaborator = (user: TUser) => {
