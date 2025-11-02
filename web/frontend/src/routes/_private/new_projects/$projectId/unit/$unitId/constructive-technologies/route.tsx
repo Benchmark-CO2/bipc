@@ -12,24 +12,23 @@ export const Route = createFileRoute(
       projectId: string;
     };
 
-    await context.queryClient.ensureQueryData({
+    const unitResponse = await context.queryClient.fetchQuery({
       queryKey: ["unit", projectId, unitId],
-      queryFn: () => getUnitByUUID(projectId, unitId),
+      queryFn: async () => {
+        const response = await getUnitByUUID(projectId, unitId);
+        return response.data;
+      },
+      staleTime: 60000, // Cache por 1 minuto
     });
 
-    const unit = context.queryClient.getQueryData<any>([
-      "unit",
-      projectId,
-      unitId,
-    ]);
-
-    const roles = unit?.data?.roles;
+    const roles = unitResponse?.roles;
     let crumbName = "Tecnologias Construtivas";
 
     if (locationSearch?.dcp && roles) {
-      crumbName = roles.find(
+      const foundRole = roles.find(
         (role: any) => role.id === locationSearch.dcp
-      )?.name;
+      );
+      crumbName = foundRole?.name || crumbName;
     }
     return {
       crumb: crumbName,

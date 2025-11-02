@@ -28,7 +28,7 @@ import {
   useParams,
   useSearch,
 } from "@tanstack/react-router";
-import { Plus, Upload } from "lucide-react";
+import { Plus, SquareArrowOutUpRight, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type TGroupedFloor = IConsumption &
@@ -396,6 +396,15 @@ function RouteComponent() {
               <Button variant="outline-bipc" size="icon-lg" disabled>
                 <Upload />
               </Button>
+              <DrawerFormDisciplines
+                componentTrigger={
+                  <Button variant="bipc" size="icon-lg">
+                    <Plus />
+                  </Button>
+                }
+                projectId={projectId}
+                unitId={unitId}
+              />
               <Button
                 variant="bipc"
                 size="icon-lg"
@@ -405,7 +414,7 @@ function RouteComponent() {
                   roles?.some((role) => role.name !== "Administrador")
                 }
               >
-                <Plus />
+                <SquareArrowOutUpRight />
               </Button>
             </div>
           </div>
@@ -414,7 +423,7 @@ function RouteComponent() {
         columns={constructiveTechnologies}
         isSelectable={false}
         isInteractive={false}
-        collapsed={false}
+        isExpandable={false}
         lastRow={{
           data: {
             co2_min: `${totalConsumptions.co2_min.toFixed(1)} KgCO₂`,

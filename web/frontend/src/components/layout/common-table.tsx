@@ -27,7 +27,7 @@ interface ICommonTableProps {
   columns: ColumnDef<any>[];
   onSelectionChange?: (selectedRows: any[]) => void;
   isSelectable?: boolean;
-  expanded?: boolean;
+  isExpandable?: boolean;
   isInteractive?: boolean;
   actions?: React.ReactNode;
   lastRow?: {
@@ -51,6 +51,7 @@ export default function CommonTable({
   collapsed = false,
   onClickRow,
   customEmptyComponent,
+  isExpandable = true,
 }: ICommonTableProps) {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
@@ -91,7 +92,7 @@ export default function CommonTable({
         </div>
         <div className="flex items-center gap-2">
           {actions}
-          {data.length > 0 && (
+          {data.length > 0 && isExpandable && (
             <Button
               variant="ghost"
               size="sm"
