@@ -8,7 +8,7 @@ class FilterFloors {
   constructor(
     private from: number | undefined,
     private to: number | undefined
-  ) { }
+  ) {}
   get() {
     return { floors_from: this.from, floors_to: this.to };
   }
@@ -100,7 +100,7 @@ export const useBenchmarkFilters = () => {
         <h3 className="mb-6 font-semibold text-primary ">
           Números de pavimentos:
         </h3>
-        <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto overflow-x-auto max-w-[375px]">
+        <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto overflow-x-auto">
           <BuildIcon
             name="house"
             isActive={
@@ -151,7 +151,7 @@ export const useBenchmarkFilters = () => {
         <h3 className="mb-6 font-semibold text-primary">
           Técnologias Construtivas:
         </h3>
-        <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto overflow-x-auto max-w-[375px]">
+        <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto overflow-x-auto">
           <TechIcon
             name="beam_column"
             isActive={activeBuildFilter.technology.includes("beam_column")}
