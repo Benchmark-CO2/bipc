@@ -116,9 +116,7 @@ const CustomCard = ({
           {/* Last Modified Date */}
           <div className="flex items-center gap-1.5 text-muted-foreground mb-4">
             <Calendar className="w-3.5 h-3.5" />
-            <span className="text-xs">
-              Última modificação {formatDate(created_at)}
-            </span>
+            <span className="text-xs">Criado: {formatDate(created_at)}</span>
           </div>
 
           {/* Project Description */}
