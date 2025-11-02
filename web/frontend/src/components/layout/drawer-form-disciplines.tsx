@@ -124,6 +124,9 @@ export default function DrawerFormDisciplines({
       queryClient.invalidateQueries({
         queryKey: ["unit", projectId, unitId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["project-permissions", projectId],
+      });
       form.reset();
       setOpenDrawer(false);
     },
@@ -151,6 +154,9 @@ export default function DrawerFormDisciplines({
       });
       queryClient.invalidateQueries({
         queryKey: ["unit", projectId, unitId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project-permissions", projectId],
       });
       form.reset();
       setOpenDrawer(false);

@@ -64,6 +64,9 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
         queryClient.invalidateQueries({
           queryKey: ["project-collaborators", projectId],
         });
+        queryClient.invalidateQueries({
+          queryKey: ["project-permissions", projectId],
+        });
       },
       onError: (error) => {
         toast.error("Erro ao remover disciplina", {
