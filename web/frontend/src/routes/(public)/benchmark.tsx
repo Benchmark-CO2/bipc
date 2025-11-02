@@ -13,7 +13,6 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { FilterTabs } from "@/components/ui/filter-tabs";
 import { useBenchmarkFilters } from "@/hooks/useBenchmarkFilters";
 import { useIsMobile } from "@/hooks/useIsMobile";
 export const Route = createFileRoute("/(public)/benchmark")({
@@ -26,13 +25,12 @@ export const Route = createFileRoute("/(public)/benchmark")({
 });
 
 function RouteComponent() {
-  const { FilterSection, activeBuildFilter } = useBenchmarkFilters();
+  const { FilterSection, activeBuildFilter, type } = useBenchmarkFilters();
   const { data } = useQuery({
     queryKey: ["units-benchmarks", JSON.stringify(activeBuildFilter)],
     queryFn: () => getProjectsBenchmark(activeBuildFilter),
   });
   const isMobile = useIsMobile();
-  const [type, setType] = useState<"co2" | "energy">("co2");
 
   const chartData =
     data?.data?.benchmark?.[type]?.map((f) => ({
@@ -47,6 +45,7 @@ function RouteComponent() {
   const minData = chartData.map((d) =>
     d.min !== undefined ? d.min : Infinity
   );
+
   return (
     <div className="w-full flex justify-center">
       <div className="w-full max-w-7xl px-6 lg:px-12 py-10 flex flex-col">
@@ -68,11 +67,6 @@ function RouteComponent() {
                     <SelectItem value="co2">Fração Acumulada</SelectItem>
                   </SelectContent>
                 </Select>
-                <FilterTabs
-                  tabs={["co2", "energy"]}
-                  onTabSelect={(tab) => setType(tab as "co2" | "energy")}
-                  selectedTab={type}
-                />
               </div>
             </div>
             {selectedChart === "trend" ? (

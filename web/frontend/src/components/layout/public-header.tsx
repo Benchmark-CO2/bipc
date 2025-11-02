@@ -3,14 +3,13 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
 import {
-  Activity,
   BarChart3,
-  FlaskConical,
+  GlobeLock,
   Headset,
   Info,
   Menu,
   User,
-  X,
+  X
 } from "lucide-react";
 import { useState } from "react";
 import Divider from "../ui/divider";
@@ -80,6 +79,15 @@ export default function PublicHeader() {
         <Headset size={18} />
         <span className="text-sm">Comunicação</span>
       </Link>
+      <a
+        target="_blank"
+        href={"/Politica_de_privacidade.pdf"}
+        className="flex items-center gap-2 hover:text-gray-300 transition-colors"
+        onClick={() => setIsMenuOpen(false)}
+      >
+        <GlobeLock size={18} />
+        <span className="text-sm">Politicas de Privacidade</span>
+      </a>
       {/* <Link
         to={"#" as any}
         activeProps={activeProps}

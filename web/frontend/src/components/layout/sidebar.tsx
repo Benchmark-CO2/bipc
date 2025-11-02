@@ -5,25 +5,25 @@ import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useSidebar } from "@/hooks/useSidebar";
 import { cn } from "@/lib/utils";
+import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
 import { Link } from "@tanstack/react-router";
 import {
   BarChart3,
   Bell,
   Book,
-  Contact,
   File,
+  GlobeLock,
   Info,
   LogIn,
   Menu,
   Settings,
-  UserPlus,
+  UserPlus
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Notifications } from "../notifications";
 import { Button } from "../ui/button";
 import Divider from "../ui/divider";
 import SidemenuItem from "../ui/sidemenu-item";
-import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
 
 interface ISidebar {
   handleLogout?: () => void;
@@ -87,6 +87,18 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 <BarChart3 size={18} />
                 <span>Benchmark</span>
               </Link>
+            </SidemenuItem>
+          </li>
+          <li>
+            <SidemenuItem variant="link">
+              <a
+                target="_blank"
+                href={"/Politica_de_privacidade.pdf"}
+                className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+              >
+                <GlobeLock size={18} />
+                <span className="text-sm">Politicas de Privacidade</span>
+              </a>
             </SidemenuItem>
           </li>
 
