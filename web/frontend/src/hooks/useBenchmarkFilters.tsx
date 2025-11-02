@@ -100,7 +100,7 @@ export const useBenchmarkFilters = () => {
         <h3 className="mb-6 font-semibold text-primary ">
           Números de pavimentos:
         </h3>
-        <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto max-sm:overflow-x-auto">
+        <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto overflow-x-auto max-w-[375px]">
           <BuildIcon
             name="house"
             isActive={
@@ -151,7 +151,7 @@ export const useBenchmarkFilters = () => {
         <h3 className="mb-6 font-semibold text-primary">
           Técnologias Construtivas:
         </h3>
-        <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto max-sm:overflow-x-auto">
+        <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto overflow-x-auto max-w-[375px]">
           <TechIcon
             name="beam_column"
             isActive={activeBuildFilter.technology.includes("beam_column")}

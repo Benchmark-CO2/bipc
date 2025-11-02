@@ -107,7 +107,6 @@ const UnitsSummary = ({
 
   const avgByUnit = useMemo(() => {
     if (!units.length || !project) return 0;
-    console.log("units", units);
     return units.reduce(
       (acc, unit) => {
         if (!acc[unit.id]) {
@@ -133,7 +132,7 @@ const UnitsSummary = ({
     0 as number
   );
 
-  
+
   const minData = useMemo(() => fakeUnits.map(d => d.min), [fakeUnits]);
   const maxData = useMemo(() => fakeUnits.map(d => d.max), [fakeUnits]);
 
@@ -162,12 +161,12 @@ const UnitsSummary = ({
       </div>
 
       <div
-        className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
+        className={cn("w-full flex justify-between gap-4 max-md:flex-col max-md:flex-col 2xl:h-[85%] max-sm:h-max", {
           "flex flex-col h-full justify-between": isExpanded,
         })}
-        >
+      >
         <div className="flex flex-col items-start w-full">
-        {ChartSelector}
+          {ChartSelector}
           <div className="w-full mb-2">
             <div className="mb-2 text-lg text-gray-600">{project.name}</div>
             <div className="flex w-auto">
@@ -248,7 +247,7 @@ const UnitsSummary = ({
               );
             })}
           </ul>
-          <Legend  />
+          <Legend />
           {/* {!isExpanded && <Subtitle />} */}
         </div>
         {chartType === "scatter" ? (
