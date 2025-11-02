@@ -87,9 +87,8 @@ const OptionMenu = ({
                 ...oldData,
                 data: {
                   ...oldData.data,
-                  options: oldData.data.options.map(
-                    (opt: TOption) =>
-                      opt.id === option.id ? { ...opt, name: localName } : opt
+                  options: oldData.data.options.map((opt: TOption) =>
+                    opt.id === option.id ? { ...opt, name: localName } : opt
                   ),
                 },
               };
@@ -347,7 +346,12 @@ function RouteComponent() {
   const unitFloors = unit?.floors || [];
 
   const calculateSumMetrics = (consumption: IConsumption) => {
-    if (!consumption?.co2_min && !consumption?.co2_max && !consumption?.energy_min && !consumption?.energy_max) {
+    if (
+      !consumption?.co2_min &&
+      !consumption?.co2_max &&
+      !consumption?.energy_min &&
+      !consumption?.energy_max
+    ) {
       return {
         co2_min: "0 KgCO2",
         co2_max: "0 KgCO2",
@@ -466,7 +470,10 @@ function RouteComponent() {
                 isSelectable={false}
                 isInteractive={true}
                 onSelectionChange={handleSelectItem}
-                lastRow={{ type: "Total", data: calculateSumMetrics(option.consumption["total"]) }}
+                lastRow={{
+                  type: "Total",
+                  data: calculateSumMetrics(option?.consumption?.["total"]),
+                }}
                 actions={
                   <>
                     <ModalConfirmDelete

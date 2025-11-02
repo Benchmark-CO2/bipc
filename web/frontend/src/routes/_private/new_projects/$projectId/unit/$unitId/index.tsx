@@ -108,8 +108,6 @@ function RouteComponent() {
   const unit = unitData?.unit;
   const roles = unitData?.roles;
 
-  const unitWithTower = isUnitWithTower(unit) ? unit : null;
-
   const navigate = Route.useNavigate();
   const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
   const [selectedTab, setSelectedTab] = useState<string>(
@@ -221,9 +219,9 @@ function RouteComponent() {
     });
   }, [setSummaryContext, selectedFloors, benchmarkData]);
 
-  const groupedFloors: TGroupedFloor[] = unitWithTower?.floors
+  const groupedFloors: TGroupedFloor[] = unit?.floors
     ? Object.values(
-        unitWithTower.floors.reduce(
+        unit.floors.reduce(
           (acc, floor) => {
             const groupId = floor.group_id;
             const { consumptions, ...restFloor } = floor;
