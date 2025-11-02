@@ -34,7 +34,7 @@ func (app *application) createTowerOptionHandler(w http.ResponseWriter, r *http.
 	}
 
 	towerOption := &data.TowerOption{
-		TowerID: unitID,
+		UnitID: unitID,
 		RoleID:  roleID,
 		Name:    input.Name,
 		Active:  input.Active,

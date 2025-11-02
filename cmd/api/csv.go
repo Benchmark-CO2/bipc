@@ -284,14 +284,11 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 					ProjectID: projectID,
 					Name:      row.UnitName,
 					Type:      "tower", // Assuming it's a tower if it has floors/modules
-					Tower: &data.Tower{
-						ID:     unitID,
-						Floors: []data.Floor{}, // Initialize floors slice
-					},
+					Floors: []data.Floor{}, // Initialize floors slice
 				},
 				Option: data.TowerOption{
 					ID:      towerOptionID,
-					TowerID: unitID,
+					UnitID: unitID,
 					Name:    fmt.Sprintf("Option for %s", row.UnitName), // Default name
 					Active:  true,
 					Modules: []data.ModuleInfo{},
@@ -329,9 +326,9 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 			GroupName: row.FloorName,
 			Area:      row.FloorArea,
 			Height:    row.FloorHeight,
-			Index:     len(unit.Tower.Floors), // usa ordem como index
+			Index:     len(unit.Floors), // usa ordem como index
 		}
-		unit.Tower.Floors = append(unit.Tower.Floors, floor)
+		unit.Floors = append(unit.Floors, floor)
 
 		module := modules.ConcreteWall{
 			BasicModuleData: modules.BasicModuleData{Type: "concrete_wall"},
@@ -477,7 +474,7 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 		// For now, we'll just use the initial projectsFormCSV in the response.
 		// If the response needs the full module data, we would need to refetch or build it here.
 		// Let's clear the floors from the response to avoid confusion, as they are intermediate.
-		projectsFormCSV[i].Unit.Tower.Floors = nil
+		projectsFormCSV[i].Unit.Floors = nil
 	}
 
 	err = app.writeJSON(w, http.StatusAccepted, envelope{"projects": projectsFormCSV}, nil)

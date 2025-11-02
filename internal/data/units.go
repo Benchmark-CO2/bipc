@@ -16,20 +16,15 @@ type Unit struct {
 	ProjectID uuid.UUID `json:"project_id"`
 	Name      string    `json:"name"`
 	Type      string    `json:"type"`
-	Tower     *Tower    `json:"tower,omitempty"`
-}
-
-type Tower struct {
-	ID        uuid.UUID `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Version   int32     `json:"version"`
-	Floors    []Floor   `json:"floors"`
+	Floors    []Floor   `json:"floors,omitempty"`
 }
 
 type FloorGroup struct {
 	ID       uuid.UUID `json:"id"`
-	TowerID  uuid.UUID `json:"tower_id"`
+	UnitID   uuid.UUID `json:"unit_id"`
 	Name     string    `json:"name"`
 	Category string    `json:"category"`
 }
@@ -86,19 +81,12 @@ func (m UnitModel) InsertWithExistingFloors(unit *Unit) error {
 	}
 
 	if unit.Type == "tower" {
-		queryTower := `INSERT INTO tower (id) VALUES ($1)`
-		_, err = tx.Exec(queryTower, unit.ID)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
 		insertedGroups := make(map[uuid.UUID]bool)
 
-		for _, floor := range unit.Tower.Floors {
+		for _, floor := range unit.Floors {
 			if !insertedGroups[floor.GroupID] {
 				queryFloorGroup := `
-					INSERT INTO floor_group (id, tower_id, name, category)
+					INSERT INTO floor_group (id, unit_id, name, category)
 					VALUES ($1, $2, $3, $4)
 					ON CONFLICT (id) DO NOTHING`
 				_, err = tx.Exec(queryFloorGroup, floor.GroupID, unit.ID, floor.GroupName, "standard_floor")
@@ -146,13 +134,6 @@ func (m UnitModel) Insert(unit *Unit, floorGroups []FloorGroupCreate) error {
 	}
 
 	if unit.Type == "tower" {
-		queryTower := `INSERT INTO tower (id) VALUES ($1)`
-		_, err = tx.Exec(queryTower, unit.ID)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
 		basementCount := 0
 		for _, fg := range floorGroups {
 			if fg.Category == "basement_floor" {
@@ -170,7 +151,7 @@ func (m UnitModel) Insert(unit *Unit, floorGroups []FloorGroupCreate) error {
 				return err
 			}
 
-			queryFloorGroup := `INSERT INTO floor_group (id, tower_id, name, category) VALUES ($1, $2, $3, $4)`
+			queryFloorGroup := `INSERT INTO floor_group (id, unit_id, name, category) VALUES ($1, $2, $3, $4)`
 			_, err = tx.Exec(queryFloorGroup, floorGroupID, unit.ID, fg.Name, fg.Category)
 			if err != nil {
 				tx.Rollback()
@@ -212,7 +193,7 @@ func (m UnitModel) GetByID(id uuid.UUID) (*Unit, error) {
 	}
 
 	query := `
-		SELECT id, project_id, name, type
+		SELECT id, project_id, name, type, created_at, updated_at, version
 		FROM units
 		WHERE id = $1`
 
@@ -226,6 +207,9 @@ func (m UnitModel) GetByID(id uuid.UUID) (*Unit, error) {
 		&unit.ProjectID,
 		&unit.Name,
 		&unit.Type,
+		&unit.CreatedAt,
+		&unit.UpdatedAt,
+		&unit.Version,
 	)
 
 	if err != nil {
@@ -238,48 +222,17 @@ func (m UnitModel) GetByID(id uuid.UUID) (*Unit, error) {
 	}
 
 	if unit.Type == "tower" {
-		tower, err := m.getTowerByUnitID(id)
+		floors, err := m.getFloorsByUnitID(id)
 		if err != nil {
 			return nil, err
 		}
-		unit.Tower = tower
+		unit.Floors = floors
 	}
 
 	return &unit, nil
 }
 
-func (m UnitModel) getTowerByUnitID(unitID uuid.UUID) (*Tower, error) {
-	query := `
-		SELECT id, created_at, updated_at, version
-		FROM tower
-		WHERE id = $1`
-
-	var tower Tower
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	err := m.DB.QueryRowContext(ctx, query, unitID).Scan(
-		&tower.ID,
-		&tower.CreatedAt,
-		&tower.UpdatedAt,
-		&tower.Version,
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	floors, err := m.getFloorsByTowerID(tower.ID)
-	if err != nil {
-		return nil, err
-	}
-	tower.Floors = floors
-
-	return &tower, nil
-}
-
-func (m UnitModel) getFloorsByTowerID(towerID uuid.UUID) ([]Floor, error) {
+func (m UnitModel) getFloorsByUnitID(unitID uuid.UUID) ([]Floor, error) {
 	query := `
 		SELECT f.id, f.group_id, fg.name, fg.category, f.area, f.height, f.index,
 		       ftm.role_id, ftm.option_id, ftm.technology, ftm.co2_min, ftm.co2_max, ftm.energy_min, ftm.energy_max
@@ -287,14 +240,14 @@ func (m UnitModel) getFloorsByTowerID(towerID uuid.UUID) ([]Floor, error) {
 		INNER JOIN floor_group fg ON f.group_id = fg.id
 		LEFT JOIN floors_consumption ftm ON f.id = ftm.floor_id
 		LEFT JOIN tower_option topt ON ftm.option_id = topt.id AND ftm.role_id = topt.role_id
-		WHERE fg.tower_id = $1 
+		WHERE fg.unit_id = $1 
 		  AND (ftm.option_id IS NULL OR topt.active = TRUE)
 		ORDER BY f.index`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	rows, err := m.DB.QueryContext(ctx, query, towerID)
+	rows, err := m.DB.QueryContext(ctx, query, unitID)
 	if err != nil {
 		return nil, err
 	}
@@ -412,7 +365,7 @@ func (m UnitModel) Delete(id uuid.UUID) error {
 	return nil
 }
 
-func (m UnitModel) UpdateTowerFloorsMetrics(towerID uuid.UUID) error {
+func (m UnitModel) UpdateUnitFloorsMetrics(unitID uuid.UUID) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -426,9 +379,9 @@ func (m UnitModel) UpdateTowerFloorsMetrics(towerID uuid.UUID) error {
 		SELECT f.id
 		FROM floor f
 		INNER JOIN floor_group fg ON f.group_id = fg.id
-		WHERE fg.tower_id = $1`
+		WHERE fg.unit_id = $1`
 
-	rows, err := tx.QueryContext(ctx, query, towerID)
+	rows, err := tx.QueryContext(ctx, query, unitID)
 	if err != nil {
 		return err
 	}
@@ -662,18 +615,18 @@ func updateFloorMetricsById(tx *sql.Tx, floorIDs []uuid.UUID) error {
 	return nil
 }
 
-func (m UnitModel) GetConsumptionByRole(towerID, roleID uuid.UUID) (map[string]*Consumption, error) {
+func (m UnitModel) GetConsumptionByRole(unitID, roleID uuid.UUID) (map[string]*Consumption, error) {
 	var activeOptionID uuid.UUID
 	query := `
 		SELECT id 
 		FROM tower_option 
-		WHERE tower_id = $1 AND role_id = $2 AND active = TRUE
+		WHERE unit_id = $1 AND role_id = $2 AND active = TRUE
 		LIMIT 1`
 	
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	
-	err := m.DB.QueryRowContext(ctx, query, towerID, roleID).Scan(&activeOptionID)
+	err := m.DB.QueryRowContext(ctx, query, unitID, roleID).Scan(&activeOptionID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return make(map[string]*Consumption), nil
@@ -681,5 +634,5 @@ func (m UnitModel) GetConsumptionByRole(towerID, roleID uuid.UUID) (map[string]*
 		return nil, err
 	}
 
-	return GetFullConsumption(m.DB, towerID, roleID, activeOptionID)
+	return GetFullConsumption(m.DB, unitID, roleID, activeOptionID)
 }
