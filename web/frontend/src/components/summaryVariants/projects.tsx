@@ -123,7 +123,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
         />
       </div>
       <div
-        className={cn("w-full flex justify-between gap-4 max-md:flex-col lg:h-2/3", {
+        className={cn("w-full flex justify-between gap-4 max-md:flex-col h-[85%] max-sm:h-max", {
           "flex flex-col": isExpanded,
         })}
       >
