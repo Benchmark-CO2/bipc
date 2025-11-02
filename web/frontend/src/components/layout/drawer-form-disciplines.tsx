@@ -149,6 +149,9 @@ export default function DrawerFormDisciplines({
       queryClient.invalidateQueries({
         queryKey: ["project-collaborators", projectId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["unit", projectId, unitId],
+      });
       form.reset();
       setOpenDrawer(false);
     },
