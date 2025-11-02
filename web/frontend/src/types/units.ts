@@ -25,18 +25,13 @@ export type TTowerFloorCategory = {
     | "basement_floor"; // Opcional por enquanto
 };
 
-export type TTowerType = {
-  id: string;
-  created_at: string;
-  updated_at: string;
-  version: number;
-  floors: TTowerFloorCategory[];
-};
-
 export interface IUnit {
   id: string;
   project_id: number;
   name: string;
   type: TUnitType;
-  tower: TTowerType;
+  created_at: string;
+  updated_at: string;
+  version: number;
+  floors: TTowerFloorCategory[];
 }

@@ -221,9 +221,9 @@ function RouteComponent() {
     });
   }, [setSummaryContext, selectedFloors, benchmarkData]);
 
-  const groupedFloors: TGroupedFloor[] = unitWithTower?.tower?.floors
+  const groupedFloors: TGroupedFloor[] = unitWithTower?.floors
     ? Object.values(
-        unitWithTower.tower.floors.reduce(
+        unitWithTower.floors.reduce(
           (acc, floor) => {
             const groupId = floor.group_id;
             const { consumptions, ...restFloor } = floor;

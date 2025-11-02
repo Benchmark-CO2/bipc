@@ -152,7 +152,7 @@ export const convertFloorGroupsToTowerFloors = (
 
 // Converte IUnit para dados do formulário
 export const convertUnitToFormData = (unit: IUnit) => {
-  if (!unit.tower?.floors) {
+  if (!unit.floors) {
     return {
       name: unit.name,
       type: unit.type,
@@ -162,7 +162,7 @@ export const convertUnitToFormData = (unit: IUnit) => {
     };
   }
 
-  const floorGroups = convertTowerFloorsToFloorGroups(unit.tower.floors);
+  const floorGroups = convertTowerFloorsToFloorGroups(unit.floors);
 
   return {
     name: unit.name,
