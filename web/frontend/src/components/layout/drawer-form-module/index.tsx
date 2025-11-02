@@ -346,8 +346,11 @@ const DrawerFormModule = ({
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(handleSubmit, (errors) => {
-                  console.log("Form validation errors:", errors);
-                  console.log("Current form values:", form.getValues());
+                  toast.error("Existem erros de validação", {
+                    description:
+                      "Evite campos com valores zerados ou inválidos.",
+                    duration: 5000,
+                  });
                 })}
                 id="module-form"
                 className="w-full flex gap-6 h-full"

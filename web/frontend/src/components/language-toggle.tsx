@@ -10,9 +10,9 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 
 const languageMap = {
-  "en-US": { label: "English", flag: flags["en-US"].flag },
+  // "en-US": { label: "English", flag: flags["en-US"].flag },
   "pt-BR": { label: "Português", flag: flags["pt-BR"].flag },
-  "es-ES": { label: "Español", flag: flags["es-ES"].flag },
+  // "es-ES": { label: "Español", flag: flags["es-ES"].flag },
 };
 
 export function LanguageToggle() {
@@ -28,7 +28,7 @@ export function LanguageToggle() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger asChild disabled>
         <Button
           variant="outline"
           size="sm"

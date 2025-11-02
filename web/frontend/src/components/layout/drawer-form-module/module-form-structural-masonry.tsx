@@ -1,7 +1,7 @@
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import { ModuleFormSchema } from "@/validators/moduleFormByType.validator";
-import { useState, useEffect } from "react";
-import { Trash2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Trash2, AlertTriangle } from "lucide-react";
 import {
   FormField,
   FormItem,
@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ModuleFormStructuralMasonryProps {
   form: UseFormReturn<ModuleFormSchema>;
@@ -1061,6 +1062,55 @@ const ModuleFormStructuralMasonry = ({
     const currentVolumes = form.getValues(`${fieldName}.volumes` as any) || [];
     const currentSteel = form.getValues(`${fieldName}.steel` as any) || [];
 
+    // Validação para campos opcionais usando useMemo
+    const sectionWarning = useMemo(() => {
+      if (!isRequired) {
+        const hasVolumes = currentVolumes.length > 0;
+        const hasSteel = currentSteel.length > 0;
+        const hasVolumeWithValue = currentVolumes.some(
+          (v: any) => v.volume > 0
+        );
+        const hasSteelWithValue = currentSteel.some((s: any) => s.mass > 0);
+
+        // Se preencheu volumes mas não steel
+        if ((hasVolumes || hasVolumeWithValue) && !hasSteel) {
+          return "Você adicionou volumes de concreto. É necessário também adicionar aço.";
+        }
+        // Se preencheu steel mas não volumes
+        else if ((hasSteel || hasSteelWithValue) && !hasVolumes) {
+          return "Você adicionou aço. É necessário também adicionar volumes de concreto.";
+        }
+        // Se ambos existem mas volumes está zerado
+        else if (
+          hasVolumes &&
+          hasSteel &&
+          !hasVolumeWithValue &&
+          hasSteelWithValue
+        ) {
+          return "Os volumes de concreto devem ser maiores que 0.";
+        }
+        // Se ambos existem mas steel está zerado
+        else if (
+          hasVolumes &&
+          hasSteel &&
+          hasVolumeWithValue &&
+          !hasSteelWithValue
+        ) {
+          return "As massas de aço devem ser maiores que 0.";
+        }
+        // Se ambos estão zerados mas foram adicionados
+        else if (
+          hasVolumes &&
+          hasSteel &&
+          !hasVolumeWithValue &&
+          !hasSteelWithValue
+        ) {
+          return "Tanto os volumes de concreto quanto as massas de aço devem ser maiores que 0.";
+        }
+      }
+      return "";
+    }, [currentVolumes, currentSteel, isRequired]);
+
     const isFckUsed = (fck: number, currentIndex: number) => {
       return currentVolumes.some(
         (volume: any, index: number) =>
@@ -1097,6 +1147,16 @@ const ModuleFormStructuralMasonry = ({
     return (
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-gray-900">{title}</h3>
+
+        {/* Warning para campos opcionais */}
+        {!isRequired && sectionWarning && (
+          <Alert className="bg-yellow-50 border-yellow-300">
+            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-800">
+              {sectionWarning}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Card className={`border-2 ${borderColor}`}>
           <CardContent className="space-y-4">
@@ -1227,7 +1287,7 @@ const ModuleFormStructuralMasonry = ({
                         size="sm"
                         onClick={() => removeVolume(index)}
                         className="shrink-0"
-                        disabled={volumeFields.length === 1}
+                        disabled={isRequired && volumeFields.length === 1}
                       >
                         <Trash2 className="h-4 w-4 text-red-600" />
                       </Button>
@@ -1378,7 +1438,7 @@ const ModuleFormStructuralMasonry = ({
                         size="sm"
                         onClick={() => removeSteel(index)}
                         className="shrink-0"
-                        disabled={steelFields.length === 1}
+                        disabled={isRequired && steelFields.length === 1}
                       >
                         <Trash2 className="h-4 w-4 text-red-600" />
                       </Button>

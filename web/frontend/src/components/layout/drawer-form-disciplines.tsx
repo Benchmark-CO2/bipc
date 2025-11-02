@@ -58,7 +58,7 @@ interface IDrawerFormDisciplines {
 // Mock data for permissions - will be provided by backend
 const mockPermissions = {
   management: [
-    { id: 1, label: "Editar propriedades do projeto" },
+    // { id: 1, label: "Editar propriedades do projeto" },
     { id: 2, label: "Criar disciplina" },
     { id: 3, label: "Criar unidades" },
     { id: 4, label: "Gerar relatórios do projeto" },
@@ -171,11 +171,16 @@ export default function DrawerFormDisciplines({
     }) || [];
 
   const onSubmit = async (data: DisciplineFormSchema) => {
+    const processedData = {
+      ...data,
+      ...(data.description?.trim() === "" && { description: undefined }),
+    };
+
     if (isEditMode) {
-      updateDiscipline(data);
+      updateDiscipline(processedData);
       return;
     }
-    createDiscipline(data);
+    createDiscipline(processedData);
   };
 
   const addCollaborator = (user: TUser) => {
