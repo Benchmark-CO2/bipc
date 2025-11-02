@@ -123,15 +123,15 @@ func (b *BeamColumn) toDataModule(moduleID, optionID uuid.UUID, result Consumpti
 	}
 
 	return &data.Module{
-		ID:                moduleID,
-		Type:              "beam_column",
-		TowerOptionID:     optionID,
-		Data:              moduleData,
-		TotalCO2Min:       &result.CO2Min,
-		TotalCO2Max:       &result.CO2Max,
-		TotalEnergyMin:    &result.EnergyMin,
-		TotalEnergyMax:    &result.EnergyMax,
-		FloorIDs:          b.FloorIDs,
+		ID:             moduleID,
+		Type:           "beam_column",
+		OptionID:       optionID,
+		Data:           moduleData,
+		TotalCO2Min:    &result.CO2Min,
+		TotalCO2Max:    &result.CO2Max,
+		TotalEnergyMin: &result.EnergyMin,
+		TotalEnergyMax: &result.EnergyMax,
+		FloorIDs:       b.FloorIDs,
 	}
 }
 
@@ -147,7 +147,7 @@ func (b *BeamColumn) fromDataModule(d *data.Module) Module {
 	}
 
 	var concreteColumns, concreteBeams, concreteSlabs ConcreteElement
-	
+
 	if colData, ok := d.Data["concrete_columns"].(map[string]interface{}); ok {
 		concreteColumns = concreteElementFromMap(colData)
 	}

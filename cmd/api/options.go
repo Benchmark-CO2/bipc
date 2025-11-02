@@ -9,7 +9,7 @@ import (
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
-func (app *application) createTowerOptionHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) createOptionHandler(w http.ResponseWriter, r *http.Request) {
 	unitID, err := app.readUUIDParam(r, "unitID")
 	if err != nil {
 		app.notFoundResponse(w, r)
@@ -33,8 +33,8 @@ func (app *application) createTowerOptionHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	towerOption := &data.TowerOption{
-		TowerID: unitID,
+	option := &data.Option{
+		UnitID: unitID,
 		RoleID:  roleID,
 		Name:    input.Name,
 		Active:  input.Active,
@@ -42,12 +42,12 @@ func (app *application) createTowerOptionHandler(w http.ResponseWriter, r *http.
 
 	v := validator.New()
 
-	if data.ValidateTowerOption(v, towerOption); !v.Valid() {
+	if data.ValidateOption(v, option); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	err = app.models.TowerOptions.Insert(towerOption)
+	err = app.models.Options.Insert(option)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrInvalidUnitID):
@@ -61,22 +61,22 @@ func (app *application) createTowerOptionHandler(w http.ResponseWriter, r *http.
 	}
 
 	headers := make(http.Header)
-	headers.Set("Location", fmt.Sprintf("/v1/tower-options/%s", towerOption.ID))
+	headers.Set("Location", fmt.Sprintf("/v1/tower-options/%s", option.ID))
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"tower_option": towerOption}, headers)
+	err = app.writeJSON(w, http.StatusCreated, envelope{"option": option}, headers)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
 }
 
-func (app *application) readTowerOptionHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) readOptionHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readUUIDParam(r, "optionID")
 	if err != nil {
 		app.notFoundResponse(w, r)
 		return
 	}
 
-	towerOption, err := app.models.TowerOptions.GetByID(id)
+	option, err := app.models.Options.GetByID(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -87,13 +87,13 @@ func (app *application) readTowerOptionHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"tower_option": towerOption}, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"option": option}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
 }
 
-func (app *application) listTowerOptionsHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) listOptionsHandler(w http.ResponseWriter, r *http.Request) {
 	unitID, err := app.readUUIDParam(r, "unitID")
 	if err != nil {
 		app.notFoundResponse(w, r)
@@ -106,26 +106,26 @@ func (app *application) listTowerOptionsHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	towerOptions, err := app.models.TowerOptions.GetAllByRole(unitID, roleID)
+	options, err := app.models.Options.GetAllByRole(unitID, roleID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"tower_options": towerOptions}, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"options": options}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
 }
 
-func (app *application) updateTowerOptionHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) updateOptionHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readUUIDParam(r, "optionID")
 	if err != nil {
 		app.notFoundResponse(w, r)
 		return
 	}
 
-	towerOption, err := app.models.TowerOptions.GetByID(id)
+	option, err := app.models.Options.GetByID(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -148,21 +148,21 @@ func (app *application) updateTowerOptionHandler(w http.ResponseWriter, r *http.
 	}
 
 	if input.Name != nil {
-		towerOption.Name = *input.Name
+		option.Name = *input.Name
 	}
 
 	if input.Active != nil {
-		towerOption.Active = *input.Active
+		option.Active = *input.Active
 	}
 
 	v := validator.New()
 
-	if data.ValidateTowerOption(v, towerOption); !v.Valid() {
+	if data.ValidateOption(v, option); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	err = app.models.TowerOptions.Update(towerOption)
+	err = app.models.Options.Update(option)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -173,20 +173,20 @@ func (app *application) updateTowerOptionHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"tower_option": towerOption}, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"option": option}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
 }
 
-func (app *application) deleteTowerOptionHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) deleteOptionHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readUUIDParam(r, "optionID")
 	if err != nil {
 		app.notFoundResponse(w, r)
 		return
 	}
 
-	err = app.models.TowerOptions.Delete(id)
+	err = app.models.Options.Delete(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):

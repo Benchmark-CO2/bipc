@@ -17,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import NotFoundList from "@/components/ui/not-found-list";
 import { useSummary } from "@/context/summaryContext";
-import { IModuleItem } from "@/types/modules";
+import { IConsumption, IModuleItem } from "@/types/modules";
 import { TOption } from "@/types/options";
 import { TConsumption } from "@/types/projects";
 import { IUnit } from "@/types/units";
@@ -34,9 +34,9 @@ import { toast } from "sonner";
 
 function mergeUnitAndOptions(unit: IUnit, towerOptions: TOption[]) {
   const areaTotal =
-    unit.tower?.floors.reduce((sum, floor) => sum + (floor.area || 0), 0) || 0;
+    unit.floors.reduce((sum, floor) => sum + (floor.area || 0), 0) || 0;
   return towerOptions
-    .filter((opt) => opt.tower_id === unit.id)
+    .filter((opt) => opt.unit_id === unit.id)
     .map((opt) => ({
       ...opt,
       area: areaTotal,
@@ -81,13 +81,13 @@ const OptionMenu = ({
           queryClient.setQueryData(
             ["options", projectId, unitId],
             (oldData: any) => {
-              if (!oldData?.data?.tower_options) return oldData;
+              if (!oldData?.data?.options) return oldData;
 
               return {
                 ...oldData,
                 data: {
                   ...oldData.data,
-                  tower_options: oldData.data.tower_options.map(
+                  options: oldData.data.options.map(
                     (opt: TOption) =>
                       opt.id === option.id ? { ...opt, name: localName } : opt
                   ),
@@ -121,13 +121,13 @@ const OptionMenu = ({
         queryClient.setQueryData(
           ["options", projectId, unitId],
           (oldData: any) => {
-            if (!oldData?.data?.tower_options) return oldData;
+            if (!oldData?.data?.options) return oldData;
 
             return {
               ...oldData,
               data: {
                 ...oldData.data,
-                tower_options: oldData.data.tower_options.map((opt: TOption) =>
+                options: oldData.data.options.map((opt: TOption) =>
                   opt.id === option.id ? { ...opt, name: localName } : opt
                 ),
               },
@@ -151,12 +151,12 @@ const OptionMenu = ({
         unitId,
       ]);
 
-      if (currentData?.data?.tower_options) {
+      if (currentData?.data?.options) {
         if (option.active) {
           return;
         }
 
-        const otherActiveOptions = currentData.data.tower_options.filter(
+        const otherActiveOptions = currentData.data.options.filter(
           (opt: TOption) => opt.active && opt.id !== option.id
         );
 
@@ -173,13 +173,13 @@ const OptionMenu = ({
         queryClient.setQueryData(
           ["options", projectId, unitId],
           (oldData: any) => {
-            if (!oldData?.data?.tower_options) return oldData;
+            if (!oldData?.data?.options) return oldData;
 
             return {
               ...oldData,
               data: {
                 ...oldData.data,
-                tower_options: oldData.data.tower_options.map((opt: TOption) =>
+                options: oldData.data.options.map((opt: TOption) =>
                   opt.id === option.id
                     ? { ...opt, active: true }
                     : { ...opt, active: false }
@@ -331,7 +331,7 @@ function RouteComponent() {
     );
   }
 
-  if (!optionsData?.data?.tower_options) {
+  if (!optionsData?.data?.options) {
     return (
       <NotFoundList
         message="Nenhuma simulação encontrada"
@@ -341,44 +341,26 @@ function RouteComponent() {
     );
   }
 
-  const options = optionsData.data.tower_options;
+  const options = optionsData.data.options;
 
   const unit = unitData?.unit as IUnit;
-  const unitTowerFloors = unit?.tower?.floors || [];
+  const unitFloors = unit?.floors || [];
 
-  const calculateSumMetrics = (modules: IModuleItem[]) => {
-    const totalModules = modules.length;
-    if (totalModules === 0) {
+  const calculateSumMetrics = (consumption: IConsumption) => {
+    if (!consumption?.co2_min && !consumption?.co2_max && !consumption?.energy_min && !consumption?.energy_max) {
       return {
-        co2_min: "0 KgCO2/m²",
-        co2_max: "0 KgCO2/m²",
-        energy_min: "0 MJ/m²",
-        energy_max: "0 MJ/m²",
+        co2_min: "0 KgCO2",
+        co2_max: "0 KgCO2",
+        energy_min: "0 MJ",
+        energy_max: "0 MJ",
       };
     }
 
-    const sumCO2Min = modules.reduce(
-      (acc, curr) => acc + (curr.consumption.co2_min || 0),
-      0
-    );
-    const sumCO2Max = modules.reduce(
-      (acc, curr) => acc + (curr.consumption.co2_max || 0),
-      0
-    );
-    const sumEnergyMin = modules.reduce(
-      (acc, curr) => acc + (curr.consumption.energy_min || 0),
-      0
-    );
-    const sumEnergyMax = modules.reduce(
-      (acc, curr) => acc + (curr.consumption.energy_max || 0),
-      0
-    );
-
     return {
-      co2_min: `${sumCO2Min.toFixed(1)} KgCO2`,
-      co2_max: `${sumCO2Max.toFixed(1)} KgCO2`,
-      energy_min: `${sumEnergyMin.toFixed(1)} MJ`,
-      energy_max: `${sumEnergyMax.toFixed(1)} MJ`,
+      co2_min: `${(consumption.co2_min || 0).toFixed(1)} KgCO2`,
+      co2_max: `${(consumption.co2_max || 0).toFixed(1)} KgCO2`,
+      energy_min: `${(consumption.energy_min || 0).toFixed(1)} MJ`,
+      energy_max: `${(consumption.energy_max || 0).toFixed(1)} MJ`,
     };
   };
 
@@ -412,7 +394,7 @@ function RouteComponent() {
               unitId={unitId}
               optionId={row.original.option_id}
               moduleId={row.original.id}
-              floors={unitTowerFloors}
+              floors={unitFloors}
             />
             <ModalConfirmDelete
               title="Excluir Tecnologia Construtiva"
@@ -484,7 +466,7 @@ function RouteComponent() {
                 isSelectable={false}
                 isInteractive={true}
                 onSelectionChange={handleSelectItem}
-                lastRow={{ type: "Total", data: calculateSumMetrics(modules) }}
+                lastRow={{ type: "Total", data: calculateSumMetrics(option.consumption["total"]) }}
                 actions={
                   <>
                     <ModalConfirmDelete
@@ -515,7 +497,7 @@ function RouteComponent() {
                         </Button>
                       }
                       type="concrete_wall"
-                      floors={unitTowerFloors}
+                      floors={unitFloors}
                       projectId={projectId}
                       unitId={unitId}
                       optionId={option.id}

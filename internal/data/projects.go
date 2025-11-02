@@ -263,7 +263,7 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectsWithUnits, error) {
 		}
 
 		if unit.Type == "tower" {
-			consumptions, area, err := GetTowerConsumptionByTechnology(m.DB, unit.ID)
+			consumptions, area, err := GetUnitConsumptionByTechnology(m.DB, unit.ID)
 			if err != nil {
 				return nil, err
 			}
@@ -430,7 +430,7 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 			}
 
 			if unit.Type == "tower" {
-				consumptions, area, err := GetTowerConsumptionByTechnology(m.DB, unit.ID)
+				consumptions, area, err := GetUnitConsumptionByTechnology(m.DB, unit.ID)
 				if err != nil {
 					return nil, Metadata{}, err
 				}

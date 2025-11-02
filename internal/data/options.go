@@ -16,9 +16,9 @@ type ModuleInfo struct {
 	Consumption *Consumption `json:"consumption,omitempty"`
 }
 
-type TowerOption struct {
+type Option struct {
 	ID          uuid.UUID              `json:"id"`
-	TowerID     uuid.UUID              `json:"tower_id"`
+	UnitID      uuid.UUID              `json:"unit_id"`
 	RoleID      uuid.UUID              `json:"role_id"`
 	Name        string                 `json:"name"`
 	Active      bool                   `json:"active"`
@@ -26,23 +26,23 @@ type TowerOption struct {
 	Consumption map[string]*Consumption `json:"consumption,omitempty"`
 }
 
-func ValidateTowerOption(v *validator.Validator, towerOption *TowerOption) {
-	v.Check(towerOption.Name != "", "name", "must be provided")
-	v.Check(len(towerOption.Name) <= 500, "name", "must not be more than 500 bytes long")
-	v.Check(towerOption.RoleID != uuid.Nil, "role_id", "must be provided")
+func ValidateOption(v *validator.Validator, option *Option) {
+	v.Check(option.Name != "", "name", "must be provided")
+	v.Check(len(option.Name) <= 500, "name", "must not be more than 500 bytes long")
+	v.Check(option.RoleID != uuid.Nil, "role_id", "must be provided")
 }
 
-type TowerOptionModel struct {
+type OptionModel struct {
 	DB *sql.DB
 }
 
-func (m TowerOptionModel) Insert(towerOption *TowerOption) error {
-	towerOptionID, err := uuid.NewV7()
+func (m OptionModel) Insert(option *Option) error {
+	optionID, err := uuid.NewV7()
 	if err != nil {
 		return err
 	}
 
-	towerOption.ID = towerOptionID
+	option.ID = optionID
 
 	tx, err := m.DB.Begin()
 	if err != nil {
@@ -52,7 +52,7 @@ func (m TowerOptionModel) Insert(towerOption *TowerOption) error {
 
 	var unitType string
 	queryCheck := `SELECT type FROM units WHERE id = $1`
-	err = tx.QueryRow(queryCheck, towerOption.TowerID).Scan(&unitType)
+	err = tx.QueryRow(queryCheck, option.UnitID).Scan(&unitType)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrInvalidUnitID
@@ -64,18 +64,18 @@ func (m TowerOptionModel) Insert(towerOption *TowerOption) error {
 		return ErrUnitIsNotTower
 	}
 
-	if towerOption.Active {
-		err = m.DeactivateTowerOptions(towerOption.TowerID, towerOption.RoleID)
+	if option.Active {
+		err = m.DeactivateOptions(option.UnitID, option.RoleID)
 		if err != nil {
 			return err
 		}
 	}
 
 	query := `
-        INSERT INTO tower_option (id, tower_id, role_id, name, active)
+        INSERT INTO options (id, unit_id, role_id, name, active)
         VALUES ($1, $2, $3, $4, $5)`
 
-	args := []interface{}{towerOption.ID, towerOption.TowerID, towerOption.RoleID, towerOption.Name, towerOption.Active}
+	args := []interface{}{option.ID, option.UnitID, option.RoleID, option.Name, option.Active}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -91,7 +91,7 @@ func (m TowerOptionModel) Insert(towerOption *TowerOption) error {
 	}
 
 	unitModel := UnitModel{DB: m.DB}
-	err = unitModel.UpdateTowerFloorsMetrics(towerOption.TowerID)
+	err = unitModel.UpdateUnitFloorsMetrics(option.UnitID)
 	if err != nil {
 		return err
 	}
@@ -99,27 +99,27 @@ func (m TowerOptionModel) Insert(towerOption *TowerOption) error {
 	return nil
 }
 
-func (m TowerOptionModel) GetByID(id uuid.UUID) (*TowerOption, error) {
+func (m OptionModel) GetByID(id uuid.UUID) (*Option, error) {
 	if id == uuid.Nil {
 		return nil, ErrRecordNotFound
 	}
 
 	query := `
-        SELECT id, tower_id, role_id, name, active
-        FROM tower_option
+        SELECT id, unit_id, role_id, name, active
+        FROM options
         WHERE id = $1`
 
-	var towerOption TowerOption
+	var option Option
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	err := m.DB.QueryRowContext(ctx, query, id).Scan(
-		&towerOption.ID,
-		&towerOption.TowerID,
-		&towerOption.RoleID,
-		&towerOption.Name,
-		&towerOption.Active,
+		&option.ID,
+		&option.UnitID,
+		&option.RoleID,
+		&option.Name,
+		&option.Active,
 	)
 
 	if err != nil {
@@ -134,9 +134,9 @@ func (m TowerOptionModel) GetByID(id uuid.UUID) (*TowerOption, error) {
 	modulesQuery := `
         SELECT id, type, relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max
         FROM module
-        WHERE tower_option_id = $1`
+        WHERE option_id = $1`
 
-	moduleRows, err := m.DB.QueryContext(ctx, modulesQuery, towerOption.ID)
+	moduleRows, err := m.DB.QueryContext(ctx, modulesQuery, option.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -170,45 +170,45 @@ func (m TowerOptionModel) GetByID(id uuid.UUID) (*TowerOption, error) {
 	if err = moduleRows.Err(); err != nil {
 		return nil, err
 	}
-	towerOption.Modules = modules
+	option.Modules = modules
 
-	consumption, err := GetFullConsumption(m.DB, towerOption.TowerID, towerOption.RoleID, towerOption.ID)
+	consumption, err := GetFullConsumption(m.DB, option.UnitID, option.RoleID, option.ID)
 	if err != nil {
 		return nil, err
 	}
 	if len(consumption) > 0 {
-		towerOption.Consumption = consumption
+		option.Consumption = consumption
 	}
 
-	return &towerOption, nil
+	return &option, nil
 }
 
-func (m TowerOptionModel) GetAll(towerID uuid.UUID) ([]*TowerOption, error) {
+func (m OptionModel) GetAll(unitID uuid.UUID) ([]*Option, error) {
 	query := `
-        SELECT id, tower_id, role_id, name, active
-        FROM tower_option
-        WHERE tower_id = $1`
+        SELECT id, unit_id, role_id, name, active
+        FROM options
+        WHERE unit_id = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := m.DB.QueryContext(ctx, query, towerID)
+	rows, err := m.DB.QueryContext(ctx, query, unitID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	towerOptions := []*TowerOption{}
+	options := []*Option{}
 
 	for rows.Next() {
-		var towerOption TowerOption
+		var option Option
 
 		err := rows.Scan(
-			&towerOption.ID,
-			&towerOption.TowerID,
-			&towerOption.RoleID,
-			&towerOption.Name,
-			&towerOption.Active,
+			&option.ID,
+			&option.UnitID,
+			&option.RoleID,
+			&option.Name,
+			&option.Active,
 		)
 		if err != nil {
 			return nil, err
@@ -217,9 +217,9 @@ func (m TowerOptionModel) GetAll(towerID uuid.UUID) ([]*TowerOption, error) {
 		modulesQuery := `
             SELECT id, type, relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max
             FROM module
-            WHERE tower_option_id = $1`
+            WHERE option_id = $1`
 
-		moduleRows, err := m.DB.QueryContext(ctx, modulesQuery, towerOption.ID)
+		moduleRows, err := m.DB.QueryContext(ctx, modulesQuery, option.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -254,52 +254,52 @@ func (m TowerOptionModel) GetAll(towerID uuid.UUID) ([]*TowerOption, error) {
 		if err = moduleRows.Err(); err != nil {
 			return nil, err
 		}
-		towerOption.Modules = modules
+		option.Modules = modules
 
-		consumption, err := GetFullConsumption(m.DB, towerOption.TowerID, towerOption.RoleID, towerOption.ID)
+		consumption, err := GetFullConsumption(m.DB, option.UnitID, option.RoleID, option.ID)
 		if err != nil {
 			return nil, err
 		}
 		if len(consumption) > 0 {
-			towerOption.Consumption = consumption
+			option.Consumption = consumption
 		}
 
-		towerOptions = append(towerOptions, &towerOption)
+		options = append(options, &option)
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return towerOptions, nil
+	return options, nil
 }
 
-func (m TowerOptionModel) GetAllByRole(towerID, roleID uuid.UUID) ([]*TowerOption, error) {
+func (m OptionModel) GetAllByRole(unitID, roleID uuid.UUID) ([]*Option, error) {
 	query := `
-        SELECT id, tower_id, role_id, name, active
-        FROM tower_option
-        WHERE tower_id = $1 AND role_id = $2`
+        SELECT id, unit_id, role_id, name, active
+        FROM options
+        WHERE unit_id = $1 AND role_id = $2`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := m.DB.QueryContext(ctx, query, towerID, roleID)
+	rows, err := m.DB.QueryContext(ctx, query, unitID, roleID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	towerOptions := []*TowerOption{}
+	options := []*Option{}
 
 	for rows.Next() {
-		var towerOption TowerOption
+		var option Option
 
 		err := rows.Scan(
-			&towerOption.ID,
-			&towerOption.TowerID,
-			&towerOption.RoleID,
-			&towerOption.Name,
-			&towerOption.Active,
+			&option.ID,
+			&option.UnitID,
+			&option.RoleID,
+			&option.Name,
+			&option.Active,
 		)
 		if err != nil {
 			return nil, err
@@ -308,9 +308,9 @@ func (m TowerOptionModel) GetAllByRole(towerID, roleID uuid.UUID) ([]*TowerOptio
 		modulesQuery := `
             SELECT id, type, relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max
             FROM module
-            WHERE tower_option_id = $1`
+            WHERE option_id = $1`
 
-		moduleRows, err := m.DB.QueryContext(ctx, modulesQuery, towerOption.ID)
+		moduleRows, err := m.DB.QueryContext(ctx, modulesQuery, option.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -345,44 +345,44 @@ func (m TowerOptionModel) GetAllByRole(towerID, roleID uuid.UUID) ([]*TowerOptio
 		if err = moduleRows.Err(); err != nil {
 			return nil, err
 		}
-		towerOption.Modules = modules
+		option.Modules = modules
 
-		consumption, err := GetFullConsumption(m.DB, towerOption.TowerID, towerOption.RoleID, towerOption.ID)
+		consumption, err := GetFullConsumption(m.DB, option.UnitID, option.RoleID, option.ID)
 		if err != nil {
 			return nil, err
 		}
 		if len(consumption) > 0 {
-			towerOption.Consumption = consumption
+			option.Consumption = consumption
 		}
 
-		towerOptions = append(towerOptions, &towerOption)
+		options = append(options, &option)
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return towerOptions, nil
+	return options, nil
 }
 
-func (m TowerOptionModel) Update(towerOption *TowerOption) error {
-	if towerOption.Active {
-		err := m.DeactivateTowerOptions(towerOption.TowerID, towerOption.RoleID)
+func (m OptionModel) Update(option *Option) error {
+	if option.Active {
+		err := m.DeactivateOptions(option.UnitID, option.RoleID)
 		if err != nil {
 			return err
 		}
 	}
 
 	query := `
-        UPDATE tower_option 
+        UPDATE options 
         SET role_id = $1, name = $2, active = $3
         WHERE id = $4`
 
 	args := []any{
-		towerOption.RoleID,
-		towerOption.Name,
-		towerOption.Active,
-		towerOption.ID,
+		option.RoleID,
+		option.Name,
+		option.Active,
+		option.ID,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -403,7 +403,7 @@ func (m TowerOptionModel) Update(towerOption *TowerOption) error {
 	}
 
 	unitModel := UnitModel{DB: m.DB}
-	err = unitModel.UpdateTowerFloorsMetrics(towerOption.TowerID)
+	err = unitModel.UpdateUnitFloorsMetrics(option.UnitID)
 	if err != nil {
 		return err
 	}
@@ -411,13 +411,13 @@ func (m TowerOptionModel) Update(towerOption *TowerOption) error {
 	return nil
 }
 
-func (m TowerOptionModel) Delete(id uuid.UUID) error {
+func (m OptionModel) Delete(id uuid.UUID) error {
 	if id == uuid.Nil {
 		return ErrRecordNotFound
 	}
 
 	query := `
-        DELETE FROM tower_option
+        DELETE FROM options
         WHERE id = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -440,15 +440,15 @@ func (m TowerOptionModel) Delete(id uuid.UUID) error {
 	return nil
 }
 
-func (m TowerOptionModel) DeactivateTowerOptions(towerID uuid.UUID, roleID uuid.UUID) error {
+func (m OptionModel) DeactivateOptions(unitID uuid.UUID, roleID uuid.UUID) error {
 	query := `
-        UPDATE tower_option
+        UPDATE options
         SET active = FALSE
-        WHERE tower_id = $1 AND role_id = $2`
+        WHERE unit_id = $1 AND role_id = $2`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := m.DB.ExecContext(ctx, query, towerID, roleID)
+	_, err := m.DB.ExecContext(ctx, query, unitID, roleID)
 	return err
 }

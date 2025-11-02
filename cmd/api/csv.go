@@ -98,7 +98,7 @@ type CSVRowData struct {
 type ProjectFromCSV struct {
 	Project data.Project     `json:"project"`
 	Unit    data.Unit        `json:"unit"`
-	Option  data.TowerOption `json:"option"`
+	Option  data.Option      `json:"option"`
 	Modules []modules.Module `json:"modules"`
 }
 
@@ -262,7 +262,7 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate unit ID: %w", err)
 			}
-			towerOptionID, err := uuid.NewV7()
+			optionID, err := uuid.NewV7()
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate tower option ID: %w", err)
 			}
@@ -283,15 +283,12 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 					ID:        unitID,
 					ProjectID: projectID,
 					Name:      row.UnitName,
-					Type:      "tower", // Assuming it's a tower if it has floors/modules
-					Tower: &data.Tower{
-						ID:     unitID,
-						Floors: []data.Floor{}, // Initialize floors slice
-					},
+					Type:      "tower",        // Assuming it's a tower if it has floors/modules
+					Floors:    []data.Floor{}, // Initialize floors slice
 				},
-				Option: data.TowerOption{
-					ID:      towerOptionID,
-					TowerID: unitID,
+				Option: data.Option{
+					ID:      optionID,
+					UnitID:  unitID,
 					Name:    fmt.Sprintf("Option for %s", row.UnitName), // Default name
 					Active:  true,
 					Modules: []data.ModuleInfo{},
@@ -329,9 +326,9 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 			GroupName: row.FloorName,
 			Area:      row.FloorArea,
 			Height:    row.FloorHeight,
-			Index:     len(unit.Tower.Floors), // usa ordem como index
+			Index:     len(unit.Floors), // usa ordem como index
 		}
-		unit.Tower.Floors = append(unit.Tower.Floors, floor)
+		unit.Floors = append(unit.Floors, floor)
 
 		module := modules.ConcreteWall{
 			BasicModuleData: modules.BasicModuleData{Type: "concrete_wall"},
@@ -442,7 +439,7 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 		}
 
 		// Insert Tower Option
-		err = app.models.TowerOptions.Insert(&projectData.Option)
+		err = app.models.Options.Insert(&projectData.Option)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return
@@ -462,7 +459,7 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 			_, err = module.Insert(app.models, projectData.Option.ID, result)
 			if err != nil {
 				switch {
-				case errors.Is(err, data.ErrInvalidTowerOptionID):
+				case errors.Is(err, data.ErrInvalidOptionID):
 					app.badRequestResponse(w, r, err)
 				case errors.Is(err, data.ErrInvalidFloorID):
 					app.badRequestResponse(w, r, err)
@@ -477,7 +474,7 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 		// For now, we'll just use the initial projectsFormCSV in the response.
 		// If the response needs the full module data, we would need to refetch or build it here.
 		// Let's clear the floors from the response to avoid confusion, as they are intermediate.
-		projectsFormCSV[i].Unit.Tower.Floors = nil
+		projectsFormCSV[i].Unit.Floors = nil
 	}
 
 	err = app.writeJSON(w, http.StatusAccepted, envelope{"projects": projectsFormCSV}, nil)

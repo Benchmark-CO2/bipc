@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetConsumptionByTechnology(db *sql.DB, towerID, roleID, optionID uuid.UUID) (map[string]*Consumption, error) {
+func GetConsumptionByTechnology(db *sql.DB, unitID, roleID, optionID uuid.UUID) (map[string]*Consumption, error) {
 	query := `
 		SELECT 
 			fc.technology,
@@ -19,7 +19,7 @@ func GetConsumptionByTechnology(db *sql.DB, towerID, roleID, optionID uuid.UUID)
 		FROM floors_consumption fc
 		INNER JOIN floor f ON fc.floor_id = f.id
 		INNER JOIN floor_group fg ON f.group_id = fg.id
-		WHERE fg.tower_id = $1 
+		WHERE fg.unit_id = $1 
 		  AND fc.role_id = $2 
 		  AND fc.option_id = $3
 		GROUP BY fc.technology`
@@ -27,7 +27,7 @@ func GetConsumptionByTechnology(db *sql.DB, towerID, roleID, optionID uuid.UUID)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := db.QueryContext(ctx, query, towerID, roleID, optionID)
+	rows, err := db.QueryContext(ctx, query, unitID, roleID, optionID)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func GetConsumptionByTechnology(db *sql.DB, towerID, roleID, optionID uuid.UUID)
 	return consumptions, nil
 }
 
-func CalculateTotalConsumption(db *sql.DB, towerID, roleID, optionID uuid.UUID) (*Consumption, error) {
+func CalculateTotalConsumption(db *sql.DB, unitID, roleID, optionID uuid.UUID) (*Consumption, error) {
 	query := `
 		WITH floor_totals AS (
 			SELECT 
@@ -74,7 +74,7 @@ func CalculateTotalConsumption(db *sql.DB, towerID, roleID, optionID uuid.UUID) 
 			FROM floors_consumption fc
 			INNER JOIN floor f ON fc.floor_id = f.id
 			INNER JOIN floor_group fg ON f.group_id = fg.id
-			WHERE fg.tower_id = $1 
+			WHERE fg.unit_id = $1 
 			  AND fc.role_id = $2 
 			  AND fc.option_id = $3
 			GROUP BY f.id, f.area
@@ -90,7 +90,7 @@ func CalculateTotalConsumption(db *sql.DB, towerID, roleID, optionID uuid.UUID) 
 	defer cancel()
 
 	var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
-	err := db.QueryRowContext(ctx, query, towerID, roleID, optionID).Scan(
+	err := db.QueryRowContext(ctx, query, unitID, roleID, optionID).Scan(
 		&co2Min, &co2Max, &energyMin, &energyMax,
 	)
 	if err != nil && err != sql.ErrNoRows {
@@ -109,13 +109,13 @@ func CalculateTotalConsumption(db *sql.DB, towerID, roleID, optionID uuid.UUID) 
 	}, nil
 }
 
-func GetFullConsumption(db *sql.DB, towerID, roleID, optionID uuid.UUID) (map[string]*Consumption, error) {
-	consumptions, err := GetConsumptionByTechnology(db, towerID, roleID, optionID)
+func GetFullConsumption(db *sql.DB, unitID, roleID, optionID uuid.UUID) (map[string]*Consumption, error) {
+	consumptions, err := GetConsumptionByTechnology(db, unitID, roleID, optionID)
 	if err != nil {
 		return nil, err
 	}
 
-	total, err := CalculateTotalConsumption(db, towerID, roleID, optionID)
+	total, err := CalculateTotalConsumption(db, unitID, roleID, optionID)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func GetFullConsumption(db *sql.DB, towerID, roleID, optionID uuid.UUID) (map[st
 	return consumptions, nil
 }
 
-func GetTowerConsumptionByTechnology(db *sql.DB, towerID uuid.UUID) (map[string]*Consumption, float64, error) {
+func GetUnitConsumptionByTechnology(db *sql.DB, unitID uuid.UUID) (map[string]*Consumption, float64, error) {
 	query := `
 		SELECT 
 			fc.technology,
@@ -139,15 +139,15 @@ func GetTowerConsumptionByTechnology(db *sql.DB, towerID uuid.UUID) (map[string]
 		FROM floors_consumption fc
 		INNER JOIN floor f ON fc.floor_id = f.id
 		INNER JOIN floor_group fg ON f.group_id = fg.id
-		INNER JOIN tower_option topt ON fc.option_id = topt.id AND fc.role_id = topt.role_id
-		WHERE fg.tower_id = $1 
-		  AND topt.active = TRUE
+		INNER JOIN options opt ON fc.option_id = opt.id AND fc.role_id = opt.role_id
+		WHERE fg.unit_id = $1 
+		  AND opt.active = TRUE
 		GROUP BY fc.technology`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := db.QueryContext(ctx, query, towerID)
+	rows, err := db.QueryContext(ctx, query, unitID)
 	if err != nil {
 		return nil, 0, err
 	}

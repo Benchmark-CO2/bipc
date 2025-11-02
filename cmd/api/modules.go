@@ -65,7 +65,7 @@ func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Reque
 	newModule, err := module.Insert(app.models, optionID, result)
 	if err != nil {
 		switch {
-		case errors.Is(err, data.ErrInvalidTowerOptionID):
+		case errors.Is(err, data.ErrInvalidOptionID):
 			app.badRequestResponse(w, r, err)
 		case errors.Is(err, data.ErrInvalidFloorID):
 			app.badRequestResponse(w, r, err)

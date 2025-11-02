@@ -6,7 +6,7 @@ export const getOptions = (
   unitId: string,
   roleId: string
 ) => {
-  return api.get<{ tower_options: TOption[] }>(
+  return api.get<{ options: TOption[] }>(
     `/v1/projects/${projectId}/units/${unitId}/roles/${roleId}/options`
   );
 };
