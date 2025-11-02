@@ -1,11 +1,17 @@
-import { IBenchmarkItem } from '@/actions/benchmarks/types';
+import { IBenchmarkItem } from "@/actions/benchmarks/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSummary } from "@/context/summaryContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import * as d3 from "d3";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Indicators from './components/indicators';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import Indicators from "./components/indicators";
 
 // Utility: Debounce function
 const debounce = <T extends (...args: any[]) => any>(
@@ -64,7 +70,7 @@ type D3GradientRangeChartProps = {
 };
 // Custom hooks
 const useChartDimensions = (
-  props: Pick<D3GradientRangeChartProps, 'width' | 'height'>,
+  props: Pick<D3GradientRangeChartProps, "width" | "height">,
   overrideDimensions: boolean,
   isMobile: boolean,
   isExpanded: boolean,
@@ -102,36 +108,48 @@ const useChartDimensions = (
     const _height = height() - (margin.top + margin.bottom);
 
     return { width: _width, height: _height, margin };
-  }, [props.width, props.height, overrideDimensions, isMobile, isExpanded, hasLessValue, hasMoreValue]);
+  }, [
+    props.width,
+    props.height,
+    overrideDimensions,
+    isMobile,
+    isExpanded,
+    hasLessValue,
+    hasMoreValue,
+  ]);
 };
 
 const useTooltipPosition = () => {
-  return useCallback((event: MouseEvent, svgRef: React.RefObject<SVGSVGElement | null>) => {
-    if (!svgRef.current) return { x: 0, y: 0 };
+  return useCallback(
+    (event: MouseEvent, svgRef: React.RefObject<SVGSVGElement | null>) => {
+      if (!svgRef.current) return { x: 0, y: 0 };
 
-    const { left, top, width, height } = svgRef.current.getBoundingClientRect();
-    const mouseX = event.clientX - left;
-    const mouseY = event.clientY - top;
+      const { left, top, width, height } =
+        svgRef.current.getBoundingClientRect();
+      const mouseX = event.clientX - left;
+      const mouseY = event.clientY - top;
 
-    const tooltipWidth = CHART_CONFIG.TOOLTIP_DIMENSIONS.width;
-    const tooltipHeight = CHART_CONFIG.TOOLTIP_DIMENSIONS.height;
-    const offset = CHART_CONFIG.TOOLTIP_DIMENSIONS.offset;
+      const tooltipWidth = CHART_CONFIG.TOOLTIP_DIMENSIONS.width;
+      const tooltipHeight = CHART_CONFIG.TOOLTIP_DIMENSIONS.height;
+      const offset = CHART_CONFIG.TOOLTIP_DIMENSIONS.offset;
 
-    let x = mouseX + offset;
-    if (mouseX + tooltipWidth + offset > width) {
-      x = mouseX - tooltipWidth - offset;
-    }
+      let x = mouseX + offset;
+      if (mouseX + tooltipWidth + offset > width) {
+        x = mouseX - tooltipWidth - offset;
+      }
 
-    let y = mouseY - offset;
-    if (mouseY + tooltipHeight > height) {
-      y = height - tooltipHeight - (offset + 20);
-    }
-    if (mouseY < offset) {
-      y = offset;
-    }
+      let y = mouseY - offset;
+      if (mouseY + tooltipHeight > height) {
+        y = height - tooltipHeight - (offset + 20);
+      }
+      if (mouseY < offset) {
+        y = offset;
+      }
 
-    return { x, y };
-  }, []);
+      return { x, y };
+    },
+    []
+  );
 };
 
 const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
@@ -173,10 +191,21 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   const minMaxDataValue = useMemo(() => Math.min(...maxData), [maxData]);
   const maxLessDataValue = useMemo(() => Math.max(...minData), [minData]);
   const maxMaxDataValue = useMemo(() => Math.max(...maxData), [maxData]);
-  const hasLessValue = totalProjects > 0 ? parseFloat((minData[0] || 0).toFixed(2)) < minLessDataValue : false;
-  const hasMoreValue = totalProjects > 0 ? parseFloat((maxData[maxData.length - 1] || 0).toFixed(2)) > maxMaxDataValue : false;
+  const hasLessValue =
+    totalProjects > 0
+      ? parseFloat((minData[0] || 0).toFixed(2)) < minLessDataValue
+      : false;
+  const hasMoreValue =
+    totalProjects > 0
+      ? parseFloat((maxData[maxData.length - 1] || 0).toFixed(2)) >
+        maxMaxDataValue
+      : false;
 
-  const { width: _width, height: _height, margin } = useChartDimensions(
+  const {
+    width: _width,
+    height: _height,
+    margin,
+  } = useChartDimensions(
     props,
     overrideDimensions,
     isMobile,
@@ -188,15 +217,20 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   const getTooltipPosition = useTooltipPosition();
 
   // Scales and calculations
-  const maxValue = useMemo(() =>
-    (data?.map((d) => d.max).reduce((a, b) => Math.max(a, b), 0) || 170) * 1.1,
+  const maxValue = useMemo(
+    () =>
+      (data?.map((d) => d.max).reduce((a, b) => Math.max(a, b), 0) || 170) *
+      1.1,
     [data]
   );
 
   const xScale = useMemo(() => {
     // Ensure we have a valid width before creating the scale
     const width = _width > 0 ? _width : 400; // fallback width
-    return d3.scaleLinear().domain([0, maxValue * 1.15]).range([0, width * 1.1]);
+    return d3
+      .scaleLinear()
+      .domain([0, maxValue * 1.15])
+      .range([0, width * 1.1]);
   }, [maxValue, _width]);
 
   const yScale = useMemo(() => {
@@ -204,55 +238,70 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     return d3.scaleLinear().domain([0, 1.01]).range([_height, 0]);
   }, [_height]);
 
-  const colorScale = useMemo(() =>
-    d3.scaleLinear<string>()
-      .domain([0, maxValue * 0.25, maxValue * 0.5, maxValue])
-      .range(DEFAULT_COLORS.GRADIENT_RANGE),
+  const colorScale = useMemo(
+    () =>
+      d3
+        .scaleLinear<string>()
+        .domain([0, maxValue * 0.25, maxValue * 0.5, maxValue])
+        .range(DEFAULT_COLORS.GRADIENT_RANGE),
     [maxValue]
   );
 
   // Event handlers - Responsivos e diretos
-  const handleMouseOver = useCallback((event: any, d: ChartData) => {
-    const position = getTooltipPosition(event, svgRef);
-    setTooltip({
-      ...position,
-      value: {
-        min: d.min,
-        max: d.max,
-        label: selectedBars?.includes(d.id) ? d.label : undefined,
-      },
-    });
-  }, [getTooltipPosition]); // Removed selectedBars dependency to prevent re-renders
+  const handleMouseOver = useCallback(
+    (event: any, d: ChartData) => {
+      const position = getTooltipPosition(event, svgRef);
+      setTooltip({
+        ...position,
+        value: {
+          min: d.min,
+          max: d.max,
+          label: selectedBars?.includes(d.id) ? d.label : undefined,
+        },
+      });
+    },
+    [getTooltipPosition]
+  ); // Removed selectedBars dependency to prevent re-renders
 
-  const handleMouseMove = useCallback((event: any, d: ChartData) => {
-    const position = getTooltipPosition(event, svgRef);
-    setTooltip({
-      ...position,
-      value: {
-        min: d.min,
-        max: d.max,
-        label: selectedBars?.includes(d.id) ? d.label : undefined,
-      },
-    });
-  }, [getTooltipPosition]); // Removed selectedBars dependency to prevent re-renders
+  const handleMouseMove = useCallback(
+    (event: any, d: ChartData) => {
+      const position = getTooltipPosition(event, svgRef);
+      setTooltip({
+        ...position,
+        value: {
+          min: d.min,
+          max: d.max,
+          label: selectedBars?.includes(d.id) ? d.label : undefined,
+        },
+      });
+    },
+    [getTooltipPosition]
+  ); // Removed selectedBars dependency to prevent re-renders
 
   const handleMouseOut = useCallback(() => {
     setTooltip(null);
   }, []);
 
   // Resize handler - Debounced leve
-  const debouncedResizeRef = useMemo(() => debounce(() => {
-    if (!svgRef.current) return;
+  const debouncedResizeRef = useMemo(
+    () =>
+      debounce(() => {
+        if (!svgRef.current) return;
 
-    const parent = svgRef.current.parentElement;
-    if (!parent) return;
+        const parent = svgRef.current.parentElement;
+        if (!parent) return;
 
-    // Only update width attribute, don't trigger chart recreation
-    svgRef.current.setAttribute("width", (parent.clientWidth + margin.left + margin.right).toString());
+        // Only update width attribute, don't trigger chart recreation
+        svgRef.current.setAttribute(
+          "width",
+          (parent.clientWidth + margin.left + margin.right).toString()
+        );
 
-    // Update internal width state without triggering full re-render
-    // This preserves zoom state and other interactions
-  }, 50), [svgRef, margin]);
+        // Update internal width state without triggering full re-render
+        // This preserves zoom state and other interactions
+      }, 50),
+    [svgRef, margin]
+  );
 
   useEffect(() => {
     window.addEventListener("resize", debouncedResizeRef);
@@ -286,11 +335,15 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           const svg = d3.select(svgRef.current);
           const currentTransform = d3.zoomTransform(svg.node() as any);
 
-          if (currentTransform && (currentTransform.k !== 1 || currentTransform.x !== 0 || currentTransform.y !== 0)) {
+          if (
+            currentTransform &&
+            (currentTransform.k !== 1 ||
+              currentTransform.x !== 0 ||
+              currentTransform.y !== 0)
+          ) {
             // If zoomed, preserve the transform but update chart area
             // Update clipping path
-            svg.select("#clip rect")
-              .attr("width", parent.clientWidth);
+            svg.select("#clip rect").attr("width", parent.clientWidth);
           } else {
             // If not zoomed, trigger a controlled re-render
             setIsResized((prev) => prev + 1);
@@ -326,7 +379,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
     // Create clipping path to hide elements outside the chart area
-    svg.append("defs")
+    svg
+      .append("defs")
       .append("clipPath")
       .attr("id", "clip")
       .append("rect")
@@ -336,15 +390,15 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .attr("height", _height);
 
     // Apply clipping to a group that will contain all chart elements
-    const chartArea = g.append("g")
-      .attr("clip-path", "url(#clip)");
+    const chartArea = g.append("g").attr("clip-path", "url(#clip)");
 
     // Grid lines
     const xTicks = xScale.ticks(isExpanded ? 30 : 10);
     const yTicks = yScale.ticks(8);
 
     // Vertical grid lines
-    chartArea.selectAll(".grid-line-x")
+    chartArea
+      .selectAll(".grid-line-x")
       .data(xTicks)
       .enter()
       .append("line")
@@ -354,10 +408,11 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .attr("y1", 0)
       .attr("y2", _height)
       .attr("stroke", DEFAULT_COLORS.GRID)
-      .attr("stroke-width", 1)
+      .attr("stroke-width", 1);
 
     // Horizontal grid lines
-    chartArea.selectAll(".grid-line-y")
+    chartArea
+      .selectAll(".grid-line-y")
       .data(yTicks)
       .enter()
       .append("line")
@@ -376,8 +431,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .call(d3.axisBottom(xScale).ticks(Math.min(10, Math.floor(_width / 60))))
       .selectAll("text")
       .style("font-size", "12px")
-      .style("fill", DEFAULT_COLORS.TEXT)
-
+      .style("fill", DEFAULT_COLORS.TEXT);
 
     g.append("g")
       .attr("class", "axis-y")
@@ -391,10 +445,17 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     g.selectAll(".tick line").remove();
 
     // Zoom behavior com scroll e touch (pinch)
-    const zoom = d3.zoom<SVGSVGElement, unknown>()
+    const zoom = d3
+      .zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 10]) // Min 1x (original), Max 10x
-      .translateExtent([[0, 0], [_width, _height]])
-      .extent([[0, 0], [_width, _height]])
+      .translateExtent([
+        [0, 0],
+        [_width, _height],
+      ])
+      .extent([
+        [0, 0],
+        [_width, _height],
+      ])
       .wheelDelta((event) => {
         // Sensibilidade do scroll: menor = mais suave
         // -event.deltaY / 500 = sensibilidade de ~0.2 (20% por scroll)
@@ -405,14 +466,13 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .filter((event) => {
         // Permitir zoom com wheel, pan com drag E touch events (pinch no mobile)
         // Bloquear apenas o botão direito do mouse e dblclick
-        return !event.button && event.type !== 'dblclick';
+        return !event.button && event.type !== "dblclick";
       })
       .touchable(() => true) // Habilitar explicitamente eventos touch para pinch-to-zoom
       .on("zoom", zoomed);
 
     // Aplicar zoom ao SVG
-    svg.call(zoom as any)
-      .on("dblclick.zoom", null); // Desabilitar o duplo-click padrão do zoom
+    svg.call(zoom as any).on("dblclick.zoom", null); // Desabilitar o duplo-click padrão do zoom
 
     // Create data points with gradients
     (data || []).forEach((d, i) => {
@@ -445,29 +505,42 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         .attr("stop-color", endColor);
 
       // Start circle (inside clipped area)
-      chartArea.append("circle")
+      chartArea
+        .append("circle")
         .attr("cx", x1)
         .attr("cy", y)
-        .attr("r", isExpanded ? CHART_CONFIG.CIRCLE_RADIUS.expanded : CHART_CONFIG.CIRCLE_RADIUS.normal)
+        .attr(
+          "r",
+          isExpanded
+            ? CHART_CONFIG.CIRCLE_RADIUS.expanded
+            : CHART_CONFIG.CIRCLE_RADIUS.normal
+        )
         .attr("fill", DEFAULT_COLORS.START)
         .attr("stroke", "white")
-        .attr("stroke-width", isExpanded ? isMobile ? 1 : 2 : 0)
+        .attr("stroke-width", isExpanded ? (isMobile ? 1 : 2) : 0)
         .attr("data-point", `${i}-start`)
         .style("pointer-events", "all") // Garantir que eventos funcionem
         .on("mouseover", (event) => {
           handleMouseOver(event, d);
         })
         .on("mousemove", (event) => handleMouseMove(event, d))
-        .on("mouseout", handleMouseOut).raise();
+        .on("mouseout", handleMouseOut)
+        .raise();
 
       // End circle (inside clipped area)
-      chartArea.append("circle")
+      chartArea
+        .append("circle")
         .attr("cx", x2)
         .attr("cy", y)
-        .attr("r", isExpanded ? CHART_CONFIG.CIRCLE_RADIUS.expanded : CHART_CONFIG.CIRCLE_RADIUS.normal)
+        .attr(
+          "r",
+          isExpanded
+            ? CHART_CONFIG.CIRCLE_RADIUS.expanded
+            : CHART_CONFIG.CIRCLE_RADIUS.normal
+        )
         .attr("fill", DEFAULT_COLORS.END)
         .attr("stroke", "white")
-        .attr("stroke-width", isExpanded ? isMobile ? 1 : 2 : 0)
+        .attr("stroke-width", isExpanded ? (isMobile ? 1 : 2) : 0)
         .attr("data-point", `${i}-end`)
         .raise()
         .style("pointer-events", "all") // Garantir que eventos funcionem
@@ -487,11 +560,15 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       const newYScale = transform.rescaleY(yScale);
 
       // Atualizar eixos imediatamente
-      g.select<SVGGElement>(".axis-x")
-        .call(d3.axisBottom(newXScale).ticks(Math.min(15, Math.floor(_width / 60))) as any);
+      g.select<SVGGElement>(".axis-x").call(
+        d3
+          .axisBottom(newXScale)
+          .ticks(Math.min(15, Math.floor(_width / 60))) as any
+      );
 
-      g.select<SVGGElement>(".axis-y")
-        .call(d3.axisLeft(newYScale).ticks(8) as any);
+      g.select<SVGGElement>(".axis-y").call(
+        d3.axisLeft(newYScale).ticks(8) as any
+      );
 
       // Atualizar posições imediatamente
       updateElementsPosition(newXScale, newYScale);
@@ -509,13 +586,15 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       updateBrushCount(countInView);
 
       // Verificar se está com zoom ativo (qualquer transformação)
-      const isZoomed = transform.k !== 1 || transform.x !== 0 || transform.y !== 0;
+      const isZoomed =
+        transform.k !== 1 || transform.x !== 0 || transform.y !== 0;
       setHasZoomed(isZoomed);
     }
 
     svg.on("dblclick", () => {
       // Reset zoom usando o comportamento do D3 zoom
-      svg.transition()
+      svg
+        .transition()
         .duration(750)
         .call(zoom.transform as any, d3.zoomIdentity);
 
@@ -534,7 +613,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         const y = newYScale(d.y);
 
         // Update start circles - seleção direta
-        chartArea.selectAll(`circle[data-point="${i}-start"]`)
+        chartArea
+          .selectAll(`circle[data-point="${i}-start"]`)
           .attr("cx", x1)
           .attr("cy", y)
           .style("pointer-events", "all")
@@ -543,7 +623,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           .on("mouseout", handleMouseOut);
 
         // Update end circles - seleção direta
-        chartArea.selectAll(`circle[data-point="${i}-end"]`)
+        chartArea
+          .selectAll(`circle[data-point="${i}-end"]`)
           .attr("cx", x2)
           .attr("cy", y)
           .style("pointer-events", "all")
@@ -568,11 +649,13 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         }
 
         // Update selected bar circles
-        chartArea.select(`circle#bar-circle-start-${d.id}`)
+        chartArea
+          .select(`circle#bar-circle-start-${d.id}`)
           .attr("cx", x1)
           .attr("cy", y);
 
-        chartArea.select(`circle#bar-circle-end-${d.id}`)
+        chartArea
+          .select(`circle#bar-circle-end-${d.id}`)
           .attr("cx", x2)
           .attr("cy", y);
 
@@ -580,19 +663,23 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         const avgX = (x1 + x2) / 2;
         const isMoreThanHalf = avgX < (maxValue ? maxValue * 0.5 : 0);
 
-        chartArea.select(`text#bar-label-min-${d.id}`)
+        chartArea
+          .select(`text#bar-label-min-${d.id}`)
           .attr("x", x1 - 18)
           .attr("y", y + 4);
 
-        chartArea.select(`text#bar-label-max-${d.id}`)
+        chartArea
+          .select(`text#bar-label-max-${d.id}`)
           .attr("x", x2 + 18)
           .attr("y", y + 4);
 
-        chartArea.select(`text#bar-label-project-${d.id}`)
+        chartArea
+          .select(`text#bar-label-project-${d.id}`)
           .attr("x", isMoreThanHalf ? x2 + 150 : x1 - 150)
           .attr("y", y + 4);
 
-        chartArea.select(`text#bar-label-name-${d.id}`)
+        chartArea
+          .select(`text#bar-label-name-${d.id}`)
           .attr("x", (x1 + x2) / 2)
           .attr("y", y + 5);
       });
@@ -602,12 +689,14 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       const yTicks = newYScale.ticks(8);
 
       // Update vertical grid lines
-      const gridX = chartArea.selectAll<SVGLineElement, number>(".grid-line-x")
+      const gridX = chartArea
+        .selectAll<SVGLineElement, number>(".grid-line-x")
         .data(xTicks);
 
       gridX.exit().remove();
 
-      gridX.enter()
+      gridX
+        .enter()
         .append("line")
         .attr("class", "grid-line-x")
         .merge(gridX)
@@ -619,12 +708,14 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         .attr("stroke-width", 1);
 
       // Update horizontal grid lines
-      const gridY = chartArea.selectAll<SVGLineElement, number>(".grid-line-y")
+      const gridY = chartArea
+        .selectAll<SVGLineElement, number>(".grid-line-y")
         .data(yTicks);
 
       gridY.exit().remove();
 
-      gridY.enter()
+      gridY
+        .enter()
         .append("line")
         .attr("class", "grid-line-y")
         .merge(gridY)
@@ -640,7 +731,18 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     return () => {
       // Nenhum cleanup necessário
     };
-  }, [isExpanded, data, isResized, _width, _height, margin, xScale, yScale, colorScale, updateBrushCount]);
+  }, [
+    isExpanded,
+    data,
+    isResized,
+    _width,
+    _height,
+    margin,
+    xScale,
+    yScale,
+    colorScale,
+    updateBrushCount,
+  ]);
 
   // Selected bars effect
   useEffect(() => {
@@ -660,7 +762,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         const x2 = xScale(d.max);
 
         if (isExpanded) {
-          chartArea.append("rect")
+          chartArea
+            .append("rect")
             .attr("x", x1 - 12)
             .attr("y", y - (CHART_CONFIG.BAR_HEIGHT + 4) / 2)
             .attr("width", x2 - x1 + 24)
@@ -672,7 +775,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
             .attr("stroke", DEFAULT_COLORS.STROKE)
             .attr("stroke-width", 2);
         } else {
-          chartArea.append("rect")
+          chartArea
+            .append("rect")
             .attr("x", x1)
             .attr("y", y - CHART_CONFIG.MINIMAL_BAR_HEIGHT / 2)
             .attr("width", x2 - x1)
@@ -686,7 +790,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         }
 
         // Start circle
-        chartArea.append("circle")
+        chartArea
+          .append("circle")
           .attr("cx", x1)
           .attr("cy", y)
           .attr("r", isExpanded ? CHART_CONFIG.CIRCLE_RADIUS.expanded : 5)
@@ -696,7 +801,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           .attr("id", `bar-circle-start-${d.id}`);
 
         // End circle
-        chartArea.append("circle")
+        chartArea
+          .append("circle")
           .attr("cx", x2)
           .attr("cy", y)
           .attr("r", isExpanded ? CHART_CONFIG.CIRCLE_RADIUS.expanded : 5)
@@ -709,7 +815,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         const isMoreThanHalf = avgX < (maxValue ? maxValue * 0.5 : 0);
 
         // Min value label
-        chartArea.append("text")
+        chartArea
+          .append("text")
           .attr("x", x1 - 18)
           .attr("y", y + 4)
           .attr("text-anchor", "end")
@@ -720,7 +827,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           .attr("id", `bar-label-min-${d.id}`);
 
         // Max value label
-        chartArea.append("text")
+        chartArea
+          .append("text")
           .attr("x", x2 + 18)
           .attr("y", y + 4)
           .attr("text-anchor", "start")
@@ -731,19 +839,23 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           .attr("id", `bar-label-max-${d.id}`);
 
         // Project identifier
-        chartArea.append("text")
+        chartArea
+          .append("text")
           .attr("x", isMoreThanHalf ? x2 + 150 : x1 - 150)
           .attr("y", y + 4)
           .attr("text-anchor", "start")
           .attr("font-size", 12)
           .attr("font-weight", "normal")
           .attr("fill", "var(--primary)")
-          .text(`${isMoreThanHalf ? '<--' : ''} ${d.label} ${!isMoreThanHalf ? '-->' : ''}`)
+          .text(
+            `${isMoreThanHalf ? "<--" : ""} ${d.label} ${!isMoreThanHalf ? "-->" : ""}`
+          )
           .attr("id", `bar-label-project-${d.id}`);
 
         // Project name inside bar (expanded only)
         if (isExpanded) {
-          chartArea.append("text")
+          chartArea
+            .append("text")
             .attr("x", (x1 + x2) / 2)
             .attr("y", y + 5)
             .attr("text-anchor", "middle")
@@ -755,21 +867,23 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         }
       } else {
         // Remove elements for unselected bars
-        chartArea.selectAll("rect, text, circle")
+        chartArea
+          .selectAll("rect, text, circle")
           .nodes()
           .forEach((element) => {
             if (!element) return;
             const node = d3.select(element);
             const id = node.attr("id");
-            if (id && (
-              id === `bar-${d.id}` ||
-              id === `bar-label-min-${d.id}` ||
-              id === `bar-label-max-${d.id}` ||
-              id === `bar-label-name-${d.id}` ||
-              id === `bar-label-project-${d.id}` ||
-              id === `bar-circle-start-${d.id}` ||
-              id === `bar-circle-end-${d.id}`
-            )) {
+            if (
+              id &&
+              (id === `bar-${d.id}` ||
+                id === `bar-label-min-${d.id}` ||
+                id === `bar-label-max-${d.id}` ||
+                id === `bar-label-name-${d.id}` ||
+                id === `bar-label-project-${d.id}` ||
+                id === `bar-circle-start-${d.id}` ||
+                id === `bar-circle-end-${d.id}`)
+            ) {
               node.remove();
             }
           });
@@ -777,31 +891,34 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     });
   }, [selectedBars, isExpanded, data, isResized, yScale, xScale, maxValue]);
 
-  const labelX = UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Incorporado";
+  const labelX =
+    UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Incorporado";
 
   return (
     <Card className={cn("shadow-none w-min-content min-w-1/2")}>
       <CardContent>
         <div className="w-full overflow-hidden relative">
-          <span className="absolute w-full text-center text-foreground/70 block rotate-270 left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
-            potencial de mitigação
+          <span className="absolute text-xs w-full text-center text-foreground/70 block rotate-270 left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
+            Potencial de mitigação
           </span>
 
           <Indicators
             max={maxLessDataValue}
             min={minLessDataValue}
             hasZoomed={hasZoomed}
-            position='end'
+            position="end"
           />
 
           <svg ref={svgRef} className="bg-white dark:bg-zinc-900 w-full" />
 
-          {!isMobile && (<Indicators
-            max={maxLessDataValue}
-            min={minLessDataValue}
-            hasZoomed={hasZoomed}
-            position='start'
-          />)}
+          {!isMobile && (
+            <Indicators
+              max={maxLessDataValue}
+              min={minLessDataValue}
+              hasZoomed={hasZoomed}
+              position="start"
+            />
+          )}
 
           {tooltip && (
             <div
@@ -812,10 +929,16 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
               }}
             >
               <span>
-                Min: <b>{tooltip.value.min.toFixed(2)} {unit}</b>
+                Min:{" "}
+                <b>
+                  {tooltip.value.min.toFixed(2)} {unit}
+                </b>
               </span>
               <span>
-                Max: <b>{tooltip.value.max.toFixed(2)} {unit}</b>
+                Max:{" "}
+                <b>
+                  {tooltip.value.max.toFixed(2)} {unit}
+                </b>
               </span>
             </div>
           )}
@@ -830,10 +953,10 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
               max={maxLessDataValue}
               min={minLessDataValue}
               hasZoomed={hasZoomed}
-              position='start'
+              position="start"
             />
           )}
-          <span className="flex-1 text-center w-full text-foreground/70">
+          <span className="flex-1 text-xs text-center w-full text-foreground/70">
             {labelX}
           </span>
         </div>

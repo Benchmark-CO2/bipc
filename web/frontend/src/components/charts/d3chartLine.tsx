@@ -4,7 +4,13 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import * as d3 from "d3";
 import { regressionPoly } from "d3-regression";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Divider from "../ui/divider";
 
 const UNIT_LABELS = {
@@ -48,7 +54,7 @@ type D3GradientRangeChartProps = {
   overrideDimensions?: boolean;
   customData?: any;
   unit?: string;
-  summary?: boolean
+  summary?: boolean;
 };
 
 type TooltipData = {
@@ -63,11 +69,11 @@ type TooltipData = {
 
 // Custom hooks
 const useChartDimensions = (
-  props: Pick<D3GradientRangeChartProps, 'width' | 'height'>,
+  props: Pick<D3GradientRangeChartProps, "width" | "height">,
   overrideDimensions: boolean,
   isMobile: boolean,
   isExpanded: boolean,
-  containerWidth?: number,
+  containerWidth?: number
 ) => {
   return useMemo(() => {
     const screenWidth = window.innerWidth;
@@ -110,34 +116,46 @@ const useChartDimensions = (
     const _height = height() - (margin.top + margin.bottom);
 
     return { width: _width, height: _height, margin };
-  }, [props.width, props.height, overrideDimensions, isMobile, isExpanded, containerWidth]);
-}; const useTooltipPosition = () => {
-  return useCallback((event: MouseEvent, svgRef: React.RefObject<SVGSVGElement | null>) => {
-    if (!svgRef.current) return { x: 0, y: 0 };
+  }, [
+    props.width,
+    props.height,
+    overrideDimensions,
+    isMobile,
+    isExpanded,
+    containerWidth,
+  ]);
+};
+const useTooltipPosition = () => {
+  return useCallback(
+    (event: MouseEvent, svgRef: React.RefObject<SVGSVGElement | null>) => {
+      if (!svgRef.current) return { x: 0, y: 0 };
 
-    const { left, top, width, height } = svgRef.current.getBoundingClientRect();
-    const mouseX = event.clientX - left;
-    const mouseY = event.clientY - top;
+      const { left, top, width, height } =
+        svgRef.current.getBoundingClientRect();
+      const mouseX = event.clientX - left;
+      const mouseY = event.clientY - top;
 
-    const tooltipWidth = 120;
-    const tooltipHeight = 80;
-    const offset = 10;
+      const tooltipWidth = 120;
+      const tooltipHeight = 80;
+      const offset = 10;
 
-    let x = mouseX + offset;
-    if (mouseX + tooltipWidth + offset > width) {
-      x = mouseX - tooltipWidth - offset;
-    }
+      let x = mouseX + offset;
+      if (mouseX + tooltipWidth + offset > width) {
+        x = mouseX - tooltipWidth - offset;
+      }
 
-    let y = mouseY - offset;
-    if (mouseY + tooltipHeight > height) {
-      y = height - tooltipHeight - (offset + 20);
-    }
-    if (mouseY < offset) {
-      y = offset;
-    }
+      let y = mouseY - offset;
+      if (mouseY + tooltipHeight > height) {
+        y = height - tooltipHeight - (offset + 20);
+      }
+      if (mouseY < offset) {
+        y = offset;
+      }
 
-    return { x, y };
-  }, []);
+      return { x, y };
+    },
+    []
+  );
 };
 
 const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
@@ -156,7 +174,11 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const [containerHeight, setContainerHeight] = useState<number>(0);
   // const data = isMobile ? _data.map(el => ({ ...el, y: el.y * 10 })) : _data;
-  const { width: _width, height: _height, margin } = useChartDimensions(
+  const {
+    width: _width,
+    height: _height,
+    margin,
+  } = useChartDimensions(
     props,
     overrideDimensions,
     isMobile,
@@ -168,10 +190,10 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   const getTooltipPosition = useTooltipPosition();
 
   // Data transformations
-  const reversedData = useMemo(() =>
-    data
-      ?.map((f) => ({ ...f, y: 1 - f.y }))
-      .sort((a, b) => a.min - b.min) || [],
+  const reversedData = useMemo(
+    () =>
+      data?.map((f) => ({ ...f, y: 1 - f.y })).sort((a, b) => a.min - b.min) ||
+      [],
     [data]
   );
 
@@ -189,7 +211,8 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
   // Polynomial regression
   const { denormalizedMax, denormalizedMin } = useMemo(() => {
-    if (!reversedData.length) return { denormalizedMax: [], denormalizedMin: [] };
+    if (!reversedData.length)
+      return { denormalizedMax: [], denormalizedMin: [] };
 
     const normalized = reversedData.map((d) => ({
       x: d.y,
@@ -219,8 +242,10 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       y: y * (maxOfMins - minOfMins) + minOfMins,
     }));
 
-    const xMin = d3.min([...denormMin, ...denormMax], (d: DataPoint) => d.x) ?? 0;
-    const xMax = d3.max([...denormMin, ...denormMax], (d: DataPoint) => d.x) ?? 1;
+    const xMin =
+      d3.min([...denormMin, ...denormMax], (d: DataPoint) => d.x) ?? 0;
+    const xMax =
+      d3.max([...denormMin, ...denormMax], (d: DataPoint) => d.x) ?? 1;
     const normalizeX = (x: number) => (x - xMin) / (xMax - xMin);
 
     denormMax = denormMax.map((d: DataPoint) => ({
@@ -240,7 +265,8 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   const xScale = useMemo(() => {
     const width = _width > 0 ? _width : 400; // fallback width
 
-    const scale = d3.scaleLinear()
+    const scale = d3
+      .scaleLinear()
       .domain([0, 1])
       .range([0, width - margin.right - (isMobile ? margin.left : 20)]);
 
@@ -249,68 +275,77 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     return scale;
   }, [_width, isMobile, isResized]);
 
-  const yScale = useMemo(() =>
-    d3.scaleLinear().domain([0, maxValue]).range([0, _height]),
+  const yScale = useMemo(
+    () => d3.scaleLinear().domain([0, maxValue]).range([0, _height]),
     [maxValue, _height]
   );
 
-  const colorScale = useMemo(() =>
-    d3.scaleLinear<string>()
-      .domain([
-        maxValue * 0.2,
-        maxValue * 0.4,
-        maxValue * 0.6,
-        maxValue * 0.8,
-        maxValue,
-      ])
-      .range(DEFAULT_COLORS.PROCEL),
+  const colorScale = useMemo(
+    () =>
+      d3
+        .scaleLinear<string>()
+        .domain([
+          maxValue * 0.2,
+          maxValue * 0.4,
+          maxValue * 0.6,
+          maxValue * 0.8,
+          maxValue,
+        ])
+        .range(DEFAULT_COLORS.PROCEL),
     [maxValue]
   );
 
   // Event handlers
-  const handleMouseMove = useCallback((event: any) => {
-    if (!svgRef.current) return;
+  const handleMouseMove = useCallback(
+    (event: any) => {
+      if (!svgRef.current) return;
 
-    const g = d3.select(svgRef.current).select("g");
-    const [mx] = d3.pointer(event, g.node());
-    const x0 = xScale.invert(mx);
+      const g = d3.select(svgRef.current).select("g");
+      const [mx] = d3.pointer(event, g.node());
+      const x0 = xScale.invert(mx);
 
-    const getClosest = (data: DataPoint[], x: number) => {
-      const bisect = d3.bisector((d: DataPoint) => d.x).center;
-      const i = bisect(data, x);
-      const clamp = (idx: number) => Math.max(0, Math.min(idx, data.length - 1));
-      return data[clamp(i)];
-    };
+      const getClosest = (data: DataPoint[], x: number) => {
+        const bisect = d3.bisector((d: DataPoint) => d.x).center;
+        const i = bisect(data, x);
+        const clamp = (idx: number) =>
+          Math.max(0, Math.min(idx, data.length - 1));
+        return data[clamp(i)];
+      };
 
-    const dMax = getClosest(denormalizedMax, x0);
-    const dMin = getClosest(denormalizedMin, x0);
+      const dMax = getClosest(denormalizedMax, x0);
+      const dMin = getClosest(denormalizedMin, x0);
 
-    const position = getTooltipPosition(event, svgRef);
-    setTooltip({
-      ...position,
-      value: {
-        min: dMin.y,
-        max: dMax.y,
-      },
-    });
+      const position = getTooltipPosition(event, svgRef);
+      setTooltip({
+        ...position,
+        value: {
+          min: dMin?.y,
+          max: dMax.y,
+        },
+      });
 
-    // Update lines
-    const g_elem = d3.select(svgRef.current).select("g");
-    g_elem.select(".tooltip-line-vertical")
-      .attr("x1", xScale(x0))
-      .attr("x2", xScale(x0))
-      .style("opacity", 1);
+      // Update lines
+      const g_elem = d3.select(svgRef.current).select("g");
+      g_elem
+        .select(".tooltip-line-vertical")
+        .attr("x1", xScale(x0))
+        .attr("x2", xScale(x0))
+        .style("opacity", 1);
 
-    g_elem.select(".tooltip-line-horizontal")
-      .attr("y1", yScale(dMax.y))
-      .attr("y2", yScale(dMax.y))
-      .style("opacity", 1);
+      g_elem
+        .select(".tooltip-line-horizontal")
+        .attr("y1", yScale(dMax.y))
+        .attr("y2", yScale(dMax.y))
+        .style("opacity", 1);
 
-    g_elem.select(".tooltip-line-horizontal2")
-      .attr("y1", yScale(dMin.y))
-      .attr("y2", yScale(dMin.y))
-      .style("opacity", 1);
-  }, [xScale, yScale, denormalizedMax, denormalizedMin, getTooltipPosition]);
+      g_elem
+        .select(".tooltip-line-horizontal2")
+        .attr("y1", yScale(dMin.y))
+        .attr("y2", yScale(dMin.y))
+        .style("opacity", 1);
+    },
+    [xScale, yScale, denormalizedMax, denormalizedMin, getTooltipPosition]
+  );
 
   const handleMouseOut = useCallback(() => {
     setTooltip(null);
@@ -342,7 +377,6 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
         const currentContainerWidth = containerWidth;
         // Update if there's any significant change
         if (Math.abs(newWidth - currentContainerWidth) > 5) {
-
           // Update container width state for recalculation
           setContainerWidth(newWidth);
 
@@ -381,7 +415,8 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
     // Create clipping path to prevent elements from overflowing
     const defs = svg.append("defs");
-    defs.append("clipPath")
+    defs
+      .append("clipPath")
       .attr("id", "chart-clip")
       .append("rect")
       .attr("x", 0)
@@ -526,7 +561,9 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       .on("mouseleave", handleMouseOut);
 
     // Grid lines
-    const xTicks = xScale.ticks(isExpanded ? 30 : 10).filter(d => xScale(d) <= _width);
+    const xTicks = xScale
+      .ticks(isExpanded ? 30 : 10)
+      .filter((d) => xScale(d) <= _width);
     const yTicks = yScale.ticks(12);
 
     g.selectAll(".grid-line-x")
@@ -556,24 +593,31 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     // Axes (rendered without clipping to preserve labels)
     const tickCount = isMobile ? 5 : 6;
 
-    axesGroup.append("g")
+    axesGroup
+      .append("g")
       .attr("transform", `translate(0,${_height})`)
-      .call(d3.axisBottom(xScale)
-        .ticks(tickCount)
-        .tickFormat((d) => d3.format(isMobile ? '.1f' : '.1f')(d))
-        .tickSizeOuter(0))
+      .call(
+        d3
+          .axisBottom(xScale)
+          .ticks(tickCount)
+          .tickFormat((d) => d3.format(isMobile ? ".1f" : ".1f")(d))
+          .tickSizeOuter(0)
+      )
       .selectAll("text")
       .style("font-size", "12px")
       .style("fill", DEFAULT_COLORS.TEXT);
 
-    axesGroup.append("g")
+    axesGroup
+      .append("g")
       .call(d3.axisLeft(yScale).ticks(8))
       .selectAll("text")
       .style("font-size", "12px")
       .style("fill", DEFAULT_COLORS.TEXT);
 
     // Procel color bands
-    const faixaWidth = (_width - margin.right - (isMobile ? margin.left : 20)) / DEFAULT_COLORS.PROCEL.length;
+    const faixaWidth =
+      (_width - margin.right - (isMobile ? margin.left : 20)) /
+      DEFAULT_COLORS.PROCEL.length;
 
     DEFAULT_COLORS.PROCEL.slice()
       .reverse()
@@ -581,7 +625,8 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
         const x = i * faixaWidth;
         const width = Math.min(faixaWidth, _width - x); // Ensure doesn't exceed _width
 
-        if (width > 0) { // Only draw if there's space
+        if (width > 0) {
+          // Only draw if there's space
           g.append("rect")
             .attr("y", _height - 10)
             .attr("x", x)
@@ -681,7 +726,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
         if (isExpanded) {
           g.append("rect")
-            .attr("x", x - (CHART_CONFIG.BAR_WIDTH.expanded / 2) + 1)
+            .attr("x", x - CHART_CONFIG.BAR_WIDTH.expanded / 2 + 1)
             .attr("y", y1)
             .attr("width", CHART_CONFIG.BAR_WIDTH.expanded)
             .attr("height", y2 - y1)
@@ -711,28 +756,56 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
         g.append("circle")
           .attr("cx", circleX)
           .attr("cy", y1)
-          .attr("r", isExpanded ? CHART_CONFIG.CIRCLE_RADIUS.expanded : CHART_CONFIG.CIRCLE_RADIUS.normal)
+          .attr(
+            "r",
+            isExpanded
+              ? CHART_CONFIG.CIRCLE_RADIUS.expanded
+              : CHART_CONFIG.CIRCLE_RADIUS.normal
+          )
           .attr("fill", DEFAULT_COLORS.START)
           .attr("stroke", "white")
-          .attr("stroke-width", isExpanded ? CHART_CONFIG.STROKE_WIDTH.expanded : CHART_CONFIG.STROKE_WIDTH.normal)
+          .attr(
+            "stroke-width",
+            isExpanded
+              ? CHART_CONFIG.STROKE_WIDTH.expanded
+              : CHART_CONFIG.STROKE_WIDTH.normal
+          )
           .attr("id", `bar-circle-start-${d.id}`)
           .raise();
 
         g.append("circle")
           .attr("cx", circleX)
           .attr("cy", y2)
-          .attr("r", isExpanded ? CHART_CONFIG.CIRCLE_RADIUS.expanded : CHART_CONFIG.CIRCLE_RADIUS.normal)
+          .attr(
+            "r",
+            isExpanded
+              ? CHART_CONFIG.CIRCLE_RADIUS.expanded
+              : CHART_CONFIG.CIRCLE_RADIUS.normal
+          )
           .attr("fill", DEFAULT_COLORS.END)
           .attr("stroke", "white")
-          .attr("stroke-width", isExpanded ? CHART_CONFIG.STROKE_WIDTH.expanded : CHART_CONFIG.STROKE_WIDTH.normal)
+          .attr(
+            "stroke-width",
+            isExpanded
+              ? CHART_CONFIG.STROKE_WIDTH.expanded
+              : CHART_CONFIG.STROKE_WIDTH.normal
+          )
           .attr("id", `bar-circle-end-${d.id}`)
           .raise();
 
         // Label
-        const labelOffset = isExpanded ? CHART_CONFIG.BAR_WIDTH.expanded : minimalBarHeight;
+        const labelOffset = isExpanded
+          ? CHART_CONFIG.BAR_WIDTH.expanded
+          : minimalBarHeight;
         g.append("text")
           .attr("x", x + labelOffset - 20)
-          .attr("y", y1 + (isExpanded ? CHART_CONFIG.BAR_WIDTH.expanded + 4 : minimalBarHeight))
+          .attr(
+            "y",
+            y1 +
+              (isExpanded
+                ? CHART_CONFIG.BAR_WIDTH.expanded + 4
+                : minimalBarHeight)
+          )
           .attr("text-anchor", "end")
           .attr("font-size", 12)
           .attr("font-weight", "normal")
@@ -772,9 +845,18 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
           .remove();
       }
     });
-  }, [selectedBars, isExpanded, reversedData, isResized, xScale, yScale, colorScale]);
+  }, [
+    selectedBars,
+    isExpanded,
+    reversedData,
+    isResized,
+    xScale,
+    yScale,
+    colorScale,
+  ]);
 
-  const labelX = UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Incorporado";
+  const labelX =
+    UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Incorporado";
 
   return (
     <Card className={cn("shadow-none w-min-content min-w-1/2")}>
@@ -785,15 +867,15 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       </CardHeader> */}
       <CardContent>
         <div className="w-full relative">
-          <span className="absolute w-full text-center text-black/70 block rotate-270  left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
+          <span className="absolute text-xs w-full text-center text-black/70 block rotate-270  left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
             {labelX}
           </span>
           <svg
             ref={svgRef}
             className={cn("bg-white dark:bg-zinc-900", {
-              "mt-10": !summary
+              "mt-10": !summary,
             })}
-            style={{ width: '100%' }}
+            style={{ width: "100%" }}
           />
           {tooltip && (
             <div
@@ -818,12 +900,14 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
             </div>
           )}
         </div>
-        <div className={cn("flex", {
-          "mt-10": !summary
-        })}>
+        <div
+          className={cn("flex", {
+            "mt-10": !summary,
+          })}
+        >
           <span>N: {data?.length}</span>
-          <span className="flex-1 text-center w-full text-black/70">
-            potencial de mitigação
+          <span className="flex-1 text-xs text-center w-full text-black/70">
+            Potencial de mitigação
           </span>
         </div>
       </CardContent>
