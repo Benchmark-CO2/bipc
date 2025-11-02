@@ -9,8 +9,13 @@ import { deleteProjectCollaborator } from "@/actions/projectCollaborators/delete
 import { deleteDiscipline } from "@/actions/disciplines/deleteDiscipline";
 import { toast } from "sonner";
 import { queryClient } from "@/utils/queryClient";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "@tanstack/react-router";
 
 const CollaboratorsView = ({ projectId }: { projectId: string }) => {
+  const { email } = useAuth();
+  const navigate = useNavigate();
+
   const { data: collaboratorsData, isLoading } = useQuery({
     queryKey: ["project-collaborators", projectId],
     queryFn: () => getProjectCollaborators(projectId),
@@ -24,13 +29,21 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
   } = useMutation({
     mutationFn: (collaboratorId: string) =>
       deleteProjectCollaborator(projectId, collaboratorId),
-    onSuccess: () => {
+    onSuccess: (_, collaboratorId) => {
+      const deletedCollaborator = collaborators.find(
+        (c) => c.id === collaboratorId
+      );
+
       toast.success("Colaborador removido com sucesso", {
         duration: 5000,
       });
       queryClient.invalidateQueries({
         queryKey: ["project-collaborators", projectId],
       });
+
+      if (deletedCollaborator?.email === email) {
+        navigate({ to: "/new_projects" });
+      }
     },
     onError: (error) => {
       toast.error("Erro ao remover colaborador", {
