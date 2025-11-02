@@ -17,7 +17,7 @@ import {
   LogIn,
   Menu,
   Settings,
-  UserPlus
+  UserPlus,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Notifications } from "../notifications";
@@ -97,7 +97,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
                 <GlobeLock size={18} />
-                <span className="text-sm">Politicas de Privacidade</span>
+                <span>Políticas de Privacidade</span>
               </a>
             </SidemenuItem>
           </li>

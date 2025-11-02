@@ -9,7 +9,7 @@ import {
   Info,
   Menu,
   User,
-  X
+  X,
 } from "lucide-react";
 import { useState } from "react";
 import Divider from "../ui/divider";
@@ -86,7 +86,7 @@ export default function PublicHeader() {
         onClick={() => setIsMenuOpen(false)}
       >
         <GlobeLock size={18} />
-        <span className="text-sm">Politicas de Privacidade</span>
+        <span className="text-sm">Políticas de Privacidade</span>
       </a>
       {/* <Link
         to={"#" as any}
