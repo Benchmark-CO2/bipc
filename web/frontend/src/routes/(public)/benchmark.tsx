@@ -53,7 +53,7 @@ function RouteComponent() {
         <h1 className="text-3xl font-bold text-primary">
           Benchmark | Visualização dos dados
         </h1>
-        <div className="h-full w-full flex items-start pt-10 justify-between max-md:flex-col gap-6">
+        <div className="h-full w-full flex items-start pt-10 justify-between max-md:flex-col gap-10 xl:gap-20">
           {FilterSection}
           <div className="w-full md:w-2/3 flex flex-col items-start">
             <div className="flex flex-col w-full gap-4">

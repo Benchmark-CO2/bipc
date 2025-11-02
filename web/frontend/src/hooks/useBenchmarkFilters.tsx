@@ -62,7 +62,7 @@ export const useBenchmarkFilters = () => {
     }
   };
   const FilterSection = (
-    <section className="w-11/12 flex flex-col items-center gap-4 mb-4 max-sm:self-center">
+    <section className="w-full md:w-1/3 flex flex-col items-center gap-4 mb-4 max-sm:self-center">
       <h2 className="w-full text-left font-semibold text-primary">
         Filtros de visualização:
       </h2>
