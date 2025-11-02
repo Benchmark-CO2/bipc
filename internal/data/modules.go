@@ -13,7 +13,7 @@ import (
 type Module struct {
 	ID                uuid.UUID              `json:"id"`
 	Type              string                 `json:"type"`
-	TowerOptionID     uuid.UUID              `json:"tower_option_id"`
+	OptionID          uuid.UUID              `json:"option_id"`
 	Data              map[string]interface{} `json:"data"`
 	TotalCO2Min       *float64               `json:"total_co2_min,omitempty"`
 	TotalCO2Max       *float64               `json:"total_co2_max,omitempty"`
@@ -41,8 +41,8 @@ func checkForeignKeyError(err error) error {
 	if err == nil {
 		return nil
 	}
-	if strings.Contains(err.Error(), "module_tower_option_id_fkey") {
-		return ErrInvalidTowerOptionID
+	if strings.Contains(err.Error(), "module_option_id_fkey") {
+		return ErrInvalidOptionID
 	}
 	if strings.Contains(err.Error(), "module_floor_floor_id_fkey") {
 		return ErrInvalidFloorID
@@ -79,14 +79,14 @@ func (m ModuleModel) Insert(module *Module) (*Module, error) {
 	}
 
 	query := `
-        INSERT INTO module (id, tower_option_id, type, data,
+        INSERT INTO module (id, option_id, type, data,
             total_co2_min, total_co2_max, total_energy_min, total_energy_max,
             relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING created_at, updated_at`
 
 	err = tx.QueryRowContext(context.Background(), query,
-		module.ID, module.TowerOptionID, module.Type, jsonData,
+		module.ID, module.OptionID, module.Type, jsonData,
 		module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax,
 		module.RelativeCO2Min, module.RelativeCO2Max, module.RelativeEnergyMin, module.RelativeEnergyMax,
 	).Scan(&module.CreatedAt, &module.UpdatedAt)
@@ -119,7 +119,7 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 
 	query := `
 		SELECT 
-			m.id, m.tower_option_id, m.type, m.data,
+			m.id, m.option_id, m.type, m.data,
 			m.total_co2_min, m.total_co2_max, m.total_energy_min, m.total_energy_max,
 			m.relative_co2_min, m.relative_co2_max, m.relative_energy_min, m.relative_energy_max,
 			m.created_at, m.updated_at
@@ -127,7 +127,7 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 		WHERE m.id = $1`
 
 	err := m.DB.QueryRowContext(ctx, query, id).Scan(
-		&module.ID, &module.TowerOptionID, &module.Type, &jsonData,
+		&module.ID, &module.OptionID, &module.Type, &jsonData,
 		&module.TotalCO2Min, &module.TotalCO2Max, &module.TotalEnergyMin, &module.TotalEnergyMax,
 		&module.RelativeCO2Min, &module.RelativeCO2Max, &module.RelativeEnergyMin, &module.RelativeEnergyMax,
 		&module.CreatedAt, &module.UpdatedAt,

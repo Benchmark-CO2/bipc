@@ -317,7 +317,7 @@ func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Co
 	return &data.Module{
 		ID:             moduleID,
 		Type:           "structural_masonry",
-		TowerOptionID:  optionID,
+		OptionID:       optionID,
 		Data:           moduleData,
 		TotalCO2Min:    &result.CO2Min,
 		TotalCO2Max:    &result.CO2Max,

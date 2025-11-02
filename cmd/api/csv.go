@@ -98,7 +98,7 @@ type CSVRowData struct {
 type ProjectFromCSV struct {
 	Project data.Project     `json:"project"`
 	Unit    data.Unit        `json:"unit"`
-	Option  data.TowerOption `json:"option"`
+	Option  data.Option      `json:"option"`
 	Modules []modules.Module `json:"modules"`
 }
 
@@ -262,7 +262,7 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate unit ID: %w", err)
 			}
-			towerOptionID, err := uuid.NewV7()
+			optionID, err := uuid.NewV7()
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate tower option ID: %w", err)
 			}
@@ -283,12 +283,12 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 					ID:        unitID,
 					ProjectID: projectID,
 					Name:      row.UnitName,
-					Type:      "tower", // Assuming it's a tower if it has floors/modules
-					Floors: []data.Floor{}, // Initialize floors slice
+					Type:      "tower",        // Assuming it's a tower if it has floors/modules
+					Floors:    []data.Floor{}, // Initialize floors slice
 				},
-				Option: data.TowerOption{
-					ID:      towerOptionID,
-					UnitID: unitID,
+				Option: data.Option{
+					ID:      optionID,
+					UnitID:  unitID,
 					Name:    fmt.Sprintf("Option for %s", row.UnitName), // Default name
 					Active:  true,
 					Modules: []data.ModuleInfo{},
@@ -439,7 +439,7 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 		}
 
 		// Insert Tower Option
-		err = app.models.TowerOptions.Insert(&projectData.Option)
+		err = app.models.Options.Insert(&projectData.Option)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return
@@ -459,7 +459,7 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 			_, err = module.Insert(app.models, projectData.Option.ID, result)
 			if err != nil {
 				switch {
-				case errors.Is(err, data.ErrInvalidTowerOptionID):
+				case errors.Is(err, data.ErrInvalidOptionID):
 					app.badRequestResponse(w, r, err)
 				case errors.Is(err, data.ErrInvalidFloorID):
 					app.badRequestResponse(w, r, err)

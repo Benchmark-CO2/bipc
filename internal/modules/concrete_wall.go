@@ -115,7 +115,7 @@ func (w *ConcreteWall) toDataModule(moduleID, optionID uuid.UUID, result Consump
 	return &data.Module{
 		ID:             moduleID,
 		Type:           "concrete_wall",
-		TowerOptionID:  optionID,
+		OptionID:       optionID,
 		Data:           moduleData,
 		TotalCO2Min:    &result.CO2Min,
 		TotalCO2Max:    &result.CO2Max,

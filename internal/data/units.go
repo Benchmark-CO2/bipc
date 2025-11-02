@@ -239,9 +239,9 @@ func (m UnitModel) getFloorsByUnitID(unitID uuid.UUID) ([]Floor, error) {
 		FROM floor f
 		INNER JOIN floor_group fg ON f.group_id = fg.id
 		LEFT JOIN floors_consumption ftm ON f.id = ftm.floor_id
-		LEFT JOIN tower_option topt ON ftm.option_id = topt.id AND ftm.role_id = topt.role_id
+		LEFT JOIN options opt ON ftm.option_id = opt.id AND ftm.role_id = opt.role_id
 		WHERE fg.unit_id = $1 
-		  AND (ftm.option_id IS NULL OR topt.active = TRUE)
+		  AND (ftm.option_id IS NULL OR opt.active = TRUE)
 		ORDER BY f.index`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -436,13 +436,13 @@ func loadFloorsAndModules(tx *sql.Tx, floorIDs []uuid.UUID) (map[uuid.UUID]*Floo
 	rows, err := tx.Query(`
 		SELECT
 			f.id, f.area,
-			m.id, m.type, topt.active, topt.role_id, topt.id,
+			m.id, m.type, opt.active, opt.role_id, opt.id,
 			m.total_co2_min, m.total_co2_max,
 			m.total_energy_min, m.total_energy_max
 		FROM floor f
 		LEFT JOIN module_floor mf ON f.id = mf.floor_id
 		LEFT JOIN module m ON mf.module_id = m.id
-		LEFT JOIN tower_option topt ON m.tower_option_id = topt.id
+		LEFT JOIN options opt ON m.option_id = opt.id
 		WHERE f.id = ANY($1)`, pq.Array(floorIDs))
 	if err != nil {
 		return nil, nil, err
@@ -619,7 +619,7 @@ func (m UnitModel) GetConsumptionByRole(unitID, roleID uuid.UUID) (map[string]*C
 	var activeOptionID uuid.UUID
 	query := `
 		SELECT id 
-		FROM tower_option 
+		FROM options 
 		WHERE unit_id = $1 AND role_id = $2 AND active = TRUE
 		LIMIT 1`
 	

@@ -139,9 +139,9 @@ func GetUnitConsumptionByTechnology(db *sql.DB, unitID uuid.UUID) (map[string]*C
 		FROM floors_consumption fc
 		INNER JOIN floor f ON fc.floor_id = f.id
 		INNER JOIN floor_group fg ON f.group_id = fg.id
-		INNER JOIN tower_option topt ON fc.option_id = topt.id AND fc.role_id = topt.role_id
+		INNER JOIN options opt ON fc.option_id = opt.id AND fc.role_id = opt.role_id
 		WHERE fg.unit_id = $1 
-		  AND topt.active = TRUE
+		  AND opt.active = TRUE
 		GROUP BY fc.technology`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
