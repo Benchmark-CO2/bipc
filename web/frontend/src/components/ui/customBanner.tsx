@@ -1,9 +1,15 @@
 import { IProject, TProjectPhase } from "@/types/projects";
-import { ChevronDown, ChevronUp, Edit } from "lucide-react";
+import { ChevronDown, ChevronUp, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { DrawerFormProject } from "../layout";
 import { Button } from "./button";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
+import ModalConfirmDelete from "../layout/modal-confirm-delete";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/utils/queryClient";
+import { toast } from "sonner";
+import { deleteProject } from "@/actions/projects/deleteProjects";
+import { useNavigate } from "@tanstack/react-router";
 
 interface ICustomBanner {
   name: string;
@@ -58,6 +64,8 @@ const CustomBanner = ({
   const fullAddress = [street, number, neighborhood].filter(Boolean).join(", ");
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
 
+  const navigate = useNavigate();
+
   const project = {
     name,
     description,
@@ -70,6 +78,28 @@ const CustomBanner = ({
     cep: cep || "",
     id: id || "",
   } as IProject;
+
+  const { mutate: onDeleteProject } = useMutation({
+    mutationFn: (projectId: string) => {
+      return deleteProject(projectId);
+    },
+    onSuccess: async () => {
+      toast.success("Projeto excluído com sucesso");
+      await queryClient.invalidateQueries({
+        queryKey: ["projects"],
+      });
+      navigate({ to: `/new_projects` });
+    },
+    onError: (error: unknown) => {
+      toast.error("Erro ao excluir o projeto", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Ocorreu um erro desconhecido",
+        duration: 5000,
+      });
+    },
+  });
 
   const handleCollapseToggle = () => {
     setIsCollapsed((prev) => {
@@ -103,15 +133,24 @@ const CustomBanner = ({
                 {phaseLabels[phase]}
               </span>
 
+              {hasPermission("*:*") && (
+                <ModalConfirmDelete
+                  componentTrigger={
+                    <Button variant="outline-destructive" size="icon">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  }
+                  title="Confirmar exclusão do projeto"
+                  onConfirm={() => onDeleteProject?.(project.id)}
+                />
+              )}
+
               {hasPermission("update:project") && (
                 <DrawerFormProject
                   componentTrigger={
-                    <button
-                      className="text-slate-300 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
-                      aria-label="Colapsar banner"
-                    >
-                      <Edit size={20} className="w-4 h-4" />
-                    </button>
+                    <Button variant="outline-bipc" size="icon">
+                      <Edit className="w-4 h-4" />
+                    </Button>
                   }
                   projectData={project}
                 />
@@ -170,15 +209,24 @@ const CustomBanner = ({
                     {phaseLabels[phase]}
                   </span>
 
+                  {hasPermission("*:*") && (
+                    <ModalConfirmDelete
+                      componentTrigger={
+                        <Button variant="outline-destructive" size="icon">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      }
+                      title="Confirmar exclusão do projeto"
+                      onConfirm={() => onDeleteProject?.(project.id)}
+                    />
+                  )}
+
                   {hasPermission("update:project") && (
                     <DrawerFormProject
                       componentTrigger={
-                        <button
-                          className="text-slate-300 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
-                          aria-label="Colapsar banner"
-                        >
-                          <Edit size={20} className="w-4 h-4" />
-                        </button>
+                        <Button variant="outline-bipc" size="icon">
+                          <Edit className="w-4 h-4" />
+                        </Button>
                       }
                       projectData={project}
                     />
