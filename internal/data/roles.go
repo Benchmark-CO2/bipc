@@ -72,6 +72,12 @@ func (p Permissions) Include(code string) bool {
 	return slices.Contains(p, code) || slices.Contains(p, "*:*")
 }
 
+type RoleWithIsMember struct {
+	ID       uuid.UUID `json:"id"`
+	Name     string    `json:"name"`
+	IsMember bool      `json:"is_member"`
+}
+
 type RoleModel struct {
 	DB *sql.DB
 }
@@ -410,13 +416,12 @@ func (m RoleModel) GetPermissionsForUser(userID uuid.UUID, projectID uuid.UUID) 
 	return permissions, nil
 }
 
-func (m RoleModel) GetAllUserRoles(userID uuid.UUID, projectID uuid.UUID) ([]Role, error) {
+func (m RoleModel) GetAllUserRoles(userID uuid.UUID, projectID uuid.UUID) ([]RoleWithIsMember, error) {
 	query := `
-		SELECT r.id, r.project_id, r.name, r.description, r.simulation, r.is_protected
+		SELECT r.id, r.name, (ur.user_id IS NOT NULL) as is_member
 		FROM roles r
-		INNER JOIN users_roles ur ON ur.role_id = r.id
-		WHERE ur.user_id = $1 AND r.project_id = $2
-		ORDER BY r.name`
+		LEFT JOIN users_roles ur ON r.id = ur.role_id AND ur.user_id = $1
+		WHERE r.project_id = $2 AND r.simulation = TRUE`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -427,18 +432,15 @@ func (m RoleModel) GetAllUserRoles(userID uuid.UUID, projectID uuid.UUID) ([]Rol
 	}
 	defer rows.Close()
 
-	var roles []Role
+	roles := []RoleWithIsMember{}
 
 	for rows.Next() {
-		var role Role
+		var role RoleWithIsMember
 
 		err := rows.Scan(
 			&role.ID,
-			&role.ProjectID,
 			&role.Name,
-			&role.Description,
-			&role.Simulation,
-			&role.IsProtected,
+			&role.IsMember,
 		)
 		if err != nil {
 			return nil, err
