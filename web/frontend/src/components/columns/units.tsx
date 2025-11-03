@@ -8,6 +8,7 @@ import { deleteUnit } from "@/actions/units/deleteUnit";
 import { toast } from "sonner";
 import { Edit, Loader2, Trash } from "lucide-react";
 import { DrawerFormUnit } from "../layout";
+import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 
 export const unitsColumns: ColumnDef<
   Pick<TProjectUnit, "name" | "id" | "area"> & TConsumption
@@ -83,6 +84,7 @@ export const unitsColumns: ColumnDef<
       const { projectId } = useParams({
         from: "/_private/new_projects/$projectId/",
       });
+      const { hasPermission } = useProjectPermissions(projectId);
 
       const { mutate: mutateDeleteUnit, isPending: isDeleting } = useMutation({
         mutationFn: () => deleteUnit(projectId, row.original.id),
@@ -108,28 +110,32 @@ export const unitsColumns: ColumnDef<
           className="flex items-center gap-1 justify-end"
           onClick={(e) => e.stopPropagation()}
         >
-          <DrawerFormUnit
-            projectId={projectId}
-            unitId={row.original.id}
-            triggerComponent={
-              <Button variant="ghost" size="icon" disabled={isDeleting}>
-                <Edit className="h-4 w-4 text-primary" />
-              </Button>
-            }
-          />
-          <ModalConfirmDelete
-            title="Excluir Unidade"
-            onConfirm={mutateDeleteUnit}
-            componentTrigger={
-              <Button variant="ghost" size="icon" disabled={isDeleting}>
-                {isDeleting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Trash className="h-4 w-4 text-red-700" />
-                )}
-              </Button>
-            }
-          />
+          {hasPermission("update:unit") && (
+            <DrawerFormUnit
+              projectId={projectId}
+              unitId={row.original.id}
+              triggerComponent={
+                <Button variant="ghost" size="icon" disabled={isDeleting}>
+                  <Edit className="h-4 w-4 text-primary" />
+                </Button>
+              }
+            />
+          )}
+          {hasPermission("delete:unit") && (
+            <ModalConfirmDelete
+              title="Excluir Unidade"
+              onConfirm={mutateDeleteUnit}
+              componentTrigger={
+                <Button variant="ghost" size="icon" disabled={isDeleting}>
+                  {isDeleting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash className="h-4 w-4 text-red-700" />
+                  )}
+                </Button>
+              }
+            />
+          )}
         </div>
       );
     },

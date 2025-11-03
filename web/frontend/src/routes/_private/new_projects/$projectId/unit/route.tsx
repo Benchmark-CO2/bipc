@@ -4,6 +4,7 @@ import { DrawerFormUnit } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import NotFoundList from "@/components/ui/not-found-list";
 import { Tabs } from "@/components/ui/tabs";
+import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { TProjectUnit } from "@/types/projects";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -37,6 +38,8 @@ function RouteComponent() {
   const { projectId } = Route.useLoaderData();
   const params: { projectId: string; unitId: string; moduleId: string } =
     Route.useParams();
+
+  const { hasPermission } = useProjectPermissions(projectId);
 
   const {
     data: projectData,
@@ -138,7 +141,7 @@ function RouteComponent() {
               <Button variant="outline-bipc" size="icon-lg" disabled>
                 <Upload />
               </Button>
-              {params.unitId && (
+              {params.unitId && hasPermission("update:unit") && (
                 <DrawerFormUnit
                   projectId={projectId}
                   unitId={params.unitId}
@@ -149,14 +152,16 @@ function RouteComponent() {
                   }
                 />
               )}
-              <DrawerFormUnit
-                projectId={projectId}
-                triggerComponent={
-                  <Button variant="bipc" size="icon-lg">
-                    <Plus className="w-16 h-16" />
-                  </Button>
-                }
-              />
+              {hasPermission("create:unit") && (
+                <DrawerFormUnit
+                  projectId={projectId}
+                  triggerComponent={
+                    <Button variant="bipc" size="icon-lg">
+                      <Plus className="w-16 h-16" />
+                    </Button>
+                  }
+                />
+              )}
             </>
           )}
         </div>

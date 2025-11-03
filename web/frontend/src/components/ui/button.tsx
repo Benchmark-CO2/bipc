@@ -23,7 +23,7 @@ const buttonVariants = cva(
         noStyles: "bg-zinc-600 text-white shadow-xs hover:bg-zinc-700",
         bipc: "bg-active text-white shadow-xs hover:bg-secondary/90",
         "outline-bipc":
-          "border border-active bg-white text-active shadow-xs hover:bg-secondary/10",
+          "border border-active bg-transparent text-active shadow-xs hover:bg-secondary/10",
         "outline-destructive":
           "border border-destructive text-destructive hover:bg-destructive/10",
       },

@@ -127,7 +127,7 @@ const CustomCard = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-2 justify-end">
+          {/* <div className="flex gap-2 justify-end">
             <Button
               data-action="delete-project"
               onClick={handleDeleteClick}
@@ -144,7 +144,7 @@ const CustomCard = ({
             >
               <Pencil className="w-4 h-4" />
             </Button>
-          </div>
+          </div> */}
         </div>
       </div>
 
