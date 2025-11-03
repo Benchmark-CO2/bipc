@@ -11,7 +11,7 @@ import ItemCard from "./components/ItemCard";
 import Legend from './components/Legend';
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
-import { barColors, stackData } from "./utils";
+import { barColors, recalculateY, stackData } from "./utils";
 
 type ProjectsSummaryProps = {
   projects: any[];
@@ -37,6 +37,25 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
       label: projects.find((f) => f.id === el.id)?.name || "",
     }))
     .filter((f) => f.min && f.max);
+
+  const newItems = projects.map(el => {
+    return {
+      co2: {
+        id: el.id,
+        y: 0,
+        min: el.consumption.total.co2_min,
+        max: el.consumption.total.co2_max,
+        label: el.name,
+      },
+      energy: {
+        id: el.id,
+        y: 0,
+        min: el.consumption.total.energy_min,
+        max: el.consumption.total.energy_max,
+        label: el.name,
+      },
+    }
+  })
   const { isExpanded } = useSummary();
 
   const stackedData = useMemo(
@@ -97,8 +116,11 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
     0
   );
 
-  const minData = useMemo(() => managedData.map(d => d.min), [managedData]);
-  const maxData = useMemo(() => managedData.map(d => d.max), [managedData]);
+  const newDataItems = [...managedData, ...newItems.map(item => item[type])]
+
+  const minData = useMemo(() => newDataItems.map(d => d.min), [newDataItems]);
+  const maxData = useMemo(() => newDataItems.map(d => d.max), [newDataItems]);
+  const newData = recalculateY(newDataItems, Math.min(...minData), Math.max(...maxData));
 
   return (
     <>
@@ -130,7 +152,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
         <div className="flex flex-col items-start w-full justify-between h-full">
           {ChartSelector}
           <ul
-            className={cn("flex flex-col gap-2 text-xl w-full text-black", {
+            className={cn("flex flex-col gap-2 text-xl w-full text-black h-full", {
               "flex-row gap-2 flex-wrap": isExpanded,
               "max-h-[280px] overflow-y-auto xl:max-h-[200px] 2xl:max-h-[420px]": !isExpanded,
             })}
@@ -173,7 +195,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
 
         {chartType === "scatter" ? (
           <D3GradientRangeChart
-            data={managedData}
+            data={newData}
             selectedBars={selectedProjects}
             unit={unitsOfMeasure[type] || ""}
             totalProjects={data?.benchmark[type].length || 0}
@@ -182,7 +204,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
           />
         ) : (
           <D3GradientRangeLineChart
-            data={managedData}
+            data={newData}
             selectedBars={selectedProjects}
           />
         )}

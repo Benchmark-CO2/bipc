@@ -1,8 +1,5 @@
-import Summary from "@/components/ui/summary";
-import { AuthContext } from "@/context/authContext";
 import { ProjectContext, PropsByVariants, SummaryVariants } from "@/context/projectContext";
-import { TUser } from "@/types/user";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export const storageUserKey = "tanstack.auth.user";
 export const storageTokenKey = "tanstack.auth.token";
@@ -31,48 +28,41 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   };
 
   const inferActions = (): PropsByVariants[SummaryVariants]['actions'] => {
-  switch (type) {
-    case 'projects':
-      return {
-        setProjects,
-        addProject: (project) => setProjects(prev => [...prev, project]),
-        deleteProject: (projectId) => setProjects(prev => prev.filter(p => p.id !== projectId)),
-      };
-    case 'units':
-      return {
-        setUnits,
-        addUnit: (unit) => setUnits(prev => [...prev, unit]),
-        deleteUnit: (unitId) => setUnits(prev => prev.filter(u => u.id !== unitId)),
-      };
-    case 'layers':
-      return {
-        setLayers,
-        addLayer: (layer) => setLayers(prev => [...prev, layer]),
-        deleteLayer: (layerId) => setLayers(prev => prev.filter(l => l.id !== layerId)),
-      };
-    default:
-      throw new Error(`Unknown type: ${type}`);
-  }
-};
-const inferState = (): PropsByVariants[SummaryVariants]['states'] => {
-  switch (type) {
-    case 'projects':
-      return { projects };
-    case 'units':
-      return { units };
-    case 'layers':
-      return { layers };
-    default:
-      throw new Error(`Unknown type: ${type}`);
-  }
-};
-
-  console.log('ProjectProvider', {
-    type,
-    inferActions: inferActions(),
-    inferState: inferState(),
-  });
-
+    switch (type) {
+      case 'projects':
+        return {
+          setProjects,
+          addProject: (project) => setProjects(prev => [...prev, project]),
+          deleteProject: (projectId) => setProjects(prev => prev.filter(p => p.id !== projectId)),
+        };
+      case 'units':
+        return {
+          setUnits,
+          addUnit: (unit) => setUnits(prev => [...prev, unit]),
+          deleteUnit: (unitId) => setUnits(prev => prev.filter(u => u.id !== unitId)),
+        };
+      case 'layers':
+        return {
+          setLayers,
+          addLayer: (layer) => setLayers(prev => [...prev, layer]),
+          deleteLayer: (layerId) => setLayers(prev => prev.filter(l => l.id !== layerId)),
+        };
+      default:
+        throw new Error(`Unknown type: ${type}`);
+    }
+  };
+  const inferState = (): PropsByVariants[SummaryVariants]['states'] => {
+    switch (type) {
+      case 'projects':
+        return { projects };
+      case 'units':
+        return { units };
+      case 'layers':
+        return { layers };
+      default:
+        throw new Error(`Unknown type: ${type}`);
+    }
+  };
   return (
     <ProjectContext.Provider
       value={{

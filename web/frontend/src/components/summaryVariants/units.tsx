@@ -11,7 +11,7 @@ import ItemCard from "./components/ItemCard";
 import Legend from './components/Legend';
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
-import { barColors, stackData } from "./utils";
+import { barColors, recalculateY, stackData } from "./utils";
 
 type ProjectsSummaryProps = {
   selectedUnits: (any & {
@@ -51,6 +51,25 @@ const UnitsSummary = ({
       label: selectedUnits.find((f) => f.id === el.id)?.name || "",
     }))
     .filter((f) => f.min && f.max);
+
+  const newItems = units.map(el => {
+    return {
+      co2: {
+        id: el.id,
+        y: 0,
+        min: el.consumptions.total.co2_min,
+        max: el.consumptions.total.co2_max,
+        label: el.name,
+      },
+      energy: {
+        id: el.id,
+        y: 0,
+        min: el.consumptions.total.energy_min,
+        max: el.consumptions.total.energy_max,
+        label: el.name,
+      },
+    }
+  })
   const { isExpanded } = useSummary();
 
   const stackedData = useMemo(
@@ -133,9 +152,11 @@ const UnitsSummary = ({
   );
 
 
-  const minData = useMemo(() => fakeUnits.map(d => d.min), [fakeUnits]);
-  const maxData = useMemo(() => fakeUnits.map(d => d.max), [fakeUnits]);
+  const newDataItems = [...fakeUnits, ...newItems.map(item => item[type])]
 
+  const minData = useMemo(() => newDataItems.map(d => d.min), [newDataItems]);
+  const maxData = useMemo(() => newDataItems.map(d => d.max), [newDataItems]);
+  const newData = recalculateY(newDataItems, Math.min(...minData), Math.max(...maxData));
 
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
@@ -252,7 +273,7 @@ const UnitsSummary = ({
         </div>
         {chartType === "scatter" ? (
           <D3GradientRangeChart
-            data={fakeUnits}
+            data={newData}
             selectedBars={selectedProjects}
             unit={unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""}
             minData={minData}
@@ -261,7 +282,7 @@ const UnitsSummary = ({
           />
         ) : (
           <D3GradientRangeLineChart
-            data={fakeUnits}
+            data={newData}
             selectedBars={selectedProjects}
           />
         )}
