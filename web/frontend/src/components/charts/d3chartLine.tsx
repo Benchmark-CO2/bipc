@@ -194,7 +194,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     () =>
       data?.map((f) => ({ ...f, y: 1 - f.y })).sort((a, b) => a.min - b.min) ||
       [],
-    [data, selectedBars]
+    [data]
   );
 
   const { minValue, maxValue, minOfMins, maxOfMins } = useMemo(() => {
