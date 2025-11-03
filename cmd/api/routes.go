@@ -54,10 +54,10 @@ func (app *application) routes() http.Handler {
 	// ----------------------------------------------------------------------------------------------------------------------------------
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects-upload", app.requireActivatedUser(app.createProjectsFromCSVHandler))
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units", app.createUnitHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units", app.requireRolesPermission("create:unit", app.createUnitHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID", app.readUnitHandler)
-	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID", app.updateUnitHandler)
-	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID", app.deleteUnitHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID", app.requireRolesPermission("update:unit", app.updateUnitHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID", app.requireRolesPermission("delete:unit", app.deleteUnitHandler))
 
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/roles/:roleID/options", app.listOptionsHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/roles/:roleID/options", app.createOptionHandler)
