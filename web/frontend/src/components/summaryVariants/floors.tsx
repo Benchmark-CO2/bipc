@@ -11,7 +11,7 @@ import ItemCard from "./components/ItemCard";
 import Legend from './components/Legend';
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
-import { barColors, stackData } from "./utils";
+import { barColors, recalculateY, stackData } from "./utils";
 
 type ProjectsSummaryProps = {
   floors: any[];
@@ -47,6 +47,24 @@ const FloorSummary = ({
     [selectedFloors, data]
   );
 
+  const newItems = floors.map(el => {
+    return {
+      co2: {
+        id: el.id,
+        y: 0,
+        min: el.co2_min,
+        max: el.co2_max,
+        label: el.group_name,
+      },
+      energy: {
+        id: el.id,
+        y: 0,
+        min: el.energy_min,
+        max: el.energy_max,
+        label: el.group_name,
+      },
+    }
+  })
   const handleAddProject = (projectId: string) => {
     if (selectedProjects.includes(projectId)) {
       setSelectedProjects(selectedProjects.filter((id) => id !== projectId));
@@ -119,8 +137,11 @@ const FloorSummary = ({
     0 as number
   );
 
-  const minData = useMemo(() => fakeFloors.map(d => d.min), [fakeFloors]);
-  const maxData = useMemo(() => fakeFloors.map(d => d.max), [fakeFloors]);
+  const newDataItems = [...fakeFloors, ...newItems.map(item => item[type])]
+
+  const minData = useMemo(() => newDataItems.map(d => d.min), [newDataItems]);
+  const maxData = useMemo(() => newDataItems.map(d => d.max), [newDataItems]);
+  const newData = recalculateY(newDataItems, Math.min(...minData), Math.max(...maxData));
 
   return (
     <>
@@ -237,7 +258,7 @@ const FloorSummary = ({
         </div>
         {chartType == "scatter" ? (
           <D3GradientRangeChart
-            data={fakeFloors}
+            data={newData}
             selectedBars={selectedProjects}
             totalProjects={data?.benchmark[type].length || 0}
             minData={minData}
@@ -245,7 +266,7 @@ const FloorSummary = ({
           />
         ) : (
           <D3GradientRangeLineChart
-            data={fakeFloors}
+            data={newData}
             selectedBars={selectedProjects}
           />
         )}

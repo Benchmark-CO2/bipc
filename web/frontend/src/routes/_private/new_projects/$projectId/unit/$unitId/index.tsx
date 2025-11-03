@@ -67,7 +67,7 @@ export const Route = createFileRoute(
       .map((key) => ({
         type: key,
         ...(unit?.consumptions as TConsumptionPerModule)[
-          key as keyof TConsumptionPerModule
+        key as keyof TConsumptionPerModule
         ],
       }));
     return { unitConsumptions };
@@ -219,79 +219,79 @@ function RouteComponent() {
 
   const groupedFloors: TGroupedFloor[] = unit?.floors
     ? Object.values(
-        unit.floors.reduce(
-          (acc, floor) => {
-            const groupId = floor.group_id;
-            const { consumptions, ...restFloor } = floor;
+      unit.floors.reduce(
+        (acc, floor) => {
+          const groupId = floor.group_id;
+          const { consumptions, ...restFloor } = floor;
 
-            const safeConsumption = consumptions?.total || {
-              co2_min: 0,
-              co2_max: 0,
-              energy_min: 0,
-              energy_max: 0,
+          const safeConsumption = consumptions?.total || {
+            co2_min: 0,
+            co2_max: 0,
+            energy_min: 0,
+            energy_max: 0,
+          };
+
+          if (!acc[groupId]) {
+            acc[groupId] = {
+              ...restFloor,
+              ...safeConsumption,
+              area: restFloor.area,
+              repetitions: 1,
             };
+          } else {
+            acc[groupId].repetitions += 1;
+            acc[groupId].area =
+              (acc[groupId].area * (acc[groupId].repetitions - 1) +
+                restFloor.area) /
+              acc[groupId].repetitions;
+            acc[groupId].co2_min =
+              (acc[groupId].co2_min * (acc[groupId].repetitions - 1) +
+                (safeConsumption.co2_min || 0)) /
+              acc[groupId].repetitions;
+            acc[groupId].co2_max =
+              (acc[groupId].co2_max * (acc[groupId].repetitions - 1) +
+                (safeConsumption.co2_max || 0)) /
+              acc[groupId].repetitions;
+            acc[groupId].energy_min =
+              (acc[groupId].energy_min * (acc[groupId].repetitions - 1) +
+                (safeConsumption.energy_min || 0)) /
+              acc[groupId].repetitions;
+            acc[groupId].energy_max =
+              (acc[groupId].energy_max * (acc[groupId].repetitions - 1) +
+                (safeConsumption.energy_max || 0)) /
+              acc[groupId].repetitions;
+          }
 
-            if (!acc[groupId]) {
-              acc[groupId] = {
-                ...restFloor,
-                ...safeConsumption,
-                area: restFloor.area,
-                repetitions: 1,
-              };
-            } else {
-              acc[groupId].repetitions += 1;
-              acc[groupId].area =
-                (acc[groupId].area * (acc[groupId].repetitions - 1) +
-                  restFloor.area) /
-                acc[groupId].repetitions;
-              acc[groupId].co2_min =
-                (acc[groupId].co2_min * (acc[groupId].repetitions - 1) +
-                  (safeConsumption.co2_min || 0)) /
-                acc[groupId].repetitions;
-              acc[groupId].co2_max =
-                (acc[groupId].co2_max * (acc[groupId].repetitions - 1) +
-                  (safeConsumption.co2_max || 0)) /
-                acc[groupId].repetitions;
-              acc[groupId].energy_min =
-                (acc[groupId].energy_min * (acc[groupId].repetitions - 1) +
-                  (safeConsumption.energy_min || 0)) /
-                acc[groupId].repetitions;
-              acc[groupId].energy_max =
-                (acc[groupId].energy_max * (acc[groupId].repetitions - 1) +
-                  (safeConsumption.energy_max || 0)) /
-                acc[groupId].repetitions;
-            }
+          return acc;
+        },
+        {} as Record<string, any>
+      )
+    ).sort((a, b) => {
+      const categoryOrder = {
+        penthouse_floor: 0,
+        standard_floor: 1,
+        ground_floor: 2,
+        basement_floor: 3,
+      };
 
-            return acc;
-          },
-          {} as Record<string, any>
-        )
-      ).sort((a, b) => {
-        const categoryOrder = {
-          penthouse_floor: 0,
-          standard_floor: 1,
-          ground_floor: 2,
-          basement_floor: 3,
-        };
+      const aCategory = a.category || getCategoryFromIndex(a.index || 0);
+      const bCategory = b.category || getCategoryFromIndex(b.index || 0);
 
-        const aCategory = a.category || getCategoryFromIndex(a.index || 0);
-        const bCategory = b.category || getCategoryFromIndex(b.index || 0);
+      const aCategoryOrder =
+        categoryOrder[aCategory as keyof typeof categoryOrder];
+      const bCategoryOrder =
+        categoryOrder[bCategory as keyof typeof categoryOrder];
 
-        const aCategoryOrder =
-          categoryOrder[aCategory as keyof typeof categoryOrder];
-        const bCategoryOrder =
-          categoryOrder[bCategory as keyof typeof categoryOrder];
+      if (aCategoryOrder !== bCategoryOrder) {
+        return aCategoryOrder - bCategoryOrder;
+      }
 
-        if (aCategoryOrder !== bCategoryOrder) {
-          return aCategoryOrder - bCategoryOrder;
-        }
+      if (a.index !== undefined && b.index !== undefined) {
+        return b.index - a.index;
+      }
 
-        if (a.index !== undefined && b.index !== undefined) {
-          return b.index - a.index;
-        }
-
-        return (a.name || "").localeCompare(b.name || "");
-      })
+      return (a.name || "").localeCompare(b.name || "");
+    })
     : [];
 
   const calculateAverageMetrics = (floors: TGroupedFloor[]) => {
@@ -365,7 +365,6 @@ function RouteComponent() {
 
   const selectedRole = roles?.find((role) => role.id === search.dcp);
 
-  console.log(selectedRole);
 
   return (
     <div className="flex flex-col gap-4">

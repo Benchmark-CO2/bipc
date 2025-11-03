@@ -23,7 +23,7 @@ type TModules = {
   id: string;
   type: string;
   label: string
-} 
+}
 type SimulationData = {
   active: boolean
   id: string
@@ -78,34 +78,36 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
     co2: {
       id: el.id,
       y: 0,
-      min: el.modules.reduce((acc, curr) => acc + curr.consumption.co2_min, 0)/el.area,
-      max: el.modules.reduce((acc, curr) => acc + curr.consumption.co2_max, 0)/el.area,
+      min: el.consumption.total.co2_min,
+      max: el.consumption.total.co2_max,
       label: el.name
     },
     energy: {
       id: el.id,
       y: 0,
-      min: el.modules.reduce((acc, curr) => acc + curr.consumption.energy_min, 0)/el.area,
-      max: el.modules.reduce((acc, curr) => acc + curr.consumption.energy_max, 0)/el.area,
+      min: el.consumption.total.energy_min,
+      max: el.consumption.total.energy_max,
       label: el.name
     }
   }));
-  const newItems: Record<'co2' | 'energy', Item>[] = projects.map(el => ({
-    co2: {
-      id: el.id,
-      y: 0,
-      min: el.modules.reduce((acc, curr) => acc + curr.consumption.co2_min, 0)/el.area,
-      max: el.modules.reduce((acc, curr) => acc + curr.consumption.co2_max, 0)/el.area,
-      label: el.name
-    },
-    energy: {
-      id: el.id,
-      y: 0,
-      min: el.modules.reduce((acc, curr) => acc + curr.consumption.energy_min, 0)/el.area,
-      max: el.modules.reduce((acc, curr) => acc + curr.consumption.energy_max, 0)/el.area,
-      label: el.name
+  const newItems: Record<'co2' | 'energy', Item>[] = projects.map(el => {
+    return {
+      co2: {
+        id: el.id,
+        y: 0,
+        min: el.consumption.total.co2_min,
+        max: el.consumption.total.co2_max,
+        label: el.name
+      },
+      energy: {
+        id: el.id,
+        y: 0,
+        min: el.consumption.total.energy_min,
+        max: el.consumption.total.energy_max,
+        label: el.name
+      }
     }
-  }));
+  });
 
   const managedData = manageData((data.benchmark?.[type as "co2" | "energy"] || []))
     .map((el) => ({
@@ -136,7 +138,7 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
   }, [projects, someSelected]);
 
   useEffect(() => {
-    if (!someSelected) return 
+    if (!someSelected) return
 
     if (previousProjects.length < projects.length) {
       const diff = projects.filter((p) => !previousProjects.includes(p.id));
@@ -186,7 +188,7 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
               : "Selecionar Todos",
           ]}
           selectedSubTab={subTabs}
-        />        
+        />
       </div>
       <div
         className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
@@ -194,7 +196,7 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
         })}
       >
         <div className="flex flex-col items-start w-full">
-        {ChartSelector}
+          {ChartSelector}
           <ul
             className={cn("flex flex-col gap-2 text-xl w-full text-black", {
               "flex-row gap-2 flex-wrap": isExpanded,
@@ -224,54 +226,29 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
                       selectedProjects={selectedProjects}
                       handleAddProject={handleAddProject}
                       sum={newItems.flatMap(el => el[type]).reduce((acc, curr) => acc + curr.max, 0)}
-                        color={barColors}
-                        type={type}
-                      />
-                    ) : (
-                      <ItemCard
-                        key={project.id}
-                        item={{
-                          id: project.id,
-                          label: project.name,
-                          co2: project.modules.flatMap(el => el.consumption).reduce((acc, curr) => acc + ((type === 'co2' ? curr.co2_max + curr.co2_min : curr.energy_max + curr.energy_min) / 2), 0),
-                          energy: project.modules.flatMap(el => el.consumption).reduce((acc, curr) => acc + ((type === 'co2' ? curr.co2_max + curr.co2_min : curr.energy_max + curr.energy_min) / 2), 0),
-                        } as any}
-                        selectedProjects={selectedProjects}
-                        handleAddProject={handleAddProject}
-                        sum={newItemsTotals.flatMap(el => el[type]).reduce((acc, curr) => acc + curr.max, 0)}
-                        color={barColors}
-                        type={type}
-                      />)}
+                      color={barColors}
+                      type={type}
+                    />
+                  ) : (
+                    <ItemCard
+                      key={project.id}
+                      item={{
+                        id: project.id,
+                        label: project.name,
+                        co2: project.modules.flatMap(el => el.consumption).reduce((acc, curr) => acc + ((type === 'co2' ? curr.co2_max + curr.co2_min : curr.energy_max + curr.energy_min) / 2), 0),
+                        energy: project.modules.flatMap(el => el.consumption).reduce((acc, curr) => acc + ((type === 'co2' ? curr.co2_max + curr.co2_min : curr.energy_max + curr.energy_min) / 2), 0),
+                      } as any}
+                      selectedProjects={selectedProjects}
+                      handleAddProject={handleAddProject}
+                      sum={newItemsTotals.flatMap(el => el[type]).reduce((acc, curr) => acc + curr.max, 0)}
+                      color={barColors}
+                      type={type}
+                    />)}
                 </div>
               ))
             }
-            {/* {(stackedData || []).map((project, idx) => {
-              if (!project) return null;
-              return isExpanded ? (
-                <ItemCard
-                  key={project.id}
-                  item={project as any}
-                  selectedProjects={selectedProjects}
-                  handleAddProject={handleAddProject}
-                  sum={sum}
-                  color={barColors}
-                  type={type}
-                />
-              ) : (
-                <ListItem
-                  key={project.id}
-                  item={project as any}
-                  selectedProjects={selectedProjects}
-                  handleAddProject={handleAddProject}
-                  sum={sum}
-                  color={barColors}
-                  type={type}
-                />
-              );
-            })} */}
           </ul>
-          {<Legend  />}
-          {/* {!isExpanded && <Subtitle />} */}
+          <Legend />
         </div>
 
         {chartType === "scatter" ? (
@@ -285,7 +262,7 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
           />
         ) : (
           <D3GradientRangeLineChart
-            data={managedData}
+            data={updateYs}
             selectedBars={selectedProjects}
           />
         )}
