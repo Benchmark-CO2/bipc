@@ -66,6 +66,20 @@ function CsvUploadPage() {
       <h1 className="text-2xl font-bold mb-4">Upload CSV for Units</h1>
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
+          <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">Module Type:</label>
+          <select
+            id="type"
+            name="type"
+            required
+            defaultValue="concrete_wall"
+            className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 p-2"
+          >
+            <option value="concrete_wall">Concrete Wall (Parede de Concreto)</option>
+            <option value="structural_masonry">Structural Masonry (Alvenaria Estrutural)</option>
+            <option value="beam_column">Beam Column (Viga e Pilar)</option>
+          </select>
+        </div>
+        <div className="mb-4">
           <label htmlFor="csv" className="block text-sm font-medium text-gray-700 mb-2">Select CSV file:</label>
           <input 
             type="file" 
