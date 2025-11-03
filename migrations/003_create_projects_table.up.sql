@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS projects (
     street TEXT,
     number TEXT,
     phase TEXT NOT NULL,
-    description TEXT
+    description TEXT,
+    benchmark BOOLEAN NOT NULL DEFAULT false
 );
 
 CREATE INDEX IF NOT EXISTS projects_name_idx ON projects USING GIN (to_tsvector('simple', name));

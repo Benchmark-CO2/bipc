@@ -1,1 +1,0 @@
-ALTER TABLE projects ADD COLUMN benchmark BOOLEAN NOT NULL DEFAULT false;

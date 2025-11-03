@@ -36,7 +36,7 @@ VALUES
     ('delete', 'invite'),
     ('create', 'role'),
     ('update', 'role'),
-    ('delete', 'role')
-    ('create', 'unit')
-    ('update', 'unit')
+    ('delete', 'role'),
+    ('create', 'unit'),
+    ('update', 'unit'),
     ('delete', 'unit');
