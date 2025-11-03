@@ -44,6 +44,7 @@ type Project struct {
 	Number       *string   `json:"number,omitzero"`
 	Phase        string    `json:"phase"`
 	Description  *string   `json:"description"`
+	Benchmark    bool      `json:"benchmark,omitempty"`
 }
 
 type ProjectsWithUnits struct {
@@ -121,12 +122,12 @@ func (m ProjectModel) Insert(project *Project, userID uuid.UUID) error {
 	defer tx.Rollback()
 
 	query1 := `
-		INSERT INTO projects (id, name, cep, state, city, neighborhood, street, number, phase, description)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO projects (id, name, cep, state, city, neighborhood, street, number, phase, description, benchmark)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		RETURNING created_at`
 
 	args := []any{project.ID, project.Name, project.CEP, project.State, project.City, project.Neighborhood,
-		project.Street, project.Number, project.Phase, project.Description}
+		project.Street, project.Number, project.Phase, project.Description, project.Benchmark}
 
 	err = tx.QueryRow(query1, args...).Scan(&project.CreatedAt)
 	if err != nil {
@@ -212,7 +213,7 @@ func (m ProjectModel) Insert(project *Project, userID uuid.UUID) error {
 
 func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectsWithUnits, error) {
 	query := `
-		SELECT id, created_at, name, cep, state, city, neighborhood, street, number, phase, description
+		SELECT id, created_at, name, cep, state, city, neighborhood, street, number, phase, description, benchmark
 		FROM projects
 		WHERE id = $1`
 
@@ -233,6 +234,7 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectsWithUnits, error) {
 		&project.Number,
 		&project.Phase,
 		&project.Description,
+		&project.Benchmark,
 	)
 	if err != nil {
 		switch {

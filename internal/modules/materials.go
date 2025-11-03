@@ -499,7 +499,18 @@ func GetBlockMass(blockType string, fbk int) (float64, error) {
 
 	mass, exists := block.Mass[fbk]
 	if !exists {
-		return 0, fmt.Errorf("fbk %d não encontrado para o bloco tipo %s", fbk, blockType)
+		nextFbk := -1
+		for availableFbk := range block.Mass {
+			if availableFbk > fbk && (nextFbk == -1 || availableFbk < nextFbk) {
+				nextFbk = availableFbk
+			}
+		}
+		
+		if nextFbk == -1 {
+			return 0, fmt.Errorf("fbk %d não encontrado e não há FBK superior disponível para o bloco tipo %s", fbk, blockType)
+		}
+		
+		mass = block.Mass[nextFbk]
 	}
 
 	return mass, nil

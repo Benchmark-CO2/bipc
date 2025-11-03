@@ -28,7 +28,11 @@ func (m BenchmarkModel) GetFloorsBenchmark() ([]*BenchmarkData, error) {
 			SUM(fc.energy_min) as energy_min,
 			SUM(fc.energy_max) as energy_max
 		FROM floor f
+		INNER JOIN floor_group fg ON f.group_id = fg.id
+		INNER JOIN units u ON fg.unit_id = u.id
+		INNER JOIN projects p ON u.project_id = p.id
 		LEFT JOIN floors_consumption fc ON f.id = fc.floor_id
+		WHERE p.benchmark = true
 		GROUP BY f.id`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -87,7 +91,10 @@ func (m BenchmarkModel) GetUnitsBenchmark() ([]*BenchmarkData, error) {
 				SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max
 			FROM floor f
 			INNER JOIN floor_group fg ON f.group_id = fg.id
+			INNER JOIN units u ON fg.unit_id = u.id
+			INNER JOIN projects p ON u.project_id = p.id
 			INNER JOIN floors_consumption fc ON f.id = fc.floor_id
+			WHERE p.benchmark = true
 			GROUP BY fg.unit_id, fc.technology
 		),
 		tower_total_consumption AS (
@@ -107,7 +114,9 @@ func (m BenchmarkModel) GetUnitsBenchmark() ([]*BenchmarkData, error) {
 			ttc.energy_min,
 			ttc.energy_max
 		FROM units u
-		LEFT JOIN tower_total_consumption ttc ON u.id = ttc.unit_id`
+		INNER JOIN projects p ON u.project_id = p.id
+		LEFT JOIN tower_total_consumption ttc ON u.id = ttc.unit_id
+		WHERE p.benchmark = true`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -202,7 +211,10 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 				SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max
 			FROM floor f
 			INNER JOIN floor_group fg ON f.group_id = fg.id
-			INNER JOIN floors_consumption fc ON f.id = fc.floor_id`
+			INNER JOIN units u ON fg.unit_id = u.id
+			INNER JOIN projects p ON u.project_id = p.id
+			INNER JOIN floors_consumption fc ON f.id = fc.floor_id
+			WHERE p.benchmark = true`
 
 	if filters.Technology != nil {
 		technologies := strings.Split(*filters.Technology, ",")
@@ -215,7 +227,7 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 		}
 		
 		query += fmt.Sprintf(`
-			WHERE fc.technology = ANY(ARRAY[%s])`, strings.Join(techPlaceholders, ","))
+			AND fc.technology = ANY(ARRAY[%s])`, strings.Join(techPlaceholders, ","))
 	}
 
 	query += `
@@ -253,7 +265,8 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 			pc.energy_min,
 			pc.energy_max
 		FROM projects p
-		LEFT JOIN project_consumption pc ON p.id = pc.project_id`
+		LEFT JOIN project_consumption pc ON p.id = pc.project_id
+		WHERE p.benchmark = true`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
