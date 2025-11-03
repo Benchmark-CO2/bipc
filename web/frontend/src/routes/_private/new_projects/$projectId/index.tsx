@@ -19,6 +19,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 
 type ProjectSearch = {
   tab?: "projeto" | "colaboradores";
@@ -37,6 +38,7 @@ function RouteComponent() {
   const { projectId } = useParams({
     from: "/_private/new_projects/$projectId",
   });
+  const { hasPermission } = useProjectPermissions(projectId);
   // const { projectConsumptions } = Route.useLoaderData({});
   const navigate = useNavigate();
   const searchParams = useSearch({
@@ -108,14 +110,16 @@ function RouteComponent() {
             <Button variant="outline-bipc" size="icon-lg" disabled>
               <Upload />
             </Button>
-            <DrawerFormUnit
-              triggerComponent={
-                <Button variant="bipc" size="icon-lg">
-                  <Plus />
-                </Button>
-              }
-              projectId={projectId}
-            />
+            {hasPermission("create:unit") && (
+              <DrawerFormUnit
+                triggerComponent={
+                  <Button variant="bipc" size="icon-lg">
+                    <Plus />
+                  </Button>
+                }
+                projectId={projectId}
+              />
+            )}
           </>
         )}
       </div>

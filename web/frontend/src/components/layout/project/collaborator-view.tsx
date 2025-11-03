@@ -11,9 +11,11 @@ import { toast } from "sonner";
 import { queryClient } from "@/utils/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "@tanstack/react-router";
+import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 
 const CollaboratorsView = ({ projectId }: { projectId: string }) => {
   const { email } = useAuth();
+  const { hasPermission } = useProjectPermissions(projectId);
   const navigate = useNavigate();
 
   const { data: collaboratorsData, isLoading } = useQuery({
@@ -107,16 +109,18 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
           <h2 className="text-md font-semibold text-primary dark:text-gray-200">
             Disciplinas
           </h2>
-          <DrawerFormDisciplines
-            componentTrigger={
-              <Button variant="bipc" className="text-white">
-                <PlusIcon className="mr-1 h-4 w-4" />
-                Nova Disciplina
-              </Button>
-            }
-            projectId={projectId}
-            projectUsers={collaborators}
-          />
+          {hasPermission("create:role") && (
+            <DrawerFormDisciplines
+              componentTrigger={
+                <Button variant="bipc" className="text-white">
+                  <PlusIcon className="mr-1 h-4 w-4" />
+                  Nova Disciplina
+                </Button>
+              }
+              projectId={projectId}
+              projectUsers={collaborators}
+            />
+          )}
         </div>
 
         <div className="space-y-2">
@@ -180,7 +184,9 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
             Todos os Colaboradores
           </h2>
 
-          <DrawerInvite projectId={projectId} />
+          {hasPermission("create:invite") && (
+            <DrawerInvite projectId={projectId} />
+          )}
         </div>
 
         <div className="space-y-2">
@@ -213,23 +219,26 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
               </div>
               {!collaborator?.roles?.some(
                 (role) => role?.toLowerCase() === "administrador"
-              ) && (
-                <div className="flex items-center gap-2">
-                  <ModalConfirmDelete
-                    componentTrigger={
-                      <Button variant="outline-destructive" size="icon-lg">
-                        {isDeletingCollaborator ? (
-                          <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
-                        ) : (
-                          <TrashIcon className="h-4 w-4" />
-                        )}
-                      </Button>
-                    }
-                    title="Remover Colaborador"
-                    onConfirm={() => mutateDeleteCollaborator(collaborator.id)}
-                  />
-                </div>
-              )}
+              ) &&
+                hasPermission("delete:collaborator") && (
+                  <div className="flex items-center gap-2">
+                    <ModalConfirmDelete
+                      componentTrigger={
+                        <Button variant="outline-destructive" size="icon-lg">
+                          {isDeletingCollaborator ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                          ) : (
+                            <TrashIcon className="h-4 w-4" />
+                          )}
+                        </Button>
+                      }
+                      title="Remover Colaborador"
+                      onConfirm={() =>
+                        mutateDeleteCollaborator(collaborator.id)
+                      }
+                    />
+                  </div>
+                )}
             </div>
           ))}
         </div>

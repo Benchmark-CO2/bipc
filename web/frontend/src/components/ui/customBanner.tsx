@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp, Edit } from "lucide-react";
 import { useState } from "react";
 import { DrawerFormProject } from "../layout";
 import { Button } from "./button";
+import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 
 interface ICustomBanner {
   name: string;
@@ -53,6 +54,7 @@ const CustomBanner = ({
   totalArea,
   collapsed = false,
 }: ICustomBanner) => {
+  const { hasPermission } = useProjectPermissions(id || "");
   const fullAddress = [street, number, neighborhood].filter(Boolean).join(", ");
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
 
@@ -101,17 +103,19 @@ const CustomBanner = ({
                 {phaseLabels[phase]}
               </span>
 
-              <DrawerFormProject
-                componentTrigger={
-                  <button
-                    className="text-slate-300 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
-                    aria-label="Colapsar banner"
-                  >
-                    <Edit size={20} className="w-4 h-4" />
-                  </button>
-                }
-                projectData={project}
-              />
+              {hasPermission("update:project") && (
+                <DrawerFormProject
+                  componentTrigger={
+                    <button
+                      className="text-slate-300 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
+                      aria-label="Colapsar banner"
+                    >
+                      <Edit size={20} className="w-4 h-4" />
+                    </button>
+                  }
+                  projectData={project}
+                />
+              )}
               <button
                 onClick={handleCollapseToggle}
                 className="text-slate-300 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
@@ -166,17 +170,19 @@ const CustomBanner = ({
                     {phaseLabels[phase]}
                   </span>
 
-                  <DrawerFormProject
-                    componentTrigger={
-                      <button
-                        className="text-slate-300 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
-                        aria-label="Colapsar banner"
-                      >
-                        <Edit size={20} className="w-4 h-4" />
-                      </button>
-                    }
-                    projectData={project}
-                  />
+                  {hasPermission("update:project") && (
+                    <DrawerFormProject
+                      componentTrigger={
+                        <button
+                          className="text-slate-300 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
+                          aria-label="Colapsar banner"
+                        >
+                          <Edit size={20} className="w-4 h-4" />
+                        </button>
+                      }
+                      projectData={project}
+                    />
+                  )}
                   <button
                     onClick={handleCollapseToggle}
                     className="text-slate-300 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"

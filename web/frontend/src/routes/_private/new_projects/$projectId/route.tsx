@@ -76,7 +76,7 @@ function RouteComponent() {
             street={project?.street}
             number={project?.number}
             cep={project?.cep}
-            id={project?.id}
+            id={projectId}
             unitsCount={project?.units?.length}
             totalArea={summedAreaOfUnits}
             collapsed={bannerCollapsed}

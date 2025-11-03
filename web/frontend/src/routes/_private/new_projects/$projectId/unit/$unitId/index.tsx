@@ -11,6 +11,7 @@ import Divider from "@/components/ui/divider";
 import { FilterTabs } from "@/components/ui/filter-tabs";
 import NotFoundList from "@/components/ui/not-found-list";
 import { useSummary } from "@/context/summaryContext";
+import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { TRoleConsumptions } from "@/types/disciplines";
 import { IConsumption } from "@/types/modules";
 import {
@@ -73,10 +74,6 @@ export const Route = createFileRoute(
   },
 });
 
-function isUnitWithTower(unit: any): unit is IUnit {
-  return unit && typeof unit === "object" && "tower" in unit;
-}
-
 function RouteComponent() {
   const { projectId, unitId } = useParams({
     from: "/_private/new_projects/$projectId/unit/$unitId/",
@@ -87,6 +84,7 @@ function RouteComponent() {
   const search = useSearch({
     from: "/_private/new_projects/$projectId/unit/$unitId/",
   });
+  const { hasPermission } = useProjectPermissions(projectId);
 
   const { setSummaryContext } = useSummary();
   const { data: unitData, isLoading } = useQuery({
@@ -394,15 +392,17 @@ function RouteComponent() {
               <Button variant="outline-bipc" size="icon-lg" disabled>
                 <Upload />
               </Button>
-              <DrawerFormDisciplines
-                componentTrigger={
-                  <Button variant="bipc" size="icon-lg">
-                    <Plus />
-                  </Button>
-                }
-                projectId={projectId}
-                unitId={unitId}
-              />
+              {hasPermission("create:role") && (
+                <DrawerFormDisciplines
+                  componentTrigger={
+                    <Button variant="bipc" size="icon-lg">
+                      <Plus />
+                    </Button>
+                  }
+                  projectId={projectId}
+                  unitId={unitId}
+                />
+              )}
               <Button
                 variant="bipc"
                 size="icon-lg"

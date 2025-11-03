@@ -59,14 +59,15 @@ interface IDrawerFormDisciplines {
 const mockPermissions = {
   management: [
     // { id: 1, label: "Editar propriedades do projeto" },
-    { id: 2, label: "Criar disciplina" },
-    { id: 3, label: "Criar unidades" },
-    { id: 4, label: "Gerar relatórios do projeto" },
+    { id: 2, label: "Atualizar projeto" },
+    { id: 3, label: "Convidar usuários" },
+    { id: 4, label: "Remover colaborador" },
+    { id: 5, label: "Remover convite de colaborador" },
+    { id: 6, label: "Criar disciplina" },
+    { id: 7, label: "Atualizar disciplina" },
+    { id: 8, label: "Remover disciplina" },
   ],
-  simulation: [
-    { id: 5, label: "Criar unidades" },
-    { id: 6, label: "Gerar relatórios das unidades" },
-  ],
+  simulation: [],
 };
 
 export default function DrawerFormDisciplines({
@@ -274,31 +275,31 @@ export default function DrawerFormDisciplines({
     }
   };
 
-  const toggleAllSimulation = (checked: boolean) => {
-    const currentPermissions = form.getValues("permissions_ids");
-    const simulationIds = mockPermissions.simulation.map((p) => p.id);
+  // const toggleAllSimulation = (checked: boolean) => {
+  //   const currentPermissions = form.getValues("permissions_ids");
+  //   const simulationIds = mockPermissions.simulation.map((p) => p.id);
 
-    if (!checked) {
-      // Remove all simulation permissions
-      const newPermissions = currentPermissions.filter(
-        (id) => !simulationIds.includes(id)
-      );
-      form.setValue("permissions_ids", newPermissions, {
-        shouldValidate: true,
-        shouldDirty: true,
-      });
-    } else {
-      // Add all simulation permissions
-      const newPermissions = [
-        ...currentPermissions.filter((id) => !simulationIds.includes(id)),
-        ...simulationIds,
-      ];
-      form.setValue("permissions_ids", newPermissions, {
-        shouldValidate: true,
-        shouldDirty: true,
-      });
-    }
-  };
+  //   if (!checked) {
+  //     // Remove all simulation permissions
+  //     const newPermissions = currentPermissions.filter(
+  //       (id) => !simulationIds.includes(id)
+  //     );
+  //     form.setValue("permissions_ids", newPermissions, {
+  //       shouldValidate: true,
+  //       shouldDirty: true,
+  //     });
+  //   } else {
+  //     // Add all simulation permissions
+  //     const newPermissions = [
+  //       ...currentPermissions.filter((id) => !simulationIds.includes(id)),
+  //       ...simulationIds,
+  //     ];
+  //     form.setValue("permissions_ids", newPermissions, {
+  //       shouldValidate: true,
+  //       shouldDirty: true,
+  //     });
+  //   }
+  // };
 
   useEffect(() => {
     if (openDrawer) {
@@ -431,7 +432,7 @@ export default function DrawerFormDisciplines({
                   className="flex items-center justify-between p-3 bg-[#00796B] text-white hover:bg-[#00796B]/90"
                   onClick={() => setManagementExpanded(!managementExpanded)}
                 >
-                  <span className="font-medium">Gestão</span>
+                  <span className="font-medium">Permissões</span>
                   {managementExpanded ? (
                     <ChevronUp className="w-5 h-5" />
                   ) : (
@@ -474,8 +475,7 @@ export default function DrawerFormDisciplines({
                 )}
               </div>
 
-              {/* Simulação Section */}
-              <div className="flex flex-col border rounded-md overflow-hidden">
+              {/* <div className="flex flex-col border rounded-md overflow-hidden">
                 <button
                   type="button"
                   className="flex items-center justify-between p-3 bg-[#00796B] text-white hover:bg-[#00796B]/90"
@@ -490,7 +490,6 @@ export default function DrawerFormDisciplines({
                 </button>
                 {simulationExpanded && (
                   <div className="flex flex-col gap-3 p-4 bg-card">
-                    {/* Adicionar/Remover tudo */}
                     <div className="flex items-center justify-between pb-2 border-b">
                       <span className="text-sm font-medium">
                         Selecionar todas
@@ -503,7 +502,6 @@ export default function DrawerFormDisciplines({
                       />
                     </div>
 
-                    {/* Lista de permissões */}
                     {mockPermissions.simulation.map((permission) => (
                       <div
                         key={permission.id}
@@ -522,7 +520,7 @@ export default function DrawerFormDisciplines({
                     ))}
                   </div>
                 )}
-              </div>
+              </div> */}
 
               {/* Buscar colaboradores */}
               <div className="flex flex-col gap-2">
