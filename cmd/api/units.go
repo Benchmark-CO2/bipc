@@ -86,8 +86,9 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 }
 
 type RoleInfo struct {
-	ID          uuid.UUID              `json:"id"`
-	Name        string                 `json:"name"`
+	ID          uuid.UUID                    `json:"id"`
+	Name        string                       `json:"name"`
+	IsMember    bool                         `json:"is_member"`
 	Consumption map[string]*data.Consumption `json:"consumption,omitempty"`
 }
 
@@ -123,27 +124,29 @@ func (app *application) readUnitHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var simulationRoles []RoleInfo
+	simulationRoles := []RoleInfo{}
+
 	for _, role := range allRoles {
-		if role.Simulation {
-			roleInfo := RoleInfo{
-				ID:   role.ID,
-				Name: role.Name,
-			}
 
-			if unit.Type == "tower" {
-				consumption, err := app.models.Units.GetConsumptionByRole(unitID, role.ID)
-				if err != nil {
-					app.serverErrorResponse(w, r, err)
-					return
-				}
-				if len(consumption) > 0 {
-					roleInfo.Consumption = consumption
-				}
-			}
-
-			simulationRoles = append(simulationRoles, roleInfo)
+		roleInfo := RoleInfo{
+			ID:       role.ID,
+			Name:     role.Name,
+			IsMember: role.IsMember,
 		}
+
+		if unit.Type == "tower" {
+			consumption, err := app.models.Units.GetConsumptionByRole(unitID, role.ID)
+			if err != nil {
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+			if len(consumption) > 0 {
+				roleInfo.Consumption = consumption
+			}
+		}
+
+		simulationRoles = append(simulationRoles, roleInfo)
+
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"unit": unit, "roles": simulationRoles}, nil)
