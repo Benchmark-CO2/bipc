@@ -13,6 +13,7 @@ export type TRole = {
 export type TRoleConsumptions = {
   id: string;
   name: string;
+  is_member: boolean;
   is_protected?: boolean;
   consumption: TConsumptionPerModule;
 };

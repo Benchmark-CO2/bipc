@@ -353,18 +353,18 @@ function RouteComponent() {
       !consumption?.energy_max
     ) {
       return {
-        co2_min: "0 KgCO2",
-        co2_max: "0 KgCO2",
-        energy_min: "0 MJ",
-        energy_max: "0 MJ",
+        co2_min: "0 KgCO2/m²",
+        co2_max: "0 KgCO2/m²",
+        energy_min: "0 MJ/m²",
+        energy_max: "0 MJ/m²",
       };
     }
 
     return {
-      co2_min: `${(consumption.co2_min || 0).toFixed(1)} KgCO2`,
-      co2_max: `${(consumption.co2_max || 0).toFixed(1)} KgCO2`,
-      energy_min: `${(consumption.energy_min || 0).toFixed(1)} MJ`,
-      energy_max: `${(consumption.energy_max || 0).toFixed(1)} MJ`,
+      co2_min: `${(consumption.co2_min || 0).toFixed(1)} KgCO2/m²`,
+      co2_max: `${(consumption.co2_max || 0).toFixed(1)} KgCO2/m²`,
+      energy_min: `${(consumption.energy_min || 0).toFixed(1)} MJ/m²`,
+      energy_max: `${(consumption.energy_max || 0).toFixed(1)} MJ/m²`,
     };
   };
 

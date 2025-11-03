@@ -363,6 +363,10 @@ function RouteComponent() {
       ?.filter((el) => !el.is_protected)
       .map((role: TRoleConsumptions) => role.name) || [];
 
+  const selectedRole = roles?.find((role) => role.id === search.dcp);
+
+  console.log(selectedRole);
+
   return (
     <div className="flex flex-col gap-4">
       <CommonTable
@@ -403,14 +407,16 @@ function RouteComponent() {
                   unitId={unitId}
                 />
               )}
-              <Button
-                variant="bipc"
-                size="icon-lg"
-                onClick={handleClickConstructiveTechnologies}
-                disabled={selectedTab === "Todas as Disciplinas"}
-              >
-                <SquareArrowOutUpRight />
-              </Button>
+              {(hasPermission("*:*") || selectedRole?.is_member) && (
+                <Button
+                  variant="bipc"
+                  size="icon-lg"
+                  onClick={handleClickConstructiveTechnologies}
+                  disabled={selectedTab === "Todas as Disciplinas"}
+                >
+                  <SquareArrowOutUpRight />
+                </Button>
+              )}
             </div>
           </div>
         }
@@ -421,10 +427,10 @@ function RouteComponent() {
         isExpandable={false}
         lastRow={{
           data: {
-            co2_min: `${totalConsumptions.co2_min.toFixed(1)} KgCO₂`,
-            co2_max: `${totalConsumptions.co2_max.toFixed(1)} KgCO₂`,
-            energy_min: `${totalConsumptions.energy_min.toFixed(1)} MJ`,
-            energy_max: `${totalConsumptions.energy_max.toFixed(1)} MJ`,
+            co2_min: `${totalConsumptions.co2_min.toFixed(1)} KgCO₂/m²`,
+            co2_max: `${totalConsumptions.co2_max.toFixed(1)} KgCO₂/m²`,
+            energy_min: `${totalConsumptions.energy_min.toFixed(1)} MJ/m²`,
+            energy_max: `${totalConsumptions.energy_max.toFixed(1)} MJ/m²`,
           },
           type: "Total",
         }}
