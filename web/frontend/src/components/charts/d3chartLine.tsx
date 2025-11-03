@@ -802,9 +802,9 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
           .attr(
             "y",
             y1 +
-              (isExpanded
-                ? CHART_CONFIG.BAR_WIDTH.expanded + 4
-                : minimalBarHeight)
+            (isExpanded
+              ? CHART_CONFIG.BAR_WIDTH.expanded + 4
+              : minimalBarHeight)
           )
           .attr("text-anchor", "end")
           .attr("font-size", 12)
