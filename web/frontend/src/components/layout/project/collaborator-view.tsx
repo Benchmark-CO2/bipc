@@ -12,6 +12,8 @@ import { queryClient } from "@/utils/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "@tanstack/react-router";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
+import { getProjectInvites } from "@/actions/invites/getProjectInvites";
+import { deleteProjectInvite } from "@/actions/invites/deleteProjectInvite";
 
 const CollaboratorsView = ({ projectId }: { projectId: string }) => {
   const { email } = useAuth();
@@ -23,6 +25,14 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
     queryFn: () => getProjectCollaborators(projectId),
     staleTime: 0,
     refetchOnMount: true,
+  });
+
+  const { data: projectInvites } = useQuery({
+    queryKey: ["project-invites", projectId],
+    queryFn: async () => {
+      const response = await getProjectInvites(projectId);
+      return response.data.invitations;
+    },
   });
 
   const {
@@ -72,6 +82,26 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
       },
       onError: (error) => {
         toast.error("Erro ao remover disciplina", {
+          description: error.message || "Erro desconhecido",
+          duration: 5000,
+        });
+      },
+    });
+
+  const { mutate: mutateDeleteInvite, isPending: isDeletingInvite } =
+    useMutation({
+      mutationFn: (inviteId: string) =>
+        deleteProjectInvite(projectId, inviteId),
+      onSuccess: () => {
+        toast.success("Convite removido com sucesso", {
+          duration: 5000,
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["project-invites", projectId],
+        });
+      },
+      onError: (error) => {
+        toast.error("Erro ao remover convite", {
           description: error.message || "Erro desconhecido",
           duration: 5000,
         });
@@ -144,33 +174,37 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
               </div>
               {!discipline.is_protected && (
                 <div className="flex items-center gap-2">
-                  <ModalConfirmDelete
-                    componentTrigger={
-                      <Button variant="outline-destructive" size="icon-lg">
-                        {isDeletingDiscipline ? (
-                          <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
-                        ) : (
-                          <TrashIcon className="h-4 w-4" />
-                        )}
-                      </Button>
-                    }
-                    title="Remover Disciplina"
-                    onConfirm={() => mutateDeleteDiscipline(discipline.id)}
-                  />
-                  <DrawerFormDisciplines
-                    componentTrigger={
-                      <Button
-                        variant="outline-bipc"
-                        size="icon-lg"
-                        className="text-primary border-primary"
-                      >
-                        <PencilIcon className="h-4 w-4" />
-                      </Button>
-                    }
-                    projectId={projectId}
-                    roleData={discipline}
-                    projectUsers={collaborators}
-                  />
+                  {hasPermission("delete:role") && (
+                    <ModalConfirmDelete
+                      componentTrigger={
+                        <Button variant="outline-destructive" size="icon-lg">
+                          {isDeletingDiscipline ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                          ) : (
+                            <TrashIcon className="h-4 w-4" />
+                          )}
+                        </Button>
+                      }
+                      title="Remover Disciplina"
+                      onConfirm={() => mutateDeleteDiscipline(discipline.id)}
+                    />
+                  )}
+                  {hasPermission("update:role") && (
+                    <DrawerFormDisciplines
+                      componentTrigger={
+                        <Button
+                          variant="outline-bipc"
+                          size="icon-lg"
+                          className="text-primary border-primary"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </Button>
+                      }
+                      projectId={projectId}
+                      roleData={discipline}
+                      projectUsers={collaborators}
+                    />
+                  )}
                 </div>
               )}
             </div>
@@ -243,6 +277,68 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
           ))}
         </div>
       </div>
+
+      {projectInvites && projectInvites.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg dark:border-gray-700">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-md font-semibold text-primary dark:text-gray-200">
+              Convites Pendentes
+            </h2>
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {projectInvites.length}{" "}
+              {projectInvites.length === 1 ? "convite" : "convites"}
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            {projectInvites.map((invite) => (
+              <div
+                key={invite.id}
+                className="flex items-center justify-between p-4 border border-yellow-200 dark:border-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-yellow-200 dark:bg-yellow-600 rounded-full flex items-center justify-center text-sm font-medium text-yellow-700 dark:text-yellow-300">
+                    {invite.email.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100">
+                      {invite.email}
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Enviado em{" "}
+                      {new Date(invite.created_at).toLocaleDateString("pt-BR")}
+                    </p>
+                    <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                      Expira em{" "}
+                      {new Date(invite.expires_at).toLocaleDateString("pt-BR")}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 text-xs font-medium bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 rounded-full">
+                    Pendente
+                  </span>
+                  {hasPermission("delete:invite") && (
+                    <ModalConfirmDelete
+                      componentTrigger={
+                        <Button variant="outline-destructive" size="icon-lg">
+                          {isDeletingInvite ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                          ) : (
+                            <TrashIcon className="h-4 w-4" />
+                          )}
+                        </Button>
+                      }
+                      title="Remover Convite"
+                      onConfirm={() => mutateDeleteInvite(invite.id)}
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

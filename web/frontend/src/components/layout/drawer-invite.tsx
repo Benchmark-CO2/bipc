@@ -27,6 +27,7 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Input } from "../ui/input";
+import { queryClient } from "@/utils/queryClient";
 
 const DrawerInvite = ({ projectId }: { projectId: string }) => {
   const [openDrawer, setOpenDrawer] = useState(false);
@@ -46,6 +47,9 @@ const DrawerInvite = ({ projectId }: { projectId: string }) => {
       toast.success(t("drawerInvite.title"), {
         description: t("drawerInvite.successMessage"),
         duration: 5000,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project-invites", projectId],
       });
       form.reset();
       setOpenDrawer(false);

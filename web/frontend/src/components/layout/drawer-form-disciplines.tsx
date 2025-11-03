@@ -60,12 +60,15 @@ const mockPermissions = {
   management: [
     // { id: 1, label: "Editar propriedades do projeto" },
     { id: 2, label: "Atualizar projeto" },
-    { id: 3, label: "Convidar usuários" },
+    { id: 3, label: "Convidar colaborador" },
     { id: 4, label: "Remover colaborador" },
     { id: 5, label: "Remover convite de colaborador" },
     { id: 6, label: "Criar disciplina" },
     { id: 7, label: "Atualizar disciplina" },
     { id: 8, label: "Remover disciplina" },
+    { id: 9, label: "Criar unidade" },
+    { id: 10, label: "Atualizar unidade" },
+    { id: 11, label: "Remover unidade" },
   ],
   simulation: [],
 };
