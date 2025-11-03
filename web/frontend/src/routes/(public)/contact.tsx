@@ -6,10 +6,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { createFileRoute } from "@tanstack/react-router";
+import { useState, FormEvent } from "react";
+
 export const Route = createFileRoute("/(public)/contact")({
   component: RouteComponent,
 });
+
 function RouteComponent() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+
+    const mailtoLink = `mailto:contato@bipc.org.br?subject=${encodeURIComponent(
+      subject || "Contato via site"
+    )}&body=${encodeURIComponent(
+      `Nome: ${name}\nE-mail: ${email}\n\nMensagem:\n${message}`
+    )}`;
+
+    window.location.href = mailtoLink;
+  };
+
   return (
     <div className="w-full flex justify-center">
       {/* Constrain overall content width and add horizontal padding */}
@@ -52,7 +72,7 @@ function RouteComponent() {
             </div>
 
             <div className="text-sm text-muted-foreground">
-              e-mail: contatobipc@bipc.org
+              e-mail: contato@bipc.org.br
             </div>
           </div>
         </div>
@@ -64,36 +84,58 @@ function RouteComponent() {
               Fale conosco
             </h1>
 
-            <form className="w-full max-w-lg">
+            <form className="w-full max-w-lg" onSubmit={handleSubmit}>
               <label className="block mb-4">
                 <span className="text-sm text-muted-foreground block mb-1">
                   Nome
                 </span>
-                <Input className="w-full" type="text" />
+                <Input
+                  className="w-full"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
               </label>
 
               <label className="block mb-4">
                 <span className="text-sm text-muted-foreground block mb-1">
                   E-mail
                 </span>
-                <Input className="w-full" type="email" />
+                <Input
+                  className="w-full"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </label>
 
               <label className="block mb-4">
                 <span className="text-sm text-muted-foreground block mb-1">
                   Assunto
                 </span>
-                <Input className="w-full" type="text" />
+                <Input
+                  className="w-full"
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                />
               </label>
 
               <label className="block mb-4">
                 <span className="text-sm text-muted-foreground block mb-1">
                   Mensagem
                 </span>
-                <Textarea className="w-full min-h-[160px]" />
+                <Textarea
+                  className="w-full min-h-[160px]"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  required
+                />
               </label>
 
-              <Button variant={"default"} className="w-full">
+              <Button type="submit" variant={"default"} className="w-full">
                 Enviar
               </Button>
             </form>
