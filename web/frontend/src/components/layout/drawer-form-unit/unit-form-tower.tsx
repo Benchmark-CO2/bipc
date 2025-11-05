@@ -14,6 +14,7 @@ import { UnitFormSchema } from "@/validators/unitForm.validator";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
 import React from "react";
 import { UseFormReturn, useFieldArray, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { Button } from "../../ui/button";
 import { Card } from "../../ui/card";
 import {
@@ -33,7 +34,6 @@ import {
   TableRow,
 } from "../../ui/table";
 import BuildingVisualizer from "../building-visualizer";
-import { useTranslation } from "react-i18next";
 
 interface UnitFormTowerProps {
   form: UseFormReturn<UnitFormSchema>;
@@ -258,9 +258,9 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
   ];
 
   return (
-    <div className="flex gap-6">
+    <div className={"flex gap-6 max-sm:flex-col"}>
       {/* Visualizador da torre */}
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 max-sm:mx-auto">
         <BuildingVisualizer
           key={`building-${watchedFloors?.length || 0}-${JSON.stringify(watchedFloors?.map((f) => ({ color: categoryColors[f.category], repetition: f.repetition, category: f.category })))}`}
           floors={
@@ -273,7 +273,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
       </div>
       {/* Formulário de pavimentos */}
       <div className="flex-1 space-y-4">
-        <div className="grid grid-cols-2 gap-4 items-baseline">
+        <div className="grid grid-cols-2 gap-4 items-baseline max-sm:grid-cols-1">
           <FormField
             control={form.control}
             name="name"
@@ -442,7 +442,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                     <Input
                                       placeholder="Ex: Cobertura"
                                       disabled={isEditMode}
-                                      className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
+                                      className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full max-sm:min-w-[100px] ${
                                         fieldState.error
                                           ? "border border-red-500"
                                           : "border-0"
