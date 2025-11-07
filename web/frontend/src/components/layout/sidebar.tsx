@@ -64,7 +64,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             </SidemenuItem>
           </li>
 
-          <li>
+          {posLaunchFeatures.trainingModal.enabled && (<li>
             <SidemenuItem variant="link">
               <Link
                 to={posLaunchFeatures.trainingModal.formUrl}
@@ -75,7 +75,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 <span>Capacitação</span>
               </Link>
             </SidemenuItem>
-          </li>
+          </li>)}
 
           <li>
             <SidemenuItem variant="link">
