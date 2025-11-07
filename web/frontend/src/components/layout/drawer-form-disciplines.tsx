@@ -1,4 +1,32 @@
+import { patchDiscipline } from "@/actions/disciplines/patchDiscipline";
+import { postDiscipline } from "@/actions/disciplines/postDiscipline";
+import { getProjectCollaborators } from "@/actions/projectCollaborators/getProjectCollaborators";
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { cn } from '@/lib/utils';
+import { TCollaborator } from "@/types/collaborators";
+import { TRole } from "@/types/disciplines";
+import { TUser } from "@/types/user";
+import { queryClient } from "@/utils/queryClient";
+import {
+  disciplineFormSchema,
+  DisciplineFormSchema,
+} from "@/validators/disciplineForm.validator";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { ChevronDown, ChevronUp, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { toast } from "sonner";
+import { Button } from "../ui/button";
+import { Checkbox } from "../ui/checkbox";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "../ui/command";
 import {
   Drawer,
   DrawerContent,
@@ -7,8 +35,6 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "../ui/drawer";
-import { Button } from "../ui/button";
-import { ChevronDown, ChevronUp, Trash2, X } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -18,34 +44,10 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Input } from "../ui/input";
-import { Textarea } from "../ui/textarea";
-import { Checkbox } from "../ui/checkbox";
-import { Switch } from "../ui/switch";
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  disciplineFormSchema,
-  DisciplineFormSchema,
-} from "@/validators/disciplineForm.validator";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { postDiscipline } from "@/actions/disciplines/postDiscipline";
-import { TRole } from "@/types/disciplines";
-import { TUser } from "@/types/user";
-import { queryClient } from "@/utils/queryClient";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "../ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import NotFoundList from "../ui/not-found-list";
-import { patchDiscipline } from "@/actions/disciplines/patchDiscipline";
-import { getProjectCollaborators } from "@/actions/projectCollaborators/getProjectCollaborators";
-import { TCollaborator } from "@/types/collaborators";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { Switch } from "../ui/switch";
+import { Textarea } from "../ui/textarea";
 
 interface IDrawerFormDisciplines {
   componentTrigger: React.ReactNode;
@@ -338,8 +340,10 @@ export default function DrawerFormDisciplines({
     }
   }, [roleData, openDrawer, form, resetCreation, projectUsers]);
 
+  const isMobile = useIsMobile()
+
   return (
-    <Drawer direction="right" open={openDrawer} dismissible={false}>
+    <Drawer direction={isMobile ? "bottom" : "right"} open={openDrawer} dismissible={false}>
       <DrawerTrigger
         asChild
         onClick={(e) => {
@@ -349,7 +353,9 @@ export default function DrawerFormDisciplines({
       >
         {componentTrigger}
       </DrawerTrigger>
-      <DrawerContent className="min-w-2/5">
+      <DrawerContent className={cn("min-w-2/5", {
+        "w-full h-4/5": isMobile,
+      })}>
         <DrawerHeader className="px-8">
           <DrawerTitle>
             {isEditMode ? "Editar Disciplina" : "Adicionar Disciplina"}
@@ -539,7 +545,9 @@ export default function DrawerFormDisciplines({
                       Colaborador...
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[400px] p-0" align="start">
+                  <PopoverContent className={cn("w-[400px] p-0", {
+                    "w-[280px]": isMobile,
+                  })} align="start">
                     <Command shouldFilter={false}>
                       <CommandInput
                         placeholder="Buscar colaborador..."

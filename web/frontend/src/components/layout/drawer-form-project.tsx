@@ -6,7 +6,9 @@ import {
   postProject,
   PostProjectRequest,
 } from "@/actions/projects/postProject";
+import { useIsMobile } from '@/hooks/useIsMobile';
 import useCep from "@/hooks/useLocation";
+import { cn } from '@/lib/utils';
 import { IProject } from "@/types/projects";
 import { masks } from "@/utils/masks";
 import {
@@ -25,11 +27,10 @@ import { Button } from "../ui/button";
 import {
   Drawer,
   DrawerContent,
-  DrawerDescription,
+  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
-  DrawerFooter,
+  DrawerTrigger
 } from "../ui/drawer";
 import {
   Form,
@@ -286,8 +287,9 @@ export default function DrawerFormProject({
     }
   }, [isError, form]);
 
+  const isMobile = useIsMobile()
   return (
-    <Drawer direction="right" open={openDrawer} dismissible={false}>
+    <Drawer direction={isMobile ? "bottom" : "right"} open={openDrawer} dismissible={false}>
       <DrawerTrigger
         asChild
         onClick={(e) => {
@@ -297,7 +299,9 @@ export default function DrawerFormProject({
       >
         {componentTrigger}
       </DrawerTrigger>
-      <DrawerContent className="min-w-2/5">
+      <DrawerContent className={cn("min-w-2/5", {
+        "w-full h-4/5": isMobile,
+      })}>
         <DrawerHeader className="px-8">
           <DrawerTitle>
             {isEditMode
