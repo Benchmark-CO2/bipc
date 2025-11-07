@@ -1,11 +1,13 @@
 import { getUnitByUUID } from "@/actions/units/getUnit";
 import { patchUnit } from "@/actions/units/patchUnit";
 import { postUnit } from "@/actions/units/postUnit";
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { cn } from '@/lib/utils';
+import { convertUnitToFormData } from "@/utils/unitConversions";
 import {
   UnitFormSchema,
   unitFormSchema,
 } from "@/validators/unitForm.validator";
-import { convertUnitToFormData } from "@/utils/unitConversions";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -152,9 +154,10 @@ const DrawerFormUnit = ({
     }
   }, [unitData, form]);
 
+  const isMobile = useIsMobile()
   return (
     <Drawer
-      direction="right"
+      direction={isMobile ? "bottom" : "right"}
       open={isOpen}
       onOpenChange={setIsOpen}
       onClose={handleClose}
@@ -170,7 +173,9 @@ const DrawerFormUnit = ({
           </Button>
         )}
       </DrawerTrigger>
-      <DrawerContent className="min-w-4/5">
+      <DrawerContent className={cn("min-w-4/5", {
+        "w-full h-4/5": isMobile,
+      })}>
         <DrawerHeader className="px-8">
           <DrawerTitle className="text-2xl font-bold text-primary">
             {unitId

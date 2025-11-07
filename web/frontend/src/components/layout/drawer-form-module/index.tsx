@@ -1,14 +1,22 @@
+import { getModule } from "@/actions/modules/getModule";
+import { patchModule } from "@/actions/modules/patchModule";
+import { postModule } from "@/actions/modules/postModule";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { cn } from '@/lib/utils';
 import { ModuleParamsProps, TModulesTypes } from "@/types/modules";
+import { TTowerFloorCategory } from "@/types/units";
 import {
   ModuleFormSchema,
   moduleFormSchema,
 } from "@/validators/moduleFormByType.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { /*Loader2,*/ Loader2, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Button } from "../../ui/button";
 import {
   Drawer,
@@ -33,17 +41,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../ui/select";
+import BuildingVisualizer from "../building-visualizer";
+import { getDefaultValuesByType } from "./module-default-values";
 import ModuleFormBeamColumn from "./module-form-beam-column";
 import ModuleFormConcreteWall from "./module-form-concrete-wall";
 import ModuleFormStructuralMasonry from "./module-form-structural-masonry";
-import BuildingVisualizer from "../building-visualizer";
-import { getDefaultValuesByType } from "./module-default-values";
-import { TTowerFloorCategory } from "@/types/units";
-import { postModule } from "@/actions/modules/postModule";
-import { toast } from "sonner";
-import { getModule } from "@/actions/modules/getModule";
-import { patchModule } from "@/actions/modules/patchModule";
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface DrawerFormModuleProps {
   triggerComponent?: React.ReactNode;
@@ -279,9 +281,11 @@ const DrawerFormModule = ({
     { value: "structural_masonry", label: t("common.structureType.masonry") },
   ];
 
+  const isMobile = useIsMobile();
+
   return (
     <Drawer
-      direction="right"
+      direction={isMobile ? "bottom" : "right"}
       open={isOpen}
       dismissible={false}
       onOpenChange={(open) => {
@@ -306,7 +310,9 @@ const DrawerFormModule = ({
           </button>
         )}
       </DrawerTrigger>
-      <DrawerContent className="min-w-4/6">
+      <DrawerContent className={cn("min-w-4/6", {
+        "w-full h-[80vh]": isMobile,
+      })}>
         <DrawerHeader className="px-8">
           <DrawerTitle className="text-2xl font-bold text-primary">
             {moduleId
@@ -321,7 +327,7 @@ const DrawerFormModule = ({
             <X className="h-4 w-4" />
           </Button>
         </DrawerHeader>
-        <div className="mx-auto w-full p-6 pr-0 pt-0 flex overflow-auto">
+        <div className="mx-auto w-full p-6 pr-0 pt-0 flex overflow-auto max-sm:flex-col max-sm:flex-1 max-sm:min-h-0">
           {isLoadingModule ? (
             <div className="grid w-full grid-cols-3 gap-4">
               <div className="flex flex-col w-full h-auto space-y-2">
@@ -353,10 +359,16 @@ const DrawerFormModule = ({
                   });
                 })}
                 id="module-form"
-                className="w-full flex gap-6 h-full"
+                className="w-full flex gap-6 h-full max-sm:flex-col"
               >
-                <div className="flex-shrink-0 h-full overflow-y-auto">
-                  <div className="sticky top-0">
+                <div className={cn("h-full overflow-y-auto", {
+                  'flex-shrink-0': !isMobile,
+                  'h-auto flex-1 mx-auto': isMobile,
+                })}>
+                  <div className={cn("top-0", {
+                    'sticky': !isMobile,
+                    'w-full': isMobile,
+                  })}>
                     <BuildingVisualizer
                       key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ index: f.index })))}`}
                       towerFloors={floors || []}
