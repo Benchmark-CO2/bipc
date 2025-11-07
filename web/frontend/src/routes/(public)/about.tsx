@@ -219,7 +219,7 @@ const advisoryCommittee = [
     photo: `${BUCKET_URL}/Carlos+Massucato.png`,
   },
   {
-    name: "Clarisse Degani",
+    name: "Clarice Degani",
     role: "",
     photo: `${BUCKET_URL}/Clarisse+Degani.png`,
   },
