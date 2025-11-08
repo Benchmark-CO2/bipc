@@ -9,32 +9,37 @@ body:
     attributes:
       value: |
         Use este template para propor novas features ou melhorias.
+
   - type: input
     id: summary
     attributes:
-      label: Resumo
-      placeholder: Ex: Adicionar filtro por data na listagem de usuários
+      label: "Resumo"
+      placeholder: "Ex: Adicionar filtro por data na listagem de usuários"
     validations:
       required: true
+
   - type: textarea
     id: problem
     attributes:
-      label: Problema relacionado
-      placeholder: Descreva o problema que essa feature resolveria
+      label: "Problema relacionado"
+      placeholder: "Descreva o problema que essa feature resolveria"
+
   - type: textarea
     id: proposal
     attributes:
-      label: Descrição da proposta
-      placeholder: Descreva a ideia ou funcionalidade desejada em detalhes
+      label: "Descrição da proposta"
+      placeholder: "Descreva a ideia ou funcionalidade desejada em detalhes"
     validations:
       required: true
+
   - type: textarea
     id: alternatives
     attributes:
-      label: Alternativas consideradas
-      placeholder: Existe alguma outra solução já existente?
+      label: "Alternativas consideradas"
+      placeholder: "Existe alguma outra solução já existente?"
+
   - type: textarea
     id: additional_context
     attributes:
-      label: Contexto adicional
-      placeholder: Qualquer informação, mockup, link, print etc.
+      label: "Contexto adicional"
+      placeholder: "Qualquer informação, mockup, link, print etc."
