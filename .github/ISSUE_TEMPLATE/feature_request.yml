@@ -1,0 +1,40 @@
+name: "🚀 Nova Feature"
+description: "Proponha uma nova funcionalidade ou melhoria"
+title: "[FEATURE] Resumo curto"
+labels: ["feature", "enhancement"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use este template para propor novas features ou melhorias.
+  - type: input
+    id: summary
+    attributes:
+      label: Resumo
+      placeholder: Ex: Adicionar filtro por data na listagem de usuários
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema relacionado
+      placeholder: Descreva o problema que essa feature resolveria
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Descrição da proposta
+      placeholder: Descreva a ideia ou funcionalidade desejada em detalhes
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+      placeholder: Existe alguma outra solução já existente?
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Contexto adicional
+      placeholder: Qualquer informação, mockup, link, print etc.

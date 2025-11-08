@@ -1,0 +1,60 @@
+name: "🐞 Reportar Bug"
+description: "Descreva um problema encontrado no sistema"
+title: "[BUG] Resumo curto do problema"
+labels: ["bug", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por reportar um bug 🙏  
+        Por favor, preencha as informações abaixo para nos ajudar a reproduzir o problema.
+  - type: input
+    id: summary
+    attributes:
+      label: Resumo
+      description: Descreva brevemente o bug.
+      placeholder: Ex: Erro ao salvar novo projeto
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      description: Liste os passos para reproduzir o problema.
+      placeholder: |
+        1. Vá até a tela X
+        2. Clique no botão Y
+        3. Observe o erro Z
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamento esperado
+      placeholder: Ex: O botão deveria salvar e retornar à lista
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportamento atual
+      placeholder: Ex: Aparece um erro “400 Bad Request”
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severidade
+      options:
+        - Baixa
+        - Média
+        - Alta
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Ambiente
+      description: Inclua informações relevantes.
+      placeholder: |
+        - Browser: Chrome 120.0
+        - OS: Ubuntu 22.04
+        - Versão do app: 1.5.0
