@@ -217,14 +217,14 @@ production/deploy/ci:
     rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./remote/production/api.service ubuntu@$(production_host_ip):~
     rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./remote/production/Caddyfile ubuntu@$(production_host_ip):~
     ssh -t -i /tmp/deploy_key -o StrictHostKeyChecking=no ubuntu@$(production_host_ip) '\
-        migrate -path ~/migrations -database $$DB_DSN up \
-        && sudo mv ~/.envrc /etc/environment \
-        && sudo systemctl daemon-reload \
-        && sudo mv ~/api.service /etc/systemd/system/ \
-        && sudo systemctl enable api \
-        && sudo systemctl restart api \
-        && sudo mv ~/Caddyfile /etc/caddy/ \
-        && sudo systemctl reload caddy \
+			migrate -path ~/migrations -database $$DB_DSN up \
+			&& sudo mv ~/.envrc /etc/environment \
+			&& sudo systemctl daemon-reload \
+			&& sudo mv ~/api.service /etc/systemd/system/ \
+			&& sudo systemctl enable api \
+			&& sudo systemctl restart api \
+			&& sudo mv ~/Caddyfile /etc/caddy/ \
+			&& sudo systemctl reload caddy \
     '
     @rm -f /tmp/deploy_key /tmp/.envrc
 # journalctl -xeu api.service
