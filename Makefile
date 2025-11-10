@@ -208,7 +208,7 @@ production/deploy/api:
 ## production/deploy/ci: deploy the api to production from CI/CD
 .PHONY: production/deploy/ci
 production/deploy/ci:
-	@echo "$$SSH_PRIVATE_KEY" | base64 --decode | printf "%s" > /tmp/deploy_key
+	@printf "%s" "$$SSH_PRIVATE_KEY" | base64 --decode > /tmp/deploy_key
 	@chmod 600 /tmp/deploy_key
 	@echo "--- Início da Chave Injetada ---"
 	@head -n 3 /tmp/deploy_key 
