@@ -235,13 +235,16 @@ func (m UnitModel) GetByID(id uuid.UUID) (*Unit, error) {
 func (m UnitModel) getFloorsByUnitID(unitID uuid.UUID) ([]Floor, error) {
 	query := `
 		SELECT f.id, f.group_id, fg.name, fg.category, f.area, f.height, f.index,
-		       ftm.role_id, ftm.option_id, ftm.technology, ftm.co2_min, ftm.co2_max, ftm.energy_min, ftm.energy_max
+		       ftm.technology, ftm.co2_min, ftm.co2_max, ftm.energy_min, ftm.energy_max
 		FROM floor f
 		INNER JOIN floor_group fg ON f.group_id = fg.id
-		LEFT JOIN floors_consumption ftm ON f.id = ftm.floor_id
-		LEFT JOIN options opt ON ftm.option_id = opt.id AND ftm.role_id = opt.role_id
-		WHERE fg.unit_id = $1 
-		  AND (ftm.option_id IS NULL OR opt.active = TRUE)
+		LEFT JOIN (
+			SELECT fc.floor_id, fc.technology, fc.co2_min, fc.co2_max, fc.energy_min, fc.energy_max
+			FROM floors_consumption fc
+			INNER JOIN options opt ON fc.option_id = opt.id AND fc.role_id = opt.role_id
+			WHERE opt.active = TRUE
+		) ftm ON f.id = ftm.floor_id
+		WHERE fg.unit_id = $1
 		ORDER BY f.index`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -261,12 +264,12 @@ func (m UnitModel) getFloorsByUnitID(unitID uuid.UUID) ([]Floor, error) {
 		var groupName, category string
 		var area, height float64
 		var index int
-		var roleID, optionID, tech sql.NullString
+		var tech sql.NullString
 		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
 
 		err := rows.Scan(
 			&floorID, &groupID, &groupName, &category, &area, &height, &index,
-			&roleID, &optionID, &tech, &co2Min, &co2Max, &energyMin, &energyMax,
+			&tech, &co2Min, &co2Max, &energyMin, &energyMax,
 		)
 		if err != nil {
 			return nil, err
