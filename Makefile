@@ -208,9 +208,13 @@ production/deploy/api:
 ## production/deploy/ci: deploy the api to production from CI/CD
 .PHONY: production/deploy/ci
 production/deploy/ci:
-	@echo "$$SSH_PRIVATE_KEY" | base64 --decode > /tmp/deploy_key
+	@echo "$$SSH_PRIVATE_KEY" | base64 --decode | printf "%s" > /tmp/deploy_key
 	@chmod 600 /tmp/deploy_key
+	@echo "--- Início da Chave Injetada ---"
 	@head -n 3 /tmp/deploy_key 
+	@echo "..."
+	@tail -n 3 /tmp/deploy_key
+	@echo "--- Fim da Chave Injetada ---"
 	@echo "$$ENV_FILE" | tr -d '\r' > /tmp/.envrc
 	@mkdir -p ~/.ssh
 	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./bin/linux_amd64/api ubuntu@$(production_host_ip):~
