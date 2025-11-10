@@ -208,8 +208,10 @@ production/deploy/api:
 ## production/deploy/ci: deploy the api to production from CI/CD
 .PHONY: production/deploy/ci
 production/deploy/ci:
-	@echo "$$SSH_PRIVATE_KEY" | tr -d '\r' > /tmp/deploy_key
+	@echo "$$SSH_PRIVATE_KEY" | base64 --decode > /tmp/deploy_key
 	@chmod 600 /tmp/deploy_key
+	@eval "$(ssh-agent -s)"
+	@ssh-add /tmp/deploy_key
 	@echo "$$ENV_FILE" | tr -d '\r' > /tmp/.envrc
 	@mkdir -p ~/.ssh
 	@ssh-keyscan -H $(production_host_ip) >> ~/.ssh/known_hosts 2>/dev/null
