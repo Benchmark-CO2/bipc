@@ -213,12 +213,12 @@ production/deploy/ci:
 	@head -n 3 /tmp/deploy_key 
 	@echo "$$ENV_FILE" | tr -d '\r' > /tmp/.envrc
 	@mkdir -p ~/.ssh
-	rsync -P -e "ssh -i /tmp/deploy_key" ./bin/linux_amd64/api ubuntu@$(production_host_ip):~
-	rsync -rP --delete -e "ssh -i /tmp/deploy_key" ./migrations ubuntu@$(production_host_ip):~
-	rsync -P -e "ssh -i /tmp/deploy_key" /tmp/.envrc ubuntu@$(production_host_ip):~/.envrc
-	rsync -P -e "ssh -i /tmp/deploy_key" ./remote/production/api.service ubuntu@$(production_host_ip):~
-	rsync -P -e "ssh -i /tmp/deploy_key" ./remote/production/Caddyfile ubuntu@$(production_host_ip):~
-	ssh -t -i /tmp/deploy_key ubuntu@$(production_host_ip) "export DB_DSN='$$DB_DSN' && migrate -path ~/migrations -database \$$DB_DSN up && sudo mv ~/.envrc /etc/environment && sudo systemctl daemon-reload && sudo mv ~/api.service /etc/systemd/system/ && sudo systemctl enable api && sudo systemctl restart api && sudo mv ~/Caddyfile /etc/caddy/ && sudo systemctl reload caddy"
+	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./bin/linux_amd64/api ubuntu@$(production_host_ip):~
+	rsync -rP --delete -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./migrations ubuntu@$(production_host_ip):~
+	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" /tmp/.envrc ubuntu@$(production_host_ip):~/.envrc
+	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./remote/production/api.service ubuntu@$(production_host_ip):~
+	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./remote/production/Caddyfile ubuntu@$(production_host_ip):~
+	ssh -t -i /tmp/deploy_key -o StrictHostKeyChecking=no ubuntu@$(production_host_ip) "export DB_DSN='$$DB_DSN' && migrate -path ~/migrations -database \$$DB_DSN up && sudo mv ~/.envrc /etc/environment && sudo systemctl daemon-reload && sudo mv ~/api.service /etc/systemd/system/ && sudo systemctl enable api && sudo systemctl restart api && sudo mv ~/Caddyfile /etc/caddy/ && sudo systemctl reload caddy"
 	@rm -f /tmp/deploy_key /tmp/.envrc
 
 # journalctl -xeu api.service
