@@ -9,7 +9,7 @@
 # export SMTP_PASSWORD=
 # export SMTP_SENDER=
 
-include .envrc
+-include .envrc
 
 # ==============================================================================
 # Go Installation
