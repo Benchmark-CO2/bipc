@@ -208,17 +208,19 @@ production/deploy/api:
 ## production/deploy/ci: deploy the api to production from CI/CD
 .PHONY: production/deploy/ci
 production/deploy/ci:
-	@echo "-- chave de deploy --"
-	@echo "$$SSH_PRIVATE_KEY"
-	@printf "%s" "$$SSH_PRIVATE_KEY" | base64 --decode > /tmp/deploy_key
+	@echo "Creating SSH key file..."
+	@printf "%s\n" "$$SSH_PRIVATE_KEY" > /tmp/deploy_key
 	@chmod 600 /tmp/deploy_key
-	@echo "--- Início da Chave Injetada ---"
-	@head -n 3 /tmp/deploy_key 
-	@echo "..."
+	@echo "--- Key file created ---"
+	@ls -lh /tmp/deploy_key
+	@echo "--- First 3 lines ---"
+	@head -n 3 /tmp/deploy_key
+	@echo "--- Last 3 lines ---"
 	@tail -n 3 /tmp/deploy_key
-	@echo "--- Fim da Chave Injetada ---"
-	@echo "$$ENV_FILE" | tr -d '\r' > /tmp/.envrc
+	@echo "Creating .envrc file..."
+	@printf "%s\n" "$$ENV_FILE" > /tmp/.envrc
 	@mkdir -p ~/.ssh
+	@echo "Starting deployment..."
 	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./bin/linux_amd64/api ubuntu@$(production_host_ip):~
 	rsync -rP --delete -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./migrations ubuntu@$(production_host_ip):~
 	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" /tmp/.envrc ubuntu@$(production_host_ip):~/.envrc
