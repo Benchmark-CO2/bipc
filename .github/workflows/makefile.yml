@@ -33,8 +33,8 @@ jobs:
       run: make build/api
 
     - name: Deploy to production
-      run: |
-        export SSH_PRIVATE_KEY='${{ secrets.SSH_PRIVATE_KEY }}'
-        export ENV_FILE='${{ secrets.ENV_FILE }}'
-        export DB_DSN='${{ secrets.DB_DSN }}'
-        make production/deploy/ci
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        ENV_FILE: ${{ secrets.ENV_FILE }}
+        DB_DSN: ${{ secrets.DB_DSN }}
+      run: make production/deploy/ci
