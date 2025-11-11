@@ -432,15 +432,16 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .call(d3.axisBottom(xScale).ticks(Math.min(10, Math.floor(_width / 60))))
       .selectAll("text")
       .style("font-size", "12px")
-      .style("fill", DEFAULT_COLORS.TEXT);
+      .style("fill", DEFAULT_COLORS.TEXT)
+      .text(d => (d as number).toInternational(undefined, 0));
 
     g.append("g")
       .attr("class", "axis-y")
       .call(d3.axisLeft(yScale).ticks(8))
       .selectAll("text")
       .style("font-size", "12px")
-      .style("fill", DEFAULT_COLORS.TEXT);
-
+      .style("fill", DEFAULT_COLORS.TEXT)
+      .text(d => (d as number).toInternational(undefined, 1));
     // Remove axis lines
     g.selectAll(".domain").remove();
     g.selectAll(".tick line").remove();
@@ -824,7 +825,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           .attr("font-size", 14)
           .attr("font-weight", "bold")
           .attr("fill", "var(--primary)")
-          .text(formatNumber(d.min, 0))
+          .text(d.min.toInternational(undefined, 0))
           .attr("id", `bar-label-min-${d.id}`);
 
         // Max value label
@@ -836,7 +837,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           .attr("font-size", 14)
           .attr("font-weight", "bold")
           .attr("fill", "var(--primary)")
-          .text(formatNumber(d.max, 0))
+          .text(d.max.toInternational(undefined, 0))
           .attr("id", `bar-label-max-${d.id}`);
 
         // Project identifier

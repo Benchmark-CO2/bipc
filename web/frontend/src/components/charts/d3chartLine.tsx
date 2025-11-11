@@ -184,7 +184,6 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     isMobile,
     isExpanded,
     containerWidth,
-    containerHeight
   );
 
   const getTooltipPosition = useTooltipPosition();
@@ -605,14 +604,16 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       )
       .selectAll("text")
       .style("font-size", "12px")
-      .style("fill", DEFAULT_COLORS.TEXT);
+      .style("fill", DEFAULT_COLORS.TEXT)
+      .text(d => (d as number).toInternational(undefined, 1))
 
     axesGroup
       .append("g")
       .call(d3.axisLeft(yScale).ticks(8))
       .selectAll("text")
       .style("font-size", "12px")
-      .style("fill", DEFAULT_COLORS.TEXT);
+      .style("fill", DEFAULT_COLORS.TEXT)
+      .text(d => (d as number).toInternational(undefined, 0))
 
     // Procel color bands
     const faixaWidth =
