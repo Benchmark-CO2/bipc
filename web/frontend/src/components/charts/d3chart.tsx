@@ -12,6 +12,7 @@ import React, {
   useState,
 } from "react";
 import Indicators from "./components/indicators";
+import { formatNumber } from "@/utils/numbers";
 
 // Utility: Debounce function
 const debounce = <T extends (...args: any[]) => any>(
@@ -823,7 +824,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           .attr("font-size", 14)
           .attr("font-weight", "bold")
           .attr("fill", "var(--primary)")
-          .text(d.min.toFixed(0))
+          .text(formatNumber(d.min, 0))
           .attr("id", `bar-label-min-${d.id}`);
 
         // Max value label
@@ -835,7 +836,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           .attr("font-size", 14)
           .attr("font-weight", "bold")
           .attr("fill", "var(--primary)")
-          .text(d.max.toFixed(0))
+          .text(formatNumber(d.max, 0))
           .attr("id", `bar-label-max-${d.id}`);
 
         // Project identifier
@@ -931,13 +932,13 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
               <span>
                 Min:{" "}
                 <b>
-                  {tooltip.value.min.toFixed(2)} {unit}
+                  {formatNumber(tooltip.value.min, 2)} {unit}
                 </b>
               </span>
               <span>
                 Max:{" "}
                 <b>
-                  {tooltip.value.max.toFixed(2)} {unit}
+                  {formatNumber(tooltip.value.max, 2)} {unit}
                 </b>
               </span>
             </div>

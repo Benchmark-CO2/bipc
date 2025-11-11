@@ -21,6 +21,7 @@ import {
   TProjectUnit,
 } from "@/types/projects";
 import { IUnit, TTowerFloorCategory } from "@/types/units";
+import { formatNumber } from '@/utils/numbers';
 import { getCategoryFromIndex } from "@/utils/unitConversions";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -318,10 +319,10 @@ function RouteComponent() {
     );
 
     return {
-      co2_min: `${(sumCO2Min / floorTotal).toFixed(1)} KgCO2/m²`,
-      co2_max: `${(sumCO2Max / floorTotal).toFixed(1)} KgCO2/m²`,
-      energy_min: `${(sumEnergyMin / floorTotal).toFixed(1)} MJ/m²`,
-      energy_max: `${(sumEnergyMax / floorTotal).toFixed(1)} MJ/m²`,
+      co2_min: `${formatNumber(sumCO2Min / floorTotal, 1)}`,
+      co2_max: `${formatNumber(sumCO2Max / floorTotal, 1)}`,
+      energy_min: `${formatNumber(sumEnergyMin / floorTotal, 1)}`,
+      energy_max: `${formatNumber(sumEnergyMax / floorTotal, 1)}`,
       area: `-`,
     };
   };
@@ -426,10 +427,10 @@ function RouteComponent() {
         isExpandable={false}
         lastRow={{
           data: {
-            co2_min: `${totalConsumptions.co2_min.toFixed(1)} KgCO₂/m²`,
-            co2_max: `${totalConsumptions.co2_max.toFixed(1)} KgCO₂/m²`,
-            energy_min: `${totalConsumptions.energy_min.toFixed(1)} MJ/m²`,
-            energy_max: `${totalConsumptions.energy_max.toFixed(1)} MJ/m²`,
+            co2_min: `${formatNumber(totalConsumptions.co2_min, 1)}`,
+            co2_max: `${formatNumber(totalConsumptions.co2_max, 1)}`,
+            energy_min: `${formatNumber(totalConsumptions.energy_min, 1)}`,
+            energy_max: `${formatNumber(totalConsumptions.energy_max, 1)}`,
           },
           type: "Total",
         }}

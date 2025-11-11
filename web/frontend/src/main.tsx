@@ -13,6 +13,8 @@ import { AuthProvider } from "./providers/authProvider";
 import { routeTree } from "./routeTree.gen";
 import { queryClient } from "./utils/queryClient";
 import { TooltipProvider } from "./components/ui/tooltip";
+import "./lib/core.extension";
+
 const router = createRouter({
   routeTree,
   defaultPreload: "intent",
