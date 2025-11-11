@@ -425,10 +425,10 @@ function RouteComponent() {
         isExpandable={false}
         lastRow={{
           data: {
-            co2_min: `${totalConsumptions.co2_min.toFixed(1)} KgCO₂/m²`,
-            co2_max: `${totalConsumptions.co2_max.toFixed(1)} KgCO₂/m²`,
-            energy_min: `${totalConsumptions.energy_min.toFixed(1)} MJ/m²`,
-            energy_max: `${totalConsumptions.energy_max.toFixed(1)} MJ/m²`,
+            co2_min: `${totalConsumptions.co2_min.toFixed(1)}`,
+            co2_max: `${totalConsumptions.co2_max.toFixed(1)}`,
+            energy_min: `${totalConsumptions.energy_min.toFixed(1)}`,
+            energy_max: `${totalConsumptions.energy_max.toFixed(1)}`,
           },
           type: "Total",
         }}
