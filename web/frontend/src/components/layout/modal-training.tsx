@@ -125,7 +125,7 @@ const ModalTraining = ({
             <DialogDescription className="text-center pt-4 text-accent/100">
               {isAuthenticated ? (
                 <>
-                  O primeiro grupo de capacitação para plataforma BIPc está
+                  O primeiro grupo de capacitação para a plataforma BIPc está
                   completo. Se você tem interesse em participar dos próximos
                   grupos indique aqui.
                 </>
