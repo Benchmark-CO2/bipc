@@ -32,7 +32,7 @@ const FloorSummary = ({
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
-
+  const filteredFloors = floors.filter(el => !!el.consumption);
 
   const fakeFloors = data.benchmark?.[type as "co2" | "energy"]
     ?.map((el) => ({
@@ -47,7 +47,7 @@ const FloorSummary = ({
     [selectedFloors, data]
   );
 
-  const newItems = floors.map(el => {
+  const newItems = filteredFloors.map(el => {
     return {
       co2: {
         id: el.id,
@@ -78,22 +78,22 @@ const FloorSummary = ({
   useEffect(() => {
     if (!someSelected) return
     setPreviousProjects(
-      selectedFloors.map(el => el.id)
+      filteredFloors.map(el => el.id)
     );
-  }, [selectedFloors, someSelected]);
+  }, [someSelected]);
 
   useEffect(() => {
     if (!someSelected) return
     if (previousProjects.length < selectedFloors.length) {
-      const diff = selectedFloors.filter(
-        (p) => !previousProjects.includes(p.id)
+      const diff = filteredFloors.filter(
+        (p) => !selectedFloors.includes(p.id)
       );
       if (diff.length > 0) {
         setSelectedProjects((prev) => [...prev, ...diff.map((d) => d.id)]);
       }
     } else if (previousProjects.length > selectedFloors.length) {
       const diff = previousProjects.filter(
-        (p) => !selectedFloors.map((u) => u.id).includes(p)
+        (p) => !selectedFloors.filter(el => el.consumption).map((u) => u.id).includes(p)
       );
       if (diff.length > 0) {
         setSelectedProjects((prev) => prev.filter((p) => !diff.includes(p)));
@@ -103,10 +103,10 @@ const FloorSummary = ({
 
   const [subTabs, setSubTabs] = useState<"Pavimentos">("Pavimentos");
   const selectAll = () => {
-    if (selectedProjects.length === selectedFloors.length) {
+    if (selectedProjects.length === filteredFloors.length) {
       setSelectedProjects([]);
     } else {
-      setSelectedProjects(selectedFloors.map((f) => f.id));
+      setSelectedProjects(filteredFloors.map((f) => f.id));
     }
   };
 
@@ -238,6 +238,7 @@ const FloorSummary = ({
                   sum={sum}
                   color={barColors}
                   type={type}
+                  hasConsumption={!!floors.find(el => el.id === floor.id)?.consumption}
                 />
               ) : (
                 <ListItem
@@ -248,6 +249,7 @@ const FloorSummary = ({
                   sum={sum}
                   color={barColors}
                   type={type}
+                  hasConsumption={!!floors.find(el => el.id === floor.id)?.consumption}
                 />
               );
             })}

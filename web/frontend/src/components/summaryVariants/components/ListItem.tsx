@@ -14,6 +14,7 @@ type ListItemProps = {
   sum: number;
   color?: string
   type: "co2" | "energy"
+  hasConsumption?: boolean;
 };
 const ListItem = ({
   item,
@@ -21,7 +22,8 @@ const ListItem = ({
   handleAddProject,
   sum,
   color,
-  type
+  type,
+  hasConsumption,
 }: ListItemProps) => {
   const { isExpanded } = useSummary();
   return (
@@ -33,15 +35,19 @@ const ListItem = ({
       style={{
         width: `${(Number(item[type]) / Number(sum)) * 100}%`,
       }}
-      onClick={() => handleAddProject(item.id!)}
+      onClick={() => hasConsumption &&handleAddProject(item.id!)}
     >
       <div className="flex items-center gap-3 cursor-pointer">
         <Checkbox
           checked={selectedProjects.includes(item.id!)}
           onClick={() => handleAddProject(item.id!)}
+          disabled={!hasConsumption}
         />
         <h4 className="whitespace-nowrap flex items-center gap-3 cursor-pointer text-base text-foreground/90">
           {item.label as string}
+          {!hasConsumption && (
+            <span className="text-xs text-red-500">(Sem consumo registrado)</span>
+          )}
         </h4>
       </div>
       <div className="flex flex-col gap-2 justify-between h-10 w-full">

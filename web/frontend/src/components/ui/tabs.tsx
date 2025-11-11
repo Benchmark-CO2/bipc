@@ -42,7 +42,7 @@ export function Tabs({
 
       {tabs?.map((tab, index) => (
         <button
-          key={tab}
+          key={tab + index}
           ref={(el) => {
             tabsRef.current[index] = el;
           }}

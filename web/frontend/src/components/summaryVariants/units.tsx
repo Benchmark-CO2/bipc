@@ -43,7 +43,7 @@ const UnitsSummary = ({
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
-
+  const filteredUnits = units.filter(el => !!el.consumption);
 
   const fakeUnits = generateFakeData(data.benchmark?.[type as "co2" | "energy"] || [])
     .map((el) => ({
@@ -52,7 +52,7 @@ const UnitsSummary = ({
     }))
     .filter((f) => f.min && f.max);
 
-  const newItems = units.map(el => {
+  const newItems = filteredUnits.map(el => {
     return {
       co2: {
         id: el.id,
@@ -92,7 +92,7 @@ const UnitsSummary = ({
   useEffect(() => {
     if (!someSelected) return
     if (previousProjects.length < selectedUnits.length) {
-      const diff = selectedUnits.filter(
+      const diff = filteredUnits.filter(
         (p) => !previousProjects.includes(p.id)
       );
       if (diff.length > 0) {
@@ -100,7 +100,7 @@ const UnitsSummary = ({
       }
     } else if (previousProjects.length > selectedUnits.length) {
       const diff = previousProjects.filter(
-        (p) => !selectedUnits.map((u) => u.id).includes(p)
+        (p) => !filteredUnits.map((u) => u.id).includes(p)
       );
       if (diff.length > 0) {
         setSelectedProjects((prev) => prev.filter((p) => !diff.includes(p)));
@@ -117,10 +117,10 @@ const UnitsSummary = ({
   };
   const [selectedSubTab, setSelectedSubTab] = useState<"Unidades">("Unidades");
   const selectAll = () => {
-    if (selectedProjects.length === selectedUnits.length) {
+    if (selectedProjects.length === filteredUnits.length) {
       setSelectedProjects([]);
     } else {
-      setSelectedProjects(selectedUnits.map((f) => f.id));
+      setSelectedProjects(filteredUnits.map((f) => f.id));
     }
   };
 
@@ -254,6 +254,7 @@ const UnitsSummary = ({
                   sum={sum}
                   color={barColors}
                   type={type}
+                  hasConsumption={!!units.find(el => el.id === unit.id)?.consumption}
                 />
               ) : (
                 <ListItem
@@ -264,6 +265,7 @@ const UnitsSummary = ({
                   sum={sum}
                   color={barColors}
                   type={type}
+                  hasConsumption={!!units.find(el => el.id === unit.id)?.consumption}
                 />
               );
             })}

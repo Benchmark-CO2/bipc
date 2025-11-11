@@ -31,6 +31,14 @@ type SimulationData = {
   name: string
   tower_id: string
   area: number
+  consumption?: {
+    total: {
+      co2_max: number;
+      co2_min: number;
+      energy_max: number;
+      energy_min: number;
+    }
+  }
 };
 
 type ProjectsSummaryProps = {
@@ -39,7 +47,7 @@ type ProjectsSummaryProps = {
   someSelected: boolean;
 };
 
-type Item = {
+type Item = SimulationData & {
   id: string;
   y: number;
   min: number;
@@ -58,39 +66,9 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
-
-  const newItemsTotals: {
-    co2: {
-      id: string;
-      y: number;
-      min: number;
-      max: number;
-      label: string;
-    },
-    energy: {
-      id: string;
-      y: number;
-      min: number;
-      max: number;
-      label: string;
-    }
-  }[] = projects.map(el => ({
-    co2: {
-      id: el.id,
-      y: 0,
-      min: el.consumption.total.co2_min,
-      max: el.consumption.total.co2_max,
-      label: el.name
-    },
-    energy: {
-      id: el.id,
-      y: 0,
-      min: el.consumption.total.energy_min,
-      max: el.consumption.total.energy_max,
-      label: el.name
-    }
-  }));
-  const newItems: Record<'co2' | 'energy', Item>[] = projects.map(el => {
+  const filteredProjects = projects.filter(el => !!el.consumption);
+  
+  const newItems: Record<'co2' | 'energy', Item>[] = filteredProjects.map(el => {
     return {
       co2: {
         id: el.id,
@@ -133,7 +111,7 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
       return;
     }
     setPreviousProjects(
-      projects.map(el => el.id)
+      filteredProjects.map(el => el.id)
     );
   }, [projects, someSelected]);
 
@@ -141,7 +119,7 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
     if (!someSelected) return
 
     if (previousProjects.length < projects.length) {
-      const diff = projects.filter((p) => !previousProjects.includes(p.id));
+      const diff = filteredProjects.filter((p) => !previousProjects.includes(p.id));
       if (diff.length > 0) {
         setSelectedProjects((prev) => [...prev, ...diff.map((d) => d.id)]);
       }
@@ -160,7 +138,7 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
     if (selectedProjects.length === projects.length) {
       setSelectedProjects([]);
     } else {
-      setSelectedProjects(projects.map((p) => p.id));
+      setSelectedProjects(filteredProjects.map((p) => p.id));
     }
   };
   const newData = [...managedData, ...(newItems.map(item => item[type]) || [])] as any;
@@ -212,14 +190,15 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
               />
             )}
             {
-              (newItems.map(el => el[type as 'co2' | 'energy'] || [])).map(project => (
+              ([...newItems.map(el => el[type as 'co2' | 'energy'] || []), ...projects.filter(el => !el.consumption && !newItems.some(_el => _el.co2.id === el.id))]).map((project, _idx, self) => {
+                return (
                 <div key={project.id} className=''>
                   {!isExpanded ? (
                     <ListItem
                       key={project.id}
                       item={{
                         id: project.id,
-                        label: project.label,
+                        label: !!project.min ? project.label : project.name,
                         co2: (project.min + project.max) / 2,
                         energy: (project.min + project.max) / 2,
                       } as any}
@@ -228,6 +207,7 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
                       sum={newItems.flatMap(el => el[type]).reduce((acc, curr) => acc + curr.max, 0)}
                       color={barColors}
                       type={type}
+                      hasConsumption={!!project.min}
                     />
                   ) : (
                     <ItemCard
@@ -240,12 +220,14 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
                       } as any}
                       selectedProjects={selectedProjects}
                       handleAddProject={handleAddProject}
-                      sum={newItemsTotals.flatMap(el => el[type]).reduce((acc, curr) => acc + curr.max, 0)}
+                      sum={newItems.flatMap(el => el[type]).reduce((acc, curr) => acc + curr.max, 0)}
                       color={barColors}
                       type={type}
+                      hasConsumption={!!projects.find(el => el.id === project.id)?.consumption}
                     />)}
                 </div>
-              ))
+              )
+              })
             }
           </ul>
           <Legend />
