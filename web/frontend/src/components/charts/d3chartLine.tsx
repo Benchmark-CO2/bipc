@@ -893,10 +893,10 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
                 </>
               )}
               <span>
-                Min: <b>{tooltip.value.min.toFixed(3)} Kg/m2</b>
+                Min: <b>{tooltip.value.min.toInternational()} Kg/m2</b>
               </span>
               <span>
-                Max: <b>{tooltip.value.max.toFixed(3)} Kg/m2</b>
+                Max: <b>{tooltip.value.max.toInternational()} Kg/m2</b>
               </span>
             </div>
           )}

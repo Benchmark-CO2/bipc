@@ -17,14 +17,14 @@ const Indicators = ({ min, max, position, hasZoomed }: IndicatorsProps) => {
       'self-start': position === 'start',
     })}>
       <div className="flex gap-1 flex-row-reverse">
-        <span className='text-sm text-foreground/70'>{formatNumber(min, 2)}</span>
+        <span className='text-sm text-foreground/70'>{min.toInternational()}</span>
         <Triangle className={cn("w-3 h-3 fill-[#3b82f6] -rotate-90 stroke-[#3b82f6]  max-sm:h-4 self-center", {
           'rotate-90': position === 'end',
           'rotate-0': position === 'center',
         })} />
       </div>
       <div className="flex gap-1 flex-row-reverse">
-        <span className='text-sm text-foreground/70'>{formatNumber(max, 2)}</span>
+        <span className='text-sm text-foreground/70'>{max.toInternational()}</span>
         <Triangle className={cn("w-3 h-3 fill-[#E36F35] -rotate-90 stroke-[#E36F35]  max-sm:h-4 self-center", {
           'rotate-90': position === 'end',
           'rotate-0': position === 'center',

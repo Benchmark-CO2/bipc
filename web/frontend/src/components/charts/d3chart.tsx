@@ -933,13 +933,13 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
               <span>
                 Min:{" "}
                 <b>
-                  {formatNumber(tooltip.value.min, 2)} {unit}
+                  {tooltip.value.min.toInternational()} {unit}
                 </b>
               </span>
               <span>
                 Max:{" "}
                 <b>
-                  {formatNumber(tooltip.value.max, 2)} {unit}
+                  {tooltip.value.max.toInternational()} {unit}
                 </b>
               </span>
             </div>
