@@ -433,7 +433,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .selectAll("text")
       .style("font-size", "12px")
       .style("fill", DEFAULT_COLORS.TEXT)
-      .text(d => (d as number).toInternational(undefined, 0));
+      .text(d => (d as number).toInternational());
 
     g.append("g")
       .attr("class", "axis-y")
@@ -441,7 +441,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .selectAll("text")
       .style("font-size", "12px")
       .style("fill", DEFAULT_COLORS.TEXT)
-      .text(d => (d as number).toInternational(undefined, 1));
+      .text(d => (d as number).toInternational());
     // Remove axis lines
     g.selectAll(".domain").remove();
     g.selectAll(".tick line").remove();
