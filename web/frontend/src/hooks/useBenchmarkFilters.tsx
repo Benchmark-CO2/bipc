@@ -60,7 +60,10 @@ export const useBenchmarkFilters = () => {
       <h2 className="w-full text-left font-semibold text-primary">
         Filtros de visualização:
       </h2>
-      <div className="min-xl:self-start max-sm:w-full max-sm:flex max-sm:justify-center max-sm:flex-col">
+      <div className="min-xl:self-start max-sm:w-full max-sm:flex max-sm:justify-center max-sm:flex-col pl-2">
+        <h3 className="mb-2 font-semibold text-primary text-sm">
+          Indicadores:
+        </h3>
         <FilterTabs
           tabs={["co2", "energy"]}
           onTabSelect={(tab) => setType(tab as "co2" | "energy")}
@@ -97,7 +100,7 @@ export const useBenchmarkFilters = () => {
           <Input type={"date"} />
         </div> */}
         <Divider className="my-6" />
-        <h3 className="mb-6 font-semibold text-primary ">
+        <h3 className="mb-6 font-semibold text-primary text-sm">
           Números de pavimentos:
         </h3>
         <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto overflow-x-auto">
@@ -148,7 +151,7 @@ export const useBenchmarkFilters = () => {
           />
         </div>
         <Divider className="my-6" />
-        <h3 className="mb-6 font-semibold text-primary">
+        <h3 className="mb-6 font-semibold text-primary text-sm">
           Técnologias Construtivas:
         </h3>
         <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto overflow-x-auto">
