@@ -48,14 +48,14 @@ function RouteComponent() {
 
   return (
     <div className="w-full flex justify-center">
-      <div className="w-full max-w-7xl px-6 lg:px-12 py-10 flex flex-col">
+      <div className="w-full max-w-[1920px] px-6 lg:px-12 py-10 flex flex-col">
         <h1 className="text-3xl font-bold text-primary">
           Benchmark | Visualização dos dados
         </h1>
-        <div className="h-full w-full flex items-start pt-10 justify-between max-md:flex-col gap-10 xl:gap-20">
+        <div className="h-full w-full flex items-start pt-10 justify-between max-lg:flex-col-reverse gap-10 xl:gap-20 transition-all">
           {FilterSection}
-          <div className="w-full md:w-2/3 flex flex-col items-start">
-            <div className="flex flex-col w-full gap-4">
+          <div className="w-full max-lg:w-full! flex flex-col items-start">
+            <div className="flex flex-col w-full gap-4 ">
               <h2 className="text-primary font-semibold">Visualização:</h2>
               <div className="flex flex-wrap gap-4 justify-between items-center mb-2">
                 <Select onValueChange={setSelectedChart} value={selectedChart}>
@@ -69,24 +69,26 @@ function RouteComponent() {
                 </Select>
               </div>
             </div>
-            {selectedChart === "trend" ? (
-              <D3GradientRangeLineChart
-                data={chartData}
-                unit={type === "co2" ? "KgCO₂/m²" : "MJ/m²"}
-                summary={false}
-              />
-            ) : (
-              <D3GradientRangeChart
-                width={width}
-                height={height}
-                data={chartData}
-                overrideDimensions={!isMobile}
-                minData={minData}
-                maxData={maxData}
-                totalProjects={chartData.length}
-                unit={type === "co2" ? "KgCO₂/m²" : "MJ/m²"}
-              />
-            )}
+            <div className='w-full'>
+              {selectedChart === "trend" ? (
+                <D3GradientRangeLineChart
+                  data={chartData}
+                  unit={type === "co2" ? "KgCO₂/m²" : "MJ/m²"}
+                  summary={false}
+                />
+              ) : (
+                <D3GradientRangeChart
+                  width={width}
+                  height={height}
+                  data={chartData}
+                  overrideDimensions={!isMobile}
+                  minData={minData}
+                  maxData={maxData}
+                  totalProjects={chartData.length}
+                  unit={type === "co2" ? "KgCO₂/m²" : "MJ/m²"}
+                />
+              )}
+            </div>
 
             <div className="flex flex-col gap-1 mt-4">
               <strong className="text-xs text-gray-shade-500">Legenda:</strong>
