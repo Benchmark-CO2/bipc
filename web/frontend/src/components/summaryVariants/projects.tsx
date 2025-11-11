@@ -30,7 +30,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
-
+  const filterProjects = projects.filter(el => !!el.consumption);
   const managedData = manageData(data.benchmark?.[type as "co2" | "energy"])
     .map((el) => ({
       ...el,
@@ -38,7 +38,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
     }))
     .filter((f) => f.min && f.max);
 
-  const newItems = projects.map(el => {
+  const newItems = filterProjects.filter(el => !!el.consumption).map(el => {
     return {
       co2: {
         id: el.id,
@@ -175,6 +175,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
                   sum={sum}
                   color={barColors}
                   type={type}
+                  hasConsumption={!!projects.find(el => el.id === project.id)?.consumption}
                 />
               ) : (
                 <ListItem
@@ -185,6 +186,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
                   sum={sum}
                   color={barColors}
                   type={type}
+                  hasConsumption={!!projects.find(el => el.id === project.id)?.consumption}
                 />
               );
             })}
