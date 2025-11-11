@@ -2,7 +2,9 @@ package main
 
 import (
 	"errors"
+	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
@@ -53,7 +55,15 @@ func (app *application) createAuthenticationTokenHandler(w http.ResponseWriter, 
 		return
 	}
 
-	token, err := app.models.Tokens.New(user.ID, 24*time.Hour, data.ScopeAuthentication)
+	var ip string
+
+	if strings.ContainsRune(r.RemoteAddr, ':') {
+		ip, _, _ = net.SplitHostPort(r.RemoteAddr)
+	} else {
+		ip = r.RemoteAddr
+	}
+
+	token, err := app.models.Tokens.New(user.ID, 24*time.Hour, data.ScopeAuthentication, &ip)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -100,7 +110,7 @@ func (app *application) createPasswordResetTokenHandler(w http.ResponseWriter, r
 		return
 	}
 
-	token, err := app.models.Tokens.New(user.ID, 1*time.Hour, data.ScopePasswordReset)
+	token, err := app.models.Tokens.New(user.ID, 1*time.Hour, data.ScopePasswordReset, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -162,7 +172,7 @@ func (app *application) createActivationTokenHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	token, err := app.models.Tokens.New(user.ID, 3*24*time.Hour, data.ScopeActivation)
+	token, err := app.models.Tokens.New(user.ID, 3*24*time.Hour, data.ScopeActivation, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

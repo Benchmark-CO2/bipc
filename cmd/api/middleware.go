@@ -198,7 +198,7 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 		}
 	}()
 
-	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var ip string
 
 		if strings.ContainsRune(r.RemoteAddr, ':') {
@@ -224,8 +224,6 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
-
-	return app.realIP(fn)
 }
 
 func (app *application) authenticate(next http.Handler) http.Handler {
