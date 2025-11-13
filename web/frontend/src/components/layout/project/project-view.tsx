@@ -3,7 +3,6 @@ import { getProjectByUUID } from "@/actions/projects/getProject";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import { unitsColumns } from "@/components/columns/units";
 import UnitsSummary from "@/components/summaryVariants/units";
-import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
 import { useSummary } from "@/context/summaryContext";
 import { TConsumption, TProjectUnit } from "@/types/projects";
@@ -11,7 +10,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import CommonTable from "../common-table";
-import DrawerFormUnit from "../drawer-form-unit";
 
 const ProjectView = ({
   projectId,
@@ -71,10 +69,10 @@ const ProjectView = ({
   }
 
   const finalAvgConsumptions = {
-    co2_min: `${avgConsumptions.co2_min.toFixed(1)} KgCO2/m²`,
-    co2_max: `${avgConsumptions.co2_max.toFixed(1)} KgCO2/m²`,
-    energy_min: `${avgConsumptions.energy_min.toFixed(1)} MJ/m²`,
-    energy_max: `${avgConsumptions.energy_max.toFixed(1)} MJ/m²`,
+    co2_min: `${avgConsumptions.co2_min.toInternational()}`,
+    co2_max: `${avgConsumptions.co2_max.toInternational()}`,
+    energy_min: `${avgConsumptions.energy_min.toInternational()}`,
+    energy_max: `${avgConsumptions.energy_max.toInternational()}`,
   };
 
   useEffect(() => {
@@ -92,6 +90,7 @@ const ProjectView = ({
       title: "Unidade Comparison",
     });
   }, [setSummaryContext, selectedUnits, benchmarkData]);
+
   return (
     <div className="flex flex-col gap-4">
       <CommonTable

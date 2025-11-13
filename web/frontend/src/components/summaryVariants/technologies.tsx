@@ -246,6 +246,8 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
           <D3GradientRangeLineChart
             data={updateYs}
             selectedBars={selectedProjects}
+            unit={type}
+
           />
         )}
       </div>

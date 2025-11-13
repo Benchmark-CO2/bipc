@@ -208,6 +208,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
           <D3GradientRangeLineChart
             data={newData}
             selectedBars={selectedProjects}
+            unit={type}
           />
         )}
       </div>
