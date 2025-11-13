@@ -21,7 +21,6 @@ import {
   TProjectUnit,
 } from "@/types/projects";
 import { IUnit, TTowerFloorCategory } from "@/types/units";
-import { formatNumber } from '@/utils/numbers';
 import { getCategoryFromIndex } from "@/utils/unitConversions";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -40,7 +39,7 @@ type TGroupedFloor = IConsumption &
   };
 
 export const Route = createFileRoute(
-  "/_private/new_projects/$projectId/unit/$unitId/"
+  "/_private/new_projects/$projectId/unit/$unitId/",
 )({
   component: RouteComponent,
   validateSearch: (search: Record<string, unknown>) => {
@@ -110,7 +109,7 @@ function RouteComponent() {
   const navigate = Route.useNavigate();
   const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
   const [selectedTab, setSelectedTab] = useState<string>(
-    "Todas as Disciplinas"
+    "Todas as Disciplinas",
   );
 
   const getFilteredConsumptions = () => {
@@ -143,7 +142,7 @@ function RouteComponent() {
             }
             return acc;
           },
-          { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0 }
+          { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0 },
         );
 
         return {
@@ -186,7 +185,7 @@ function RouteComponent() {
         energy_min: acc.energy_min + (curr.energy_min || 0),
         energy_max: acc.energy_max + (curr.energy_max || 0),
       }),
-      { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0 }
+      { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0 },
     );
   };
 
@@ -265,8 +264,8 @@ function RouteComponent() {
 
             return acc;
           },
-          {} as Record<string, any>
-        )
+          {} as Record<string, any>,
+        ),
       ).sort((a, b) => {
         const categoryOrder = {
           penthouse_floor: 0,
@@ -298,31 +297,31 @@ function RouteComponent() {
   const calculateAverageMetrics = (floors: TGroupedFloor[]) => {
     const floorTotal = floors.reduce(
       (acc, curr) => acc + curr.repetitions * curr.area,
-      0
+      0,
     );
 
     const sumCO2Min = floors.reduce(
       (acc, curr) => acc + curr.co2_min * curr.area * curr.repetitions,
-      0
+      0,
     );
     const sumCO2Max = floors.reduce(
       (acc, curr) => acc + curr.co2_max * curr.area * curr.repetitions,
-      0
+      0,
     );
     const sumEnergyMin = floors.reduce(
       (acc, curr) => acc + curr.energy_min * curr.area * curr.repetitions,
-      0
+      0,
     );
     const sumEnergyMax = floors.reduce(
       (acc, curr) => acc + curr.energy_max * curr.area * curr.repetitions,
-      0
+      0,
     );
 
     return {
-      co2_min: `${(sumCO2Min / floorTotal).toInternational()}`,
-      co2_max: `${(sumCO2Max / floorTotal).toInternational()}`,
-      energy_min: `${(sumEnergyMin / floorTotal).toInternational()}`,
-      energy_max: `${(sumEnergyMax / floorTotal).toInternational()}`,
+      co2_min: `${sumCO2Min / floorTotal}`,
+      co2_max: `${sumCO2Max / floorTotal}`,
+      energy_min: `${sumEnergyMin / floorTotal}`,
+      energy_max: `${sumEnergyMax / floorTotal}`,
       area: `-`,
     };
   };

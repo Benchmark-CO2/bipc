@@ -1,6 +1,5 @@
 import { IModuleItem } from "@/types/modules";
 import { TConsumption } from "@/types/projects";
-import { formatNumber } from '@/utils/numbers';
 import { structureTypes } from "@/utils/structureTypes";
 import { ColumnDef } from "@tanstack/react-table";
 

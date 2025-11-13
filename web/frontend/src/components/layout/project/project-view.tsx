@@ -57,7 +57,7 @@ const ProjectView = ({
       energy_min: 0,
       energy_max: 0,
       area: 0,
-    }
+    },
   );
 
   if (units.length > 0) {
@@ -69,10 +69,10 @@ const ProjectView = ({
   }
 
   const finalAvgConsumptions = {
-    co2_min: `${avgConsumptions.co2_min.toInternational()}`,
-    co2_max: `${avgConsumptions.co2_max.toInternational()}`,
-    energy_min: `${avgConsumptions.energy_min.toInternational()}`,
-    energy_max: `${avgConsumptions.energy_max.toInternational()}`,
+    co2_min: `${avgConsumptions.co2_min}`,
+    co2_max: `${avgConsumptions.co2_max}`,
+    energy_min: `${avgConsumptions.energy_min}`,
+    energy_max: `${avgConsumptions.energy_max}`,
   };
 
   useEffect(() => {
