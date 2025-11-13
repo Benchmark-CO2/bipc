@@ -1,6 +1,6 @@
-Object.defineProperty(Number.prototype, 'toInternational', {
-  value: function(locale: string = 'pt-BR', decimals: number = 1) {
-    if (!this) return this
+Object.defineProperty(Number.prototype, "toInternational", {
+  value: function (locale: string = "pt-BR", decimals: number = 1) {
+    if (!this) return 0;
     if (isNaN(this)) {
       return 0;
     }
@@ -10,4 +10,3 @@ Object.defineProperty(Number.prototype, 'toInternational', {
     }).format(this);
   },
 });
-
