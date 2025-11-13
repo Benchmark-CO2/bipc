@@ -12,7 +12,6 @@ import React, {
   useState,
 } from "react";
 import Indicators from "./components/indicators";
-import { formatNumber } from "@/utils/numbers";
 
 // Utility: Debounce function
 const debounce = <T extends (...args: any[]) => any>(
@@ -122,11 +121,11 @@ const useChartDimensions = (
 
 const useTooltipPosition = () => {
   return useCallback(
-    (event: MouseEvent, svgRef: React.RefObject<SVGSVGElement | null>) => {
-      if (!svgRef.current) return { x: 0, y: 0 };
+    (event: MouseEvent, canvasRef: React.RefObject<HTMLCanvasElement | null>) => {
+      if (!canvasRef.current) return { x: 0, y: 0 };
 
       const { left, top, width, height } =
-        svgRef.current.getBoundingClientRect();
+        canvasRef.current.getBoundingClientRect();
       const mouseX = event.clientX - left;
       const mouseY = event.clientY - top;
 
@@ -164,17 +163,19 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   ...props
 }) => {
   const { isExpanded } = useSummary();
-  const svgRef = useRef<SVGSVGElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const [tooltip, setTooltip] = useState<{
     x: number;
     y: number;
     value: { min: number; max: number; label?: string };
   } | null>(null);
-  const [isResized, setIsResized] = useState(0);
   const [brushSelectionCount, setBrushSelectionCount] = useState<number>(0);
   const brushSelectionCountRef = useRef<number>(0);
   const [hasZoomed, setHasZoomed] = useState(false);
+  const transformRef = useRef({ k: 1, x: 0, y: 0 });
+  const animationFrameRef = useRef<number | null>(null);
 
   // Inicializar o contador com o total de dados
   useEffect(() => {
@@ -189,7 +190,6 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   }, []);
 
   const minLessDataValue = useMemo(() => Math.min(...minData), [minData]);
-  const minMaxDataValue = useMemo(() => Math.min(...maxData), [maxData]);
   const maxLessDataValue = useMemo(() => Math.max(...minData), [minData]);
   const maxMaxDataValue = useMemo(() => Math.max(...maxData), [maxData]);
   const hasLessValue =
@@ -214,8 +214,6 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     hasLessValue,
     hasMoreValue
   );
-
-  const getTooltipPosition = useTooltipPosition();
 
   // Scales and calculations
   const maxValue = useMemo(
@@ -248,60 +246,351 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     [maxValue]
   );
 
-  // Event handlers - Responsivos e diretos
-  const handleMouseOver = useCallback(
-    (event: any, d: ChartData) => {
-      const position = getTooltipPosition(event, svgRef);
-      setTooltip({
-        ...position,
-        value: {
-          min: d.min,
-          max: d.max,
-          label: selectedBars?.includes(d.id) ? d.label : undefined,
-        },
-      });
-    },
-    [getTooltipPosition]
-  ); // Removed selectedBars dependency to prevent re-renders
+  const getTooltipPosition = useTooltipPosition();
 
-  const handleMouseMove = useCallback(
-    (event: any, d: ChartData) => {
-      const position = getTooltipPosition(event, svgRef);
-      setTooltip({
-        ...position,
-        value: {
-          min: d.min,
-          max: d.max,
-          label: selectedBars?.includes(d.id) ? d.label : undefined,
-        },
-      });
-    },
-    [getTooltipPosition]
-  ); // Removed selectedBars dependency to prevent re-renders
+  // Helper function to get data point under mouse
+  const getDataAtPosition = useCallback(
+    (mouseX: number, mouseY: number) => {
+      const transform = transformRef.current;
+      const newXScale = d3.scaleLinear()
+        .domain(xScale.domain())
+        .range(xScale.range().map(r => r * transform.k + transform.x));
+      const newYScale = d3.scaleLinear()
+        .domain(yScale.domain())
+        .range(yScale.range().map(r => r * transform.k + transform.y));
 
-  const handleMouseOut = useCallback(() => {
+      // Check if mouse is near any data point
+      for (const d of data) {
+        const x1 = newXScale(d.min);
+        const x2 = newXScale(d.max);
+        const y = newYScale(d.y);
+        const radius = isExpanded ? CHART_CONFIG.CIRCLE_RADIUS.expanded : CHART_CONFIG.CIRCLE_RADIUS.normal;
+
+        // Check start circle
+        const distStart = Math.sqrt(Math.pow(mouseX - x1, 2) + Math.pow(mouseY - y, 2));
+        if (distStart <= radius + 5) return d;
+
+        // Check end circle
+        const distEnd = Math.sqrt(Math.pow(mouseX - x2, 2) + Math.pow(mouseY - y, 2));
+        if (distEnd <= radius + 5) return d;
+
+        // Check bar area (if expanded or selected)
+        if (isExpanded || selectedBars.includes(d.id)) {
+          const barHeight = isExpanded ? CHART_CONFIG.BAR_HEIGHT : CHART_CONFIG.MINIMAL_BAR_HEIGHT;
+          if (mouseX >= x1 && mouseX <= x2 && Math.abs(mouseY - y) <= barHeight / 2) {
+            return d;
+          }
+        }
+      }
+      return null;
+    },
+    [data, xScale, yScale, isExpanded, selectedBars]
+  );
+
+  // Event handlers
+  const handleCanvasMouseMove = useCallback(
+    (event: MouseEvent) => {
+      if (!canvasRef.current) return;
+
+      const rect = canvasRef.current.getBoundingClientRect();
+      const mouseX = (event.clientX - rect.left) - margin.left;
+      const mouseY = (event.clientY - rect.top) - margin.top;
+
+      const d = getDataAtPosition(mouseX, mouseY);
+      
+      if (d) {
+        const position = getTooltipPosition(event, canvasRef);
+        setTooltip({
+          ...position,
+          value: {
+            min: d.min,
+            max: d.max,
+            label: selectedBars?.includes(d.id) ? d.label : undefined,
+          },
+        });
+        if (canvasRef.current) {
+          canvasRef.current.style.cursor = 'pointer';
+        }
+      } else {
+        setTooltip(null);
+        if (canvasRef.current) {
+          canvasRef.current.style.cursor = 'default';
+        }
+      }
+    },
+    [getDataAtPosition, getTooltipPosition, selectedBars, margin, canvasRef]
+  );
+
+  const handleCanvasMouseLeave = useCallback(() => {
     setTooltip(null);
+    if (canvasRef.current) {
+      canvasRef.current.style.cursor = 'default';
+    }
   }, []);
 
-  // Resize handler - Debounced leve
+  // Canvas drawing function
+  const drawChart = useCallback(() => {
+    if (!canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) return;
+
+    // Polyfill for roundRect if not available
+    if (!ctx.roundRect) {
+      (ctx as any).roundRect = function(x: number, y: number, width: number, height: number, radius: number | number[]) {
+        const r = typeof radius === 'number' ? radius : radius[0];
+        this.beginPath();
+        this.moveTo(x + r, y);
+        this.lineTo(x + width - r, y);
+        this.quadraticCurveTo(x + width, y, x + width, y + r);
+        this.lineTo(x + width, y + height - r);
+        this.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+        this.lineTo(x + r, y + height);
+        this.quadraticCurveTo(x, y + height, x, y + height - r);
+        this.lineTo(x, y + r);
+        this.quadraticCurveTo(x, y, x + r, y);
+        this.closePath();
+      };
+    }
+
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    
+    // Set canvas size accounting for device pixel ratio
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+
+    // Clear canvas
+    ctx.fillStyle = document.documentElement.classList.contains('dark') ? '#18181b' : '#ffffff';
+    ctx.fillRect(0, 0, rect.width, rect.height);
+
+    // Save context for transformations
+    ctx.save();
+    ctx.translate(margin.left, margin.top);
+
+    // Apply zoom transform
+    const transform = transformRef.current;
+    const newXScale = d3.scaleLinear()
+      .domain(xScale.domain())
+      .range(xScale.range().map(r => r * transform.k + transform.x));
+    const newYScale = d3.scaleLinear()
+      .domain(yScale.domain())
+      .range(yScale.range().map(r => r * transform.k + transform.y));
+
+    // Draw grid lines
+    ctx.strokeStyle = DEFAULT_COLORS.GRID;
+    ctx.lineWidth = 1;
+
+    // Vertical grid lines
+    const xTicks = newXScale.ticks(isExpanded ? 30 : 10);
+    xTicks.forEach(tick => {
+      const x = newXScale(tick);
+      if (x >= 0 && x <= _width) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, _height);
+        ctx.stroke();
+      }
+    });
+
+    // Horizontal grid lines
+    const yTicks = newYScale.ticks(8);
+    yTicks.forEach(tick => {
+      const y = newYScale(tick);
+      if (y >= 0 && y <= _height) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(_width, y);
+        ctx.stroke();
+      }
+    });
+
+    // Draw data points
+    data.forEach((d) => {
+      const x1 = newXScale(d.min);
+      const x2 = newXScale(d.max);
+      const y = newYScale(d.y);
+
+      // Skip if outside visible area
+      if (x2 < 0 || x1 > _width || y < 0 || y > _height) return;
+
+      const isSelected = selectedBars.includes(d.id);
+
+      // Draw bar if expanded or selected
+      if (isExpanded || isSelected) {
+        const barHeight = isExpanded ? CHART_CONFIG.BAR_HEIGHT : CHART_CONFIG.MINIMAL_BAR_HEIGHT;
+        
+        // Create gradient for bar
+        const gradient = ctx.createLinearGradient(x1, y, x2, y);
+        gradient.addColorStop(0, colorScale(d.min));
+        gradient.addColorStop(1, colorScale(d.max));
+
+        ctx.fillStyle = gradient;
+        
+        if (isExpanded) {
+          ctx.beginPath();
+          ctx.roundRect(x1 - 12, y - (barHeight + 4) / 2, x2 - x1 + 24, barHeight + 4, 15);
+          ctx.fill();
+          
+          if (isSelected) {
+            ctx.strokeStyle = DEFAULT_COLORS.STROKE;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          }
+        } else {
+          ctx.beginPath();
+          ctx.roundRect(x1, y - barHeight / 2, x2 - x1, barHeight, 5);
+          ctx.fill();
+          
+          if (isSelected) {
+            ctx.strokeStyle = DEFAULT_COLORS.STROKE;
+            ctx.lineWidth = 0.1;
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw circles
+      const radius = isExpanded ? CHART_CONFIG.CIRCLE_RADIUS.expanded : CHART_CONFIG.CIRCLE_RADIUS.normal;
+      const strokeWidth = isExpanded ? (isMobile ? 1 : 2) : 0;
+
+      // Start circle
+      ctx.beginPath();
+      ctx.arc(x1, y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = DEFAULT_COLORS.START;
+      ctx.fill();
+      if (strokeWidth > 0 || isSelected) {
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = isSelected ? strokeWidth : strokeWidth;
+        ctx.stroke();
+      }
+
+      // End circle
+      ctx.beginPath();
+      ctx.arc(x2, y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = DEFAULT_COLORS.END;
+      ctx.fill();
+      if (strokeWidth > 0 || isSelected) {
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = isSelected ? strokeWidth : (isExpanded ? (isMobile ? 1 : 0.5) : 0);
+        ctx.stroke();
+      }
+
+      // Draw labels for selected bars
+      if (isSelected) {
+        const avgX = (x1 + x2) / 2;
+        const isMoreThanHalf = avgX < (maxValue ? maxValue * 0.5 : 0);
+        
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary') || DEFAULT_COLORS.TEXT;
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'end';
+        ctx.fillText(d.min.toInternational(undefined, 0), x1 - 18, y + 4);
+        
+        ctx.textAlign = 'start';
+        ctx.fillText(d.max.toInternational(undefined, 0), x2 + 18, y + 4);
+        
+        ctx.font = 'normal 12px sans-serif';
+        ctx.fillText(
+          `${isMoreThanHalf ? "<--" : ""} ${d.label} ${!isMoreThanHalf ? "-->" : ""}`,
+          isMoreThanHalf ? x2 + 150 : x1 - 150,
+          y + 4
+        );
+
+        if (isExpanded) {
+          ctx.font = 'bold 14px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillText(d.label, avgX, y + 5);
+        }
+      }
+    });
+
+    ctx.restore();
+
+    // Draw axes (outside clipped area)
+    ctx.save();
+    ctx.translate(margin.left, margin.top);
+
+    // Draw X-axis line
+    ctx.strokeStyle = DEFAULT_COLORS.TEXT;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, _height);
+    ctx.lineTo(_width, _height);
+    ctx.stroke();
+
+    // Draw Y-axis line
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, _height);
+    ctx.stroke();
+
+    // X-axis ticks and labels
+    ctx.fillStyle = DEFAULT_COLORS.TEXT;
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+
+    const xAxisTicks = newXScale.ticks(Math.min(10, Math.floor(_width / 60)));
+    xAxisTicks.forEach(tick => {
+      const x = newXScale(tick);
+      if (x >= 0 && x <= _width) {
+        // Draw tick mark
+        ctx.beginPath();
+        ctx.moveTo(x, _height);
+        ctx.lineTo(x, _height + 6);
+        ctx.stroke();
+        
+        // Draw label
+        ctx.fillText((tick as number).toInternational(), x, _height + 8);
+      }
+    });
+
+    // Y-axis ticks and labels
+    ctx.textAlign = 'end';
+    ctx.textBaseline = 'middle';
+
+    const yAxisTicks = newYScale.ticks(8);
+    yAxisTicks.forEach(tick => {
+      const y = newYScale(tick);
+      if (y >= 0 && y <= _height) {
+        // Draw tick mark
+        ctx.beginPath();
+        ctx.moveTo(-6, y);
+        ctx.lineTo(0, y);
+        ctx.stroke();
+        
+        // Draw label
+        ctx.fillText((tick as number).toInternational(), -10, y);
+      }
+    });
+
+    ctx.restore();
+
+    // Count visible points
+    const [x0, x1] = newXScale.domain();
+    const [y0, y1] = newYScale.domain();
+    const countInView = data.filter((d) => {
+      const xInRange = d.min >= x0 && d.max <= x1;
+      const yInRange = d.y >= y0 && d.y <= y1;
+      return xInRange && yInRange;
+    }).length;
+    updateBrushCount(countInView);
+
+  }, [canvasRef, margin, xScale, yScale, _width, _height, data, selectedBars, isExpanded, isMobile, colorScale, maxValue, updateBrushCount]);
+
+  // Resize handler
   const debouncedResizeRef = useMemo(
     () =>
       debounce(() => {
-        if (!svgRef.current) return;
-
-        const parent = svgRef.current.parentElement;
-        if (!parent) return;
-
-        // Only update width attribute, don't trigger chart recreation
-        svgRef.current.setAttribute(
-          "width",
-          (parent.clientWidth + margin.left + margin.right).toString()
-        );
-
-        // Update internal width state without triggering full re-render
-        // This preserves zoom state and other interactions
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+        animationFrameRef.current = requestAnimationFrame(drawChart);
       }, 50),
-    [svgRef, margin]
+    [drawChart]
   );
 
   useEffect(() => {
@@ -311,587 +600,110 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
   // ResizeObserver to watch parent element changes
   useEffect(() => {
-    if (!svgRef.current?.parentElement) return;
+    if (!containerRef.current) return;
 
     let resizeTimer: NodeJS.Timeout;
     const resizeObserver = new ResizeObserver(() => {
-      // Clear previous timer
       clearTimeout(resizeTimer);
-
-      // Debounce the resize to avoid excessive updates
       resizeTimer = setTimeout(() => {
-        if (!svgRef.current) return;
-
-        const parent = svgRef.current.parentElement;
-        if (!parent) return;
-
-        const newWidth = parent.clientWidth + margin.left + margin.right;
-        const currentWidth = svgRef.current.getAttribute("width");
-
-        // Only update if there's a significant change in width (> 20px to be very conservative)
-        if (Math.abs(newWidth - parseFloat(currentWidth || "0")) > 20) {
-          svgRef.current.setAttribute("width", newWidth.toString());
-
-          // Update chart dimensions while preserving zoom state
-          const svg = d3.select(svgRef.current);
-          const currentTransform = d3.zoomTransform(svg.node() as any);
-
-          if (
-            currentTransform &&
-            (currentTransform.k !== 1 ||
-              currentTransform.x !== 0 ||
-              currentTransform.y !== 0)
-          ) {
-            // If zoomed, preserve the transform but update chart area
-            // Update clipping path
-            svg.select("#clip rect").attr("width", parent.clientWidth);
-          } else {
-            // If not zoomed, trigger a controlled re-render
-            setIsResized((prev) => prev + 1);
-          }
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
         }
-      }, 150); // Increased debounce time to be more conservative
+        animationFrameRef.current = requestAnimationFrame(drawChart);
+      }, 150);
     });
 
-    resizeObserver.observe(svgRef.current.parentElement);
+    resizeObserver.observe(containerRef.current);
 
     return () => {
       clearTimeout(resizeTimer);
       resizeObserver.disconnect();
     };
-  }, [margin]);
+  }, [drawChart]);
 
-  // Main chart effect
+  // Main chart effect with Canvas and Zoom
   useEffect(() => {
-    if (!svgRef.current) return;
+    if (!canvasRef.current) return;
 
-    // Clear previous SVG
-    d3.select(svgRef.current).selectAll("*").remove();
+    // Initial draw
+    drawChart();
 
-    // Create SVG
-    const svg = d3
-      .select(svgRef.current)
-      .attr("width", _width + margin.left + margin.right)
-      .attr("height", _height + margin.top + margin.bottom);
+    const canvas = canvasRef.current;
 
-    // Main group
-    const g = svg
-      .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    // Create clipping path to hide elements outside the chart area
-    svg
-      .append("defs")
-      .append("clipPath")
-      .attr("id", "clip")
-      .append("rect")
-      .attr("x", 0)
-      .attr("y", 0)
-      .attr("width", _width)
-      .attr("height", _height);
-
-    // Apply clipping to a group that will contain all chart elements
-    const chartArea = g.append("g").attr("clip-path", "url(#clip)");
-
-    // Grid lines
-    const xTicks = xScale.ticks(isExpanded ? 30 : 10);
-    const yTicks = yScale.ticks(8);
-
-    // Vertical grid lines
-    chartArea
-      .selectAll(".grid-line-x")
-      .data(xTicks)
-      .enter()
-      .append("line")
-      .attr("class", "grid-line-x")
-      .attr("x1", (d) => xScale(d))
-      .attr("x2", (d) => xScale(d))
-      .attr("y1", 0)
-      .attr("y2", _height)
-      .attr("stroke", DEFAULT_COLORS.GRID)
-      .attr("stroke-width", 1);
-
-    // Horizontal grid lines
-    chartArea
-      .selectAll(".grid-line-y")
-      .data(yTicks)
-      .enter()
-      .append("line")
-      .attr("class", "grid-line-y")
-      .attr("x1", 0)
-      .attr("x2", _width)
-      .attr("y1", (d) => yScale(d))
-      .attr("y2", (d) => yScale(d))
-      .attr("stroke", DEFAULT_COLORS.GRID)
-      .attr("stroke-width", 1);
-
-    // Axes (outside clipped area)
-    g.append("g")
-      .attr("class", "axis-x")
-      .attr("transform", `translate(0,${_height})`)
-      .call(d3.axisBottom(xScale).ticks(Math.min(10, Math.floor(_width / 60))))
-      .selectAll("text")
-      .style("font-size", "12px")
-      .style("fill", DEFAULT_COLORS.TEXT)
-      .text(d => (d as number).toInternational());
-
-    g.append("g")
-      .attr("class", "axis-y")
-      .call(d3.axisLeft(yScale).ticks(8))
-      .selectAll("text")
-      .style("font-size", "12px")
-      .style("fill", DEFAULT_COLORS.TEXT)
-      .text(d => (d as number).toInternational());
-    // Remove axis lines
-    g.selectAll(".domain").remove();
-    g.selectAll(".tick line").remove();
-
-    // Zoom behavior com scroll e touch (pinch)
+    // Zoom behavior for canvas
     const zoom = d3
-      .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([1, 10]) // Min 1x (original), Max 10x
-      .translateExtent([
-        [0, 0],
-        [_width, _height],
-      ])
-      .extent([
-        [0, 0],
-        [_width, _height],
-      ])
+      .zoom<HTMLCanvasElement, unknown>()
+      .scaleExtent([1, 10])
       .wheelDelta((event) => {
-        // Sensibilidade do scroll: menor = mais suave
-        // -event.deltaY / 500 = sensibilidade de ~0.2 (20% por scroll)
-        // Shift + scroll = 2x mais rápido
         const sensitivity = event.shiftKey ? 250 : 700;
         return -event.deltaY / sensitivity;
       })
       .filter((event) => {
-        // Permitir zoom com wheel, pan com drag E touch events (pinch no mobile)
-        // Bloquear apenas o botão direito do mouse e dblclick
         return !event.button && event.type !== "dblclick";
       })
-      .touchable(() => true) // Habilitar explicitamente eventos touch para pinch-to-zoom
-      .on("zoom", zoomed);
+      .on("zoom", (event) => {
+        const transform = event.transform;
+        transformRef.current = { k: transform.k, x: transform.x, y: transform.y };
+        
+        // Check if zoomed
+        const isZoomed = transform.k !== 1 || transform.x !== 0 || transform.y !== 0;
+        setHasZoomed(isZoomed);
 
-    // Aplicar zoom ao SVG
-    svg.call(zoom as any).on("dblclick.zoom", null); // Desabilitar o duplo-click padrão do zoom
+        // Redraw with animation frame
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+        animationFrameRef.current = requestAnimationFrame(drawChart);
+      });
 
-    // Create data points with gradients
-    (data || []).forEach((d, i) => {
-      const y = yScale(d.y);
-      const x1 = xScale(d.min);
-      const x2 = xScale(d.max);
+    // Apply zoom to canvas
+    d3.select(canvas).call(zoom as any);
 
-      // Create unique gradient for each bar
-      const gradientId = `gradient-${i}`;
-      const gradient = svg
-        .append("defs")
-        .append("linearGradient")
-        .attr("id", gradientId)
-        .attr("x1", "0%")
-        .attr("x2", "100%")
-        .attr("y1", "50%")
-        .attr("y2", "50%");
-
-      const startColor = colorScale(d.min);
-      const endColor = colorScale(d.max);
-
-      gradient
-        .append("stop")
-        .attr("offset", "0%")
-        .attr("stop-color", startColor);
-
-      gradient
-        .append("stop")
-        .attr("offset", "100%")
-        .attr("stop-color", endColor);
-
-      // Start circle (inside clipped area)
-      chartArea
-        .append("circle")
-        .attr("cx", x1)
-        .attr("cy", y)
-        .attr(
-          "r",
-          isExpanded
-            ? CHART_CONFIG.CIRCLE_RADIUS.expanded
-            : CHART_CONFIG.CIRCLE_RADIUS.normal
-        )
-        .attr("fill", DEFAULT_COLORS.START)
-        .attr("stroke", "white")
-        .attr("stroke-width", isExpanded ? (isMobile ? 1 : 2) : 0)
-        .attr("data-point", `${i}-start`)
-        .style("pointer-events", "all") // Garantir que eventos funcionem
-        .on("mouseover", (event) => {
-          handleMouseOver(event, d);
-        })
-        .on("mousemove", (event) => handleMouseMove(event, d))
-        .on("mouseout", handleMouseOut)
-        .raise();
-
-      // End circle (inside clipped area)
-      chartArea
-        .append("circle")
-        .attr("cx", x2)
-        .attr("cy", y)
-        .attr(
-          "r",
-          isExpanded
-            ? CHART_CONFIG.CIRCLE_RADIUS.expanded
-            : CHART_CONFIG.CIRCLE_RADIUS.normal
-        )
-        .attr("fill", DEFAULT_COLORS.END)
-        .attr("stroke", "white")
-        .attr("stroke-width", isExpanded ? (isMobile ? 1 : 2) : 0)
-        .attr("data-point", `${i}-end`)
-        .raise()
-        .style("pointer-events", "all") // Garantir que eventos funcionem
-        .on("mouseover", (event) => {
-          handleMouseOver(event, d);
-        })
-        .on("mousemove", (event) => handleMouseMove(event, d))
-        .on("mouseout", handleMouseOut);
-    });
-
-    // Função de zoom - responsiva e imediata
-    function zoomed(event: any) {
-      const transform = event.transform;
-
-      // Criar novas escalas baseadas no transform
-      const newXScale = transform.rescaleX(xScale);
-      const newYScale = transform.rescaleY(yScale);
-
-      // Atualizar eixos imediatamente
-      g.select<SVGGElement>(".axis-x").call(
-        d3
-          .axisBottom(newXScale)
-          .ticks(Math.min(15, Math.floor(_width / 60))) as any
-      );
-
-      g.select<SVGGElement>(".axis-y").call(
-        d3.axisLeft(newYScale).ticks(8) as any
-      );
-
-      // Atualizar posições imediatamente
-      updateElementsPosition(newXScale, newYScale);
-
-      // Contar elementos visíveis
-      const [x0, x1] = newXScale.domain();
-      const [y0, y1] = newYScale.domain();
-
-      const countInView = data.filter((d) => {
-        const xInRange = d.min >= x0 && d.max <= x1;
-        const yInRange = d.y >= y0 && d.y <= y1;
-        return xInRange && yInRange;
-      }).length;
-
-      updateBrushCount(countInView);
-
-      // Verificar se está com zoom ativo (qualquer transformação)
-      const isZoomed =
-        transform.k !== 1 || transform.x !== 0 || transform.y !== 0;
-      setHasZoomed(isZoomed);
-    }
-
-    svg.on("dblclick", () => {
-      // Reset zoom usando o comportamento do D3 zoom
-      svg
+    // Double click to reset zoom
+    const handleDoubleClick = () => {
+      d3.select(canvas)
         .transition()
         .duration(750)
         .call(zoom.transform as any, d3.zoomIdentity);
-
-      // Reset contador para o total
+      
+      transformRef.current = { k: 1, x: 0, y: 0 };
       updateBrushCount(data.length);
-
-      // Reset indicador de zoom
       setHasZoomed(false);
-    });
+      
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      animationFrameRef.current = requestAnimationFrame(drawChart);
+    };
 
-    function updateElementsPosition(newXScale = xScale, newYScale = yScale) {
-      // Update all circles - simplificado e direto
-      (data || []).forEach((d, i) => {
-        const x1 = newXScale(d.min);
-        const x2 = newXScale(d.max);
-        const y = newYScale(d.y);
+    canvas.addEventListener('dblclick', handleDoubleClick);
+    canvas.addEventListener('mousemove', handleCanvasMouseMove as any);
+    canvas.addEventListener('mouseleave', handleCanvasMouseLeave);
 
-        // Update start circles - seleção direta
-        chartArea
-          .selectAll(`circle[data-point="${i}-start"]`)
-          .attr("cx", x1)
-          .attr("cy", y)
-          .style("pointer-events", "all")
-          .on("mouseover", (event: any) => handleMouseOver(event, d))
-          .on("mousemove", (event: any) => handleMouseMove(event, d))
-          .on("mouseout", handleMouseOut);
-
-        // Update end circles - seleção direta
-        chartArea
-          .selectAll(`circle[data-point="${i}-end"]`)
-          .attr("cx", x2)
-          .attr("cy", y)
-          .style("pointer-events", "all")
-          .on("mouseover", (event: any) => handleMouseOver(event, d))
-          .on("mousemove", (event: any) => handleMouseMove(event, d))
-          .on("mouseout", handleMouseOut);
-
-        // Update selected bar elements if they exist
-        const barRect = chartArea.select(`rect#bar-${d.id}`);
-        if (!barRect.empty()) {
-          if (isExpanded) {
-            barRect
-              .attr("x", x1 - 12)
-              .attr("y", y - (CHART_CONFIG.BAR_HEIGHT + 4) / 2)
-              .attr("width", x2 - x1 + 24);
-          } else {
-            barRect
-              .attr("x", x1)
-              .attr("y", y - CHART_CONFIG.MINIMAL_BAR_HEIGHT / 2)
-              .attr("width", x2 - x1);
-          }
-        }
-
-        // Update selected bar circles
-        chartArea
-          .select(`circle#bar-circle-start-${d.id}`)
-          .attr("cx", x1)
-          .attr("cy", y);
-
-        chartArea
-          .select(`circle#bar-circle-end-${d.id}`)
-          .attr("cx", x2)
-          .attr("cy", y);
-
-        // Update labels
-        const avgX = (x1 + x2) / 2;
-        const isMoreThanHalf = avgX < (maxValue ? maxValue * 0.5 : 0);
-
-        chartArea
-          .select(`text#bar-label-min-${d.id}`)
-          .attr("x", x1 - 18)
-          .attr("y", y + 4);
-
-        chartArea
-          .select(`text#bar-label-max-${d.id}`)
-          .attr("x", x2 + 18)
-          .attr("y", y + 4);
-
-        chartArea
-          .select(`text#bar-label-project-${d.id}`)
-          .attr("x", isMoreThanHalf ? x2 + 150 : x1 - 150)
-          .attr("y", y + 4);
-
-        chartArea
-          .select(`text#bar-label-name-${d.id}`)
-          .attr("x", (x1 + x2) / 2)
-          .attr("y", y + 5);
-      });
-
-      // Update grid lines
-      const xTicks = newXScale.ticks(isExpanded ? 30 : 10);
-      const yTicks = newYScale.ticks(8);
-
-      // Update vertical grid lines
-      const gridX = chartArea
-        .selectAll<SVGLineElement, number>(".grid-line-x")
-        .data(xTicks);
-
-      gridX.exit().remove();
-
-      gridX
-        .enter()
-        .append("line")
-        .attr("class", "grid-line-x")
-        .merge(gridX)
-        .attr("x1", (d) => newXScale(d))
-        .attr("x2", (d) => newXScale(d))
-        .attr("y1", 0)
-        .attr("y2", _height)
-        .attr("stroke", DEFAULT_COLORS.GRID)
-        .attr("stroke-width", 1);
-
-      // Update horizontal grid lines
-      const gridY = chartArea
-        .selectAll<SVGLineElement, number>(".grid-line-y")
-        .data(yTicks);
-
-      gridY.exit().remove();
-
-      gridY
-        .enter()
-        .append("line")
-        .attr("class", "grid-line-y")
-        .merge(gridY)
-        .attr("x1", 0)
-        .attr("x2", _width)
-        .attr("y1", (d) => newYScale(d))
-        .attr("y2", (d) => newYScale(d))
-        .attr("stroke", DEFAULT_COLORS.GRID)
-        .attr("stroke-width", 1);
-    }
-
-    // Cleanup function
+    // Cleanup
     return () => {
-      // Nenhum cleanup necessário
+      canvas.removeEventListener('dblclick', handleDoubleClick);
+      canvas.removeEventListener('mousemove', handleCanvasMouseMove as any);
+      canvas.removeEventListener('mouseleave', handleCanvasMouseLeave);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
   }, [
-    isExpanded,
-    data,
-    isResized,
-    _width,
-    _height,
-    margin,
-    xScale,
-    yScale,
-    colorScale,
+    drawChart,
+    handleCanvasMouseMove,
+    handleCanvasMouseLeave,
+    data.length,
     updateBrushCount,
   ]);
 
-  // Selected bars effect
+  // Redraw when selectedBars changes
   useEffect(() => {
-    if (!svgRef.current || !data) return;
-    const g = d3.select(svgRef.current).select("g");
-    if (g.empty()) return;
-
-    // Select the chartArea group (with clip-path)
-    const chartArea = g.select("g[clip-path='url(#clip)']");
-    if (chartArea.empty()) return;
-
-    (data || []).forEach((d, i) => {
-      const gradientId = `gradient-${i}`;
-      if (selectedBars.includes(d.id)) {
-        const y = yScale(d.y);
-        const x1 = xScale(d.min);
-        const x2 = xScale(d.max);
-
-        if (isExpanded) {
-          chartArea
-            .append("rect")
-            .attr("x", x1 - 12)
-            .attr("y", y - (CHART_CONFIG.BAR_HEIGHT + 4) / 2)
-            .attr("width", x2 - x1 + 24)
-            .attr("height", CHART_CONFIG.BAR_HEIGHT + 4)
-            .attr("fill", `url(#${gradientId})`)
-            .attr("rx", 15)
-            .attr("ry", 15)
-            .attr("id", `bar-${d.id}`)
-            .attr("stroke", DEFAULT_COLORS.STROKE)
-            .attr("stroke-width", 2);
-        } else {
-          chartArea
-            .append("rect")
-            .attr("x", x1)
-            .attr("y", y - CHART_CONFIG.MINIMAL_BAR_HEIGHT / 2)
-            .attr("width", x2 - x1)
-            .attr("height", CHART_CONFIG.MINIMAL_BAR_HEIGHT)
-            .attr("fill", `url(#${gradientId})`)
-            .attr("rx", 5)
-            .attr("ry", 5)
-            .attr("id", `bar-${d.id}`)
-            .attr("stroke", DEFAULT_COLORS.STROKE)
-            .attr("stroke-width", 0.1);
-        }
-
-        // Start circle
-        chartArea
-          .append("circle")
-          .attr("cx", x1)
-          .attr("cy", y)
-          .attr("r", isExpanded ? CHART_CONFIG.CIRCLE_RADIUS.expanded : 5)
-          .attr("fill", DEFAULT_COLORS.START)
-          .attr("stroke", "white")
-          .attr("stroke-width", isExpanded ? 2 : 1)
-          .attr("id", `bar-circle-start-${d.id}`);
-
-        // End circle
-        chartArea
-          .append("circle")
-          .attr("cx", x2)
-          .attr("cy", y)
-          .attr("r", isExpanded ? CHART_CONFIG.CIRCLE_RADIUS.expanded : 5)
-          .attr("fill", DEFAULT_COLORS.END)
-          .attr("stroke", "white")
-          .attr("stroke-width", isExpanded ? 2 : 0.5)
-          .attr("id", `bar-circle-end-${d.id}`);
-
-        const avgX = (x1 + x2) / 2;
-        const isMoreThanHalf = avgX < (maxValue ? maxValue * 0.5 : 0);
-
-        // Min value label
-        chartArea
-          .append("text")
-          .attr("x", x1 - 18)
-          .attr("y", y + 4)
-          .attr("text-anchor", "end")
-          .attr("font-size", 14)
-          .attr("font-weight", "bold")
-          .attr("fill", "var(--primary)")
-          .text(d.min.toInternational(undefined, 0))
-          .attr("id", `bar-label-min-${d.id}`);
-
-        // Max value label
-        chartArea
-          .append("text")
-          .attr("x", x2 + 18)
-          .attr("y", y + 4)
-          .attr("text-anchor", "start")
-          .attr("font-size", 14)
-          .attr("font-weight", "bold")
-          .attr("fill", "var(--primary)")
-          .text(d.max.toInternational(undefined, 0))
-          .attr("id", `bar-label-max-${d.id}`);
-
-        // Project identifier
-        chartArea
-          .append("text")
-          .attr("x", isMoreThanHalf ? x2 + 150 : x1 - 150)
-          .attr("y", y + 4)
-          .attr("text-anchor", "start")
-          .attr("font-size", 12)
-          .attr("font-weight", "normal")
-          .attr("fill", "var(--primary)")
-          .text(
-            `${isMoreThanHalf ? "<--" : ""} ${d.label} ${!isMoreThanHalf ? "-->" : ""}`
-          )
-          .attr("id", `bar-label-project-${d.id}`);
-
-        // Project name inside bar (expanded only)
-        if (isExpanded) {
-          chartArea
-            .append("text")
-            .attr("x", (x1 + x2) / 2)
-            .attr("y", y + 5)
-            .attr("text-anchor", "middle")
-            .attr("font-size", 14)
-            .attr("font-weight", "bold")
-            .attr("fill", "#FFF")
-            .text(d.label)
-            .attr("id", `bar-label-name-${d.id}`);
-        }
-      } else {
-        // Remove elements for unselected bars
-        chartArea
-          .selectAll("rect, text, circle")
-          .nodes()
-          .forEach((element) => {
-            if (!element) return;
-            const node = d3.select(element);
-            const id = node.attr("id");
-            if (
-              id &&
-              (id === `bar-${d.id}` ||
-                id === `bar-label-min-${d.id}` ||
-                id === `bar-label-max-${d.id}` ||
-                id === `bar-label-name-${d.id}` ||
-                id === `bar-label-project-${d.id}` ||
-                id === `bar-circle-start-${d.id}` ||
-                id === `bar-circle-end-${d.id}`)
-            ) {
-              node.remove();
-            }
-          });
-      }
-    });
-  }, [selectedBars, isExpanded, data, isResized, yScale, xScale, maxValue]);
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    animationFrameRef.current = requestAnimationFrame(drawChart);
+  }, [selectedBars, drawChart]);
 
   const labelX =
     UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Incorporado";
@@ -899,7 +711,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   return (
     <Card className={cn("shadow-none w-min-content min-w-1/2")}>
       <CardContent>
-        <div className="w-full overflow-hidden relative">
+        <div ref={containerRef} className="w-full overflow-hidden relative">
           <span className="absolute text-xs w-full text-center text-foreground/70 block rotate-270 left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
             Potencial de mitigação
           </span>
@@ -911,7 +723,14 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
             position="end"
           />
 
-          <svg ref={svgRef} className="bg-white dark:bg-zinc-900 w-full" />
+          <canvas 
+            ref={canvasRef} 
+            className="bg-white dark:bg-zinc-900 w-full cursor-grab active:cursor-grabbing"
+            style={{
+              width: '100%',
+              height: _height + margin.top + margin.bottom,
+            }}
+          />
 
           {!isMobile && (
             <Indicators
