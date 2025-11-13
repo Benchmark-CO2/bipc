@@ -56,16 +56,19 @@ export const useBenchmarkFilters = () => {
     }
   };
   const FilterSection = (
-    <section className="w-full md:w-1/3 min-w-[375px] flex flex-col items-center gap-4 mb-4 max-sm:self-center">
+    <section className="w-full md:w-1/3 min-w-[375px] flex flex-col items-center gap-4 mb-4 max-sm:self-center max-lg:w-full!">
       <h2 className="w-full text-left font-semibold text-primary">
         Filtros de visualização:
       </h2>
-      <div className="min-xl:self-start max-sm:w-full max-sm:flex max-sm:justify-center max-sm:flex-col">
+      <div className="min-xl:self-start max-sm:w-full max-sm:flex max-sm:justify-center max-sm:flex-col pl-2">
+        <h3 className="mb-2 font-semibold text-primary text-sm">
+          Indicadores:
+        </h3>
         <FilterTabs
           tabs={["co2", "energy"]}
           onTabSelect={(tab) => setType(tab as "co2" | "energy")}
           selectedTab={type}
-          className="w-full"
+          className="w-full max-w-[500px]"
           tabsStyle="w-full"
         />
         {/* <div className="flex gap-2 w-full">
@@ -97,7 +100,7 @@ export const useBenchmarkFilters = () => {
           <Input type={"date"} />
         </div> */}
         <Divider className="my-6" />
-        <h3 className="mb-6 font-semibold text-primary ">
+        <h3 className="mb-6 font-semibold text-primary text-sm">
           Números de pavimentos:
         </h3>
         <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto overflow-x-auto">
@@ -148,8 +151,8 @@ export const useBenchmarkFilters = () => {
           />
         </div>
         <Divider className="my-6" />
-        <h3 className="mb-6 font-semibold text-primary">
-          Técnologias Construtivas:
+        <h3 className="mb-6 font-semibold text-primary text-sm">
+          Tecnologias Construtivas:
         </h3>
         <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto overflow-x-auto">
           <TechIcon

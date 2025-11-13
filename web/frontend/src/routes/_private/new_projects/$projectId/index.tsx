@@ -69,10 +69,10 @@ function RouteComponent() {
         projectData?.consumption?.[key as keyof TConsumptionPerModule];
       return {
         type: key as TModulesTypes,
-        co2_max: consumption?.co2_max ?? 0,
-        co2_min: consumption?.co2_min ?? 0,
-        energy_max: consumption?.energy_max ?? 0,
-        energy_min: consumption?.energy_min ?? 0,
+        co2_max: consumption?.co2_max?.toInternational() ?? 0,
+        co2_min: consumption?.co2_min?.toInternational() ?? 0,
+        energy_max: consumption?.energy_max?.toInternational() ?? 0,
+        energy_min: consumption?.energy_min?.toInternational() ?? 0,
       };
     });
 

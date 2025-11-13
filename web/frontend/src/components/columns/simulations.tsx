@@ -34,22 +34,22 @@ export const simulationColumns: ColumnDef<TSimulation>[] = [
   {
     accessorKey: "co2_min",
     header: t("modulesTable.headers.co2Min"),
-    cell: ({ row }) => row.original.co2_min?.toFixed(1) || "-",
+    cell: ({ row }) => row.original.co2_min?.toInternational() || "-",
   },
   {
     accessorKey: "co2_max",
     header: t("modulesTable.headers.co2Max"),
-    cell: ({ row }) => row.original.co2_max?.toFixed(1) || "-",
+    cell: ({ row }) => row.original.co2_max?.toInternational() || "-",
   },
   {
     accessorKey: "energy_min",
     header: t("modulesTable.headers.energyMin"),
-    cell: ({ row }) => row.original.energy_min?.toFixed(1) || "-",
+    cell: ({ row }) => row.original.energy_min?.toInternational() || "-",
   },
   {
     accessorKey: "energy_max",
     header: t("modulesTable.headers.energyMax"),
-    cell: ({ row }) => row.original.energy_max?.toFixed(1) || "-",
+    cell: ({ row }) => row.original.energy_max?.toInternational() || "-",
   },
   {
     accessorKey: "version",
