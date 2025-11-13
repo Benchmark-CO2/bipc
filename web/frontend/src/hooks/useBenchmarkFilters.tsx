@@ -56,7 +56,7 @@ export const useBenchmarkFilters = () => {
     }
   };
   const FilterSection = (
-    <section className="w-full md:w-1/3 min-w-[375px] flex flex-col items-center gap-4 mb-4 max-sm:self-center">
+    <section className="w-full md:w-1/3 min-w-[375px] flex flex-col items-center gap-4 mb-4 max-sm:self-center max-lg:w-full!">
       <h2 className="w-full text-left font-semibold text-primary">
         Filtros de visualização:
       </h2>
@@ -68,7 +68,7 @@ export const useBenchmarkFilters = () => {
           tabs={["co2", "energy"]}
           onTabSelect={(tab) => setType(tab as "co2" | "energy")}
           selectedTab={type}
-          className="w-full"
+          className="w-full max-w-[500px]"
           tabsStyle="w-full"
         />
         {/* <div className="flex gap-2 w-full">
