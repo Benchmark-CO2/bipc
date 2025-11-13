@@ -21,7 +21,6 @@ import { IConsumption, IModuleItem } from "@/types/modules";
 import { TOption } from "@/types/options";
 import { TConsumption } from "@/types/projects";
 import { IUnit } from "@/types/units";
-import { formatNumber } from '@/utils/numbers';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createFileRoute,
@@ -33,9 +32,8 @@ import { Copy, Edit, Loader2, Plus, Star, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-
 export const Route = createFileRoute(
-  "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies/"
+  "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies/",
 )({
   component: RouteComponent,
   validateSearch: (search: Record<string, unknown>) => {
@@ -77,11 +75,11 @@ const OptionMenu = ({
                 data: {
                   ...oldData.data,
                   options: oldData.data.options.map((opt: TOption) =>
-                    opt.id === option.id ? { ...opt, name: localName } : opt
+                    opt.id === option.id ? { ...opt, name: localName } : opt,
                   ),
                 },
               };
-            }
+            },
           );
         } catch (error) {
           console.error("Erro ao atualizar nome da opção:", error);
@@ -116,11 +114,11 @@ const OptionMenu = ({
               data: {
                 ...oldData.data,
                 options: oldData.data.options.map((opt: TOption) =>
-                  opt.id === option.id ? { ...opt, name: localName } : opt
+                  opt.id === option.id ? { ...opt, name: localName } : opt,
                 ),
               },
             };
-          }
+          },
         );
       } catch (error) {
         console.error("Erro ao atualizar nome da opção:", error);
@@ -145,11 +143,11 @@ const OptionMenu = ({
         }
 
         const otherActiveOptions = currentData.data.options.filter(
-          (opt: TOption) => opt.active && opt.id !== option.id
+          (opt: TOption) => opt.active && opt.id !== option.id,
         );
 
         const deactivatePromises = otherActiveOptions.map((opt: TOption) =>
-          patchOption(projectId, unitId, opt.id, { active: false })
+          patchOption(projectId, unitId, opt.id, { active: false }),
         );
 
         const activatePromise = patchOption(projectId, unitId, option.id, {
@@ -170,11 +168,11 @@ const OptionMenu = ({
                 options: oldData.data.options.map((opt: TOption) =>
                   opt.id === option.id
                     ? { ...opt, active: true }
-                    : { ...opt, active: false }
+                    : { ...opt, active: false },
                 ),
               },
             };
-          }
+          },
         );
       } else {
         await patchOption(projectId, unitId, option.id, { active: true });

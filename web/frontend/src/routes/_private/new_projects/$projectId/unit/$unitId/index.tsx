@@ -318,10 +318,10 @@ function RouteComponent() {
     );
 
     return {
-      co2_min: `${sumCO2Min / floorTotal}`,
-      co2_max: `${sumCO2Max / floorTotal}`,
-      energy_min: `${sumEnergyMin / floorTotal}`,
-      energy_max: `${sumEnergyMax / floorTotal}`,
+      co2_min: `${(sumCO2Min / floorTotal).toInternational()}`,
+      co2_max: `${(sumCO2Max / floorTotal).toInternational()}`,
+      energy_min: `${(sumEnergyMin / floorTotal).toInternational()}`,
+      energy_max: `${(sumEnergyMax / floorTotal).toInternational()}`,
       area: `-`,
     };
   };
