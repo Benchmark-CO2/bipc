@@ -17,43 +17,43 @@ export const floorsColumns: ColumnDef<
     header: () => <div className="text-center">Área (m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original.area?.toFixed(1)} m²` || "-"}
+        {`${row.original.area?.toFixed(1)}` || "-"}
       </div>
     ),
   },
   {
     accessorKey: "co2_min",
-    header: () => <div className="text-center">CO2 min</div>,
+    header: () => <div className="text-center">CO₂ Min. (KgCO₂/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original.co2_min?.toFixed(1)} KgCO₂/m²` || "-"}
+        {`${row.original.co2_min?.toFixed(1)}` || "-"}
       </div>
     ),
   },
   {
     accessorKey: "co2_max",
-    header: () => <div className="text-center">CO2 max</div>,
+    header: () => <div className="text-center">CO₂ Max. (KgCO₂/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original.co2_max?.toFixed(1)} KgCO₂/m²` || "-"}
+        {`${row.original.co2_max?.toFixed(1)}` || "-"}
       </div>
     ),
   },
   {
     accessorKey: "energy_min",
-    header: () => <div className="text-center">Energia min</div>,
+    header: () => <div className="text-center">Energia Min. (MJ/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original.energy_min?.toFixed(1)} MJ/m²` || "-"}
+        {`${row.original.energy_min?.toFixed(1)}` || "-"}
       </div>
     ),
   },
   {
     accessorKey: "energy_max",
-    header: () => <div className="text-center">Energia max</div>,
+    header: () => <div className="text-center">Energia Max. (MJ/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original.energy_max?.toFixed(1)} MJ/m²` || "-"}
+        {`${row.original.energy_max?.toFixed(1)}` || "-"}
       </div>
     ),
   },

@@ -945,7 +945,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         </div>
 
         <div className="flex max-sm:flex-col-reverse max-sm:gap-4 max-sm:mt-2">
-          <span>
+          <span className="text-xs">
             Exibindo: {brushSelectionCount} / {data?.length || 0}
           </span>
           {isMobile && (
