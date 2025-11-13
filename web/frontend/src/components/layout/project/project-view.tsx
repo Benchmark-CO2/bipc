@@ -69,10 +69,10 @@ const ProjectView = ({
   }
 
   const finalAvgConsumptions = {
-    co2_min: `${avgConsumptions.co2_min}`,
-    co2_max: `${avgConsumptions.co2_max}`,
-    energy_min: `${avgConsumptions.energy_min}`,
-    energy_max: `${avgConsumptions.energy_max}`,
+    co2_min: avgConsumptions.co2_min,
+    co2_max: avgConsumptions.co2_max,
+    energy_min: avgConsumptions.energy_min,
+    energy_max: avgConsumptions.energy_max,
   };
 
   useEffect(() => {

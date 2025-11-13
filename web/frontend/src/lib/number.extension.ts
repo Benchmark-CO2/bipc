@@ -4,9 +4,14 @@ Object.defineProperty(Number.prototype, "toInternational", {
     if (isNaN(this)) {
       return 0;
     }
-    return new Intl.NumberFormat(locale, {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    }).format(this);
+    try {
+      return new Intl.NumberFormat(locale, {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      }).format(this);
+    } catch (error) {
+      console.error(error);
+      return this.toString();
+    }
   },
 });
