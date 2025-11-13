@@ -14,8 +14,8 @@ import React, {
 import Divider from "../ui/divider";
 
 const UNIT_LABELS = {
-  "KgCO₂/m²": "Carbono Incorporado (Kg CO₂/m²)",
-  "MJ/m²": "Energia Incorporada (MJ/m²)",
+  "co2": "Emissão de CO2 (Kg/m²)",
+  "energy": "Demanda de energia primária (MJ/m²)",
 } as const;
 
 // Constants
@@ -908,7 +908,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
         >
           <span>N: {data?.length}</span>
           <span className="flex-1 text-xs text-center w-full text-black/70">
-            Potencial de mitigação
+            Eficiência
           </span>
         </div>
       </CardContent>
