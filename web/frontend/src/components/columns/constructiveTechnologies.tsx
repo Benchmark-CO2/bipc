@@ -18,37 +18,37 @@ export const constructiveTechnologies: ColumnDef<
   },
   {
     accessorKey: "co2_min",
-    header: () => <div className="text-center">CO2 Min (KgCO₂/m²)</div>,
+    header: () => <div className="text-center">CO₂ Min. (KgCO₂/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${parseFloat(row.original.co2_min)?.toInternational()}` || "-"}
+        {`${row.original.co2_min?.toInternational()}` || "-"}
       </div>
     ),
   },
   {
     accessorKey: "co2_max",
-    header: () => <div className="text-center">CO2 Max (KgCO₂/m²)</div>,
+    header: () => <div className="text-center">CO₂ Max. (KgCO₂/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${parseFloat(row.original.co2_max)?.toInternational()}` || "-"}
+        {`${row.original.co2_max?.toInternational()}` || "-"}
       </div>
     ),
   },
   {
     accessorKey: "energy_min",
-    header: () => <div className="text-center">Energia Min (MJ/m²)</div>,
+    header: () => <div className="text-center">Energia Min. (MJ/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${parseFloat(row.original.energy_min)?.toInternational()}` || "-"}
+        {`${row.original.energy_min?.toInternational()}` || "-"}
       </div>
     ),
   },
   {
     accessorKey: "energy_max",
-    header: () => <div className="text-center">Energia Max (MJ/m²)</div>,
+    header: () => <div className="text-center">Energia Max. (MJ/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${parseFloat(row.original.energy_max)?.toInternational()}` || "-"}
+        {`${row.original.energy_max?.toInternational()}` || "-"}
       </div>
     ),
   },

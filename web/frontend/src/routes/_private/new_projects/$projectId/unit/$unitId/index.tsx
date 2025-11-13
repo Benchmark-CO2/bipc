@@ -68,7 +68,7 @@ export const Route = createFileRoute(
       .map((key) => ({
         type: key,
         ...(unit?.consumptions as TConsumptionPerModule)[
-        key as keyof TConsumptionPerModule
+          key as keyof TConsumptionPerModule
         ],
       }));
     return { unitConsumptions };
@@ -220,79 +220,79 @@ function RouteComponent() {
 
   const groupedFloors: TGroupedFloor[] = unit?.floors
     ? Object.values(
-      unit.floors.reduce(
-        (acc, floor) => {
-          const groupId = floor.group_id;
-          const { consumptions, ...restFloor } = floor;
+        unit.floors.reduce(
+          (acc, floor) => {
+            const groupId = floor.group_id;
+            const { consumptions, ...restFloor } = floor;
 
-          const safeConsumption = consumptions?.total || {
-            co2_min: 0,
-            co2_max: 0,
-            energy_min: 0,
-            energy_max: 0,
-          };
-
-          if (!acc[groupId]) {
-            acc[groupId] = {
-              ...restFloor,
-              ...safeConsumption,
-              area: restFloor.area,
-              repetitions: 1,
+            const safeConsumption = consumptions?.total || {
+              co2_min: 0,
+              co2_max: 0,
+              energy_min: 0,
+              energy_max: 0,
             };
-          } else {
-            acc[groupId].repetitions += 1;
-            acc[groupId].area =
-              (acc[groupId].area * (acc[groupId].repetitions - 1) +
-                restFloor.area) /
-              acc[groupId].repetitions;
-            acc[groupId].co2_min =
-              (acc[groupId].co2_min * (acc[groupId].repetitions - 1) +
-                (safeConsumption.co2_min || 0)) /
-              acc[groupId].repetitions;
-            acc[groupId].co2_max =
-              (acc[groupId].co2_max * (acc[groupId].repetitions - 1) +
-                (safeConsumption.co2_max || 0)) /
-              acc[groupId].repetitions;
-            acc[groupId].energy_min =
-              (acc[groupId].energy_min * (acc[groupId].repetitions - 1) +
-                (safeConsumption.energy_min || 0)) /
-              acc[groupId].repetitions;
-            acc[groupId].energy_max =
-              (acc[groupId].energy_max * (acc[groupId].repetitions - 1) +
-                (safeConsumption.energy_max || 0)) /
-              acc[groupId].repetitions;
-          }
 
-          return acc;
-        },
-        {} as Record<string, any>
-      )
-    ).sort((a, b) => {
-      const categoryOrder = {
-        penthouse_floor: 0,
-        standard_floor: 1,
-        ground_floor: 2,
-        basement_floor: 3,
-      };
+            if (!acc[groupId]) {
+              acc[groupId] = {
+                ...restFloor,
+                ...safeConsumption,
+                area: restFloor.area,
+                repetitions: 1,
+              };
+            } else {
+              acc[groupId].repetitions += 1;
+              acc[groupId].area =
+                (acc[groupId].area * (acc[groupId].repetitions - 1) +
+                  restFloor.area) /
+                acc[groupId].repetitions;
+              acc[groupId].co2_min =
+                (acc[groupId].co2_min * (acc[groupId].repetitions - 1) +
+                  (safeConsumption.co2_min || 0)) /
+                acc[groupId].repetitions;
+              acc[groupId].co2_max =
+                (acc[groupId].co2_max * (acc[groupId].repetitions - 1) +
+                  (safeConsumption.co2_max || 0)) /
+                acc[groupId].repetitions;
+              acc[groupId].energy_min =
+                (acc[groupId].energy_min * (acc[groupId].repetitions - 1) +
+                  (safeConsumption.energy_min || 0)) /
+                acc[groupId].repetitions;
+              acc[groupId].energy_max =
+                (acc[groupId].energy_max * (acc[groupId].repetitions - 1) +
+                  (safeConsumption.energy_max || 0)) /
+                acc[groupId].repetitions;
+            }
 
-      const aCategory = a.category || getCategoryFromIndex(a.index || 0);
-      const bCategory = b.category || getCategoryFromIndex(b.index || 0);
+            return acc;
+          },
+          {} as Record<string, any>
+        )
+      ).sort((a, b) => {
+        const categoryOrder = {
+          penthouse_floor: 0,
+          standard_floor: 1,
+          ground_floor: 2,
+          basement_floor: 3,
+        };
 
-      const aCategoryOrder =
-        categoryOrder[aCategory as keyof typeof categoryOrder];
-      const bCategoryOrder =
-        categoryOrder[bCategory as keyof typeof categoryOrder];
+        const aCategory = a.category || getCategoryFromIndex(a.index || 0);
+        const bCategory = b.category || getCategoryFromIndex(b.index || 0);
 
-      if (aCategoryOrder !== bCategoryOrder) {
-        return aCategoryOrder - bCategoryOrder;
-      }
+        const aCategoryOrder =
+          categoryOrder[aCategory as keyof typeof categoryOrder];
+        const bCategoryOrder =
+          categoryOrder[bCategory as keyof typeof categoryOrder];
 
-      if (a.index !== undefined && b.index !== undefined) {
-        return b.index - a.index;
-      }
+        if (aCategoryOrder !== bCategoryOrder) {
+          return aCategoryOrder - bCategoryOrder;
+        }
 
-      return (a.name || "").localeCompare(b.name || "");
-    })
+        if (a.index !== undefined && b.index !== undefined) {
+          return b.index - a.index;
+        }
+
+        return (a.name || "").localeCompare(b.name || "");
+      })
     : [];
 
   const calculateAverageMetrics = (floors: TGroupedFloor[]) => {
@@ -319,10 +319,10 @@ function RouteComponent() {
     );
 
     return {
-      co2_min: `${formatNumber(sumCO2Min / floorTotal, 1)}`,
-      co2_max: `${formatNumber(sumCO2Max / floorTotal, 1)}`,
-      energy_min: `${formatNumber(sumEnergyMin / floorTotal, 1)}`,
-      energy_max: `${formatNumber(sumEnergyMax / floorTotal, 1)}`,
+      co2_min: `${(sumCO2Min / floorTotal).toInternational()}`,
+      co2_max: `${(sumCO2Max / floorTotal).toInternational()}`,
+      energy_min: `${(sumEnergyMin / floorTotal).toInternational()}`,
+      energy_max: `${(sumEnergyMax / floorTotal).toInternational()}`,
       area: `-`,
     };
   };
@@ -365,7 +365,6 @@ function RouteComponent() {
       .map((role: TRoleConsumptions) => role.name) || [];
 
   const selectedRole = roles?.find((role) => role.id === search.dcp);
-
 
   return (
     <div className="flex flex-col gap-4">
@@ -427,10 +426,10 @@ function RouteComponent() {
         isExpandable={false}
         lastRow={{
           data: {
-            co2_min: `${formatNumber(totalConsumptions.co2_min, 1)}`,
-            co2_max: `${formatNumber(totalConsumptions.co2_max, 1)}`,
-            energy_min: `${formatNumber(totalConsumptions.energy_min, 1)}`,
-            energy_max: `${formatNumber(totalConsumptions.energy_max, 1)}`,
+            co2_min: `${totalConsumptions.co2_min.toInternational()}`,
+            co2_max: `${totalConsumptions.co2_max.toInternational()}`,
+            energy_min: `${totalConsumptions.energy_min.toInternational()}`,
+            energy_max: `${totalConsumptions.energy_max.toInternational()}`,
           },
           type: "Total",
         }}

@@ -25,43 +25,53 @@ export const unitsColumns: ColumnDef<
     header: () => <div className="text-center">Área Total (m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original?.area.toInternational()} m²`}
+        {row.original?.area?.toInternational()
+          ? `${row.original?.area?.toInternational()}`
+          : "-"}
       </div>
     ),
   },
   {
     accessorKey: "co2_max",
-    header: () => <div className="text-center">CO2 max (KgCO₂/m²)</div>,
+    header: () => <div className="text-center">CO₂ Max. (KgCO₂/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original?.co2_max.toInternational()} `}
+        {row.original?.co2_max?.toInternational()
+          ? `${row.original?.co2_max?.toInternational()}`
+          : "-"}
       </div>
     ),
   },
   {
     accessorKey: "co2_min",
-    header: () => <div className="text-center">CO2 min (KgCO₂/m²)</div>,
+    header: () => <div className="text-center">CO₂ Min. (KgCO₂/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original?.co2_min.toInternational()} `}
+        {row.original?.co2_min?.toInternational()
+          ? `${row.original?.co2_min?.toInternational()}`
+          : "-"}
       </div>
     ),
   },
   {
     accessorKey: "energy_max",
-    header: () => <div className="text-center">Energia max (MJ/m²)</div>,
+    header: () => <div className="text-center">Energia Max. (MJ/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original?.energy_max.toInternational()} `}
+        {row.original?.energy_max?.toInternational()
+          ? `${row.original?.energy_max?.toInternational()}`
+          : "-"}
       </div>
     ),
   },
   {
     accessorKey: "energy_min",
-    header: () => <div className="text-center">Energia min (MJ/m²)</div>,
+    header: () => <div className="text-center">Energia Min. (MJ/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original?.energy_min.toInternational()} `}
+        {row.original?.energy_min?.toInternational()
+          ? `${row.original?.energy_min?.toInternational()}`
+          : "-"}
       </div>
     ),
   },

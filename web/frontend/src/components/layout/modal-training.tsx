@@ -125,8 +125,9 @@ const ModalTraining = ({
             <DialogDescription className="text-center pt-4 text-accent/100">
               {isAuthenticated ? (
                 <>
-                  Inscreva-se para participar do treinamento para uso da
-                  plataforma. Agora o passo final é se inscrever no formulário.
+                  O primeiro grupo de capacitação para a plataforma BIPc está
+                  completo. Se você tem interesse em participar dos próximos
+                  grupos indique aqui.
                 </>
               ) : (
                 <>
@@ -146,14 +147,14 @@ const ModalTraining = ({
                   onClick={handleOpenForm}
                   className="w-full"
                 >
-                  Cadastre-se no treinamento
+                  Quero participar
                 </Button>
                 <Button
                   variant="default"
                   onClick={handleAlreadyRegistered}
                   className="mx-auto border-none shadow-none"
                 >
-                  Já me inscrevi
+                  Já preenchi minha inscrição
                 </Button>
               </>
             ) : (

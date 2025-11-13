@@ -202,10 +202,11 @@ const OptionMenu = ({
         onClick={handleActiveChange}
       >
         <Star
-          className={`h-4 w-4 ${option.active
-            ? "fill-yellow-500 text-yellow-500"
-            : "text-gray-400 hover:text-yellow-500"
-            }`}
+          className={`h-4 w-4 ${
+            option.active
+              ? "fill-yellow-500 text-yellow-500"
+              : "text-gray-400 hover:text-yellow-500"
+          }`}
         />
       </Button>
       <Input
@@ -348,10 +349,10 @@ function RouteComponent() {
     }
 
     return {
-      co2_min: `${formatNumber(consumption.co2_min || 0, 1)}`,
-      co2_max: `${formatNumber(consumption.co2_max || 0, 1)}`,
-      energy_min: `${formatNumber(consumption.energy_min || 0, 1)}`,
-      energy_max: `${formatNumber(consumption.energy_max || 0, 1)}`,
+      co2_min: `${(consumption.co2_min || 0).toInternational()}`,
+      co2_max: `${(consumption.co2_max || 0).toInternational()}`,
+      energy_min: `${(consumption.energy_min || 0).toInternational()}`,
+      energy_max: `${(consumption.energy_max || 0).toInternational()}`,
     };
   };
 
@@ -367,49 +368,49 @@ function RouteComponent() {
   const newColumns: ColumnDef<
     Omit<IModuleItem, "consumption"> & TConsumption & { option_id: string }
   >[] = [
-      ...constructiveTechnologies,
-      {
-        id: "actions",
-        header: "",
-        cell: ({ row }) => {
-          return (
-            <div className="flex items-center justify-end gap-2">
-              <DrawerFormModule
-                triggerComponent={
-                  <Button variant="ghost" size="icon" disabled={isDeleting}>
-                    <Edit className="h-4 w-4 text-primary" />
-                  </Button>
-                }
-                type={row.original.type}
-                projectId={projectId}
-                unitId={unitId}
-                optionId={row.original.option_id}
-                moduleId={row.original.id}
-                floors={unitFloors}
-              />
-              <ModalConfirmDelete
-                title="Excluir Tecnologia Construtiva"
-                onConfirm={() =>
-                  mutateDeleteTec({
-                    optionId: row.original.option_id,
-                    moduleId: row.original.id,
-                  })
-                }
-                componentTrigger={
-                  <Button variant="ghost" size="icon" disabled={isDeletingTec}>
-                    {isDeletingTec ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash className="h-4 w-4 text-red-700" />
-                    )}
-                  </Button>
-                }
-              />
-            </div>
-          );
-        },
+    ...constructiveTechnologies,
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => {
+        return (
+          <div className="flex items-center justify-end gap-2">
+            <DrawerFormModule
+              triggerComponent={
+                <Button variant="ghost" size="icon" disabled={isDeleting}>
+                  <Edit className="h-4 w-4 text-primary" />
+                </Button>
+              }
+              type={row.original.type}
+              projectId={projectId}
+              unitId={unitId}
+              optionId={row.original.option_id}
+              moduleId={row.original.id}
+              floors={unitFloors}
+            />
+            <ModalConfirmDelete
+              title="Excluir Tecnologia Construtiva"
+              onConfirm={() =>
+                mutateDeleteTec({
+                  optionId: row.original.option_id,
+                  moduleId: row.original.id,
+                })
+              }
+              componentTrigger={
+                <Button variant="ghost" size="icon" disabled={isDeletingTec}>
+                  {isDeletingTec ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash className="h-4 w-4 text-red-700" />
+                  )}
+                </Button>
+              }
+            />
+          </div>
+        );
       },
-    ];
+    },
+  ];
 
   if (options.length === 0) {
     return (
