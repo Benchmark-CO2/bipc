@@ -21,6 +21,7 @@ import { IConsumption, IModuleItem } from "@/types/modules";
 import { TOption } from "@/types/options";
 import { TConsumption } from "@/types/projects";
 import { IUnit } from "@/types/units";
+import { formatNumber } from '@/utils/numbers';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createFileRoute,
@@ -32,19 +33,7 @@ import { Copy, Edit, Loader2, Plus, Star, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-function mergeUnitAndOptions(unit: IUnit, towerOptions: TOption[]) {
-  const areaTotal =
-    unit.floors.reduce((sum, floor) => sum + (floor.area || 0), 0) || 0;
-  return towerOptions
-    .filter((opt) => opt.unit_id === unit.id)
-    .map((opt) => ({
-      ...opt,
-      area: areaTotal,
-      modules: opt.modules.map((module) => ({
-        ...module,
-      })),
-    }));
-}
+
 export const Route = createFileRoute(
   "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies/"
 )({
@@ -360,10 +349,10 @@ function RouteComponent() {
     }
 
     return {
-      co2_min: `${(consumption.co2_min || 0).toFixed(1)}`,
-      co2_max: `${(consumption.co2_max || 0).toFixed(1)}`,
-      energy_min: `${(consumption.energy_min || 0).toFixed(1)}`,
-      energy_max: `${(consumption.energy_max || 0).toFixed(1)}`,
+      co2_min: `${(consumption.co2_min || 0).toInternational()}`,
+      co2_max: `${(consumption.co2_max || 0).toInternational()}`,
+      energy_min: `${(consumption.energy_min || 0).toInternational()}`,
+      energy_max: `${(consumption.energy_max || 0).toInternational()}`,
     };
   };
 

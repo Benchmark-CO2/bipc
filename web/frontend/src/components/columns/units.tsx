@@ -25,8 +25,8 @@ export const unitsColumns: ColumnDef<
     header: () => <div className="text-center">Área Total (m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {row.original?.area?.toFixed(1)
-          ? `${row.original?.area?.toFixed(1)}`
+        {row.original?.area?.toInternational()
+          ? `${row.original?.area?.toInternational()}`
           : "-"}
       </div>
     ),
@@ -36,8 +36,8 @@ export const unitsColumns: ColumnDef<
     header: () => <div className="text-center">CO₂ Max. (KgCO₂/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {row.original?.co2_max?.toFixed(1)
-          ? `${row.original?.co2_max?.toFixed(1)}`
+        {row.original?.co2_max?.toInternational()
+          ? `${row.original?.co2_max?.toInternational()}`
           : "-"}
       </div>
     ),
@@ -47,8 +47,8 @@ export const unitsColumns: ColumnDef<
     header: () => <div className="text-center">CO₂ Min. (KgCO₂/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {row.original?.co2_min?.toFixed(1)
-          ? `${row.original?.co2_min?.toFixed(1)}`
+        {row.original?.co2_min?.toInternational()
+          ? `${row.original?.co2_min?.toInternational()}`
           : "-"}
       </div>
     ),
@@ -58,8 +58,8 @@ export const unitsColumns: ColumnDef<
     header: () => <div className="text-center">Energia Max. (MJ/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {row.original?.energy_max?.toFixed(1)
-          ? `${row.original?.energy_max?.toFixed(1)}`
+        {row.original?.energy_max?.toInternational()
+          ? `${row.original?.energy_max?.toInternational()}`
           : "-"}
       </div>
     ),
@@ -69,8 +69,8 @@ export const unitsColumns: ColumnDef<
     header: () => <div className="text-center">Energia Min. (MJ/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {row.original?.energy_min?.toFixed(1)
-          ? `${row.original?.energy_min?.toFixed(1)}`
+        {row.original?.energy_min?.toInternational()
+          ? `${row.original?.energy_min?.toInternational()}`
           : "-"}
       </div>
     ),

@@ -1,6 +1,7 @@
 import { TConsumption } from "@/types/projects";
 import { TTowerFloorCategory } from "@/types/units";
 import { ColumnDef } from "@tanstack/react-table";
+
 export const floorsColumns: ColumnDef<
   Pick<TTowerFloorCategory, "group_name"> &
     TConsumption & { repetitions: number; area: number }
@@ -17,7 +18,7 @@ export const floorsColumns: ColumnDef<
     header: () => <div className="text-center">Área (m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original.area?.toFixed(1)}` || "-"}
+        {`${row.original.area?.toInternational()}` || "-"}
       </div>
     ),
   },
@@ -26,7 +27,7 @@ export const floorsColumns: ColumnDef<
     header: () => <div className="text-center">CO₂ Min. (KgCO₂/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original.co2_min?.toFixed(1)}` || "-"}
+        {`${row.original.co2_min?.toInternational()}` || "-"}
       </div>
     ),
   },
@@ -35,7 +36,7 @@ export const floorsColumns: ColumnDef<
     header: () => <div className="text-center">CO₂ Max. (KgCO₂/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original.co2_max?.toFixed(1)}` || "-"}
+        {`${row.original.co2_max?.toInternational()}` || "-"}
       </div>
     ),
   },
@@ -44,7 +45,7 @@ export const floorsColumns: ColumnDef<
     header: () => <div className="text-center">Energia Min. (MJ/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original.energy_min?.toFixed(1)}` || "-"}
+        {`${row.original.energy_min?.toInternational()}` || "-"}
       </div>
     ),
   },
@@ -53,7 +54,7 @@ export const floorsColumns: ColumnDef<
     header: () => <div className="text-center">Energia Max. (MJ/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original.energy_max?.toFixed(1)}` || "-"}
+        {`${row.original.energy_max?.toInternational()}` || "-"}
       </div>
     ),
   },

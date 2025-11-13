@@ -21,6 +21,7 @@ import {
   TProjectUnit,
 } from "@/types/projects";
 import { IUnit, TTowerFloorCategory } from "@/types/units";
+import { formatNumber } from '@/utils/numbers';
 import { getCategoryFromIndex } from "@/utils/unitConversions";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -318,10 +319,10 @@ function RouteComponent() {
     );
 
     return {
-      co2_min: `${(sumCO2Min / floorTotal).toFixed(1)}`,
-      co2_max: `${(sumCO2Max / floorTotal).toFixed(1)}`,
-      energy_min: `${(sumEnergyMin / floorTotal).toFixed(1)}`,
-      energy_max: `${(sumEnergyMax / floorTotal).toFixed(1)}`,
+      co2_min: `${(sumCO2Min / floorTotal).toInternational()}`,
+      co2_max: `${(sumCO2Max / floorTotal).toInternational()}`,
+      energy_min: `${(sumEnergyMin / floorTotal).toInternational()}`,
+      energy_max: `${(sumEnergyMax / floorTotal).toInternational()}`,
       area: `-`,
     };
   };
@@ -425,10 +426,10 @@ function RouteComponent() {
         isExpandable={false}
         lastRow={{
           data: {
-            co2_min: `${totalConsumptions.co2_min.toFixed(1)}`,
-            co2_max: `${totalConsumptions.co2_max.toFixed(1)}`,
-            energy_min: `${totalConsumptions.energy_min.toFixed(1)}`,
-            energy_max: `${totalConsumptions.energy_max.toFixed(1)}`,
+            co2_min: `${totalConsumptions.co2_min.toInternational()}`,
+            co2_max: `${totalConsumptions.co2_max.toInternational()}`,
+            energy_min: `${totalConsumptions.energy_min.toInternational()}`,
+            energy_max: `${totalConsumptions.energy_max.toInternational()}`,
           },
           type: "Total",
         }}

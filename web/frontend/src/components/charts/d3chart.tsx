@@ -12,6 +12,7 @@ import React, {
   useState,
 } from "react";
 import Indicators from "./components/indicators";
+import { formatNumber } from "@/utils/numbers";
 
 // Utility: Debounce function
 const debounce = <T extends (...args: any[]) => any>(
@@ -431,15 +432,16 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .call(d3.axisBottom(xScale).ticks(Math.min(10, Math.floor(_width / 60))))
       .selectAll("text")
       .style("font-size", "12px")
-      .style("fill", DEFAULT_COLORS.TEXT);
+      .style("fill", DEFAULT_COLORS.TEXT)
+      .text(d => (d as number).toInternational());
 
     g.append("g")
       .attr("class", "axis-y")
       .call(d3.axisLeft(yScale).ticks(8))
       .selectAll("text")
       .style("font-size", "12px")
-      .style("fill", DEFAULT_COLORS.TEXT);
-
+      .style("fill", DEFAULT_COLORS.TEXT)
+      .text(d => (d as number).toInternational());
     // Remove axis lines
     g.selectAll(".domain").remove();
     g.selectAll(".tick line").remove();
@@ -823,7 +825,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           .attr("font-size", 14)
           .attr("font-weight", "bold")
           .attr("fill", "var(--primary)")
-          .text(d.min.toFixed(0))
+          .text(d.min.toInternational(undefined, 0))
           .attr("id", `bar-label-min-${d.id}`);
 
         // Max value label
@@ -835,7 +837,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           .attr("font-size", 14)
           .attr("font-weight", "bold")
           .attr("fill", "var(--primary)")
-          .text(d.max.toFixed(0))
+          .text(d.max.toInternational(undefined, 0))
           .attr("id", `bar-label-max-${d.id}`);
 
         // Project identifier
@@ -931,13 +933,13 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
               <span>
                 Min:{" "}
                 <b>
-                  {tooltip.value.min.toFixed(2)} {unit}
+                  {tooltip.value.min.toInternational()} {unit}
                 </b>
               </span>
               <span>
                 Max:{" "}
                 <b>
-                  {tooltip.value.max.toFixed(2)} {unit}
+                  {tooltip.value.max.toInternational()} {unit}
                 </b>
               </span>
             </div>
