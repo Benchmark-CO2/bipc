@@ -11,7 +11,7 @@ import ItemCard from "./components/ItemCard";
 import Legend from './components/Legend';
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
-import { barColors, recalculateY, stackData } from "./utils";
+import { barColors, recalculateY } from "./utils";
 
 type ProjectsSummaryProps = {
   selectedUnits: (any & {
@@ -43,7 +43,7 @@ const UnitsSummary = ({
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
-  const filteredUnits = units.filter(el => !!el.consumption);
+  const filteredUnits = units.filter(el => !!el.consumptions);
 
   const fakeUnits = generateFakeData(data.benchmark?.[type as "co2" | "energy"] || [])
     .map((el) => ({
@@ -74,10 +74,13 @@ const UnitsSummary = ({
 
   const stackedData = useMemo(
     () =>
-      stackData(selectedUnits, data)?.map((el) => ({
-        ...el,
+      newItems.map(el => ({
+        id: el[type].id,
+        label: el[type].label,
+        co2: (el.co2.max + el.co2.min) / 2,
+        energy: (el.energy.max + el.energy.min) / 2,
       })),
-    [selectedUnits, data]
+    [newItems]
   );
 
   const [previousProjects, setPreviousProjects] = useState<any[]>([]);
@@ -254,7 +257,7 @@ const UnitsSummary = ({
                   sum={sum}
                   color={barColors}
                   type={type}
-                  hasConsumption={!!units.find(el => el.id === unit.id)?.consumption}
+                  hasConsumption={!!unit[type]}
                 />
               ) : (
                 <ListItem
@@ -265,7 +268,7 @@ const UnitsSummary = ({
                   sum={sum}
                   color={barColors}
                   type={type}
-                  hasConsumption={!!units.find(el => el.id === unit.id)?.consumption}
+                  hasConsumption={!!unit[type]}
                 />
               );
             })}

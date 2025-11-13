@@ -6,7 +6,7 @@ export const stackData = <T extends IProject>(item: T[], data: IBenchmarkRespons
     .map(({ id }) => {
       const project = item.find((p) => p.id === id);
       if (!project) return null;
-
+      
       const co2Item = data.benchmark.co2.find((b) => b.id === id);
       const energyItem = data.benchmark.energy.find((b) => b.id === id);
 

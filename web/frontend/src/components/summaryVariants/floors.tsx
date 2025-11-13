@@ -8,10 +8,10 @@ import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ItemCard from "./components/ItemCard";
-import Legend from './components/Legend';
+import Legend from "./components/Legend";
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
-import { barColors, recalculateY, stackData } from "./utils";
+import { barColors, recalculateY } from "./utils";
 
 type ProjectsSummaryProps = {
   floors: any[];
@@ -32,7 +32,7 @@ const FloorSummary = ({
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
-  const filteredFloors = floors.filter(el => !!el.consumption);
+  const filteredFloors = floors.filter((el) => !!el.co2_max);
 
   const fakeFloors = data.benchmark?.[type as "co2" | "energy"]
     ?.map((el) => ({
@@ -41,13 +41,8 @@ const FloorSummary = ({
     }))
     .filter((f) => f.min && f.max);
   const { isExpanded } = useSummary();
-  const stackedData = useMemo(
-    () =>
-      stackData(selectedFloors, data),
-    [selectedFloors, data]
-  );
 
-  const newItems = filteredFloors.map(el => {
+  const newItems = filteredFloors.map((el) => {
     return {
       co2: {
         id: el.id,
@@ -63,8 +58,19 @@ const FloorSummary = ({
         max: el.energy_max,
         label: el.group_name,
       },
-    }
-  })
+    };
+  });
+
+    const stackedData = useMemo(
+    () => newItems.map(el => ({
+      id: el[type].id,
+      label: el[type].label,
+      co2: (el.co2.max + el.co2.min) / 2,
+      energy: (el.energy.max + el.energy.min) / 2,
+    })),
+    [newItems],
+  );
+
   const handleAddProject = (projectId: string) => {
     if (selectedProjects.includes(projectId)) {
       setSelectedProjects(selectedProjects.filter((id) => id !== projectId));
@@ -76,24 +82,24 @@ const FloorSummary = ({
   const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!someSelected) return
-    setPreviousProjects(
-      filteredFloors.map(el => el.id)
-    );
+    if (!someSelected) return;
+    setPreviousProjects(filteredFloors.map((el) => el.id));
   }, [someSelected]);
 
   useEffect(() => {
-    if (!someSelected) return
+    if (!someSelected) return;
     if (previousProjects.length < selectedFloors.length) {
-      const diff = filteredFloors.filter(
-        (p) => !selectedFloors.includes(p.id)
-      );
+      const diff = filteredFloors.filter((p) => !selectedFloors.includes(p.id));
       if (diff.length > 0) {
         setSelectedProjects((prev) => [...prev, ...diff.map((d) => d.id)]);
       }
     } else if (previousProjects.length > selectedFloors.length) {
       const diff = previousProjects.filter(
-        (p) => !selectedFloors.filter(el => el.consumption).map((u) => u.id).includes(p)
+        (p) =>
+          !selectedFloors
+            .filter((el) => el.consumption)
+            .map((u) => u.id)
+            .includes(p),
       );
       if (diff.length > 0) {
         setSelectedProjects((prev) => prev.filter((p) => !diff.includes(p)));
@@ -128,20 +134,24 @@ const FloorSummary = ({
         };
         return acc;
       },
-      {} as Record<string, number>
+      {} as Record<string, number>,
     );
   }, [floors, unit, fakeFloors]);
 
   const sum = (Object.values(avgByUnit) as Array<{ avg: number }>).reduce(
     (acc: number, b: { avg: number }) => acc + b.avg,
-    0 as number
+    0 as number,
   );
 
-  const newDataItems = [...fakeFloors, ...newItems.map(item => item[type])]
+  const newDataItems = [...fakeFloors, ...newItems.map((item) => item[type])];
 
-  const minData = useMemo(() => newDataItems.map(d => d.min), [newDataItems]);
-  const maxData = useMemo(() => newDataItems.map(d => d.max), [newDataItems]);
-  const newData = recalculateY(newDataItems, Math.min(...minData), Math.max(...maxData));
+  const minData = useMemo(() => newDataItems.map((d) => d.min), [newDataItems]);
+  const maxData = useMemo(() => newDataItems.map((d) => d.max), [newDataItems]);
+  const newData = recalculateY(
+    newDataItems,
+    Math.min(...minData),
+    Math.max(...maxData),
+  );
 
   return (
     <>
@@ -166,9 +176,12 @@ const FloorSummary = ({
         />
       </div>
       <div
-        className={cn("w-full flex justify-between gap-4 max-md:flex-col max-md:flex-col 2xl:h-[85%] max-sm:h-max", {
-          "flex flex-col": isExpanded,
-        })}
+        className={cn(
+          "w-full flex justify-between gap-4 max-md:flex-col max-md:flex-col 2xl:h-[85%] max-sm:h-max",
+          {
+            "flex flex-col": isExpanded,
+          },
+        )}
       >
         <div className="flex flex-col items-start w-full">
           {ChartSelector}
@@ -207,7 +220,7 @@ const FloorSummary = ({
                           "bg-white text-black border-2 border-active shadow-md",
                           {
                             "ml-30": idx === 0,
-                          }
+                          },
                         )}
                       >
                         <span className="text-black text-base p-2">
@@ -238,7 +251,7 @@ const FloorSummary = ({
                   sum={sum}
                   color={barColors}
                   type={type}
-                  hasConsumption={!!floors.find(el => el.id === floor.id)?.consumption}
+                  hasConsumption={true}
                 />
               ) : (
                 <ListItem
@@ -249,7 +262,7 @@ const FloorSummary = ({
                   sum={sum}
                   color={barColors}
                   type={type}
-                  hasConsumption={!!floors.find(el => el.id === floor.id)?.consumption}
+                  hasConsumption={true}
                 />
               );
             })}

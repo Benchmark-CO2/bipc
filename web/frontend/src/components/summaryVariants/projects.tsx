@@ -11,7 +11,7 @@ import ItemCard from "./components/ItemCard";
 import Legend from './components/Legend';
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
-import { barColors, recalculateY, stackData } from "./utils";
+import { barColors, recalculateY } from "./utils";
 
 type ProjectsSummaryProps = {
   projects: any[];
@@ -60,10 +60,13 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
 
   const stackedData = useMemo(
     () =>
-      stackData(projects, data)?.map((el) => ({
-        ...el,
-      })),
-    [projects, data]
+      newItems.map(el => ({
+        id: el[type].id,
+        label: el[type].label,
+        co2: (el.co2.max + el.co2.min) / 2,
+        energy: (el.energy.max + el.energy.min) / 2,
+      }))
+    ,[newItems]
   );
 
   const handleAddProject = (projectId: string) => {
