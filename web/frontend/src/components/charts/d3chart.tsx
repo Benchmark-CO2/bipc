@@ -370,6 +370,12 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     ctx.save();
     ctx.translate(margin.left, margin.top);
 
+    // Create clipping region to prevent content from going outside chart area
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, _width, _height);
+    ctx.clip();
+
     // Apply zoom transform
     const transform = transformRef.current;
     const newXScale = d3.scaleLinear()
@@ -407,7 +413,76 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       }
     });
 
-    // Draw data points
+    // Prepare selected items with positions for label collision detection
+    const selectedItems = data
+      .filter(d => selectedBars.includes(d.id))
+      .map(d => ({
+        ...d,
+        x1: newXScale(d.min),
+        x2: newXScale(d.max),
+        y: newYScale(d.y),
+        labelOffset: 0, // Will be adjusted for collision
+      }))
+      .sort((a, b) => a.y - b.y); // Sort by Y position
+
+    // Detect collisions and adjust label positions
+    const minLabelSpacing = 24; // Minimum pixels between labels
+    for (let i = 0; i < selectedItems.length; i++) {
+      for (let j = i + 1; j < selectedItems.length; j++) {
+        const item1 = selectedItems[i];
+        const item2 = selectedItems[j];
+        
+        const yDist = Math.abs((item1.y + item1.labelOffset) - (item2.y + item2.labelOffset));
+        
+        if (yDist < minLabelSpacing) {
+          // Push item2 down to avoid collision
+          const adjustment = minLabelSpacing - yDist;
+          item2.labelOffset += adjustment;
+        }
+      }
+    }
+
+    // First pass: Draw circles for non-selected items
+    data.forEach((d) => {
+      const x1 = newXScale(d.min);
+      const x2 = newXScale(d.max);
+      const y = newYScale(d.y);
+
+      // Skip if outside visible area
+      if (x2 < 0 || x1 > _width || y < 0 || y > _height) return;
+
+      const isSelected = selectedBars.includes(d.id);
+      
+      // Only draw circles for non-selected items in first pass
+      if (!isSelected) {
+        const radius = isExpanded ? CHART_CONFIG.CIRCLE_RADIUS.expanded : CHART_CONFIG.CIRCLE_RADIUS.normal;
+        const strokeWidth = isExpanded ? (isMobile ? 1 : 2) : 0;
+
+        // Start circle
+        ctx.beginPath();
+        ctx.arc(x1, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = DEFAULT_COLORS.START;
+        ctx.fill();
+        if (strokeWidth > 0) {
+          ctx.strokeStyle = 'white';
+          ctx.lineWidth = strokeWidth;
+          ctx.stroke();
+        }
+
+        // End circle
+        ctx.beginPath();
+        ctx.arc(x2, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = DEFAULT_COLORS.END;
+        ctx.fill();
+        if (strokeWidth > 0) {
+          ctx.strokeStyle = 'white';
+          ctx.lineWidth = isExpanded ? (isMobile ? 1 : 0.5) : 0;
+          ctx.stroke();
+        }
+      }
+    });
+
+    // Second pass: Draw bars for selected items
     data.forEach((d) => {
       const x1 = newXScale(d.min);
       const x2 = newXScale(d.max);
@@ -418,8 +493,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
       const isSelected = selectedBars.includes(d.id);
 
-      // Draw bar if expanded or selected
-      if (isExpanded || isSelected) {
+      // Draw bar only for selected items
+      if (isSelected) {
         const barHeight = isExpanded ? CHART_CONFIG.BAR_HEIGHT : CHART_CONFIG.MINIMAL_BAR_HEIGHT;
         
         // Create gradient for bar
@@ -434,78 +509,149 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           ctx.roundRect(x1 - 12, y - (barHeight + 4) / 2, x2 - x1 + 24, barHeight + 4, 15);
           ctx.fill();
           
-          if (isSelected) {
-            ctx.strokeStyle = DEFAULT_COLORS.STROKE;
-            ctx.lineWidth = 2;
-            ctx.stroke();
-          }
+          ctx.strokeStyle = DEFAULT_COLORS.STROKE;
+          ctx.lineWidth = 2;
+          ctx.stroke();
         } else {
           ctx.beginPath();
           ctx.roundRect(x1, y - barHeight / 2, x2 - x1, barHeight, 5);
           ctx.fill();
           
-          if (isSelected) {
-            ctx.strokeStyle = DEFAULT_COLORS.STROKE;
-            ctx.lineWidth = 0.1;
-            ctx.stroke();
-          }
-        }
-      }
-
-      // Draw circles
-      const radius = isExpanded ? CHART_CONFIG.CIRCLE_RADIUS.expanded : CHART_CONFIG.CIRCLE_RADIUS.normal;
-      const strokeWidth = isExpanded ? (isMobile ? 1 : 2) : 0;
-
-      // Start circle
-      ctx.beginPath();
-      ctx.arc(x1, y, radius, 0, Math.PI * 2);
-      ctx.fillStyle = DEFAULT_COLORS.START;
-      ctx.fill();
-      if (strokeWidth > 0 || isSelected) {
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = isSelected ? strokeWidth : strokeWidth;
-        ctx.stroke();
-      }
-
-      // End circle
-      ctx.beginPath();
-      ctx.arc(x2, y, radius, 0, Math.PI * 2);
-      ctx.fillStyle = DEFAULT_COLORS.END;
-      ctx.fill();
-      if (strokeWidth > 0 || isSelected) {
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = isSelected ? strokeWidth : (isExpanded ? (isMobile ? 1 : 0.5) : 0);
-        ctx.stroke();
-      }
-
-      // Draw labels for selected bars
-      if (isSelected) {
-        const avgX = (x1 + x2) / 2;
-        const isMoreThanHalf = avgX < (maxValue ? maxValue * 0.5 : 0);
-        
-        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary') || DEFAULT_COLORS.TEXT;
-        ctx.font = 'bold 14px sans-serif';
-        ctx.textAlign = 'end';
-        ctx.fillText(d.min.toInternational(undefined, 0), x1 - 18, y + 4);
-        
-        ctx.textAlign = 'start';
-        ctx.fillText(d.max.toInternational(undefined, 0), x2 + 18, y + 4);
-        
-        ctx.font = 'normal 12px sans-serif';
-        ctx.fillText(
-          `${isMoreThanHalf ? "<--" : ""} ${d.label} ${!isMoreThanHalf ? "-->" : ""}`,
-          isMoreThanHalf ? x2 + 150 : x1 - 150,
-          y + 4
-        );
-
-        if (isExpanded) {
-          ctx.font = 'bold 14px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillText(d.label, avgX, y + 5);
+          ctx.strokeStyle = DEFAULT_COLORS.STROKE;
+          ctx.lineWidth = 0.1;
+          ctx.stroke();
         }
       }
     });
+
+    // Third pass: Draw circles for selected items (on top)
+    data.forEach((d) => {
+      const x1 = newXScale(d.min);
+      const x2 = newXScale(d.max);
+      const y = newYScale(d.y);
+
+      // Skip if outside visible area
+      if (x2 < 0 || x1 > _width || y < 0 || y > _height) return;
+
+      const isSelected = selectedBars.includes(d.id);
+
+      // Draw circles only for selected items
+      if (isSelected) {
+        const radius = isExpanded ? CHART_CONFIG.CIRCLE_RADIUS.expanded : CHART_CONFIG.CIRCLE_RADIUS.normal;
+        const strokeWidth = isExpanded ? (isMobile ? 1 : 2) : 0;
+
+        // Start circle
+        ctx.beginPath();
+        ctx.arc(x1, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = DEFAULT_COLORS.START;
+        ctx.fill();
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = strokeWidth;
+        ctx.stroke();
+
+        // End circle
+        ctx.beginPath();
+        ctx.arc(x2, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = DEFAULT_COLORS.END;
+        ctx.fill();
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = isExpanded ? (isMobile ? 1 : 0.5) : 0;
+        ctx.stroke();
+      }
+    });
+
+    // Draw labels for selected items with collision-adjusted positions
+    selectedItems.forEach((item) => {
+      if (isExpanded) {
+        // In expanded mode, draw label inside the bar with collision adjustment
+        const adjustedY = item.y + item.labelOffset;
+        const avgX = (item.x1 + item.x2) / 2;
+        
+        // Draw connecting line if label was moved significantly
+        if (Math.abs(item.labelOffset) > 2) {
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([3, 3]);
+          ctx.beginPath();
+          ctx.moveTo(avgX, item.y);
+          ctx.lineTo(avgX, adjustedY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        
+        // Draw label inside bar
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--foreground') || DEFAULT_COLORS.TEXT;
+        ctx.fillText(item.label, avgX, adjustedY + 5);
+      } else {
+        // In normal mode, draw labels outside the bar
+        const adjustedY = item.y + item.labelOffset;
+        const avgX = (item.x1 + item.x2) / 2;
+        
+        // Determine if label should be on left or right based on position
+        const isLeftSide = avgX < _width * 0.5;
+        
+        const foregroundColor = getComputedStyle(document.documentElement).getPropertyValue('--foreground') || DEFAULT_COLORS.TEXT;
+        
+        // Draw connecting line for vertical offset (if label was moved)
+        if (Math.abs(item.labelOffset) > 2) {
+          ctx.strokeStyle = foregroundColor.trim();
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          const connectX = isLeftSide ? item.x2 : item.x1;
+          ctx.moveTo(connectX, item.y);
+          ctx.lineTo(connectX, adjustedY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary') || DEFAULT_COLORS.TEXT;
+        ctx.font = 'bold 14px sans-serif';
+        
+        // Min value label
+        ctx.textAlign = 'end';
+        ctx.fillText(item.min.toInternational(undefined, 0), item.x1 - 18, adjustedY + 4);
+        
+        // Max value label
+        ctx.textAlign = 'start';
+        ctx.fillText(item.max.toInternational(undefined, 0), item.x2 + 18, adjustedY + 4);
+        
+        // Draw horizontal connecting line to project label
+        ctx.strokeStyle = foregroundColor.trim();
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        
+        // Project label - positioned on the side with more space
+        ctx.font = 'normal 12px sans-serif';
+        if (isLeftSide) {
+          // Draw line and label to the right
+          ctx.moveTo(item.x2, adjustedY);
+          ctx.lineTo(item.x2 + 65, adjustedY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          ctx.fillStyle = foregroundColor.trim();
+          ctx.textAlign = 'start';
+          ctx.fillText(`${item.label}`, item.x2 + 70, adjustedY + 4);
+        } else {
+          // Draw line and label to the left
+          ctx.moveTo(item.x1, adjustedY);
+          ctx.lineTo(item.x1 - 65, adjustedY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          ctx.fillStyle = foregroundColor.trim();
+          ctx.textAlign = 'end';
+          ctx.fillText(`${item.label}`, item.x1 - 70, adjustedY + 4);
+        }
+      }
+    });
+
+    // Restore clipping region
+    ctx.restore();
 
     ctx.restore();
 
