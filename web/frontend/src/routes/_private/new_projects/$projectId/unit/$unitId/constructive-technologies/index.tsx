@@ -21,6 +21,7 @@ import { IConsumption, IModuleItem } from "@/types/modules";
 import { TOption } from "@/types/options";
 import { TConsumption } from "@/types/projects";
 import { IUnit } from "@/types/units";
+import { formatNumber } from '@/utils/numbers';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createFileRoute,
@@ -32,19 +33,7 @@ import { Copy, Edit, Loader2, Plus, Star, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-function mergeUnitAndOptions(unit: IUnit, towerOptions: TOption[]) {
-  const areaTotal =
-    unit.floors.reduce((sum, floor) => sum + (floor.area || 0), 0) || 0;
-  return towerOptions
-    .filter((opt) => opt.unit_id === unit.id)
-    .map((opt) => ({
-      ...opt,
-      area: areaTotal,
-      modules: opt.modules.map((module) => ({
-        ...module,
-      })),
-    }));
-}
+
 export const Route = createFileRoute(
   "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies/"
 )({
@@ -213,10 +202,11 @@ const OptionMenu = ({
         onClick={handleActiveChange}
       >
         <Star
-          className={`h-4 w-4 ${option.active
-            ? "fill-yellow-500 text-yellow-500"
-            : "text-gray-400 hover:text-yellow-500"
-            }`}
+          className={`h-4 w-4 ${
+            option.active
+              ? "fill-yellow-500 text-yellow-500"
+              : "text-gray-400 hover:text-yellow-500"
+          }`}
         />
       </Button>
       <Input
@@ -351,18 +341,18 @@ function RouteComponent() {
       !consumption?.energy_max
     ) {
       return {
-        co2_min: "0 KgCO2/m²",
-        co2_max: "0 KgCO2/m²",
-        energy_min: "0 MJ/m²",
-        energy_max: "0 MJ/m²",
+        co2_min: "0",
+        co2_max: "0",
+        energy_min: "0",
+        energy_max: "0",
       };
     }
 
     return {
-      co2_min: `${(consumption.co2_min || 0).toFixed(1)} KgCO2/m²`,
-      co2_max: `${(consumption.co2_max || 0).toFixed(1)} KgCO2/m²`,
-      energy_min: `${(consumption.energy_min || 0).toFixed(1)} MJ/m²`,
-      energy_max: `${(consumption.energy_max || 0).toFixed(1)} MJ/m²`,
+      co2_min: `${(consumption.co2_min || 0).toInternational()}`,
+      co2_max: `${(consumption.co2_max || 0).toInternational()}`,
+      energy_min: `${(consumption.energy_min || 0).toInternational()}`,
+      energy_max: `${(consumption.energy_max || 0).toInternational()}`,
     };
   };
 
@@ -378,49 +368,49 @@ function RouteComponent() {
   const newColumns: ColumnDef<
     Omit<IModuleItem, "consumption"> & TConsumption & { option_id: string }
   >[] = [
-      ...constructiveTechnologies,
-      {
-        id: "actions",
-        header: "",
-        cell: ({ row }) => {
-          return (
-            <div className="flex items-center justify-end gap-2">
-              <DrawerFormModule
-                triggerComponent={
-                  <Button variant="ghost" size="icon" disabled={isDeleting}>
-                    <Edit className="h-4 w-4 text-primary" />
-                  </Button>
-                }
-                type={row.original.type}
-                projectId={projectId}
-                unitId={unitId}
-                optionId={row.original.option_id}
-                moduleId={row.original.id}
-                floors={unitFloors}
-              />
-              <ModalConfirmDelete
-                title="Excluir Tecnologia Construtiva"
-                onConfirm={() =>
-                  mutateDeleteTec({
-                    optionId: row.original.option_id,
-                    moduleId: row.original.id,
-                  })
-                }
-                componentTrigger={
-                  <Button variant="ghost" size="icon" disabled={isDeletingTec}>
-                    {isDeletingTec ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash className="h-4 w-4 text-red-700" />
-                    )}
-                  </Button>
-                }
-              />
-            </div>
-          );
-        },
+    ...constructiveTechnologies,
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => {
+        return (
+          <div className="flex items-center justify-end gap-2">
+            <DrawerFormModule
+              triggerComponent={
+                <Button variant="ghost" size="icon" disabled={isDeleting}>
+                  <Edit className="h-4 w-4 text-primary" />
+                </Button>
+              }
+              type={row.original.type}
+              projectId={projectId}
+              unitId={unitId}
+              optionId={row.original.option_id}
+              moduleId={row.original.id}
+              floors={unitFloors}
+            />
+            <ModalConfirmDelete
+              title="Excluir Tecnologia Construtiva"
+              onConfirm={() =>
+                mutateDeleteTec({
+                  optionId: row.original.option_id,
+                  moduleId: row.original.id,
+                })
+              }
+              componentTrigger={
+                <Button variant="ghost" size="icon" disabled={isDeletingTec}>
+                  {isDeletingTec ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash className="h-4 w-4 text-red-700" />
+                  )}
+                </Button>
+              }
+            />
+          </div>
+        );
       },
-    ];
+    },
+  ];
 
   if (options.length === 0) {
     return (

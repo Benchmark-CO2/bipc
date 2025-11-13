@@ -12,8 +12,8 @@ type ListItemProps = {
   selectedProjects: string[];
   handleAddProject: (id: string) => void;
   sum: number;
-  color?: string
-  type: "co2" | "energy"
+  color?: string;
+  type: "co2" | "energy";
   hasConsumption?: boolean;
 };
 const ListItem = ({
@@ -29,13 +29,16 @@ const ListItem = ({
   return (
     <li
       key={item.id}
-      className={cn("flex flex-col items-start gap-2 mb-2 max-sm:items-center max-sm:self-start max-sm:w-full", {
-        "text-sm": isExpanded,
-      })}
+      className={cn(
+        "flex flex-col items-start gap-2 mb-2 max-sm:items-center max-sm:self-start max-sm:w-full",
+        {
+          "text-sm": isExpanded,
+        }
+      )}
       style={{
         width: `${(Number(item[type]) / Number(sum)) * 100}%`,
       }}
-      onClick={() => hasConsumption &&handleAddProject(item.id!)}
+      onClick={() => hasConsumption && handleAddProject(item.id!)}
     >
       <div className="flex items-center gap-3 cursor-pointer">
         <Checkbox
@@ -43,10 +46,12 @@ const ListItem = ({
           onClick={() => handleAddProject(item.id!)}
           disabled={!hasConsumption}
         />
-        <h4 className="whitespace-nowrap flex items-center gap-3 cursor-pointer text-base text-foreground/90">
+        <h4 className="whitespace-nowrap flex items-center gap-3 cursor-pointer text-sm text-foreground/90">
           {item.label as string}
           {!hasConsumption && (
-            <span className="text-xs text-red-500">(Sem consumo registrado)</span>
+            <span className="text-xs text-red-500">
+              (Sem consumo registrado)
+            </span>
           )}
         </h4>
       </div>
@@ -56,10 +61,13 @@ const ListItem = ({
             backgroundColor: color,
           }}
           className={cn(`h-[10px] rounded-l-md w-full`, {
-            "border-[0.5px] border-gray-300 rounded-md p-2": !item[type] && !isExpanded,
+            "border-[0.5px] border-gray-300 rounded-md p-2":
+              !item[type] && !isExpanded,
           })}
         ></div>
-        <span className="text-sm whitespace-nowrap text-foreground/70">{(item[type] || 0).toFixed(1)} {type === "co2" ? "KgCO₂/m²" : "MJ/m²"}</span>
+        <span className="text-sm whitespace-nowrap text-foreground/70">
+          {(item[type] || 0).toFixed(1)} {type === "co2" ? "KgCO₂/m²" : "MJ/m²"}
+        </span>
       </div>
     </li>
   );
