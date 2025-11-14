@@ -77,7 +77,7 @@ const useChartDimensions = (
 ) => {
   return useMemo(() => {
     const screenWidth = window.innerWidth;
-
+    const screenHeight = window.innerHeight
     const width = () => {
       if (props.width && overrideDimensions) return props.width;
 
@@ -99,7 +99,7 @@ const useChartDimensions = (
       // if (containerHeight && containerHeight > 0) {
       //   return Math.max(300, containerHeight - 40); // Subtract some padding
       // }
-
+      if (screenHeight > 1200  && isExpanded) return screenHeight * 0.65
       if (isMobile && !isExpanded) return 250;
       if (isMobile && isExpanded) return 320;
       if (isExpanded) return window.innerHeight * 0.96 - 130;
@@ -868,7 +868,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       </CardHeader> */}
       <CardContent>
         <div className="w-full relative">
-          <span className="absolute text-xs w-full text-center text-black/70 block rotate-270  left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
+          <span className="absolute text-base w-full text-center text-black/70 block rotate-270  left-0 -translate-x-[49%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
             {labelX}
           </span>
           <svg
@@ -907,7 +907,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
           })}
         >
           <span>N: {data?.length}</span>
-          <span className="flex-1 text-xs text-center w-full text-black/70">
+          <span className="flex-1 text-base text-center w-full text-black/70">
             Eficiência
           </span>
         </div>
