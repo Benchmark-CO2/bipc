@@ -15,6 +15,7 @@ const (
 	ScopeActivation     = "activation"
 	ScopeAuthentication = "authentication"
 	ScopePasswordReset  = "password-reset"
+	ScopeAPIKey         = "api-key"
 )
 
 type Token struct {

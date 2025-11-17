@@ -34,7 +34,7 @@ type User struct {
 }
 
 func (u *User) IsAnonymous() bool {
-	return u == AnonymousUser
+	return u == AnonymousUser // pointer comparison
 }
 
 func ValidateEmail(v *validator.Validator, email string) {

@@ -197,3 +197,24 @@ func (app *application) createActivationTokenHandler(w http.ResponseWriter, r *h
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) createAPIKeyHandler(w http.ResponseWriter, r *http.Request) {
+	user := app.contextGetUser(r)
+
+	err := app.models.Tokens.DeleteAllForUser(data.ScopeAPIKey, user.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	token, err := app.models.Tokens.New(user.ID, 100*365*24*time.Hour, data.ScopeAPIKey, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"api_key": token.Plaintext}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}

@@ -229,22 +229,36 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 func (app *application) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Authorization")
+		w.Header().Add("Vary", "X-API-Key")
+
+		var token string
+		var scope string
 
 		authorizationHeader := r.Header.Get("Authorization")
+		if authorizationHeader != "" {
+			headerParts := strings.Split(authorizationHeader, " ")
+			if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+				app.invalidAuthenticationTokenResponse(w, r)
+				return
+			}
 
-		if authorizationHeader == "" {
+			token = headerParts[1]
+			scope = data.ScopeAuthentication
+		}
+
+		if token == "" {
+			apiKey := r.Header.Get("X-API-Key")
+			if apiKey != "" {
+				token = apiKey
+				scope = data.ScopeAPIKey
+			}
+		}
+
+		if token == "" {
 			r = app.contextSetUser(r, data.AnonymousUser)
 			next.ServeHTTP(w, r)
 			return
 		}
-
-		headerParts := strings.Split(authorizationHeader, " ")
-		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
-			app.invalidAuthenticationTokenResponse(w, r)
-			return
-		}
-
-		token := headerParts[1]
 
 		v := validator.New()
 
@@ -253,7 +267,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		user, err := app.models.Users.GetForToken(data.ScopeAuthentication, token)
+		user, err := app.models.Users.GetForToken(scope, token)
 		if err != nil {
 			switch {
 			case errors.Is(err, data.ErrRecordNotFound):
