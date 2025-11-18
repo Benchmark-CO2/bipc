@@ -167,7 +167,41 @@ func (m BenchmarkModel) GetUnitsBenchmark() ([]*BenchmarkData, error) {
 type GetProjectsBenchmarkFilters struct {
 	FloorsFrom *int    `json:"floors_from,omitempty"`
 	FloorsTo   *int    `json:"floors_to,omitempty"`
+	Floors     *string `json:"floors,omitempty"`
 	Technology *string `json:"technology,omitempty"`
+}
+
+type FloorRange struct {
+	Min           int
+	Max           int
+	IsGreaterThan bool
+}
+
+var validFloorFilters = map[string]FloorRange{
+	"1":    {Min: 1, Max: 1, IsGreaterThan: false},
+	"2":    {Min: 2, Max: 2, IsGreaterThan: false},
+	"3-4":  {Min: 3, Max: 4, IsGreaterThan: false},
+	"5-10": {Min: 5, Max: 10, IsGreaterThan: false},
+	"11+":  {Min: 11, Max: 0, IsGreaterThan: true},
+}
+
+func getValidFloorFilterValues() string {
+	values := make([]string, 0, len(validFloorFilters))
+	for key := range validFloorFilters {
+		values = append(values, key)
+	}
+	return strings.Join(values, ", ")
+}
+
+func parseFloorFilter(value string) (*FloorRange, error) {
+	value = strings.TrimSpace(value)
+
+	floorRange, ok := validFloorFilters[value]
+	if !ok {
+		return nil, fmt.Errorf("%w: '%s' - allowed values are: %s", ErrInvalidFloorFilter, value, getValidFloorFilterValues())
+	}
+
+	return &floorRange, nil
 }
 
 func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters) ([]*BenchmarkData, error) {
@@ -188,16 +222,55 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 			FROM floors_per_tower fpt
 			WHERE 1=1`
 
-	if filters.FloorsFrom != nil {
-		query += fmt.Sprintf(` AND floor_count >= $%d`, argPosition)
-		args = append(args, *filters.FloorsFrom)
-		argPosition++
-	}
+	if filters.Floors != nil {
+		floorValues := strings.Split(*filters.Floors, ",")
+		var floorConditions []string
 
-	if filters.FloorsTo != nil {
-		query += fmt.Sprintf(` AND floor_count <= $%d`, argPosition)
-		args = append(args, *filters.FloorsTo)
-		argPosition++
+		for _, value := range floorValues {
+			value = strings.TrimSpace(value)
+			if !strings.HasSuffix(value, "+") && len(value) > 0 {
+				if num := strings.TrimSpace(value); num != "" {
+					if _, exists := validFloorFilters[num+"+"]; exists {
+						value = num + "+"
+					}
+				}
+			}
+
+			floorRange, err := parseFloorFilter(value)
+			if err != nil {
+				return nil, err
+			}
+
+			if floorRange.IsGreaterThan {
+				floorConditions = append(floorConditions, fmt.Sprintf("floor_count >= $%d", argPosition))
+				args = append(args, floorRange.Min)
+				argPosition++
+			} else if floorRange.Min == floorRange.Max {
+				floorConditions = append(floorConditions, fmt.Sprintf("floor_count = $%d", argPosition))
+				args = append(args, floorRange.Min)
+				argPosition++
+			} else {
+				floorConditions = append(floorConditions, fmt.Sprintf("(floor_count >= $%d AND floor_count <= $%d)", argPosition, argPosition+1))
+				args = append(args, floorRange.Min, floorRange.Max)
+				argPosition += 2
+			}
+		}
+
+		if len(floorConditions) > 0 {
+			query += " AND (" + strings.Join(floorConditions, " OR ") + ")"
+		}
+	} else {
+		if filters.FloorsFrom != nil {
+			query += fmt.Sprintf(` AND floor_count >= $%d`, argPosition)
+			args = append(args, *filters.FloorsFrom)
+			argPosition++
+		}
+
+		if filters.FloorsTo != nil {
+			query += fmt.Sprintf(` AND floor_count <= $%d`, argPosition)
+			args = append(args, *filters.FloorsTo)
+			argPosition++
+		}
 	}
 
 	query += `),
@@ -219,13 +292,13 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 	if filters.Technology != nil {
 		technologies := strings.Split(*filters.Technology, ",")
 		techPlaceholders := make([]string, len(technologies))
-		
+
 		for i, _ := range technologies {
 			techPlaceholders[i] = fmt.Sprintf("$%d", argPosition)
 			args = append(args, strings.TrimSpace(technologies[i]))
 			argPosition++
 		}
-		
+
 		query += fmt.Sprintf(`
 			AND fc.technology = ANY(ARRAY[%s])`, strings.Join(techPlaceholders, ","))
 	}

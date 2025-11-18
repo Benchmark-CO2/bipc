@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 	"sort"
 
@@ -123,6 +124,7 @@ func (app *application) getProjectsBenchmarkHandler(w http.ResponseWriter, r *ht
 	var filters struct {
 		FloorsFrom *int    `json:"floors_from,omitempty"`
 		FloorsTo   *int    `json:"floors_to,omitempty"`
+		Floors     *string `json:"floors,omitempty"`
 		Technology *string `json:"technology,omitempty"`
 	}
 
@@ -138,6 +140,11 @@ func (app *application) getProjectsBenchmarkHandler(w http.ResponseWriter, r *ht
 		filters.FloorsTo = &floorsTo
 	}
 
+	floors := app.readString(r.URL.Query(), "floors", "")
+	if floors != "" {
+		filters.Floors = &floors
+	}
+
 	technology := app.readString(r.URL.Query(), "technology", "")
 	if technology != "" {
 		filters.Technology = &technology
@@ -148,9 +155,21 @@ func (app *application) getProjectsBenchmarkHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
-	projects, err := app.models.Benchmark.GetProjectsBenchmark(filters)
+	projectFilters := data.GetProjectsBenchmarkFilters{
+		FloorsFrom: filters.FloorsFrom,
+		FloorsTo:   filters.FloorsTo,
+		Floors:     filters.Floors,
+		Technology: filters.Technology,
+	}
+
+	projects, err := app.models.Benchmark.GetProjectsBenchmark(projectFilters)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		switch {
+		case errors.Is(err, data.ErrInvalidFloorFilter):
+			app.badRequestResponse(w, r, err)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 
