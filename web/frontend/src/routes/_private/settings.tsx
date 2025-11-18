@@ -5,7 +5,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
 import { SettingsSection } from "@/components/settings-section";
 import { Separator } from "@/components/ui/separator";
-import { Palette, Globe } from "lucide-react";
+import { Palette, Globe, ShieldHalf, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import DrawerDocuments from "@/components/layout/drawer-documents";
 
 export const Route = createFileRoute("/_private/settings")({
   component: RouteComponent,
@@ -64,6 +66,51 @@ function RouteComponent() {
                 {t("settings.language")}
               </label>
               <LanguageToggle />
+            </div>
+          </SettingsSection>
+        </div>
+
+        {/* Divider */}
+        <div className="flex items-center gap-4">
+          <Separator className="flex-1" />
+          <span className="text-sm text-muted-foreground font-medium">
+            Saiba mais
+          </span>
+          <Separator className="flex-1" />
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <SettingsSection
+            title={"Privacidade e Proteção de Dados"}
+            description={"Entenda como tratamos seus dados pessoais"}
+            icon={ShieldHalf}
+          >
+            <div className="space-y-3">
+              <DrawerDocuments
+                documentType="privacy-policy"
+                triggerComponent={
+                  <Button variant="link" className="p-0 h-auto">
+                    Exercer meus direitos ➡️
+                  </Button>
+                }
+              />
+            </div>
+          </SettingsSection>
+
+          <SettingsSection
+            title={"Uso de dados da plataforma"}
+            description={"Saiba como utilizamos os dados coletados"}
+            icon={TrendingUp}
+          >
+            <div className="space-y-3">
+              <DrawerDocuments
+                documentType="terms-of-use"
+                triggerComponent={
+                  <Button variant="link" className="p-0 h-auto">
+                    Acessar para saber mais ➡️
+                  </Button>
+                }
+              />
             </div>
           </SettingsSection>
         </div>

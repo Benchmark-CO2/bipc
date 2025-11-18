@@ -79,24 +79,14 @@ export default function PublicHeader() {
         <Headset size={18} />
         <span className="text-sm">Comunicação</span>
       </Link>
-      <a
-        target="_blank"
-        href={"/Politica_de_privacidade.pdf"}
+      <Link
+        to="/privacidade"
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
         onClick={() => setIsMenuOpen(false)}
       >
         <GlobeLock size={18} />
         <span className="text-sm">Políticas de Privacidade</span>
-      </a>
-      {/* <Link
-        to={"#" as any}
-        activeProps={activeProps}
-        className="flex items-center gap-2 hover:text-gray-300 transition-colors"
-        onClick={() => setIsMenuOpen(false)}
-      >
-        <Activity size={18} />
-        <span className="text-sm">Ações</span>
-      </Link> */}
+      </Link>
       <Divider
         className={cn("h-[28px] w-0.5 my-0", {
           hidden: isMobile,
