@@ -49,6 +49,8 @@ type Project struct {
 
 type ProjectsWithUnits struct {
 	Project
+	IsAdministrator bool `json:"is_administrator,omitzero"`
+
 	Units        []ProjectUnit           `json:"units,omitempty"`
 	Consumptions map[string]*Consumption `json:"consumption,omitempty"`
 	Area         float64                 `json:"area,omitempty"`
@@ -354,7 +356,16 @@ func (m ProjectModel) Delete(projectID uuid.UUID) error {
 func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]*ProjectsWithUnits, Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) OVER(), p.id, p.created_at, p.name,
-		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description
+		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description,
+		EXISTS(
+			SELECT 1
+			FROM users_roles ur
+			JOIN roles r ON ur.role_id = r.id
+			JOIN roles_permissions rp ON r.id = rp.role_id
+			WHERE ur.user_id = $2 
+			AND r.project_id = p.id 
+			AND rp.permission_id = 1
+		) as is_administrator
 		FROM projects p
 		INNER JOIN users_projects up ON up.project_id = p.id
 		WHERE (to_tsvector('simple', p.name) @@ plainto_tsquery('simple', $1) OR $1 = '')
@@ -396,6 +407,7 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 			&project.Number,
 			&project.Phase,
 			&project.Description,
+			&project.IsAdministrator,
 		)
 		if err != nil {
 			return nil, Metadata{}, err

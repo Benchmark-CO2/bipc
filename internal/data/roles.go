@@ -476,3 +476,27 @@ func (m RoleModel) IsUserAssociated(userID uuid.UUID, roleID uuid.UUID) (bool, e
 
 	return exists, nil
 }
+
+func (m RoleModel) IsUserAdminInAnyProject(userID uuid.UUID) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+		SELECT EXISTS (
+			SELECT 1
+			FROM users_roles ur
+			JOIN roles r ON ur.role_id = r.id
+			JOIN roles_permissions rp ON r.id = rp.role_id
+			WHERE ur.user_id = $1 
+			AND rp.permission_id = 1
+		)`
+
+	var exists bool
+
+	err := m.DB.QueryRowContext(ctx, query, userID).Scan(&exists)
+	if err != nil {
+		return true, err
+	}
+
+	return exists, nil
+}

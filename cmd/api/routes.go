@@ -25,6 +25,7 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/users", app.requireAuthenticatedUser(app.updateUserHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/users", app.requireAuthenticatedUser(app.deleteUserHandler))
 	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)
 	router.HandlerFunc(http.MethodPut, "/v1/users/password", app.updateUserPasswordHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/users/collaborators", app.requireAuthenticatedUser(app.userCollaboratorsHandler))

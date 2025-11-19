@@ -381,3 +381,29 @@ func (app *application) replyInvitationHandler(w http.ResponseWriter, r *http.Re
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) deleteUserHandler(w http.ResponseWriter, r *http.Request) {
+	user := app.contextGetUser(r)
+
+	isAdmin, err := app.models.Roles.IsUserAdminInAnyProject(user.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if isAdmin {
+		app.cannotDeleteAdminUserResponse(w, r)
+		return
+	}
+
+	err = app.models.Users.Delete(user.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "user successfully deleted"}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}

@@ -89,3 +89,8 @@ func (app *application) notImplementedResponse(w http.ResponseWriter, r *http.Re
 	message := "the requested feature is not implemented yet"
 	app.errorResponse(w, r, http.StatusNotImplemented, message)
 }
+
+func (app *application) cannotDeleteAdminUserResponse(w http.ResponseWriter, r *http.Request) {
+	message := "cannot delete user account: user is an administrator in one or more projects. please delete or transfer ownership of these projects first"
+	app.errorResponse(w, r, http.StatusForbidden, message)
+}
