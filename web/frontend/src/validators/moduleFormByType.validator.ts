@@ -1,10 +1,11 @@
+import { parseNumber } from '@/utils/numbers';
 import { z } from "zod";
 
 // Schemas baseados na nova tipagem type2.ts
 const concreteVolumeItemSchema = z
   .object({
     fck: z.number(),
-    volume: z.number().nonnegative("O volume não pode ser negativo"),
+    volume: z.string().transform(parseNumber),
     customFck: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
@@ -19,18 +20,18 @@ const concreteVolumeItemSchema = z
     }
   })
   .transform((data) => {
-    const { customFck, ...rest } = data;
+    const { customFck: _customFck, ...rest } = data;
     return rest;
   });
 
 const steelMassItemSchema = z
   .object({
     ca: z.number().nonnegative("O CA deve ser um número não negativo"),
-    mass: z.number().nonnegative("A massa deve ser um número não negativo"),
+    mass: z.string().transform(parseNumber),
     customCa: z.boolean().optional(),
   })
   .transform((data) => {
-    const { customCa, ...rest } = data;
+    const { customCa: _customCa, ...rest } = data;
     return rest;
   });
 
@@ -80,7 +81,7 @@ const blockItemSchema = z
     }
   })
   .transform((data) => {
-    const { customFbk, ...rest } = data;
+    const { customFbk: _customFbk, ...rest } = data;
     return rest;
   });
 
@@ -103,7 +104,7 @@ const groutVolumeItemSchema = z
     }
   })
   .transform((data) => {
-    const { customFgk, ...rest } = data;
+    const { customFgk: _customFgk, ...rest } = data;
     return rest;
   });
 
@@ -136,7 +137,7 @@ const mortarItemSchema = z
     }
   })
   .transform((data) => {
-    const { customFak, ...rest } = data;
+    const { customFak: _customFak, ...rest } = data;
     return rest;
   });
 
@@ -158,12 +159,12 @@ export const moduleFormSchema = z
     avg_slab_span: z.number().nonnegative().optional(),
 
     concrete_walls: concreteElementSchema.optional(),
-    wall_thickness: z.number().nonnegative().optional(),
-    slab_thickness: z.number().nonnegative().optional(),
-    wall_area: z.number().nonnegative().optional(),
+    wall_thickness: z.string().transform(parseNumber).optional(),
+    slab_thickness: z.string().transform(parseNumber).optional(),
+    wall_area: z.string().transform(parseNumber).optional(),
     slab_area: z.number().nonnegative().optional(),
-    wall_form_area: z.number().nonnegative().optional(),
-    slab_form_area: z.number().nonnegative().optional(),
+    wall_form_area: z.string().transform(parseNumber).optional(),
+    slab_form_area: z.string().transform(parseNumber).optional(),
 
     blocks: z.array(blockItemSchema).optional(),
     grout: z
@@ -232,8 +233,8 @@ export const moduleFormSchema = z
     }
   );
 
-// Tipos inferred
 export type ModuleFormSchema = z.infer<typeof moduleFormSchema>;
+export type ModuleFormInput = z.input<typeof moduleFormSchema>;
 
 // Funções auxiliares para validação específica por tipo
 export const validateBeamColumnData = (data: Partial<ModuleFormSchema>) => {

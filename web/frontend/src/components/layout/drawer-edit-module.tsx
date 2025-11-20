@@ -32,9 +32,10 @@ import {
 } from "../ui/select";
 // import { toast } from 'sonner'
 import { TModuleData } from "@/types/projects";
+import { masks } from '@/utils/masks';
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { X } from "lucide-react";
 
 interface IDrawerEditProject {
   componentTrigger: React.ReactNode;
@@ -215,7 +216,7 @@ export default function DrawerEditModule({
                       {t("drawerEditModule.repeatedUnitLabel")}
                     </FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -236,7 +237,7 @@ export default function DrawerEditModule({
                           {t("drawerEditModule.totalLabel")}
                         </FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} />
+                          <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -251,7 +252,7 @@ export default function DrawerEditModule({
                           {t("drawerEditModule.towerLabel")}
                         </FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} />
+                          <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -266,7 +267,7 @@ export default function DrawerEditModule({
                           {t("drawerEditModule.basementLabel")}
                         </FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} />
+                          <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -281,7 +282,7 @@ export default function DrawerEditModule({
                           {t("drawerEditModule.basementNumberLabel")}
                         </FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} />
+                          <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -301,7 +302,7 @@ export default function DrawerEditModule({
                         {t("drawerEditModule.totalBuiltAreaLabel")}
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -318,7 +319,7 @@ export default function DrawerEditModule({
                         {t("drawerEditModule.floorHeightLabel")}
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -335,7 +336,7 @@ export default function DrawerEditModule({
                         {t("drawerEditModule.maxFloorHeightLabel")}
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -352,7 +353,7 @@ export default function DrawerEditModule({
                         {t("drawerEditModule.wallThicknessLabel")}
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -369,7 +370,7 @@ export default function DrawerEditModule({
                         {t("drawerEditModule.slabThicknessLabel")}
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -386,7 +387,7 @@ export default function DrawerEditModule({
                         {t("drawerEditModule.concreteVolumeFck20Label")}
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -403,7 +404,7 @@ export default function DrawerEditModule({
                         {t("drawerEditModule.concreteVolumeFck25Label")}
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -420,7 +421,7 @@ export default function DrawerEditModule({
                         {t("drawerEditModule.concreteVolumeFck30Label")}
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -437,7 +438,7 @@ export default function DrawerEditModule({
                         {t("drawerEditModule.concreteVolumeFck35Label")}
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -454,7 +455,7 @@ export default function DrawerEditModule({
                         {t("drawerEditModule.concreteVolumeFck40Label")}
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -471,7 +472,7 @@ export default function DrawerEditModule({
                         {t("drawerEditModule.concreteVolumeFck45Label")}
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

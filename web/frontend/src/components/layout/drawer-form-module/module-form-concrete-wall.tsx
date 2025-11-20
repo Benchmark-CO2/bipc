@@ -1,6 +1,8 @@
+import { masks } from '@/utils/masks';
+import { parseNumber } from '@/utils/numbers';
 import { ModuleFormSchema } from "@/validators/moduleFormByType.validator";
 import { AlertTriangle, Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import { Button } from "../../ui/button";
 import { Card, CardContent } from "../../ui/card";
@@ -160,7 +162,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                     <FormItem>
                       <FormControl>
                         <span className="text-sm font-medium text-gray-600">
-                          {totalVolume.toFixed(2)}
+                          {totalVolume.toInternational(undefined, 2)}
                         </span>
                       </FormControl>
                       <FormMessage />
@@ -251,12 +253,11 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                             <div className="flex gap-1">
                               <FormControl>
                                 <Input
-                                  type="number"
-                                  step="0.01"
+                                  type="text"
                                   placeholder="100"
                                   value={volumeField.value || ""}
                                   onChange={(e) => {
-                                    const newValue = Number(e.target.value);
+                                    const newValue = masks.numeric(e.target.value);
                                     volumeField.onChange(newValue);
                                   }}
                                 />
@@ -338,7 +339,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                     <FormItem>
                       <FormControl>
                         <span className="text-sm font-medium text-gray-600">
-                          {totalMass.toFixed(0)}
+                          {totalMass.toInternational(undefined, 0)}
                         </span>
                       </FormControl>
                       <FormMessage />
@@ -431,12 +432,11 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                             <div className="flex gap-1">
                               <FormControl>
                                 <Input
-                                  type="number"
-                                  step="0.01"
+                                  type="text"
                                   placeholder="800"
                                   value={massField.value || ""}
                                   onChange={(e) => {
-                                    const newValue = Number(e.target.value);
+                                    const newValue = masks.numeric(e.target.value);
                                     massField.onChange(newValue);
                                   }}
                                 />
@@ -504,18 +504,18 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
   ) => {
     if (!isFormSection) {
       const [volumes, setVolumes] = useState<
-        Array<{ fck: number; volume: number }>
+        Array<{ fck: number; volume: string }>
       >([]);
-      const [steels, setSteels] = useState<Array<{ ca: number; mass: number }>>(
+      const [steels, setSteels] = useState<Array<{ ca: number; mass: string }>>(
         []
       );
 
       const totalVolume = volumes.reduce(
-        (total, item) => total + (item.volume || 0),
+        (total, item) => total + (parseNumber(item.volume) || 0),
         0
       );
       const totalMass = steels.reduce(
-        (total, item) => total + (item.mass || 0),
+        (total, item) => total + (parseNumber(item.mass) || 0),
         0
       );
 
@@ -530,7 +530,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                   Volume total de concreto (m³)
                 </FormLabel>
                 <Input
-                  value={totalVolume.toFixed(2)}
+                  value={totalVolume.toInternational(undefined, 2)}
                   disabled
                   className="bg-gray-50 text-gray-700 font-medium"
                 />
@@ -594,12 +594,11 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                           <FormLabel className="text-xs">Volume (m³)</FormLabel>
                           <div className="flex gap-1">
                             <Input
-                              type="number"
-                              step="0.01"
+                              type="text"
                               value={volume.volume}
                               onChange={(e) => {
                                 const newVolumes = [...volumes];
-                                newVolumes[index].volume = Number(
+                                newVolumes[index].volume = masks.numeric(
                                   e.target.value
                                 );
                                 setVolumes(newVolumes);
@@ -630,7 +629,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setVolumes([...volumes, { fck: 50, volume: 0 }])}
+                onClick={() => setVolumes([...volumes, { fck: 50, volume: '0' }])}
                 className="w-full text-green-600 border-green-600 hover:bg-green-50"
               >
                 Adicionar
@@ -643,7 +642,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                   Aço total (kg)
                 </FormLabel>
                 <Input
-                  value={totalMass.toFixed(0)}
+                  value={totalMass.toInternational(undefined, 0)}
                   disabled
                   className="bg-gray-50 text-gray-700 font-medium"
                 />
@@ -707,12 +706,11 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                           <FormLabel className="text-xs">Massa (kg)</FormLabel>
                           <div className="flex gap-1">
                             <Input
-                              type="number"
-                              step="0.01"
+                              type="text"
                               value={steel.mass}
                               onChange={(e) => {
                                 const newSteels = [...steels];
-                                newSteels[index].mass = Number(e.target.value);
+                                newSteels[index].mass = masks.numeric(e.target.value);
                                 setSteels(newSteels);
                               }}
                             />
@@ -739,7 +737,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setSteels([...steels, { ca: 50, mass: 0 }])}
+                onClick={() => setSteels([...steels, { ca: 50, mass: '0' }])}
                 className="w-full text-green-600 border-green-600 hover:bg-green-50"
               >
                 Adicionar
@@ -753,7 +751,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
     // Form section implementation
     const wallFormArea = form.watch("wall_form_area") || 0;
     const slabFormArea = form.watch("slab_form_area") || 0;
-    const totalFormArea = wallFormArea + slabFormArea;
+    const totalFormArea = parseNumber(wallFormArea as unknown as string) + parseNumber(slabFormArea as unknown as string);
 
     return (
       <div className="space-y-3">
@@ -781,9 +779,8 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                   Forma total (m²)
                 </FormLabel>
                 <Input
-                  type="number"
-                  step="0.01"
-                  value={totalFormArea.toFixed(2)}
+                  type="text"
+                  value={totalFormArea.toInternational(undefined, 2)}
                   readOnly
                   className="bg-gray-50 text-gray-700 font-medium"
                 />
@@ -801,12 +798,11 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                     </FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        step="0.01"
+                        type="text"
                         placeholder="1000"
                         value={field.value || ""}
                         onChange={(e) => {
-                          const value = Number(e.target.value);
+                          const value = masks.numeric(e.target.value);
                           field.onChange(value);
                         }}
                       />
@@ -826,12 +822,11 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                     </FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        step="0.01"
+                        type="text"
                         placeholder="400"
                         value={field.value || ""}
                         onChange={(e) => {
-                          const value = Number(e.target.value);
+                          const value = masks.numeric(e.target.value);
                           field.onChange(value);
                         }}
                       />
@@ -858,11 +853,10 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
               <FormLabel className="text-xs">Espessura da parede (m)</FormLabel>
               <FormControl>
                 <Input
-                  type="number"
-                  step="0.01"
+                  type="text"
                   placeholder="0,10"
                   value={field.value || ""}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
+                  onChange={(e) => field.onChange(masks.numeric(e.target.value))}
                 />
               </FormControl>
               <FormMessage />
@@ -878,11 +872,10 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
               <FormLabel className="text-xs">Espessura da laje (m)</FormLabel>
               <FormControl>
                 <Input
-                  type="number"
-                  step="0.01"
+                  type="text"
                   placeholder="0,10"
                   value={field.value || ""}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
+                  onChange={(e) => field.onChange(masks.numeric(e.target.value))}
                 />
               </FormControl>
               <FormMessage />
@@ -898,11 +891,10 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
               <FormLabel className="text-xs">Área de parede (m²)</FormLabel>
               <FormControl>
                 <Input
-                  type="number"
-                  step="0.01"
+                  type="text"
                   placeholder="1000"
                   value={field.value || ""}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
+                  onChange={(e) => field.onChange(masks.numeric(e.target.value))}
                 />
               </FormControl>
               <FormMessage />

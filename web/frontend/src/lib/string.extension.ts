@@ -1,4 +1,3 @@
-import { parse } from "node:path/win32";
 
 Object.defineProperty(String.prototype, "fromInternational", {
   value: function () {

@@ -10,6 +10,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { masks } from '@/utils/masks';
 import { UnitFormSchema } from "@/validators/unitForm.validator";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
 import React from "react";
@@ -478,8 +479,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                 <Tooltip open={!!fieldState.error}>
                                   <TooltipTrigger asChild>
                                     <Input
-                                      type="number"
-                                      step="0.01"
+                                      type="text"
                                       placeholder="100"
                                       disabled={isEditMode}
                                       className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
@@ -490,9 +490,9 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                       {...field}
                                       onChange={(e) =>
                                         field.onChange(
-                                          e.target.value
-                                            ? Number(e.target.value)
-                                            : 0
+                                          masks.numeric(e.target.value
+                                            ? e.target.value
+                                            : '0')
                                         )
                                       }
                                       onFocus={() => setFocusedRowIndex(index)}
@@ -525,8 +525,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                 <Tooltip open={!!fieldState.error}>
                                   <TooltipTrigger asChild>
                                     <Input
-                                      type="number"
-                                      step="0.01"
+                                      type="text"
                                       placeholder="3"
                                       disabled={isEditMode}
                                       className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
@@ -538,8 +537,8 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                       onChange={(e) =>
                                         field.onChange(
                                           e.target.value
-                                            ? Number(e.target.value)
-                                            : 0
+                                            ? masks.numeric(e.target.value)
+                                            : '0'
                                         )
                                       }
                                       onFocus={() => setFocusedRowIndex(index)}
@@ -574,6 +573,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                     <Input
                                       type="number"
                                       min="1"
+                                      step="1"
                                       placeholder="1"
                                       disabled={isEditMode}
                                       className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${

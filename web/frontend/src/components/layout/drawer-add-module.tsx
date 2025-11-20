@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { TModuleData } from "@/types/projects";
+import { masks } from '@/utils/masks';
 import {
   addModuleFormSchema,
   AddModuleFormSchema,
@@ -179,7 +180,7 @@ export default function DrawerAddModule({
                 <FormItem>
                   <FormLabel>{t("drawerAddModule.repeatUnit")}</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} />
+                    <Input {...field} type="number" step={"1"} min={"0"} onChange={e => field.onChange(e.target.value)} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -198,7 +199,7 @@ export default function DrawerAddModule({
                     <FormItem>
                       <FormLabel>{t("drawerAddModule.total")}</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -211,7 +212,7 @@ export default function DrawerAddModule({
                     <FormItem>
                       <FormLabel>{t("drawerAddModule.tower")}</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -224,7 +225,7 @@ export default function DrawerAddModule({
                     <FormItem>
                       <FormLabel>{t("drawerAddModule.basement")}</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -239,7 +240,7 @@ export default function DrawerAddModule({
                         {t("drawerAddModule.basementNumber")}
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))}  />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -257,7 +258,7 @@ export default function DrawerAddModule({
                   <FormItem>
                     <FormLabel>{t("drawerAddModule.totalBuiltArea")}</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} />
+                      <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -274,7 +275,7 @@ export default function DrawerAddModule({
                       {t("drawerAddModule.floorToFloorHeight")}
                     </FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} />
+                      <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -291,7 +292,7 @@ export default function DrawerAddModule({
                       {t("drawerAddModule.maxFloorToFloorHeight")}
                     </FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} />
+                      <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -306,7 +307,7 @@ export default function DrawerAddModule({
                   <FormItem>
                     <FormLabel>{t("drawerAddModule.wallThickness")}</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} />
+                      <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -321,7 +322,7 @@ export default function DrawerAddModule({
                   <FormItem>
                     <FormLabel>{t("drawerAddModule.slabThickness")}</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} />
+                      <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -338,7 +339,7 @@ export default function DrawerAddModule({
                       {t("drawerAddModule.concreteVolumeFck20")}
                     </FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} />
+                      <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -355,7 +356,7 @@ export default function DrawerAddModule({
                       {t("drawerAddModule.concreteVolumeFck25")}
                     </FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} />
+                      <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -372,7 +373,7 @@ export default function DrawerAddModule({
                       {t("drawerAddModule.concreteVolumeFck30")}
                     </FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} />
+                      <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -389,7 +390,7 @@ export default function DrawerAddModule({
                       {t("drawerAddModule.concreteVolumeFck35")}
                     </FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} />
+                      <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -406,7 +407,7 @@ export default function DrawerAddModule({
                       {t("drawerAddModule.concreteVolumeFck40")}
                     </FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} />
+                      <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -423,7 +424,7 @@ export default function DrawerAddModule({
                       {t("drawerAddModule.concreteVolumeFck45")}
                     </FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} />
+                      <Input {...field} type="text" onChange={e => field.onChange(masks.numeric(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

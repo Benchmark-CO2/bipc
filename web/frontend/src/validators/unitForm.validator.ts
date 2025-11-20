@@ -1,3 +1,4 @@
+import { parseNumber } from '@/utils/numbers';
 import { z } from "zod";
 
 const baseUnitSchema = z.object({
@@ -10,8 +11,8 @@ const baseUnitSchema = z.object({
 
 export const floorSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
-  area: z.number().positive("Área deve ser um número positivo"),
-  height: z.number().positive("Altura deve ser um número positivo"),
+  area: z.string().transform(parseNumber),
+  height: z.string().transform(parseNumber),
   repetition: z
     .number()
     .int()
