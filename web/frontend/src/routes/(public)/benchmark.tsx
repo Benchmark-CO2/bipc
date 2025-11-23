@@ -28,7 +28,10 @@ function RouteComponent() {
   const { FilterSection, activeBuildFilter, type } = useBenchmarkFilters();
   const { data } = useQuery({
     queryKey: ["units-benchmarks", JSON.stringify(activeBuildFilter)],
-    queryFn: () => getProjectsBenchmark(activeBuildFilter),
+    queryFn: () => getProjectsBenchmark({
+      technology: activeBuildFilter.technology,
+      floors: activeBuildFilter.floors.get()
+    }),
   });
   const isMobile = useIsMobile();
 
