@@ -5,56 +5,65 @@ import { FilterTabs } from "@/components/ui/filter-tabs";
 import { useState } from "react";
 
 class FilterFloors {
-  constructor(
-    private from: number | undefined,
-    private to: number | undefined
-  ) {}
+
+
+  constructor(private filterList: string[] = []) { }
+
+  stringfyFilter(from: string, to?: string) {
+    if (!from) return "";
+    if (to == null) return `${from}`;
+    return `${from}-${to}`;
+  }
+
+  insertFilter(option: string) {
+    if (this.filterList.includes(option)) {
+      return new FilterFloors(this.filterList.filter(el => el !== option))
+    } else {
+      return new FilterFloors([...this.filterList, option])
+    }
+  }
+
   get() {
-    return { floors_from: this.from, floors_to: this.to };
+    return this.filterList.join(',')
+  }
+
+  has(option: string) {
+    return this.filterList.includes(option)
+  }
+
+  toJSON() {
+    return this.get()
   }
 }
 export const useBenchmarkFilters = () => {
   const [activeBuildFilter, setActiveBuildFilter] = useState<{
-    floors_from: number | undefined;
-    floors_to: number | undefined;
+    floors: FilterFloors
     technology: string[];
   }>({
-    floors_from: undefined,
-    floors_to: undefined,
+    floors: new FilterFloors(),
     technology: [],
   });
   const [type, setType] = useState<"co2" | "energy">("co2");
 
-  const changeFromTo = (from: number | undefined, to: number | undefined) => {
+  const handleFloorsFilterChange = (filter: string) => {
+    setActiveBuildFilter(oldState => ({
+      ...oldState,
+      floors: oldState.floors.insertFilter(filter)
+    }))
+  }
+
+  const handleBuildFilterChange = (filterData: FilterFloors | string) => {
+    const technology = (
+      activeBuildFilter.technology.includes(filterData as string)
+        ? activeBuildFilter.technology.filter((tech) => tech !== filterData)
+        : [...activeBuildFilter.technology, filterData]
+    ) as string[];
     setActiveBuildFilter({
       ...activeBuildFilter,
-      floors_from: from,
-      floors_to: to,
+      technology,
     });
   };
-  const handleBuildFilterChange = (filterData: FilterFloors | string) => {
-    if (filterData instanceof FilterFloors) {
-      const { floors_from, floors_to } = filterData.get();
-      if (
-        activeBuildFilter.floors_from === floors_from &&
-        activeBuildFilter.floors_to === floors_to
-      ) {
-        changeFromTo(undefined, undefined);
-        return;
-      }
-      changeFromTo(floors_from, floors_to);
-    } else {
-      const technology = (
-        activeBuildFilter.technology.includes(filterData as string)
-          ? activeBuildFilter.technology.filter((tech) => tech !== filterData)
-          : [...activeBuildFilter.technology, filterData]
-      ) as string[];
-      setActiveBuildFilter({
-        ...activeBuildFilter,
-        technology,
-      });
-    }
-  };
+
   const FilterSection = (
     <section className="w-full md:w-1/3 min-w-[375px] flex flex-col items-center gap-4 mb-4 max-sm:self-center max-lg:w-full!">
       <h2 className="w-full text-left font-semibold text-primary">
@@ -106,12 +115,9 @@ export const useBenchmarkFilters = () => {
         <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto overflow-x-auto">
           <BuildIcon
             name="house"
-            isActive={
-              activeBuildFilter.floors_to === 1 ||
-              activeBuildFilter.floors_from === 1
-            }
+            isActive={activeBuildFilter.floors.has('1')}
             onClick={() =>
-              handleBuildFilterChange(new FilterFloors(undefined, 1))
+              handleFloorsFilterChange('1')
             }
           />
           {/* <BuildIcon
@@ -121,32 +127,26 @@ export const useBenchmarkFilters = () => {
           /> */}
           <BuildIcon
             name="twofloors"
-            isActive={
-              activeBuildFilter.floors_from === 2 ||
-              activeBuildFilter.floors_to === 2
-            }
+            isActive={activeBuildFilter.floors.has('2')}
             onClick={() =>
-              handleBuildFilterChange(new FilterFloors(undefined, 2))
+              handleFloorsFilterChange('2')
             }
           />
           <BuildIcon
             name="fourLess"
-            isActive={
-              activeBuildFilter.floors_from === 4 ||
-              activeBuildFilter.floors_to === 4
-            }
-            onClick={() => handleBuildFilterChange(new FilterFloors(3, 4))}
+            isActive={activeBuildFilter.floors.has('3-4')}
+            onClick={() => handleFloorsFilterChange('3-4')}
           />
           <BuildIcon
             name="tenLess"
-            isActive={activeBuildFilter.floors_to === 10}
-            onClick={() => handleBuildFilterChange(new FilterFloors(5, 10))}
+            isActive={activeBuildFilter.floors.has('5-10')}
+            onClick={() => handleFloorsFilterChange('5-10')}
           />
           <BuildIcon
             name="tenMore"
-            isActive={activeBuildFilter.floors_from === 10}
+            isActive={activeBuildFilter.floors.has('11+')}
             onClick={() =>
-              handleBuildFilterChange(new FilterFloors(10, undefined))
+              handleFloorsFilterChange('11+')
             }
           />
         </div>
