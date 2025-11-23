@@ -64,18 +64,20 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             </SidemenuItem>
           </li>
 
-          {posLaunchFeatures.trainingModal.enabled && (<li>
-            <SidemenuItem variant="link">
-              <Link
-                to={posLaunchFeatures.trainingModal.formUrl}
-                target="_blank"
-                className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-              >
-                <Book size={18} />
-                <span>Capacitação</span>
-              </Link>
-            </SidemenuItem>
-          </li>)}
+          {posLaunchFeatures.trainingModal.enabled && (
+            <li>
+              <SidemenuItem variant="link">
+                <Link
+                  to={posLaunchFeatures.trainingModal.formUrl}
+                  target="_blank"
+                  className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+                >
+                  <Book size={18} />
+                  <span>Capacitação</span>
+                </Link>
+              </SidemenuItem>
+            </li>
+          )}
 
           <li>
             <SidemenuItem variant="link">
@@ -91,14 +93,13 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           </li>
           <li>
             <SidemenuItem variant="link">
-              <a
-                target="_blank"
-                href={"/Politica_de_privacidade.pdf"}
+              <Link
+                to="/privacidade"
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
                 <GlobeLock size={18} />
                 <span>Políticas de Privacidade</span>
-              </a>
+              </Link>
             </SidemenuItem>
           </li>
 
