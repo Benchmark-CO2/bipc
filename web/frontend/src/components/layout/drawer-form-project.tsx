@@ -6,9 +6,9 @@ import {
   postProject,
   PostProjectRequest,
 } from "@/actions/projects/postProject";
-import { useIsMobile } from '@/hooks/useIsMobile';
+import { useIsMobile } from "@/hooks/useIsMobile";
 import useCep from "@/hooks/useLocation";
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 import { IProject } from "@/types/projects";
 import { masks } from "@/utils/masks";
 import {
@@ -30,7 +30,7 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger
+  DrawerTrigger,
 } from "../ui/drawer";
 import {
   Form,
@@ -61,6 +61,7 @@ export default function DrawerFormProject({
 }: IDrawerAddProject) {
   const [openDrawer, setOpenDrawer] = useState(false);
   const [file, setFile] = useState<File | undefined>(undefined);
+  const [isAgreementChecked, setIsAgreementChecked] = useState(false);
 
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -233,6 +234,7 @@ export default function DrawerFormProject({
     if (openDrawer) {
       resetCreation();
       resetUpdate();
+      setIsAgreementChecked(false);
 
       if (projectData) {
         form.reset({
@@ -287,9 +289,13 @@ export default function DrawerFormProject({
     }
   }, [isError, form]);
 
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobile();
   return (
-    <Drawer direction={isMobile ? "bottom" : "right"} open={openDrawer} dismissible={false}>
+    <Drawer
+      direction={isMobile ? "bottom" : "right"}
+      open={openDrawer}
+      dismissible={false}
+    >
       <DrawerTrigger
         asChild
         onClick={(e) => {
@@ -299,9 +305,11 @@ export default function DrawerFormProject({
       >
         {componentTrigger}
       </DrawerTrigger>
-      <DrawerContent className={cn("min-w-2/5", {
-        "w-full h-4/5": isMobile,
-      })}>
+      <DrawerContent
+        className={cn("min-w-2/5", {
+          "w-full h-4/5": isMobile,
+        })}
+      >
         <DrawerHeader className="px-8">
           <DrawerTitle>
             {isEditMode
@@ -535,6 +543,54 @@ export default function DrawerFormProject({
                   </FormItem>
                 )}
               />
+
+              <div className="p-5 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border-2 border-yellow-400 dark:border-yellow-600">
+                <div className="flex items-start gap-3 mb-4">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  <div>
+                    <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+                      Importante: Confirmação de Dados
+                    </h4>
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200 leading-relaxed">
+                      Os responsáveis pelos projetos poderão ser contactados em
+                      até <strong>3 anos após o fim da fase do projeto</strong>{" "}
+                      indicada no momento de criação do projeto. Este contato
+                      busca confirmar a execução dos dados informados no momento
+                      do projeto. A confiabilidade do nosso benchmark depende da
+                      sua colaboração. Agradecemos a compreensão!
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-white dark:bg-gray-900/50 rounded-md border border-yellow-300 dark:border-yellow-700">
+                  <input
+                    type="checkbox"
+                    id="agreement-checkbox"
+                    checked={isAgreementChecked}
+                    onChange={(e) => setIsAgreementChecked(e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-yellow-400 text-yellow-600 focus:ring-yellow-500 cursor-pointer flex-shrink-0"
+                  />
+                  <label
+                    htmlFor="agreement-checkbox"
+                    className="text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer select-none leading-relaxed"
+                  >
+                    Estou ciente da possibilidade de ser contactado para
+                    confirmação dos dados do projeto, conforme informado
+                  </label>
+                </div>
+              </div>
             </form>
           </div>
         </Form>
@@ -554,7 +610,9 @@ export default function DrawerFormProject({
           ) : (
             <Button
               variant={"bipc"}
-              disabled={isCreationPending || isCreationSuccess}
+              disabled={
+                isCreationPending || isCreationSuccess || !isAgreementChecked
+              }
               type="submit"
               form="project-form"
             >
