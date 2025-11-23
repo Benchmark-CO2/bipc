@@ -19,6 +19,7 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 
 import { DialogSuccessSignup } from "@/components/layout/dialogs/dialog-success-signup";
+import { DialogWarnSignup } from "@/components/layout/dialogs/dialog-warn-signup";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import Divider from "@/components/ui/divider";
@@ -58,7 +59,7 @@ const SignUp = () => {
   });
   const navigate = useNavigate();
   const { t } = useTranslation();
-
+  const [warnModalIsOpen, setWarnModalIsOpen] = useState(false);
   const { isPending, mutate } = useMutation({
     mutationFn: register,
     onError: (error: AxiosError) => {
@@ -142,7 +143,7 @@ const SignUp = () => {
           <Form {...form}>
             <form
               className="flex flex-col gap-4"
-              onSubmit={form.handleSubmit(handleSubmit)}
+              onSubmit={form.handleSubmit(() => setWarnModalIsOpen(true))}
             >
               <p className="font-bold text-lg">Informações pessoais</p>
               <FormField
@@ -421,6 +422,7 @@ const SignUp = () => {
           </Form>
         </CardContent>
       </Card>
+      {warnModalIsOpen && <DialogWarnSignup handleClose={() => setWarnModalIsOpen(false)} handleConfirm={() => handleSubmit(form.getValues())} />}
       {successModal && <DialogSuccessSignup handleClose={handleClose} />}
     </div>
   );
