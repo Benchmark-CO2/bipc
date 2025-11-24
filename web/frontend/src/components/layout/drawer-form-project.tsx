@@ -248,6 +248,7 @@ export default function DrawerFormProject({
           street: projectData.street || "",
           number: projectData.number || "",
         });
+        setIsAgreementChecked(true);
       } else {
         form.reset({
           name: "",
@@ -580,11 +581,12 @@ export default function DrawerFormProject({
                     id="agreement-checkbox"
                     checked={isAgreementChecked}
                     onChange={(e) => setIsAgreementChecked(e.target.checked)}
+                    disabled={isEditMode}
                     className="mt-1 h-4 w-4 rounded border-yellow-400 text-yellow-600 focus:ring-yellow-500 cursor-pointer flex-shrink-0"
                   />
                   <label
                     htmlFor="agreement-checkbox"
-                    className="text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer select-none leading-relaxed"
+                    className="text-sm font-medium text-gray-500 dark:text-gray-100 cursor-pointer select-none leading-relaxed"
                   >
                     Estou ciente da possibilidade de ser contactado para
                     confirmação dos dados do projeto, conforme informado
