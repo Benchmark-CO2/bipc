@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { ModuleParamsProps, TModulesTypes } from "@/types/modules";
 import { TTowerFloorCategory } from "@/types/units";
 import {
+  ModuleFormInput,
   ModuleFormSchema,
   moduleFormSchema,
 } from "@/validators/moduleFormByType.validator";
@@ -72,9 +73,9 @@ const DrawerFormModule = ({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
-  const form = useForm<ModuleFormSchema>({
-    resolver: zodResolver(moduleFormSchema),
-    defaultValues: getDefaultValuesByType(type),
+  const form = useForm<ModuleFormInput>({
+    resolver: zodResolver(moduleFormSchema) as any,
+    defaultValues: getDefaultValuesByType(type) as any,
   });
 
   const { mutate: mutateModule, isPending: isUpdatePending } = useMutation({
@@ -103,11 +104,13 @@ const DrawerFormModule = ({
       queryClient.invalidateQueries({
         queryKey: ["module", projectId, unitId, moduleId!],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["module", projectId, unitId, optionId, moduleId!],
+      });
       form.reset();
       setIsOpen(false);
     },
   });
-
   const { isPending: isCreationPending, mutate: mutateCreation } = useMutation({
     mutationFn: (data: ModuleParamsProps) =>
       postModule(data, projectId, unitId, optionId),
@@ -148,6 +151,7 @@ const DrawerFormModule = ({
     enabled: !!moduleId && isOpen,
   });
 
+
   useEffect(() => {
     const ensureArraysInitialized = () => {
       const currentType = form.getValues("type");
@@ -184,7 +188,7 @@ const DrawerFormModule = ({
 
   useEffect(() => {
     if (moduleData) {
-      const { floor_ids, id, ...rest } = moduleData;
+      const { floor_ids, ...rest } = moduleData;
 
       setSelectedFloors(floor_ids || []);
 
@@ -193,22 +197,83 @@ const DrawerFormModule = ({
         rest.type === "concrete_wall" ||
         rest.type === "structural_masonry"
       ) {
-        form.reset(rest as unknown as ModuleFormSchema);
+        const restAny = rest as any;
+        const convertedData = {
+          ...rest,
+          // Converter concrete_columns, concrete_beams, concrete_slabs, concrete_walls
+          ...(restAny.concrete_columns && {
+            concrete_columns: {
+              volumes: restAny.concrete_columns.volumes.map((c: any) => ({
+                fck: c.fck,
+                volume: String(c.volume || 0),
+              })),
+              steel: restAny.concrete_columns.steel.map((c: any) => ({
+                ca: c.ca || 50,
+                mass: String(c.mass || 0),
+              })),
+            },
+          }),
+          ...(restAny.concrete_beams && {
+            concrete_beams: {
+              volumes: restAny.concrete_beams.volumes.map((c: any) => ({
+                fck: c.fck,
+                volume: String(c.volume || 0),
+              })),
+              steel: restAny.concrete_beams.steel.map((c: any) => ({
+                ca: c.ca || 50,
+                mass: String(c.mass || 0),
+              })),
+            },
+          }),
+          ...(restAny.concrete_slabs && {
+            concrete_slabs: {
+              volumes: restAny.concrete_slabs.volumes.map((c: any) => ({
+                fck: c.fck,
+                volume: String(c.volume || 0),
+              })),
+              steel: restAny.concrete_slabs.steel.map((c: any) => ({
+                ca: c.ca || 50,
+                mass: String(c.mass || 0),
+              })),
+            },
+          }),
+          ...(restAny.concrete_walls && {
+            concrete_walls: {
+              volumes: restAny.concrete_walls.volumes.map((c: any) => ({
+                fck: c.fck,
+                volume: String(c.volume || 0),
+              })),
+              steel: restAny.concrete_walls.steel.map((c: any) => ({
+                ca: c.ca || 50,
+                mass: String(c.mass || 0),
+              })),
+            },
+          }),
+          // Converter campos de concrete_wall para string
+          ...(rest.type === "concrete_wall" && {
+            wall_thickness: String(restAny.wall_thickness || 0),
+            slab_thickness: String(restAny.slab_thickness || 0),
+            wall_area: String(restAny.wall_area || 0),
+            wall_form_area: String(restAny.wall_form_area || 0),
+            slab_form_area: String(restAny.slab_form_area || 0),
+          }),
+        };
+        form.reset(convertedData as any);
       } else {
-        form.reset(getDefaultValuesByType(type));
+        form.reset(getDefaultValuesByType(type) as any);
       }
     }
   }, [moduleData, moduleId, type, form]);
 
   const handleSubmit = (data: ModuleFormSchema) => {
-    if (moduleId) {
-      const { type: typeFromData, ...rest } = data;
+    if (moduleId && moduleData) {
+      const { floor_ids: _floor_ids, ...rest } = moduleData;
       const baseFields: ModuleParamsProps = {
         type,
         data: {
           ...rest,
           floor_ids: selectedFloors,
-        },
+        } as any,
       };
       mutateModule(baseFields);
       return;
@@ -235,7 +300,7 @@ const DrawerFormModule = ({
         wall_thickness: data.wall_thickness,
         slab_thickness: data.slab_thickness,
         wall_area: data.wall_area,
-        slab_area: data.slab_area,
+        slab_area: data?.slab_area || 0,
         wall_form_area: data.wall_form_area,
         slab_form_area: data.slab_form_area,
       };
@@ -351,7 +416,7 @@ const DrawerFormModule = ({
           ) : (
             <Form {...form}>
               <form
-                onSubmit={form.handleSubmit(handleSubmit, (errors) => {
+                onSubmit={form.handleSubmit(handleSubmit as any, (errors) => {
                   toast.error("Existem erros de validação", {
                     description:
                       "Evite campos com valores zerados ou inválidos.",
@@ -362,7 +427,7 @@ const DrawerFormModule = ({
                 className="w-full flex gap-6 h-full max-sm:flex-col"
               >
                 <div className={cn("h-full overflow-y-auto", {
-                  'flex-shrink-0': !isMobile,
+                  'shrink-0': !isMobile,
                   'h-auto flex-1 mx-auto': isMobile,
                 })}>
                   <div className={cn("top-0", {
@@ -388,7 +453,7 @@ const DrawerFormModule = ({
                     {/* Campos básicos */}
                     <div className="grid grid-cols-1 gap-4">
                       <FormField
-                        control={form.control}
+                        control={form.control as any}
                         name="type"
                         disabled={Boolean(moduleId)}
                         render={({ field }) => (
@@ -408,7 +473,7 @@ const DrawerFormModule = ({
                                     value === "structural_masonry"
                                   ) {
                                     form.reset(
-                                      getDefaultValuesByType(value as any)
+                                      getDefaultValuesByType(value as 'beam_column' | 'concrete_wall' | 'structural_masonry') as any,
                                     );
                                   }
                                 }}

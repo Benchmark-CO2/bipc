@@ -1,6 +1,8 @@
+import { masks } from '@/utils/masks';
+import { parseNumber } from '@/utils/numbers';
 import { ModuleFormSchema } from "@/validators/moduleFormByType.validator";
 import { Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import { Button } from "../../ui/button";
 import { Card, CardContent } from "../../ui/card";
@@ -61,13 +63,13 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
   }, [form, fckOptions, caOptions]);
 
   const calculateTotalVolume = (
-    volumes: Array<{ fck: number; volume: number }>
+    volumes: Array<{ fck: number; volume: string }>
   ) => {
-    return volumes?.reduce((total, item) => total + (item.volume || 0), 0) || 0;
+    return volumes?.reduce((total, item) => total + parseNumber(item.volume || '0'), 0) || 0;
   };
 
-  const calculateTotalMass = (steel: Array<{ ca: number; mass: number }>) => {
-    return steel?.reduce((total, item) => total + (item.mass || 0), 0) || 0;
+  const calculateTotalMass = (steel: Array<{ ca: number; mass: string }>) => {
+    return steel?.reduce((total, item) => total + parseNumber(item.mass || '0'), 0) || 0;
   };
 
   const renderCompleteSection = (
@@ -151,7 +153,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                     <FormItem>
                       <FormControl>
                         <span className="text-sm font-medium text-gray-600">
-                          {totalVolume.toFixed(2)}
+                          {totalVolume.toInternational(undefined, 2)}
                         </span>
                       </FormControl>
                       <FormMessage />
@@ -244,12 +246,11 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                             <div className="flex gap-1">
                               <FormControl>
                                 <Input
-                                  type="number"
-                                  step="0.01"
+                                  type="text"
                                   placeholder="100"
                                   value={volumeField.value || ""}
                                   onChange={(e) => {
-                                    const newValue = Number(e.target.value);
+                                    const newValue = masks.numeric(e.target.value);
                                     volumeField.onChange(newValue);
                                   }}
                                 />
@@ -281,11 +282,11 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                               Outro FCK (MPa)
                             </FormLabel>
                             <Input
-                              type="number"
+                              type="text"
                               placeholder="70"
                               {...field}
                               onChange={(e) =>
-                                field.onChange(Number(e.target.value))
+                                field.onChange(masks.numeric(e.target.value))
                               }
                             />
                           </FormItem>
@@ -323,7 +324,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                     <FormItem>
                       <FormControl>
                         <span className="text-sm font-medium text-gray-600">
-                          {totalMass.toFixed(0)}
+                          {totalMass.toInternational(undefined, 0)}
                         </span>
                       </FormControl>
                       <FormMessage />
@@ -416,12 +417,11 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                             <div className="flex gap-1">
                               <FormControl>
                                 <Input
-                                  type="number"
-                                  step="0.01"
+                                  type="text"
                                   placeholder="800"
                                   value={massField.value || ""}
                                   onChange={(e) => {
-                                    const newValue = Number(e.target.value);
+                                    const newValue = masks.numeric(e.target.value);
                                     massField.onChange(newValue);
                                   }}
                                 />
@@ -452,11 +452,11 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                             <FormLabel className="text-xs">Outro CA</FormLabel>
                             <Input
                               {...field}
-                              type="number"
+                              type="text"
                               placeholder="CA60"
                               // value={currentCa || ""}
                               onChange={(e) => {
-                                field.onChange(Number(e.target.value));
+                                field.onChange(masks.numeric(e.target.value));
                               }}
                             />
                           </FormItem>
@@ -494,10 +494,10 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
               <FormLabel className="text-xs">Número de pilares</FormLabel>
               <FormControl>
                 <Input
-                  type="number"
+                  type="text"
                   placeholder="10"
                   value={field.value || ""}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
+                  onChange={(e) => field.onChange(masks.numeric(e.target.value))}
                 />
               </FormControl>
               <FormMessage />
@@ -513,11 +513,10 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
               <FormLabel className="text-xs">Vão médio das vigas (m)</FormLabel>
               <FormControl>
                 <Input
-                  type="number"
-                  step="0.01"
+                  type="text"
                   placeholder="6,00"
                   value={field.value || ""}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
+                  onChange={(e) => field.onChange(masks.numeric(e.target.value))}
                 />
               </FormControl>
               <FormMessage />
@@ -533,11 +532,10 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
               <FormLabel className="text-xs">Vão médio das lajes (m)</FormLabel>
               <FormControl>
                 <Input
-                  type="number"
-                  step="0.01"
+                  type="text"
                   placeholder="8,00"
                   value={field.value || ""}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
+                  onChange={(e) => field.onChange(masks.numeric(e.target.value))}
                 />
               </FormControl>
               <FormMessage />
@@ -574,11 +572,10 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                     </FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        step="0.01"
+                        type="text"
                         placeholder="100"
                         value={field.value || ""}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => field.onChange(masks.numeric(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -596,11 +593,10 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                     </FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        step="0.01"
+                        type="text"
                         placeholder="200"
                         value={field.value || ""}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => field.onChange(masks.numeric(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -618,11 +614,10 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                     </FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        step="0.01"
+                        type="text"
                         placeholder="400"
                         value={field.value || ""}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => field.onChange(masks.numeric(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -636,13 +631,12 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                   const formColumns = form.watch("form_columns") || 0;
                   const formBeams = form.watch("form_beams") || 0;
                   const formSlabs = form.watch("form_slabs") || 0;
-                  const totalArea = formColumns + formBeams + formSlabs;
+                  const totalArea = parseNumber(formColumns as unknown as string) + parseNumber(formBeams as unknown as string) + parseNumber(formSlabs as unknown as string);
 
                   return (
                     <Input
-                      type="number"
-                      step="0.01"
-                      value={totalArea.toFixed(2)}
+                      type="text"
+                      value={totalArea.toInternational(undefined, 2)}
                       readOnly
                       className="bg-gray-50 text-gray-700 font-medium"
                     />

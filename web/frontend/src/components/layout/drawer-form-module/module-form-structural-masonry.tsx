@@ -1,17 +1,14 @@
-import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
-import { ModuleFormSchema } from "@/validators/moduleFormByType.validator";
-import { useState, useEffect, useMemo } from "react";
-import { Trash2, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormControl,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -19,7 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { masks } from '@/utils/masks';
+import { parseNumber } from '@/utils/numbers';
+import { ModuleFormSchema } from "@/validators/moduleFormByType.validator";
+import { AlertTriangle, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 
 interface ModuleFormStructuralMasonryProps {
   form: UseFormReturn<ModuleFormSchema>;
@@ -140,7 +142,7 @@ const GroutItem = ({
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500">Total:</span>
               <span className="text-sm font-semibold text-gray-900">
-                {totalVolume.toFixed(2)} m³
+                {totalVolume.toInternational(undefined, 2)} m³
               </span>
             </div>
           </div>
@@ -166,12 +168,11 @@ const GroutItem = ({
                           {isCustomFgk ? (
                             <div className="flex gap-1">
                               <Input
-                                type="number"
-                                step="0.1"
+                                type="text"
                                 placeholder="Outro"
                                 value={field.value || ""}
                                 onChange={(e) =>
-                                  field.onChange(Number(e.target.value))
+                                  field.onChange(masks.numeric(e.target.value))
                                 }
                                 className="flex-1 w-full"
                               />
@@ -235,12 +236,11 @@ const GroutItem = ({
                         <FormLabel className="text-xs">Volume (m³)</FormLabel>
                         <FormControl>
                           <Input
-                            type="number"
-                            step="0.01"
+                            type="text"
                             placeholder="0.00"
                             value={field.value || ""}
                             onChange={(e) =>
-                              field.onChange(Number(e.target.value))
+                              field.onChange(masks.numeric(e.target.value))
                             }
                           />
                         </FormControl>
@@ -284,7 +284,7 @@ const GroutItem = ({
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500">Total:</span>
               <span className="text-sm font-semibold text-gray-900">
-                {totalMass.toFixed(2)} kg
+                {totalMass.toInternational(undefined, 2)} kg
               </span>
             </div>
           </div>
@@ -312,12 +312,12 @@ const GroutItem = ({
                           {isCustomCa ? (
                             <div className="flex gap-1">
                               <Input
-                                type="number"
+                                type="text"
                                 step="1"
                                 placeholder="Outro"
                                 value={field.value || ""}
                                 onChange={(e) =>
-                                  field.onChange(Number(e.target.value))
+                                  field.onChange(masks.numeric(e.target.value))
                                 }
                                 className="flex-1 w-full"
                               />
@@ -381,12 +381,11 @@ const GroutItem = ({
                         <FormLabel className="text-xs">Massa (kg)</FormLabel>
                         <FormControl>
                           <Input
-                            type="number"
-                            step="0.01"
+                            type="text"
                             placeholder="0.00"
                             value={field.value || ""}
                             onChange={(e) =>
-                              field.onChange(Number(e.target.value))
+                              field.onChange(masks.numeric(e.target.value))
                             }
                           />
                         </FormControl>
@@ -525,13 +524,13 @@ const ModuleFormStructuralMasonry = ({
   }, [form, fckOptions, caOptions]);
 
   const calculateTotalVolume = (
-    volumes: Array<{ fck: number; volume: number }>
+    volumes: Array<{ fck: number; volume: string }>
   ) => {
-    return volumes?.reduce((total, item) => total + (item.volume || 0), 0) || 0;
+    return volumes?.reduce((total, item) => total + parseNumber(item.volume || '0'), 0) || 0;
   };
 
-  const calculateTotalMass = (steel: Array<{ ca: number; mass: number }>) => {
-    return steel?.reduce((total, item) => total + (item.mass || 0), 0) || 0;
+  const calculateTotalMass = (steel: Array<{ ca: number; mass: string }>) => {
+    return steel?.reduce((total, item) => total + parseNumber(item.mass || '0'), 0) || 0;
   };
 
   const calculateTotalQuantity = (
@@ -649,12 +648,12 @@ const ModuleFormStructuralMasonry = ({
                               {isCustomFbk ? (
                                 <div className="flex gap-1">
                                   <Input
-                                    type="number"
+                                    type="text"
                                     step="0.1"
                                     placeholder="Outro"
                                     value={field.value || ""}
                                     onChange={(e) =>
-                                      field.onChange(Number(e.target.value))
+                                      field.onChange(masks.numeric(e.target.value))
                                     }
                                     className="flex-1"
                                   />
@@ -723,11 +722,11 @@ const ModuleFormStructuralMasonry = ({
                             </FormLabel>
                             <FormControl>
                               <Input
-                                type="number"
+                                type="text"
                                 placeholder="0"
                                 value={field.value || ""}
                                 onChange={(e) =>
-                                  field.onChange(Number(e.target.value))
+                                  field.onChange(masks.numeric(e.target.value))
                                 }
                               />
                             </FormControl>
@@ -880,7 +879,7 @@ const ModuleFormStructuralMasonry = ({
               </FormLabel>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-900">
-                  {totalVolume.toFixed(2)}
+                  {totalVolume.toInternational(undefined, 2)}
                 </span>
               </div>
             </div>
@@ -908,12 +907,12 @@ const ModuleFormStructuralMasonry = ({
                               {isCustomFak ? (
                                 <div className="flex gap-1">
                                   <Input
-                                    type="number"
+                                    type="text"
                                     step="0.1"
                                     placeholder="Outro"
                                     value={field.value || ""}
                                     onChange={(e) =>
-                                      field.onChange(Number(e.target.value))
+                                      field.onChange(masks.numeric(e.target.value))
                                     }
                                     className="flex-1 w-full"
                                   />
@@ -982,12 +981,11 @@ const ModuleFormStructuralMasonry = ({
                             </FormLabel>
                             <FormControl>
                               <Input
-                                type="number"
-                                step="0.01"
+                                type="text"
                                 placeholder="0.00"
                                 value={field.value || ""}
                                 onChange={(e) =>
-                                  field.onChange(Number(e.target.value))
+                                  field.onChange(masks.numeric(e.target.value))
                                 }
                               />
                             </FormControl>
@@ -1166,7 +1164,7 @@ const ModuleFormStructuralMasonry = ({
               </FormLabel>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-900">
-                  {totalVolume.toFixed(2)}
+                  {totalVolume.toInternational(undefined, 2)}
                 </span>
               </div>
             </div>
@@ -1192,12 +1190,12 @@ const ModuleFormStructuralMasonry = ({
                               {isCustomFck ? (
                                 <div className="flex gap-1">
                                   <Input
-                                    type="number"
+                                    type="text"
                                     step="0.1"
                                     placeholder="Outro"
                                     value={field.value || ""}
                                     onChange={(e) =>
-                                      field.onChange(Number(e.target.value))
+                                      field.onChange(masks.numeric(e.target.value))
                                     }
                                     className="flex-1"
                                   />
@@ -1267,12 +1265,11 @@ const ModuleFormStructuralMasonry = ({
                             </FormLabel>
                             <FormControl>
                               <Input
-                                type="number"
-                                step="0.01"
+                                type="text"
                                 placeholder="0.00"
                                 value={field.value || ""}
                                 onChange={(e) =>
-                                  field.onChange(Number(e.target.value))
+                                  field.onChange(masks.numeric(e.target.value))
                                 }
                               />
                             </FormControl>
@@ -1317,7 +1314,7 @@ const ModuleFormStructuralMasonry = ({
               </FormLabel>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-900">
-                  {totalMass.toFixed(2)}
+                  {totalMass.toInternational(undefined, 2)}
                 </span>
               </div>
             </div>
@@ -1343,12 +1340,12 @@ const ModuleFormStructuralMasonry = ({
                               {isCustomCa ? (
                                 <div className="flex gap-1">
                                   <Input
-                                    type="number"
+                                    type="text"
                                     step="0.1"
                                     placeholder="Outro"
                                     value={field.value || ""}
                                     onChange={(e) =>
-                                      field.onChange(Number(e.target.value))
+                                      field.onChange(masks.numeric(e.target.value))
                                     }
                                     className="flex-1"
                                   />
@@ -1418,12 +1415,11 @@ const ModuleFormStructuralMasonry = ({
                             </FormLabel>
                             <FormControl>
                               <Input
-                                type="number"
-                                step="0.01"
+                                type="text"
                                 placeholder="0.00"
                                 value={field.value || ""}
                                 onChange={(e) =>
-                                  field.onChange(Number(e.target.value))
+                                  field.onChange(masks.numeric(e.target.value))
                                 }
                               />
                             </FormControl>
@@ -1488,11 +1484,10 @@ const ModuleFormStructuralMasonry = ({
                     </FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        step="0.01"
+                        type="text"
                         placeholder="0,00"
                         value={field.value || ""}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => field.onChange(masks.numeric(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -1510,11 +1505,10 @@ const ModuleFormStructuralMasonry = ({
                     </FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        step="0.01"
+                        type="text"
                         placeholder="0,00"
                         value={field.value || ""}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => field.onChange(masks.numeric(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -1532,11 +1526,10 @@ const ModuleFormStructuralMasonry = ({
                     </FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        step="0.01"
+                        type="text"
                         placeholder="0,00"
                         value={field.value || ""}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => field.onChange(masks.numeric(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />
