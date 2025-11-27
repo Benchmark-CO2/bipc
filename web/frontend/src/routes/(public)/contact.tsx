@@ -3,11 +3,10 @@ import Linkedin from "@/assets/linkedin.svg";
 import FullLogo from "@/assets/logo_full.svg";
 import Youtube from "@/assets/youtube.svg";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { createFileRoute } from "@tanstack/react-router";
-import { FormEvent, useState } from "react";
+import { useState, FormEvent } from "react";
 
 export const Route = createFileRoute("/(public)/contact")({
   component: RouteComponent,
@@ -18,7 +17,6 @@ function RouteComponent() {
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [approved, setApproved] = useState(false);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -32,7 +30,6 @@ function RouteComponent() {
     window.location.href = mailtoLink;
   };
 
-  const formIsCompleted = name && email && message && approved;
   return (
     <div className="w-full flex justify-center">
       {/* Constrain overall content width and add horizontal padding */}
@@ -131,22 +128,14 @@ function RouteComponent() {
                   Mensagem
                 </span>
                 <Textarea
-                  className="w-full min-h-40"
+                  className="w-full min-h-[160px]"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   required
                 />
               </label>
 
-              <label className="mb-4 flex gap-2">
-                <Checkbox checked={approved} onClick={() => setApproved(res => !res)} />
-
-                <span className="text-sm text-muted-foreground block mb-1">
-                  Eu declaro estar ciente de que os dados informados no formulário de contato somente poderão ser usados para permitir a resposta à demanda
-                </span>
-              </label>
-
-              <Button type="submit" variant={"default"} className="w-full" disabled={!formIsCompleted}>
+              <Button type="submit" variant={"default"} className="w-full">
                 Enviar
               </Button>
             </form>
