@@ -493,7 +493,6 @@ const DrawerFormModule = ({
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(handleSubmit as any, (errors) => {
-                  console.log("Validation errors:", errors);
                   toast.error("Existem erros de validação", {
                     description:
                       "Evite campos com valores zerados ou inválidos.",
