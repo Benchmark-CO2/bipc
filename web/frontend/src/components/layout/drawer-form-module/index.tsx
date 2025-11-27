@@ -191,10 +191,12 @@ const DrawerFormModule = ({
 
       setSelectedFloors(floor_ids || []);
 
-      const toLocalString = (value: number | string): string => {
-        if (value === null || value === undefined) return "0";
+      const toLocalString = (
+        value: number | string | null | undefined
+      ): string => {
+        if (value === null || value === undefined) return "0,00";
         const numValue = typeof value === "string" ? parseFloat(value) : value;
-        if (isNaN(numValue)) return "0";
+        if (isNaN(numValue)) return "0,00";
 
         return numValue.toInternational("pt-BR", 2);
       };
@@ -309,6 +311,28 @@ const DrawerFormModule = ({
         };
 
         form.reset(convertedData as any);
+
+        // Garantir que campos numéricos sejam strings após reset
+        if (rest.type === "structural_masonry") {
+          const currentFormSlabs = form.getValues("form_slabs");
+          if (typeof currentFormSlabs === "number") {
+            form.setValue("form_slabs", toLocalString(currentFormSlabs));
+          }
+          const currentFormColumns = form.getValues("form_columns");
+          if (
+            currentFormColumns !== undefined &&
+            typeof currentFormColumns === "number"
+          ) {
+            form.setValue("form_columns", toLocalString(currentFormColumns));
+          }
+          const currentFormBeams = form.getValues("form_beams");
+          if (
+            currentFormBeams !== undefined &&
+            typeof currentFormBeams === "number"
+          ) {
+            form.setValue("form_beams", toLocalString(currentFormBeams));
+          }
+        }
       } else {
         form.reset(getDefaultValuesByType(type) as any);
       }
@@ -355,11 +379,18 @@ const DrawerFormModule = ({
           concrete_columns: data.concrete_columns,
         }),
         ...(data.concrete_beams && { concrete_beams: data.concrete_beams }),
-        form_slabs: data.form_slabs || 0,
-        ...(data.form_columns !== undefined && {
-          form_columns: data.form_columns,
-        }),
-        ...(data.form_beams !== undefined && { form_beams: data.form_beams }),
+        ...(data.form_slabs !== undefined &&
+          data.form_slabs !== 0 && {
+            form_slabs: data.form_slabs,
+          }),
+        ...(data.form_columns !== undefined &&
+          data.form_columns !== 0 && {
+            form_columns: data.form_columns,
+          }),
+        ...(data.form_beams !== undefined &&
+          data.form_beams !== 0 && {
+            form_beams: data.form_beams,
+          }),
       };
     }
 
