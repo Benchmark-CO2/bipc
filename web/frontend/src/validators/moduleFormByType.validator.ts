@@ -1,4 +1,4 @@
-import { parseNumber } from '@/utils/numbers';
+import { parseNumber } from "@/utils/numbers";
 import { z } from "zod";
 
 // Schemas baseados na nova tipagem type2.ts
@@ -8,17 +8,17 @@ const concreteVolumeItemSchema = z
     volume: z.string().transform(parseNumber),
     customFck: z.boolean().optional(),
   })
-  .superRefine((data, ctx) => {
-    if (!data.customFck) {
-      if (data.fck < 20 || data.fck > 45) {
-        ctx.addIssue({
-          path: ["fck"],
-          code: "custom",
-          message: "Fck deve estar entre 20 e 45",
-        });
-      }
-    }
-  })
+  // .superRefine((data, ctx) => {
+  //   if (!data.customFck) {
+  //     if (data.fck < 20 || data.fck > 45) {
+  //       ctx.addIssue({
+  //         path: ["fck"],
+  //         code: "custom",
+  //         message: "Fck deve estar entre 20 e 45",
+  //       });
+  //     }
+  //   }
+  // })
   .transform((data) => {
     const { customFck: _customFck, ...rest } = data;
     return rest;
@@ -65,21 +65,27 @@ const blockItemSchema = z
       "compensador 1/8 (19x19x4)",
     ]),
     fbk: z.number(),
-    quantity: z.number().int().positive("A quantidade deve ser positiva"),
+    quantity: z.string().transform((val) => {
+      const parsed = parseNumber(val);
+      if (parsed <= 0) {
+        throw new Error("A quantidade deve ser positiva");
+      }
+      return Math.round(parsed);
+    }),
     customFbk: z.boolean().optional(),
   })
-  .superRefine((data, ctx) => {
-    if (!data.customFbk) {
-      const validFbks = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26];
-      if (!validFbks.includes(data.fbk)) {
-        ctx.addIssue({
-          path: ["fbk"],
-          code: "custom",
-          message: "Fbk deve ser 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24 ou 26",
-        });
-      }
-    }
-  })
+  // .superRefine((data, ctx) => {
+  //   if (!data.customFbk) {
+  //     const validFbks = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26];
+  //     if (!validFbks.includes(data.fbk)) {
+  //       ctx.addIssue({
+  //         path: ["fbk"],
+  //         code: "custom",
+  //         message: "Fbk deve ser 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24 ou 26",
+  //       });
+  //     }
+  //   }
+  // })
   .transform((data) => {
     const { customFbk: _customFbk, ...rest } = data;
     return rest;
@@ -88,21 +94,27 @@ const blockItemSchema = z
 const groutVolumeItemSchema = z
   .object({
     fgk: z.number(),
-    volume: z.number().positive("O volume deve ser positivo"),
+    volume: z.string().transform((val) => {
+      const parsed = parseNumber(val);
+      if (parsed <= 0) {
+        throw new Error("O volume deve ser positivo");
+      }
+      return parsed;
+    }),
     customFgk: z.boolean().optional(),
   })
-  .superRefine((data, ctx) => {
-    if (!data.customFgk) {
-      const validFgks = [15, 20, 25, 30];
-      if (!validFgks.includes(data.fgk)) {
-        ctx.addIssue({
-          path: ["fgk"],
-          code: "custom",
-          message: "Fgk deve ser 15, 20, 25 ou 30",
-        });
-      }
-    }
-  })
+  // .superRefine((data, ctx) => {
+  //   if (!data.customFgk) {
+  //     const validFgks = [15, 20, 25, 30];
+  //     if (!validFgks.includes(data.fgk)) {
+  //       ctx.addIssue({
+  //         path: ["fgk"],
+  //         code: "custom",
+  //         message: "Fgk deve ser 15, 20, 25 ou 30",
+  //       });
+  //     }
+  //   }
+  // })
   .transform((data) => {
     const { customFgk: _customFgk, ...rest } = data;
     return rest;
@@ -121,21 +133,27 @@ const groutItemSchema = z.object({
 const mortarItemSchema = z
   .object({
     fak: z.number(),
-    volume: z.number().positive("O volume deve ser positivo"),
+    volume: z.string().transform((val) => {
+      const parsed = parseNumber(val);
+      if (parsed <= 0) {
+        throw new Error("O volume deve ser positivo");
+      }
+      return parsed;
+    }),
     customFak: z.boolean().optional(),
   })
-  .superRefine((data, ctx) => {
-    if (!data.customFak) {
-      const validFaks = [4.5, 8, 14];
-      if (!validFaks.includes(data.fak)) {
-        ctx.addIssue({
-          path: ["fak"],
-          code: "custom",
-          message: "Fak deve ser 4.5, 8 ou 14",
-        });
-      }
-    }
-  })
+  // .superRefine((data, ctx) => {
+  //   if (!data.customFak) {
+  //     const validFaks = [4.5, 8, 14];
+  //     if (!validFaks.includes(data.fak)) {
+  //       ctx.addIssue({
+  //         path: ["fak"],
+  //         code: "custom",
+  //         message: "Fak deve ser 4.5, 8 ou 14",
+  //       });
+  //     }
+  //   }
+  // })
   .transform((data) => {
     const { customFak: _customFak, ...rest } = data;
     return rest;
@@ -151,12 +169,18 @@ export const moduleFormSchema = z
     concrete_columns: concreteElementSchema.optional(),
     concrete_beams: concreteElementSchema.optional(),
     concrete_slabs: concreteElementSchema.optional(),
-    form_columns: z.number().nonnegative().optional(),
-    form_beams: z.number().nonnegative().optional(),
-    form_slabs: z.number().nonnegative().optional(),
-    column_number: z.number().int().nonnegative().optional(),
-    avg_beam_span: z.number().nonnegative().optional(),
-    avg_slab_span: z.number().nonnegative().optional(),
+    form_columns: z.string().transform(parseNumber).optional(),
+    form_beams: z.string().transform(parseNumber).optional(),
+    form_slabs: z.string().transform(parseNumber).optional(),
+    column_number: z
+      .string()
+      .transform((val) => {
+        const parsed = parseNumber(val);
+        return Math.round(parsed);
+      })
+      .optional(),
+    avg_beam_span: z.string().transform(parseNumber).optional(),
+    avg_slab_span: z.string().transform(parseNumber).optional(),
 
     concrete_walls: concreteElementSchema.optional(),
     wall_thickness: z.string().transform(parseNumber).optional(),
