@@ -2,8 +2,8 @@ import { getModule } from "@/actions/modules/getModule";
 import { patchModule } from "@/actions/modules/patchModule";
 import { postModule } from "@/actions/modules/postModule";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useIsMobile } from '@/hooks/useIsMobile';
-import { cn } from '@/lib/utils';
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
 import { ModuleParamsProps, TModulesTypes } from "@/types/modules";
 import { TTowerFloorCategory } from "@/types/units";
 import {
@@ -151,7 +151,6 @@ const DrawerFormModule = ({
     enabled: !!moduleId && isOpen,
   });
 
-
   useEffect(() => {
     const ensureArraysInitialized = () => {
       const currentType = form.getValues("type");
@@ -192,6 +191,14 @@ const DrawerFormModule = ({
 
       setSelectedFloors(floor_ids || []);
 
+      const toLocalString = (value: number | string): string => {
+        if (value === null || value === undefined) return "0";
+        const numValue = typeof value === "string" ? parseFloat(value) : value;
+        if (isNaN(numValue)) return "0";
+
+        return numValue.toInternational("pt-BR", 2);
+      };
+
       if (
         rest.type === "beam_column" ||
         rest.type === "concrete_wall" ||
@@ -200,16 +207,16 @@ const DrawerFormModule = ({
         const restAny = rest as any;
         const convertedData = {
           ...rest,
-          // Converter concrete_columns, concrete_beams, concrete_slabs, concrete_walls
+
           ...(restAny.concrete_columns && {
             concrete_columns: {
               volumes: restAny.concrete_columns.volumes.map((c: any) => ({
                 fck: c.fck,
-                volume: String(c.volume || 0),
+                volume: toLocalString(c.volume),
               })),
               steel: restAny.concrete_columns.steel.map((c: any) => ({
                 ca: c.ca || 50,
-                mass: String(c.mass || 0),
+                mass: toLocalString(c.mass),
               })),
             },
           }),
@@ -217,11 +224,11 @@ const DrawerFormModule = ({
             concrete_beams: {
               volumes: restAny.concrete_beams.volumes.map((c: any) => ({
                 fck: c.fck,
-                volume: String(c.volume || 0),
+                volume: toLocalString(c.volume),
               })),
               steel: restAny.concrete_beams.steel.map((c: any) => ({
                 ca: c.ca || 50,
-                mass: String(c.mass || 0),
+                mass: toLocalString(c.mass),
               })),
             },
           }),
@@ -229,11 +236,11 @@ const DrawerFormModule = ({
             concrete_slabs: {
               volumes: restAny.concrete_slabs.volumes.map((c: any) => ({
                 fck: c.fck,
-                volume: String(c.volume || 0),
+                volume: toLocalString(c.volume),
               })),
               steel: restAny.concrete_slabs.steel.map((c: any) => ({
                 ca: c.ca || 50,
-                mass: String(c.mass || 0),
+                mass: toLocalString(c.mass),
               })),
             },
           }),
@@ -241,23 +248,66 @@ const DrawerFormModule = ({
             concrete_walls: {
               volumes: restAny.concrete_walls.volumes.map((c: any) => ({
                 fck: c.fck,
-                volume: String(c.volume || 0),
+                volume: toLocalString(c.volume),
               })),
               steel: restAny.concrete_walls.steel.map((c: any) => ({
                 ca: c.ca || 50,
-                mass: String(c.mass || 0),
+                mass: toLocalString(c.mass),
               })),
             },
           }),
-          // Converter campos de concrete_wall para string
-          ...(rest.type === "concrete_wall" && {
-            wall_thickness: String(restAny.wall_thickness || 0),
-            slab_thickness: String(restAny.slab_thickness || 0),
-            wall_area: String(restAny.wall_area || 0),
-            wall_form_area: String(restAny.wall_form_area || 0),
-            slab_form_area: String(restAny.slab_form_area || 0),
+
+          ...(rest.type === "beam_column" && {
+            form_columns: toLocalString(restAny.form_columns),
+            form_beams: toLocalString(restAny.form_beams),
+            form_slabs: toLocalString(restAny.form_slabs),
+            column_number: toLocalString(restAny.column_number),
+            avg_beam_span: toLocalString(restAny.avg_beam_span),
+            avg_slab_span: toLocalString(restAny.avg_slab_span),
           }),
+
+          ...(rest.type === "concrete_wall" && {
+            wall_thickness: toLocalString(restAny.wall_thickness),
+            slab_thickness: toLocalString(restAny.slab_thickness),
+            wall_area: toLocalString(restAny.wall_area),
+            wall_form_area: toLocalString(restAny.wall_form_area),
+            slab_form_area: toLocalString(restAny.slab_form_area),
+          }),
+
+          ...(rest.type === "structural_masonry" && {
+            form_slabs: toLocalString(restAny.form_slabs),
+            ...(restAny.form_columns !== undefined && {
+              form_columns: toLocalString(restAny.form_columns),
+            }),
+            ...(restAny.form_beams !== undefined && {
+              form_beams: toLocalString(restAny.form_beams),
+            }),
+          }),
+          ...(rest.type === "structural_masonry" &&
+            restAny.masonry && {
+              blocks: restAny.masonry.blocks?.map((block: any) => ({
+                type: block.type,
+                fbk: block.fbk,
+                quantity: toLocalString(block.quantity),
+              })),
+              grout: restAny.masonry.grout?.map((grout: any) => ({
+                position: grout.position,
+                volumes: grout.volumes?.map((v: any) => ({
+                  fgk: v.fgk,
+                  volume: toLocalString(v.volume),
+                })),
+                steel: grout.steel?.map((s: any) => ({
+                  ca: s.ca,
+                  mass: toLocalString(s.mass),
+                })),
+              })),
+              mortar: restAny.masonry.mortar?.map((mortar: any) => ({
+                fak: mortar.fak,
+                volume: toLocalString(mortar.volume),
+              })),
+            }),
         };
+
         form.reset(convertedData as any);
       } else {
         form.reset(getDefaultValuesByType(type) as any);
@@ -266,22 +316,11 @@ const DrawerFormModule = ({
   }, [moduleData, moduleId, type, form]);
 
   const handleSubmit = (data: ModuleFormSchema) => {
-    if (moduleId && moduleData) {
-      const { floor_ids: _floor_ids, ...rest } = moduleData;
-      const baseFields: ModuleParamsProps = {
-        type,
-        data: {
-          ...rest,
-          floor_ids: selectedFloors,
-        } as any,
-      };
-      mutateModule(baseFields);
-      return;
-    }
+    const moduleType = data.type || type;
 
     let filteredData = {};
 
-    if (data.type === "beam_column") {
+    if (moduleType === "beam_column") {
       filteredData = {
         concrete_columns: data.concrete_columns || { volumes: [], steel: [] },
         concrete_beams: data.concrete_beams || { volumes: [], steel: [] },
@@ -293,7 +332,7 @@ const DrawerFormModule = ({
         avg_beam_span: data.avg_beam_span,
         avg_slab_span: data.avg_slab_span,
       };
-    } else if (data.type === "concrete_wall") {
+    } else if (moduleType === "concrete_wall") {
       filteredData = {
         concrete_walls: data.concrete_walls || { volumes: [], steel: [] },
         concrete_slabs: data.concrete_slabs || { volumes: [], steel: [] },
@@ -304,7 +343,7 @@ const DrawerFormModule = ({
         wall_form_area: data.wall_form_area,
         slab_form_area: data.slab_form_area,
       };
-    } else if (data.type === "structural_masonry") {
+    } else if (moduleType === "structural_masonry") {
       filteredData = {
         masonry: {
           blocks: data.blocks || [],
@@ -325,14 +364,18 @@ const DrawerFormModule = ({
     }
 
     const baseFields: ModuleParamsProps = {
-      type: data.type,
+      type: moduleType ?? data.type,
       data: {
         ...filteredData,
         floor_ids: selectedFloors,
       },
     };
 
-    mutateCreation(baseFields);
+    if (moduleId && moduleData) {
+      mutateModule(baseFields);
+    } else {
+      mutateCreation(baseFields);
+    }
   };
 
   const handleClose = () => {
@@ -375,9 +418,11 @@ const DrawerFormModule = ({
           </button>
         )}
       </DrawerTrigger>
-      <DrawerContent className={cn("min-w-4/6", {
-        "w-full h-[80vh]": isMobile,
-      })}>
+      <DrawerContent
+        className={cn("min-w-4/6", {
+          "w-full h-[80vh]": isMobile,
+        })}
+      >
         <DrawerHeader className="px-8">
           <DrawerTitle className="text-2xl font-bold text-primary">
             {moduleId
@@ -426,14 +471,18 @@ const DrawerFormModule = ({
                 id="module-form"
                 className="w-full flex gap-6 h-full max-sm:flex-col"
               >
-                <div className={cn("h-full overflow-y-auto", {
-                  'shrink-0': !isMobile,
-                  'h-auto flex-1 mx-auto': isMobile,
-                })}>
-                  <div className={cn("top-0", {
-                    'sticky': !isMobile,
-                    'w-full': isMobile,
-                  })}>
+                <div
+                  className={cn("h-full overflow-y-auto", {
+                    "shrink-0": !isMobile,
+                    "h-auto flex-1 mx-auto": isMobile,
+                  })}
+                >
+                  <div
+                    className={cn("top-0", {
+                      sticky: !isMobile,
+                      "w-full": isMobile,
+                    })}
+                  >
                     <BuildingVisualizer
                       key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ index: f.index })))}`}
                       towerFloors={floors || []}
@@ -473,7 +522,12 @@ const DrawerFormModule = ({
                                     value === "structural_masonry"
                                   ) {
                                     form.reset(
-                                      getDefaultValuesByType(value as 'beam_column' | 'concrete_wall' | 'structural_masonry') as any,
+                                      getDefaultValuesByType(
+                                        value as
+                                          | "beam_column"
+                                          | "concrete_wall"
+                                          | "structural_masonry"
+                                      ) as any
                                     );
                                   }
                                 }}
