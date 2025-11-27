@@ -1,6 +1,6 @@
-import { masks } from '@/utils/masks';
-import { parseNumber } from '@/utils/numbers';
-import { ModuleFormSchema } from "@/validators/moduleFormByType.validator";
+import { masks } from "@/utils/masks";
+import { parseNumber } from "@/utils/numbers";
+import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
@@ -23,7 +23,7 @@ import {
 } from "../../ui/select";
 
 interface ModuleFormConcreteWallProps {
-  form: UseFormReturn<ModuleFormSchema>;
+  form: UseFormReturn<ModuleFormInput>;
 }
 
 const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
@@ -62,21 +62,39 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
     const slabFormArea = form.getValues("slab_form_area");
 
     if (wallFormArea === undefined) {
-      form.setValue("wall_form_area", 0);
+      form.setValue("wall_form_area", "0");
     }
     if (slabFormArea === undefined) {
-      form.setValue("slab_form_area", 0);
+      form.setValue("slab_form_area", "0");
     }
   }, [form, fckOptions, caOptions]);
 
   const calculateTotalVolume = (
-    volumes: Array<{ fck: number; volume: number }>
+    volumes: Array<{ fck: number; volume: string | number }>
   ) => {
-    return volumes?.reduce((total, item) => total + (item.volume || 0), 0) || 0;
+    return (
+      volumes?.reduce((total, item) => {
+        const volume =
+          typeof item.volume === "string"
+            ? parseNumber(item.volume)
+            : item.volume || 0;
+        return total + volume;
+      }, 0) || 0
+    );
   };
 
-  const calculateTotalMass = (steel: Array<{ ca: number; mass: number }>) => {
-    return steel?.reduce((total, item) => total + (item.mass || 0), 0) || 0;
+  const calculateTotalMass = (
+    steel: Array<{ ca: number; mass: string | number }>
+  ) => {
+    return (
+      steel?.reduce((total, item) => {
+        const mass =
+          typeof item.mass === "string"
+            ? parseNumber(item.mass)
+            : item.mass || 0;
+        return total + mass;
+      }, 0) || 0
+    );
   };
 
   const renderCompleteSection = (
@@ -257,7 +275,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                   placeholder="100"
                                   value={volumeField.value || ""}
                                   onChange={(e) => {
-                                    const newValue = masks.numeric(e.target.value);
+                                    const newValue = masks.numeric(
+                                      e.target.value
+                                    );
                                     volumeField.onChange(newValue);
                                   }}
                                 />
@@ -436,7 +456,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                   placeholder="800"
                                   value={massField.value || ""}
                                   onChange={(e) => {
-                                    const newValue = masks.numeric(e.target.value);
+                                    const newValue = masks.numeric(
+                                      e.target.value
+                                    );
                                     massField.onChange(newValue);
                                   }}
                                 />
@@ -629,7 +651,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setVolumes([...volumes, { fck: 50, volume: '0' }])}
+                onClick={() =>
+                  setVolumes([...volumes, { fck: 50, volume: "0" }])
+                }
                 className="w-full text-green-600 border-green-600 hover:bg-green-50"
               >
                 Adicionar
@@ -710,7 +734,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                               value={steel.mass}
                               onChange={(e) => {
                                 const newSteels = [...steels];
-                                newSteels[index].mass = masks.numeric(e.target.value);
+                                newSteels[index].mass = masks.numeric(
+                                  e.target.value
+                                );
                                 setSteels(newSteels);
                               }}
                             />
@@ -737,7 +763,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setSteels([...steels, { ca: 50, mass: '0' }])}
+                onClick={() => setSteels([...steels, { ca: 50, mass: "0" }])}
                 className="w-full text-green-600 border-green-600 hover:bg-green-50"
               >
                 Adicionar
@@ -751,7 +777,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
     // Form section implementation
     const wallFormArea = form.watch("wall_form_area") || 0;
     const slabFormArea = form.watch("slab_form_area") || 0;
-    const totalFormArea = parseNumber(wallFormArea as unknown as string) + parseNumber(slabFormArea as unknown as string);
+    const totalFormArea =
+      parseNumber(wallFormArea as unknown as string) +
+      parseNumber(slabFormArea as unknown as string);
 
     return (
       <div className="space-y-3">
@@ -856,7 +884,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                   type="text"
                   placeholder="0,10"
                   value={field.value || ""}
-                  onChange={(e) => field.onChange(masks.numeric(e.target.value))}
+                  onChange={(e) =>
+                    field.onChange(masks.numeric(e.target.value))
+                  }
                 />
               </FormControl>
               <FormMessage />
@@ -875,7 +905,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                   type="text"
                   placeholder="0,10"
                   value={field.value || ""}
-                  onChange={(e) => field.onChange(masks.numeric(e.target.value))}
+                  onChange={(e) =>
+                    field.onChange(masks.numeric(e.target.value))
+                  }
                 />
               </FormControl>
               <FormMessage />
@@ -894,7 +926,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                   type="text"
                   placeholder="1000"
                   value={field.value || ""}
-                  onChange={(e) => field.onChange(masks.numeric(e.target.value))}
+                  onChange={(e) =>
+                    field.onChange(masks.numeric(e.target.value))
+                  }
                 />
               </FormControl>
               <FormMessage />

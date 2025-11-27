@@ -32,31 +32,30 @@ export const beamColumnDefaultValues = {
     volumes: [{ fck: 30, volume: "0" }],
     steel: [{ ca: 50 as const, mass: "0" }],
   },
-  form_columns: 0,
-  form_beams: 0,
-  form_slabs: 0,
-  column_number: 0,
-  avg_beam_span: 0,
-  avg_slab_span: 0,
+  form_columns: "0",
+  form_beams: "0",
+  form_slabs: "0",
+  column_number: "0",
+  avg_beam_span: "0",
+  avg_slab_span: "0",
 };
 
 export const structuralMasonryDefaultValues = {
   type: "structural_masonry" as const,
-  blocks: [{ type: "inteiro (14x19x29)" as const, fbk: 6, quantity: 0 }],
+  blocks: [{ type: "inteiro (14x19x29)" as const, fbk: 6, quantity: "0" }],
   grout: [
     {
       position: "vertical" as const,
-      volumes: [{ fgk: 20, volume: 0 }],
+      volumes: [{ fgk: 20, volume: "0" }],
       steel: [{ ca: 50 as const, mass: "0" }],
     },
   ],
-  mortar: [{ fak: 4.5, volume: 0 }],
+  mortar: [{ fak: 4.5, volume: "0" }],
   concrete_slabs: {
     volumes: [{ fck: 30, volume: "0" }],
     steel: [{ ca: 50 as const, mass: "0" }],
   },
-  form_slabs: 0,
-  avg_slab_span: 0,
+  form_slabs: "0",
 };
 
 export const getDefaultValuesByType = (type: TModulesTypes) => {

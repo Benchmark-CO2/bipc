@@ -1,6 +1,6 @@
-import { masks } from '@/utils/masks';
-import { parseNumber } from '@/utils/numbers';
-import { ModuleFormSchema } from "@/validators/moduleFormByType.validator";
+import { masks } from "@/utils/masks";
+import { parseNumber } from "@/utils/numbers";
+import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
@@ -23,7 +23,7 @@ import {
 } from "../../ui/select";
 
 interface ModuleFormBeamColumnProps {
-  form: UseFormReturn<ModuleFormSchema>;
+  form: UseFormReturn<ModuleFormInput>;
 }
 
 const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
@@ -65,11 +65,21 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
   const calculateTotalVolume = (
     volumes: Array<{ fck: number; volume: string }>
   ) => {
-    return volumes?.reduce((total, item) => total + parseNumber(item.volume || '0'), 0) || 0;
+    return (
+      volumes?.reduce(
+        (total, item) => total + parseNumber(item.volume || "0"),
+        0
+      ) || 0
+    );
   };
 
   const calculateTotalMass = (steel: Array<{ ca: number; mass: string }>) => {
-    return steel?.reduce((total, item) => total + parseNumber(item.mass || '0'), 0) || 0;
+    return (
+      steel?.reduce(
+        (total, item) => total + parseNumber(item.mass || "0"),
+        0
+      ) || 0
+    );
   };
 
   const renderCompleteSection = (
@@ -250,7 +260,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                   placeholder="100"
                                   value={volumeField.value || ""}
                                   onChange={(e) => {
-                                    const newValue = masks.numeric(e.target.value);
+                                    const newValue = masks.numeric(
+                                      e.target.value
+                                    );
                                     volumeField.onChange(newValue);
                                   }}
                                 />
@@ -421,7 +433,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                   placeholder="800"
                                   value={massField.value || ""}
                                   onChange={(e) => {
-                                    const newValue = masks.numeric(e.target.value);
+                                    const newValue = masks.numeric(
+                                      e.target.value
+                                    );
                                     massField.onChange(newValue);
                                   }}
                                 />
@@ -497,7 +511,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                   type="text"
                   placeholder="10"
                   value={field.value || ""}
-                  onChange={(e) => field.onChange(masks.numeric(e.target.value))}
+                  onChange={(e) =>
+                    field.onChange(masks.numeric(e.target.value))
+                  }
                 />
               </FormControl>
               <FormMessage />
@@ -516,7 +532,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                   type="text"
                   placeholder="6,00"
                   value={field.value || ""}
-                  onChange={(e) => field.onChange(masks.numeric(e.target.value))}
+                  onChange={(e) =>
+                    field.onChange(masks.numeric(e.target.value))
+                  }
                 />
               </FormControl>
               <FormMessage />
@@ -535,7 +553,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                   type="text"
                   placeholder="8,00"
                   value={field.value || ""}
-                  onChange={(e) => field.onChange(masks.numeric(e.target.value))}
+                  onChange={(e) =>
+                    field.onChange(masks.numeric(e.target.value))
+                  }
                 />
               </FormControl>
               <FormMessage />
@@ -575,7 +595,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         type="text"
                         placeholder="100"
                         value={field.value || ""}
-                        onChange={(e) => field.onChange(masks.numeric(e.target.value))}
+                        onChange={(e) =>
+                          field.onChange(masks.numeric(e.target.value))
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -596,7 +618,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         type="text"
                         placeholder="200"
                         value={field.value || ""}
-                        onChange={(e) => field.onChange(masks.numeric(e.target.value))}
+                        onChange={(e) =>
+                          field.onChange(masks.numeric(e.target.value))
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -617,7 +641,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         type="text"
                         placeholder="400"
                         value={field.value || ""}
-                        onChange={(e) => field.onChange(masks.numeric(e.target.value))}
+                        onChange={(e) =>
+                          field.onChange(masks.numeric(e.target.value))
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -631,7 +657,10 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                   const formColumns = form.watch("form_columns") || 0;
                   const formBeams = form.watch("form_beams") || 0;
                   const formSlabs = form.watch("form_slabs") || 0;
-                  const totalArea = parseNumber(formColumns as unknown as string) + parseNumber(formBeams as unknown as string) + parseNumber(formSlabs as unknown as string);
+                  const totalArea =
+                    parseNumber(formColumns as unknown as string) +
+                    parseNumber(formBeams as unknown as string) +
+                    parseNumber(formSlabs as unknown as string);
 
                   return (
                     <Input

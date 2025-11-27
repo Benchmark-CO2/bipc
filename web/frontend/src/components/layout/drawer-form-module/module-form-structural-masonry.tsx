@@ -16,21 +16,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { masks } from '@/utils/masks';
-import { parseNumber } from '@/utils/numbers';
-import { ModuleFormSchema } from "@/validators/moduleFormByType.validator";
+import { masks } from "@/utils/masks";
+import { parseNumber } from "@/utils/numbers";
+import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 
 interface ModuleFormStructuralMasonryProps {
-  form: UseFormReturn<ModuleFormSchema>;
+  form: UseFormReturn<ModuleFormInput>;
 }
 
 interface GroutItemProps {
   groutIndex: number;
   groutField: any;
-  form: UseFormReturn<ModuleFormSchema>;
+  form: UseFormReturn<ModuleFormInput>;
   groutTypes: Array<{ value: string; label: string }>;
   isGroutTypeUsed: (groutType: string, currentIndex: number) => boolean;
   onRemove: () => void;
@@ -76,11 +76,11 @@ const GroutItem = ({
   const steel = form.watch(`grout.${groutIndex}.steel`) || [];
 
   const totalVolume = volumes.reduce(
-    (sum: number, item: any) => sum + (item.volume || 0),
+    (sum: number, item: any) => sum + parseNumber(item.volume || "0"),
     0
   );
   const totalMass = steel.reduce(
-    (sum: number, item: any) => sum + (item.mass || 0),
+    (sum: number, item: any) => sum + parseNumber(item.mass || "0"),
     0
   );
 
@@ -148,9 +148,12 @@ const GroutItem = ({
           </div>
 
           {volumesFieldArray.fields.map((volumeField, volumeIndex) => {
+            const currentFgk = form.watch(
+              `grout.${groutIndex}.volumes.${volumeIndex}.fgk`
+            );
             const isCustomFgk =
               customFgkSelected[`grout-${groutIndex}-volume-${volumeIndex}`] ||
-              false;
+              (currentFgk && !fgkOptions.includes(currentFgk));
 
             return (
               <div
@@ -165,63 +168,40 @@ const GroutItem = ({
                       <FormItem className="flex-1">
                         <FormLabel className="text-xs">Fgk (MPa)</FormLabel>
                         <FormControl>
-                          {isCustomFgk ? (
-                            <div className="flex gap-1">
-                              <Input
-                                type="text"
-                                placeholder="Outro"
-                                value={field.value || ""}
-                                onChange={(e) =>
-                                  field.onChange(masks.numeric(e.target.value))
-                                }
-                                className="flex-1 w-full"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setCustomFgkSelected((prev) => ({
-                                    ...prev,
-                                    [`grout-${groutIndex}-volume-${volumeIndex}`]:
-                                      false,
-                                  }));
-                                  field.onChange(fgkOptions[0]);
-                                }}
-                                className="text-xs"
-                              >
-                                ✕
-                              </Button>
-                            </div>
-                          ) : (
-                            <Select
-                              onValueChange={(value) => {
-                                if (value === "custom") {
-                                  setCustomFgkSelected((prev) => ({
-                                    ...prev,
-                                    [`grout-${groutIndex}-volume-${volumeIndex}`]:
-                                      true,
-                                  }));
-                                  field.onChange(0);
-                                } else {
-                                  field.onChange(Number(value));
-                                }
-                              }}
-                              value={field.value?.toString()}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Fgk" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {fgkOptions.map((fgk) => (
-                                  <SelectItem key={fgk} value={fgk.toString()}>
-                                    {fgk}
-                                  </SelectItem>
-                                ))}
-                                <SelectItem value="custom">Outro</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
+                          <Select
+                            onValueChange={(value) => {
+                              if (value === "custom") {
+                                setCustomFgkSelected((prev) => ({
+                                  ...prev,
+                                  [`grout-${groutIndex}-volume-${volumeIndex}`]:
+                                    true,
+                                }));
+                                field.onChange(0);
+                              } else {
+                                setCustomFgkSelected((prev) => ({
+                                  ...prev,
+                                  [`grout-${groutIndex}-volume-${volumeIndex}`]:
+                                    false,
+                                }));
+                                field.onChange(Number(value));
+                              }
+                            }}
+                            value={
+                              isCustomFgk ? "custom" : field.value?.toString()
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Fgk" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {fgkOptions.map((fgk) => (
+                                <SelectItem key={fgk} value={fgk.toString()}>
+                                  {fgk}
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="custom">Outro</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -260,6 +240,33 @@ const GroutItem = ({
                     <Trash2 className="h-4 w-4 text-red-600" />
                   </Button>
                 </div>
+
+                {isCustomFgk && (
+                  <FormField
+                    control={form.control}
+                    name={`grout.${groutIndex}.volumes.${volumeIndex}.fgk`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">
+                          Outro Fgk (MPa)
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="35"
+                            value={field.value || ""}
+                            onChange={(e) => {
+                              const numericValue = masks.numeric(
+                                e.target.value
+                              );
+                              field.onChange(Number(numericValue) || 0);
+                            }}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
             );
           })}
@@ -268,7 +275,7 @@ const GroutItem = ({
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => volumesFieldArray.append({ fgk: 20, volume: 0 })}
+            onClick={() => volumesFieldArray.append({ fgk: 20, volume: "0" })}
             className="w-full text-green-600 border-green-600 hover:bg-green-50"
           >
             Adicionar
@@ -290,9 +297,12 @@ const GroutItem = ({
           </div>
 
           {steelFieldArray.fields.map((steelField, steelIndex) => {
+            const currentCa = form.watch(
+              `grout.${groutIndex}.steel.${steelIndex}.ca`
+            );
             const isCustomCa =
               customCaSelected[`grout-${groutIndex}-steel-${steelIndex}`] ||
-              false;
+              (currentCa && !caOptions.includes(currentCa));
 
             return (
               <div
@@ -309,64 +319,40 @@ const GroutItem = ({
                           Categoria (MPa)
                         </FormLabel>
                         <FormControl>
-                          {isCustomCa ? (
-                            <div className="flex gap-1">
-                              <Input
-                                type="text"
-                                step="1"
-                                placeholder="Outro"
-                                value={field.value || ""}
-                                onChange={(e) =>
-                                  field.onChange(masks.numeric(e.target.value))
-                                }
-                                className="flex-1 w-full"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setCustomCaSelected((prev) => ({
-                                    ...prev,
-                                    [`grout-${groutIndex}-steel-${steelIndex}`]:
-                                      false,
-                                  }));
-                                  field.onChange(caOptions[0]);
-                                }}
-                                className="text-xs"
-                              >
-                                ✕
-                              </Button>
-                            </div>
-                          ) : (
-                            <Select
-                              onValueChange={(value) => {
-                                if (value === "custom") {
-                                  setCustomCaSelected((prev) => ({
-                                    ...prev,
-                                    [`grout-${groutIndex}-steel-${steelIndex}`]:
-                                      true,
-                                  }));
-                                  field.onChange(0);
-                                } else {
-                                  field.onChange(Number(value));
-                                }
-                              }}
-                              value={field.value?.toString()}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="CA" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {caOptions.map((ca) => (
-                                  <SelectItem key={ca} value={ca.toString()}>
-                                    {ca}
-                                  </SelectItem>
-                                ))}
-                                <SelectItem value="custom">Outro</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
+                          <Select
+                            onValueChange={(value) => {
+                              if (value === "custom") {
+                                setCustomCaSelected((prev) => ({
+                                  ...prev,
+                                  [`grout-${groutIndex}-steel-${steelIndex}`]:
+                                    true,
+                                }));
+                                field.onChange(0);
+                              } else {
+                                setCustomCaSelected((prev) => ({
+                                  ...prev,
+                                  [`grout-${groutIndex}-steel-${steelIndex}`]:
+                                    false,
+                                }));
+                                field.onChange(Number(value));
+                              }
+                            }}
+                            value={
+                              isCustomCa ? "custom" : field.value?.toString()
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="CA" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {caOptions.map((ca) => (
+                                <SelectItem key={ca} value={ca.toString()}>
+                                  {ca}
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="custom">Outro</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -405,6 +391,33 @@ const GroutItem = ({
                     <Trash2 className="h-4 w-4 text-red-600" />
                   </Button>
                 </div>
+
+                {isCustomCa && (
+                  <FormField
+                    control={form.control}
+                    name={`grout.${groutIndex}.steel.${steelIndex}.ca`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">
+                          Outro CA (MPa)
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="70"
+                            value={field.value || ""}
+                            onChange={(e) => {
+                              const numericValue = masks.numeric(
+                                e.target.value
+                              );
+                              field.onChange(Number(numericValue) || 0);
+                            }}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
             );
           })}
@@ -413,7 +426,7 @@ const GroutItem = ({
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => steelFieldArray.append({ ca: 50, mass: 0 })}
+            onClick={() => steelFieldArray.append({ ca: 50, mass: "0" })}
             className="w-full text-green-600 border-green-600 hover:bg-green-50"
           >
             Adicionar
@@ -481,13 +494,13 @@ const ModuleFormStructuralMasonry = ({
 
       if (!volumes || volumes.length === 0) {
         form.setValue(`${fieldName}.volumes` as any, [
-          { fck: fckOptions[0], volume: 0 },
+          { fck: fckOptions[0], volume: "0" },
         ]);
       }
 
       if (!steel || steel.length === 0) {
         form.setValue(`${fieldName}.steel` as any, [
-          { ca: caOptions[0], mass: 0 },
+          { ca: caOptions[0], mass: "0" },
         ]);
       }
     });
@@ -498,7 +511,7 @@ const ModuleFormStructuralMasonry = ({
 
     if (!blocks || blocks.length === 0) {
       form.setValue("blocks", [
-        { type: "inteiro (14x19x29)" as const, fbk: 6, quantity: 0 },
+        { type: "inteiro (14x19x29)" as const, fbk: 6, quantity: "0" },
       ]);
     }
 
@@ -506,45 +519,69 @@ const ModuleFormStructuralMasonry = ({
       form.setValue("grout", [
         {
           position: "vertical" as const,
-          volumes: [{ fgk: 20, volume: 0 }],
-          steel: [{ ca: 50, mass: 0 }],
+          volumes: [{ fgk: 20, volume: "0" }],
+          steel: [{ ca: 50, mass: "0" }],
         },
       ]);
     }
 
     if (!mortar || mortar.length === 0) {
-      form.setValue("mortar", [{ fak: 4.5, volume: 0 }]);
+      form.setValue("mortar", [{ fak: 4.5, volume: "0" }]);
     }
 
     const formSlabs = form.getValues("form_slabs");
 
     if (formSlabs === undefined) {
-      form.setValue("form_slabs", 0);
+      form.setValue("form_slabs", "0");
     }
   }, [form, fckOptions, caOptions]);
 
   const calculateTotalVolume = (
     volumes: Array<{ fck: number; volume: string }>
   ) => {
-    return volumes?.reduce((total, item) => total + parseNumber(item.volume || '0'), 0) || 0;
+    return (
+      volumes?.reduce(
+        (total, item) => total + parseNumber(item.volume || "0"),
+        0
+      ) || 0
+    );
   };
 
   const calculateTotalMass = (steel: Array<{ ca: number; mass: string }>) => {
-    return steel?.reduce((total, item) => total + parseNumber(item.mass || '0'), 0) || 0;
+    return (
+      steel?.reduce(
+        (total, item) => total + parseNumber(item.mass || "0"),
+        0
+      ) || 0
+    );
   };
 
   const calculateTotalQuantity = (
-    blocks: Array<{ type: string; fbk: number; quantity: number }>
+    blocks: Array<{ type: string; fbk: number; quantity: string | number }>
   ) => {
     return (
-      blocks?.reduce((total, item) => total + (item.quantity || 0), 0) || 0
+      blocks?.reduce((total, item) => {
+        const quantity =
+          typeof item.quantity === "string"
+            ? parseNumber(item.quantity)
+            : item.quantity || 0;
+        return total + quantity;
+      }, 0) || 0
     );
   };
 
   const calculateTotalMortarVolume = (
-    mortar: Array<{ fak: number; volume: number }>
+    mortar: Array<{ fak: number; volume: string | number }>
   ) => {
-    return mortar?.reduce((total, item) => total + (item.volume || 0), 0) || 0;
+    return (
+      mortar?.reduce((total, item) => {
+        const volume =
+          typeof item.volume === "string"
+            ? parseNumber(item.volume)
+            : item.volume || 0;
+        return total + volume;
+      }, 0) || 0
+    );
   };
 
   const renderBlockSection = () => {
@@ -588,15 +625,17 @@ const ModuleFormStructuralMasonry = ({
               </FormLabel>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-900">
-                  {totalQuantity.toFixed(0)}
+                  {totalQuantity.toInternational(undefined, 0)}
                 </span>
               </div>
             </div>
 
             <div className="space-y-3">
               {blockFields.map((field, index) => {
+                const currentFbk = form.watch(`blocks.${index}.fbk`);
                 const isCustomFbk =
-                  customFbkSelected[`block-${index}`] || false;
+                  customFbkSelected[`block-${index}`] ||
+                  (currentFbk && !fbkOptions.includes(currentFbk));
 
                 return (
                   <div
@@ -645,67 +684,43 @@ const ModuleFormStructuralMasonry = ({
                               Fbk (MPa) *
                             </FormLabel>
                             <FormControl>
-                              {isCustomFbk ? (
-                                <div className="flex gap-1">
-                                  <Input
-                                    type="text"
-                                    step="0.1"
-                                    placeholder="Outro"
-                                    value={field.value || ""}
-                                    onChange={(e) =>
-                                      field.onChange(masks.numeric(e.target.value))
-                                    }
-                                    className="flex-1"
-                                  />
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setCustomFbkSelected((prev) => ({
-                                        ...prev,
-                                        [`block-${index}`]: false,
-                                      }));
-                                      field.onChange(fbkOptions[0]);
-                                    }}
-                                    className="text-xs"
-                                  >
-                                    ✕
-                                  </Button>
-                                </div>
-                              ) : (
-                                <Select
-                                  onValueChange={(value) => {
-                                    if (value === "custom") {
-                                      setCustomFbkSelected((prev) => ({
-                                        ...prev,
-                                        [`block-${index}`]: true,
-                                      }));
-                                      field.onChange(0);
-                                    } else {
-                                      field.onChange(Number(value));
-                                    }
-                                  }}
-                                  value={field.value?.toString()}
-                                >
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Fbk" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {fbkOptions.map((fbk) => (
-                                      <SelectItem
-                                        key={fbk}
-                                        value={fbk.toString()}
-                                      >
-                                        {fbk}
-                                      </SelectItem>
-                                    ))}
-                                    <SelectItem value="custom">
-                                      Outro
+                              <Select
+                                onValueChange={(value) => {
+                                  if (value === "custom") {
+                                    setCustomFbkSelected((prev) => ({
+                                      ...prev,
+                                      [`block-${index}`]: true,
+                                    }));
+                                    field.onChange(0);
+                                  } else {
+                                    setCustomFbkSelected((prev) => ({
+                                      ...prev,
+                                      [`block-${index}`]: false,
+                                    }));
+                                    field.onChange(Number(value));
+                                  }
+                                }}
+                                value={
+                                  isCustomFbk
+                                    ? "custom"
+                                    : field.value?.toString()
+                                }
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Fbk" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {fbkOptions.map((fbk) => (
+                                    <SelectItem
+                                      key={fbk}
+                                      value={fbk.toString()}
+                                    >
+                                      {fbk}
                                     </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              )}
+                                  ))}
+                                  <SelectItem value="custom">Outro</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -746,6 +761,33 @@ const ModuleFormStructuralMasonry = ({
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
                     </div>
+
+                    {isCustomFbk && (
+                      <FormField
+                        control={form.control}
+                        name={`blocks.${index}.fbk`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">
+                              Outro Fbk (MPa)
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="text"
+                                placeholder="70"
+                                value={field.value || ""}
+                                onChange={(e) => {
+                                  const numericValue = masks.numeric(
+                                    e.target.value
+                                  );
+                                  field.onChange(Number(numericValue) || 0);
+                                }}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </div>
                 );
               })}
@@ -759,7 +801,7 @@ const ModuleFormStructuralMasonry = ({
                 appendBlock({
                   type: getNextAvailableBlockType(),
                   fbk: 6,
-                  quantity: 0,
+                  quantity: "0",
                 })
               }
               className="w-full text-green-600 border-green-600 hover:bg-green-50"
@@ -837,8 +879,8 @@ const ModuleFormStructuralMasonry = ({
               onClick={() =>
                 appendGrout({
                   position: getNextAvailableGroutType() as any,
-                  volumes: [{ fgk: 20, volume: 0 }],
-                  steel: [{ ca: 50, mass: 0 }],
+                  volumes: [{ fgk: 20, volume: "0" }],
+                  steel: [{ ca: 50, mass: "0" }],
                 })
               }
               className="ml-auto text-green-600 border-green-600 hover:bg-green-50"
@@ -886,8 +928,10 @@ const ModuleFormStructuralMasonry = ({
 
             <div className="space-y-3">
               {mortarFields.map((field, index) => {
+                const currentFak = form.watch(`mortar.${index}.fak`);
                 const isCustomFak =
-                  customFakSelected[`mortar-${index}`] || false;
+                  customFakSelected[`mortar-${index}`] ||
+                  (currentFak && !fakOptions.includes(currentFak));
 
                 return (
                   <div
@@ -904,67 +948,43 @@ const ModuleFormStructuralMasonry = ({
                               Fak (MPa) *
                             </FormLabel>
                             <FormControl>
-                              {isCustomFak ? (
-                                <div className="flex gap-1">
-                                  <Input
-                                    type="text"
-                                    step="0.1"
-                                    placeholder="Outro"
-                                    value={field.value || ""}
-                                    onChange={(e) =>
-                                      field.onChange(masks.numeric(e.target.value))
-                                    }
-                                    className="flex-1 w-full"
-                                  />
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setCustomFakSelected((prev) => ({
-                                        ...prev,
-                                        [`mortar-${index}`]: false,
-                                      }));
-                                      field.onChange(fakOptions[0]);
-                                    }}
-                                    className="text-xs"
-                                  >
-                                    ✕
-                                  </Button>
-                                </div>
-                              ) : (
-                                <Select
-                                  onValueChange={(value) => {
-                                    if (value === "custom") {
-                                      setCustomFakSelected((prev) => ({
-                                        ...prev,
-                                        [`mortar-${index}`]: true,
-                                      }));
-                                      field.onChange(0);
-                                    } else {
-                                      field.onChange(Number(value));
-                                    }
-                                  }}
-                                  value={field.value?.toString()}
-                                >
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Fak" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {fakOptions.map((fak) => (
-                                      <SelectItem
-                                        key={fak}
-                                        value={fak.toString()}
-                                      >
-                                        {fak}
-                                      </SelectItem>
-                                    ))}
-                                    <SelectItem value="custom">
-                                      Outro
+                              <Select
+                                onValueChange={(value) => {
+                                  if (value === "custom") {
+                                    setCustomFakSelected((prev) => ({
+                                      ...prev,
+                                      [`mortar-${index}`]: true,
+                                    }));
+                                    field.onChange(0);
+                                  } else {
+                                    setCustomFakSelected((prev) => ({
+                                      ...prev,
+                                      [`mortar-${index}`]: false,
+                                    }));
+                                    field.onChange(Number(value));
+                                  }
+                                }}
+                                value={
+                                  isCustomFak
+                                    ? "custom"
+                                    : field.value?.toString()
+                                }
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Fak" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {fakOptions.map((fak) => (
+                                    <SelectItem
+                                      key={fak}
+                                      value={fak.toString()}
+                                    >
+                                      {fak}
                                     </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              )}
+                                  ))}
+                                  <SelectItem value="custom">Outro</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1005,6 +1025,33 @@ const ModuleFormStructuralMasonry = ({
                         <Trash2 className="h-4 w-4 text-red-600" />
                       </Button>
                     </div>
+
+                    {isCustomFak && (
+                      <FormField
+                        control={form.control}
+                        name={`mortar.${index}.fak`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">
+                              Outro Fak (MPa)
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="text"
+                                placeholder="10"
+                                value={field.value || ""}
+                                onChange={(e) => {
+                                  const numericValue = masks.numeric(
+                                    e.target.value
+                                  );
+                                  field.onChange(Number(numericValue) || 0);
+                                }}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </div>
                 );
               })}
@@ -1017,7 +1064,7 @@ const ModuleFormStructuralMasonry = ({
               onClick={() =>
                 appendMortar({
                   fak: 5,
-                  volume: 0,
+                  volume: "0",
                 })
               }
               className="w-full text-green-600 border-green-600 hover:bg-green-50"
@@ -1171,8 +1218,12 @@ const ModuleFormStructuralMasonry = ({
 
             <div className="space-y-3">
               {volumeFields.map((field, index) => {
+                const currentFck = form.watch(
+                  `${fieldName}.volumes.${index}.fck` as any
+                );
                 const isCustomFck =
-                  customFckSelected[`${fieldName}-volume-${index}`] || false;
+                  customFckSelected[`${fieldName}-volume-${index}`] ||
+                  (currentFck && !fckOptions.includes(currentFck));
 
                 return (
                   <div
@@ -1187,68 +1238,44 @@ const ModuleFormStructuralMasonry = ({
                           <FormItem className="flex-1">
                             <FormLabel className="text-xs">Fck (MPa)</FormLabel>
                             <FormControl>
-                              {isCustomFck ? (
-                                <div className="flex gap-1">
-                                  <Input
-                                    type="text"
-                                    step="0.1"
-                                    placeholder="Outro"
-                                    value={field.value || ""}
-                                    onChange={(e) =>
-                                      field.onChange(masks.numeric(e.target.value))
-                                    }
-                                    className="flex-1"
-                                  />
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setCustomFckSelected((prev) => ({
-                                        ...prev,
-                                        [`${fieldName}-volume-${index}`]: false,
-                                      }));
-                                      field.onChange(fckOptions[0]);
-                                    }}
-                                    className="text-xs"
-                                  >
-                                    ✕
-                                  </Button>
-                                </div>
-                              ) : (
-                                <Select
-                                  onValueChange={(value) => {
-                                    if (value === "custom") {
-                                      setCustomFckSelected((prev) => ({
-                                        ...prev,
-                                        [`${fieldName}-volume-${index}`]: true,
-                                      }));
-                                      field.onChange(0);
-                                    } else {
-                                      field.onChange(Number(value));
-                                    }
-                                  }}
-                                  value={field.value?.toString()}
-                                >
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Fck" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {fckOptions.map((fck) => (
-                                      <SelectItem
-                                        key={fck}
-                                        value={fck.toString()}
-                                        disabled={isFckUsed(fck, index)}
-                                      >
-                                        {fck}
-                                      </SelectItem>
-                                    ))}
-                                    <SelectItem value="custom">
-                                      Outro
+                              <Select
+                                onValueChange={(value) => {
+                                  if (value === "custom") {
+                                    setCustomFckSelected((prev) => ({
+                                      ...prev,
+                                      [`${fieldName}-volume-${index}`]: true,
+                                    }));
+                                    field.onChange(0);
+                                  } else {
+                                    setCustomFckSelected((prev) => ({
+                                      ...prev,
+                                      [`${fieldName}-volume-${index}`]: false,
+                                    }));
+                                    field.onChange(Number(value));
+                                  }
+                                }}
+                                value={
+                                  isCustomFck
+                                    ? "custom"
+                                    : field.value?.toString()
+                                }
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Fck" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {fckOptions.map((fck) => (
+                                    <SelectItem
+                                      key={fck}
+                                      value={fck.toString()}
+                                      disabled={isFckUsed(fck, index)}
+                                    >
+                                      {fck}
                                     </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              )}
+                                  ))}
+                                  <SelectItem value="custom">Outro</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1289,6 +1316,33 @@ const ModuleFormStructuralMasonry = ({
                         <Trash2 className="h-4 w-4 text-red-600" />
                       </Button>
                     </div>
+
+                    {isCustomFck && (
+                      <FormField
+                        control={form.control}
+                        name={`${fieldName}.volumes.${index}.fck`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">
+                              Outro Fck (MPa)
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="text"
+                                placeholder="70"
+                                value={field.value || ""}
+                                onChange={(e) => {
+                                  const numericValue = masks.numeric(
+                                    e.target.value
+                                  );
+                                  field.onChange(Number(numericValue) || 0);
+                                }}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </div>
                 );
               })}
@@ -1299,7 +1353,7 @@ const ModuleFormStructuralMasonry = ({
               variant="outline"
               size="sm"
               onClick={() =>
-                appendVolume({ fck: getNextAvailableFck(), volume: 0 })
+                appendVolume({ fck: getNextAvailableFck(), volume: "0" })
               }
               className="w-full text-green-600 border-green-600 hover:bg-green-50"
             >
@@ -1321,8 +1375,12 @@ const ModuleFormStructuralMasonry = ({
 
             <div className="space-y-3">
               {steelFields.map((field, index) => {
+                const currentCa = form.watch(
+                  `${fieldName}.steel.${index}.ca` as any
+                );
                 const isCustomCa =
-                  customCaSelected[`${fieldName}-steel-${index}`] || false;
+                  customCaSelected[`${fieldName}-steel-${index}`] ||
+                  (currentCa && !caOptions.includes(currentCa));
 
                 return (
                   <div
@@ -1337,68 +1395,44 @@ const ModuleFormStructuralMasonry = ({
                           <FormItem className="flex-1">
                             <FormLabel className="text-xs">CA</FormLabel>
                             <FormControl>
-                              {isCustomCa ? (
-                                <div className="flex gap-1">
-                                  <Input
-                                    type="text"
-                                    step="0.1"
-                                    placeholder="Outro"
-                                    value={field.value || ""}
-                                    onChange={(e) =>
-                                      field.onChange(masks.numeric(e.target.value))
-                                    }
-                                    className="flex-1"
-                                  />
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setCustomCaSelected((prev) => ({
-                                        ...prev,
-                                        [`${fieldName}-steel-${index}`]: false,
-                                      }));
-                                      field.onChange(caOptions[0]);
-                                    }}
-                                    className="text-xs"
-                                  >
-                                    ✕
-                                  </Button>
-                                </div>
-                              ) : (
-                                <Select
-                                  onValueChange={(value) => {
-                                    if (value === "custom") {
-                                      setCustomCaSelected((prev) => ({
-                                        ...prev,
-                                        [`${fieldName}-steel-${index}`]: true,
-                                      }));
-                                      field.onChange(0);
-                                    } else {
-                                      field.onChange(Number(value));
-                                    }
-                                  }}
-                                  value={field.value?.toString()}
-                                >
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="CA" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {caOptions.map((ca) => (
-                                      <SelectItem
-                                        key={ca}
-                                        value={ca.toString()}
-                                        disabled={isCaUsed(ca, index)}
-                                      >
-                                        {ca}
-                                      </SelectItem>
-                                    ))}
-                                    <SelectItem value="custom">
-                                      Outro
+                              <Select
+                                onValueChange={(value) => {
+                                  if (value === "custom") {
+                                    setCustomCaSelected((prev) => ({
+                                      ...prev,
+                                      [`${fieldName}-steel-${index}`]: true,
+                                    }));
+                                    field.onChange(0);
+                                  } else {
+                                    setCustomCaSelected((prev) => ({
+                                      ...prev,
+                                      [`${fieldName}-steel-${index}`]: false,
+                                    }));
+                                    field.onChange(Number(value));
+                                  }
+                                }}
+                                value={
+                                  isCustomCa
+                                    ? "custom"
+                                    : field.value?.toString()
+                                }
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="CA" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {caOptions.map((ca) => (
+                                    <SelectItem
+                                      key={ca}
+                                      value={ca.toString()}
+                                      disabled={isCaUsed(ca, index)}
+                                    >
+                                      {ca}
                                     </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              )}
+                                  ))}
+                                  <SelectItem value="custom">Outro</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1439,6 +1473,33 @@ const ModuleFormStructuralMasonry = ({
                         <Trash2 className="h-4 w-4 text-red-600" />
                       </Button>
                     </div>
+
+                    {isCustomCa && (
+                      <FormField
+                        control={form.control}
+                        name={`${fieldName}.steel.${index}.ca`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">
+                              Outro CA (MPa)
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="text"
+                                placeholder="70"
+                                value={field.value || ""}
+                                onChange={(e) => {
+                                  const numericValue = masks.numeric(
+                                    e.target.value
+                                  );
+                                  field.onChange(Number(numericValue) || 0);
+                                }}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </div>
                 );
               })}
@@ -1448,7 +1509,9 @@ const ModuleFormStructuralMasonry = ({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => appendSteel({ ca: getNextAvailableCa(), mass: 0 })}
+              onClick={() =>
+                appendSteel({ ca: getNextAvailableCa(), mass: "0" })
+              }
               className="w-full text-green-600 border-green-600 hover:bg-green-50"
             >
               Adicionar
@@ -1460,10 +1523,13 @@ const ModuleFormStructuralMasonry = ({
   };
 
   const renderFormsSection = () => {
-    const formSlabs = form.watch("form_slabs") || 0;
-    const formColumns = form.watch("form_columns") || 0;
-    const formBeams = form.watch("form_beams") || 0;
-    const totalFormArea = formSlabs + formColumns + formBeams;
+    const formSlabs = form.watch("form_slabs") || "0";
+    const formColumns = form.watch("form_columns") || "0";
+    const formBeams = form.watch("form_beams") || "0";
+    const totalFormArea =
+      parseNumber(formSlabs) +
+      parseNumber(formColumns) +
+      parseNumber(formBeams);
 
     return (
       <div className="space-y-3">
@@ -1487,7 +1553,9 @@ const ModuleFormStructuralMasonry = ({
                         type="text"
                         placeholder="0,00"
                         value={field.value || ""}
-                        onChange={(e) => field.onChange(masks.numeric(e.target.value))}
+                        onChange={(e) =>
+                          field.onChange(masks.numeric(e.target.value))
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -1508,7 +1576,9 @@ const ModuleFormStructuralMasonry = ({
                         type="text"
                         placeholder="0,00"
                         value={field.value || ""}
-                        onChange={(e) => field.onChange(masks.numeric(e.target.value))}
+                        onChange={(e) =>
+                          field.onChange(masks.numeric(e.target.value))
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -1529,7 +1599,9 @@ const ModuleFormStructuralMasonry = ({
                         type="text"
                         placeholder="0,00"
                         value={field.value || ""}
-                        onChange={(e) => field.onChange(masks.numeric(e.target.value))}
+                        onChange={(e) =>
+                          field.onChange(masks.numeric(e.target.value))
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -1541,7 +1613,7 @@ const ModuleFormStructuralMasonry = ({
                 <FormLabel className="text-xs">Total (m²)</FormLabel>
                 <div className="flex items-center h-10 px-3 border border-input rounded-md bg-muted">
                   <span className="text-sm font-semibold">
-                    {totalFormArea.toFixed(2)}
+                    {totalFormArea.toInternational(undefined, 2)}
                   </span>
                 </div>
               </FormItem>
