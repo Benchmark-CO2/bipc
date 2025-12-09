@@ -169,9 +169,18 @@ export const moduleFormSchema = z
     concrete_columns: concreteElementSchema.optional(),
     concrete_beams: concreteElementSchema.optional(),
     concrete_slabs: concreteElementSchema.optional(),
-    form_columns: z.string().transform(parseNumber).optional(),
-    form_beams: z.string().transform(parseNumber).optional(),
-    form_slabs: z.string().transform(parseNumber).optional(),
+    form_columns: z
+      .union([z.string(), z.undefined()])
+      .transform((val) => (val ? parseNumber(val) : undefined))
+      .optional(),
+    form_beams: z
+      .union([z.string(), z.undefined()])
+      .transform((val) => (val ? parseNumber(val) : undefined))
+      .optional(),
+    form_slabs: z
+      .union([z.string(), z.undefined()])
+      .transform((val) => (val ? parseNumber(val) : undefined))
+      .optional(),
     column_number: z
       .string()
       .transform((val) => {
@@ -187,8 +196,14 @@ export const moduleFormSchema = z
     slab_thickness: z.string().transform(parseNumber).optional(),
     wall_area: z.string().transform(parseNumber).optional(),
     slab_area: z.number().nonnegative().optional(),
-    wall_form_area: z.string().transform(parseNumber).optional(),
-    slab_form_area: z.string().transform(parseNumber).optional(),
+    wall_form_area: z
+      .union([z.string(), z.undefined()])
+      .transform((val) => (val ? parseNumber(val) : undefined))
+      .optional(),
+    slab_form_area: z
+      .union([z.string(), z.undefined()])
+      .transform((val) => (val ? parseNumber(val) : undefined))
+      .optional(),
 
     blocks: z.array(blockItemSchema).optional(),
     grout: z

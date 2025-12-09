@@ -194,11 +194,13 @@ const DrawerFormModule = ({
       const toLocalString = (
         value: number | string | null | undefined
       ): string => {
-        if (value === null || value === undefined) return "0,00";
+        if (value === null || value === undefined) return "0";
+        if (value === "" || value === "0" || value === 0) return "0";
         const numValue = typeof value === "string" ? parseFloat(value) : value;
-        if (isNaN(numValue)) return "0,00";
+        if (isNaN(numValue)) return "0";
 
-        return numValue.toInternational("pt-BR", 2);
+        const formatted = numValue.toInternational("pt-BR", 2);
+        return typeof formatted === "number" ? String(formatted) : formatted;
       };
 
       if (
@@ -207,107 +209,121 @@ const DrawerFormModule = ({
         rest.type === "structural_masonry"
       ) {
         const restAny = rest as any;
+        const defaults = getDefaultValuesByType(rest.type);
+
         const convertedData = {
           ...rest,
 
-          ...(restAny.concrete_columns && {
-            concrete_columns: {
-              volumes: restAny.concrete_columns.volumes.map((c: any) => ({
-                fck: c.fck,
-                volume: toLocalString(c.volume),
-              })),
-              steel: restAny.concrete_columns.steel.map((c: any) => ({
-                ca: c.ca || 50,
-                mass: toLocalString(c.mass),
-              })),
-            },
-          }),
-          ...(restAny.concrete_beams && {
-            concrete_beams: {
-              volumes: restAny.concrete_beams.volumes.map((c: any) => ({
-                fck: c.fck,
-                volume: toLocalString(c.volume),
-              })),
-              steel: restAny.concrete_beams.steel.map((c: any) => ({
-                ca: c.ca || 50,
-                mass: toLocalString(c.mass),
-              })),
-            },
-          }),
-          ...(restAny.concrete_slabs && {
-            concrete_slabs: {
-              volumes: restAny.concrete_slabs.volumes.map((c: any) => ({
-                fck: c.fck,
-                volume: toLocalString(c.volume),
-              })),
-              steel: restAny.concrete_slabs.steel.map((c: any) => ({
-                ca: c.ca || 50,
-                mass: toLocalString(c.mass),
-              })),
-            },
-          }),
-          ...(restAny.concrete_walls && {
-            concrete_walls: {
-              volumes: restAny.concrete_walls.volumes.map((c: any) => ({
-                fck: c.fck,
-                volume: toLocalString(c.volume),
-              })),
-              steel: restAny.concrete_walls.steel.map((c: any) => ({
-                ca: c.ca || 50,
-                mass: toLocalString(c.mass),
-              })),
-            },
-          }),
+          // Concrete columns - usa default se não existir
+          concrete_columns: restAny.concrete_columns
+            ? {
+                volumes: restAny.concrete_columns.volumes.map((c: any) => ({
+                  fck: c.fck,
+                  volume: toLocalString(c.volume),
+                })),
+                steel: restAny.concrete_columns.steel.map((c: any) => ({
+                  ca: c.ca || 50,
+                  mass: toLocalString(c.mass),
+                })),
+              }
+            : (defaults as any).concrete_columns,
 
+          // Concrete beams - usa default se não existir
+          concrete_beams: restAny.concrete_beams
+            ? {
+                volumes: restAny.concrete_beams.volumes.map((c: any) => ({
+                  fck: c.fck,
+                  volume: toLocalString(c.volume),
+                })),
+                steel: restAny.concrete_beams.steel.map((c: any) => ({
+                  ca: c.ca || 50,
+                  mass: toLocalString(c.mass),
+                })),
+              }
+            : (defaults as any).concrete_beams,
+
+          // Concrete slabs - usa default se não existir
+          concrete_slabs: restAny.concrete_slabs
+            ? {
+                volumes: restAny.concrete_slabs.volumes.map((c: any) => ({
+                  fck: c.fck,
+                  volume: toLocalString(c.volume),
+                })),
+                steel: restAny.concrete_slabs.steel.map((c: any) => ({
+                  ca: c.ca || 50,
+                  mass: toLocalString(c.mass),
+                })),
+              }
+            : (defaults as any).concrete_slabs,
+
+          // Concrete walls - usa default se não existir
+          concrete_walls: restAny.concrete_walls
+            ? {
+                volumes: restAny.concrete_walls.volumes.map((c: any) => ({
+                  fck: c.fck,
+                  volume: toLocalString(c.volume),
+                })),
+                steel: restAny.concrete_walls.steel.map((c: any) => ({
+                  ca: c.ca || 50,
+                  mass: toLocalString(c.mass),
+                })),
+              }
+            : (defaults as any).concrete_walls,
+
+          // Beam column specific fields
           ...(rest.type === "beam_column" && {
-            form_columns: toLocalString(restAny.form_columns),
-            form_beams: toLocalString(restAny.form_beams),
-            form_slabs: toLocalString(restAny.form_slabs),
-            column_number: toLocalString(restAny.column_number),
-            avg_beam_span: toLocalString(restAny.avg_beam_span),
-            avg_slab_span: toLocalString(restAny.avg_slab_span),
+            form_columns: toLocalString(restAny.form_columns ?? 0),
+            form_beams: toLocalString(restAny.form_beams ?? 0),
+            form_slabs: toLocalString(restAny.form_slabs ?? 0),
+            column_number: toLocalString(restAny.column_number ?? 0),
+            avg_beam_span: toLocalString(restAny.avg_beam_span ?? 0),
+            avg_slab_span: toLocalString(restAny.avg_slab_span ?? 0),
           }),
 
+          // Concrete wall specific fields
           ...(rest.type === "concrete_wall" && {
-            wall_thickness: toLocalString(restAny.wall_thickness),
-            slab_thickness: toLocalString(restAny.slab_thickness),
-            wall_area: toLocalString(restAny.wall_area),
-            wall_form_area: toLocalString(restAny.wall_form_area),
-            slab_form_area: toLocalString(restAny.slab_form_area),
+            wall_thickness: toLocalString(restAny.wall_thickness ?? 0),
+            slab_thickness: toLocalString(restAny.slab_thickness ?? 0),
+            wall_area: toLocalString(restAny.wall_area ?? 0),
+            slab_area: restAny.slab_area ?? 0,
+            wall_form_area: toLocalString(restAny.wall_form_area ?? 0),
+            slab_form_area: toLocalString(restAny.slab_form_area ?? 0),
           }),
 
+          // Structural masonry specific fields
           ...(rest.type === "structural_masonry" && {
-            form_slabs: toLocalString(restAny.form_slabs),
-            ...(restAny.form_columns !== undefined && {
-              form_columns: toLocalString(restAny.form_columns),
-            }),
-            ...(restAny.form_beams !== undefined && {
-              form_beams: toLocalString(restAny.form_beams),
-            }),
+            form_slabs: toLocalString(restAny.form_slabs ?? 0),
+            form_columns: toLocalString(restAny.form_columns ?? 0),
+            form_beams: toLocalString(restAny.form_beams ?? 0),
+            blocks: restAny.masonry?.blocks
+              ? restAny.masonry.blocks.map((block: any) => ({
+                  type: block.type,
+                  fbk: block.fbk,
+                  quantity: toLocalString(block.quantity),
+                }))
+              : (defaults as any).blocks,
+            grout: restAny.masonry?.grout
+              ? restAny.masonry.grout.map((grout: any) => ({
+                  position: grout.position,
+                  volumes:
+                    grout.volumes?.map((v: any) => ({
+                      fgk: v.fgk,
+                      volume: toLocalString(v.volume),
+                    })) || [],
+                  steel:
+                    grout.steel?.map((s: any) => ({
+                      ca: s.ca,
+                      mass: toLocalString(s.mass),
+                    })) || [],
+                }))
+              : (defaults as any).grout,
+            mortar: restAny.masonry?.mortar
+              ? restAny.masonry.mortar.map((mortar: any) => ({
+                  fak: mortar.fak,
+                  volume: toLocalString(mortar.volume),
+                }))
+              : (defaults as any).mortar,
           }),
-          ...(rest.type === "structural_masonry" &&
-            restAny.masonry && {
-              blocks: restAny.masonry.blocks?.map((block: any) => ({
-                type: block.type,
-                fbk: block.fbk,
-                quantity: toLocalString(block.quantity),
-              })),
-              grout: restAny.masonry.grout?.map((grout: any) => ({
-                position: grout.position,
-                volumes: grout.volumes?.map((v: any) => ({
-                  fgk: v.fgk,
-                  volume: toLocalString(v.volume),
-                })),
-                steel: grout.steel?.map((s: any) => ({
-                  ca: s.ca,
-                  mass: toLocalString(s.mass),
-                })),
-              })),
-              mortar: restAny.masonry.mortar?.map((mortar: any) => ({
-                fak: mortar.fak,
-                volume: toLocalString(mortar.volume),
-              })),
-            }),
         };
 
         form.reset(convertedData as any);
