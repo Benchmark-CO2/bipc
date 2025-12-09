@@ -191,6 +191,7 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
             )}
             {
               ([...newItems.map(el => el[type as 'co2' | 'energy'] || []), ...projects.filter(el => !el.consumption && !newItems.some(_el => _el.co2.id === el.id))]).map((project, _idx, self) => {
+                console.log({project})
                 return (
                 <div key={project.id} className=''>
                   {!isExpanded ? (
@@ -212,12 +213,7 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
                   ) : (
                     <ItemCard
                       key={project.id}
-                      item={{
-                        id: project.id,
-                        label: project.name,
-                        co2: project.modules.flatMap(el => el.consumption).reduce((acc, curr) => acc + ((type === 'co2' ? curr.co2_max + curr.co2_min : curr.energy_max + curr.energy_min) / 2), 0),
-                        energy: project.modules.flatMap(el => el.consumption).reduce((acc, curr) => acc + ((type === 'co2' ? curr.co2_max + curr.co2_min : curr.energy_max + curr.energy_min) / 2), 0),
-                      } as any}
+                      item={project as any}
                       selectedProjects={selectedProjects}
                       handleAddProject={handleAddProject}
                       sum={newItems.flatMap(el => el[type]).reduce((acc, curr) => acc + curr.max, 0)}
