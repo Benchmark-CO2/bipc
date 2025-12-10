@@ -10,8 +10,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { masks } from '@/utils/masks';
-import { UnitFormSchema } from "@/validators/unitForm.validator";
+import { masks } from "@/utils/masks";
+import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
 import React from "react";
 import { UseFormReturn, useFieldArray, useWatch } from "react-hook-form";
@@ -37,7 +37,7 @@ import {
 import BuildingVisualizer from "../building-visualizer";
 
 interface UnitFormTowerProps {
-  form: UseFormReturn<UnitFormSchema>;
+  form: UseFormReturn<UnitFormInput, any, UnitFormSchema>;
   isEditMode?: boolean;
 }
 
@@ -52,13 +52,13 @@ const categoryColors = {
 const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
   const { t } = useTranslation();
   const { fields, remove, move } = useFieldArray({
-    control: form.control,
+    control: form.control as any,
     name: "data.floor_groups",
   });
 
   // Usar useWatch para reagir a mudanças em tempo real
   const watchedFloors = useWatch({
-    control: form.control,
+    control: form.control as any,
     name: "data.floor_groups",
     defaultValue: [],
   });
@@ -229,8 +229,8 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
     // Criar novo pavimento
     const newFloor = {
       name: "",
-      area: 100,
-      height: 3.0,
+      area: "",
+      height: "",
       repetition: 1,
       category: category,
       index: newIndex,
@@ -263,11 +263,12 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
       {/* Visualizador da torre */}
       <div className="flex-shrink-0 max-sm:mx-auto">
         <BuildingVisualizer
-          key={`building-${watchedFloors?.length || 0}-${JSON.stringify(watchedFloors?.map((f) => ({ color: categoryColors[f.category], repetition: f.repetition, category: f.category })))}`}
+          key={`building-${watchedFloors?.length || 0}-${JSON.stringify(watchedFloors?.map((f: any) => ({ color: categoryColors[f.category as keyof typeof categoryColors], repetition: f.repetition, category: f.category })))}`}
           floors={
-            watchedFloors?.map((floor) => ({
+            watchedFloors?.map((floor: any) => ({
               ...floor,
-              color: categoryColors[floor.category],
+              color:
+                categoryColors[floor.category as keyof typeof categoryColors],
             })) || []
           }
         />
@@ -276,7 +277,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
       <div className="flex-1 space-y-4">
         <div className="grid grid-cols-2 gap-4 items-baseline max-sm:grid-cols-1">
           <FormField
-            control={form.control}
+            control={form.control as any}
             name="name"
             render={({ field }) => (
               <FormItem>
@@ -294,7 +295,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
           />
 
           <FormField
-            control={form.control}
+            control={form.control as any}
             name="type"
             render={({ field }) => (
               <FormItem>
@@ -425,20 +426,25 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                           style={{
                             backgroundColor:
                               categoryColors[
-                                watchedFloors[index]?.category ||
-                                  "standard_floor"
+                                (watchedFloors[index]?.category ||
+                                  "standard_floor") as keyof typeof categoryColors
                               ],
                           }}
                         />
                       </TableCell>
                       <TableCell>
                         <FormField
-                          control={form.control}
+                          control={form.control as any}
                           name={`data.floor_groups.${index}.name`}
                           render={({ field, fieldState }) => (
                             <FormItem>
                               <FormControl>
-                                <Tooltip open={!!fieldState.error}>
+                                <Tooltip
+                                  open={
+                                    !!fieldState.error &&
+                                    focusedRowIndex !== index
+                                  }
+                                >
                                   <TooltipTrigger asChild>
                                     <Input
                                       placeholder="Ex: Cobertura"
@@ -471,30 +477,34 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                       </TableCell>
                       <TableCell>
                         <FormField
-                          control={form.control}
+                          control={form.control as any}
                           name={`data.floor_groups.${index}.area`}
                           render={({ field, fieldState }) => (
                             <FormItem>
                               <FormControl>
-                                <Tooltip open={!!fieldState.error}>
+                                <Tooltip
+                                  open={
+                                    !!fieldState.error &&
+                                    focusedRowIndex !== index
+                                  }
+                                >
                                   <TooltipTrigger asChild>
                                     <Input
                                       type="text"
-                                      placeholder="100"
+                                      placeholder="Ex: 100"
                                       disabled={isEditMode}
                                       className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
                                         fieldState.error
                                           ? "border border-red-500"
                                           : "border-0"
                                       }`}
-                                      {...field}
-                                      onChange={(e) =>
+                                      value={field.value}
+                                      onChange={(e) => {
+                                        const value = e.target.value;
                                         field.onChange(
-                                          masks.numeric(e.target.value
-                                            ? e.target.value
-                                            : '0')
-                                        )
-                                      }
+                                          value ? masks.numeric(value) : ""
+                                        );
+                                      }}
                                       onFocus={() => setFocusedRowIndex(index)}
                                       onBlur={() => setFocusedRowIndex(null)}
                                     />
@@ -505,7 +515,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                       arrowClassName="bg-red-600 fill-red-600"
                                     >
                                       <p className="text-sm">
-                                        {fieldState.error.message}
+                                        Campo obrigatório. Insira a área em m².
                                       </p>
                                     </TooltipContent>
                                   )}
@@ -517,30 +527,34 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                       </TableCell>
                       <TableCell>
                         <FormField
-                          control={form.control}
+                          control={form.control as any}
                           name={`data.floor_groups.${index}.height`}
                           render={({ field, fieldState }) => (
                             <FormItem>
                               <FormControl>
-                                <Tooltip open={!!fieldState.error}>
+                                <Tooltip
+                                  open={
+                                    !!fieldState.error &&
+                                    focusedRowIndex !== index
+                                  }
+                                >
                                   <TooltipTrigger asChild>
                                     <Input
                                       type="text"
-                                      placeholder="3"
+                                      placeholder="Ex: 3"
                                       disabled={isEditMode}
                                       className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
                                         fieldState.error
                                           ? "border border-red-500"
                                           : "border-0"
                                       }`}
-                                      {...field}
-                                      onChange={(e) =>
+                                      value={field.value}
+                                      onChange={(e) => {
+                                        const value = e.target.value;
                                         field.onChange(
-                                          e.target.value
-                                            ? masks.numeric(e.target.value)
-                                            : '0'
-                                        )
-                                      }
+                                          value ? masks.numeric(value) : ""
+                                        );
+                                      }}
                                       onFocus={() => setFocusedRowIndex(index)}
                                       onBlur={() => setFocusedRowIndex(null)}
                                     />
@@ -551,7 +565,8 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                       arrowClassName="bg-red-600 fill-red-600"
                                     >
                                       <p className="text-sm">
-                                        {fieldState.error.message}
+                                        Campo obrigatório. Insira a altura em
+                                        metros.
                                       </p>
                                     </TooltipContent>
                                   )}
@@ -563,12 +578,17 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                       </TableCell>
                       <TableCell>
                         <FormField
-                          control={form.control}
+                          control={form.control as any}
                           name={`data.floor_groups.${index}.repetition`}
                           render={({ field, fieldState }) => (
                             <FormItem>
                               <FormControl>
-                                <Tooltip open={!!fieldState.error}>
+                                <Tooltip
+                                  open={
+                                    !!fieldState.error &&
+                                    focusedRowIndex !== index
+                                  }
+                                >
                                   <TooltipTrigger asChild>
                                     <Input
                                       type="number"
@@ -611,12 +631,17 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                       </TableCell>
                       <TableCell>
                         <FormField
-                          control={form.control}
+                          control={form.control as any}
                           name={`data.floor_groups.${index}.category`}
                           render={({ field, fieldState }) => (
                             <FormItem>
                               <FormControl>
-                                <Tooltip open={!!fieldState.error}>
+                                <Tooltip
+                                  open={
+                                    !!fieldState.error &&
+                                    focusedRowIndex !== index
+                                  }
+                                >
                                   <TooltipTrigger asChild>
                                     <Select
                                       onValueChange={field.onChange}

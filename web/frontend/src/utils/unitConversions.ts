@@ -1,5 +1,9 @@
 import { TTowerFloorCategory, IUnit } from "@/types/units";
-import { FloorSchema } from "@/validators/unitForm.validator";
+import {
+  FloorSchema,
+  FloorFormInput,
+  UnitFormInput,
+} from "@/validators/unitForm.validator";
 
 // Função para determinar categoria baseada no índice
 // IMPORTANTE: Agora a categoria é definida pelo usuário, não automaticamente pelo índice
@@ -151,11 +155,11 @@ export const convertFloorGroupsToTowerFloors = (
 };
 
 // Converte IUnit para dados do formulário
-export const convertUnitToFormData = (unit: IUnit) => {
+export const convertUnitToFormData = (unit: IUnit): UnitFormInput => {
   if (!unit.floors) {
     return {
       name: unit.name,
-      type: unit.type,
+      type: unit.type as "tower",
       data: {
         floor_groups: [],
       },
@@ -164,11 +168,21 @@ export const convertUnitToFormData = (unit: IUnit) => {
 
   const floorGroups = convertTowerFloorsToFloorGroups(unit.floors);
 
+  // Converter FloorSchema[] para FloorFormInput[]
+  const floorFormInputs: FloorFormInput[] = floorGroups.map((floor) => ({
+    name: floor.name,
+    area: floor.area.toString().replace(".", ","), // Converter número para string com formato BR
+    height: floor.height.toString().replace(".", ","),
+    repetition: floor.repetition,
+    category: floor.category,
+    index: floor.index,
+  }));
+
   return {
     name: unit.name,
-    type: unit.type,
+    type: unit.type as "tower",
     data: {
-      floor_groups: floorGroups,
+      floor_groups: floorFormInputs,
     },
   };
 };
@@ -231,4 +245,24 @@ export const convertFloorSchemaToUnified = (
     repetition: floor.repetition,
     category: floor.category,
   }));
+};
+
+// Converte FloorFormInput[] para UnifiedFloor[] (para uso no formulário)
+export const convertFloorFormInputToUnified = (
+  floors: FloorFormInput[]
+): UnifiedFloor[] => {
+  return floors.map((floor, index) => {
+    // Converter strings para números, tratando vírgulas como separador decimal
+    const area = parseFloat(floor.area.replace(",", ".")) || 0;
+    const height = parseFloat(floor.height.replace(",", ".")) || 0;
+
+    return {
+      id: `floor-${index}`,
+      name: floor.name,
+      area,
+      height,
+      repetition: floor.repetition,
+      category: floor.category,
+    };
+  });
 };

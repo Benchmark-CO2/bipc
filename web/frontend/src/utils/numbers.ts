@@ -7,8 +7,8 @@ export const formatNumber = (number: number, decimals: number = 2): string => {
 
 export const parseNumber = (value: string | number): number => {
   if (typeof value === "number") return value;
-  if (!value) return 0;
+  if (!value || value.trim() === "") return NaN;
   const normalized = value.trim().replace(/\./g, "").replace(",", ".");
   const parsed = parseFloat(normalized);
-  return isNaN(parsed) ? 0 : parsed;
+  return parsed;
 };
