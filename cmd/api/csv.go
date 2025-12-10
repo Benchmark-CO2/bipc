@@ -913,19 +913,16 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID, moduleType strin
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate floor ID: %w", err)
 		}
-		groupID, err := uuid.NewV7()
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate floor group ID: %w", err)
-		}
 
 		// Cria o Floor
 		floor := data.Floor{
-			ID:        floorID,
-			GroupID:   groupID,
-			GroupName: baseData.FloorName,
-			Area:      baseData.FloorArea,
-			Height:    baseData.FloorHeight,
-			Index:     len(unit.Floors), // usa ordem como index
+			ID:         floorID,
+			UnitID:     unit.ID,
+			FloorGroup: baseData.FloorName,
+			Category:   "standard_floor", // Default category for CSV imports
+			Area:       baseData.FloorArea,
+			Height:     baseData.FloorHeight,
+			Index:      len(unit.Floors), // usa ordem como index
 		}
 		unit.Floors = append(unit.Floors, floor)
 
@@ -1152,8 +1149,21 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 			return
 		}
 
-		// Insert Unit with existing floors
-		err = app.models.Units.InsertWithExistingFloors(&projectData.Unit)
+		// Convert Unit.Floors to FloorCreate slice
+		floorCreates := make([]data.FloorCreate, len(projectData.Unit.Floors))
+		for i, floor := range projectData.Unit.Floors {
+			floorCreates[i] = data.FloorCreate{
+				ID:         floor.ID,
+				FloorGroup: floor.FloorGroup,
+				Category:   floor.Category,
+				Area:       floor.Area,
+				Height:     floor.Height,
+				Index:      floor.Index,
+			}
+		}
+
+		// Insert Unit with floors
+		err = app.models.Units.Insert(&projectData.Unit, floorCreates)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return

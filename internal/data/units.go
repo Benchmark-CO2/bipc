@@ -22,13 +22,6 @@ type Unit struct {
 	Floors    []Floor   `json:"floors,omitempty"`
 }
 
-type FloorGroup struct {
-	ID       uuid.UUID `json:"id"`
-	UnitID   uuid.UUID `json:"unit_id"`
-	Name     string    `json:"name"`
-	Category string    `json:"category"`
-}
-
 type Consumption struct {
 	CO2Min    *float64 `json:"co2_min,omitempty"`
 	CO2Max    *float64 `json:"co2_max,omitempty"`
@@ -37,22 +30,23 @@ type Consumption struct {
 }
 
 type Floor struct {
-	ID           uuid.UUID              `json:"id"`
-	GroupID      uuid.UUID              `json:"group_id"`
-	GroupName    string                 `json:"group_name"`
-	Category     string                 `json:"category"`
-	Area         float64                `json:"area"`
-	Height       float64                `json:"height"`
-	Index        int                    `json:"index"`
+	ID           uuid.UUID               `json:"id"`
+	UnitID       uuid.UUID               `json:"unit_id"`
+	FloorGroup   string                  `json:"floor_group"`
+	Category     string                  `json:"category"`
+	Area         float64                 `json:"area"`
+	Height       float64                 `json:"height"`
+	Index        int                     `json:"index"`
 	Consumptions map[string]*Consumption `json:"consumptions,omitempty"`
 }
 
-type FloorGroupCreate struct {
-	Name       string  `json:"name"`
-	Category   string  `json:"category"`
-	Area       float64 `json:"area"`
-	Height     float64 `json:"height"`
-	Repetition int     `json:"repetition"`
+type FloorCreate struct {
+	ID         uuid.UUID `json:"id,omitempty"`
+	FloorGroup string    `json:"floor_group"`
+	Category   string    `json:"category"`
+	Area       float64   `json:"area"`
+	Height     float64   `json:"height"`
+	Index      int       `json:"index"`
 }
 
 func ValidateUnit(v *validator.Validator, unit *Unit) {
@@ -60,67 +54,15 @@ func ValidateUnit(v *validator.Validator, unit *Unit) {
 	v.Check(unit.Type != "", "type", "must be provided")
 }
 
-func (m UnitModel) InsertWithExistingFloors(unit *Unit) error {
+func (m UnitModel) Insert(unit *Unit, floors []FloorCreate) error {
 	tx, err := m.DB.Begin()
 	if err != nil {
 		return err
 	}
-
-	if unit.ID == uuid.Nil {
-		tx.Rollback()
-		return errors.New("unit.ID must be provided")
-	}
-
-	queryUnit := `
-		INSERT INTO units (id, project_id, name, type)
-		VALUES ($1, $2, $3, $4)`
-	_, err = tx.Exec(queryUnit, unit.ID, unit.ProjectID, unit.Name, unit.Type)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	if unit.Type == "tower" {
-		insertedGroups := make(map[uuid.UUID]bool)
-
-		for _, floor := range unit.Floors {
-			if !insertedGroups[floor.GroupID] {
-				queryFloorGroup := `
-					INSERT INTO floor_group (id, unit_id, name, category)
-					VALUES ($1, $2, $3, $4)
-					ON CONFLICT (id) DO NOTHING`
-				_, err = tx.Exec(queryFloorGroup, floor.GroupID, unit.ID, floor.GroupName, "standard_floor")
-				if err != nil {
-					tx.Rollback()
-					return err
-				}
-				insertedGroups[floor.GroupID] = true
-			}
-
-			queryFloor := `
-				INSERT INTO floor (id, group_id, area, height, "index")
-				VALUES ($1, $2, $3, $4, $5)
-				ON CONFLICT (id) DO NOTHING`
-			_, err = tx.Exec(queryFloor, floor.ID, floor.GroupID, floor.Area, floor.Height, floor.Index)
-			if err != nil {
-				tx.Rollback()
-				return err
-			}
-		}
-	}
-
-	return tx.Commit()
-}
-
-func (m UnitModel) Insert(unit *Unit, floorGroups []FloorGroupCreate) error {
-	tx, err := m.DB.Begin()
-	if err != nil {
-		return err
-	}
+	defer tx.Rollback()
 
 	unit.ID, err = uuid.NewV7()
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
@@ -129,57 +71,33 @@ func (m UnitModel) Insert(unit *Unit, floorGroups []FloorGroupCreate) error {
 		VALUES ($1, $2, $3, $4)`
 	_, err = tx.Exec(queryUnit, unit.ID, unit.ProjectID, unit.Name, unit.Type)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
-	if unit.Type == "tower" {
-		basementCount := 0
-		for _, fg := range floorGroups {
-			if fg.Category == "basement_floor" {
-				basementCount += fg.Repetition
+	if unit.Type == "tower" && len(floors) > 0 {
+		// Validate unique indexes
+		indexMap := make(map[int]bool)
+		for _, floor := range floors {
+			if indexMap[floor.Index] {
+				return errors.New("floor indexes must be unique")
 			}
+			indexMap[floor.Index] = true
 		}
 
-		currentBasementIndex := -basementCount
-		currentAboveGroundIndex := 0
-
-		for _, fg := range floorGroups {
-			floorGroupID, err := uuid.NewV7()
-			if err != nil {
-				tx.Rollback()
-				return err
-			}
-
-			queryFloorGroup := `INSERT INTO floor_group (id, unit_id, name, category) VALUES ($1, $2, $3, $4)`
-			_, err = tx.Exec(queryFloorGroup, floorGroupID, unit.ID, fg.Name, fg.Category)
-			if err != nil {
-				tx.Rollback()
-				return err
-			}
-
-			for i := 0; i < fg.Repetition; i++ {
-				floorID, err := uuid.NewV7()
+		queryFloor := `INSERT INTO floor (id, unit_id, floor_group, category, area, height, "index") VALUES ($1, $2, $3, $4, $5, $6, $7)`
+		
+		for _, floor := range floors {
+			floorID := floor.ID
+			if floorID == uuid.Nil {
+				floorID, err = uuid.NewV7()
 				if err != nil {
-					tx.Rollback()
 					return err
 				}
+			}
 
-				var floorIndex int
-				if fg.Category == "basement_floor" {
-					floorIndex = currentBasementIndex
-					currentBasementIndex++
-				} else {
-					floorIndex = currentAboveGroundIndex
-					currentAboveGroundIndex++
-				}
-
-				queryFloor := `INSERT INTO floor (id, group_id, area, height, "index") VALUES ($1, $2, $3, $4, $5)`
-				_, err = tx.Exec(queryFloor, floorID, floorGroupID, fg.Area, fg.Height, floorIndex)
-				if err != nil {
-					tx.Rollback()
-					return err
-				}
+			_, err = tx.Exec(queryFloor, floorID, unit.ID, floor.FloorGroup, floor.Category, floor.Area, floor.Height, floor.Index)
+			if err != nil {
+				return err
 			}
 		}
 	}
@@ -234,17 +152,16 @@ func (m UnitModel) GetByID(id uuid.UUID) (*Unit, error) {
 
 func (m UnitModel) getFloorsByUnitID(unitID uuid.UUID) ([]Floor, error) {
 	query := `
-		SELECT f.id, f.group_id, fg.name, fg.category, f.area, f.height, f.index,
+		SELECT f.id, f.unit_id, f.floor_group, f.category, f.area, f.height, f.index,
 		       ftm.technology, ftm.co2_min, ftm.co2_max, ftm.energy_min, ftm.energy_max
 		FROM floor f
-		INNER JOIN floor_group fg ON f.group_id = fg.id
 		LEFT JOIN (
 			SELECT fc.floor_id, fc.technology, fc.co2_min, fc.co2_max, fc.energy_min, fc.energy_max
 			FROM floors_consumption fc
 			INNER JOIN options opt ON fc.option_id = opt.id AND fc.role_id = opt.role_id
 			WHERE opt.active = TRUE
 		) ftm ON f.id = ftm.floor_id
-		WHERE fg.unit_id = $1
+		WHERE f.unit_id = $1
 		ORDER BY f.index`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -260,15 +177,15 @@ func (m UnitModel) getFloorsByUnitID(unitID uuid.UUID) ([]Floor, error) {
 	var orderedFloorIDs []uuid.UUID
 
 	for rows.Next() {
-		var floorID, groupID uuid.UUID
-		var groupName, category string
+		var floorID, floorUnitID uuid.UUID
+		var floorGroup, category string
 		var area, height float64
 		var index int
 		var tech sql.NullString
 		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
 
 		err := rows.Scan(
-			&floorID, &groupID, &groupName, &category, &area, &height, &index,
+			&floorID, &floorUnitID, &floorGroup, &category, &area, &height, &index,
 			&tech, &co2Min, &co2Max, &energyMin, &energyMax,
 		)
 		if err != nil {
@@ -278,8 +195,8 @@ func (m UnitModel) getFloorsByUnitID(unitID uuid.UUID) ([]Floor, error) {
 		if _, ok := floorsMap[floorID]; !ok {
 			floorsMap[floorID] = &Floor{
 				ID:           floorID,
-				GroupID:      groupID,
-				GroupName:    groupName,
+				UnitID:       floorUnitID,
+				FloorGroup:   floorGroup,
 				Category:     category,
 				Area:         area,
 				Height:       height,
@@ -336,9 +253,159 @@ func (m UnitModel) getFloorsByUnitID(unitID uuid.UUID) ([]Floor, error) {
 	return floors, nil
 }
 
-// TODO: Update this function to work with the new structure
-func (m UnitModel) Update(unit *Unit) error {
-	return errors.New("Update not implemented yet")
+func (m UnitModel) getExistingFloors(tx *sql.Tx, unitID uuid.UUID) (map[uuid.UUID]*Floor, error) {
+	queryExistingFloors := `
+		SELECT id, floor_group, category, area, height, "index"
+		FROM floor
+		WHERE unit_id = $1
+		ORDER BY "index"`
+	
+	rows, err := tx.Query(queryExistingFloors, unitID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	
+	existingFloors := make(map[uuid.UUID]*Floor)
+	for rows.Next() {
+		var floor Floor
+		if err := rows.Scan(&floor.ID, &floor.FloorGroup, &floor.Category, &floor.Area, &floor.Height, &floor.Index); err != nil {
+			return nil, err
+		}
+		floor.UnitID = unitID
+		existingFloors[floor.ID] = &floor
+	}
+	
+	return existingFloors, rows.Err()
+}
+
+func (m UnitModel) Update(unit *Unit, floors []FloorCreate) error {
+	tx, err := m.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	queryUnit := `
+		UPDATE units 
+		SET name = $1, updated_at = CURRENT_TIMESTAMP, version = version + 1
+		WHERE id = $2
+		RETURNING version`
+	
+	err = tx.QueryRow(queryUnit, unit.Name, unit.ID).Scan(&unit.Version)
+	if err != nil {
+		return err
+	}
+
+	if len(floors) == 0 {
+		return tx.Commit()
+	}
+
+	// Validate unique indexes
+	indexMap := make(map[int]bool)
+	for _, floor := range floors {
+		if indexMap[floor.Index] {
+			return errors.New("floor indexes must be unique")
+		}
+		indexMap[floor.Index] = true
+	}
+
+	moduleModel := ModuleModel{DB: m.DB}
+	hasModules, err := moduleModel.HasModulesForUnit(tx, unit.ID)
+	if err != nil {
+		return err
+	}
+
+	existingFloors, err := m.getExistingFloors(tx, unit.ID)
+	if err != nil {
+		return err
+	}
+
+	// Detect changes by comparing IDs and floor properties
+	floorHasChanged := false
+	existingIDs := make(map[uuid.UUID]bool)
+	newIDs := make(map[uuid.UUID]bool)
+
+	for id := range existingFloors {
+		existingIDs[id] = true
+	}
+
+	for _, newFloor := range floors {
+		if newFloor.ID != uuid.Nil {
+			newIDs[newFloor.ID] = true
+			
+			if existingFloor, exists := existingFloors[newFloor.ID]; exists {
+				// Floor exists, check if properties changed
+				if existingFloor.Area != newFloor.Area || 
+				   existingFloor.Height != newFloor.Height || 
+				   existingFloor.Index != newFloor.Index ||
+				   existingFloor.FloorGroup != newFloor.FloorGroup ||
+				   existingFloor.Category != newFloor.Category {
+					floorHasChanged = true
+					break
+				}
+			} else {
+				// ID provided but floor doesn't exist
+				floorHasChanged = true
+				break
+			}
+		} else {
+			// New floor without ID
+			floorHasChanged = true
+			break
+		}
+	}
+
+	// Check if any floors were removed
+	if !floorHasChanged {
+		for existingID := range existingIDs {
+			if !newIDs[existingID] {
+				floorHasChanged = true
+				break
+			}
+		}
+	}
+
+	// If floors changed and there are modules, mark them as outdated BEFORE deleting floors
+	if hasModules && floorHasChanged {
+		err = moduleModel.MarkModulesAsOutdatedForUnit(tx, unit.ID)
+		if err != nil {
+			return err
+		}
+
+		optionModel := OptionModel{DB: m.DB}
+		err = optionModel.DeactivateOptionsWithOutdatedModules(tx, unit.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Delete all existing floors
+	queryDeleteFloors := `DELETE FROM floor WHERE unit_id = $1`
+	_, err = tx.Exec(queryDeleteFloors, unit.ID)
+	if err != nil {
+		return err
+	}
+
+	// Insert new floors
+	queryFloor := `INSERT INTO floor (id, unit_id, floor_group, category, area, height, "index") VALUES ($1, $2, $3, $4, $5, $6, $7)`
+	
+	for _, floor := range floors {
+		floorID := floor.ID
+		if floorID == uuid.Nil {
+			floorID, err = uuid.NewV7()
+			if err != nil {
+				return err
+			}
+		}
+
+		_, err = tx.Exec(queryFloor, floorID, unit.ID, floor.FloorGroup, floor.Category, floor.Area, floor.Height, floor.Index)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 func (m UnitModel) Delete(id uuid.UUID) error {
@@ -379,10 +446,9 @@ func (m UnitModel) UpdateUnitFloorsMetrics(unitID uuid.UUID) error {
 	defer tx.Rollback()
 
 	query := `
-		SELECT f.id
-		FROM floor f
-		INNER JOIN floor_group fg ON f.group_id = fg.id
-		WHERE fg.unit_id = $1`
+		SELECT id
+		FROM floor
+		WHERE unit_id = $1`
 
 	rows, err := tx.QueryContext(ctx, query, unitID)
 	if err != nil {

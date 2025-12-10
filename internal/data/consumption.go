@@ -18,8 +18,7 @@ func GetConsumptionByTechnology(db *sql.DB, unitID, roleID, optionID uuid.UUID) 
 			SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max
 		FROM floors_consumption fc
 		INNER JOIN floor f ON fc.floor_id = f.id
-		INNER JOIN floor_group fg ON f.group_id = fg.id
-		WHERE fg.unit_id = $1 
+		WHERE f.unit_id = $1 
 		  AND fc.role_id = $2 
 		  AND fc.option_id = $3
 		GROUP BY fc.technology`
@@ -73,8 +72,7 @@ func CalculateTotalConsumption(db *sql.DB, unitID, roleID, optionID uuid.UUID) (
 				SUM(fc.energy_max) as energy_max
 			FROM floors_consumption fc
 			INNER JOIN floor f ON fc.floor_id = f.id
-			INNER JOIN floor_group fg ON f.group_id = fg.id
-			WHERE fg.unit_id = $1 
+			WHERE f.unit_id = $1 
 			  AND fc.role_id = $2 
 			  AND fc.option_id = $3
 			GROUP BY f.id, f.area
@@ -128,24 +126,31 @@ func GetFullConsumption(db *sql.DB, unitID, roleID, optionID uuid.UUID) (map[str
 }
 
 func GetUnitConsumptionByTechnology(db *sql.DB, unitID uuid.UUID) (map[string]*Consumption, float64, error) {
+	// First, get the total area from floors
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	
+	var totalArea float64
+	areaQuery := `SELECT COALESCE(SUM(area), 0) FROM floor WHERE unit_id = $1`
+	err := db.QueryRowContext(ctx, areaQuery, unitID).Scan(&totalArea)
+	if err != nil {
+		return nil, 0, err
+	}
+	
+	// Then get consumptions by technology
 	query := `
 		SELECT 
 			fc.technology,
 			SUM(fc.co2_min * f.area) / NULLIF(SUM(f.area), 0) as co2_min,
 			SUM(fc.co2_max * f.area) / NULLIF(SUM(f.area), 0) as co2_max,
 			SUM(fc.energy_min * f.area) / NULLIF(SUM(f.area), 0) as energy_min,
-			SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max,
-			SUM(f.area) as total_area
+			SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max
 		FROM floors_consumption fc
 		INNER JOIN floor f ON fc.floor_id = f.id
-		INNER JOIN floor_group fg ON f.group_id = fg.id
 		INNER JOIN options opt ON fc.option_id = opt.id AND fc.role_id = opt.role_id
-		WHERE fg.unit_id = $1 
+		WHERE f.unit_id = $1 
 		  AND opt.active = TRUE
 		GROUP BY fc.technology`
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
 
 	rows, err := db.QueryContext(ctx, query, unitID)
 	if err != nil {
@@ -154,14 +159,12 @@ func GetUnitConsumptionByTechnology(db *sql.DB, unitID uuid.UUID) (map[string]*C
 	defer rows.Close()
 
 	consumptions := make(map[string]*Consumption)
-	var totalArea float64
 
 	for rows.Next() {
 		var tech string
 		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
-		var area sql.NullFloat64
 
-		err := rows.Scan(&tech, &co2Min, &co2Max, &energyMin, &energyMax, &area)
+		err := rows.Scan(&tech, &co2Min, &co2Max, &energyMin, &energyMax)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -172,9 +175,6 @@ func GetUnitConsumptionByTechnology(db *sql.DB, unitID uuid.UUID) (map[string]*C
 				CO2Max:    &co2Max.Float64,
 				EnergyMin: &energyMin.Float64,
 				EnergyMax: &energyMax.Float64,
-			}
-			if area.Valid && totalArea == 0 {
-				totalArea = area.Float64
 			}
 		}
 	}
