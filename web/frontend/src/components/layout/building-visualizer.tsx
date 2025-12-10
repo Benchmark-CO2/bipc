@@ -1,15 +1,21 @@
 import React from "react";
-import { FloorSchema } from "@/validators/unitForm.validator";
+import { FloorSchema, FloorFormInput } from "@/validators/unitForm.validator";
 import { TTowerFloorCategory } from "@/types/units";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   UnifiedFloor,
   convertTowerFloorsToUnified,
   convertFloorSchemaToUnified,
+  convertFloorFormInputToUnified,
 } from "@/utils/unitConversions";
 
+// Helper para verificar se é FloorFormInput (com strings) ou FloorSchema (com números)
+const isFloorFormInput = (floor: any): floor is FloorFormInput => {
+  return floor && typeof floor.area === "string";
+};
+
 interface BuildingVisualizerProps {
-  floors?: FloorSchema[];
+  floors?: FloorSchema[] | FloorFormInput[];
 
   towerFloors?: TTowerFloorCategory[];
   isSelectable?: boolean;
@@ -27,7 +33,9 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   const unifiedFloors: UnifiedFloor[] = towerFloors
     ? convertTowerFloorsToUnified(towerFloors)
     : floors
-      ? convertFloorSchemaToUnified(floors)
+      ? isFloorFormInput(floors[0])
+        ? convertFloorFormInputToUnified(floors as FloorFormInput[])
+        : convertFloorSchemaToUnified(floors as FloorSchema[])
       : [];
 
   const selectedItems = isSelectable ? selectedFloorIds : [];

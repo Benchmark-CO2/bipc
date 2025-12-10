@@ -1,4 +1,4 @@
-import { parseNumber } from '@/utils/numbers';
+import { parseNumber } from "@/utils/numbers";
 import { z } from "zod";
 
 const baseUnitSchema = z.object({
@@ -11,8 +11,34 @@ const baseUnitSchema = z.object({
 
 export const floorSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
-  area: z.string().transform(parseNumber),
-  height: z.string().transform(parseNumber),
+  area: z
+    .string()
+    .min(1, "Área é obrigatória")
+    .transform((val, ctx) => {
+      const num = parseNumber(val);
+      if (isNaN(num) || num <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Área deve ser um número maior que zero",
+        });
+        return z.NEVER;
+      }
+      return num;
+    }),
+  height: z
+    .string()
+    .min(1, "Altura é obrigatória")
+    .transform((val, ctx) => {
+      const num = parseNumber(val);
+      if (isNaN(num) || num <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Altura deve ser um número maior que zero",
+        });
+        return z.NEVER;
+      }
+      return num;
+    }),
   repetition: z
     .number()
     .int()
@@ -27,6 +53,21 @@ export const floorSchema = z.object({
   index: z.number().int().optional(), // Índice para ordenação, opcional
 });
 
+// Tipo para o input do formulário (antes da transformação)
+export type FloorFormInput = {
+  name: string;
+  area: string;
+  height: string;
+  repetition: number;
+  category:
+    | "standard_floor"
+    | "ground_floor"
+    | "basement_floor"
+    | "penthouse_floor";
+  index?: number;
+};
+
+// Tipo após a validação/transformação
 export type FloorSchema = z.infer<typeof floorSchema>;
 
 const towerFieldsSchema = z.object({
@@ -53,6 +94,16 @@ export const unitFormSchema = baseUnitSchema.merge(towerFieldsSchema).refine(
   }
 );
 
+// Tipo para o input do formulário (antes da transformação)
+export type UnitFormInput = {
+  name: string;
+  type: "tower";
+  data: {
+    floor_groups: FloorFormInput[];
+  };
+};
+
+// Tipo após a validação/transformação
 export type UnitFormSchema = z.infer<typeof unitFormSchema>;
 
 // Schema simplificado para edição de unidades (apenas nome)

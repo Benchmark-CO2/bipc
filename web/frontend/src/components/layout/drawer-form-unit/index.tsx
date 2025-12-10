@@ -1,10 +1,11 @@
 import { getUnitByUUID } from "@/actions/units/getUnit";
 import { patchUnit } from "@/actions/units/patchUnit";
 import { postUnit } from "@/actions/units/postUnit";
-import { useIsMobile } from '@/hooks/useIsMobile';
-import { cn } from '@/lib/utils';
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
 import { convertUnitToFormData } from "@/utils/unitConversions";
 import {
+  UnitFormInput,
   UnitFormSchema,
   unitFormSchema,
 } from "@/validators/unitForm.validator";
@@ -44,8 +45,8 @@ const DrawerFormUnit = ({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const form = useForm<UnitFormSchema>({
-    resolver: zodResolver(unitFormSchema),
+  const form = useForm<UnitFormInput, any, UnitFormSchema>({
+    resolver: zodResolver(unitFormSchema) as any,
     defaultValues: {
       name: "",
       type: "tower" as const,
@@ -53,8 +54,8 @@ const DrawerFormUnit = ({
         floor_groups: [
           {
             name: "",
-            area: 100,
-            height: 3.0,
+            area: "",
+            height: "",
             repetition: 1,
             category: "standard_floor",
             index: 1,
@@ -154,7 +155,7 @@ const DrawerFormUnit = ({
     }
   }, [unitData, form]);
 
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobile();
   return (
     <Drawer
       direction={isMobile ? "bottom" : "right"}
@@ -173,9 +174,11 @@ const DrawerFormUnit = ({
           </Button>
         )}
       </DrawerTrigger>
-      <DrawerContent className={cn("min-w-4/5", {
-        "w-full h-4/5": isMobile,
-      })}>
+      <DrawerContent
+        className={cn("min-w-4/5", {
+          "w-full h-4/5": isMobile,
+        })}
+      >
         <DrawerHeader className="px-8">
           <DrawerTitle className="text-2xl font-bold text-primary">
             {unitId
