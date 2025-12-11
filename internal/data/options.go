@@ -10,6 +10,11 @@ import (
 	"github.com/google/uuid"
 )
 
+var (
+	ErrInvalidOptionID          = errors.New("option_id does not exist or is invalid")
+	ErrOptionHasOutdatedModules = errors.New("option has outdated modules and cannot be activated")
+)
+
 type ModuleInfo struct {
 	ID          uuid.UUID    `json:"id"`
 	Type        string       `json:"type"`

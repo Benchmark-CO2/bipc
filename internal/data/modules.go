@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 type Module struct {
@@ -327,5 +328,16 @@ func (m ModuleModel) MarkModulesAsOutdatedForUnit(tx *sql.Tx, unitID uuid.UUID) 
 		WHERE m.id = mf.module_id AND f.unit_id = $1`
 	
 	_, err := tx.Exec(query, unitID)
+	return err
+}
+
+func (m ModuleModel) MarkModulesAsOutdatedForFloors(tx *sql.Tx, floorIDs []uuid.UUID) error {
+	query := `
+		UPDATE module m
+		SET outdated = TRUE
+		FROM module_floor mf
+		WHERE m.id = mf.module_id AND mf.floor_id = ANY($1)`
+	
+	_, err := tx.Exec(query, pq.Array(floorIDs))
 	return err
 }

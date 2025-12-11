@@ -103,7 +103,16 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 
 	err = app.models.Units.Insert(unit, floors)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		switch {
+		case errors.Is(err, data.ErrDuplicateFloorIndexes):
+			v.AddError("floors", "floor indexes must be unique")
+			app.failedValidationResponse(w, r, v.Errors)
+		case errors.Is(err, data.ErrFloorIndexGap):
+			v.AddError("floors", "floor indexes must be continuous without gaps")
+			app.failedValidationResponse(w, r, v.Errors)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 
@@ -249,7 +258,16 @@ func (app *application) updateUnitHandler(w http.ResponseWriter, r *http.Request
 
 	err = app.models.Units.Update(unit, floors)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		switch {
+		case errors.Is(err, data.ErrDuplicateFloorIndexes):
+			v.AddError("floors", "floor indexes must be unique")
+			app.failedValidationResponse(w, r, v.Errors)
+		case errors.Is(err, data.ErrFloorIndexGap):
+			v.AddError("floors", "floor indexes must be continuous without gaps")
+			app.failedValidationResponse(w, r, v.Errors)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 

@@ -11,6 +11,16 @@ import (
 	"github.com/lib/pq"
 )
 
+var (
+	ErrInvalidUnitID         = errors.New("unit_id does not exist or is invalid")
+	ErrUnitIsNotTower        = errors.New("the specified unit is not a tower")
+	ErrInvalidFloorID        = errors.New("one or more floor_ids are invalid or do not exist")
+	ErrInvalidFloorFilter    = errors.New("invalid floor filter")
+	ErrDuplicateFloorIndexes = errors.New("floor indexes must be unique")
+	ErrFloorIndexGap         = errors.New("floor indexes must be continuous without gaps")
+	ErrInvalidFloor          = errors.New("invalid floor")
+)
+
 type Unit struct {
 	ID        uuid.UUID `json:"id"`
 	ProjectID uuid.UUID `json:"project_id"`
@@ -54,6 +64,67 @@ func ValidateUnit(v *validator.Validator, unit *Unit) {
 	v.Check(unit.Type != "", "type", "must be provided")
 }
 
+func validateFloorIndexes(floors []FloorCreate) error {
+	if len(floors) == 0 {
+		return nil
+	}
+
+	indexMap := make(map[int]bool)
+	minIndex := floors[0].Index
+	maxIndex := floors[0].Index
+
+	for _, floor := range floors {
+		if indexMap[floor.Index] {
+			return ErrDuplicateFloorIndexes
+		}
+		indexMap[floor.Index] = true
+
+		if floor.Index < minIndex {
+			minIndex = floor.Index
+		}
+		if floor.Index > maxIndex {
+			maxIndex = floor.Index
+		}
+	}
+
+	// Check for continuous indexes (no gaps)
+	expectedCount := maxIndex - minIndex + 1
+	if len(floors) != expectedCount {
+		return ErrFloorIndexGap
+	}
+
+	// Verify all indexes exist in range
+	for i := minIndex; i <= maxIndex; i++ {
+		if !indexMap[i] {
+			return ErrFloorIndexGap
+		}
+	}
+
+	return nil
+}
+
+func insertFloors(tx *sql.Tx, unitID uuid.UUID, floors []FloorCreate) error {
+	queryFloor := `INSERT INTO floor (id, unit_id, floor_group, category, area, height, "index") VALUES ($1, $2, $3, $4, $5, $6, $7)`
+	
+	for _, floor := range floors {
+		floorID := floor.ID
+		if floorID == uuid.Nil {
+			var err error
+			floorID, err = uuid.NewV7()
+			if err != nil {
+				return err
+			}
+		}
+
+		_, err := tx.Exec(queryFloor, floorID, unitID, floor.FloorGroup, floor.Category, floor.Area, floor.Height, floor.Index)
+		if err != nil {
+			return err
+		}
+	}
+	
+	return nil
+}
+
 func (m UnitModel) Insert(unit *Unit, floors []FloorCreate) error {
 	tx, err := m.DB.Begin()
 	if err != nil {
@@ -75,30 +146,12 @@ func (m UnitModel) Insert(unit *Unit, floors []FloorCreate) error {
 	}
 
 	if unit.Type == "tower" && len(floors) > 0 {
-		// Validate unique indexes
-		indexMap := make(map[int]bool)
-		for _, floor := range floors {
-			if indexMap[floor.Index] {
-				return errors.New("floor indexes must be unique")
-			}
-			indexMap[floor.Index] = true
+		if err := validateFloorIndexes(floors); err != nil {
+			return err
 		}
 
-		queryFloor := `INSERT INTO floor (id, unit_id, floor_group, category, area, height, "index") VALUES ($1, $2, $3, $4, $5, $6, $7)`
-		
-		for _, floor := range floors {
-			floorID := floor.ID
-			if floorID == uuid.Nil {
-				floorID, err = uuid.NewV7()
-				if err != nil {
-					return err
-				}
-			}
-
-			_, err = tx.Exec(queryFloor, floorID, unit.ID, floor.FloorGroup, floor.Category, floor.Area, floor.Height, floor.Index)
-			if err != nil {
-				return err
-			}
+		if err := insertFloors(tx, unit.ID, floors); err != nil {
+			return err
 		}
 	}
 
@@ -301,18 +354,7 @@ func (m UnitModel) Update(unit *Unit, floors []FloorCreate) error {
 		return tx.Commit()
 	}
 
-	// Validate unique indexes
-	indexMap := make(map[int]bool)
-	for _, floor := range floors {
-		if indexMap[floor.Index] {
-			return errors.New("floor indexes must be unique")
-		}
-		indexMap[floor.Index] = true
-	}
-
-	moduleModel := ModuleModel{DB: m.DB}
-	hasModules, err := moduleModel.HasModulesForUnit(tx, unit.ID)
-	if err != nil {
+	if err := validateFloorIndexes(floors); err != nil {
 		return err
 	}
 
@@ -321,85 +363,94 @@ func (m UnitModel) Update(unit *Unit, floors []FloorCreate) error {
 		return err
 	}
 
-	// Detect changes by comparing IDs and floor properties
-	floorHasChanged := false
+	validatedFloors := make([]FloorCreate, 0, len(floors))
+	for _, floor := range floors {
+		if floor.ID != uuid.Nil {
+			if _, exists := existingFloors[floor.ID]; exists {
+				validatedFloors = append(validatedFloors, floor)
+			} else {
+				floor.ID = uuid.Nil
+				validatedFloors = append(validatedFloors, floor)
+			}
+		} else {
+			validatedFloors = append(validatedFloors, floor)
+		}
+	}
+
+	moduleModel := ModuleModel{DB: m.DB}
+	hasModules, err := moduleModel.HasModulesForUnit(tx, unit.ID)
+	if err != nil {
+		return err
+	}
+
+	var changedFloorIDs []uuid.UUID
 	existingIDs := make(map[uuid.UUID]bool)
-	newIDs := make(map[uuid.UUID]bool)
 
 	for id := range existingFloors {
 		existingIDs[id] = true
 	}
 
-	for _, newFloor := range floors {
+	for _, newFloor := range validatedFloors {
 		if newFloor.ID != uuid.Nil {
-			newIDs[newFloor.ID] = true
-			
 			if existingFloor, exists := existingFloors[newFloor.ID]; exists {
-				// Floor exists, check if properties changed
-				if existingFloor.Area != newFloor.Area || 
-				   existingFloor.Height != newFloor.Height || 
-				   existingFloor.Index != newFloor.Index ||
-				   existingFloor.FloorGroup != newFloor.FloorGroup ||
-				   existingFloor.Category != newFloor.Category {
-					floorHasChanged = true
-					break
+				if existingFloor.Area != newFloor.Area ||
+					existingFloor.Height != newFloor.Height ||
+					existingFloor.Index != newFloor.Index ||
+					existingFloor.FloorGroup != newFloor.FloorGroup ||
+					existingFloor.Category != newFloor.Category {
+					changedFloorIDs = append(changedFloorIDs, newFloor.ID)
 				}
-			} else {
-				// ID provided but floor doesn't exist
-				floorHasChanged = true
-				break
+				delete(existingIDs, newFloor.ID)
+			}
+		}
+	}
+
+	for removedID := range existingIDs {
+		changedFloorIDs = append(changedFloorIDs, removedID)
+	}
+
+	if len(existingIDs) > 0 {
+		removedIDs := make([]uuid.UUID, 0, len(existingIDs))
+		for id := range existingIDs {
+			removedIDs = append(removedIDs, id)
+		}
+		queryDeleteFloors := `DELETE FROM floor WHERE id = ANY($1)`
+		_, err = tx.Exec(queryDeleteFloors, pq.Array(removedIDs))
+		if err != nil {
+			return err
+		}
+	}
+
+	var floorsToInsert []FloorCreate
+	for _, floor := range validatedFloors {
+		if floor.ID != uuid.Nil {
+			queryUpdate := `
+				UPDATE floor 
+				SET floor_group = $1, category = $2, area = $3, height = $4, "index" = $5
+				WHERE id = $6`
+			_, err = tx.Exec(queryUpdate, floor.FloorGroup, floor.Category, floor.Area, floor.Height, floor.Index, floor.ID)
+			if err != nil {
+				return err
 			}
 		} else {
-			// New floor without ID
-			floorHasChanged = true
-			break
+			floorsToInsert = append(floorsToInsert, floor)
 		}
 	}
 
-	// Check if any floors were removed
-	if !floorHasChanged {
-		for existingID := range existingIDs {
-			if !newIDs[existingID] {
-				floorHasChanged = true
-				break
-			}
+	if len(floorsToInsert) > 0 {
+		if err := insertFloors(tx, unit.ID, floorsToInsert); err != nil {
+			return err
 		}
 	}
 
-	// If floors changed and there are modules, mark them as outdated BEFORE deleting floors
-	if hasModules && floorHasChanged {
-		err = moduleModel.MarkModulesAsOutdatedForUnit(tx, unit.ID)
+	if hasModules && len(changedFloorIDs) > 0 {
+		err = moduleModel.MarkModulesAsOutdatedForFloors(tx, changedFloorIDs)
 		if err != nil {
 			return err
 		}
 
 		optionModel := OptionModel{DB: m.DB}
 		err = optionModel.DeactivateOptionsWithOutdatedModules(tx, unit.ID)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Delete all existing floors
-	queryDeleteFloors := `DELETE FROM floor WHERE unit_id = $1`
-	_, err = tx.Exec(queryDeleteFloors, unit.ID)
-	if err != nil {
-		return err
-	}
-
-	// Insert new floors
-	queryFloor := `INSERT INTO floor (id, unit_id, floor_group, category, area, height, "index") VALUES ($1, $2, $3, $4, $5, $6, $7)`
-	
-	for _, floor := range floors {
-		floorID := floor.ID
-		if floorID == uuid.Nil {
-			floorID, err = uuid.NewV7()
-			if err != nil {
-				return err
-			}
-		}
-
-		_, err = tx.Exec(queryFloor, floorID, unit.ID, floor.FloorGroup, floor.Category, floor.Area, floor.Height, floor.Index)
 		if err != nil {
 			return err
 		}
