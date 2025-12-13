@@ -189,11 +189,11 @@ const SignUp = () => {
                 name="crea_cau"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("signUp.crea")}</FormLabel>
+                    <FormLabel>Registro CREA/CAU</FormLabel>
                     <FormControl>
                       <Input
                         type="text"
-                        placeholder={t("signUp.crea")}
+                        placeholder={"26.2024.9999999"}
                         disabled={isPending}
                         autoComplete="none"
                         {...field}
@@ -433,7 +433,15 @@ const SignUp = () => {
           </Form>
         </CardContent>
       </Card>
-      {warnModalIsOpen && <DialogWarnSignup handleClose={() => setWarnModalIsOpen(false)} handleConfirm={() => handleSubmit(form.getValues())} />}
+      {warnModalIsOpen && (
+        <DialogWarnSignup
+          handleClose={() => setWarnModalIsOpen(false)}
+          handleConfirm={() => {
+            handleSubmit(form.getValues());
+            setWarnModalIsOpen(false);
+          }}
+        />
+      )}
       {successModal && <DialogSuccessSignup handleClose={handleClose} />}
     </div>
   );
