@@ -7,8 +7,11 @@ export const patchUnit = (
   projectId: string,
   unitId: string
 ) => {
+  // Remove o campo 'type' do payload para update
+  const { type, ...updatePayload } = unitParams;
+
   return api.patch<{ unit: IUnit }>(
     `/v1/projects/${projectId}/units/${unitId}`,
-    unitParams
+    updatePayload
   );
 };

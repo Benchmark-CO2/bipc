@@ -8,6 +8,7 @@ import {
   UnitFormInput,
   UnitFormSchema,
   unitFormSchema,
+  FloorFormInput,
 } from "@/validators/unitForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -51,14 +52,14 @@ const DrawerFormUnit = ({
       name: "",
       type: "tower" as const,
       data: {
-        floor_groups: [
+        floors: [
           {
-            name: "",
+            floor_group: "",
             area: "",
             height: "",
-            repetition: 1,
             category: "standard_floor",
-            index: 1,
+            index: 0,
+            repetition: 1,
           },
         ],
       },
@@ -107,14 +108,18 @@ const DrawerFormUnit = ({
         duration: 5000,
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success(t("success.unitUpdated"), {
         duration: 5000,
       });
-      queryClient.invalidateQueries({
+      // Invalidar queries específicas e aguardar a refetch
+      await queryClient.invalidateQueries({
+        queryKey: ["unit", projectId, unitId],
+      });
+      await queryClient.invalidateQueries({
         queryKey: ["project", projectId],
       });
-      queryClient.invalidateQueries({
+      await queryClient.invalidateQueries({
         queryKey: ["projects"],
       });
       setIsOpen(false);
@@ -123,11 +128,66 @@ const DrawerFormUnit = ({
   });
 
   const handleSubmit = (data: UnitFormSchema) => {
+    console.log("handleSubmit chamado", { data, unitId });
+
     if (unitId) {
+      // No modo de edição, enviar dados diretamente
+      console.log("Modo edição - enviando:", data);
       mutateUpdate(data);
       return;
     }
-    mutateCreation(data);
+
+    // No modo de criação, expandir pavimentos com repetition > 1
+    // Pegar os dados do form antes da validação para ter acesso ao repetition
+    const formData = form.getValues();
+    console.log("formData do form.getValues():", formData);
+
+    const expandedFloors: any[] = [];
+
+    formData.data.floors.forEach((floor: FloorFormInput) => {
+      const repetition = floor.repetition || 1;
+      console.log("Processando floor:", { floor, repetition });
+
+      // Converter strings para números
+      const areaNum = parseFloat(floor.area.replace(",", "."));
+      const heightNum = parseFloat(floor.height.replace(",", "."));
+
+      for (let i = 0; i < repetition; i++) {
+        expandedFloors.push({
+          floor_group: floor.floor_group,
+          area: areaNum,
+          height: heightNum,
+          category: floor.category,
+          index: floor.index + i,
+        });
+      }
+    });
+
+    console.log("expandedFloors:", expandedFloors);
+
+    // Recalcular índices para garantir continuidade
+    const sortedFloors = expandedFloors.sort((a, b) => a.index - b.index);
+    const minIndex = sortedFloors[0]?.index || 0;
+
+    const reindexedFloors = sortedFloors.map((floor, idx) => ({
+      ...floor,
+      index: minIndex + idx,
+    }));
+
+    const createData = {
+      name: data.name,
+      type: data.type,
+      data: {
+        floors: reindexedFloors,
+      },
+    };
+
+    console.log("createData final:", createData);
+    mutateCreation(createData as any);
+  };
+
+  const handleSubmitError = (errors: any) => {
+    console.log("Erro de validação do formulário:", errors);
   };
 
   const handleClose = () => {
@@ -201,7 +261,7 @@ const DrawerFormUnit = ({
           ) : (
             <Form {...form}>
               <form
-                onSubmit={form.handleSubmit(handleSubmit)}
+                onSubmit={form.handleSubmit(handleSubmit, handleSubmitError)}
                 className="flex flex-col gap-3 overflow-y-auto p-8"
                 id="unit-form"
               >
@@ -237,7 +297,7 @@ const DrawerFormUnit = ({
               variant="bipc"
               className="w-full"
               form="unit-form"
-              disabled={true}
+              disabled={isUpdatePending}
             >
               {t("drawerFormUnit.editUnitButton")}
               {isUpdatePending && (
