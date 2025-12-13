@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 type Module struct {
@@ -23,6 +24,7 @@ type Module struct {
 	RelativeCO2Max    *float64               `json:"relative_co2_max,omitempty"`
 	RelativeEnergyMin *float64               `json:"relative_energy_min,omitempty"`
 	RelativeEnergyMax *float64               `json:"relative_energy_max,omitempty"`
+	Outdated          bool                   `json:"outdated"`
 	FloorIDs          []uuid.UUID            `json:"floor_ids"`
 	CreatedAt         time.Time              `json:"created_at"`
 	UpdatedAt         time.Time              `json:"updated_at"`
@@ -81,14 +83,16 @@ func (m ModuleModel) Insert(module *Module) (*Module, error) {
 	query := `
         INSERT INTO module (id, option_id, type, data,
             total_co2_min, total_co2_max, total_energy_min, total_energy_max,
-            relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max,
+            outdated)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING created_at, updated_at`
 
 	err = tx.QueryRowContext(context.Background(), query,
 		module.ID, module.OptionID, module.Type, jsonData,
 		module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax,
 		module.RelativeCO2Min, module.RelativeCO2Max, module.RelativeEnergyMin, module.RelativeEnergyMax,
+		module.Outdated,
 	).Scan(&module.CreatedAt, &module.UpdatedAt)
 
 	if err != nil {
@@ -122,7 +126,7 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 			m.id, m.option_id, m.type, m.data,
 			m.total_co2_min, m.total_co2_max, m.total_energy_min, m.total_energy_max,
 			m.relative_co2_min, m.relative_co2_max, m.relative_energy_min, m.relative_energy_max,
-			m.created_at, m.updated_at
+			m.outdated, m.created_at, m.updated_at
 		FROM module m
 		WHERE m.id = $1`
 
@@ -130,7 +134,7 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 		&module.ID, &module.OptionID, &module.Type, &jsonData,
 		&module.TotalCO2Min, &module.TotalCO2Max, &module.TotalEnergyMin, &module.TotalEnergyMax,
 		&module.RelativeCO2Min, &module.RelativeCO2Max, &module.RelativeEnergyMin, &module.RelativeEnergyMax,
-		&module.CreatedAt, &module.UpdatedAt,
+		&module.Outdated, &module.CreatedAt, &module.UpdatedAt,
 	)
 
 	if err != nil {
@@ -192,6 +196,7 @@ func (m ModuleModel) Update(module *Module) error {
             total_energy_min = $4, total_energy_max = $5,
             relative_co2_min = $6, relative_co2_max = $7,
             relative_energy_min = $8, relative_energy_max = $9,
+            outdated = FALSE,
             updated_at = NOW()
         WHERE id = $10`
 
@@ -295,4 +300,44 @@ func (m ModuleModel) GetModuleType(id uuid.UUID) (string, error) {
 	}
 
 	return moduleType, nil
+}
+
+func (m ModuleModel) HasModulesForUnit(tx *sql.Tx, unitID uuid.UUID) (bool, error) {
+	query := `
+		SELECT COUNT(DISTINCT m.id)
+		FROM module m
+		INNER JOIN module_floor mf ON m.id = mf.module_id
+		INNER JOIN floor f ON mf.floor_id = f.id
+		WHERE f.unit_id = $1`
+	
+	var moduleCount int
+	err := tx.QueryRow(query, unitID).Scan(&moduleCount)
+	if err != nil {
+		return false, err
+	}
+	
+	return moduleCount > 0, nil
+}
+
+func (m ModuleModel) MarkModulesAsOutdatedForUnit(tx *sql.Tx, unitID uuid.UUID) error {
+	query := `
+		UPDATE module m
+		SET outdated = TRUE
+		FROM module_floor mf
+		INNER JOIN floor f ON mf.floor_id = f.id
+		WHERE m.id = mf.module_id AND f.unit_id = $1`
+	
+	_, err := tx.Exec(query, unitID)
+	return err
+}
+
+func (m ModuleModel) MarkModulesAsOutdatedForFloors(tx *sql.Tx, floorIDs []uuid.UUID) error {
+	query := `
+		UPDATE module m
+		SET outdated = TRUE
+		FROM module_floor mf
+		WHERE m.id = mf.module_id AND mf.floor_id = ANY($1)`
+	
+	_, err := tx.Exec(query, pq.Array(floorIDs))
+	return err
 }

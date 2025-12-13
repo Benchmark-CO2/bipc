@@ -50,10 +50,10 @@ func (app *application) createOptionHandler(w http.ResponseWriter, r *http.Reque
 	err = app.models.Options.Insert(option)
 	if err != nil {
 		switch {
-		case errors.Is(err, data.ErrInvalidUnitID):
-			app.badRequestResponse(w, r, err)
-		case errors.Is(err, data.ErrUnitIsNotTower):
-			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrInvalidUnitID),
+			errors.Is(err, data.ErrUnitIsNotTower),
+			errors.Is(err, data.ErrOptionHasOutdatedModules):
+			app.unprocessableEntityResponse(w, r, err)
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
@@ -167,6 +167,8 @@ func (app *application) updateOptionHandler(w http.ResponseWriter, r *http.Reque
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
 			app.notFoundResponse(w, r)
+		case errors.Is(err, data.ErrOptionHasOutdatedModules):
+			app.unprocessableEntityResponse(w, r, err)
 		default:
 			app.serverErrorResponse(w, r, err)
 		}

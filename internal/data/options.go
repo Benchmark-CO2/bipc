@@ -10,9 +10,15 @@ import (
 	"github.com/google/uuid"
 )
 
+var (
+	ErrInvalidOptionID          = errors.New("option_id does not exist or is invalid")
+	ErrOptionHasOutdatedModules = errors.New("option has outdated modules and cannot be activated")
+)
+
 type ModuleInfo struct {
 	ID          uuid.UUID    `json:"id"`
 	Type        string       `json:"type"`
+	Outdated    bool         `json:"outdated"`
 	Consumption *Consumption `json:"consumption,omitempty"`
 }
 
@@ -34,6 +40,16 @@ func ValidateOption(v *validator.Validator, option *Option) {
 
 type OptionModel struct {
 	DB *sql.DB
+}
+
+func (m OptionModel) hasOutdatedModules(optionID uuid.UUID) (bool, error) {
+	var outdatedCount int
+	queryOutdated := `SELECT COUNT(*) FROM module WHERE option_id = $1 AND outdated = TRUE`
+	err := m.DB.QueryRow(queryOutdated, optionID).Scan(&outdatedCount)
+	if err != nil {
+		return false, err
+	}
+	return outdatedCount > 0, nil
 }
 
 func (m OptionModel) Insert(option *Option) error {
@@ -132,7 +148,7 @@ func (m OptionModel) GetByID(id uuid.UUID) (*Option, error) {
 	}
 
 	modulesQuery := `
-        SELECT id, type, relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max
+        SELECT id, type, outdated, relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max
         FROM module
         WHERE option_id = $1`
 
@@ -149,6 +165,7 @@ func (m OptionModel) GetByID(id uuid.UUID) (*Option, error) {
 		err := moduleRows.Scan(
 			&module.ID,
 			&module.Type,
+			&module.Outdated,
 			&co2Min,
 			&co2Max,
 			&energyMin,
@@ -306,7 +323,7 @@ func (m OptionModel) GetAllByRole(unitID, roleID uuid.UUID) ([]*Option, error) {
 		}
 
 		modulesQuery := `
-            SELECT id, type, relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max
+            SELECT id, type, outdated, relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max
             FROM module
             WHERE option_id = $1`
 
@@ -322,6 +339,7 @@ func (m OptionModel) GetAllByRole(unitID, roleID uuid.UUID) ([]*Option, error) {
 			err := moduleRows.Scan(
 				&module.ID,
 				&module.Type,
+				&module.Outdated,
 				&co2Min,
 				&co2Max,
 				&energyMin,
@@ -367,7 +385,16 @@ func (m OptionModel) GetAllByRole(unitID, roleID uuid.UUID) ([]*Option, error) {
 
 func (m OptionModel) Update(option *Option) error {
 	if option.Active {
-		err := m.DeactivateOptions(option.UnitID, option.RoleID)
+		hasOutdated, err := m.hasOutdatedModules(option.ID)
+		if err != nil {
+			return err
+		}
+		
+		if hasOutdated {
+			return ErrOptionHasOutdatedModules
+		}
+
+		err = m.DeactivateOptions(option.UnitID, option.RoleID)
 		if err != nil {
 			return err
 		}
@@ -450,5 +477,19 @@ func (m OptionModel) DeactivateOptions(unitID uuid.UUID, roleID uuid.UUID) error
 	defer cancel()
 
 	_, err := m.DB.ExecContext(ctx, query, unitID, roleID)
+	return err
+}
+
+func (m OptionModel) DeactivateOptionsWithOutdatedModules(tx *sql.Tx, unitID uuid.UUID) error {
+	query := `
+		UPDATE options opt
+		SET active = FALSE
+		WHERE opt.unit_id = $1
+		AND EXISTS (
+			SELECT 1 FROM module m
+			WHERE m.option_id = opt.id AND m.outdated = TRUE
+		)`
+	
+	_, err := tx.Exec(query, unitID)
 	return err
 }

@@ -85,9 +85,8 @@ func (app *application) notPermittedResponse(w http.ResponseWriter, r *http.Requ
 	app.errorResponse(w, r, http.StatusForbidden, message)
 }
 
-func (app *application) notImplementedResponse(w http.ResponseWriter, r *http.Request) {
-	message := "the requested feature is not implemented yet"
-	app.errorResponse(w, r, http.StatusNotImplemented, message)
+func (app *application) unprocessableEntityResponse(w http.ResponseWriter, r *http.Request, err error) {
+	app.errorResponse(w, r, http.StatusUnprocessableEntity, err.Error())
 }
 
 func (app *application) cannotDeleteAdminUserResponse(w http.ResponseWriter, r *http.Request) {

@@ -9,12 +9,6 @@ var (
 	ErrRecordNotFound = errors.New("record not found")
 	ErrEditConflict   = errors.New("edit conflict")
 	ErrNoRowsDeleted  = errors.New("no rows deleted")
-
-	ErrInvalidOptionID    = errors.New("option_id does not exist or is invalid")
-	ErrInvalidFloorID     = errors.New("one or more floor_ids are invalid or do not exist")
-	ErrInvalidUnitID      = errors.New("unit_id does not exist or is invalid")
-	ErrUnitIsNotTower     = errors.New("the specified unit is not a tower")
-	ErrInvalidFloorFilter = errors.New("invalid floor filter")
 )
 
 type Models struct {
