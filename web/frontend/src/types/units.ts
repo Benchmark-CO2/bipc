@@ -13,8 +13,6 @@ export type TUnitType = "tower";
 export type TTowerFloorCategory = {
   id: string;
   unit_id?: string;
-  group_id?: string;
-  group_name?: string;
   floor_group?: string; // Campo que vem do backend na edição
   area: number;
   height: number;
