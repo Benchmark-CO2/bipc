@@ -50,6 +50,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/roles", app.requireRolesPermission("create:role", app.createRoleHandler))
 	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/roles/:roleID", app.requireRolesPermission("update:role", app.updateRoleHandler))
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/roles/:roleID", app.requireRolesPermission("delete:role", app.deleteRoleHandler))
+	router.HandlerFunc(http.MethodPut, "/v1/projects/:projectID/transfer-ownership", app.requireRolesPermission("*:*", app.transferOwnershipHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/collaborators", app.listCollaboratorsHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/user/permissions", app.requireAuthenticatedUser(app.listUserPermissionsHandler))
 

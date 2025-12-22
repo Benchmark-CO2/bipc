@@ -260,3 +260,28 @@ func (app *application) listUserPermissionsHandler(w http.ResponseWriter, r *htt
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) transferOwnershipHandler(w http.ResponseWriter, r *http.Request) {
+	projectID, _ := app.readUUIDParam(r, "projectID")
+
+	var input struct {
+		NewOwnerID uuid.UUID `json:"new_owner_id"`
+	}
+
+	err := app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	err = app.models.Roles.TransferOwnership(projectID, input.NewOwnerID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "ownership successfully transferred"}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
