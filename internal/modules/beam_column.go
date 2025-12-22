@@ -19,15 +19,14 @@ type BeamColumn struct {
 	FormSlabs       *float64        `json:"form_slabs,omitempty"`
 	FormTotal       *float64        `json:"form_total,omitempty"`
 	ColumnNumber    *int            `json:"column_number,omitempty"`
-	AvgBeamSpan     *int            `json:"avg_beam_span,omitempty"`
-	AvgSlabSpan     *int            `json:"avg_slab_span,omitempty"`
+	AvgBeamSpan     *float64        `json:"avg_beam_span,omitempty"`
+	AvgSlabSpan     *float64        `json:"avg_slab_span,omitempty"`
 	FloorIDs        []uuid.UUID     `json:"floor_ids"`
 }
 
 func (b *BeamColumn) GetType() string { return b.Type }
 
 func (b *BeamColumn) Validate(v *validator.Validator) {
-	// v.Check(b.Name != "", "name", "must be provided")
 	v.Check(b.Type != "", "type", "must be provided")
 	v.Check(len(b.FloorIDs) > 0, "floor_ids", "must be provided")
 	v.Check(validator.Unique(b.FloorIDs), "floor_ids", "must not contain duplicate values")
@@ -159,7 +158,8 @@ func (b *BeamColumn) fromDataModule(d *data.Module) Module {
 	}
 
 	var formColumns, formBeams, formSlabs, formTotal *float64
-	var columnNumber, avgBeamSpan, avgSlabSpan *int
+	var columnNumber *int
+	var avgBeamSpan, avgSlabSpan *float64
 
 	if val, ok := d.Data["form_columns"].(float64); ok {
 		formColumns = &val
@@ -178,12 +178,10 @@ func (b *BeamColumn) fromDataModule(d *data.Module) Module {
 		columnNumber = &intVal
 	}
 	if val, ok := d.Data["avg_beam_span"].(float64); ok {
-		intVal := int(val)
-		avgBeamSpan = &intVal
+		avgBeamSpan = &val
 	}
 	if val, ok := d.Data["avg_slab_span"].(float64); ok {
-		intVal := int(val)
-		avgSlabSpan = &intVal
+		avgSlabSpan = &val
 	}
 
 	return &BeamColumn{
