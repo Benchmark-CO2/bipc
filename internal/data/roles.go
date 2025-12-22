@@ -500,3 +500,28 @@ func (m RoleModel) IsUserAdminInAnyProject(userID uuid.UUID) (bool, error) {
 
 	return exists, nil
 }
+
+func (m RoleModel) TransferOwnership(projectID uuid.UUID, newOwnerID uuid.UUID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+	WITH admin_role AS (
+  		SELECT r.id AS role_id
+  		FROM roles r
+  		JOIN roles_permissions rp ON rp.role_id = r.id
+  		WHERE r.project_id = $1 AND rp.permission_id = 1
+  		LIMIT 1
+	)
+	UPDATE users_roles ur
+	SET user_id = $2
+	FROM admin_role ar
+	WHERE ur.role_id = ar.role_id`
+
+	_, err := m.DB.ExecContext(ctx, query, projectID, newOwnerID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
