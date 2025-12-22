@@ -491,10 +491,15 @@ var BlockDatabase = map[string]MasonryBlockInfo{
 	},
 }
 
+func IsValidBlockType(blockType string) bool {
+	_, exists := BlockDatabase[blockType]
+	return exists
+}
+
 func GetBlockMass(blockType string, fbk int) (float64, error) {
 	block, exists := BlockDatabase[blockType]
 	if !exists {
-		return 0, fmt.Errorf("tipo de bloco não encontrado: %s", blockType)
+		return 0, fmt.Errorf("block type not found: %s", blockType)
 	}
 
 	mass, exists := block.Mass[fbk]
@@ -507,10 +512,21 @@ func GetBlockMass(blockType string, fbk int) (float64, error) {
 		}
 		
 		if nextFbk == -1 {
-			return 0, fmt.Errorf("fbk %d não encontrado e não há FBK superior disponível para o bloco tipo %s", fbk, blockType)
+			maxFbk := -1
+			for availableFbk := range block.Mass {
+				if availableFbk > maxFbk {
+					maxFbk = availableFbk
+				}
+			}
+			
+			if maxFbk == -1 {
+				return 0, fmt.Errorf("no mass data available for block type %s", blockType)
+			}
+			
+			mass = block.Mass[maxFbk]
+		} else {
+			mass = block.Mass[nextFbk]
 		}
-		
-		mass = block.Mass[nextFbk]
 	}
 
 	return mass, nil
