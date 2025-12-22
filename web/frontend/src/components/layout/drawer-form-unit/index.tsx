@@ -292,18 +292,49 @@ const DrawerFormUnit = ({
             </>
           )}
           {Boolean(unitId) && (
-            <Button
-              type="submit"
-              variant="bipc"
-              className="w-full"
-              form="unit-form"
-              disabled={isUpdatePending}
-            >
-              {t("drawerFormUnit.editUnitButton")}
-              {isUpdatePending && (
-                <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
-              )}
-            </Button>
+            <div className="flex flex-col w-full gap-4">
+              <div className="p-5 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border-2 border-yellow-400 dark:border-yellow-600">
+                <div className="flex items-start gap-3">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  <div>
+                    <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+                      Importante: Confirmação de Atualização
+                    </h4>
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200 leading-relaxed">
+                      Ao editar esta unidade, todas as simulações associadas
+                      serão invalidadas e precisarão ser refeitas. Ao clicar em
+                      atualizar abaixo, você reconhece que entende as
+                      consequências desta ação.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <Button
+                type="submit"
+                variant="bipc"
+                className="w-full"
+                form="unit-form"
+                disabled={isUpdatePending}
+              >
+                {t("drawerFormUnit.editUnitButton")}
+                {isUpdatePending && (
+                  <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                )}
+              </Button>
+            </div>
           )}
         </DrawerFooter>
       </DrawerContent>

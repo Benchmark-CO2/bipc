@@ -16,6 +16,11 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import NotFoundList from "@/components/ui/not-found-list";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useSummary } from "@/context/summaryContext";
 import { IConsumption, IModuleItem } from "@/types/modules";
 import { TOption } from "@/types/options";
@@ -28,7 +33,15 @@ import {
   useParams,
 } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
-import { Copy, Edit, Loader2, Plus, Star, Trash } from "lucide-react";
+import {
+  Copy,
+  Edit,
+  Loader2,
+  Plus,
+  Star,
+  Trash,
+  TriangleAlert,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -205,6 +218,7 @@ const OptionMenu = ({
         size="icon"
         className="hover:bg-gray-100 dark:hover:bg-gray-700"
         onClick={handleActiveChange}
+        disabled={option.modules.some((mod) => mod.outdated)}
       >
         <Star
           className={`h-4 w-4 ${
@@ -222,6 +236,24 @@ const OptionMenu = ({
         onBlur={handleBlur}
         className="font-medium text-accent-foreground focus:border-primary focus:ring-primary max-w-[240px]"
       />
+      {option.modules.some((mod) => mod.outdated) && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 ml-2 rounded-full bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 cursor-help transition-all hover:shadow-sm">
+              <TriangleAlert className="h-3.5 w-3.5 text-yellow-600 dark:text-yellow-500" />
+              <span className="text-xs font-medium text-yellow-700 dark:text-yellow-400">
+                Desatualizado
+              </span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-[200px]">
+            <span>
+              Algumas tecnologias construtivas desta simulação estão
+              desatualizadas devido a mudanças na unidade.
+            </span>
+          </TooltipContent>
+        </Tooltip>
+      )}
     </div>
   );
 };
@@ -370,6 +402,16 @@ function RouteComponent() {
     }
   };
 
+  const borderColumn = (option: TOption) => {
+    if (option.modules.some((mod) => mod.outdated)) {
+      return "border-yellow-500 dark:border-yellow-500";
+    }
+    if (option.active) {
+      return "border-primary dark:border-primary";
+    }
+    return "border-gray-200 dark:border-gray-700";
+  };
+
   const newColumns: ColumnDef<
     Omit<IModuleItem, "consumption"> & TConsumption & { option_id: string }
   >[] = [
@@ -445,7 +487,7 @@ function RouteComponent() {
         return (
           <div
             key={option.id}
-            className={`flex items-center gap-2 rounded-xl border-2 ${option.active ? "border-primary" : "border-gray-200"} bg-white p-4 dark:border-gray-700 dark:bg-gray-800 w-full`}
+            className={`flex items-center gap-2 rounded-xl border-2 ${borderColumn(option)} bg-white p-4 dark:bg-gray-800 w-full`}
           >
             <div className="flex items-center gap-2 justify-between w-full">
               <CommonTable
