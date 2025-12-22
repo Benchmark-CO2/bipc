@@ -108,6 +108,8 @@ func (s *StructuralMasonry) Validate(v *validator.Validator) {
 	for i, block := range s.Masonry.Blocks {
 		prefix := fmt.Sprintf("masonry.blocks[%d]", i)
 		v.Check(block.Type != "", prefix+".type", "must be provided")
+		v.Check(IsValidBlockType(block.Type), prefix+".type", "invalid block type")
+		v.Check(block.Fbk > 0, prefix+".fbk", "must be greater than 0")
 		v.Check(block.Quantity >= 0, prefix+".quantity", "cannot be negative")
 	}
 }
@@ -166,12 +168,12 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 	for _, b := range me.Blocks {
 		blockMass, err := GetBlockMass(b.Type, b.Fbk)
 		if err != nil {
-			return fmt.Errorf("error getting block mass: %v", err)
+			return fmt.Errorf("error getting block mass: %w", err)
 		}
 
 		refBlockMass, err := GetBlockMass("inteiro (14x19x39)", b.Fbk)
 		if err != nil {
-			return fmt.Errorf("error getting reference block mass: %v", err)
+			return fmt.Errorf("error getting reference block mass: %w", err)
 		}
 
 		massFactor := blockMass / refBlockMass
