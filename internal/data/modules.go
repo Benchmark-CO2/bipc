@@ -48,8 +48,11 @@ func checkForeignKeyError(err error) error {
 	if strings.Contains(err.Error(), "module_option_id_fkey") {
 		return ErrInvalidOptionID
 	}
-	if strings.Contains(err.Error(), "module_application") {
+	if strings.Contains(err.Error(), "module_application_floor_id_fkey") {
 		return ErrInvalidFloorID
+	}
+	if strings.Contains(err.Error(), "module_application_unit_id_fkey") {
+		return ErrInvalidUnitID
 	}
 	return err
 }
@@ -368,7 +371,7 @@ func (m ModuleModel) HasModulesForUnit(tx *sql.Tx, unitID uuid.UUID) (bool, erro
 	query := `
 		SELECT COUNT(DISTINCT m.id)
 		FROM module m
-		INNER JOIN module_floor mf ON m.id = mf.module_id
+		INNER JOIN module_application mf ON m.id = mf.module_id
 		INNER JOIN floor f ON mf.floor_id = f.id
 		WHERE f.unit_id = $1`
 
@@ -385,7 +388,7 @@ func (m ModuleModel) MarkModulesAsOutdatedForUnit(tx *sql.Tx, unitID uuid.UUID) 
 	query := `
 		UPDATE module m
 		SET outdated = TRUE
-		FROM module_floor mf
+		FROM module_application mf
 		INNER JOIN floor f ON mf.floor_id = f.id
 		WHERE m.id = mf.module_id AND f.unit_id = $1`
 
@@ -397,7 +400,7 @@ func (m ModuleModel) MarkModulesAsOutdatedForFloors(tx *sql.Tx, floorIDs []uuid.
 	query := `
 		UPDATE module m
 		SET outdated = TRUE
-		FROM module_floor mf
+		FROM module_application mf
 		WHERE m.id = mf.module_id AND mf.floor_id = ANY($1)`
 
 	_, err := tx.Exec(query, pq.Array(floorIDs))

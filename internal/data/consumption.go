@@ -16,7 +16,7 @@ func GetConsumptionByTechnology(db *sql.DB, unitID, roleID, optionID uuid.UUID) 
 			SUM(fc.co2_max * f.area) / NULLIF(SUM(f.area), 0) as co2_max,
 			SUM(fc.energy_min * f.area) / NULLIF(SUM(f.area), 0) as energy_min,
 			SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max
-		FROM floors_consumption fc
+		FROM element_consumption fc
 		INNER JOIN floor f ON fc.floor_id = f.id
 		WHERE f.unit_id = $1 
 		  AND fc.role_id = $2 
@@ -70,7 +70,7 @@ func CalculateTotalConsumption(db *sql.DB, unitID, roleID, optionID uuid.UUID) (
 				SUM(fc.co2_max) as co2_max,
 				SUM(fc.energy_min) as energy_min,
 				SUM(fc.energy_max) as energy_max
-			FROM floors_consumption fc
+			FROM element_consumption fc
 			INNER JOIN floor f ON fc.floor_id = f.id
 			WHERE f.unit_id = $1 
 			  AND fc.role_id = $2 
@@ -145,7 +145,7 @@ func GetUnitConsumptionByTechnology(db *sql.DB, unitID uuid.UUID) (map[string]*C
 			SUM(fc.co2_max * f.area) / NULLIF(SUM(f.area), 0) as co2_max,
 			SUM(fc.energy_min * f.area) / NULLIF(SUM(f.area), 0) as energy_min,
 			SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max
-		FROM floors_consumption fc
+		FROM element_consumption fc
 		INNER JOIN floor f ON fc.floor_id = f.id
 		INNER JOIN options opt ON fc.option_id = opt.id AND fc.role_id = opt.role_id
 		WHERE f.unit_id = $1 

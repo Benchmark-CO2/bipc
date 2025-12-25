@@ -210,7 +210,7 @@ func (m UnitModel) getFloorsByUnitID(unitID uuid.UUID) ([]Floor, error) {
 		FROM floor f
 		LEFT JOIN (
 			SELECT fc.floor_id, fc.technology, fc.co2_min, fc.co2_max, fc.energy_min, fc.energy_max
-			FROM floors_consumption fc
+			FROM element_consumption fc
 			INNER JOIN options opt ON fc.option_id = opt.id AND fc.role_id = opt.role_id
 			WHERE opt.active = TRUE
 		) ftm ON f.id = ftm.floor_id
@@ -560,7 +560,7 @@ func loadFloorsAndModules(tx *sql.Tx, floorIDs []uuid.UUID) (map[uuid.UUID]*Floo
 			m.total_co2_min, m.total_co2_max,
 			m.total_energy_min, m.total_energy_max
 		FROM floor f
-		LEFT JOIN module_floor mf ON f.id = mf.floor_id
+		LEFT JOIN module_application mf ON f.id = mf.floor_id
 		LEFT JOIN module m ON mf.module_id = m.id
 		LEFT JOIN options opt ON m.option_id = opt.id
 		WHERE f.id = ANY($1)`, pq.Array(floorIDs))
@@ -717,7 +717,7 @@ func updateFloorMetricsById(tx *sql.Tx, floorIDs []uuid.UUID) error {
 		floorEnergyMax := *metrics.EnergyMax / floor.Area
 
 		_, err := tx.Exec(`
-			INSERT INTO floors_consumption (floor_id, role_id, option_id, technology, co2_min, co2_max, energy_min, energy_max)
+			INSERT INTO element_consumption (floor_id, role_id, option_id, technology, co2_min, co2_max, energy_min, energy_max)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 			ON CONFLICT (floor_id, role_id, option_id, technology) 
 			DO UPDATE SET 
