@@ -60,6 +60,8 @@ func ParseModuleType(t string) (Module, error) {
 		return &ConcreteWall{BasicModuleData: BasicModuleData{Type: t}}, nil
 	case "structural_masonry":
 		return &StructuralMasonry{BasicModuleData: BasicModuleData{Type: t}}, nil
+	case "raft_foundation":
+		return &RaftFoundation{BasicModuleData: BasicModuleData{Type: t}}, nil
 	default:
 		return nil, errors.New("invalid module type")
 	}
