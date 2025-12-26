@@ -81,6 +81,13 @@ const DrawerFormModule = ({
     defaultValues: getDefaultValuesByType(type) as any,
   });
 
+  const structureTypeWatch = form.watch("type");
+
+  const isUsingPaviments =
+    structureTypeWatch === "beam_column" ||
+    structureTypeWatch === "concrete_wall" ||
+    structureTypeWatch === "structural_masonry";
+
   const { mutate: mutateModule, isPending: isUpdatePending } = useMutation({
     mutationFn: (data: ModuleParamsProps) =>
       patchModule(data, projectId, unitId, optionId, moduleId!),
@@ -488,11 +495,19 @@ const DrawerFormModule = ({
       };
     }
 
+    const conditionalFields = isUsingPaviments
+      ? {
+          floor_ids: selectedFloors,
+        }
+      : {
+          unit_id: unitId,
+        };
+
     const baseFields: ModuleParamsProps = {
       type: moduleType ?? data.type,
       data: {
         ...filteredData,
-        floor_ids: selectedFloors,
+        ...conditionalFields,
       },
     };
 
@@ -617,7 +632,7 @@ const DrawerFormModule = ({
                     <BuildingVisualizer
                       key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ index: f.index })))}`}
                       towerFloors={floors || []}
-                      isSelectable={true}
+                      isSelectable={isUsingPaviments}
                       selectedFloorIds={selectedFloors}
                       onCheckFloorId={setSelectedFloors}
                     />
@@ -697,9 +712,9 @@ const DrawerFormModule = ({
                     </div>
                     {/* Campos específicos por tipo de estrutura */}
                     {(() => {
-                      const structureType = form.watch("type");
+                      // const structureType = form.watch("type");
 
-                      switch (structureType) {
+                      switch (structureTypeWatch) {
                         case "beam_column":
                           return <ModuleFormBeamColumn form={form as any} />;
                         case "concrete_wall":
@@ -739,7 +754,7 @@ const DrawerFormModule = ({
             disabled={
               isCreationPending ||
               isUpdatePending ||
-              selectedFloors.length === 0
+              (selectedFloors.length === 0 && isUsingPaviments)
             }
           >
             {isCreationPending || isUpdatePending ? (

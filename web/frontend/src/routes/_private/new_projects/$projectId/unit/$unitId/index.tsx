@@ -116,7 +116,19 @@ function RouteComponent() {
     if (!roles || roles.length === 0) return [];
 
     if (selectedTab === "Todas as Disciplinas") {
-      const moduleTypes = unitConsumptions.map((item) => item.type);
+      // Coletar todos os tipos únicos de todos os roles
+      const allTypes = new Set<string>();
+      roles.forEach((role) => {
+        const roleConsumptions =
+          (role as any).consumptions || (role as any).consumption;
+        if (roleConsumptions) {
+          Object.keys(roleConsumptions)
+            .filter((key) => key !== "total")
+            .forEach((type) => allTypes.add(type));
+        }
+      });
+
+      const moduleTypes = Array.from(allTypes);
 
       return moduleTypes.map((type) => {
         const summedConsumption = roles.reduce(
