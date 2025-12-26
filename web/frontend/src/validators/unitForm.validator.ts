@@ -9,8 +9,31 @@ const baseUnitSchema = z.object({
   }),
 });
 
+// Schema para criação (com repetition)
+export const floorFormSchema = z.object({
+  id: z.string().uuid().optional(),
+  floor_group: z.string().min(1, "Nome do grupo de pavimento é obrigatório"),
+  area: z.string().min(1, "Área é obrigatória"),
+  height: z.string().min(1, "Altura é obrigatória"),
+  category: z.enum(
+    ["standard_floor", "ground_floor", "basement_floor", "penthouse_floor"],
+    {
+      required_error: "Selecione uma categoria",
+      invalid_type_error: "Categoria inválida",
+    }
+  ),
+  index: z.number().int(),
+  repetition: z
+    .number()
+    .int()
+    .positive("Quantidade deve ser maior que zero")
+    .optional(),
+});
+
+// Schema para API (floors individuais após expansão)
 export const floorSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
+  id: z.string().uuid().optional(),
+  floor_group: z.string().min(1, "Nome do grupo de pavimento é obrigatório"),
   area: z
     .string()
     .min(1, "Área é obrigatória")
@@ -39,10 +62,6 @@ export const floorSchema = z.object({
       }
       return num;
     }),
-  repetition: z
-    .number()
-    .int()
-    .positive("Número de repetições deve ser um número positivo"),
   category: z.enum(
     ["standard_floor", "ground_floor", "basement_floor", "penthouse_floor"],
     {
@@ -50,21 +69,22 @@ export const floorSchema = z.object({
       invalid_type_error: "Categoria inválida",
     }
   ),
-  index: z.number().int().optional(), // Índice para ordenação, opcional
+  index: z.number().int(),
 });
 
 // Tipo para o input do formulário (antes da transformação)
 export type FloorFormInput = {
-  name: string;
+  id?: string;
+  floor_group: string;
   area: string;
   height: string;
-  repetition: number;
   category:
     | "standard_floor"
     | "ground_floor"
     | "basement_floor"
     | "penthouse_floor";
-  index?: number;
+  index: number;
+  repetition?: number; // Opcional - usado apenas no formulário
 };
 
 // Tipo após a validação/transformação
@@ -72,34 +92,21 @@ export type FloorSchema = z.infer<typeof floorSchema>;
 
 const towerFieldsSchema = z.object({
   data: z.object({
-    floor_groups: z
+    floors: z
       .array(floorSchema)
       .min(1, "Pelo menos um pavimento deve ser adicionado"),
   }),
 });
 
 // Schema principal com validação condicional
-export const unitFormSchema = baseUnitSchema.merge(towerFieldsSchema).refine(
-  (data) => {
-    // Se o tipo for "tower", deve ter pelo menos um pavimento
-    if (data.type === "tower") {
-      return data.data.floor_groups && data.data.floor_groups.length > 0;
-    }
-    return true;
-  },
-  {
-    message:
-      "Pelo menos um pavimento deve ser adicionado para unidades do tipo Tower",
-    path: ["data.floor_groups"], // Associa o erro ao campo correto
-  }
-);
+export const unitFormSchema = baseUnitSchema.merge(towerFieldsSchema);
 
 // Tipo para o input do formulário (antes da transformação)
 export type UnitFormInput = {
   name: string;
   type: "tower";
   data: {
-    floor_groups: FloorFormInput[];
+    floors: FloorFormInput[];
   };
 };
 

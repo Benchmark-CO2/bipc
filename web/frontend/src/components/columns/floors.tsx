@@ -3,14 +3,14 @@ import { TTowerFloorCategory } from "@/types/units";
 import { ColumnDef } from "@tanstack/react-table";
 
 export const floorsColumns: ColumnDef<
-  Pick<TTowerFloorCategory, "group_name"> &
+  Pick<TTowerFloorCategory, "floor_group"> &
     TConsumption & { repetitions: number; area: number }
 >[] = [
   {
-    accessorKey: "group_name",
+    accessorKey: "floor_group",
     header: "Nome",
     cell: ({ row }) => (
-      <div className="text-left">{row.original.group_name || "-"}</div>
+      <div className="text-left">{row.original.floor_group || "-"}</div>
     ),
   },
   {

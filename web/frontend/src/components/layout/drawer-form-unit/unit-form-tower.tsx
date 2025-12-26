@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/tooltip";
 import { masks } from "@/utils/masks";
 import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { Copy, GripVertical, Plus, Trash2 } from "lucide-react";
 import React from "react";
 import { UseFormReturn, useFieldArray, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -53,13 +53,13 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
   const { t } = useTranslation();
   const { fields, remove, move } = useFieldArray({
     control: form.control as any,
-    name: "data.floor_groups",
+    name: "data.floors",
   });
 
   // Usar useWatch para reagir a mudanças em tempo real
   const watchedFloors = useWatch({
     control: form.control as any,
-    name: "data.floor_groups",
+    name: "data.floors",
     defaultValue: [],
   });
 
@@ -73,9 +73,9 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
 
   // Função para recalcular índices automaticamente
   const recalculateIndices = React.useCallback(() => {
-    const floorGroups = form.getValues("data.floor_groups");
+    const floors = form.getValues("data.floors");
 
-    const validFloorGroups = floorGroups.filter(
+    const validFloors = floors.filter(
       (f) =>
         f &&
         f.category &&
@@ -89,55 +89,72 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
 
     // Separar por categoria
     const categories = {
-      penthouse_floor: validFloorGroups.filter(
+      penthouse_floor: validFloors.filter(
         (f) => f.category === "penthouse_floor"
       ),
-      standard_floor: validFloorGroups.filter(
+      standard_floor: validFloors.filter(
         (f) => f.category === "standard_floor"
       ),
-      ground_floor: validFloorGroups.filter(
-        (f) => f.category === "ground_floor"
-      ),
-      basement_floor: validFloorGroups.filter(
+      ground_floor: validFloors.filter((f) => f.category === "ground_floor"),
+      basement_floor: validFloors.filter(
         (f) => f.category === "basement_floor"
       ),
     };
 
+    // Calcular o total de floors expandidos por categoria (considerando repetition)
+    const getTotalFloorsInCategory = (cat: typeof validFloors) => {
+      return cat.reduce((sum, f) => sum + (f.repetition || 1), 0);
+    };
+
     // Calcular índices para cada categoria
-    const updatedFloors = validFloorGroups.map((floor) => {
+    const updatedFloors = validFloors.map((floor) => {
       const floorsInCategory = categories[floor.category] || [];
       const indexInCategory = floorsInCategory.indexOf(floor);
+
+      // Somar as repetições de todos os floors anteriores na mesma categoria
+      const floorsBeforeInCategory = floorsInCategory.slice(0, indexInCategory);
+      const totalFloorsBeforeInCategory = floorsBeforeInCategory.reduce(
+        (sum, f) => sum + (f.repetition || 1),
+        0
+      );
 
       let newIndex: number;
 
       switch (floor.category) {
         case "basement_floor":
-          // Subsolo: índices negativos (-1, -2, -3...)
-          newIndex = -(indexInCategory + 1);
+          // Subsolo: índices negativos (-1, -2, -3...) do mais alto (próximo ao solo) para o mais baixo
+          const totalBasementFloors = getTotalFloorsInCategory(
+            categories.basement_floor
+          );
+          newIndex = -(totalBasementFloors - totalFloorsBeforeInCategory);
           break;
         case "ground_floor":
           // Térreo: índices a partir de 0 (0, 1, 2...)
-          newIndex = indexInCategory;
+          newIndex = totalFloorsBeforeInCategory;
           break;
         case "standard_floor":
           // Tipo: índices acima do térreo
+          const totalGroundFloors = getTotalFloorsInCategory(
+            categories.ground_floor
+          );
           const maxGroundIndex =
-            categories.ground_floor.length > 0
-              ? categories.ground_floor.length - 1
-              : -1;
-          newIndex = maxGroundIndex + 1 + indexInCategory;
+            totalGroundFloors > 0 ? totalGroundFloors - 1 : -1;
+          newIndex = maxGroundIndex + 1 + totalFloorsBeforeInCategory;
           break;
         case "penthouse_floor":
           // Cobertura: índices acima de todos
+          const totalGround = getTotalFloorsInCategory(categories.ground_floor);
+          const totalStandard = getTotalFloorsInCategory(
+            categories.standard_floor
+          );
           const maxStandardIndex =
-            categories.standard_floor.length > 0
-              ? (categories.ground_floor.length > 0
-                  ? categories.ground_floor.length - 1
-                  : -1) + categories.standard_floor.length
-              : categories.ground_floor.length > 0
-                ? categories.ground_floor.length - 1
+            totalStandard > 0
+              ? (totalGround > 0 ? totalGround - 1 : -1) + totalStandard
+              : totalGround > 0
+                ? totalGround - 1
                 : -1;
-          newIndex = Math.max(maxStandardIndex + 1, 1) + indexInCategory;
+          newIndex =
+            Math.max(maxStandardIndex + 1, 1) + totalFloorsBeforeInCategory;
           break;
         default:
           newIndex = 0;
@@ -146,7 +163,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
       return { ...floor, index: newIndex };
     });
 
-    form.setValue("data.floor_groups", updatedFloors, {
+    form.setValue("data.floors", updatedFloors, {
       shouldValidate: false,
     });
   }, [form]);
@@ -201,7 +218,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
       | "basement_floor" = "standard_floor"
   ) => {
     // Encontrar a posição correta para inserir baseada na categoria
-    const floor_groups = form.getValues("data.floor_groups");
+    const floors = form.getValues("data.floors");
     const categoryOrder = {
       penthouse_floor: 0,
       standard_floor: 1,
@@ -214,10 +231,10 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
     const newIndex = 0; // Temporário
 
     // Encontrar onde inserir baseado na hierarquia das categorias
-    let insertIndex = floor_groups.length;
+    let insertIndex = floors.length;
 
-    for (let i = 0; i < floor_groups.length; i++) {
-      const floorCategoryOrder = categoryOrder[floor_groups[i].category];
+    for (let i = 0; i < floors.length; i++) {
+      const floorCategoryOrder = categoryOrder[floors[i].category];
       const newCategoryOrder = categoryOrder[category];
 
       if (newCategoryOrder < floorCategoryOrder) {
@@ -226,21 +243,21 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
       }
     }
 
-    // Criar novo pavimento
+    // Criar novo pavimento individual (com repetition no modo criação)
     const newFloor = {
-      name: "",
+      floor_group: "",
       area: "",
       height: "",
-      repetition: 1,
       category: category,
       index: newIndex,
+      repetition: 1,
     };
 
     // Inserir na posição correta
-    const updatedFloors = [...floor_groups];
+    const updatedFloors = [...floors];
     updatedFloors.splice(insertIndex, 0, newFloor);
 
-    form.setValue("data.floor_groups", updatedFloors, {
+    form.setValue("data.floors", updatedFloors, {
       shouldValidate: false,
     });
 
@@ -254,6 +271,29 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
     setTimeout(() => recalculateIndices(), 0);
   };
 
+  const duplicateFloor = (index: number) => {
+    const floors = form.getValues("data.floors");
+    const floorToDuplicate = floors[index];
+
+    // Criar uma cópia do pavimento
+    const duplicatedFloor = {
+      ...floorToDuplicate,
+      id: undefined, // Remover ID para que seja tratado como novo
+      index: floorToDuplicate.index + 1, // Será recalculado
+    };
+
+    // Inserir logo após o pavimento original
+    const updatedFloors = [...floors];
+    updatedFloors.splice(index + 1, 0, duplicatedFloor);
+
+    form.setValue("data.floors", updatedFloors, {
+      shouldValidate: false,
+    });
+
+    // Recalcular índices após duplicar
+    setTimeout(() => recalculateIndices(), 0);
+  };
+
   const unitTypes = [
     { value: "tower", label: t("drawerFormUnit.unitTypeOptions.tower") },
   ];
@@ -263,14 +303,8 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
       {/* Visualizador da torre */}
       <div className="flex-shrink-0 max-sm:mx-auto">
         <BuildingVisualizer
-          key={`building-${watchedFloors?.length || 0}-${JSON.stringify(watchedFloors?.map((f: any) => ({ color: categoryColors[f.category as keyof typeof categoryColors], repetition: f.repetition, category: f.category })))}`}
-          floors={
-            watchedFloors?.map((floor: any) => ({
-              ...floor,
-              color:
-                categoryColors[floor.category as keyof typeof categoryColors],
-            })) || []
-          }
+          key={`building-${watchedFloors?.length || 0}-${JSON.stringify(watchedFloors?.map((f: any) => ({ category: f.category, index: f.index })))}`}
+          floors={watchedFloors || []}
         />
       </div>
       {/* Formulário de pavimentos */}
@@ -285,7 +319,6 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                 <FormControl>
                   <Input
                     placeholder={t("drawerFormUnit.unitNamePlaceholder")}
-                    disabled={isEditMode}
                     {...field}
                   />
                 </FormControl>
@@ -329,42 +362,40 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             Pavimentos
           </h4>
-          {!isEditMode && (
-            <div className="flex items-center gap-2">
-              <Select
-                value={selectedCategory}
-                onValueChange={(value) =>
-                  setSelectedCategory(
-                    value as
-                      | "penthouse_floor"
-                      | "standard_floor"
-                      | "ground_floor"
-                      | "basement_floor"
-                  )
-                }
-              >
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="penthouse_floor">Cobertura</SelectItem>
-                  <SelectItem value="standard_floor">Tipo</SelectItem>
-                  <SelectItem value="ground_floor">Térreo</SelectItem>
-                  <SelectItem value="basement_floor">Subsolo</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                type="button"
-                onClick={() => addFloor(selectedCategory)}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2 text-green-600 border-green-600 hover:bg-green-50"
-              >
-                <Plus className="h-4 w-4" />
-                Adicionar
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <Select
+              value={selectedCategory}
+              onValueChange={(value) =>
+                setSelectedCategory(
+                  value as
+                    | "penthouse_floor"
+                    | "standard_floor"
+                    | "ground_floor"
+                    | "basement_floor"
+                )
+              }
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="penthouse_floor">Cobertura</SelectItem>
+                <SelectItem value="standard_floor">Tipo</SelectItem>
+                <SelectItem value="ground_floor">Térreo</SelectItem>
+                <SelectItem value="basement_floor">Subsolo</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              onClick={() => addFloor(selectedCategory)}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 text-green-600 border-green-600 hover:bg-green-50"
+            >
+              <Plus className="h-4 w-4" />
+              Adicionar
+            </Button>
+          </div>
         </div>
 
         {fields.length === 0 ? (
@@ -384,13 +415,14 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                   <TableHead>Nome</TableHead>
                   <TableHead className="w-24">Área (m²)</TableHead>
                   <TableHead className="w-24">Altura (m)</TableHead>
-                  <TableHead className="w-20">Qtd.</TableHead>
+                  {!isEditMode && <TableHead className="w-20">Qtd.</TableHead>}
                   <TableHead className="w-32">Categoria</TableHead>
-                  <TableHead className="w-16">Ações</TableHead>
+                  <TableHead className="w-24">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {fields.map((field, index) => {
+                {[...fields].reverse().map((field, reverseIndex) => {
+                  const index = fields.length - 1 - reverseIndex;
                   const canDropHere =
                     draggedIndex !== null &&
                     watchedFloors[draggedIndex]?.category ===
@@ -404,9 +436,9 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                       } ${draggedIndex !== null && !canDropHere ? "opacity-30" : ""}
                       ${focusedRowIndex === index ? "shadow-sm shadow-blue-200 dark:shadow-blue-900 bg-blue-50 dark:bg-blue-950/20" : ""}
                       `}
-                      draggable={!isEditMode}
+                      draggable={true}
                       style={{
-                        cursor: !isEditMode ? "grab" : "default",
+                        cursor: "grab",
                         backgroundColor: canDropHere
                           ? "rgba(147, 197, 253, 0.2)" // Azul claro quando pode dar drop
                           : focusedRowIndex === index
@@ -435,7 +467,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                       <TableCell>
                         <FormField
                           control={form.control as any}
-                          name={`data.floor_groups.${index}.name`}
+                          name={`data.floors.${index}.floor_group`}
                           render={({ field, fieldState }) => (
                             <FormItem>
                               <FormControl>
@@ -448,7 +480,6 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                   <TooltipTrigger asChild>
                                     <Input
                                       placeholder="Ex: Cobertura"
-                                      disabled={isEditMode}
                                       className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full max-sm:min-w-[100px] ${
                                         fieldState.error
                                           ? "border border-red-500"
@@ -478,7 +509,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                       <TableCell>
                         <FormField
                           control={form.control as any}
-                          name={`data.floor_groups.${index}.area`}
+                          name={`data.floors.${index}.area`}
                           render={({ field, fieldState }) => (
                             <FormItem>
                               <FormControl>
@@ -492,7 +523,6 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                     <Input
                                       type="text"
                                       placeholder="Ex: 100"
-                                      disabled={isEditMode}
                                       className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
                                         fieldState.error
                                           ? "border border-red-500"
@@ -528,7 +558,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                       <TableCell>
                         <FormField
                           control={form.control as any}
-                          name={`data.floor_groups.${index}.height`}
+                          name={`data.floors.${index}.height`}
                           render={({ field, fieldState }) => (
                             <FormItem>
                               <FormControl>
@@ -542,7 +572,6 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                     <Input
                                       type="text"
                                       placeholder="Ex: 3"
-                                      disabled={isEditMode}
                                       className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
                                         fieldState.error
                                           ? "border border-red-500"
@@ -576,63 +605,66 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                           )}
                         />
                       </TableCell>
+                      {!isEditMode && (
+                        <TableCell>
+                          <FormField
+                            control={form.control as any}
+                            name={`data.floors.${index}.repetition`}
+                            render={({ field, fieldState }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <Tooltip
+                                    open={
+                                      !!fieldState.error &&
+                                      focusedRowIndex !== index
+                                    }
+                                  >
+                                    <TooltipTrigger asChild>
+                                      <Input
+                                        type="number"
+                                        min="1"
+                                        step="1"
+                                        placeholder="1"
+                                        className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
+                                          fieldState.error
+                                            ? "border border-red-500"
+                                            : "border-0"
+                                        }`}
+                                        {...field}
+                                        onChange={(e) =>
+                                          field.onChange(
+                                            e.target.value
+                                              ? Number(e.target.value)
+                                              : 1
+                                          )
+                                        }
+                                        onFocus={() =>
+                                          setFocusedRowIndex(index)
+                                        }
+                                        onBlur={() => setFocusedRowIndex(null)}
+                                      />
+                                    </TooltipTrigger>
+                                    {fieldState.error && (
+                                      <TooltipContent
+                                        className="bg-red-600 border-red-700 text-white"
+                                        arrowClassName="bg-red-600 fill-red-600"
+                                      >
+                                        <p className="text-sm">
+                                          {fieldState.error.message}
+                                        </p>
+                                      </TooltipContent>
+                                    )}
+                                  </Tooltip>
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell>
                         <FormField
                           control={form.control as any}
-                          name={`data.floor_groups.${index}.repetition`}
-                          render={({ field, fieldState }) => (
-                            <FormItem>
-                              <FormControl>
-                                <Tooltip
-                                  open={
-                                    !!fieldState.error &&
-                                    focusedRowIndex !== index
-                                  }
-                                >
-                                  <TooltipTrigger asChild>
-                                    <Input
-                                      type="number"
-                                      min="1"
-                                      step="1"
-                                      placeholder="1"
-                                      disabled={isEditMode}
-                                      className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
-                                        fieldState.error
-                                          ? "border border-red-500"
-                                          : "border-0"
-                                      }`}
-                                      {...field}
-                                      onChange={(e) =>
-                                        field.onChange(
-                                          e.target.value
-                                            ? Number(e.target.value)
-                                            : 1
-                                        )
-                                      }
-                                      onFocus={() => setFocusedRowIndex(index)}
-                                      onBlur={() => setFocusedRowIndex(null)}
-                                    />
-                                  </TooltipTrigger>
-                                  {fieldState.error && (
-                                    <TooltipContent
-                                      className="bg-red-600 border-red-700 text-white"
-                                      arrowClassName="bg-red-600 fill-red-600"
-                                    >
-                                      <p className="text-sm">
-                                        {fieldState.error.message}
-                                      </p>
-                                    </TooltipContent>
-                                  )}
-                                </Tooltip>
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <FormField
-                          control={form.control as any}
-                          name={`data.floor_groups.${index}.category`}
+                          name={`data.floors.${index}.category`}
                           render={({ field, fieldState }) => (
                             <FormItem>
                               <FormControl>
@@ -646,7 +678,6 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                     <Select
                                       onValueChange={field.onChange}
                                       defaultValue={field.value}
-                                      disabled={isEditMode}
                                     >
                                       <SelectTrigger
                                         className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
@@ -694,16 +725,28 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                         />
                       </TableCell>
                       <TableCell>
-                        <Button
-                          type="button"
-                          onClick={() => removeFloor(index)}
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          disabled={isEditMode}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            type="button"
+                            onClick={() => duplicateFloor(index)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            title="Duplicar pavimento"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            onClick={() => removeFloor(index)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            title="Remover pavimento"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );

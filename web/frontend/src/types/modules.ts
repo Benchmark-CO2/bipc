@@ -76,6 +76,7 @@ export interface IModuleItem {
   id: string;
   type: TModulesTypes;
   consumption: IConsumption;
+  outdated?: boolean;
 }
 
 export interface IBasicModule {
