@@ -150,7 +150,7 @@ func (r *RaftFoundation) toDataModule(moduleID, optionID uuid.UUID, result Consu
 		TotalEnergyMin: &result.EnergyMin,
 		TotalEnergyMax: &result.EnergyMax,
 		FloorIDs:       []uuid.UUID{},
-		UnitID:         r.UnitID,
+		UnitID:         &r.UnitID,
 	}
 }
 
@@ -202,6 +202,6 @@ func (r *RaftFoundation) fromDataModule(d *data.Module) Module {
 		Thickness:       thickness,
 		Fck:             fck,
 		Steel:           steel,
-		UnitID:          d.UnitID,
+		UnitID:          *d.UnitID,
 	}
 }

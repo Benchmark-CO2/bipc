@@ -27,7 +27,7 @@ type Module struct {
 	RelativeEnergyMax *float64               `json:"relative_energy_max,omitempty"`
 	Outdated          bool                   `json:"outdated"`
 	FloorIDs          []uuid.UUID            `json:"floor_ids,omitempty"`
-	UnitID            uuid.UUID              `json:"unit_id,omitempty"`
+	UnitID            *uuid.UUID             `json:"unit_id,omitempty"`
 	CreatedAt         time.Time              `json:"created_at"`
 	UpdatedAt         time.Time              `json:"updated_at"`
 }
@@ -86,7 +86,7 @@ func insertModuleUnit(db dbExecutor, moduleID uuid.UUID, unitID uuid.UUID) error
 
 func (m ModuleModel) Insert(module *Module) (*Module, error) {
 	hasFloors := len(module.FloorIDs) > 0
-	hasUnit := module.UnitID != uuid.Nil
+	hasUnit := module.UnitID != nil
 
 	if hasFloors && hasUnit {
 		return nil, errors.New("module cannot have both floor_ids and unit_id")
@@ -135,9 +135,13 @@ func (m ModuleModel) Insert(module *Module) (*Module, error) {
 		}
 	}
 
-	if module.UnitID != uuid.Nil {
-		if err := insertModuleUnit(tx, module.ID, module.UnitID); err != nil {
+	if module.UnitID != nil {
+		if err := insertModuleUnit(tx, module.ID, *module.UnitID); err != nil {
 			return nil, checkForeignKeyError(err)
+		}
+
+		if err := updateUnitMetricsById(tx, *module.UnitID); err != nil {
+			return nil, err
 		}
 	}
 
@@ -204,17 +208,18 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 	err = m.DB.QueryRowContext(ctx, `
 		SELECT unit_id FROM module_application 
 		WHERE module_id = $1 AND unit_id IS NOT NULL`, id).Scan(&unitID)
-	if err != nil && err != sql.ErrNoRows {
+	if err == nil {
+		module.UnitID = &unitID
+	} else if err != sql.ErrNoRows {
 		return nil, err
 	}
-	module.UnitID = unitID
 
 	return &module, nil
 }
 
 func (m ModuleModel) Update(module *Module) error {
 	hasFloors := len(module.FloorIDs) > 0
-	hasUnit := module.UnitID != uuid.Nil
+	hasUnit := module.UnitID != nil
 
 	if hasFloors && hasUnit {
 		return errors.New("module cannot have both floor_ids and unit_id")
@@ -283,9 +288,13 @@ func (m ModuleModel) Update(module *Module) error {
 		}
 	}
 
-	if module.UnitID != uuid.Nil {
-		if err := insertModuleUnit(tx, module.ID, module.UnitID); err != nil {
+	if module.UnitID != nil {
+		if err := insertModuleUnit(tx, module.ID, *module.UnitID); err != nil {
 			return checkForeignKeyError(err)
+		}
+
+		if err := updateUnitMetricsById(tx, *module.UnitID); err != nil {
+			return err
 		}
 	}
 
@@ -307,19 +316,27 @@ func (m ModuleModel) Delete(id uuid.UUID) error {
 	defer tx.Rollback()
 
 	var floorIDs []uuid.UUID
+	var unitID *uuid.UUID
+	
 	rows, err := tx.QueryContext(ctx, `
-		SELECT floor_id FROM module_application 
-		WHERE module_id = $1 AND floor_id IS NOT NULL`, id)
+		SELECT floor_id, unit_id FROM module_application 
+		WHERE module_id = $1`, id)
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var floorID uuid.UUID
-		if err := rows.Scan(&floorID); err != nil {
+		var floorID *uuid.UUID
+		var uID *uuid.UUID
+		if err := rows.Scan(&floorID, &uID); err != nil {
 			return err
 		}
-		floorIDs = append(floorIDs, floorID)
+		if floorID != nil {
+			floorIDs = append(floorIDs, *floorID)
+		}
+		if uID != nil {
+			unitID = uID
+		}
 	}
 	if err = rows.Err(); err != nil {
 		return err
@@ -339,8 +356,16 @@ func (m ModuleModel) Delete(id uuid.UUID) error {
 		return ErrRecordNotFound
 	}
 
-	if err := updateFloorMetricsById(tx, floorIDs); err != nil {
-		return err
+	if len(floorIDs) > 0 {
+		if err := updateFloorMetricsById(tx, floorIDs); err != nil {
+			return err
+		}
+	}
+
+	if unitID != nil {
+		if err := updateUnitMetricsById(tx, *unitID); err != nil {
+			return err
+		}
 	}
 
 	return tx.Commit()

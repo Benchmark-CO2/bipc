@@ -38,7 +38,12 @@ ALTER TABLE element_consumption
         (floor_id IS NULL AND unit_id IS NOT NULL)
     );
 
-ALTER TABLE element_consumption 
-    ADD PRIMARY KEY (floor_id, role_id, option_id, technology);
+CREATE UNIQUE INDEX element_consumption_floor_unique 
+    ON element_consumption (floor_id, role_id, option_id, technology)
+    WHERE floor_id IS NOT NULL;
+
+CREATE UNIQUE INDEX element_consumption_unit_unique
+    ON element_consumption (unit_id, role_id, option_id, technology)
+    WHERE unit_id IS NOT NULL;
 
 COMMIT;

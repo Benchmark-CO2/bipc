@@ -1,5 +1,8 @@
 BEGIN;
 
+DROP INDEX IF EXISTS element_consumption_unit_unique;
+DROP INDEX IF EXISTS element_consumption_floor_unique;
+
 ALTER TABLE element_consumption DROP CONSTRAINT element_consumption_pkey;
 
 ALTER TABLE element_consumption 

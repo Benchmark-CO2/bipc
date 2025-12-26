@@ -486,11 +486,391 @@ func (m UnitModel) Delete(id uuid.UUID) error {
 	return nil
 }
 
-func (m UnitModel) UpdateUnitFloorsMetrics(unitID uuid.UUID) error {
+type UnitModel struct {
+	DB *sql.DB
+}
+
+type FloorMetrics struct {
+	FloorID   uuid.UUID
+	Area      float64
+	ModuleIDs []uuid.UUID
+}
+
+type ModuleMetrics struct {
+	ModuleID       uuid.UUID
+	RoleID         uuid.UUID
+	OptionID       uuid.UUID
+	Active         bool
+	Type           string
+	TotalCO2Min    float64
+	TotalCO2Max    float64
+	TotalEnergyMin float64
+	TotalEnergyMax float64
+}
+
+func getUnitData(tx *sql.Tx, unitID uuid.UUID) (totalArea float64, floors map[uuid.UUID]*FloorMetrics, modules map[uuid.UUID]*ModuleMetrics, unitModuleIDs []uuid.UUID, err error) {
+	err = tx.QueryRow(`SELECT COALESCE(SUM(area), 0) FROM floor WHERE unit_id = $1`, unitID).Scan(&totalArea)
+	if err != nil {
+		return 0, nil, nil, nil, err
+	}
+
+	if totalArea == 0 {
+		return totalArea, make(map[uuid.UUID]*FloorMetrics), make(map[uuid.UUID]*ModuleMetrics), []uuid.UUID{}, nil
+	}
+
+	rows, err := tx.Query(`
+		SELECT
+			f.id, f.area,
+			m.id, m.type, opt.active, opt.role_id, opt.id,
+			m.total_co2_min, m.total_co2_max,
+			m.total_energy_min, m.total_energy_max,
+			ma.floor_id, ma.unit_id
+		FROM floor f
+		LEFT JOIN module_application ma ON (f.id = ma.floor_id OR f.unit_id = ma.unit_id)
+		LEFT JOIN module m ON ma.module_id = m.id
+		LEFT JOIN options opt ON m.option_id = opt.id
+		WHERE f.unit_id = $1`, unitID)
+	if err != nil {
+		return 0, nil, nil, nil, err
+	}
+	defer rows.Close()
+
+	floors = make(map[uuid.UUID]*FloorMetrics)
+	modules = make(map[uuid.UUID]*ModuleMetrics)
+	unitModuleIDsMap := make(map[uuid.UUID]bool)
+
+	for rows.Next() {
+		var (
+			floorID                              uuid.UUID
+			area                                 float64
+			moduleID, moduleType, roleID, optionID sql.NullString
+			active                               sql.NullBool
+			co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+			maFloorID, maUnitID                  *uuid.UUID
+		)
+
+		if err := rows.Scan(&floorID, &area, &moduleID, &moduleType, &active, &roleID, &optionID, 
+			&co2Min, &co2Max, &energyMin, &energyMax, &maFloorID, &maUnitID); err != nil {
+			return 0, nil, nil, nil, err
+		}
+
+		if _, ok := floors[floorID]; !ok {
+			floors[floorID] = &FloorMetrics{
+				FloorID:   floorID,
+				Area:      area,
+				ModuleIDs: []uuid.UUID{},
+			}
+		}
+
+		if moduleID.Valid && active.Valid && active.Bool {
+			mid, err := uuid.Parse(moduleID.String)
+			if err != nil {
+				return 0, nil, nil, nil, err
+			}
+
+			rid, err := uuid.Parse(roleID.String)
+			if err != nil {
+				return 0, nil, nil, nil, err
+			}
+
+			oid, err := uuid.Parse(optionID.String)
+			if err != nil {
+				return 0, nil, nil, nil, err
+			}
+
+			if maFloorID != nil {
+				floors[floorID].ModuleIDs = append(floors[floorID].ModuleIDs, mid)
+			}
+
+			if maUnitID != nil {
+				unitModuleIDsMap[mid] = true
+			}
+
+			if _, ok := modules[mid]; !ok {
+				modules[mid] = &ModuleMetrics{
+					ModuleID:       mid,
+					RoleID:         rid,
+					OptionID:       oid,
+					Active:         true,
+					Type:           moduleType.String,
+					TotalCO2Min:    co2Min.Float64,
+					TotalCO2Max:    co2Max.Float64,
+					TotalEnergyMin: energyMin.Float64,
+					TotalEnergyMax: energyMax.Float64,
+				}
+			}
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return 0, nil, nil, nil, err
+	}
+
+	unitModuleIDs = make([]uuid.UUID, 0, len(unitModuleIDsMap))
+	for mid := range unitModuleIDsMap {
+		unitModuleIDs = append(unitModuleIDs, mid)
+	}
+
+	return totalArea, floors, modules, unitModuleIDs, nil
+}
+
+func updateFloorMetricsById(tx *sql.Tx, floorIDs []uuid.UUID) error {
+	if len(floorIDs) == 0 {
+		return nil
+	}
+
+	rows, err := tx.Query(`
+		SELECT
+			f.id, f.area,
+			m.id, m.type, opt.active, opt.role_id, opt.id,
+			m.total_co2_min, m.total_co2_max,
+			m.total_energy_min, m.total_energy_max
+		FROM floor f
+		INNER JOIN module_application ma ON f.id = ma.floor_id
+		INNER JOIN module m ON ma.module_id = m.id
+		INNER JOIN options opt ON m.option_id = opt.id
+		WHERE f.id = ANY($1) AND opt.active = TRUE`, pq.Array(floorIDs))
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	floors := make(map[uuid.UUID]*FloorMetrics)
+	modules := make(map[uuid.UUID]*ModuleMetrics)
+
+	for rows.Next() {
+		var (
+			floorID                              uuid.UUID
+			area                                 float64
+			moduleID, roleID, optionID           uuid.UUID
+			moduleType                           string
+			active                               bool
+			co2Min, co2Max, energyMin, energyMax float64
+		)
+
+		if err := rows.Scan(&floorID, &area, &moduleID, &moduleType, &active, &roleID, &optionID,
+			&co2Min, &co2Max, &energyMin, &energyMax); err != nil {
+			return err
+		}
+
+		if _, ok := floors[floorID]; !ok {
+			floors[floorID] = &FloorMetrics{
+				FloorID:   floorID,
+				Area:      area,
+				ModuleIDs: []uuid.UUID{},
+			}
+		}
+
+		floors[floorID].ModuleIDs = append(floors[floorID].ModuleIDs, moduleID)
+
+		if _, ok := modules[moduleID]; !ok {
+			modules[moduleID] = &ModuleMetrics{
+				ModuleID:       moduleID,
+				RoleID:         roleID,
+				OptionID:       optionID,
+				Active:         active,
+				Type:           moduleType,
+				TotalCO2Min:    co2Min,
+				TotalCO2Max:    co2Max,
+				TotalEnergyMin: energyMin,
+				TotalEnergyMax: energyMax,
+			}
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return err
+	}
+
+	moduleFloors := make(map[uuid.UUID][]float64)
+	for _, floor := range floors {
+		for _, moduleID := range floor.ModuleIDs {
+			moduleFloors[moduleID] = append(moduleFloors[moduleID], floor.Area)
+		}
+	}
+
+	for moduleID, floorAreas := range moduleFloors {
+		var avgArea float64
+		for _, area := range floorAreas {
+			avgArea += area
+		}
+		avgArea /= float64(len(floorAreas))
+
+		m := modules[moduleID]
+		_, err = tx.Exec(`
+			UPDATE module SET
+				relative_co2_min = $1,
+				relative_co2_max = $2,
+				relative_energy_min = $3,
+				relative_energy_max = $4
+			WHERE id = $5`,
+			m.TotalCO2Min/avgArea,
+			m.TotalCO2Max/avgArea,
+			m.TotalEnergyMin/avgArea,
+			m.TotalEnergyMax/avgArea,
+			moduleID,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	type floorMetricsKey struct {
+		floorID  uuid.UUID
+		roleID   uuid.UUID
+		optionID uuid.UUID
+		tech     string
+	}
+	floorGroupedMetrics := make(map[floorMetricsKey]*Consumption)
+
+	for _, floor := range floors {
+		if floor.Area == 0 {
+			continue
+		}
+
+		for _, moduleID := range floor.ModuleIDs {
+			m := modules[moduleID]
+			key := floorMetricsKey{
+				floorID:  floor.FloorID,
+				roleID:   m.RoleID,
+				optionID: m.OptionID,
+				tech:     m.Type,
+			}
+
+			if _, ok := floorGroupedMetrics[key]; !ok {
+				floorGroupedMetrics[key] = &Consumption{
+					CO2Min:    new(float64),
+					CO2Max:    new(float64),
+					EnergyMin: new(float64),
+					EnergyMax: new(float64),
+				}
+			}
+
+			*floorGroupedMetrics[key].CO2Min += m.TotalCO2Min
+			*floorGroupedMetrics[key].CO2Max += m.TotalCO2Max
+			*floorGroupedMetrics[key].EnergyMin += m.TotalEnergyMin
+			*floorGroupedMetrics[key].EnergyMax += m.TotalEnergyMax
+		}
+	}
+
+	for key, metrics := range floorGroupedMetrics {
+		floor := floors[key.floorID]
+		floorCO2Min := *metrics.CO2Min / floor.Area
+		floorCO2Max := *metrics.CO2Max / floor.Area
+		floorEnergyMin := *metrics.EnergyMin / floor.Area
+		floorEnergyMax := *metrics.EnergyMax / floor.Area
+
+		_, err := tx.Exec(`
+			INSERT INTO element_consumption (floor_id, role_id, option_id, technology, co2_min, co2_max, energy_min, energy_max)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			ON CONFLICT (floor_id, role_id, option_id, technology) 
+			WHERE floor_id IS NOT NULL
+			DO UPDATE SET 
+				co2_min = EXCLUDED.co2_min,
+				co2_max = EXCLUDED.co2_max,
+				energy_min = EXCLUDED.energy_min,
+				energy_max = EXCLUDED.energy_max`,
+			key.floorID, key.roleID, key.optionID, key.tech, floorCO2Min, floorCO2Max, floorEnergyMin, floorEnergyMax,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func updateUnitMetricsById(tx *sql.Tx, unitID uuid.UUID) error {
+	totalArea, _, modules, unitModuleIDs, err := getUnitData(tx, unitID)
+	if err != nil {
+		return err
+	}
+
+	if totalArea == 0 || len(unitModuleIDs) == 0 {
+		return nil
+	}
+
+	type unitMetricsKey struct {
+		roleID   uuid.UUID
+		optionID uuid.UUID
+		tech     string
+	}
+	unitGroupedMetrics := make(map[unitMetricsKey]*Consumption)
+
+	for _, moduleID := range unitModuleIDs {
+		m := modules[moduleID]
+		key := unitMetricsKey{
+			roleID:   m.RoleID,
+			optionID: m.OptionID,
+			tech:     m.Type,
+		}
+
+		if _, ok := unitGroupedMetrics[key]; !ok {
+			unitGroupedMetrics[key] = &Consumption{
+				CO2Min:    new(float64),
+				CO2Max:    new(float64),
+				EnergyMin: new(float64),
+				EnergyMax: new(float64),
+			}
+		}
+
+		*unitGroupedMetrics[key].CO2Min += m.TotalCO2Min
+		*unitGroupedMetrics[key].CO2Max += m.TotalCO2Max
+		*unitGroupedMetrics[key].EnergyMin += m.TotalEnergyMin
+		*unitGroupedMetrics[key].EnergyMax += m.TotalEnergyMax
+	}
+
+	for _, moduleID := range unitModuleIDs {
+		m := modules[moduleID]
+		_, err = tx.Exec(`
+			UPDATE module SET
+				relative_co2_min = $1,
+				relative_co2_max = $2,
+				relative_energy_min = $3,
+				relative_energy_max = $4
+			WHERE id = $5`,
+			m.TotalCO2Min/totalArea,
+			m.TotalCO2Max/totalArea,
+			m.TotalEnergyMin/totalArea,
+			m.TotalEnergyMax/totalArea,
+			moduleID,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	for key, metrics := range unitGroupedMetrics {
+		unitCO2Min := *metrics.CO2Min / totalArea
+		unitCO2Max := *metrics.CO2Max / totalArea
+		unitEnergyMin := *metrics.EnergyMin / totalArea
+		unitEnergyMax := *metrics.EnergyMax / totalArea
+
+		_, err := tx.Exec(`
+			INSERT INTO element_consumption (unit_id, role_id, option_id, technology, co2_min, co2_max, energy_min, energy_max)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			ON CONFLICT (unit_id, role_id, option_id, technology)
+			WHERE unit_id IS NOT NULL
+			DO UPDATE SET 
+				co2_min = EXCLUDED.co2_min,
+				co2_max = EXCLUDED.co2_max,
+				energy_min = EXCLUDED.energy_min,
+				energy_max = EXCLUDED.energy_max`,
+			unitID, key.roleID, key.optionID, key.tech, unitCO2Min, unitCO2Max, unitEnergyMin, unitEnergyMax,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func updateAllFloorMetrics(db *sql.DB, unitID uuid.UUID) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	tx, err := m.DB.BeginTx(ctx, nil)
+	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -528,211 +908,6 @@ func (m UnitModel) UpdateUnitFloorsMetrics(unitID uuid.UUID) error {
 	}
 
 	return tx.Commit()
-}
-
-type UnitModel struct {
-	DB *sql.DB
-}
-
-type FloorMetrics struct {
-	FloorID   uuid.UUID
-	Area      float64
-	ModuleIDs []uuid.UUID
-}
-
-type ModuleMetrics struct {
-	ModuleID       uuid.UUID
-	RoleID         uuid.UUID
-	OptionID       uuid.UUID
-	Active         bool
-	Type           string
-	TotalCO2Min    float64
-	TotalCO2Max    float64
-	TotalEnergyMin float64
-	TotalEnergyMax float64
-}
-
-func loadFloorsAndModules(tx *sql.Tx, floorIDs []uuid.UUID) (map[uuid.UUID]*FloorMetrics, map[uuid.UUID]*ModuleMetrics, error) {
-	rows, err := tx.Query(`
-		SELECT
-			f.id, f.area,
-			m.id, m.type, opt.active, opt.role_id, opt.id,
-			m.total_co2_min, m.total_co2_max,
-			m.total_energy_min, m.total_energy_max
-		FROM floor f
-		LEFT JOIN module_application mf ON f.id = mf.floor_id
-		LEFT JOIN module m ON mf.module_id = m.id
-		LEFT JOIN options opt ON m.option_id = opt.id
-		WHERE f.id = ANY($1)`, pq.Array(floorIDs))
-	if err != nil {
-		return nil, nil, err
-	}
-	defer rows.Close()
-
-	floors := make(map[uuid.UUID]*FloorMetrics)
-	modules := make(map[uuid.UUID]*ModuleMetrics)
-
-	for rows.Next() {
-		var (
-			floorID                              uuid.UUID
-			area                                 float64
-			moduleID, moduleType, roleID, optionID sql.NullString
-			active                               sql.NullBool
-			co2Min, co2Max, energyMin, energyMax sql.NullFloat64
-		)
-
-		if err := rows.Scan(&floorID, &area, &moduleID, &moduleType, &active, &roleID, &optionID, &co2Min, &co2Max, &energyMin, &energyMax); err != nil {
-			return nil, nil, err
-		}
-
-		if _, ok := floors[floorID]; !ok {
-			floors[floorID] = &FloorMetrics{
-				FloorID:   floorID,
-				Area:      area,
-				ModuleIDs: []uuid.UUID{},
-			}
-		}
-
-		if moduleID.Valid {
-			mid, err := uuid.Parse(moduleID.String)
-			if err != nil {
-				return nil, nil, err
-			}
-
-			rid, err := uuid.Parse(roleID.String)
-			if err != nil {
-				return nil, nil, err
-			}
-
-			oid, err := uuid.Parse(optionID.String)
-			if err != nil {
-				return nil, nil, err
-			}
-
-			floors[floorID].ModuleIDs = append(floors[floorID].ModuleIDs, mid)
-
-			if _, ok := modules[mid]; !ok {
-				modules[mid] = &ModuleMetrics{
-					ModuleID:       mid,
-					RoleID:         rid,
-					OptionID:       oid,
-					Active:         active.Valid && active.Bool,
-					Type:           moduleType.String,
-					TotalCO2Min:    co2Min.Float64,
-					TotalCO2Max:    co2Max.Float64,
-					TotalEnergyMin: energyMin.Float64,
-					TotalEnergyMax: energyMax.Float64,
-				}
-			}
-		}
-	}
-
-	return floors, modules, nil
-}
-
-func updateFloorMetricsById(tx *sql.Tx, floorIDs []uuid.UUID) error {
-	floors, modules, err := loadFloorsAndModules(tx, floorIDs)
-	if err != nil {
-		return err
-	}
-
-	// Calculate average floor area
-	moduleFloors := make(map[uuid.UUID][]float64) // map[moduleID][]floorArea
-	for _, floor := range floors {
-		for _, moduleID := range floor.ModuleIDs {
-			moduleFloors[moduleID] = append(moduleFloors[moduleID], floor.Area)
-		}
-	}
-
-	// Update relative metrics for each module
-	for moduleID, floorAreas := range moduleFloors {
-		var avgArea float64
-		for _, area := range floorAreas {
-			avgArea += area
-		}
-		avgArea /= float64(len(floorAreas))
-
-		m := modules[moduleID]
-		_, err = tx.Exec(`
-			UPDATE module SET
-				relative_co2_min = $1,
-				relative_co2_max = $2,
-				relative_energy_min = $3,
-				relative_energy_max = $4
-			WHERE id = $5`,
-			m.TotalCO2Min/avgArea,
-			m.TotalCO2Max/avgArea,
-			m.TotalEnergyMin/avgArea,
-			m.TotalEnergyMax/avgArea,
-			moduleID,
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	type metricsKey struct {
-		floorID  uuid.UUID
-		roleID   uuid.UUID
-		optionID uuid.UUID
-		tech     string
-	}
-	groupedMetrics := make(map[metricsKey]*Consumption)
-
-	for _, floor := range floors {
-		if floor.Area == 0 {
-			continue
-		}
-
-		for _, moduleID := range floor.ModuleIDs {
-			m := modules[moduleID]
-			key := metricsKey{
-				floorID:  floor.FloorID,
-				roleID:   m.RoleID,
-				optionID: m.OptionID,
-				tech:     m.Type,
-			}
-
-			if _, ok := groupedMetrics[key]; !ok {
-				groupedMetrics[key] = &Consumption{
-					CO2Min:    new(float64),
-					CO2Max:    new(float64),
-					EnergyMin: new(float64),
-					EnergyMax: new(float64),
-				}
-			}
-
-			*groupedMetrics[key].CO2Min += m.TotalCO2Min
-			*groupedMetrics[key].CO2Max += m.TotalCO2Max
-			*groupedMetrics[key].EnergyMin += m.TotalEnergyMin
-			*groupedMetrics[key].EnergyMax += m.TotalEnergyMax
-		}
-	}
-
-	for key, metrics := range groupedMetrics {
-		floor := floors[key.floorID]
-		floorCO2Min := *metrics.CO2Min / floor.Area
-		floorCO2Max := *metrics.CO2Max / floor.Area
-		floorEnergyMin := *metrics.EnergyMin / floor.Area
-		floorEnergyMax := *metrics.EnergyMax / floor.Area
-
-		_, err := tx.Exec(`
-			INSERT INTO element_consumption (floor_id, role_id, option_id, technology, co2_min, co2_max, energy_min, energy_max)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-			ON CONFLICT (floor_id, role_id, option_id, technology) 
-			DO UPDATE SET 
-				co2_min = EXCLUDED.co2_min,
-				co2_max = EXCLUDED.co2_max,
-				energy_min = EXCLUDED.energy_min,
-				energy_max = EXCLUDED.energy_max`,
-			key.floorID, key.roleID, key.optionID, key.tech, floorCO2Min, floorCO2Max, floorEnergyMin, floorEnergyMax,
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func (m UnitModel) GetConsumptionByRole(unitID, roleID uuid.UUID) (map[string]*Consumption, error) {
