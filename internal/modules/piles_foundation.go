@@ -7,19 +7,14 @@ import (
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
-type PilesFoundationSteel struct {
-	CA50 float64 `json:"ca50"`
-	CA60 float64 `json:"ca60"`
-}
-
 type PilesFoundationPiles struct {
-	Volume float64              `json:"volume"`
-	Steel  PilesFoundationSteel `json:"steel"`
+	Volume float64               `json:"volume"`
+	Steel  FoundationSteelBasic  `json:"steel"`
 }
 
 type PilesFoundationCapBeams struct {
-	Volume float64              `json:"volume"`
-	Steel  PilesFoundationSteel `json:"steel"`
+	Volume float64               `json:"volume"`
+	Steel  FoundationSteelBasic  `json:"steel"`
 }
 
 type PilesFoundation struct {

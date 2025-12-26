@@ -7,22 +7,15 @@ import (
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
-type RaftFoundationSteel struct {
-	Mesh  float64 `json:"mesh"`
-	CA50  float64 `json:"ca50"`
-	CA60  float64 `json:"ca60"`
-	CP190 float64 `json:"cp190"`
-}
-
 type RaftFoundation struct {
 	ID uuid.UUID `json:"id"`
 	BasicModuleData
 	Consumption *Consumption `json:"consumption,omitempty"`
 
-	Area      float64             `json:"area"`
-	Thickness float64             `json:"thickness"`
-	Fck       int                 `json:"fck"`
-	Steel     RaftFoundationSteel `json:"steel"`
+	Area      float64                  `json:"area"`
+	Thickness float64                  `json:"thickness"`
+	Fck       int                      `json:"fck"`
+	Steel     FoundationSteelComplete  `json:"steel"`
 
 	UnitID uuid.UUID `json:"unit_id"`
 }
@@ -167,7 +160,7 @@ func (r *RaftFoundation) fromDataModule(d *data.Module) Module {
 
 	var area, thickness float64
 	var fck int
-	var steel RaftFoundationSteel
+	var steel FoundationSteelComplete
 
 	if val, ok := d.Data["area"].(float64); ok {
 		area = val

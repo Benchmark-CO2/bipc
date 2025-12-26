@@ -45,6 +45,18 @@ type Consumption struct {
 	EnergyMax float64 `json:"energy_max"`
 }
 
+type FoundationSteelComplete struct {
+	Mesh  float64 `json:"mesh"`
+	CA50  float64 `json:"ca50"`
+	CA60  float64 `json:"ca60"`
+	CP190 float64 `json:"cp190"`
+}
+
+type FoundationSteelBasic struct {
+	CA50 float64 `json:"ca50"`
+	CA60 float64 `json:"ca60"`
+}
+
 func (c *Consumption) sum(value Consumption) {
 	c.CO2Min += value.CO2Min
 	c.CO2Max += value.CO2Max
@@ -64,6 +76,8 @@ func ParseModuleType(t string) (Module, error) {
 		return &RaftFoundation{BasicModuleData: BasicModuleData{Type: t}}, nil
 	case "piles_foundation":
 		return &PilesFoundation{BasicModuleData: BasicModuleData{Type: t}}, nil
+	case "raft_piles_foundation":
+		return &RaftPilesFoundation{BasicModuleData: BasicModuleData{Type: t}}, nil
 	default:
 		return nil, errors.New("invalid module type")
 	}
