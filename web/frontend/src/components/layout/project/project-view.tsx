@@ -8,7 +8,7 @@ import { useSummary } from "@/context/summaryContext";
 import { TConsumption, TProjectUnit } from "@/types/projects";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import CommonTable from "../common-table";
 
 const ProjectView = ({
@@ -22,6 +22,8 @@ const ProjectView = ({
   const { data: projectData } = useQuery({
     queryKey: ["project", projectId],
     queryFn: () => getProjectByUUID(projectId),
+    staleTime: 0,
+    refetchOnMount: true,
   });
   const { data: benchmarkData } = useQuery({
     queryKey: ["units-benchmarks"],
@@ -29,15 +31,18 @@ const ProjectView = ({
   });
   const [selectedUnits, setSelectedUnits] = useState<TProjectUnit[]>([]);
   const { setSummaryContext } = useSummary();
-  const handleSelectionChange = (el: any) => {
+  const handleSelectionChange = useCallback((el: any) => {
     setSelectedUnits(el);
-  };
+  }, []);
 
-  const units =
-    projectData?.data?.project?.units?.map((unit) => ({
-      ...unit,
-      ...(unit?.consumptions?.total || {}),
-    })) || [];
+  const units = useMemo(() => {
+    return (
+      projectData?.data?.project?.units?.map((unit) => ({
+        ...unit,
+        ...(unit?.consumptions?.total || {}),
+      })) || []
+    );
+  }, [projectData]);
 
   const avgConsumptions = units.reduce(
     (acc, unit) => {
@@ -57,7 +62,7 @@ const ProjectView = ({
       energy_min: 0,
       energy_max: 0,
       area: 0,
-    },
+    }
   );
 
   if (units.length > 0) {
@@ -75,21 +80,26 @@ const ProjectView = ({
     energy_max: avgConsumptions.energy_max.toInternational(),
   };
 
+  const summaryComponent = useMemo(() => {
+    if (!benchmarkData?.data || !projectData?.data) return null;
+    return (
+      <UnitsSummary
+        selectedUnits={selectedUnits.length ? selectedUnits : (units as any)}
+        project={projectData?.data?.project as any}
+        data={benchmarkData.data}
+        units={units || []}
+        someSelected={selectedUnits.length > 0}
+      />
+    );
+  }, [selectedUnits, benchmarkData?.data, projectData?.data, units]);
+
   useEffect(() => {
-    if (!benchmarkData?.data) return;
+    if (!summaryComponent) return;
     setSummaryContext({
-      component: (
-        <UnitsSummary
-          selectedUnits={selectedUnits.length ? selectedUnits : (units as any)}
-          project={projectData?.data?.project as any}
-          data={benchmarkData.data}
-          units={units || []}
-          someSelected={selectedUnits.length > 0}
-        />
-      ),
+      component: summaryComponent,
       title: "Unidade Comparison",
     });
-  }, [setSummaryContext, selectedUnits, benchmarkData]);
+  }, [summaryComponent]);
 
   return (
     <div className="flex flex-col gap-4">

@@ -40,149 +40,73 @@ export const getIndexFromCategory = (
 };
 
 // Converte TTowerFloorCategory[] para FloorSchema[]
-// IMPORTANTE: A ordenação sempre segue a hierarquia:
-// 1. penthouse_floor (cobertura) - topo
-// 2. standard_floor (tipo) - meio
-// 3. ground_floor (térreo) - nível do solo
-// 4. basement_floor (subsolo) - abaixo do solo
-export const convertTowerFloorsToFloorGroups = (
+// IMPORTANTE: Agora cada floor é individual, sem agrupamento
+// A ordenação segue o índice de cada floor
+export const convertTowerFloorsToFloorSchema = (
   towerFloors: TTowerFloorCategory[]
 ): FloorSchema[] => {
-  // Primeiro, agrupar por group_name
-  const grouped = towerFloors.reduce(
-    (acc, floor) => {
-      const groupName = floor.group_name;
-      if (!acc[groupName]) {
-        acc[groupName] = {
-          name: floor.group_name,
-          area: floor.area,
-          height: floor.height,
-          repetition: 1,
-          category: floor.category || getCategoryFromIndex(floor.index),
-          index: floor.index, // Incluir o índice
-          minIndex: floor.index,
-          maxIndex: floor.index,
-        };
-      } else {
-        acc[groupName].repetition += 1;
-        acc[groupName].minIndex = Math.min(
-          acc[groupName].minIndex,
-          floor.index
-        );
-        acc[groupName].maxIndex = Math.max(
-          acc[groupName].maxIndex,
-          floor.index
-        );
-      }
-      return acc;
-    },
-    {} as Record<string, FloorSchema & { minIndex: number; maxIndex: number }>
-  );
+  // Mapear cada floor individual diretamente
+  const floors = towerFloors.map((floor) => ({
+    id: floor.id,
+    floor_group: floor.floor_group || floor.group_name || "",
+    area: floor.area,
+    height: floor.height,
+    category: floor.category || getCategoryFromIndex(floor.index),
+    index: floor.index,
+  }));
 
-  // Converter para array e ordenar
-  const floorGroups = Object.values(grouped).map(
-    ({ minIndex, maxIndex, ...floor }) => ({
-      ...floor,
-      // Se todos os floors do grupo têm o mesmo índice, usar esse índice
-      // Senão, usar o índice mínimo como referência
-      index: minIndex === maxIndex ? minIndex : minIndex,
-    })
-  );
-
-  // Ordenar por categoria primeiro, depois por índice (se disponível), depois por nome
-  return floorGroups.sort((a, b) => {
-    const categoryOrder = {
-      penthouse_floor: 0,
-      standard_floor: 1,
-      ground_floor: 2,
-      basement_floor: 3,
-    };
-
-    const aCategoryOrder = categoryOrder[a.category];
-    const bCategoryOrder = categoryOrder[b.category];
-
-    if (aCategoryOrder !== bCategoryOrder) {
-      return aCategoryOrder - bCategoryOrder;
-    }
-
-    // Se mesma categoria, ordenar por índice (se disponível)
-    if (a.index !== undefined && b.index !== undefined) {
-      // Para todas as categorias: índices maiores ficam acima na visualização
-      // Isso significa que para standard_floor com índices 1, 2, 3...
-      // o índice 3 aparece antes do índice 1 (mais acima na torre)
-      return b.index - a.index; // maior índice primeiro (mais acima)
-    }
-
-    // Se não tem índice, ordenar por nome
-    return a.name.localeCompare(b.name);
-  });
+  // Ordenar por índice (do menor para o maior para lógica interna)
+  return floors.sort((a, b) => a.index - b.index);
 };
 
 // Converte FloorSchema[] para TTowerFloorCategory[]
-export const convertFloorGroupsToTowerFloors = (
-  floorGroups: FloorSchema[]
+export const convertFloorSchemaToTowerFloors = (
+  floors: FloorSchema[]
 ): TTowerFloorCategory[] => {
-  const towerFloors: TTowerFloorCategory[] = [];
-
-  floorGroups.forEach((group, groupIndex) => {
-    const baseIndex =
-      group.index !== undefined
-        ? group.index
-        : getIndexFromCategory(group.category);
-
-    for (let i = 0; i < group.repetition; i++) {
-      const floor: TTowerFloorCategory = {
-        id: `${group.name}-${i}`,
-        group_id: `group-${groupIndex}`,
-        group_name: group.name,
-        area: group.area,
-        height: group.height,
-        index: baseIndex + i,
-        consumption: {
-          co2_max: 0,
-          co2_min: 0,
-          energy_max: 0,
-          energy_min: 0,
-        },
-        category: group.category,
-      };
-
-      towerFloors.push(floor);
-    }
-  });
-
-  return towerFloors.sort((a, b) => b.index - a.index); // Ordenar do topo para baixo
+  return floors.map((floor) => ({
+    id: floor.id || `temp-${floor.index}`,
+    floor_group: floor.floor_group,
+    group_id: floor.floor_group,
+    group_name: floor.floor_group,
+    area: floor.area,
+    height: floor.height,
+    index: floor.index,
+    category: floor.category,
+  }));
 };
 
 // Converte IUnit para dados do formulário
 export const convertUnitToFormData = (unit: IUnit): UnitFormInput => {
-  if (!unit.floors) {
+  if (!unit.floors || unit.floors.length === 0) {
     return {
       name: unit.name,
       type: unit.type as "tower",
       data: {
-        floor_groups: [],
+        floors: [],
       },
     };
   }
 
-  const floorGroups = convertTowerFloorsToFloorGroups(unit.floors);
-
-  // Converter FloorSchema[] para FloorFormInput[]
-  const floorFormInputs: FloorFormInput[] = floorGroups.map((floor) => ({
-    name: floor.name,
+  // No modo de edição, cada floor vem individual do backend (sem repetition)
+  // Converter cada floor individual para o formato do formulário
+  const floorFormInputs: FloorFormInput[] = unit.floors.map((floor) => ({
+    id: floor.id,
+    floor_group: floor.floor_group || floor.group_name || "",
     area: floor.area.toString().replace(".", ","), // Converter número para string com formato BR
     height: floor.height.toString().replace(".", ","),
-    repetition: floor.repetition,
-    category: floor.category,
+    category: floor.category || getCategoryFromIndex(floor.index),
     index: floor.index,
+    // Não incluir repetition no modo de edição
   }));
+
+  // Ordenar por índice para exibição correta
+  floorFormInputs.sort((a, b) => a.index - b.index);
 
   return {
     name: unit.name,
     type: unit.type as "tower",
     data: {
-      floor_groups: floorFormInputs,
+      floors: floorFormInputs,
     },
   };
 };
@@ -194,42 +118,20 @@ export type UnifiedFloor = {
   area: number;
   height: number;
   category: FloorSchema["category"];
-  repetition: number;
+  index: number;
 };
 
 // Converte TTowerFloorCategory[] para UnifiedFloor[]
 export const convertTowerFloorsToUnified = (
   towerFloors: TTowerFloorCategory[]
 ): UnifiedFloor[] => {
-  // Primeiro ordenar os floors por categoria e índice
-  const sortedFloors = towerFloors.slice().sort((a, b) => {
-    const categoryOrder = {
-      penthouse_floor: 0,
-      standard_floor: 1,
-      ground_floor: 2,
-      basement_floor: 3,
-    };
-
-    const aCategoryOrder =
-      categoryOrder[a.category || getCategoryFromIndex(a.index)];
-    const bCategoryOrder =
-      categoryOrder[b.category || getCategoryFromIndex(b.index)];
-
-    if (aCategoryOrder !== bCategoryOrder) {
-      return aCategoryOrder - bCategoryOrder;
-    }
-
-    // Se mesma categoria, ordenar por índice (do maior para o menor para ficar visual correto)
-    return b.index - a.index;
-  });
-
-  return sortedFloors.map((floor) => ({
+  return towerFloors.map((floor) => ({
     id: floor.id,
-    name: floor.group_name,
+    name: floor.floor_group || floor.group_name || "",
     area: floor.area,
     height: floor.height,
-    repetition: 1, // TTowerFloorCategory não tem repetição
     category: floor.category || getCategoryFromIndex(floor.index),
+    index: floor.index,
   }));
 };
 
@@ -237,13 +139,13 @@ export const convertTowerFloorsToUnified = (
 export const convertFloorSchemaToUnified = (
   floors: FloorSchema[]
 ): UnifiedFloor[] => {
-  return floors.map((floor, index) => ({
-    id: `floor-${index}`,
-    name: floor.name,
+  return floors.map((floor) => ({
+    id: floor.id || `floor-${floor.index}`,
+    name: floor.floor_group,
     area: floor.area,
     height: floor.height,
-    repetition: floor.repetition,
     category: floor.category,
+    index: floor.index,
   }));
 };
 
@@ -251,18 +153,26 @@ export const convertFloorSchemaToUnified = (
 export const convertFloorFormInputToUnified = (
   floors: FloorFormInput[]
 ): UnifiedFloor[] => {
-  return floors.map((floor, index) => {
+  const unifiedFloors: UnifiedFloor[] = [];
+
+  floors.forEach((floor) => {
     // Converter strings para números, tratando vírgulas como separador decimal
     const area = parseFloat(floor.area.replace(",", ".")) || 0;
     const height = parseFloat(floor.height.replace(",", ".")) || 0;
+    const repetition = floor.repetition || 1;
 
-    return {
-      id: `floor-${index}`,
-      name: floor.name,
-      area,
-      height,
-      repetition: floor.repetition,
-      category: floor.category,
-    };
+    // Expandir floors com repetition > 1 para visualização
+    for (let i = 0; i < repetition; i++) {
+      unifiedFloors.push({
+        id: floor.id || `floor-${floor.index}-${i}`,
+        name: floor.floor_group,
+        area,
+        height,
+        category: floor.category,
+        index: floor.index + i,
+      });
+    }
   });
+
+  return unifiedFloors;
 };

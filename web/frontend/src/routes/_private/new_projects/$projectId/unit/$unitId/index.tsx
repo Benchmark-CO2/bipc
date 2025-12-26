@@ -39,7 +39,7 @@ type TGroupedFloor = IConsumption &
   };
 
 export const Route = createFileRoute(
-  "/_private/new_projects/$projectId/unit/$unitId/",
+  "/_private/new_projects/$projectId/unit/$unitId/"
 )({
   component: RouteComponent,
   validateSearch: (search: Record<string, unknown>) => {
@@ -109,7 +109,7 @@ function RouteComponent() {
   const navigate = Route.useNavigate();
   const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
   const [selectedTab, setSelectedTab] = useState<string>(
-    "Todas as Disciplinas",
+    "Todas as Disciplinas"
   );
 
   const getFilteredConsumptions = () => {
@@ -142,7 +142,7 @@ function RouteComponent() {
             }
             return acc;
           },
-          { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0 },
+          { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0 }
         );
 
         return {
@@ -185,7 +185,7 @@ function RouteComponent() {
         energy_min: acc.energy_min + (curr.energy_min || 0),
         energy_max: acc.energy_max + (curr.energy_max || 0),
       }),
-      { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0 },
+      { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0 }
     );
   };
 
@@ -221,7 +221,8 @@ function RouteComponent() {
     ? Object.values(
         unit.floors.reduce(
           (acc, floor) => {
-            const groupId = floor.group_id;
+            // Agrupar por floor_group, area e height
+            const groupKey = `${floor.floor_group || ""}_${floor.area}_${floor.height}`;
             const { consumptions, ...restFloor } = floor;
 
             const safeConsumption = consumptions?.total || {
@@ -231,41 +232,37 @@ function RouteComponent() {
               energy_max: 0,
             };
 
-            if (!acc[groupId]) {
-              acc[groupId] = {
+            if (!acc[groupKey]) {
+              acc[groupKey] = {
                 ...restFloor,
                 ...safeConsumption,
                 area: restFloor.area,
                 repetitions: 1,
               };
             } else {
-              acc[groupId].repetitions += 1;
-              acc[groupId].area =
-                (acc[groupId].area * (acc[groupId].repetitions - 1) +
-                  restFloor.area) /
-                acc[groupId].repetitions;
-              acc[groupId].co2_min =
-                (acc[groupId].co2_min * (acc[groupId].repetitions - 1) +
+              acc[groupKey].repetitions += 1;
+              acc[groupKey].co2_min =
+                (acc[groupKey].co2_min * (acc[groupKey].repetitions - 1) +
                   (safeConsumption.co2_min || 0)) /
-                acc[groupId].repetitions;
-              acc[groupId].co2_max =
-                (acc[groupId].co2_max * (acc[groupId].repetitions - 1) +
+                acc[groupKey].repetitions;
+              acc[groupKey].co2_max =
+                (acc[groupKey].co2_max * (acc[groupKey].repetitions - 1) +
                   (safeConsumption.co2_max || 0)) /
-                acc[groupId].repetitions;
-              acc[groupId].energy_min =
-                (acc[groupId].energy_min * (acc[groupId].repetitions - 1) +
+                acc[groupKey].repetitions;
+              acc[groupKey].energy_min =
+                (acc[groupKey].energy_min * (acc[groupKey].repetitions - 1) +
                   (safeConsumption.energy_min || 0)) /
-                acc[groupId].repetitions;
-              acc[groupId].energy_max =
-                (acc[groupId].energy_max * (acc[groupId].repetitions - 1) +
+                acc[groupKey].repetitions;
+              acc[groupKey].energy_max =
+                (acc[groupKey].energy_max * (acc[groupKey].repetitions - 1) +
                   (safeConsumption.energy_max || 0)) /
-                acc[groupId].repetitions;
+                acc[groupKey].repetitions;
             }
 
             return acc;
           },
-          {} as Record<string, any>,
-        ),
+          {} as Record<string, any>
+        )
       ).sort((a, b) => {
         const categoryOrder = {
           penthouse_floor: 0,
@@ -290,31 +287,31 @@ function RouteComponent() {
           return b.index - a.index;
         }
 
-        return (a.name || "").localeCompare(b.name || "");
+        return (a.floor_group || "").localeCompare(b.floor_group || "");
       })
     : [];
 
   const calculateAverageMetrics = (floors: TGroupedFloor[]) => {
     const floorTotal = floors.reduce(
       (acc, curr) => acc + curr.repetitions * curr.area,
-      0,
+      0
     );
 
     const sumCO2Min = floors.reduce(
       (acc, curr) => acc + curr.co2_min * curr.area * curr.repetitions,
-      0,
+      0
     );
     const sumCO2Max = floors.reduce(
       (acc, curr) => acc + curr.co2_max * curr.area * curr.repetitions,
-      0,
+      0
     );
     const sumEnergyMin = floors.reduce(
       (acc, curr) => acc + curr.energy_min * curr.area * curr.repetitions,
-      0,
+      0
     );
     const sumEnergyMax = floors.reduce(
       (acc, curr) => acc + curr.energy_max * curr.area * curr.repetitions,
-      0,
+      0
     );
 
     return {
