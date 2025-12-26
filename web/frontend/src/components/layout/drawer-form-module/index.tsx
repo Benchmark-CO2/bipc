@@ -47,6 +47,9 @@ import { getDefaultValuesByType } from "./module-default-values";
 import ModuleFormBeamColumn from "./module-form-beam-column";
 import ModuleFormConcreteWall from "./module-form-concrete-wall";
 import ModuleFormStructuralMasonry from "./module-form-structural-masonry";
+import ModuleFormRaftFoundation from "./module-form-raft-foundation";
+import ModuleFormPilesFoundation from "./module-form-piles-foundation";
+import ModuleFormRaftPilesFoundation from "./module-form-raft-piles-foundation";
 
 interface DrawerFormModuleProps {
   triggerComponent?: React.ReactNode;
@@ -206,7 +209,10 @@ const DrawerFormModule = ({
       if (
         rest.type === "beam_column" ||
         rest.type === "concrete_wall" ||
-        rest.type === "structural_masonry"
+        rest.type === "structural_masonry" ||
+        rest.type === "raft_foundation" ||
+        rest.type === "piles_foundation" ||
+        rest.type === "raft_piles_foundation"
       ) {
         const restAny = rest as any;
         const defaults = getDefaultValuesByType(rest.type);
@@ -288,6 +294,60 @@ const DrawerFormModule = ({
             slab_area: restAny.slab_area ?? 0,
             wall_form_area: toLocalString(restAny.wall_form_area ?? 0),
             slab_form_area: toLocalString(restAny.slab_form_area ?? 0),
+          }),
+
+          // Raft foundation specific fields
+          ...(rest.type === "raft_foundation" && {
+            area: toLocalString(restAny.area ?? 0),
+            thickness: toLocalString(restAny.thickness ?? 0),
+            fck: restAny.fck ?? (defaults as any).fck,
+            steel: {
+              mesh: toLocalString(restAny.steel?.mesh ?? 0),
+              ca50: toLocalString(restAny.steel?.ca50 ?? 0),
+              ca60: toLocalString(restAny.steel?.ca60 ?? 0),
+              cp190: toLocalString(restAny.steel?.cp190 ?? 0),
+            },
+          }),
+
+          // Piles foundation specific fields
+          ...(rest.type === "piles_foundation" && {
+            fck: restAny.fck ?? (defaults as any).fck,
+            piles: {
+              volume: toLocalString(restAny.piles?.volume ?? 0),
+              steel: {
+                ca50: toLocalString(restAny.piles?.steel?.ca50 ?? 0),
+                ca60: toLocalString(restAny.piles?.steel?.ca60 ?? 0),
+              },
+            },
+            cap_beams: {
+              volume: toLocalString(restAny.cap_beams?.volume ?? 0),
+              steel: {
+                ca50: toLocalString(restAny.cap_beams?.steel?.ca50 ?? 0),
+                ca60: toLocalString(restAny.cap_beams?.steel?.ca60 ?? 0),
+              },
+            },
+          }),
+
+          // Raft piles foundation specific fields
+          ...(rest.type === "raft_piles_foundation" && {
+            raft: {
+              area: toLocalString(restAny.raft?.area ?? 0),
+              thickness: toLocalString(restAny.raft?.thickness ?? 0),
+              fck: restAny.raft?.fck ?? (defaults as any).raft.fck,
+              steel: {
+                mesh: toLocalString(restAny.raft?.steel?.mesh ?? 0),
+                ca50: toLocalString(restAny.raft?.steel?.ca50 ?? 0),
+                ca60: toLocalString(restAny.raft?.steel?.ca60 ?? 0),
+                cp190: toLocalString(restAny.raft?.steel?.cp190 ?? 0),
+              },
+            },
+            piles: {
+              volume: toLocalString(restAny.piles?.volume ?? 0),
+              steel: {
+                ca50: toLocalString(restAny.piles?.steel?.ca50 ?? 0),
+                ca60: toLocalString(restAny.piles?.steel?.ca60 ?? 0),
+              },
+            },
           }),
 
           // Structural masonry specific fields
@@ -408,6 +468,24 @@ const DrawerFormModule = ({
             form_beams: data.form_beams,
           }),
       };
+    } else if (moduleType === "raft_foundation") {
+      filteredData = {
+        area: data.area,
+        thickness: data.thickness,
+        fck: data.fck,
+        steel: data.steel,
+      };
+    } else if (moduleType === "piles_foundation") {
+      filteredData = {
+        fck: data.fck,
+        piles: data.piles,
+        cap_beams: data.cap_beams,
+      };
+    } else if (moduleType === "raft_piles_foundation") {
+      filteredData = {
+        raft: data.raft,
+        piles: data.piles,
+      };
     }
 
     const baseFields: ModuleParamsProps = {
@@ -434,6 +512,9 @@ const DrawerFormModule = ({
     { value: "beam_column", label: t("common.structureType.beamColumn") },
     { value: "concrete_wall", label: t("common.structureType.concreteWall") },
     { value: "structural_masonry", label: t("common.structureType.masonry") },
+    { value: "raft_foundation", label: "Radier" },
+    { value: "piles_foundation", label: "Estacas" },
+    { value: "raft_piles_foundation", label: "Radier Estaqueado" },
   ];
 
   const isMobile = useIsMobile();
@@ -450,7 +531,10 @@ const DrawerFormModule = ({
             type &&
             (type === "beam_column" ||
               type === "concrete_wall" ||
-              type === "structural_masonry")
+              type === "structural_masonry" ||
+              type === "raft_foundation" ||
+              type === "piles_foundation" ||
+              type === "raft_piles_foundation")
           ) {
             form.setValue("type", type);
           }
@@ -508,7 +592,7 @@ const DrawerFormModule = ({
           ) : (
             <Form {...form}>
               <form
-                onSubmit={form.handleSubmit(handleSubmit as any, (errors) => {
+                onSubmit={form.handleSubmit(handleSubmit as any, () => {
                   toast.error("Existem erros de validação", {
                     description:
                       "Evite campos com valores zerados ou inválidos.",
@@ -566,7 +650,10 @@ const DrawerFormModule = ({
                                   if (
                                     value === "beam_column" ||
                                     value === "concrete_wall" ||
-                                    value === "structural_masonry"
+                                    value === "structural_masonry" ||
+                                    value === "raft_foundation" ||
+                                    value === "piles_foundation" ||
+                                    value === "raft_piles_foundation"
                                   ) {
                                     form.reset(
                                       getDefaultValuesByType(
@@ -574,6 +661,9 @@ const DrawerFormModule = ({
                                           | "beam_column"
                                           | "concrete_wall"
                                           | "structural_masonry"
+                                          | "raft_foundation"
+                                          | "piles_foundation"
+                                          | "raft_piles_foundation"
                                       ) as any
                                     );
                                   }
@@ -617,6 +707,18 @@ const DrawerFormModule = ({
                         case "structural_masonry":
                           return (
                             <ModuleFormStructuralMasonry form={form as any} />
+                          );
+                        case "raft_foundation":
+                          return (
+                            <ModuleFormRaftFoundation form={form as any} />
+                          );
+                        case "piles_foundation":
+                          return (
+                            <ModuleFormPilesFoundation form={form as any} />
+                          );
+                        case "raft_piles_foundation":
+                          return (
+                            <ModuleFormRaftPilesFoundation form={form as any} />
                           );
                         default:
                           return null;
