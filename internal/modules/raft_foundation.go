@@ -33,9 +33,9 @@ func (r *RaftFoundation) Validate(v *validator.Validator) {
 	v.Check(r.Type != "", "type", "must be provided")
 	v.Check(r.UnitID != uuid.Nil, "unit_id", "must be provided")
 
-	v.Check(r.Area >= 40.0, "area", "must be at least 40.0 m²")
-	v.Check(r.Thickness >= 0.100 && r.Thickness <= 0.450, "thickness", "must be between 0.100 and 0.450 m")
-	v.Check(r.Fck == 20 || r.Fck == 25 || r.Fck == 30, "fck", "must be 20, 25, or 30 MPa")
+	v.Check(r.Area >= 0, "area", "cannot be negative")
+	v.Check(r.Thickness >= 0, "thickness", "cannot be negative")
+	v.Check(r.Fck != 0, "fck", "must be provided")
 
 	v.Check(r.Steel.Mesh >= 0, "steel.mesh", "cannot be negative")
 	v.Check(r.Steel.CA50 >= 0, "steel.ca50", "cannot be negative")
