@@ -36,66 +36,70 @@ const ModuleFormPilesFoundation = ({
   return (
     <div className="space-y-4">
       {/* FCK */}
-      <FormField
-        control={form.control}
-        name="fck"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="text-xs">FCK do concreto (MPa) *</FormLabel>
-            <FormControl>
-              <Select
-                onValueChange={(value) => {
-                  if (value === "other") {
-                    setCustomFck(true);
-                    field.onChange(70);
-                  } else {
-                    setCustomFck(false);
-                    field.onChange(Number(value));
-                  }
-                }}
-                value={isCustomFck ? "other" : field.value?.toString()}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione FCK" />
-                </SelectTrigger>
-                <SelectContent>
-                  {fckOptions.map((fck) => (
-                    <SelectItem key={fck} value={fck.toString()}>
-                      {fck}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="other">Outro</SelectItem>
-                </SelectContent>
-              </Select>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      {isCustomFck && (
+      <div
+        className={`grid gap-4 ${isCustomFck ? "grid-cols-2" : "grid-cols-1"}`}
+      >
         <FormField
           control={form.control}
           name="fck"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Outro FCK (MPa)</FormLabel>
+              <FormLabel className="text-xs">FCK do concreto (MPa) *</FormLabel>
               <FormControl>
-                <Input
-                  type="text"
-                  placeholder="70"
-                  {...field}
-                  value={field.value?.toString() || ""}
-                  onChange={(e) =>
-                    field.onChange(Number(masks.numeric(e.target.value)) || 0)
-                  }
-                />
+                <Select
+                  onValueChange={(value) => {
+                    if (value === "other") {
+                      setCustomFck(true);
+                      field.onChange(70);
+                    } else {
+                      setCustomFck(false);
+                      field.onChange(Number(value));
+                    }
+                  }}
+                  value={isCustomFck ? "other" : field.value?.toString()}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione FCK" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fckOptions.map((fck) => (
+                      <SelectItem key={fck} value={fck.toString()}>
+                        {fck}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="other">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-      )}
+
+        {isCustomFck && (
+          <FormField
+            control={form.control}
+            name="fck"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">Outro FCK (MPa)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="text"
+                    placeholder="70"
+                    {...field}
+                    value={field.value?.toString() || ""}
+                    onChange={(e) =>
+                      field.onChange(Number(masks.numeric(e.target.value)) || 0)
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+      </div>
 
       {/* Estacas */}
       <h3 className="text-sm font-medium text-gray-900">Estacas</h3>
