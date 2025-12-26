@@ -159,12 +159,36 @@ const mortarItemSchema = z
     return rest;
   });
 
+// Steel schema for foundations
+const foundationSteelSchema = z.object({
+  mesh: z.string().transform(parseNumber).optional(),
+  ca50: z.string().transform(parseNumber).optional(),
+  ca60: z.string().transform(parseNumber).optional(),
+  cp190: z.string().transform(parseNumber).optional(),
+});
+
+// Piles steel schema (only ca50 and ca60)
+const pilesSteelSchema = z.object({
+  ca50: z.string().transform(parseNumber).optional(),
+  ca60: z.string().transform(parseNumber).optional(),
+});
+
 export const moduleFormSchema = z
   .object({
-    type: z.enum(["beam_column", "concrete_wall", "structural_masonry"], {
-      required_error: "Selecione um tipo de estrutura",
-      invalid_type_error: "Tipo de estrutura inválido",
-    }),
+    type: z.enum(
+      [
+        "beam_column",
+        "concrete_wall",
+        "structural_masonry",
+        "raft_foundation",
+        "piles_foundation",
+        "raft_piles_foundation",
+      ],
+      {
+        required_error: "Selecione um tipo de estrutura",
+        invalid_type_error: "Tipo de estrutura inválido",
+      }
+    ),
 
     concrete_columns: concreteElementSchema.optional(),
     concrete_beams: concreteElementSchema.optional(),
@@ -211,6 +235,36 @@ export const moduleFormSchema = z
       .min(1, "Adicione pelo menos um tipo de graute")
       .optional(),
     mortar: z.array(mortarItemSchema).optional(),
+
+    // Raft foundation fields
+    area: z.string().transform(parseNumber).optional(),
+    thickness: z.string().transform(parseNumber).optional(),
+    fck: z.number().optional(),
+    steel: foundationSteelSchema.optional(),
+
+    // Piles foundation fields
+    piles: z
+      .object({
+        volume: z.string().transform(parseNumber).optional(),
+        steel: pilesSteelSchema.optional(),
+      })
+      .optional(),
+    cap_beams: z
+      .object({
+        volume: z.string().transform(parseNumber).optional(),
+        steel: pilesSteelSchema.optional(),
+      })
+      .optional(),
+
+    // Raft piles foundation fields
+    raft: z
+      .object({
+        area: z.string().transform(parseNumber).optional(),
+        thickness: z.string().transform(parseNumber).optional(),
+        fck: z.number().optional(),
+        steel: foundationSteelSchema.optional(),
+      })
+      .optional(),
   })
   .refine(
     (data) => {
@@ -268,6 +322,51 @@ export const moduleFormSchema = z
     {
       message:
         "Para Alvenaria Estrutural são obrigatórios: blocos, graute, argamassa e laje de concreto",
+      path: ["type"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.type === "raft_foundation") {
+        return (
+          data.area !== undefined &&
+          data.thickness !== undefined &&
+          data.fck !== undefined
+        );
+      }
+      return true;
+    },
+    {
+      message: "Para Radier são obrigatórios: área, espessura e fck",
+      path: ["type"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.type === "piles_foundation") {
+        return data.fck !== undefined;
+      }
+      return true;
+    },
+    {
+      message: "Para Estacas é obrigatório: fck",
+      path: ["type"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.type === "raft_piles_foundation") {
+        return (
+          data.raft?.area !== undefined &&
+          data.raft?.thickness !== undefined &&
+          data.raft?.fck !== undefined
+        );
+      }
+      return true;
+    },
+    {
+      message:
+        "Para Radier Estaqueado são obrigatórios: área, espessura e fck do radier",
       path: ["type"],
     }
   );
