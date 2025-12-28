@@ -1,6 +1,6 @@
 import { masks } from "@/utils/masks";
 import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
-import { useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Card, CardContent } from "../../ui/card";
 import {
@@ -33,6 +33,13 @@ const ModuleFormPilesFoundation = ({
   const isCustomFck =
     customFck || (currentFck && !fckOptions.includes(currentFck));
 
+  // Detectar FCK customizado ao carregar dados de edição (antes do render)
+  useLayoutEffect(() => {
+    if (currentFck && !fckOptions.includes(currentFck)) {
+      setCustomFck(true);
+    }
+  }, [currentFck]);
+
   return (
     <div className="space-y-4">
       {/* FCK */}
@@ -48,15 +55,33 @@ const ModuleFormPilesFoundation = ({
               <FormControl>
                 <Select
                   onValueChange={(value) => {
+                    // Ignorar valores vazios (onChange automático do Select)
+                    if (!value || value === "") {
+                      return;
+                    }
+
                     if (value === "other") {
                       setCustomFck(true);
-                      field.onChange(70);
+                      // Manter o valor atual se já for customizado, senão usar 70
+                      if (!currentFck || fckOptions.includes(currentFck)) {
+                        field.onChange(70);
+                      }
                     } else {
                       setCustomFck(false);
                       field.onChange(Number(value));
                     }
                   }}
-                  value={isCustomFck ? "other" : field.value?.toString()}
+                  value={(() => {
+                    if (field.value && !fckOptions.includes(field.value)) {
+                      return "other";
+                    } else if (
+                      field.value &&
+                      fckOptions.includes(field.value)
+                    ) {
+                      return field.value.toString();
+                    }
+                    return "";
+                  })()}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione FCK" />
