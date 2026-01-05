@@ -12,8 +12,8 @@ export type TUnitType = "tower";
 
 export type TTowerFloorCategory = {
   id: string;
-  group_id: string;
-  group_name: string;
+  unit_id?: string;
+  floor_group?: string; // Campo que vem do backend na edição
   area: number;
   height: number;
   index: number;
@@ -22,7 +22,7 @@ export type TTowerFloorCategory = {
     | "penthouse_floor"
     | "standard_floor"
     | "ground_floor"
-    | "basement_floor"; // Opcional por enquanto
+    | "basement_floor";
 };
 
 export interface IUnit {

@@ -33,12 +33,18 @@ import {
 import { masks } from "@/utils/masks";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Info, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import DrawerDocuments from "@/components/layout/drawer-documents";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const SignUp = () => {
   const [successModal, setSuccessModal] = useState(false);
@@ -152,7 +158,19 @@ const SignUp = () => {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("signUp.name")} *</FormLabel>
+                    <div className="flex items-center gap-1.5">
+                      <FormLabel>{t("signUp.name")} *</FormLabel>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger type="button">
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Obrigatório. Para podermos te identificar</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <FormControl>
                       <Input
                         placeholder={t("signUp.name")}
@@ -170,7 +188,21 @@ const SignUp = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email *</FormLabel>
+                    <div className="flex items-center gap-1.5">
+                      <FormLabel>Email *</FormLabel>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger type="button">
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              Obrigatório. Para permitir seu acesso a plataforma
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <FormControl>
                       <Input
                         type="email"
@@ -184,61 +216,106 @@ const SignUp = () => {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="crea_cau"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("signUp.crea")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="text"
-                        placeholder={t("signUp.crea")}
-                        disabled={isPending}
-                        autoComplete="none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="birthdate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("signUp.birthDate")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="text"
-                        placeholder={"DD/MM/AAAA"}
-                        disabled={isPending}
-                        autoComplete="bday"
-                        value={masks.date(field.value || "")}
-                        onChange={(e) =>
-                          field.onChange(masks.date(e.target.value))
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("signUp.city")}</FormLabel>
-                    <FormControl>
-                      <Input type="text" disabled={isPending} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-3 gap-4 max-md:grid-cols-1">
+                <FormField
+                  control={form.control}
+                  name="crea_cau"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-1.5">
+                        <FormLabel>Registro CREA/CAU</FormLabel>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger type="button">
+                              <Info className="h-4 w-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                Para nos certificarmos que relatórios
+                                certificados sejam emitidos apenas para
+                                profissionais ativos
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          placeholder={"26.2024.9999999"}
+                          disabled={isPending}
+                          autoComplete="none"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="birthdate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-1.5">
+                        <FormLabel>{t("signUp.birthDate")}</FormLabel>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger type="button">
+                              <Info className="h-4 w-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Para autenticar a veracidade da identidade</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="text"
+                          placeholder={"DD/MM/AAAA"}
+                          disabled={isPending}
+                          autoComplete="bday"
+                          value={masks.date(field.value || "")}
+                          onChange={(e) =>
+                            field.onChange(masks.date(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-1.5">
+                        <FormLabel>{t("signUp.city")}</FormLabel>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger type="button">
+                              <Info className="h-4 w-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                Para vincular os dados do usuário a uma
+                                localidade
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                      <FormControl>
+                        <Input type="text" disabled={isPending} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
                 <FormField
                   control={form.control}
@@ -317,7 +394,22 @@ const SignUp = () => {
                 name="activity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("signUp.activityArea")}</FormLabel>
+                    <div className="flex items-center gap-1.5">
+                      <FormLabel>{t("signUp.activityArea")}</FormLabel>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger type="button">
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              Para identificar a função realizada em colaboração
+                              com outros profissionais em um projeto
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <FormControl>
                       <Select
                         onValueChange={field.onChange}
@@ -334,6 +426,13 @@ const SignUp = () => {
                           <SelectItem value="Engenharia Civil">
                             Engenharia Civil
                           </SelectItem>
+                          <SelectItem value="Coordenação de Projetos">
+                            Coordenação de Projetos
+                          </SelectItem>
+                          <SelectItem value="Pesquisador(a)">
+                            Pesquisador(a)
+                          </SelectItem>
+                          <SelectItem value="Outro">Outro</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>
@@ -346,7 +445,22 @@ const SignUp = () => {
                 name="enterprise"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("signUp.companyName")}</FormLabel>
+                    <div className="flex items-center gap-1.5">
+                      <FormLabel>{t("signUp.companyName")}</FormLabel>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger type="button">
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              Para identificar a organização em que o
+                              profissional colabora
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <FormControl>
                       <Input
                         type="text"
@@ -433,7 +547,15 @@ const SignUp = () => {
           </Form>
         </CardContent>
       </Card>
-      {warnModalIsOpen && <DialogWarnSignup handleClose={() => setWarnModalIsOpen(false)} handleConfirm={() => handleSubmit(form.getValues())} />}
+      {warnModalIsOpen && (
+        <DialogWarnSignup
+          handleClose={() => setWarnModalIsOpen(false)}
+          handleConfirm={() => {
+            handleSubmit(form.getValues());
+            setWarnModalIsOpen(false);
+          }}
+        />
+      )}
       {successModal && <DialogSuccessSignup handleClose={handleClose} />}
     </div>
   );
