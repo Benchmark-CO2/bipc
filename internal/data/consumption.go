@@ -99,6 +99,53 @@ func queryUnitConsumptionByTech(ctx context.Context, db *sql.DB, unitID, roleID,
 	return scanConsumptionRows(rows)
 }
 
+func queryFloorConsumptionByActiveOptions(ctx context.Context, db *sql.DB, unitID uuid.UUID) (map[string]*Consumption, error) {
+	query := `
+		SELECT 
+			fc.technology,
+			SUM(fc.co2_min * f.area) / NULLIF(SUM(f.area), 0) as co2_min,
+			SUM(fc.co2_max * f.area) / NULLIF(SUM(f.area), 0) as co2_max,
+			SUM(fc.energy_min * f.area) / NULLIF(SUM(f.area), 0) as energy_min,
+			SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max
+		FROM element_consumption fc
+		INNER JOIN floor f ON fc.floor_id = f.id
+		INNER JOIN options opt ON fc.option_id = opt.id AND fc.role_id = opt.role_id
+		WHERE f.unit_id = $1 
+		  AND opt.active = TRUE
+		GROUP BY fc.technology`
+
+	rows, err := db.QueryContext(ctx, query, unitID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return scanConsumptionRows(rows)
+}
+
+func queryUnitConsumptionByActiveOptions(ctx context.Context, db *sql.DB, unitID uuid.UUID) (map[string]*Consumption, error) {
+	query := `
+		SELECT 
+			uc.technology,
+			SUM(uc.co2_min) as co2_min,
+			SUM(uc.co2_max) as co2_max,
+			SUM(uc.energy_min) as energy_min,
+			SUM(uc.energy_max) as energy_max
+		FROM element_consumption uc
+		INNER JOIN options opt ON uc.option_id = opt.id AND uc.role_id = opt.role_id
+		WHERE uc.unit_id = $1 
+		  AND opt.active = TRUE
+		GROUP BY uc.technology`
+
+	rows, err := db.QueryContext(ctx, query, unitID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return scanConsumptionRows(rows)
+}
+
 func queryFloorConsumptionTotal(ctx context.Context, db *sql.DB, unitID, roleID, optionID uuid.UUID) (co2Min, co2Max, energyMin, energyMax float64, found bool, err error) {
 	query := `
 		SELECT 
@@ -238,29 +285,25 @@ func GetUnitConsumptionByTechnology(db *sql.DB, unitID uuid.UUID) (map[string]*C
 		return nil, 0, err
 	}
 
-	query := `
-		SELECT 
-			fc.technology,
-			SUM(fc.co2_min * f.area) / NULLIF(SUM(f.area), 0) as co2_min,
-			SUM(fc.co2_max * f.area) / NULLIF(SUM(f.area), 0) as co2_max,
-			SUM(fc.energy_min * f.area) / NULLIF(SUM(f.area), 0) as energy_min,
-			SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max
-		FROM element_consumption fc
-		INNER JOIN floor f ON fc.floor_id = f.id
-		INNER JOIN options opt ON fc.option_id = opt.id AND fc.role_id = opt.role_id
-		WHERE f.unit_id = $1 
-		  AND opt.active = TRUE
-		GROUP BY fc.technology`
-
-	rows, err := db.QueryContext(ctx, query, unitID)
+	consumptions, err := queryFloorConsumptionByActiveOptions(ctx, db, unitID)
 	if err != nil {
 		return nil, 0, err
 	}
-	defer rows.Close()
 
-	consumptions, err := scanConsumptionRows(rows)
+	unitConsumptions, err := queryUnitConsumptionByActiveOptions(ctx, db, unitID)
 	if err != nil {
 		return nil, 0, err
+	}
+
+	for tech, cons := range unitConsumptions {
+		if _, ok := consumptions[tech]; !ok {
+			consumptions[tech] = cons
+		} else {
+			*consumptions[tech].CO2Min += *cons.CO2Min
+			*consumptions[tech].CO2Max += *cons.CO2Max
+			*consumptions[tech].EnergyMin += *cons.EnergyMin
+			*consumptions[tech].EnergyMax += *cons.EnergyMax
+		}
 	}
 
 	addTotalToConsumptions(consumptions)
@@ -293,6 +336,8 @@ func CalculateProjectConsumptions(units []ProjectUnit) (map[string]*Consumption,
 		}
 	}
 
+	addTotalToConsumptions(projectConsumptions)
+
 	if projectArea > 0 {
 		for _, cons := range projectConsumptions {
 			*cons.CO2Min /= projectArea
@@ -301,8 +346,6 @@ func CalculateProjectConsumptions(units []ProjectUnit) (map[string]*Consumption,
 			*cons.EnergyMax /= projectArea
 		}
 	}
-
-	addTotalToConsumptions(projectConsumptions)
 
 	return projectConsumptions, projectArea
 }

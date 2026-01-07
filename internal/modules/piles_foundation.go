@@ -8,13 +8,23 @@ import (
 )
 
 type PilesFoundationPiles struct {
-	Volume float64               `json:"volume"`
-	Steel  FoundationSteelBasic  `json:"steel"`
+	Volume float64              `json:"volume"`
+	Steel  FoundationSteelBasic `json:"steel"`
 }
 
-type PilesFoundationCapBeams struct {
-	Volume float64               `json:"volume"`
-	Steel  FoundationSteelBasic  `json:"steel"`
+type PilesFoundationBlocks struct {
+	Volume float64              `json:"volume"`
+	Steel  FoundationSteelBasic `json:"steel"`
+}
+
+type PilesFoundationGradeBeams struct {
+	Volume float64              `json:"volume"`
+	Steel  FoundationSteelBasic `json:"steel"`
+}
+
+type PilesFoundationTieBeams struct {
+	Volume float64              `json:"volume"`
+	Steel  FoundationSteelBasic `json:"steel"`
 }
 
 type PilesFoundation struct {
@@ -22,10 +32,12 @@ type PilesFoundation struct {
 	BasicModuleData
 	Consumption *Consumption `json:"consumption,omitempty"`
 
-	Fck      int                         `json:"fck"`
-	Piles    PilesFoundationPiles        `json:"piles"`
-	CapBeams PilesFoundationCapBeams     `json:"cap_beams"`
-	UnitID   uuid.UUID                   `json:"unit_id"`
+	Fck        int                          `json:"fck"`
+	Piles      PilesFoundationPiles         `json:"piles"`
+	Blocks     PilesFoundationBlocks        `json:"blocks"`
+	GradeBeams PilesFoundationGradeBeams    `json:"grade_beams"`
+	TieBeams   PilesFoundationTieBeams      `json:"tie_beams"`
+	UnitID     uuid.UUID                    `json:"unit_id"`
 }
 
 func (p *PilesFoundation) GetType() string { return p.Type }
@@ -40,15 +52,23 @@ func (p *PilesFoundation) Validate(v *validator.Validator) {
 	v.Check(p.Piles.Steel.CA50 >= 0, "piles.steel.ca50", "cannot be negative")
 	v.Check(p.Piles.Steel.CA60 >= 0, "piles.steel.ca60", "cannot be negative")
 
-	v.Check(p.CapBeams.Volume >= 0, "cap_beams.volume", "cannot be negative")
-	v.Check(p.CapBeams.Steel.CA50 >= 0, "cap_beams.steel.ca50", "cannot be negative")
-	v.Check(p.CapBeams.Steel.CA60 >= 0, "cap_beams.steel.ca60", "cannot be negative")
+	v.Check(p.Blocks.Volume >= 0, "blocks.volume", "cannot be negative")
+	v.Check(p.Blocks.Steel.CA50 >= 0, "blocks.steel.ca50", "cannot be negative")
+	v.Check(p.Blocks.Steel.CA60 >= 0, "blocks.steel.ca60", "cannot be negative")
+
+	v.Check(p.GradeBeams.Volume >= 0, "grade_beams.volume", "cannot be negative")
+	v.Check(p.GradeBeams.Steel.CA50 >= 0, "grade_beams.steel.ca50", "cannot be negative")
+	v.Check(p.GradeBeams.Steel.CA60 >= 0, "grade_beams.steel.ca60", "cannot be negative")
+
+	v.Check(p.TieBeams.Volume >= 0, "tie_beams.volume", "cannot be negative")
+	v.Check(p.TieBeams.Steel.CA50 >= 0, "tie_beams.steel.ca50", "cannot be negative")
+	v.Check(p.TieBeams.Steel.CA60 >= 0, "tie_beams.steel.ca60", "cannot be negative")
 }
 
 func (p *PilesFoundation) Calculate() (Consumption, error) {
 	var result Consumption
 
-	totalConcreteVolume := p.Piles.Volume + p.CapBeams.Volume
+	totalConcreteVolume := p.Piles.Volume + p.Blocks.Volume + p.GradeBeams.Volume + p.TieBeams.Volume
 
 	concreteCO2, ok := sidacConcreteData.KgCO2[float64(p.Fck)]
 	if !ok {
@@ -64,7 +84,7 @@ func (p *PilesFoundation) Calculate() (Consumption, error) {
 	result.EnergyMin += concreteEnergy.Min * totalConcreteVolume
 	result.EnergyMax += concreteEnergy.Max * totalConcreteVolume
 
-	totalCA50 := p.Piles.Steel.CA50 + p.CapBeams.Steel.CA50
+	totalCA50 := p.Piles.Steel.CA50 + p.Blocks.Steel.CA50 + p.GradeBeams.Steel.CA50 + p.TieBeams.Steel.CA50
 	if totalCA50 > 0 {
 		steel50CO2 := sidacSteelData.KgCO2[50]
 		steel50Energy := sidacSteelData.MJ[50]
@@ -74,7 +94,7 @@ func (p *PilesFoundation) Calculate() (Consumption, error) {
 		result.EnergyMax += steel50Energy.Max * totalCA50
 	}
 
-	totalCA60 := p.Piles.Steel.CA60 + p.CapBeams.Steel.CA60
+	totalCA60 := p.Piles.Steel.CA60 + p.Blocks.Steel.CA60 + p.GradeBeams.Steel.CA60 + p.TieBeams.Steel.CA60
 	if totalCA60 > 0 {
 		steel60CO2 := sidacSteelData.KgCO2[60]
 		steel60Energy := sidacSteelData.MJ[60]
@@ -130,11 +150,25 @@ func (p *PilesFoundation) toDataModule(moduleID, optionID uuid.UUID, result Cons
 				"ca60": p.Piles.Steel.CA60,
 			},
 		},
-		"cap_beams": map[string]interface{}{
-			"volume": p.CapBeams.Volume,
+		"blocks": map[string]interface{}{
+			"volume": p.Blocks.Volume,
 			"steel": map[string]interface{}{
-				"ca50": p.CapBeams.Steel.CA50,
-				"ca60": p.CapBeams.Steel.CA60,
+				"ca50": p.Blocks.Steel.CA50,
+				"ca60": p.Blocks.Steel.CA60,
+			},
+		},
+		"grade_beams": map[string]interface{}{
+			"volume": p.GradeBeams.Volume,
+			"steel": map[string]interface{}{
+				"ca50": p.GradeBeams.Steel.CA50,
+				"ca60": p.GradeBeams.Steel.CA60,
+			},
+		},
+		"tie_beams": map[string]interface{}{
+			"volume": p.TieBeams.Volume,
+			"steel": map[string]interface{}{
+				"ca50": p.TieBeams.Steel.CA50,
+				"ca60": p.TieBeams.Steel.CA60,
 			},
 		},
 		"unit_id": p.UnitID.String(),
@@ -167,7 +201,9 @@ func (p *PilesFoundation) fromDataModule(d *data.Module) Module {
 
 	var fck int
 	var piles PilesFoundationPiles
-	var capBeams PilesFoundationCapBeams
+	var blocks PilesFoundationBlocks
+	var gradeBeams PilesFoundationGradeBeams
+	var tieBeams PilesFoundationTieBeams
 
 	if val, ok := d.Data["fck"].(float64); ok {
 		fck = int(val)
@@ -187,16 +223,44 @@ func (p *PilesFoundation) fromDataModule(d *data.Module) Module {
 		}
 	}
 
-	if capBeamsData, ok := d.Data["cap_beams"].(map[string]interface{}); ok {
-		if val, ok := capBeamsData["volume"].(float64); ok {
-			capBeams.Volume = val
+	if blocksData, ok := d.Data["blocks"].(map[string]interface{}); ok {
+		if val, ok := blocksData["volume"].(float64); ok {
+			blocks.Volume = val
 		}
-		if steelData, ok := capBeamsData["steel"].(map[string]interface{}); ok {
+		if steelData, ok := blocksData["steel"].(map[string]interface{}); ok {
 			if val, ok := steelData["ca50"].(float64); ok {
-				capBeams.Steel.CA50 = val
+				blocks.Steel.CA50 = val
 			}
 			if val, ok := steelData["ca60"].(float64); ok {
-				capBeams.Steel.CA60 = val
+				blocks.Steel.CA60 = val
+			}
+		}
+	}
+
+	if gradeBeamsData, ok := d.Data["grade_beams"].(map[string]interface{}); ok {
+		if val, ok := gradeBeamsData["volume"].(float64); ok {
+			gradeBeams.Volume = val
+		}
+		if steelData, ok := gradeBeamsData["steel"].(map[string]interface{}); ok {
+			if val, ok := steelData["ca50"].(float64); ok {
+				gradeBeams.Steel.CA50 = val
+			}
+			if val, ok := steelData["ca60"].(float64); ok {
+				gradeBeams.Steel.CA60 = val
+			}
+		}
+	}
+
+	if tieBeamsData, ok := d.Data["tie_beams"].(map[string]interface{}); ok {
+		if val, ok := tieBeamsData["volume"].(float64); ok {
+			tieBeams.Volume = val
+		}
+		if steelData, ok := tieBeamsData["steel"].(map[string]interface{}); ok {
+			if val, ok := steelData["ca50"].(float64); ok {
+				tieBeams.Steel.CA50 = val
+			}
+			if val, ok := steelData["ca60"].(float64); ok {
+				tieBeams.Steel.CA60 = val
 			}
 		}
 	}
@@ -207,7 +271,9 @@ func (p *PilesFoundation) fromDataModule(d *data.Module) Module {
 		Consumption:     consumption,
 		Fck:             fck,
 		Piles:           piles,
-		CapBeams:        capBeams,
+		Blocks:          blocks,
+		GradeBeams:      gradeBeams,
+		TieBeams:        tieBeams,
 		UnitID:          *d.UnitID,
 	}
 }
