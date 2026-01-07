@@ -326,11 +326,25 @@ const DrawerFormModule = ({
                 ca60: toLocalString(restAny.piles?.steel?.ca60 ?? 0),
               },
             },
-            cap_beams: {
-              volume: toLocalString(restAny.cap_beams?.volume ?? 0),
+            tie_beams: {
+              volume: toLocalString(restAny.tie_beams?.volume ?? 0),
               steel: {
-                ca50: toLocalString(restAny.cap_beams?.steel?.ca50 ?? 0),
-                ca60: toLocalString(restAny.cap_beams?.steel?.ca60 ?? 0),
+                ca50: toLocalString(restAny.tie_beams?.steel?.ca50 ?? 0),
+                ca60: toLocalString(restAny.tie_beams?.steel?.ca60 ?? 0),
+              },
+            },
+            grade_beams: {
+              volume: toLocalString(restAny.grade_beams?.volume ?? 0),
+              steel: {
+                ca50: toLocalString(restAny.grade_beams?.steel?.ca50 ?? 0),
+                ca60: toLocalString(restAny.grade_beams?.steel?.ca60 ?? 0),
+              },
+            },
+            pile_caps: {
+              volume: toLocalString(restAny.blocks?.volume ?? 0),
+              steel: {
+                ca50: toLocalString(restAny.blocks?.steel?.ca50 ?? 0),
+                ca60: toLocalString(restAny.blocks?.steel?.ca60 ?? 0),
               },
             },
           }),
@@ -362,13 +376,13 @@ const DrawerFormModule = ({
             form_slabs: toLocalString(restAny.form_slabs ?? 0),
             form_columns: toLocalString(restAny.form_columns ?? 0),
             form_beams: toLocalString(restAny.form_beams ?? 0),
-            blocks: restAny.masonry?.blocks
+            masonry_blocks: restAny.masonry?.blocks
               ? restAny.masonry.blocks.map((block: any) => ({
                   type: block.type,
                   fbk: block.fbk,
                   quantity: toLocalString(block.quantity),
                 }))
-              : (defaults as any).blocks,
+              : (defaults as any).masonry_blocks,
             grout: restAny.masonry?.grout
               ? restAny.masonry.grout.map((grout: any) => ({
                   position: grout.position,
@@ -453,7 +467,7 @@ const DrawerFormModule = ({
     } else if (moduleType === "structural_masonry") {
       filteredData = {
         masonry: {
-          blocks: data.blocks || [],
+          blocks: data.masonry_blocks || [],
           grout: data.grout || [],
           mortar: data.mortar || [],
         },
@@ -486,7 +500,9 @@ const DrawerFormModule = ({
       filteredData = {
         fck: data.fck,
         piles: data.piles,
-        cap_beams: data.cap_beams,
+        blocks: data.pile_caps,
+        tie_beams: data.tie_beams,
+        grade_beams: data.grade_beams,
       };
     } else if (moduleType === "raft_piles_foundation") {
       filteredData = {

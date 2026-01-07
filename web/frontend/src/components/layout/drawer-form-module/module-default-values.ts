@@ -42,7 +42,9 @@ export const beamColumnDefaultValues = {
 
 export const structuralMasonryDefaultValues = {
   type: "structural_masonry" as const,
-  blocks: [{ type: "inteiro (14x19x29)" as const, fbk: 6, quantity: "0" }],
+  masonry_blocks: [
+    { type: "inteiro (14x19x29)" as const, fbk: 6, quantity: "0" },
+  ],
   grout: [
     {
       position: "vertical" as const,
@@ -81,7 +83,21 @@ export const pilesFoundationDefaultValues = {
       ca60: "0",
     },
   },
-  cap_beams: {
+  pile_caps: {
+    volume: "0",
+    steel: {
+      ca50: "0",
+      ca60: "0",
+    },
+  },
+  grade_beams: {
+    volume: "0",
+    steel: {
+      ca50: "0",
+      ca60: "0",
+    },
+  },
+  tie_beams: {
     volume: "0",
     steel: {
       ca50: "0",

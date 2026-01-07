@@ -128,7 +128,7 @@ const ModuleFormPilesFoundation = ({
 
       {/* Estacas */}
       <h3 className="text-sm font-medium text-gray-900">Estacas</h3>
-      <Card className="border-2 border-blue-500">
+      <Card className="border-2 border-gray-200">
         <CardContent className="space-y-4 pt-4">
           {/* Volume das Estacas */}
           <FormField
@@ -205,16 +205,16 @@ const ModuleFormPilesFoundation = ({
         </CardContent>
       </Card>
 
-      {/* Mesoestrutura (Blocos de Coroamento) */}
+      {/* Blocos de Coroamento */}
       <h3 className="text-sm font-medium text-gray-900">
-        Mesoestrutura (Blocos, Vigas Baldrame, Cintas)
+        Blocos de Coroamento
       </h3>
-      <Card className="border-2 border-blue-500">
+      <Card className="border-2 border-gray-200">
         <CardContent className="space-y-4 pt-4">
-          {/* Volume da Mesoestrutura */}
+          {/* Volume dos Blocos */}
           <FormField
             control={form.control}
-            name="cap_beams.volume"
+            name="pile_caps.volume"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">
@@ -235,14 +235,14 @@ const ModuleFormPilesFoundation = ({
             )}
           />
 
-          {/* Aço da Mesoestrutura */}
+          {/* Aço dos Blocos */}
           <div className="space-y-3">
             <FormLabel className="text-xs text-gray-700">Aço</FormLabel>
 
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="cap_beams.steel.ca50"
+                name="pile_caps.steel.ca50"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">CA50 (kg)</FormLabel>
@@ -263,7 +263,165 @@ const ModuleFormPilesFoundation = ({
 
               <FormField
                 control={form.control}
-                name="cap_beams.steel.ca60"
+                name="pile_caps.steel.ca60"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs">CA60 (kg)</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="0,00"
+                        onChange={(e) => {
+                          const maskedValue = masks.numeric(e.target.value);
+                          field.onChange(maskedValue);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Vigas Baldrame */}
+      <h3 className="text-sm font-medium text-gray-900">Vigas Baldrame</h3>
+      <Card className="border-2 border-gray-200">
+        <CardContent className="space-y-4 pt-4">
+          {/* Volume das Vigas Baldrame */}
+          <FormField
+            control={form.control}
+            name="grade_beams.volume"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">
+                  Volume de concreto (m³)
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="0,00"
+                    onChange={(e) => {
+                      const maskedValue = masks.numeric(e.target.value);
+                      field.onChange(maskedValue);
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Aço das Vigas Baldrame */}
+          <div className="space-y-3">
+            <FormLabel className="text-xs text-gray-700">Aço</FormLabel>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="grade_beams.steel.ca50"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs">CA50 (kg)</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="0,00"
+                        onChange={(e) => {
+                          const maskedValue = masks.numeric(e.target.value);
+                          field.onChange(maskedValue);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="grade_beams.steel.ca60"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs">CA60 (kg)</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="0,00"
+                        onChange={(e) => {
+                          const maskedValue = masks.numeric(e.target.value);
+                          field.onChange(maskedValue);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cintas */}
+      <h3 className="text-sm font-medium text-gray-900">Cintas</h3>
+      <Card className="border-2 border-gray-200">
+        <CardContent className="space-y-4 pt-4">
+          {/* Volume das Cintas */}
+          <FormField
+            control={form.control}
+            name="tie_beams.volume"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">
+                  Volume de concreto (m³)
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="0,00"
+                    onChange={(e) => {
+                      const maskedValue = masks.numeric(e.target.value);
+                      field.onChange(maskedValue);
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Aço das Cintas */}
+          <div className="space-y-3">
+            <FormLabel className="text-xs text-gray-700">Aço</FormLabel>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="tie_beams.steel.ca50"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs">CA50 (kg)</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="0,00"
+                        onChange={(e) => {
+                          const maskedValue = masks.numeric(e.target.value);
+                          field.onChange(maskedValue);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="tie_beams.steel.ca60"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">CA60 (kg)</FormLabel>

@@ -229,7 +229,8 @@ export const moduleFormSchema = z
       .transform((val) => (val ? parseNumber(val) : undefined))
       .optional(),
 
-    blocks: z.array(blockItemSchema).optional(),
+    // Structural masonry fields
+    masonry_blocks: z.array(blockItemSchema).optional(),
     grout: z
       .array(groutItemSchema)
       .min(1, "Adicione pelo menos um tipo de graute")
@@ -249,7 +250,19 @@ export const moduleFormSchema = z
         steel: pilesSteelSchema.optional(),
       })
       .optional(),
-    cap_beams: z
+    tie_beams: z
+      .object({
+        volume: z.string().transform(parseNumber).optional(),
+        steel: pilesSteelSchema.optional(),
+      })
+      .optional(),
+    pile_caps: z
+      .object({
+        volume: z.string().transform(parseNumber).optional(),
+        steel: pilesSteelSchema.optional(),
+      })
+      .optional(),
+    grade_beams: z
       .object({
         volume: z.string().transform(parseNumber).optional(),
         steel: pilesSteelSchema.optional(),
@@ -311,7 +324,7 @@ export const moduleFormSchema = z
     (data) => {
       if (data.type === "structural_masonry") {
         return (
-          data.blocks !== undefined &&
+          data.masonry_blocks !== undefined &&
           data.grout !== undefined &&
           data.mortar !== undefined &&
           data.concrete_slabs !== undefined

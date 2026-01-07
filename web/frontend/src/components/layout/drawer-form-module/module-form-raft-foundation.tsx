@@ -47,7 +47,7 @@ const ModuleFormRaftFoundation = ({ form }: ModuleFormRaftFoundationProps) => {
           name="area"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Área (m²) *</FormLabel>
+              <FormLabel className="text-xs">Área (m²)</FormLabel>
               <FormControl>
                 <Input
                   {...field}
@@ -68,7 +68,7 @@ const ModuleFormRaftFoundation = ({ form }: ModuleFormRaftFoundationProps) => {
           name="thickness"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Espessura (m) *</FormLabel>
+              <FormLabel className="text-xs">Espessura (m)</FormLabel>
               <FormControl>
                 <Input
                   {...field}
@@ -182,7 +182,7 @@ const ModuleFormRaftFoundation = ({ form }: ModuleFormRaftFoundationProps) => {
 
       <h3 className="text-sm font-medium text-gray-900">Aço</h3>
 
-      <Card className="border-2 border-blue-500">
+      <Card className="border-2 border-gray-200">
         <CardContent className="space-y-4 pt-4">
           {/* Aço */}
           <div className="space-y-3">
