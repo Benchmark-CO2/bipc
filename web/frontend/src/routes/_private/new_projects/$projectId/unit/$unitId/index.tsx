@@ -1,6 +1,7 @@
 import { getFloorsBenchmark } from "@/actions/benchmarks/getFloors";
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { getUnitByUUID } from "@/actions/units/getUnit";
+import GraphIcon from "@/assets/icons/graph";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import { floorsColumns } from "@/components/columns/floors";
 import { CommonTable } from "@/components/layout";
@@ -406,8 +407,9 @@ function RouteComponent() {
               {hasPermission("create:role") && (
                 <DrawerFormDisciplines
                   componentTrigger={
-                    <Button variant="bipc" size="icon-lg">
+                    <Button variant="outline-bipc" size="lg">
                       <Plus />
+                      Nova disciplina
                     </Button>
                   }
                   projectId={projectId}
@@ -417,11 +419,12 @@ function RouteComponent() {
               {(hasPermission("*:*") || selectedRole?.is_member) && (
                 <Button
                   variant="bipc"
-                  size="icon-lg"
+                  size="lg"
                   onClick={handleClickConstructiveTechnologies}
                   disabled={selectedTab === "Todas as Disciplinas"}
                 >
-                  <SquareArrowOutUpRight />
+                  <GraphIcon />
+                  Criar simulações
                 </Button>
               )}
             </div>
