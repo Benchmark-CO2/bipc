@@ -1,5 +1,6 @@
 import Logo from "@/assets/logo.svg";
 import LogoFull from "@/assets/logo_full.svg";
+import BipcIcon from "@/assets/icons/bipc";
 import { useSummary } from "@/context/summaryContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -19,11 +20,15 @@ import {
   Settings,
   UserPlus,
 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Notifications } from "../notifications";
 import { Button } from "../ui/button";
 import Divider from "../ui/divider";
 import SidemenuItem from "../ui/sidemenu-item";
+import ExpandContentIcon from "@/assets/icons/expand-content";
+import CollapseContentIcon from "@/assets/icons/collapse-content";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 interface ISidebar {
   handleLogout?: () => void;
@@ -39,18 +44,237 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const { context, setSummaryContext } = useSummary();
+
+  // Estado para controlar se o sidebar está minimizado
+  const [isMinimized, setIsMinimized] = useState(() => {
+    const saved = localStorage.getItem("sidebarMinimized");
+    return saved === "true";
+  });
+
+  // Salvar estado no localStorage quando mudar
+  useEffect(() => {
+    localStorage.setItem("sidebarMinimized", isMinimized.toString());
+  }, [isMinimized]);
+
+  const toggleMinimize = () => {
+    setIsMinimized(!isMinimized);
+  };
+
+  // Versão minimizada do sidebar
+  const minimizedSidebar = (
+    <div className="h-full flex flex-col py-4 px-3 relative">
+      {/* Logo minimizado - flutuante no topo */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2">
+        <Link to={isAuthenticated ? "/benchmark" : "/login"}>
+          <BipcIcon size={48} className="text-secondary" />
+        </Link>
+      </div>
+
+      {/* Espaço para o logo flutuante */}
+      <div className="h-16" />
+
+      {/* Botão para expandir */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={toggleMinimize}
+            className="mb-6 p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
+          >
+            <ExpandContentIcon size={28} className="text-white" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="right">
+          <p>Expandir sidebar</p>
+        </TooltipContent>
+      </Tooltip>
+
+      {/* Ícones de navegação */}
+      <div className="flex-1 flex flex-col gap-1 justify-end">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link
+              to="/about"
+              className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
+            >
+              <Info size={18} className="text-white" />
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>Sobre o BIPc</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {posLaunchFeatures.trainingModal.enabled && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                to={posLaunchFeatures.trainingModal.formUrl}
+                target="_blank"
+                className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
+              >
+                <Book size={18} className="text-white" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Capacitação</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link
+              to="/benchmark"
+              activeProps={{ className: "bg-zinc-700/30" }}
+              className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
+            >
+              <BarChart3 size={18} className="text-white" />
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>Benchmark</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link
+              to="/privacidade"
+              className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
+            >
+              <GlobeLock size={18} className="text-white" />
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>Políticas de Privacidade</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <div className="h-px bg-zinc-700/50 my-2" />
+
+        {isAuthenticated ? (
+          <>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  to="/new_projects"
+                  activeProps={{ className: "bg-zinc-700/30" }}
+                  className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
+                >
+                  <File size={18} className="text-white" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Projetos</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  to="/settings"
+                  activeProps={{ className: "bg-zinc-700/30" }}
+                  className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
+                >
+                  <Settings size={18} className="text-white" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Configurações</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center">
+                  <Notifications iconOnly size={18} />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Notificações</p>
+              </TooltipContent>
+            </Tooltip>
+          </>
+        ) : (
+          <>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  to="/sign-up"
+                  activeProps={{ className: "bg-zinc-700/30" }}
+                  className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
+                >
+                  <UserPlus size={18} className="text-white" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Cadastre-se</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  to="/login"
+                  activeProps={{ className: "bg-zinc-700/30" }}
+                  className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
+                >
+                  <LogIn size={18} className="text-white" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Login</p>
+              </TooltipContent>
+            </Tooltip>
+          </>
+        )}
+      </div>
+
+      {/* Botão de logout no rodapé */}
+      {isAuthenticated && handleLogout && (
+        <div className="mt-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleLogout}
+                className="p-2 hover:bg-red-700/30 rounded-md transition-colors flex items-center justify-center w-full"
+              >
+                <LogIn size={18} className="text-red-500 rotate-180" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Sair</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
+    </div>
+  );
+
   const sidemenuContent = (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col relative">
       {/* Header com Logo */}
-      <div className="flex items-center mb-6 p-4">
+      <div className="flex items-center mb-6 p-4 justify-between relative">
         <Link to={isAuthenticated ? "/benchmark" : "/login"}>
           <img src={LogoFull} alt="Logo" className="w-full" />
         </Link>
+        {!isMobile && (
+          <button
+            onClick={toggleMinimize}
+            className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors absolute right-4 top-4"
+            title="Minimizar sidebar"
+          >
+            <CollapseContentIcon size={28} className="text-white" />
+          </button>
+        )}
       </div>
 
       {/* Menu Items - Seção Principal */}
       <div className="flex-1 flex flex-col p-4 overflow-auto custom-scrollbar">
-        <ul className="flex flex-col gap-1 mt-auto mb-2">
+        <ul
+          className="flex flex-col gap-1 mt-auto mb-2 transition-opacity duration-200"
+          style={{ opacity: isMinimized && !isMobile ? 0 : 1 }}
+        >
           {/* Institucional */}
           <li>
             <SidemenuItem variant="link">
@@ -303,8 +527,13 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-sidebar text-white max-w-80 w-full">
-      {sidemenuContent}
+    <div
+      className={cn(
+        "flex h-screen flex-col bg-sidebar text-white transition-all duration-300",
+        isMinimized ? "w-[72px]" : "w-96"
+      )}
+    >
+      {isMinimized ? minimizedSidebar : sidemenuContent}
     </div>
   );
 };
