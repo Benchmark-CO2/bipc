@@ -464,15 +464,16 @@ export default function DrawerFormDisciplines({
                     </div>
 
                     {/* Lista de permissões */}
-                    {mockPermissions.management.map((permission) => (
+                    {mockPermissions.management.map((permission, idx) => (
                       <div
                         key={permission.id}
-                        className="flex items-center justify-between gap-2"
+                        className="flex items-center justify-between gap-2 font-bold text-primary"
                       >
-                        <span className="text-sm font-normal flex-1">
+                        <label className="text-sm font-normal flex-1" htmlFor={'checkbox-' + permission.id}>
                           {permission.label}
-                        </span>
+                        </label>
                         <Checkbox
+                          id={'checkbox-' + permission.id}
                           checked={selectedPermissions.includes(permission.id)}
                           onCheckedChange={(checked) =>
                             togglePermission(permission.id, checked as boolean)
