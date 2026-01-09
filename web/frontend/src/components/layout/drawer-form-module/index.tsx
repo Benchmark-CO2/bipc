@@ -213,6 +213,20 @@ const DrawerFormModule = ({
         return typeof formatted === "number" ? String(formatted) : formatted;
       };
 
+      // Helper para converter steel do backend (array) para formato do formulário
+      const convertSteelArray = (steelArray: any[] | undefined) => {
+        if (!steelArray || !Array.isArray(steelArray)) {
+          return [{ material: "rebar", resistance: "CA50", mass: "0" }];
+        }
+        return steelArray.map((item) => ({
+          material: item.material || "rebar",
+          other_name: item.other_name,
+          resistance: item.resistance || "CA50",
+          other_resistance: item.other_resistance,
+          mass: toLocalString(item.mass ?? 0),
+        }));
+      };
+
       if (
         rest.type === "beam_column" ||
         rest.type === "concrete_wall" ||
@@ -308,12 +322,7 @@ const DrawerFormModule = ({
             area: toLocalString(restAny.area ?? 0),
             thickness: toLocalString(restAny.thickness ?? 0),
             fck: restAny.fck ?? (defaults as any).fck,
-            steel: {
-              mesh: toLocalString(restAny.steel?.mesh ?? 0),
-              ca50: toLocalString(restAny.steel?.ca50 ?? 0),
-              ca60: toLocalString(restAny.steel?.ca60 ?? 0),
-              cp190: toLocalString(restAny.steel?.cp190 ?? 0),
-            },
+            steel: convertSteelArray(restAny.steel),
           }),
 
           // Piles foundation specific fields
@@ -321,53 +330,33 @@ const DrawerFormModule = ({
             fck: restAny.fck ?? (defaults as any).fck,
             piles: {
               volume: toLocalString(restAny.piles?.volume ?? 0),
-              steel: {
-                ca50: toLocalString(restAny.piles?.steel?.ca50 ?? 0),
-                ca60: toLocalString(restAny.piles?.steel?.ca60 ?? 0),
-              },
-            },
-            tie_beams: {
-              volume: toLocalString(restAny.tie_beams?.volume ?? 0),
-              steel: {
-                ca50: toLocalString(restAny.tie_beams?.steel?.ca50 ?? 0),
-                ca60: toLocalString(restAny.tie_beams?.steel?.ca60 ?? 0),
-              },
-            },
-            grade_beams: {
-              volume: toLocalString(restAny.grade_beams?.volume ?? 0),
-              steel: {
-                ca50: toLocalString(restAny.grade_beams?.steel?.ca50 ?? 0),
-                ca60: toLocalString(restAny.grade_beams?.steel?.ca60 ?? 0),
-              },
+              steel: convertSteelArray(restAny.piles?.steel),
             },
             pile_caps: {
               volume: toLocalString(restAny.blocks?.volume ?? 0),
-              steel: {
-                ca50: toLocalString(restAny.blocks?.steel?.ca50 ?? 0),
-                ca60: toLocalString(restAny.blocks?.steel?.ca60 ?? 0),
-              },
+              steel: convertSteelArray(restAny.blocks?.steel),
+            },
+            tie_beams: {
+              volume: toLocalString(restAny.tie_beams?.volume ?? 0),
+              steel: convertSteelArray(restAny.tie_beams?.steel),
+            },
+            grade_beams: {
+              volume: toLocalString(restAny.grade_beams?.volume ?? 0),
+              steel: convertSteelArray(restAny.grade_beams?.steel),
             },
           }),
 
           // Raft piles foundation specific fields
           ...(rest.type === "raft_piles_foundation" && {
+            fck: restAny.fck ?? (defaults as any).fck,
             raft: {
               area: toLocalString(restAny.raft?.area ?? 0),
               thickness: toLocalString(restAny.raft?.thickness ?? 0),
-              fck: restAny.raft?.fck ?? (defaults as any).raft.fck,
-              steel: {
-                mesh: toLocalString(restAny.raft?.steel?.mesh ?? 0),
-                ca50: toLocalString(restAny.raft?.steel?.ca50 ?? 0),
-                ca60: toLocalString(restAny.raft?.steel?.ca60 ?? 0),
-                cp190: toLocalString(restAny.raft?.steel?.cp190 ?? 0),
-              },
+              steel: convertSteelArray(restAny.raft?.steel),
             },
             piles: {
               volume: toLocalString(restAny.piles?.volume ?? 0),
-              steel: {
-                ca50: toLocalString(restAny.piles?.steel?.ca50 ?? 0),
-                ca60: toLocalString(restAny.piles?.steel?.ca60 ?? 0),
-              },
+              steel: convertSteelArray(restAny.piles?.steel),
             },
           }),
 
@@ -500,12 +489,13 @@ const DrawerFormModule = ({
       filteredData = {
         fck: data.fck,
         piles: data.piles,
-        blocks: data.pile_caps,
+        blocks: data.pile_caps, // pile_caps → blocks para o backend
         tie_beams: data.tie_beams,
         grade_beams: data.grade_beams,
       };
     } else if (moduleType === "raft_piles_foundation") {
       filteredData = {
+        fck: data.fck, // FCK único na raiz
         raft: data.raft,
         piles: data.piles,
       };

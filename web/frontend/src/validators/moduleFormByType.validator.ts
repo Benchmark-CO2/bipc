@@ -160,18 +160,47 @@ const mortarItemSchema = z
   });
 
 // Steel schema for foundations
-const foundationSteelSchema = z.object({
-  mesh: z.string().transform(parseNumber).optional(),
-  ca50: z.string().transform(parseNumber).optional(),
-  ca60: z.string().transform(parseNumber).optional(),
-  cp190: z.string().transform(parseNumber).optional(),
-});
+const steelMaterialSchema = z
+  .object({
+    material: z.enum(["general", "rebar", "mesh", "strand", "other"]),
+    other_name: z.string().optional(),
+    resistance: z.enum(["CA50", "CA60", "CP190", "other"]),
+    other_resistance: z.number().optional(),
+    mass: z.string().transform(parseNumber),
+  })
+  .refine(
+    (data) => {
+      // Se material = "other", other_name é obrigatório
+      if (data.material === "other") {
+        return data.other_name && data.other_name.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Nome do material é obrigatório quando 'Outros' é selecionado",
+      path: ["other_name"],
+    }
+  )
+  .refine(
+    (data) => {
+      // Se resistance = "other", other_resistance é obrigatório
+      if (data.resistance === "other") {
+        return (
+          data.other_resistance !== undefined && data.other_resistance !== null
+        );
+      }
+      return true;
+    },
+    {
+      message:
+        "Resistência customizada é obrigatória quando 'Outro' é selecionado",
+      path: ["other_resistance"],
+    }
+  );
 
-// Piles steel schema (only ca50 and ca60)
-const pilesSteelSchema = z.object({
-  ca50: z.string().transform(parseNumber).optional(),
-  ca60: z.string().transform(parseNumber).optional(),
-});
+const foundationSteelSchema = z
+  .array(steelMaterialSchema)
+  .min(1, "Adicione pelo menos um material de aço");
 
 export const moduleFormSchema = z
   .object({
@@ -247,25 +276,25 @@ export const moduleFormSchema = z
     piles: z
       .object({
         volume: z.string().transform(parseNumber).optional(),
-        steel: pilesSteelSchema.optional(),
+        steel: foundationSteelSchema.optional(),
       })
       .optional(),
     tie_beams: z
       .object({
         volume: z.string().transform(parseNumber).optional(),
-        steel: pilesSteelSchema.optional(),
+        steel: foundationSteelSchema.optional(),
       })
       .optional(),
     pile_caps: z
       .object({
         volume: z.string().transform(parseNumber).optional(),
-        steel: pilesSteelSchema.optional(),
+        steel: foundationSteelSchema.optional(),
       })
       .optional(),
     grade_beams: z
       .object({
         volume: z.string().transform(parseNumber).optional(),
-        steel: pilesSteelSchema.optional(),
+        steel: foundationSteelSchema.optional(),
       })
       .optional(),
 
@@ -274,7 +303,6 @@ export const moduleFormSchema = z
       .object({
         area: z.string().transform(parseNumber).optional(),
         thickness: z.string().transform(parseNumber).optional(),
-        fck: z.number().optional(),
         steel: foundationSteelSchema.optional(),
       })
       .optional(),
@@ -372,14 +400,13 @@ export const moduleFormSchema = z
         return (
           data.raft?.area !== undefined &&
           data.raft?.thickness !== undefined &&
-          data.raft?.fck !== undefined
+          data.fck !== undefined // FCK está na raiz, não no raft
         );
       }
       return true;
     },
     {
-      message:
-        "Para Radier Estaqueado são obrigatórios: área, espessura e fck do radier",
+      message: "Para Radier Estaqueado são obrigatórios: área, espessura e fck",
       path: ["type"],
     }
   );

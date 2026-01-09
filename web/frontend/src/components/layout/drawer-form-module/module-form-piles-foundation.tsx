@@ -1,6 +1,6 @@
 import { masks } from "@/utils/masks";
 import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Card, CardContent } from "../../ui/card";
 import {
@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../ui/select";
+import SteelMaterialList from "./steel-material-list";
 
 interface ModuleFormPilesFoundationProps {
   form: UseFormReturn<ModuleFormInput>;
@@ -155,53 +156,7 @@ const ModuleFormPilesFoundation = ({
           />
 
           {/* Aço das Estacas */}
-          <div className="space-y-3">
-            <FormLabel className="text-xs text-gray-700">Aço</FormLabel>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="piles.steel.ca50"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs">CA50 (kg)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="0,00"
-                        onChange={(e) => {
-                          const maskedValue = masks.numeric(e.target.value);
-                          field.onChange(maskedValue);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="piles.steel.ca60"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs">CA60 (kg)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="0,00"
-                        onChange={(e) => {
-                          const maskedValue = masks.numeric(e.target.value);
-                          field.onChange(maskedValue);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
+          <SteelMaterialList form={form} name="piles.steel" />
         </CardContent>
       </Card>
 
@@ -236,53 +191,7 @@ const ModuleFormPilesFoundation = ({
           />
 
           {/* Aço dos Blocos */}
-          <div className="space-y-3">
-            <FormLabel className="text-xs text-gray-700">Aço</FormLabel>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="pile_caps.steel.ca50"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs">CA50 (kg)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="0,00"
-                        onChange={(e) => {
-                          const maskedValue = masks.numeric(e.target.value);
-                          field.onChange(maskedValue);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="pile_caps.steel.ca60"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs">CA60 (kg)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="0,00"
-                        onChange={(e) => {
-                          const maskedValue = masks.numeric(e.target.value);
-                          field.onChange(maskedValue);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
+          <SteelMaterialList form={form} name="pile_caps.steel" />
         </CardContent>
       </Card>
 
@@ -315,53 +224,7 @@ const ModuleFormPilesFoundation = ({
           />
 
           {/* Aço das Vigas Baldrame */}
-          <div className="space-y-3">
-            <FormLabel className="text-xs text-gray-700">Aço</FormLabel>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="grade_beams.steel.ca50"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs">CA50 (kg)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="0,00"
-                        onChange={(e) => {
-                          const maskedValue = masks.numeric(e.target.value);
-                          field.onChange(maskedValue);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="grade_beams.steel.ca60"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs">CA60 (kg)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="0,00"
-                        onChange={(e) => {
-                          const maskedValue = masks.numeric(e.target.value);
-                          field.onChange(maskedValue);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
+          <SteelMaterialList form={form} name="grade_beams.steel" />
         </CardContent>
       </Card>
 
@@ -394,53 +257,7 @@ const ModuleFormPilesFoundation = ({
           />
 
           {/* Aço das Cintas */}
-          <div className="space-y-3">
-            <FormLabel className="text-xs text-gray-700">Aço</FormLabel>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="tie_beams.steel.ca50"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs">CA50 (kg)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="0,00"
-                        onChange={(e) => {
-                          const maskedValue = masks.numeric(e.target.value);
-                          field.onChange(maskedValue);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="tie_beams.steel.ca60"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs">CA60 (kg)</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="0,00"
-                        onChange={(e) => {
-                          const maskedValue = masks.numeric(e.target.value);
-                          field.onChange(maskedValue);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
+          <SteelMaterialList form={form} name="tie_beams.steel" />
         </CardContent>
       </Card>
     </div>

@@ -65,12 +65,13 @@ export const raftFoundationDefaultValues = {
   area: "0",
   thickness: "0",
   fck: 25,
-  steel: {
-    mesh: "0",
-    ca50: "0",
-    ca60: "0",
-    cp190: "0",
-  },
+  steel: [
+    {
+      material: "rebar" as const,
+      resistance: "CA50" as const,
+      mass: "0",
+    },
+  ],
 };
 
 export const pilesFoundationDefaultValues = {
@@ -78,53 +79,69 @@ export const pilesFoundationDefaultValues = {
   fck: 30,
   piles: {
     volume: "0",
-    steel: {
-      ca50: "0",
-      ca60: "0",
-    },
+    steel: [
+      {
+        material: "rebar" as const,
+        resistance: "CA50" as const,
+        mass: "0",
+      },
+    ],
   },
   pile_caps: {
     volume: "0",
-    steel: {
-      ca50: "0",
-      ca60: "0",
-    },
+    steel: [
+      {
+        material: "rebar" as const,
+        resistance: "CA50" as const,
+        mass: "0",
+      },
+    ],
   },
   grade_beams: {
     volume: "0",
-    steel: {
-      ca50: "0",
-      ca60: "0",
-    },
+    steel: [
+      {
+        material: "rebar" as const,
+        resistance: "CA50" as const,
+        mass: "0",
+      },
+    ],
   },
   tie_beams: {
     volume: "0",
-    steel: {
-      ca50: "0",
-      ca60: "0",
-    },
+    steel: [
+      {
+        material: "rebar" as const,
+        resistance: "CA50" as const,
+        mass: "0",
+      },
+    ],
   },
 };
 
 export const raftPilesFoundationDefaultValues = {
   type: "raft_piles_foundation" as const,
+  fck: 25,
   raft: {
     area: "0",
     thickness: "0",
-    fck: 25,
-    steel: {
-      mesh: "0",
-      ca50: "0",
-      ca60: "0",
-      cp190: "0",
-    },
+    steel: [
+      {
+        material: "rebar" as const,
+        resistance: "CA50" as const,
+        mass: "0",
+      },
+    ],
   },
   piles: {
     volume: "0",
-    steel: {
-      ca50: "0",
-      ca60: "0",
-    },
+    steel: [
+      {
+        material: "rebar" as const,
+        resistance: "CA50" as const,
+        mass: "0",
+      },
+    ],
   },
 };
 
