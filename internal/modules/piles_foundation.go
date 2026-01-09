@@ -8,23 +8,23 @@ import (
 )
 
 type PilesFoundationPiles struct {
-	Volume float64              `json:"volume"`
-	Steel  FoundationSteelBasic `json:"steel"`
+	Volume float64         `json:"volume"`
+	Steel  []SteelMaterial `json:"steel"`
 }
 
 type PilesFoundationBlocks struct {
-	Volume float64              `json:"volume"`
-	Steel  FoundationSteelBasic `json:"steel"`
+	Volume float64         `json:"volume"`
+	Steel  []SteelMaterial `json:"steel"`
 }
 
 type PilesFoundationGradeBeams struct {
-	Volume float64              `json:"volume"`
-	Steel  FoundationSteelBasic `json:"steel"`
+	Volume float64         `json:"volume"`
+	Steel  []SteelMaterial `json:"steel"`
 }
 
 type PilesFoundationTieBeams struct {
-	Volume float64              `json:"volume"`
-	Steel  FoundationSteelBasic `json:"steel"`
+	Volume float64         `json:"volume"`
+	Steel  []SteelMaterial `json:"steel"`
 }
 
 type PilesFoundation struct {
@@ -49,20 +49,16 @@ func (p *PilesFoundation) Validate(v *validator.Validator) {
 	v.Check(p.Fck != 0, "fck", "must be provided")
 
 	v.Check(p.Piles.Volume >= 0, "piles.volume", "cannot be negative")
-	v.Check(p.Piles.Steel.CA50 >= 0, "piles.steel.ca50", "cannot be negative")
-	v.Check(p.Piles.Steel.CA60 >= 0, "piles.steel.ca60", "cannot be negative")
+	ValidateSteelMaterials(v, p.Piles.Steel, "piles.steel")
 
 	v.Check(p.Blocks.Volume >= 0, "blocks.volume", "cannot be negative")
-	v.Check(p.Blocks.Steel.CA50 >= 0, "blocks.steel.ca50", "cannot be negative")
-	v.Check(p.Blocks.Steel.CA60 >= 0, "blocks.steel.ca60", "cannot be negative")
+	ValidateSteelMaterials(v, p.Blocks.Steel, "blocks.steel")
 
 	v.Check(p.GradeBeams.Volume >= 0, "grade_beams.volume", "cannot be negative")
-	v.Check(p.GradeBeams.Steel.CA50 >= 0, "grade_beams.steel.ca50", "cannot be negative")
-	v.Check(p.GradeBeams.Steel.CA60 >= 0, "grade_beams.steel.ca60", "cannot be negative")
+	ValidateSteelMaterials(v, p.GradeBeams.Steel, "grade_beams.steel")
 
 	v.Check(p.TieBeams.Volume >= 0, "tie_beams.volume", "cannot be negative")
-	v.Check(p.TieBeams.Steel.CA50 >= 0, "tie_beams.steel.ca50", "cannot be negative")
-	v.Check(p.TieBeams.Steel.CA60 >= 0, "tie_beams.steel.ca60", "cannot be negative")
+	ValidateSteelMaterials(v, p.TieBeams.Steel, "tie_beams.steel")
 }
 
 func (p *PilesFoundation) Calculate() (Consumption, error) {
@@ -84,25 +80,18 @@ func (p *PilesFoundation) Calculate() (Consumption, error) {
 	result.EnergyMin += concreteEnergy.Min * totalConcreteVolume
 	result.EnergyMax += concreteEnergy.Max * totalConcreteVolume
 
-	totalCA50 := p.Piles.Steel.CA50 + p.Blocks.Steel.CA50 + p.GradeBeams.Steel.CA50 + p.TieBeams.Steel.CA50
-	if totalCA50 > 0 {
-		steel50CO2 := sidacSteelData.KgCO2[50]
-		steel50Energy := sidacSteelData.MJ[50]
-		result.CO2Min += steel50CO2.Min * totalCA50
-		result.CO2Max += steel50CO2.Max * totalCA50
-		result.EnergyMin += steel50Energy.Min * totalCA50
-		result.EnergyMax += steel50Energy.Max * totalCA50
+	// Calculate steel for all components
+	var allSteel []SteelMaterial
+	allSteel = append(allSteel, p.Piles.Steel...)
+	allSteel = append(allSteel, p.Blocks.Steel...)
+	allSteel = append(allSteel, p.GradeBeams.Steel...)
+	allSteel = append(allSteel, p.TieBeams.Steel...)
+	
+	steelConsumption, err := CalculateSteelConsumption(allSteel)
+	if err != nil {
+		return result, err
 	}
-
-	totalCA60 := p.Piles.Steel.CA60 + p.Blocks.Steel.CA60 + p.GradeBeams.Steel.CA60 + p.TieBeams.Steel.CA60
-	if totalCA60 > 0 {
-		steel60CO2 := sidacSteelData.KgCO2[60]
-		steel60Energy := sidacSteelData.MJ[60]
-		result.CO2Min += steel60CO2.Min * totalCA60
-		result.CO2Max += steel60CO2.Max * totalCA60
-		result.EnergyMin += steel60Energy.Min * totalCA60
-		result.EnergyMax += steel60Energy.Max * totalCA60
-	}
+	result.sum(steelConsumption)
 
 	return result, nil
 }
@@ -145,31 +134,19 @@ func (p *PilesFoundation) toDataModule(moduleID, optionID uuid.UUID, result Cons
 		"fck": p.Fck,
 		"piles": map[string]interface{}{
 			"volume": p.Piles.Volume,
-			"steel": map[string]interface{}{
-				"ca50": p.Piles.Steel.CA50,
-				"ca60": p.Piles.Steel.CA60,
-			},
+			"steel":  p.Piles.Steel,
 		},
 		"blocks": map[string]interface{}{
 			"volume": p.Blocks.Volume,
-			"steel": map[string]interface{}{
-				"ca50": p.Blocks.Steel.CA50,
-				"ca60": p.Blocks.Steel.CA60,
-			},
+			"steel":  p.Blocks.Steel,
 		},
 		"grade_beams": map[string]interface{}{
 			"volume": p.GradeBeams.Volume,
-			"steel": map[string]interface{}{
-				"ca50": p.GradeBeams.Steel.CA50,
-				"ca60": p.GradeBeams.Steel.CA60,
-			},
+			"steel":  p.GradeBeams.Steel,
 		},
 		"tie_beams": map[string]interface{}{
 			"volume": p.TieBeams.Volume,
-			"steel": map[string]interface{}{
-				"ca50": p.TieBeams.Steel.CA50,
-				"ca60": p.TieBeams.Steel.CA60,
-			},
+			"steel":  p.TieBeams.Steel,
 		},
 		"unit_id": p.UnitID.String(),
 	}
@@ -213,56 +190,28 @@ func (p *PilesFoundation) fromDataModule(d *data.Module) Module {
 		if val, ok := pilesData["volume"].(float64); ok {
 			piles.Volume = val
 		}
-		if steelData, ok := pilesData["steel"].(map[string]interface{}); ok {
-			if val, ok := steelData["ca50"].(float64); ok {
-				piles.Steel.CA50 = val
-			}
-			if val, ok := steelData["ca60"].(float64); ok {
-				piles.Steel.CA60 = val
-			}
-		}
+		piles.Steel = deserializeSteelMaterialsFromInterface(pilesData["steel"])
 	}
 
 	if blocksData, ok := d.Data["blocks"].(map[string]interface{}); ok {
 		if val, ok := blocksData["volume"].(float64); ok {
 			blocks.Volume = val
 		}
-		if steelData, ok := blocksData["steel"].(map[string]interface{}); ok {
-			if val, ok := steelData["ca50"].(float64); ok {
-				blocks.Steel.CA50 = val
-			}
-			if val, ok := steelData["ca60"].(float64); ok {
-				blocks.Steel.CA60 = val
-			}
-		}
+		blocks.Steel = deserializeSteelMaterialsFromInterface(blocksData["steel"])
 	}
 
 	if gradeBeamsData, ok := d.Data["grade_beams"].(map[string]interface{}); ok {
 		if val, ok := gradeBeamsData["volume"].(float64); ok {
 			gradeBeams.Volume = val
 		}
-		if steelData, ok := gradeBeamsData["steel"].(map[string]interface{}); ok {
-			if val, ok := steelData["ca50"].(float64); ok {
-				gradeBeams.Steel.CA50 = val
-			}
-			if val, ok := steelData["ca60"].(float64); ok {
-				gradeBeams.Steel.CA60 = val
-			}
-		}
+		gradeBeams.Steel = deserializeSteelMaterialsFromInterface(gradeBeamsData["steel"])
 	}
 
 	if tieBeamsData, ok := d.Data["tie_beams"].(map[string]interface{}); ok {
 		if val, ok := tieBeamsData["volume"].(float64); ok {
 			tieBeams.Volume = val
 		}
-		if steelData, ok := tieBeamsData["steel"].(map[string]interface{}); ok {
-			if val, ok := steelData["ca50"].(float64); ok {
-				tieBeams.Steel.CA50 = val
-			}
-			if val, ok := steelData["ca60"].(float64); ok {
-				tieBeams.Steel.CA60 = val
-			}
-		}
+		tieBeams.Steel = deserializeSteelMaterialsFromInterface(tieBeamsData["steel"])
 	}
 
 	return &PilesFoundation{

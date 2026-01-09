@@ -12,10 +12,10 @@ type RaftFoundation struct {
 	BasicModuleData
 	Consumption *Consumption `json:"consumption,omitempty"`
 
-	Area      float64                  `json:"area"`
-	Thickness float64                  `json:"thickness"`
-	Fck       int                      `json:"fck"`
-	Steel     FoundationSteelComplete  `json:"steel"`
+	Area      float64         `json:"area"`
+	Thickness float64         `json:"thickness"`
+	Fck       int             `json:"fck"`
+	Steel     []SteelMaterial `json:"steel"`
 
 	UnitID uuid.UUID `json:"unit_id"`
 }
@@ -30,10 +30,7 @@ func (r *RaftFoundation) Validate(v *validator.Validator) {
 	v.Check(r.Thickness >= 0, "thickness", "cannot be negative")
 	v.Check(r.Fck != 0, "fck", "must be provided")
 
-	v.Check(r.Steel.Mesh >= 0, "steel.mesh", "cannot be negative")
-	v.Check(r.Steel.CA50 >= 0, "steel.ca50", "cannot be negative")
-	v.Check(r.Steel.CA60 >= 0, "steel.ca60", "cannot be negative")
-	v.Check(r.Steel.CP190 >= 0, "steel.cp190", "cannot be negative")
+	ValidateSteelMaterials(v, r.Steel, "steel")
 }
 
 func (r *RaftFoundation) Calculate() (Consumption, error) {
@@ -55,33 +52,11 @@ func (r *RaftFoundation) Calculate() (Consumption, error) {
 	result.EnergyMin += concreteEnergy.Min * concreteVolume
 	result.EnergyMax += concreteEnergy.Max * concreteVolume
 
-	if r.Steel.CA50 > 0 {
-		steel50CO2 := sidacSteelData.KgCO2[50]
-		steel50Energy := sidacSteelData.MJ[50]
-		result.CO2Min += steel50CO2.Min * r.Steel.CA50
-		result.CO2Max += steel50CO2.Max * r.Steel.CA50
-		result.EnergyMin += steel50Energy.Min * r.Steel.CA50
-		result.EnergyMax += steel50Energy.Max * r.Steel.CA50
+	steelConsumption, err := CalculateSteelConsumption(r.Steel)
+	if err != nil {
+		return result, err
 	}
-
-	totalCA60 := r.Steel.Mesh + r.Steel.CA60
-	if totalCA60 > 0 {
-		steel60CO2 := sidacSteelData.KgCO2[60]
-		steel60Energy := sidacSteelData.MJ[60]
-		result.CO2Min += steel60CO2.Min * totalCA60
-		result.CO2Max += steel60CO2.Max * totalCA60
-		result.EnergyMin += steel60Energy.Min * totalCA60
-		result.EnergyMax += steel60Energy.Max * totalCA60
-	}
-
-	if r.Steel.CP190 > 0 {
-		cp190CO2 := sidacStrandData.KgCO2[190]
-		cp190Energy := sidacStrandData.MJ[190]
-		result.CO2Min += cp190CO2.Min * r.Steel.CP190
-		result.CO2Max += cp190CO2.Max * r.Steel.CP190
-		result.EnergyMin += cp190Energy.Min * r.Steel.CP190
-		result.EnergyMax += cp190Energy.Max * r.Steel.CP190
-	}
+	result.sum(steelConsumption)
 
 	return result, nil
 }
@@ -124,13 +99,8 @@ func (r *RaftFoundation) toDataModule(moduleID, optionID uuid.UUID, result Consu
 		"area":      r.Area,
 		"thickness": r.Thickness,
 		"fck":       r.Fck,
-		"steel": map[string]interface{}{
-			"mesh":  r.Steel.Mesh,
-			"ca50":  r.Steel.CA50,
-			"ca60":  r.Steel.CA60,
-			"cp190": r.Steel.CP190,
-		},
-		"unit_id": r.UnitID.String(),
+		"steel":     r.Steel,
+		"unit_id":   r.UnitID.String(),
 	}
 
 	return &data.Module{
@@ -160,7 +130,7 @@ func (r *RaftFoundation) fromDataModule(d *data.Module) Module {
 
 	var area, thickness float64
 	var fck int
-	var steel FoundationSteelComplete
+	var steel []SteelMaterial
 
 	if val, ok := d.Data["area"].(float64); ok {
 		area = val
@@ -172,20 +142,7 @@ func (r *RaftFoundation) fromDataModule(d *data.Module) Module {
 		fck = int(val)
 	}
 
-	if steelData, ok := d.Data["steel"].(map[string]interface{}); ok {
-		if val, ok := steelData["mesh"].(float64); ok {
-			steel.Mesh = val
-		}
-		if val, ok := steelData["ca50"].(float64); ok {
-			steel.CA50 = val
-		}
-		if val, ok := steelData["ca60"].(float64); ok {
-			steel.CA60 = val
-		}
-		if val, ok := steelData["cp190"].(float64); ok {
-			steel.CP190 = val
-		}
-	}
+	steel = deserializeSteelMaterialsFromInterface(d.Data["steel"])
 
 	return &RaftFoundation{
 		ID:              d.ID,
