@@ -8,15 +8,14 @@ import (
 )
 
 type RaftPilesFoundationRaft struct {
-	Area      float64                  `json:"area"`
-	Thickness float64                  `json:"thickness"`
-	Fck       int                      `json:"fck"`
-	Steel     FoundationSteelComplete  `json:"steel"`
+	Area      float64         `json:"area"`
+	Thickness float64         `json:"thickness"`
+	Steel     []SteelMaterial `json:"steel"`
 }
 
 type RaftPilesFoundationPiles struct {
-	Volume float64               `json:"volume"`
-	Steel  FoundationSteelBasic  `json:"steel"`
+	Volume float64         `json:"volume"`
+	Steel  []SteelMaterial `json:"steel"`
 }
 
 type RaftPilesFoundation struct {
@@ -24,6 +23,7 @@ type RaftPilesFoundation struct {
 	BasicModuleData
 	Consumption *Consumption `json:"consumption,omitempty"`
 
+	Fck    int                      `json:"fck"`
 	Raft   RaftPilesFoundationRaft  `json:"raft"`
 	Piles  RaftPilesFoundationPiles `json:"piles"`
 	UnitID uuid.UUID                `json:"unit_id"`
@@ -35,18 +35,16 @@ func (rp *RaftPilesFoundation) Validate(v *validator.Validator) {
 	v.Check(rp.Type != "", "type", "must be provided")
 	v.Check(rp.UnitID != uuid.Nil, "unit_id", "must be provided")
 
+	v.Check(rp.Fck != 0, "fck", "must be provided")
+
 	v.Check(rp.Raft.Area >= 0, "raft.area", "cannot be negative")
 	v.Check(rp.Raft.Thickness >= 0, "raft.thickness", "cannot be negative")
-	v.Check(rp.Raft.Fck != 0, "raft.fck", "must be provided")
-
-	v.Check(rp.Raft.Steel.Mesh >= 0, "raft.steel.mesh", "cannot be negative")
-	v.Check(rp.Raft.Steel.CA50 >= 0, "raft.steel.ca50", "cannot be negative")
-	v.Check(rp.Raft.Steel.CA60 >= 0, "raft.steel.ca60", "cannot be negative")
-	v.Check(rp.Raft.Steel.CP190 >= 0, "raft.steel.cp190", "cannot be negative")
+	v.Check(len(rp.Raft.Steel) > 0, "raft.steel", "must have at least one item")
+	ValidateSteelMaterials(v, rp.Raft.Steel, "raft.steel")
 
 	v.Check(rp.Piles.Volume >= 0, "piles.volume", "cannot be negative")
-	v.Check(rp.Piles.Steel.CA50 >= 0, "piles.steel.ca50", "cannot be negative")
-	v.Check(rp.Piles.Steel.CA60 >= 0, "piles.steel.ca60", "cannot be negative")
+	v.Check(len(rp.Piles.Steel) > 0, "piles.steel", "must have at least one item")
+	ValidateSteelMaterials(v, rp.Piles.Steel, "piles.steel")
 }
 
 func (rp *RaftPilesFoundation) Calculate() (Consumption, error) {
@@ -54,85 +52,36 @@ func (rp *RaftPilesFoundation) Calculate() (Consumption, error) {
 
 	// Calculate raft concrete
 	raftConcreteVolume := rp.Raft.Area * rp.Raft.Thickness
-	raftConcreteCO2, ok := sidacConcreteData.KgCO2[float64(rp.Raft.Fck)]
+	concreteCO2, ok := sidacConcreteData.KgCO2[float64(rp.Fck)]
 	if !ok {
-		raftConcreteCO2 = sidacConcreteData.KgCO2[30]
+		concreteCO2 = sidacConcreteData.KgCO2[30]
 	}
-	raftConcreteEnergy, ok := sidacConcreteData.MJ[float64(rp.Raft.Fck)]
+	concreteEnergy, ok := sidacConcreteData.MJ[float64(rp.Fck)]
 	if !ok {
-		raftConcreteEnergy = sidacConcreteData.MJ[30]
+		concreteEnergy = sidacConcreteData.MJ[30]
 	}
 
-	result.CO2Min += raftConcreteCO2.Min * raftConcreteVolume
-	result.CO2Max += raftConcreteCO2.Max * raftConcreteVolume
-	result.EnergyMin += raftConcreteEnergy.Min * raftConcreteVolume
-	result.EnergyMax += raftConcreteEnergy.Max * raftConcreteVolume
+	result.CO2Min += concreteCO2.Min * raftConcreteVolume
+	result.CO2Max += concreteCO2.Max * raftConcreteVolume
+	result.EnergyMin += concreteEnergy.Min * raftConcreteVolume
+	result.EnergyMax += concreteEnergy.Max * raftConcreteVolume
 
-	// Calculate piles concrete
-	pilesConcreteCO2, ok := sidacConcreteData.KgCO2[float64(rp.Raft.Fck)]
-	if !ok {
-		pilesConcreteCO2 = sidacConcreteData.KgCO2[30]
-	}
-	pilesConcreteEnergy, ok := sidacConcreteData.MJ[float64(rp.Raft.Fck)]
-	if !ok {
-		pilesConcreteEnergy = sidacConcreteData.MJ[30]
-	}
+	// Calculate piles concrete (uses same fck)
+	result.CO2Min += concreteCO2.Min * rp.Piles.Volume
+	result.CO2Max += concreteCO2.Max * rp.Piles.Volume
+	result.EnergyMin += concreteEnergy.Min * rp.Piles.Volume
+	result.EnergyMax += concreteEnergy.Max * rp.Piles.Volume
 
-	result.CO2Min += pilesConcreteCO2.Min * rp.Piles.Volume
-	result.CO2Max += pilesConcreteCO2.Max * rp.Piles.Volume
-	result.EnergyMin += pilesConcreteEnergy.Min * rp.Piles.Volume
-	result.EnergyMax += pilesConcreteEnergy.Max * rp.Piles.Volume
-
-	// Calculate raft steel CA-50
-	if rp.Raft.Steel.CA50 > 0 {
-		steel50CO2 := sidacSteelData.KgCO2[50]
-		steel50Energy := sidacSteelData.MJ[50]
-		result.CO2Min += steel50CO2.Min * rp.Raft.Steel.CA50
-		result.CO2Max += steel50CO2.Max * rp.Raft.Steel.CA50
-		result.EnergyMin += steel50Energy.Min * rp.Raft.Steel.CA50
-		result.EnergyMax += steel50Energy.Max * rp.Raft.Steel.CA50
+	// Calculate steel for both raft and piles
+	var allSteel []SteelMaterial
+	allSteel = append(allSteel, rp.Raft.Steel...)
+	allSteel = append(allSteel, rp.Piles.Steel...)
+	
+	steelConsumption, err := CalculateSteelConsumption(allSteel)
+	if err != nil {
+		return result, err
 	}
-
-	// Calculate raft steel CA-60 + mesh
-	totalRaftCA60 := rp.Raft.Steel.Mesh + rp.Raft.Steel.CA60
-	if totalRaftCA60 > 0 {
-		steel60CO2 := sidacSteelData.KgCO2[60]
-		steel60Energy := sidacSteelData.MJ[60]
-		result.CO2Min += steel60CO2.Min * totalRaftCA60
-		result.CO2Max += steel60CO2.Max * totalRaftCA60
-		result.EnergyMin += steel60Energy.Min * totalRaftCA60
-		result.EnergyMax += steel60Energy.Max * totalRaftCA60
-	}
-
-	// Calculate raft steel CP-190
-	if rp.Raft.Steel.CP190 > 0 {
-		cp190CO2 := sidacStrandData.KgCO2[190]
-		cp190Energy := sidacStrandData.MJ[190]
-		result.CO2Min += cp190CO2.Min * rp.Raft.Steel.CP190
-		result.CO2Max += cp190CO2.Max * rp.Raft.Steel.CP190
-		result.EnergyMin += cp190Energy.Min * rp.Raft.Steel.CP190
-		result.EnergyMax += cp190Energy.Max * rp.Raft.Steel.CP190
-	}
-
-	// Calculate piles steel CA-50
-	if rp.Piles.Steel.CA50 > 0 {
-		steel50CO2 := sidacSteelData.KgCO2[50]
-		steel50Energy := sidacSteelData.MJ[50]
-		result.CO2Min += steel50CO2.Min * rp.Piles.Steel.CA50
-		result.CO2Max += steel50CO2.Max * rp.Piles.Steel.CA50
-		result.EnergyMin += steel50Energy.Min * rp.Piles.Steel.CA50
-		result.EnergyMax += steel50Energy.Max * rp.Piles.Steel.CA50
-	}
-
-	// Calculate piles steel CA-60
-	if rp.Piles.Steel.CA60 > 0 {
-		steel60CO2 := sidacSteelData.KgCO2[60]
-		steel60Energy := sidacSteelData.MJ[60]
-		result.CO2Min += steel60CO2.Min * rp.Piles.Steel.CA60
-		result.CO2Max += steel60CO2.Max * rp.Piles.Steel.CA60
-		result.EnergyMin += steel60Energy.Min * rp.Piles.Steel.CA60
-		result.EnergyMax += steel60Energy.Max * rp.Piles.Steel.CA60
-	}
+	result.sum(steelConsumption)
 
 	return result, nil
 }
@@ -172,23 +121,15 @@ func (rp *RaftPilesFoundation) Update(models data.Models, moduleID, optionID uui
 
 func (rp *RaftPilesFoundation) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
 	moduleData := map[string]interface{}{
+		"fck": rp.Fck,
 		"raft": map[string]interface{}{
 			"area":      rp.Raft.Area,
 			"thickness": rp.Raft.Thickness,
-			"fck":       rp.Raft.Fck,
-			"steel": map[string]interface{}{
-				"mesh":  rp.Raft.Steel.Mesh,
-				"ca50":  rp.Raft.Steel.CA50,
-				"ca60":  rp.Raft.Steel.CA60,
-				"cp190": rp.Raft.Steel.CP190,
-			},
+			"steel":     rp.Raft.Steel,
 		},
 		"piles": map[string]interface{}{
 			"volume": rp.Piles.Volume,
-			"steel": map[string]interface{}{
-				"ca50": rp.Piles.Steel.CA50,
-				"ca60": rp.Piles.Steel.CA60,
-			},
+			"steel":  rp.Piles.Steel,
 		},
 		"unit_id": rp.UnitID.String(),
 	}
@@ -218,6 +159,11 @@ func (rp *RaftPilesFoundation) fromDataModule(d *data.Module) Module {
 		}
 	}
 
+	var fck int
+	if val, ok := d.Data["fck"].(float64); ok {
+		fck = int(val)
+	}
+
 	var raft RaftPilesFoundationRaft
 	var piles RaftPilesFoundationPiles
 
@@ -228,43 +174,21 @@ func (rp *RaftPilesFoundation) fromDataModule(d *data.Module) Module {
 		if val, ok := raftData["thickness"].(float64); ok {
 			raft.Thickness = val
 		}
-		if val, ok := raftData["fck"].(float64); ok {
-			raft.Fck = int(val)
-		}
-		if steelData, ok := raftData["steel"].(map[string]interface{}); ok {
-			if val, ok := steelData["mesh"].(float64); ok {
-				raft.Steel.Mesh = val
-			}
-			if val, ok := steelData["ca50"].(float64); ok {
-				raft.Steel.CA50 = val
-			}
-			if val, ok := steelData["ca60"].(float64); ok {
-				raft.Steel.CA60 = val
-			}
-			if val, ok := steelData["cp190"].(float64); ok {
-				raft.Steel.CP190 = val
-			}
-		}
+		raft.Steel = deserializeSteelMaterialsFromInterface(raftData["steel"])
 	}
 
 	if pilesData, ok := d.Data["piles"].(map[string]interface{}); ok {
 		if val, ok := pilesData["volume"].(float64); ok {
 			piles.Volume = val
 		}
-		if steelData, ok := pilesData["steel"].(map[string]interface{}); ok {
-			if val, ok := steelData["ca50"].(float64); ok {
-				piles.Steel.CA50 = val
-			}
-			if val, ok := steelData["ca60"].(float64); ok {
-				piles.Steel.CA60 = val
-			}
-		}
+		piles.Steel = deserializeSteelMaterialsFromInterface(pilesData["steel"])
 	}
 
 	return &RaftPilesFoundation{
 		ID:              d.ID,
 		BasicModuleData: BasicModuleData{Type: "raft_piles_foundation"},
 		Consumption:     consumption,
+		Fck:             fck,
 		Raft:            raft,
 		Piles:           piles,
 		UnitID:          *d.UnitID,
