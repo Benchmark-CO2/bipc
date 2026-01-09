@@ -39,9 +39,11 @@ func (rp *RaftPilesFoundation) Validate(v *validator.Validator) {
 
 	v.Check(rp.Raft.Area >= 0, "raft.area", "cannot be negative")
 	v.Check(rp.Raft.Thickness >= 0, "raft.thickness", "cannot be negative")
+	v.Check(len(rp.Raft.Steel) > 0, "raft.steel", "must have at least one item")
 	ValidateSteelMaterials(v, rp.Raft.Steel, "raft.steel")
 
 	v.Check(rp.Piles.Volume >= 0, "piles.volume", "cannot be negative")
+	v.Check(len(rp.Piles.Steel) > 0, "piles.steel", "must have at least one item")
 	ValidateSteelMaterials(v, rp.Piles.Steel, "piles.steel")
 }
 

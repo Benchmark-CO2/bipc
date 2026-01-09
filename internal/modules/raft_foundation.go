@@ -30,6 +30,7 @@ func (r *RaftFoundation) Validate(v *validator.Validator) {
 	v.Check(r.Thickness >= 0, "thickness", "cannot be negative")
 	v.Check(r.Fck != 0, "fck", "must be provided")
 
+	v.Check(len(r.Steel) > 0, "steel", "must have at least one item")
 	ValidateSteelMaterials(v, r.Steel, "steel")
 }
 

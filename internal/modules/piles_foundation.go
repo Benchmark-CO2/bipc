@@ -49,15 +49,19 @@ func (p *PilesFoundation) Validate(v *validator.Validator) {
 	v.Check(p.Fck != 0, "fck", "must be provided")
 
 	v.Check(p.Piles.Volume >= 0, "piles.volume", "cannot be negative")
+	v.Check(len(p.Piles.Steel) > 0, "piles.steel", "must have at least one item")
 	ValidateSteelMaterials(v, p.Piles.Steel, "piles.steel")
 
 	v.Check(p.Blocks.Volume >= 0, "blocks.volume", "cannot be negative")
+	v.Check(len(p.Blocks.Steel) > 0, "blocks.steel", "must have at least one item")
 	ValidateSteelMaterials(v, p.Blocks.Steel, "blocks.steel")
 
 	v.Check(p.GradeBeams.Volume >= 0, "grade_beams.volume", "cannot be negative")
+	v.Check(len(p.GradeBeams.Steel) > 0, "grade_beams.steel", "must have at least one item")
 	ValidateSteelMaterials(v, p.GradeBeams.Steel, "grade_beams.steel")
 
 	v.Check(p.TieBeams.Volume >= 0, "tie_beams.volume", "cannot be negative")
+	v.Check(len(p.TieBeams.Steel) > 0, "tie_beams.steel", "must have at least one item")
 	ValidateSteelMaterials(v, p.TieBeams.Steel, "tie_beams.steel")
 }
 
