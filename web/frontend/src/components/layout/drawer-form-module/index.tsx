@@ -227,14 +227,16 @@ const DrawerFormModule = ({
         }));
       };
 
-      if (
-        rest.type === "beam_column" ||
-        rest.type === "concrete_wall" ||
-        rest.type === "structural_masonry" ||
-        rest.type === "raft_foundation" ||
-        rest.type === "piles_foundation" ||
-        rest.type === "raft_piles_foundation"
-      ) {
+      const constructiveTypes = [
+        "beam_column",
+        "concrete_wall",
+        "structural_masonry",
+        "raft_foundation",
+        "piles_foundation",
+        "raft_piles_foundation",
+      ];
+
+      if (constructiveTypes.includes(rest.type)) {
         const restAny = rest as any;
         const defaults = getDefaultValuesByType(rest.type);
 
@@ -641,6 +643,7 @@ const DrawerFormModule = ({
                       isSelectable={isUsingPaviments}
                       selectedFloorIds={selectedFloors}
                       onCheckFloorId={setSelectedFloors}
+                      complete={true}
                     />
                   </div>
                 </div>
