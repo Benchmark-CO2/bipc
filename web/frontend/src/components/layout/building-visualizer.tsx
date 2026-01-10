@@ -22,6 +22,7 @@ interface BuildingVisualizerProps {
   selectedFloorIds?: string[];
   onCheckFloorId?: (selectedFloorIds: string[]) => void;
   complete?: boolean;
+  isFoundation?: boolean;
 }
 
 const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
@@ -31,6 +32,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   selectedFloorIds = [],
   onCheckFloorId,
   complete = false,
+  isFoundation = false,
 }) => {
   const unifiedFloors: UnifiedFloor[] = towerFloors
     ? convertTowerFloorsToUnified(towerFloors)
@@ -63,6 +65,20 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   const sortedTypicalFloors = typicalFloors.sort((a, b) => b.index - a.index);
   const sortedGroundFloors = groundFloors.sort((a, b) => b.index - a.index);
   const sortedBasementFloors = basementFloors.sort((a, b) => b.index - a.index);
+
+  const biggestFloorArea = Math.max(
+    ...unifiedFloors.map((floor) => floor.area),
+    1
+  );
+
+  const foundationFloor: UnifiedFloor = {
+    id: "foundation_floor",
+    name: "Mesoestrutura e fundação",
+    area: biggestFloorArea,
+    height: 2,
+    category: "foundation_floor" as any,
+    index: -2,
+  };
 
   const handleFloorSelection = (
     floorIdentifier: string,
@@ -101,7 +117,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
     allFloorIds.length > 0 &&
     allFloorIds.every((id) => selectedItems.includes(id));
 
-  const renderFloorBlock = (floor: UnifiedFloor) => {
+  const renderFloorBlock = (floor: UnifiedFloor, hasFoundation = false) => {
     const widthPercentage = (floor.area / maxArea) * 100;
     const floorIdentifier = isSelectable ? floor.id : floor.name;
     const isFloorSelected = selectedItems.includes(floorIdentifier);
@@ -111,6 +127,16 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
       standard_floor: "#3B82F6",
       ground_floor: "#10B981",
       basement_floor: "#F59E0B",
+      foundation_floor: "#db7070",
+    };
+
+    const opacity = () => {
+      if (!complete) return "1";
+
+      if (hasFoundation && isFoundation) return 1;
+      if (hasFoundation && !isFoundation) return 0.2;
+      if (!hasFoundation && isFoundation) return 0.2;
+      return 1;
     };
 
     return (
@@ -118,9 +144,10 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
         key={floor.id}
         className={`mb-2 ${
           complete
-            ? "grid grid-cols-[2fr_auto_minmax(0,100px)] gap-2 items-center w-full"
+            ? "grid grid-cols-[2fr_auto_minmax(0,100px)] gap-2 items-start w-full"
             : "flex items-center"
         }`}
+        style={{ opacity: opacity() }}
       >
         {/* Bloco do andar */}
         <div
@@ -132,7 +159,6 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
             height: complete ? "16px" : `${Math.max(24, floor.height * 6)}px`,
             width: `${widthPercentage}%`,
             textShadow: "1px 1px 2px rgba(0,0,0,0.5)",
-            opacity: isSelectable || !complete ? 1 : 0.4,
           }}
           title={`${floor.name} - ${floor.area}m² - ${floor.height}m`}
         ></div>
@@ -142,14 +168,18 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
           <>
             <Checkbox
               checked={isFloorSelected}
-              disabled={!isSelectable}
+              disabled={!isSelectable || hasFoundation}
               onCheckedChange={(checked) =>
                 handleFloorSelection(floorIdentifier, checked === true)
               }
               className="border border-gray-300 bg-white data-[state=checked]:bg-active data-[state=checked]:border-active flex-shrink-0"
             />
             <span
-              className="text-xs font-normal text-gray-700 dark:text-gray-300 truncate"
+              className={`text-xs text-gray-700 dark:text-gray-300 ${
+                hasFoundation ? "font-bold" : "font-normal"
+              }
+                ${!hasFoundation ? "truncate" : ""}
+              `}
               title={floor.name}
             >
               {floor.name}
@@ -237,6 +267,16 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
             {sortedBasementFloors.map((floor) => renderFloorBlock(floor))}
           </div>
         </div>
+
+        {complete && (
+          <div className="flex flex-col w-full">
+            <div
+              className={`w-full max-w-64 ${complete ? "ml-auto" : "mx-auto"}`}
+            >
+              {renderFloorBlock(foundationFloor, true)}
+            </div>
+          </div>
+        )}
 
         {unifiedFloors.length === 0 && (
           <div className="flex items-center justify-center h-32 text-gray-500 dark:text-gray-400 text-xs text-center">

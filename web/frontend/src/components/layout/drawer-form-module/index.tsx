@@ -644,6 +644,7 @@ const DrawerFormModule = ({
                       selectedFloorIds={selectedFloors}
                       onCheckFloorId={setSelectedFloors}
                       complete={true}
+                      isFoundation={!isUsingPaviments}
                     />
                   </div>
                 </div>
