@@ -11,6 +11,7 @@ import useCep from "@/hooks/useLocation";
 import { cn } from "@/lib/utils";
 import { IProject } from "@/types/projects";
 import { masks } from "@/utils/masks";
+import { states } from '@/utils/states';
 import {
   ProjectFormSchema,
   projectFormSchema,
@@ -386,11 +387,25 @@ export default function DrawerFormProject({
                     <FormItem className="flex-1/3">
                       <FormLabel>{t("drawerFormProject.stateLabel")}</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder={t("drawerFormProject.statePlaceholder")}
-                          disabled={locationLoading}
-                          {...field}
-                        />
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue
+                              placeholder={t(
+                                "drawerFormProject.statePlaceholder"
+                              )}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {states.map((state) => (
+                              <SelectItem key={state.label} value={state.value.toUpperCase()}>
+                                {state.label} - {state.value}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
