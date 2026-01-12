@@ -294,11 +294,11 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                               Outro FCK (MPa)
                             </FormLabel>
                             <Input
-                              type="text"
+                              type="number"
                               placeholder="70"
                               {...field}
                               onChange={(e) =>
-                                field.onChange(masks.numeric(e.target.value))
+                                field.onChange(Number(e.target.value))
                               }
                             />
                           </FormItem>
@@ -466,11 +466,10 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                             <FormLabel className="text-xs">Outro CA</FormLabel>
                             <Input
                               {...field}
-                              type="text"
-                              placeholder="CA60"
-                              // value={currentCa || ""}
+                              type="number"
+                              placeholder="60"
                               onChange={(e) => {
-                                field.onChange(masks.numeric(e.target.value));
+                                field.onChange(Number(e.target.value));
                               }}
                             />
                           </FormItem>
