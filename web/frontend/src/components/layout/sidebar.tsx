@@ -29,6 +29,7 @@ import SidemenuItem from "../ui/sidemenu-item";
 import ExpandContentIcon from "@/assets/icons/expand-content";
 import CollapseContentIcon from "@/assets/icons/collapse-content";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { BetaWarning } from '../beta-warning';
 
 interface ISidebar {
   handleLogout?: () => void;
@@ -267,6 +268,10 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             <CollapseContentIcon size={28} className="text-white" />
           </button>
         )}
+      </div>
+
+      <div className="p-2">
+        <BetaWarning />
       </div>
 
       {/* Menu Items - Seção Principal */}
