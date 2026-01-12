@@ -300,7 +300,7 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 	}
 
 	query += `
-			GROUP BY fg.unit_id, fc.technology
+			GROUP BY f.unit_id, fc.technology
 		),
 		filtered_consumption AS (
 			SELECT
