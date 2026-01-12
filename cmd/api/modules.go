@@ -69,6 +69,8 @@ func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Reque
 			app.badRequestResponse(w, r, err)
 		case errors.Is(err, data.ErrInvalidFloorID):
 			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrInvalidUnitID):
+			app.badRequestResponse(w, r, err)
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
@@ -176,6 +178,8 @@ func (app *application) updateModuleHandler(w http.ResponseWriter, r *http.Reque
 		case errors.Is(err, data.ErrRecordNotFound):
 			app.notFoundResponse(w, r)
 		case errors.Is(err, data.ErrInvalidFloorID):
+			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrInvalidUnitID):
 			app.badRequestResponse(w, r, err)
 		default:
 			app.serverErrorResponse(w, r, err)

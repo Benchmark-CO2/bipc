@@ -30,7 +30,7 @@ func (m BenchmarkModel) GetFloorsBenchmark() ([]*BenchmarkData, error) {
 		FROM floor f
 		INNER JOIN units u ON f.unit_id = u.id
 		INNER JOIN projects p ON u.project_id = p.id
-		LEFT JOIN floors_consumption fc ON f.id = fc.floor_id
+		LEFT JOIN element_consumption fc ON f.id = fc.floor_id
 		WHERE p.benchmark = true
 		GROUP BY f.id`
 
@@ -91,7 +91,7 @@ func (m BenchmarkModel) GetUnitsBenchmark() ([]*BenchmarkData, error) {
 			FROM floor f
 			INNER JOIN units u ON f.unit_id = u.id
 			INNER JOIN projects p ON u.project_id = p.id
-			INNER JOIN floors_consumption fc ON f.id = fc.floor_id
+			INNER JOIN element_consumption fc ON f.id = fc.floor_id
 			WHERE p.benchmark = true
 			GROUP BY f.unit_id, fc.technology
 		),
@@ -282,7 +282,7 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 			FROM floor f
 			INNER JOIN units u ON f.unit_id = u.id
 			INNER JOIN projects p ON u.project_id = p.id
-			INNER JOIN floors_consumption fc ON f.id = fc.floor_id
+			INNER JOIN element_consumption fc ON f.id = fc.floor_id
 			WHERE p.benchmark = true`
 
 	if filters.Technology != nil {
@@ -300,7 +300,7 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 	}
 
 	query += `
-			GROUP BY fg.unit_id, fc.technology
+			GROUP BY f.unit_id, fc.technology
 		),
 		filtered_consumption AS (
 			SELECT

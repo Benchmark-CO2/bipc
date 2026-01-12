@@ -505,12 +505,12 @@ const ModuleFormStructuralMasonry = ({
       }
     });
 
-    const blocks = form.getValues("blocks");
+    const blocks = form.getValues("masonry_blocks");
     const grout = form.getValues("grout");
     const mortar = form.getValues("mortar");
 
     if (!blocks || blocks.length === 0) {
-      form.setValue("blocks", [
+      form.setValue("masonry_blocks", [
         { type: "inteiro (14x19x29)" as const, fbk: 6, quantity: "0" },
       ]);
     }
@@ -591,11 +591,11 @@ const ModuleFormStructuralMasonry = ({
       remove: removeBlock,
     } = useFieldArray({
       control: form.control,
-      name: "blocks",
+      name: "masonry_blocks",
     });
 
-    useWatch({ control: form.control, name: "blocks" });
-    const currentBlocks = form.getValues("blocks") || [];
+    useWatch({ control: form.control, name: "masonry_blocks" });
+    const currentBlocks = form.getValues("masonry_blocks") || [];
 
     const isBlockTypeUsed = (blockType: string, currentIndex: number) => {
       return currentBlocks.some(
@@ -632,7 +632,7 @@ const ModuleFormStructuralMasonry = ({
 
             <div className="space-y-3">
               {blockFields.map((field, index) => {
-                const currentFbk = form.watch(`blocks.${index}.fbk`);
+                const currentFbk = form.watch(`masonry_blocks.${index}.fbk`);
                 const isCustomFbk =
                   customFbkSelected[`block-${index}`] ||
                   (currentFbk && !fbkOptions.includes(currentFbk));
@@ -645,7 +645,7 @@ const ModuleFormStructuralMasonry = ({
                     <div className="flex items-end gap-2">
                       <FormField
                         control={form.control}
-                        name={`blocks.${index}.type`}
+                        name={`masonry_blocks.${index}.type`}
                         render={({ field }) => (
                           <FormItem className="flex-1">
                             <FormLabel className="text-xs">Tipo *</FormLabel>
@@ -677,7 +677,7 @@ const ModuleFormStructuralMasonry = ({
 
                       <FormField
                         control={form.control}
-                        name={`blocks.${index}.fbk`}
+                        name={`masonry_blocks.${index}.fbk`}
                         render={({ field }) => (
                           <FormItem className="flex-1">
                             <FormLabel className="text-xs">
@@ -729,7 +729,7 @@ const ModuleFormStructuralMasonry = ({
 
                       <FormField
                         control={form.control}
-                        name={`blocks.${index}.quantity`}
+                        name={`masonry_blocks.${index}.quantity`}
                         render={({ field }) => (
                           <FormItem className="flex-1">
                             <FormLabel className="text-xs">
@@ -765,7 +765,7 @@ const ModuleFormStructuralMasonry = ({
                     {isCustomFbk && (
                       <FormField
                         control={form.control}
-                        name={`blocks.${index}.fbk`}
+                        name={`masonry_blocks.${index}.fbk`}
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-xs">

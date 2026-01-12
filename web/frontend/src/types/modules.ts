@@ -67,7 +67,10 @@ export interface IMortar {
 export type TModulesTypes =
   | "beam_column"
   | "concrete_wall"
-  | "structural_masonry";
+  | "structural_masonry"
+  | "raft_foundation"
+  | "piles_foundation"
+  | "raft_piles_foundation";
 
 export interface IModuleItem {
   id: string;

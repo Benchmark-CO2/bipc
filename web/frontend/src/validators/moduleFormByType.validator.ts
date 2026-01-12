@@ -159,12 +159,65 @@ const mortarItemSchema = z
     return rest;
   });
 
+// Steel schema for foundations
+const steelMaterialSchema = z
+  .object({
+    material: z.enum(["general", "rebar", "mesh", "strand", "other"]),
+    other_name: z.string().optional(),
+    resistance: z.enum(["CA50", "CA60", "CP190", "other"]),
+    other_resistance: z.number().optional(),
+    mass: z.string().transform(parseNumber),
+  })
+  .refine(
+    (data) => {
+      // Se material = "other", other_name é obrigatório
+      if (data.material === "other") {
+        return data.other_name && data.other_name.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Nome do material é obrigatório quando 'Outros' é selecionado",
+      path: ["other_name"],
+    }
+  )
+  .refine(
+    (data) => {
+      // Se resistance = "other", other_resistance é obrigatório
+      if (data.resistance === "other") {
+        return (
+          data.other_resistance !== undefined && data.other_resistance !== null
+        );
+      }
+      return true;
+    },
+    {
+      message:
+        "Resistência customizada é obrigatória quando 'Outro' é selecionado",
+      path: ["other_resistance"],
+    }
+  );
+
+const foundationSteelSchema = z
+  .array(steelMaterialSchema)
+  .min(1, "Adicione pelo menos um material de aço");
+
 export const moduleFormSchema = z
   .object({
-    type: z.enum(["beam_column", "concrete_wall", "structural_masonry"], {
-      required_error: "Selecione um tipo de estrutura",
-      invalid_type_error: "Tipo de estrutura inválido",
-    }),
+    type: z.enum(
+      [
+        "beam_column",
+        "concrete_wall",
+        "structural_masonry",
+        "raft_foundation",
+        "piles_foundation",
+        "raft_piles_foundation",
+      ],
+      {
+        required_error: "Selecione um tipo de estrutura",
+        invalid_type_error: "Tipo de estrutura inválido",
+      }
+    ),
 
     concrete_columns: concreteElementSchema.optional(),
     concrete_beams: concreteElementSchema.optional(),
@@ -205,12 +258,54 @@ export const moduleFormSchema = z
       .transform((val) => (val ? parseNumber(val) : undefined))
       .optional(),
 
-    blocks: z.array(blockItemSchema).optional(),
+    // Structural masonry fields
+    masonry_blocks: z.array(blockItemSchema).optional(),
     grout: z
       .array(groutItemSchema)
       .min(1, "Adicione pelo menos um tipo de graute")
       .optional(),
     mortar: z.array(mortarItemSchema).optional(),
+
+    // Raft foundation fields
+    area: z.string().transform(parseNumber).optional(),
+    thickness: z.string().transform(parseNumber).optional(),
+    fck: z.number().optional(),
+    steel: foundationSteelSchema.optional(),
+
+    // Piles foundation fields
+    piles: z
+      .object({
+        volume: z.string().transform(parseNumber).optional(),
+        steel: foundationSteelSchema.optional(),
+      })
+      .optional(),
+    tie_beams: z
+      .object({
+        volume: z.string().transform(parseNumber).optional(),
+        steel: foundationSteelSchema.optional(),
+      })
+      .optional(),
+    pile_caps: z
+      .object({
+        volume: z.string().transform(parseNumber).optional(),
+        steel: foundationSteelSchema.optional(),
+      })
+      .optional(),
+    grade_beams: z
+      .object({
+        volume: z.string().transform(parseNumber).optional(),
+        steel: foundationSteelSchema.optional(),
+      })
+      .optional(),
+
+    // Raft piles foundation fields
+    raft: z
+      .object({
+        area: z.string().transform(parseNumber).optional(),
+        thickness: z.string().transform(parseNumber).optional(),
+        steel: foundationSteelSchema.optional(),
+      })
+      .optional(),
   })
   .refine(
     (data) => {
@@ -257,7 +352,7 @@ export const moduleFormSchema = z
     (data) => {
       if (data.type === "structural_masonry") {
         return (
-          data.blocks !== undefined &&
+          data.masonry_blocks !== undefined &&
           data.grout !== undefined &&
           data.mortar !== undefined &&
           data.concrete_slabs !== undefined
@@ -268,6 +363,50 @@ export const moduleFormSchema = z
     {
       message:
         "Para Alvenaria Estrutural são obrigatórios: blocos, graute, argamassa e laje de concreto",
+      path: ["type"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.type === "raft_foundation") {
+        return (
+          data.area !== undefined &&
+          data.thickness !== undefined &&
+          data.fck !== undefined
+        );
+      }
+      return true;
+    },
+    {
+      message: "Para Radier são obrigatórios: área, espessura e fck",
+      path: ["type"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.type === "piles_foundation") {
+        return data.fck !== undefined;
+      }
+      return true;
+    },
+    {
+      message: "Para Estacas é obrigatório: fck",
+      path: ["type"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.type === "raft_piles_foundation") {
+        return (
+          data.raft?.area !== undefined &&
+          data.raft?.thickness !== undefined &&
+          data.fck !== undefined // FCK está na raiz, não no raft
+        );
+      }
+      return true;
+    },
+    {
+      message: "Para Radier Estaqueado são obrigatórios: área, espessura e fck",
       path: ["type"],
     }
   );

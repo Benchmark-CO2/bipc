@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/validator"
@@ -98,6 +99,9 @@ func (m OptionModel) Insert(option *Option) error {
 
 	_, err = tx.ExecContext(ctx, query, args...)
 	if err != nil {
+		if strings.Contains(err.Error(), "options_role_id_fkey") {
+			return ErrInvalidRoleID
+		}
 		return err
 	}
 
@@ -106,8 +110,7 @@ func (m OptionModel) Insert(option *Option) error {
 		return err
 	}
 
-	unitModel := UnitModel{DB: m.DB}
-	err = unitModel.UpdateUnitFloorsMetrics(option.UnitID)
+	err = updateAllFloorMetrics(m.DB, option.UnitID)
 	if err != nil {
 		return err
 	}
@@ -232,7 +235,7 @@ func (m OptionModel) GetAll(unitID uuid.UUID) ([]*Option, error) {
 		}
 
 		modulesQuery := `
-            SELECT id, type, relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max
+            SELECT id, type, outdated, relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max
             FROM module
             WHERE option_id = $1`
 
@@ -248,6 +251,7 @@ func (m OptionModel) GetAll(unitID uuid.UUID) ([]*Option, error) {
 			err := moduleRows.Scan(
 				&module.ID,
 				&module.Type,
+				&module.Outdated,
 				&co2Min,
 				&co2Max,
 				&energyMin,
@@ -429,8 +433,7 @@ func (m OptionModel) Update(option *Option) error {
 		return ErrRecordNotFound
 	}
 
-	unitModel := UnitModel{DB: m.DB}
-	err = unitModel.UpdateUnitFloorsMetrics(option.UnitID)
+	err = updateAllFloorMetrics(m.DB, option.UnitID)
 	if err != nil {
 		return err
 	}

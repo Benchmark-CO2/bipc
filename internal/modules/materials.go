@@ -42,6 +42,16 @@ var sidacSteelData = SidacMaterial{
 	},
 }
 
+// Prestressing strands CP190 RB 12.7
+var sidacStrandData = SidacMaterial{
+	KgCO2: map[float64]SidacValue{
+		190: {Min: 2.3, Max: 2.3},
+	},
+	MJ: map[float64]SidacValue{
+		190: {Min: 8.025, Max: 16.05},
+	},
+}
+
 var sidacGroutData = SidacMaterial{
 	KgCO2: map[float64]SidacValue{
 		15: {Min: 157.8, Max: 332.7},

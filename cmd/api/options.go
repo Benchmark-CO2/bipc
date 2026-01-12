@@ -52,6 +52,7 @@ func (app *application) createOptionHandler(w http.ResponseWriter, r *http.Reque
 		switch {
 		case errors.Is(err, data.ErrInvalidUnitID),
 			errors.Is(err, data.ErrUnitIsNotTower),
+			errors.Is(err, data.ErrInvalidRoleID),
 			errors.Is(err, data.ErrOptionHasOutdatedModules):
 			app.unprocessableEntityResponse(w, r, err)
 		default:
