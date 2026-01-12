@@ -452,10 +452,11 @@ export default function DrawerFormDisciplines({
                   <div className="flex flex-col gap-3 p-4 bg-card">
                     {/* Adicionar/Remover tudo */}
                     <div className="flex items-center justify-between pb-2 border-b">
-                      <span className="text-sm font-medium">
+                      <label className="text-sm font-bold" htmlFor="select-all-management">
                         Selecionar todas
-                      </span>
+                      </label>
                       <Checkbox
+                        id="select-all-management"
                         checked={mockPermissions.management.every((p) =>
                           selectedPermissions.includes(p.id)
                         )}
@@ -464,19 +465,21 @@ export default function DrawerFormDisciplines({
                     </div>
 
                     {/* Lista de permissões */}
-                    {mockPermissions.management.map((permission) => (
+                    {mockPermissions.management.map((permission, idx) => (
                       <div
                         key={permission.id}
-                        className="flex items-center justify-between gap-2"
+                        className="flex items-center justify-between gap-2 "
                       >
-                        <span className="text-sm font-normal flex-1">
+                        <label className="text-sm font-bold text-primary flex-1" htmlFor={'checkbox-' + permission.id}>
                           {permission.label}
-                        </span>
+                        </label>
                         <Checkbox
+                          id={'checkbox-' + permission.id}
                           checked={selectedPermissions.includes(permission.id)}
                           onCheckedChange={(checked) =>
                             togglePermission(permission.id, checked as boolean)
                           }
+                          className='border-px border-neutral-400/80'
                         />
                       </div>
                     ))}
