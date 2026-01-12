@@ -1,6 +1,7 @@
 import { getFloorsBenchmark } from "@/actions/benchmarks/getFloors";
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { getUnitByUUID } from "@/actions/units/getUnit";
+import GraphIcon from "@/assets/icons/graph";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import { floorsColumns } from "@/components/columns/floors";
 import { CommonTable } from "@/components/layout";
@@ -116,7 +117,19 @@ function RouteComponent() {
     if (!roles || roles.length === 0) return [];
 
     if (selectedTab === "Todas as Disciplinas") {
-      const moduleTypes = unitConsumptions.map((item) => item.type);
+      // Coletar todos os tipos únicos de todos os roles
+      const allTypes = new Set<string>();
+      roles.forEach((role) => {
+        const roleConsumptions =
+          (role as any).consumptions || (role as any).consumption;
+        if (roleConsumptions) {
+          Object.keys(roleConsumptions)
+            .filter((key) => key !== "total")
+            .forEach((type) => allTypes.add(type));
+        }
+      });
+
+      const moduleTypes = Array.from(allTypes);
 
       return moduleTypes.map((type) => {
         const summedConsumption = roles.reduce(
@@ -394,8 +407,9 @@ function RouteComponent() {
               {hasPermission("create:role") && (
                 <DrawerFormDisciplines
                   componentTrigger={
-                    <Button variant="bipc" size="icon-lg">
+                    <Button variant="outline-bipc" size="lg">
                       <Plus />
+                      Nova disciplina
                     </Button>
                   }
                   projectId={projectId}
@@ -405,11 +419,12 @@ function RouteComponent() {
               {(hasPermission("*:*") || selectedRole?.is_member) && (
                 <Button
                   variant="bipc"
-                  size="icon-lg"
+                  size="lg"
                   onClick={handleClickConstructiveTechnologies}
                   disabled={selectedTab === "Todas as Disciplinas"}
                 >
-                  <SquareArrowOutUpRight />
+                  <GraphIcon />
+                  Criar simulações
                 </Button>
               )}
             </div>

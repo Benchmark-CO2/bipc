@@ -47,6 +47,9 @@ import { getDefaultValuesByType } from "./module-default-values";
 import ModuleFormBeamColumn from "./module-form-beam-column";
 import ModuleFormConcreteWall from "./module-form-concrete-wall";
 import ModuleFormStructuralMasonry from "./module-form-structural-masonry";
+import ModuleFormRaftFoundation from "./module-form-raft-foundation";
+import ModuleFormPilesFoundation from "./module-form-piles-foundation";
+import ModuleFormRaftPilesFoundation from "./module-form-raft-piles-foundation";
 
 interface DrawerFormModuleProps {
   triggerComponent?: React.ReactNode;
@@ -77,6 +80,13 @@ const DrawerFormModule = ({
     resolver: zodResolver(moduleFormSchema) as any,
     defaultValues: getDefaultValuesByType(type) as any,
   });
+
+  const structureTypeWatch = form.watch("type");
+
+  const isUsingPaviments =
+    structureTypeWatch === "beam_column" ||
+    structureTypeWatch === "concrete_wall" ||
+    structureTypeWatch === "structural_masonry";
 
   const { mutate: mutateModule, isPending: isUpdatePending } = useMutation({
     mutationFn: (data: ModuleParamsProps) =>
@@ -203,11 +213,30 @@ const DrawerFormModule = ({
         return typeof formatted === "number" ? String(formatted) : formatted;
       };
 
-      if (
-        rest.type === "beam_column" ||
-        rest.type === "concrete_wall" ||
-        rest.type === "structural_masonry"
-      ) {
+      // Helper para converter steel do backend (array) para formato do formulário
+      const convertSteelArray = (steelArray: any[] | undefined) => {
+        if (!steelArray || !Array.isArray(steelArray)) {
+          return [{ material: "rebar", resistance: "CA50", mass: "0" }];
+        }
+        return steelArray.map((item) => ({
+          material: item.material || "rebar",
+          other_name: item.other_name,
+          resistance: item.resistance || "CA50",
+          other_resistance: item.other_resistance,
+          mass: toLocalString(item.mass ?? 0),
+        }));
+      };
+
+      const constructiveTypes = [
+        "beam_column",
+        "concrete_wall",
+        "structural_masonry",
+        "raft_foundation",
+        "piles_foundation",
+        "raft_piles_foundation",
+      ];
+
+      if (constructiveTypes.includes(rest.type)) {
         const restAny = rest as any;
         const defaults = getDefaultValuesByType(rest.type);
 
@@ -290,18 +319,61 @@ const DrawerFormModule = ({
             slab_form_area: toLocalString(restAny.slab_form_area ?? 0),
           }),
 
+          // Raft foundation specific fields
+          ...(rest.type === "raft_foundation" && {
+            area: toLocalString(restAny.area ?? 0),
+            thickness: toLocalString(restAny.thickness ?? 0),
+            fck: restAny.fck ?? (defaults as any).fck,
+            steel: convertSteelArray(restAny.steel),
+          }),
+
+          // Piles foundation specific fields
+          ...(rest.type === "piles_foundation" && {
+            fck: restAny.fck ?? (defaults as any).fck,
+            piles: {
+              volume: toLocalString(restAny.piles?.volume ?? 0),
+              steel: convertSteelArray(restAny.piles?.steel),
+            },
+            pile_caps: {
+              volume: toLocalString(restAny.blocks?.volume ?? 0),
+              steel: convertSteelArray(restAny.blocks?.steel),
+            },
+            tie_beams: {
+              volume: toLocalString(restAny.tie_beams?.volume ?? 0),
+              steel: convertSteelArray(restAny.tie_beams?.steel),
+            },
+            grade_beams: {
+              volume: toLocalString(restAny.grade_beams?.volume ?? 0),
+              steel: convertSteelArray(restAny.grade_beams?.steel),
+            },
+          }),
+
+          // Raft piles foundation specific fields
+          ...(rest.type === "raft_piles_foundation" && {
+            fck: restAny.fck ?? (defaults as any).fck,
+            raft: {
+              area: toLocalString(restAny.raft?.area ?? 0),
+              thickness: toLocalString(restAny.raft?.thickness ?? 0),
+              steel: convertSteelArray(restAny.raft?.steel),
+            },
+            piles: {
+              volume: toLocalString(restAny.piles?.volume ?? 0),
+              steel: convertSteelArray(restAny.piles?.steel),
+            },
+          }),
+
           // Structural masonry specific fields
           ...(rest.type === "structural_masonry" && {
             form_slabs: toLocalString(restAny.form_slabs ?? 0),
             form_columns: toLocalString(restAny.form_columns ?? 0),
             form_beams: toLocalString(restAny.form_beams ?? 0),
-            blocks: restAny.masonry?.blocks
+            masonry_blocks: restAny.masonry?.blocks
               ? restAny.masonry.blocks.map((block: any) => ({
                   type: block.type,
                   fbk: block.fbk,
                   quantity: toLocalString(block.quantity),
                 }))
-              : (defaults as any).blocks,
+              : (defaults as any).masonry_blocks,
             grout: restAny.masonry?.grout
               ? restAny.masonry.grout.map((grout: any) => ({
                   position: grout.position,
@@ -386,7 +458,7 @@ const DrawerFormModule = ({
     } else if (moduleType === "structural_masonry") {
       filteredData = {
         masonry: {
-          blocks: data.blocks || [],
+          blocks: data.masonry_blocks || [],
           grout: data.grout || [],
           mortar: data.mortar || [],
         },
@@ -408,13 +480,42 @@ const DrawerFormModule = ({
             form_beams: data.form_beams,
           }),
       };
+    } else if (moduleType === "raft_foundation") {
+      filteredData = {
+        area: data.area,
+        thickness: data.thickness,
+        fck: data.fck,
+        steel: data.steel,
+      };
+    } else if (moduleType === "piles_foundation") {
+      filteredData = {
+        fck: data.fck,
+        piles: data.piles,
+        blocks: data.pile_caps, // pile_caps → blocks para o backend
+        tie_beams: data.tie_beams,
+        grade_beams: data.grade_beams,
+      };
+    } else if (moduleType === "raft_piles_foundation") {
+      filteredData = {
+        fck: data.fck, // FCK único na raiz
+        raft: data.raft,
+        piles: data.piles,
+      };
     }
+
+    const conditionalFields = isUsingPaviments
+      ? {
+          floor_ids: selectedFloors,
+        }
+      : {
+          unit_id: unitId,
+        };
 
     const baseFields: ModuleParamsProps = {
       type: moduleType ?? data.type,
       data: {
         ...filteredData,
-        floor_ids: selectedFloors,
+        ...conditionalFields,
       },
     };
 
@@ -434,6 +535,9 @@ const DrawerFormModule = ({
     { value: "beam_column", label: t("common.structureType.beamColumn") },
     { value: "concrete_wall", label: t("common.structureType.concreteWall") },
     { value: "structural_masonry", label: t("common.structureType.masonry") },
+    { value: "raft_foundation", label: "Radier" },
+    { value: "piles_foundation", label: "Estacas" },
+    { value: "raft_piles_foundation", label: "Radier Estaqueado" },
   ];
 
   const isMobile = useIsMobile();
@@ -450,7 +554,10 @@ const DrawerFormModule = ({
             type &&
             (type === "beam_column" ||
               type === "concrete_wall" ||
-              type === "structural_masonry")
+              type === "structural_masonry" ||
+              type === "raft_foundation" ||
+              type === "piles_foundation" ||
+              type === "raft_piles_foundation")
           ) {
             form.setValue("type", type);
           }
@@ -508,7 +615,7 @@ const DrawerFormModule = ({
           ) : (
             <Form {...form}>
               <form
-                onSubmit={form.handleSubmit(handleSubmit as any, (errors) => {
+                onSubmit={form.handleSubmit(handleSubmit as any, () => {
                   toast.error("Existem erros de validação", {
                     description:
                       "Evite campos com valores zerados ou inválidos.",
@@ -533,9 +640,11 @@ const DrawerFormModule = ({
                     <BuildingVisualizer
                       key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ index: f.index })))}`}
                       towerFloors={floors || []}
-                      isSelectable={true}
+                      isSelectable={isUsingPaviments}
                       selectedFloorIds={selectedFloors}
                       onCheckFloorId={setSelectedFloors}
+                      complete={true}
+                      isFoundation={!isUsingPaviments}
                     />
                   </div>
                 </div>
@@ -566,7 +675,10 @@ const DrawerFormModule = ({
                                   if (
                                     value === "beam_column" ||
                                     value === "concrete_wall" ||
-                                    value === "structural_masonry"
+                                    value === "structural_masonry" ||
+                                    value === "raft_foundation" ||
+                                    value === "piles_foundation" ||
+                                    value === "raft_piles_foundation"
                                   ) {
                                     form.reset(
                                       getDefaultValuesByType(
@@ -574,6 +686,9 @@ const DrawerFormModule = ({
                                           | "beam_column"
                                           | "concrete_wall"
                                           | "structural_masonry"
+                                          | "raft_foundation"
+                                          | "piles_foundation"
+                                          | "raft_piles_foundation"
                                       ) as any
                                     );
                                   }
@@ -607,9 +722,9 @@ const DrawerFormModule = ({
                     </div>
                     {/* Campos específicos por tipo de estrutura */}
                     {(() => {
-                      const structureType = form.watch("type");
+                      // const structureType = form.watch("type");
 
-                      switch (structureType) {
+                      switch (structureTypeWatch) {
                         case "beam_column":
                           return <ModuleFormBeamColumn form={form as any} />;
                         case "concrete_wall":
@@ -617,6 +732,18 @@ const DrawerFormModule = ({
                         case "structural_masonry":
                           return (
                             <ModuleFormStructuralMasonry form={form as any} />
+                          );
+                        case "raft_foundation":
+                          return (
+                            <ModuleFormRaftFoundation form={form as any} />
+                          );
+                        case "piles_foundation":
+                          return (
+                            <ModuleFormPilesFoundation form={form as any} />
+                          );
+                        case "raft_piles_foundation":
+                          return (
+                            <ModuleFormRaftPilesFoundation form={form as any} />
                           );
                         default:
                           return null;
@@ -637,7 +764,7 @@ const DrawerFormModule = ({
             disabled={
               isCreationPending ||
               isUpdatePending ||
-              selectedFloors.length === 0
+              (selectedFloors.length === 0 && isUsingPaviments)
             }
           >
             {isCreationPending || isUpdatePending ? (

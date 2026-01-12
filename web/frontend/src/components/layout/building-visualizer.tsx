@@ -21,6 +21,8 @@ interface BuildingVisualizerProps {
   isSelectable?: boolean;
   selectedFloorIds?: string[];
   onCheckFloorId?: (selectedFloorIds: string[]) => void;
+  complete?: boolean;
+  isFoundation?: boolean;
 }
 
 const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
@@ -29,6 +31,8 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   isSelectable = false,
   selectedFloorIds = [],
   onCheckFloorId,
+  complete = false,
+  isFoundation = false,
 }) => {
   const unifiedFloors: UnifiedFloor[] = towerFloors
     ? convertTowerFloorsToUnified(towerFloors)
@@ -61,6 +65,20 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   const sortedTypicalFloors = typicalFloors.sort((a, b) => b.index - a.index);
   const sortedGroundFloors = groundFloors.sort((a, b) => b.index - a.index);
   const sortedBasementFloors = basementFloors.sort((a, b) => b.index - a.index);
+
+  const biggestFloorArea = Math.max(
+    ...unifiedFloors.map((floor) => floor.area),
+    1
+  );
+
+  const foundationFloor: UnifiedFloor = {
+    id: "foundation_floor",
+    name: "Mesoestrutura e fundação",
+    area: biggestFloorArea,
+    height: 2,
+    category: "foundation_floor" as any,
+    index: -2,
+  };
 
   const handleFloorSelection = (
     floorIdentifier: string,
@@ -99,7 +117,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
     allFloorIds.length > 0 &&
     allFloorIds.every((id) => selectedItems.includes(id));
 
-  const renderFloorBlock = (floor: UnifiedFloor) => {
+  const renderFloorBlock = (floor: UnifiedFloor, hasFoundation = false) => {
     const widthPercentage = (floor.area / maxArea) * 100;
     const floorIdentifier = isSelectable ? floor.id : floor.name;
     const isFloorSelected = selectedItems.includes(floorIdentifier);
@@ -109,45 +127,59 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
       standard_floor: "#3B82F6",
       ground_floor: "#10B981",
       basement_floor: "#F59E0B",
+      foundation_floor: "#db7070",
+    };
+
+    const opacity = () => {
+      if (!complete) return "1";
+
+      if (hasFoundation && isFoundation) return 1;
+      if (hasFoundation && !isFoundation) return 0.2;
+      if (!hasFoundation && isFoundation) return 0.2;
+      return 1;
     };
 
     return (
       <div
         key={floor.id}
         className={`mb-2 ${
-          isSelectable
-            ? "grid grid-cols-[2fr_auto_minmax(0,100px)] gap-2 items-center w-full"
+          complete
+            ? "grid grid-cols-[2fr_auto_minmax(0,100px)] gap-2 items-start w-full"
             : "flex items-center"
         }`}
+        style={{ opacity: opacity() }}
       >
         {/* Bloco do andar */}
         <div
           className={`flex items-center text-xs font-medium text-white shadow-sm ${
-            isSelectable ? "h-4 rounded-l-lg ml-auto" : "justify-center mx-auto"
+            complete ? "h-4 rounded-l-lg ml-auto" : "justify-center mx-auto"
           }`}
           style={{
             backgroundColor: categoryColors[floor.category],
-            height: isSelectable
-              ? "16px"
-              : `${Math.max(24, floor.height * 6)}px`,
-            width: isSelectable ? `${widthPercentage}%` : `${widthPercentage}%`,
+            height: complete ? "16px" : `${Math.max(24, floor.height * 6)}px`,
+            width: `${widthPercentage}%`,
             textShadow: "1px 1px 2px rgba(0,0,0,0.5)",
           }}
           title={`${floor.name} - ${floor.area}m² - ${floor.height}m`}
         ></div>
 
         {/* Checkbox e nome */}
-        {isSelectable && (
+        {complete && (
           <>
             <Checkbox
               checked={isFloorSelected}
+              disabled={!isSelectable || hasFoundation}
               onCheckedChange={(checked) =>
                 handleFloorSelection(floorIdentifier, checked === true)
               }
               className="border border-gray-300 bg-white data-[state=checked]:bg-active data-[state=checked]:border-active flex-shrink-0"
             />
             <span
-              className="text-xs font-normal text-gray-700 dark:text-gray-300 truncate"
+              className={`text-xs text-gray-700 dark:text-gray-300 ${
+                hasFoundation ? "font-bold" : "font-normal"
+              }
+                ${!hasFoundation ? "truncate" : ""}
+              `}
               title={floor.name}
             >
               {floor.name}
@@ -160,56 +192,58 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
 
   return (
     <div className="flex flex-col items-center p-4 min-h-96 w-80">
-      {isSelectable && (
-        <div className="w-full mb-4 space-y-3">
+      <div className="w-full mb-4 space-y-3">
+        {complete && (
           <div className="text-left">
             <span className="text-md font-normal leading-2 dark:text-gray-300">
-              Selecione os pavimentos em que esta tecnologia construtiva será
-              aplicada
+              {isSelectable
+                ? `Selecione os pavimentos em que esta tecnologia construtiva será
+                aplicada`
+                : `Os pavimentos abaixo são apenas para visualização e não podem ser editados ou selecionados aqui.`}
             </span>
           </div>
+        )}
 
-          {/* Selecionar todos */}
-          {unifiedFloors.length > 0 && (
-            <div className="grid grid-cols-[2fr_auto_minmax(0,100px)] gap-2 items-center w-full max-w-64 ml-auto pb-2 border-b border-gray-300 dark:border-gray-600">
-              <div className="flex items-center justify-end">
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                  Selecionar todos
-                </span>
-              </div>
-              <Checkbox
-                checked={areAllSelected}
-                onCheckedChange={(checked) => handleSelectAll(checked === true)}
-                className="border border-gray-300 bg-white data-[state=checked]:bg-active data-[state=checked]:border-active flex-shrink-0"
-              />
-              <div className="flex items-center">
-                <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
-                  {selectedItems.length} de {allFloorIds.length}
-                </span>
-              </div>
+        {/* Selecionar todos */}
+        {complete && isSelectable && unifiedFloors.length > 0 && (
+          <div className="grid grid-cols-[2fr_auto_minmax(0,100px)] gap-2 items-center w-full max-w-64 ml-auto pb-2 border-b border-gray-300 dark:border-gray-600">
+            <div className="flex items-center justify-end">
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                Selecionar todos
+              </span>
             </div>
-          )}
-        </div>
-      )}
+            <Checkbox
+              checked={areAllSelected}
+              onCheckedChange={(checked) => handleSelectAll(checked === true)}
+              className="border border-gray-300 bg-white data-[state=checked]:bg-active data-[state=checked]:border-active flex-shrink-0"
+            />
+            <div className="flex items-center">
+              <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
+                {selectedItems.length} de {allFloorIds.length}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
       <div className="flex flex-col items-center w-full max-w-72">
         <div className="flex flex-col w-full">
           {/* Cobertura (topo) */}
           <div
-            className={`w-full max-w-64 ${isSelectable ? "ml-auto" : "mx-auto"} `}
+            className={`w-full max-w-64 ${complete ? "ml-auto" : "mx-auto"} `}
           >
             {sortedRoofFloors.map((floor) => renderFloorBlock(floor))}
           </div>
 
           {/* Tipo */}
           <div
-            className={`w-full max-w-64 ${isSelectable ? "ml-auto" : "mx-auto"}`}
+            className={`w-full max-w-64 ${complete ? "ml-auto" : "mx-auto"}`}
           >
             {sortedTypicalFloors.map((floor) => renderFloorBlock(floor))}
           </div>
 
           {/* Térreo */}
           <div
-            className={`w-full max-w-64 ${isSelectable ? "ml-auto" : "mx-auto"}`}
+            className={`w-full max-w-64 ${complete ? "ml-auto" : "mx-auto"}`}
           >
             {sortedGroundFloors.map((floor) => renderFloorBlock(floor))}
           </div>
@@ -220,19 +254,29 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
           typicalFloors.length > 0 ||
           groundFloors.length > 0 ||
           basementFloors.length > 0) && (
-          <div className="w-full h-0.5 bg-black my-3 relative">
-            <div className="absolute -bottom-1 left-0 w-full h-2 bg-gray-400"></div>
+          <div className="w-full h-0.1 bg-black mt-1 mb-3 relative">
+            <div className="absolute -bottom-1 left-0 w-full h-1 bg-gray-400"></div>
           </div>
         )}
 
         {/* Subsolo (abaixo da linha do solo) */}
         <div className="flex flex-col w-full">
           <div
-            className={`w-full max-w-64 ${isSelectable ? "ml-auto" : "mx-auto"}`}
+            className={`w-full max-w-64 ${complete ? "ml-auto" : "mx-auto"}`}
           >
             {sortedBasementFloors.map((floor) => renderFloorBlock(floor))}
           </div>
         </div>
+
+        {complete && (
+          <div className="flex flex-col w-full">
+            <div
+              className={`w-full max-w-64 ${complete ? "ml-auto" : "mx-auto"}`}
+            >
+              {renderFloorBlock(foundationFloor, true)}
+            </div>
+          </div>
+        )}
 
         {unifiedFloors.length === 0 && (
           <div className="flex items-center justify-center h-32 text-gray-500 dark:text-gray-400 text-xs text-center">

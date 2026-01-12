@@ -39,8 +39,12 @@ const EmptyList = () => (
 
 interface INotificationProps {
   size?: number;
+  iconOnly?: boolean;
 }
-export const Notifications = ({ size = 16 }: INotificationProps) => {
+export const Notifications = ({
+  size = 16,
+  iconOnly = false,
+}: INotificationProps) => {
   const { notifications } = useNotifications();
   const { t } = useTranslation();
   const ref = useRef<HTMLButtonElement>(null);
@@ -53,7 +57,11 @@ export const Notifications = ({ size = 16 }: INotificationProps) => {
   return (
     <Popover modal i18nIsDynamicList>
       <PopoverTrigger ref={ref} className="relative cursor-pointer">
-        Notificações
+        {iconOnly ? (
+          <Bell size={size} className="text-white" />
+        ) : (
+          "Notificações"
+        )}
         {notifications.length > 0 && (
           <span className="absolute -top-1 -right-4 scale-90 bg-destructive text-white rounded-full px-1 text-xs">
             {notifications.length}

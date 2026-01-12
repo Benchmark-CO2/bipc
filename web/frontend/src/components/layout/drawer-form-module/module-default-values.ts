@@ -42,7 +42,9 @@ export const beamColumnDefaultValues = {
 
 export const structuralMasonryDefaultValues = {
   type: "structural_masonry" as const,
-  blocks: [{ type: "inteiro (14x19x29)" as const, fbk: 6, quantity: "0" }],
+  masonry_blocks: [
+    { type: "inteiro (14x19x29)" as const, fbk: 6, quantity: "0" },
+  ],
   grout: [
     {
       position: "vertical" as const,
@@ -58,6 +60,91 @@ export const structuralMasonryDefaultValues = {
   form_slabs: "0",
 };
 
+export const raftFoundationDefaultValues = {
+  type: "raft_foundation" as const,
+  area: "0",
+  thickness: "0",
+  fck: 25,
+  steel: [
+    {
+      material: "rebar" as const,
+      resistance: "CA50" as const,
+      mass: "0",
+    },
+  ],
+};
+
+export const pilesFoundationDefaultValues = {
+  type: "piles_foundation" as const,
+  fck: 30,
+  piles: {
+    volume: "0",
+    steel: [
+      {
+        material: "rebar" as const,
+        resistance: "CA50" as const,
+        mass: "0",
+      },
+    ],
+  },
+  pile_caps: {
+    volume: "0",
+    steel: [
+      {
+        material: "rebar" as const,
+        resistance: "CA50" as const,
+        mass: "0",
+      },
+    ],
+  },
+  grade_beams: {
+    volume: "0",
+    steel: [
+      {
+        material: "rebar" as const,
+        resistance: "CA50" as const,
+        mass: "0",
+      },
+    ],
+  },
+  tie_beams: {
+    volume: "0",
+    steel: [
+      {
+        material: "rebar" as const,
+        resistance: "CA50" as const,
+        mass: "0",
+      },
+    ],
+  },
+};
+
+export const raftPilesFoundationDefaultValues = {
+  type: "raft_piles_foundation" as const,
+  fck: 25,
+  raft: {
+    area: "0",
+    thickness: "0",
+    steel: [
+      {
+        material: "rebar" as const,
+        resistance: "CA50" as const,
+        mass: "0",
+      },
+    ],
+  },
+  piles: {
+    volume: "0",
+    steel: [
+      {
+        material: "rebar" as const,
+        resistance: "CA50" as const,
+        mass: "0",
+      },
+    ],
+  },
+};
+
 export const getDefaultValuesByType = (type: TModulesTypes) => {
   switch (type) {
     case "beam_column":
@@ -66,6 +153,12 @@ export const getDefaultValuesByType = (type: TModulesTypes) => {
       return concreteWallDefaultValues;
     case "structural_masonry":
       return structuralMasonryDefaultValues;
+    case "raft_foundation":
+      return raftFoundationDefaultValues;
+    case "piles_foundation":
+      return pilesFoundationDefaultValues;
+    case "raft_piles_foundation":
+      return raftPilesFoundationDefaultValues;
     default:
       return concreteWallDefaultValues;
   }
