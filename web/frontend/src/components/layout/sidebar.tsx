@@ -24,6 +24,7 @@ import { Notifications } from "../notifications";
 import { Button } from "../ui/button";
 import Divider from "../ui/divider";
 import SidemenuItem from "../ui/sidemenu-item";
+import { BetaWarning } from '../beta-warning';
 
 interface ISidebar {
   handleLogout?: () => void;
@@ -46,6 +47,10 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         <Link to={isAuthenticated ? "/benchmark" : "/login"}>
           <img src={LogoFull} alt="Logo" className="w-full" />
         </Link>
+      </div>
+
+      <div className="p-2">
+        <BetaWarning />
       </div>
 
       {/* Menu Items - Seção Principal */}
