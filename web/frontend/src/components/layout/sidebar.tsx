@@ -29,7 +29,7 @@ import SidemenuItem from "../ui/sidemenu-item";
 import ExpandContentIcon from "@/assets/icons/expand-content";
 import CollapseContentIcon from "@/assets/icons/collapse-content";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { BetaWarning } from '../beta-warning';
+import { BetaWarning } from "../beta-warning";
 
 interface ISidebar {
   handleLogout?: () => void;
@@ -270,7 +270,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         )}
       </div>
 
-      <div className="p-2">
+      <div className="p-4">
         <BetaWarning />
       </div>
 
