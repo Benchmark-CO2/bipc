@@ -83,6 +83,7 @@ func (app *application) createPasswordResetTokenHandler(w http.ResponseWriter, r
 	err := app.readJSON(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
+		return
 	}
 
 	v := validator.New()

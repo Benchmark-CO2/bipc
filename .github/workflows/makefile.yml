@@ -9,32 +9,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.24'
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24"
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '24'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
 
-    - name: Install pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 10.12.1
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.12.1
 
-    - name: Build frontend
-      run: make build/frontend
+      - name: Build frontend
+        run: make build/frontend
 
-    - name: Build backend
-      run: make build/api
+      - name: Build documentation
+        run: make build/docs
 
-    - name: Deploy to production
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        ENV_FILE: ${{ secrets.ENV_FILE }}
-        DB_DSN: ${{ secrets.DB_DSN }}
-      run: make production/deploy/ci
+      - name: Build backend
+        run: make build/api
+
+      - name: Deploy to production
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          DB_DSN: ${{ secrets.DB_DSN }}
+        run: make production/deploy/ci

@@ -1,161 +1,357 @@
-openapi: 3.0.0
+openapi: 3.1.0
 info:
-  title: Structures API
+  title: BIPC
+  description: Iterative Benchmark for Low-Carbon Projects
   version: 1.0.0
-  description: |
-    API for managing structural engineering projects, including users, projects, units, and modules for calculating CO2 emissions.
-  contact:
-    name: API Support
-    email: support@example.com
-  license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
-
+security:
+  - apiKeyAuthentication: []
+  - bearerHttpAuthentication: []
 tags:
-  - name: Users
-    description: User management
-  - name: Authentication
-    description: Authentication and token management
-  - name: Projects
-    description: Project management
-  - name: Invitations
-    description: User invitations to projects
-  - name: Units
-    description: Unit management within projects
-  - name: Options
-    description: unit option management within units
-  - name: Modules
-    description: "Management of structural modules. A module represents a specific engineering solution (e.g., a beam-column system or a concrete wall system) for a set of floors within a tower. Modules are used to calculate CO2 emissions and other metrics."
+  - name: users
+  - name: invitations
+  - name: tokens
 
 paths:
   /v1/users:
     post:
       summary: Register a new user
       description: Creates a new user account. After registration, an activation token is sent to the user's email.
-      tags:
-        - Users
+      security: []
+      tags: [users]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateUser'
-            example:
-              name: "John Doe"
-              email: "john.doe@example.com"
-              password: "password123"
-              image_url: "http://example.com/avatar.png"
+              $ref: "#/components/schemas/CreateUser"
       responses:
-        '202':
+        "202":
           description: Accepted. The user was successfully registered and an activation email has been sent.
-        '400':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
           description: Bad Request. The request body is invalid or malformed.
-        '422':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
           description: Unprocessable Entity. The request failed validation checks (e.g., duplicate email).
-        '500':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     patch:
       summary: Update user details
       description: Updates the details for the currently authenticated user. Requires authentication.
-      tags:
-        - Users
-      security:
-        - bearerAuth: []
+      tags: [users]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateUser'
-            example:
-              name: "John Doe"
-              email: "john.doe@example.com"
-              image_url: "http://example.com/new_avatar.png"
+              $ref: "#/components/schemas/UpdateUser"
       responses:
-        '200':
+        "200":
           description: OK. The user was successfully updated.
-        '400':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
           description: Bad Request. The request body is invalid or malformed.
-        '401':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
           description: Unauthorized. The user is not authenticated.
-        '404':
-          description: Not Found. The requested user does not exist.
-        '409':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
           description: Conflict. A conflicting edit occurred.
-        '422':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
           description: Unprocessable Entity. The request failed validation checks (e.g., duplicate email).
-        '500':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Delete user account
+      description: Deletes the currently authenticated user's account. To delete the account it is necessary to delete or transfer the projects.
+      tags: [users]
+      responses:
+        "200":
+          description: OK. The user was successfully deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultOkResponse"
+        "403":
+          description: Forbidden. The user cannot be deleted because they have associated projects.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized. The user is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/users/activated:
     put:
       summary: Activate a user
       description: Activates a user account using a token sent to their email.
-      tags:
-        - Users
+      security: []
+      tags: [users]
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - token
               properties:
                 token:
                   type: string
-                  description: The activation token.
-                  example: "J2bVb6wR2bF3aH4g5h6j7k8l9m0n1o2p"
       responses:
-        '200':
+        "200":
           description: OK. User successfully activated.
-        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+        "400":
           description: Bad Request. The request body is invalid or malformed.
-        '409':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
           description: Conflict. A conflicting edit occurred.
-        '422':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
           description: Unprocessable Entity. The token is invalid or has expired.
-        '500':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/users/password:
     put:
       summary: Update user password
       description: Updates the password for a user, typically used in a password reset flow.
-      tags:
-        - Users
+      security: []
+      tags: [users]
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - password
+                - token
               properties:
                 password:
                   type: string
                   format: password
-                  description: The new password.
-                  example: "newpassword123"
+                  description: The new password. Must be at least 8 bytes long.
                 token:
                   type: string
-                  description: The password reset token.
-                  example: "K3cVc7xS3cG4bH5h6i7j8k9l0m1n2o3p"
       responses:
-        '200':
+        "200":
           description: OK. Password successfully updated.
-        '400':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultOkResponse"
+        "400":
           description: Bad Request. The request body is invalid or malformed.
-        '409':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
           description: Conflict. A conflicting edit occurred.
-        '422':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
           description: Unprocessable Entity. The token is invalid or has expired.
-        '500':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/users/collaborators:
+    get:
+      summary: List user collaborators
+      description: Returns a list of users who have been invited to collaborate on the authenticated user's projects.
+      tags: [users]
+      responses:
+        "200":
+          description: A list of collaborators.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsersList"
+        "401":
+          description: Unauthorized. The user is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/users/pending-invitations:
+    get:
+      summary: List pending invitations
+      description: Returns a list of pending invitations for the authenticated user.
+      tags: [invitations]
+      responses:
+        "200":
+          description: A list of pending invitations.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvitationsWithDetails"
+        "401":
+          description: Unauthorized. The user is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/users/reply/{invitationID}:
+    put:
+      summary: Reply to an invitation
+      description: Accepts or declines an invitation to collaborate on a project.
+      tags: [invitations]
+      parameters:
+        - name: invitationID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - accepted
+                    - declined
+      responses:
+        "403":
+          description: Forbidden. account must be activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized. The user is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Unprocessable Entity. The request failed validation checks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "400":
+          description: Bad Request. The request body is invalid or malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "200":
+          description: OK. Invitation response recorded successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultOkResponse"
 
   /v1/tokens/authentication:
     post:
       summary: Create authentication token
       description: Authenticates a user and returns a JWT token.
-      tags:
-        - Authentication
+      security: []
+      tags: [tokens]
       requestBody:
         required: true
         content:
@@ -166,18 +362,101 @@ paths:
                 email:
                   type: string
                   format: email
-                  example: "john.doe@example.com"
                 password:
                   type: string
                   format: password
-                  example: "password123"
       responses:
-        '201':
-          description: Created. Token successfully created.
-        '401':
+        "400":
+          description: Bad Request. The request body is invalid or malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Unprocessable Entity. The request failed validation checks.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
           description: Unauthorized. Invalid credentials.
-        '500':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "201":
+          description: Created. Token successfully created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - authentication_token
+                  - user
+                properties:
+                  authentication_token:
+                    type: object
+                    required:
+                      - token
+                      - expiry
+                    properties:
+                      token:
+                        type: string
+                      expiry:
+                        type: string
+                        format: date-time
+                  user:
+                    $ref: "#/components/schemas/User"
+
+  /v1/tokens/activation:
+    post:
+      summary: Resend activation token
+      description: Resends the activation token to the user's email.
+      security: []
+      tags: [tokens]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "202":
+          description: OK. Activation email resent successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultOkResponse"
+        "400":
+          description: Bad Request. The request body is invalid or malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Unprocessable Entity. The request failed validation checks.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/projects:
     get:
@@ -188,13 +467,13 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: A paginated list of projects.
-        '401':
+        "401":
           description: Unauthorized. The user is not authenticated.
-        '422':
+        "422":
           description: Unprocessable Entity. The request failed validation checks.
-        '500':
+        "500":
           description: Internal Server Error.
     post:
       summary: Create new project
@@ -208,17 +487,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Project'
+              $ref: "#/components/schemas/Project"
       responses:
-        '201':
+        "201":
           description: Created. The project was successfully created.
-        '400':
+        "400":
           description: Bad Request. The request body is invalid or malformed.
-        '401':
+        "401":
           description: Unauthorized. The user is not authenticated.
-        '422':
+        "422":
           description: Unprocessable Entity. The request failed validation checks (e.g., duplicate project name).
-        '500':
+        "500":
           description: Internal Server Error.
 
   /v1/projects/{projectID}:
@@ -237,13 +516,13 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: A single project.
-        '401':
+        "401":
           description: Unauthorized. The user is not authenticated.
-        '404':
+        "404":
           description: Not Found. The requested project does not exist.
-        '500':
+        "500":
           description: Internal Server Error.
     patch:
       summary: Update a project
@@ -264,21 +543,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Project'
+              $ref: "#/components/schemas/Project"
       responses:
-        '200':
+        "200":
           description: OK. The project was successfully updated.
-        '400':
+        "400":
           description: Bad Request. The request body is invalid or malformed.
-        '401':
+        "401":
           description: Unauthorized. The user is not authenticated.
-        '404':
+        "404":
           description: Not Found. The requested project does not exist.
-        '409':
+        "409":
           description: Conflict. A conflicting edit occurred.
-        '422':
+        "422":
           description: Unprocessable Entity. The request failed validation checks (e.g., duplicate project name).
-        '500':
+        "500":
           description: Internal Server Error.
     delete:
       summary: Delete a project
@@ -295,13 +574,13 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: OK. The project was successfully deleted.
-        '401':
+        "401":
           description: Unauthorized. The user is not authenticated.
-        '404':
+        "404":
           description: Not Found. The requested project does not exist.
-        '500':
+        "500":
           description: Internal Server Error.
 
   /v1/projects/{projectID}/invite:
@@ -334,15 +613,15 @@ paths:
                   items:
                     type: string
       responses:
-        '200':
+        "200":
           description: OK. Invitation sent successfully.
-        '400':
+        "400":
           description: Bad Request. The request body is invalid or malformed.
-        '401':
+        "401":
           description: Unauthorized. The user is not authenticated.
-        '422':
+        "422":
           description: Unprocessable Entity. The request failed validation checks (e.g., user already a member, or pending invitation exists).
-        '500':
+        "500":
           description: Internal Server Error.
 
   /v1/projects/{projectID}/units:
@@ -366,21 +645,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UnitCreate'
+              $ref: "#/components/schemas/UnitCreate"
       responses:
-        '200':
+        "200":
           description: OK. The unit was created successfully.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Unit'
-        '400':
+                $ref: "#/components/schemas/Unit"
+        "400":
           description: Bad Request. The request body is invalid or malformed.
-        '401':
+        "401":
           description: Unauthorized. The user is not authenticated.
-        '422':
+        "422":
           description: Unprocessable Entity. The request failed validation checks.
-        '500':
+        "500":
           description: Internal Server Error.
 
   /v1/projects/{projectID}/units/{unitID}:
@@ -407,17 +686,17 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: A single unit.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Unit'
-        '401':
+                $ref: "#/components/schemas/Unit"
+        "401":
           description: Unauthorized. The user is not authenticated.
-        '404':
+        "404":
           description: Not Found. The requested unit does not exist.
-        '500':
+        "500":
           description: Internal Server Error.
     patch:
       summary: Update a unit
@@ -446,25 +725,25 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UnitCreate'
+              $ref: "#/components/schemas/UnitCreate"
       responses:
-        '200':
+        "200":
           description: OK. The unit was successfully updated.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Unit'
-        '400':
+                $ref: "#/components/schemas/Unit"
+        "400":
           description: Bad Request. The request body is invalid or malformed.
-        '401':
+        "401":
           description: Unauthorized. The user is not authenticated.
-        '404':
+        "404":
           description: Not Found. The requested unit does not exist.
-        '409':
+        "409":
           description: Conflict. A conflicting edit occurred.
-        '422':
+        "422":
           description: Unprocessable Entity. The request failed validation checks.
-        '500':
+        "500":
           description: Internal Server Error.
     delete:
       summary: Delete a unit
@@ -489,20 +768,20 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: OK. The unit was successfully deleted.
-        '401':
+        "401":
           description: Unauthorized. The user is not authenticated.
-        '404':
+        "404":
           description: Not Found. The requested unit does not exist.
-        '500':
+        "500":
           description: Internal Server Error.
 
   /v1/projects/{projectID}/units/{unitID}/options:
     post:
       summary: Create a new engineering option for a tower
       tags:
-          - Options
+        - Options
       security:
         - bearerAuth: []
       parameters:
@@ -523,9 +802,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OptionCreateRequest'
+              $ref: "#/components/schemas/OptionCreateRequest"
       responses:
-        '201':
+        "201":
           description: unit option created successfully
     get:
       summary: List all options for a unit
@@ -547,7 +826,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: A list of options
   /v1/projects/{projectID}/units/{unitID}/options/{optionID}:
     get:
@@ -576,9 +855,9 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: A single unit option
-        '404':
+        "404":
           description: Not Found.
     patch:
       summary: Update a unit option
@@ -610,13 +889,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OptionCreateRequest'
+              $ref: "#/components/schemas/OptionCreateRequest"
       responses:
-        '200':
+        "200":
           description: Successfully updated
-        '404':
+        "404":
           description: Not Found.
-        '409':
+        "409":
           description: Conflict. A conflicting edit occurred.
     delete:
       summary: Delete a unit option
@@ -644,9 +923,9 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Successfully deleted
-        '404':
+        "404":
           description: Not Found.
 
   /v1/projects/{projectID}/units/{unitID}/options/{optionID}/modules:
@@ -678,9 +957,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ModuleCreateRequest'
+              $ref: "#/components/schemas/ModuleCreateRequest"
       responses:
-        '201':
+        "201":
           description: Module created successfully
 
   /v1/projects/{projectID}/units/{unitID}/options/{optionID}/modules/{moduleID}:
@@ -714,7 +993,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: A single module
     delete:
       summary: Delete a module
@@ -746,7 +1025,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Successfully deleted
     patch:
       summary: Update a module
@@ -782,18 +1061,42 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ModuleCreateRequest'
+              $ref: "#/components/schemas/ModuleCreateRequest"
       responses:
-        '200':
+        "200":
           description: module successfully updated
 
 components:
   securitySchemes:
-    bearerAuth:
+    bearerHttpAuthentication:
       type: http
       scheme: bearer
-      bearerFormat: JWT
+      bearerFormat: opaque
+    apiKeyAuthentication:
+      type: apiKey
+      in: header
+      name: X-API-Key
   schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          oneOf:
+            - type: string
+            - type: object
+              additionalProperties:
+                type: string
+
+    DefaultOkResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+
     CreateUser:
       type: object
       required:
@@ -803,23 +1106,50 @@ components:
       properties:
         name:
           type: string
-          description: "User's full name."
-          example: "John Doe"
         email:
           type: string
           format: email
-          description: "User's email address. Must be unique."
-          example: "john.doe@example.com"
         password:
           type: string
           format: password
-          description: "User's password. Must be at least 8 characters long."
-          example: "password123"
-        image_url:
+        crea_cau:
           type: string
-          format: url
-          description: "URL for the user's profile picture."
-          example: "http://example.com/avatar.png"
+          description: CREA or CAU registration number
+        birthdate:
+          type: string
+          format: date-time
+        city:
+          type: string
+        activity:
+          type: string
+        enterprise:
+          type: string
+
+    User:
+      allOf:
+        - $ref: "#/components/schemas/CreateUser"
+        - type: object
+          required:
+            - id
+            - created_at
+            - activated
+          properties:
+            id:
+              type: string
+              format: uuid
+              readOnly: true
+            created_at:
+              type: string
+              format: date-time
+              readOnly: true
+            activated:
+              type: boolean
+              readOnly: true
+
+    UsersList:
+      type: array
+      items:
+        $ref: "#/components/schemas/User"
 
     UpdateUser:
       type: object
@@ -827,22 +1157,73 @@ components:
         name:
           type: string
           description: "User's full name."
-          example: "John Doe"
         email:
           type: string
           format: email
-          description: "User's email address. Must be unique."
-          example: "john.doe@example.com"
         password:
           type: string
           format: password
           description: "User's new password. Must be at least 8 characters long."
-          example: "newpassword123"
-        image_url:
+        crea_cau:
           type: string
-          format: url
-          description: "URL for the user's profile picture."
-          example: "http://example.com/new_avatar.png"
+          description: CREA or CAU registration number
+        birthdate:
+          type: string
+          format: date-time
+        city:
+          type: string
+        activity:
+          type: string
+        enterprise:
+          type: string
+
+    InvitationsWithDetails:
+      type: object
+      required:
+        - invitations
+      properties:
+        invitations:
+          type: array
+          items:
+            type: object
+            required:
+              - id
+              - status
+              - created_at
+              - expires_at
+              - inviter_id
+              - project_id
+              - email
+              - inviter_name
+              - project_name
+            properties:
+              id:
+                type: string
+                format: uuid
+              status:
+                type: string
+                enum:
+                  - accepted
+                  - declined
+              created_at:
+                type: string
+                format: date-time
+              expires_at:
+                type: string
+                format: date-time
+              inviter_id:
+                type: string
+                format: uuid
+              project_id:
+                type: string
+                format: uuid
+              email:
+                type: string
+                format: email
+              inviter_name:
+                type: string
+              project_name:
+                type: string
 
     Project:
       type: object
@@ -894,7 +1275,7 @@ components:
 
     Tower:
       allOf:
-        - $ref: '#/components/schemas/Unit'
+        - $ref: "#/components/schemas/Unit"
         - type: object
           properties:
             created_at:
@@ -911,7 +1292,7 @@ components:
             floors:
               type: array
               items:
-                $ref: '#/components/schemas/Floor'
+                $ref: "#/components/schemas/Floor"
 
     FloorGroup:
       type: object
@@ -926,7 +1307,7 @@ components:
         floors:
           type: array
           items:
-            $ref: '#/components/schemas/Floor'
+            $ref: "#/components/schemas/Floor"
 
     Floor:
       type: object
@@ -968,7 +1349,7 @@ components:
         data:
           description: "Polymorphic data based on the unit type."
           oneOf:
-            - $ref: '#/components/schemas/TowerCreateData'
+            - $ref: "#/components/schemas/TowerCreateData"
 
     TowerCreateData:
       type: object
@@ -978,7 +1359,7 @@ components:
         floor_groups:
           type: array
           items:
-            $ref: '#/components/schemas/FloorGroupCreate'
+            $ref: "#/components/schemas/FloorGroupCreate"
 
     FloorGroupCreate:
       type: object
@@ -1029,15 +1410,19 @@ components:
         data:
           description: "Polymorphic data containing the specific details for the chosen module type. The structure of this object depends on the 'type' field."
           oneOf:
-            - $ref: '#/components/schemas/BeamColumnData'
-            - $ref: '#/components/schemas/ConcreteWallData'
+            - $ref: "#/components/schemas/BeamColumnData"
+            - $ref: "#/components/schemas/ConcreteWallData"
       required:
         - type
         - floor_ids
         - data
       example:
         type: "beam_column"
-        floor_ids: ["f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6", "e7f8a9b0-c1d2-e3f4-a5b6-c7d8e9f0a1b2"]
+        floor_ids:
+          [
+            "f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6",
+            "e7f8a9b0-c1d2-e3f4-a5b6-c7d8e9f0a1b2",
+          ]
         data:
           concrete_columns:
             volumes:
@@ -1095,7 +1480,7 @@ components:
       description: "An array defining concrete volumes, broken down by compressive strength (fck)."
       minItems: 1
       items:
-        $ref: '#/components/schemas/ConcreteVolumeItem'
+        $ref: "#/components/schemas/ConcreteVolumeItem"
 
     # Schema for a single steel mass item
     SteelMassItem:
@@ -1118,7 +1503,7 @@ components:
       type: array
       description: "An array defining steel reinforcement mass, broken down by type."
       items:
-        $ref: '#/components/schemas/SteelMass'
+        $ref: "#/components/schemas/SteelMass"
 
     # Schema for the concrete element, with consistent references
     ConcreteElement:
@@ -1126,9 +1511,9 @@ components:
       description: "Defines the composition of a concrete structural element, including its steel reinforcement and concrete volumes."
       properties:
         volumes:
-          $ref: '#/components/schemas/ConcreteVolumes'
+          $ref: "#/components/schemas/ConcreteVolumes"
         steel:
-          $ref: '#/components/schemas/SteelMasses'
+          $ref: "#/components/schemas/SteelMasses"
       required:
         - volumes
         - steel
@@ -1138,24 +1523,24 @@ components:
       description: "Data for a 'beam_column' type module."
       properties:
         floor_ids:
-            type: array
-            description: "Array of floor IDs to which this module will be applied. These floors must belong to the tower associated with this unit option."
-            items:
-              type: string
-              format: uuid
-              example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+          type: array
+          description: "Array of floor IDs to which this module will be applied. These floors must belong to the tower associated with this unit option."
+          items:
+            type: string
+            format: uuid
+            example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
         concrete_columns:
           description: "Concrete and steel composition for all columns in the specified floors."
           allOf:
-            - $ref: '#/components/schemas/ConcreteElement'
+            - $ref: "#/components/schemas/ConcreteElement"
         concrete_beams:
           description: "Concrete and steel composition for all beams in the specified floors."
           allOf:
-            - $ref: '#/components/schemas/ConcreteElement'
+            - $ref: "#/components/schemas/ConcreteElement"
         concrete_slabs:
           description: "Concrete and steel composition for all slabs in the specified floors."
           allOf:
-            - $ref: '#/components/schemas/ConcreteElement'
+            - $ref: "#/components/schemas/ConcreteElement"
         form_columns:
           type: number
           description: "Total area of concrete forms for columns in square meters (m²)."
@@ -1190,20 +1575,20 @@ components:
       description: "Data for a 'concrete_wall' type module."
       properties:
         floor_ids:
-            type: array
-            description: "Array of floor IDs to which this module will be applied. These floors must belong to the tower associated with this unit option."
-            items:
-              type: string
-              format: uuid
-              example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+          type: array
+          description: "Array of floor IDs to which this module will be applied. These floors must belong to the tower associated with this unit option."
+          items:
+            type: string
+            format: uuid
+            example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
         concrete_walls:
           description: "Concrete and steel composition for all walls in the specified floors."
           allOf:
-            - $ref: '#/components/schemas/ConcreteElement'
+            - $ref: "#/components/schemas/ConcreteElement"
         concrete_slabs:
           description: "Concrete and steel composition for all slabs in the specified floors."
           allOf:
-            - $ref: '#/components/schemas/ConcreteElement'
+            - $ref: "#/components/schemas/ConcreteElement"
         wall_thickness:
           type: number
           description: "Average thickness of the concrete walls in meters (m)."
