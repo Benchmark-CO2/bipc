@@ -79,6 +79,7 @@ const useChartDimensions = (
 ) => {
   return useMemo(() => {
     const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight
 
     const width = () => {
       if (props.width && overrideDimensions) return props.width;
@@ -93,6 +94,7 @@ const useChartDimensions = (
       if (props.height && overrideDimensions) return props.height;
       if (isMobile && !isExpanded) return 250;
       if (isMobile && isExpanded) return 320;
+      if (screenHeight > 1200 && isExpanded) return screenHeight * 0.65
       if (isExpanded) return window.innerHeight * 0.96 - 130;
       return window.innerHeight * 0.7 - 340;
     };
@@ -858,7 +860,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     <Card className={cn("shadow-none w-min-content min-w-1/2")}>
       <CardContent>
         <div ref={containerRef} className="w-full overflow-hidden relative">
-          <span className="absolute text-xs w-full text-center text-foreground/70 block rotate-270 left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
+          <span className="absolute text-base w-full text-center text-foreground/70 block rotate-270 left-0 -translate-x-[49%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
             Potencial de mitigação
           </span>
 
@@ -923,7 +925,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
               position="start"
             />
           )}
-          <span className="flex-1 text-xs text-center w-full text-foreground/70">
+          <span className="flex-1 text-base text-center w-full text-foreground/70">
             {labelX}
           </span>
         </div>

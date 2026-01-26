@@ -2,7 +2,7 @@ import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
 import { cn } from "@/lib/utils";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, Activity } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
@@ -29,7 +29,11 @@ const manageData = (data: ProjectsSummaryProps["data"]["benchmark"]["co2"]) => {
 const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-  const { chartType, ChartSelector } = useChartType();
+  const [previousProjects, setPreviousProjects] = useState<any[]>([]);
+  const [subTabs, setSubTabs] = useState<"Projetos">("Projetos");
+
+  const { chartType, ChartSelector, changeChartType } = useChartType();
+
   const filterProjects = projects.filter(el => !!el.consumption);
   const managedData = manageData(data.benchmark?.[type as "co2" | "energy"])
     .map((el) => ({
@@ -76,7 +80,6 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
       setSelectedProjects([...selectedProjects, projectId]);
     }
   };
-  const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
     if (!someSelected) {
@@ -106,7 +109,14 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
     }
   }, [previousProjects, projects, someSelected]);
 
-  const [subTabs, setSubTabs] = useState<"Projetos">("Projetos");
+  useEffect(() => {
+    if (isExpanded) {
+      changeChartType(["scatter", "line"])
+    } else {
+      changeChartType(["scatter"])
+    }
+  }, [isExpanded])
+
   const selectAll = () => {
     if (selectedProjects.length === projects.length) {
       setSelectedProjects([]);
@@ -129,7 +139,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
     <>
       <div className="w-full flex gap-2 mb-4">
         <FilterTabs
-          tabs={["co2", "energy"]}
+          tabs={!isExpanded ? ["co2", "energy"] : []}
           onTabSelect={(tab) => setType(tab as "co2" | "energy")}
           selectedTab={type}
           fullWidth
@@ -153,7 +163,9 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
         })}
       >
         <div className="flex flex-col items-start w-full justify-between h-full">
-          {ChartSelector}
+          <Activity mode={isExpanded ? "hidden" : "visible"}>
+            {ChartSelector}
+          </Activity>
           <ul
             className={cn("flex flex-col gap-2 text-xl w-full text-black h-full", {
               "flex-row gap-2 flex-wrap": isExpanded,
@@ -197,8 +209,35 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
           {<Legend />}
           {/* {!isExpanded && <Subtitle />} */}
         </div>
-
-        {chartType === "scatter" ? (
+            
+        {
+          chartType.map(el => {
+            switch(el){
+              case "line":
+                return (
+                  <D3GradientRangeLineChart
+                    data={newData}
+                    selectedBars={selectedProjects}
+                    unit={type}
+                  />
+                )
+              case "scatter":
+                return (
+                  <D3GradientRangeChart
+                  data={newData}
+                  selectedBars={selectedProjects}
+                  unit={unitsOfMeasure[type] || ""}
+                  totalProjects={data?.benchmark[type].length || 0}
+                  minData={minData}
+                  maxData={maxData}
+                />
+                )
+              default:
+                return null
+            }
+          })
+        }
+        {/* {chartType === "scatter" ? (
           <D3GradientRangeChart
             data={newData}
             selectedBars={selectedProjects}
@@ -213,10 +252,22 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
             selectedBars={selectedProjects}
             unit={type}
           />
-        )}
+        )} */}
       </div>
     </>
   );
 };
+
+const ChartWrapper: React.FC<{
+  children: React.ReactNode
+}> = ({
+  children
+}) => {
+  return (
+    <div className='max-h-[900px]'>
+      {children}
+    </div>
+  )
+}
 
 export default ProjectsSummary;

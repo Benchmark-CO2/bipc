@@ -23,7 +23,6 @@ export function FilterTabs({
   className,
   tabsStyle
 }: IFilterTabsProps) {
-  if (tabs.length === 0) return null;
 
   const convertTabName = (tab: string) => {
     if (tab.toLowerCase() === "co2") return "CO₂";
@@ -53,7 +52,7 @@ export function FilterTabs({
         ))}
       </div>
 
-      {hasSubTabs && <div className="h-6 w-px bg-gray-shade-300 dark:bg-gray-shade-500 max-sm:h-px max-sm:w-full max-sm:my-1" />}
+      {hasSubTabs && !!tabs.length && <div className="h-6 w-px bg-gray-shade-300 dark:bg-gray-shade-500 max-sm:h-px max-sm:w-full max-sm:my-1" />}
       {hasSubTabs && (
         <div className='max-sm:w-full flex max-sm:flex-col'>
           <div className="flex items-center gap-4">
