@@ -172,7 +172,7 @@ build/frontend:
 ## build/docs: build the documentation
 .PHONY: build/docs
 build/docs:
-	npx @redocly/cli build-docs openapi.yaml -o=web/frontend/dist/docs.html
+	npx @redocly/cli build-docs openapi.yaml -t custom.hbs -o=web/frontend/dist/docs.html
 
 ## build/api: build the cmd/api application
 .PHONY: build/api
