@@ -117,7 +117,7 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 
 func (app *application) commonHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://brasilapi.com.br; img-src 'self' data: https://bipc-avatar.s3.sa-east-1.amazonaws.com")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' https://cdn.redocly.com; connect-src 'self' https://brasilapi.com.br; img-src 'self' data: https://bipc-avatar.s3.sa-east-1.amazonaws.com")
 		w.Header().Set("Referrer-Policy", "origin-when-cross-origin")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "deny")
@@ -142,7 +142,7 @@ func (app *application) enableCORS(next http.Handler) http.Handler {
 
 					if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
 						w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, PUT, PATCH, DELETE")
-						w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+						w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-API-Key")
 						w.Header().Set("Access-Control-Max-Age", "600")
 						w.WriteHeader(http.StatusOK)
 						return
