@@ -36,12 +36,14 @@ interface DialogCreateSimulationProps {
   projectId: string;
   unitId: string;
   roleId: string;
+  triggerComponent?: React.ReactNode;
 }
 
 const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
   projectId,
   unitId,
   roleId,
+  triggerComponent,
 }) => {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -80,13 +82,15 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild data-action="delete-project">
-        <Button
-          variant="secondary"
-          className="ml-auto text-white"
-          onClick={() => setOpen(true)}
-        >
-          Fazer Nova Simulação
-        </Button>
+        {triggerComponent || (
+          <Button
+            variant="secondary"
+            className="ml-auto text-white"
+            onClick={() => setOpen(true)}
+          >
+            Fazer Nova Simulação
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="text-center">
         <DialogHeader>

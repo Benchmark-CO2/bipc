@@ -460,7 +460,21 @@ function RouteComponent() {
                 />
               }
             />
-          ) : undefined
+          ) : filteredConsumptions.length === 0 ? (
+            <NotFoundList
+              message={
+                selectedTab === "Todas as Disciplinas"
+                  ? "Nenhuma simulação encontrada"
+                  : "Crie sua primeira simulação"
+              }
+              showIcon={false}
+              description={
+                selectedTab === "Todas as Disciplinas"
+                  ? `As tecnologias construtivas de todas as disciplinas serão exibidas aqui após a inserção de dados às simulações.`
+                  : `Crie sua primeira simulação para começar a adicionar tecnologias construtivas.`
+              }
+            />
+          ) : null
         }
       />
     </div>

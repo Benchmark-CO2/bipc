@@ -10,6 +10,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import CommonTable from "../common-table";
+import NotFoundList from "@/components/ui/not-found-list";
+import DrawerFormUnit from "../drawer-form-unit";
+import { Button } from "@/components/ui/button";
 
 const ProjectView = ({
   projectId,
@@ -116,6 +119,21 @@ const ProjectView = ({
           })
         }
         lastRow={{ type: "Média", data: finalAvgConsumptions }}
+        customEmptyComponent={
+          <NotFoundList
+            message="Nenhuma edificação encontrada"
+            showIcon={false}
+            description={`Defina os pavimentos e unidades para organizar a estrutura deste projeto.`}
+            button={
+              <DrawerFormUnit
+                triggerComponent={
+                  <Button variant="bipc">Adicionar Edificação</Button>
+                }
+                projectId={projectId}
+              />
+            }
+          />
+        }
       />
       <Divider />
       <CommonTable
@@ -125,6 +143,13 @@ const ProjectView = ({
         isSelectable={false}
         isInteractive={false}
         collapsed={false}
+        customEmptyComponent={
+          <NotFoundList
+            message="Nenhuma tecnologia construtiva encontrada"
+            showIcon={false}
+            description={`As tecnologias construtivas serão exibidas aqui após as simulações.`}
+          />
+        }
       />
     </div>
   );
