@@ -148,11 +148,13 @@ function RouteComponent() {
               </Button>
             </>
           )}
-          <DrawerFormProject
-            componentTrigger={
-              <Button variant={"bipc"}>{t("projects.addProject")}</Button>
-            }
-          />
+          {projects?.length > 0 && (
+            <DrawerFormProject
+              componentTrigger={
+                <Button variant={"bipc"}>{t("projects.addProject")}</Button>
+              }
+            />
+          )}
         </div>
       </div>
       {viewMode === "table" ? (
@@ -161,31 +163,36 @@ function RouteComponent() {
           onClickProject={onClickProject}
           onDeleteProject={onDeleteProject}
         />
-      ) : (
+      ) : [...(projects ?? [])].length ? (
         <div className="grid grid-cols-2 min-[1280px]:grid-cols-4 min-[2000px]:grid-cols-6 w-full flex-wrap items-center gap-6 max-md:grid-cols-2 max-sm:grid-cols-1 transition-all">
-          {[...(projects ?? [])].length ? (
-            [...(projects ?? [])].map((project, ix) => {
-              const { co, mj, density, ...projectData } = project;
-              return (
-                <CustomCard
-                  key={project.id + ix}
-                  project={projectData}
-                  onClick={() => {
-                    onClickProject(project.id);
-                  }}
-                  onDeleteProject={onDeleteProject}
-                  selectedProjects={selectedProjects}
-                  handleSelectProject={handleSelectProject}
-                />
-              );
-            })
-          ) : (
-            <NotFoundList
-              message="Nenhum projeto encontrado"
-              description="Crie seu primeiro projeto clicando no botão acima"
-            />
-          )}
+          {[...(projects ?? [])].map((project, ix) => {
+            const { co, mj, density, ...projectData } = project;
+            return (
+              <CustomCard
+                key={project.id + ix}
+                project={projectData}
+                onClick={() => {
+                  onClickProject(project.id);
+                }}
+                onDeleteProject={onDeleteProject}
+                selectedProjects={selectedProjects}
+                handleSelectProject={handleSelectProject}
+              />
+            );
+          })}
         </div>
+      ) : (
+        <NotFoundList
+          message="Você ainda não possui projetos."
+          description="Crie seu primeiro projeto para começar a gerenciar suas unidades e simulações."
+          button={
+            <DrawerFormProject
+              componentTrigger={
+                <Button variant={"bipc"}>Criar Novo Projeto</Button>
+              }
+            />
+          }
+        />
       )}
     </div>
   );
