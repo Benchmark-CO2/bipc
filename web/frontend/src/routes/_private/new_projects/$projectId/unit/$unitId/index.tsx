@@ -390,7 +390,7 @@ function RouteComponent() {
       <CommonTable
         tableName={
           <div>
-            Tecnologia Construtiva (módulo de cálculo)
+            Simulações
             <div className="flex items-center gap-2 mt-4">
               <FilterTabs
                 tabs={["Todas as Disciplinas"]}
@@ -449,7 +449,7 @@ function RouteComponent() {
             <NotFoundList
               message="Sem Disciplinas para exibir"
               showIcon={false}
-              description={`Você ainda não criou nenhuma disciplina para esta unidade. Crie uma disciplina para começar a adicionar tecnologias construtivas.`}
+              description={`Você ainda não criou nenhuma disciplina para esta unidade. Crie uma disciplina para começar a criar simulações.`}
               button={
                 <DrawerFormDisciplines
                   componentTrigger={
@@ -460,7 +460,13 @@ function RouteComponent() {
                 />
               }
             />
-          ) : undefined
+          ) : filteredConsumptions.length === 0 ? (
+            <NotFoundList
+              message="Sem simulações para exibir no momento"
+              showIcon={false}
+              description={`Clique no botão "Criar simulações" e adicione os dados do projeto.`}
+            />
+          ) : null
         }
       />
     </div>

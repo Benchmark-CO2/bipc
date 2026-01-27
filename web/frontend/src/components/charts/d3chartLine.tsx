@@ -14,8 +14,8 @@ import React, {
 import Divider from "../ui/divider";
 
 const UNIT_LABELS = {
-  "co2": "Emissão de CO2 (Kg/m²)",
-  "energy": "Demanda de energia primária (MJ/m²)",
+  co2: "Emissão de CO2 (Kg/m²)",
+  energy: "Demanda de energia primária (MJ/m²)",
 } as const;
 
 // Constants
@@ -183,7 +183,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     overrideDimensions,
     isMobile,
     isExpanded,
-    containerWidth,
+    containerWidth
   );
 
   const getTooltipPosition = useTooltipPosition();
@@ -605,7 +605,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       .selectAll("text")
       .style("font-size", "12px")
       .style("fill", DEFAULT_COLORS.TEXT)
-      .text(d => (d as number).toInternational(undefined, 1))
+      .text((d) => (d as number).toInternational(undefined, 1));
 
     axesGroup
       .append("g")
@@ -613,7 +613,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       .selectAll("text")
       .style("font-size", "12px")
       .style("fill", DEFAULT_COLORS.TEXT)
-      .text(d => (d as number).toInternational(undefined, 0))
+      .text((d) => (d as number).toInternational(undefined, 0));
 
     // Procel color bands
     const faixaWidth =
@@ -803,9 +803,9 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
           .attr(
             "y",
             y1 +
-            (isExpanded
-              ? CHART_CONFIG.BAR_WIDTH.expanded + 4
-              : minimalBarHeight)
+              (isExpanded
+                ? CHART_CONFIG.BAR_WIDTH.expanded + 4
+                : minimalBarHeight)
           )
           .attr("text-anchor", "end")
           .attr("font-size", 12)
@@ -893,10 +893,16 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
                 </>
               )}
               <span>
-                Min: <b>{tooltip.value.min.toInternational()} Kg/m2</b>
+                Min:{" "}
+                <b>
+                  {tooltip.value.min.toInternational()} {unit}
+                </b>
               </span>
               <span>
-                Max: <b>{tooltip.value.max.toInternational()} Kg/m2</b>
+                Max:{" "}
+                <b>
+                  {tooltip.value.max.toInternational()} {unit}
+                </b>
               </span>
             </div>
           )}
@@ -906,7 +912,9 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
             "mt-10": !summary,
           })}
         >
-          <span>N: {data?.length}</span>
+          <span className="text-muted-foreground text-xs">
+            Nº de projetos: {data?.length}
+          </span>
           <span className="flex-1 text-xs text-center w-full text-black/70">
             Eficiência
           </span>

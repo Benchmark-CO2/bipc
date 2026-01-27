@@ -446,9 +446,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                         name={`${fieldName}.steel.${index}.mass` as any}
                         render={({ field: massField }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">
-                              Massa (kg)
-                            </FormLabel>
+                            <FormLabel className="text-xs">Peso (kg)</FormLabel>
                             <div className="flex gap-1">
                               <FormControl>
                                 <Input
@@ -727,7 +725,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                         </div>
 
                         <div>
-                          <FormLabel className="text-xs">Massa (kg)</FormLabel>
+                          <FormLabel className="text-xs">Peso (kg)</FormLabel>
                           <div className="flex gap-1">
                             <Input
                               type="text"

@@ -1,8 +1,8 @@
 import { patchDiscipline } from "@/actions/disciplines/patchDiscipline";
 import { postDiscipline } from "@/actions/disciplines/postDiscipline";
 import { getProjectCollaborators } from "@/actions/projectCollaborators/getProjectCollaborators";
-import { useIsMobile } from '@/hooks/useIsMobile';
-import { cn } from '@/lib/utils';
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
 import { TCollaborator } from "@/types/collaborators";
 import { TRole } from "@/types/disciplines";
 import { TUser } from "@/types/user";
@@ -30,6 +30,7 @@ import {
 import {
   Drawer,
   DrawerContent,
+  DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
@@ -340,10 +341,14 @@ export default function DrawerFormDisciplines({
     }
   }, [roleData, openDrawer, form, resetCreation, projectUsers]);
 
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobile();
 
   return (
-    <Drawer direction={isMobile ? "bottom" : "right"} open={openDrawer} dismissible={false}>
+    <Drawer
+      direction={isMobile ? "bottom" : "right"}
+      open={openDrawer}
+      dismissible={false}
+    >
       <DrawerTrigger
         asChild
         onClick={(e) => {
@@ -353,13 +358,20 @@ export default function DrawerFormDisciplines({
       >
         {componentTrigger}
       </DrawerTrigger>
-      <DrawerContent className={cn("min-w-2/5", {
-        "w-full h-4/5": isMobile,
-      })}>
+      <DrawerContent
+        className={cn("min-w-2/5", {
+          "w-full h-4/5": isMobile,
+        })}
+      >
         <DrawerHeader className="px-8">
           <DrawerTitle>
             {isEditMode ? "Editar Disciplina" : "Adicionar Disciplina"}
           </DrawerTitle>
+          <DrawerDescription>
+            Para realizar simulações, primeiro adicione uma disciplina como
+            "Estrutural", "Fundação", "Vedações" ou qualquer outro título que
+            descreva a sua área de atuação.
+          </DrawerDescription>
           <Button
             onClick={() => setOpenDrawer(false)}
             className="absolute right-4 top-2"
@@ -450,9 +462,16 @@ export default function DrawerFormDisciplines({
                 </button>
                 {managementExpanded && (
                   <div className="flex flex-col gap-3 p-4 bg-card">
+                    <span className="text-muted-foreground text-sm">
+                      Selecione as permissões que as pessoas atribuídas a esta
+                      disciplina terão.
+                    </span>
                     {/* Adicionar/Remover tudo */}
                     <div className="flex items-center justify-between pb-2 border-b">
-                      <label className="text-sm font-bold" htmlFor="select-all-management">
+                      <label
+                        className="text-sm font-bold"
+                        htmlFor="select-all-management"
+                      >
                         Selecionar todas
                       </label>
                       <Checkbox
@@ -470,16 +489,19 @@ export default function DrawerFormDisciplines({
                         key={permission.id}
                         className="flex items-center justify-between gap-2 "
                       >
-                        <label className="text-sm font-bold text-primary flex-1" htmlFor={'checkbox-' + permission.id}>
+                        <label
+                          className="text-sm font-bold text-primary flex-1"
+                          htmlFor={"checkbox-" + permission.id}
+                        >
                           {permission.label}
                         </label>
                         <Checkbox
-                          id={'checkbox-' + permission.id}
+                          id={"checkbox-" + permission.id}
                           checked={selectedPermissions.includes(permission.id)}
                           onCheckedChange={(checked) =>
                             togglePermission(permission.id, checked as boolean)
                           }
-                          className='border-px border-neutral-400/80'
+                          className="border-px border-neutral-400/80"
                         />
                       </div>
                     ))}
@@ -537,6 +559,12 @@ export default function DrawerFormDisciplines({
               {/* Buscar colaboradores */}
               <div className="flex flex-col gap-2">
                 <FormLabel>Buscar colaboradores</FormLabel>
+                <span className="text-sm text-muted-foreground">
+                  Selecione os colaboradores que fazem parte desta disciplina.{" "}
+                  <br />
+                  Importante: Se o seu usuário faz parte deste grupo, não
+                  esqueça de se adicionar.
+                </span>
                 <Popover open={openPopover} onOpenChange={setOpenPopover}>
                   <PopoverTrigger asChild>
                     <Button
@@ -548,9 +576,12 @@ export default function DrawerFormDisciplines({
                       Colaborador...
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className={cn("w-[400px] p-0", {
-                    "w-[280px]": isMobile,
-                  })} align="start">
+                  <PopoverContent
+                    className={cn("w-[400px] p-0", {
+                      "w-[280px]": isMobile,
+                    })}
+                    align="start"
+                  >
                     <Command shouldFilter={false}>
                       <CommandInput
                         placeholder="Buscar colaborador..."

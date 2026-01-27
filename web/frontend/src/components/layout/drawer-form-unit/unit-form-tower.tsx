@@ -414,7 +414,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                   <TableHead className="w-4"></TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead className="w-24">Área (m²)</TableHead>
-                  <TableHead className="w-24">Altura (m)</TableHead>
+                  <TableHead className="w-24">Altura/Piso a piso (m)</TableHead>
                   {!isEditMode && <TableHead className="w-20">Qtd.</TableHead>}
                   <TableHead className="w-32">Categoria</TableHead>
                   <TableHead className="w-24">Ações</TableHead>
