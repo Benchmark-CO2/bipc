@@ -14,6 +14,7 @@ import (
 )
 
 var (
+	ErrNilRoleID               = errors.New("role ID must be provided")
 	ErrDuplicateRoleName       = errors.New("duplicate role name")
 	ErrDuplicatePermissionID   = errors.New("duplicate permission ID")
 	ErrInvalidPermissionID     = errors.New("invalid permission ID")
@@ -83,11 +84,9 @@ type RoleModel struct {
 }
 
 func (m RoleModel) Insert(role *RoleWithUsersPermissions) error {
-	id, err := uuid.NewV7()
-	if err != nil {
-		return err
+	if role.ID == uuid.Nil {
+		return ErrNilRoleID
 	}
-	role.ID = id
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

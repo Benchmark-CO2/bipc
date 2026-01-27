@@ -307,15 +307,37 @@ func parseInt(s string) (int, error) {
 	return strconv.Atoi(s)
 }
 
+// parseFieldStringRequired safely parses a required string field from a record
+func parseFieldStringRequired(fieldName string, record []string, headerMap map[string]int) string {
+	idx, ok := headerMap[fieldName]
+	if !ok || idx >= len(record) {
+		return ""
+	}
+	return strings.TrimSpace(record[idx])
+}
+
+// parseFieldStringOptional safely parses an optional string field from a record
+func parseFieldStringOptional(fieldName string, record []string, headerMap map[string]int) string {
+	idx, ok := headerMap[fieldName]
+	if !ok || idx >= len(record) {
+		return ""
+	}
+	return strings.TrimSpace(record[idx])
+}
+
 // generateConcreteWallRows generates ConcreteWallCSVRow from CSV data
 func (app *application) generateConcreteWallRows(dataRows [][]string, headerMap map[string]int) []ConcreteWallCSVRow {
 	allCSVRows := []ConcreteWallCSVRow{}
-
 	for i, record := range dataRows {
 		// Helper for parsing with error logging
 		parseFieldFloat := func(fieldName string) float64 {
-			// No need to check 'ok' here, as validateCSVHeaders already ensured presence
-			idx := headerMap[fieldName]
+			idx, ok := headerMap[fieldName]
+			if !ok {
+				return 0
+			}
+			if idx >= len(record) {
+				return 0
+			}
 			val, err := parseFloat(record[idx])
 			if err != nil {
 				app.logger.Warn("Could not parse float", "field", fieldName, "row", i+2, "error", err)
@@ -323,39 +345,61 @@ func (app *application) generateConcreteWallRows(dataRows [][]string, headerMap 
 			return val
 		}
 		parseFieldInt := func(fieldName string) int {
-			// No need to check 'ok' here, as validateCSVHeaders already ensured presence
-			idx := headerMap[fieldName]
+			idx, ok := headerMap[fieldName]
+			if !ok {
+				return 0
+			}
+			if idx >= len(record) {
+				return 0
+			}
 			val, err := parseInt(record[idx])
 			if err != nil {
 				app.logger.Warn("Could not parse int", "field", fieldName, "row", i+2, "error", err)
 			}
 			return val
 		}
+		parseOptionalField := func(fieldName string) *string {
+			idx, ok := headerMap[fieldName]
+			if !ok || idx >= len(record) {
+				return nil
+			}
+			val := strings.TrimSpace(record[idx])
+			if val == "" {
+				return nil
+			}
+			return &val
+		}
 
-		FloorName := record[headerMap["floor_name"]]
+		FloorName := ""
+		if idx, ok := headerMap["floor_name"]; ok && idx < len(record) {
+			FloorName = record[idx]
+		}
 		if FloorName == "" {
 			FloorName = "unique_floor"
 		}
 
-		unitName := record[headerMap["unit_name"]]
+		unitName := ""
+		if idx, ok := headerMap["unit_name"]; ok && idx < len(record) {
+			unitName = record[idx]
+		}
 		if unitName == "" {
 			unitName = "unit"
 		}
 
 		row := ConcreteWallCSVRow{
 			BaseCSVRowData: BaseCSVRowData{
-				ProjectName:         record[headerMap["project_name"]],
-				ProjectCEP:          &record[headerMap["project_cep"]],
-				ProjectState:        record[headerMap["project_state"]],
-				ProjectCity:         record[headerMap["project_city"]],
-				ProjectNeighborhood: &record[headerMap["project_neighborhood"]],
-				ProjectStreet:       &record[headerMap["project_street"]],
-				ProjectNumber:       &record[headerMap["project_number"]],
-				ProjectPhase:        record[headerMap["project_phase"]],
+				ProjectName:         parseFieldStringRequired("project_name", record, headerMap),
+				ProjectCEP:          parseOptionalField("project_cep"),
+				ProjectState:        parseFieldStringRequired("project_state", record, headerMap),
+				ProjectCity:         parseFieldStringRequired("project_city", record, headerMap),
+				ProjectNeighborhood: parseOptionalField("project_neighborhood"),
+				ProjectStreet:       parseOptionalField("project_street"),
+				ProjectNumber:       parseOptionalField("project_number"),
+				ProjectPhase:        parseFieldStringOptional("project_phase", record, headerMap),
 				UnitName:            unitName,
 				FloorName:           FloorName,
 				FloorArea:           parseFieldFloat("floor_area"),
-				FloorCategory:       record[headerMap["floor_category"]],
+				FloorCategory:       parseFieldStringOptional("floor_category", record, headerMap),
 				FloorHeight:         parseFieldFloat("floor_height"),
 				FloorRepetition:     parseFieldInt("floor_repetition"),
 			},
@@ -376,23 +420,48 @@ func (app *application) generateConcreteWallRows(dataRows [][]string, headerMap 
 		}
 
 		// Parse concrete and steel volumes for concrete wall
+		// NOTE: This includes aggregation from stairs and structure elements as per business rules
+		// module_wall_concrete_XX now includes: wall + stairs + structure concrete
+		// module_wall_steel_XX now includes: wall + stairs + structure steel
 		for headerName := range headerMap {
 			if strings.HasPrefix(headerName, "module_wall_concrete_") {
 				fckStr := strings.TrimPrefix(headerName, "module_wall_concrete_")
 				fck, _ := strconv.Atoi(fckStr)
 				if fck > 0 {
+					// Aggregate wall + stairs + structure concrete
 					volume := parseFieldFloat(headerName)
-					if volume > 0 {
-						row.WallConcrete.Volumes = append(row.WallConcrete.Volumes, modules.ConcreteVolumeItem{Fck: fck, Volume: volume})
+					
+					// Add stairs concrete if present
+					stairsHeaderName := strings.Replace(headerName, "module_wall_concrete_", "module_stairs_concrete_", 1)
+					stairsVolume := parseFieldFloat(stairsHeaderName)
+					
+					// Add structure concrete if present
+					structureHeaderName := strings.Replace(headerName, "module_wall_concrete_", "module_structure_concrete_", 1)
+					structureVolume := parseFieldFloat(structureHeaderName)
+					
+					totalVolume := volume + stairsVolume + structureVolume
+					if totalVolume > 0 {
+						row.WallConcrete.Volumes = append(row.WallConcrete.Volumes, modules.ConcreteVolumeItem{Fck: fck, Volume: totalVolume})
 					}
 				}
 			} else if strings.HasPrefix(headerName, "module_wall_steel_") {
 				caStr := strings.TrimPrefix(headerName, "module_wall_steel_")
 				ca, _ := strconv.Atoi(caStr)
 				if ca > 0 {
+					// Aggregate wall + stairs + structure steel
 					mass := parseFieldFloat(headerName)
-					if mass > 0 {
-						row.WallConcrete.Steel = append(row.WallConcrete.Steel, modules.SteelMassItem{CA: ca, Mass: mass})
+					
+					// Add stairs steel if present
+					stairsHeaderName := strings.Replace(headerName, "module_wall_steel_", "module_stairs_steel_", 1)
+					stairsMass := parseFieldFloat(stairsHeaderName)
+					
+					// Add structure steel if present
+					structureHeaderName := strings.Replace(headerName, "module_wall_steel_", "module_structure_steel_", 1)
+					structureMass := parseFieldFloat(structureHeaderName)
+					
+					totalMass := mass + stairsMass + structureMass
+					if totalMass > 0 {
+						row.WallConcrete.Steel = append(row.WallConcrete.Steel, modules.SteelMassItem{CA: ca, Mass: totalMass})
 					}
 				}
 			} else if strings.HasPrefix(headerName, "module_slab_concrete_") {
@@ -424,11 +493,16 @@ func (app *application) generateConcreteWallRows(dataRows [][]string, headerMap 
 // generateStructuralMasonryRows generates StructuralMasonryCSVRow from CSV data
 func (app *application) generateStructuralMasonryRows(dataRows [][]string, headerMap map[string]int) []StructuralMasonryCSVRow {
 	allCSVRows := []StructuralMasonryCSVRow{}
-
 	for i, record := range dataRows {
 		// Helper for parsing with error logging
 		parseFieldFloat := func(fieldName string) float64 {
-			idx := headerMap[fieldName]
+			idx, ok := headerMap[fieldName]
+			if !ok {
+				return 0
+			}
+			if idx >= len(record) {
+				return 0
+			}
 			val, err := parseFloat(record[idx])
 			if err != nil {
 				app.logger.Warn("Could not parse float", "field", fieldName, "row", i+2, "error", err)
@@ -436,28 +510,38 @@ func (app *application) generateStructuralMasonryRows(dataRows [][]string, heade
 			return val
 		}
 		parseFieldInt := func(fieldName string) int {
-			idx := headerMap[fieldName]
+			idx, ok := headerMap[fieldName]
+			if !ok {
+				return 0
+			}
+			if idx >= len(record) {
+				return 0
+			}
 			val, err := parseInt(record[idx])
 			if err != nil {
 				app.logger.Warn("Could not parse int", "field", fieldName, "row", i+2, "error", err)
 			}
 			return val
 		}
-
-		FloorName := record[headerMap["floor_name"]]
-		if FloorName == "" {
-			FloorName = "unique_floor"
-		}
-
-		unitName := record[headerMap["unit_name"]]
-		if unitName == "" {
-			unitName = "unit"
+		parseOptionalField := func(fieldName string) *string {
+			idx, ok := headerMap[fieldName]
+			if !ok || idx >= len(record) {
+				return nil
+			}
+			val := strings.TrimSpace(record[idx])
+			if val == "" {
+				return nil
+			}
+			return &val
 		}
 
 		// Helper to safely parse optional float fields
 		parseOptionalFieldFloat := func(fieldName string) *float64 {
 			idx, ok := headerMap[fieldName]
 			if !ok {
+				return nil
+			}
+			if idx >= len(record) {
 				return nil
 			}
 			val, err := parseFloat(record[idx])
@@ -467,20 +551,36 @@ func (app *application) generateStructuralMasonryRows(dataRows [][]string, heade
 			return &val
 		}
 
+		FloorName := ""
+		if idx, ok := headerMap["floor_name"]; ok && idx < len(record) {
+			FloorName = record[idx]
+		}
+		if FloorName == "" {
+			FloorName = "unique_floor"
+		}
+
+		unitName := ""
+		if idx, ok := headerMap["unit_name"]; ok && idx < len(record) {
+			unitName = record[idx]
+		}
+		if unitName == "" {
+			unitName = "unit"
+		}
+
 		row := StructuralMasonryCSVRow{
 			BaseCSVRowData: BaseCSVRowData{
-				ProjectName:         record[headerMap["project_name"]],
-				ProjectCEP:          &record[headerMap["project_cep"]],
-				ProjectState:        record[headerMap["project_state"]],
-				ProjectCity:         record[headerMap["project_city"]],
-				ProjectNeighborhood: &record[headerMap["project_neighborhood"]],
-				ProjectStreet:       &record[headerMap["project_street"]],
-				ProjectNumber:       &record[headerMap["project_number"]],
-				ProjectPhase:        record[headerMap["project_phase"]],
+				ProjectName:         parseFieldStringRequired("project_name", record, headerMap),
+				ProjectCEP:          parseOptionalField("project_cep"),
+				ProjectState:        parseFieldStringRequired("project_state", record, headerMap),
+				ProjectCity:         parseFieldStringRequired("project_city", record, headerMap),
+				ProjectNeighborhood: parseOptionalField("project_neighborhood"),
+				ProjectStreet:       parseOptionalField("project_street"),
+				ProjectNumber:       parseOptionalField("project_number"),
+				ProjectPhase:        parseFieldStringOptional("project_phase", record, headerMap),
 				UnitName:            unitName,
 				FloorName:           FloorName,
 				FloorArea:           parseFieldFloat("floor_area"),
-				FloorCategory:       record[headerMap["floor_category"]],
+				FloorCategory:       parseFieldStringOptional("floor_category", record, headerMap),
 				FloorHeight:         parseFieldFloat("floor_height"),
 				FloorRepetition:     parseFieldInt("floor_repetition"),
 			},
@@ -668,7 +768,13 @@ func (app *application) generateBeamColumnRows(dataRows [][]string, headerMap ma
 	for i, record := range dataRows {
 		// Helper for parsing with error logging
 		parseFieldFloat := func(fieldName string) float64 {
-			idx := headerMap[fieldName]
+			idx, ok := headerMap[fieldName]
+			if !ok {
+				return 0
+			}
+			if idx >= len(record) {
+				return 0
+			}
 			val, err := parseFloat(record[idx])
 			if err != nil {
 				app.logger.Warn("Could not parse float", "field", fieldName, "row", i+2, "error", err)
@@ -676,28 +782,38 @@ func (app *application) generateBeamColumnRows(dataRows [][]string, headerMap ma
 			return val
 		}
 		parseFieldInt := func(fieldName string) int {
-			idx := headerMap[fieldName]
+			idx, ok := headerMap[fieldName]
+			if !ok {
+				return 0
+			}
+			if idx >= len(record) {
+				return 0
+			}
 			val, err := parseInt(record[idx])
 			if err != nil {
 				app.logger.Warn("Could not parse int", "field", fieldName, "row", i+2, "error", err)
 			}
 			return val
 		}
-
-		FloorName := record[headerMap["floor_name"]]
-		if FloorName == "" {
-			FloorName = "unique_floor"
-		}
-
-		unitName := record[headerMap["unit_name"]]
-		if unitName == "" {
-			unitName = "unit"
+		parseOptionalField := func(fieldName string) *string {
+			idx, ok := headerMap[fieldName]
+			if !ok || idx >= len(record) {
+				return nil
+			}
+			val := strings.TrimSpace(record[idx])
+			if val == "" {
+				return nil
+			}
+			return &val
 		}
 
 		// Helper to safely parse optional float fields
 		parseOptionalFieldFloat := func(fieldName string) *float64 {
 			idx, ok := headerMap[fieldName]
 			if !ok {
+				return nil
+			}
+			if idx >= len(record) {
 				return nil
 			}
 			val, err := parseFloat(record[idx])
@@ -707,20 +823,36 @@ func (app *application) generateBeamColumnRows(dataRows [][]string, headerMap ma
 			return &val
 		}
 
+		FloorName := ""
+		if idx, ok := headerMap["floor_name"]; ok && idx < len(record) {
+			FloorName = record[idx]
+		}
+		if FloorName == "" {
+			FloorName = "unique_floor"
+		}
+
+		unitName := ""
+		if idx, ok := headerMap["unit_name"]; ok && idx < len(record) {
+			unitName = record[idx]
+		}
+		if unitName == "" {
+			unitName = "unit"
+		}
+
 		row := BeamColumnCSVRow{
 			BaseCSVRowData: BaseCSVRowData{
-				ProjectName:         record[headerMap["project_name"]],
-				ProjectCEP:          &record[headerMap["project_cep"]],
-				ProjectState:        record[headerMap["project_state"]],
-				ProjectCity:         record[headerMap["project_city"]],
-				ProjectNeighborhood: &record[headerMap["project_neighborhood"]],
-				ProjectStreet:       &record[headerMap["project_street"]],
-				ProjectNumber:       &record[headerMap["project_number"]],
-				ProjectPhase:        record[headerMap["project_phase"]],
+				ProjectName:         parseFieldStringRequired("project_name", record, headerMap),
+				ProjectCEP:          parseOptionalField("project_cep"),
+				ProjectState:        parseFieldStringRequired("project_state", record, headerMap),
+				ProjectCity:         parseFieldStringRequired("project_city", record, headerMap),
+				ProjectNeighborhood: parseOptionalField("project_neighborhood"),
+				ProjectStreet:       parseOptionalField("project_street"),
+				ProjectNumber:       parseOptionalField("project_number"),
+				ProjectPhase:        parseFieldStringOptional("project_phase", record, headerMap),
 				UnitName:            unitName,
 				FloorName:           FloorName,
 				FloorArea:           parseFieldFloat("floor_area"),
-				FloorCategory:       record[headerMap["floor_category"]],
+				FloorCategory:       parseFieldStringOptional("floor_category", record, headerMap),
 				FloorHeight:         parseFieldFloat("floor_height"),
 				FloorRepetition:     parseFieldInt("floor_repetition"),
 			},
@@ -852,6 +984,7 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID, moduleType strin
 				projects = append(projects, *currentProjectFormCSV)
 			}
 
+			// Generate all IDs upfront - consistent with application pattern
 			projectID, err := uuid.NewV7()
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate project ID: %w", err)
@@ -862,7 +995,7 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID, moduleType strin
 			}
 			optionID, err := uuid.NewV7()
 			if err != nil {
-				return nil, fmt.Errorf("failed to generate tower option ID: %w", err)
+				return nil, fmt.Errorf("failed to generate option ID: %w", err)
 			}
 
 			currentProjectFormCSV = &ProjectFromCSV{
@@ -908,13 +1041,13 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID, moduleType strin
 			return nil, errors.New("internal error: unit not found for current project")
 		}
 
-		// Floor Handling
+		// Floor Handling - generate Floor ID upfront
 		floorID, err := uuid.NewV7()
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate floor ID: %w", err)
 		}
 
-		// Cria o Floor
+		// Cria o Floor com ID pré-gerado
 		floor := data.Floor{
 			ID:         floorID,
 			UnitID:     unit.ID,
@@ -1006,8 +1139,10 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID, moduleType strin
 
 // validateCSVHeaders checks if all required headers are present in the provided headerMap.
 // It returns an error if any required header is missing.
+// Handles both correctly spelled and misspelled headers from CSV files.
 func validateCSVHeaders(headerMap map[string]int, moduleType string) error {
 	requiredHeaders := getRequiredHeaders(moduleType)
+
 	for _, requiredHeader := range requiredHeaders {
 		if _, ok := headerMap[requiredHeader]; !ok {
 			return fmt.Errorf("CSV header is missing the required '%s' column", requiredHeader)
@@ -1162,7 +1297,7 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 			}
 		}
 
-		// Insert Unit with floors
+		// Insert Unit with floors (IDs already generated)
 		err = app.models.Units.Insert(&projectData.Unit, floorCreates)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
@@ -1170,15 +1305,22 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 		}
 
 		// Create role "Estrutura" for the project
-		roleEstruturaName := "Disciplina-auto"
+		roleEstruturaName := "Estrutura"
+		roleID, err := uuid.NewV7()
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+		
 		roleEstrutura := &data.RoleWithUsersPermissions{
 			Role: data.Role{
+				ID:          roleID,
 				ProjectID:   projectData.Project.ID,
 				Name:        roleEstruturaName,
 				Simulation:  true,
 				IsProtected: false,
 			},
-			PermissionsIDs: []int32{}, // create, read, update, delete
+			PermissionsIDs: []int32{},
 			UsersIDs:       []uuid.UUID{user.ID},
 		}
 
@@ -1189,26 +1331,14 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 			return
 		}
 
-		// Use the ID generated by Insert
-		roleID := roleEstrutura.ID
 		app.logger.Info("Role created successfully", "roleID", roleID, "roleName", roleEstruturaName, "projectID", projectData.Project.ID)
-
-		// Verify the role exists in the database before proceeding
-		_, err = app.models.Roles.GetByID(roleID)
-		if err != nil {
-			app.logger.Error("Failed to verify role after insert", "error", err, "roleID", roleID)
-			app.serverErrorResponse(w, r, err)
-			return
-		}
-
-		app.logger.Info("Role verified in database", "roleID", roleID)
 
 		// Set the role_id for the option before inserting
 		projectsFormCSV[i].Option.RoleID = roleID
 
 		app.logger.Info("Inserting option", "optionID", projectsFormCSV[i].Option.ID, "roleID", projectsFormCSV[i].Option.RoleID, "unitID", projectsFormCSV[i].Option.UnitID)
 
-		// Insert Tower Option
+		// Insert Option (ID already generated)
 		err = app.models.Options.Insert(&projectsFormCSV[i].Option)
 		if err != nil {
 			app.logger.Error("Failed to insert option", "error", err, "optionID", projectsFormCSV[i].Option.ID, "roleID", projectsFormCSV[i].Option.RoleID)
@@ -1216,9 +1346,8 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 			return
 		}
 
-		// Now, process the modules for this project
+		// Process modules - FloorIDs already set correctly
 		for _, module := range projectData.Modules {
-
 			// Calculate consumption
 			result, err := module.Calculate()
 			if err != nil {
@@ -1226,7 +1355,6 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 				return
 			}
 
-			// Insert the module using the correct option ID from the slice
 			_, err = module.Insert(app.models, projectsFormCSV[i].Option.ID, result)
 			if err != nil {
 				switch {

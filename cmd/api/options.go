@@ -7,6 +7,7 @@ import (
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
+	"github.com/google/uuid"
 )
 
 func (app *application) createOptionHandler(w http.ResponseWriter, r *http.Request) {
@@ -46,6 +47,13 @@ func (app *application) createOptionHandler(w http.ResponseWriter, r *http.Reque
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
+
+	optionID, err := uuid.NewV7()
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	option.ID = optionID
 
 	err = app.models.Options.Insert(option)
 	if err != nil {
