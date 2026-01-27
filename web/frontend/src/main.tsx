@@ -50,14 +50,7 @@ createRoot(document.getElementById("root")!).render(
           <SummaryProvider>
             <TooltipProvider>
               <App />
-              <Toaster
-                position="bottom-right"
-                toastOptions={{
-                  classNames: {
-                    description: "!text-gray-600 !dark:text-gray-300",
-                  },
-                }}
-              />
+              <Toaster position="bottom-right" />
             </TooltipProvider>
           </SummaryProvider>
         </AuthProvider>

@@ -23,6 +23,7 @@ import { Input } from "../ui/input";
 import { Switch } from "../ui/switch";
 import { postOption } from "@/actions/options/postOption";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const createSimulationSchema = z.object({
   name: z.string().min(1, "O nome é obrigatório"),
@@ -52,6 +53,7 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
       queryClient.invalidateQueries({
         queryKey: ["options", projectId, unitId],
       });
+      toast.success("Simulação criada com sucesso");
       form.reset();
       setOpen(false);
     },
