@@ -20,6 +20,7 @@ var (
 
 	phases = []string{"preliminary_study", "not_defined", "basic_project", "executive_project", "released_for_construction"}
 
+	ErrNilProjectID         = errors.New("project ID must be provided")
 	ErrInvalidProjectID     = errors.New("projectID does not exist")
 	ErrDuplicateUserProject = errors.New("duplicate user-project association")
 )
@@ -100,13 +101,8 @@ type ProjectModel struct {
 }
 
 func (m ProjectModel) Insert(project *Project, userID uuid.UUID) error {
-
 	if project.ID == uuid.Nil {
-		projectID, err := uuid.NewV7()
-		if err != nil {
-			return err
-		}
-		project.ID = projectID
+		return ErrNilProjectID
 	}
 
 	roleID, err := uuid.NewV7()

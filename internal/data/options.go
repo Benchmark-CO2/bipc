@@ -12,6 +12,7 @@ import (
 )
 
 var (
+	ErrNilOptionID              = errors.New("option ID must be provided")
 	ErrInvalidOptionID          = errors.New("option_id does not exist or is invalid")
 	ErrOptionHasOutdatedModules = errors.New("option has outdated modules and cannot be activated")
 )
@@ -54,12 +55,9 @@ func (m OptionModel) hasOutdatedModules(optionID uuid.UUID) (bool, error) {
 }
 
 func (m OptionModel) Insert(option *Option) error {
-	optionID, err := uuid.NewV7()
-	if err != nil {
-		return err
+	if option.ID == uuid.Nil {
+		return ErrNilOptionID
 	}
-
-	option.ID = optionID
 
 	tx, err := m.DB.Begin()
 	if err != nil {

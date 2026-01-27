@@ -9,6 +9,7 @@ import (
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
+	"github.com/google/uuid"
 )
 
 func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Request) {
@@ -50,6 +51,13 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
+
+	projectID, err := uuid.NewV7()
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	project.ID = projectID
 
 	err = app.models.Projects.Insert(project, user.ID)
 	if err != nil {
