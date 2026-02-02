@@ -15,7 +15,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { FieldErrors, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "../../ui/button";
@@ -128,11 +128,7 @@ const DrawerFormUnit = ({
   });
 
   const handleSubmit = (data: UnitFormSchema) => {
-    console.log("handleSubmit chamado", { data, unitId });
-
     if (unitId) {
-      // No modo de edição, enviar dados diretamente
-      console.log("Modo edição - enviando:", data);
       mutateUpdate(data);
       return;
     }
@@ -140,13 +136,11 @@ const DrawerFormUnit = ({
     // No modo de criação, expandir pavimentos com repetition > 1
     // Pegar os dados do form antes da validação para ter acesso ao repetition
     const formData = form.getValues();
-    console.log("formData do form.getValues():", formData);
 
     const expandedFloors: any[] = [];
 
     formData.data.floors.forEach((floor: FloorFormInput) => {
       const repetition = floor.repetition || 1;
-      console.log("Processando floor:", { floor, repetition });
 
       // Converter strings para números
       const areaNum = parseFloat(floor.area.replace(",", "."));
@@ -162,8 +156,6 @@ const DrawerFormUnit = ({
         });
       }
     });
-
-    console.log("expandedFloors:", expandedFloors);
 
     // Recalcular índices para garantir continuidade
     const sortedFloors = expandedFloors.sort((a, b) => a.index - b.index);
@@ -182,12 +174,11 @@ const DrawerFormUnit = ({
       },
     };
 
-    console.log("createData final:", createData);
     mutateCreation(createData as any);
   };
 
-  const handleSubmitError = (errors: any) => {
-    console.log("Erro de validação do formulário:", errors);
+  const handleSubmitError = (errors: FieldErrors<UnitFormInput>) => {
+    console.error("Erro de validação do formulário:", errors);
   };
 
   const handleClose = () => {
