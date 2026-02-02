@@ -9,16 +9,17 @@ export interface AuthContext {
       token: string;
       expiry: string;
     },
-    user: TUser
+    user: TUser,
   ) => void;
   logout: () => void;
+  refreshUser: (user: TUser) => void;
   token: {
     token: string;
     expiry: string;
   } | null;
   email: string | null;
   user: TUser | null;
-  sidebarStatus: 'open' | 'closed';
+  sidebarStatus: "open" | "closed";
   toggleSidebar: () => void;
 }
 

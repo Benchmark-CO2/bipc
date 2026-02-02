@@ -11,7 +11,7 @@ import useCep from "@/hooks/useLocation";
 import { cn } from "@/lib/utils";
 import { IProject } from "@/types/projects";
 import { masks } from "@/utils/masks";
-import { states } from '@/utils/states';
+import { states } from "@/utils/states";
 import {
   ProjectFormSchema,
   projectFormSchema,
@@ -344,7 +344,7 @@ export default function DrawerFormProject({
                     <FormControl>
                       <Input
                         placeholder={t(
-                          "drawerFormProject.projectNamePlaceholder"
+                          "drawerFormProject.projectNamePlaceholder",
                         )}
                         {...field}
                       />
@@ -394,13 +394,16 @@ export default function DrawerFormProject({
                           <SelectTrigger className="w-full">
                             <SelectValue
                               placeholder={t(
-                                "drawerFormProject.statePlaceholder"
+                                "drawerFormProject.statePlaceholder",
                               )}
                             />
                           </SelectTrigger>
                           <SelectContent>
                             {states.map((state) => (
-                              <SelectItem key={state.label} value={state.value.toUpperCase()}>
+                              <SelectItem
+                                key={state.label}
+                                value={state.value.toUpperCase()}
+                              >
                                 {state.label} - {state.value}
                               </SelectItem>
                             ))}
@@ -440,7 +443,7 @@ export default function DrawerFormProject({
                     <FormControl>
                       <Input
                         placeholder={t(
-                          "drawerFormProject.neighborhoodPlaceholder"
+                          "drawerFormProject.neighborhoodPlaceholder",
                         )}
                         disabled={locationLoading}
                         {...field}
@@ -506,7 +509,7 @@ export default function DrawerFormProject({
                         <SelectTrigger className="w-full">
                           <SelectValue
                             placeholder={t(
-                              "drawerFormProject.projectPhasePlaceholder"
+                              "drawerFormProject.projectPhasePlaceholder",
                             )}
                           />
                         </SelectTrigger>
@@ -525,7 +528,7 @@ export default function DrawerFormProject({
                           </SelectItem>
                           <SelectItem value="released_for_construction">
                             {t(
-                              "common.projectPhaseOptions.released_for_construction"
+                              "common.projectPhaseOptions.released_for_construction",
                             )}
                           </SelectItem>
                         </SelectContent>
@@ -546,7 +549,7 @@ export default function DrawerFormProject({
                     <FormControl>
                       <Textarea
                         placeholder={t(
-                          "drawerFormProject.descriptionPlaceholder"
+                          "drawerFormProject.descriptionPlaceholder",
                         )}
                         minLength={10}
                         maxLength={200}

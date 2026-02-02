@@ -15,6 +15,9 @@ export function UserAvatar({
   className,
 }: UserAvatarProps) {
   const getInitials = (name: string) => {
+    if (!name || typeof name !== "string" || name.trim() === "") {
+      return "U";
+    }
     return name
       .split(" ")
       .map((n) => n[0])
@@ -36,7 +39,7 @@ export function UserAvatar({
       className={cn(
         "flex items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold",
         sizeClasses[size],
-        className
+        className,
       )}
       title={email || name}
     >
