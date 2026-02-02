@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { PencilIcon, PlusIcon, TrashIcon, UserCheck } from "lucide-react";
 import DrawerFormDisciplines from "../drawer-form-disciplines";
+import DialogTransferOwnership from "../dialog-transfer-ownership";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getProjectCollaborators } from "@/actions/projectCollaborators/getProjectCollaborators";
 import DrawerInvite from "../drawer-invite";
@@ -15,7 +16,13 @@ import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { getProjectInvites } from "@/actions/invites/getProjectInvites";
 import { deleteProjectInvite } from "@/actions/invites/deleteProjectInvite";
 
-const CollaboratorsView = ({ projectId }: { projectId: string }) => {
+const CollaboratorsView = ({
+  projectId,
+  projectName,
+}: {
+  projectId: string;
+  projectName?: string;
+}) => {
   const { email } = useAuth();
   const { hasPermission } = useProjectPermissions(projectId);
   const navigate = useNavigate();
@@ -43,7 +50,7 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
       deleteProjectCollaborator(projectId, collaboratorId),
     onSuccess: (_, collaboratorId) => {
       const deletedCollaborator = collaborators.find(
-        (c) => c.id === collaboratorId
+        (c) => c.id === collaboratorId,
       );
 
       toast.success("Colaborador removido com sucesso", {
@@ -113,10 +120,10 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
 
   const sortedCollaborators = [...collaborators].sort((a, b) => {
     const aIsAdmin = (a.roles as unknown as string[])?.some(
-      (role) => role?.toLowerCase() === "administrador"
+      (role) => role?.toLowerCase() === "administrador",
     );
     const bIsAdmin = (b.roles as unknown as string[])?.some(
-      (role) => role?.toLowerCase() === "administrador"
+      (role) => role?.toLowerCase() === "administrador",
     );
 
     if (aIsAdmin && !bIsAdmin) return -1;
@@ -252,10 +259,26 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
                 </div>
               </div>
               {!collaborator?.roles?.some(
-                (role) => role?.toLowerCase() === "administrador"
-              ) &&
-                hasPermission("delete:collaborator") && (
-                  <div className="flex items-center gap-2">
+                (role) => role?.toLowerCase() === "administrador",
+              ) && (
+                <div className="flex items-center gap-2">
+                  {hasPermission("*:*") && (
+                    <DialogTransferOwnership
+                      componentTrigger={
+                        <Button
+                          variant="outline-bipc"
+                          size="icon-lg"
+                          className="text-primary border-primary"
+                        >
+                          <UserCheck className="h-4 w-4" />
+                        </Button>
+                      }
+                      projectId={projectId}
+                      projectName={projectName || "este projeto"}
+                      preselectedUserId={collaborator.id}
+                    />
+                  )}
+                  {hasPermission("delete:collaborator") && (
                     <ModalConfirmDelete
                       componentTrigger={
                         <Button variant="outline-destructive" size="icon-lg">
@@ -271,8 +294,9 @@ const CollaboratorsView = ({ projectId }: { projectId: string }) => {
                         mutateDeleteCollaborator(collaborator.id)
                       }
                     />
-                  </div>
-                )}
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
