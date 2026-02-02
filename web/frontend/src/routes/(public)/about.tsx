@@ -150,7 +150,7 @@ const team = [
     photo: `${BUCKET_URL}/Lucas+Caldas.png`,
   },
   {
-    name: "Karine Hilgenber Martins",
+    name: "Karine Hilgenberg Martins",
     role: "Pesquisadora",
     photo: `${BUCKET_URL}/Karine+Hilgenber.png`,
   },
@@ -350,7 +350,7 @@ const TeamSection = ({
                 </p>
               </div>
             </div>
-          )
+          ),
         )}
       </div>
     </section>
