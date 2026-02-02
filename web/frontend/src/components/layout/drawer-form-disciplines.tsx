@@ -61,17 +61,17 @@ interface IDrawerFormDisciplines {
 // Mock data for permissions - will be provided by backend
 const mockPermissions = {
   management: [
-    // { id: 1, label: "Editar propriedades do projeto" },
-    { id: 2, label: "Atualizar projeto" },
+    // { id: 1, label: "Editar propriedades do empreendimento" },
+    { id: 2, label: "Atualizar empreendimento" },
     { id: 3, label: "Convidar colaborador" },
     { id: 4, label: "Remover colaborador" },
     { id: 5, label: "Remover convite de colaborador" },
     { id: 6, label: "Criar disciplina" },
     { id: 7, label: "Atualizar disciplina" },
     { id: 8, label: "Remover disciplina" },
-    { id: 9, label: "Criar unidade" },
-    { id: 10, label: "Atualizar unidade" },
-    { id: 11, label: "Remover unidade" },
+    { id: 9, label: "Criar edificação" },
+    { id: 10, label: "Atualizar edificação" },
+    { id: 11, label: "Remover edificação" },
   ],
   simulation: [],
 };
@@ -87,7 +87,7 @@ export default function DrawerFormDisciplines({
   const [managementExpanded, setManagementExpanded] = useState(true);
   const [simulationExpanded, setSimulationExpanded] = useState(true);
   const [selectedCollaborators, setSelectedCollaborators] = useState<TUser[]>(
-    []
+    [],
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [openPopover, setOpenPopover] = useState(false);
@@ -197,7 +197,7 @@ export default function DrawerFormDisciplines({
       setSelectedCollaborators(newCollaborators);
       form.setValue(
         "users_ids",
-        newCollaborators.map((c) => String(c.id))
+        newCollaborators.map((c) => String(c.id)),
       );
     }
     setOpenPopover(false);
@@ -206,12 +206,12 @@ export default function DrawerFormDisciplines({
 
   const removeCollaborator = (userId: string) => {
     const newCollaborators = selectedCollaborators.filter(
-      (c) => c.id !== userId
+      (c) => c.id !== userId,
     );
     setSelectedCollaborators(newCollaborators);
     form.setValue(
       "users_ids",
-      newCollaborators.map((c) => String(c.id))
+      newCollaborators.map((c) => String(c.id)),
     );
   };
 
@@ -221,7 +221,7 @@ export default function DrawerFormDisciplines({
 
     // Filter out already selected collaborators
     const availableUsers = users?.filter(
-      (user) => !selectedCollaborators.some((c) => c.id === user.id)
+      (user) => !selectedCollaborators.some((c) => c.id === user.id),
     );
 
     // Filter by search term
@@ -231,7 +231,7 @@ export default function DrawerFormDisciplines({
     return availableUsers.filter(
       (user) =>
         user.name.toLowerCase().includes(lowerSearch) ||
-        user.email.toLowerCase().includes(lowerSearch)
+        user.email.toLowerCase().includes(lowerSearch),
     );
   };
 
@@ -262,7 +262,7 @@ export default function DrawerFormDisciplines({
     if (!checked) {
       // Remove all management permissions
       const newPermissions = currentPermissions.filter(
-        (id) => !managementIds.includes(id)
+        (id) => !managementIds.includes(id),
       );
       form.setValue("permissions_ids", newPermissions, {
         shouldValidate: true,
@@ -324,7 +324,7 @@ export default function DrawerFormDisciplines({
         // Set selected collaborators based on roleData
         if (roleData.users_ids && projectUsers) {
           const collaborators = projectUsers.filter((user) =>
-            roleData.users_ids.includes(String(user.id))
+            roleData.users_ids.includes(String(user.id)),
           );
           setSelectedCollaborators(collaborators);
         }
@@ -411,7 +411,7 @@ export default function DrawerFormDisciplines({
                     <FormLabel>Descrição</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Projetos de alvenaria estrutural"
+                        placeholder="Empreendimentos de alvenaria estrutural"
                         rows={3}
                         className="resize-none"
                         {...field}
@@ -477,7 +477,7 @@ export default function DrawerFormDisciplines({
                       <Checkbox
                         id="select-all-management"
                         checked={mockPermissions.management.every((p) =>
-                          selectedPermissions.includes(p.id)
+                          selectedPermissions.includes(p.id),
                         )}
                         onCheckedChange={toggleAllManagement}
                       />

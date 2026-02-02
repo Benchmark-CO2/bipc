@@ -84,14 +84,14 @@ const CustomBanner = ({
       return deleteProject(projectId);
     },
     onSuccess: async () => {
-      toast.success("Projeto excluído com sucesso");
+      toast.success("Empreendimento excluído com sucesso");
       await queryClient.invalidateQueries({
         queryKey: ["projects"],
       });
       navigate({ to: `/new_projects` });
     },
     onError: (error: unknown) => {
-      toast.error("Erro ao excluir o projeto", {
+      toast.error("Erro ao excluir o empreendimento", {
         description:
           error instanceof Error
             ? error.message
@@ -140,7 +140,7 @@ const CustomBanner = ({
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   }
-                  title="Confirmar exclusão do projeto"
+                  title="Confirmar exclusão do empreendimento"
                   onConfirm={() => onDeleteProject?.(project.id)}
                 />
               )}
@@ -216,7 +216,7 @@ const CustomBanner = ({
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       }
-                      title="Confirmar exclusão do projeto"
+                      title="Confirmar exclusão do empreendimento"
                       onConfirm={() => onDeleteProject?.(project.id)}
                     />
                   )}
@@ -245,7 +245,8 @@ const CustomBanner = ({
                     <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-md px-3 py-1.5">
                       <span className="text-blue-300 font-medium">🏢</span>
                       <span className="text-xs font-semibold text-white">
-                        {unitsCount} {unitsCount === 1 ? "Unidade" : "Unidades"}
+                        {unitsCount}{" "}
+                        {unitsCount === 1 ? "Edificação" : "Edificações"}
                       </span>
                     </div>
                   )}

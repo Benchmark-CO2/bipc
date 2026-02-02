@@ -8,7 +8,7 @@ import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
 import NotFoundList from "../ui/not-found-list";
 import ItemCard from "./components/ItemCard";
-import Legend from './components/Legend';
+import Legend from "./components/Legend";
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
 import { barColors, recalculateY } from "./utils";
@@ -26,11 +26,15 @@ const manageData = (data: ProjectsSummaryProps["data"]["benchmark"]["co2"]) => {
     label: "",
   }));
 };
-const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps) => {
+const ProjectsSummary = ({
+  projects,
+  data,
+  someSelected,
+}: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
-  const filterProjects = projects.filter(el => !!el.consumption);
+  const filterProjects = projects.filter((el) => !!el.consumption);
   const managedData = manageData(data.benchmark?.[type as "co2" | "energy"])
     .map((el) => ({
       ...el,
@@ -38,35 +42,37 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
     }))
     .filter((f) => f.min && f.max);
 
-  const newItems = filterProjects.filter(el => !!el.consumption).map(el => {
-    return {
-      co2: {
-        id: el.id,
-        y: 0,
-        min: el.consumption.total.co2_min,
-        max: el.consumption.total.co2_max,
-        label: el.name,
-      },
-      energy: {
-        id: el.id,
-        y: 0,
-        min: el.consumption.total.energy_min,
-        max: el.consumption.total.energy_max,
-        label: el.name,
-      },
-    }
-  })
+  const newItems = filterProjects
+    .filter((el) => !!el.consumption)
+    .map((el) => {
+      return {
+        co2: {
+          id: el.id,
+          y: 0,
+          min: el.consumption.total.co2_min,
+          max: el.consumption.total.co2_max,
+          label: el.name,
+        },
+        energy: {
+          id: el.id,
+          y: 0,
+          min: el.consumption.total.energy_min,
+          max: el.consumption.total.energy_max,
+          label: el.name,
+        },
+      };
+    });
   const { isExpanded } = useSummary();
 
   const stackedData = useMemo(
     () =>
-      newItems.map(el => ({
+      newItems.map((el) => ({
         id: el[type].id,
         label: el[type].label,
         co2: (el.co2.max + el.co2.min) / 2,
         energy: (el.energy.max + el.energy.min) / 2,
-      }))
-    ,[newItems]
+      })),
+    [newItems],
   );
 
   const handleAddProject = (projectId: string) => {
@@ -83,13 +89,11 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
       setSelectedProjects([]);
       return;
     }
-    setPreviousProjects(
-      projects.map(el => el.id)
-    );
+    setPreviousProjects(projects.map((el) => el.id));
   }, [projects, someSelected]);
 
   useEffect(() => {
-    if (!someSelected) return
+    if (!someSelected) return;
 
     if (previousProjects.length < projects.length) {
       const diff = projects.filter((p) => !previousProjects.includes(p.id));
@@ -98,7 +102,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
       }
     } else if (previousProjects.length > projects.length) {
       const diff = previousProjects.filter(
-        (p) => !projects.map((u) => u.id).includes(p)
+        (p) => !projects.map((u) => u.id).includes(p),
       );
       if (diff.length > 0) {
         setSelectedProjects((prev) => prev.filter((p) => !diff.includes(p)));
@@ -106,7 +110,7 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
     }
   }, [previousProjects, projects, someSelected]);
 
-  const [subTabs, setSubTabs] = useState<"Projetos">("Projetos");
+  const [subTabs, setSubTabs] = useState<"Empreendimentos">("Empreendimentos");
   const selectAll = () => {
     if (selectedProjects.length === projects.length) {
       setSelectedProjects([]);
@@ -116,14 +120,18 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
   };
   const sum = stackedData.reduce(
     (acc, b) => acc + ((b[type as keyof typeof b] as number) || 0),
-    0
+    0,
   );
 
-  const newDataItems = [...managedData, ...newItems.map(item => item[type])]
+  const newDataItems = [...managedData, ...newItems.map((item) => item[type])];
 
-  const minData = useMemo(() => newDataItems.map(d => d.min), [newDataItems]);
-  const maxData = useMemo(() => newDataItems.map(d => d.max), [newDataItems]);
-  const newData = recalculateY(newDataItems, Math.min(...minData), Math.max(...maxData));
+  const minData = useMemo(() => newDataItems.map((d) => d.min), [newDataItems]);
+  const maxData = useMemo(() => newDataItems.map((d) => d.max), [newDataItems]);
+  const newData = recalculateY(
+    newDataItems,
+    Math.min(...minData),
+    Math.max(...maxData),
+  );
 
   return (
     <>
@@ -134,12 +142,12 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
           selectedTab={type}
           fullWidth
           onSubTabSelect={(tab) => {
-            if (tab === "Projetos") setSubTabs(tab as "Projetos");
+            if (tab === "Empreendimentos") setSubTabs(tab as "Empreendimentos");
             if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
               selectAll();
           }}
           subTabs={[
-            "Projetos",
+            "Empreendimentos",
             selectedProjects.length === projects.length
               ? "Desmarcar Todos"
               : "Selecionar Todos",
@@ -148,22 +156,29 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
         />
       </div>
       <div
-        className={cn("w-full flex justify-between gap-4 max-md:flex-col 2xl:h-[85%] max-sm:h-max", {
-          "flex flex-col": isExpanded,
-        })}
+        className={cn(
+          "w-full flex justify-between gap-4 max-md:flex-col 2xl:h-[85%] max-sm:h-max",
+          {
+            "flex flex-col": isExpanded,
+          },
+        )}
       >
         <div className="flex flex-col items-start w-full justify-between h-full">
           {ChartSelector}
           <ul
-            className={cn("flex flex-col gap-2 text-xl w-full text-black h-full", {
-              "flex-row gap-2 flex-wrap": isExpanded,
-              "max-h-[280px] overflow-y-auto xl:max-h-[200px] 2xl:max-h-[420px]": !isExpanded,
-            })}
+            className={cn(
+              "flex flex-col gap-2 text-xl w-full text-black h-full",
+              {
+                "flex-row gap-2 flex-wrap": isExpanded,
+                "max-h-[280px] overflow-y-auto xl:max-h-[200px] 2xl:max-h-[420px]":
+                  !isExpanded,
+              },
+            )}
           >
             {(!stackedData || stackedData.length === 0) && (
               <NotFoundList
-                message="Nenhum projeto selecionado."
-                description="Por favor, selecione ao menos um projeto para visualizar o resumo."
+                message="Nenhum empreendimento selecionado."
+                description="Por favor, selecione ao menos um empreendimento para visualizar o resumo."
                 className="bg-transparent border-0 shadow-none"
               />
             )}
@@ -178,7 +193,9 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
                   sum={sum}
                   color={barColors}
                   type={type}
-                  hasConsumption={!!projects.find(el => el.id === project.id)?.consumption}
+                  hasConsumption={
+                    !!projects.find((el) => el.id === project.id)?.consumption
+                  }
                 />
               ) : (
                 <ListItem
@@ -189,7 +206,9 @@ const ProjectsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps)
                   sum={sum}
                   color={barColors}
                   type={type}
-                  hasConsumption={!!projects.find(el => el.id === project.id)?.consumption}
+                  hasConsumption={
+                    !!projects.find((el) => el.id === project.id)?.consumption
+                  }
                 />
               );
             })}

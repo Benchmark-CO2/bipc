@@ -404,7 +404,7 @@ const SignUp = () => {
                           <TooltipContent>
                             <p>
                               Para identificar a função realizada em colaboração
-                              com outros profissionais em um projeto
+                              com outros profissionais em um empreendimento
                             </p>
                           </TooltipContent>
                         </Tooltip>

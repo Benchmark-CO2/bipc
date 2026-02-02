@@ -87,10 +87,10 @@
     "noProjects": "Você não possui projetos."
   },
   "units": {
-    "title": "Unidades de Construção",
-    "description": "Adicione unidades de construção ao seu projeto no botão acima.",
-    "addUnit": "Adicionar Unidade de Construção",
-    "noUnits": "Nenhuma unidade de construção encontrada"
+    "title": "Edificações",
+    "description": "Adicione edificações ao seu projeto no botão acima.",
+    "addUnit": "Adicionar Edificação",
+    "noUnits": "Nenhuma Edificação encontrada"
   },
   "versions": {
     "title": "Versões",
@@ -233,11 +233,11 @@
     "errorCreateUnit": "Erro ao criar unidade",
     "errorCreateUnitType": "Erro ao criar tipo de unidade",
     "errorDeleteProject": "Erro ao deletar projeto",
-    "errorDeleteUnit": "Erro ao deletar unidade de construção",
+    "errorDeleteUnit": "Erro ao deletar Edificação",
     "errorDeleteModule": "Erro ao deletar Módulo de Tecnologia Construtiva",
     "errorDeleteSimulation": "Erro ao deletar simulação",
     "errorUpdateProject": "Erro ao atualizar projeto",
-    "errorUpdateUnit": "Erro ao atualizar unidade de construção",
+    "errorUpdateUnit": "Erro ao atualizar Edificação",
     "errorUpdateModule": "Erro ao atualizar Módulo de Tecnologia Construtiva",
     "errorUpdateSimulation": "Erro ao atualizar simulação",
     "errorFetchZipCode": "Erro ao buscar CEP",
@@ -260,9 +260,9 @@
     "moduleCreated": "Módulo de Tecnologia Construtiva criado com sucesso",
     "moduleUpdated": "Módulo de Tecnologia Construtiva atualizado com sucesso",
     "moduleDeleted": "Módulo de Tecnologia Construtiva deletado com sucesso",
-    "unitCreated": "Unidade de construção criada com sucesso",
-    "unitUpdated": "Unidade de construção atualizada com sucesso",
-    "unitDeleted": "Unidade de construção deletada com sucesso"
+    "unitCreated": "Edificação criada com sucesso",
+    "unitUpdated": "Edificação atualizada com sucesso",
+    "unitDeleted": "Edificação deletada com sucesso"
   },
   "modalConfirmDelete": {
     "projectTitle": "Excluir Projeto",
@@ -361,15 +361,15 @@
     "editProjectButton": "Editar Projeto"
   },
   "drawerFormUnit": {
-    "createButton": "Criar Unidade de Construção",
-    "addTitle": "Adicionar Unidade de Construção",
-    "editTitle": "Atualizar Unidade de Construção",
-    "description": "Uma unidade da construção corresponde a uma parte do projeto independente das demais. O tipo de unidade define quais informações são solicitadas. Utilize as unidades da construção para gerir a complexidade e quantidade de edificios em um mesmo projeto.",
-    "example": "Exemplo: um projeto composto por duas torres pode ser dividido em duas unidades. No caso de um edificio, os campos solicitados são pavimentos etc.",
-    "unitNameLabel": "Nome da Unidade de Construção *",
-    "unitNamePlaceholder": "Digite o nome da unidade de construção",
-    "unitTypeLabel": "Tipo de Unidade *",
-    "unitTypePlaceholder": "Selecione um tipo de unidade",
+    "createButton": "Criar Edificação",
+    "addTitle": "Adicionar Edificação",
+    "editTitle": "Atualizar Edificação",
+    "description": "Uma edificação corresponde a uma parte do empreendimento independente das demais. O tipo de edificação define quais informações são solicitadas. Utilize as edificações para gerir a complexidade e quantidade de edificios em um mesmo projeto.",
+    "example": "Exemplo: um projeto composto por duas torres pode ser dividido em duas edificações. No caso de um edificio, os campos solicitados são pavimentos etc.",
+    "unitNameLabel": "Nome da Edificação *",
+    "unitNamePlaceholder": "Digite o nome da Edificação",
+    "unitTypeLabel": "Tipo de Edificação *",
+    "unitTypePlaceholder": "Selecione um tipo de edificação",
     "unitTypeOptions": {
       "tower": "Torre"
     },
@@ -381,15 +381,15 @@
       "type_floors": "Andares Tipo",
       "total_area": "Área Total (m²)"
     },
-    "addUnitButton": "Adicionar Unidade",
-    "editUnitButton": "Atualizar Unidade"
+    "addUnitButton": "Adicionar Edificação",
+    "editUnitButton": "Atualizar Edificação"
   },
   "drawerFormModule": {
     "createButtonTrigger": "Criar Módulo",
     "updateSimulation": "Atualizar Módulo",
     "addTitle": "Adicionar Módulo",
     "editTitle": "Atualizar Módulo",
-    "description": "Um mesmo edifício costuma combinar mais de uma tecnologia construtiva, mesmo em um único subsistema da construção. Como a forma de quantificar material muda dependendo do tipo de tecnologia, cada tipo possui um módulo de cálculo que pode ser adicionado para compor a soma de CO2 da unidade.",
+    "description": "Um mesmo edifício costuma combinar mais de uma tecnologia construtiva, mesmo em um único subsistema da construção. Como a forma de quantificar material muda dependendo do tipo de tecnologia, cada tipo possui um módulo de cálculo que pode ser adicionado para compor a soma de CO2 da edificação.",
     "commonForm": {
       "nameLabel": "Nome do Módulo *",
       "namePlaceholder": "Pavimento 1 ao 3...",
