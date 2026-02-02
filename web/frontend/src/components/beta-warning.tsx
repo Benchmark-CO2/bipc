@@ -9,6 +9,8 @@ export const BetaWarning = () => {
       </div>
       <p className="text-sm ">
         A plataforma segue em desenvolvimento e recebe melhorias constantes.
+        Para sugestões, entre em contato pelo email:{" "}
+        <strong>contato@bipc.org.br</strong>
       </p>
     </div>
   );
