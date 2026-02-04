@@ -35,9 +35,9 @@ func (app *application) createOptionHandler(w http.ResponseWriter, r *http.Reque
 
 	option := &data.Option{
 		UnitID: unitID,
-		RoleID:  roleID,
-		Name:    input.Name,
-		Active:  input.Active,
+		RoleID: roleID,
+		Name:   input.Name,
+		Active: input.Active,
 	}
 
 	v := validator.New()

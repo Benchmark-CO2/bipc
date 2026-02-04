@@ -24,12 +24,12 @@ type ModuleInfo struct {
 }
 
 type Option struct {
-	ID          uuid.UUID              `json:"id"`
-	UnitID      uuid.UUID              `json:"unit_id"`
-	RoleID      uuid.UUID              `json:"role_id"`
-	Name        string                 `json:"name"`
-	Active      bool                   `json:"active"`
-	Modules     []ModuleInfo           `json:"modules"`
+	ID          uuid.UUID               `json:"id"`
+	UnitID      uuid.UUID               `json:"unit_id"`
+	RoleID      uuid.UUID               `json:"role_id"`
+	Name        string                  `json:"name"`
+	Active      bool                    `json:"active"`
+	Modules     []ModuleInfo            `json:"modules"`
 	Consumption map[string]*Consumption `json:"consumption,omitempty"`
 }
 
@@ -393,7 +393,7 @@ func (m OptionModel) Update(option *Option) error {
 		if err != nil {
 			return err
 		}
-		
+
 		if hasOutdated {
 			return ErrOptionHasOutdatedModules
 		}
@@ -492,7 +492,7 @@ func (m OptionModel) DeactivateOptionsWithOutdatedModules(tx *sql.Tx, unitID uui
 			SELECT 1 FROM module m
 			WHERE m.option_id = opt.id AND m.outdated = TRUE
 		)`
-	
+
 	_, err := tx.Exec(query, unitID)
 	return err
 }

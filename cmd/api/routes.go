@@ -1,7 +1,6 @@
 package main
 
 import (
-	"expvar"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -15,13 +14,8 @@ func (app *application) routes() http.Handler {
 	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
 	router.NotFound = app.notFound(http.FileServer(http.FS(web.DistFs)))
 
-	router.Handler(http.MethodGet, "/v1/metrics", expvar.Handler())
+	router.HandlerFunc(http.MethodGet, "/v1/metrics", app.metricsHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
-
-	// app.requireAuthenticatedUser()
-	// app.requireActivatedUser()
-	// app.requireRolesPermission()
-	// app.requireRoleAssociation()
 
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/users", app.requireAuthenticatedUser(app.updateUserHandler))

@@ -17,11 +17,11 @@ type SteelMassItem struct {
 }
 
 type SteelMaterial struct {
-	Material          string  `json:"material"`
-	OtherName         string  `json:"other_name,omitempty"`
-	Resistance        string  `json:"resistance"`
-	OtherResistance   float64 `json:"other_resistance,omitempty"`
-	Mass              float64 `json:"mass"`
+	Material        string  `json:"material"`
+	OtherName       string  `json:"other_name,omitempty"`
+	Resistance      string  `json:"resistance"`
+	OtherResistance float64 `json:"other_resistance,omitempty"`
+	Mass            float64 `json:"mass"`
 }
 
 type ConcreteVolumeItem struct {
@@ -63,27 +63,27 @@ func (c *Consumption) sum(value Consumption) {
 func findClosestResistance(targetValue float64, material SidacMaterial) float64 {
 	var firstAbove float64 = -1
 	var highest float64
-	
+
 	for resistance := range material.KgCO2 {
 		if resistance > highest {
 			highest = resistance
 		}
-		
+
 		if resistance >= targetValue && (firstAbove < 0 || resistance < firstAbove) {
 			firstAbove = resistance
 		}
 	}
-	
+
 	if firstAbove > 0 {
 		return firstAbove
 	}
-	
+
 	return highest
 }
 
 func deserializeSteelMaterialsFromInterface(data interface{}) []SteelMaterial {
 	var materials []SteelMaterial
-	
+
 	if steelData, ok := data.([]interface{}); ok {
 		for _, item := range steelData {
 			if steelItem, ok := item.(map[string]interface{}); ok {
@@ -107,7 +107,7 @@ func deserializeSteelMaterialsFromInterface(data interface{}) []SteelMaterial {
 			}
 		}
 	}
-	
+
 	return materials
 }
 
@@ -118,40 +118,40 @@ func ValidateSteelMaterials(v *validator.Validator, materials []SteelMaterial, f
 	validResistances := map[string]bool{
 		"CA50": true, "CA60": true, "CP190": true, "other": true,
 	}
-	
+
 	for i, material := range materials {
 		prefix := fmt.Sprintf("%s[%d]", fieldPrefix, i)
-		
+
 		v.Check(material.Material != "", prefix+".material", "must be provided")
-		v.Check(validMaterialTypes[material.Material], prefix+".material", 
+		v.Check(validMaterialTypes[material.Material], prefix+".material",
 			"must be one of: general, rebar, mesh, strand, other")
-		
+
 		if material.Material == "other" {
-			v.Check(material.OtherName != "", prefix+".other_name", 
+			v.Check(material.OtherName != "", prefix+".other_name",
 				"must be provided when material is 'other'")
 		}
-		
+
 		v.Check(material.Resistance != "", prefix+".resistance", "must be provided")
-		v.Check(validResistances[material.Resistance], prefix+".resistance", 
+		v.Check(validResistances[material.Resistance], prefix+".resistance",
 			"must be one of: CA50, CA60, CP190, other")
-		
+
 		if material.Resistance == "other" {
-			v.Check(material.OtherResistance > 0, prefix+".other_resistance", 
+			v.Check(material.OtherResistance > 0, prefix+".other_resistance",
 				"must be provided and greater than 0 when resistance is 'other'")
 		}
-		
+
 		v.Check(material.Mass >= 0, prefix+".mass", "cannot be negative")
 	}
 }
 
 func CalculateSteelConsumption(materials []SteelMaterial) (Consumption, error) {
 	var result Consumption
-	
+
 	for _, material := range materials {
 		if material.Mass <= 0 {
 			continue
 		}
-		
+
 		var ca float64
 		switch material.Resistance {
 		case "CA50":
@@ -169,10 +169,10 @@ func CalculateSteelConsumption(materials []SteelMaterial) (Consumption, error) {
 		default:
 			ca = 50
 		}
-		
+
 		var steelCO2, steelEnergy SidacValue
 		var found bool
-		
+
 		if val, ok := sidacSteelData.KgCO2[ca]; ok {
 			steelCO2 = val
 			steelEnergy = sidacSteelData.MJ[ca]
@@ -185,7 +185,7 @@ func CalculateSteelConsumption(materials []SteelMaterial) (Consumption, error) {
 				found = true
 			}
 		}
-		
+
 		if !found {
 			if val, ok := sidacStrandData.KgCO2[ca]; ok {
 				steelCO2 = val
@@ -200,18 +200,18 @@ func CalculateSteelConsumption(materials []SteelMaterial) (Consumption, error) {
 				}
 			}
 		}
-		
+
 		if !found {
 			steelCO2 = sidacSteelData.KgCO2[60]
 			steelEnergy = sidacSteelData.MJ[60]
 		}
-		
+
 		result.CO2Min += steelCO2.Min * material.Mass
 		result.CO2Max += steelCO2.Max * material.Mass
 		result.EnergyMin += steelEnergy.Min * material.Mass
 		result.EnergyMax += steelEnergy.Max * material.Mass
 	}
-	
+
 	return result, nil
 }
 
