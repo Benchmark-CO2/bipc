@@ -14,6 +14,6 @@ export interface UpdateUserParams {
 export const patchUser = (userParams: UpdateUserParams) => {
   return api.patch("/v1/users", {
     ...userParams,
-    birthDate: ((userParams.split('')).pop()).join('')
+    birthDate: new Date(userParams.birthdate || "").toISOString(),
   });
 };

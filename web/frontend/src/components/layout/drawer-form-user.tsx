@@ -1,3 +1,4 @@
+import { patchUser, UpdateUserParams } from "@/actions/users/patchUser";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -26,19 +27,19 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
+import { dateUtils } from '@/utils/date';
 import { masks } from "@/utils/masks";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import { useEffect, useState } from "react";
-import { Eye, EyeOff, Loader2, X } from "lucide-react";
-import { toast } from "sonner";
 import {
   UpdateUserFormSchema,
   updateUserFormSchema,
 } from "@/validators/updateUserForm.validator";
-import { patchUser, UpdateUserParams } from "@/actions/users/patchUser";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Eye, EyeOff, Loader2, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 interface DrawerFormUserProps {
   componentTrigger: React.ReactNode;
@@ -181,7 +182,7 @@ export default function DrawerFormUser({
       // Format birthdate for display if it exists
       let formattedBirthdate = "";
       if (userData.birthdate) {
-        const date = new Date(userData.birthdate);
+        const date = dateUtils.ignoreTimezone(new Date(userData.birthdate));
         formattedBirthdate = date.toLocaleDateString("pt-BR");
       }
 

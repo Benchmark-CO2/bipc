@@ -1,9 +1,8 @@
 import { IProject, TProjectPhase } from "@/types/projects";
-import { Calendar, Pencil, Trash2 } from "lucide-react";
+import { Calendar } from "lucide-react";
 import React, { useRef } from "react";
 import { DrawerFormProject } from "../layout";
 import ModalConfirmDelete from "../layout/modal-confirm-delete";
-import { Button } from "./button";
 import { Checkbox } from "./checkbox";
 
 const phaseLabels: Record<TProjectPhase, string> = {
@@ -74,7 +73,7 @@ const CustomCard = ({
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return "Hoje";
     if (diffDays === 1) return "Ontem";
