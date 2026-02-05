@@ -3,9 +3,9 @@
  */
 
 const STORAGE_KEYS = {
-  NOT_AUTH_COMPLETED: "training_modal_has_account",
-  AUTH_COMPLETED: "training_modal_registered",
-  NOT_AUTH_MINIMIZED: "training_modal_minimized_not_auth",
+  NOT_AUTH_COMPLETED: "training_modal_has_account/v2",
+  AUTH_COMPLETED: "training_modal_registered/v2",
+  NOT_AUTH_MINIMIZED: "training_modal_minimized_not_auth/v2",
   AUTH_MINIMIZED: "training_modal_minimized_auth",
 } as const;
 
