@@ -42,7 +42,7 @@ function RouteComponent() {
     })) || [];
   const width = (window.innerWidth - 421) * 0.5;
   const height = window.innerHeight * 0.5;
-  const [selectedChart, setSelectedChart] = useState("trend");
+  const [selectedChart, setSelectedChart] = useState("co2");
 
   const maxData = chartData.map((d) => (d.max !== undefined ? d.max : 0));
   const minData = chartData.map((d) =>
