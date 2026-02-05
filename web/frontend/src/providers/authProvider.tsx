@@ -30,7 +30,7 @@ function setStoredToken(
   authentication_token: {
     token: string;
     expiry: string;
-  } | null
+  } | null,
 ) {
   if (authentication_token) {
     localStorage.setItem(storageTokenKey, JSON.stringify(authentication_token));
@@ -87,12 +87,12 @@ function clearStoredData() {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<{ token: string; expiry: string } | null>(
-    getStoredToken()
+    getStoredToken(),
   );
   const [user, setUser] = useState<TUser | null>(getStoredUser());
   const isAuthenticated = !!token?.token;
   const [sidebarOpen, setSidebarOpen] = useState<"open" | "closed">(
-    getStoredSidebarStatus()
+    getStoredSidebarStatus(),
   );
 
   const logout = () => {
@@ -106,13 +106,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token: string;
       expiry: string;
     },
-    user: TUser
+    user: TUser,
   ) => {
     setStoredToken(authentication_token);
     setStoredUser(user);
     setToken(authentication_token);
     setUser(user);
     localStorage.setItem("sidebarStatus", "closed");
+  };
+
+  const refreshUser = (updatedUser: TUser) => {
+    setStoredUser(updatedUser);
+    setUser(updatedUser);
   };
 
   useEffect(() => {
@@ -128,13 +133,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token,
         login,
         logout,
+        refreshUser,
         email: user?.email ?? null,
         activated: user?.activated ?? null,
         user,
         sidebarStatus: sidebarOpen,
         toggleSidebar: () =>
           setSidebarOpen((oldState) =>
-            oldState === "open" ? "closed" : "open"
+            oldState === "open" ? "closed" : "open",
           ),
       }}
     >

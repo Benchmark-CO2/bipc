@@ -1,4 +1,4 @@
-import { GenerateApiKey } from '@/components/apiKey';
+import { GenerateApiKey } from "@/components/apiKey";
 import { LanguageToggle } from "@/components/language-toggle";
 import DrawerDocuments from "@/components/layout/drawer-documents";
 import { SettingsSection } from "@/components/settings-section";
@@ -7,8 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { UserInfo } from "@/components/user-info";
 import { createFileRoute } from "@tanstack/react-router";
-import { Globe, KeySquare, Palette, ShieldHalf, TrendingUp } from "lucide-react";
-import { useState } from 'react';
+import {
+  Globe,
+  KeySquare,
+  Palette,
+  ShieldHalf,
+  TrendingUp,
+} from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_private/settings")({
@@ -19,7 +25,6 @@ function RouteComponent() {
   const { t } = useTranslation();
   const [visibleApiKey, setVisibleApiKey] = useState(false);
 
- 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       {/* Header */}
@@ -117,9 +122,8 @@ function RouteComponent() {
               />
             </div>
           </SettingsSection>
-
         </div>
-          <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4">
           <Separator className="flex-1" />
           <span className="text-sm text-muted-foreground font-medium">
             Desenvolvimento
@@ -128,14 +132,13 @@ function RouteComponent() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-1">
-        <SettingsSection
-            title={'Chave de API'}
-            description={'Gerar uma chave de API para usar na plataforma'}
+          <SettingsSection
+            title={"Chave de API"}
+            description={"Gerar uma chave de API para usar na plataforma"}
             icon={KeySquare}
-        >
-          <GenerateApiKey />
-        </SettingsSection>
-
+          >
+            <GenerateApiKey />
+          </SettingsSection>
         </div>
       </div>
     </div>

@@ -131,7 +131,10 @@ function RouteComponent() {
         />
       )}
       {selectedTab === "Colaboradores" && (
-        <CollaboratorsView projectId={projectId} />
+        <CollaboratorsView
+          projectId={projectId}
+          projectName={projectData?.name}
+        />
       )}
     </div>
   );

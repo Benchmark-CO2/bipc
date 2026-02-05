@@ -1,8 +1,9 @@
 import { IProject, TProjectPhase } from "@/types/projects";
-import { ChevronDown, ChevronUp, Edit, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Edit, Trash2, UserCheck } from "lucide-react";
 import { useState } from "react";
 import { DrawerFormProject } from "../layout";
 import { Button } from "./button";
+import DialogTransferOwnership from "../layout/dialog-transfer-ownership";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import ModalConfirmDelete from "../layout/modal-confirm-delete";
 import { useMutation } from "@tanstack/react-query";
@@ -134,7 +135,19 @@ const CustomBanner = ({
                 {phaseLabels[phase]}
               </span>
 
-              {id && hasPermission("update:project") && (
+              {hasPermission("*:*") && (
+                <DialogTransferOwnership
+                  componentTrigger={
+                    <Button variant="bipc" size="icon">
+                      <UserCheck className="w-4 h-4" />
+                    </Button>
+                  }
+                  projectId={project.id}
+                  projectName={name}
+                />
+              )}
+
+              {hasPermission("update:project") && (
                 <DrawerFormProject
                   componentTrigger={
                     <Button variant="bipc" size="icon">
@@ -145,7 +158,7 @@ const CustomBanner = ({
                 />
               )}
 
-              {id && hasPermission("*:*") && (
+              {hasPermission("*:*") && (
                 <ModalConfirmDelete
                   componentTrigger={
                     <Button variant="destructive" size="icon">
