@@ -15,11 +15,13 @@ import { trainingModalStorage } from "@/utils/trainingModalStorage";
 interface ModalTrainingProps {
   isAuthenticated: boolean;
   onNavigateToSignUp: () => void;
+  minimizedSidebar?: boolean;
 }
 
 const ModalTraining = ({
   isAuthenticated,
   onNavigateToSignUp,
+  minimizedSidebar = false,
 }: ModalTrainingProps) => {
   const [open, setOpen] = useState(false);
   const [showMiniature, setShowMiniature] = useState(false);
@@ -225,9 +227,13 @@ const ModalTraining = ({
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
               <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
             </svg>
-            <strong>Capacitação</strong>
+            {!minimizedSidebar && <strong>Capacitação</strong>}
           </span>
-          <span className="text-sm ml-auto cursor-pointer">Saiba mais...</span>
+          {!minimizedSidebar && (
+            <span className="text-sm ml-auto cursor-pointer">
+              Saiba mais...
+            </span>
+          )}
         </div>
       )}
     </>

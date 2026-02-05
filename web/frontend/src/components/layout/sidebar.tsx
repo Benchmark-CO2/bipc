@@ -90,6 +90,15 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         </TooltipContent>
       </Tooltip>
 
+      <div className="flex flex-col gap-2 w-full">
+        <BetaWarning minimizedSidebar />
+        <ModalTraining
+          isAuthenticated={isAuthenticated}
+          onNavigateToSignUp={() => {}}
+          minimizedSidebar
+        />
+      </div>
+
       {/* Ícones de navegação */}
       <div className="flex-1 flex flex-col gap-1 justify-end">
         <Tooltip>

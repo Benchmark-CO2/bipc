@@ -10,7 +10,7 @@ import {
 import { useState } from "react";
 import { Button } from "./ui/button";
 
-export const BetaWarning = () => {
+export const BetaWarning = ({ minimizedSidebar = false }) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -60,9 +60,11 @@ export const BetaWarning = () => {
       >
         <span className="flex items-center gap-2">
           <FlaskConical size={16} />
-          <strong>Em beta</strong>
+          {!minimizedSidebar && <strong>Em beta</strong>}
         </span>
-        <span className="text-sm ml-auto cursor-pointer">Saiba mais...</span>
+        {!minimizedSidebar && (
+          <span className="text-sm ml-auto cursor-pointer">Saiba mais...</span>
+        )}
       </div>
     </>
   );
