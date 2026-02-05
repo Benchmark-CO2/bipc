@@ -51,7 +51,7 @@ function RouteComponent() {
   };
 
   useEffect(() => {
-    document.title = "BIPC / Projetos";
+    document.title = "BIPC / Empreendimentos";
   }, []);
 
   const onClickProject = (projectUid: string) => {
@@ -88,7 +88,7 @@ function RouteComponent() {
   const handleSelectAll = () => {
     const allProjects = projects ?? [];
     const allSelected = allProjects.every((project) =>
-      selectedProjects.get(project.id)
+      selectedProjects.get(project.id),
     );
 
     if (allSelected) {
@@ -107,7 +107,7 @@ function RouteComponent() {
     (projects ?? []).every((project) => selectedProjects.get(project.id));
 
   const someSelected = [...selectedProjects.values()].some(
-    (value) => value === true
+    (value) => value === true,
   );
   useEffect(() => {
     if (!benchmarkData?.data) return;
@@ -118,7 +118,7 @@ function RouteComponent() {
           projects={
             someSelected
               ? [...(projects ?? [])].filter((project) =>
-                  selectedProjects.get(project.id)
+                  selectedProjects.get(project.id),
                 )
               : projects
           }
@@ -133,7 +133,7 @@ function RouteComponent() {
     <div>
       <div className="mb-6 mt-6 flex justify-between gap-1 flex-wrap">
         <h1 className='text-4xl font-bold font-["helvetica"] text-primary '>
-          Projetos
+          Empreendimentos
         </h1>
         <div className="flex justify-end gap-2 ml-auto">
           {viewMode === "grid" && projects && projects.length > 0 && (
@@ -148,11 +148,13 @@ function RouteComponent() {
               </Button>
             </>
           )}
-          <DrawerFormProject
-            componentTrigger={
-              <Button variant={"bipc"}>{t("projects.addProject")}</Button>
-            }
-          />
+          {projects?.length > 0 && (
+            <DrawerFormProject
+              componentTrigger={
+                <Button variant={"bipc"}>{t("projects.addProject")}</Button>
+              }
+            />
+          )}
         </div>
       </div>
       {viewMode === "table" ? (
@@ -161,31 +163,36 @@ function RouteComponent() {
           onClickProject={onClickProject}
           onDeleteProject={onDeleteProject}
         />
-      ) : (
+      ) : [...(projects ?? [])].length ? (
         <div className="grid grid-cols-2 min-[1280px]:grid-cols-4 min-[2000px]:grid-cols-6 w-full flex-wrap items-center gap-6 max-md:grid-cols-2 max-sm:grid-cols-1 transition-all">
-          {[...(projects ?? [])].length ? (
-            [...(projects ?? [])].map((project, ix) => {
-              const { co, mj, density, ...projectData } = project;
-              return (
-                <CustomCard
-                  key={project.id + ix}
-                  project={projectData}
-                  onClick={() => {
-                    onClickProject(project.id);
-                  }}
-                  onDeleteProject={onDeleteProject}
-                  selectedProjects={selectedProjects}
-                  handleSelectProject={handleSelectProject}
-                />
-              );
-            })
-          ) : (
-            <NotFoundList
-              message="Nenhum projeto encontrado"
-              description="Crie seu primeiro projeto clicando no botão acima"
-            />
-          )}
+          {[...(projects ?? [])].map((project, ix) => {
+            const { co, mj, density, ...projectData } = project;
+            return (
+              <CustomCard
+                key={project.id + ix}
+                project={projectData}
+                onClick={() => {
+                  onClickProject(project.id);
+                }}
+                onDeleteProject={onDeleteProject}
+                selectedProjects={selectedProjects}
+                handleSelectProject={handleSelectProject}
+              />
+            );
+          })}
         </div>
+      ) : (
+        <NotFoundList
+          message="Você ainda não possui projetos."
+          description="Crie seu primeiro projeto para começar a gerenciar suas unidades e simulações."
+          button={
+            <DrawerFormProject
+              componentTrigger={
+                <Button variant={"bipc"}>Criar Novo Projeto</Button>
+              }
+            />
+          }
+        />
       )}
     </div>
   );

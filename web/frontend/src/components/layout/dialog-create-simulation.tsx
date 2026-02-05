@@ -23,6 +23,7 @@ import { Input } from "../ui/input";
 import { Switch } from "../ui/switch";
 import { postOption } from "@/actions/options/postOption";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const createSimulationSchema = z.object({
   name: z.string().min(1, "O nome é obrigatório"),
@@ -35,12 +36,14 @@ interface DialogCreateSimulationProps {
   projectId: string;
   unitId: string;
   roleId: string;
+  triggerComponent?: React.ReactNode;
 }
 
 const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
   projectId,
   unitId,
   roleId,
+  triggerComponent,
 }) => {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -52,6 +55,7 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
       queryClient.invalidateQueries({
         queryKey: ["options", projectId, unitId],
       });
+      toast.success("Simulação criada com sucesso");
       form.reset();
       setOpen(false);
     },
@@ -78,13 +82,15 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild data-action="delete-project">
-        <Button
-          variant="secondary"
-          className="ml-auto text-white"
-          onClick={() => setOpen(true)}
-        >
-          Fazer Nova Simulação
-        </Button>
+        {triggerComponent || (
+          <Button
+            variant="secondary"
+            className="ml-auto text-white"
+            onClick={() => setOpen(true)}
+          >
+            Fazer Nova Simulação
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="text-center">
         <DialogHeader>

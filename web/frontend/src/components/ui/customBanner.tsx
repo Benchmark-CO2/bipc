@@ -85,14 +85,14 @@ const CustomBanner = ({
       return deleteProject(projectId);
     },
     onSuccess: async () => {
-      toast.success("Projeto excluído com sucesso");
+      toast.success("Empreendimento excluído com sucesso");
       await queryClient.invalidateQueries({
         queryKey: ["projects"],
       });
       navigate({ to: `/new_projects` });
     },
     onError: (error: unknown) => {
-      toast.error("Erro ao excluir o projeto", {
+      toast.error("Erro ao excluir o empreendimento", {
         description:
           error instanceof Error
             ? error.message
@@ -110,24 +110,25 @@ const CustomBanner = ({
     });
   };
 
-  if (isCollapsed) {
-    return (
-      <div className="w-full max-md:w-12/12 h-16 shadow-md shadow-zinc-600 dark:shadow-zinc-900 rounded-lg mx-auto relative overflow-hidden transition-all duration-300">
-        {image && (
-          <img
-            className="h-full w-full object-cover z-1 absolute right-0 top-0 rounded-lg opacity-30"
-            src={image}
-            alt={name}
-          />
-        )}
+  return (
+    <div className="w-full max-md:w-12/12 shadow-lg shadow-zinc-600 dark:shadow-zinc-900 rounded-lg mx-auto relative overflow-hidden transition-all duration-500">
+      {image && (
+        <img
+          className="h-full w-full object-cover z-1 absolute right-0 top-0 rounded-lg opacity-30"
+          src={image}
+          alt={name}
+        />
+      )}
 
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-800/85 to-slate-900/70 text-white rounded-lg">
-          <div className="h-full px-6 max-md:px-4 flex items-center justify-between">
-            <h1 className="text-lg max-md:text-base font-bold text-white truncate flex-1">
+      <div className="relative bg-sidebar text-white rounded-lg px-6 max-md:px-4 py-4">
+        <div className={`flex flex-col ${isCollapsed ? "gap-0" : "gap-3"}`}>
+          {/* Primeira linha: name, phase, botões */}
+          <div className="flex items-center justify-between gap-4 flex-wrap min-h-[40px]">
+            <h1 className="text-lg max-md:text-base font-bold text-white flex-1 min-w-[200px] break-words my-auto">
               {name}
             </h1>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 ml-auto flex-shrink-0">
               <span
                 className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-white shadow-md ${phaseColors[phase]}`}
               >
@@ -135,169 +136,117 @@ const CustomBanner = ({
               </span>
 
               {hasPermission("*:*") && (
-                <>
-                  <DialogTransferOwnership
-                    componentTrigger={
-                      <Button variant="outline-bipc" size="icon">
-                        <UserCheck className="w-4 h-4" />
-                      </Button>
-                    }
-                    projectId={project.id}
-                    projectName={name}
-                  />
-                  <ModalConfirmDelete
-                    componentTrigger={
-                      <Button variant="outline-destructive" size="icon">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    }
-                    title="Confirmar exclusão do projeto"
-                    onConfirm={() => onDeleteProject?.(project.id)}
-                  />
-                </>
+                <DialogTransferOwnership
+                  componentTrigger={
+                    <Button variant="bipc" size="icon">
+                      <UserCheck className="w-4 h-4" />
+                    </Button>
+                  }
+                  projectId={project.id}
+                  projectName={name}
+                />
               )}
 
               {hasPermission("update:project") && (
                 <DrawerFormProject
                   componentTrigger={
-                    <Button variant="outline-bipc" size="icon">
+                    <Button variant="bipc" size="icon">
                       <Edit className="w-4 h-4" />
                     </Button>
                   }
                   projectData={project}
                 />
               )}
+
+              {hasPermission("*:*") && (
+                <ModalConfirmDelete
+                  componentTrigger={
+                    <Button variant="destructive" size="icon">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  }
+                  title="Confirmar exclusão do empreendimento"
+                  onConfirm={() => onDeleteProject?.(project.id)}
+                />
+              )}
+
               <button
                 onClick={handleCollapseToggle}
                 className="text-slate-300 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
-                aria-label="Colapsar banner"
+                aria-label={isCollapsed ? "Expandir banner" : "Colapsar banner"}
               >
-                <ChevronDown className="w-4 h-4" />
+                {isCollapsed ? (
+                  <ChevronDown className="w-4 h-4 transition-transform duration-500" />
+                ) : (
+                  <ChevronUp className="w-4 h-4 transition-transform duration-500" />
+                )}
               </button>
             </div>
           </div>
-        </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="w-full max-md:w-12/12 h-48 shadow-lg shadow-zinc-600 dark:shadow-zinc-900 rounded-lg mx-auto relative overflow-hidden transition-all duration-300">
-      {image && (
-        <img
-          className="h-full w-full object-cover z-1 absolute right-0 top-0 rounded-lg"
-          src={image}
-          alt={name}
-        />
-      )}
-
-      <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-800/85 to-slate-900/70 text-white rounded-lg">
-        <div className="h-full p-6 max-md:p-4 flex flex-col justify-between">
-          {/* Header Section */}
-          <div className="flex-shrink-0">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1 min-w-0 pr-4">
-                <h1 className="text-xl max-md:text-lg font-bold text-white truncate">
-                  {name}
-                </h1>
-                <div className="flex items-center gap-1 mt-1">
+          {/* Conteúdo expansível */}
+          <div
+            className={`grid transition-all duration-500 ease-in-out ${
+              isCollapsed
+                ? "grid-rows-[0fr] opacity-0"
+                : "grid-rows-[1fr] opacity-100"
+            }`}
+          >
+            <div className="overflow-hidden">
+              {/* Segunda linha: city, state, fullAddress, unitsCount, totalArea */}
+              <div className="flex items-center gap-2 flex-wrap mb-3">
+                <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-md px-3 py-1.5">
                   <span className="text-xs text-slate-300">📍</span>
-                  <span className="text-sm text-slate-200 truncate">
+                  <span className="text-sm text-slate-200">
                     {city}, {state}
                   </span>
                 </div>
+
                 {fullAddress && (
-                  <div className="text-xs text-slate-300 truncate max-w-md mt-0.5 ml-4">
-                    {fullAddress}
+                  <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-md px-3 py-1.5">
+                    <span className="text-xs text-slate-300">🏠</span>
+                    <span className="text-sm text-slate-200">
+                      {fullAddress}
+                    </span>
+                  </div>
+                )}
+
+                {unitsCount && unitsCount > 0 && (
+                  <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-md px-3 py-1.5">
+                    <span className="text-blue-300 font-medium text-xs">
+                      🏢
+                    </span>
+                    <span className="text-sm font-semibold text-white">
+                      {unitsCount}{" "}
+                      {unitsCount === 1 ? "Edificação" : "Edificações"}
+                    </span>
+                  </div>
+                )}
+
+                {totalArea && totalArea > 0 && (
+                  <div className="flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-md px-3 py-1.5">
+                    <span className="text-green-300 font-medium text-xs">
+                      📐
+                    </span>
+                    <span className="text-sm font-semibold text-white">
+                      {totalArea.toLocaleString("pt-BR", {
+                        maximumFractionDigits: 0,
+                      })}{" "}
+                      m²
+                    </span>
                   </div>
                 )}
               </div>
 
-              <div className="flex-shrink-0 flex flex-col gap-2 items-end">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-white shadow-md ${phaseColors[phase]}`}
-                  >
-                    {phaseLabels[phase]}
-                  </span>
-
-                  {hasPermission("*:*") && (
-                    <>
-                      <DialogTransferOwnership
-                        componentTrigger={
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="border-primary text-primary hover:bg-primary hover:text-white"
-                          >
-                            <UserCheck className="w-4 h-4" />
-                          </Button>
-                        }
-                        projectId={project.id}
-                        projectName={name}
-                      />
-                      <ModalConfirmDelete
-                        componentTrigger={
-                          <Button variant="outline-destructive" size="icon">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        }
-                        title="Confirmar exclusão do projeto"
-                        onConfirm={() => onDeleteProject?.(project.id)}
-                      />
-                    </>
-                  )}
-
-                  {hasPermission("update:project") && (
-                    <DrawerFormProject
-                      componentTrigger={
-                        <Button variant="outline-bipc" size="icon">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                      }
-                      projectData={project}
-                    />
-                  )}
-                  <button
-                    onClick={handleCollapseToggle}
-                    className="text-slate-300 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
-                    aria-label="Colapsar banner"
-                  >
-                    <ChevronUp className="w-4 h-4" />
-                  </button>
+              {/* Description Section */}
+              {description && (
+                <div>
+                  <p className="text-sm text-slate-200 leading-relaxed">
+                    {description}
+                  </p>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  {unitsCount && unitsCount > 0 && (
-                    <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-md px-3 py-1.5">
-                      <span className="text-blue-300 font-medium">🏢</span>
-                      <span className="text-xs font-semibold text-white">
-                        {unitsCount} {unitsCount === 1 ? "Unidade" : "Unidades"}
-                      </span>
-                    </div>
-                  )}
-
-                  {totalArea && totalArea > 0 && (
-                    <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-md px-3 py-1.5">
-                      <span className="text-green-300 font-medium">📐</span>
-                      <span className="text-xs font-semibold text-white">
-                        {totalArea.toLocaleString("pt-BR", {
-                          maximumFractionDigits: 0,
-                        })}{" "}
-                        m²
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
+              )}
             </div>
-          </div>
-
-          {/* Description Section */}
-          <div className="flex-1 flex items-end">
-            <p className="text-sm text-slate-200 line-clamp-2 leading-relaxed">
-              {description}
-            </p>
           </div>
         </div>
       </div>

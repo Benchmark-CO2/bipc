@@ -1,8 +1,8 @@
 import { patchDiscipline } from "@/actions/disciplines/patchDiscipline";
 import { postDiscipline } from "@/actions/disciplines/postDiscipline";
 import { getProjectCollaborators } from "@/actions/projectCollaborators/getProjectCollaborators";
-import { useIsMobile } from '@/hooks/useIsMobile';
-import { cn } from '@/lib/utils';
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
 import { TCollaborator } from "@/types/collaborators";
 import { TRole } from "@/types/disciplines";
 import { TUser } from "@/types/user";
@@ -30,6 +30,7 @@ import {
 import {
   Drawer,
   DrawerContent,
+  DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
@@ -60,17 +61,17 @@ interface IDrawerFormDisciplines {
 // Mock data for permissions - will be provided by backend
 const mockPermissions = {
   management: [
-    // { id: 1, label: "Editar propriedades do projeto" },
-    { id: 2, label: "Atualizar projeto" },
+    // { id: 1, label: "Editar propriedades do empreendimento" },
+    { id: 2, label: "Atualizar empreendimento" },
     { id: 3, label: "Convidar colaborador" },
     { id: 4, label: "Remover colaborador" },
     { id: 5, label: "Remover convite de colaborador" },
     { id: 6, label: "Criar disciplina" },
     { id: 7, label: "Atualizar disciplina" },
     { id: 8, label: "Remover disciplina" },
-    { id: 9, label: "Criar unidade" },
-    { id: 10, label: "Atualizar unidade" },
-    { id: 11, label: "Remover unidade" },
+    { id: 9, label: "Criar edificação" },
+    { id: 10, label: "Atualizar edificação" },
+    { id: 11, label: "Remover edificação" },
   ],
   simulation: [],
 };
@@ -86,7 +87,7 @@ export default function DrawerFormDisciplines({
   const [managementExpanded, setManagementExpanded] = useState(true);
   const [simulationExpanded, setSimulationExpanded] = useState(true);
   const [selectedCollaborators, setSelectedCollaborators] = useState<TUser[]>(
-    []
+    [],
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [openPopover, setOpenPopover] = useState(false);
@@ -196,7 +197,7 @@ export default function DrawerFormDisciplines({
       setSelectedCollaborators(newCollaborators);
       form.setValue(
         "users_ids",
-        newCollaborators.map((c) => String(c.id))
+        newCollaborators.map((c) => String(c.id)),
       );
     }
     setOpenPopover(false);
@@ -205,12 +206,12 @@ export default function DrawerFormDisciplines({
 
   const removeCollaborator = (userId: string) => {
     const newCollaborators = selectedCollaborators.filter(
-      (c) => c.id !== userId
+      (c) => c.id !== userId,
     );
     setSelectedCollaborators(newCollaborators);
     form.setValue(
       "users_ids",
-      newCollaborators.map((c) => String(c.id))
+      newCollaborators.map((c) => String(c.id)),
     );
   };
 
@@ -220,7 +221,7 @@ export default function DrawerFormDisciplines({
 
     // Filter out already selected collaborators
     const availableUsers = users?.filter(
-      (user) => !selectedCollaborators.some((c) => c.id === user.id)
+      (user) => !selectedCollaborators.some((c) => c.id === user.id),
     );
 
     // Filter by search term
@@ -230,7 +231,7 @@ export default function DrawerFormDisciplines({
     return availableUsers.filter(
       (user) =>
         user.name.toLowerCase().includes(lowerSearch) ||
-        user.email.toLowerCase().includes(lowerSearch)
+        user.email.toLowerCase().includes(lowerSearch),
     );
   };
 
@@ -261,7 +262,7 @@ export default function DrawerFormDisciplines({
     if (!checked) {
       // Remove all management permissions
       const newPermissions = currentPermissions.filter(
-        (id) => !managementIds.includes(id)
+        (id) => !managementIds.includes(id),
       );
       form.setValue("permissions_ids", newPermissions, {
         shouldValidate: true,
@@ -323,7 +324,7 @@ export default function DrawerFormDisciplines({
         // Set selected collaborators based on roleData
         if (roleData.users_ids && projectUsers) {
           const collaborators = projectUsers.filter((user) =>
-            roleData.users_ids.includes(String(user.id))
+            roleData.users_ids.includes(String(user.id)),
           );
           setSelectedCollaborators(collaborators);
         }
@@ -340,10 +341,14 @@ export default function DrawerFormDisciplines({
     }
   }, [roleData, openDrawer, form, resetCreation, projectUsers]);
 
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobile();
 
   return (
-    <Drawer direction={isMobile ? "bottom" : "right"} open={openDrawer} dismissible={false}>
+    <Drawer
+      direction={isMobile ? "bottom" : "right"}
+      open={openDrawer}
+      dismissible={false}
+    >
       <DrawerTrigger
         asChild
         onClick={(e) => {
@@ -353,13 +358,20 @@ export default function DrawerFormDisciplines({
       >
         {componentTrigger}
       </DrawerTrigger>
-      <DrawerContent className={cn("min-w-2/5", {
-        "w-full h-4/5": isMobile,
-      })}>
+      <DrawerContent
+        className={cn("min-w-2/5", {
+          "w-full h-4/5": isMobile,
+        })}
+      >
         <DrawerHeader className="px-8">
           <DrawerTitle>
             {isEditMode ? "Editar Disciplina" : "Adicionar Disciplina"}
           </DrawerTitle>
+          <DrawerDescription>
+            Para realizar simulações, primeiro adicione uma disciplina como
+            "Estrutural", "Fundação", "Vedações" ou qualquer outro título que
+            descreva a sua área de atuação.
+          </DrawerDescription>
           <Button
             onClick={() => setOpenDrawer(false)}
             className="absolute right-4 top-2"
@@ -399,7 +411,7 @@ export default function DrawerFormDisciplines({
                     <FormLabel>Descrição</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Projetos de alvenaria estrutural"
+                        placeholder="Empreendimentos de alvenaria estrutural"
                         rows={3}
                         className="resize-none"
                         {...field}
@@ -450,15 +462,22 @@ export default function DrawerFormDisciplines({
                 </button>
                 {managementExpanded && (
                   <div className="flex flex-col gap-3 p-4 bg-card">
+                    <span className="text-muted-foreground text-sm">
+                      Selecione as permissões que as pessoas atribuídas a esta
+                      disciplina terão.
+                    </span>
                     {/* Adicionar/Remover tudo */}
                     <div className="flex items-center justify-between pb-2 border-b">
-                      <label className="text-sm font-bold" htmlFor="select-all-management">
+                      <label
+                        className="text-sm font-bold"
+                        htmlFor="select-all-management"
+                      >
                         Selecionar todas
                       </label>
                       <Checkbox
                         id="select-all-management"
                         checked={mockPermissions.management.every((p) =>
-                          selectedPermissions.includes(p.id)
+                          selectedPermissions.includes(p.id),
                         )}
                         onCheckedChange={toggleAllManagement}
                       />
@@ -470,16 +489,19 @@ export default function DrawerFormDisciplines({
                         key={permission.id}
                         className="flex items-center justify-between gap-2 "
                       >
-                        <label className="text-sm font-bold text-primary flex-1" htmlFor={'checkbox-' + permission.id}>
+                        <label
+                          className="text-sm font-bold text-primary flex-1"
+                          htmlFor={"checkbox-" + permission.id}
+                        >
                           {permission.label}
                         </label>
                         <Checkbox
-                          id={'checkbox-' + permission.id}
+                          id={"checkbox-" + permission.id}
                           checked={selectedPermissions.includes(permission.id)}
                           onCheckedChange={(checked) =>
                             togglePermission(permission.id, checked as boolean)
                           }
-                          className='border-px border-neutral-400/80'
+                          className="border-px border-neutral-400/80"
                         />
                       </div>
                     ))}
@@ -537,6 +559,12 @@ export default function DrawerFormDisciplines({
               {/* Buscar colaboradores */}
               <div className="flex flex-col gap-2">
                 <FormLabel>Buscar colaboradores</FormLabel>
+                <span className="text-sm text-muted-foreground">
+                  Selecione os colaboradores que fazem parte desta disciplina.{" "}
+                  <br />
+                  Importante: Se o seu usuário faz parte deste grupo, não
+                  esqueça de se adicionar.
+                </span>
                 <Popover open={openPopover} onOpenChange={setOpenPopover}>
                   <PopoverTrigger asChild>
                     <Button
@@ -548,9 +576,12 @@ export default function DrawerFormDisciplines({
                       Colaborador...
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className={cn("w-[400px] p-0", {
-                    "w-[280px]": isMobile,
-                  })} align="start">
+                  <PopoverContent
+                    className={cn("w-[400px] p-0", {
+                      "w-[280px]": isMobile,
+                    })}
+                    align="start"
+                  >
                     <Command shouldFilter={false}>
                       <CommandInput
                         placeholder="Buscar colaborador..."

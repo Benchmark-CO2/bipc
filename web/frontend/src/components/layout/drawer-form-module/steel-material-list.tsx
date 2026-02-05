@@ -125,7 +125,7 @@ const SteelMaterialItem = ({
             name={`${name}.${index}.mass`}
             render={({ field }) => (
               <FormItem className="w-full space-y-1">
-                <FormLabel className="text-xs">Massa (kg) *</FormLabel>
+                <FormLabel className="text-xs">Peso (kg) *</FormLabel>
                 <FormControl>
                   <Input
                     {...field}

@@ -441,3 +441,46 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: #71717a;
 }
+
+/* Sonner toast progress bar */
+[data-sonner-toast] {
+  position: relative;
+}
+
+[data-sonner-toast]::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.3);
+  transform-origin: left;
+  animation: progress-bar-animation var(--toast-duration, 4000ms) linear
+    forwards;
+}
+
+[data-sonner-toast][data-type="success"]::after {
+  background-color: #22c55e;
+}
+
+[data-sonner-toast][data-type="error"]::after {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+[data-sonner-toast][data-type="warning"]::after {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+[data-sonner-toast][data-type="info"]::after {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+@keyframes progress-bar-animation {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}

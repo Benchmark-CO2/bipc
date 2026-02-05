@@ -106,7 +106,7 @@ func validateFloorIndexes(floors []FloorCreate) error {
 
 func insertFloors(tx *sql.Tx, unitID uuid.UUID, floors []FloorCreate) error {
 	queryFloor := `INSERT INTO floor (id, unit_id, floor_group, category, area, height, "index") VALUES ($1, $2, $3, $4, $5, $6, $7)`
-	
+
 	for _, floor := range floors {
 		floorID := floor.ID
 		if floorID == uuid.Nil {
@@ -122,7 +122,7 @@ func insertFloors(tx *sql.Tx, unitID uuid.UUID, floors []FloorCreate) error {
 			return err
 		}
 	}
-	
+
 	return nil
 }
 
@@ -312,13 +312,13 @@ func (m UnitModel) getExistingFloors(tx *sql.Tx, unitID uuid.UUID) (map[uuid.UUI
 		FROM floor
 		WHERE unit_id = $1
 		ORDER BY "index"`
-	
+
 	rows, err := tx.Query(queryExistingFloors, unitID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	existingFloors := make(map[uuid.UUID]*Floor)
 	for rows.Next() {
 		var floor Floor
@@ -328,7 +328,7 @@ func (m UnitModel) getExistingFloors(tx *sql.Tx, unitID uuid.UUID) (map[uuid.UUI
 		floor.UnitID = unitID
 		existingFloors[floor.ID] = &floor
 	}
-	
+
 	return existingFloors, rows.Err()
 }
 
@@ -344,7 +344,7 @@ func (m UnitModel) Update(unit *Unit, floors []FloorCreate) error {
 		SET name = $1, updated_at = CURRENT_TIMESTAMP, version = version + 1
 		WHERE id = $2
 		RETURNING version`
-	
+
 	err = tx.QueryRow(queryUnit, unit.Name, unit.ID).Scan(&unit.Version)
 	if err != nil {
 		return err
@@ -541,15 +541,15 @@ func getUnitData(tx *sql.Tx, unitID uuid.UUID) (totalArea float64, floors map[uu
 
 	for rows.Next() {
 		var (
-			floorID                              uuid.UUID
-			area                                 float64
+			floorID                                uuid.UUID
+			area                                   float64
 			moduleID, moduleType, roleID, optionID sql.NullString
-			active                               sql.NullBool
-			co2Min, co2Max, energyMin, energyMax sql.NullFloat64
-			maFloorID, maUnitID                  *uuid.UUID
+			active                                 sql.NullBool
+			co2Min, co2Max, energyMin, energyMax   sql.NullFloat64
+			maFloorID, maUnitID                    *uuid.UUID
 		)
 
-		if err := rows.Scan(&floorID, &area, &moduleID, &moduleType, &active, &roleID, &optionID, 
+		if err := rows.Scan(&floorID, &area, &moduleID, &moduleType, &active, &roleID, &optionID,
 			&co2Min, &co2Max, &energyMin, &energyMax, &maFloorID, &maUnitID); err != nil {
 			return 0, nil, nil, nil, err
 		}
@@ -917,10 +917,10 @@ func (m UnitModel) GetConsumptionByRole(unitID, roleID uuid.UUID) (map[string]*C
 		FROM options 
 		WHERE unit_id = $1 AND role_id = $2 AND active = TRUE
 		LIMIT 1`
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	
+
 	err := m.DB.QueryRowContext(ctx, query, unitID, roleID).Scan(&activeOptionID)
 	if err != nil {
 		if err == sql.ErrNoRows {
