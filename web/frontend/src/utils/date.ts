@@ -19,6 +19,11 @@ function calculateRelativeTime(date: Date): string {
     }
 }
 
+const ignoreTimezone = (date: Date): Date => {
+    const timezoneOffset = date.getTimezoneOffset() * 60000; // Convert minutes to milliseconds
+    return new Date(date.getTime() + timezoneOffset);
+}
 export const dateUtils = {
   calculateRelativeTime,
+  ignoreTimezone,
 }
