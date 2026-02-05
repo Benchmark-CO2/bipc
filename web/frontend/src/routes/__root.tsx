@@ -20,6 +20,7 @@ import {
 } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
+import { trainingModalStorage } from "@/utils/trainingModalStorage";
 // import { AuthProvider } from "@/providers/authProvider";
 // import { ProjectProvider } from "@/providers/projectProvider";
 // import Summary from "@/components/ui/summary";
@@ -28,7 +29,7 @@ const TanStackRouterDevtools = import.meta.env.PROD
   : lazy(() =>
       import("@tanstack/router-devtools").then((res) => ({
         default: res.TanStackRouterDevtools,
-      }))
+      })),
     );
 
 export const Route = createRootRouteWithContext<{
@@ -41,6 +42,7 @@ export const Route = createRootRouteWithContext<{
     const path = useLocation();
     const handleLogout = () => {
       logout();
+      trainingModalStorage.clearMinimized(isAuthenticated);
       navigate({
         to: "/login",
         replace: true,
@@ -107,7 +109,7 @@ export const Route = createRootRouteWithContext<{
         )}
 
         {/* Modal de Capacitação - não aparece nas páginas de login e sign-up */}
-        {shouldShowTrainingModal() && !isAuthPage && (
+        {shouldShowTrainingModal() && !isAuthPage && !isAuthenticated && (
           <ModalTraining
             isAuthenticated={isAuthenticated}
             onNavigateToSignUp={handleNavigateToSignUp}

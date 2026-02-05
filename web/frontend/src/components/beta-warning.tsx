@@ -1,24 +1,69 @@
 import { FlaskConical } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
+import { useState } from "react";
+import { Button } from "./ui/button";
 
 export const BetaWarning = () => {
+  const [open, setOpen] = useState(false);
+
   return (
-    <div className="bg-primary text-white p-2 px-4 rounded-lg mx-auto">
-      <div className="flex items-center gap-2 my-1">
-        <FlaskConical size={16} />
-        <span className="font-bold">Estamos em beta</span>
-      </div>
-      <p className="text-sm mb-1">
-        A plataforma segue em desenvolvimento e recebe melhorias constantes.
-      </p>
-      <p className="text-sm ">
-        Tem alguma sugestão de melhoria? Envie um e-mail para:{" "}
-        <a
-          href="mailto:contato@bipc.org.br"
-          className="font-bold hover:underline"
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent
+          className="sm:max-w-[500px] bg-primary p-10 border-none"
+          showCloseButton={false}
         >
-          contato@bipc.org.br
-        </a>
-      </p>
-    </div>
+          <DialogHeader>
+            <DialogTitle className="text-2xl text-center text-accent flex items-center gap-2 justify-center">
+              <FlaskConical />
+              Em Beta
+            </DialogTitle>
+            <DialogDescription className="text-center pt-4 text-accent/100">
+              <p className="text-md mb-1">
+                A plataforma segue em desenvolvimento e recebe melhorias
+                constantes.
+              </p>
+              <p className="text-md ">
+                Tem alguma sugestão de melhoria? Envie um e-mail para:{" "}
+                <a
+                  href="mailto:contato@bipc.org.br"
+                  className="font-bold hover:underline"
+                >
+                  contato@bipc.org.br
+                </a>
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-col gap-3 mt-4">
+            <Button
+              variant="bipc"
+              size="lg"
+              className="w-full"
+              onClick={() => setOpen(false)}
+            >
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <div
+        className="bg-primary text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-primary/90 cursor-pointer border border-primary/50"
+        onClick={() => setOpen(true)}
+      >
+        <span className="flex items-center gap-2">
+          <FlaskConical size={16} />
+          <strong>Em beta</strong>
+        </span>
+        <span className="text-sm ml-auto cursor-pointer">Saiba mais...</span>
+      </div>
+    </>
   );
 };

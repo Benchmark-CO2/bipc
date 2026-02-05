@@ -30,6 +30,7 @@ import ExpandContentIcon from "@/assets/icons/expand-content";
 import CollapseContentIcon from "@/assets/icons/collapse-content";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { BetaWarning } from "../beta-warning";
+import ModalTraining from "./modal-training";
 
 interface ISidebar {
   handleLogout?: () => void;
@@ -270,8 +271,12 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         )}
       </div>
 
-      <div className="p-4">
+      <div className="p-4 flex flex-col gap-2 w-full">
         <BetaWarning />
+        <ModalTraining
+          isAuthenticated={isAuthenticated}
+          onNavigateToSignUp={() => {}}
+        />
       </div>
 
       {/* Menu Items - Seção Principal */}
