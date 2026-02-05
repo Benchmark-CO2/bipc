@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Dialog,
   DialogContent,
@@ -188,7 +188,14 @@ export default function DialogTransferOwnership({
             {collaborators.length === 0 && !isLoading && (
               <p className="text-sm text-muted-foreground">
                 Você precisa ter pelo menos um colaborador no empreendimento
-                para transferir a propriedade.
+                para transferir a propriedade.{" "}
+                <Link
+                  to={`/new_projects/${projectId}?tab=colaboradores` as string}
+                  className="text-primary underline"
+                  onClick={() => setOpen(false)}
+                >
+                  Adicione colaboradores aqui.
+                </Link>
               </p>
             )}
           </div>
