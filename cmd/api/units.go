@@ -101,6 +101,13 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	unitID, err := uuid.NewV7()
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	unit.ID = unitID
+
 	err = app.models.Units.Insert(unit, floors)
 	if err != nil {
 		switch {

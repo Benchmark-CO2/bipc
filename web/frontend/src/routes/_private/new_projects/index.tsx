@@ -51,7 +51,7 @@ function RouteComponent() {
   };
 
   useEffect(() => {
-    document.title = "BIPC / Projetos";
+    document.title = "BIPC / Empreendimentos";
   }, []);
 
   const onClickProject = (projectUid: string) => {
@@ -88,7 +88,7 @@ function RouteComponent() {
   const handleSelectAll = () => {
     const allProjects = projects ?? [];
     const allSelected = allProjects.every((project) =>
-      selectedProjects.get(project.id)
+      selectedProjects.get(project.id),
     );
 
     if (allSelected) {
@@ -107,7 +107,7 @@ function RouteComponent() {
     (projects ?? []).every((project) => selectedProjects.get(project.id));
 
   const someSelected = [...selectedProjects.values()].some(
-    (value) => value === true
+    (value) => value === true,
   );
   useEffect(() => {
     if (!benchmarkData?.data) return;
@@ -118,7 +118,7 @@ function RouteComponent() {
           projects={
             someSelected
               ? [...(projects ?? [])].filter((project) =>
-                  selectedProjects.get(project.id)
+                  selectedProjects.get(project.id),
                 )
               : projects
           }
@@ -133,7 +133,7 @@ function RouteComponent() {
     <div>
       <div className="mb-6 mt-6 flex justify-between gap-1 flex-wrap">
         <h1 className='text-4xl font-bold font-["helvetica"] text-primary '>
-          Projetos
+          Empreendimentos
         </h1>
         <div className="flex justify-end gap-2 ml-auto">
           {viewMode === "grid" && projects && projects.length > 0 && (

@@ -12,6 +12,7 @@ import (
 )
 
 var (
+	ErrNilUnitID             = errors.New("unit ID must be provided")
 	ErrInvalidUnitID         = errors.New("unit_id does not exist or is invalid")
 	ErrUnitIsNotTower        = errors.New("the specified unit is not a tower")
 	ErrInvalidFloorID        = errors.New("one or more floor_ids are invalid or do not exist")
@@ -126,16 +127,15 @@ func insertFloors(tx *sql.Tx, unitID uuid.UUID, floors []FloorCreate) error {
 }
 
 func (m UnitModel) Insert(unit *Unit, floors []FloorCreate) error {
+	if unit.ID == uuid.Nil {
+		return ErrNilUnitID
+	}
+
 	tx, err := m.DB.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-
-	unit.ID, err = uuid.NewV7()
-	if err != nil {
-		return err
-	}
 
 	queryUnit := `
 		INSERT INTO units (id, project_id, name, type)

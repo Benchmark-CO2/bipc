@@ -45,6 +45,13 @@ func (app *application) createRoleHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	roleID, err := uuid.NewV7()
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	role.ID = roleID
+
 	err = app.models.Roles.Insert(role)
 	if err != nil {
 		switch {

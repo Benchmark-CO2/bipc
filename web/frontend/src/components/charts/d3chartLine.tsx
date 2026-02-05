@@ -14,8 +14,8 @@ import React, {
 import Divider from "../ui/divider";
 
 const UNIT_LABELS = {
-  "co2": "Emissão de CO2 (Kg/m²)",
-  "energy": "Demanda de energia primária (MJ/m²)",
+  co2: "Emissão de CO2 (Kg/m²)",
+  energy: "Demanda de energia primária (MJ/m²)",
 } as const;
 
 // Constants
@@ -73,7 +73,7 @@ const useChartDimensions = (
   overrideDimensions: boolean,
   isMobile: boolean,
   isExpanded: boolean,
-  containerWidth?: number
+  containerWidth?: number,
 ) => {
   return useMemo(() => {
     const screenWidth = window.innerWidth;
@@ -154,7 +154,7 @@ const useTooltipPosition = () => {
 
       return { x, y };
     },
-    []
+    [],
   );
 };
 
@@ -193,7 +193,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     () =>
       data?.map((f) => ({ ...f, y: 1 - f.y })).sort((a, b) => a.min - b.min) ||
       [],
-    [data]
+    [data],
   );
 
   const { minValue, maxValue, minOfMins, maxOfMins } = useMemo(() => {
@@ -276,7 +276,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
   const yScale = useMemo(
     () => d3.scaleLinear().domain([0, maxValue]).range([0, _height]),
-    [maxValue, _height]
+    [maxValue, _height],
   );
 
   const colorScale = useMemo(
@@ -291,7 +291,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
           maxValue,
         ])
         .range(DEFAULT_COLORS.PROCEL),
-    [maxValue]
+    [maxValue],
   );
 
   // Event handlers
@@ -343,7 +343,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
         .attr("y2", yScale(dMin.y))
         .style("opacity", 1);
     },
-    [xScale, yScale, denormalizedMax, denormalizedMin, getTooltipPosition]
+    [xScale, yScale, denormalizedMax, denormalizedMin, getTooltipPosition],
   );
 
   const handleMouseOut = useCallback(() => {
@@ -600,12 +600,12 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
           .axisBottom(xScale)
           .ticks(tickCount)
           .tickFormat((d) => d3.format(isMobile ? ".1f" : ".1f")(d))
-          .tickSizeOuter(0)
+          .tickSizeOuter(0),
       )
       .selectAll("text")
       .style("font-size", "12px")
       .style("fill", DEFAULT_COLORS.TEXT)
-      .text(d => (d as number).toInternational(undefined, 1))
+      .text((d) => (d as number).toInternational(undefined, 1));
 
     axesGroup
       .append("g")
@@ -613,7 +613,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       .selectAll("text")
       .style("font-size", "12px")
       .style("fill", DEFAULT_COLORS.TEXT)
-      .text(d => (d as number).toInternational(undefined, 0))
+      .text((d) => (d as number).toInternational(undefined, 0));
 
     // Procel color bands
     const faixaWidth =
@@ -761,7 +761,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
             "r",
             isExpanded
               ? CHART_CONFIG.CIRCLE_RADIUS.expanded
-              : CHART_CONFIG.CIRCLE_RADIUS.normal
+              : CHART_CONFIG.CIRCLE_RADIUS.normal,
           )
           .attr("fill", DEFAULT_COLORS.START)
           .attr("stroke", "white")
@@ -769,7 +769,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
             "stroke-width",
             isExpanded
               ? CHART_CONFIG.STROKE_WIDTH.expanded
-              : CHART_CONFIG.STROKE_WIDTH.normal
+              : CHART_CONFIG.STROKE_WIDTH.normal,
           )
           .attr("id", `bar-circle-start-${d.id}`)
           .raise();
@@ -781,7 +781,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
             "r",
             isExpanded
               ? CHART_CONFIG.CIRCLE_RADIUS.expanded
-              : CHART_CONFIG.CIRCLE_RADIUS.normal
+              : CHART_CONFIG.CIRCLE_RADIUS.normal,
           )
           .attr("fill", DEFAULT_COLORS.END)
           .attr("stroke", "white")
@@ -789,7 +789,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
             "stroke-width",
             isExpanded
               ? CHART_CONFIG.STROKE_WIDTH.expanded
-              : CHART_CONFIG.STROKE_WIDTH.normal
+              : CHART_CONFIG.STROKE_WIDTH.normal,
           )
           .attr("id", `bar-circle-end-${d.id}`)
           .raise();
@@ -803,9 +803,9 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
           .attr(
             "y",
             y1 +
-            (isExpanded
-              ? CHART_CONFIG.BAR_WIDTH.expanded + 4
-              : minimalBarHeight)
+              (isExpanded
+                ? CHART_CONFIG.BAR_WIDTH.expanded + 4
+                : minimalBarHeight),
           )
           .attr("text-anchor", "end")
           .attr("font-size", 12)
@@ -893,10 +893,16 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
                 </>
               )}
               <span>
-                Min: <b>{tooltip.value.min.toInternational()} Kg/m2</b>
+                Min:{" "}
+                <b>
+                  {tooltip.value.min.toInternational()} {unit}
+                </b>
               </span>
               <span>
-                Max: <b>{tooltip.value.max.toInternational()} Kg/m2</b>
+                Max:{" "}
+                <b>
+                  {tooltip.value.max.toInternational()} {unit}
+                </b>
               </span>
             </div>
           )}
@@ -906,7 +912,9 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
             "mt-10": !summary,
           })}
         >
-          <span>N: {data?.length}</span>
+          <span className="text-muted-foreground text-xs">
+            Nº de empreendimentos: {data?.length}
+          </span>
           <span className="flex-1 text-xs text-center w-full text-black/70">
             Eficiência
           </span>

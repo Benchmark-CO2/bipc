@@ -28,10 +28,11 @@ function RouteComponent() {
   const { FilterSection, activeBuildFilter, type } = useBenchmarkFilters();
   const { data } = useQuery({
     queryKey: ["units-benchmarks", JSON.stringify(activeBuildFilter)],
-    queryFn: () => getProjectsBenchmark({
-      technology: activeBuildFilter.technology,
-      floors: activeBuildFilter.floors.get()
-    }),
+    queryFn: () =>
+      getProjectsBenchmark({
+        technology: activeBuildFilter.technology,
+        floors: activeBuildFilter.floors.get(),
+      }),
   });
   const isMobile = useIsMobile();
 
@@ -72,11 +73,11 @@ function RouteComponent() {
                 </Select>
               </div>
             </div>
-            <div className='w-full'>
+            <div className="w-full">
               {selectedChart === "trend" ? (
                 <D3GradientRangeLineChart
                   data={chartData}
-                  unit={type}
+                  unit={type === "co2" ? "kgCO₂/m²" : "MJ/m²"}
                   summary={false}
                 />
               ) : (
@@ -88,7 +89,7 @@ function RouteComponent() {
                   minData={minData}
                   maxData={maxData}
                   totalProjects={chartData.length}
-                  unit={type === "co2" ? "KgCO₂/m²" : "MJ/m²"}
+                  unit={type === "co2" ? "kgCO₂/m²" : "MJ/m²"}
                 />
               )}
             </div>

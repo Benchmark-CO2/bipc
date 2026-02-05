@@ -8,7 +8,7 @@ import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ItemCard from "./components/ItemCard";
-import Legend from './components/Legend';
+import Legend from "./components/Legend";
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
 import { barColors, recalculateY } from "./utils";
@@ -43,16 +43,18 @@ const UnitsSummary = ({
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
-  const filteredUnits = units.filter(el => !!el.consumptions);
+  const filteredUnits = units.filter((el) => !!el.consumptions);
 
-  const fakeUnits = generateFakeData(data.benchmark?.[type as "co2" | "energy"] || [])
+  const fakeUnits = generateFakeData(
+    data.benchmark?.[type as "co2" | "energy"] || [],
+  )
     .map((el) => ({
       ...el,
       label: selectedUnits.find((f) => f.id === el.id)?.name || "",
     }))
     .filter((f) => f.min && f.max);
 
-  const newItems = filteredUnits.map(el => {
+  const newItems = filteredUnits.map((el) => {
     return {
       co2: {
         id: el.id,
@@ -68,42 +70,40 @@ const UnitsSummary = ({
         max: el.consumptions.total.energy_max,
         label: el.name,
       },
-    }
-  })
+    };
+  });
   const { isExpanded } = useSummary();
 
   const stackedData = useMemo(
     () =>
-      newItems.map(el => ({
+      newItems.map((el) => ({
         id: el[type].id,
         label: el[type].label,
         co2: (el.co2.max + el.co2.min) / 2,
         energy: (el.energy.max + el.energy.min) / 2,
       })),
-    [newItems]
+    [newItems],
   );
 
   const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!someSelected) return
-    setPreviousProjects(
-      selectedUnits.map(el => el.id)
-    );
+    if (!someSelected) return;
+    setPreviousProjects(selectedUnits.map((el) => el.id));
   }, [selectedUnits, someSelected]);
 
   useEffect(() => {
-    if (!someSelected) return
+    if (!someSelected) return;
     if (previousProjects.length < selectedUnits.length) {
       const diff = filteredUnits.filter(
-        (p) => !previousProjects.includes(p.id)
+        (p) => !previousProjects.includes(p.id),
       );
       if (diff.length > 0) {
         setSelectedProjects((prev) => [...prev, ...diff.map((d) => d.id)]);
       }
     } else if (previousProjects.length > selectedUnits.length) {
       const diff = previousProjects.filter(
-        (p) => !filteredUnits.map((u) => u.id).includes(p)
+        (p) => !filteredUnits.map((u) => u.id).includes(p),
       );
       if (diff.length > 0) {
         setSelectedProjects((prev) => prev.filter((p) => !diff.includes(p)));
@@ -118,7 +118,8 @@ const UnitsSummary = ({
       setSelectedProjects([...selectedProjects, projectId]);
     }
   };
-  const [selectedSubTab, setSelectedSubTab] = useState<"Unidades">("Unidades");
+  const [selectedSubTab, setSelectedSubTab] =
+    useState<"Edificações">("Edificações");
   const selectAll = () => {
     if (selectedProjects.length === filteredUnits.length) {
       setSelectedProjects([]);
@@ -145,21 +146,24 @@ const UnitsSummary = ({
         if (!acc[unit.id].avg) delete acc[unit.id];
         return acc;
       },
-      {} as Record<string, number>
+      {} as Record<string, number>,
     );
   }, [units, project, fakeUnits]);
 
   const sum = (Object.values(avgByUnit) as Array<{ avg: number }>).reduce(
     (acc: number, b: { avg: number }) => acc + b.avg,
-    0 as number
+    0 as number,
   );
 
+  const newDataItems = [...fakeUnits, ...newItems.map((item) => item[type])];
 
-  const newDataItems = [...fakeUnits, ...newItems.map(item => item[type])]
-
-  const minData = useMemo(() => newDataItems.map(d => d.min), [newDataItems]);
-  const maxData = useMemo(() => newDataItems.map(d => d.max), [newDataItems]);
-  const newData = recalculateY(newDataItems, Math.min(...minData), Math.max(...maxData));
+  const minData = useMemo(() => newDataItems.map((d) => d.min), [newDataItems]);
+  const maxData = useMemo(() => newDataItems.map((d) => d.max), [newDataItems]);
+  const newData = recalculateY(
+    newDataItems,
+    Math.min(...minData),
+    Math.max(...maxData),
+  );
 
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
@@ -170,13 +174,13 @@ const UnitsSummary = ({
           selectedTab={type}
           fullWidth
           subTabs={[
-            "Unidades",
+            "Edificações",
             selectedProjects.length === units.length
               ? "Desmarcar Todos"
               : "Selecionar Todos",
           ]}
           onSubTabSelect={(tab) => {
-            if (tab === "Unidades") setSelectedSubTab(tab as "Unidades");
+            if (tab === "Edificações") setSelectedSubTab(tab as "Edificações");
             if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
               selectAll();
           }}
@@ -185,9 +189,12 @@ const UnitsSummary = ({
       </div>
 
       <div
-        className={cn("w-full flex justify-between gap-4 max-md:flex-col max-md:flex-col 2xl:h-[85%] max-sm:h-max", {
-          "flex flex-col h-full justify-between": isExpanded,
-        })}
+        className={cn(
+          "w-full flex justify-between gap-4 max-md:flex-col max-md:flex-col 2xl:h-[85%] max-sm:h-max",
+          {
+            "flex flex-col h-full justify-between": isExpanded,
+          },
+        )}
       >
         <div className="flex flex-col items-start w-full">
           {ChartSelector}
@@ -225,7 +232,7 @@ const UnitsSummary = ({
                           "bg-white text-black border-2 border-active shadow-md",
                           {
                             "ml-30": idx === 0,
-                          }
+                          },
                         )}
                       >
                         <span className="text-black text-base p-2">
@@ -290,7 +297,6 @@ const UnitsSummary = ({
             data={newData}
             selectedBars={selectedProjects}
             unit={type}
-
           />
         )}
       </div>
