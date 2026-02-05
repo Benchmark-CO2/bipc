@@ -19,6 +19,7 @@ export const useProjects = () => {
 
   const modifiedProjects = data?.data?.projects?.map((el) => ({
     ...el,
+    created_at: el.created_at.replace('Z', ''),
     co: generateFakeCo2(),
     mj: generateFakeMJ(),
     density: generateFakeDens(),
