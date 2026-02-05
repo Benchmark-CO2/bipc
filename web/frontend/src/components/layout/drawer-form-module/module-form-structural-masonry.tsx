@@ -364,7 +364,7 @@ const GroutItem = ({
                     name={`grout.${groutIndex}.steel.${steelIndex}.mass`}
                     render={({ field }) => (
                       <FormItem className="flex-1">
-                        <FormLabel className="text-xs">Massa (kg)</FormLabel>
+                        <FormLabel className="text-xs">Peso (kg)</FormLabel>
                         <FormControl>
                           <Input
                             type="text"
@@ -1141,7 +1141,7 @@ const ModuleFormStructuralMasonry = ({
           hasVolumeWithValue &&
           !hasSteelWithValue
         ) {
-          return "As massas de aço devem ser maiores que 0.";
+          return "Os pesos de aço devem ser maiores que 0.";
         }
         // Se ambos estão zerados mas foram adicionados
         else if (
@@ -1150,7 +1150,7 @@ const ModuleFormStructuralMasonry = ({
           !hasVolumeWithValue &&
           !hasSteelWithValue
         ) {
-          return "Tanto os volumes de concreto quanto as massas de aço devem ser maiores que 0.";
+          return "Tanto os volumes de concreto quanto os pesos de aço devem ser maiores que 0.";
         }
       }
       return "";
@@ -1444,9 +1444,7 @@ const ModuleFormStructuralMasonry = ({
                         name={`${fieldName}.steel.${index}.mass`}
                         render={({ field }) => (
                           <FormItem className="flex-1">
-                            <FormLabel className="text-xs">
-                              Massa (kg)
-                            </FormLabel>
+                            <FormLabel className="text-xs">Peso (kg)</FormLabel>
                             <FormControl>
                               <Input
                                 type="text"

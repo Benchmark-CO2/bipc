@@ -10,9 +10,11 @@ tags:
   - name: users
   - name: invitations
   - name: tokens
+servers:
+  - url: https://bipc.org.br/v1
 
 paths:
-  /v1/users:
+  /users:
     post:
       summary: Register a new user
       description: Creates a new user account. After registration, an activation token is sent to the user's email.
@@ -126,7 +128,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /v1/users/activated:
+  /users/activated:
     put:
       summary: Activate a user
       description: Activates a user account using a token sent to their email.
@@ -178,7 +180,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /v1/users/password:
+  /users/password:
     put:
       summary: Update user password
       description: Updates the password for a user, typically used in a password reset flow.
@@ -232,7 +234,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /v1/users/collaborators:
+  /users/collaborators:
     get:
       summary: List user collaborators
       description: Returns a list of users who have been invited to collaborate on the authenticated user's projects.
@@ -257,7 +259,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /v1/users/pending-invitations:
+  /users/pending-invitations:
     get:
       summary: List pending invitations
       description: Returns a list of pending invitations for the authenticated user.
@@ -282,7 +284,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /v1/users/reply/{invitationID}:
+  /users/reply/{invitationID}:
     put:
       summary: Reply to an invitation
       description: Accepts or declines an invitation to collaborate on a project.
@@ -346,7 +348,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/DefaultOkResponse"
 
-  /v1/tokens/authentication:
+  /tokens/authentication:
     post:
       summary: Create authentication token
       description: Authenticates a user and returns a JWT token.
@@ -414,7 +416,7 @@ paths:
                   user:
                     $ref: "#/components/schemas/User"
 
-  /v1/tokens/activation:
+  /tokens/activation:
     post:
       summary: Resend activation token
       description: Resends the activation token to the user's email.
@@ -457,6 +459,87 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
+  /tokens/password-reset:
+    post:
+      summary: Create password reset token
+      description: Sends a password reset token to the user's email.
+      security: []
+      tags: [tokens]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "400":
+          description: Bad Request. The request body is invalid or malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Unprocessable Entity. The request failed validation checks.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "202":
+          description: Accepted. Password reset email sent successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultOkResponse"
+
+  /tokens/api-key:
+    post:
+      summary: Create API key
+      description: Generates a new API key for the authenticated user.
+      tags: [tokens]
+      responses:
+        "403":
+          description: Forbidden. account must be activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized. The user is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "201":
+          description: Created. API key successfully created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - api_key
+                properties:
+                  api_key:
+                    type: string
+                    readOnly: true
 
   /v1/projects:
     get:
@@ -1117,7 +1200,7 @@ components:
           description: CREA or CAU registration number
         birthdate:
           type: string
-          format: date-time
+          format: date
         city:
           type: string
         activity:

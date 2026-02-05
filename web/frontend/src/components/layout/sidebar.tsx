@@ -166,7 +166,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">
-                <p>Projetos</p>
+                <p>Empreendimentos</p>
               </TooltipContent>
             </Tooltip>
 
@@ -346,7 +346,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                     className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
                   >
                     <File size={18} />
-                    <span>Projetos</span>
+                    <span>Empreendimentos</span>
                   </Link>
                 </SidemenuItem>
               </li>
@@ -480,7 +480,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           "sticky top-0 left-0 w-full h-16 bg-sidebar flex justify-between items-center px-6 shadow-md z-50",
           {
             relative: sidebarStatus === "open",
-          }
+          },
         )}
       >
         <div>
@@ -496,7 +496,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               hideSummary();
               localStorage.setItem(
                 "sidebarStatus",
-                sidebarStatus === "open" ? "closed" : "open"
+                sidebarStatus === "open" ? "closed" : "open",
               );
             }}
           />
@@ -514,7 +514,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             "fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 z-40",
             sidebarStatus === "open"
               ? "opacity-100"
-              : "opacity-0 pointer-events-none"
+              : "opacity-0 pointer-events-none",
           )}
         />
 
@@ -522,7 +522,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         <div
           className={cn(
             "fixed top-0 left-0 h-screen w-80 bg-sidebar text-white p-6 transition-transform duration-300 z-50",
-            sidebarStatus === "open" ? "translate-x-0" : "-translate-x-full"
+            sidebarStatus === "open" ? "translate-x-0" : "-translate-x-full",
           )}
         >
           {sidemenuContent}
@@ -535,7 +535,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
     <div
       className={cn(
         "flex h-screen flex-col bg-sidebar text-white transition-all duration-300",
-        isMinimized ? "w-[72px]" : "w-96"
+        isMinimized ? "w-[72px]" : "w-96",
       )}
     >
       {isMinimized ? minimizedSidebar : sidemenuContent}

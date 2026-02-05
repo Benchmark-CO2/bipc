@@ -65,7 +65,7 @@ const ProjectView = ({
       energy_min: 0,
       energy_max: 0,
       area: 0,
-    }
+    },
   );
 
   if (units.length > 0) {
@@ -107,7 +107,7 @@ const ProjectView = ({
   return (
     <div className="flex flex-col gap-4">
       <CommonTable
-        tableName="Unidades"
+        tableName="Edificações"
         data={units || []}
         columns={unitsColumns}
         isSelectable={true}

@@ -423,9 +423,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         name={`${fieldName}.steel.${index}.mass` as any}
                         render={({ field: massField }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">
-                              Massa (kg)
-                            </FormLabel>
+                            <FormLabel className="text-xs">Peso (kg)</FormLabel>
                             <div className="flex gap-1">
                               <FormControl>
                                 <Input

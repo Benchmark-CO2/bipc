@@ -532,7 +532,7 @@ const PrivacyPolicy: React.FC = () => {
                   Você pode requerer o acesso aos seus dados pessoais
                   armazenados pela Plataforma, ou em decorrência de um dos
                   nossos serviços, mediante solicitação em nosso canal de
-                  contato através do e-mail privacidade@bipc.com.br.
+                  contato através do e-mail privacidade@bipc.org.br.
                 </td>
               </tr>
               <tr>
@@ -542,7 +542,7 @@ const PrivacyPolicy: React.FC = () => {
                 <td className="border border-gray-300 p-3 align-top">
                   Em caso de dados incorretos, você pode solicitar a correção ou
                   atualização de seus dados, mediante solicitação em nosso canal
-                  de contato privacidade@bipc.com.br.
+                  de contato privacidade@bipc.org.br.
                 </td>
               </tr>
               <tr>
@@ -552,7 +552,7 @@ const PrivacyPolicy: React.FC = () => {
                 <td className="border border-gray-300 p-3 align-top">
                   A qualquer momento, você pode solicitar a exclusão de seus
                   dados pessoais pelo nosso canal de contato
-                  privacidade@bipc.com.br. É possível que após o requerimento de
+                  privacidade@bipc.org.br. É possível que após o requerimento de
                   exclusão dos seus dados, alguns dados permaneçam armazenados,
                   para fins de cumprimento de obrigações legais ou para a
                   proteção dos interesses legais do CBCS, como gestor da
@@ -592,7 +592,7 @@ const PrivacyPolicy: React.FC = () => {
                   Caso compreenda que seus dados pessoais estejam sendo tratados
                   em descumprimento à lei, você poderá se opor a esse
                   tratamento, mediante solicitação em nosso canal de contato
-                  privacidade@bipc.com.br
+                  privacidade@bipc.org.br
                 </td>
               </tr>
             </tbody>
@@ -689,7 +689,7 @@ const PrivacyPolicy: React.FC = () => {
         </p>
         <p className="mb-4">
           O USUÁRIO poderá entrar em contato pelo e-mail
-          privacidade@bipc.com.br, sendo que as respostas ao contato serão
+          privacidade@bipc.org.br, sendo que as respostas ao contato serão
           enviadas sempre de segunda a sexta, das 9h às 18h, exceto em feriados
           nacionais.
         </p>

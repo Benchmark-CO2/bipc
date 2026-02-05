@@ -42,20 +42,24 @@ func extractRealIP(r *http.Request) string {
 }
 
 type metricsResponseWriter struct {
-	http.ResponseWriter
+	wrapped       http.ResponseWriter
 	statusCode    int
 	headerWritten bool
 }
 
 func newMetricsResponseWriter(w http.ResponseWriter) *metricsResponseWriter {
 	return &metricsResponseWriter{
-		ResponseWriter: w,
-		statusCode:     http.StatusOK,
+		wrapped:    w,
+		statusCode: http.StatusOK,
 	}
 }
 
+func (mw *metricsResponseWriter) Header() http.Header {
+	return mw.wrapped.Header()
+}
+
 func (mw *metricsResponseWriter) WriteHeader(statusCode int) {
-	mw.ResponseWriter.WriteHeader(statusCode)
+	mw.wrapped.WriteHeader(statusCode)
 
 	if !mw.headerWritten {
 		mw.statusCode = statusCode
@@ -65,11 +69,11 @@ func (mw *metricsResponseWriter) WriteHeader(statusCode int) {
 
 func (mw *metricsResponseWriter) Write(b []byte) (int, error) {
 	mw.headerWritten = true
-	return mw.ResponseWriter.Write(b)
+	return mw.wrapped.Write(b)
 }
 
 func (mw *metricsResponseWriter) Unwrap() http.ResponseWriter {
-	return mw.ResponseWriter
+	return mw.wrapped
 }
 
 func (app *application) metrics(next http.Handler) http.Handler {

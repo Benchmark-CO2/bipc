@@ -135,7 +135,7 @@ const team = [
     photo: `${BUCKET_URL}/Kamilla+Savasini.png`,
   },
   {
-    name: "Jean Appel",
+    name: "Jean Carlos Ravanelli Appel",
     role: "Pesquisador",
     photo: `${BUCKET_URL}/Jean+Appel.png`,
   },
@@ -150,7 +150,7 @@ const team = [
     photo: `${BUCKET_URL}/Lucas+Caldas.png`,
   },
   {
-    name: "Karine Hilgenber",
+    name: "Karine Hilgenberg Martins",
     role: "Pesquisadora",
     photo: `${BUCKET_URL}/Karine+Hilgenber.png`,
   },
@@ -171,7 +171,7 @@ const team = [
     photo: `${BUCKET_URL}/Zila+Mascarenhas.png`,
   },
   {
-    name: "Danielly Letícia Rebelatto",
+    name: "Danielly Letícia Rebelato",
     role: "Pesquisadora",
     photo: `${BUCKET_URL}/Danielly+Rebelatto.png`,
   },
@@ -259,7 +259,7 @@ const TopSection = () => {
 
           <p>
             A ferramenta permite à equipe ter uma ideia do impacto de carbono da
-            construção na emissao de carbono, verificar em tempo real o
+            construção na emissão de carbono, verificar em tempo real o
             benchmark dos projetos existentes no mercado e conhecer as
             tendências de evolução das emissões de carbono, tudo antes de
             concluir o projeto.
@@ -350,7 +350,7 @@ const TeamSection = ({
                 </p>
               </div>
             </div>
-          )
+          ),
         )}
       </div>
     </section>

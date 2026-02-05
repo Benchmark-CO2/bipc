@@ -535,7 +535,7 @@ function RouteComponent() {
                     <DrawerFormModule
                       triggerComponent={
                         <Button variant="outline-bipc">
-                          Adicionar Tecnologia
+                          Criar Simulações
                           <Plus className="ml-1 h-4 w-4" />
                         </Button>
                       }

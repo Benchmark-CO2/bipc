@@ -68,7 +68,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
     "penthouse_floor" | "standard_floor" | "ground_floor" | "basement_floor"
   >("standard_floor");
   const [focusedRowIndex, setFocusedRowIndex] = React.useState<number | null>(
-    null
+    null,
   );
 
   // Função para recalcular índices automaticamente
@@ -84,20 +84,20 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
           "standard_floor",
           "ground_floor",
           "basement_floor",
-        ].includes(f.category)
+        ].includes(f.category),
     );
 
     // Separar por categoria
     const categories = {
       penthouse_floor: validFloors.filter(
-        (f) => f.category === "penthouse_floor"
+        (f) => f.category === "penthouse_floor",
       ),
       standard_floor: validFloors.filter(
-        (f) => f.category === "standard_floor"
+        (f) => f.category === "standard_floor",
       ),
       ground_floor: validFloors.filter((f) => f.category === "ground_floor"),
       basement_floor: validFloors.filter(
-        (f) => f.category === "basement_floor"
+        (f) => f.category === "basement_floor",
       ),
     };
 
@@ -115,7 +115,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
       const floorsBeforeInCategory = floorsInCategory.slice(0, indexInCategory);
       const totalFloorsBeforeInCategory = floorsBeforeInCategory.reduce(
         (sum, f) => sum + (f.repetition || 1),
-        0
+        0,
       );
 
       let newIndex: number;
@@ -124,7 +124,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
         case "basement_floor":
           // Subsolo: índices negativos (-1, -2, -3...) do mais alto (próximo ao solo) para o mais baixo
           const totalBasementFloors = getTotalFloorsInCategory(
-            categories.basement_floor
+            categories.basement_floor,
           );
           newIndex = -(totalBasementFloors - totalFloorsBeforeInCategory);
           break;
@@ -135,7 +135,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
         case "standard_floor":
           // Tipo: índices acima do térreo
           const totalGroundFloors = getTotalFloorsInCategory(
-            categories.ground_floor
+            categories.ground_floor,
           );
           const maxGroundIndex =
             totalGroundFloors > 0 ? totalGroundFloors - 1 : -1;
@@ -145,7 +145,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
           // Cobertura: índices acima de todos
           const totalGround = getTotalFloorsInCategory(categories.ground_floor);
           const totalStandard = getTotalFloorsInCategory(
-            categories.standard_floor
+            categories.standard_floor,
           );
           const maxStandardIndex =
             totalStandard > 0
@@ -215,7 +215,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
       | "penthouse_floor"
       | "standard_floor"
       | "ground_floor"
-      | "basement_floor" = "standard_floor"
+      | "basement_floor" = "standard_floor",
   ) => {
     // Encontrar a posição correta para inserir baseada na categoria
     const floors = form.getValues("data.floors");
@@ -371,7 +371,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                     | "penthouse_floor"
                     | "standard_floor"
                     | "ground_floor"
-                    | "basement_floor"
+                    | "basement_floor",
                 )
               }
             >
@@ -414,7 +414,10 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                   <TableHead className="w-4"></TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead className="w-24">Área (m²)</TableHead>
-                  <TableHead className="w-24">Altura (m)</TableHead>
+                  <TableHead className="w-24">
+                    Altura/Piso
+                    <br /> a piso (m)
+                  </TableHead>
                   {!isEditMode && <TableHead className="w-20">Qtd.</TableHead>}
                   <TableHead className="w-32">Categoria</TableHead>
                   <TableHead className="w-24">Ações</TableHead>
@@ -532,7 +535,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                       onChange={(e) => {
                                         const value = e.target.value;
                                         field.onChange(
-                                          value ? masks.numeric(value) : ""
+                                          value ? masks.numeric(value) : "",
                                         );
                                       }}
                                       onFocus={() => setFocusedRowIndex(index)}
@@ -581,7 +584,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                       onChange={(e) => {
                                         const value = e.target.value;
                                         field.onChange(
-                                          value ? masks.numeric(value) : ""
+                                          value ? masks.numeric(value) : "",
                                         );
                                       }}
                                       onFocus={() => setFocusedRowIndex(index)}
@@ -635,7 +638,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                           field.onChange(
                                             e.target.value
                                               ? Number(e.target.value)
-                                              : 1
+                                              : 1,
                                           )
                                         }
                                         onFocus={() =>

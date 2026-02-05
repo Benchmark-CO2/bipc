@@ -36,7 +36,7 @@ function RouteComponent() {
           {t("common.invite_other", { count: 2 })}
         </h1>
         <p className="text-muted-foreground">
-          Gerencie seus convites de projetos e colaborações
+          Gerencie seus convites de empreendimentos e colaborações
         </p>
       </div>
 
