@@ -7,7 +7,7 @@ const BreadCrumbs = () => {
     select: (matches) => {
       return matches.filter(
         (match) =>
-          !!(match as { loaderData?: { crumb?: string } }).loaderData?.crumb
+          !!(match as { loaderData?: { crumb?: string } }).loaderData?.crumb,
       );
     },
   });
@@ -15,7 +15,7 @@ const BreadCrumbs = () => {
   const crumbs = matches.map((match) => {
     const { crumb } = match.loaderData as { crumb: string };
 
-    if (crumb === "Projetos") {
+    if (crumb === "Empreendimentos") {
       return (
         <div className="w-6 h-6 bg-active rounded-full flex items-center justify-center">
           <BipcIcon className="w-4 h-4" style={{ color: "white" }} />

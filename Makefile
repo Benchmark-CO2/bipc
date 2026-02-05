@@ -1,5 +1,7 @@
 # ==============================================================================
 # .envrc file
+
+# export URL=
 #
 # export DB_DSN=
 #
@@ -191,6 +193,9 @@ production_host_ip = 18.230.151.65
 production/connect:
 	ssh -i ~/.ssh/mestra.pem ubuntu@$(production_host_ip)
 
+# journalctl -xeu api.service
+# sudo systemctl status api.service
+
 ## production/deploy/api: deploy the api to production
 .PHONY: production/deploy/api
 production/deploy/api:
@@ -233,9 +238,3 @@ production/deploy/ci:
 	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./remote/production/Caddyfile ubuntu@$(production_host_ip):~
 	ssh -t -i /tmp/deploy_key -o StrictHostKeyChecking=no ubuntu@$(production_host_ip) "export DB_DSN='$$DB_DSN' && migrate -path ~/migrations -database \$$DB_DSN up && sudo mv ~/.envrc /etc/environment && sudo systemctl daemon-reload && sudo mv ~/api.service /etc/systemd/system/ && sudo systemctl enable api && sudo systemctl restart api && sudo mv ~/Caddyfile /etc/caddy/ && sudo systemctl reload caddy"
 	@rm -f /tmp/deploy_key /tmp/.envrc
-
-# journalctl -xeu api.service
-# sudo systemctl status api.service
-# ssh -L :9999:$(production_host_ip):4000 -i ~/.ssh/mestra.pem ubuntu@$(production_host_ip)
-
-

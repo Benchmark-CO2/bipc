@@ -462,14 +462,15 @@ function RouteComponent() {
   if (options.length === 0) {
     return (
       <NotFoundList
-        message="Nenhuma simulação encontrada"
+        message="Crie sua primeira simulação"
         showIcon={false}
-        description="Nenhum dado disponível nesta tabela. Crie uma nova simulação para começar a adicionar dados."
+        description="Clique em 'Nova Simulação' para adicionar os dados técnicos e das tecnologias construtivas deste projeto."
         button={
           <DialogCreateSimulation
             projectId={projectId}
             unitId={unitId}
             roleId={roleId}
+            triggerComponent={<Button variant="bipc">Nova Simulação</Button>}
           />
         }
       />
@@ -534,7 +535,7 @@ function RouteComponent() {
                     <DrawerFormModule
                       triggerComponent={
                         <Button variant="outline-bipc">
-                          Adicionar Tecnologia
+                          Criar Simulações
                           <Plus className="ml-1 h-4 w-4" />
                         </Button>
                       }
@@ -545,6 +546,13 @@ function RouteComponent() {
                       optionId={option.id}
                     />
                   </>
+                }
+                customEmptyComponent={
+                  <NotFoundList
+                    message="Nenhuma tecnologia construtiva encontrada"
+                    showIcon={false}
+                    description={`Adicione tecnologias construtivas para essa simulação utilizando o botão "Adicionar Tecnologia".`}
+                  />
                 }
               />
             </div>

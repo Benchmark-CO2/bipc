@@ -76,7 +76,7 @@ func (rp *RaftPilesFoundation) Calculate() (Consumption, error) {
 	var allSteel []SteelMaterial
 	allSteel = append(allSteel, rp.Raft.Steel...)
 	allSteel = append(allSteel, rp.Piles.Steel...)
-	
+
 	steelConsumption, err := CalculateSteelConsumption(allSteel)
 	if err != nil {
 		return result, err

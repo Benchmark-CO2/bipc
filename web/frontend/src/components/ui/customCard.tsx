@@ -159,7 +159,7 @@ const CustomCard = ({
         componentTrigger={
           <button ref={deleteButtonRef} className="hidden" aria-hidden="true" />
         }
-        title="Confirmar exclusão do projeto"
+        title="Confirmar exclusão do empreendimento"
         onConfirm={() => onDeleteProject?.(project.id)}
       />
     </>

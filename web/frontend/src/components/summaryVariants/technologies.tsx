@@ -6,10 +6,10 @@ import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
-import NotFoundList from '../ui/not-found-list';
-import ItemCard from './components/ItemCard';
-import Legend from './components/Legend';
-import ListItem from './components/ListItem';
+import NotFoundList from "../ui/not-found-list";
+import ItemCard from "./components/ItemCard";
+import Legend from "./components/Legend";
+import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
 import { barColors, recalculateY } from "./utils";
 
@@ -22,23 +22,23 @@ type TModules = {
   };
   id: string;
   type: string;
-  label: string
-}
+  label: string;
+};
 type SimulationData = {
-  active: boolean
-  id: string
-  modules: TModules[]
-  name: string
-  tower_id: string
-  area: number
+  active: boolean;
+  id: string;
+  modules: TModules[];
+  name: string;
+  tower_id: string;
+  area: number;
   consumption?: {
     total: {
       co2_max: number;
       co2_min: number;
       energy_max: number;
       energy_min: number;
-    }
-  }
+    };
+  };
 };
 
 type ProjectsSummaryProps = {
@@ -62,39 +62,46 @@ const manageData = (data: ProjectsSummaryProps["data"]["benchmark"]["co2"]) => {
     label: "",
   }));
 };
-const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryProps) => {
+const SimulationsSummary = ({
+  projects,
+  data,
+  someSelected,
+}: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
-  const filteredProjects = projects.filter(el => !!el.consumption);
-  
-  const newItems: Record<'co2' | 'energy', Item>[] = filteredProjects.map(el => {
-    return {
-      co2: {
-        id: el.id,
-        y: 0,
-        min: el?.consumption?.total.co2_min,
-        max: el?.consumption?.total.co2_max,
-        label: el.name
-      },
-      energy: {
-        id: el.id,
-        y: 0,
-        min: el?.consumption?.total.energy_min,
-        max: el?.consumption?.total.energy_max,
-        label: el.name
-      }
-    }
-  }) as any;
+  const filteredProjects = projects.filter((el) => !!el.consumption);
 
-  const managedData = manageData((data.benchmark?.[type as "co2" | "energy"] || []))
+  const newItems: Record<"co2" | "energy", Item>[] = filteredProjects.map(
+    (el) => {
+      return {
+        co2: {
+          id: el.id,
+          y: 0,
+          min: el?.consumption?.total.co2_min,
+          max: el?.consumption?.total.co2_max,
+          label: el.name,
+        },
+        energy: {
+          id: el.id,
+          y: 0,
+          min: el?.consumption?.total.energy_min,
+          max: el?.consumption?.total.energy_max,
+          label: el.name,
+        },
+      };
+    },
+  ) as any;
+
+  const managedData = manageData(
+    data.benchmark?.[type as "co2" | "energy"] || [],
+  )
     .map((el) => ({
       ...el,
       label: projects.find((f) => f.id === el.id)?.name || "",
     }))
     .filter((f) => f.min && f.max);
   const { isExpanded } = useSummary();
-
 
   const handleAddProject = (projectId: string) => {
     if (selectedProjects.includes(projectId)) {
@@ -110,22 +117,22 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
       setSelectedProjects([]);
       return;
     }
-    setPreviousProjects(
-      filteredProjects.map(el => el.id)
-    );
+    setPreviousProjects(filteredProjects.map((el) => el.id));
   }, [projects, someSelected]);
 
   useEffect(() => {
-    if (!someSelected) return
+    if (!someSelected) return;
 
     if (previousProjects.length < projects.length) {
-      const diff = filteredProjects.filter((p) => !previousProjects.includes(p.id));
+      const diff = filteredProjects.filter(
+        (p) => !previousProjects.includes(p.id),
+      );
       if (diff.length > 0) {
         setSelectedProjects((prev) => [...prev, ...diff.map((d) => d.id)]);
       }
     } else if (previousProjects.length > projects.length) {
       const diff = previousProjects.filter(
-        (p) => !projects.map((u) => u.id).includes(p)
+        (p) => !projects.map((u) => u.id).includes(p),
       );
       if (diff.length > 0) {
         setSelectedProjects((prev) => prev.filter((p) => !diff.includes(p)));
@@ -133,7 +140,7 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
     }
   }, [previousProjects, projects, someSelected]);
 
-  const [subTabs, setSubTabs] = useState<"Projetos">("Projetos");
+  const [subTabs, setSubTabs] = useState<"Empreendimentos">("Empreendimentos");
   const selectAll = () => {
     if (selectedProjects.length === projects.length) {
       setSelectedProjects([]);
@@ -141,10 +148,17 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
       setSelectedProjects(filteredProjects.map((p) => p.id));
     }
   };
-  const newData = [...managedData, ...(newItems.map(item => item[type]) || [])] as any;
+  const newData = [
+    ...managedData,
+    ...(newItems.map((item) => item[type]) || []),
+  ] as any;
   const minData = useMemo(() => newData.map((d: Item) => d.min), [newData]);
   const maxData = useMemo(() => newData.map((d: Item) => d.max), [newData]);
-  const updateYs = recalculateY(newData, minData[0], maxData[maxData.length - 1]);
+  const updateYs = recalculateY(
+    newData,
+    minData[0],
+    maxData[maxData.length - 1],
+  );
 
   return (
     <>
@@ -155,12 +169,12 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
           selectedTab={type}
           fullWidth
           onSubTabSelect={(tab) => {
-            if (tab === "Projetos") setSubTabs(tab as "Projetos");
+            if (tab === "Empreendimentos") setSubTabs(tab as "Empreendimentos");
             if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
               selectAll();
           }}
           subTabs={[
-            "Projetos",
+            "Empreendimentos",
             selectedProjects.length === projects.length
               ? "Desmarcar Todos"
               : "Selecionar Todos",
@@ -184,27 +198,37 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
             {" "}
             {(!projects || projects.length === 0) && (
               <NotFoundList
-                message="Nenhum projeto selecionado."
-                description="Por favor, selecione ao menos um projeto para visualizar o resumo."
+                message="Nenhum empreendimento selecionado."
+                description="Por favor, selecione ao menos um empreendimento para visualizar o resumo."
                 className="bg-transparent border-0 shadow-none"
               />
             )}
-            {
-              ([...newItems.map(el => el[type as 'co2' | 'energy'] || []), ...projects.filter(el => !el.consumption && !newItems.some(_el => _el.co2.id === el.id))]).map((project, _idx) => {
-                return (
-                <div key={project.id} className=''>
+            {[
+              ...newItems.map((el) => el[type as "co2" | "energy"] || []),
+              ...projects.filter(
+                (el) =>
+                  !el.consumption &&
+                  !newItems.some((_el) => _el.co2.id === el.id),
+              ),
+            ].map((project, _idx) => {
+              return (
+                <div key={project.id} className="">
                   {!isExpanded ? (
                     <ListItem
                       key={project.id}
-                      item={{
-                        id: project.id,
-                        label: project.min ? project.label : project.name,
-                        co2: (project.min + project.max) / 2,
-                        energy: (project.min + project.max) / 2,
-                      } as any}
+                      item={
+                        {
+                          id: project.id,
+                          label: project.min ? project.label : project.name,
+                          co2: (project.min + project.max) / 2,
+                          energy: (project.min + project.max) / 2,
+                        } as any
+                      }
                       selectedProjects={selectedProjects}
                       handleAddProject={handleAddProject}
-                      sum={newItems.flatMap(el => el[type]).reduce((acc, curr) => acc + curr.max, 0)}
+                      sum={newItems
+                        .flatMap((el) => el[type])
+                        .reduce((acc, curr) => acc + curr.max, 0)}
                       color={barColors}
                       type={type}
                       hasConsumption={!!project.min}
@@ -215,15 +239,20 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
                       item={project as any}
                       selectedProjects={selectedProjects}
                       handleAddProject={handleAddProject}
-                      sum={newItems.flatMap(el => el[type]).reduce((acc, curr) => acc + curr.max, 0)}
+                      sum={newItems
+                        .flatMap((el) => el[type])
+                        .reduce((acc, curr) => acc + curr.max, 0)}
                       color={barColors}
                       type={type}
-                      hasConsumption={!!projects.find(el => el.id === project.id)?.consumption}
-                    />)}
+                      hasConsumption={
+                        !!projects.find((el) => el.id === project.id)
+                          ?.consumption
+                      }
+                    />
+                  )}
                 </div>
-              )
-              })
-            }
+              );
+            })}
           </ul>
           <Legend />
         </div>
@@ -242,7 +271,6 @@ const SimulationsSummary = ({ projects, data, someSelected }: ProjectsSummaryPro
             data={updateYs}
             selectedBars={selectedProjects}
             unit={type}
-
           />
         )}
       </div>

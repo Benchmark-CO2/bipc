@@ -520,7 +520,7 @@ func GetBlockMass(blockType string, fbk int) (float64, error) {
 				nextFbk = availableFbk
 			}
 		}
-		
+
 		if nextFbk == -1 {
 			maxFbk := -1
 			for availableFbk := range block.Mass {
@@ -528,11 +528,11 @@ func GetBlockMass(blockType string, fbk int) (float64, error) {
 					maxFbk = availableFbk
 				}
 			}
-			
+
 			if maxFbk == -1 {
 				return 0, fmt.Errorf("no mass data available for block type %s", blockType)
 			}
-			
+
 			mass = block.Mass[maxFbk]
 		} else {
 			mass = block.Mass[nextFbk]

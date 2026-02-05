@@ -38,7 +38,7 @@ func parseFloors(data json.RawMessage) ([]data.FloorCreate, error) {
 func validateFloors(v *validator.Validator, floors []data.FloorCreate) {
 	allowedCategories := []string{"basement_floor", "penthouse_floor", "ground_floor", "standard_floor"}
 	indexMap := make(map[int]bool)
-	
+
 	for i, floor := range floors {
 		v.Check(floor.FloorGroup != "", "floors."+strconv.Itoa(i)+".floor_group", "must be provided")
 		v.Check(floor.Category != "", "floors."+strconv.Itoa(i)+".category", "must be provided")
@@ -49,7 +49,7 @@ func validateFloors(v *validator.Validator, floors []data.FloorCreate) {
 		)
 		v.Check(floor.Area > 0, "floors."+strconv.Itoa(i)+".area", "must be greater than zero")
 		v.Check(floor.Height > 0, "floors."+strconv.Itoa(i)+".height", "must be greater than zero")
-		
+
 		if indexMap[floor.Index] {
 			v.AddError("floors."+strconv.Itoa(i)+".index", "index must be unique")
 		}

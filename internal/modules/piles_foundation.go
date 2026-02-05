@@ -32,12 +32,12 @@ type PilesFoundation struct {
 	BasicModuleData
 	Consumption *Consumption `json:"consumption,omitempty"`
 
-	Fck        int                          `json:"fck"`
-	Piles      PilesFoundationPiles         `json:"piles"`
-	Blocks     PilesFoundationBlocks        `json:"blocks"`
-	GradeBeams PilesFoundationGradeBeams    `json:"grade_beams"`
-	TieBeams   PilesFoundationTieBeams      `json:"tie_beams"`
-	UnitID     uuid.UUID                    `json:"unit_id"`
+	Fck        int                       `json:"fck"`
+	Piles      PilesFoundationPiles      `json:"piles"`
+	Blocks     PilesFoundationBlocks     `json:"blocks"`
+	GradeBeams PilesFoundationGradeBeams `json:"grade_beams"`
+	TieBeams   PilesFoundationTieBeams   `json:"tie_beams"`
+	UnitID     uuid.UUID                 `json:"unit_id"`
 }
 
 func (p *PilesFoundation) GetType() string { return p.Type }
@@ -90,7 +90,7 @@ func (p *PilesFoundation) Calculate() (Consumption, error) {
 	allSteel = append(allSteel, p.Blocks.Steel...)
 	allSteel = append(allSteel, p.GradeBeams.Steel...)
 	allSteel = append(allSteel, p.TieBeams.Steel...)
-	
+
 	steelConsumption, err := CalculateSteelConsumption(allSteel)
 	if err != nil {
 		return result, err

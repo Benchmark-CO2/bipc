@@ -48,8 +48,8 @@ func checkForeignKeyError(err error) error {
 	if strings.Contains(err.Error(), "module_option_id_fkey") {
 		return ErrInvalidOptionID
 	}
-	if strings.Contains(err.Error(), "module_application_floor_id_fkey") || 
-	   strings.Contains(err.Error(), "module_floor_floor_id_fkey") {
+	if strings.Contains(err.Error(), "module_application_floor_id_fkey") ||
+		strings.Contains(err.Error(), "module_floor_floor_id_fkey") {
 		return ErrInvalidFloorID
 	}
 	if strings.Contains(err.Error(), "module_application_unit_id_fkey") {
@@ -318,7 +318,7 @@ func (m ModuleModel) Delete(id uuid.UUID) error {
 
 	var floorIDs []uuid.UUID
 	var unitID *uuid.UUID
-	
+
 	rows, err := tx.QueryContext(ctx, `
 		SELECT floor_id, unit_id FROM module_application 
 		WHERE module_id = $1`, id)

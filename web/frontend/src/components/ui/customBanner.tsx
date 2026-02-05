@@ -84,14 +84,14 @@ const CustomBanner = ({
       return deleteProject(projectId);
     },
     onSuccess: async () => {
-      toast.success("Projeto excluído com sucesso");
+      toast.success("Empreendimento excluído com sucesso");
       await queryClient.invalidateQueries({
         queryKey: ["projects"],
       });
       navigate({ to: `/new_projects` });
     },
     onError: (error: unknown) => {
-      toast.error("Erro ao excluir o projeto", {
+      toast.error("Erro ao excluir o empreendimento", {
         description:
           error instanceof Error
             ? error.message
@@ -134,7 +134,7 @@ const CustomBanner = ({
                 {phaseLabels[phase]}
               </span>
 
-              {hasPermission("update:project") && (
+              {id && hasPermission("update:project") && (
                 <DrawerFormProject
                   componentTrigger={
                     <Button variant="bipc" size="icon">
@@ -145,14 +145,14 @@ const CustomBanner = ({
                 />
               )}
 
-              {hasPermission("*:*") && (
+              {id && hasPermission("*:*") && (
                 <ModalConfirmDelete
                   componentTrigger={
                     <Button variant="destructive" size="icon">
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   }
-                  title="Confirmar exclusão do projeto"
+                  title="Confirmar exclusão do empreendimento"
                   onConfirm={() => onDeleteProject?.(project.id)}
                 />
               )}
@@ -204,7 +204,8 @@ const CustomBanner = ({
                       🏢
                     </span>
                     <span className="text-sm font-semibold text-white">
-                      {unitsCount} {unitsCount === 1 ? "Unidade" : "Unidades"}
+                      {unitsCount}{" "}
+                      {unitsCount === 1 ? "Edificação" : "Edificações"}
                     </span>
                   </div>
                 )}
