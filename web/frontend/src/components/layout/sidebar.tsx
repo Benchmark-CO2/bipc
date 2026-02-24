@@ -94,8 +94,8 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         <BetaWarning minimizedSidebar />
         <ModalTraining
           isAuthenticated={isAuthenticated}
-          onNavigateToSignUp={() => {}}
           minimizedSidebar
+          hasNavigateToSignUp={false}
         />
       </div>
 
@@ -284,7 +284,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         <BetaWarning />
         <ModalTraining
           isAuthenticated={isAuthenticated}
-          onNavigateToSignUp={() => {}}
+          hasNavigateToSignUp={false}
         />
       </div>
 
