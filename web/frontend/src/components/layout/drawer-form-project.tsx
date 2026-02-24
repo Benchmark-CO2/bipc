@@ -332,6 +332,7 @@ export default function DrawerFormProject({
               id="project-form"
               className="flex flex-col gap-3 rounded-md px-4 py-2 border-gray-shade-200 border bg-card"
               onSubmit={form.handleSubmit(onSubmit)}
+              autoComplete="off"
             >
               <FormField
                 control={form.control}
