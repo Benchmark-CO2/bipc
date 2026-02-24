@@ -35,6 +35,7 @@ import {
   TableRow,
 } from "../../ui/table";
 import BuildingVisualizer from "../building-visualizer";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 interface UnitFormTowerProps {
   form: UseFormReturn<UnitFormInput, any, UnitFormSchema>;
@@ -51,6 +52,7 @@ const categoryColors = {
 
 const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const { fields, remove, move } = useFieldArray({
     control: form.control as any,
     name: "data.floors",
@@ -414,8 +416,14 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                   <TableHead className="w-4"></TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead className="w-24">Área (m²)</TableHead>
-                  <TableHead className="w-24">Dist. piso a piso (m)</TableHead>
-                  {!isEditMode && <TableHead className="w-20">Qtd.</TableHead>}
+                  <TableHead className="w-24">
+                    {isMobile ? "Piso a piso (m)" : "Dist. piso a piso (m)"}
+                  </TableHead>
+                  {!isEditMode && (
+                    <TableHead className="w-20">
+                      {isMobile ? "Qtd." : "Quantidade"}
+                    </TableHead>
+                  )}
                   <TableHead className="w-32">Categoria</TableHead>
                   <TableHead className="w-24">Ações</TableHead>
                 </TableRow>

@@ -83,7 +83,7 @@
   "projects": {
     "title": "Projetos",
     "description": "Gerencie seus projetos aqui",
-    "addProject": "Adicionar Projeto",
+    "addProject": "Adicionar Empreendimento",
     "noProjects": "Você não possui projetos."
   },
   "units": {
@@ -334,7 +334,7 @@
   },
   "drawerFormProject": {
     "createButton": "Criar Projeto",
-    "addTitle": "Adicionar Projeto",
+    "addTitle": "Adicionar Empreendimento",
     "editTitle": "Editar Projeto",
     "description": "O nome de projeto pode ser composto por qualquer expressão alfanumerica que identifique seu projeto. Ex.: 'Residencial 1', 'Edificio Janus', 'Conjunto multifamiliar misto'",
     "projectNameLabel": "Nome do Projeto *",
@@ -360,7 +360,7 @@
     "citySearchPlaceholder": "Buscar cidade...",
     "cityNotFound": "Nenhuma cidade encontrada.",
     "selectStateFirst": "Selecione um estado primeiro",
-    "addProjectButton": "Adicionar Projeto",
+    "addProjectButton": "Adicionar Empreendimento",
     "editProjectButton": "Editar Projeto"
   },
   "drawerFormUnit": {
