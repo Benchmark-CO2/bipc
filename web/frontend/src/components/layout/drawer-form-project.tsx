@@ -8,6 +8,7 @@ import {
 } from "@/actions/projects/postProject";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import useCep from "@/hooks/useLocation";
+import useCities from "@/hooks/useCities";
 import { cn } from "@/lib/utils";
 import { IProject } from "@/types/projects";
 import { masks } from "@/utils/masks";
@@ -50,6 +51,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
+import { CityCombobox } from "../ui/city-combobox";
 
 interface IDrawerAddProject {
   componentTrigger: React.ReactNode;
@@ -63,6 +65,8 @@ export default function DrawerFormProject({
   const [openDrawer, setOpenDrawer] = useState(false);
   const [file, setFile] = useState<File | undefined>(undefined);
   const [isAgreementChecked, setIsAgreementChecked] = useState(false);
+  const [filledByCep, setFilledByCep] = useState(false);
+  const [selectedState, setSelectedState] = useState("");
 
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -89,6 +93,8 @@ export default function DrawerFormProject({
     isLoading: locationLoading,
     searchCep,
   } = useCep();
+
+  const { cities, isLoading: citiesLoading } = useCities(selectedState);
 
   const navigate = useNavigate();
 
@@ -236,6 +242,8 @@ export default function DrawerFormProject({
       resetCreation();
       resetUpdate();
       setIsAgreementChecked(false);
+      setFilledByCep(false);
+      setSelectedState("");
 
       if (projectData) {
         form.reset({
@@ -268,6 +276,8 @@ export default function DrawerFormProject({
 
   useEffect(() => {
     if (locationData) {
+      setFilledByCep(true);
+      setSelectedState(locationData.state);
       form.clearErrors("cep");
       form.setValue("state", locationData.state);
       form.setValue("city", locationData.city);
@@ -278,6 +288,8 @@ export default function DrawerFormProject({
 
   useEffect(() => {
     if (isError) {
+      setFilledByCep(false);
+      setSelectedState("");
       toast.error(t("error.errorFetchZipCode"), {
         description: t("warn.verifyZipCode"),
         duration: 5000,
@@ -366,7 +378,16 @@ export default function DrawerFormProject({
                           placeholder={t("drawerFormProject.cepPlaceholder")}
                           value={masks.cep((field.value as string) || "")}
                           onChange={(e) => {
+                            const raw = e.target.value.replace(/\D/g, "");
                             field.onChange(e.target.value);
+                            if (raw.length === 0 && filledByCep) {
+                              setFilledByCep(false);
+                              setSelectedState("");
+                              form.setValue("state", "");
+                              form.setValue("city", "");
+                              form.setValue("neighborhood", "");
+                              form.setValue("street", "");
+                            }
                             if (e.target.value.length > 8)
                               searchCep(e.target.value);
                           }}
@@ -389,8 +410,15 @@ export default function DrawerFormProject({
                       <FormLabel>{t("drawerFormProject.stateLabel")}</FormLabel>
                       <FormControl>
                         <Select
-                          onValueChange={field.onChange}
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            setSelectedState(value);
+                            if (!filledByCep) {
+                              form.setValue("city", "");
+                            }
+                          }}
                           value={field.value}
+                          disabled={filledByCep || locationLoading}
                         >
                           <SelectTrigger className="w-full">
                             <SelectValue
@@ -422,11 +450,26 @@ export default function DrawerFormProject({
                     <FormItem className="flex-2/3">
                       <FormLabel>{t("drawerFormProject.cityLabel")}</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder={t("drawerFormProject.cityPlaceholder")}
-                          disabled={locationLoading}
-                          {...field}
-                        />
+                        {filledByCep ? (
+                          <Input
+                            placeholder={t("drawerFormProject.cityPlaceholder")}
+                            disabled
+                            {...field}
+                          />
+                        ) : (
+                          <CityCombobox
+                            cities={cities}
+                            value={field.value}
+                            onChange={field.onChange}
+                            disabled={!selectedState || locationLoading}
+                            isLoading={citiesLoading}
+                            placeholder={
+                              !selectedState
+                                ? t("drawerFormProject.selectStateFirst")
+                                : t("drawerFormProject.cityPlaceholder")
+                            }
+                          />
+                        )}
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -446,7 +489,7 @@ export default function DrawerFormProject({
                         placeholder={t(
                           "drawerFormProject.neighborhoodPlaceholder",
                         )}
-                        disabled={locationLoading}
+                        disabled={filledByCep || locationLoading}
                         {...field}
                       />
                     </FormControl>
@@ -466,7 +509,7 @@ export default function DrawerFormProject({
                       <FormControl>
                         <Input
                           placeholder={t("drawerFormProject.streetPlaceholder")}
-                          disabled={locationLoading}
+                          disabled={filledByCep || locationLoading}
                           {...field}
                         />
                       </FormControl>
