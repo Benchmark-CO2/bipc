@@ -357,6 +357,9 @@
     "descriptionPlaceholder": "Digite uma descrição do projeto (opcional)",
     "imageLabel": "Imagem do Projeto (opcional)",
     "imagePlaceholder": "Selecione uma imagem do projeto (opcional)",
+    "citySearchPlaceholder": "Buscar cidade...",
+    "cityNotFound": "Nenhuma cidade encontrada.",
+    "selectStateFirst": "Selecione um estado primeiro",
     "addProjectButton": "Adicionar Projeto",
     "editProjectButton": "Editar Projeto"
   },
