@@ -1,8 +1,6 @@
-import BipcIcon from "@/assets/icons/bipc";
-import CollapseContentIcon from "@/assets/icons/collapse-content";
-import ExpandContentIcon from "@/assets/icons/expand-content";
 import Logo from "@/assets/logo.svg";
 import LogoFull from "@/assets/logo_full.svg";
+import BipcIcon from "@/assets/icons/bipc";
 import { useSummary } from "@/context/summaryContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -22,14 +20,16 @@ import {
   Settings,
   UserPlus,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { BetaWarning } from "../beta-warning";
 import { Notifications } from "../notifications";
 import { Button } from "../ui/button";
 import Divider from "../ui/divider";
 import SidemenuItem from "../ui/sidemenu-item";
+import ExpandContentIcon from "@/assets/icons/expand-content";
+import CollapseContentIcon from "@/assets/icons/collapse-content";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { BetaWarning } from "../beta-warning";
 import ModalTraining from "./modal-training";
 
 interface ISidebar {
@@ -62,12 +62,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
     setIsMinimized(!isMinimized);
   };
 
-  const closeAll = () => {
-    if (isMobile) {
-      toggleSidebar();
-      hideSummary();
-    }
-  };
   // Versão minimizada do sidebar
   const minimizedSidebar = (
     <div className="h-full flex flex-col py-4 px-3 relative">
@@ -100,7 +94,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         <BetaWarning minimizedSidebar />
         <ModalTraining
           isAuthenticated={isAuthenticated}
-          onNavigateToSignUp={() => { }}
+          onNavigateToSignUp={() => {}}
           minimizedSidebar
         />
       </div>
@@ -141,7 +135,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         <Tooltip>
           <TooltipTrigger asChild>
             <Link
-              onClick={closeAll}
               to="/benchmark"
               activeProps={{ className: "bg-zinc-700/30" }}
               className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
@@ -157,7 +150,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         <Tooltip>
           <TooltipTrigger asChild>
             <Link
-              onClick={closeAll}
               to="/privacidade"
               className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
             >
@@ -176,7 +168,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
-                  onClick={closeAll}
                   to="/new_projects"
                   activeProps={{ className: "bg-zinc-700/30" }}
                   className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
@@ -192,7 +183,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
-                  onClick={closeAll}
                   to="/settings"
                   activeProps={{ className: "bg-zinc-700/30" }}
                   className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
@@ -221,7 +211,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
-                  onClick={closeAll}
                   to="/sign-up"
                   activeProps={{ className: "bg-zinc-700/30" }}
                   className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
@@ -237,7 +226,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
-                  onClick={closeAll}
                   to="/login"
                   activeProps={{ className: "bg-zinc-700/30" }}
                   className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
@@ -296,7 +284,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         <BetaWarning />
         <ModalTraining
           isAuthenticated={isAuthenticated}
-          onNavigateToSignUp={() => { }}
+          onNavigateToSignUp={() => {}}
         />
       </div>
 
@@ -310,7 +298,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           <li>
             <SidemenuItem variant="link">
               <Link
-                onClick={closeAll}
                 to={"/about"}
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
@@ -338,7 +325,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           <li>
             <SidemenuItem variant="link">
               <Link
-                onClick={closeAll}
                 to="/benchmark"
                 activeProps={activeProps}
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
@@ -351,7 +337,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           <li>
             <SidemenuItem variant="link">
               <Link
-                onClick={closeAll}
                 to="/privacidade"
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
@@ -370,7 +355,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               <li>
                 <SidemenuItem variant="link">
                   <Link
-                    onClick={closeAll}
                     to="/new_projects"
                     activeProps={activeProps}
                     className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
@@ -384,7 +368,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               <li>
                 <SidemenuItem variant="link">
                   <Link
-                    onClick={closeAll}
                     to={"/settings"}
                     activeProps={activeProps}
                     className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
@@ -414,7 +397,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               <li>
                 <SidemenuItem variant="link">
                   <Link
-                    onClick={closeAll}
                     to="/sign-up"
                     activeProps={activeProps}
                     className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
@@ -429,7 +411,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               <li>
                 <SidemenuItem variant="link">
                   <Link
-                    onClick={closeAll}
                     to="/login"
                     activeProps={activeProps}
                     className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
@@ -525,7 +506,8 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             size={24}
             className="text-white cursor-pointer"
             onClick={() => {
-              closeAll();
+              toggleSidebar();
+              hideSummary();
               localStorage.setItem(
                 "sidebarStatus",
                 sidebarStatus === "open" ? "closed" : "open",
@@ -537,7 +519,9 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         {/* Overlay */}
         <div
           onClick={() => {
-            closeAll();
+            toggleSidebar();
+            hideSummary();
+
             localStorage.setItem("sidebarStatus", "closed");
           }}
           className={cn(
