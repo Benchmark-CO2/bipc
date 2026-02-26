@@ -153,7 +153,7 @@ const ModalTraining = ({
                   onClick={handleAlreadyRegistered}
                   className="mx-auto border-none shadow-none"
                 >
-                  Já preenchi minha inscrição
+                  Já estou inscrito(a)
                 </Button>
               </>
             ) : (
