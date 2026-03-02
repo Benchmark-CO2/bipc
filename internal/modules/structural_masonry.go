@@ -436,7 +436,7 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 
 	return &StructuralMasonry{
 		ID:              d.ID,
-		BasicModuleData: BasicModuleData{Type: "structural_masonry"},
+		BasicModuleData: BasicModuleData{Type: "structural_masonry", Outdated: d.Outdated},
 		Consumption:     consumption,
 		ConcreteColumns: concreteColumns,
 		ConcreteBeams:   concreteBeams,

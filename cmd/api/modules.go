@@ -9,6 +9,7 @@ import (
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/modules"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
+	"github.com/google/uuid"
 )
 
 func (app *application) parseModule(w http.ResponseWriter, r *http.Request) (modules.Module, error) {
@@ -235,6 +236,71 @@ func (app *application) deleteModuleHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"message": "module successfully deleted", "id": moduleID}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) duplicateModuleHandler(w http.ResponseWriter, r *http.Request) {
+	moduleID, err := app.readUUIDParam(r, "moduleID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	optionID, err := app.readUUIDParam(r, "optionID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	moduleType, err := app.models.Modules.GetModuleType(moduleID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	newModuleID, err := uuid.NewV7()
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	duplicatedModule, err := app.models.Modules.Duplicate(moduleID, newModuleID, optionID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		case errors.Is(err, data.ErrInvalidOptionID):
+			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrInvalidFloorID):
+			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrInvalidUnitID):
+			app.badRequestResponse(w, r, err)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	moduleAPI, err := modules.ParseModuleType(moduleType)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	module, err := moduleAPI.Get(app.models, duplicatedModule.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"module": module}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

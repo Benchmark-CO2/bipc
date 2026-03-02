@@ -220,7 +220,7 @@ func (p *PilesFoundation) fromDataModule(d *data.Module) Module {
 
 	return &PilesFoundation{
 		ID:              d.ID,
-		BasicModuleData: BasicModuleData{Type: "piles_foundation"},
+		BasicModuleData: BasicModuleData{Type: "piles_foundation", Outdated: d.Outdated},
 		Consumption:     consumption,
 		Fck:             fck,
 		Piles:           piles,

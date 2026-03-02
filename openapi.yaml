@@ -1149,6 +1149,49 @@ paths:
         "200":
           description: module successfully updated
 
+  /v1/projects/{projectID}/units/{unitID}/options/{optionID}/modules/{moduleID}/duplicate:
+    post:
+      summary: Duplicate an existing module
+      description: Creates a copy of an existing module with the same data but a new ID. The duplicated module will be associated with the specified option.
+      tags:
+        - Modules
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: optionID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The option ID to associate the duplicated module with
+        - name: moduleID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The ID of the module to duplicate
+      responses:
+        "201":
+          description: Module successfully duplicated
+        "400":
+          description: Bad Request. Invalid option, floor, or unit ID.
+        "404":
+          description: Not Found. The original module does not exist.
+        "500":
+          description: Internal Server Error.
+
 components:
   securitySchemes:
     bearerHttpAuthentication:
@@ -1437,38 +1480,51 @@ components:
     TowerCreateData:
       type: object
       required:
-        - floor_groups
+        - floors
       properties:
-        floor_groups:
+        floors:
           type: array
+          description: "Array of individual floors. Each floor must have a unique index and consecutive indexes starting from 1."
+          minItems: 1
           items:
-            $ref: "#/components/schemas/FloorGroupCreate"
+            $ref: "#/components/schemas/FloorCreate"
 
-    FloorGroupCreate:
+    FloorCreate:
       type: object
       required:
-        - name
+        - floor_group
+        - category
         - area
         - height
-        - repetition
+        - index
       properties:
-        name:
+        id:
           type: string
-        example: "Typical Floor"
+          format: uuid
+          description: "Optional UUID for the floor. If not provided, will be auto-generated."
+        floor_group:
+          type: string
+          description: "Name of the floor group this floor belongs to (e.g., 'Standard Floors', 'Basement')."
+          example: "Standard Floors"
+        category:
+          type: string
+          description: "Category of the floor."
+          enum: [basement_floor, penthouse_floor, ground_floor, standard_floor]
+          example: "standard_floor"
         area:
           type: number
           format: float
+          description: "Floor area in square meters (m²)."
           example: 500.0
         height:
           type: number
           format: float
+          description: "Floor height in meters (m)."
           example: 3.0
-        repetition:
+        index:
           type: integer
-          example: 10
-        category:
-          type: string
-          enum: [basement_floor, penthouse_floor, ground_floor, standard_floor]
+          description: "Floor index/number. Must be unique and consecutive (no gaps). Typically starts at 1."
+          example: 1
 
     OptionCreateRequest:
       type: object
@@ -1497,16 +1553,15 @@ components:
             - $ref: "#/components/schemas/ConcreteWallData"
       required:
         - type
-        - floor_ids
         - data
       example:
         type: "beam_column"
-        floor_ids:
-          [
-            "f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6",
-            "e7f8a9b0-c1d2-e3f4-a5b6-c7d8e9f0a1b2",
-          ]
         data:
+          floor_ids:
+            [
+              "f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6",
+              "e7f8a9b0-c1d2-e3f4-a5b6-c7d8e9f0a1b2",
+            ]
           concrete_columns:
             volumes:
               - fck: 30
@@ -1586,7 +1641,7 @@ components:
       type: array
       description: "An array defining steel reinforcement mass, broken down by type."
       items:
-        $ref: "#/components/schemas/SteelMass"
+        $ref: "#/components/schemas/SteelMassItem"
 
     # Schema for the concrete element, with consistent references
     ConcreteElement:
@@ -1607,11 +1662,11 @@ components:
       properties:
         floor_ids:
           type: array
-          description: "Array of floor IDs to which this module will be applied. These floors must belong to the tower associated with this unit option."
+          description: "Array of floor IDs to which this module will be applied. These floors must belong to the unit associated with this option."
           items:
             type: string
             format: uuid
-            example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+          minItems: 1
         concrete_columns:
           description: "Concrete and steel composition for all columns in the specified floors."
           allOf:
@@ -1636,19 +1691,24 @@ components:
           type: number
           description: "Total area of concrete forms for slabs in square meters (m²)."
           example: 9000.0
+        form_total:
+          type: number
+          description: "Total area of all concrete forms (columns + beams + slabs) in square meters (m²)."
+          example: 12750.5
         column_number:
           type: integer
           description: "Total number of columns in the specified floors."
           example: 120
         avg_beam_span:
-          type: integer
+          type: number
           description: "Average span between beams in meters (m)."
-          example: 6
+          example: 6.0
         avg_slab_span:
-          type: integer
+          type: number
           description: "Average span of slabs in meters (m)."
-          example: 5
+          example: 5.0
       required:
+        - floor_ids
         - concrete_columns
         - concrete_beams
         - concrete_slabs

@@ -186,7 +186,7 @@ func (b *BeamColumn) fromDataModule(d *data.Module) Module {
 
 	return &BeamColumn{
 		ID:              d.ID,
-		BasicModuleData: BasicModuleData{Type: "beam_column"},
+		BasicModuleData: BasicModuleData{Type: "beam_column", Outdated: d.Outdated},
 		Consumption:     consumption,
 		ConcreteColumns: concreteColumns,
 		ConcreteBeams:   concreteBeams,

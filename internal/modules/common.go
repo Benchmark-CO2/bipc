@@ -43,7 +43,8 @@ func (c ConcreteElement) MarshalJSON() ([]byte, error) {
 }
 
 type BasicModuleData struct {
-	Type string `json:"type"`
+	Type     string `json:"type"`
+	Outdated bool   `json:"outdated"`
 }
 
 type Consumption struct {

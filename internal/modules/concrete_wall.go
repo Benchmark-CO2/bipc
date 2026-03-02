@@ -168,7 +168,7 @@ func (w *ConcreteWall) fromDataModule(d *data.Module) Module {
 
 	return &ConcreteWall{
 		ID:              d.ID,
-		BasicModuleData: BasicModuleData{Type: "concrete_wall"},
+		BasicModuleData: BasicModuleData{Type: "concrete_wall", Outdated: d.Outdated},
 		Consumption:     consumption,
 		ConcreteWalls:   concreteWalls,
 		ConcreteSlabs:   concreteSlabs,

@@ -186,7 +186,7 @@ func (rp *RaftPilesFoundation) fromDataModule(d *data.Module) Module {
 
 	return &RaftPilesFoundation{
 		ID:              d.ID,
-		BasicModuleData: BasicModuleData{Type: "raft_piles_foundation"},
+		BasicModuleData: BasicModuleData{Type: "raft_piles_foundation", Outdated: d.Outdated},
 		Consumption:     consumption,
 		Fck:             fck,
 		Raft:            raft,
