@@ -11,6 +11,7 @@ import {
   Globe,
   KeySquare,
   Palette,
+  ShieldCheck,
   ShieldHalf,
   TrendingUp,
 } from "lucide-react";
@@ -100,7 +101,7 @@ function RouteComponent() {
                 rel="noopener noreferrer"
               >
                 <Button variant="link" className="p-0 h-auto">
-                  Exercer meus direitos ➡️
+                  Saiba mais ➡️
                 </Button>
               </a>
             </div>
@@ -118,7 +119,27 @@ function RouteComponent() {
                 rel="noopener noreferrer"
               >
                 <Button variant="link" className="p-0 h-auto">
-                  Acessar para saber mais ➡️
+                  Saiba mais ➡️
+                </Button>
+              </a>
+            </div>
+          </SettingsSection>
+
+          <SettingsSection
+            title={"Exercer meus direitos"}
+            description={
+              "Você pode solicitar acesso, correção ou exclusão dos seus dados pessoais a qualquer momento."
+            }
+            icon={ShieldCheck}
+          >
+            <div className="space-y-3">
+              <a
+                href="https://bipc.org.br/saiba-mais"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button variant="link" className="p-0 h-auto">
+                  Consultar formulário ➡️
                 </Button>
               </a>
             </div>
