@@ -1,5 +1,6 @@
 import { masks } from "@/utils/masks";
 import { Trash2 } from "lucide-react";
+import { useEffect } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import { Button } from "../../ui/button";
 import {
@@ -31,6 +32,8 @@ interface SteelMaterialItemProps {
   fieldId: string;
   materialOptions: Array<{ value: string; label: string }>;
   resistanceOptions: Array<{ value: string; label: string }>;
+  usedMaterials: string[];
+  usedResistances: string[];
   onRemove: () => void;
   canRemove: boolean;
 }
@@ -43,6 +46,8 @@ const SteelMaterialItem = ({
   fieldId,
   materialOptions,
   resistanceOptions,
+  usedMaterials,
+  usedResistances,
   onRemove,
   canRemove,
 }: SteelMaterialItemProps) => {
@@ -55,6 +60,30 @@ const SteelMaterialItem = ({
     control: form.control,
     name: `${name}.${index}.resistance`,
   });
+
+  // Filtrar opções de resistência de acordo com o material selecionado
+  const allowedResistancesByMaterial: Record<string, string[]> = {
+    rebar: ["CA50", "CA60", "other"],
+    mesh: ["CA60", "other"],
+    strand: ["CP190", "other"],
+    other: ["CA50", "CA60", "CP190", "other"],
+  };
+  const allowedResistances =
+    allowedResistancesByMaterial[currentMaterial] ??
+    resistanceOptions.map((o) => o.value);
+  const filteredResistanceOptions = resistanceOptions.filter((opt) =>
+    allowedResistances.includes(opt.value),
+  );
+
+  // Resetar resistência quando o material muda e o valor atual não é mais válido
+  useEffect(() => {
+    if (currentResistance && !allowedResistances.includes(currentResistance)) {
+      form.setValue(
+        `${name}.${index}.resistance`,
+        filteredResistanceOptions[0]?.value ?? "CA50",
+      );
+    }
+  }, [currentMaterial]);
 
   return (
     <div
@@ -77,7 +106,14 @@ const SteelMaterialItem = ({
                     </SelectTrigger>
                     <SelectContent>
                       {materialOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
+                        <SelectItem
+                          key={opt.value}
+                          value={opt.value}
+                          disabled={
+                            usedMaterials.includes(opt.value) &&
+                            currentMaterial !== opt.value
+                          }
+                        >
                           {opt.label}
                         </SelectItem>
                       ))}
@@ -104,8 +140,15 @@ const SteelMaterialItem = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {resistanceOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
+                      {filteredResistanceOptions.map((opt) => (
+                        <SelectItem
+                          key={opt.value}
+                          value={opt.value}
+                          disabled={
+                            usedResistances.includes(opt.value) &&
+                            currentResistance !== opt.value
+                          }
+                        >
                           {opt.label}
                         </SelectItem>
                       ))}
@@ -183,7 +226,7 @@ const SteelMaterialItem = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">
-                Resistência Customizada (MPa) *
+                Tipo de resistência customizada (MPa) *
               </FormLabel>
               <FormControl>
                 <Input
@@ -228,6 +271,15 @@ const SteelMaterialList = ({
         : item.mass;
     return sum + (isNaN(numericValue) ? 0 : numericValue);
   }, 0);
+
+  // Coletar materiais e resistências já utilizados
+  const usedMaterials = (steelArray || [])
+    .map((item: any) => item?.material)
+    .filter(Boolean);
+
+  const usedResistances = (steelArray || [])
+    .map((item: any) => item?.resistance)
+    .filter(Boolean);
 
   const materialOptions = showMeshAndStrand
     ? [
@@ -275,6 +327,8 @@ const SteelMaterialList = ({
           fieldId={field.id}
           materialOptions={materialOptions}
           resistanceOptions={resistanceOptions}
+          usedMaterials={usedMaterials}
+          usedResistances={usedResistances}
           onRemove={() => remove(index)}
           canRemove={fields.length > 1}
         />
