@@ -23,7 +23,6 @@ export const Route = createFileRoute("/_private/settings")({
 
 function RouteComponent() {
   const { t } = useTranslation();
-  const [visibleApiKey, setVisibleApiKey] = useState(false);
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
