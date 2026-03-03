@@ -235,12 +235,12 @@ const SteelMaterialList = ({
         { value: "mesh", label: "Tela" },
         { value: "strand", label: "Cordoalha" },
         { value: "general", label: "Geral" },
-        { value: "other", label: "Outros" },
+        { value: "other", label: "Outro" },
       ]
     : [
         { value: "rebar", label: "Vergalhão" },
         { value: "general", label: "Geral" },
-        { value: "other", label: "Outros" },
+        { value: "other", label: "Outro" },
       ];
 
   const resistanceOptions = [

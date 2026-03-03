@@ -177,7 +177,7 @@ const steelMaterialSchema = z
       return true;
     },
     {
-      message: "Nome do material é obrigatório quando 'Outros' é selecionado",
+      message: "Nome do material é obrigatório quando 'Outro' é selecionado",
       path: ["other_name"],
     },
   )
