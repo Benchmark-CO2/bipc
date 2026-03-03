@@ -179,7 +179,7 @@ const steelMaterialSchema = z
     {
       message: "Nome do material é obrigatório quando 'Outros' é selecionado",
       path: ["other_name"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -195,7 +195,7 @@ const steelMaterialSchema = z
       message:
         "Resistência customizada é obrigatória quando 'Outro' é selecionado",
       path: ["other_resistance"],
-    }
+    },
   );
 
 const foundationSteelSchema = z
@@ -216,7 +216,7 @@ export const moduleFormSchema = z
       {
         required_error: "Selecione um tipo de estrutura",
         invalid_type_error: "Tipo de estrutura inválido",
-      }
+      },
     ),
 
     concrete_columns: concreteElementSchema.optional(),
@@ -328,7 +328,7 @@ export const moduleFormSchema = z
       message:
         "Para Viga Pilar são obrigatórios: concreto (colunas, vigas, lajes), formas (colunas, vigas, lajes), número de colunas e vãos médios",
       path: ["type"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -346,7 +346,7 @@ export const moduleFormSchema = z
       message:
         "Para Parede de Concreto são obrigatórios: concreto (paredes, lajes) e espessuras (parede, laje)",
       path: ["type"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -364,7 +364,7 @@ export const moduleFormSchema = z
       message:
         "Para Alvenaria Estrutural são obrigatórios: blocos, graute, argamassa e laje de concreto",
       path: ["type"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -380,7 +380,7 @@ export const moduleFormSchema = z
     {
       message: "Para Radier são obrigatórios: área, espessura e fck",
       path: ["type"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -392,7 +392,7 @@ export const moduleFormSchema = z
     {
       message: "Para Estacas é obrigatório: fck",
       path: ["type"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -400,7 +400,7 @@ export const moduleFormSchema = z
         return (
           data.raft?.area !== undefined &&
           data.raft?.thickness !== undefined &&
-          data.fck !== undefined // FCK está na raiz, não no raft
+          data.fck !== undefined // fck está na raiz, não no raft
         );
       }
       return true;
@@ -408,7 +408,7 @@ export const moduleFormSchema = z
     {
       message: "Para Radier Estaqueado são obrigatórios: área, espessura e fck",
       path: ["type"],
-    }
+    },
   );
 
 export type ModuleFormSchema = z.infer<typeof moduleFormSchema>;
