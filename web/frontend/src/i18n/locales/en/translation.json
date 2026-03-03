@@ -410,8 +410,8 @@
       "fckLabel": "Fck (MPa) *",
       "fckVolume": "Volume (m³) *",
       "concreteSlabsLabel": "Concrete - Slabs *",
-      "steelCA50Label": "Steel CA50 (kg/m²) *",
-      "steelCA60Label": "Steel CA60 (kg/m²) *",
+      "steelCA50Label": "Steel CA-50 (kg/m²) *",
+      "steelCA60Label": "Steel CA-60 (kg/m²) *",
       "minimumElementRequired": "At least one element must be maintained."
     },
     "beamColumnForm": {

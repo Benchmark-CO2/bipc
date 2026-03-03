@@ -97,7 +97,7 @@ const SteelMaterialItem = ({
             name={`${name}.${index}.resistance`}
             render={({ field }) => (
               <FormItem className="w-full space-y-1">
-                <FormLabel className="text-xs">Resistência *</FormLabel>
+                <FormLabel className="text-xs">Tipo *</FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger className="h-9 w-full">
@@ -125,7 +125,7 @@ const SteelMaterialItem = ({
             name={`${name}.${index}.mass`}
             render={({ field }) => (
               <FormItem className="w-full space-y-1">
-                <FormLabel className="text-xs">Peso (kg) *</FormLabel>
+                <FormLabel className="text-xs">Massa (kg) *</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
@@ -232,7 +232,7 @@ const SteelMaterialList = ({
   const materialOptions = showMeshAndStrand
     ? [
         { value: "rebar", label: "Vergalhão" },
-        { value: "mesh", label: "Malha (Tela)" },
+        { value: "mesh", label: "Tela" },
         { value: "strand", label: "Cordoalha" },
         { value: "general", label: "Geral" },
         { value: "other", label: "Outros" },
@@ -244,9 +244,9 @@ const SteelMaterialList = ({
       ];
 
   const resistanceOptions = [
-    { value: "CA50", label: "CA50" },
-    { value: "CA60", label: "CA60" },
-    { value: "CP190", label: "CP190" },
+    { value: "CA50", label: "CA-50" },
+    { value: "CA60", label: "CA-60" },
+    { value: "CP190", label: "CP-190" },
     { value: "other", label: "Outro" },
   ];
 

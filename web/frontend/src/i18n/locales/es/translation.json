@@ -408,8 +408,8 @@
       "fckLabel": "Fck (MPa) *",
       "fckVolume": "Volumen (m³) *",
       "concreteSlabsLabel": "Concreto - Losas *",
-      "steelCA50Label": "Acero CA50 (kg/m²) *",
-      "steelCA60Label": "Acero CA60 (kg/m²) *",
+      "steelCA50Label": "Acero CA-50 (kg/m²) *",
+      "steelCA60Label": "Acero CA-60 (kg/m²) *",
       "minimumElementRequired": "Es necesario mantener al menos un elemento."
     },
     "beamColumnForm": {

@@ -405,7 +405,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                       value={ca.toString()}
                                       disabled={isCaUsed(ca, index)}
                                     >
-                                      CA{ca}{" "}
+                                      CA-{ca}{" "}
                                       {isCaUsed(ca, index) ? "(Em uso)" : ""}
                                     </SelectItem>
                                   ))}
@@ -423,7 +423,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         name={`${fieldName}.steel.${index}.mass` as any}
                         render={({ field: massField }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">Peso (kg)</FormLabel>
+                            <FormLabel className="text-xs">
+                              Massa (kg)
+                            </FormLabel>
                             <div className="flex gap-1">
                               <FormControl>
                                 <Input

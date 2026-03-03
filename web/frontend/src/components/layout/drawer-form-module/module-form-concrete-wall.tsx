@@ -428,7 +428,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                       value={ca.toString()}
                                       disabled={isCaUsed(ca, index)}
                                     >
-                                      CA{ca}{" "}
+                                      CA-{ca}{" "}
                                       {isCaUsed(ca, index) ? "(Em uso)" : ""}
                                     </SelectItem>
                                   ))}
@@ -446,7 +446,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                         name={`${fieldName}.steel.${index}.mass` as any}
                         render={({ field: massField }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">Peso (kg)</FormLabel>
+                            <FormLabel className="text-xs">
+                              Massa (kg)
+                            </FormLabel>
                             <div className="flex gap-1">
                               <FormControl>
                                 <Input
@@ -702,7 +704,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                             <SelectContent>
                               {caOptions.map((ca) => (
                                 <SelectItem key={ca} value={ca.toString()}>
-                                  CA{ca}
+                                  CA-{ca}
                                 </SelectItem>
                               ))}
                               <SelectItem value="other">Outro</SelectItem>
@@ -725,7 +727,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                         </div>
 
                         <div>
-                          <FormLabel className="text-xs">Peso (kg)</FormLabel>
+                          <FormLabel className="text-xs">Massa (kg)</FormLabel>
                           <div className="flex gap-1">
                             <Input
                               type="text"

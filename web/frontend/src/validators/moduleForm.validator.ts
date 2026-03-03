@@ -10,7 +10,7 @@ const steelMassItemSchema = z.object({
   ca: z.number().refine((val) => val === 50 || val === 60, {
     message: "CA deve ser 50 ou 60",
   }),
-  mass: z.number().nonnegative("O peso deve ser um número não negativo"),
+  mass: z.number().nonnegative("A massa deve ser um número não negativo"),
 });
 
 const concreteElementSchema = z.object({
@@ -85,7 +85,7 @@ export const moduleFormSchema = z
       message:
         "Para Viga Pilar são obrigatórios: concreto (colunas, vigas, lajes), formas (colunas, vigas, lajes), número de colunas e vãos médios",
       path: ["type"],
-    }
+    },
   )
   .refine(
     (data) => {
@@ -105,7 +105,7 @@ export const moduleFormSchema = z
       message:
         "Para Parede de Concreto são obrigatórios: concreto (paredes, lajes), espessuras (parede, laje) e áreas (forma, parede)",
       path: ["type"],
-    }
+    },
   );
 // Comentado: validação para structural masonry
 // .refine(
