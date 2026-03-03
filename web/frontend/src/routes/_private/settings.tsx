@@ -95,14 +95,15 @@ function RouteComponent() {
             icon={ShieldHalf}
           >
             <div className="space-y-3">
-              <DrawerDocuments
-                documentType="privacy-policy"
-                triggerComponent={
-                  <Button variant="link" className="p-0 h-auto">
-                    Exercer meus direitos ➡️
-                  </Button>
-                }
-              />
+              <a
+                href="https://bipc.org.br/privacidade"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button variant="link" className="p-0 h-auto">
+                  Exercer meus direitos ➡️
+                </Button>
+              </a>
             </div>
           </SettingsSection>
 
@@ -112,14 +113,15 @@ function RouteComponent() {
             icon={TrendingUp}
           >
             <div className="space-y-3">
-              <DrawerDocuments
-                documentType="terms-of-use"
-                triggerComponent={
-                  <Button variant="link" className="p-0 h-auto">
-                    Acessar para saber mais ➡️
-                  </Button>
-                }
-              />
+              <a
+                href="https://bipc.org.br/saiba-mais"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button variant="link" className="p-0 h-auto">
+                  Acessar para saber mais ➡️
+                </Button>
+              </a>
             </div>
           </SettingsSection>
         </div>
