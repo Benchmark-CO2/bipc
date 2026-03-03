@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { UserInfo } from "@/components/user-info";
+import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Globe,
@@ -125,25 +126,27 @@ function RouteComponent() {
             </div>
           </SettingsSection>
 
-          <SettingsSection
-            title={"Exercer meus direitos"}
-            description={
-              "Você pode solicitar acesso, correção ou exclusão dos seus dados pessoais a qualquer momento."
-            }
-            icon={ShieldCheck}
-          >
-            <div className="space-y-3">
-              <a
-                href="https://bipc.org.br/saiba-mais"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button variant="link" className="p-0 h-auto">
-                  Consultar formulário ➡️
-                </Button>
-              </a>
-            </div>
-          </SettingsSection>
+          {posLaunchFeatures.formExerciseRights.enabled && (
+            <SettingsSection
+              title={"Exercer meus direitos"}
+              description={
+                "Você pode solicitar acesso, correção ou exclusão dos seus dados pessoais a qualquer momento."
+              }
+              icon={ShieldCheck}
+            >
+              <div className="space-y-3">
+                <a
+                  href={posLaunchFeatures.formExerciseRights.formUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="link" className="p-0 h-auto">
+                    Consultar formulário ➡️
+                  </Button>
+                </a>
+              </div>
+            </SettingsSection>
+          )}
         </div>
         <div className="flex items-center gap-4">
           <Separator className="flex-1" />

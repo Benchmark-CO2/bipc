@@ -9,4 +9,8 @@ export const posLaunchFeatures = {
     formUrl: "https://classroom.google.com/c/ODQyNjMyNjg3Mjkz?cjc=rxuxkvbl", // Substituir pelo link real do formulário
     description: "Modal de capacitação para novos usuários da plataforma.",
   },
+  formExerciseRights: {
+    enabled: true,
+    formUrl: "https://forms.gle/ytcc9m3erCX5u4QZ9",
+  },
 };
