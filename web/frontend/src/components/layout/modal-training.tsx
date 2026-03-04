@@ -16,12 +16,14 @@ interface ModalTrainingProps {
   isAuthenticated: boolean;
   onNavigateToSignUp: () => void;
   minimizedSidebar?: boolean;
+  disableFloating?: boolean;
 }
 
 const ModalTraining = ({
   isAuthenticated,
   onNavigateToSignUp,
   minimizedSidebar = false,
+  disableFloating = false,
 }: ModalTrainingProps) => {
   const [open, setOpen] = useState(false);
   const [showMiniature, setShowMiniature] = useState(false);
@@ -180,7 +182,7 @@ const ModalTraining = ({
       </Dialog>
 
       {/* Miniatura fixa no canto inferior direito */}
-      {!isAuthenticated && showMiniature && (
+      {!disableFloating && !isAuthenticated && showMiniature && (
         <div
           onClick={handleRestoreFromMiniature}
           className="fixed bottom-4 right-4 z-50 cursor-pointer bg-primary text-primary-foreground rounded-lg shadow-lg p-4 hover:scale-105 transition-transform"
@@ -206,36 +208,32 @@ const ModalTraining = ({
         </div>
       )}
 
-      {isAuthenticated && (
-        <div
-          className="bg-primary text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-primary/90 cursor-pointer border border-primary/50"
-          onClick={() => setOpen(true)}
-          title="Clique para abrir"
-        >
-          <span className="flex items-center gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-            </svg>
-            {!minimizedSidebar && <strong>Capacitação</strong>}
-          </span>
-          {!minimizedSidebar && (
-            <span className="text-sm ml-auto cursor-pointer">
-              Saiba mais...
-            </span>
-          )}
-        </div>
-      )}
+      <div
+        className="bg-primary text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-primary/90 cursor-pointer border border-primary/50"
+        onClick={() => setOpen(true)}
+        title="Clique para abrir"
+      >
+        <span className="flex items-center gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+          </svg>
+          {!minimizedSidebar && <strong>Capacitação</strong>}
+        </span>
+        {!minimizedSidebar && (
+          <span className="text-sm ml-auto cursor-pointer">Saiba mais...</span>
+        )}
+      </div>
     </>
   );
 };

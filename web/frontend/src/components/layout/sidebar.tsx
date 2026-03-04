@@ -103,34 +103,17 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
       <div className="flex-1 flex flex-col gap-1 justify-end">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link
-              to="/about"
+            <a
+              href="https://bipc.org.br/sobre"
               className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
             >
               <Info size={18} className="text-white" />
-            </Link>
+            </a>
           </TooltipTrigger>
           <TooltipContent side="right">
             <p>Sobre o BIPc</p>
           </TooltipContent>
         </Tooltip>
-
-        {posLaunchFeatures.trainingModal.enabled && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                to={posLaunchFeatures.trainingModal.formUrl}
-                target="_blank"
-                className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
-              >
-                <Book size={18} className="text-white" />
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>Capacitação</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
 
         <Tooltip>
           <TooltipTrigger asChild>
@@ -149,12 +132,12 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link
-              to="/privacidade"
+            <a
+              href="https://bipc.org.br/privacidade"
               className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
             >
               <GlobeLock size={18} className="text-white" />
-            </Link>
+            </a>
           </TooltipTrigger>
           <TooltipContent side="right">
             <p>Políticas de Privacidade</p>
@@ -285,6 +268,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         <ModalTraining
           isAuthenticated={isAuthenticated}
           onNavigateToSignUp={() => {}}
+          disableFloating={true}
         />
       </div>
 
@@ -297,30 +281,15 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           {/* Institucional */}
           <li>
             <SidemenuItem variant="link">
-              <Link
-                to={"/about"}
+              <a
+                href="https://bipc.org.br/sobre"
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
                 <Info size={18} />
                 <span>Sobre o BIPc</span>
-              </Link>
+              </a>
             </SidemenuItem>
           </li>
-
-          {posLaunchFeatures.trainingModal.enabled && (
-            <li>
-              <SidemenuItem variant="link">
-                <Link
-                  to={posLaunchFeatures.trainingModal.formUrl}
-                  target="_blank"
-                  className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-                >
-                  <Book size={18} />
-                  <span>Capacitação</span>
-                </Link>
-              </SidemenuItem>
-            </li>
-          )}
 
           <li>
             <SidemenuItem variant="link">
@@ -336,13 +305,13 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           </li>
           <li>
             <SidemenuItem variant="link">
-              <Link
-                to="/privacidade"
+              <a
+                href="https://bipc.org.br/privacidade"
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
                 <GlobeLock size={18} />
                 <span>Políticas de Privacidade</span>
-              </Link>
+              </a>
             </SidemenuItem>
           </li>
 
