@@ -62,6 +62,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.readOptionHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.updateOptionHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.deleteOptionHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/duplicate", app.duplicateOptionHandler)
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules", app.createModuleHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.readModuleHandler)

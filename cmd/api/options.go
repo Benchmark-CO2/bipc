@@ -213,3 +213,83 @@ func (app *application) deleteOptionHandler(w http.ResponseWriter, r *http.Reque
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) duplicateOptionHandler(w http.ResponseWriter, r *http.Request) {
+	optionID, err := app.readUUIDParam(r, "optionID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	originalOption, err := app.models.Options.GetByID(optionID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	newOptionID, err := uuid.NewV7()
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	duplicatedOption := &data.Option{
+		ID:     newOptionID,
+		UnitID: originalOption.UnitID,
+		RoleID: originalOption.RoleID,
+		Name:   generateDuplicateName(originalOption.Name),
+		Active: true,
+	}
+
+	err = app.models.Options.Insert(duplicatedOption)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrInvalidUnitID),
+			errors.Is(err, data.ErrUnitIsNotTower),
+			errors.Is(err, data.ErrInvalidRoleID):
+			app.unprocessableEntityResponse(w, r, err)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	for _, moduleInfo := range originalOption.Modules {
+		originalModule, err := app.models.Modules.Get(moduleInfo.ID)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		newModuleID, err := uuid.NewV7()
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		_, err = app.duplicateModule(originalModule, newModuleID, newOptionID)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
+
+	duplicatedOption, err = app.models.Options.GetByID(newOptionID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v1/tower-options/%s", duplicatedOption.ID))
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"option": duplicatedOption}, headers)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}

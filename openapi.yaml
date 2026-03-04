@@ -1011,6 +1011,44 @@ paths:
         "404":
           description: Not Found.
 
+  /v1/projects/{projectID}/units/{unitID}/options/{optionID}/duplicate:
+    post:
+      summary: Duplicate an existing option with all its modules
+      description: Creates a copy of an existing option with the same data but new IDs. All modules associated with the original option are also duplicated. The duplicated option will be marked as active and any other active option will be deactivated. If the original name ends with " (number)", the number is incremented; otherwise, " (1)" is appended to the name.
+      tags:
+        - Options
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: optionID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The ID of the option to duplicate
+      responses:
+        "201":
+          description: Option successfully duplicated with all its modules
+        "400":
+          description: Bad Request. Invalid unit or role ID.
+        "404":
+          description: Not Found. The original option does not exist.
+        "500":
+          description: Internal Server Error.
+
   /v1/projects/{projectID}/units/{unitID}/options/{optionID}/modules:
     post:
       summary: Create a new module for a unit option

@@ -218,33 +218,6 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 	return &module, nil
 }
 
-func (m ModuleModel) Duplicate(originalID, newModuleID, newOptionID uuid.UUID) (*Module, error) {
-	originalModule, err := m.Get(originalID)
-	if err != nil {
-		return nil, err
-	}
-
-	duplicatedModule := &Module{
-		ID:                newModuleID,
-		Type:              originalModule.Type,
-		OptionID:          newOptionID,
-		Data:              originalModule.Data,
-		TotalCO2Min:       originalModule.TotalCO2Min,
-		TotalCO2Max:       originalModule.TotalCO2Max,
-		TotalEnergyMin:    originalModule.TotalEnergyMin,
-		TotalEnergyMax:    originalModule.TotalEnergyMax,
-		RelativeCO2Min:    originalModule.RelativeCO2Min,
-		RelativeCO2Max:    originalModule.RelativeCO2Max,
-		RelativeEnergyMin: originalModule.RelativeEnergyMin,
-		RelativeEnergyMax: originalModule.RelativeEnergyMax,
-		Outdated:          false,
-		FloorIDs:          originalModule.FloorIDs,
-		UnitID:            originalModule.UnitID,
-	}
-
-	return m.Insert(duplicatedModule)
-}
-
 func (m ModuleModel) Update(module *Module) error {
 	hasFloors := len(module.FloorIDs) > 0
 	hasUnit := module.UnitID != nil

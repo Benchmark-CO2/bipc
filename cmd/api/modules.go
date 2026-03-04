@@ -41,6 +41,28 @@ func (app *application) parseModule(w http.ResponseWriter, r *http.Request) (mod
 	return module, nil
 }
 
+func (app *application) duplicateModule(originalModule *data.Module, newModuleID, newOptionID uuid.UUID) (*data.Module, error) {
+	duplicatedModule := &data.Module{
+		ID:                newModuleID,
+		Type:              originalModule.Type,
+		OptionID:          newOptionID,
+		Data:              originalModule.Data,
+		TotalCO2Min:       originalModule.TotalCO2Min,
+		TotalCO2Max:       originalModule.TotalCO2Max,
+		TotalEnergyMin:    originalModule.TotalEnergyMin,
+		TotalEnergyMax:    originalModule.TotalEnergyMax,
+		RelativeCO2Min:    originalModule.RelativeCO2Min,
+		RelativeCO2Max:    originalModule.RelativeCO2Max,
+		RelativeEnergyMin: originalModule.RelativeEnergyMin,
+		RelativeEnergyMax: originalModule.RelativeEnergyMax,
+		Outdated:          false,
+		FloorIDs:          originalModule.FloorIDs,
+		UnitID:            originalModule.UnitID,
+	}
+
+	return app.models.Modules.Insert(duplicatedModule)
+}
+
 func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Request) {
 	optionID, _ := app.readUUIDParam(r, "optionID")
 
@@ -254,7 +276,7 @@ func (app *application) duplicateModuleHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	moduleType, err := app.models.Modules.GetModuleType(moduleID)
+	originalModule, err := app.models.Modules.Get(moduleID)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -271,11 +293,9 @@ func (app *application) duplicateModuleHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	duplicatedModule, err := app.models.Modules.Duplicate(moduleID, newModuleID, optionID)
+	_, err = app.duplicateModule(originalModule, newModuleID, optionID)
 	if err != nil {
 		switch {
-		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
 		case errors.Is(err, data.ErrInvalidOptionID):
 			app.badRequestResponse(w, r, err)
 		case errors.Is(err, data.ErrInvalidFloorID):
@@ -288,13 +308,13 @@ func (app *application) duplicateModuleHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	moduleAPI, err := modules.ParseModuleType(moduleType)
+	moduleAPI, err := modules.ParseModuleType(originalModule.Type)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	module, err := moduleAPI.Get(app.models, duplicatedModule.ID)
+	module, err := moduleAPI.Get(app.models, newModuleID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
