@@ -2,6 +2,10 @@
   email contato@bipc.org.br
 }
 
+www.app.bipc.org.br {
+  redir https://app.bipc.org.br{uri} permanent
+}
+
 bipc.org.br {
   reverse_proxy localhost:4000
 }

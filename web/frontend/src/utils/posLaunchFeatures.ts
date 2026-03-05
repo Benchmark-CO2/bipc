@@ -6,7 +6,7 @@ export const posLaunchFeatures = {
   trainingModal: {
     enabled: true,
     endDate: "2126-11-17T23:59:59",
-    formUrl: "https://forms.gle/dDHZcfVroKvWvNAZ9", // Substituir pelo link real do formulário
+    formUrl: "https://classroom.google.com/c/ODQyNjMyNjg3Mjkz?cjc=rxuxkvbl", // Substituir pelo link real do formulário
     description: "Modal de capacitação para novos usuários da plataforma.",
   },
 };

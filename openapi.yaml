@@ -10,6 +10,7 @@ tags:
   - name: users
   - name: invitations
   - name: tokens
+  - name: projects
 servers:
   - url: https://bipc.org.br/v1
 
@@ -245,7 +246,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UsersList"
+                type: object
+                required:
+                  - users
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
         "401":
           description: Unauthorized. The user is not authenticated.
           content:
@@ -541,56 +549,161 @@ paths:
                     type: string
                     readOnly: true
 
-  /v1/projects:
-    get:
-      summary: List all projects
-      description: Returns a paginated list of projects for the authenticated user.
-      tags:
-        - Projects
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: A paginated list of projects.
-        "401":
-          description: Unauthorized. The user is not authenticated.
-        "422":
-          description: Unprocessable Entity. The request failed validation checks.
-        "500":
-          description: Internal Server Error.
+  /projects:
     post:
       summary: Create new project
       description: Creates a new project for the authenticated user.
-      tags:
-        - Projects
-      security:
-        - bearerAuth: []
+      tags: [projects]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Project"
+              $ref: "#/components/schemas/CreateProject"
       responses:
-        "201":
-          description: Created. The project was successfully created.
-        "400":
-          description: Bad Request. The request body is invalid or malformed.
+        "403":
+          description: Forbidden. account must be activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: Unauthorized. The user is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "400":
+          description: Bad Request. The request body is invalid or malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "422":
-          description: Unprocessable Entity. The request failed validation checks (e.g., duplicate project name).
+          description: Unprocessable Entity. The request failed validation checks.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "201":
+          description: Created. The project was successfully created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - project
+                properties:
+                  project:
+                    $ref: "#/components/schemas/Project"
+    get:
+      summary: List all projects
+      description: Returns a paginated list of projects for the authenticated user.
+      tags: [projects]
+      parameters:
+        - name: name
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10000000
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              [
+                "id",
+                "created_at",
+                "name",
+                "state",
+                "city",
+                "phase",
+                "-id",
+                "-created_at",
+                "-name",
+                "-state",
+                "-city",
+                "-phase",
+              ]
+      responses:
+        "401":
+          description: Unauthorized. The user is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Unprocessable Entity. The request failed validation checks.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "200":
+          description: Created. The project was successfully created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - projects
+                  - metadata
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProjectWithUnits"
+                  metadata:
+                    type: object
+                    required:
+                      - current_page
+                      - page_size
+                      - first_page
+                      - last_page
+                      - total_records
+                    properties:
+                      current_page:
+                        type: integer
+                      page_size:
+                        type: integer
+                      first_page:
+                        type: integer
+                      last_page:
+                        type: integer
+                      total_records:
+                        type: integer
 
-  /v1/projects/{projectID}:
+  /projects/{projectID}:
     get:
       summary: Get a project by ID
       description: Retrieves the details of a specific project.
-      tags:
-        - Projects
-      security:
-        - bearerAuth: []
+      tags: [projects]
       parameters:
         - name: projectID
           in: path
@@ -599,21 +712,45 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
-          description: A single project.
+        "403":
+          description: Forbidden. account must be activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: Unauthorized. The user is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Not Found. The requested project does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "200":
+          description: A single project.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - project
+                properties:
+                  project:
+                    $ref: "#/components/schemas/ProjectWithUnits"
     patch:
       summary: Update a project
       description: Updates the details of a specific project.
-      tags:
-        - Projects
-      security:
-        - bearerAuth: []
+      tags: [projects]
       parameters:
         - name: projectID
           in: path
@@ -626,29 +763,65 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Project"
+              $ref: "#/components/schemas/UpdateProject"
       responses:
-        "200":
-          description: OK. The project was successfully updated.
-        "400":
-          description: Bad Request. The request body is invalid or malformed.
-        "401":
-          description: Unauthorized. The user is not authenticated.
-        "404":
-          description: Not Found. The requested project does not exist.
-        "409":
-          description: Conflict. A conflicting edit occurred.
         "422":
-          description: Unprocessable Entity. The request failed validation checks (e.g., duplicate project name).
+          description: Unprocessable Entity. The request failed validation checks.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden. account must be activated or user does not have permission.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized. The user is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not Found. The requested project does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "400":
+          description: Bad Request. The request body is invalid or malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Conflict. A conflicting edit occurred.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "200":
+          description: OK. The project was successfully updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - project
+                properties:
+                  project:
+                    $ref: "#/components/schemas/Project"
     delete:
       summary: Delete a project
       description: Deletes a specific project.
-      tags:
-        - Projects
-      security:
-        - bearerAuth: []
+      tags: [projects]
       parameters:
         - name: projectID
           in: path
@@ -657,14 +830,36 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
-          description: OK. The project was successfully deleted.
-        "401":
-          description: Unauthorized. The user is not authenticated.
-        "404":
-          description: Not Found. The requested project does not exist.
+        "422":
+          description: Unprocessable Entity. The request failed validation checks.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden. account must be activated or user does not have permission.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized. The user is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "200":
+          description: OK. The project was successfully deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultOkResponse"
 
   /v1/projects/{projectID}/invite:
     post:
@@ -1350,11 +1545,6 @@ components:
               type: boolean
               readOnly: true
 
-    UsersList:
-      type: array
-      items:
-        $ref: "#/components/schemas/User"
-
     UpdateUser:
       type: object
       properties:
@@ -1429,12 +1619,17 @@ components:
               project_name:
                 type: string
 
-    Project:
+    CreateProject:
       type: object
+      required:
+        - name
+        - state
+        - city
+        - phase
       properties:
         name:
           type: string
-        zip_code:
+        cep:
           type: string
         state:
           type: string
@@ -1450,13 +1645,119 @@ components:
           type: string
         description:
           type: string
-        image_url:
+
+    UpdateProject:
+      type: object
+      properties:
+        name:
           type: string
+        cep:
+          type: string
+        state:
+          type: string
+        city:
+          type: string
+        neighborhood:
+          type: string
+        street:
+          type: string
+        number:
+          type: string
+        phase:
+          type: string
+        description:
+          type: string
+
+    Project:
+      allOf:
+        - $ref: "#/components/schemas/CreateProject"
+        - type: object
+          required:
+            - id
+            - created_at
+            - benchmark
+          properties:
+            id:
+              type: string
+              format: uuid
+              readOnly: true
+            created_at:
+              type: string
+              format: date-time
+              readOnly: true
+            benchmark:
+              type: boolean
+              readOnly: true
+
+    ProjectWithUnits:
+      allOf:
+        - $ref: "#/components/schemas/Project"
+        - type: object
+          properties:
+            is_administrator:
+              type: boolean
+              readOnly: true
+            units:
+              type: array
+              readOnly: true
+              items:
+                $ref: "#/components/schemas/ProjectUnit"
+            consumptions:
+              type: object
+              readOnly: true
+              additionalProperties:
+                $ref: "#/components/schemas/Consumption"
+            area:
+              type: number
+              format: float
+              readOnly: true
+
+    ProjectUnit:
+      type: object
       required:
+        - id
         - name
-        - state
-        - city
-        - phase
+        - type
+        - area
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+        area:
+          type: number
+          format: float
+          readOnly: true
+        consumptions:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/Consumption"
+
+    Consumption:
+      type: object
+      properties:
+        co2_min:
+          type: number
+          format: float
+          readOnly: true
+        co2_max:
+          type: number
+          format: float
+          readOnly: true
+        energy_min:
+          type: number
+          format: float
+          readOnly: true
+        energy_max:
+          type: number
+          format: float
+          readOnly: true
 
     # --- Unit & Tower Schemas (based on new_db2.sql) ---
     Unit:
