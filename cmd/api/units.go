@@ -307,3 +307,117 @@ func (app *application) deleteUnitHandler(w http.ResponseWriter, r *http.Request
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) duplicateUnitHandler(w http.ResponseWriter, r *http.Request) {
+	unitID, err := app.readUUIDParam(r, "unitID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	projectID, err := app.readUUIDParam(r, "projectID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	originalUnit, err := app.models.Units.GetByID(unitID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	if originalUnit.ProjectID != projectID {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	newUnitID, err := uuid.NewV7()
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	duplicatedUnit := &data.Unit{
+		ID:        newUnitID,
+		ProjectID: originalUnit.ProjectID,
+		Name:      generateDuplicateName(originalUnit.Name),
+		Type:      originalUnit.Type,
+	}
+
+	// Create floor index to ID mappings
+	oldFloorIndexToID := make(map[int]uuid.UUID)
+	newFloorIndexToID := make(map[int]uuid.UUID)
+	var floorsToCreate []data.FloorCreate
+
+	for _, floor := range originalUnit.Floors {
+		oldFloorIndexToID[floor.Index] = floor.ID
+
+		newFloorID, err := uuid.NewV7()
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		newFloorIndexToID[floor.Index] = newFloorID
+
+		floorsToCreate = append(floorsToCreate, data.FloorCreate{
+			ID:         newFloorID,
+			FloorGroup: floor.FloorGroup,
+			Category:   floor.Category,
+			Area:       floor.Area,
+			Height:     floor.Height,
+			Index:      floor.Index,
+		})
+	}
+
+	err = app.models.Units.Insert(duplicatedUnit, floorsToCreate)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	originalOptions, err := app.models.Options.GetAll(originalUnit.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	for _, originalOption := range originalOptions {
+		newOptionID, err := uuid.NewV7()
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		_, err = app.duplicateOption(
+			originalOption,
+			newOptionID,
+			newUnitID,
+			originalOption.Name,   // preserve name
+			&originalOption.Active, // preserve active
+			oldFloorIndexToID,
+			newFloorIndexToID,
+		)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
+
+	duplicatedUnit, err = app.models.Units.GetByID(newUnitID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"unit": duplicatedUnit}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}

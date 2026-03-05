@@ -860,6 +860,46 @@ paths:
         "500":
           description: Internal Server Error.
 
+  /v1/projects/{projectID}/units/{unitID}/duplicate:
+    post:
+      summary: Duplicate an existing unit with all its options and modules
+      description: Creates a copy of an existing unit with all its floors, options, and modules. All entities are created with new IDs. Floor indexes are preserved (floor index 0 becomes floor index 0 in the new unit). Modules associated with specific floors are mapped to the corresponding floor indexes in the new unit. The active option state is preserved. If the original name ends with " (number)", the number is incremented; otherwise, " (1)" is appended to the name.
+      tags:
+        - Units
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The ID of the project
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The ID of the unit to duplicate
+      responses:
+        "201":
+          description: Unit successfully duplicated with all its floors, options, and modules
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unit:
+                    $ref: "#/components/schemas/Unit"
+        "400":
+          description: Bad Request. Invalid project or unit ID.
+        "404":
+          description: Not Found. The original unit does not exist.
+        "500":
+          description: Internal Server Error.
+
   /v1/projects/{projectID}/units/{unitID}/options:
     post:
       summary: Create a new engineering option for a tower

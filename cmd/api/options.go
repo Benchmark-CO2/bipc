@@ -10,6 +10,84 @@ import (
 	"github.com/google/uuid"
 )
 
+// duplicateOption duplicates an option with all its modules with optional customizations.
+// Use customName to override the generated name (for unit/project duplication).
+// Use customActive to override the active state (for unit/project duplication).
+// Use customUnitID to change the unit reference (for unit duplication).
+// Pass oldFloorIndexToID and newFloorIndexToID for floor mapping (for unit duplication).
+// Pass empty string, nil, original unitID, and nil maps to use defaults (for option handler).
+func (app *application) duplicateOption(
+	originalOption *data.Option,
+	newOptionID, customUnitID uuid.UUID,
+	customName string,
+	customActive *bool,
+	oldFloorIndexToID, newFloorIndexToID map[int]uuid.UUID,
+) (*data.Option, error) {
+	name := customName
+	if name == "" {
+		name = generateDuplicateName(originalOption.Name)
+	}
+
+	active := originalOption.Active
+	if customActive != nil {
+		active = *customActive
+	}
+
+	duplicatedOption := &data.Option{
+		ID:     newOptionID,
+		UnitID: customUnitID,
+		RoleID: originalOption.RoleID,
+		Name:   name,
+		Active: active,
+	}
+
+	err := app.models.Options.Insert(duplicatedOption)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, moduleInfo := range originalOption.Modules {
+		originalModule, err := app.models.Modules.Get(moduleInfo.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		newModuleID, err := uuid.NewV7()
+		if err != nil {
+			return nil, err
+		}
+
+		var newFloorIDs []uuid.UUID
+		var newUnitIDPtr *uuid.UUID
+
+		// If floor mapping is provided (unit duplication), map floor IDs by index
+		if oldFloorIndexToID != nil && newFloorIndexToID != nil {
+			for _, oldFloorID := range originalModule.FloorIDs {
+				// Find the index of the old floor
+				for idx, fID := range oldFloorIndexToID {
+					if fID == oldFloorID {
+						if newFID, exists := newFloorIndexToID[idx]; exists {
+							newFloorIDs = append(newFloorIDs, newFID)
+						}
+						break
+					}
+				}
+			}
+
+			if originalModule.UnitID != nil {
+				newUnitIDPtr = &customUnitID
+			}
+		}
+
+		_, err = app.duplicateModule(originalModule, newModuleID, newOptionID, newFloorIDs, newUnitIDPtr)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return app.models.Options.GetByID(newOptionID)
+}
+
 func (app *application) createOptionHandler(w http.ResponseWriter, r *http.Request) {
 	unitID, err := app.readUUIDParam(r, "unitID")
 	if err != nil {
@@ -238,15 +316,15 @@ func (app *application) duplicateOptionHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	duplicatedOption := &data.Option{
-		ID:     newOptionID,
-		UnitID: originalOption.UnitID,
-		RoleID: originalOption.RoleID,
-		Name:   generateDuplicateName(originalOption.Name),
-		Active: true,
-	}
-
-	err = app.models.Options.Insert(duplicatedOption)
+	active := true
+	duplicatedOption, err := app.duplicateOption(
+		originalOption,
+		newOptionID,
+		originalOption.UnitID,
+		"",     // generates name
+		&active, // force active=true
+		nil, nil, // no floor mapping
+	)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrInvalidUnitID),
@@ -256,32 +334,6 @@ func (app *application) duplicateOptionHandler(w http.ResponseWriter, r *http.Re
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
-		return
-	}
-
-	for _, moduleInfo := range originalOption.Modules {
-		originalModule, err := app.models.Modules.Get(moduleInfo.ID)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
-		}
-
-		newModuleID, err := uuid.NewV7()
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
-		}
-
-		_, err = app.duplicateModule(originalModule, newModuleID, newOptionID)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
-		}
-	}
-
-	duplicatedOption, err = app.models.Options.GetByID(newOptionID)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
 		return
 	}
 

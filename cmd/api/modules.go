@@ -41,7 +41,26 @@ func (app *application) parseModule(w http.ResponseWriter, r *http.Request) (mod
 	return module, nil
 }
 
-func (app *application) duplicateModule(originalModule *data.Module, newModuleID, newOptionID uuid.UUID) (*data.Module, error) {
+// duplicateModule duplicates a module with optional floor ID mapping and unit ID override.
+// Use customFloorIDs to remap floor relationships (for unit duplication).
+// Use customUnitID to change the unit reference (for unit duplication).
+// Pass nil for both to preserve original relationships (for option duplication).
+func (app *application) duplicateModule(
+	originalModule *data.Module,
+	newModuleID, newOptionID uuid.UUID,
+	customFloorIDs []uuid.UUID,
+	customUnitID *uuid.UUID,
+) (*data.Module, error) {
+	floorIDs := originalModule.FloorIDs
+	if customFloorIDs != nil {
+		floorIDs = customFloorIDs
+	}
+
+	unitID := originalModule.UnitID
+	if customUnitID != nil {
+		unitID = customUnitID
+	}
+
 	duplicatedModule := &data.Module{
 		ID:                newModuleID,
 		Type:              originalModule.Type,
@@ -56,8 +75,8 @@ func (app *application) duplicateModule(originalModule *data.Module, newModuleID
 		RelativeEnergyMin: originalModule.RelativeEnergyMin,
 		RelativeEnergyMax: originalModule.RelativeEnergyMax,
 		Outdated:          false,
-		FloorIDs:          originalModule.FloorIDs,
-		UnitID:            originalModule.UnitID,
+		FloorIDs:          floorIDs,
+		UnitID:            unitID,
 	}
 
 	return app.models.Modules.Insert(duplicatedModule)
@@ -293,7 +312,7 @@ func (app *application) duplicateModuleHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	_, err = app.duplicateModule(originalModule, newModuleID, optionID)
+	_, err = app.duplicateModule(originalModule, newModuleID, optionID, nil, nil)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrInvalidOptionID):
