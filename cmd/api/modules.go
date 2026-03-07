@@ -41,10 +41,13 @@ func (app *application) parseModule(w http.ResponseWriter, r *http.Request) (mod
 	return module, nil
 }
 
-// duplicateModule duplicates a module with optional floor ID mapping and unit ID override.
-// Use customFloorIDs to remap floor relationships (for unit duplication).
-// Use customUnitID to change the unit reference (for unit duplication).
-// Pass nil for both to preserve original relationships (for option duplication).
+// duplicateModule creates a copy of a module with optional customizations.
+// Parameters:
+//   - originalModule: the source module to duplicate
+//   - newModuleID: UUID for the new module
+//   - newOptionID: UUID of the option that will own this module
+//   - customFloorIDs: nil = preserve original floors, []uuid.UUID = use these floor IDs
+//   - customUnitID: nil = preserve original unit, *uuid.UUID = use this unit ID
 func (app *application) duplicateModule(
 	originalModule *data.Module,
 	newModuleID, newOptionID uuid.UUID,

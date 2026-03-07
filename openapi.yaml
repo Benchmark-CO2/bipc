@@ -861,6 +861,64 @@ paths:
               schema:
                 $ref: "#/components/schemas/DefaultOkResponse"
 
+  /v1/projects/{projectID}/duplicate:
+    post:
+      summary: Duplicate a project
+      description: Creates a complete copy of an existing project including all its units, floors, options, and modules. The duplicated project will have a new name with a numeric suffix (e.g., "Project (1)"), and all IDs will be newly generated. The user who duplicates the project will be the owner/administrator of the new project. Floor relationships are preserved by index, so modules remain correctly associated with corresponding floors in the duplicated units. Option names and active states are preserved from the original project.
+      tags: [projects]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          description: ID of the project to duplicate
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: Created. The project was successfully duplicated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - project
+                properties:
+                  project:
+                    $ref: "#/components/schemas/ProjectWithUnits"
+        "400":
+          description: Bad Request. Invalid project ID format.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized. The user is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden. Account must be activated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not Found. The project does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error. Failed to duplicate project or its resources.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/projects/{projectID}/invite:
     post:
       summary: Invite a user to a project

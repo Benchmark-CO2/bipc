@@ -308,6 +308,109 @@ func (app *application) deleteUnitHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// duplicateUnit creates a copy of a unit with all its floors, options and modules.
+// Parameters:
+//   - originalUnit: the source unit to duplicate
+//   - newProjectID: UUID of the project that will own this unit
+//   - customName: nil = preserve original name, *string = use this name
+//   - roleIDMap: nil = preserve original roles (same project), map = oldRoleID -> newRoleID mapping (cross-project)
+//   - adminRoleID: fallback role ID when mapping not found (only used if roleIDMap is not nil)
+func (app *application) duplicateUnit(
+	originalUnit *data.Unit,
+	newProjectID uuid.UUID,
+	customName *string,
+	roleIDMap map[uuid.UUID]uuid.UUID,
+	adminRoleID uuid.UUID,
+) (*data.Unit, error) {
+	newUnitID, err := uuid.NewV7()
+	if err != nil {
+		return nil, err
+	}
+
+	name := originalUnit.Name
+	if customName != nil {
+		name = *customName
+	}
+
+	duplicatedUnit := &data.Unit{
+		ID:        newUnitID,
+		ProjectID: newProjectID,
+		Name:      name,
+		Type:      originalUnit.Type,
+	}
+
+	// Create floor index to ID mappings
+	oldFloorIndexToID := make(map[int]uuid.UUID)
+	newFloorIndexToID := make(map[int]uuid.UUID)
+	var floorsToCreate []data.FloorCreate
+
+	for _, floor := range originalUnit.Floors {
+		oldFloorIndexToID[floor.Index] = floor.ID
+
+		newFloorID, err := uuid.NewV7()
+		if err != nil {
+			return nil, err
+		}
+
+		newFloorIndexToID[floor.Index] = newFloorID
+
+		floorsToCreate = append(floorsToCreate, data.FloorCreate{
+			ID:         newFloorID,
+			FloorGroup: floor.FloorGroup,
+			Category:   floor.Category,
+			Area:       floor.Area,
+			Height:     floor.Height,
+			Index:      floor.Index,
+		})
+	}
+
+	err = app.models.Units.Insert(duplicatedUnit, floorsToCreate)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get options from the original unit
+	originalOptions, err := app.models.Options.GetAll(originalUnit.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Duplicate each option for the new unit
+	for _, originalOption := range originalOptions {
+		newOptionID, err := uuid.NewV7()
+		if err != nil {
+			return nil, err
+		}
+
+		// Calculate the correct role ID if mapping is provided
+		var customRoleID *uuid.UUID
+		if roleIDMap != nil {
+			newRoleID, found := roleIDMap[originalOption.RoleID]
+			if !found {
+				// Fallback to admin role if mapping not found
+				newRoleID = adminRoleID
+			}
+			customRoleID = &newRoleID
+		}
+
+		_, err = app.duplicateOption(
+			originalOption,
+			newOptionID,
+			newUnitID,
+			originalOption.Name,    // preserve name
+			&originalOption.Active, // preserve active
+			customRoleID,           // use mapped role if provided
+			oldFloorIndexToID,
+			newFloorIndexToID,
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return app.models.Units.GetByID(newUnitID)
+}
+
 func (app *application) duplicateUnitHandler(w http.ResponseWriter, r *http.Request) {
 	unitID, err := app.readUUIDParam(r, "unitID")
 	if err != nil {
@@ -337,80 +440,14 @@ func (app *application) duplicateUnitHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	newUnitID, err := uuid.NewV7()
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
-	duplicatedUnit := &data.Unit{
-		ID:        newUnitID,
-		ProjectID: originalUnit.ProjectID,
-		Name:      generateDuplicateName(originalUnit.Name),
-		Type:      originalUnit.Type,
-	}
-
-	// Create floor index to ID mappings
-	oldFloorIndexToID := make(map[int]uuid.UUID)
-	newFloorIndexToID := make(map[int]uuid.UUID)
-	var floorsToCreate []data.FloorCreate
-
-	for _, floor := range originalUnit.Floors {
-		oldFloorIndexToID[floor.Index] = floor.ID
-
-		newFloorID, err := uuid.NewV7()
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
-		}
-
-		newFloorIndexToID[floor.Index] = newFloorID
-
-		floorsToCreate = append(floorsToCreate, data.FloorCreate{
-			ID:         newFloorID,
-			FloorGroup: floor.FloorGroup,
-			Category:   floor.Category,
-			Area:       floor.Area,
-			Height:     floor.Height,
-			Index:      floor.Index,
-		})
-	}
-
-	err = app.models.Units.Insert(duplicatedUnit, floorsToCreate)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
-	originalOptions, err := app.models.Options.GetAll(originalUnit.ID)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
-	for _, originalOption := range originalOptions {
-		newOptionID, err := uuid.NewV7()
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
-		}
-
-		_, err = app.duplicateOption(
-			originalOption,
-			newOptionID,
-			newUnitID,
-			originalOption.Name,   // preserve name
-			&originalOption.Active, // preserve active
-			oldFloorIndexToID,
-			newFloorIndexToID,
-		)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
-		}
-	}
-
-	duplicatedUnit, err = app.models.Units.GetByID(newUnitID)
+	duplicatedName := generateDuplicateName(originalUnit.Name)
+	duplicatedUnit, err := app.duplicateUnit(
+		originalUnit,
+		originalUnit.ProjectID,
+		&duplicatedName,
+		nil,          // no role mapping needed (same project)
+		uuid.Nil,     // admin role not needed
+	)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

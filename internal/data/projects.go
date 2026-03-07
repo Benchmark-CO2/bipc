@@ -50,7 +50,8 @@ type Project struct {
 
 type ProjectWithUnits struct {
 	Project
-	IsAdministrator bool `json:"is_administrator,omitzero"`
+	IsAdministrator bool      `json:"is_administrator,omitzero"`
+	Roles           []Role    `json:"roles,omitempty"`
 
 	Units        []ProjectUnit           `json:"units,omitempty"`
 	Consumptions map[string]*Consumption `json:"consumption,omitempty"`
@@ -242,6 +243,34 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectWithUnits, error) {
 			return nil, err
 		}
 	}
+
+	// Get all roles for this project
+	rolesQuery := `
+		SELECT id, project_id, name, description, simulation, is_protected
+		FROM roles
+		WHERE project_id = $1
+		ORDER BY name`
+
+	rolesRows, err := m.DB.QueryContext(ctx, rolesQuery, project.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rolesRows.Close()
+
+	var roles []Role
+	for rolesRows.Next() {
+		var role Role
+		if err := rolesRows.Scan(&role.ID, &role.ProjectID, &role.Name, &role.Description, &role.Simulation, &role.IsProtected); err != nil {
+			return nil, err
+		}
+		roles = append(roles, role)
+	}
+
+	if err := rolesRows.Err(); err != nil {
+		return nil, err
+	}
+
+	project.Roles = roles
 
 	unitsQuery := `
 		SELECT id, name, type
