@@ -85,6 +85,11 @@ func (app *application) notPermittedResponse(w http.ResponseWriter, r *http.Requ
 	app.errorResponse(w, r, http.StatusForbidden, message)
 }
 
+func (app *application) adminOnlyResponse(w http.ResponseWriter, r *http.Request) {
+	message := "this action requires administrator privileges"
+	app.errorResponse(w, r, http.StatusForbidden, message)
+}
+
 func (app *application) unprocessableEntityResponse(w http.ResponseWriter, r *http.Request, err error) {
 	app.errorResponse(w, r, http.StatusUnprocessableEntity, err.Error())
 }

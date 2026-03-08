@@ -26,6 +26,7 @@ type User struct {
 	Email      string     `json:"email"`
 	Password   password   `json:"-"`
 	Activated  bool       `json:"activated"`
+	IsAdmin    bool       `json:"is_admin"`
 	CreaCau    *string    `json:"crea_cau,omitzero"`
 	Birthdate  *time.Time `json:"birthdate,omitzero"`
 	City       *string    `json:"city,omitzero"`
@@ -127,11 +128,11 @@ func (m UserModel) Insert(user *User) error {
 	user.ID = userID
 
 	query := `
-        INSERT INTO users (id, name, email, password_hash, activated, crea_cau, birthdate, city, activity, enterprise) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        INSERT INTO users (id, name, email, password_hash, activated, is_admin, crea_cau, birthdate, city, activity, enterprise) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING created_at`
 
-	args := []any{user.ID, user.Name, user.Email, user.Password.hash, user.Activated, user.CreaCau, user.Birthdate, user.City, user.Activity, user.Enterprise}
+	args := []any{user.ID, user.Name, user.Email, user.Password.hash, user.Activated, user.IsAdmin, user.CreaCau, user.Birthdate, user.City, user.Activity, user.Enterprise}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -151,7 +152,7 @@ func (m UserModel) Insert(user *User) error {
 
 func (m UserModel) GetByEmail(email string) (*User, error) {
 	query := `
-        SELECT id, created_at, name, email, password_hash, activated, crea_cau, birthdate, city, activity, enterprise
+        SELECT id, created_at, name, email, password_hash, activated, is_admin, crea_cau, birthdate, city, activity, enterprise
         FROM users
         WHERE email = $1`
 
@@ -167,6 +168,7 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 		&user.Email,
 		&user.Password.hash,
 		&user.Activated,
+		&user.IsAdmin,
 		&user.CreaCau,
 		&user.Birthdate,
 		&user.City,
@@ -189,14 +191,15 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 func (m UserModel) Update(user *User) error {
 	query := `
         UPDATE users 
-        SET name = $1, email = $2, password_hash = $3, activated = $4, crea_cau = $5, birthdate = $6, city = $7, activity = $8, enterprise = $9
-        WHERE id = $10`
+        SET name = $1, email = $2, password_hash = $3, activated = $4, is_admin = $5, crea_cau = $6, birthdate = $7, city = $8, activity = $9, enterprise = $10
+        WHERE id = $11`
 
 	args := []any{
 		user.Name,
 		user.Email,
 		user.Password.hash,
 		user.Activated,
+		user.IsAdmin,
 		user.CreaCau,
 		user.Birthdate,
 		user.City,
@@ -234,7 +237,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 
 	query := `
-        SELECT u.id, u.created_at, u.name, u.email, u.password_hash, u.activated, u.crea_cau, u.birthdate, u.city, u.activity, u.enterprise
+        SELECT u.id, u.created_at, u.name, u.email, u.password_hash, u.activated, u.is_admin, u.crea_cau, u.birthdate, u.city, u.activity, u.enterprise
         FROM users u
         INNER JOIN tokens t ON u.id = t.user_id
         WHERE t.hash = $1
@@ -255,6 +258,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 		&user.Email,
 		&user.Password.hash,
 		&user.Activated,
+		&user.IsAdmin,
 		&user.CreaCau,
 		&user.Birthdate,
 		&user.City,
@@ -275,7 +279,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 
 func (m UserModel) Collaborators(userID uuid.UUID) ([]*User, error) {
 	query := `
-		SELECT u.id, u.created_at, u.name, u.email, u.activated, u.crea_cau, u.birthdate, u.city, u.activity, u.enterprise
+		SELECT u.id, u.created_at, u.name, u.email, u.activated, u.is_admin, u.crea_cau, u.birthdate, u.city, u.activity, u.enterprise
 		FROM users u
 		JOIN users_projects up1 ON u.id = up1.user_id
 		JOIN users_projects up2 ON up1.project_id = up2.project_id
@@ -303,6 +307,7 @@ func (m UserModel) Collaborators(userID uuid.UUID) ([]*User, error) {
 			&user.Name,
 			&user.Email,
 			&user.Activated,
+			&user.IsAdmin,
 			&user.CreaCau,
 			&user.Birthdate,
 			&user.City,

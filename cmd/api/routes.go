@@ -53,7 +53,7 @@ func (app *application) routes() http.Handler {
 
 	// ----------------------------------------------------------------------------------------------------------------------------------
 
-	router.HandlerFunc(http.MethodPost, "/v1/projects-upload", app.requireActivatedUser(app.createProjectsFromCSVHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/projects-upload", app.requireAdmin(app.createProjectsFromCSVHandler))
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units", app.requireRolesPermission("create:unit", app.createUnitHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID", app.readUnitHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID", app.requireRolesPermission("update:unit", app.updateUnitHandler))
