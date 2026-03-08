@@ -34,7 +34,6 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects", app.requireActivatedUser(app.createProjectHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects", app.requireAuthenticatedUser(app.listProjectsHandler))
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate", app.requireActivatedUser(app.duplicateProjectHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID", app.requireActivatedUser(app.showProjectHandler))
 	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID", app.requireRolesPermission("update:project", app.updateProjectHandler))
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID", app.requireRolesPermission("*:*", app.deleteProjectHandler))
@@ -49,7 +48,9 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPut, "/v1/projects/:projectID/transfer-ownership", app.requireRolesPermission("*:*", app.transferOwnershipHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/collaborators", app.listCollaboratorsHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/user/permissions", app.requireAuthenticatedUser(app.listUserPermissionsHandler))
-
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate", app.requireActivatedUser(app.duplicateProjectHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate/:targetUserID", app.requireActivatedUser(app.duplicateProjectToUserHandler))
+	
 	// ----------------------------------------------------------------------------------------------------------------------------------
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects-upload", app.requireActivatedUser(app.createProjectsFromCSVHandler))
