@@ -374,6 +374,46 @@ func (app *application) requireRoleAssociation(next http.HandlerFunc) http.Handl
 	return app.requireActivatedUser(fn)
 }
 
+func (app *application) requireOptionRoleAssociation(next http.HandlerFunc) http.HandlerFunc {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		user := app.contextGetUser(r)
+
+		optionID, err := app.readUUIDParam(r, "optionID")
+		if err != nil {
+			v := validator.New()
+			v.AddError("url", err.Error())
+			app.failedValidationResponse(w, r, v.Errors)
+			return
+		}
+
+		option, err := app.models.Options.GetByID(optionID)
+		if err != nil {
+			switch {
+			case errors.Is(err, data.ErrRecordNotFound):
+				app.notFoundResponse(w, r)
+			default:
+				app.serverErrorResponse(w, r, err)
+			}
+			return
+		}
+
+		isAssociated, err := app.models.Roles.IsUserAssociated(user.ID, option.RoleID)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		if !isAssociated {
+			app.notPermittedResponse(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	}
+
+	return app.requireActivatedUser(fn)
+}
+
 func (app *application) notFound(fileServer http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
