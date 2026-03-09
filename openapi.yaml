@@ -1982,12 +1982,16 @@ components:
         type:
           type: string
           description: "The type of structural module."
-          enum: [beam_column, concrete_wall]
+          enum: [beam_column, concrete_wall, structural_masonry, raft_foundation, piles_foundation, raft_piles_foundation]
         data:
           description: "Polymorphic data containing the specific details for the chosen module type. The structure of this object depends on the 'type' field."
           oneOf:
             - $ref: "#/components/schemas/BeamColumnData"
             - $ref: "#/components/schemas/ConcreteWallData"
+            - $ref: "#/components/schemas/StructuralMasonryData"
+            - $ref: "#/components/schemas/RaftFoundationData"
+            - $ref: "#/components/schemas/PilesFoundationData"
+            - $ref: "#/components/schemas/RaftPilesFoundationData"
       required:
         - type
         - data
@@ -2006,26 +2010,31 @@ components:
               - fck: 35
                 volume: 50.0
             steel:
-              - ca: 50
-                mass: 7500
-              - ca: 60
-                mass: 1200
+              - material: "rebar"
+                resistance: "CA50"
+                mass: 7500.0
+              - material: "rebar"
+                resistance: "CA60"
+                mass: 1200.0
           concrete_beams:
             volumes:
               - fck: 30
                 volume: 200.0
             steel:
-              - ca: 50
-                mass: 10000
-              - ca: 60
-                mass: 1500
+              - material: "rebar"
+                resistance: "CA50"
+                mass: 10000.0
+              - material: "rebar"
+                resistance: "CA60"
+                mass: 1500.0
           concrete_slabs:
             volumes:
               - fck: 25
                 volume: 450.0
             steel:
-              - ca: 50
-                mass: 22500
+              - material: "rebar"
+                resistance: "CA50"
+                mass: 22500.0
           form_columns: 1200
           form_beams: 2500
           form_slabs: 9000
@@ -2057,28 +2066,46 @@ components:
       items:
         $ref: "#/components/schemas/ConcreteVolumeItem"
 
-    # Schema for a single steel mass item
-    SteelMassItem:
+    # Schema for a single steel material item
+    SteelMaterial:
       type: object
+      description: "Defines a steel reinforcement material with its type, resistance characteristics, and mass."
       properties:
-        ca:
-          type: integer
-          description: "The type of CA steel reinforcement."
-          enum: [50, 60]
+        material:
+          type: string
+          description: "The type of steel material."
+          enum: [general, rebar, mesh, strand, other]
+          example: "rebar"
+        other_name:
+          type: string
+          description: "Custom material name. Required when material is 'other'."
+          example: "Custom Steel Type"
+        resistance:
+          type: string
+          description: "The resistance/strength classification of the steel."
+          enum: [CA50, CA60, CP190, other]
+          example: "CA50"
+        other_resistance:
+          type: number
+          format: float
+          description: "Custom resistance value in MPa. Required when resistance is 'other'."
+          example: 500.0
         mass:
           type: number
           format: float
           description: "Total mass of steel reinforcement in kilograms (kg)."
+          example: 22500.0
       required:
-        - ca
+        - material
+        - resistance
         - mass
 
-    # Schema for the array of steel masses
-    SteelMasses:
+    # Schema for the array of steel materials
+    SteelMaterials:
       type: array
-      description: "An array defining steel reinforcement mass, broken down by type."
+      description: "An array defining steel reinforcement materials, broken down by type and resistance."
       items:
-        $ref: "#/components/schemas/SteelMassItem"
+        $ref: "#/components/schemas/SteelMaterial"
 
     # Schema for the concrete element, with consistent references
     ConcreteElement:
@@ -2088,7 +2115,7 @@ components:
         volumes:
           $ref: "#/components/schemas/ConcreteVolumes"
         steel:
-          $ref: "#/components/schemas/SteelMasses"
+          $ref: "#/components/schemas/SteelMaterials"
       required:
         - volumes
         - steel
@@ -2196,3 +2223,268 @@ components:
       required:
         - concrete_walls
         - concrete_slabs
+
+    StructuralMasonryData:
+      type: object
+      description: "Data for a 'structural_masonry' type module. Structural masonry combines concrete structural elements (columns, beams, slabs) with masonry block construction."
+      properties:
+        floor_ids:
+          type: array
+          description: "Array of floor IDs to which this module will be applied."
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        concrete_columns:
+          description: "Concrete and steel composition for columns."
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        concrete_beams:
+          description: "Concrete and steel composition for beams."
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        concrete_slabs:
+          description: "Concrete and steel composition for slabs."
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        form_columns:
+          type: number
+          description: "Total area of concrete forms for columns in m²."
+          example: 1200
+        form_beams:
+          type: number
+          description: "Total area of concrete forms for beams in m²."
+          example: 2500
+        form_slabs:
+          type: number
+          description: "Total area of concrete forms for slabs in m²."
+          example: 9000
+        form_total:
+          type: number
+          description: "Total area of all concrete forms in m²."
+          example: 12700
+        masonry:
+          type: object
+          description: "Masonry elements including grout, mortar, and blocks."
+          properties:
+            grout:
+              type: array
+              description: "Array of grout information for vertical or horizontal filling."
+              items:
+                type: object
+                properties:
+                  position:
+                    type: string
+                    enum: [vertical, horizontal]
+                    description: "Position of grout application."
+                  volumes:
+                    type: array
+                    description: "Array of grout volumes by compressive strength (fgk)."
+                    items:
+                      type: object
+                      properties:
+                        fgk:
+                          type: integer
+                          description: "Grout compressive strength in MPa."
+                          example: 15
+                        volume:
+                          type: number
+                          format: float
+                          description: "Volume of grout in m³."
+                          example: 10.5
+                      required: [fgk, volume]
+                  steel:
+                    $ref: "#/components/schemas/SteelMaterials"
+                required: [position, volumes]
+            mortar:
+              type: array
+              description: "Array of mortar volumes by compressive strength (fak)."
+              items:
+                type: object
+                properties:
+                  fak:
+                    type: number
+                    format: float
+                    description: "Mortar compressive strength in MPa."
+                    example: 8.5
+                  volume:
+                    type: number
+                    format: float
+                    description: "Volume of mortar in m³."
+                    example: 15.0
+                required: [fak, volume]
+            blocks:
+              type: array
+              description: "Array of masonry blocks by type and strength."
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    description: "Type of masonry block."
+                    example: "inteiro (14x19x39)"
+                  fbk:
+                    type: integer
+                    description: "Block compressive strength in MPa."
+                    example: 8
+                  quantity:
+                    type: integer
+                    description: "Number of blocks."
+                    example: 5000
+                required: [type, fbk, quantity]
+          required: [grout, mortar, blocks]
+      required:
+        - floor_ids
+        - concrete_columns
+        - concrete_beams
+        - concrete_slabs
+        - masonry
+
+    RaftFoundationData:
+      type: object
+      description: "Data for a 'raft_foundation' type module. A raft foundation is a continuous concrete slab that extends over the entire building footprint."
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+          description: "ID of the unit this foundation belongs to."
+        area:
+          type: number
+          format: float
+          description: "Total area of the raft foundation in m²."
+          example: 500.0
+        thickness:
+          type: number
+          format: float
+          description: "Thickness of the raft slab in meters."
+          example: 0.30
+        fck:
+          type: integer
+          description: "Characteristic compressive strength of concrete in MPa."
+          enum: [20, 25, 30, 35, 40, 45]
+          example: 30
+        steel:
+          $ref: "#/components/schemas/SteelMaterials"
+      required:
+        - unit_id
+        - area
+        - thickness
+        - fck
+        - steel
+
+    PilesFoundationData:
+      type: object
+      description: "Data for a 'piles_foundation' type module. A piles foundation uses deep vertical elements to transfer loads to deeper soil layers."
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+          description: "ID of the unit this foundation belongs to."
+        fck:
+          type: integer
+          description: "Characteristic compressive strength of concrete in MPa."
+          enum: [20, 25, 30, 35, 40, 45]
+          example: 30
+        piles:
+          type: object
+          description: "Pile elements."
+          properties:
+            volume:
+              type: number
+              format: float
+              description: "Total volume of pile concrete in m³."
+              example: 50.0
+            steel:
+              $ref: "#/components/schemas/SteelMaterials"
+          required: [volume, steel]
+        blocks:
+          type: object
+          description: "Pile cap blocks."
+          properties:
+            volume:
+              type: number
+              format: float
+              description: "Total volume of block concrete in m³."
+              example: 30.0
+            steel:
+              $ref: "#/components/schemas/SteelMaterials"
+          required: [volume, steel]
+        grade_beams:
+          type: object
+          description: "Grade beams connecting pile caps."
+          properties:
+            volume:
+              type: number
+              format: float
+              description: "Total volume of grade beam concrete in m³."
+              example: 20.0
+            steel:
+              $ref: "#/components/schemas/SteelMaterials"
+          required: [volume, steel]
+        tie_beams:
+          type: object
+          description: "Tie beams for lateral stability."
+          properties:
+            volume:
+              type: number
+              format: float
+              description: "Total volume of tie beam concrete in m³."
+              example: 15.0
+            steel:
+              $ref: "#/components/schemas/SteelMaterials"
+          required: [volume, steel]
+      required:
+        - unit_id
+        - fck
+        - piles
+        - blocks
+        - grade_beams
+        - tie_beams
+
+    RaftPilesFoundationData:
+      type: object
+      description: "Data for a 'raft_piles_foundation' type module. Combines a raft foundation with supporting piles for higher load capacity."
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+          description: "ID of the unit this foundation belongs to."
+        fck:
+          type: integer
+          description: "Characteristic compressive strength of concrete in MPa."
+          enum: [20, 25, 30, 35, 40, 45]
+          example: 30
+        raft:
+          type: object
+          description: "Raft slab component."
+          properties:
+            area:
+              type: number
+              format: float
+              description: "Total area of the raft in m²."
+              example: 500.0
+            thickness:
+              type: number
+              format: float
+              description: "Thickness of the raft slab in meters."
+              example: 0.30
+            steel:
+              $ref: "#/components/schemas/SteelMaterials"
+          required: [area, thickness, steel]
+        piles:
+          type: object
+          description: "Supporting piles component."
+          properties:
+            volume:
+              type: number
+              format: float
+              description: "Total volume of pile concrete in m³."
+              example: 40.0
+            steel:
+              $ref: "#/components/schemas/SteelMaterials"
+          required: [volume, steel]
+      required:
+        - unit_id
+        - fck
+        - raft
+        - piles
