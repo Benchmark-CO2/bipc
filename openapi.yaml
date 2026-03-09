@@ -863,8 +863,8 @@ paths:
 
   /v1/projects/{projectID}/duplicate:
     post:
-      summary: Duplicate a project
-      description: Creates a complete copy of an existing project including all its units, floors, options, and modules. The duplicated project will have a new name with a numeric suffix (e.g., "Project (1)"), and all IDs will be newly generated. The user who duplicates the project will be the owner/administrator of the new project. Floor relationships are preserved by index, so modules remain correctly associated with corresponding floors in the duplicated units. Option names and active states are preserved from the original project.
+      summary: Duplicate a project (same owner)
+      description: Creates a complete copy of an existing project including all its units, floors, options, modules, and roles. The duplicated project will have a new name with a numeric suffix (e.g., "Project (1)"), and all IDs will be newly generated. The current authenticated user becomes the owner of the duplicated project, and all original role members are preserved. Note that this endpoint does NOT allow changing the owner - use the transfer endpoint for cross-account duplication.
       tags: [projects]
       security:
         - bearerAuth: []

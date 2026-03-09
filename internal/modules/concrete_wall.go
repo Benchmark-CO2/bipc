@@ -126,15 +126,7 @@ func (w *ConcreteWall) toDataModule(moduleID, optionID uuid.UUID, result Consump
 }
 
 func (w *ConcreteWall) fromDataModule(d *data.Module) Module {
-	var consumption *Consumption
-	if d.TotalCO2Min != nil {
-		consumption = &Consumption{
-			CO2Min:    *d.TotalCO2Min,
-			CO2Max:    *d.TotalCO2Max,
-			EnergyMin: *d.TotalEnergyMin,
-			EnergyMax: *d.TotalEnergyMax,
-		}
-	}
+	consumption := consumptionFromDataModule(d)
 
 	var concreteWalls, concreteSlabs ConcreteElement
 
@@ -145,39 +137,18 @@ func (w *ConcreteWall) fromDataModule(d *data.Module) Module {
 		concreteSlabs = concreteElementFromMap(slabData)
 	}
 
-	var wallThickness, slabThickness, wallArea, slabArea, wallFormArea, slabFormArea *float64
-
-	if val, ok := d.Data["wall_thickness"].(float64); ok {
-		wallThickness = &val
-	}
-	if val, ok := d.Data["slab_thickness"].(float64); ok {
-		slabThickness = &val
-	}
-	if val, ok := d.Data["wall_area"].(float64); ok {
-		wallArea = &val
-	}
-	if val, ok := d.Data["slab_area"].(float64); ok {
-		slabArea = &val
-	}
-	if val, ok := d.Data["wall_form_area"].(float64); ok {
-		wallFormArea = &val
-	}
-	if val, ok := d.Data["slab_form_area"].(float64); ok {
-		slabFormArea = &val
-	}
-
 	return &ConcreteWall{
 		ID:              d.ID,
 		BasicModuleData: BasicModuleData{Type: "concrete_wall", Outdated: d.Outdated},
 		Consumption:     consumption,
 		ConcreteWalls:   concreteWalls,
 		ConcreteSlabs:   concreteSlabs,
-		WallThickness:   wallThickness,
-		SlabThickness:   slabThickness,
-		WallArea:        wallArea,
-		SlabArea:        slabArea,
-		WallFormArea:    wallFormArea,
-		SlabFormArea:    slabFormArea,
+		WallThickness:   extractFloat64Pointer(d.Data, "wall_thickness"),
+		SlabThickness:   extractFloat64Pointer(d.Data, "slab_thickness"),
+		WallArea:        extractFloat64Pointer(d.Data, "wall_area"),
+		SlabArea:        extractFloat64Pointer(d.Data, "slab_area"),
+		WallFormArea:    extractFloat64Pointer(d.Data, "wall_form_area"),
+		SlabFormArea:    extractFloat64Pointer(d.Data, "slab_form_area"),
 		FloorIDs:        d.FloorIDs,
 	}
 }

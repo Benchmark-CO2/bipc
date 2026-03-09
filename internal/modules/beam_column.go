@@ -135,15 +135,7 @@ func (b *BeamColumn) toDataModule(moduleID, optionID uuid.UUID, result Consumpti
 }
 
 func (b *BeamColumn) fromDataModule(d *data.Module) Module {
-	var consumption *Consumption
-	if d.TotalCO2Min != nil {
-		consumption = &Consumption{
-			CO2Min:    *d.TotalCO2Min,
-			CO2Max:    *d.TotalCO2Max,
-			EnergyMin: *d.TotalEnergyMin,
-			EnergyMax: *d.TotalEnergyMax,
-		}
-	}
+	consumption := consumptionFromDataModule(d)
 
 	var concreteColumns, concreteBeams, concreteSlabs ConcreteElement
 
@@ -157,33 +149,6 @@ func (b *BeamColumn) fromDataModule(d *data.Module) Module {
 		concreteSlabs = concreteElementFromMap(slabData)
 	}
 
-	var formColumns, formBeams, formSlabs, formTotal *float64
-	var columnNumber *int
-	var avgBeamSpan, avgSlabSpan *float64
-
-	if val, ok := d.Data["form_columns"].(float64); ok {
-		formColumns = &val
-	}
-	if val, ok := d.Data["form_beams"].(float64); ok {
-		formBeams = &val
-	}
-	if val, ok := d.Data["form_slabs"].(float64); ok {
-		formSlabs = &val
-	}
-	if val, ok := d.Data["form_total"].(float64); ok {
-		formTotal = &val
-	}
-	if val, ok := d.Data["column_number"].(float64); ok {
-		intVal := int(val)
-		columnNumber = &intVal
-	}
-	if val, ok := d.Data["avg_beam_span"].(float64); ok {
-		avgBeamSpan = &val
-	}
-	if val, ok := d.Data["avg_slab_span"].(float64); ok {
-		avgSlabSpan = &val
-	}
-
 	return &BeamColumn{
 		ID:              d.ID,
 		BasicModuleData: BasicModuleData{Type: "beam_column", Outdated: d.Outdated},
@@ -191,13 +156,13 @@ func (b *BeamColumn) fromDataModule(d *data.Module) Module {
 		ConcreteColumns: concreteColumns,
 		ConcreteBeams:   concreteBeams,
 		ConcreteSlabs:   concreteSlabs,
-		FormColumns:     formColumns,
-		FormBeams:       formBeams,
-		FormSlabs:       formSlabs,
-		FormTotal:       formTotal,
-		ColumnNumber:    columnNumber,
-		AvgBeamSpan:     avgBeamSpan,
-		AvgSlabSpan:     avgSlabSpan,
+		FormColumns:     extractFloat64Pointer(d.Data, "form_columns"),
+		FormBeams:       extractFloat64Pointer(d.Data, "form_beams"),
+		FormSlabs:       extractFloat64Pointer(d.Data, "form_slabs"),
+		FormTotal:       extractFloat64Pointer(d.Data, "form_total"),
+		ColumnNumber:    extractIntPointer(d.Data, "column_number"),
+		AvgBeamSpan:     extractFloat64Pointer(d.Data, "avg_beam_span"),
+		AvgSlabSpan:     extractFloat64Pointer(d.Data, "avg_slab_span"),
 		FloorIDs:        d.FloorIDs,
 	}
 }
