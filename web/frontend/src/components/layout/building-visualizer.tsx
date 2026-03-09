@@ -46,16 +46,16 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   const onSelectionChange = isSelectable ? onCheckFloorId : undefined;
 
   const roofFloors = unifiedFloors.filter(
-    (floor) => floor.category === "penthouse_floor"
+    (floor) => floor.category === "penthouse_floor",
   );
   const typicalFloors = unifiedFloors.filter(
-    (floor) => floor.category === "standard_floor"
+    (floor) => floor.category === "standard_floor",
   );
   const groundFloors = unifiedFloors.filter(
-    (floor) => floor.category === "ground_floor"
+    (floor) => floor.category === "ground_floor",
   );
   const basementFloors = unifiedFloors.filter(
-    (floor) => floor.category === "basement_floor"
+    (floor) => floor.category === "basement_floor",
   );
 
   const maxArea = Math.max(...unifiedFloors.map((floor) => floor.area), 1);
@@ -68,7 +68,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
 
   const biggestFloorArea = Math.max(
     ...unifiedFloors.map((floor) => floor.area),
-    1
+    1,
   );
 
   const foundationFloor: UnifiedFloor = {
@@ -82,7 +82,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
 
   const handleFloorSelection = (
     floorIdentifier: string,
-    isChecked: boolean
+    isChecked: boolean,
   ) => {
     if (!onSelectionChange) return;
 
@@ -94,7 +94,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
         : [...selectedItems, floorIdentifier];
     } else {
       newSelectedItems = selectedItems.filter(
-        (item: string) => item !== floorIdentifier
+        (item: string) => item !== floorIdentifier,
       );
     }
 
@@ -299,7 +299,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
                 {unifiedFloors
                   .reduce((sum, floor) => sum + floor.area, 0)
                   .toFixed(0)}
-              </span>
+              </span>{" "}
               m² total
             </div>
           </div>

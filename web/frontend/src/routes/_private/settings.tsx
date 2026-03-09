@@ -1,12 +1,13 @@
 import { GenerateApiKey } from "@/components/apiKey";
 import { LanguageToggle } from "@/components/language-toggle";
-import DrawerDocuments from "@/components/layout/drawer-documents";
 import { SettingsSection } from "@/components/settings-section";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { UserInfo } from "@/components/user-info";
 import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Globe,
@@ -16,7 +17,6 @@ import {
   ShieldHalf,
   TrendingUp,
 } from "lucide-react";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_private/settings")({
@@ -25,9 +25,12 @@ export const Route = createFileRoute("/_private/settings")({
 
 function RouteComponent() {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
+    <div
+      className={cn("container mx-auto p-6 max-w-4xl", { "px-0": isMobile })}
+    >
       {/* Header */}
       <div className="space-y-2 mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-primary">

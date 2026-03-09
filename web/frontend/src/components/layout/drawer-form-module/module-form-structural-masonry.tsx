@@ -77,11 +77,11 @@ const GroutItem = ({
 
   const totalVolume = volumes.reduce(
     (sum: number, item: any) => sum + parseNumber(item.volume || "0"),
-    0
+    0,
   );
   const totalMass = steel.reduce(
     (sum: number, item: any) => sum + parseNumber(item.mass || "0"),
-    0
+    0,
   );
 
   return (
@@ -149,7 +149,7 @@ const GroutItem = ({
 
           {volumesFieldArray.fields.map((volumeField, volumeIndex) => {
             const currentFgk = form.watch(
-              `grout.${groutIndex}.volumes.${volumeIndex}.fgk`
+              `grout.${groutIndex}.volumes.${volumeIndex}.fgk`,
             );
             const isCustomFgk =
               customFgkSelected[`grout-${groutIndex}-volume-${volumeIndex}`] ||
@@ -257,7 +257,7 @@ const GroutItem = ({
                             value={field.value || ""}
                             onChange={(e) => {
                               const numericValue = masks.numeric(
-                                e.target.value
+                                e.target.value,
                               );
                               field.onChange(Number(numericValue) || 0);
                             }}
@@ -298,7 +298,7 @@ const GroutItem = ({
 
           {steelFieldArray.fields.map((steelField, steelIndex) => {
             const currentCa = form.watch(
-              `grout.${groutIndex}.steel.${steelIndex}.ca`
+              `grout.${groutIndex}.steel.${steelIndex}.ca`,
             );
             const isCustomCa =
               customCaSelected[`grout-${groutIndex}-steel-${steelIndex}`] ||
@@ -364,7 +364,7 @@ const GroutItem = ({
                     name={`grout.${groutIndex}.steel.${steelIndex}.mass`}
                     render={({ field }) => (
                       <FormItem className="flex-1">
-                        <FormLabel className="text-xs">Peso (kg)</FormLabel>
+                        <FormLabel className="text-xs">Massa (kg)</FormLabel>
                         <FormControl>
                           <Input
                             type="text"
@@ -408,7 +408,7 @@ const GroutItem = ({
                             value={field.value || ""}
                             onChange={(e) => {
                               const numericValue = masks.numeric(
-                                e.target.value
+                                e.target.value,
                               );
                               field.onChange(Number(numericValue) || 0);
                             }}
@@ -537,12 +537,12 @@ const ModuleFormStructuralMasonry = ({
   }, [form, fckOptions, caOptions]);
 
   const calculateTotalVolume = (
-    volumes: Array<{ fck: number; volume: string }>
+    volumes: Array<{ fck: number; volume: string }>,
   ) => {
     return (
       volumes?.reduce(
         (total, item) => total + parseNumber(item.volume || "0"),
-        0
+        0,
       ) || 0
     );
   };
@@ -551,13 +551,13 @@ const ModuleFormStructuralMasonry = ({
     return (
       steel?.reduce(
         (total, item) => total + parseNumber(item.mass || "0"),
-        0
+        0,
       ) || 0
     );
   };
 
   const calculateTotalQuantity = (
-    blocks: Array<{ type: string; fbk: number; quantity: string | number }>
+    blocks: Array<{ type: string; fbk: number; quantity: string | number }>,
   ) => {
     return (
       blocks?.reduce((total, item) => {
@@ -571,7 +571,7 @@ const ModuleFormStructuralMasonry = ({
   };
 
   const calculateTotalMortarVolume = (
-    mortar: Array<{ fak: number; volume: string | number }>
+    mortar: Array<{ fak: number; volume: string | number }>,
   ) => {
     return (
       mortar?.reduce((total, item) => {
@@ -600,7 +600,7 @@ const ModuleFormStructuralMasonry = ({
     const isBlockTypeUsed = (blockType: string, currentIndex: number) => {
       return currentBlocks.some(
         (block: any, index: number) =>
-          index !== currentIndex && block.type === blockType
+          index !== currentIndex && block.type === blockType,
       );
     };
 
@@ -778,7 +778,7 @@ const ModuleFormStructuralMasonry = ({
                                 value={field.value || ""}
                                 onChange={(e) => {
                                   const numericValue = masks.numeric(
-                                    e.target.value
+                                    e.target.value,
                                   );
                                   field.onChange(Number(numericValue) || 0);
                                 }}
@@ -835,7 +835,7 @@ const ModuleFormStructuralMasonry = ({
     const isGroutTypeUsed = (groutType: string, currentIndex: number) => {
       return currentGrout.some(
         (grout: any, index: number) =>
-          index !== currentIndex && grout.type === groutType
+          index !== currentIndex && grout.type === groutType,
       );
     };
 
@@ -1042,7 +1042,7 @@ const ModuleFormStructuralMasonry = ({
                                 value={field.value || ""}
                                 onChange={(e) => {
                                   const numericValue = masks.numeric(
-                                    e.target.value
+                                    e.target.value,
                                   );
                                   field.onChange(Number(numericValue) || 0);
                                 }}
@@ -1080,7 +1080,7 @@ const ModuleFormStructuralMasonry = ({
   const renderCompleteSection = (
     fieldName: "concrete_columns" | "concrete_beams" | "concrete_slabs",
     title: string,
-    isRequired: boolean = true
+    isRequired: boolean = true,
   ) => {
     const {
       fields: volumeFields,
@@ -1113,7 +1113,7 @@ const ModuleFormStructuralMasonry = ({
         const hasVolumes = currentVolumes.length > 0;
         const hasSteel = currentSteel.length > 0;
         const hasVolumeWithValue = currentVolumes.some(
-          (v: any) => v.volume > 0
+          (v: any) => v.volume > 0,
         );
         const hasSteelWithValue = currentSteel.some((s: any) => s.mass > 0);
 
@@ -1141,7 +1141,7 @@ const ModuleFormStructuralMasonry = ({
           hasVolumeWithValue &&
           !hasSteelWithValue
         ) {
-          return "Os pesos de aço devem ser maiores que 0.";
+          return "As massas de aço devem ser maiores que 0.";
         }
         // Se ambos estão zerados mas foram adicionados
         else if (
@@ -1150,7 +1150,7 @@ const ModuleFormStructuralMasonry = ({
           !hasVolumeWithValue &&
           !hasSteelWithValue
         ) {
-          return "Tanto os volumes de concreto quanto os pesos de aço devem ser maiores que 0.";
+          return "Tanto os volumes de concreto quanto as massas de aço devem ser maiores que 0.";
         }
       }
       return "";
@@ -1161,14 +1161,14 @@ const ModuleFormStructuralMasonry = ({
         (volume: any, index: number) =>
           index !== currentIndex &&
           volume.fck === fck &&
-          fckOptions.includes(fck)
+          fckOptions.includes(fck),
       );
     };
 
     const isCaUsed = (ca: number, currentIndex: number) => {
       return currentSteel.some(
         (steel: any, index: number) =>
-          index !== currentIndex && steel.ca === ca && caOptions.includes(ca)
+          index !== currentIndex && steel.ca === ca && caOptions.includes(ca),
       );
     };
 
@@ -1219,7 +1219,7 @@ const ModuleFormStructuralMasonry = ({
             <div className="space-y-3">
               {volumeFields.map((field, index) => {
                 const currentFck = form.watch(
-                  `${fieldName}.volumes.${index}.fck` as any
+                  `${fieldName}.volumes.${index}.fck` as any,
                 );
                 const isCustomFck =
                   customFckSelected[`${fieldName}-volume-${index}`] ||
@@ -1333,7 +1333,7 @@ const ModuleFormStructuralMasonry = ({
                                 value={field.value || ""}
                                 onChange={(e) => {
                                   const numericValue = masks.numeric(
-                                    e.target.value
+                                    e.target.value,
                                   );
                                   field.onChange(Number(numericValue) || 0);
                                 }}
@@ -1376,7 +1376,7 @@ const ModuleFormStructuralMasonry = ({
             <div className="space-y-3">
               {steelFields.map((field, index) => {
                 const currentCa = form.watch(
-                  `${fieldName}.steel.${index}.ca` as any
+                  `${fieldName}.steel.${index}.ca` as any,
                 );
                 const isCustomCa =
                   customCaSelected[`${fieldName}-steel-${index}`] ||
@@ -1444,7 +1444,9 @@ const ModuleFormStructuralMasonry = ({
                         name={`${fieldName}.steel.${index}.mass`}
                         render={({ field }) => (
                           <FormItem className="flex-1">
-                            <FormLabel className="text-xs">Peso (kg)</FormLabel>
+                            <FormLabel className="text-xs">
+                              Massa (kg)
+                            </FormLabel>
                             <FormControl>
                               <Input
                                 type="text"
@@ -1488,7 +1490,7 @@ const ModuleFormStructuralMasonry = ({
                                 value={field.value || ""}
                                 onChange={(e) => {
                                   const numericValue = masks.numeric(
-                                    e.target.value
+                                    e.target.value,
                                   );
                                   field.onChange(Number(numericValue) || 0);
                                 }}
@@ -1637,7 +1639,7 @@ const ModuleFormStructuralMasonry = ({
           {renderCompleteSection(
             "concrete_columns",
             "Pilar de concreto",
-            false
+            false,
           )}
           {renderCompleteSection("concrete_beams", "Viga de concreto", false)}
         </div>

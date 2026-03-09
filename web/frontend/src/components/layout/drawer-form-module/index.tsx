@@ -202,7 +202,7 @@ const DrawerFormModule = ({
       setSelectedFloors(floor_ids || []);
 
       const toLocalString = (
-        value: number | string | null | undefined
+        value: number | string | null | undefined,
       ): string => {
         if (value === null || value === undefined) return "0";
         if (value === "" || value === "0" || value === 0) return "0";
@@ -497,7 +497,7 @@ const DrawerFormModule = ({
       };
     } else if (moduleType === "raft_piles_foundation") {
       filteredData = {
-        fck: data.fck, // FCK único na raiz
+        fck: data.fck, // fck único na raiz
         raft: data.raft,
         piles: data.piles,
       };
@@ -536,7 +536,7 @@ const DrawerFormModule = ({
     { value: "concrete_wall", label: t("common.structureType.concreteWall") },
     { value: "structural_masonry", label: t("common.structureType.masonry") },
     { value: "raft_foundation", label: "Radier" },
-    { value: "piles_foundation", label: "Estacas" },
+    { value: "piles_foundation", label: "Estaca" },
     { value: "raft_piles_foundation", label: "Radier Estaqueado" },
   ];
 
@@ -665,7 +665,7 @@ const DrawerFormModule = ({
                           <FormItem>
                             <FormLabel>
                               {t(
-                                "drawerFormModule.commonForm.structureTypeLabel"
+                                "drawerFormModule.commonForm.structureTypeLabel",
                               )}
                             </FormLabel>
                             <FormControl>
@@ -688,8 +688,8 @@ const DrawerFormModule = ({
                                           | "structural_masonry"
                                           | "raft_foundation"
                                           | "piles_foundation"
-                                          | "raft_piles_foundation"
-                                      ) as any
+                                          | "raft_piles_foundation",
+                                      ) as any,
                                     );
                                   }
                                 }}
@@ -699,7 +699,7 @@ const DrawerFormModule = ({
                                 <SelectTrigger className="w-full">
                                   <SelectValue
                                     placeholder={t(
-                                      "drawerFormModule.commonForm.structureTypePlaceholder"
+                                      "drawerFormModule.commonForm.structureTypePlaceholder",
                                     )}
                                   />
                                 </SelectTrigger>

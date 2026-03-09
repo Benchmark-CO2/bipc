@@ -62,6 +62,31 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
     setIsMinimized(!isMinimized);
   };
 
+  const handleMobileNavigation = () => {
+    if (isMobile) {
+      toggleSidebar();
+      hideSummary();
+      localStorage.setItem("sidebarStatus", "closed");
+    }
+  };
+
+  const hideSummary = () => {
+    if (!context) return;
+    if (sidebarStatus === "open") {
+      setTimeout(() => {
+        setSummaryContext({
+          ...context,
+          hide: false,
+        });
+      }, 200);
+    } else {
+      setSummaryContext({
+        ...context,
+        hide: true,
+      });
+    }
+  };
+
   // Versão minimizada do sidebar
   const minimizedSidebar = (
     <div className="h-full flex flex-col py-4 px-3 relative">
@@ -94,8 +119,8 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         <BetaWarning minimizedSidebar />
         <ModalTraining
           isAuthenticated={isAuthenticated}
-          onNavigateToSignUp={() => {}}
           minimizedSidebar
+          hasNavigateToSignUp={false}
         />
       </div>
 
@@ -267,8 +292,8 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         <BetaWarning />
         <ModalTraining
           isAuthenticated={isAuthenticated}
-          onNavigateToSignUp={() => {}}
           disableFloating={true}
+          hasNavigateToSignUp={false}
         />
       </div>
 
@@ -295,6 +320,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             <SidemenuItem variant="link">
               <Link
                 to="/benchmark"
+                onClick={handleMobileNavigation}
                 activeProps={activeProps}
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
@@ -325,6 +351,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 <SidemenuItem variant="link">
                   <Link
                     to="/new_projects"
+                    onClick={handleMobileNavigation}
                     activeProps={activeProps}
                     className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
                   >
@@ -338,6 +365,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 <SidemenuItem variant="link">
                   <Link
                     to={"/settings"}
+                    onClick={handleMobileNavigation}
                     activeProps={activeProps}
                     className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
                   >
@@ -367,6 +395,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 <SidemenuItem variant="link">
                   <Link
                     to="/sign-up"
+                    onClick={handleMobileNavigation}
                     activeProps={activeProps}
                     className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
                   >
@@ -381,6 +410,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 <SidemenuItem variant="link">
                   <Link
                     to="/login"
+                    onClick={handleMobileNavigation}
                     activeProps={activeProps}
                     className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
                   >
@@ -440,22 +470,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
       </div>
     </div>
   );
-  const hideSummary = () => {
-    if (!context) return;
-    if (sidebarStatus === "open") {
-      setTimeout(() => {
-        setSummaryContext({
-          ...context,
-          hide: false,
-        });
-      }, 200);
-    } else {
-      setSummaryContext({
-        ...context,
-        hide: true,
-      });
-    }
-  };
   if (isMobile) {
     return (
       <div
@@ -504,7 +518,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         {/* Mobile Sidebar */}
         <div
           className={cn(
-            "fixed top-0 left-0 h-screen w-80 bg-sidebar text-white p-6 transition-transform duration-300 z-50",
+            "fixed top-0 left-0 h-screen w-80 bg-sidebar text-white p-0 transition-transform duration-300 z-51",
             sidebarStatus === "open" ? "translate-x-0" : "-translate-x-full",
           )}
         >

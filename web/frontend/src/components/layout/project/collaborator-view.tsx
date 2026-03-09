@@ -117,6 +117,7 @@ const CollaboratorsView = ({
 
   const collaborators = collaboratorsData?.data?.data?.collaborators || [];
   const roles = collaboratorsData?.data?.data?.roles || [];
+  const rolesNames = roles.filter((r) => !r.is_protected).map((r) => r.name);
 
   const sortedCollaborators = [...collaborators].sort((a, b) => {
     const aIsAdmin = (a.roles as unknown as string[])?.some(
@@ -156,6 +157,7 @@ const CollaboratorsView = ({
               }
               projectId={projectId}
               projectUsers={collaborators}
+              roles={rolesNames}
             />
           )}
         </div>
@@ -210,6 +212,7 @@ const CollaboratorsView = ({
                       projectId={projectId}
                       roleData={discipline}
                       projectUsers={collaborators}
+                      roles={rolesNames}
                     />
                   )}
                 </div>

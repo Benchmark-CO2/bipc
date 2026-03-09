@@ -44,17 +44,17 @@ type Project struct {
 	Street       *string   `json:"street,omitzero"`
 	Number       *string   `json:"number,omitzero"`
 	Phase        string    `json:"phase"`
-	Description  *string   `json:"description"`
-	Benchmark    bool      `json:"benchmark,omitempty"`
+	Description  *string   `json:"description,omitzero"`
+	Benchmark    bool      `json:"benchmark"`
 }
 
-type ProjectsWithUnits struct {
+type ProjectWithUnits struct {
 	Project
 	IsAdministrator bool `json:"is_administrator,omitzero"`
 
 	Units        []ProjectUnit           `json:"units,omitempty"`
 	Consumptions map[string]*Consumption `json:"consumption,omitempty"`
-	Area         float64                 `json:"area,omitempty"`
+	Area         float64                 `json:"area,omitzero"`
 }
 
 func ValidateProject(v *validator.Validator, project *Project) {
@@ -122,12 +122,12 @@ func (m ProjectModel) Insert(project *Project, userID uuid.UUID) error {
 	query1 := `
 		INSERT INTO projects (id, name, cep, state, city, neighborhood, street, number, phase, description, benchmark)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-		RETURNING created_at`
+		RETURNING created_at, benchmark`
 
 	args := []any{project.ID, project.Name, project.CEP, project.State, project.City, project.Neighborhood,
 		project.Street, project.Number, project.Phase, project.Description, project.Benchmark}
 
-	err = tx.QueryRow(query1, args...).Scan(&project.CreatedAt)
+	err = tx.QueryRow(query1, args...).Scan(&project.CreatedAt, &project.Benchmark)
 	if err != nil {
 		return err
 	}
@@ -209,13 +209,13 @@ func (m ProjectModel) Insert(project *Project, userID uuid.UUID) error {
 	return nil
 }
 
-func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectsWithUnits, error) {
+func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectWithUnits, error) {
 	query := `
 		SELECT id, created_at, name, cep, state, city, neighborhood, street, number, phase, description, benchmark
 		FROM projects
 		WHERE id = $1`
 
-	var project ProjectsWithUnits
+	var project ProjectWithUnits
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -349,7 +349,7 @@ func (m ProjectModel) Delete(projectID uuid.UUID) error {
 	return nil
 }
 
-func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]*ProjectsWithUnits, Metadata, error) {
+func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]*ProjectWithUnits, Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) OVER(), p.id, p.created_at, p.name,
 		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description,
@@ -381,12 +381,12 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 	defer rows.Close()
 
 	totalRecords := 0
-	projects := []*ProjectsWithUnits{}
+	projects := []*ProjectWithUnits{}
 	projectIDs := []uuid.UUID{}
-	projectsMap := make(map[uuid.UUID]*ProjectsWithUnits)
+	projectsMap := make(map[uuid.UUID]*ProjectWithUnits)
 
 	for rows.Next() {
-		var project ProjectsWithUnits
+		var project ProjectWithUnits
 		project.Consumptions = make(map[string]*Consumption)
 		project.Units = []ProjectUnit{}
 

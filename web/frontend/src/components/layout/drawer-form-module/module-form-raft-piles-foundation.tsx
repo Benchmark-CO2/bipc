@@ -34,7 +34,7 @@ const ModuleFormRaftPilesFoundation = ({
   const isCustomFck =
     customFck || (currentFck && !fckOptions.includes(currentFck));
 
-  // Detectar FCK customizado ao carregar dados de edição (antes do render)
+  // Detectar fck customizado ao carregar dados de edição (antes do render)
   useLayoutEffect(() => {
     if (currentFck && !fckOptions.includes(currentFck)) {
       setCustomFck(true);
@@ -43,7 +43,7 @@ const ModuleFormRaftPilesFoundation = ({
 
   return (
     <div className="space-y-4">
-      {/* FCK Único para Radier e Estacas */}
+      {/* fck Único para Radier e Estacas */}
       <div
         className={`grid gap-4 ${isCustomFck ? "grid-cols-2" : "grid-cols-1"}`}
       >
@@ -52,7 +52,7 @@ const ModuleFormRaftPilesFoundation = ({
           name="fck"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">FCK do concreto (MPa) *</FormLabel>
+              <FormLabel className="text-xs">fck do concreto (MPa) *</FormLabel>
               <FormControl>
                 <Select
                   onValueChange={(value) => {
@@ -85,7 +85,7 @@ const ModuleFormRaftPilesFoundation = ({
                   })()}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione FCK" />
+                    <SelectValue placeholder="Selecione fck" />
                   </SelectTrigger>
                   <SelectContent>
                     {fckOptions.map((fck) => (
@@ -108,7 +108,7 @@ const ModuleFormRaftPilesFoundation = ({
             name="fck"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-xs">Outro FCK (MPa)</FormLabel>
+                <FormLabel className="text-xs">Outro fck (MPa)</FormLabel>
                 <FormControl>
                   <Input
                     type="text"

@@ -83,7 +83,7 @@
   "projects": {
     "title": "Projetos",
     "description": "Gerencie seus projetos aqui",
-    "addProject": "Adicionar Projeto",
+    "addProject": "Adicionar Empreendimento",
     "noProjects": "Você não possui projetos."
   },
   "units": {
@@ -334,7 +334,7 @@
   },
   "drawerFormProject": {
     "createButton": "Criar Projeto",
-    "addTitle": "Adicionar Projeto",
+    "addTitle": "Adicionar Empreendimento",
     "editTitle": "Editar Projeto",
     "description": "O nome de projeto pode ser composto por qualquer expressão alfanumerica que identifique seu projeto. Ex.: 'Residencial 1', 'Edificio Janus', 'Conjunto multifamiliar misto'",
     "projectNameLabel": "Nome do Projeto *",
@@ -357,7 +357,10 @@
     "descriptionPlaceholder": "Digite uma descrição do projeto (opcional)",
     "imageLabel": "Imagem do Projeto (opcional)",
     "imagePlaceholder": "Selecione uma imagem do projeto (opcional)",
-    "addProjectButton": "Adicionar Projeto",
+    "citySearchPlaceholder": "Buscar cidade...",
+    "cityNotFound": "Nenhuma cidade encontrada.",
+    "selectStateFirst": "Selecione um estado primeiro",
+    "addProjectButton": "Adicionar Empreendimento",
     "editProjectButton": "Editar Projeto"
   },
   "drawerFormUnit": {
@@ -401,8 +404,8 @@
       "fckLabel": "Fck (MPa) *",
       "fckVolume": "Volume (m³) *",
       "concreteSlabsLabel": "Concreto - Lajes *",
-      "steelCA50Label": "Aço CA50 (kg/m²) *",
-      "steelCA60Label": "Aço CA60 (kg/m²) *",
+      "steelCA50Label": "Aço CA-50 (kg/m²) *",
+      "steelCA60Label": "Aço CA-60 (kg/m²) *",
       "minimumElementRequired": "É necessário manter pelo menos um elemento."
     },
     "beamColumnForm": {

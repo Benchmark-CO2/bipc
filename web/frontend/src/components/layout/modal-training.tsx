@@ -11,23 +11,25 @@ import { useEffect, useState, useRef } from "react";
 import { X } from "lucide-react";
 import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
 import { trainingModalStorage } from "@/utils/trainingModalStorage";
+import { useNavigate } from "@tanstack/react-router";
 
 interface ModalTrainingProps {
   isAuthenticated: boolean;
-  onNavigateToSignUp: () => void;
   minimizedSidebar?: boolean;
   disableFloating?: boolean;
+  hasNavigateToSignUp?: boolean;
 }
 
 const ModalTraining = ({
   isAuthenticated,
-  onNavigateToSignUp,
   minimizedSidebar = false,
   disableFloating = false,
+  hasNavigateToSignUp = false,
 }: ModalTrainingProps) => {
   const [open, setOpen] = useState(false);
   const [showMiniature, setShowMiniature] = useState(false);
   const shouldMinimizeOnCloseRef = useRef(true);
+  const navigate = useNavigate();
 
   const formUrl = posLaunchFeatures.trainingModal.formUrl;
 
@@ -55,9 +57,24 @@ const ModalTraining = ({
     }
   }, [isAuthenticated]);
 
+  const onNavigateToSignUp = () => {
+    if (!hasNavigateToSignUp) return;
+
+    navigate({
+      to: "/sign-up",
+    })
+      .then(() => null)
+      .catch((err: unknown) => err);
+  };
+
   const handleHasAccount = () => {
     // Sempre minimiza, nunca marca como completed
     handleMinimize();
+    navigate({
+      to: "/login",
+    })
+      .then(() => null)
+      .catch((err: unknown) => err);
   };
 
   const handleAlreadyRegistered = () => {
