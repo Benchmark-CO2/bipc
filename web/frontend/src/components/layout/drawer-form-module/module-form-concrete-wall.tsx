@@ -70,7 +70,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
   }, [form, fckOptions, caOptions]);
 
   const calculateTotalVolume = (
-    volumes: Array<{ fck: number; volume: string | number }>
+    volumes: Array<{ fck: number; volume: string | number }>,
   ) => {
     return (
       volumes?.reduce((total, item) => {
@@ -84,7 +84,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
   };
 
   const calculateTotalMass = (
-    steel: Array<{ ca: number; mass: string | number }>
+    steel: Array<{ ca: number; mass: string | number }>,
   ) => {
     return (
       steel?.reduce((total, item) => {
@@ -101,7 +101,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
     fieldName: "concrete_walls" | "concrete_slabs",
     title: string,
     isRequired: boolean = true,
-    showCustomFckWarning: boolean = false
+    showCustomFckWarning: boolean = false,
   ) => {
     const {
       fields: volumeFields,
@@ -133,14 +133,14 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
         (volume: any, index: number) =>
           index !== currentIndex &&
           volume.fck === fck &&
-          fckOptions.includes(fck)
+          fckOptions.includes(fck),
       );
     };
 
     const isCaUsed = (ca: number, currentIndex: number) => {
       return currentSteel.some(
         (steel: any, index: number) =>
-          index !== currentIndex && steel.ca === ca && caOptions.includes(ca)
+          index !== currentIndex && steel.ca === ca && caOptions.includes(ca),
       );
     };
 
@@ -209,7 +209,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                         name={`${fieldKey}.fck` as any}
                         render={({ field: fckField }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">FCK (MPa)</FormLabel>
+                            <FormLabel className="text-xs">fck (MPa)</FormLabel>
                             <FormControl>
                               <Select
                                 onValueChange={(value) => {
@@ -221,7 +221,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                     fckField.onChange(70);
                                     form.setValue(
                                       `${fieldKey}.customFck` as any,
-                                      true
+                                      true,
                                     );
                                   } else {
                                     setCustomFckSelected((prev) => ({
@@ -238,7 +238,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                 }
                               >
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Selecione FCK" />
+                                  <SelectValue placeholder="Selecione fck" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {fckOptions.map((fck) => (
@@ -276,7 +276,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                   value={volumeField.value || ""}
                                   onChange={(e) => {
                                     const newValue = masks.numeric(
-                                      e.target.value
+                                      e.target.value,
                                     );
                                     volumeField.onChange(newValue);
                                   }}
@@ -306,7 +306,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-xs">
-                              Outro FCK (MPa)
+                              Outro fck (MPa)
                             </FormLabel>
                             <Input
                               type="number"
@@ -320,7 +320,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                               <div className="flex items-center gap-1 mt-1 text-orange-600 text-xs">
                                 <AlertTriangle className="h-3 w-3" />
                                 <span>
-                                  Para cálculo será considerado FCK 50
+                                  Para cálculo será considerado fck 50
                                 </span>
                               </div>
                             )}
@@ -372,7 +372,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
             <div className="space-y-3">
               {steelFields.map((field, index) => {
                 const currentCa = form.watch(
-                  `${fieldName}.steel.${index}.ca` as any
+                  `${fieldName}.steel.${index}.ca` as any,
                 );
                 const steelFieldKey = `${fieldName}.steel.${index}`;
                 const isCustomCa =
@@ -401,7 +401,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                     }));
                                     form.setValue(
                                       `${fieldName}.steel.${index}.customCa` as any,
-                                      true
+                                      true,
                                     );
                                     caField.onChange(60);
                                   } else {
@@ -428,7 +428,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                       value={ca.toString()}
                                       disabled={isCaUsed(ca, index)}
                                     >
-                                      CA{ca}{" "}
+                                      CA-{ca}{" "}
                                       {isCaUsed(ca, index) ? "(Em uso)" : ""}
                                     </SelectItem>
                                   ))}
@@ -446,7 +446,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                         name={`${fieldName}.steel.${index}.mass` as any}
                         render={({ field: massField }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">Peso (kg)</FormLabel>
+                            <FormLabel className="text-xs">
+                              Massa (kg)
+                            </FormLabel>
                             <div className="flex gap-1">
                               <FormControl>
                                 <Input
@@ -455,7 +457,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                   value={massField.value || ""}
                                   onChange={(e) => {
                                     const newValue = masks.numeric(
-                                      e.target.value
+                                      e.target.value,
                                     );
                                     massField.onChange(newValue);
                                   }}
@@ -520,23 +522,23 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
 
   const renderOptionalSection = (
     title: string,
-    isFormSection: boolean = false
+    isFormSection: boolean = false,
   ) => {
     if (!isFormSection) {
       const [volumes, setVolumes] = useState<
         Array<{ fck: number; volume: string }>
       >([]);
       const [steels, setSteels] = useState<Array<{ ca: number; mass: string }>>(
-        []
+        [],
       );
 
       const totalVolume = volumes.reduce(
         (total, item) => total + (parseNumber(item.volume) || 0),
-        0
+        0,
       );
       const totalMass = steels.reduce(
         (total, item) => total + (parseNumber(item.mass) || 0),
-        0
+        0,
       );
 
       return (
@@ -567,7 +569,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                     >
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <FormLabel className="text-xs">FCK (MPa)</FormLabel>
+                          <FormLabel className="text-xs">fck (MPa)</FormLabel>
                           <Select
                             defaultValue={
                               isCustomFck ? "other" : volume.fck.toString()
@@ -619,7 +621,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                               onChange={(e) => {
                                 const newVolumes = [...volumes];
                                 newVolumes[index].volume = masks.numeric(
-                                  e.target.value
+                                  e.target.value,
                                 );
                                 setVolumes(newVolumes);
                               }}
@@ -630,7 +632,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                               size="sm"
                               onClick={() => {
                                 setVolumes(
-                                  volumes.filter((_, i) => i !== index)
+                                  volumes.filter((_, i) => i !== index),
                                 );
                               }}
                               className="px-2"
@@ -702,7 +704,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                             <SelectContent>
                               {caOptions.map((ca) => (
                                 <SelectItem key={ca} value={ca.toString()}>
-                                  CA{ca}
+                                  CA-{ca}
                                 </SelectItem>
                               ))}
                               <SelectItem value="other">Outro</SelectItem>
@@ -725,7 +727,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                         </div>
 
                         <div>
-                          <FormLabel className="text-xs">Peso (kg)</FormLabel>
+                          <FormLabel className="text-xs">Massa (kg)</FormLabel>
                           <div className="flex gap-1">
                             <Input
                               type="text"
@@ -733,7 +735,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                               onChange={(e) => {
                                 const newSteels = [...steels];
                                 newSteels[index].mass = masks.numeric(
-                                  e.target.value
+                                  e.target.value,
                                 );
                                 setSteels(newSteels);
                               }}

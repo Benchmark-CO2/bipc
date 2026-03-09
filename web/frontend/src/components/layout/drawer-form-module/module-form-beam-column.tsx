@@ -63,12 +63,12 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
   }, [form, fckOptions, caOptions]);
 
   const calculateTotalVolume = (
-    volumes: Array<{ fck: number; volume: string }>
+    volumes: Array<{ fck: number; volume: string }>,
   ) => {
     return (
       volumes?.reduce(
         (total, item) => total + parseNumber(item.volume || "0"),
-        0
+        0,
       ) || 0
     );
   };
@@ -77,7 +77,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
     return (
       steel?.reduce(
         (total, item) => total + parseNumber(item.mass || "0"),
-        0
+        0,
       ) || 0
     );
   };
@@ -85,7 +85,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
   const renderCompleteSection = (
     fieldName: "concrete_columns" | "concrete_beams" | "concrete_slabs",
     title: string,
-    isRequired: boolean = true
+    isRequired: boolean = true,
   ) => {
     const {
       fields: volumeFields,
@@ -117,14 +117,14 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
         (volume: any, index: number) =>
           index !== currentIndex &&
           volume.fck === fck &&
-          fckOptions.includes(fck)
+          fckOptions.includes(fck),
       );
     };
 
     const isCaUsed = (ca: number, currentIndex: number) => {
       return currentSteel.some(
         (steel: any, index: number) =>
-          index !== currentIndex && steel.ca === ca && caOptions.includes(ca)
+          index !== currentIndex && steel.ca === ca && caOptions.includes(ca),
       );
     };
 
@@ -176,7 +176,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
             <div className="space-y-3">
               {volumeFields.map((field, index) => {
                 const currentFck = form.watch(
-                  `${fieldName}.volumes.${index}.fck` as any
+                  `${fieldName}.volumes.${index}.fck` as any,
                 );
                 const fieldKey = `${fieldName}.volumes.${index}`;
                 const isCustomFck =
@@ -194,7 +194,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         name={`${fieldName}.volumes.${index}.fck` as any}
                         render={({ field: fckField }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">FCK (MPa)</FormLabel>
+                            <FormLabel className="text-xs">fck (MPa)</FormLabel>
                             <FormControl>
                               <Select
                                 onValueChange={(value) => {
@@ -205,7 +205,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                     }));
                                     form.setValue(
                                       `${fieldKey}.customFck` as any,
-                                      true
+                                      true,
                                     );
                                     fckField.onChange(70);
                                   } else {
@@ -223,7 +223,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                 }
                               >
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Selecione FCK" />
+                                  <SelectValue placeholder="Selecione fck" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {fckOptions.map((fck) => (
@@ -261,7 +261,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                   value={volumeField.value || ""}
                                   onChange={(e) => {
                                     const newValue = masks.numeric(
-                                      e.target.value
+                                      e.target.value,
                                     );
                                     volumeField.onChange(newValue);
                                   }}
@@ -291,7 +291,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-xs">
-                              Outro FCK (MPa)
+                              Outro fck (MPa)
                             </FormLabel>
                             <Input
                               type="number"
@@ -349,7 +349,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
             <div className="space-y-3">
               {steelFields.map((field, index) => {
                 const currentCa = form.watch(
-                  `${fieldName}.steel.${index}.ca` as any
+                  `${fieldName}.steel.${index}.ca` as any,
                 );
                 const steelFieldKey = `${fieldName}.steel.${index}`;
                 const isCustomCa =
@@ -378,7 +378,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                     }));
                                     form.setValue(
                                       `${fieldName}.steel.${index}.customCa` as any,
-                                      true
+                                      true,
                                     );
                                     caField.onChange(60);
                                   } else {
@@ -405,7 +405,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                       value={ca.toString()}
                                       disabled={isCaUsed(ca, index)}
                                     >
-                                      CA{ca}{" "}
+                                      CA-{ca}{" "}
                                       {isCaUsed(ca, index) ? "(Em uso)" : ""}
                                     </SelectItem>
                                   ))}
@@ -423,7 +423,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         name={`${fieldName}.steel.${index}.mass` as any}
                         render={({ field: massField }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">Peso (kg)</FormLabel>
+                            <FormLabel className="text-xs">
+                              Massa (kg)
+                            </FormLabel>
                             <div className="flex gap-1">
                               <FormControl>
                                 <Input
@@ -432,7 +434,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                   value={massField.value || ""}
                                   onChange={(e) => {
                                     const newValue = masks.numeric(
-                                      e.target.value
+                                      e.target.value,
                                     );
                                     massField.onChange(newValue);
                                   }}

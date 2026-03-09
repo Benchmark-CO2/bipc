@@ -414,6 +414,7 @@ function RouteComponent() {
                   }
                   projectId={projectId}
                   unitId={unitId}
+                  roles={roleTabs}
                 />
               )}
               {(hasPermission("*:*") || selectedRole?.is_member) && (
@@ -457,6 +458,7 @@ function RouteComponent() {
                   }
                   projectId={projectId}
                   unitId={unitId}
+                  roles={roleTabs}
                 />
               }
             />

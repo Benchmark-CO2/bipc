@@ -11,21 +11,25 @@ import { useEffect, useState, useRef } from "react";
 import { X } from "lucide-react";
 import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
 import { trainingModalStorage } from "@/utils/trainingModalStorage";
+import { useNavigate } from "@tanstack/react-router";
 
 interface ModalTrainingProps {
   isAuthenticated: boolean;
-  onNavigateToSignUp: () => void;
   minimizedSidebar?: boolean;
+  disableFloating?: boolean;
+  hasNavigateToSignUp?: boolean;
 }
 
 const ModalTraining = ({
   isAuthenticated,
-  onNavigateToSignUp,
   minimizedSidebar = false,
+  disableFloating = false,
+  hasNavigateToSignUp = false,
 }: ModalTrainingProps) => {
   const [open, setOpen] = useState(false);
   const [showMiniature, setShowMiniature] = useState(false);
   const shouldMinimizeOnCloseRef = useRef(true);
+  const navigate = useNavigate();
 
   const formUrl = posLaunchFeatures.trainingModal.formUrl;
 
@@ -53,9 +57,24 @@ const ModalTraining = ({
     }
   }, [isAuthenticated]);
 
+  const onNavigateToSignUp = () => {
+    if (!hasNavigateToSignUp) return;
+
+    navigate({
+      to: "/sign-up",
+    })
+      .then(() => null)
+      .catch((err: unknown) => err);
+  };
+
   const handleHasAccount = () => {
     // Sempre minimiza, nunca marca como completed
     handleMinimize();
+    navigate({
+      to: "/login",
+    })
+      .then(() => null)
+      .catch((err: unknown) => err);
   };
 
   const handleAlreadyRegistered = () => {
@@ -179,8 +198,8 @@ const ModalTraining = ({
         </DialogContent>
       </Dialog>
 
-      {/* Miniatura fixa no canto inferior direito */}
-      {!isAuthenticated && showMiniature && (
+      {/* Miniatura fixa no canto inferior direito - apenas para usuários deslogados */}
+      {!disableFloating && !isAuthenticated && showMiniature && (
         <div
           onClick={handleRestoreFromMiniature}
           className="fixed bottom-4 right-4 z-50 cursor-pointer bg-primary text-primary-foreground rounded-lg shadow-lg p-4 hover:scale-105 transition-transform"
@@ -206,6 +225,7 @@ const ModalTraining = ({
         </div>
       )}
 
+      {/* Item inline no sidebar - apenas para usuários logados */}
       {isAuthenticated && (
         <div
           className="bg-primary text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-primary/90 cursor-pointer border border-primary/50"

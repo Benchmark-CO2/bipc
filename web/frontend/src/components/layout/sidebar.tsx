@@ -62,6 +62,31 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
     setIsMinimized(!isMinimized);
   };
 
+  const handleMobileNavigation = () => {
+    if (isMobile) {
+      toggleSidebar();
+      hideSummary();
+      localStorage.setItem("sidebarStatus", "closed");
+    }
+  };
+
+  const hideSummary = () => {
+    if (!context) return;
+    if (sidebarStatus === "open") {
+      setTimeout(() => {
+        setSummaryContext({
+          ...context,
+          hide: false,
+        });
+      }, 200);
+    } else {
+      setSummaryContext({
+        ...context,
+        hide: true,
+      });
+    }
+  };
+
   // Versão minimizada do sidebar
   const minimizedSidebar = (
     <div className="h-full flex flex-col py-4 px-3 relative">
@@ -92,45 +117,30 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
 
       <div className="flex flex-col gap-2 w-full">
         <BetaWarning minimizedSidebar />
-        <ModalTraining
-          isAuthenticated={isAuthenticated}
-          onNavigateToSignUp={() => {}}
-          minimizedSidebar
-        />
+        {isAuthenticated && (
+          <ModalTraining
+            isAuthenticated={isAuthenticated}
+            minimizedSidebar
+            hasNavigateToSignUp={false}
+          />
+        )}
       </div>
 
       {/* Ícones de navegação */}
       <div className="flex-1 flex flex-col gap-1 justify-end">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link
-              to="/about"
+            <a
+              href="https://bipc.org.br/sobre"
               className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
             >
               <Info size={18} className="text-white" />
-            </Link>
+            </a>
           </TooltipTrigger>
           <TooltipContent side="right">
             <p>Sobre o BIPc</p>
           </TooltipContent>
         </Tooltip>
-
-        {posLaunchFeatures.trainingModal.enabled && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                to={posLaunchFeatures.trainingModal.formUrl}
-                target="_blank"
-                className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
-              >
-                <Book size={18} className="text-white" />
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>Capacitação</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
 
         <Tooltip>
           <TooltipTrigger asChild>
@@ -149,12 +159,12 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link
-              to="/privacidade"
+            <a
+              href="https://bipc.org.br/privacidade"
               className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
             >
               <GlobeLock size={18} className="text-white" />
-            </Link>
+            </a>
           </TooltipTrigger>
           <TooltipContent side="right">
             <p>Políticas de Privacidade</p>
@@ -282,10 +292,13 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
 
       <div className="p-4 flex flex-col gap-2 w-full">
         <BetaWarning />
-        <ModalTraining
-          isAuthenticated={isAuthenticated}
-          onNavigateToSignUp={() => {}}
-        />
+        {isAuthenticated && (
+          <ModalTraining
+            isAuthenticated={isAuthenticated}
+            disableFloating={true}
+            hasNavigateToSignUp={false}
+          />
+        )}
       </div>
 
       {/* Menu Items - Seção Principal */}
@@ -297,35 +310,21 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           {/* Institucional */}
           <li>
             <SidemenuItem variant="link">
-              <Link
-                to={"/about"}
+              <a
+                href="https://bipc.org.br/sobre"
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
                 <Info size={18} />
                 <span>Sobre o BIPc</span>
-              </Link>
+              </a>
             </SidemenuItem>
           </li>
-
-          {posLaunchFeatures.trainingModal.enabled && (
-            <li>
-              <SidemenuItem variant="link">
-                <Link
-                  to={posLaunchFeatures.trainingModal.formUrl}
-                  target="_blank"
-                  className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-                >
-                  <Book size={18} />
-                  <span>Capacitação</span>
-                </Link>
-              </SidemenuItem>
-            </li>
-          )}
 
           <li>
             <SidemenuItem variant="link">
               <Link
                 to="/benchmark"
+                onClick={handleMobileNavigation}
                 activeProps={activeProps}
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
@@ -336,13 +335,13 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           </li>
           <li>
             <SidemenuItem variant="link">
-              <Link
-                to="/privacidade"
+              <a
+                href="https://bipc.org.br/privacidade"
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
                 <GlobeLock size={18} />
                 <span>Políticas de Privacidade</span>
-              </Link>
+              </a>
             </SidemenuItem>
           </li>
 
@@ -356,6 +355,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 <SidemenuItem variant="link">
                   <Link
                     to="/new_projects"
+                    onClick={handleMobileNavigation}
                     activeProps={activeProps}
                     className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
                   >
@@ -369,6 +369,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 <SidemenuItem variant="link">
                   <Link
                     to={"/settings"}
+                    onClick={handleMobileNavigation}
                     activeProps={activeProps}
                     className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
                   >
@@ -398,6 +399,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 <SidemenuItem variant="link">
                   <Link
                     to="/sign-up"
+                    onClick={handleMobileNavigation}
                     activeProps={activeProps}
                     className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
                   >
@@ -412,6 +414,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 <SidemenuItem variant="link">
                   <Link
                     to="/login"
+                    onClick={handleMobileNavigation}
                     activeProps={activeProps}
                     className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
                   >
@@ -471,22 +474,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
       </div>
     </div>
   );
-  const hideSummary = () => {
-    if (!context) return;
-    if (sidebarStatus === "open") {
-      setTimeout(() => {
-        setSummaryContext({
-          ...context,
-          hide: false,
-        });
-      }, 200);
-    } else {
-      setSummaryContext({
-        ...context,
-        hide: true,
-      });
-    }
-  };
   if (isMobile) {
     return (
       <div
@@ -535,7 +522,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         {/* Mobile Sidebar */}
         <div
           className={cn(
-            "fixed top-0 left-0 h-screen w-80 bg-sidebar text-white p-6 transition-transform duration-300 z-50",
+            "fixed top-0 left-0 h-screen w-80 bg-sidebar text-white p-0 transition-transform duration-300 z-51",
             sidebarStatus === "open" ? "translate-x-0" : "-translate-x-full",
           )}
         >

@@ -21,9 +21,6 @@ import {
 import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { trainingModalStorage } from "@/utils/trainingModalStorage";
-// import { AuthProvider } from "@/providers/authProvider";
-// import { ProjectProvider } from "@/providers/projectProvider";
-// import Summary from "@/components/ui/summary";
 const TanStackRouterDevtools = import.meta.env.PROD
   ? () => null
   : lazy(() =>
@@ -68,14 +65,6 @@ export const Route = createRootRouteWithContext<{
     const isAuthPage =
       path.pathname === "/login" || path.pathname === "/sign-up";
 
-    const handleNavigateToSignUp = () => {
-      navigate({
-        to: "/sign-up",
-      })
-        .then(() => null)
-        .catch((err: unknown) => err);
-    };
-
     return (
       <div className="flex h-screen w-full transition-all">
         {isAuthenticated && (
@@ -112,7 +101,7 @@ export const Route = createRootRouteWithContext<{
         {shouldShowTrainingModal() && !isAuthPage && !isAuthenticated && (
           <ModalTraining
             isAuthenticated={isAuthenticated}
-            onNavigateToSignUp={handleNavigateToSignUp}
+            hasNavigateToSignUp={true}
           />
         )}
 

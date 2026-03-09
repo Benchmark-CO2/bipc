@@ -71,13 +71,13 @@ const Login = () => {
   return (
     <div
       className={cn(
-        "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar"
+        "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar",
       )}
     >
       <div
         className={cn(
           "flex px-10 flex-col items-center justify-center gap-4 w-full max-w-[440px] border border-zinc-200 dark:border-zinc-800 rounded-md py-8 bg-card",
-          { "h-full": isMobile }
+          { "h-full": isMobile },
         )}
       >
         <div className="w-full">
@@ -114,7 +114,7 @@ const Login = () => {
                       "text-lg pl-10",
                       fieldsError.email
                         ? "border-red-500 focus-visible:border-red-500"
-                        : ""
+                        : "",
                     )}
                     disabled={isPending}
                     autoComplete="email"
@@ -143,7 +143,7 @@ const Login = () => {
                         "pr-10 text-md",
                         fieldsError.password
                           ? "border-red-500 focus-visible:border-red-500"
-                          : ""
+                          : "",
                       )}
                       disabled={isPending}
                       autoComplete="current-password"
@@ -213,6 +213,21 @@ const Login = () => {
             >
               {t("loginPage.buttonRegister")}
             </Button>
+          </div>
+
+          <Divider className="w-[90%] mx-auto" />
+          <div className="flex flex-col justify-end items-center gap-4">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center">
+              <a
+                href="https://bipc.org.br/saiba-mais"
+                target="_blank"
+                style={{ color: "#187B8B" }}
+                className="hover:brightness-110 hover:font-semibold underline underline-offset-2 transition-all"
+              >
+                Clique aqui e saiba como os seus dados estão sendo utilizados no
+                BIPc.
+              </a>{" "}
+            </p>
           </div>
         </div>
       </div>
