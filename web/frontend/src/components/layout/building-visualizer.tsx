@@ -292,7 +292,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
           <div className="text-xs space-y-1 text-gray-600 dark:text-gray-400">
             <div>
               <span className="font-medium">{unifiedFloors.length}</span>{" "}
-              andares
+              {unifiedFloors.length === 1 ? "pavimento" : "pavimentos"}
             </div>
             <div>
               <span className="font-medium">
