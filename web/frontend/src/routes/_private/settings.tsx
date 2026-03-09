@@ -6,6 +6,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { UserInfo } from "@/components/user-info";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Globe,
@@ -23,10 +25,12 @@ export const Route = createFileRoute("/_private/settings")({
 
 function RouteComponent() {
   const { t } = useTranslation();
-  const [visibleApiKey, setVisibleApiKey] = useState(false);
+  const isMobile = useIsMobile();
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
+    <div
+      className={cn("container mx-auto p-6 max-w-4xl", { "px-0": isMobile })}
+    >
       {/* Header */}
       <div className="space-y-2 mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-primary">

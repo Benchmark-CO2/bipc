@@ -56,6 +56,7 @@ interface IDrawerFormDisciplines {
   unitId?: string;
   roleData?: TRole;
   projectUsers?: TCollaborator[];
+  roles?: string[];
 }
 
 // Mock data for permissions - will be provided by backend
@@ -82,6 +83,7 @@ export default function DrawerFormDisciplines({
   unitId,
   roleData,
   projectUsers,
+  roles,
 }: IDrawerFormDisciplines) {
   const [openDrawer, setOpenDrawer] = useState(false);
   const [managementExpanded, setManagementExpanded] = useState(true);
@@ -183,7 +185,23 @@ export default function DrawerFormDisciplines({
       defaultValue: [],
     }) || [];
 
+  const watchedName = useWatch({
+    control: form.control,
+    name: "name",
+    defaultValue: "",
+  });
+  const isDuplicateName =
+    !!watchedName &&
+    (roles ?? []).some(
+      (r) =>
+        r.trim().toLowerCase() === watchedName.trim().toLowerCase() &&
+        (!isEditMode ||
+          roleData?.name?.trim().toLowerCase() !==
+            watchedName.trim().toLowerCase()),
+    );
+
   const onSubmit = async (data: DisciplineFormSchema) => {
+    if (isDuplicateName) return;
     if (isEditMode) {
       updateDiscipline(data);
       return;
@@ -398,6 +416,11 @@ export default function DrawerFormDisciplines({
                       <Input placeholder="Vedações" {...field} />
                     </FormControl>
                     <FormMessage />
+                    {isDuplicateName && (
+                      <p className="text-[0.8rem] font-medium text-destructive">
+                        A disciplina já existe. Utilize outro nome.
+                      </p>
+                    )}
                   </FormItem>
                 )}
               />
@@ -668,14 +691,24 @@ export default function DrawerFormDisciplines({
         </Form>
         <DrawerFooter className="px-8 py-4">
           {isEditMode ? (
-            <Button type="submit" form="disciplines-form" variant={"bipc"}>
+            <Button
+              type="submit"
+              form="disciplines-form"
+              variant={"bipc"}
+              disabled={isDuplicateName || isUpdating}
+            >
               Salvar alterações
               {isUpdating && (
                 <div className="ml-2 h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
               )}
             </Button>
           ) : (
-            <Button variant={"bipc"} type="submit" form="disciplines-form">
+            <Button
+              variant={"bipc"}
+              type="submit"
+              form="disciplines-form"
+              disabled={isDuplicateName || isCreating}
+            >
               Adicionar disciplina
               {isCreating && (
                 <div className="ml-2 h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />

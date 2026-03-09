@@ -430,7 +430,7 @@ const SignUp = () => {
                             Coordenação de Projetos
                           </SelectItem>
                           <SelectItem value="Pesquisador(a)">
-                            Pesquisador(a)
+                            Pesquisa
                           </SelectItem>
                           <SelectItem value="Outro">Outro</SelectItem>
                         </SelectContent>

@@ -29,7 +29,7 @@ import {
 } from "../../ui/drawer";
 import { Form } from "../../ui/form";
 import UnitFormTower from "./unit-form-tower";
-
+import { initialFloors } from "./initial-floors";
 interface DrawerFormUnitProps {
   triggerComponent?: React.ReactNode;
   projectId: string;
@@ -52,16 +52,7 @@ const DrawerFormUnit = ({
       name: "",
       type: "tower" as const,
       data: {
-        floors: [
-          {
-            floor_group: "",
-            area: "",
-            height: "",
-            category: "standard_floor",
-            index: 0,
-            repetition: 1,
-          },
-        ],
+        floors: initialFloors,
       },
     },
   });
