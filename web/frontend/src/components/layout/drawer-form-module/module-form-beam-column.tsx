@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../ui/select";
+import SteelMaterialList from "./steel-material-list";
 
 interface ModuleFormBeamColumnProps {
   form: UseFormReturn<ModuleFormInput>;
@@ -28,12 +29,8 @@ interface ModuleFormBeamColumnProps {
 
 const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
   const fckOptions = [20, 25, 30, 35, 40, 45];
-  const caOptions = [50, 60];
 
   const [customFckSelected, setCustomFckSelected] = useState<
-    Record<string, boolean>
-  >({});
-  const [customCaSelected, setCustomCaSelected] = useState<
     Record<string, boolean>
   >({});
 
@@ -56,11 +53,11 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
       if (!steel || steel.length === 0) {
         form.setValue(`${fieldName}.steel` as any, [
-          { ca: caOptions[0], mass: 0 },
+          { material: "rebar", resistance: "CA50", mass: "0" },
         ]);
       }
     });
-  }, [form, fckOptions, caOptions]);
+  }, [form, fckOptions]);
 
   const calculateTotalVolume = (
     volumes: Array<{ fck: number; volume: string }>,
@@ -68,15 +65,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
     return (
       volumes?.reduce(
         (total, item) => total + parseNumber(item.volume || "0"),
-        0,
-      ) || 0
-    );
-  };
-
-  const calculateTotalMass = (steel: Array<{ ca: number; mass: string }>) => {
-    return (
-      steel?.reduce(
-        (total, item) => total + parseNumber(item.mass || "0"),
         0,
       ) || 0
     );
@@ -96,21 +84,10 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
       name: `${fieldName}.volumes` as any,
     });
 
-    const {
-      fields: steelFields,
-      append: appendSteel,
-      remove: removeSteel,
-    } = useFieldArray({
-      control: form.control,
-      name: `${fieldName}.steel` as any,
-    });
-
     const borderColor = isRequired ? "border-blue-500" : "border-gray-300";
 
     useWatch({ control: form.control, name: `${fieldName}.volumes` as any });
-    useWatch({ control: form.control, name: `${fieldName}.steel` as any });
     const currentVolumes = form.getValues(`${fieldName}.volumes` as any) || [];
-    const currentSteel = form.getValues(`${fieldName}.steel` as any) || [];
 
     const isFckUsed = (fck: number, currentIndex: number) => {
       return currentVolumes.some(
@@ -121,13 +98,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
       );
     };
 
-    const isCaUsed = (ca: number, currentIndex: number) => {
-      return currentSteel.some(
-        (steel: any, index: number) =>
-          index !== currentIndex && steel.ca === ca && caOptions.includes(ca),
-      );
-    };
-
     const getNextAvailableFck = () => {
       const usedFcks = currentVolumes
         .map((volume: any) => volume.fck)
@@ -135,15 +105,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
       return fckOptions.find((fck) => !usedFcks.includes(fck)) || fckOptions[0];
     };
 
-    const getNextAvailableCa = () => {
-      const usedCas = currentSteel
-        .map((steel: any) => steel.ca)
-        .filter((ca: number) => caOptions.includes(ca));
-      return caOptions.find((ca) => !usedCas.includes(ca)) || caOptions[0];
-    };
-
     const totalVolume = calculateTotalVolume(currentVolumes);
-    const totalMass = calculateTotalMass(currentSteel);
 
     return (
       <div className="space-y-3">
@@ -324,172 +286,11 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
             <div className="border-t border-gray-200 my-4"></div>
 
-            <div className="flex items-center justify-between py-2 px-1">
-              <FormLabel className="text-xs text-gray-500">
-                Aço total (kg)
-              </FormLabel>
-              <FormField
-                control={form.control}
-                name={`${fieldName}.total_mass` as any}
-                render={() => {
-                  return (
-                    <FormItem>
-                      <FormControl>
-                        <span className="text-sm font-medium text-gray-600">
-                          {totalMass.toInternational(undefined, 0)}
-                        </span>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-            </div>
-
-            <div className="space-y-3">
-              {steelFields.map((field, index) => {
-                const currentCa = form.watch(
-                  `${fieldName}.steel.${index}.ca` as any,
-                );
-                const steelFieldKey = `${fieldName}.steel.${index}`;
-                const isCustomCa =
-                  customCaSelected[steelFieldKey] ||
-                  (currentCa && !caOptions.includes(currentCa));
-
-                return (
-                  <div
-                    key={field.id}
-                    className="border border-gray-200 rounded-md p-3 space-y-3"
-                  >
-                    <div className="grid grid-cols-2 gap-2 items-end">
-                      <FormField
-                        control={form.control}
-                        name={`${fieldName}.steel.${index}.ca` as any}
-                        render={({ field: caField }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">CA</FormLabel>
-                            <FormControl>
-                              <Select
-                                onValueChange={(value) => {
-                                  if (value === "other") {
-                                    setCustomCaSelected((prev) => ({
-                                      ...prev,
-                                      [steelFieldKey]: true,
-                                    }));
-                                    form.setValue(
-                                      `${fieldName}.steel.${index}.customCa` as any,
-                                      true,
-                                    );
-                                    caField.onChange(60);
-                                  } else {
-                                    setCustomCaSelected((prev) => ({
-                                      ...prev,
-                                      [steelFieldKey]: false,
-                                    }));
-                                    caField.onChange(Number(value));
-                                  }
-                                }}
-                                value={
-                                  isCustomCa
-                                    ? "other"
-                                    : caField.value?.toString() || ""
-                                }
-                              >
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Selecione CA" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {caOptions.map((ca) => (
-                                    <SelectItem
-                                      key={ca}
-                                      value={ca.toString()}
-                                      disabled={isCaUsed(ca, index)}
-                                    >
-                                      CA-{ca}{" "}
-                                      {isCaUsed(ca, index) ? "(Em uso)" : ""}
-                                    </SelectItem>
-                                  ))}
-                                  <SelectItem value="other">Outro</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name={`${fieldName}.steel.${index}.mass` as any}
-                        render={({ field: massField }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">
-                              Massa (kg)
-                            </FormLabel>
-                            <div className="flex gap-1">
-                              <FormControl>
-                                <Input
-                                  type="text"
-                                  placeholder="800"
-                                  value={massField.value || ""}
-                                  onChange={(e) => {
-                                    const newValue = masks.numeric(
-                                      e.target.value,
-                                    );
-                                    massField.onChange(newValue);
-                                  }}
-                                />
-                              </FormControl>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => removeSteel(index)}
-                                className="px-2"
-                                disabled={steelFields.length <= 1}
-                              >
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    {isCustomCa && (
-                      <FormField
-                        control={form.control}
-                        name={`${fieldName}.steel.${index}.ca` as any}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">Outro CA</FormLabel>
-                            <Input
-                              {...field}
-                              type="number"
-                              placeholder="60"
-                              onChange={(e) => {
-                                field.onChange(Number(e.target.value));
-                              }}
-                            />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => appendSteel({ ca: getNextAvailableCa(), mass: 0 })}
-              className="w-full text-green-600 border-green-600 hover:bg-green-50"
-            >
-              Adicionar
-            </Button>
+            <SteelMaterialList
+              form={form}
+              name={`${fieldName}.steel`}
+              allowedMaterials={["rebar", "strand", "other"]}
+            />
           </CardContent>
         </Card>
       </div>
