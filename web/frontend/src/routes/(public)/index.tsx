@@ -5,7 +5,7 @@ export const Route = createFileRoute("/(public)/")({
   loader: async ({ context }) => {
     if (!context.auth.isAuthenticated) {
       throw redirect({
-        to: "/about",
+        to: "/login",
       });
     } else {
       throw redirect({

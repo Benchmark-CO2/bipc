@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
 import {
   BarChart3,
+  Book,
+  CircleHelp,
   GlobeLock,
   Headset,
   Info,
@@ -30,15 +32,14 @@ export default function PublicHeader() {
 
   const NavLinks = () => (
     <>
-      <Link
-        to={"/about"}
-        activeProps={activeProps}
+      <a
+        href="https://bipc.org.br/sobre"
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
         onClick={() => setIsMenuOpen(false)}
       >
         <Info size={18} />
         <span className="text-sm">Sobre o BIPc</span>
-      </Link>
+      </a>
       {/* <Divider
         className={cn("h-[28px] w-0.5 my-0", {
           hidden: isMobile,
@@ -54,39 +55,38 @@ export default function PublicHeader() {
         <BarChart3 size={18} />
         <span className="text-sm">Benchmark</span>
       </Link>
-      {/* <Divider
-        className={cn("h-[28px] w-0.5 my-0", {
-          hidden: isMobile,
-          "mx-4": !isMobile,
-        })}
-      /> */}
-
-      {/* <Link
-        to={"#" as any}
-        activeProps={activeProps}
+      <a
+        href="https://bipc.org.br/faq"
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
         onClick={() => setIsMenuOpen(false)}
       >
-        <FlaskConical size={18} />
-        <span className="text-sm">PD&I</span>
-      </Link> */}
-      <Link
-        to={"/contact"}
-        activeProps={activeProps}
+        <CircleHelp size={18} />
+        <span className="text-sm">FAQ</span>
+      </a>
+      <a
+        href="https://bipc.org.br/glossario"
+        className="flex items-center gap-2 hover:text-gray-300 transition-colors"
+        onClick={() => setIsMenuOpen(false)}
+      >
+        <Book size={18} />
+        <span className="text-sm">Glossário</span>
+      </a>
+      <a
+        href="https://bipc.org.br/contato"
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
         onClick={() => setIsMenuOpen(false)}
       >
         <Headset size={18} />
         <span className="text-sm">Comunicação</span>
-      </Link>
-      <Link
-        to="/privacidade"
+      </a>
+      <a
+        href="https://bipc.org.br/privacidade"
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
         onClick={() => setIsMenuOpen(false)}
       >
         <GlobeLock size={18} />
         <span className="text-sm">Políticas de Privacidade</span>
-      </Link>
+      </a>
       <Divider
         className={cn("h-[28px] w-0.5 my-0", {
           hidden: isMobile,
@@ -146,7 +146,7 @@ export default function PublicHeader() {
             {
               "opacity-100 visible": isMenuOpen,
               "opacity-0 invisible": !isMenuOpen,
-            }
+            },
           )}
         >
           <div className="flex flex-col gap-2 p-4">

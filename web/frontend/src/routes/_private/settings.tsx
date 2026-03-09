@@ -1,11 +1,11 @@
 import { GenerateApiKey } from "@/components/apiKey";
 import { LanguageToggle } from "@/components/language-toggle";
-import DrawerDocuments from "@/components/layout/drawer-documents";
 import { SettingsSection } from "@/components/settings-section";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { UserInfo } from "@/components/user-info";
+import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { createFileRoute } from "@tanstack/react-router";
@@ -13,10 +13,10 @@ import {
   Globe,
   KeySquare,
   Palette,
+  ShieldCheck,
   ShieldHalf,
   TrendingUp,
 } from "lucide-react";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_private/settings")({
@@ -99,14 +99,15 @@ function RouteComponent() {
             icon={ShieldHalf}
           >
             <div className="space-y-3">
-              <DrawerDocuments
-                documentType="privacy-policy"
-                triggerComponent={
-                  <Button variant="link" className="p-0 h-auto">
-                    Exercer meus direitos ➡️
-                  </Button>
-                }
-              />
+              <a
+                href="https://bipc.org.br/privacidade"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button variant="link" className="p-0 h-auto">
+                  Saiba mais ➡️
+                </Button>
+              </a>
             </div>
           </SettingsSection>
 
@@ -116,16 +117,39 @@ function RouteComponent() {
             icon={TrendingUp}
           >
             <div className="space-y-3">
-              <DrawerDocuments
-                documentType="terms-of-use"
-                triggerComponent={
-                  <Button variant="link" className="p-0 h-auto">
-                    Acessar para saber mais ➡️
-                  </Button>
-                }
-              />
+              <a
+                href="https://bipc.org.br/saiba-mais"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button variant="link" className="p-0 h-auto">
+                  Saiba mais ➡️
+                </Button>
+              </a>
             </div>
           </SettingsSection>
+
+          {posLaunchFeatures.formExerciseRights.enabled && (
+            <SettingsSection
+              title={"Exercer meus direitos"}
+              description={
+                "Você pode solicitar acesso, correção ou exclusão dos seus dados pessoais a qualquer momento."
+              }
+              icon={ShieldCheck}
+            >
+              <div className="space-y-3">
+                <a
+                  href={posLaunchFeatures.formExerciseRights.formUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="link" className="p-0 h-auto">
+                    Consultar formulário ➡️
+                  </Button>
+                </a>
+              </div>
+            </SettingsSection>
+          )}
         </div>
         <div className="flex items-center gap-4">
           <Separator className="flex-1" />
