@@ -117,11 +117,13 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
 
       <div className="flex flex-col gap-2 w-full">
         <BetaWarning minimizedSidebar />
-        <ModalTraining
-          isAuthenticated={isAuthenticated}
-          minimizedSidebar
-          hasNavigateToSignUp={false}
-        />
+        {isAuthenticated && (
+          <ModalTraining
+            isAuthenticated={isAuthenticated}
+            minimizedSidebar
+            hasNavigateToSignUp={false}
+          />
+        )}
       </div>
 
       {/* Ícones de navegação */}
@@ -290,11 +292,13 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
 
       <div className="p-4 flex flex-col gap-2 w-full">
         <BetaWarning />
-        <ModalTraining
-          isAuthenticated={isAuthenticated}
-          disableFloating={true}
-          hasNavigateToSignUp={false}
-        />
+        {isAuthenticated && (
+          <ModalTraining
+            isAuthenticated={isAuthenticated}
+            disableFloating={true}
+            hasNavigateToSignUp={false}
+          />
+        )}
       </div>
 
       {/* Menu Items - Seção Principal */}
