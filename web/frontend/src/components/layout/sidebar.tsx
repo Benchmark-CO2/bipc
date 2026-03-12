@@ -24,6 +24,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Notifications } from "../notifications";
 import { Button } from "../ui/button";
+import { CustomLink } from "../ui/custom-link";
 import Divider from "../ui/divider";
 import SidemenuItem from "../ui/sidemenu-item";
 import ExpandContentIcon from "@/assets/icons/expand-content";
@@ -130,12 +131,12 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
       <div className="flex-1 flex flex-col gap-1 justify-end">
         <Tooltip>
           <TooltipTrigger asChild>
-            <a
-              href="https://bipc.org.br/sobre"
+            <CustomLink
+              linkKey="about"
               className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
             >
               <Info size={18} className="text-white" />
-            </a>
+            </CustomLink>
           </TooltipTrigger>
           <TooltipContent side="right">
             <p>Sobre o BIPc</p>
@@ -159,12 +160,12 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <a
-              href="https://bipc.org.br/privacidade"
+            <CustomLink
+              linkKey="privacy"
               className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
             >
               <GlobeLock size={18} className="text-white" />
-            </a>
+            </CustomLink>
           </TooltipTrigger>
           <TooltipContent side="right">
             <p>Políticas de Privacidade</p>
@@ -310,13 +311,13 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           {/* Institucional */}
           <li>
             <SidemenuItem variant="link">
-              <a
-                href="https://bipc.org.br/sobre"
+              <CustomLink
+                linkKey="about"
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
                 <Info size={18} />
                 <span>Sobre o BIPc</span>
-              </a>
+              </CustomLink>
             </SidemenuItem>
           </li>
 
@@ -335,13 +336,13 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           </li>
           <li>
             <SidemenuItem variant="link">
-              <a
-                href="https://bipc.org.br/privacidade"
+              <CustomLink
+                linkKey="privacy"
                 className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               >
                 <GlobeLock size={18} />
                 <span>Políticas de Privacidade</span>
-              </a>
+              </CustomLink>
             </SidemenuItem>
           </li>
 

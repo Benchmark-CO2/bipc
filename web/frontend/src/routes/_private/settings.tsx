@@ -3,6 +3,7 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { SettingsSection } from "@/components/settings-section";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { CustomLink } from "@/components/ui/custom-link";
 import { Separator } from "@/components/ui/separator";
 import { UserInfo } from "@/components/user-info";
 import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
@@ -99,15 +100,11 @@ function RouteComponent() {
             icon={ShieldHalf}
           >
             <div className="space-y-3">
-              <a
-                href="https://bipc.org.br/privacidade"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <CustomLink linkKey="privacy">
                 <Button variant="link" className="p-0 h-auto">
                   Saiba mais ➡️
                 </Button>
-              </a>
+              </CustomLink>
             </div>
           </SettingsSection>
 
@@ -117,15 +114,11 @@ function RouteComponent() {
             icon={TrendingUp}
           >
             <div className="space-y-3">
-              <a
-                href="https://bipc.org.br/saiba-mais"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <CustomLink linkKey="faq">
                 <Button variant="link" className="p-0 h-auto">
                   Saiba mais ➡️
                 </Button>
-              </a>
+              </CustomLink>
             </div>
           </SettingsSection>
 

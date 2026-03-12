@@ -1,6 +1,7 @@
 import { login } from "@/actions/auth/login";
 import FullLogo from "@/assets/logo_full.svg";
 import { Button } from "@/components/ui/button";
+import { CustomLink } from "@/components/ui/custom-link";
 import Divider from "@/components/ui/divider";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -218,15 +219,15 @@ const Login = () => {
           <Divider className="w-[90%] mx-auto" />
           <div className="flex flex-col justify-end items-center gap-4">
             <p className="text-sm text-zinc-600 dark:text-zinc-400 text-center">
-              <a
-                href="https://bipc.org.br/saiba-mais"
-                target="_blank"
-                style={{ color: "#187B8B" }}
+              <CustomLink
+                linkKey="faq"
                 className="hover:brightness-110 hover:font-semibold underline underline-offset-2 transition-all"
               >
-                Clique aqui e saiba como os seus dados estão sendo utilizados no
-                BIPc.
-              </a>{" "}
+                <span style={{ color: "#187B8B" }}>
+                  Clique aqui e saiba como os seus dados estão sendo utilizados
+                  no BIPc.
+                </span>
+              </CustomLink>{" "}
             </p>
           </div>
         </div>

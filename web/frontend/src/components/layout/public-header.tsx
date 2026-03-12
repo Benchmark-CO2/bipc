@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import { CustomLink } from "../ui/custom-link";
 import Divider from "../ui/divider";
 
 const activeProps = {
@@ -32,14 +33,14 @@ export default function PublicHeader() {
 
   const NavLinks = () => (
     <>
-      <a
-        href="https://bipc.org.br/sobre"
+      <CustomLink
+        linkKey="about"
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
         onClick={() => setIsMenuOpen(false)}
       >
         <Info size={18} />
         <span className="text-sm">Sobre o BIPc</span>
-      </a>
+      </CustomLink>
       {/* <Divider
         className={cn("h-[28px] w-0.5 my-0", {
           hidden: isMobile,
@@ -55,38 +56,38 @@ export default function PublicHeader() {
         <BarChart3 size={18} />
         <span className="text-sm">Benchmark</span>
       </Link>
-      <a
-        href="https://bipc.org.br/faq"
+      <CustomLink
+        linkKey="faq"
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
         onClick={() => setIsMenuOpen(false)}
       >
         <CircleHelp size={18} />
         <span className="text-sm">FAQ</span>
-      </a>
-      <a
-        href="https://bipc.org.br/glossario"
+      </CustomLink>
+      <CustomLink
+        linkKey="glossary"
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
         onClick={() => setIsMenuOpen(false)}
       >
         <Book size={18} />
         <span className="text-sm">Glossário</span>
-      </a>
-      <a
-        href="https://bipc.org.br/contato"
+      </CustomLink>
+      <CustomLink
+        linkKey="contact"
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
         onClick={() => setIsMenuOpen(false)}
       >
         <Headset size={18} />
         <span className="text-sm">Comunicação</span>
-      </a>
-      <a
-        href="https://bipc.org.br/privacidade"
+      </CustomLink>
+      <CustomLink
+        linkKey="privacy"
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
         onClick={() => setIsMenuOpen(false)}
       >
         <GlobeLock size={18} />
         <span className="text-sm">Políticas de Privacidade</span>
-      </a>
+      </CustomLink>
       <Divider
         className={cn("h-[28px] w-0.5 my-0", {
           hidden: isMobile,
