@@ -188,7 +188,7 @@ const ModuleFormRaftFoundation = ({ form }: ModuleFormRaftFoundationProps) => {
           <SteelMaterialList
             form={form}
             name="steel"
-            showMeshAndStrand={true}
+            allowedMaterials={["rebar", "mesh", "strand", "other"]}
           />
         </CardContent>
       </Card>

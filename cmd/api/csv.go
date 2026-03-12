@@ -13,6 +13,18 @@ import (
 	"github.com/google/uuid" // Import uuid package
 )
 
+// convertCAToSteelMaterial converts a CA (resistance) value to SteelMaterial format
+func convertCAToSteelMaterial(ca int, mass float64) modules.SteelMaterial {
+	resistance, otherResistance := modules.ConvertCAToResistance(ca)
+	
+	return modules.SteelMaterial{
+		Material:        "rebar",
+		Resistance:      resistance,
+		OtherResistance: otherResistance,
+		Mass:            mass,
+	}
+}
+
 // Define base required headers (common to all module types)
 var baseRequiredHeaders = []string{
 	"project_name",
@@ -411,11 +423,11 @@ func (app *application) generateConcreteWallRows(dataRows [][]string, headerMap 
 			ModuleSlabFormArea:  parseFieldFloat("module_slab_form_area"),
 			WallConcrete: modules.ConcreteElement{
 				Volumes: []modules.ConcreteVolumeItem{},
-				Steel:   []modules.SteelMassItem{},
+				Steel:   []modules.SteelMaterial{},
 			},
 			SlabConcrete: modules.ConcreteElement{
 				Volumes: []modules.ConcreteVolumeItem{},
-				Steel:   []modules.SteelMassItem{},
+				Steel:   []modules.SteelMaterial{},
 			},
 		}
 
@@ -461,7 +473,7 @@ func (app *application) generateConcreteWallRows(dataRows [][]string, headerMap 
 					
 					totalMass := mass + stairsMass + structureMass
 					if totalMass > 0 {
-						row.WallConcrete.Steel = append(row.WallConcrete.Steel, modules.SteelMassItem{CA: ca, Mass: totalMass})
+						row.WallConcrete.Steel = append(row.WallConcrete.Steel, convertCAToSteelMaterial(ca, totalMass))
 					}
 				}
 			} else if strings.HasPrefix(headerName, "module_slab_concrete_") {
@@ -479,7 +491,7 @@ func (app *application) generateConcreteWallRows(dataRows [][]string, headerMap 
 				if ca > 0 {
 					mass := parseFieldFloat(headerName)
 					if mass > 0 {
-						row.SlabConcrete.Steel = append(row.SlabConcrete.Steel, modules.SteelMassItem{CA: ca, Mass: mass})
+						row.SlabConcrete.Steel = append(row.SlabConcrete.Steel, convertCAToSteelMaterial(ca, mass))
 					}
 				}
 			}
@@ -591,23 +603,23 @@ func (app *application) generateStructuralMasonryRows(dataRows [][]string, heade
 			Blocks:            []modules.BlockInfo{},
 			ColumnConcrete: modules.ConcreteElement{
 				Volumes: []modules.ConcreteVolumeItem{},
-				Steel:   []modules.SteelMassItem{},
+				Steel:   []modules.SteelMaterial{},
 			},
 			BeamConcrete: modules.ConcreteElement{
 				Volumes: []modules.ConcreteVolumeItem{},
-				Steel:   []modules.SteelMassItem{},
+				Steel:   []modules.SteelMaterial{},
 			},
 			SlabConcrete: modules.ConcreteElement{
 				Volumes: []modules.ConcreteVolumeItem{},
-				Steel:   []modules.SteelMassItem{},
+				Steel:   []modules.SteelMaterial{},
 			},
 			GroutVertical: modules.GroutInfo{
 				Volumes: []modules.GroutVolumeItem{},
-				Steel:   []modules.SteelMassItem{},
+				Steel:   []modules.SteelMaterial{},
 			},
 			GroutHorizontal: modules.GroutInfo{
 				Volumes: []modules.GroutVolumeItem{},
-				Steel:   []modules.SteelMassItem{},
+				Steel:   []modules.SteelMaterial{},
 			},
 			Mortar: []modules.MortarItem{},
 		}
@@ -629,7 +641,7 @@ func (app *application) generateStructuralMasonryRows(dataRows [][]string, heade
 				if ca > 0 {
 					mass := parseFieldFloat(headerName)
 					if mass > 0 {
-						row.ColumnConcrete.Steel = append(row.ColumnConcrete.Steel, modules.SteelMassItem{CA: ca, Mass: mass})
+						row.ColumnConcrete.Steel = append(row.ColumnConcrete.Steel, convertCAToSteelMaterial(ca, mass))
 					}
 				}
 			} else if strings.HasPrefix(headerName, "module_beam_concrete_") {
@@ -647,7 +659,7 @@ func (app *application) generateStructuralMasonryRows(dataRows [][]string, heade
 				if ca > 0 {
 					mass := parseFieldFloat(headerName)
 					if mass > 0 {
-						row.BeamConcrete.Steel = append(row.BeamConcrete.Steel, modules.SteelMassItem{CA: ca, Mass: mass})
+						row.BeamConcrete.Steel = append(row.BeamConcrete.Steel, convertCAToSteelMaterial(ca, mass))
 					}
 				}
 			} else if strings.HasPrefix(headerName, "module_slab_concrete_") {
@@ -665,7 +677,7 @@ func (app *application) generateStructuralMasonryRows(dataRows [][]string, heade
 				if ca > 0 {
 					mass := parseFieldFloat(headerName)
 					if mass > 0 {
-						row.SlabConcrete.Steel = append(row.SlabConcrete.Steel, modules.SteelMassItem{CA: ca, Mass: mass})
+						row.SlabConcrete.Steel = append(row.SlabConcrete.Steel, convertCAToSteelMaterial(ca, mass))
 					}
 				}
 			} else if strings.HasPrefix(headerName, "module_grout_vertical_") && !strings.Contains(headerName, "steel") {
@@ -683,7 +695,7 @@ func (app *application) generateStructuralMasonryRows(dataRows [][]string, heade
 				if ca > 0 {
 					mass := parseFieldFloat(headerName)
 					if mass > 0 {
-						row.GroutVertical.Steel = append(row.GroutVertical.Steel, modules.SteelMassItem{CA: ca, Mass: mass})
+						row.GroutVertical.Steel = append(row.GroutVertical.Steel, convertCAToSteelMaterial(ca, mass))
 					}
 				}
 			} else if strings.HasPrefix(headerName, "module_grout_horizontal_") && !strings.Contains(headerName, "steel") {
@@ -701,7 +713,7 @@ func (app *application) generateStructuralMasonryRows(dataRows [][]string, heade
 				if ca > 0 {
 					mass := parseFieldFloat(headerName)
 					if mass > 0 {
-						row.GroutHorizontal.Steel = append(row.GroutHorizontal.Steel, modules.SteelMassItem{CA: ca, Mass: mass})
+						row.GroutHorizontal.Steel = append(row.GroutHorizontal.Steel, convertCAToSteelMaterial(ca, mass))
 					}
 				}
 			} else if strings.HasPrefix(headerName, "module_mortar_") {
@@ -861,15 +873,15 @@ func (app *application) generateBeamColumnRows(dataRows [][]string, headerMap ma
 			ModuleFormSlabs:   parseOptionalFieldFloat("module_form_slabs"),
 			ColumnConcrete: modules.ConcreteElement{
 				Volumes: []modules.ConcreteVolumeItem{},
-				Steel:   []modules.SteelMassItem{},
+				Steel:   []modules.SteelMaterial{},
 			},
 			BeamConcrete: modules.ConcreteElement{
 				Volumes: []modules.ConcreteVolumeItem{},
-				Steel:   []modules.SteelMassItem{},
+				Steel:   []modules.SteelMaterial{},
 			},
 			SlabConcrete: modules.ConcreteElement{
 				Volumes: []modules.ConcreteVolumeItem{},
-				Steel:   []modules.SteelMassItem{},
+				Steel:   []modules.SteelMaterial{},
 			},
 		}
 
@@ -890,7 +902,7 @@ func (app *application) generateBeamColumnRows(dataRows [][]string, headerMap ma
 				if ca > 0 {
 					mass := parseFieldFloat(headerName)
 					if mass > 0 {
-						row.ColumnConcrete.Steel = append(row.ColumnConcrete.Steel, modules.SteelMassItem{CA: ca, Mass: mass})
+						row.ColumnConcrete.Steel = append(row.ColumnConcrete.Steel, convertCAToSteelMaterial(ca, mass))
 					}
 				}
 			} else if strings.HasPrefix(headerName, "module_beam_concrete_") {
@@ -908,7 +920,7 @@ func (app *application) generateBeamColumnRows(dataRows [][]string, headerMap ma
 				if ca > 0 {
 					mass := parseFieldFloat(headerName)
 					if mass > 0 {
-						row.BeamConcrete.Steel = append(row.BeamConcrete.Steel, modules.SteelMassItem{CA: ca, Mass: mass})
+						row.BeamConcrete.Steel = append(row.BeamConcrete.Steel, convertCAToSteelMaterial(ca, mass))
 					}
 				}
 			} else if strings.HasPrefix(headerName, "module_slab_concrete_") {
@@ -926,7 +938,7 @@ func (app *application) generateBeamColumnRows(dataRows [][]string, headerMap ma
 				if ca > 0 {
 					mass := parseFieldFloat(headerName)
 					if mass > 0 {
-						row.SlabConcrete.Steel = append(row.SlabConcrete.Steel, modules.SteelMassItem{CA: ca, Mass: mass})
+						row.SlabConcrete.Steel = append(row.SlabConcrete.Steel, convertCAToSteelMaterial(ca, mass))
 					}
 				}
 			}

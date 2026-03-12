@@ -22,6 +22,7 @@ import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
+import SteelMaterialList from "./steel-material-list";
 
 interface ModuleFormStructuralMasonryProps {
   form: UseFormReturn<ModuleFormInput>;
@@ -36,13 +37,8 @@ interface GroutItemProps {
   onRemove: () => void;
   canRemove: boolean;
   fgkOptions: number[];
-  caOptions: number[];
   customFgkSelected: Record<string, boolean>;
   setCustomFgkSelected: React.Dispatch<
-    React.SetStateAction<Record<string, boolean>>
-  >;
-  customCaSelected: Record<string, boolean>;
-  setCustomCaSelected: React.Dispatch<
     React.SetStateAction<Record<string, boolean>>
   >;
 }
@@ -56,31 +52,18 @@ const GroutItem = ({
   onRemove,
   canRemove,
   fgkOptions,
-  caOptions,
   customFgkSelected,
   setCustomFgkSelected,
-  customCaSelected,
-  setCustomCaSelected,
 }: GroutItemProps) => {
   const volumesFieldArray = useFieldArray({
     control: form.control,
     name: `grout.${groutIndex}.volumes`,
   });
 
-  const steelFieldArray = useFieldArray({
-    control: form.control,
-    name: `grout.${groutIndex}.steel`,
-  });
-
   const volumes = form.watch(`grout.${groutIndex}.volumes`) || [];
-  const steel = form.watch(`grout.${groutIndex}.steel`) || [];
 
   const totalVolume = volumes.reduce(
     (sum: number, item: any) => sum + parseNumber(item.volume || "0"),
-    0,
-  );
-  const totalMass = steel.reduce(
-    (sum: number, item: any) => sum + parseNumber(item.mass || "0"),
     0,
   );
 
@@ -284,154 +267,12 @@ const GroutItem = ({
 
         <div className="border-t border-gray-200 my-4"></div>
 
-        {/* Steel Section */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between py-2 px-1">
-            <FormLabel className="text-xs text-gray-500">Aço (kg)</FormLabel>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">Total:</span>
-              <span className="text-sm font-semibold text-gray-900">
-                {totalMass.toInternational(undefined, 2)} kg
-              </span>
-            </div>
-          </div>
-
-          {steelFieldArray.fields.map((steelField, steelIndex) => {
-            const currentCa = form.watch(
-              `grout.${groutIndex}.steel.${steelIndex}.ca`,
-            );
-            const isCustomCa =
-              customCaSelected[`grout-${groutIndex}-steel-${steelIndex}`] ||
-              (currentCa && !caOptions.includes(currentCa));
-
-            return (
-              <div
-                key={steelField.id}
-                className="border border-gray-200 rounded-md p-3 space-y-3"
-              >
-                <div className="flex items-end gap-2">
-                  <FormField
-                    control={form.control}
-                    name={`grout.${groutIndex}.steel.${steelIndex}.ca`}
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel className="text-xs">
-                          Categoria (MPa)
-                        </FormLabel>
-                        <FormControl>
-                          <Select
-                            onValueChange={(value) => {
-                              if (value === "custom") {
-                                setCustomCaSelected((prev) => ({
-                                  ...prev,
-                                  [`grout-${groutIndex}-steel-${steelIndex}`]:
-                                    true,
-                                }));
-                                field.onChange(0);
-                              } else {
-                                setCustomCaSelected((prev) => ({
-                                  ...prev,
-                                  [`grout-${groutIndex}-steel-${steelIndex}`]:
-                                    false,
-                                }));
-                                field.onChange(Number(value));
-                              }
-                            }}
-                            value={
-                              isCustomCa ? "custom" : field.value?.toString()
-                            }
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="CA" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {caOptions.map((ca) => (
-                                <SelectItem key={ca} value={ca.toString()}>
-                                  {ca}
-                                </SelectItem>
-                              ))}
-                              <SelectItem value="custom">Outro</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`grout.${groutIndex}.steel.${steelIndex}.mass`}
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel className="text-xs">Massa (kg)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="0.00"
-                            value={field.value || ""}
-                            onChange={(e) =>
-                              field.onChange(masks.numeric(e.target.value))
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => steelFieldArray.remove(steelIndex)}
-                    className="shrink-0"
-                    disabled={steelFieldArray.fields.length === 1}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-600" />
-                  </Button>
-                </div>
-
-                {isCustomCa && (
-                  <FormField
-                    control={form.control}
-                    name={`grout.${groutIndex}.steel.${steelIndex}.ca`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs">
-                          Outro CA (MPa)
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="text"
-                            placeholder="70"
-                            value={field.value || ""}
-                            onChange={(e) => {
-                              const numericValue = masks.numeric(
-                                e.target.value,
-                              );
-                              field.onChange(Number(numericValue) || 0);
-                            }}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                )}
-              </div>
-            );
-          })}
-
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => steelFieldArray.append({ ca: 50, mass: "0" })}
-            className="w-full text-green-600 border-green-600 hover:bg-green-50"
-          >
-            Adicionar
-          </Button>
-        </div>
+        {/* Steel Section - usando SteelMaterialList */}
+        <SteelMaterialList
+          form={form}
+          name={`grout.${groutIndex}.steel`}
+          allowedMaterials={["rebar", "mesh", "strand", "other"]}
+        />
       </CardContent>
     </Card>
   );
@@ -441,7 +282,6 @@ const ModuleFormStructuralMasonry = ({
   form,
 }: ModuleFormStructuralMasonryProps) => {
   const fckOptions = [20, 25, 30, 35, 40, 45];
-  const caOptions = [50, 60];
   const fbkOptions = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26];
   const fgkOptions = [15, 20, 25, 30];
   const fakOptions = [4.5, 8, 14];
@@ -472,9 +312,6 @@ const ModuleFormStructuralMasonry = ({
   const [customFckSelected, setCustomFckSelected] = useState<
     Record<string, boolean>
   >({});
-  const [customCaSelected, setCustomCaSelected] = useState<
-    Record<string, boolean>
-  >({});
   const [customFbkSelected, setCustomFbkSelected] = useState<
     Record<string, boolean>
   >({});
@@ -500,7 +337,7 @@ const ModuleFormStructuralMasonry = ({
 
       if (!steel || steel.length === 0) {
         form.setValue(`${fieldName}.steel` as any, [
-          { ca: caOptions[0], mass: "0" },
+          { material: "rebar", resistance: "CA50", mass: "0" },
         ]);
       }
     });
@@ -520,7 +357,13 @@ const ModuleFormStructuralMasonry = ({
         {
           position: "vertical" as const,
           volumes: [{ fgk: 20, volume: "0" }],
-          steel: [{ ca: 50, mass: "0" }],
+          steel: [
+            {
+              material: "rebar" as const,
+              resistance: "CA50" as const,
+              mass: "0",
+            },
+          ],
         },
       ]);
     }
@@ -534,7 +377,7 @@ const ModuleFormStructuralMasonry = ({
     if (formSlabs === undefined) {
       form.setValue("form_slabs", "0");
     }
-  }, [form, fckOptions, caOptions]);
+  }, [form, fckOptions]);
 
   const calculateTotalVolume = (
     volumes: Array<{ fck: number; volume: string }>,
@@ -542,15 +385,6 @@ const ModuleFormStructuralMasonry = ({
     return (
       volumes?.reduce(
         (total, item) => total + parseNumber(item.volume || "0"),
-        0,
-      ) || 0
-    );
-  };
-
-  const calculateTotalMass = (steel: Array<{ ca: number; mass: string }>) => {
-    return (
-      steel?.reduce(
-        (total, item) => total + parseNumber(item.mass || "0"),
         0,
       ) || 0
     );
@@ -863,11 +697,8 @@ const ModuleFormStructuralMasonry = ({
               onRemove={() => removeGrout(groutIndex)}
               canRemove={groutFields.length > 1}
               fgkOptions={fgkOptions}
-              caOptions={caOptions}
               customFgkSelected={customFgkSelected}
               setCustomFgkSelected={setCustomFgkSelected}
-              customCaSelected={customCaSelected}
-              setCustomCaSelected={setCustomCaSelected}
             />
           ))}
 
@@ -880,7 +711,13 @@ const ModuleFormStructuralMasonry = ({
                 appendGrout({
                   position: getNextAvailableGroutType() as any,
                   volumes: [{ fgk: 20, volume: "0" }],
-                  steel: [{ ca: 50, mass: "0" }],
+                  steel: [
+                    {
+                      material: "rebar" as any,
+                      resistance: "CA50" as any,
+                      mass: "0",
+                    },
+                  ],
                 })
               }
               className="ml-auto text-green-600 border-green-600 hover:bg-green-50"
@@ -1091,15 +928,6 @@ const ModuleFormStructuralMasonry = ({
       name: `${fieldName}.volumes` as any,
     });
 
-    const {
-      fields: steelFields,
-      append: appendSteel,
-      remove: removeSteel,
-    } = useFieldArray({
-      control: form.control,
-      name: `${fieldName}.steel` as any,
-    });
-
     const borderColor = isRequired ? "border-blue-500" : "border-gray-300";
 
     useWatch({ control: form.control, name: `${fieldName}.volumes` as any });
@@ -1117,34 +945,25 @@ const ModuleFormStructuralMasonry = ({
         );
         const hasSteelWithValue = currentSteel.some((s: any) => s.mass > 0);
 
-        // Se preencheu volumes mas não steel
         if ((hasVolumes || hasVolumeWithValue) && !hasSteel) {
           return "Você adicionou volumes de concreto. É necessário também adicionar aço.";
-        }
-        // Se preencheu steel mas não volumes
-        else if ((hasSteel || hasSteelWithValue) && !hasVolumes) {
+        } else if ((hasSteel || hasSteelWithValue) && !hasVolumes) {
           return "Você adicionou aço. É necessário também adicionar volumes de concreto.";
-        }
-        // Se ambos existem mas volumes está zerado
-        else if (
+        } else if (
           hasVolumes &&
           hasSteel &&
           !hasVolumeWithValue &&
           hasSteelWithValue
         ) {
           return "Os volumes de concreto devem ser maiores que 0.";
-        }
-        // Se ambos existem mas steel está zerado
-        else if (
+        } else if (
           hasVolumes &&
           hasSteel &&
           hasVolumeWithValue &&
           !hasSteelWithValue
         ) {
           return "As massas de aço devem ser maiores que 0.";
-        }
-        // Se ambos estão zerados mas foram adicionados
-        else if (
+        } else if (
           hasVolumes &&
           hasSteel &&
           !hasVolumeWithValue &&
@@ -1165,13 +984,6 @@ const ModuleFormStructuralMasonry = ({
       );
     };
 
-    const isCaUsed = (ca: number, currentIndex: number) => {
-      return currentSteel.some(
-        (steel: any, index: number) =>
-          index !== currentIndex && steel.ca === ca && caOptions.includes(ca),
-      );
-    };
-
     const getNextAvailableFck = () => {
       const usedFcks = currentVolumes
         .map((volume: any) => volume.fck)
@@ -1179,15 +991,7 @@ const ModuleFormStructuralMasonry = ({
       return fckOptions.find((fck) => !usedFcks.includes(fck)) || fckOptions[0];
     };
 
-    const getNextAvailableCa = () => {
-      const usedCas = currentSteel
-        .map((steel: any) => steel.ca)
-        .filter((ca: number) => caOptions.includes(ca));
-      return caOptions.find((ca) => !usedCas.includes(ca)) || caOptions[0];
-    };
-
     const totalVolume = calculateTotalVolume(currentVolumes);
-    const totalMass = calculateTotalMass(currentSteel);
 
     return (
       <div className="space-y-3">
@@ -1362,160 +1166,11 @@ const ModuleFormStructuralMasonry = ({
 
             <div className="border-t border-gray-200 my-4"></div>
 
-            <div className="flex items-center justify-between py-2 px-1">
-              <FormLabel className="text-xs text-gray-500">
-                Aço total (kg)
-              </FormLabel>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-gray-900">
-                  {totalMass.toInternational(undefined, 2)}
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {steelFields.map((field, index) => {
-                const currentCa = form.watch(
-                  `${fieldName}.steel.${index}.ca` as any,
-                );
-                const isCustomCa =
-                  customCaSelected[`${fieldName}-steel-${index}`] ||
-                  (currentCa && !caOptions.includes(currentCa));
-
-                return (
-                  <div
-                    key={field.id}
-                    className="border border-gray-200 rounded-md p-3 space-y-3"
-                  >
-                    <div className="flex items-end gap-2">
-                      <FormField
-                        control={form.control}
-                        name={`${fieldName}.steel.${index}.ca`}
-                        render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="text-xs">CA</FormLabel>
-                            <FormControl>
-                              <Select
-                                onValueChange={(value) => {
-                                  if (value === "custom") {
-                                    setCustomCaSelected((prev) => ({
-                                      ...prev,
-                                      [`${fieldName}-steel-${index}`]: true,
-                                    }));
-                                    field.onChange(0);
-                                  } else {
-                                    setCustomCaSelected((prev) => ({
-                                      ...prev,
-                                      [`${fieldName}-steel-${index}`]: false,
-                                    }));
-                                    field.onChange(Number(value));
-                                  }
-                                }}
-                                value={
-                                  isCustomCa
-                                    ? "custom"
-                                    : field.value?.toString()
-                                }
-                              >
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="CA" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {caOptions.map((ca) => (
-                                    <SelectItem
-                                      key={ca}
-                                      value={ca.toString()}
-                                      disabled={isCaUsed(ca, index)}
-                                    >
-                                      {ca}
-                                    </SelectItem>
-                                  ))}
-                                  <SelectItem value="custom">Outro</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name={`${fieldName}.steel.${index}.mass`}
-                        render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="text-xs">
-                              Massa (kg)
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                type="text"
-                                placeholder="0.00"
-                                value={field.value || ""}
-                                onChange={(e) =>
-                                  field.onChange(masks.numeric(e.target.value))
-                                }
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeSteel(index)}
-                        className="shrink-0"
-                        disabled={isRequired && steelFields.length === 1}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                      </Button>
-                    </div>
-
-                    {isCustomCa && (
-                      <FormField
-                        control={form.control}
-                        name={`${fieldName}.steel.${index}.ca`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">
-                              Outro CA (MPa)
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                type="text"
-                                placeholder="70"
-                                value={field.value || ""}
-                                onChange={(e) => {
-                                  const numericValue = masks.numeric(
-                                    e.target.value,
-                                  );
-                                  field.onChange(Number(numericValue) || 0);
-                                }}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                appendSteel({ ca: getNextAvailableCa(), mass: "0" })
-              }
-              className="w-full text-green-600 border-green-600 hover:bg-green-50"
-            >
-              Adicionar
-            </Button>
+            <SteelMaterialList
+              form={form}
+              name={`${fieldName}.steel`}
+              allowedMaterials={["rebar", "mesh", "strand", "other"]}
+            />
           </CardContent>
         </Card>
       </div>

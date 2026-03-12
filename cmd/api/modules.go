@@ -9,6 +9,7 @@ import (
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/modules"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
+	"github.com/google/uuid"
 )
 
 func (app *application) parseModule(w http.ResponseWriter, r *http.Request) (modules.Module, error) {
@@ -38,6 +39,50 @@ func (app *application) parseModule(w http.ResponseWriter, r *http.Request) (mod
 	}
 
 	return module, nil
+}
+
+// duplicateModule creates a copy of a module with optional customizations.
+// Parameters:
+//   - originalModule: the source module to duplicate
+//   - newModuleID: UUID for the new module
+//   - newOptionID: UUID of the option that will own this module
+//   - customFloorIDs: nil = preserve original floors, []uuid.UUID = use these floor IDs
+//   - customUnitID: nil = preserve original unit, *uuid.UUID = use this unit ID
+func (app *application) duplicateModule(
+	originalModule *data.Module,
+	newModuleID, newOptionID uuid.UUID,
+	customFloorIDs []uuid.UUID,
+	customUnitID *uuid.UUID,
+) (*data.Module, error) {
+	floorIDs := originalModule.FloorIDs
+	if customFloorIDs != nil {
+		floorIDs = customFloorIDs
+	}
+
+	unitID := originalModule.UnitID
+	if customUnitID != nil {
+		unitID = customUnitID
+	}
+
+	duplicatedModule := &data.Module{
+		ID:                newModuleID,
+		Type:              originalModule.Type,
+		OptionID:          newOptionID,
+		Data:              originalModule.Data,
+		TotalCO2Min:       originalModule.TotalCO2Min,
+		TotalCO2Max:       originalModule.TotalCO2Max,
+		TotalEnergyMin:    originalModule.TotalEnergyMin,
+		TotalEnergyMax:    originalModule.TotalEnergyMax,
+		RelativeCO2Min:    originalModule.RelativeCO2Min,
+		RelativeCO2Max:    originalModule.RelativeCO2Max,
+		RelativeEnergyMin: originalModule.RelativeEnergyMin,
+		RelativeEnergyMax: originalModule.RelativeEnergyMax,
+		Outdated:          false,
+		FloorIDs:          floorIDs,
+		UnitID:            unitID,
+	}
+
+	return app.models.Modules.Insert(duplicatedModule)
 }
 
 func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Request) {
@@ -235,6 +280,69 @@ func (app *application) deleteModuleHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"message": "module successfully deleted", "id": moduleID}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) duplicateModuleHandler(w http.ResponseWriter, r *http.Request) {
+	moduleID, err := app.readUUIDParam(r, "moduleID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	optionID, err := app.readUUIDParam(r, "optionID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	originalModule, err := app.models.Modules.Get(moduleID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	newModuleID, err := uuid.NewV7()
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	_, err = app.duplicateModule(originalModule, newModuleID, optionID, nil, nil)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrInvalidOptionID):
+			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrInvalidFloorID):
+			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrInvalidUnitID):
+			app.badRequestResponse(w, r, err)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	moduleAPI, err := modules.ParseModuleType(originalModule.Type)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	module, err := moduleAPI.Get(app.models, newModuleID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"module": module}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

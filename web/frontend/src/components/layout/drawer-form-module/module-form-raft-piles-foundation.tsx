@@ -182,7 +182,7 @@ const ModuleFormRaftPilesFoundation = ({
           <SteelMaterialList
             form={form}
             name="raft.steel"
-            showMeshAndStrand={true}
+            allowedMaterials={["rebar", "mesh", "strand", "other"]}
           />
         </CardContent>
       </Card>

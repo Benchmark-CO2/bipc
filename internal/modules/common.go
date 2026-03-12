@@ -11,6 +11,26 @@ import (
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
+var caToResistanceMap = map[int]string{
+	50:  "CA50",
+	60:  "CA60",
+	190: "CP190",
+}
+
+var resistanceToCAMap = map[string]float64{
+	"CA50":  50,
+	"CA60":  60,
+	"CP190": 190,
+}
+
+// ConvertCAToResistance converts a CA value to resistance string and other_resistance value
+func ConvertCAToResistance(ca int) (resistance string, otherResistance float64) {
+	if res, ok := caToResistanceMap[ca]; ok {
+		return res, 0
+	}
+	return "other", float64(ca)
+}
+
 type SteelMassItem struct {
 	CA   int     `json:"ca"`
 	Mass float64 `json:"mass"`
@@ -31,7 +51,7 @@ type ConcreteVolumeItem struct {
 
 type ConcreteElement struct {
 	Volumes []ConcreteVolumeItem `json:"volumes,omitempty"`
-	Steel   []SteelMassItem      `json:"steel,omitempty"`
+	Steel   []SteelMaterial      `json:"steel,omitempty"`
 }
 
 func (c ConcreteElement) MarshalJSON() ([]byte, error) {
@@ -43,7 +63,8 @@ func (c ConcreteElement) MarshalJSON() ([]byte, error) {
 }
 
 type BasicModuleData struct {
-	Type string `json:"type"`
+	Type     string `json:"type"`
+	Outdated bool   `json:"outdated"`
 }
 
 type Consumption struct {
@@ -153,21 +174,16 @@ func CalculateSteelConsumption(materials []SteelMaterial) (Consumption, error) {
 		}
 
 		var ca float64
-		switch material.Resistance {
-		case "CA50":
-			ca = 50
-		case "CA60":
-			ca = 60
-		case "CP190":
-			ca = 190
-		case "other":
+		if material.Resistance == "other" {
 			if material.OtherResistance > 0 {
 				ca = material.OtherResistance
 			} else {
-				ca = 50
+				ca = 50 // default fallback
 			}
-		default:
-			ca = 50
+		} else if val, ok := resistanceToCAMap[material.Resistance]; ok {
+			ca = val
+		} else {
+			ca = 50 // default fallback
 		}
 
 		var steelCO2, steelEnergy SidacValue
@@ -257,16 +273,7 @@ func validateConcreteElement(v *validator.Validator, el ConcreteElement, fieldPr
 	}
 	v.Check(len(el.Volumes) > 0, fieldPrefix+".volumes", "must have at least one item")
 
-	caSet := make(map[int]struct{})
-	for _, s := range el.Steel {
-		v.Check(s.Mass > 0, fieldPrefix+".steel.mass", "must be greater than 0")
-		v.Check(s.CA != 0, fieldPrefix+".steel.ca", "must be provided")
-		if _, exists := caSet[s.CA]; exists {
-			v.Check(false, fieldPrefix+".steel.ca", fmt.Sprintf("duplicate ca value: %d", s.CA))
-		} else {
-			caSet[s.CA] = struct{}{}
-		}
-	}
+	ValidateSteelMaterials(v, el.Steel, fieldPrefix+".steel")
 	v.Check(len(el.Steel) > 0, fieldPrefix+".steel", "must have at least one item")
 }
 
@@ -290,23 +297,11 @@ func (ce *ConcreteElement) calculate(sidacConcrete, sidacSteel SidacMaterial) (C
 		result.EnergyMax += val.Max * c.Volume
 	}
 
-	for _, s := range ce.Steel {
-		val, ok := sidacSteel.KgCO2[float64(s.CA)]
-		if !ok {
-			val = sidacSteel.KgCO2[60]
-			// return result, fmt.Errorf("steel type not found in sidacSteelData: %d", s.CA)
-		}
-		result.CO2Min += val.Min * s.Mass
-		result.CO2Max += val.Max * s.Mass
-
-		val, ok = sidacSteel.MJ[float64(s.CA)]
-		if !ok {
-			val = sidacSteel.MJ[60]
-			// return result, fmt.Errorf("steel type not found in sidacSteelData: %d", s.CA)
-		}
-		result.EnergyMin += val.Min * s.Mass
-		result.EnergyMax += val.Max * s.Mass
+	steelConsumption, err := CalculateSteelConsumption(ce.Steel)
+	if err != nil {
+		return result, err
 	}
+	result.sum(steelConsumption)
 
 	return result, nil
 }
@@ -336,16 +331,78 @@ func concreteElementFromMap(dataMap map[string]interface{}) ConcreteElement {
 	}
 
 	if steelData, ok := dataMap["steel"].([]interface{}); ok {
-		for _, s := range steelData {
-			if steelMap, ok := s.(map[string]interface{}); ok {
-				steel := SteelMassItem{
-					CA:   int(steelMap["ca"].(float64)),
-					Mass: steelMap["mass"].(float64),
-				}
-				element.Steel = append(element.Steel, steel)
-			}
-		}
+		element.Steel = steelMaterialsFromData(steelData)
 	}
 
 	return element
+}
+
+// steelMaterialsFromData converts []interface{} to []SteelMaterial with backward compatibility
+// for the old CA-based format (SteelMassItem).
+func steelMaterialsFromData(steelData []interface{}) []SteelMaterial {
+	var materials []SteelMaterial
+	
+	for _, s := range steelData {
+		steelMap, ok := s.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		
+		// Try to read as new format (SteelMaterial)
+		if material, ok := steelMap["material"].(string); ok {
+			steel := SteelMaterial{
+				Material:   material,
+				Resistance: steelMap["resistance"].(string),
+				Mass:       steelMap["mass"].(float64),
+			}
+			if otherName, ok := steelMap["other_name"].(string); ok {
+				steel.OtherName = otherName
+			}
+			if otherRes, ok := steelMap["other_resistance"].(float64); ok {
+				steel.OtherResistance = otherRes
+			}
+			materials = append(materials, steel)
+		} else if ca, ok := steelMap["ca"].(float64); ok {
+			// Backward compatibility: read old format (SteelMassItem) and convert
+			resistance, otherResistance := ConvertCAToResistance(int(ca))
+			
+			steel := SteelMaterial{
+				Material:        "rebar",
+				Resistance:      resistance,
+				OtherResistance: otherResistance,
+				Mass:            steelMap["mass"].(float64),
+			}
+			materials = append(materials, steel)
+		}
+	}
+	
+	return materials
+}
+
+func consumptionFromDataModule(d *data.Module) *Consumption {
+	if d.TotalCO2Min == nil {
+		return nil
+	}
+	
+	return &Consumption{
+		CO2Min:    *d.TotalCO2Min,
+		CO2Max:    *d.TotalCO2Max,
+		EnergyMin: *d.TotalEnergyMin,
+		EnergyMax: *d.TotalEnergyMax,
+	}
+}
+
+func extractFloat64Pointer(data map[string]interface{}, key string) *float64 {
+	if val, ok := data[key].(float64); ok {
+		return &val
+	}
+	return nil
+}
+
+func extractIntPointer(data map[string]interface{}, key string) *int {
+	if val, ok := data[key].(float64); ok {
+		intVal := int(val)
+		return &intVal
+	}
+	return nil
 }

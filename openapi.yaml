@@ -861,6 +861,64 @@ paths:
               schema:
                 $ref: "#/components/schemas/DefaultOkResponse"
 
+  /v1/projects/{projectID}/duplicate:
+    post:
+      summary: Duplicate a project (same owner)
+      description: Creates a complete copy of an existing project including all its units, floors, options, modules, and roles. The duplicated project will have a new name with a numeric suffix (e.g., "Project (1)"), and all IDs will be newly generated. The current authenticated user becomes the owner of the duplicated project, and all original role members are preserved. Note that this endpoint does NOT allow changing the owner - use the transfer endpoint for cross-account duplication.
+      tags: [projects]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          description: ID of the project to duplicate
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: Created. The project was successfully duplicated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - project
+                properties:
+                  project:
+                    $ref: "#/components/schemas/ProjectWithUnits"
+        "400":
+          description: Bad Request. Invalid project ID format.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized. The user is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden. Account must be activated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not Found. The project does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error. Failed to duplicate project or its resources.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/projects/{projectID}/invite:
     post:
       summary: Invite a user to a project
@@ -1055,6 +1113,46 @@ paths:
         "500":
           description: Internal Server Error.
 
+  /v1/projects/{projectID}/units/{unitID}/duplicate:
+    post:
+      summary: Duplicate an existing unit with all its options and modules
+      description: Creates a copy of an existing unit with all its floors, options, and modules. All entities are created with new IDs. Floor indexes are preserved (floor index 0 becomes floor index 0 in the new unit). Modules associated with specific floors are mapped to the corresponding floor indexes in the new unit. The active option state is preserved. If the original name ends with " (number)", the number is incremented; otherwise, " (1)" is appended to the name.
+      tags:
+        - Units
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The ID of the project
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The ID of the unit to duplicate
+      responses:
+        "201":
+          description: Unit successfully duplicated with all its floors, options, and modules
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unit:
+                    $ref: "#/components/schemas/Unit"
+        "400":
+          description: Bad Request. Invalid project or unit ID.
+        "404":
+          description: Not Found. The original unit does not exist.
+        "500":
+          description: Internal Server Error.
+
   /v1/projects/{projectID}/units/{unitID}/options:
     post:
       summary: Create a new engineering option for a tower
@@ -1206,6 +1304,44 @@ paths:
         "404":
           description: Not Found.
 
+  /v1/projects/{projectID}/units/{unitID}/options/{optionID}/duplicate:
+    post:
+      summary: Duplicate an existing option with all its modules
+      description: Creates a copy of an existing option with the same data but new IDs. All modules associated with the original option are also duplicated. The duplicated option will be marked as active and any other active option will be deactivated. If the original name ends with " (number)", the number is incremented; otherwise, " (1)" is appended to the name.
+      tags:
+        - Options
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: optionID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The ID of the option to duplicate
+      responses:
+        "201":
+          description: Option successfully duplicated with all its modules
+        "400":
+          description: Bad Request. Invalid unit or role ID.
+        "404":
+          description: Not Found. The original option does not exist.
+        "500":
+          description: Internal Server Error.
+
   /v1/projects/{projectID}/units/{unitID}/options/{optionID}/modules:
     post:
       summary: Create a new module for a unit option
@@ -1236,6 +1372,242 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/ModuleCreateRequest"
+            examples:
+              beam_column:
+                summary: "Beam Column Module"
+                value:
+                  type: "beam_column"
+                  data:
+                    floor_ids:
+                      - "f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6"
+                      - "e7f8a9b0-c1d2-e3f4-a5b6-c7d8e9f0a1b2"
+                    concrete_columns:
+                      volumes:
+                        - fck: 30
+                          volume: 150.5
+                        - fck: 35
+                          volume: 50.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 7500.0
+                        - material: "rebar"
+                          resistance: "CA60"
+                          mass: 1200.0
+                    concrete_beams:
+                      volumes:
+                        - fck: 30
+                          volume: 200.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 10000.0
+                        - material: "rebar"
+                          resistance: "CA60"
+                          mass: 1500.0
+                    concrete_slabs:
+                      volumes:
+                        - fck: 25
+                          volume: 450.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 22500.0
+                    form_columns: 1200
+                    form_beams: 2500
+                    form_slabs: 9000
+                    column_number: 120
+                    avg_beam_span: 6
+                    avg_slab_span: 5
+              
+              concrete_wall:
+                summary: "Concrete Wall Module"
+                value:
+                  type: "concrete_wall"
+                  data:
+                    floor_ids:
+                      - "f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6"
+                      - "e7f8a9b0-c1d2-e3f4-a5b6-c7d8e9f0a1b2"
+                    concrete_walls:
+                      volumes:
+                        - fck: 30
+                          volume: 180.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 9000.0
+                        - material: "mesh"
+                          resistance: "CA60"
+                          mass: 500.0
+                    concrete_slabs:
+                      volumes:
+                        - fck: 25
+                          volume: 300.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 15000.0
+                    wall_thickness: 0.20
+                    slab_thickness: 0.15
+                    wall_area: 3000
+                    slab_area: 15000
+                    wall_form_area: 6000
+                    slab_form_area: 30000
+              
+              structural_masonry:
+                summary: "Structural Masonry Module"
+                value:
+                  type: "structural_masonry"
+                  data:
+                    floor_ids:
+                      - "f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6"
+                    concrete_columns:
+                      volumes:
+                        - fck: 25
+                          volume: 50.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 2500.0
+                    concrete_beams:
+                      volumes:
+                        - fck: 25
+                          volume: 80.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 4000.0
+                    concrete_slabs:
+                      volumes:
+                        - fck: 25
+                          volume: 200.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 10000.0
+                    form_columns: 500
+                    form_beams: 800
+                    form_slabs: 5000
+                    form_total: 6300
+                    masonry:
+                      grout:
+                        - position: "vertical"
+                          volumes:
+                            - fgk: 15
+                              volume: 10.5
+                          steel:
+                            - material: "rebar"
+                              resistance: "CA50"
+                              mass: 500.0
+                        - position: "horizontal"
+                          volumes:
+                            - fgk: 15
+                              volume: 5.0
+                          steel:
+                            - material: "rebar"
+                              resistance: "CA50"
+                              mass: 250.0
+                      mortar:
+                        - fak: 8.5
+                          volume: 15.0
+                      blocks:
+                        - type: "inteiro (14x19x39)"
+                          fbk: 8
+                          quantity: 5000
+              
+              raft_foundation:
+                summary: "Raft Foundation Module"
+                value:
+                  type: "raft_foundation"
+                  data:
+                    area: 150.5
+                    thickness: 0.25
+                    fck: 30
+                    steel:
+                      - material: "mesh"
+                        resistance: "CA60"
+                        mass: 120.5
+                      - material: "rebar"
+                        resistance: "CA50"
+                        mass: 450.0
+                      - material: "rebar"
+                        resistance: "CA60"
+                        mass: 80.0
+                      - material: "strand"
+                        resistance: "CP190"
+                        mass: 150.0
+                    unit_id: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+              
+              piles_foundation:
+                summary: "Piles Foundation Module"
+                value:
+                  type: "piles_foundation"
+                  data:
+                    fck: 30
+                    piles:
+                      volume: 45.5
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 450.0
+                    blocks:
+                      volume: 15.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 220.0
+                        - material: "rebar"
+                          resistance: "CA60"
+                          mass: 40.0
+                    grade_beams:
+                      volume: 8.5
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 120.0
+                        - material: "rebar"
+                          resistance: "CA60"
+                          mass: 20.0
+                    tie_beams:
+                      volume: 2.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 30.0
+                        - material: "rebar"
+                          resistance: "CA60"
+                          mass: 5.0
+                    unit_id: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+              
+              raft_piles_foundation:
+                summary: "Raft + Piles Foundation Module"
+                value:
+                  type: "raft_piles_foundation"
+                  data:
+                    fck: 25
+                    raft:
+                      area: 100.0
+                      thickness: 0.250
+                      steel:
+                        - material: "mesh"
+                          resistance: "CA60"
+                          mass: 150.0
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 200.0
+                        - material: "rebar"
+                          resistance: "CA60"
+                          mass: 50.0
+                        - material: "strand"
+                          resistance: "CP190"
+                          mass: 100.0
+                    piles:
+                      volume: 35.8
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 630.0
+                    unit_id: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
       responses:
         "201":
           description: Module created successfully
@@ -1343,6 +1715,49 @@ paths:
       responses:
         "200":
           description: module successfully updated
+
+  /v1/projects/{projectID}/units/{unitID}/options/{optionID}/modules/{moduleID}/duplicate:
+    post:
+      summary: Duplicate an existing module
+      description: Creates a copy of an existing module with the same data but a new ID. The duplicated module will be associated with the specified option.
+      tags:
+        - Modules
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: optionID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The option ID to associate the duplicated module with
+        - name: moduleID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The ID of the module to duplicate
+      responses:
+        "201":
+          description: Module successfully duplicated
+        "400":
+          description: Bad Request. Invalid option, floor, or unit ID.
+        "404":
+          description: Not Found. The original module does not exist.
+        "500":
+          description: Internal Server Error.
 
 components:
   securitySchemes:
@@ -1738,38 +2153,51 @@ components:
     TowerCreateData:
       type: object
       required:
-        - floor_groups
+        - floors
       properties:
-        floor_groups:
+        floors:
           type: array
+          description: "Array of individual floors. Each floor must have a unique index and consecutive indexes starting from 1."
+          minItems: 1
           items:
-            $ref: "#/components/schemas/FloorGroupCreate"
+            $ref: "#/components/schemas/FloorCreate"
 
-    FloorGroupCreate:
+    FloorCreate:
       type: object
       required:
-        - name
+        - floor_group
+        - category
         - area
         - height
-        - repetition
+        - index
       properties:
-        name:
+        id:
           type: string
-        example: "Typical Floor"
+          format: uuid
+          description: "Optional UUID for the floor. If not provided, will be auto-generated."
+        floor_group:
+          type: string
+          description: "Name of the floor group this floor belongs to (e.g., 'Standard Floors', 'Basement')."
+          example: "Standard Floors"
+        category:
+          type: string
+          description: "Category of the floor."
+          enum: [basement_floor, penthouse_floor, ground_floor, standard_floor]
+          example: "standard_floor"
         area:
           type: number
           format: float
+          description: "Floor area in square meters (m²)."
           example: 500.0
         height:
           type: number
           format: float
+          description: "Floor height in meters (m)."
           example: 3.0
-        repetition:
+        index:
           type: integer
-          example: 10
-        category:
-          type: string
-          enum: [basement_floor, penthouse_floor, ground_floor, standard_floor]
+          description: "Floor index/number. Must be unique and consecutive (no gaps). Typically starts at 1."
+          example: 1
 
     OptionCreateRequest:
       type: object
@@ -1790,57 +2218,19 @@ components:
         type:
           type: string
           description: "The type of structural module."
-          enum: [beam_column, concrete_wall]
+          enum: [beam_column, concrete_wall, structural_masonry, raft_foundation, piles_foundation, raft_piles_foundation]
         data:
           description: "Polymorphic data containing the specific details for the chosen module type. The structure of this object depends on the 'type' field."
           oneOf:
             - $ref: "#/components/schemas/BeamColumnData"
             - $ref: "#/components/schemas/ConcreteWallData"
+            - $ref: "#/components/schemas/StructuralMasonryData"
+            - $ref: "#/components/schemas/RaftFoundationData"
+            - $ref: "#/components/schemas/PilesFoundationData"
+            - $ref: "#/components/schemas/RaftPilesFoundationData"
       required:
         - type
-        - floor_ids
         - data
-      example:
-        type: "beam_column"
-        floor_ids:
-          [
-            "f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6",
-            "e7f8a9b0-c1d2-e3f4-a5b6-c7d8e9f0a1b2",
-          ]
-        data:
-          concrete_columns:
-            volumes:
-              - fck: 30
-                volume: 150.5
-              - fck: 35
-                volume: 50.0
-            steel:
-              - ca: 50
-                mass: 7500
-              - ca: 60
-                mass: 1200
-          concrete_beams:
-            volumes:
-              - fck: 30
-                volume: 200.0
-            steel:
-              - ca: 50
-                mass: 10000
-              - ca: 60
-                mass: 1500
-          concrete_slabs:
-            volumes:
-              - fck: 25
-                volume: 450.0
-            steel:
-              - ca: 50
-                mass: 22500
-          form_columns: 1200
-          form_beams: 2500
-          form_slabs: 9000
-          column_number: 120
-          avg_beam_span: 6
-          avg_slab_span: 5
 
     # Schema for a single concrete volume item
     ConcreteVolumeItem:
@@ -1866,28 +2256,46 @@ components:
       items:
         $ref: "#/components/schemas/ConcreteVolumeItem"
 
-    # Schema for a single steel mass item
-    SteelMassItem:
+    # Schema for a single steel material item
+    SteelMaterial:
       type: object
+      description: "Defines a steel reinforcement material with its type, resistance characteristics, and mass."
       properties:
-        ca:
-          type: integer
-          description: "The type of CA steel reinforcement."
-          enum: [50, 60]
+        material:
+          type: string
+          description: "The type of steel material."
+          enum: [general, rebar, mesh, strand, other]
+          example: "rebar"
+        other_name:
+          type: string
+          description: "Custom material name. Required when material is 'other'."
+          example: "Custom Steel Type"
+        resistance:
+          type: string
+          description: "The resistance/strength classification of the steel."
+          enum: [CA50, CA60, CP190, other]
+          example: "CA50"
+        other_resistance:
+          type: number
+          format: float
+          description: "Custom resistance value in MPa. Required when resistance is 'other'."
+          example: 500.0
         mass:
           type: number
           format: float
           description: "Total mass of steel reinforcement in kilograms (kg)."
+          example: 22500.0
       required:
-        - ca
+        - material
+        - resistance
         - mass
 
-    # Schema for the array of steel masses
-    SteelMasses:
+    # Schema for the array of steel materials
+    SteelMaterials:
       type: array
-      description: "An array defining steel reinforcement mass, broken down by type."
+      description: "An array defining steel reinforcement materials, broken down by type and resistance."
       items:
-        $ref: "#/components/schemas/SteelMass"
+        $ref: "#/components/schemas/SteelMaterial"
 
     # Schema for the concrete element, with consistent references
     ConcreteElement:
@@ -1897,7 +2305,7 @@ components:
         volumes:
           $ref: "#/components/schemas/ConcreteVolumes"
         steel:
-          $ref: "#/components/schemas/SteelMasses"
+          $ref: "#/components/schemas/SteelMaterials"
       required:
         - volumes
         - steel
@@ -1908,11 +2316,11 @@ components:
       properties:
         floor_ids:
           type: array
-          description: "Array of floor IDs to which this module will be applied. These floors must belong to the tower associated with this unit option."
+          description: "Array of floor IDs to which this module will be applied. These floors must belong to the unit associated with this option."
           items:
             type: string
             format: uuid
-            example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+          minItems: 1
         concrete_columns:
           description: "Concrete and steel composition for all columns in the specified floors."
           allOf:
@@ -1937,19 +2345,24 @@ components:
           type: number
           description: "Total area of concrete forms for slabs in square meters (m²)."
           example: 9000.0
+        form_total:
+          type: number
+          description: "Total area of all concrete forms (columns + beams + slabs) in square meters (m²)."
+          example: 12750.5
         column_number:
           type: integer
           description: "Total number of columns in the specified floors."
           example: 120
         avg_beam_span:
-          type: integer
+          type: number
           description: "Average span between beams in meters (m)."
-          example: 6
+          example: 6.0
         avg_slab_span:
-          type: integer
+          type: number
           description: "Average span of slabs in meters (m)."
-          example: 5
+          example: 5.0
       required:
+        - floor_ids
         - concrete_columns
         - concrete_beams
         - concrete_slabs
@@ -2000,3 +2413,268 @@ components:
       required:
         - concrete_walls
         - concrete_slabs
+
+    StructuralMasonryData:
+      type: object
+      description: "Data for a 'structural_masonry' type module. Structural masonry combines concrete structural elements (columns, beams, slabs) with masonry block construction."
+      properties:
+        floor_ids:
+          type: array
+          description: "Array of floor IDs to which this module will be applied."
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        concrete_columns:
+          description: "Concrete and steel composition for columns."
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        concrete_beams:
+          description: "Concrete and steel composition for beams."
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        concrete_slabs:
+          description: "Concrete and steel composition for slabs."
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        form_columns:
+          type: number
+          description: "Total area of concrete forms for columns in m²."
+          example: 1200
+        form_beams:
+          type: number
+          description: "Total area of concrete forms for beams in m²."
+          example: 2500
+        form_slabs:
+          type: number
+          description: "Total area of concrete forms for slabs in m²."
+          example: 9000
+        form_total:
+          type: number
+          description: "Total area of all concrete forms in m²."
+          example: 12700
+        masonry:
+          type: object
+          description: "Masonry elements including grout, mortar, and blocks."
+          properties:
+            grout:
+              type: array
+              description: "Array of grout information for vertical or horizontal filling."
+              items:
+                type: object
+                properties:
+                  position:
+                    type: string
+                    enum: [vertical, horizontal]
+                    description: "Position of grout application."
+                  volumes:
+                    type: array
+                    description: "Array of grout volumes by compressive strength (fgk)."
+                    items:
+                      type: object
+                      properties:
+                        fgk:
+                          type: integer
+                          description: "Grout compressive strength in MPa."
+                          example: 15
+                        volume:
+                          type: number
+                          format: float
+                          description: "Volume of grout in m³."
+                          example: 10.5
+                      required: [fgk, volume]
+                  steel:
+                    $ref: "#/components/schemas/SteelMaterials"
+                required: [position, volumes]
+            mortar:
+              type: array
+              description: "Array of mortar volumes by compressive strength (fak)."
+              items:
+                type: object
+                properties:
+                  fak:
+                    type: number
+                    format: float
+                    description: "Mortar compressive strength in MPa."
+                    example: 8.5
+                  volume:
+                    type: number
+                    format: float
+                    description: "Volume of mortar in m³."
+                    example: 15.0
+                required: [fak, volume]
+            blocks:
+              type: array
+              description: "Array of masonry blocks by type and strength."
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    description: "Type of masonry block."
+                    example: "inteiro (14x19x39)"
+                  fbk:
+                    type: integer
+                    description: "Block compressive strength in MPa."
+                    example: 8
+                  quantity:
+                    type: integer
+                    description: "Number of blocks."
+                    example: 5000
+                required: [type, fbk, quantity]
+          required: [grout, mortar, blocks]
+      required:
+        - floor_ids
+        - concrete_columns
+        - concrete_beams
+        - concrete_slabs
+        - masonry
+
+    RaftFoundationData:
+      type: object
+      description: "Data for a 'raft_foundation' type module. A raft foundation is a continuous concrete slab that extends over the entire building footprint."
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+          description: "ID of the unit this foundation belongs to."
+        area:
+          type: number
+          format: float
+          description: "Total area of the raft foundation in m²."
+          example: 500.0
+        thickness:
+          type: number
+          format: float
+          description: "Thickness of the raft slab in meters."
+          example: 0.30
+        fck:
+          type: integer
+          description: "Characteristic compressive strength of concrete in MPa."
+          enum: [20, 25, 30, 35, 40, 45]
+          example: 30
+        steel:
+          $ref: "#/components/schemas/SteelMaterials"
+      required:
+        - unit_id
+        - area
+        - thickness
+        - fck
+        - steel
+
+    PilesFoundationData:
+      type: object
+      description: "Data for a 'piles_foundation' type module. A piles foundation uses deep vertical elements to transfer loads to deeper soil layers."
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+          description: "ID of the unit this foundation belongs to."
+        fck:
+          type: integer
+          description: "Characteristic compressive strength of concrete in MPa."
+          enum: [20, 25, 30, 35, 40, 45]
+          example: 30
+        piles:
+          type: object
+          description: "Pile elements."
+          properties:
+            volume:
+              type: number
+              format: float
+              description: "Total volume of pile concrete in m³."
+              example: 50.0
+            steel:
+              $ref: "#/components/schemas/SteelMaterials"
+          required: [volume, steel]
+        blocks:
+          type: object
+          description: "Pile cap blocks."
+          properties:
+            volume:
+              type: number
+              format: float
+              description: "Total volume of block concrete in m³."
+              example: 30.0
+            steel:
+              $ref: "#/components/schemas/SteelMaterials"
+          required: [volume, steel]
+        grade_beams:
+          type: object
+          description: "Grade beams connecting pile caps."
+          properties:
+            volume:
+              type: number
+              format: float
+              description: "Total volume of grade beam concrete in m³."
+              example: 20.0
+            steel:
+              $ref: "#/components/schemas/SteelMaterials"
+          required: [volume, steel]
+        tie_beams:
+          type: object
+          description: "Tie beams for lateral stability."
+          properties:
+            volume:
+              type: number
+              format: float
+              description: "Total volume of tie beam concrete in m³."
+              example: 15.0
+            steel:
+              $ref: "#/components/schemas/SteelMaterials"
+          required: [volume, steel]
+      required:
+        - unit_id
+        - fck
+        - piles
+        - blocks
+        - grade_beams
+        - tie_beams
+
+    RaftPilesFoundationData:
+      type: object
+      description: "Data for a 'raft_piles_foundation' type module. Combines a raft foundation with supporting piles for higher load capacity."
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+          description: "ID of the unit this foundation belongs to."
+        fck:
+          type: integer
+          description: "Characteristic compressive strength of concrete in MPa."
+          enum: [20, 25, 30, 35, 40, 45]
+          example: 30
+        raft:
+          type: object
+          description: "Raft slab component."
+          properties:
+            area:
+              type: number
+              format: float
+              description: "Total area of the raft in m²."
+              example: 500.0
+            thickness:
+              type: number
+              format: float
+              description: "Thickness of the raft slab in meters."
+              example: 0.30
+            steel:
+              $ref: "#/components/schemas/SteelMaterials"
+          required: [area, thickness, steel]
+        piles:
+          type: object
+          description: "Supporting piles component."
+          properties:
+            volume:
+              type: number
+              format: float
+              description: "Total volume of pile concrete in m³."
+              example: 40.0
+            steel:
+              $ref: "#/components/schemas/SteelMaterials"
+          required: [volume, steel]
+      required:
+        - unit_id
+        - fck
+        - raft
+        - piles

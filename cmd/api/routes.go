@@ -48,7 +48,9 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPut, "/v1/projects/:projectID/transfer-ownership", app.requireRolesPermission("*:*", app.transferOwnershipHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/collaborators", app.listCollaboratorsHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/user/permissions", app.requireAuthenticatedUser(app.listUserPermissionsHandler))
-
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate", app.requireActivatedUser(app.duplicateProjectHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate/:targetUserID", app.requireActivatedUser(app.duplicateProjectToUserHandler))
+	
 	// ----------------------------------------------------------------------------------------------------------------------------------
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects-upload", app.requireActivatedUser(app.createProjectsFromCSVHandler))
@@ -56,17 +58,20 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID", app.readUnitHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID", app.requireRolesPermission("update:unit", app.updateUnitHandler))
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID", app.requireRolesPermission("delete:unit", app.deleteUnitHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/duplicate", app.requireRolesPermission("create:unit", app.duplicateUnitHandler))
 
-	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/roles/:roleID/options", app.listOptionsHandler)
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/roles/:roleID/options", app.createOptionHandler)
-	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.readOptionHandler)
-	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.updateOptionHandler)
-	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.deleteOptionHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/roles/:roleID/options", app.requireRoleAssociation(app.listOptionsHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/roles/:roleID/options", app.requireRoleAssociation(app.createOptionHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.requireOptionRoleAssociation(app.readOptionHandler))
+	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.requireOptionRoleAssociation(app.updateOptionHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.requireOptionRoleAssociation(app.deleteOptionHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/duplicate", app.requireOptionRoleAssociation(app.duplicateOptionHandler))
 
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules", app.createModuleHandler)
-	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.readModuleHandler)
-	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.deleteModuleHandler)
-	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.updateModuleHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules", app.requireOptionRoleAssociation(app.createModuleHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.readModuleHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.deleteModuleHandler))
+	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.updateModuleHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID/duplicate", app.requireOptionRoleAssociation(app.duplicateModuleHandler))
 
 	router.HandlerFunc(http.MethodGet, "/v1/benchmark/floors", app.getFloorsBenchmarkHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/benchmark/units", app.getUnitsBenchmarkHandler)

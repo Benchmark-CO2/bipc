@@ -28,7 +28,7 @@ type MortarItem struct {
 type GroutInfo struct {
 	Position string            `json:"position"`
 	Volumes  []GroutVolumeItem `json:"volumes"`
-	Steel    []SteelMassItem   `json:"steel"`
+	Steel    []SteelMaterial   `json:"steel"`
 }
 
 type MasonryElement struct {
@@ -132,21 +132,11 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 			result.EnergyMin += val.Min * gv.Volume
 			result.EnergyMax += val.Max * gv.Volume
 		}
-		for _, gs := range g.Steel {
-			val, ok := sidacSteel.KgCO2[float64(gs.CA)]
-			if !ok {
-				val = sidacSteel.KgCO2[60]
-			}
-			result.CO2Min += val.Min * gs.Mass
-			result.CO2Max += val.Max * gs.Mass
-
-			val, ok = sidacSteel.MJ[float64(gs.CA)]
-			if !ok {
-				val = sidacSteel.MJ[60]
-			}
-			result.EnergyMin += val.Min * gs.Mass
-			result.EnergyMax += val.Max * gs.Mass
+		steelConsumption, err := CalculateSteelConsumption(g.Steel)
+		if err != nil {
+			return err
 		}
+		result.sum(steelConsumption)
 	}
 
 	for _, m := range me.Mortar {
@@ -272,10 +262,18 @@ func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Co
 				})
 			}
 			for _, steel := range grout.Steel {
-				groutData["steel"] = append(groutData["steel"].([]map[string]interface{}), map[string]interface{}{
-					"ca":   steel.CA,
-					"mass": steel.Mass,
-				})
+				steelMap := map[string]interface{}{
+					"material":   steel.Material,
+					"resistance": steel.Resistance,
+					"mass":       steel.Mass,
+				}
+				if steel.OtherName != "" {
+					steelMap["other_name"] = steel.OtherName
+				}
+				if steel.OtherResistance > 0 {
+					steelMap["other_resistance"] = steel.OtherResistance
+				}
+				groutData["steel"] = append(groutData["steel"].([]map[string]interface{}), steelMap)
 			}
 			groutList = append(groutList, groutData)
 		}
@@ -330,15 +328,7 @@ func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Co
 }
 
 func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
-	var consumption *Consumption
-	if d.TotalCO2Min != nil {
-		consumption = &Consumption{
-			CO2Min:    *d.TotalCO2Min,
-			CO2Max:    *d.TotalCO2Max,
-			EnergyMin: *d.TotalEnergyMin,
-			EnergyMax: *d.TotalEnergyMax,
-		}
-	}
+	consumption := consumptionFromDataModule(d)
 
 	var concreteColumns, concreteBeams, concreteSlabs ConcreteElement
 
@@ -350,21 +340,6 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 	}
 	if slabData, ok := d.Data["concrete_slabs"].(map[string]interface{}); ok {
 		concreteSlabs = concreteElementFromMap(slabData)
-	}
-
-	var formColumns, formBeams, formSlabs, formTotal *float64
-
-	if val, ok := d.Data["form_columns"].(float64); ok {
-		formColumns = &val
-	}
-	if val, ok := d.Data["form_beams"].(float64); ok {
-		formBeams = &val
-	}
-	if val, ok := d.Data["form_slabs"].(float64); ok {
-		formSlabs = &val
-	}
-	if val, ok := d.Data["form_total"].(float64); ok {
-		formTotal = &val
 	}
 
 	var masonry MasonryElement
@@ -389,14 +364,7 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 					}
 
 					if steelData, ok := groutMap["steel"].([]interface{}); ok {
-						for _, st := range steelData {
-							if steelMap, ok := st.(map[string]interface{}); ok {
-								grout.Steel = append(grout.Steel, SteelMassItem{
-									CA:   int(steelMap["ca"].(float64)),
-									Mass: steelMap["mass"].(float64),
-								})
-							}
-						}
+						grout.Steel = steelMaterialsFromData(steelData)
 					}
 
 					masonry.Grout = append(masonry.Grout, grout)
@@ -436,15 +404,15 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 
 	return &StructuralMasonry{
 		ID:              d.ID,
-		BasicModuleData: BasicModuleData{Type: "structural_masonry"},
+		BasicModuleData: BasicModuleData{Type: "structural_masonry", Outdated: d.Outdated},
 		Consumption:     consumption,
 		ConcreteColumns: concreteColumns,
 		ConcreteBeams:   concreteBeams,
 		ConcreteSlabs:   concreteSlabs,
-		FormColumns:     formColumns,
-		FormBeams:       formBeams,
-		FormSlabs:       formSlabs,
-		FormTotal:       formTotal,
+		FormColumns:     extractFloat64Pointer(d.Data, "form_columns"),
+		FormBeams:       extractFloat64Pointer(d.Data, "form_beams"),
+		FormSlabs:       extractFloat64Pointer(d.Data, "form_slabs"),
+		FormTotal:       extractFloat64Pointer(d.Data, "form_total"),
 		Masonry:         masonry,
 		FloorIDs:        d.FloorIDs,
 	}

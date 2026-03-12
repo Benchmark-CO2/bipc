@@ -24,20 +24,46 @@ const concreteVolumeItemSchema = z
     return rest;
   });
 
-const steelMassItemSchema = z
+// Steel schema for foundations and superstructure
+const steelMaterialSchema = z
   .object({
-    ca: z.number().nonnegative("O CA deve ser um número não negativo"),
+    material: z.enum(["general", "rebar", "mesh", "strand", "other"]),
+    other_name: z.string().optional(),
+    resistance: z.enum(["CA50", "CA60", "CP190", "other"]),
+    other_resistance: z.number().optional(),
     mass: z.string().transform(parseNumber),
-    customCa: z.boolean().optional(),
   })
-  .transform((data) => {
-    const { customCa: _customCa, ...rest } = data;
-    return rest;
-  });
+  .refine(
+    (data) => {
+      if (data.material === "other") {
+        return data.other_name && data.other_name.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Nome do material é obrigatório quando 'Outro' é selecionado",
+      path: ["other_name"],
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.resistance === "other") {
+        return (
+          data.other_resistance !== undefined && data.other_resistance !== null
+        );
+      }
+      return true;
+    },
+    {
+      message:
+        "Resistência customizada é obrigatória quando 'Outro' é selecionado",
+      path: ["other_resistance"],
+    },
+  );
 
 const concreteElementSchema = z.object({
   volumes: z.array(concreteVolumeItemSchema).optional().default([]),
-  steel: z.array(steelMassItemSchema).optional().default([]),
+  steel: z.array(steelMaterialSchema).optional().default([]),
 });
 
 const blockItemSchema = z
@@ -126,7 +152,7 @@ const groutItemSchema = z.object({
     .array(groutVolumeItemSchema)
     .min(1, "Adicione pelo menos um volume"),
   steel: z
-    .array(steelMassItemSchema)
+    .array(steelMaterialSchema)
     .min(1, "Adicione pelo menos uma armadura"),
 });
 
@@ -158,45 +184,6 @@ const mortarItemSchema = z
     const { customFak: _customFak, ...rest } = data;
     return rest;
   });
-
-// Steel schema for foundations
-const steelMaterialSchema = z
-  .object({
-    material: z.enum(["general", "rebar", "mesh", "strand", "other"]),
-    other_name: z.string().optional(),
-    resistance: z.enum(["CA50", "CA60", "CP190", "other"]),
-    other_resistance: z.number().optional(),
-    mass: z.string().transform(parseNumber),
-  })
-  .refine(
-    (data) => {
-      // Se material = "other", other_name é obrigatório
-      if (data.material === "other") {
-        return data.other_name && data.other_name.trim().length > 0;
-      }
-      return true;
-    },
-    {
-      message: "Nome do material é obrigatório quando 'Outro' é selecionado",
-      path: ["other_name"],
-    },
-  )
-  .refine(
-    (data) => {
-      // Se resistance = "other", other_resistance é obrigatório
-      if (data.resistance === "other") {
-        return (
-          data.other_resistance !== undefined && data.other_resistance !== null
-        );
-      }
-      return true;
-    },
-    {
-      message:
-        "Resistência customizada é obrigatória quando 'Outro' é selecionado",
-      path: ["other_resistance"],
-    },
-  );
 
 const foundationSteelSchema = z
   .array(steelMaterialSchema)

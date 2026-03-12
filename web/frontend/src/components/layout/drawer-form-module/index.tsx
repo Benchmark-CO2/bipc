@@ -117,7 +117,8 @@ const DrawerFormModule = ({
       queryClient.invalidateQueries({
         queryKey: ["module", projectId, unitId, optionId, moduleId!],
       });
-      form.reset();
+      form.reset(getDefaultValuesByType(type) as any);
+      setSelectedFloors([]);
       setIsOpen(false);
     },
   });
@@ -144,7 +145,8 @@ const DrawerFormModule = ({
       queryClient.invalidateQueries({
         queryKey: ["options", projectId, unitId],
       });
-      form.reset();
+      form.reset(getDefaultValuesByType(type) as any);
+      setSelectedFloors([]);
       setIsOpen(false);
     },
   });
@@ -250,10 +252,7 @@ const DrawerFormModule = ({
                   fck: c.fck,
                   volume: toLocalString(c.volume),
                 })),
-                steel: restAny.concrete_columns.steel.map((c: any) => ({
-                  ca: c.ca || 50,
-                  mass: toLocalString(c.mass),
-                })),
+                steel: convertSteelArray(restAny.concrete_columns.steel),
               }
             : (defaults as any).concrete_columns,
 
@@ -264,10 +263,7 @@ const DrawerFormModule = ({
                   fck: c.fck,
                   volume: toLocalString(c.volume),
                 })),
-                steel: restAny.concrete_beams.steel.map((c: any) => ({
-                  ca: c.ca || 50,
-                  mass: toLocalString(c.mass),
-                })),
+                steel: convertSteelArray(restAny.concrete_beams.steel),
               }
             : (defaults as any).concrete_beams,
 
@@ -278,10 +274,7 @@ const DrawerFormModule = ({
                   fck: c.fck,
                   volume: toLocalString(c.volume),
                 })),
-                steel: restAny.concrete_slabs.steel.map((c: any) => ({
-                  ca: c.ca || 50,
-                  mass: toLocalString(c.mass),
-                })),
+                steel: convertSteelArray(restAny.concrete_slabs.steel),
               }
             : (defaults as any).concrete_slabs,
 
@@ -292,10 +285,7 @@ const DrawerFormModule = ({
                   fck: c.fck,
                   volume: toLocalString(c.volume),
                 })),
-                steel: restAny.concrete_walls.steel.map((c: any) => ({
-                  ca: c.ca || 50,
-                  mass: toLocalString(c.mass),
-                })),
+                steel: convertSteelArray(restAny.concrete_walls.steel),
               }
             : (defaults as any).concrete_walls,
 
@@ -382,11 +372,7 @@ const DrawerFormModule = ({
                       fgk: v.fgk,
                       volume: toLocalString(v.volume),
                     })) || [],
-                  steel:
-                    grout.steel?.map((s: any) => ({
-                      ca: s.ca,
-                      mass: toLocalString(s.mass),
-                    })) || [],
+                  steel: convertSteelArray(grout.steel),
                 }))
               : (defaults as any).grout,
             mortar: restAny.masonry?.mortar
@@ -527,7 +513,8 @@ const DrawerFormModule = ({
   };
 
   const handleClose = () => {
-    form.reset();
+    form.reset(getDefaultValuesByType(type) as any);
+    setSelectedFloors([]);
     setIsOpen(false);
   };
 

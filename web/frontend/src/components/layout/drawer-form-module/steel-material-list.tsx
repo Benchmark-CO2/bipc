@@ -19,10 +19,26 @@ import {
   SelectValue,
 } from "../../ui/select";
 
+type MaterialKey = "rebar" | "mesh" | "strand" | "other";
+
+const allMaterialOptions: Record<MaterialKey, string> = {
+  rebar: "Vergalhão",
+  mesh: "Tela",
+  strand: "Cordoalha",
+  other: "Outro",
+};
+
+const defaultResistanceByMaterial: Record<string, string> = {
+  rebar: "CA50",
+  mesh: "CA60",
+  strand: "CP190",
+  other: "CA50",
+};
+
 interface SteelMaterialListProps {
   form: UseFormReturn<any>;
   name: string;
-  showMeshAndStrand?: boolean;
+  allowedMaterials?: MaterialKey[];
 }
 
 interface SteelMaterialItemProps {
@@ -248,7 +264,7 @@ const SteelMaterialItem = ({
 const SteelMaterialList = ({
   form,
   name,
-  showMeshAndStrand = false,
+  allowedMaterials = ["rebar", "other"],
 }: SteelMaterialListProps) => {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -281,17 +297,10 @@ const SteelMaterialList = ({
     .map((item: any) => item?.resistance)
     .filter(Boolean);
 
-  const materialOptions = showMeshAndStrand
-    ? [
-        { value: "rebar", label: "Vergalhão" },
-        { value: "mesh", label: "Tela" },
-        { value: "strand", label: "Cordoalha" },
-        { value: "other", label: "Outro" },
-      ]
-    : [
-        { value: "rebar", label: "Vergalhão" },
-        { value: "other", label: "Outro" },
-      ];
+  const materialOptions = allowedMaterials.map((key) => ({
+    value: key,
+    label: allMaterialOptions[key],
+  }));
 
   const resistanceOptions = [
     { value: "CA50", label: "CA-50" },
@@ -338,13 +347,14 @@ const SteelMaterialList = ({
         type="button"
         variant="outline"
         size="sm"
-        onClick={() =>
+        onClick={() => {
+          const defaultMaterial = allowedMaterials[0] ?? "rebar";
           append({
-            material: "rebar",
-            resistance: "CA50",
+            material: defaultMaterial,
+            resistance: defaultResistanceByMaterial[defaultMaterial] ?? "CA50",
             mass: "0",
-          })
-        }
+          });
+        }}
         className="w-full text-green-600 border-green-600 hover:bg-green-50"
       >
         Adicionar

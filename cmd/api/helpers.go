@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -144,4 +145,17 @@ func (app *application) background(fn func()) {
 
 		fn()
 	}()
+}
+
+func generateDuplicateName(originalName string) string {
+	pattern := regexp.MustCompile(`^(.+)\s+\((\d+)\)$`)
+	matches := pattern.FindStringSubmatch(originalName)
+
+	if matches != nil {
+		baseName := matches[1]
+		number, _ := strconv.Atoi(matches[2])
+		return fmt.Sprintf("%s (%d)", baseName, number+1)
+	}
+
+	return fmt.Sprintf("%s (1)", originalName)
 }

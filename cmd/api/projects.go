@@ -439,3 +439,294 @@ func (app *application) deleteInvitationHandler(w http.ResponseWriter, r *http.R
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) duplicateProjectHandler(w http.ResponseWriter, r *http.Request) {
+	projectID, err := app.readUUIDParam(r, "projectID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	user := app.contextGetUser(r)
+
+	originalProject, err := app.models.Projects.GetByID(projectID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	newProjectID, err := uuid.NewV7()
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	duplicatedProject := &data.Project{
+		ID:           newProjectID,
+		Name:         generateDuplicateName(originalProject.Name),
+		CEP:          originalProject.CEP,
+		State:        originalProject.State,
+		City:         originalProject.City,
+		Neighborhood: originalProject.Neighborhood,
+		Street:       originalProject.Street,
+		Number:       originalProject.Number,
+		Phase:        originalProject.Phase,
+		Description:  originalProject.Description,
+		Benchmark:    false,
+	}
+
+	err = app.models.Projects.Insert(duplicatedProject, user.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// Get all roles with members and permissions from the original project
+	originalCollaborators, err := app.models.Roles.Collaborators(projectID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// Get the new project to retrieve the auto-created admin role
+	newProject, err := app.models.Projects.GetByID(newProjectID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// Create a map to track role ID mappings: oldRoleID -> newRoleID
+	roleIDMap := make(map[uuid.UUID]uuid.UUID)
+
+	var adminRoleID uuid.UUID
+	for _, role := range newProject.Roles {
+		if role.Name == "Administrador" && role.IsProtected {
+			adminRoleID = role.ID
+			for _, origRole := range originalCollaborators.Roles {
+				if origRole.Name == "Administrador" && origRole.IsProtected {
+					roleIDMap[origRole.ID] = role.ID
+					break
+				}
+			}
+			break
+		}
+	}
+
+	// Duplicate all other roles (non-Administrador) with their members and permissions
+	for _, originalRole := range originalCollaborators.Roles {
+		if originalRole.Name == "Administrador" && originalRole.IsProtected {
+			continue
+		}
+
+		newRoleID, err := uuid.NewV7()
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		newRole := &data.RoleWithUsersPermissions{
+			Role: data.Role{
+				ID:          newRoleID,
+				ProjectID:   newProjectID,
+				Name:        originalRole.Name,
+				Description: originalRole.Description,
+				Simulation:  originalRole.Simulation,
+				IsProtected: originalRole.IsProtected,
+			},
+			PermissionsIDs: originalRole.PermissionsIDs,
+			UsersIDs:       originalRole.UsersIDs,
+		}
+
+		err = app.models.Roles.Insert(newRole)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		roleIDMap[originalRole.ID] = newRoleID
+	}
+
+	for _, unit := range originalProject.Units {
+		originalUnit, err := app.models.Units.GetByID(unit.ID)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		_, err = app.duplicateUnit(
+			originalUnit,
+			newProjectID,
+			&originalUnit.Name,
+			roleIDMap,
+			adminRoleID,
+		)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
+
+	duplicatedProjectWithUnits, err := app.models.Projects.GetByID(newProjectID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"project": duplicatedProjectWithUnits}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) duplicateProjectToUserHandler(w http.ResponseWriter, r *http.Request) {
+	projectID, err := app.readUUIDParam(r, "projectID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	targetUserID, err := app.readUUIDParam(r, "targetUserID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	originalProject, err := app.models.Projects.GetByID(projectID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	newProjectID, err := uuid.NewV7()
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	duplicatedProject := &data.Project{
+		ID:           newProjectID,
+		Name:         generateDuplicateName(originalProject.Name),
+		CEP:          originalProject.CEP,
+		State:        originalProject.State,
+		City:         originalProject.City,
+		Neighborhood: originalProject.Neighborhood,
+		Street:       originalProject.Street,
+		Number:       originalProject.Number,
+		Phase:        originalProject.Phase,
+		Description:  originalProject.Description,
+		Benchmark:    false,
+	}
+
+	// Create project for target user
+	err = app.models.Projects.Insert(duplicatedProject, targetUserID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// Get all roles with members and permissions from the original project
+	originalCollaborators, err := app.models.Roles.Collaborators(projectID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// Get the new project to retrieve the auto-created admin role
+	newProject, err := app.models.Projects.GetByID(newProjectID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// Create a map to track role ID mappings: oldRoleID -> newRoleID
+	roleIDMap := make(map[uuid.UUID]uuid.UUID)
+
+	var adminRoleID uuid.UUID
+	for _, role := range newProject.Roles {
+		if role.Name == "Administrador" && role.IsProtected {
+			adminRoleID = role.ID
+			for _, origRole := range originalCollaborators.Roles {
+				if origRole.Name == "Administrador" && origRole.IsProtected {
+					roleIDMap[origRole.ID] = role.ID
+					break
+				}
+			}
+			break
+		}
+	}
+
+	// Duplicate all other roles with only the target user as member
+	for _, originalRole := range originalCollaborators.Roles {
+		if originalRole.Name == "Administrador" && originalRole.IsProtected {
+			continue
+		}
+
+		newRoleID, err := uuid.NewV7()
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		newRole := &data.RoleWithUsersPermissions{
+			Role: data.Role{
+				ID:          newRoleID,
+				ProjectID:   newProjectID,
+				Name:        originalRole.Name,
+				Description: originalRole.Description,
+				Simulation:  originalRole.Simulation,
+				IsProtected: originalRole.IsProtected,
+			},
+			PermissionsIDs: originalRole.PermissionsIDs,
+			UsersIDs:       []uuid.UUID{targetUserID}, // Only target user
+		}
+
+		err = app.models.Roles.Insert(newRole)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		roleIDMap[originalRole.ID] = newRoleID
+	}
+
+	for _, unit := range originalProject.Units {
+		originalUnit, err := app.models.Units.GetByID(unit.ID)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		_, err = app.duplicateUnit(
+			originalUnit,
+			newProjectID,
+			&originalUnit.Name,
+			roleIDMap,
+			adminRoleID,
+		)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
+
+	duplicatedProjectWithUnits, err := app.models.Projects.GetByID(newProjectID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"project": duplicatedProjectWithUnits}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
