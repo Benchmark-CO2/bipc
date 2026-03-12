@@ -1372,6 +1372,242 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/ModuleCreateRequest"
+            examples:
+              beam_column:
+                summary: "Beam Column Module"
+                value:
+                  type: "beam_column"
+                  data:
+                    floor_ids:
+                      - "f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6"
+                      - "e7f8a9b0-c1d2-e3f4-a5b6-c7d8e9f0a1b2"
+                    concrete_columns:
+                      volumes:
+                        - fck: 30
+                          volume: 150.5
+                        - fck: 35
+                          volume: 50.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 7500.0
+                        - material: "rebar"
+                          resistance: "CA60"
+                          mass: 1200.0
+                    concrete_beams:
+                      volumes:
+                        - fck: 30
+                          volume: 200.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 10000.0
+                        - material: "rebar"
+                          resistance: "CA60"
+                          mass: 1500.0
+                    concrete_slabs:
+                      volumes:
+                        - fck: 25
+                          volume: 450.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 22500.0
+                    form_columns: 1200
+                    form_beams: 2500
+                    form_slabs: 9000
+                    column_number: 120
+                    avg_beam_span: 6
+                    avg_slab_span: 5
+              
+              concrete_wall:
+                summary: "Concrete Wall Module"
+                value:
+                  type: "concrete_wall"
+                  data:
+                    floor_ids:
+                      - "f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6"
+                      - "e7f8a9b0-c1d2-e3f4-a5b6-c7d8e9f0a1b2"
+                    concrete_walls:
+                      volumes:
+                        - fck: 30
+                          volume: 180.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 9000.0
+                        - material: "mesh"
+                          resistance: "CA60"
+                          mass: 500.0
+                    concrete_slabs:
+                      volumes:
+                        - fck: 25
+                          volume: 300.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 15000.0
+                    wall_thickness: 0.20
+                    slab_thickness: 0.15
+                    wall_area: 3000
+                    slab_area: 15000
+                    wall_form_area: 6000
+                    slab_form_area: 30000
+              
+              structural_masonry:
+                summary: "Structural Masonry Module"
+                value:
+                  type: "structural_masonry"
+                  data:
+                    floor_ids:
+                      - "f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6"
+                    concrete_columns:
+                      volumes:
+                        - fck: 25
+                          volume: 50.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 2500.0
+                    concrete_beams:
+                      volumes:
+                        - fck: 25
+                          volume: 80.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 4000.0
+                    concrete_slabs:
+                      volumes:
+                        - fck: 25
+                          volume: 200.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 10000.0
+                    form_columns: 500
+                    form_beams: 800
+                    form_slabs: 5000
+                    form_total: 6300
+                    masonry:
+                      grout:
+                        - position: "vertical"
+                          volumes:
+                            - fgk: 15
+                              volume: 10.5
+                          steel:
+                            - material: "rebar"
+                              resistance: "CA50"
+                              mass: 500.0
+                        - position: "horizontal"
+                          volumes:
+                            - fgk: 15
+                              volume: 5.0
+                          steel:
+                            - material: "rebar"
+                              resistance: "CA50"
+                              mass: 250.0
+                      mortar:
+                        - fak: 8.5
+                          volume: 15.0
+                      blocks:
+                        - type: "inteiro (14x19x39)"
+                          fbk: 8
+                          quantity: 5000
+              
+              raft_foundation:
+                summary: "Raft Foundation Module"
+                value:
+                  type: "raft_foundation"
+                  data:
+                    area: 150.5
+                    thickness: 0.25
+                    fck: 30
+                    steel:
+                      - material: "mesh"
+                        resistance: "CA60"
+                        mass: 120.5
+                      - material: "rebar"
+                        resistance: "CA50"
+                        mass: 450.0
+                      - material: "rebar"
+                        resistance: "CA60"
+                        mass: 80.0
+                      - material: "strand"
+                        resistance: "CP190"
+                        mass: 150.0
+                    unit_id: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+              
+              piles_foundation:
+                summary: "Piles Foundation Module"
+                value:
+                  type: "piles_foundation"
+                  data:
+                    fck: 30
+                    piles:
+                      volume: 45.5
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 450.0
+                    blocks:
+                      volume: 15.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 220.0
+                        - material: "rebar"
+                          resistance: "CA60"
+                          mass: 40.0
+                    grade_beams:
+                      volume: 8.5
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 120.0
+                        - material: "rebar"
+                          resistance: "CA60"
+                          mass: 20.0
+                    tie_beams:
+                      volume: 2.0
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 30.0
+                        - material: "rebar"
+                          resistance: "CA60"
+                          mass: 5.0
+                    unit_id: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+              
+              raft_piles_foundation:
+                summary: "Raft + Piles Foundation Module"
+                value:
+                  type: "raft_piles_foundation"
+                  data:
+                    fck: 25
+                    raft:
+                      area: 100.0
+                      thickness: 0.250
+                      steel:
+                        - material: "mesh"
+                          resistance: "CA60"
+                          mass: 150.0
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 200.0
+                        - material: "rebar"
+                          resistance: "CA60"
+                          mass: 50.0
+                        - material: "strand"
+                          resistance: "CP190"
+                          mass: 100.0
+                    piles:
+                      volume: 35.8
+                      steel:
+                        - material: "rebar"
+                          resistance: "CA50"
+                          mass: 630.0
+                    unit_id: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
       responses:
         "201":
           description: Module created successfully
@@ -1995,52 +2231,6 @@ components:
       required:
         - type
         - data
-      example:
-        type: "beam_column"
-        data:
-          floor_ids:
-            [
-              "f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6",
-              "e7f8a9b0-c1d2-e3f4-a5b6-c7d8e9f0a1b2",
-            ]
-          concrete_columns:
-            volumes:
-              - fck: 30
-                volume: 150.5
-              - fck: 35
-                volume: 50.0
-            steel:
-              - material: "rebar"
-                resistance: "CA50"
-                mass: 7500.0
-              - material: "rebar"
-                resistance: "CA60"
-                mass: 1200.0
-          concrete_beams:
-            volumes:
-              - fck: 30
-                volume: 200.0
-            steel:
-              - material: "rebar"
-                resistance: "CA50"
-                mass: 10000.0
-              - material: "rebar"
-                resistance: "CA60"
-                mass: 1500.0
-          concrete_slabs:
-            volumes:
-              - fck: 25
-                volume: 450.0
-            steel:
-              - material: "rebar"
-                resistance: "CA50"
-                mass: 22500.0
-          form_columns: 1200
-          form_beams: 2500
-          form_slabs: 9000
-          column_number: 120
-          avg_beam_span: 6
-          avg_slab_span: 5
 
     # Schema for a single concrete volume item
     ConcreteVolumeItem:
