@@ -26,7 +26,7 @@ type User struct {
 	Email      string     `json:"email"`
 	Password   password   `json:"-"`
 	Activated  bool       `json:"activated"`
-	Crea_Cau   *string    `json:"crea_cau,omitzero"`
+	CreaCau    *string    `json:"crea_cau,omitzero"`
 	Birthdate  *time.Time `json:"birthdate,omitzero"`
 	City       *string    `json:"city,omitzero"`
 	Activity   *string    `json:"activity,omitzero"`
@@ -34,7 +34,7 @@ type User struct {
 }
 
 func (u *User) IsAnonymous() bool {
-	return u == AnonymousUser // pointer comparison
+	return u == AnonymousUser
 }
 
 func ValidateEmail(v *validator.Validator, email string) {
@@ -62,9 +62,9 @@ func ValidateUser(v *validator.Validator, user *User) {
 		panic("missing password hash for user")
 	}
 
-	if user.Crea_Cau != nil {
-		v.Check(*user.Crea_Cau != "", "crea_cau", "must not be empty if provided")
-		v.Check(len(*user.Crea_Cau) <= 100, "crea_cau", "must not be more than 100 bytes long")
+	if user.CreaCau != nil {
+		v.Check(*user.CreaCau != "", "crea_cau", "must not be empty if provided")
+		v.Check(len(*user.CreaCau) <= 100, "crea_cau", "must not be more than 100 bytes long")
 	}
 
 	if user.City != nil {
@@ -131,7 +131,7 @@ func (m UserModel) Insert(user *User) error {
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING created_at`
 
-	args := []any{user.ID, user.Name, user.Email, user.Password.hash, user.Activated, user.Crea_Cau, user.Birthdate, user.City, user.Activity, user.Enterprise}
+	args := []any{user.ID, user.Name, user.Email, user.Password.hash, user.Activated, user.CreaCau, user.Birthdate, user.City, user.Activity, user.Enterprise}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -167,7 +167,7 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 		&user.Email,
 		&user.Password.hash,
 		&user.Activated,
-		&user.Crea_Cau,
+		&user.CreaCau,
 		&user.Birthdate,
 		&user.City,
 		&user.Activity,
@@ -197,7 +197,7 @@ func (m UserModel) Update(user *User) error {
 		user.Email,
 		user.Password.hash,
 		user.Activated,
-		user.Crea_Cau,
+		user.CreaCau,
 		user.Birthdate,
 		user.City,
 		user.Activity,
@@ -255,7 +255,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 		&user.Email,
 		&user.Password.hash,
 		&user.Activated,
-		&user.Crea_Cau,
+		&user.CreaCau,
 		&user.Birthdate,
 		&user.City,
 		&user.Activity,
@@ -303,7 +303,7 @@ func (m UserModel) Collaborators(userID uuid.UUID) ([]*User, error) {
 			&user.Name,
 			&user.Email,
 			&user.Activated,
-			&user.Crea_Cau,
+			&user.CreaCau,
 			&user.Birthdate,
 			&user.City,
 			&user.Activity,

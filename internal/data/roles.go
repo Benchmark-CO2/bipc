@@ -363,7 +363,7 @@ func (m RoleModel) Collaborators(projectID uuid.UUID) (Collaborators, error) {
 	for rows2.Next() {
 		var user UserWithRoles
 
-		err := rows2.Scan(&user.ID, &user.CreatedAt, &user.Name, &user.Email, &user.Activated, &user.Crea_Cau, &user.Birthdate, &user.City, &user.Activity, &user.Enterprise, pq.Array(&user.Roles))
+		err := rows2.Scan(&user.ID, &user.CreatedAt, &user.Name, &user.Email, &user.Activated, &user.CreaCau, &user.Birthdate, &user.City, &user.Activity, &user.Enterprise, pq.Array(&user.Roles))
 		if err != nil {
 			return collaborators, err
 		}

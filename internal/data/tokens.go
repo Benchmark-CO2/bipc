@@ -24,7 +24,7 @@ type Token struct {
 	UserID    uuid.UUID `json:"-"`
 	Expiry    time.Time `json:"expiry"`
 	Scope     string    `json:"-"`
-	Ip        *string   `json:"-"`
+	IP        *string   `json:"-"`
 }
 
 func ValidateTokenPlaintext(v *validator.Validator, tokenPlaintext string) {
@@ -38,7 +38,7 @@ func generateToken(userID uuid.UUID, ttl time.Duration, scope string, ip *string
 		UserID:    userID,
 		Expiry:    time.Now().Add(ttl),
 		Scope:     scope,
-		Ip:        ip,
+		IP:        ip,
 	}
 
 	hash := sha256.Sum256([]byte(token.Plaintext))
@@ -63,7 +63,7 @@ func (m TokenModel) Insert(token *Token) error {
         INSERT INTO tokens (hash, user_id, expiry, scope, ip) 
         VALUES ($1, $2, $3, $4, $5)`
 
-	args := []any{token.Hash, token.UserID, token.Expiry, token.Scope, token.Ip}
+	args := []any{token.Hash, token.UserID, token.Expiry, token.Scope, token.IP}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

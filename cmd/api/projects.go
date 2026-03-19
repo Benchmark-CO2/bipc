@@ -302,14 +302,14 @@ func (app *application) inviteUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	user_invited, err := app.models.Users.GetByEmail(input.Email)
+	userInvited, err := app.models.Users.GetByEmail(input.Email)
 	if err != nil && !errors.Is(err, data.ErrRecordNotFound) {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	if user_invited != nil {
-		isMember, err := app.models.Projects.IsUserInProject(user_invited.ID, projectID)
+	if userInvited != nil {
+		isMember, err := app.models.Projects.IsUserInProject(userInvited.ID, projectID)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return

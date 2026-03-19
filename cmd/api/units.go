@@ -445,8 +445,8 @@ func (app *application) duplicateUnitHandler(w http.ResponseWriter, r *http.Requ
 		originalUnit,
 		originalUnit.ProjectID,
 		&duplicatedName,
-		nil,          // no role mapping needed (same project)
-		uuid.Nil,     // admin role not needed
+		nil,      // no role mapping needed (same project)
+		uuid.Nil, // admin role not needed
 	)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

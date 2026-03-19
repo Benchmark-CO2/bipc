@@ -50,8 +50,8 @@ type Project struct {
 
 type ProjectWithUnits struct {
 	Project
-	IsAdministrator bool      `json:"is_administrator,omitzero"`
-	Roles           []Role    `json:"roles,omitempty"`
+	IsAdministrator bool   `json:"is_administrator,omitzero"`
+	Roles           []Role `json:"roles,omitempty"`
 
 	Units        []ProjectUnit           `json:"units,omitempty"`
 	Consumptions map[string]*Consumption `json:"consumption,omitempty"`

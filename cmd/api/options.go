@@ -331,7 +331,7 @@ func (app *application) duplicateOptionHandler(w http.ResponseWriter, r *http.Re
 		originalOption,
 		newOptionID,
 		originalOption.UnitID,
-		"",      // generates name
+		"",       // generates name
 		&active,  // force active=true
 		nil,      // keep original role
 		nil, nil, // no floor mapping

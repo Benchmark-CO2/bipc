@@ -341,13 +341,13 @@ func concreteElementFromMap(dataMap map[string]interface{}) ConcreteElement {
 // for the old CA-based format (SteelMassItem).
 func steelMaterialsFromData(steelData []interface{}) []SteelMaterial {
 	var materials []SteelMaterial
-	
+
 	for _, s := range steelData {
 		steelMap, ok := s.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		
+
 		// Try to read as new format (SteelMaterial)
 		if material, ok := steelMap["material"].(string); ok {
 			steel := SteelMaterial{
@@ -365,7 +365,7 @@ func steelMaterialsFromData(steelData []interface{}) []SteelMaterial {
 		} else if ca, ok := steelMap["ca"].(float64); ok {
 			// Backward compatibility: read old format (SteelMassItem) and convert
 			resistance, otherResistance := ConvertCAToResistance(int(ca))
-			
+
 			steel := SteelMaterial{
 				Material:        "rebar",
 				Resistance:      resistance,
@@ -375,7 +375,7 @@ func steelMaterialsFromData(steelData []interface{}) []SteelMaterial {
 			materials = append(materials, steel)
 		}
 	}
-	
+
 	return materials
 }
 
@@ -383,7 +383,7 @@ func consumptionFromDataModule(d *data.Module) *Consumption {
 	if d.TotalCO2Min == nil {
 		return nil
 	}
-	
+
 	return &Consumption{
 		CO2Min:    *d.TotalCO2Min,
 		CO2Max:    *d.TotalCO2Max,

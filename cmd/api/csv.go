@@ -16,7 +16,7 @@ import (
 // convertCAToSteelMaterial converts a CA (resistance) value to SteelMaterial format
 func convertCAToSteelMaterial(ca int, mass float64) modules.SteelMaterial {
 	resistance, otherResistance := modules.ConvertCAToResistance(ca)
-	
+
 	return modules.SteelMaterial{
 		Material:        "rebar",
 		Resistance:      resistance,
@@ -442,15 +442,15 @@ func (app *application) generateConcreteWallRows(dataRows [][]string, headerMap 
 				if fck > 0 {
 					// Aggregate wall + stairs + structure concrete
 					volume := parseFieldFloat(headerName)
-					
+
 					// Add stairs concrete if present
 					stairsHeaderName := strings.Replace(headerName, "module_wall_concrete_", "module_stairs_concrete_", 1)
 					stairsVolume := parseFieldFloat(stairsHeaderName)
-					
+
 					// Add structure concrete if present
 					structureHeaderName := strings.Replace(headerName, "module_wall_concrete_", "module_structure_concrete_", 1)
 					structureVolume := parseFieldFloat(structureHeaderName)
-					
+
 					totalVolume := volume + stairsVolume + structureVolume
 					if totalVolume > 0 {
 						row.WallConcrete.Volumes = append(row.WallConcrete.Volumes, modules.ConcreteVolumeItem{Fck: fck, Volume: totalVolume})
@@ -462,15 +462,15 @@ func (app *application) generateConcreteWallRows(dataRows [][]string, headerMap 
 				if ca > 0 {
 					// Aggregate wall + stairs + structure steel
 					mass := parseFieldFloat(headerName)
-					
+
 					// Add stairs steel if present
 					stairsHeaderName := strings.Replace(headerName, "module_wall_steel_", "module_stairs_steel_", 1)
 					stairsMass := parseFieldFloat(stairsHeaderName)
-					
+
 					// Add structure steel if present
 					structureHeaderName := strings.Replace(headerName, "module_wall_steel_", "module_structure_steel_", 1)
 					structureMass := parseFieldFloat(structureHeaderName)
-					
+
 					totalMass := mass + stairsMass + structureMass
 					if totalMass > 0 {
 						row.WallConcrete.Steel = append(row.WallConcrete.Steel, convertCAToSteelMaterial(ca, totalMass))
@@ -1323,7 +1323,7 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 			app.serverErrorResponse(w, r, err)
 			return
 		}
-		
+
 		roleEstrutura := &data.RoleWithUsersPermissions{
 			Role: data.Role{
 				ID:          roleID,
