@@ -66,6 +66,7 @@ export default function DrawerFormProject({
   const [file, setFile] = useState<File | undefined>(undefined);
   const [isAgreementChecked, setIsAgreementChecked] = useState(false);
   const [filledByCep, setFilledByCep] = useState(false);
+  const [cepFilledFields, setCepFilledFields] = useState<Set<string>>(new Set());
   const [selectedState, setSelectedState] = useState("");
 
   const queryClient = useQueryClient();
@@ -94,7 +95,7 @@ export default function DrawerFormProject({
     searchCep,
   } = useCep();
 
-  const { cities, isLoading: citiesLoading } = useCities(selectedState);
+  const { cities, isLoading: citiesLoading, isError: citiesError } = useCities(selectedState);
 
   const navigate = useNavigate();
 
@@ -243,6 +244,7 @@ export default function DrawerFormProject({
       resetUpdate();
       setIsAgreementChecked(false);
       setFilledByCep(false);
+      setCepFilledFields(new Set());
       setSelectedState("");
 
       if (projectData) {
@@ -279,16 +281,25 @@ export default function DrawerFormProject({
       setFilledByCep(true);
       setSelectedState(locationData.state);
       form.clearErrors("cep");
-      form.setValue("state", locationData.state);
-      form.setValue("city", locationData.city);
-      form.setValue("neighborhood", locationData.neighborhood);
-      form.setValue("street", locationData.street);
+
+      const filled = new Set<string>();
+      if (locationData.state) filled.add("state");
+      if (locationData.city) filled.add("city");
+      if (locationData.neighborhood) filled.add("neighborhood");
+      if (locationData.street) filled.add("street");
+      setCepFilledFields(filled);
+
+      form.setValue("state", locationData.state ?? "");
+      form.setValue("city", locationData.city ?? "");
+      form.setValue("neighborhood", locationData.neighborhood ?? "");
+      form.setValue("street", locationData.street ?? "");
     }
   }, [locationData, form]);
 
   useEffect(() => {
     if (isError) {
       setFilledByCep(false);
+      setCepFilledFields(new Set());
       setSelectedState("");
       toast.error(t("error.errorFetchZipCode"), {
         description: t("warn.verifyZipCode"),
@@ -382,6 +393,7 @@ export default function DrawerFormProject({
                             field.onChange(e.target.value);
                             if (raw.length === 0 && filledByCep) {
                               setFilledByCep(false);
+                              setCepFilledFields(new Set());
                               setSelectedState("");
                               form.setValue("state", "");
                               form.setValue("city", "");
@@ -463,6 +475,7 @@ export default function DrawerFormProject({
                             onChange={field.onChange}
                             disabled={!selectedState || locationLoading}
                             isLoading={citiesLoading}
+                            isError={citiesError}
                             placeholder={
                               !selectedState
                                 ? t("drawerFormProject.selectStateFirst")
@@ -489,7 +502,7 @@ export default function DrawerFormProject({
                         placeholder={t(
                           "drawerFormProject.neighborhoodPlaceholder",
                         )}
-                        disabled={filledByCep || locationLoading}
+                        disabled={cepFilledFields.has("neighborhood") || locationLoading}
                         {...field}
                       />
                     </FormControl>
@@ -509,7 +522,7 @@ export default function DrawerFormProject({
                       <FormControl>
                         <Input
                           placeholder={t("drawerFormProject.streetPlaceholder")}
-                          disabled={filledByCep || locationLoading}
+                          disabled={cepFilledFields.has("street") || locationLoading}
                           {...field}
                         />
                       </FormControl>
