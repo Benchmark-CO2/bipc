@@ -16,6 +16,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
 import { type CityOption } from "@/hooks/useCities";
 import { useTranslation } from "react-i18next";
 
@@ -25,6 +26,7 @@ interface CityComboboxProps {
   onChange: (value: string) => void;
   disabled?: boolean;
   isLoading?: boolean;
+  isError?: boolean;
   placeholder?: string;
   searchPlaceholder?: string;
   emptyMessage?: string;
@@ -36,6 +38,7 @@ export function CityCombobox({
   onChange,
   disabled = false,
   isLoading = false,
+  isError = false,
   placeholder,
   searchPlaceholder,
   emptyMessage,
@@ -48,6 +51,18 @@ export function CityCombobox({
   const displaySearchPlaceholder =
     searchPlaceholder ?? t("drawerFormProject.citySearchPlaceholder");
   const displayEmpty = emptyMessage ?? t("drawerFormProject.cityNotFound");
+
+  // Fallback to manual input when the cities API fails or returns empty (after loading)
+  if (isError || (!isLoading && cities.length === 0 && !disabled)) {
+    return (
+      <Input
+        placeholder={displayPlaceholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+      />
+    );
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen} modal>

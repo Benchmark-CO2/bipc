@@ -12,7 +12,7 @@ export interface CityOption {
 }
 
 const useCities = (uf: string) => {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["ibge-cities", uf],
     queryFn: async () => {
       const res = await externalApi.get<IBGECity[]>(
@@ -31,6 +31,7 @@ const useCities = (uf: string) => {
   return {
     cities: data ?? [],
     isLoading,
+    isError,
   };
 };
 
