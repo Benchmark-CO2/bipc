@@ -41,6 +41,7 @@ const ModalSimple = ({
 
   const onConfirmAction = async () => {
     await onConfirm?.();
+    setOpen(false);
   };
 
   return (
