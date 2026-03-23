@@ -101,7 +101,7 @@ export default function DrawerFormDisciplines({
     defaultValues: {
       name: "",
       description: "",
-      simulation: false,
+      simulation: true,
       permissions_ids: [],
       users_ids: [],
     },
@@ -216,6 +216,7 @@ export default function DrawerFormDisciplines({
       form.setValue(
         "users_ids",
         newCollaborators.map((c) => String(c.id)),
+        { shouldValidate: true },
       );
     }
     setOpenPopover(false);
@@ -230,6 +231,7 @@ export default function DrawerFormDisciplines({
     form.setValue(
       "users_ids",
       newCollaborators.map((c) => String(c.id)),
+      { shouldValidate: true },
     );
   };
 
@@ -585,8 +587,10 @@ export default function DrawerFormDisciplines({
                 <span className="text-sm text-muted-foreground">
                   Selecione os colaboradores que fazem parte desta disciplina.{" "}
                   <br />
-                  Importante: Se o seu usuário faz parte deste grupo, não
-                  esqueça de se adicionar.
+                  <span className="text-sm text-yellow-600 font-medium">
+                    Importante: Se o seu usuário faz parte deste grupo, não
+                    esqueça de se adicionar.
+                  </span>
                 </span>
                 <Popover open={openPopover} onOpenChange={setOpenPopover}>
                   <PopoverTrigger asChild>
@@ -648,8 +652,8 @@ export default function DrawerFormDisciplines({
               {/* Lista de colaboradores selecionados */}
               {selectedCollaborators.length === 0 ? (
                 <NotFoundList
-                  message="Sem usuário"
-                  description="Adicione um usuário à disciplina"
+                  message="Nenhum colaborador adicionado"
+                  description="É necessário adicionar pelo menos 1 colaborador à disciplina."
                   icon="file"
                   showIcon={false}
                 />
@@ -685,6 +689,11 @@ export default function DrawerFormDisciplines({
                     </div>
                   ))}
                 </div>
+              )}
+              {form.formState.errors.users_ids && (
+                <p className="text-[0.8rem] font-medium text-destructive">
+                  {form.formState.errors.users_ids.message}
+                </p>
               )}
             </form>
           </div>
