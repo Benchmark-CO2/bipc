@@ -183,7 +183,7 @@ const CustomBanner = ({
               {hasPermission("*:*") && (
                 <DialogTransferOwnership
                   componentTrigger={
-                    <Button variant="bipc" size="icon">
+                    <Button variant="outline-bipc" size="icon">
                       <UserCheck className="w-4 h-4" />
                     </Button>
                   }
