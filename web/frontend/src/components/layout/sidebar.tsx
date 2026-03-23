@@ -323,51 +323,43 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         >
           {/* Institucional */}
           <li>
-            <SidemenuItem variant="link">
-              <CustomLink
-                linkKey="about"
-                className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-              >
-                <Info size={18} />
-                <span>Sobre o BIPc</span>
-              </CustomLink>
-            </SidemenuItem>
+            <CustomLink
+              linkKey="about"
+              className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+            >
+              <Info size={18} />
+              <span>Sobre o BIPc</span>
+            </CustomLink>
           </li>
 
           <li>
-            <SidemenuItem variant="link">
-              <Link
-                to="/benchmark"
-                onClick={handleMobileNavigation}
-                activeProps={activeProps}
-                className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-              >
-                <BarChart3 size={18} />
-                <span>Benchmark</span>
-              </Link>
-            </SidemenuItem>
+            <Link
+              to="/benchmark"
+              onClick={handleMobileNavigation}
+              activeProps={activeProps}
+              className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+            >
+              <BarChart3 size={18} />
+              <span>Benchmark</span>
+            </Link>
           </li>
           <li>
-            <SidemenuItem variant="link">
-              <CustomLink
-                linkKey="privacy"
-                className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-              >
-                <GlobeLock size={18} />
-                <span>Políticas de Privacidade</span>
-              </CustomLink>
-            </SidemenuItem>
+            <CustomLink
+              linkKey="privacy"
+              className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+            >
+              <GlobeLock size={18} />
+              <span>Políticas de Privacidade</span>
+            </CustomLink>
           </li>
           <li>
-            <SidemenuItem variant="link">
-              <CustomLink
-                linkKey="faq"
-                className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-              >
-                <BookLock size={18} />
-                <span>Licenciamento e melhorias</span>
-              </CustomLink>
-            </SidemenuItem>
+            <CustomLink
+              linkKey="faq"
+              className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+            >
+              <BookLock size={18} />
+              <span>Licenciamento e melhorias</span>
+            </CustomLink>
           </li>
 
           <Divider className="my-4" />
@@ -377,43 +369,40 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             <>
               {/* Projetos */}
               <li>
-                <SidemenuItem variant="link">
-                  <Link
-                    to="/new_projects"
-                    onClick={handleMobileNavigation}
-                    activeProps={activeProps}
-                    className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-                  >
-                    <File size={18} />
-                    <span>Empreendimentos</span>
-                  </Link>
-                </SidemenuItem>
+                <Link
+                  to="/new_projects"
+                  onClick={handleMobileNavigation}
+                  activeProps={activeProps}
+                  className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+                >
+                  <File size={18} />
+                  <span>Empreendimentos</span>
+                </Link>
               </li>
 
               <li>
-                <SidemenuItem variant="link">
-                  <Link
-                    to={"/settings"}
-                    onClick={handleMobileNavigation}
-                    activeProps={activeProps}
-                    className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-                  >
-                    <Settings size={18} />
-                    <span>Configurações</span>
-                  </Link>
-                </SidemenuItem>
+                <Link
+                  to={"/settings"}
+                  onClick={handleMobileNavigation}
+                  activeProps={activeProps}
+                  className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+                >
+                  <Settings size={18} />
+                  <span>Configurações</span>
+                </Link>
               </li>
 
               {/* Notificações */}
               <li>
-                <SidemenuItem variant="link" hide={isMobile}>
-                  <div className="flex gap-3 items-center w-full p-2">
-                    <Bell size={18} />
-                    <div className="flex-1">
-                      <Notifications />
-                    </div>
+                <div
+                  className="flex gap-3 items-center w-full p-2"
+                  style={{ display: isMobile ? "none" : "flex" }}
+                >
+                  <Bell size={18} />
+                  <div className="flex-1">
+                    <Notifications />
                   </div>
-                </SidemenuItem>
+                </div>
               </li>
             </>
           ) : (
