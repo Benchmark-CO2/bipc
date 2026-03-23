@@ -6,9 +6,11 @@ import ModalConfirmDelete from "../layout/modal-confirm-delete";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteUnit } from "@/actions/units/deleteUnit";
 import { toast } from "sonner";
-import { Edit, Loader2, Trash } from "lucide-react";
+import { Copy, Edit, Loader2, Trash } from "lucide-react";
 import { DrawerFormUnit } from "../layout";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
+import ModalSimple from "../layout/modal-simple";
+import { postDuplicateUnit } from "@/actions/units/postDuplicateUnit";
 
 export const unitsColumns: ColumnDef<
   Pick<TProjectUnit, "name" | "id" | "area"> & TConsumption
@@ -105,11 +107,54 @@ export const unitsColumns: ColumnDef<
         },
       });
 
+      const { mutate: mutateDuplicateUnit, isPending: isDuplicating } =
+        useMutation({
+          mutationFn: () => {
+            return postDuplicateUnit(projectId, row.original.id);
+          },
+          onSuccess: async (data) => {
+            const unitData = await data?.data?.unit;
+
+            toast.success("Edificação duplicada com sucesso");
+            queryClient.invalidateQueries({
+              queryKey: ["project", projectId],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["projects"],
+            });
+            navigate({
+              to: `/new_projects/${projectId}/unit/${unitData.id}`,
+            });
+          },
+          onError: (error) => {
+            toast.error("Erro ao duplicar edificação", {
+              description: error.message,
+            });
+          },
+        });
+
       return (
         <div
           className="flex items-center gap-1 justify-end"
           onClick={(e) => e.stopPropagation()}
         >
+          {hasPermission("create:unit") && (
+            <ModalSimple
+              title="Duplicar Edificação"
+              content="Tem certeza que deseja duplicar esta edificação? Esta ação criará uma cópia idêntica da edificação, incluindo todas as suas informações e configurações. Você poderá editar os detalhes da nova edificação após a duplicação."
+              confirmTitle="Duplicar"
+              onConfirm={mutateDuplicateUnit}
+              componentTrigger={
+                <Button variant="ghost" size="icon" disabled={isDuplicating}>
+                  {isDuplicating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Copy className="h-4 w-4 text-primary" />
+                  )}
+                </Button>
+              }
+            />
+          )}
           {hasPermission("update:unit") && (
             <DrawerFormUnit
               projectId={projectId}
