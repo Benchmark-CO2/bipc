@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/consistent-indexed-object-style */
 
+import { TRole } from "./disciplines";
 import { TModulesTypes } from "./modules";
 import { TUnitType } from "./units";
 
@@ -37,6 +38,8 @@ export interface IProject {
     | TProjectPhase
     | number
     | TConsumptionPerModule
+    | TRole[]
+    | boolean
     | undefined;
   id: string;
   created_at: string;
@@ -54,62 +57,17 @@ export interface IProject {
   consumption?: TConsumptionPerModule;
   area: number;
   user_id: number;
+  roles?: TRole[];
+  benchmark?: boolean;
 }
 
 export type TProjectsTemp = {
   [key: string]: TProjectUnit[];
 };
 
-export type TProjectUnitModule = {
-  [key: string]: TModuleData[];
-};
-
-export type TModuleData = {
-  nome: string;
-  tipoDeEstrutura: "beamColumn" | "concreteWall" | "masonry";
-  data: string;
-  numeroDeTorres: number;
-  pavimentosSemFundacao: number;
-  pavimentosTotalDaTorre: number;
-  pavimentosDoEmbasamento: number;
-  numeroDeSubsolos: number;
-  pavimentosTipo: number;
-  areaConstruidaTotal: number;
-  alturaPisoAPisoTipo: number;
-  maiorPisoAPisoExistente: number;
-  espessuraDeParedes: number;
-  espessuraDeLajes: number;
-  volumeDeConcretoFck20: number;
-  volumeDeConcretoFck25: number;
-  volumeDeConcretoFck30: number;
-  volumeDeConcretoFck35: number;
-  volumeDeConcretoFck40: number;
-  volumeDeConcretoFck45: number;
-  consumoDeAco: number;
-  consumoDeConcreto: number;
-  emissaoDeCo2: number;
-  energia: number;
-  version: string;
-  module_uuid: string;
-  created_at: string;
-};
-
 export type TModuleSimulations = {
   [key: string]: TSimulation[];
 };
-
-// export type TSimulation = {
-//   name: "beamColumn" | "concreteWall" | "masonry";
-//   version: string;
-//   created_at: string;
-//   updated_at: string;
-//   data: {
-//     green: DataPoint;
-//     grey: DataPoint;
-//   };
-//   isValid: boolean;
-//   isGlobal?: boolean; // Indica se a simulação é global
-// };
 
 type ConcreteSlab = {
   // Defina as propriedades reais de cada slab aqui
