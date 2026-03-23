@@ -1,5 +1,6 @@
 import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
 import { deleteModule } from "@/actions/modules/deleteModule";
+import { postDuplicateModule } from "@/actions/modules/postDuplicateModule";
 import { deleteOption } from "@/actions/options/deleteOption";
 import { getOptions } from "@/actions/options/getOptions";
 import { patchOption } from "@/actions/options/patchOption";
@@ -351,6 +352,27 @@ function RouteComponent() {
     enabled: !!projectId && !!unitId,
   });
 
+  const { mutate: duplicateModule } = useMutation({
+    mutationFn: ({
+      optionId,
+      moduleId,
+    }: {
+      optionId: string;
+      moduleId: string;
+    }) => postDuplicateModule(projectId, unitId, optionId, moduleId),
+    onSuccess: () => {
+      toast.success("Tecnologia Construtiva duplicada com sucesso");
+      queryClient.invalidateQueries({
+        queryKey: ["options", projectId, unitId],
+      });
+    },
+    onError: (error) => {
+      toast.error("Erro ao duplicar tecnologia construtiva", {
+        description: error.message,
+      });
+    },
+  });
+
   useEffect(() => {
     if (!benchmarkData?.data || !unitData?.unit) return;
     setSummaryContext({
@@ -441,6 +463,28 @@ function RouteComponent() {
       cell: ({ row }) => {
         return (
           <div className="flex items-center justify-end gap-2">
+            <ModalSimple
+              title="Duplicar Tecnologia Construtiva"
+              content="Tem certeza que deseja duplicar esta tecnologia construtiva? Esta ação criará uma cópia idêntica da tecnologia construtiva, incluindo todos os seus dados técnicos. Você poderá editar os detalhes da nova tecnologia construtiva após a duplicação."
+              confirmTitle="Duplicar"
+              onConfirm={() => {
+                if (!row.original.option_id) return;
+                if (!row.original.id) return;
+                duplicateModule({
+                  optionId: row.original.option_id,
+                  moduleId: row.original.id,
+                });
+              }}
+              componentTrigger={
+                <Button variant="ghost" size="icon" disabled={isDeletingTec}>
+                  {isDeletingTec ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Copy className="h-4 w-4 text-primary" />
+                  )}
+                </Button>
+              }
+            />
             <DrawerFormModule
               triggerComponent={
                 <Button variant="ghost" size="icon" disabled={isDeleting}>
