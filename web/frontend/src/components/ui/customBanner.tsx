@@ -1,5 +1,12 @@
 import { IProject, TProjectPhase } from "@/types/projects";
-import { ChevronDown, ChevronUp, Edit, Trash2, UserCheck } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  Edit,
+  Trash2,
+  UserCheck,
+} from "lucide-react";
 import { useState } from "react";
 import { DrawerFormProject } from "../layout";
 import { Button } from "./button";
@@ -11,6 +18,8 @@ import { queryClient } from "@/utils/queryClient";
 import { toast } from "sonner";
 import { deleteProject } from "@/actions/projects/deleteProjects";
 import { useNavigate } from "@tanstack/react-router";
+import ModalSimple from "../layout/modal-simple";
+import { postDuplicateProject } from "@/actions/projects/postDuplicateProject";
 
 interface ICustomBanner {
   name: string;
@@ -102,6 +111,28 @@ const CustomBanner = ({
     },
   });
 
+  const { mutate: onDuplicateProject } = useMutation({
+    mutationFn: (projectId: string) => {
+      return postDuplicateProject(projectId);
+    },
+    onSuccess: async (data) => {
+      toast.success("Empreendimento duplicado com sucesso");
+      await queryClient.invalidateQueries({
+        queryKey: ["projects"],
+      });
+      navigate({ to: `/new_projects` });
+    },
+    onError: (error: unknown) => {
+      toast.error("Erro ao duplicar o empreendimento", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Ocorreu um erro desconhecido",
+        duration: 5000,
+      });
+    },
+  });
+
   const handleCollapseToggle = () => {
     setIsCollapsed((prev) => {
       const newState = !prev;
@@ -134,6 +165,20 @@ const CustomBanner = ({
               >
                 {phaseLabels[phase]}
               </span>
+
+              {hasPermission("*:*") && (
+                <ModalSimple
+                  componentTrigger={
+                    <Button variant="outline-bipc" size="icon">
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  }
+                  title="Duplicar empreendimento"
+                  content="Tem certeza que deseja duplicar este empreendimento? Esta ação criará uma cópia idêntica do empreendimento, incluindo todas as suas informações e configurações. Você poderá editar os detalhes do novo empreendimento após a duplicação."
+                  confirmTitle="Duplicar"
+                  onConfirm={() => onDuplicateProject(project.id)}
+                />
+              )}
 
               {hasPermission("*:*") && (
                 <DialogTransferOwnership
