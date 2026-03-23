@@ -326,6 +326,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             <CustomLink
               linkKey="about"
               className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+              onClick={handleMobileNavigation}
             >
               <Info size={18} />
               <span>Sobre o BIPc</span>
@@ -347,6 +348,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             <CustomLink
               linkKey="privacy"
               className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+              onClick={handleMobileNavigation}
             >
               <GlobeLock size={18} />
               <span>Políticas de Privacidade</span>
@@ -356,6 +358,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             <CustomLink
               linkKey="faq"
               className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+              onClick={handleMobileNavigation}
             >
               <BookLock size={18} />
               <span>Licenciamento e melhorias</span>
@@ -410,32 +413,28 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               {/* Seção para usuários não logados */}
               {/* Cadastre-se */}
               <li>
-                <SidemenuItem variant="link">
-                  <Link
-                    to="/sign-up"
-                    onClick={handleMobileNavigation}
-                    activeProps={activeProps}
-                    className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-                  >
-                    <UserPlus size={18} />
-                    <span>Cadastre-se</span>
-                  </Link>
-                </SidemenuItem>
+                <Link
+                  to="/sign-up"
+                  onClick={handleMobileNavigation}
+                  activeProps={activeProps}
+                  className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+                >
+                  <UserPlus size={18} />
+                  <span>Cadastre-se</span>
+                </Link>
               </li>
 
               {/* Login */}
               <li>
-                <SidemenuItem variant="link">
-                  <Link
-                    to="/login"
-                    onClick={handleMobileNavigation}
-                    activeProps={activeProps}
-                    className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-                  >
-                    <LogIn size={18} />
-                    <span>Login</span>
-                  </Link>
-                </SidemenuItem>
+                <Link
+                  to="/login"
+                  onClick={handleMobileNavigation}
+                  activeProps={activeProps}
+                  className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+                >
+                  <LogIn size={18} />
+                  <span>Login</span>
+                </Link>
               </li>
             </>
           )}
@@ -445,33 +444,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         <div>
           {isAuthenticated && (
             <div className="flex flex-col gap-2">
-              {/* <Divider className="my-1" />
-
-                  <div className="p-2">
-                    <SidebarThemeToggle />
-                  </div>
-                  <div className="px-2">
-                    <SidebarLanguageToggle />
-                  </div>
-
-                  <Divider className="my-1" />
-
-                  <div className="flex items-center gap-3 p-2 pt-4 mb-4">
-                    <Avatar className="w-8 h-8">
-                      <AvatarFallback className="bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">
-                        {stringUtils.getInitials(user?.name || "") || (
-                          <User className="w-4 h-4" />
-                        )}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{user?.name}</p>
-                      <p className="text-xs text-gray-400 truncate">
-                        {user?.email}
-                      </p>
-                    </div>
-                  </div> */}
-
               {handleLogout && (
                 <Button
                   variant="destructive"
