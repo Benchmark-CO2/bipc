@@ -6,12 +6,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useSidebar } from "@/hooks/useSidebar";
 import { cn } from "@/lib/utils";
-import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
 import { Link } from "@tanstack/react-router";
 import {
   BarChart3,
   Bell,
-  Book,
   File,
   GlobeLock,
   Info,
@@ -19,6 +17,7 @@ import {
   Menu,
   Settings,
   UserPlus,
+  BookLock,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -169,6 +168,20 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           </TooltipTrigger>
           <TooltipContent side="right">
             <p>Políticas de Privacidade</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <CustomLink
+              linkKey="faq"
+              className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
+            >
+              <BookLock size={18} className="text-white" />
+            </CustomLink>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>Licenciamento e melhorias</p>
           </TooltipContent>
         </Tooltip>
 
@@ -342,6 +355,17 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               >
                 <GlobeLock size={18} />
                 <span>Políticas de Privacidade</span>
+              </CustomLink>
+            </SidemenuItem>
+          </li>
+          <li>
+            <SidemenuItem variant="link">
+              <CustomLink
+                linkKey="faq"
+                className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+              >
+                <BookLock size={18} />
+                <span>Licenciamento e melhorias</span>
               </CustomLink>
             </SidemenuItem>
           </li>
