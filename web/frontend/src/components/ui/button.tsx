@@ -14,18 +14,18 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-transparent dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-700/50",
         secondary:
           "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
         noStyles: "bg-zinc-600 text-white shadow-xs hover:bg-zinc-700",
-        bipc: "bg-active text-white shadow-xs hover:bg-secondary/90",
+        bipc: "bg-active text-white shadow-xs hover:bg-active/80",
         "outline-bipc":
-          "border border-active bg-transparent text-active shadow-xs hover:bg-secondary/10",
+          "border border-active bg-transparent text-active shadow-xs hover:bg-active/10",
         "outline-destructive":
-          "border border-destructive text-destructive hover:bg-destructive/10",
+          "border border-destructive text-destructive hover:bg-destructive/10 dark:text-red-400 dark:border-red-400 dark:hover:bg-red-400/10",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
@@ -40,7 +40,7 @@ const buttonVariants = cva(
       variant: "default",
       size: "lg",
     },
-  }
+  },
 );
 
 function Button({
