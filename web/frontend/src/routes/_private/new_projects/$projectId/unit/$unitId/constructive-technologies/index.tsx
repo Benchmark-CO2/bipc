@@ -1,8 +1,10 @@
 import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
 import { deleteModule } from "@/actions/modules/deleteModule";
+import { postDuplicateModule } from "@/actions/modules/postDuplicateModule";
 import { deleteOption } from "@/actions/options/deleteOption";
 import { getOptions } from "@/actions/options/getOptions";
 import { patchOption } from "@/actions/options/patchOption";
+import { duplicateOption } from "@/actions/options/postDuplicateOption";
 import { getUnitByUUID } from "@/actions/units/getUnit";
 import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
 import {
@@ -11,6 +13,7 @@ import {
   DrawerFormModule,
 } from "@/components/layout";
 import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
+import ModalSimple from "@/components/layout/modal-simple";
 import TechnologiesSummary from "@/components/summaryVariants/technologies";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -46,7 +49,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute(
-  "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies/"
+  "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies/",
 )({
   component: RouteComponent,
   validateSearch: (search: Record<string, unknown>) => {
@@ -88,11 +91,11 @@ const OptionMenu = ({
                 data: {
                   ...oldData.data,
                   options: oldData.data.options.map((opt: TOption) =>
-                    opt.id === option.id ? { ...opt, name: localName } : opt
+                    opt.id === option.id ? { ...opt, name: localName } : opt,
                   ),
                 },
               };
-            }
+            },
           );
         } catch (error) {
           console.error("Erro ao atualizar nome da opção:", error);
@@ -127,11 +130,11 @@ const OptionMenu = ({
               data: {
                 ...oldData.data,
                 options: oldData.data.options.map((opt: TOption) =>
-                  opt.id === option.id ? { ...opt, name: localName } : opt
+                  opt.id === option.id ? { ...opt, name: localName } : opt,
                 ),
               },
             };
-          }
+          },
         );
       } catch (error) {
         console.error("Erro ao atualizar nome da opção:", error);
@@ -156,11 +159,11 @@ const OptionMenu = ({
         }
 
         const otherActiveOptions = currentData.data.options.filter(
-          (opt: TOption) => opt.active && opt.id !== option.id
+          (opt: TOption) => opt.active && opt.id !== option.id,
         );
 
         const deactivatePromises = otherActiveOptions.map((opt: TOption) =>
-          patchOption(projectId, unitId, opt.id, { active: false })
+          patchOption(projectId, unitId, opt.id, { active: false }),
         );
 
         const activatePromise = patchOption(projectId, unitId, option.id, {
@@ -181,11 +184,11 @@ const OptionMenu = ({
                 options: oldData.data.options.map((opt: TOption) =>
                   opt.id === option.id
                     ? { ...opt, active: true }
-                    : { ...opt, active: false }
+                    : { ...opt, active: false },
                 ),
               },
             };
-          }
+          },
         );
       } else {
         await patchOption(projectId, unitId, option.id, { active: true });
@@ -284,14 +287,31 @@ function RouteComponent() {
   const { mutate: deleteSimulation, isPending: isDeleting } = useMutation({
     mutationFn: (optionId: string) => deleteOption(projectId, unitId, optionId),
     onSuccess: () => {
+      toast.success("Simulação excluída com sucesso");
       queryClient.invalidateQueries({
         queryKey: ["options", projectId, unitId],
       });
     },
     onError: () => {
-      console.error("Erro ao deletar opção");
+      toast.error("Erro ao deletar Simulação");
     },
   });
+
+  const { mutate: duplicateSimulation, isPending: isDuplicating } = useMutation(
+    {
+      mutationFn: (optionId: string) =>
+        duplicateOption(projectId, unitId, optionId),
+      onSuccess: () => {
+        toast.success("Simulação duplicada com sucesso");
+        queryClient.invalidateQueries({
+          queryKey: ["options", projectId, unitId],
+        });
+      },
+      onError: () => {
+        toast.error("Erro ao duplicar Simulação");
+      },
+    },
+  );
 
   const { data: optionsData, isLoading: isLoadingOptions } = useQuery({
     queryKey: ["options", projectId, unitId],
@@ -330,6 +350,27 @@ function RouteComponent() {
       return null;
     },
     enabled: !!projectId && !!unitId,
+  });
+
+  const { mutate: duplicateModule } = useMutation({
+    mutationFn: ({
+      optionId,
+      moduleId,
+    }: {
+      optionId: string;
+      moduleId: string;
+    }) => postDuplicateModule(projectId, unitId, optionId, moduleId),
+    onSuccess: () => {
+      toast.success("Tecnologia Construtiva duplicada com sucesso");
+      queryClient.invalidateQueries({
+        queryKey: ["options", projectId, unitId],
+      });
+    },
+    onError: (error) => {
+      toast.error("Erro ao duplicar tecnologia construtiva", {
+        description: error.message,
+      });
+    },
   });
 
   useEffect(() => {
@@ -422,6 +463,28 @@ function RouteComponent() {
       cell: ({ row }) => {
         return (
           <div className="flex items-center justify-end gap-2">
+            <ModalSimple
+              title="Duplicar Tecnologia Construtiva"
+              content="Tem certeza que deseja duplicar esta tecnologia construtiva? Esta ação criará uma cópia idêntica da tecnologia construtiva, incluindo todos os seus dados técnicos. Você poderá editar os detalhes da nova tecnologia construtiva após a duplicação."
+              confirmTitle="Duplicar"
+              onConfirm={() => {
+                if (!row.original.option_id) return;
+                if (!row.original.id) return;
+                duplicateModule({
+                  optionId: row.original.option_id,
+                  moduleId: row.original.id,
+                });
+              }}
+              componentTrigger={
+                <Button variant="ghost" size="icon" disabled={isDeletingTec}>
+                  {isDeletingTec ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Copy className="h-4 w-4 text-primary" />
+                  )}
+                </Button>
+              }
+            />
             <DrawerFormModule
               triggerComponent={
                 <Button variant="ghost" size="icon" disabled={isDeleting}>
@@ -529,9 +592,25 @@ function RouteComponent() {
                       title="Excluir Simulação"
                       onConfirm={() => deleteSimulation(option.id)}
                     />
-                    <Button variant="outline-bipc" size="icon-lg" disabled>
-                      <Copy className="h-4 w-4" />
-                    </Button>
+                    <ModalSimple
+                      title="Duplicar Simulação"
+                      content="Tem certeza que deseja duplicar esta simulação? Esta ação criará uma cópia idêntica da simulação, incluindo todas as tecnologias construtivas associadas. Você poderá editar os detalhes da nova simulação após a duplicação."
+                      confirmTitle="Duplicar"
+                      onConfirm={() => duplicateSimulation(option.id)}
+                      componentTrigger={
+                        <Button
+                          variant="outline-bipc"
+                          size="icon-lg"
+                          disabled={isDuplicating}
+                        >
+                          {isDuplicating ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                      }
+                    />
                     <DrawerFormModule
                       triggerComponent={
                         <Button variant="outline-bipc">

@@ -6,12 +6,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useSidebar } from "@/hooks/useSidebar";
 import { cn } from "@/lib/utils";
-import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
 import { Link } from "@tanstack/react-router";
 import {
   BarChart3,
   Bell,
-  Book,
   File,
   GlobeLock,
   Info,
@@ -19,6 +17,7 @@ import {
   Menu,
   Settings,
   UserPlus,
+  BookLock,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -172,6 +171,20 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           </TooltipContent>
         </Tooltip>
 
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <CustomLink
+              linkKey="faq"
+              className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
+            >
+              <BookLock size={18} className="text-white" />
+            </CustomLink>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>Licenciamento e melhorias</p>
+          </TooltipContent>
+        </Tooltip>
+
         <div className="h-px bg-zinc-700/50 my-2" />
 
         {isAuthenticated ? (
@@ -310,40 +323,46 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         >
           {/* Institucional */}
           <li>
-            <SidemenuItem variant="link">
-              <CustomLink
-                linkKey="about"
-                className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-              >
-                <Info size={18} />
-                <span>Sobre o BIPc</span>
-              </CustomLink>
-            </SidemenuItem>
+            <CustomLink
+              linkKey="about"
+              className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+              onClick={handleMobileNavigation}
+            >
+              <Info size={18} />
+              <span>Sobre o BIPc</span>
+            </CustomLink>
           </li>
 
           <li>
-            <SidemenuItem variant="link">
-              <Link
-                to="/benchmark"
-                onClick={handleMobileNavigation}
-                activeProps={activeProps}
-                className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-              >
-                <BarChart3 size={18} />
-                <span>Benchmark</span>
-              </Link>
-            </SidemenuItem>
+            <Link
+              to="/benchmark"
+              onClick={handleMobileNavigation}
+              activeProps={activeProps}
+              className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+            >
+              <BarChart3 size={18} />
+              <span>Benchmark</span>
+            </Link>
           </li>
           <li>
-            <SidemenuItem variant="link">
-              <CustomLink
-                linkKey="privacy"
-                className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-              >
-                <GlobeLock size={18} />
-                <span>Políticas de Privacidade</span>
-              </CustomLink>
-            </SidemenuItem>
+            <CustomLink
+              linkKey="privacy"
+              className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+              onClick={handleMobileNavigation}
+            >
+              <GlobeLock size={18} />
+              <span>Políticas de Privacidade</span>
+            </CustomLink>
+          </li>
+          <li>
+            <CustomLink
+              linkKey="faq"
+              className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+              onClick={handleMobileNavigation}
+            >
+              <BookLock size={18} />
+              <span>Licenciamento e melhorias</span>
+            </CustomLink>
           </li>
 
           <Divider className="my-4" />
@@ -353,43 +372,40 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             <>
               {/* Projetos */}
               <li>
-                <SidemenuItem variant="link">
-                  <Link
-                    to="/new_projects"
-                    onClick={handleMobileNavigation}
-                    activeProps={activeProps}
-                    className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-                  >
-                    <File size={18} />
-                    <span>Empreendimentos</span>
-                  </Link>
-                </SidemenuItem>
+                <Link
+                  to="/new_projects"
+                  onClick={handleMobileNavigation}
+                  activeProps={activeProps}
+                  className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+                >
+                  <File size={18} />
+                  <span>Empreendimentos</span>
+                </Link>
               </li>
 
               <li>
-                <SidemenuItem variant="link">
-                  <Link
-                    to={"/settings"}
-                    onClick={handleMobileNavigation}
-                    activeProps={activeProps}
-                    className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-                  >
-                    <Settings size={18} />
-                    <span>Configurações</span>
-                  </Link>
-                </SidemenuItem>
+                <Link
+                  to={"/settings"}
+                  onClick={handleMobileNavigation}
+                  activeProps={activeProps}
+                  className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+                >
+                  <Settings size={18} />
+                  <span>Configurações</span>
+                </Link>
               </li>
 
               {/* Notificações */}
               <li>
-                <SidemenuItem variant="link" hide={isMobile}>
-                  <div className="flex gap-3 items-center w-full p-2">
-                    <Bell size={18} />
-                    <div className="flex-1">
-                      <Notifications />
-                    </div>
+                <div
+                  className="flex gap-3 items-center w-full p-2"
+                  style={{ display: isMobile ? "none" : "flex" }}
+                >
+                  <Bell size={18} />
+                  <div className="flex-1">
+                    <Notifications />
                   </div>
-                </SidemenuItem>
+                </div>
               </li>
             </>
           ) : (
@@ -397,32 +413,28 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               {/* Seção para usuários não logados */}
               {/* Cadastre-se */}
               <li>
-                <SidemenuItem variant="link">
-                  <Link
-                    to="/sign-up"
-                    onClick={handleMobileNavigation}
-                    activeProps={activeProps}
-                    className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-                  >
-                    <UserPlus size={18} />
-                    <span>Cadastre-se</span>
-                  </Link>
-                </SidemenuItem>
+                <Link
+                  to="/sign-up"
+                  onClick={handleMobileNavigation}
+                  activeProps={activeProps}
+                  className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+                >
+                  <UserPlus size={18} />
+                  <span>Cadastre-se</span>
+                </Link>
               </li>
 
               {/* Login */}
               <li>
-                <SidemenuItem variant="link">
-                  <Link
-                    to="/login"
-                    onClick={handleMobileNavigation}
-                    activeProps={activeProps}
-                    className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-                  >
-                    <LogIn size={18} />
-                    <span>Login</span>
-                  </Link>
-                </SidemenuItem>
+                <Link
+                  to="/login"
+                  onClick={handleMobileNavigation}
+                  activeProps={activeProps}
+                  className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+                >
+                  <LogIn size={18} />
+                  <span>Login</span>
+                </Link>
               </li>
             </>
           )}
@@ -432,33 +444,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         <div>
           {isAuthenticated && (
             <div className="flex flex-col gap-2">
-              {/* <Divider className="my-1" />
-
-                  <div className="p-2">
-                    <SidebarThemeToggle />
-                  </div>
-                  <div className="px-2">
-                    <SidebarLanguageToggle />
-                  </div>
-
-                  <Divider className="my-1" />
-
-                  <div className="flex items-center gap-3 p-2 pt-4 mb-4">
-                    <Avatar className="w-8 h-8">
-                      <AvatarFallback className="bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">
-                        {stringUtils.getInitials(user?.name || "") || (
-                          <User className="w-4 h-4" />
-                        )}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{user?.name}</p>
-                      <p className="text-xs text-gray-400 truncate">
-                        {user?.email}
-                      </p>
-                    </div>
-                  </div> */}
-
               {handleLogout && (
                 <Button
                   variant="destructive"

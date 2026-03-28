@@ -1,21 +1,25 @@
 // import { getProjectByUUID } from "@/actions/projects/getProject";
 import { getProjectByUUID } from "@/actions/projects/getProject";
+import { postDuplicateUnit } from "@/actions/units/postDuplicateUnit";
 import { DrawerFormUnit } from "@/components/layout";
+import ModalSimple from "@/components/layout/modal-simple";
 import { Button } from "@/components/ui/button";
 import NotFoundList from "@/components/ui/not-found-list";
 import { Tabs } from "@/components/ui/tabs";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { TProjectUnit } from "@/types/projects";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createFileRoute,
   Outlet,
   useRouter,
   useLocation,
+  useNavigate,
 } from "@tanstack/react-router";
-import { Edit, Plus, Upload } from "lucide-react";
+import { Copy, Edit, Loader2, Plus, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_private/new_projects/$projectId/unit")({
   component: RouteComponent,
@@ -34,6 +38,8 @@ export const Route = createFileRoute("/_private/new_projects/$projectId/unit")({
 function RouteComponent() {
   const router = useRouter();
   const location = useLocation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { projectId } = Route.useLoaderData();
   const params: { projectId: string; unitId: string; moduleId: string } =
@@ -66,6 +72,33 @@ function RouteComponent() {
     }
   };
 
+  const { mutate: mutateDuplicateUnit, isPending: isDuplicating } = useMutation(
+    {
+      mutationFn: (props: { projectId: string; unitId: string }) => {
+        return postDuplicateUnit(props.projectId, props.unitId);
+      },
+      onSuccess: async (data) => {
+        const unitData = await data?.data?.unit;
+
+        toast.success("Edificação duplicada com sucesso");
+        queryClient.invalidateQueries({
+          queryKey: ["project", projectId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["projects"],
+        });
+        await navigate({
+          to: `/new_projects/${projectId}/unit/${unitData.id}`,
+        });
+      },
+      onError: (error) => {
+        toast.error("Erro ao duplicar edificação", {
+          description: error.message,
+        });
+      },
+    },
+  );
+
   useEffect(() => {
     setTabs(units);
   }, [units]);
@@ -75,7 +108,7 @@ function RouteComponent() {
       history.pushState(
         {},
         "",
-        `/new_projects/${projectId}/unit/${tabs[0].id}`
+        `/new_projects/${projectId}/unit/${tabs[0].id}`,
       );
       setSelectedTab(tabs[0].name);
     } else if (params.unitId) {
@@ -141,6 +174,25 @@ function RouteComponent() {
               <Button variant="outline-bipc" size="icon-lg" disabled>
                 <Upload />
               </Button>
+              {params.unitId && hasPermission("create:unit") && (
+                <ModalSimple
+                  title="Duplicar Edificação"
+                  content="Tem certeza que deseja duplicar esta edificação? Esta ação criará uma cópia idêntica da edificação, incluindo todas as suas informações e configurações. Você poderá editar os detalhes da nova edificação após a duplicação."
+                  confirmTitle="Duplicar"
+                  onConfirm={() =>
+                    mutateDuplicateUnit({ projectId, unitId: params.unitId })
+                  }
+                  componentTrigger={
+                    <Button variant="outline-bipc" size="icon-lg">
+                      {isDuplicating ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Copy />
+                      )}
+                    </Button>
+                  }
+                />
+              )}
               {params.unitId && hasPermission("update:unit") && (
                 <DrawerFormUnit
                   projectId={projectId}
