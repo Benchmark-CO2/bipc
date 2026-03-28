@@ -22,4 +22,24 @@ export const commonLinks = {
     internal: "/privacidade",
     external: `${BASE_URL}/privacidade`,
   },
+  termsOfUse: {
+    internal: "/termos-de-uso",
+    external: `${BASE_URL}/termos-de-uso`,
+  },
+  media: {
+    internal: "",
+    external: `${BASE_URL}/midia`,
+  },
+  launch: {
+    internal: "",
+    external: `${BASE_URL}/lancamento`,
+  },
+  repository: {
+    internal: "",
+    external: `${BASE_URL}/repositorio`,
+  },
+  dataForm: {
+    internal: "",
+    external: "https://forms.gle/ytcc9m3erCX5u4QZ9",
+  },
 };
