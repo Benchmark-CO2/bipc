@@ -551,7 +551,7 @@ function RouteComponent() {
         return (
           <div
             key={option.id}
-            className={`flex items-center gap-2 rounded-xl border-2 ${borderColumn(option)} bg-white p-4 dark:bg-gray-800 w-full`}
+            className={`flex items-center gap-2 rounded-xl border-2 ${borderColumn(option)} bg-white p-4 dark:bg-dark-950 w-full`}
           >
             <div className="flex items-center gap-2 justify-between w-full">
               <CommonTable
