@@ -156,8 +156,8 @@ export function SidebarHoverPopover({
       <PopoverContent
         side={side}
         align="center"
-        sideOffset={12}
-        className="bg-sidebar border-zinc-700 p-2 w-auto min-w-[200px] border-b-[6px] border-b-secondary"
+        sideOffset={16}
+        className="bg-sidebar border-0 border-b-[6px] border-b-secondary p-2 w-auto min-w-[200px]"
         onMouseEnter={handleOpen}
         onMouseLeave={handleClose}
         onOpenAutoFocus={(e) => e.preventDefault()}
