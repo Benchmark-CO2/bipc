@@ -342,6 +342,8 @@ func (app *application) duplicateOptionHandler(w http.ResponseWriter, r *http.Re
 			errors.Is(err, data.ErrUnitIsNotTower),
 			errors.Is(err, data.ErrInvalidRoleID):
 			app.unprocessableEntityResponse(w, r, err)
+		case errors.Is(err, data.ErrZeroArea):
+			app.badRequestResponse(w, r, err)
 		default:
 			app.serverErrorResponse(w, r, err)
 		}

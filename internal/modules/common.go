@@ -50,13 +50,19 @@ type ConcreteVolumeItem struct {
 }
 
 type ConcreteElement struct {
-	Volumes []ConcreteVolumeItem `json:"volumes,omitempty"`
-	Steel   []SteelMaterial      `json:"steel,omitempty"`
+	Volumes []ConcreteVolumeItem `json:"volumes"`
+	Steel   []SteelMaterial      `json:"steel"`
 }
 
 func (c ConcreteElement) MarshalJSON() ([]byte, error) {
 	if len(c.Volumes) == 0 && len(c.Steel) == 0 {
 		return []byte("null"), nil
+	}
+	if c.Volumes == nil {
+		c.Volumes = []ConcreteVolumeItem{}
+	}
+	if c.Steel == nil {
+		c.Steel = []SteelMaterial{}
 	}
 	type Alias ConcreteElement
 	return json.Marshal((Alias)(c))
@@ -424,8 +430,9 @@ func PrepareModuleTargetConsumptions(
 			if err != nil {
 				return nil, err
 			}
+
 			if area == 0 {
-				return nil, fmt.Errorf("floor %s has zero area", floorID)
+				return nil, fmt.Errorf("%w: floor %s has zero area", data.ErrZeroArea, floorID)
 			}
 
 			targets = append(targets, data.ModuleTargetConsumption{
@@ -447,8 +454,9 @@ func PrepareModuleTargetConsumptions(
 		if err != nil {
 			return nil, err
 		}
+
 		if totalArea == 0 {
-			return nil, fmt.Errorf("unit %s has zero total area", *unitID)
+			return nil, fmt.Errorf("unit %s has zero total area, please add floors with area before adding modules", *unitID)
 		}
 
 		targets = append(targets, data.ModuleTargetConsumption{

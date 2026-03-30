@@ -16,6 +16,7 @@ var (
 	ErrInvalidUnitID         = errors.New("unit_id does not exist or is invalid")
 	ErrUnitIsNotTower        = errors.New("the specified unit is not a tower")
 	ErrInvalidFloorID        = errors.New("one or more floor_ids are invalid or do not exist")
+	ErrZeroArea              = errors.New("floor or unit has zero area")
 	ErrInvalidFloorFilter    = errors.New("invalid floor filter")
 	ErrDuplicateFloorIndexes = errors.New("floor indexes must be unique")
 	ErrFloorIndexGap         = errors.New("floor indexes must be continuous without gaps")

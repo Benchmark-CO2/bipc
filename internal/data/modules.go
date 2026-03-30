@@ -26,7 +26,7 @@ type Module struct {
 	RelativeEnergyMin *float64               `json:"relative_energy_min,omitempty"`
 	RelativeEnergyMax *float64               `json:"relative_energy_max,omitempty"`
 	Outdated          bool                   `json:"outdated"`
-	FloorIDs          []uuid.UUID            `json:"floor_ids,omitempty"`
+	FloorIDs          []uuid.UUID            `json:"floor_ids"`
 	UnitID            *uuid.UUID             `json:"unit_id,omitempty"`
 	CreatedAt         time.Time              `json:"created_at"`
 	UpdatedAt         time.Time              `json:"updated_at"`

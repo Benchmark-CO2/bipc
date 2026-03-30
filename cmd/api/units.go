@@ -456,7 +456,12 @@ func (app *application) duplicateUnitHandler(w http.ResponseWriter, r *http.Requ
 		uuid.Nil, // admin role not needed
 	)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		switch {
+		case errors.Is(err, data.ErrZeroArea):
+			app.badRequestResponse(w, r, err)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 
