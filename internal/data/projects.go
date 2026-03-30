@@ -26,11 +26,12 @@ var (
 )
 
 type ProjectUnit struct {
-	ID           uuid.UUID               `json:"id"`
-	Name         string                  `json:"name"`
-	Type         string                  `json:"type"`
-	Consumptions map[string]*Consumption `json:"consumptions,omitempty"`
-	Area         float64                 `json:"area"`
+	ID              uuid.UUID               `json:"id"`
+	Name            string                  `json:"name"`
+	Type            string                  `json:"type"`
+	RepetitionCount int                     `json:"repetition_count"`
+	Consumptions    map[string]*Consumption `json:"consumptions,omitempty"`
+	Area            float64                 `json:"area"`
 }
 
 type Project struct {
@@ -273,7 +274,7 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectWithUnits, error) {
 	project.Roles = roles
 
 	unitsQuery := `
-		SELECT id, name, type
+		SELECT id, name, type, repetition_count
 		FROM units
 		WHERE project_id = $1
 		ORDER BY id`
@@ -287,7 +288,7 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectWithUnits, error) {
 	var units []ProjectUnit
 	for rows.Next() {
 		var unit ProjectUnit
-		if err := rows.Scan(&unit.ID, &unit.Name, &unit.Type); err != nil {
+		if err := rows.Scan(&unit.ID, &unit.Name, &unit.Type, &unit.RepetitionCount); err != nil {
 			return nil, err
 		}
 
@@ -448,7 +449,7 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 
 	if len(projects) > 0 {
 		unitsQuery := `
-			SELECT project_id, id, name, type
+			SELECT project_id, id, name, type, repetition_count
 			FROM units
 			WHERE project_id = ANY($1)
 			ORDER BY project_id, id`
@@ -464,7 +465,7 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 		for unitRows.Next() {
 			var projectID uuid.UUID
 			var unit ProjectUnit
-			if err := unitRows.Scan(&projectID, &unit.ID, &unit.Name, &unit.Type); err != nil {
+			if err := unitRows.Scan(&projectID, &unit.ID, &unit.Name, &unit.Type, &unit.RepetitionCount); err != nil {
 				return nil, Metadata{}, err
 			}
 

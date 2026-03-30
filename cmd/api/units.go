@@ -16,9 +16,10 @@ type TowerCreateData struct {
 }
 
 type UnitCreate struct {
-	Name string          `json:"name"`
-	Type string          `json:"type"`
-	Data json.RawMessage `json:"data"`
+	Name            string          `json:"name"`
+	Type            string          `json:"type"`
+	RepetitionCount *int            `json:"repetition_count,omitempty"`
+	Data            json.RawMessage `json:"data"`
 }
 
 func parseFloors(data json.RawMessage) ([]data.FloorCreate, error) {
@@ -73,9 +74,13 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	unit := &data.Unit{
-		ProjectID: projectID,
-		Name:      input.Name,
-		Type:      input.Type,
+		ProjectID:       projectID,
+		Name:            input.Name,
+		Type:            input.Type,
+		RepetitionCount: 1,
+	}
+	if input.RepetitionCount != nil {
+		unit.RepetitionCount = *input.RepetitionCount
 	}
 
 	v := validator.New()
@@ -207,8 +212,9 @@ func (app *application) readUnitHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 type UnitUpdate struct {
-	Name string          `json:"name"`
-	Data json.RawMessage `json:"data"`
+	Name            string          `json:"name"`
+	RepetitionCount *int            `json:"repetition_count,omitempty"`
+	Data            json.RawMessage `json:"data"`
 }
 
 func (app *application) updateUnitHandler(w http.ResponseWriter, r *http.Request) {
@@ -249,6 +255,9 @@ func (app *application) updateUnitHandler(w http.ResponseWriter, r *http.Request
 
 	if input.Name != "" {
 		unit.Name = input.Name
+	}
+	if input.RepetitionCount != nil {
+		unit.RepetitionCount = *input.RepetitionCount
 	}
 
 	v := validator.New()
@@ -340,10 +349,11 @@ func (app *application) duplicateUnit(
 	}
 
 	duplicatedUnit := &data.Unit{
-		ID:        newUnitID,
-		ProjectID: newProjectID,
-		Name:      name,
-		Type:      originalUnit.Type,
+		ID:              newUnitID,
+		ProjectID:       newProjectID,
+		Name:            name,
+		Type:            originalUnit.Type,
+		RepetitionCount: originalUnit.RepetitionCount,
 	}
 
 	// Create floor index to ID mappings

@@ -24,14 +24,15 @@ var (
 )
 
 type Unit struct {
-	ID        uuid.UUID `json:"id"`
-	ProjectID uuid.UUID `json:"project_id"`
-	Name      string    `json:"name"`
-	Type      string    `json:"type"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Version   int32     `json:"version"`
-	Floors    []Floor   `json:"floors,omitempty"`
+	ID              uuid.UUID `json:"id"`
+	ProjectID       uuid.UUID `json:"project_id"`
+	Name            string    `json:"name"`
+	Type            string    `json:"type"`
+	RepetitionCount int       `json:"repetition_count"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+	Version         int32     `json:"version"`
+	Floors          []Floor   `json:"floors,omitempty"`
 }
 
 type Consumption struct {
@@ -62,8 +63,12 @@ type FloorCreate struct {
 }
 
 func ValidateUnit(v *validator.Validator, unit *Unit) {
+	if unit.RepetitionCount == 0 {
+		unit.RepetitionCount = 1
+	}
 	v.Check(unit.Name != "", "name", "must be provided")
 	v.Check(unit.Type != "", "type", "must be provided")
+	v.Check(unit.RepetitionCount > 0, "repetition_count", "must be greater than zero")
 }
 
 func validateFloorIndexes(floors []FloorCreate) error {
@@ -139,9 +144,9 @@ func (m UnitModel) Insert(unit *Unit, floors []FloorCreate) error {
 	defer tx.Rollback()
 
 	queryUnit := `
-		INSERT INTO units (id, project_id, name, type)
-		VALUES ($1, $2, $3, $4)`
-	_, err = tx.Exec(queryUnit, unit.ID, unit.ProjectID, unit.Name, unit.Type)
+		INSERT INTO units (id, project_id, name, type, repetition_count)
+		VALUES ($1, $2, $3, $4, $5)`
+	_, err = tx.Exec(queryUnit, unit.ID, unit.ProjectID, unit.Name, unit.Type, unit.RepetitionCount)
 	if err != nil {
 		return err
 	}
@@ -165,7 +170,7 @@ func (m UnitModel) GetByID(id uuid.UUID) (*Unit, error) {
 	}
 
 	query := `
-		SELECT id, project_id, name, type, created_at, updated_at, version
+		SELECT id, project_id, name, type, repetition_count, created_at, updated_at, version
 		FROM units
 		WHERE id = $1`
 
@@ -179,6 +184,7 @@ func (m UnitModel) GetByID(id uuid.UUID) (*Unit, error) {
 		&unit.ProjectID,
 		&unit.Name,
 		&unit.Type,
+		&unit.RepetitionCount,
 		&unit.CreatedAt,
 		&unit.UpdatedAt,
 		&unit.Version,
@@ -206,31 +212,31 @@ func (m UnitModel) GetByID(id uuid.UUID) (*Unit, error) {
 
 func (m UnitModel) GetFloorArea(floorID uuid.UUID) (float64, error) {
 	query := `SELECT area FROM floor WHERE id = $1`
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	
+
 	var area float64
 	err := m.DB.QueryRowContext(ctx, query, floorID).Scan(&area)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return area, nil
 }
 
 func (m UnitModel) GetUnitTotalArea(unitID uuid.UUID) (float64, error) {
 	query := `SELECT COALESCE(SUM(area), 0) FROM floor WHERE unit_id = $1`
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	
+
 	var totalArea float64
 	err := m.DB.QueryRowContext(ctx, query, unitID).Scan(&totalArea)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return totalArea, nil
 }
 
@@ -364,11 +370,11 @@ func (m UnitModel) Update(unit *Unit, floors []FloorCreate) error {
 
 	queryUnit := `
 		UPDATE units 
-		SET name = $1, updated_at = CURRENT_TIMESTAMP, version = version + 1
-		WHERE id = $2
+		SET name = $1, repetition_count = $2, updated_at = CURRENT_TIMESTAMP, version = version + 1
+		WHERE id = $3
 		RETURNING version`
 
-	err = tx.QueryRow(queryUnit, unit.Name, unit.ID).Scan(&unit.Version)
+	err = tx.QueryRow(queryUnit, unit.Name, unit.RepetitionCount, unit.ID).Scan(&unit.Version)
 	if err != nil {
 		return err
 	}

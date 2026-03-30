@@ -358,15 +358,22 @@ func GetUnitConsumptionByTechnology(db *sql.DB, unitID uuid.UUID) (map[string]*C
 }
 
 // CalculateProjectConsumptions aggregates consumption from multiple units at project level.
-// Calculates area-weighted average: sum(unit_consumption × unit_area) / total_area.
-// Returns consumption per m² of the project + total project area.
+// Calculates repetition-weighted average: sum(unit_consumption × repetition_count) / total_repetitions.
+// Returns weighted project consumption + total weighted area.
 func CalculateProjectConsumptions(units []ProjectUnit) (map[string]*Consumption, float64) {
 	projectConsumptions := make(map[string]*Consumption)
 	var projectArea float64
+	var totalRepetitions float64
 
-	// Accumulate area-weighted consumptions from each unit
+	// Accumulate repetition-weighted consumptions from each unit
 	for _, unit := range units {
-		projectArea += unit.Area
+		repetitionWeight := float64(unit.RepetitionCount)
+		if repetitionWeight <= 0 {
+			repetitionWeight = 1
+		}
+
+		totalRepetitions += repetitionWeight
+		projectArea += unit.Area * repetitionWeight
 
 		for tech, cons := range unit.Consumptions {
 			if tech == "total" {
@@ -377,12 +384,12 @@ func CalculateProjectConsumptions(units []ProjectUnit) (map[string]*Consumption,
 				projectConsumptions[tech] = newConsumption()
 			}
 
-			// Accumulate area-weighted consumption
+			// Accumulate repetition-weighted consumption
 			weightedCons := &Consumption{
-				CO2Min:    ptrFloat(*cons.CO2Min * unit.Area),
-				CO2Max:    ptrFloat(*cons.CO2Max * unit.Area),
-				EnergyMin: ptrFloat(*cons.EnergyMin * unit.Area),
-				EnergyMax: ptrFloat(*cons.EnergyMax * unit.Area),
+				CO2Min:    ptrFloat(*cons.CO2Min * repetitionWeight),
+				CO2Max:    ptrFloat(*cons.CO2Max * repetitionWeight),
+				EnergyMin: ptrFloat(*cons.EnergyMin * repetitionWeight),
+				EnergyMax: ptrFloat(*cons.EnergyMax * repetitionWeight),
 			}
 			projectConsumptions[tech].Add(weightedCons)
 		}
@@ -390,13 +397,13 @@ func CalculateProjectConsumptions(units []ProjectUnit) (map[string]*Consumption,
 
 	addTotalToConsumptions(projectConsumptions)
 
-	// Normalize by total area (convert to consumption per m²)
-	if projectArea > 0 {
+	// Normalize by total repetitions
+	if totalRepetitions > 0 {
 		for _, cons := range projectConsumptions {
-			*cons.CO2Min /= projectArea
-			*cons.CO2Max /= projectArea
-			*cons.EnergyMin /= projectArea
-			*cons.EnergyMax /= projectArea
+			*cons.CO2Min /= totalRepetitions
+			*cons.CO2Max /= totalRepetitions
+			*cons.EnergyMin /= totalRepetitions
+			*cons.EnergyMax /= totalRepetitions
 		}
 	}
 
