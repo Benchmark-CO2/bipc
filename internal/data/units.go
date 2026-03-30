@@ -295,17 +295,13 @@ func (m UnitModel) getFloorsByUnitID(unitID uuid.UUID) ([]Floor, error) {
 
 		if tech.Valid && co2Min.Valid {
 			if _, ok := floorsMap[floorID].Consumptions[tech.String]; !ok {
-				floorsMap[floorID].Consumptions[tech.String] = &Consumption{
-					CO2Min:    new(float64),
-					CO2Max:    new(float64),
-					EnergyMin: new(float64),
-					EnergyMax: new(float64),
-				}
+				floorsMap[floorID].Consumptions[tech.String] = newConsumption()
 			}
-			*floorsMap[floorID].Consumptions[tech.String].CO2Min += co2Min.Float64
-			*floorsMap[floorID].Consumptions[tech.String].CO2Max += co2Max.Float64
-			*floorsMap[floorID].Consumptions[tech.String].EnergyMin += energyMin.Float64
-			*floorsMap[floorID].Consumptions[tech.String].EnergyMax += energyMax.Float64
+			cons := floorsMap[floorID].Consumptions[tech.String]
+			*cons.CO2Min += co2Min.Float64
+			*cons.CO2Max += co2Max.Float64
+			*cons.EnergyMin += energyMin.Float64
+			*cons.EnergyMax += energyMax.Float64
 		}
 	}
 
@@ -316,17 +312,9 @@ func (m UnitModel) getFloorsByUnitID(unitID uuid.UUID) ([]Floor, error) {
 	// Calculate totals
 	for _, floor := range floorsMap {
 		if len(floor.Consumptions) > 0 {
-			total := &Consumption{
-				CO2Min:    new(float64),
-				CO2Max:    new(float64),
-				EnergyMin: new(float64),
-				EnergyMax: new(float64),
-			}
+			total := newConsumption()
 			for _, consumption := range floor.Consumptions {
-				*total.CO2Min += *consumption.CO2Min
-				*total.CO2Max += *consumption.CO2Max
-				*total.EnergyMin += *consumption.EnergyMin
-				*total.EnergyMax += *consumption.EnergyMax
+				total.Add(consumption)
 			}
 			floor.Consumptions["total"] = total
 		}
@@ -772,12 +760,7 @@ func updateFloorMetricsById(tx *sql.Tx, floorIDs []uuid.UUID) error {
 			}
 
 			if _, ok := floorGroupedMetrics[key]; !ok {
-				floorGroupedMetrics[key] = &Consumption{
-					CO2Min:    new(float64),
-					CO2Max:    new(float64),
-					EnergyMin: new(float64),
-					EnergyMax: new(float64),
-				}
+				floorGroupedMetrics[key] = newConsumption()
 			}
 
 			*floorGroupedMetrics[key].CO2Min += m.TotalCO2Min
@@ -840,12 +823,7 @@ func updateUnitMetricsById(tx *sql.Tx, unitID uuid.UUID) error {
 		}
 
 		if _, ok := unitGroupedMetrics[key]; !ok {
-			unitGroupedMetrics[key] = &Consumption{
-				CO2Min:    new(float64),
-				CO2Max:    new(float64),
-				EnergyMin: new(float64),
-				EnergyMax: new(float64),
-			}
+			unitGroupedMetrics[key] = newConsumption()
 		}
 
 		*unitGroupedMetrics[key].CO2Min += m.TotalCO2Min

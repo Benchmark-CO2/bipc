@@ -8,6 +8,43 @@ import (
 	"github.com/google/uuid"
 )
 
+// newConsumption creates a new Consumption with all fields initialized to zero.
+// Useful for accumulating values in aggregations.
+func newConsumption() *Consumption {
+	return &Consumption{
+		CO2Min:    new(float64),
+		CO2Max:    new(float64),
+		EnergyMin: new(float64),
+		EnergyMax: new(float64),
+	}
+}
+
+// ptrFloat creates a pointer to the given float64 value.
+// Helper function for creating Consumption with specific values.
+func ptrFloat(v float64) *float64 {
+	return &v
+}
+
+// Add accumulates values from another Consumption into this one.
+// All fields are added: CO2Min, CO2Max, EnergyMin, EnergyMax.
+func (c *Consumption) Add(other *Consumption) {
+	if other == nil {
+		return
+	}
+	if other.CO2Min != nil {
+		*c.CO2Min += *other.CO2Min
+	}
+	if other.CO2Max != nil {
+		*c.CO2Max += *other.CO2Max
+	}
+	if other.EnergyMin != nil {
+		*c.EnergyMin += *other.EnergyMin
+	}
+	if other.EnergyMax != nil {
+		*c.EnergyMax += *other.EnergyMax
+	}
+}
+
 // scanConsumptionRows extracts consumptions by technology from a ResultSet.
 // Returns map[technology]Consumption for easy access by type.
 func scanConsumptionRows(rows *sql.Rows) (map[string]*Consumption, error) {
@@ -124,21 +161,13 @@ func addTotalToConsumptions(consumptions map[string]*Consumption) {
 		return
 	}
 
-	total := &Consumption{
-		CO2Min:    new(float64),
-		CO2Max:    new(float64),
-		EnergyMin: new(float64),
-		EnergyMax: new(float64),
-	}
+	total := newConsumption()
 
 	for tech, cons := range consumptions {
 		if tech == "total" {
 			continue
 		}
-		*total.CO2Min += *cons.CO2Min
-		*total.CO2Max += *cons.CO2Max
-		*total.EnergyMin += *cons.EnergyMin
-		*total.EnergyMax += *cons.EnergyMax
+		total.Add(cons)
 	}
 
 	consumptions["total"] = total
@@ -316,10 +345,7 @@ func GetUnitConsumptionByTechnology(db *sql.DB, unitID uuid.UUID) (map[string]*C
 	// 4. Merge: add unit consumptions to floor consumptions
 	for tech, unitCons := range unitConsumptions {
 		if floorCons, exists := consumptions[tech]; exists {
-			*floorCons.CO2Min += *unitCons.CO2Min
-			*floorCons.CO2Max += *unitCons.CO2Max
-			*floorCons.EnergyMin += *unitCons.EnergyMin
-			*floorCons.EnergyMax += *unitCons.EnergyMax
+			floorCons.Add(unitCons)
 		} else {
 			consumptions[tech] = unitCons
 		}
@@ -348,18 +374,17 @@ func CalculateProjectConsumptions(units []ProjectUnit) (map[string]*Consumption,
 			}
 
 			if _, exists := projectConsumptions[tech]; !exists {
-				projectConsumptions[tech] = &Consumption{
-					CO2Min:    new(float64),
-					CO2Max:    new(float64),
-					EnergyMin: new(float64),
-					EnergyMax: new(float64),
-				}
+				projectConsumptions[tech] = newConsumption()
 			}
 
-			*projectConsumptions[tech].CO2Min += *cons.CO2Min * unit.Area
-			*projectConsumptions[tech].CO2Max += *cons.CO2Max * unit.Area
-			*projectConsumptions[tech].EnergyMin += *cons.EnergyMin * unit.Area
-			*projectConsumptions[tech].EnergyMax += *cons.EnergyMax * unit.Area
+			// Accumulate area-weighted consumption
+			weightedCons := &Consumption{
+				CO2Min:    ptrFloat(*cons.CO2Min * unit.Area),
+				CO2Max:    ptrFloat(*cons.CO2Max * unit.Area),
+				EnergyMin: ptrFloat(*cons.EnergyMin * unit.Area),
+				EnergyMax: ptrFloat(*cons.EnergyMax * unit.Area),
+			}
+			projectConsumptions[tech].Add(weightedCons)
 		}
 	}
 
