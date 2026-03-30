@@ -36,11 +36,6 @@ type ModuleModel struct {
 	DB *sql.DB
 }
 
-type dbExecutor interface {
-	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
-}
-
 func checkForeignKeyError(err error) error {
 	if err == nil {
 		return nil
@@ -48,41 +43,25 @@ func checkForeignKeyError(err error) error {
 	if strings.Contains(err.Error(), "module_option_id_fkey") {
 		return ErrInvalidOptionID
 	}
-	if strings.Contains(err.Error(), "module_application_floor_id_fkey") ||
-		strings.Contains(err.Error(), "module_floor_floor_id_fkey") {
-		return ErrInvalidFloorID
-	}
-	if strings.Contains(err.Error(), "module_application_unit_id_fkey") {
-		return ErrInvalidUnitID
-	}
 	return err
 }
 
-func insertModuleFloors(db dbExecutor, moduleID uuid.UUID, floorIDs []uuid.UUID) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
+func insertModuleTargetConsumptions(tx *sql.Tx, ctx context.Context, targets []ModuleTargetConsumption) error {
+	insertQuery := `
+		INSERT INTO module_target_consumption 
+		(id, module_id, target_id, target_type, role_id, option_id, co2_min, co2_max, energy_min, energy_max)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
-	for _, floorID := range floorIDs {
-		_, err := db.ExecContext(ctx,
-			`INSERT INTO module_application (module_id, floor_id, unit_id) VALUES ($1, $2, NULL)`,
-			moduleID, floorID,
-		)
+	for _, target := range targets {
+		target.ID = uuid.Must(uuid.NewV7())
+		_, err := tx.ExecContext(ctx, insertQuery,
+			target.ID, target.ModuleID, target.TargetID, target.TargetType, target.RoleID, target.OptionID,
+			target.CO2Min, target.CO2Max, target.EnergyMin, target.EnergyMax)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func insertModuleUnit(db dbExecutor, moduleID uuid.UUID, unitID uuid.UUID) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	_, err := db.ExecContext(ctx,
-		`INSERT INTO module_application (module_id, floor_id, unit_id) VALUES ($1, NULL, $2)`,
-		moduleID, unitID,
-	)
-	return err
 }
 
 func (m ModuleModel) insertTx(tx *sql.Tx, module *Module) (*Module, error) {
@@ -138,31 +117,8 @@ func (m ModuleModel) Insert(module *Module, targets []ModuleTargetConsumption) (
 		return nil, err
 	}
 
-	if len(module.FloorIDs) > 0 {
-		if err := insertModuleFloors(tx, module.ID, module.FloorIDs); err != nil {
-			return nil, checkForeignKeyError(err)
-		}
-	}
-
-	if module.UnitID != nil {
-		if err := insertModuleUnit(tx, module.ID, *module.UnitID); err != nil {
-			return nil, checkForeignKeyError(err)
-		}
-	}
-
-	insertQuery := `
-		INSERT INTO module_target_consumption 
-		(id, module_id, target_id, target_type, role_id, option_id, co2_min, co2_max, energy_min, energy_max)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
-
-	for _, target := range targets {
-		target.ID = uuid.Must(uuid.NewV7())
-		_, err := tx.ExecContext(ctx, insertQuery,
-			target.ID, target.ModuleID, target.TargetID, target.TargetType, target.RoleID, target.OptionID,
-			target.CO2Min, target.CO2Max, target.EnergyMin, target.EnergyMax)
-		if err != nil {
-			return nil, err
-		}
+	if err := insertModuleTargetConsumptions(tx, ctx, targets); err != nil {
+		return nil, err
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -299,42 +255,13 @@ func (m ModuleModel) Update(module *Module, targets []ModuleTargetConsumption) e
 		return err
 	}
 
-	_, err = tx.ExecContext(ctx, `DELETE FROM module_application WHERE module_id = $1`, module.ID)
-	if err != nil {
-		return err
-	}
-
-	if len(module.FloorIDs) > 0 {
-		err = insertModuleFloors(tx, module.ID, module.FloorIDs)
-		if err != nil {
-			return checkForeignKeyError(err)
-		}
-	}
-
-	if module.UnitID != nil {
-		if err := insertModuleUnit(tx, module.ID, *module.UnitID); err != nil {
-			return checkForeignKeyError(err)
-		}
-	}
-
 	_, err = tx.ExecContext(ctx, "DELETE FROM module_target_consumption WHERE module_id = $1", module.ID)
 	if err != nil {
 		return err
 	}
 
-	insertQuery := `
-		INSERT INTO module_target_consumption 
-		(id, module_id, target_id, target_type, role_id, option_id, co2_min, co2_max, energy_min, energy_max)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
-
-	for _, target := range targets {
-		target.ID = uuid.Must(uuid.NewV7())
-		_, err := tx.ExecContext(ctx, insertQuery,
-			target.ID, target.ModuleID, target.TargetID, target.TargetType, target.RoleID, target.OptionID,
-			target.CO2Min, target.CO2Max, target.EnergyMin, target.EnergyMax)
-		if err != nil {
-			return err
-		}
+	if err := insertModuleTargetConsumptions(tx, ctx, targets); err != nil {
+		return err
 	}
 
 	return tx.Commit()
