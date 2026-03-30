@@ -350,33 +350,6 @@ func (m ModuleModel) Delete(id uuid.UUID) error {
 	}
 	defer tx.Rollback()
 
-	var floorIDs []uuid.UUID
-	var unitID *uuid.UUID
-
-	rows, err := tx.QueryContext(ctx, `
-		SELECT floor_id, unit_id FROM module_application 
-		WHERE module_id = $1`, id)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var floorID *uuid.UUID
-		var uID *uuid.UUID
-		if err := rows.Scan(&floorID, &uID); err != nil {
-			return err
-		}
-		if floorID != nil {
-			floorIDs = append(floorIDs, *floorID)
-		}
-		if uID != nil {
-			unitID = uID
-		}
-	}
-	if err = rows.Err(); err != nil {
-		return err
-	}
-
 	query := `DELETE FROM module WHERE id = $1`
 	result, err := tx.ExecContext(ctx, query, id)
 	if err != nil {
@@ -389,18 +362,6 @@ func (m ModuleModel) Delete(id uuid.UUID) error {
 	}
 	if rowsAffected == 0 {
 		return ErrRecordNotFound
-	}
-
-	if len(floorIDs) > 0 {
-		if err := updateFloorMetricsById(tx, floorIDs); err != nil {
-			return err
-		}
-	}
-
-	if unitID != nil {
-		if err := updateUnitMetricsById(tx, *unitID); err != nil {
-			return err
-		}
 	}
 
 	return tx.Commit()

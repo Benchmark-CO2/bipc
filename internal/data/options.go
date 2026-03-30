@@ -103,17 +103,7 @@ func (m OptionModel) Insert(option *Option) error {
 		return err
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-
-	err = updateAllFloorMetrics(m.DB, option.UnitID)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return tx.Commit()
 }
 
 func (m OptionModel) GetByID(id uuid.UUID) (*Option, error) {
@@ -319,11 +309,6 @@ func (m OptionModel) Update(option *Option) error {
 
 	if rowsAffected == 0 {
 		return ErrRecordNotFound
-	}
-
-	err = updateAllFloorMetrics(m.DB, option.UnitID)
-	if err != nil {
-		return err
 	}
 
 	return nil
