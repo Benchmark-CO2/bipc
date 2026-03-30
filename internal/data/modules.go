@@ -92,6 +92,41 @@ func (m ModuleModel) insertTx(tx *sql.Tx, module *Module) (*Module, error) {
 	return module, nil
 }
 
+func (m ModuleModel) validateModuleTargets(tx *sql.Tx, ctx context.Context, module *Module) error {
+	var optionUnitID uuid.UUID
+
+	err := tx.QueryRowContext(ctx, `SELECT unit_id FROM options WHERE id = $1`, module.OptionID).Scan(&optionUnitID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrInvalidOptionID
+		}
+		return err
+	}
+
+	if module.UnitID != nil && *module.UnitID != optionUnitID {
+		return ErrInvalidUnitID
+	}
+
+	if len(module.FloorIDs) == 0 {
+		return nil
+	}
+
+	var validFloorCount int
+	err = tx.QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM floor
+		WHERE unit_id = $1 AND id = ANY($2)`, optionUnitID, pq.Array(module.FloorIDs)).Scan(&validFloorCount)
+	if err != nil {
+		return err
+	}
+
+	if validFloorCount != len(module.FloorIDs) {
+		return ErrInvalidFloorID
+	}
+
+	return nil
+}
+
 func (m ModuleModel) Insert(module *Module, targets []ModuleTargetConsumption) (*Module, error) {
 	hasFloors := len(module.FloorIDs) > 0
 	hasUnit := module.UnitID != nil
@@ -111,6 +146,10 @@ func (m ModuleModel) Insert(module *Module, targets []ModuleTargetConsumption) (
 		return nil, err
 	}
 	defer tx.Rollback()
+
+	if err := m.validateModuleTargets(tx, ctx, module); err != nil {
+		return nil, err
+	}
 
 	_, err = m.insertTx(tx, module)
 	if err != nil {
@@ -250,6 +289,10 @@ func (m ModuleModel) Update(module *Module, targets []ModuleTargetConsumption) e
 		return err
 	}
 	defer tx.Rollback()
+
+	if err := m.validateModuleTargets(tx, ctx, module); err != nil {
+		return err
+	}
 
 	if err := m.updateTx(tx, module); err != nil {
 		return err
