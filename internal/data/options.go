@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Benchmark-CO2/bipc/internal/i18n"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/google/uuid"
 )
@@ -34,10 +35,10 @@ type Option struct {
 	Consumption map[string]*Consumption `json:"consumption,omitempty"`
 }
 
-func ValidateOption(v *validator.Validator, option *Option) {
-	v.Check(option.Name != "", "name", "must be provided")
-	v.Check(len(option.Name) <= 500, "name", "must not be more than 500 bytes long")
-	v.Check(option.RoleID != uuid.Nil, "role_id", "must be provided")
+func ValidateOption(v *validator.Validator, option *Option, lang i18n.Language) {
+	v.Check(option.Name != "", "name", i18n.GetMessage(lang, "validation_must_be_provided"))
+	v.Check(len(option.Name) <= 500, "name", i18n.GetMessage(lang, "validation_max_500_bytes"))
+	v.Check(option.RoleID != uuid.Nil, "role_id", i18n.GetMessage(lang, "validation_must_be_provided"))
 }
 
 type OptionModel struct {

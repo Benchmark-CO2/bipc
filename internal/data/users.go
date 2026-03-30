@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Benchmark-CO2/bipc/internal/i18n"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -43,57 +44,57 @@ func (u *User) IsAnonymous() bool {
 	return u == AnonymousUser
 }
 
-func ValidateEmail(v *validator.Validator, email string) {
-	v.Check(email != "", "email", "must be provided")
-	v.Check(validator.Matches(email, validator.EmailRX), "email", "must be a valid email address")
+func ValidateEmail(v *validator.Validator, email string, lang i18n.Language) {
+	v.Check(email != "", "email", i18n.GetMessage(lang, "validation_must_be_provided"))
+	v.Check(validator.Matches(email, validator.EmailRX), "email", i18n.GetMessage(lang, "validation_valid_email"))
 }
 
-func ValidatePasswordPlaintext(v *validator.Validator, password string) {
-	v.Check(password != "", "password", "must be provided")
-	v.Check(len(password) >= 8, "password", "must be at least 8 bytes long")
-	v.Check(len(password) <= 72, "password", "must not be more than 72 bytes long") // bcrypt max
+func ValidatePasswordPlaintext(v *validator.Validator, password string, lang i18n.Language) {
+	v.Check(password != "", "password", i18n.GetMessage(lang, "validation_must_be_provided"))
+	v.Check(len(password) >= 8, "password", i18n.GetMessage(lang, "validation_min_8_bytes"))
+	v.Check(len(password) <= 72, "password", i18n.GetMessage(lang, "validation_max_72_bytes")) // bcrypt max
 }
 
-func ValidateUser(v *validator.Validator, user *User) {
-	v.Check(user.Name != "", "name", "must be provided")
-	v.Check(len(user.Name) <= 500, "name", "must not be more than 500 bytes long")
+func ValidateUser(v *validator.Validator, user *User, lang i18n.Language) {
+	v.Check(user.Name != "", "name", i18n.GetMessage(lang, "validation_must_be_provided"))
+	v.Check(len(user.Name) <= 500, "name", i18n.GetMessage(lang, "validation_max_500_bytes"))
 
-	ValidateEmail(v, user.Email)
+	ValidateEmail(v, user.Email, lang)
 
 	if user.Password.plaintext != nil {
-		ValidatePasswordPlaintext(v, *user.Password.plaintext)
+		ValidatePasswordPlaintext(v, *user.Password.plaintext, lang)
 	}
 
 	if user.Password.hash == nil {
 		panic("missing password hash for user")
 	}
 
-	v.Check(validator.PermittedValue(user.Type, types...), "type", fmt.Sprintf("must be a valid type (allowed: %s)", strings.Join(types, ", ")))
+	v.Check(validator.PermittedValue(user.Type, types...), "type", fmt.Sprintf(i18n.GetMessage(lang, "validation_valid_type"), strings.Join(types, ", ")))
 
 	if user.Cnpj != nil {
-		v.Check(*user.Cnpj != "", "cnpj", "must not be empty if provided")
-		v.Check(len(*user.Cnpj) == 14, "cnpj", "must be exactly 14 digits")
-		v.Check(validator.Matches(*user.Cnpj, validator.CnpjRX), "cnpj", "must contain only digits")
+		v.Check(*user.Cnpj != "", "cnpj", i18n.GetMessage(lang, "validation_not_empty_if_provided"))
+		v.Check(len(*user.Cnpj) == 14, "cnpj", i18n.GetMessage(lang, "validation_exactly_14_digits"))
+		v.Check(validator.Matches(*user.Cnpj, validator.CnpjRX), "cnpj", i18n.GetMessage(lang, "validation_only_digits"))
 	}
 
 	if user.CreaCau != nil {
-		v.Check(*user.CreaCau != "", "crea_cau", "must not be empty if provided")
-		v.Check(len(*user.CreaCau) <= 100, "crea_cau", "must not be more than 100 bytes long")
+		v.Check(*user.CreaCau != "", "crea_cau", i18n.GetMessage(lang, "validation_not_empty_if_provided"))
+		v.Check(len(*user.CreaCau) <= 100, "crea_cau", i18n.GetMessage(lang, "validation_max_100_bytes"))
 	}
 
 	if user.City != nil {
-		v.Check(*user.City != "", "city", "must not be empty if provided")
-		v.Check(len(*user.City) <= 100, "city", "must not be more than 100 bytes long")
+		v.Check(*user.City != "", "city", i18n.GetMessage(lang, "validation_not_empty_if_provided"))
+		v.Check(len(*user.City) <= 100, "city", i18n.GetMessage(lang, "validation_max_100_bytes"))
 	}
 
 	if user.Activity != nil {
-		v.Check(*user.Activity != "", "activity", "must not be empty if provided")
-		v.Check(len(*user.Activity) <= 100, "activity", "must not be more than 100 bytes long")
+		v.Check(*user.Activity != "", "activity", i18n.GetMessage(lang, "validation_not_empty_if_provided"))
+		v.Check(len(*user.Activity) <= 100, "activity", i18n.GetMessage(lang, "validation_max_100_bytes"))
 	}
 
 	if user.Enterprise != nil {
-		v.Check(*user.Enterprise != "", "enterprise", "must not be empty if provided")
-		v.Check(len(*user.Enterprise) <= 100, "enterprise", "must not be more than 100 bytes long")
+		v.Check(*user.Enterprise != "", "enterprise", i18n.GetMessage(lang, "validation_not_empty_if_provided"))
+		v.Check(len(*user.Enterprise) <= 100, "enterprise", i18n.GetMessage(lang, "validation_max_100_bytes"))
 	}
 }
 

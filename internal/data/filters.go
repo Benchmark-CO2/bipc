@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Benchmark-CO2/bipc/internal/i18n"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
@@ -14,13 +15,13 @@ type Filters struct {
 	SortSafelist []string
 }
 
-func ValidateFilters(v *validator.Validator, f Filters) {
-	v.Check(f.Page > 0, "page", "must be greater than zero")
-	v.Check(f.Page <= 10_000_000, "page", "must be a maximum of 10 million")
-	v.Check(f.PageSize > 0, "page_size", "must be greater than zero")
-	v.Check(f.PageSize <= 50, "page_size", "must be a maximum of 50")
+func ValidateFilters(v *validator.Validator, f Filters, lang i18n.Language) {
+	v.Check(f.Page > 0, "page", i18n.GetMessage(lang, "validation_greater_than_zero"))
+	v.Check(f.Page <= 10_000_000, "page", i18n.GetMessage(lang, "validation_max_10_million"))
+	v.Check(f.PageSize > 0, "page_size", i18n.GetMessage(lang, "validation_greater_than_zero"))
+	v.Check(f.PageSize <= 50, "page_size", i18n.GetMessage(lang, "validation_max_50"))
 
-	v.Check(validator.PermittedValue(f.Sort, f.SortSafelist...), "sort", fmt.Sprintf("must be a valid sort value (allowed: %s)", strings.Join(f.SortSafelist, ", ")))
+	v.Check(validator.PermittedValue(f.Sort, f.SortSafelist...), "sort", fmt.Sprintf(i18n.GetMessage(lang, "validation_valid_sort_value"), strings.Join(f.SortSafelist, ", ")))
 }
 
 func (f Filters) sortColumn() string {

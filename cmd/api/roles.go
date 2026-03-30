@@ -39,8 +39,9 @@ func (app *application) createRoleHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	v := validator.New()
+	lang := app.contextGetLanguage(r)
 
-	if data.ValidateRole(v, role); !v.Valid() {
+	if data.ValidateRole(v, role, lang); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -56,22 +57,28 @@ func (app *application) createRoleHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrInvalidProjectID):
-			v.AddError("params", "projectID: does not exist or is invalid")
+			message := app.localizer.GetLocalizedMessage(lang, "invalid_project_id_param")
+			v.AddError("params", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrDuplicateRoleName):
-			v.AddError("name", "already exists for this project")
+			message := app.localizer.GetLocalizedMessage(lang, "role_name_already_exists")
+			v.AddError("name", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrDuplicatePermissionID):
-			v.AddError("permissions_ids", "contain duplicate IDs")
+			message := app.localizer.GetLocalizedMessage(lang, "duplicate_permission_ids")
+			v.AddError("permissions_ids", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrInvalidPermissionID):
-			v.AddError("permissions_ids", "contain invalid IDs")
+			message := app.localizer.GetLocalizedMessage(lang, "invalid_permission_ids")
+			v.AddError("permissions_ids", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrInvalidUserID):
-			v.AddError("users_ids", "contain invalid IDs")
+			message := app.localizer.GetLocalizedMessage(lang, "invalid_user_ids")
+			v.AddError("users_ids", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrDuplicateUserRole):
-			v.AddError("users_ids", "contain duplicate IDs")
+			message := app.localizer.GetLocalizedMessage(lang, "duplicate_user_ids")
+			v.AddError("users_ids", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -109,14 +116,18 @@ func (app *application) updateRoleHandler(w http.ResponseWriter, r *http.Request
 
 	if role.ProjectID != projectID {
 		v := validator.New()
-		v.AddError("url", "role does not belong to the specified project")
+		lang := app.contextGetLanguage(r)
+		message := app.localizer.GetLocalizedMessage(lang, "role_not_in_project")
+		v.AddError("url", message)
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
 	if role.IsProtected {
 		v := validator.New()
-		v.AddError("role", "cannot be modified")
+		lang := app.contextGetLanguage(r)
+		message := app.localizer.GetLocalizedMessage(lang, "role_cannot_be_modified")
+		v.AddError("role", message)
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -156,8 +167,9 @@ func (app *application) updateRoleHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	v := validator.New()
+	lang := app.contextGetLanguage(r)
 
-	if data.ValidateRole(v, role); !v.Valid() {
+	if data.ValidateRole(v, role, lang); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -166,16 +178,20 @@ func (app *application) updateRoleHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrDuplicateRoleName):
-			v.AddError("name", "already exists for this project")
+			message := app.localizer.GetLocalizedMessage(lang, "role_name_already_exists")
+			v.AddError("name", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrDuplicatePermissionID):
-			v.AddError("permissions_ids", "contain duplicate IDs")
+			message := app.localizer.GetLocalizedMessage(lang, "duplicate_permission_ids")
+			v.AddError("permissions_ids", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrInvalidPermissionID):
-			v.AddError("permissions_ids", "contain invalid IDs")
+			message := app.localizer.GetLocalizedMessage(lang, "invalid_permission_ids")
+			v.AddError("permissions_ids", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrInvalidUserID):
-			v.AddError("users_ids", "contain invalid IDs")
+			message := app.localizer.GetLocalizedMessage(lang, "invalid_user_ids")
+			v.AddError("users_ids", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -213,14 +229,18 @@ func (app *application) deleteRoleHandler(w http.ResponseWriter, r *http.Request
 
 	if role.ProjectID != projectID {
 		v := validator.New()
-		v.AddError("url", "role does not belong to the specified project")
+		lang := app.contextGetLanguage(r)
+		message := app.localizer.GetLocalizedMessage(lang, "role_not_in_project")
+		v.AddError("url", message)
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
 	if role.IsProtected {
 		v := validator.New()
-		v.AddError("role", "cannot be deleted")
+		lang := app.contextGetLanguage(r)
+		message := app.localizer.GetLocalizedMessage(lang, "role_cannot_be_deleted")
+		v.AddError("role", message)
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -231,7 +251,9 @@ func (app *application) deleteRoleHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "role successfully deleted"}, nil)
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "role_deleted_success")
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": message}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -287,7 +309,9 @@ func (app *application) transferOwnershipHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "ownership successfully transferred"}, nil)
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "ownership_transferred_success")
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": message}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

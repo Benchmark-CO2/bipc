@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Benchmark-CO2/bipc/internal/i18n"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -58,42 +59,42 @@ type ProjectWithUnits struct {
 	Area         float64                 `json:"area,omitzero"`
 }
 
-func ValidateProject(v *validator.Validator, project *Project) {
-	v.Check(project.Name != "", "name", "must be provided")
-	v.Check(len(project.Name) <= 100, "name", "must not be more than 100 bytes long")
+func ValidateProject(v *validator.Validator, project *Project, lang i18n.Language) {
+	v.Check(project.Name != "", "name", i18n.GetMessage(lang, "validation_must_be_provided"))
+	v.Check(len(project.Name) <= 100, "name", i18n.GetMessage(lang, "validation_max_100_bytes"))
 
 	if project.CEP != nil {
-		v.Check(validator.Matches(*project.CEP, validator.CEPRX), "cep", "must be a valid CEP")
+		v.Check(validator.Matches(*project.CEP, validator.CEPRX), "cep", i18n.GetMessage(lang, "validation_valid_cep"))
 	}
 
-	v.Check(project.State != "", "state", "must be provided")
-	v.Check(len(project.State) == 2, "state", "must be a valid state code (2 characters)")
-	v.Check(validator.PermittedValue(project.State, states...), "state", fmt.Sprintf("must be a valid state code (allowed: %s)", strings.Join(states, ", ")))
+	v.Check(project.State != "", "state", i18n.GetMessage(lang, "validation_must_be_provided"))
+	v.Check(len(project.State) == 2, "state", i18n.GetMessage(lang, "validation_valid_state_code_2"))
+	v.Check(validator.PermittedValue(project.State, states...), "state", fmt.Sprintf(i18n.GetMessage(lang, "validation_valid_state_code_allowed"), strings.Join(states, ", ")))
 
-	v.Check(project.City != "", "city", "must be provided")
-	v.Check(len(project.City) <= 100, "city", "must not be more than 100 bytes long")
+	v.Check(project.City != "", "city", i18n.GetMessage(lang, "validation_must_be_provided"))
+	v.Check(len(project.City) <= 100, "city", i18n.GetMessage(lang, "validation_max_100_bytes"))
 
 	if project.Neighborhood != nil {
-		v.Check(*project.Neighborhood != "", "neighborhood", "empty neighborhood is not allowed")
-		v.Check(len(*project.Neighborhood) <= 100, "neighborhood", "must not be more than 100 bytes long")
+		v.Check(*project.Neighborhood != "", "neighborhood", fmt.Sprintf(i18n.GetMessage(lang, "validation_empty_not_allowed"), "neighborhood"))
+		v.Check(len(*project.Neighborhood) <= 100, "neighborhood", i18n.GetMessage(lang, "validation_max_100_bytes"))
 	}
 
 	if project.Street != nil {
-		v.Check(*project.Street != "", "street", "empty street is not allowed")
-		v.Check(len(*project.Street) <= 100, "street", "must not be more than 100 bytes long")
+		v.Check(*project.Street != "", "street", fmt.Sprintf(i18n.GetMessage(lang, "validation_empty_not_allowed"), "street"))
+		v.Check(len(*project.Street) <= 100, "street", i18n.GetMessage(lang, "validation_max_100_bytes"))
 	}
 
 	if project.Number != nil {
-		v.Check(*project.Number != "", "number", "empty number is not allowed")
-		v.Check(len(*project.Number) <= 20, "number", "must not be more than 20 bytes long")
+		v.Check(*project.Number != "", "number", fmt.Sprintf(i18n.GetMessage(lang, "validation_empty_not_allowed"), "number"))
+		v.Check(len(*project.Number) <= 20, "number", i18n.GetMessage(lang, "validation_max_20_bytes"))
 	}
 
-	v.Check(project.Phase != "", "phase", "must be provided")
-	v.Check(validator.PermittedValue(project.Phase, phases...), "phase", fmt.Sprintf("must be a valid phase (allowed: %s)", strings.Join(phases, ", ")))
+	v.Check(project.Phase != "", "phase", i18n.GetMessage(lang, "validation_must_be_provided"))
+	v.Check(validator.PermittedValue(project.Phase, phases...), "phase", fmt.Sprintf(i18n.GetMessage(lang, "validation_valid_phase"), strings.Join(phases, ", ")))
 
 	if project.Description != nil {
-		v.Check(*project.Description != "", "description", "empty description is not allowed")
-		v.Check(len(*project.Description) <= 500, "description", "must not be more than 500 bytes long")
+		v.Check(*project.Description != "", "description", fmt.Sprintf(i18n.GetMessage(lang, "validation_empty_not_allowed"), "description"))
+		v.Check(len(*project.Description) <= 500, "description", i18n.GetMessage(lang, "validation_max_500_bytes"))
 	}
 }
 

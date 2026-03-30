@@ -77,5 +77,5 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/benchmark/units", app.getUnitsBenchmarkHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/benchmark/projects", app.getProjectsBenchmarkHandler)
 
-	return app.metrics(app.recoverPanic(app.commonHeaders(app.enableCORS(app.realIP(app.rateLimit(app.authenticate(router)))))))
+	return app.detectLanguage(app.metrics(app.recoverPanic(app.commonHeaders(app.enableCORS(app.realIP(app.rateLimit(app.authenticate(router))))))))
 }

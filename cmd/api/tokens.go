@@ -24,9 +24,10 @@ func (app *application) createAuthenticationTokenHandler(w http.ResponseWriter, 
 	}
 
 	v := validator.New()
+	lang := app.contextGetLanguage(r)
 
-	data.ValidateEmail(v, input.Email)
-	data.ValidatePasswordPlaintext(v, input.Password)
+	data.ValidateEmail(v, input.Email, lang)
+	data.ValidatePasswordPlaintext(v, input.Password, lang)
 
 	if !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
@@ -87,8 +88,9 @@ func (app *application) createPasswordResetTokenHandler(w http.ResponseWriter, r
 	}
 
 	v := validator.New()
+	lang := app.contextGetLanguage(r)
 
-	if data.ValidateEmail(v, input.Email); !v.Valid() {
+	if data.ValidateEmail(v, input.Email, lang); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -97,7 +99,8 @@ func (app *application) createPasswordResetTokenHandler(w http.ResponseWriter, r
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			v.AddError("email", "no matching email address found")
+			message := app.localizer.GetLocalizedMessage(lang, "no_matching_email")
+			v.AddError("email", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -106,7 +109,8 @@ func (app *application) createPasswordResetTokenHandler(w http.ResponseWriter, r
 	}
 
 	if !user.Activated {
-		v.AddError("email", "user account must be activated")
+		message := app.localizer.GetLocalizedMessage(lang, "user_account_not_activated")
+		v.AddError("email", message)
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -129,7 +133,8 @@ func (app *application) createPasswordResetTokenHandler(w http.ResponseWriter, r
 		}
 	})
 
-	env := envelope{"message": "an email will be sent to you containing password reset instructions"}
+	message := app.localizer.GetLocalizedMessage(lang, "password_reset_email_sent")
+	env := envelope{"message": message}
 
 	err = app.writeJSON(w, http.StatusAccepted, env, nil)
 	if err != nil {
@@ -149,8 +154,9 @@ func (app *application) createActivationTokenHandler(w http.ResponseWriter, r *h
 	}
 
 	v := validator.New()
+	lang := app.contextGetLanguage(r)
 
-	if data.ValidateEmail(v, input.Email); !v.Valid() {
+	if data.ValidateEmail(v, input.Email, lang); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -159,7 +165,8 @@ func (app *application) createActivationTokenHandler(w http.ResponseWriter, r *h
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			v.AddError("email", "no matching email address found")
+			message := app.localizer.GetLocalizedMessage(lang, "no_matching_email")
+			v.AddError("email", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -168,7 +175,8 @@ func (app *application) createActivationTokenHandler(w http.ResponseWriter, r *h
 	}
 
 	if user.Activated {
-		v.AddError("email", "user has already been activated")
+		message := app.localizer.GetLocalizedMessage(lang, "user_already_activated")
+		v.AddError("email", message)
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -191,7 +199,8 @@ func (app *application) createActivationTokenHandler(w http.ResponseWriter, r *h
 		}
 	})
 
-	env := envelope{"message": "an email will be sent to you containing activation instructions"}
+	message := app.localizer.GetLocalizedMessage(lang, "activation_email_sent")
+	env := envelope{"message": message}
 
 	err = app.writeJSON(w, http.StatusAccepted, env, nil)
 	if err != nil {

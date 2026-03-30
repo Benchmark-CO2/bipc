@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -26,17 +25,20 @@ func (app *application) errorResponse(w http.ResponseWriter, r *http.Request, st
 
 func (app *application) serverErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
 	app.logError(r, err)
-	message := "the server encountered a problem and could not process your request"
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "server_error")
 	app.errorResponse(w, r, http.StatusInternalServerError, message)
 }
 
 func (app *application) notFoundResponse(w http.ResponseWriter, r *http.Request) {
-	message := "the requested resource could not be found"
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "not_found")
 	app.errorResponse(w, r, http.StatusNotFound, message)
 }
 
 func (app *application) methodNotAllowedResponse(w http.ResponseWriter, r *http.Request) {
-	message := fmt.Sprintf("the %s method is not supported for this resource", r.Method)
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessageWithArgs(lang, "method_not_allowed", r.Method)
 	app.errorResponse(w, r, http.StatusMethodNotAllowed, message)
 }
 
@@ -49,39 +51,46 @@ func (app *application) failedValidationResponse(w http.ResponseWriter, r *http.
 }
 
 func (app *application) editConflictResponse(w http.ResponseWriter, r *http.Request) {
-	message := "unable to update the record due to an edit conflict, please try again"
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "edit_conflict")
 	app.errorResponse(w, r, http.StatusConflict, message)
 }
 
 func (app *application) rateLimitExceededResponse(w http.ResponseWriter, r *http.Request) {
-	message := "rate limit exceeded"
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "rate_limit_exceeded")
 	app.errorResponse(w, r, http.StatusTooManyRequests, message)
 }
 
 func (app *application) invalidCredentialsResponse(w http.ResponseWriter, r *http.Request) {
-	message := "invalid authentication credentials"
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "invalid_credentials")
 	app.errorResponse(w, r, http.StatusUnauthorized, message)
 }
 
 func (app *application) invalidAuthenticationTokenResponse(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("WWW-Authenticate", "Bearer")
 
-	message := "invalid, missing or expired authentication token"
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "invalid_auth_token")
 	app.errorResponse(w, r, http.StatusUnauthorized, message)
 }
 
 func (app *application) authenticationRequiredResponse(w http.ResponseWriter, r *http.Request) {
-	message := "you must be authenticated to access this resource"
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "authentication_required")
 	app.errorResponse(w, r, http.StatusUnauthorized, message)
 }
 
 func (app *application) inactiveAccountResponse(w http.ResponseWriter, r *http.Request) {
-	message := "your user account must be activated to access this resource"
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "inactive_account")
 	app.errorResponse(w, r, http.StatusForbidden, message)
 }
 
 func (app *application) notPermittedResponse(w http.ResponseWriter, r *http.Request) {
-	message := "your user account doesn`t have the necessary permissions to access this resource"
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "not_permitted")
 	app.errorResponse(w, r, http.StatusForbidden, message)
 }
 
@@ -90,6 +99,7 @@ func (app *application) unprocessableEntityResponse(w http.ResponseWriter, r *ht
 }
 
 func (app *application) cannotDeleteAdminUserResponse(w http.ResponseWriter, r *http.Request) {
-	message := "cannot delete user account: user is an administrator in one or more projects. please delete or transfer ownership of these projects first"
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "cannot_delete_admin")
 	app.errorResponse(w, r, http.StatusForbidden, message)
 }

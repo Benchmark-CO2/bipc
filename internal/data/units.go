@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/Benchmark-CO2/bipc/internal/i18n"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -60,9 +61,9 @@ type FloorCreate struct {
 	Index      int       `json:"index"`
 }
 
-func ValidateUnit(v *validator.Validator, unit *Unit) {
-	v.Check(unit.Name != "", "name", "must be provided")
-	v.Check(unit.Type != "", "type", "must be provided")
+func ValidateUnit(v *validator.Validator, unit *Unit, lang i18n.Language) {
+	v.Check(unit.Name != "", "name", i18n.GetMessage(lang, "validation_must_be_provided"))
+	v.Check(unit.Type != "", "type", i18n.GetMessage(lang, "validation_must_be_provided"))
 }
 
 func validateFloorIndexes(floors []FloorCreate) error {

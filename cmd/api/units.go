@@ -79,7 +79,8 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	v := validator.New()
-	data.ValidateUnit(v, unit)
+	lang := app.contextGetLanguage(r)
+	data.ValidateUnit(v, unit, lang)
 
 	var floors []data.FloorCreate
 
@@ -93,7 +94,8 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 		validateFloors(v, floors)
 
 	default:
-		v.AddError("type", "invalid unit type")
+		message := app.localizer.GetLocalizedMessage(lang, "invalid_unit_type")
+		v.AddError("type", message)
 	}
 
 	if !v.Valid() {
@@ -110,12 +112,15 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 
 	err = app.models.Units.Insert(unit, floors)
 	if err != nil {
+		lang := app.contextGetLanguage(r)
 		switch {
 		case errors.Is(err, data.ErrDuplicateFloorIndexes):
-			v.AddError("floors", "floor indexes must be unique")
+			message := app.localizer.GetLocalizedMessage(lang, "duplicate_floor_indexes")
+			v.AddError("floors", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrFloorIndexGap):
-			v.AddError("floors", "floor indexes must be continuous without gaps")
+			message := app.localizer.GetLocalizedMessage(lang, "floor_index_gap")
+			v.AddError("floors", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -245,7 +250,8 @@ func (app *application) updateUnitHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	v := validator.New()
-	data.ValidateUnit(v, unit)
+	lang := app.contextGetLanguage(r)
+	data.ValidateUnit(v, unit, lang)
 
 	var floors []data.FloorCreate
 
@@ -267,10 +273,12 @@ func (app *application) updateUnitHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrDuplicateFloorIndexes):
-			v.AddError("floors", "floor indexes must be unique")
+			message := app.localizer.GetLocalizedMessage(lang, "duplicate_floor_indexes")
+			v.AddError("floors", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrFloorIndexGap):
-			v.AddError("floors", "floor indexes must be continuous without gaps")
+			message := app.localizer.GetLocalizedMessage(lang, "floor_index_gap")
+			v.AddError("floors", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -302,7 +310,9 @@ func (app *application) deleteUnitHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "unit successfully deleted"}, nil)
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "unit_deleted_success")
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": message}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

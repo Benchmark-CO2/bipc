@@ -130,8 +130,9 @@ func (app *application) createOptionHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	v := validator.New()
+	lang := app.contextGetLanguage(r)
 
-	if data.ValidateOption(v, option); !v.Valid() {
+	if data.ValidateOption(v, option, lang); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -253,8 +254,9 @@ func (app *application) updateOptionHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	v := validator.New()
+	lang := app.contextGetLanguage(r)
 
-	if data.ValidateOption(v, option); !v.Valid() {
+	if data.ValidateOption(v, option, lang); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -296,7 +298,9 @@ func (app *application) deleteOptionHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "tower option successfully deleted"}, nil)
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "option_deleted_success")
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": message}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

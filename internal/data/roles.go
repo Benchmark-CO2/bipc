@@ -8,6 +8,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/Benchmark-CO2/bipc/internal/i18n"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -38,22 +39,22 @@ type RoleWithUsersPermissions struct {
 	UsersIDs       []uuid.UUID `json:"users_ids,omitempty"`
 }
 
-func ValidateRole(v *validator.Validator, role *RoleWithUsersPermissions) {
-	v.Check(role.Name != "", "name", "must be provided")
-	v.Check(len(role.Name) <= 100, "name", "must not be more than 100 bytes long")
+func ValidateRole(v *validator.Validator, role *RoleWithUsersPermissions, lang i18n.Language) {
+	v.Check(role.Name != "", "name", i18n.GetMessage(lang, "validation_must_be_provided"))
+	v.Check(len(role.Name) <= 100, "name", i18n.GetMessage(lang, "validation_max_100_bytes"))
 
 	if role.Description != nil {
 		//v.Check(*role.Description != "", "description", "must not be empty string")
-		v.Check(len(*role.Description) <= 500, "description", "must not be more than 500 bytes long")
+		v.Check(len(*role.Description) <= 500, "description", i18n.GetMessage(lang, "validation_max_500_bytes"))
 	}
 
 	if len(role.PermissionsIDs) > 0 {
-		v.Check(validator.Unique(role.PermissionsIDs), "permissions_ids", "must not contain duplicate IDs")
-		v.Check(!slices.Contains(role.PermissionsIDs, 1), "permissions_ids", "cannot contain protected permissionsIDs")
+		v.Check(validator.Unique(role.PermissionsIDs), "permissions_ids", i18n.GetMessage(lang, "validation_no_duplicate_ids"))
+		v.Check(!slices.Contains(role.PermissionsIDs, 1), "permissions_ids", i18n.GetMessage(lang, "validation_no_protected_ids"))
 	}
 
 	if len(role.UsersIDs) > 0 {
-		v.Check(validator.Unique(role.UsersIDs), "users_ids", "must not contain duplicate IDs")
+		v.Check(validator.Unique(role.UsersIDs), "users_ids", i18n.GetMessage(lang, "validation_no_duplicate_ids"))
 	}
 }
 

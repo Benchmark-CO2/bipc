@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/Benchmark-CO2/bipc/internal/i18n"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/google/uuid"
 )
@@ -27,9 +28,9 @@ type Token struct {
 	IP        *string   `json:"-"`
 }
 
-func ValidateTokenPlaintext(v *validator.Validator, tokenPlaintext string) {
-	v.Check(tokenPlaintext != "", "token", "must be provided")
-	v.Check(len(tokenPlaintext) == 26, "token", "must be 26 bytes long") // rand.Text() generates 26 byte strings
+func ValidateTokenPlaintext(v *validator.Validator, tokenPlaintext string, lang i18n.Language) {
+	v.Check(tokenPlaintext != "", "token", i18n.GetMessage(lang, "validation_must_be_provided"))
+	v.Check(len(tokenPlaintext) == 26, "token", i18n.GetMessage(lang, "validation_token_26_bytes")) // rand.Text() generates 26 byte strings
 }
 
 func generateToken(userID uuid.UUID, ttl time.Duration, scope string, ip *string) *Token {

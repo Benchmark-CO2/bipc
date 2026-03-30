@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
+	"github.com/Benchmark-CO2/bipc/internal/i18n"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/Benchmark-CO2/bipc/web"
 
@@ -265,8 +266,9 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		}
 
 		v := validator.New()
+		lang := app.contextGetLanguage(r)
 
-		if data.ValidateTokenPlaintext(v, token); !v.Valid() {
+		if data.ValidateTokenPlaintext(v, token, lang); !v.Valid() {
 			app.invalidAuthenticationTokenResponse(w, r)
 			return
 		}
@@ -447,5 +449,14 @@ func (app *application) notFound(fileServer http.Handler) http.Handler {
 		}
 
 		fileServer.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) detectLanguage(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		acceptLang := r.Header.Get("Accept-Language")
+		lang := i18n.ParseAcceptLanguage(acceptLang, i18n.GetSupportedLanguages(), app.localizer.GetDefaultLanguage())
+		r = app.contextSetLanguage(r, lang)
+		next.ServeHTTP(w, r)
 	})
 }

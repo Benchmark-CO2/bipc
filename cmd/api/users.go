@@ -49,8 +49,9 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	v := validator.New()
+	lang := app.contextGetLanguage(r)
 
-	if data.ValidateUser(v, user); !v.Valid() {
+	if data.ValidateUser(v, user, lang); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -59,7 +60,8 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrDuplicateEmail):
-			v.AddError("email", "a user with this email address already exists")
+			message := app.localizer.GetLocalizedMessage(lang, "duplicate_email")
+			v.AddError("email", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -160,8 +162,9 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	v := validator.New()
+	lang := app.contextGetLanguage(r)
 
-	if data.ValidateUser(v, user); !v.Valid() {
+	if data.ValidateUser(v, user, lang); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -170,7 +173,8 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrDuplicateEmail):
-			v.AddError("email", "a user with this email address already exists")
+			message := app.localizer.GetLocalizedMessage(lang, "duplicate_email")
+			v.AddError("email", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrEditConflict):
 			app.editConflictResponse(w, r)
@@ -198,8 +202,9 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	v := validator.New()
+	lang := app.contextGetLanguage(r)
 
-	if data.ValidateTokenPlaintext(v, input.TokenPlaintext); !v.Valid() {
+	if data.ValidateTokenPlaintext(v, input.TokenPlaintext, lang); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -208,7 +213,8 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			v.AddError("token", "invalid or expired activation token")
+			message := app.localizer.GetLocalizedMessage(lang, "invalid_activation_token")
+			v.AddError("token", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -254,9 +260,10 @@ func (app *application) updateUserPasswordHandler(w http.ResponseWriter, r *http
 	}
 
 	v := validator.New()
+	lang := app.contextGetLanguage(r)
 
-	data.ValidatePasswordPlaintext(v, input.Password)
-	data.ValidateTokenPlaintext(v, input.TokenPlaintext)
+	data.ValidatePasswordPlaintext(v, input.Password, lang)
+	data.ValidateTokenPlaintext(v, input.TokenPlaintext, lang)
 
 	if !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
@@ -267,7 +274,8 @@ func (app *application) updateUserPasswordHandler(w http.ResponseWriter, r *http
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			v.AddError("token", "missing or expired password reset token")
+			message := app.localizer.GetLocalizedMessage(lang, "missing_password_reset_token")
+			v.AddError("token", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -298,7 +306,8 @@ func (app *application) updateUserPasswordHandler(w http.ResponseWriter, r *http
 		return
 	}
 
-	env := envelope{"message": "your password was successfully reset"}
+	message := app.localizer.GetLocalizedMessage(lang, "password_reset_success")
+	env := envelope{"message": message}
 
 	err = app.writeJSON(w, http.StatusOK, env, nil)
 	if err != nil {
@@ -360,8 +369,9 @@ func (app *application) replyInvitationHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	v := validator.New()
+	lang := app.contextGetLanguage(r)
 
-	if data.ValidateStatus(v, input.Status); !v.Valid() {
+	if data.ValidateStatus(v, input.Status, lang); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -370,7 +380,8 @@ func (app *application) replyInvitationHandler(w http.ResponseWriter, r *http.Re
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			v.AddError("invitation", "no invitation found with the provided ID")
+			message := app.localizer.GetLocalizedMessage(lang, "invitation_not_found")
+			v.AddError("invitation", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -382,7 +393,8 @@ func (app *application) replyInvitationHandler(w http.ResponseWriter, r *http.Re
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrEditConflict):
-			v.AddError("invitation", "no pending invitation found")
+			message := app.localizer.GetLocalizedMessage(lang, "no_pending_invitation")
+			v.AddError("invitation", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -390,7 +402,8 @@ func (app *application) replyInvitationHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "invitation successfully replied"}, nil)
+	message := app.localizer.GetLocalizedMessage(lang, "invitation_replied_success")
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": message}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -416,7 +429,9 @@ func (app *application) deleteUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "user successfully deleted"}, nil)
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "user_deleted_success")
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": message}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

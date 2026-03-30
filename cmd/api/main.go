@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
+	"github.com/Benchmark-CO2/bipc/internal/i18n"
 	"github.com/Benchmark-CO2/bipc/internal/mailer"
 	"github.com/Benchmark-CO2/bipc/internal/vcs"
 
@@ -52,11 +53,12 @@ type config struct {
 }
 
 type application struct {
-	config config
-	logger *slog.Logger
-	models data.Models
-	mailer *mailer.Mailer
-	wg     sync.WaitGroup
+	config    config
+	logger    *slog.Logger
+	models    data.Models
+	mailer    *mailer.Mailer
+	localizer *i18n.Localizer
+	wg        sync.WaitGroup
 }
 
 func main() {
@@ -126,10 +128,11 @@ func main() {
 	}))
 
 	app := &application{
-		config: cfg,
-		logger: logger,
-		models: data.NewModels(db),
-		mailer: mailer,
+		config:    cfg,
+		logger:    logger,
+		models:    data.NewModels(db),
+		mailer:    mailer,
+		localizer: i18n.New(i18n.Portuguese),
 	}
 
 	err = app.serve()

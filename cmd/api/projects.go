@@ -46,8 +46,9 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	v := validator.New()
+	lang := app.contextGetLanguage(r)
 
-	if data.ValidateProject(v, project); !v.Valid() {
+	if data.ValidateProject(v, project, lang); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -63,28 +64,36 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrInvalidProjectID):
-			v.AddError("projects(id)", "the provided projectID does not exist")
+			message := app.localizer.GetLocalizedMessage(lang, "invalid_project_id")
+			v.AddError("projects(id)", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrInvalidUserID):
-			v.AddError("users(id)", "the provided userID does not exist")
+			message := app.localizer.GetLocalizedMessage(lang, "invalid_user_id")
+			v.AddError("users(id)", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrDuplicateUserProject):
-			v.AddError("users_projects", "user is already associated with the project")
+			message := app.localizer.GetLocalizedMessage(lang, "duplicate_user_project")
+			v.AddError("users_projects", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrDuplicateRoleName):
-			v.AddError("roles(name)", "you already have a role with this name")
+			message := app.localizer.GetLocalizedMessage(lang, "duplicate_role_name")
+			v.AddError("roles(name)", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrInvalidPermissionID):
-			v.AddError("permissions(id)", "the provided permissionID does not exist")
+			message := app.localizer.GetLocalizedMessage(lang, "invalid_permission_id")
+			v.AddError("permissions(id)", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrInvalidRoleID):
-			v.AddError("roles(id)", "the provided roleID does not exist")
+			message := app.localizer.GetLocalizedMessage(lang, "invalid_role_id")
+			v.AddError("roles(id)", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrDuplicateRolePermission):
-			v.AddError("roles_permissions", "role already has permission associated")
+			message := app.localizer.GetLocalizedMessage(lang, "duplicate_role_permission")
+			v.AddError("roles_permissions", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		case errors.Is(err, data.ErrDuplicateUserRole):
-			v.AddError("users_roles", "user already has role associated")
+			message := app.localizer.GetLocalizedMessage(lang, "duplicate_user_role")
+			v.AddError("users_roles", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -193,8 +202,9 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	v := validator.New()
+	lang := app.contextGetLanguage(r)
 
-	if data.ValidateProject(v, project); !v.Valid() {
+	if data.ValidateProject(v, project, lang); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -225,7 +235,9 @@ func (app *application) deleteProjectHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "project successfully deleted"}, nil)
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "project_deleted_success")
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": message}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -240,13 +252,14 @@ func (app *application) listProjectsHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	v := validator.New()
+	lang := app.contextGetLanguage(r)
 
 	qs := r.URL.Query()
 
 	input.Name = app.readString(qs, "name", "")
 
-	input.Filters.Page = app.readInt(qs, "page", 1, v)
-	input.Filters.PageSize = app.readInt(qs, "page_size", 10, v)
+	input.Filters.Page = app.readInt(qs, "page", 1, v, lang)
+	input.Filters.PageSize = app.readInt(qs, "page_size", 10, v, lang)
 	input.Filters.Sort = app.readString(qs, "sort", "-id")
 	input.Filters.SortSafelist = []string{
 		"id",
@@ -263,7 +276,7 @@ func (app *application) listProjectsHandler(w http.ResponseWriter, r *http.Reque
 		"-phase",
 	}
 
-	if data.ValidateFilters(v, input.Filters); !v.Valid() {
+	if data.ValidateFilters(v, input.Filters, lang); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -296,8 +309,9 @@ func (app *application) inviteUserHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	v := validator.New()
+	lang := app.contextGetLanguage(r)
 
-	if data.ValidateEmail(v, input.Email); !v.Valid() {
+	if data.ValidateEmail(v, input.Email, lang); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -316,7 +330,9 @@ func (app *application) inviteUserHandler(w http.ResponseWriter, r *http.Request
 		}
 
 		if isMember {
-			v.AddError("email", "this user is already a member of the project")
+			lang := app.contextGetLanguage(r)
+			message := app.localizer.GetLocalizedMessage(lang, "user_already_project_member")
+			v.AddError("email", message)
 			app.failedValidationResponse(w, r, v.Errors)
 			return
 		}
@@ -333,7 +349,9 @@ func (app *application) inviteUserHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrDuplicatePendingInvitation):
-			v.AddError("email", "a pending invitation already exists for this email in this project")
+			lang := app.contextGetLanguage(r)
+			message := app.localizer.GetLocalizedMessage(lang, "duplicate_pending_invitation")
+			v.AddError("email", message)
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -360,7 +378,8 @@ func (app *application) inviteUserHandler(w http.ResponseWriter, r *http.Request
 		}
 	})
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "invitation sent successfully"}, nil)
+	message := app.localizer.GetLocalizedMessage(lang, "invitation_sent_success")
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": message}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -386,7 +405,9 @@ func (app *application) removeCollaboratorHandler(w http.ResponseWriter, r *http
 
 	if permissions.Include("*:*") {
 		v := validator.New()
-		v.AddError("user_id", "cannot remove a user with full permissions from the project")
+		lang := app.contextGetLanguage(r)
+		message := app.localizer.GetLocalizedMessage(lang, "cannot_remove_full_permissions_user")
+		v.AddError("user_id", message)
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -397,7 +418,9 @@ func (app *application) removeCollaboratorHandler(w http.ResponseWriter, r *http
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "user successfully removed from project"}, nil)
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "user_removed_from_project")
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": message}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -434,7 +457,9 @@ func (app *application) deleteInvitationHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "invitation deleted successfully"}, nil)
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "invitation_deleted_success")
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": message}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

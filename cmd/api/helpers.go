@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Benchmark-CO2/bipc/internal/i18n"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
@@ -49,7 +50,7 @@ func (app *application) readCSV(qs url.Values, key string, defaultValue []string
 	return strings.Split(csv, ",")
 }
 
-func (app *application) readInt(qs url.Values, key string, defaultValue int, v *validator.Validator) int {
+func (app *application) readInt(qs url.Values, key string, defaultValue int, v *validator.Validator, lang i18n.Language) int {
 	s := qs.Get(key)
 
 	if s == "" {
@@ -58,7 +59,7 @@ func (app *application) readInt(qs url.Values, key string, defaultValue int, v *
 
 	i, err := strconv.Atoi(s)
 	if err != nil {
-		v.AddError(key, "must be an integer value")
+		v.AddError(key, app.localizer.GetLocalizedMessage(lang, "json_must_be_integer"))
 		return defaultValue
 	}
 
@@ -87,6 +88,8 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data envelo
 }
 
 func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any) error {
+	lang := app.contextGetLanguage(r)
+
 	r.Body = http.MaxBytesReader(w, r.Body, 1_048_576) // 1MB limit
 
 	dec := json.NewDecoder(r.Body)
@@ -101,21 +104,21 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 
 		switch {
 		case errors.As(err, &syntaxError):
-			return fmt.Errorf("body contains badly-formed JSON (at character %d)", syntaxError.Offset)
+			return fmt.Errorf(app.localizer.GetLocalizedMessage(lang, "json_badly_formed_at"), syntaxError.Offset)
 		case errors.Is(err, io.ErrUnexpectedEOF):
-			return errors.New("body contains badly-formed JSON")
+			return errors.New(app.localizer.GetLocalizedMessage(lang, "json_badly_formed"))
 		case errors.As(err, &unmarshalTypeError):
 			if unmarshalTypeError.Field != "" {
-				return fmt.Errorf("body contains incorrect JSON type for field %q", unmarshalTypeError.Field)
+				return fmt.Errorf(app.localizer.GetLocalizedMessage(lang, "json_incorrect_type_field"), unmarshalTypeError.Field)
 			}
-			return fmt.Errorf("body contains incorrect JSON type (at character %d)", unmarshalTypeError.Offset)
+			return fmt.Errorf(app.localizer.GetLocalizedMessage(lang, "json_incorrect_type_at"), unmarshalTypeError.Offset)
 		case errors.Is(err, io.EOF):
-			return errors.New("body must not be empty")
+			return errors.New(app.localizer.GetLocalizedMessage(lang, "json_body_empty"))
 		case strings.HasPrefix(err.Error(), "json: unknown field "):
 			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
-			return fmt.Errorf("body contains unknown key %s", fieldName)
+			return fmt.Errorf(app.localizer.GetLocalizedMessage(lang, "json_unknown_field"), fieldName)
 		case errors.As(err, &maxBytesError):
-			return fmt.Errorf("body must not be larger than %d bytes", maxBytesError.Limit)
+			return fmt.Errorf(app.localizer.GetLocalizedMessage(lang, "json_body_too_large"), maxBytesError.Limit)
 		case errors.As(err, &invalidUnmarshalError):
 			panic("readJSON: destination (dst) must be a non-nil pointer") // The decode destination is not valid (usually because it is not a pointer). This is actually a problem with our application code, not the JSON itself.
 		default:
@@ -125,7 +128,7 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 
 	err = dec.Decode(&struct{}{})
 	if !errors.Is(err, io.EOF) {
-		return errors.New("body must only contain a single JSON value")
+		return errors.New(app.localizer.GetLocalizedMessage(lang, "json_multiple_values"))
 	}
 
 	return nil

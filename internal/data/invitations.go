@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Benchmark-CO2/bipc/internal/i18n"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/google/uuid"
 )
@@ -34,9 +35,9 @@ type InvitationWithDetails struct {
 	ProjectName string `json:"project_name"`
 }
 
-func ValidateStatus(v *validator.Validator, s string) {
-	v.Check(s != "", "status", "must be provided")
-	v.Check(validator.PermittedValue(s, status...), "status", fmt.Sprintf("must be a valid state code (allowed: %s)", strings.Join(status, ", ")))
+func ValidateStatus(v *validator.Validator, s string, lang i18n.Language) {
+	v.Check(s != "", "status", i18n.GetMessage(lang, "validation_must_be_provided"))
+	v.Check(validator.PermittedValue(s, status...), "status", fmt.Sprintf(i18n.GetMessage(lang, "validation_valid_status"), strings.Join(status, ", ")))
 }
 
 type InvitationModel struct {

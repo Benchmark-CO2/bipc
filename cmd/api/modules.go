@@ -279,7 +279,9 @@ func (app *application) deleteModuleHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "module successfully deleted", "id": moduleID}, nil)
+	lang := app.contextGetLanguage(r)
+	message := app.localizer.GetLocalizedMessage(lang, "module_deleted_success")
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": message, "id": moduleID}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

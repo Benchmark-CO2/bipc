@@ -129,13 +129,14 @@ func (app *application) getProjectsBenchmarkHandler(w http.ResponseWriter, r *ht
 	}
 
 	v := validator.New()
+	lang := app.contextGetLanguage(r)
 
-	floorsFrom := app.readInt(r.URL.Query(), "floors_from", -1, v)
+	floorsFrom := app.readInt(r.URL.Query(), "floors_from", -1, v, lang)
 	if floorsFrom != -1 {
 		filters.FloorsFrom = &floorsFrom
 	}
 
-	floorsTo := app.readInt(r.URL.Query(), "floors_to", -1, v)
+	floorsTo := app.readInt(r.URL.Query(), "floors_to", -1, v, lang)
 	if floorsTo != -1 {
 		filters.FloorsTo = &floorsTo
 	}
