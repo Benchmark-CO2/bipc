@@ -163,8 +163,8 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 	}
 
 	rows, err := m.DB.QueryContext(ctx, `
-		SELECT floor_id FROM module_application 
-		WHERE module_id = $1 AND floor_id IS NOT NULL`, id)
+		SELECT DISTINCT target_id FROM module_target_consumption 
+		WHERE module_id = $1 AND target_type = 'floor'`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -182,8 +182,8 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 
 	var unitID uuid.UUID
 	err = m.DB.QueryRowContext(ctx, `
-		SELECT unit_id FROM module_application 
-		WHERE module_id = $1 AND unit_id IS NOT NULL`, id).Scan(&unitID)
+		SELECT DISTINCT target_id FROM module_target_consumption 
+		WHERE module_id = $1 AND target_type = 'unit'`, id).Scan(&unitID)
 	if err == nil {
 		module.UnitID = &unitID
 	} else if err != sql.ErrNoRows {
@@ -319,8 +319,8 @@ func (m ModuleModel) HasModulesForUnit(tx *sql.Tx, unitID uuid.UUID) (bool, erro
 	query := `
 		SELECT COUNT(DISTINCT m.id)
 		FROM module m
-		INNER JOIN module_application mf ON m.id = mf.module_id
-		INNER JOIN floor f ON mf.floor_id = f.id
+		INNER JOIN module_target_consumption mtc ON m.id = mtc.module_id
+		INNER JOIN floor f ON mtc.target_id = f.id AND mtc.target_type = 'floor'
 		WHERE f.unit_id = $1`
 
 	var moduleCount int
@@ -336,9 +336,9 @@ func (m ModuleModel) MarkModulesAsOutdatedForUnit(tx *sql.Tx, unitID uuid.UUID) 
 	query := `
 		UPDATE module m
 		SET outdated = TRUE
-		FROM module_application mf
-		INNER JOIN floor f ON mf.floor_id = f.id
-		WHERE m.id = mf.module_id AND f.unit_id = $1`
+		FROM module_target_consumption mtc
+		INNER JOIN floor f ON mtc.target_id = f.id AND mtc.target_type = 'floor'
+		WHERE m.id = mtc.module_id AND f.unit_id = $1`
 
 	_, err := tx.Exec(query, unitID)
 	return err
@@ -348,8 +348,10 @@ func (m ModuleModel) MarkModulesAsOutdatedForFloors(tx *sql.Tx, floorIDs []uuid.
 	query := `
 		UPDATE module m
 		SET outdated = TRUE
-		FROM module_application mf
-		WHERE m.id = mf.module_id AND mf.floor_id = ANY($1)`
+		FROM module_target_consumption mtc
+		WHERE m.id = mtc.module_id 
+			AND mtc.target_type = 'floor' 
+			AND mtc.target_id = ANY($1)`
 
 	_, err := tx.Exec(query, pq.Array(floorIDs))
 	return err
