@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/validator"
@@ -13,6 +15,8 @@ import (
 )
 
 var (
+	types = []string{"member", "company"}
+
 	ErrDuplicateEmail = errors.New("duplicate email")
 	ErrInvalidUserID  = errors.New("userID does not exist")
 )
@@ -26,6 +30,8 @@ type User struct {
 	Email      string     `json:"email"`
 	Password   password   `json:"-"`
 	Activated  bool       `json:"activated"`
+	Type       string     `json:"type"`
+	Cnpj       *string    `json:"cnpj,omitzero"`
 	CreaCau    *string    `json:"crea_cau,omitzero"`
 	Birthdate  *time.Time `json:"birthdate,omitzero"`
 	City       *string    `json:"city,omitzero"`
@@ -60,6 +66,14 @@ func ValidateUser(v *validator.Validator, user *User) {
 
 	if user.Password.hash == nil {
 		panic("missing password hash for user")
+	}
+
+	v.Check(validator.PermittedValue(user.Type, types...), "type", fmt.Sprintf("must be a valid type (allowed: %s)", strings.Join(types, ", ")))
+
+	if user.Cnpj != nil {
+		v.Check(*user.Cnpj != "", "cnpj", "must not be empty if provided")
+		v.Check(len(*user.Cnpj) == 14, "cnpj", "must be exactly 14 digits")
+		v.Check(validator.Matches(*user.Cnpj, validator.CnpjRX), "cnpj", "must contain only digits")
 	}
 
 	if user.CreaCau != nil {
@@ -127,11 +141,11 @@ func (m UserModel) Insert(user *User) error {
 	user.ID = userID
 
 	query := `
-        INSERT INTO users (id, name, email, password_hash, activated, crea_cau, birthdate, city, activity, enterprise) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        INSERT INTO users (id, name, email, password_hash, activated, type, cnpj, crea_cau, birthdate, city, activity, enterprise)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING created_at`
 
-	args := []any{user.ID, user.Name, user.Email, user.Password.hash, user.Activated, user.CreaCau, user.Birthdate, user.City, user.Activity, user.Enterprise}
+	args := []any{user.ID, user.Name, user.Email, user.Password.hash, user.Activated, user.Type, user.Cnpj, user.CreaCau, user.Birthdate, user.City, user.Activity, user.Enterprise}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -151,7 +165,7 @@ func (m UserModel) Insert(user *User) error {
 
 func (m UserModel) GetByEmail(email string) (*User, error) {
 	query := `
-        SELECT id, created_at, name, email, password_hash, activated, crea_cau, birthdate, city, activity, enterprise
+        SELECT id, created_at, name, email, password_hash, activated, type, cnpj, crea_cau, birthdate, city, activity, enterprise
         FROM users
         WHERE email = $1`
 
@@ -167,6 +181,8 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 		&user.Email,
 		&user.Password.hash,
 		&user.Activated,
+		&user.Type,
+		&user.Cnpj,
 		&user.CreaCau,
 		&user.Birthdate,
 		&user.City,
@@ -188,15 +204,17 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 
 func (m UserModel) Update(user *User) error {
 	query := `
-        UPDATE users 
-        SET name = $1, email = $2, password_hash = $3, activated = $4, crea_cau = $5, birthdate = $6, city = $7, activity = $8, enterprise = $9
-        WHERE id = $10`
+        UPDATE users
+        SET name = $1, email = $2, password_hash = $3, activated = $4, type = $5, cnpj = $6, crea_cau = $7, birthdate = $8, city = $9, activity = $10, enterprise = $11
+        WHERE id = $12`
 
 	args := []any{
 		user.Name,
 		user.Email,
 		user.Password.hash,
 		user.Activated,
+		user.Type,
+		user.Cnpj,
 		user.CreaCau,
 		user.Birthdate,
 		user.City,
@@ -234,11 +252,11 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 
 	query := `
-        SELECT u.id, u.created_at, u.name, u.email, u.password_hash, u.activated, u.crea_cau, u.birthdate, u.city, u.activity, u.enterprise
+        SELECT u.id, u.created_at, u.name, u.email, u.password_hash, u.activated, u.type, u.cnpj, u.crea_cau, u.birthdate, u.city, u.activity, u.enterprise
         FROM users u
         INNER JOIN tokens t ON u.id = t.user_id
         WHERE t.hash = $1
-        AND t.scope = $2 
+        AND t.scope = $2
         AND t.expiry > $3`
 
 	args := []any{tokenHash[:], tokenScope, time.Now()}
@@ -255,6 +273,8 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 		&user.Email,
 		&user.Password.hash,
 		&user.Activated,
+		&user.Type,
+		&user.Cnpj,
 		&user.CreaCau,
 		&user.Birthdate,
 		&user.City,
@@ -275,7 +295,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 
 func (m UserModel) Collaborators(userID uuid.UUID) ([]*User, error) {
 	query := `
-		SELECT u.id, u.created_at, u.name, u.email, u.activated, u.crea_cau, u.birthdate, u.city, u.activity, u.enterprise
+		SELECT u.id, u.created_at, u.name, u.email, u.activated, u.type, u.cnpj, u.crea_cau, u.birthdate, u.city, u.activity, u.enterprise
 		FROM users u
 		JOIN users_projects up1 ON u.id = up1.user_id
 		JOIN users_projects up2 ON up1.project_id = up2.project_id
@@ -303,6 +323,8 @@ func (m UserModel) Collaborators(userID uuid.UUID) ([]*User, error) {
 			&user.Name,
 			&user.Email,
 			&user.Activated,
+			&user.Type,
+			&user.Cnpj,
 			&user.CreaCau,
 			&user.Birthdate,
 			&user.City,

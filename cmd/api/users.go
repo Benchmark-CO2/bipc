@@ -14,6 +14,8 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		Name       string     `json:"name"`
 		Email      string     `json:"email"`
 		Password   string     `json:"password"`
+		Type       string     `json:"type"`
+		Cnpj       *string    `json:"cnpj"`
 		CreaCau    *string    `json:"crea_cau"`
 		Birthdate  *time.Time `json:"birthdate"`
 		City       *string    `json:"city"`
@@ -31,6 +33,8 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		Name:       input.Name,
 		Email:      input.Email,
 		Activated:  false,
+		Type:       input.Type,
+		Cnpj:       input.Cnpj,
 		CreaCau:    input.CreaCau,
 		Birthdate:  input.Birthdate,
 		City:       input.City,
@@ -95,6 +99,8 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 		Name       *string    `json:"name"`
 		Email      *string    `json:"email"`
 		Password   *string    `json:"password"`
+		Type       *string    `json:"type"`
+		Cnpj       *string    `json:"cnpj"`
 		CreaCau    *string    `json:"crea_cau"`
 		Birthdate  *time.Time `json:"birthdate"`
 		City       *string    `json:"city"`
@@ -123,6 +129,14 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 			app.serverErrorResponse(w, r, err)
 			return
 		}
+	}
+
+	if input.Type != nil {
+		user.Type = *input.Type
+	}
+
+	if input.Cnpj != nil {
+		user.Cnpj = input.Cnpj
 	}
 
 	if input.CreaCau != nil {
