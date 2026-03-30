@@ -148,44 +148,8 @@ func (m OptionModel) GetByID(id uuid.UUID) (*Option, error) {
 		}
 	}
 
-	modulesQuery := `
-        SELECT id, type, outdated, relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max
-        FROM module
-        WHERE option_id = $1`
-
-	moduleRows, err := m.DB.QueryContext(ctx, modulesQuery, option.ID)
+	modules, err := getModuleConsumptionByOption(ctx, m.DB, option.ID)
 	if err != nil {
-		return nil, err
-	}
-	defer moduleRows.Close()
-
-	modules := []ModuleInfo{}
-	for moduleRows.Next() {
-		var module ModuleInfo
-		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
-		err := moduleRows.Scan(
-			&module.ID,
-			&module.Type,
-			&module.Outdated,
-			&co2Min,
-			&co2Max,
-			&energyMin,
-			&energyMax,
-		)
-		if err != nil {
-			return nil, err
-		}
-		if co2Min.Valid {
-			module.Consumption = &Consumption{
-				CO2Min:    &co2Min.Float64,
-				CO2Max:    &co2Max.Float64,
-				EnergyMin: &energyMin.Float64,
-				EnergyMax: &energyMax.Float64,
-			}
-		}
-		modules = append(modules, module)
-	}
-	if err = moduleRows.Err(); err != nil {
 		return nil, err
 	}
 	option.Modules = modules
@@ -232,45 +196,8 @@ func (m OptionModel) GetAll(unitID uuid.UUID) ([]*Option, error) {
 			return nil, err
 		}
 
-		modulesQuery := `
-            SELECT id, type, outdated, relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max
-            FROM module
-            WHERE option_id = $1`
-
-		moduleRows, err := m.DB.QueryContext(ctx, modulesQuery, option.ID)
+		modules, err := getModuleConsumptionByOption(ctx, m.DB, option.ID)
 		if err != nil {
-			return nil, err
-		}
-
-		modules := []ModuleInfo{}
-		for moduleRows.Next() {
-			var module ModuleInfo
-			var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
-			err := moduleRows.Scan(
-				&module.ID,
-				&module.Type,
-				&module.Outdated,
-				&co2Min,
-				&co2Max,
-				&energyMin,
-				&energyMax,
-			)
-			if err != nil {
-				moduleRows.Close()
-				return nil, err
-			}
-			if co2Min.Valid {
-				module.Consumption = &Consumption{
-					CO2Min:    &co2Min.Float64,
-					CO2Max:    &co2Max.Float64,
-					EnergyMin: &energyMin.Float64,
-					EnergyMax: &energyMax.Float64,
-				}
-			}
-			modules = append(modules, module)
-		}
-		moduleRows.Close()
-		if err = moduleRows.Err(); err != nil {
 			return nil, err
 		}
 		option.Modules = modules
@@ -324,45 +251,8 @@ func (m OptionModel) GetAllByRole(unitID, roleID uuid.UUID) ([]*Option, error) {
 			return nil, err
 		}
 
-		modulesQuery := `
-            SELECT id, type, outdated, relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max
-            FROM module
-            WHERE option_id = $1`
-
-		moduleRows, err := m.DB.QueryContext(ctx, modulesQuery, option.ID)
+		modules, err := getModuleConsumptionByOption(ctx, m.DB, option.ID)
 		if err != nil {
-			return nil, err
-		}
-
-		modules := []ModuleInfo{}
-		for moduleRows.Next() {
-			var module ModuleInfo
-			var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
-			err := moduleRows.Scan(
-				&module.ID,
-				&module.Type,
-				&module.Outdated,
-				&co2Min,
-				&co2Max,
-				&energyMin,
-				&energyMax,
-			)
-			if err != nil {
-				moduleRows.Close()
-				return nil, err
-			}
-			if co2Min.Valid {
-				module.Consumption = &Consumption{
-					CO2Min:    &co2Min.Float64,
-					CO2Max:    &co2Max.Float64,
-					EnergyMin: &energyMin.Float64,
-					EnergyMax: &energyMax.Float64,
-				}
-			}
-			modules = append(modules, module)
-		}
-		moduleRows.Close()
-		if err = moduleRows.Err(); err != nil {
 			return nil, err
 		}
 		option.Modules = modules

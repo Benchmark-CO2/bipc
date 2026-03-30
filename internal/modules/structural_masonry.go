@@ -219,7 +219,20 @@ func (s *StructuralMasonry) Insert(models data.Models, optionID uuid.UUID, resul
 
 	moduleToInsert := s.toDataModule(moduleID, optionID, result)
 
-	insertedModule, err := models.Modules.Insert(moduleToInsert)
+	option, err := models.Options.GetByID(optionID)
+	if err != nil {
+		return nil, err
+	}
+
+	targets, err := PrepareModuleTargetConsumptions(
+		models, moduleID, optionID, option.RoleID,
+		result, s.FloorIDs, nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	insertedModule, err := models.Modules.Insert(moduleToInsert, targets)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +254,21 @@ func (s *StructuralMasonry) Get(models data.Models, moduleID uuid.UUID) (Module,
 
 func (s *StructuralMasonry) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
 	module := s.toDataModule(moduleID, optionID, result)
-	return models.Modules.Update(module)
+
+	option, err := models.Options.GetByID(optionID)
+	if err != nil {
+		return err
+	}
+
+	targets, err := PrepareModuleTargetConsumptions(
+		models, moduleID, optionID, option.RoleID,
+		result, s.FloorIDs, nil,
+	)
+	if err != nil {
+		return err
+	}
+
+	return models.Modules.Update(module, targets)
 }
 
 func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {

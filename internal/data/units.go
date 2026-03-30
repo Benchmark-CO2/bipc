@@ -203,16 +203,50 @@ func (m UnitModel) GetByID(id uuid.UUID) (*Unit, error) {
 	return &unit, nil
 }
 
+func (m UnitModel) GetFloorArea(floorID uuid.UUID) (float64, error) {
+	query := `SELECT area FROM floor WHERE id = $1`
+	
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	
+	var area float64
+	err := m.DB.QueryRowContext(ctx, query, floorID).Scan(&area)
+	if err != nil {
+		return 0, err
+	}
+	
+	return area, nil
+}
+
+func (m UnitModel) GetUnitTotalArea(unitID uuid.UUID) (float64, error) {
+	query := `SELECT COALESCE(SUM(area), 0) FROM floor WHERE unit_id = $1`
+	
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	
+	var totalArea float64
+	err := m.DB.QueryRowContext(ctx, query, unitID).Scan(&totalArea)
+	if err != nil {
+		return 0, err
+	}
+	
+	return totalArea, nil
+}
+
 func (m UnitModel) getFloorsByUnitID(unitID uuid.UUID) ([]Floor, error) {
 	query := `
 		SELECT f.id, f.unit_id, f.floor_group, f.category, f.area, f.height, f.index,
 		       ftm.technology, ftm.co2_min, ftm.co2_max, ftm.energy_min, ftm.energy_max
 		FROM floor f
 		LEFT JOIN (
-			SELECT fc.floor_id, fc.technology, fc.co2_min, fc.co2_max, fc.energy_min, fc.energy_max
-			FROM element_consumption fc
-			INNER JOIN options opt ON fc.option_id = opt.id AND fc.role_id = opt.role_id
-			WHERE opt.active = TRUE
+			SELECT mtc.target_id as floor_id, m.type as technology, 
+			       SUM(mtc.co2_min) as co2_min, SUM(mtc.co2_max) as co2_max, 
+			       SUM(mtc.energy_min) as energy_min, SUM(mtc.energy_max) as energy_max
+			FROM module_target_consumption mtc
+			INNER JOIN module m ON mtc.module_id = m.id
+			INNER JOIN options opt ON mtc.option_id = opt.id AND mtc.role_id = opt.role_id
+			WHERE mtc.target_type = 'floor' AND opt.active = TRUE
+			GROUP BY mtc.target_id, m.type
 		) ftm ON f.id = ftm.floor_id
 		WHERE f.unit_id = $1
 		ORDER BY f.index`

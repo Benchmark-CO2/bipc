@@ -123,7 +123,14 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"unit": unit}, nil)
+	// Fetch the complete unit with floors
+	completeUnit, err := app.models.Units.GetByID(unitID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"unit": completeUnit}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

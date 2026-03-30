@@ -75,7 +75,20 @@ func (w *ConcreteWall) Insert(models data.Models, optionID uuid.UUID, result Con
 
 	moduleToInsert := w.toDataModule(moduleID, optionID, result)
 
-	insertedModule, err := models.Modules.Insert(moduleToInsert)
+	option, err := models.Options.GetByID(optionID)
+	if err != nil {
+		return nil, err
+	}
+
+	targets, err := PrepareModuleTargetConsumptions(
+		models, moduleID, optionID, option.RoleID,
+		result, w.FloorIDs, nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	insertedModule, err := models.Modules.Insert(moduleToInsert, targets)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +110,21 @@ func (w *ConcreteWall) Get(models data.Models, moduleID uuid.UUID) (Module, erro
 
 func (w *ConcreteWall) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
 	module := w.toDataModule(moduleID, optionID, result)
-	return models.Modules.Update(module)
+
+	option, err := models.Options.GetByID(optionID)
+	if err != nil {
+		return err
+	}
+
+	targets, err := PrepareModuleTargetConsumptions(
+		models, moduleID, optionID, option.RoleID,
+		result, w.FloorIDs, nil,
+	)
+	if err != nil {
+		return err
+	}
+
+	return models.Modules.Update(module, targets)
 }
 
 func (w *ConcreteWall) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {

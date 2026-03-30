@@ -82,7 +82,34 @@ func (app *application) duplicateModule(
 		UnitID:            unitID,
 	}
 
-	return app.models.Modules.Insert(duplicatedModule)
+	option, err := app.models.Options.GetByID(newOptionID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert module totals to Consumption type
+	result := modules.Consumption{
+		CO2Min:    *originalModule.TotalCO2Min,
+		CO2Max:    *originalModule.TotalCO2Max,
+		EnergyMin: *originalModule.TotalEnergyMin,
+		EnergyMax: *originalModule.TotalEnergyMax,
+	}
+
+	// Use centralized function to prepare targets with area calculations
+	targets, err := modules.PrepareModuleTargetConsumptions(
+		app.models,
+		newModuleID,
+		newOptionID,
+		option.RoleID,
+		result,
+		floorIDs,
+		unitID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return app.models.Modules.Insert(duplicatedModule, targets)
 }
 
 func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Request) {

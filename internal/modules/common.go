@@ -406,3 +406,67 @@ func extractIntPointer(data map[string]interface{}, key string) *int {
 	}
 	return nil
 }
+
+// PrepareModuleTargetConsumptions creates target consumption records for floors and/or unit.
+// It retrieves areas from the database and calculates consumption per m².
+func PrepareModuleTargetConsumptions(
+	models data.Models,
+	moduleID, optionID, roleID uuid.UUID,
+	result Consumption,
+	floorIDs []uuid.UUID,
+	unitID *uuid.UUID,
+) ([]data.ModuleTargetConsumption, error) {
+	targets := make([]data.ModuleTargetConsumption, 0)
+
+	if len(floorIDs) > 0 {
+		for _, floorID := range floorIDs {
+			area, err := models.Units.GetFloorArea(floorID)
+			if err != nil {
+				return nil, err
+			}
+			if area == 0 {
+				return nil, fmt.Errorf("floor %s has zero area", floorID)
+			}
+
+			targets = append(targets, data.ModuleTargetConsumption{
+				ModuleID:   moduleID,
+				TargetID:   floorID,
+				TargetType: "floor",
+				RoleID:     roleID,
+				OptionID:   optionID,
+				CO2Min:     result.CO2Min / area,
+				CO2Max:     result.CO2Max / area,
+				EnergyMin:  result.EnergyMin / area,
+				EnergyMax:  result.EnergyMax / area,
+			})
+		}
+	}
+
+	if unitID != nil {
+		totalArea, err := models.Units.GetUnitTotalArea(*unitID)
+		if err != nil {
+			return nil, err
+		}
+		if totalArea == 0 {
+			return nil, fmt.Errorf("unit %s has zero total area", *unitID)
+		}
+
+		targets = append(targets, data.ModuleTargetConsumption{
+			ModuleID:   moduleID,
+			TargetID:   *unitID,
+			TargetType: "unit",
+			RoleID:     roleID,
+			OptionID:   optionID,
+			CO2Min:     result.CO2Min / totalArea,
+			CO2Max:     result.CO2Max / totalArea,
+			EnergyMin:  result.EnergyMin / totalArea,
+			EnergyMax:  result.EnergyMax / totalArea,
+		})
+	}
+
+	if len(targets) == 0 {
+		return nil, errors.New("no valid targets provided")
+	}
+
+	return targets, nil
+}
