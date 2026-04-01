@@ -66,7 +66,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 	v := validator.New()
 
-	if data.ValidateUser(v, user); !v.Valid() {
+	if data.ValidateUser(v, user, false); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
@@ -203,7 +203,7 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 
 	v := validator.New()
 
-	if data.ValidateUser(v, user); !v.Valid() {
+	if data.ValidateUser(v, user, true); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
