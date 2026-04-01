@@ -24,19 +24,24 @@ var (
 var AnonymousUser = &User{}
 
 type User struct {
-	ID         uuid.UUID  `json:"id"`
-	CreatedAt  time.Time  `json:"created_at"`
-	Name       string     `json:"name"`
-	Email      string     `json:"email"`
-	Password   password   `json:"-"`
-	Activated  bool       `json:"activated"`
-	Type       string     `json:"type"`
-	Cnpj       *string    `json:"cnpj,omitzero"`
-	CreaCau    *string    `json:"crea_cau,omitzero"`
-	Birthdate  *time.Time `json:"birthdate,omitzero"`
-	City       *string    `json:"city,omitzero"`
-	Activity   *string    `json:"activity,omitzero"`
-	Enterprise *string    `json:"enterprise,omitzero"`
+	ID           uuid.UUID  `json:"id"`
+	CreatedAt    time.Time  `json:"created_at"`
+	Name         string     `json:"name"`
+	Email        string     `json:"email"`
+	Password     password   `json:"-"`
+	Activated    bool       `json:"activated"`
+	Type         string     `json:"type"`
+	Cnpj         *string    `json:"cnpj,omitzero"`
+	CreaCau      *string    `json:"crea_cau,omitzero"`
+	Birthdate    *time.Time `json:"birthdate,omitzero"`
+	City         *string    `json:"city,omitzero"`
+	Activity     *string    `json:"activity,omitzero"`
+	Enterprise   *string    `json:"enterprise,omitzero"`
+	Cep          *string    `json:"cep,omitzero"`
+	State        *string    `json:"state,omitzero"`
+	Neighborhood *string    `json:"neighborhood,omitzero"`
+	Street       *string    `json:"street,omitzero"`
+	Number       *string    `json:"number,omitzero"`
 }
 
 func (u *User) IsAnonymous() bool {
@@ -95,6 +100,30 @@ func ValidateUser(v *validator.Validator, user *User) {
 		v.Check(*user.Enterprise != "", "enterprise", "must not be empty if provided")
 		v.Check(len(*user.Enterprise) <= 100, "enterprise", "must not be more than 100 bytes long")
 	}
+
+	if user.Cep != nil {
+		v.Check(validator.Matches(*user.Cep, validator.CEPRX), "cep", "must be a valid CEP")
+	}
+
+	if user.State != nil {
+		v.Check(len(*user.State) == 2, "state", "must be a valid state code (2 characters)")
+		v.Check(validator.PermittedValue(*user.State, states...), "state", fmt.Sprintf("must be a valid state code (allowed: %s)", strings.Join(states, ", ")))
+	}
+
+	if user.Neighborhood != nil {
+		v.Check(*user.Neighborhood != "", "neighborhood", "must not be empty if provided")
+		v.Check(len(*user.Neighborhood) <= 100, "neighborhood", "must not be more than 100 bytes long")
+	}
+
+	if user.Street != nil {
+		v.Check(*user.Street != "", "street", "must not be empty if provided")
+		v.Check(len(*user.Street) <= 100, "street", "must not be more than 100 bytes long")
+	}
+
+	if user.Number != nil {
+		v.Check(*user.Number != "", "number", "must not be empty if provided")
+		v.Check(len(*user.Number) <= 20, "number", "must not be more than 20 bytes long")
+	}
 }
 
 type password struct {
@@ -141,11 +170,11 @@ func (m UserModel) Insert(user *User) error {
 	user.ID = userID
 
 	query := `
-        INSERT INTO users (id, name, email, password_hash, activated, type, cnpj, crea_cau, birthdate, city, activity, enterprise)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        INSERT INTO users (id, name, email, password_hash, activated, type, cnpj, crea_cau, birthdate, city, activity, enterprise, cep, state, neighborhood, street, number)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
         RETURNING created_at`
 
-	args := []any{user.ID, user.Name, user.Email, user.Password.hash, user.Activated, user.Type, user.Cnpj, user.CreaCau, user.Birthdate, user.City, user.Activity, user.Enterprise}
+	args := []any{user.ID, user.Name, user.Email, user.Password.hash, user.Activated, user.Type, user.Cnpj, user.CreaCau, user.Birthdate, user.City, user.Activity, user.Enterprise, user.Cep, user.State, user.Neighborhood, user.Street, user.Number}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -165,7 +194,7 @@ func (m UserModel) Insert(user *User) error {
 
 func (m UserModel) GetByEmail(email string) (*User, error) {
 	query := `
-        SELECT id, created_at, name, email, password_hash, activated, type, cnpj, crea_cau, birthdate, city, activity, enterprise
+        SELECT id, created_at, name, email, password_hash, activated, type, cnpj, crea_cau, birthdate, city, activity, enterprise, cep, state, neighborhood, street, number
         FROM users
         WHERE email = $1`
 
@@ -188,6 +217,11 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 		&user.City,
 		&user.Activity,
 		&user.Enterprise,
+		&user.Cep,
+		&user.State,
+		&user.Neighborhood,
+		&user.Street,
+		&user.Number,
 	)
 
 	if err != nil {
@@ -205,8 +239,8 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 func (m UserModel) Update(user *User) error {
 	query := `
         UPDATE users
-        SET name = $1, email = $2, password_hash = $3, activated = $4, type = $5, cnpj = $6, crea_cau = $7, birthdate = $8, city = $9, activity = $10, enterprise = $11
-        WHERE id = $12`
+        SET name = $1, email = $2, password_hash = $3, activated = $4, type = $5, cnpj = $6, crea_cau = $7, birthdate = $8, city = $9, activity = $10, enterprise = $11, cep = $12, state = $13, neighborhood = $14, street = $15, number = $16
+        WHERE id = $17`
 
 	args := []any{
 		user.Name,
@@ -220,6 +254,11 @@ func (m UserModel) Update(user *User) error {
 		user.City,
 		user.Activity,
 		user.Enterprise,
+		user.Cep,
+		user.State,
+		user.Neighborhood,
+		user.Street,
+		user.Number,
 		user.ID,
 	}
 
@@ -252,7 +291,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
 
 	query := `
-        SELECT u.id, u.created_at, u.name, u.email, u.password_hash, u.activated, u.type, u.cnpj, u.crea_cau, u.birthdate, u.city, u.activity, u.enterprise
+        SELECT u.id, u.created_at, u.name, u.email, u.password_hash, u.activated, u.type, u.cnpj, u.crea_cau, u.birthdate, u.city, u.activity, u.enterprise, u.cep, u.state, u.neighborhood, u.street, u.number
         FROM users u
         INNER JOIN tokens t ON u.id = t.user_id
         WHERE t.hash = $1
@@ -280,6 +319,11 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 		&user.City,
 		&user.Activity,
 		&user.Enterprise,
+		&user.Cep,
+		&user.State,
+		&user.Neighborhood,
+		&user.Street,
+		&user.Number,
 	)
 	if err != nil {
 		switch {
@@ -295,7 +339,7 @@ func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error)
 
 func (m UserModel) Collaborators(userID uuid.UUID) ([]*User, error) {
 	query := `
-		SELECT u.id, u.created_at, u.name, u.email, u.activated, u.type, u.cnpj, u.crea_cau, u.birthdate, u.city, u.activity, u.enterprise
+		SELECT u.id, u.created_at, u.name, u.email, u.activated, u.type, u.cnpj, u.crea_cau, u.birthdate, u.city, u.activity, u.enterprise, u.cep, u.state, u.neighborhood, u.street, u.number
 		FROM users u
 		JOIN users_projects up1 ON u.id = up1.user_id
 		JOIN users_projects up2 ON up1.project_id = up2.project_id
@@ -330,6 +374,11 @@ func (m UserModel) Collaborators(userID uuid.UUID) ([]*User, error) {
 			&user.City,
 			&user.Activity,
 			&user.Enterprise,
+			&user.Cep,
+			&user.State,
+			&user.Neighborhood,
+			&user.Street,
+			&user.Number,
 		)
 		if err != nil {
 			return nil, err

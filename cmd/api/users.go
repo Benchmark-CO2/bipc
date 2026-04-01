@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
@@ -11,16 +12,21 @@ import (
 
 func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Name       string     `json:"name"`
-		Email      string     `json:"email"`
-		Password   string     `json:"password"`
-		Type       string     `json:"type"`
-		Cnpj       *string    `json:"cnpj"`
-		CreaCau    *string    `json:"crea_cau"`
-		Birthdate  *time.Time `json:"birthdate"`
-		City       *string    `json:"city"`
-		Activity   *string    `json:"activity"`
-		Enterprise *string    `json:"enterprise"`
+		Name         string     `json:"name"`
+		Email        string     `json:"email"`
+		Password     string     `json:"password"`
+		Type         string     `json:"type"`
+		Cnpj         *string    `json:"cnpj"`
+		CreaCau      *string    `json:"crea_cau"`
+		Birthdate    *time.Time `json:"birthdate"`
+		City         *string    `json:"city"`
+		Activity     *string    `json:"activity"`
+		Enterprise   *string    `json:"enterprise"`
+		Cep          *string    `json:"cep"`
+		State        *string    `json:"state"`
+		Neighborhood *string    `json:"neighborhood"`
+		Street       *string    `json:"street"`
+		Number       *string    `json:"number"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -30,16 +36,26 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	user := &data.User{
-		Name:       input.Name,
-		Email:      input.Email,
-		Activated:  false,
-		Type:       input.Type,
-		Cnpj:       input.Cnpj,
-		CreaCau:    input.CreaCau,
-		Birthdate:  input.Birthdate,
-		City:       input.City,
-		Activity:   input.Activity,
-		Enterprise: input.Enterprise,
+		Name:         input.Name,
+		Email:        input.Email,
+		Activated:    false,
+		Type:         input.Type,
+		Cnpj:         input.Cnpj,
+		CreaCau:      input.CreaCau,
+		Birthdate:    input.Birthdate,
+		City:         input.City,
+		Activity:     input.Activity,
+		Enterprise:   input.Enterprise,
+		Cep:          input.Cep,
+		State:        input.State,
+		Neighborhood: input.Neighborhood,
+		Street:       input.Street,
+		Number:       input.Number,
+	}
+
+	if input.State != nil {
+		state := strings.ToUpper(*input.State)
+		user.State = &state
 	}
 
 	err = user.Password.Set(input.Password)
@@ -96,16 +112,21 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 	user := app.contextGetUser(r)
 
 	var input struct {
-		Name       *string    `json:"name"`
-		Email      *string    `json:"email"`
-		Password   *string    `json:"password"`
-		Type       *string    `json:"type"`
-		Cnpj       *string    `json:"cnpj"`
-		CreaCau    *string    `json:"crea_cau"`
-		Birthdate  *time.Time `json:"birthdate"`
-		City       *string    `json:"city"`
-		Activity   *string    `json:"activity"`
-		Enterprise *string    `json:"enterprise"`
+		Name         *string    `json:"name"`
+		Email        *string    `json:"email"`
+		Password     *string    `json:"password"`
+		Type         *string    `json:"type"`
+		Cnpj         *string    `json:"cnpj"`
+		CreaCau      *string    `json:"crea_cau"`
+		Birthdate    *time.Time `json:"birthdate"`
+		City         *string    `json:"city"`
+		Activity     *string    `json:"activity"`
+		Enterprise   *string    `json:"enterprise"`
+		Cep          *string    `json:"cep"`
+		State        *string    `json:"state"`
+		Neighborhood *string    `json:"neighborhood"`
+		Street       *string    `json:"street"`
+		Number       *string    `json:"number"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -157,6 +178,27 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 
 	if input.Enterprise != nil {
 		user.Enterprise = input.Enterprise
+	}
+
+	if input.Cep != nil {
+		user.Cep = input.Cep
+	}
+
+	if input.State != nil {
+		state := strings.ToUpper(*input.State)
+		user.State = &state
+	}
+
+	if input.Neighborhood != nil {
+		user.Neighborhood = input.Neighborhood
+	}
+
+	if input.Street != nil {
+		user.Street = input.Street
+	}
+
+	if input.Number != nil {
+		user.Number = input.Number
 	}
 
 	v := validator.New()
