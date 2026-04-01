@@ -10,14 +10,22 @@ import { Link } from "@tanstack/react-router";
 import {
   BarChart3,
   Bell,
-  File,
+  CircleHelp,
+  ClipboardList,
+  FileText,
+  Fingerprint,
+  FolderGit,
   GlobeLock,
-  Info,
   LogIn,
   Menu,
+  MonitorPlay,
+  Newspaper,
+  Phone,
+  Rss,
   Settings,
   UserPlus,
-  BookLock,
+  List,
+  Building2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -25,12 +33,27 @@ import { Notifications } from "../notifications";
 import { Button } from "../ui/button";
 import { CustomLink } from "../ui/custom-link";
 import Divider from "../ui/divider";
-import SidemenuItem from "../ui/sidemenu-item";
 import ExpandContentIcon from "@/assets/icons/expand-content";
 import CollapseContentIcon from "@/assets/icons/collapse-content";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { BetaWarning } from "../beta-warning";
 import ModalTraining from "./modal-training";
+import { SidebarHoverPopover, type PopoverItem } from "./sidebar-hover-popover";
+
+const saibaMaisItems: PopoverItem[] = [
+  { label: "Perguntas frequentes", icon: CircleHelp, linkKey: "faq" },
+  { label: "Glossário", icon: FileText, linkKey: "glossary" },
+  { label: "BIPc na mídia", icon: MonitorPlay, linkKey: "media" },
+  { label: "Lançamento", icon: Newspaper, linkKey: "launch" },
+  { label: "Repositório", icon: FolderGit, linkKey: "repository" },
+  { label: "Contato", icon: Phone, linkKey: "contact" },
+];
+
+const transparenciaItems: PopoverItem[] = [
+  { label: "Privacidade dos dados", icon: Fingerprint, linkKey: "privacy" },
+  { label: "Termos de uso", icon: ClipboardList, linkKey: "termsOfUse" },
+  { label: "Formulário de dados", icon: List, linkKey: "dataForm" },
+];
 
 interface ISidebar {
   handleLogout?: () => void;
@@ -134,13 +157,27 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               linkKey="about"
               className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
             >
-              <Info size={18} className="text-white" />
+              <BipcIcon size={18} className="text-white" />
             </CustomLink>
           </TooltipTrigger>
           <TooltipContent side="right">
             <p>Sobre o BIPc</p>
           </TooltipContent>
         </Tooltip>
+
+        <SidebarHoverPopover
+          triggerClassName="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
+          trigger={<Rss size={18} className="text-white" />}
+          items={saibaMaisItems}
+        />
+
+        <SidebarHoverPopover
+          triggerClassName="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
+          trigger={<GlobeLock size={18} className="text-white" />}
+          items={transparenciaItems}
+        />
+
+        <div className="h-px bg-zinc-700/50 my-2" />
 
         <Tooltip>
           <TooltipTrigger asChild>
@@ -157,34 +194,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           </TooltipContent>
         </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <CustomLink
-              linkKey="privacy"
-              className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
-            >
-              <GlobeLock size={18} className="text-white" />
-            </CustomLink>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            <p>Políticas de Privacidade</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <CustomLink
-              linkKey="faq"
-              className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
-            >
-              <BookLock size={18} className="text-white" />
-            </CustomLink>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            <p>Licenciamento e melhorias</p>
-          </TooltipContent>
-        </Tooltip>
-
         <div className="h-px bg-zinc-700/50 my-2" />
 
         {isAuthenticated ? (
@@ -196,7 +205,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                   activeProps={{ className: "bg-zinc-700/30" }}
                   className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
                 >
-                  <File size={18} className="text-white" />
+                  <Building2 size={18} className="text-white" />
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">
@@ -328,10 +337,42 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
               onClick={handleMobileNavigation}
             >
-              <Info size={18} />
+              <BipcIcon size={18} />
               <span>Sobre o BIPc</span>
             </CustomLink>
           </li>
+
+          <li>
+            <SidebarHoverPopover
+              triggerClassName="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+              trigger={
+                <>
+                  <Rss size={18} />
+                  <span>Saiba mais</span>
+                </>
+              }
+              items={saibaMaisItems}
+              onItemClick={handleMobileNavigation}
+              isMobile={isMobile}
+            />
+          </li>
+
+          <li>
+            <SidebarHoverPopover
+              triggerClassName="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
+              trigger={
+                <>
+                  <GlobeLock size={18} />
+                  <span>Transparência</span>
+                </>
+              }
+              items={transparenciaItems}
+              onItemClick={handleMobileNavigation}
+              isMobile={isMobile}
+            />
+          </li>
+
+          <Divider className="my-4 h-[1px]" />
 
           <li>
             <Link
@@ -344,28 +385,8 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               <span>Benchmark</span>
             </Link>
           </li>
-          <li>
-            <CustomLink
-              linkKey="privacy"
-              className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-              onClick={handleMobileNavigation}
-            >
-              <GlobeLock size={18} />
-              <span>Políticas de Privacidade</span>
-            </CustomLink>
-          </li>
-          <li>
-            <CustomLink
-              linkKey="faq"
-              className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
-              onClick={handleMobileNavigation}
-            >
-              <BookLock size={18} />
-              <span>Licenciamento e melhorias</span>
-            </CustomLink>
-          </li>
 
-          <Divider className="my-4" />
+          <Divider className="my-4 h-[1px]" />
 
           {/* Seção específica para usuários logados */}
           {isAuthenticated ? (
@@ -378,14 +399,14 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                   activeProps={activeProps}
                   className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
                 >
-                  <File size={18} />
+                  <Building2 size={18} />
                   <span>Empreendimentos</span>
                 </Link>
               </li>
 
               <li>
                 <Link
-                  to={"/settings"}
+                  to="/settings"
                   onClick={handleMobileNavigation}
                   activeProps={activeProps}
                   className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
@@ -411,7 +432,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           ) : (
             <>
               {/* Seção para usuários não logados */}
-              {/* Cadastre-se */}
               <li>
                 <Link
                   to="/sign-up"
@@ -424,7 +444,6 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 </Link>
               </li>
 
-              {/* Login */}
               <li>
                 <Link
                   to="/login"

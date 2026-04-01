@@ -52,7 +52,7 @@ export function Tabs({
           className={`relative inline-flex items-center justify-center whitespace-nowrap px-6 py-3 text-sm transition-all duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-active focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 max-w-[200px] overflow-hidden text-ellipsis ${
             selectedTab === tab
               ? "text-active font-bold"
-              : "cursor-pointer text-gray-shade-500 font-normal hover:text-active"
+              : "cursor-pointer text-gray-shade-500 font-normal hover:text-active/80 dark:text-accent-foreground/80 dark:hover:text-active/80"
           }`}
         >
           {tab}
