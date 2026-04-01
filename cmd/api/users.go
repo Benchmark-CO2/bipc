@@ -111,11 +111,11 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 	user := app.contextGetUser(r)
 
+	// dont allow users to update their type, as this could lead to security issues
 	var input struct {
 		Name         *string    `json:"name"`
 		Email        *string    `json:"email"`
 		Password     *string    `json:"password"`
-		Type         *string    `json:"type"`
 		Cnpj         *string    `json:"cnpj"`
 		CreaCau      *string    `json:"crea_cau"`
 		Birthdate    *time.Time `json:"birthdate"`
@@ -150,10 +150,6 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 			app.serverErrorResponse(w, r, err)
 			return
 		}
-	}
-
-	if input.Type != nil {
-		user.Type = *input.Type
 	}
 
 	if input.Cnpj != nil {
