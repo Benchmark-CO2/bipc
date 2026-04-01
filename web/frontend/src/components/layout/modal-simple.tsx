@@ -64,7 +64,7 @@ const ModalSimple = ({
           </Button>
           {onConfirm && (
             <Button
-              variant="default"
+              variant="bipc"
               onClick={onConfirmAction}
               disabled={disableConfirm}
             >

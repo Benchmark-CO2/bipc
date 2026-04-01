@@ -43,7 +43,7 @@ function RouteComponent() {
 
   const { data: benchmarkData } = useQuery({
     queryKey: ["projects-benchmarks"],
-    queryFn: getProjectsBenchmark,
+    queryFn: () => getProjectsBenchmark({}),
   });
 
   const toggleViewMode = () => {
@@ -132,7 +132,7 @@ function RouteComponent() {
   return (
     <div>
       <div className="mb-6 mt-6 flex justify-between gap-1 flex-wrap">
-        <h1 className='text-4xl font-bold font-["helvetica"] text-primary '>
+        <h1 className="text-4xl font-semibold text-primary dark:text-accent-foreground">
           Empreendimentos
         </h1>
         <div className="flex justify-end gap-2 ml-auto">

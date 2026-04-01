@@ -59,16 +59,6 @@ const CustomCard = ({
     handleSelectProject(project.id!, !selectedProjects.get(project.id!));
   };
 
-  const handleEditClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    editButtonRef.current?.click();
-  };
-
-  const handleDeleteClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    deleteButtonRef.current?.click();
-  };
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -87,7 +77,7 @@ const CustomCard = ({
     <>
       <div
         onClick={handleClickCard}
-        className="card w-full relative md:max-w-md overflow-hidden rounded-lg border border-secondary bg-transparent transition-all duration-300 hover:cursor-pointer hover:shadow-md hover:border-secondary/80 dark:border-zinc-500 "
+        className="card w-full relative md:max-w-md overflow-hidden rounded-lg border border-secondary bg-transparent transition-all duration-300 hover:cursor-pointer hover:shadow-md hover:border-secondary/80 dark:border-zinc-500 dark:hover:border-zinc-400"
       >
         <div className="w-full h-full p-4">
           {/* Header with checkbox and name */}
@@ -96,9 +86,9 @@ const CustomCard = ({
               data-action="checkbox"
               onClick={handleClickCheck}
               checked={selectedProjects?.get(project.id!) || false}
-              className="data-[state=checked]:bg-secondary data-[state=checked]:border-secondary scale-110 transition-all flex-shrink-0 dark:data-[state=checked]:bg-primary dark:border-primary dark:data-[state=checked]:text-white max-sm:scale-120"
+              className="data-[state=checked]:bg-secondary data-[state=checked]:border-secondary scale-110 transition-all flex-shrink-0 dark:data-[state=checked]:bg-primary dark:border-zinc-500 dark:data-[state=checked]:text-white max-sm:scale-120"
             />
-            <h3 className="text-lg font-semibold text-primary line-clamp-1 flex-1">
+            <h3 className="text-lg font-semibold text-primary line-clamp-1 flex-1 dark:text-accent-foreground">
               {name}
             </h3>
           </div>

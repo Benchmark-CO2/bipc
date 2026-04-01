@@ -20,7 +20,7 @@ import { Checkbox } from "../ui/checkbox";
 import { Button } from "../ui/button";
 import { ChevronDown } from "lucide-react";
 import NotFoundList from "../ui/not-found-list";
-import { unitsOfMeasure } from '@/utils/unitsOfMeasure';
+import { cn } from "@/lib/utils";
 
 interface ICommonTableProps {
   tableName: string | React.ReactNode;
@@ -129,8 +129,8 @@ export default function CommonTable({
               <TableHeader
                 className={
                   isInteractive
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-gray-shade-300 dark:bg-gray-800 text-primary"
+                    ? "bg-primary text-primary-foreground dark:bg-dark-950 dark:text-accent-foreground"
+                    : "bg-gray-shade-300 dark:bg-accent/80 text-primary dark:text-accent-foreground"
                 }
               >
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -178,7 +178,7 @@ export default function CommonTable({
                       <TableHead key={header.id} className="text-inherit">
                         {flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )}
                       </TableHead>
                     ))}
@@ -190,14 +190,13 @@ export default function CommonTable({
                   <TableRow
                     data-action="open-module"
                     key={row.id}
-                    className={
-                      isInteractive
-                        ? "hover:cursor-pointer hover:bg-dark-100 dark:hover:bg-dark-950"
-                        : ""
-                    }
-                    style={{
-                      backgroundColor: index % 2 === 0 ? "#E3F3F6" : "#FBFEFE",
-                    }}
+                    className={cn(
+                      index % 2 === 0
+                        ? "bg-[#E3F3F6] dark:bg-white/[0.03]"
+                        : "bg-[#FBFEFE] dark:bg-transparent",
+                      isInteractive &&
+                        "hover:cursor-pointer hover:bg-dark-100 dark:hover:bg-white/[0.08]",
+                    )}
                     data-state={row.getIsSelected() && "selected"}
                     onClick={() => onClickRow && onClickRow(row.original)}
                   >
@@ -229,14 +228,14 @@ export default function CommonTable({
                       <TableCell key={cell.id}>
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </TableCell>
                     ))}
                   </TableRow>
                 ))}
                 {lastRow && (
-                  <TableRow className="bg-gray-shade-300 hover:bg-gray-shade-300/30 font-semibold">
+                  <TableRow className="bg-gray-shade-300 dark:bg-accent/80 hover:bg-gray-shade-300/30 dark:hover:bg-dark-950/80 font-semibold">
                     {isSelectable && <TableCell></TableCell>}
                     <TableCell className="font-semibold text-left">
                       {lastRow.type}
