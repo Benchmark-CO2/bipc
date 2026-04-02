@@ -1,10 +1,20 @@
 {{define "subject"}}Activate your BIPC account{{ end }}
 
 {{define "plainBody"}}
-Hi, 
-Access this link {{.url}}/activate?tkn={{.activationToken}} to activate your account.
-Please note that this is a one-time use token and it will expire in 3 days.
-Thanks, The BIPC Team
+Olá,
+
+Bem-vindo(a) ao BIPc!
+
+Para concluir seu cadastro e ativar sua conta, acesse o link abaixo:
+
+{{.url}}/activate?tkn={{.activationToken}}
+
+Este link de ativação é de uso único e expirará em 3 dias.
+
+Se você não solicitou a criação desta conta, pode ignorar este e-mail com segurança.
+
+Atenciosamente,
+Equipe BIPc
 {{ end }}
 
 {{define "htmlBody"}}
@@ -15,14 +25,27 @@ Thanks, The BIPC Team
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   </head>
   <body>
-    <p>Hi,</p>
-    <p>Access <a href="{{.url}}/activate?tkn={{.activationToken}}">this link</a> to activate your account.</p>
     <p>
-      Please note that this is a one-time use token and it will expire in 3 days.
+      Olá,
     </p>
     <p>
-      Thanks,<br />
-      The BIPC Team
+      Bem-vindo(a) ao BIPc!
+    </p>
+    <p>
+      Para concluir seu cadastro e ativar sua conta, acesse o link abaixo:
+    </p>
+    <p>
+      <a href="{{.url}}/activate?tkn={{.activationToken}}">Clique aqui para ativar sua conta</a>
+    </p>
+    <p>
+      Este link de ativação é de uso único e expirará em 3 dias.
+    </p>
+    <p>
+      Se você não solicitou a criação desta conta, pode ignorar este e-mail com segurança.
+    </p>
+    <p>
+      Atenciosamente,<br />
+      Equipe BIPc
     </p>
   </body>
 </html>
