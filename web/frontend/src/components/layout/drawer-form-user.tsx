@@ -209,8 +209,7 @@ export default function DrawerFormUser({
     if (data.city && data.city.trim() !== "") updateData.city = data.city;
 
     // Address fields
-    if (data.cep && data.cep.trim() !== "")
-      updateData.cep = data.cep.replace(/\D/g, "");
+    if (data.cep && data.cep.trim() !== "") updateData.cep = data.cep;
     if (data.state && data.state.trim() !== "") updateData.state = data.state;
     if (data.neighborhood && data.neighborhood.trim() !== "")
       updateData.neighborhood = data.neighborhood;

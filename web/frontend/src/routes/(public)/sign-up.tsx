@@ -162,7 +162,7 @@ const SignUp = () => {
       ...(city && city.trim() !== "" && { city }),
       ...(activity && activity.trim() !== "" && { activity }),
       ...(enterprise && enterprise.trim() !== "" && { enterprise }),
-      ...(cep && cep.trim() !== "" && { cep: cep.replace(/\D/g, "") }),
+      ...(cep && cep.trim() !== "" && { cep }),
       ...(state && state.trim() !== "" && { state }),
       ...(neighborhood && neighborhood.trim() !== "" && { neighborhood }),
       ...(street && street.trim() !== "" && { street }),
