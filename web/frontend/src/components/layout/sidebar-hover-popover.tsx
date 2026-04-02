@@ -45,25 +45,33 @@ function PopoverLink({
 
   if (CUR_USAGE === "internal" && internalUrl) {
     return (
-      <Link to={internalUrl} className={className} onClick={onItemClick}>
-        <Icon size={18} />
-        <span className="text-sm">{item.label}</span>
-      </Link>
+      <li>
+        <Link to={internalUrl} className={className} onClick={onItemClick}>
+          <Icon size={18} />
+          <span className="text-sm">{item.label}</span>
+        </Link>
+      </li>
     );
   }
 
-  return (
-    <a
-      href={externalUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={className}
-      onClick={onItemClick}
-    >
-      <Icon size={18} />
-      <span className="text-sm">{item.label}</span>
-    </a>
-  );
+  if (CUR_USAGE === "external" && externalUrl) {
+    return (
+      <li>
+        <a
+          href={externalUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={className}
+          onClick={onItemClick}
+        >
+          <Icon size={18} />
+          <span className="text-sm">{item.label}</span>
+        </a>
+      </li>
+    );
+  }
+
+  return null;
 }
 
 function MobileCollapsible({
@@ -170,9 +178,11 @@ export function SidebarHoverPopover({
         />
         <ul className="flex flex-col gap-1">
           {items.map((item) => (
-            <li key={item.linkKey}>
-              <PopoverLink item={item} onItemClick={onItemClick} />
-            </li>
+            <PopoverLink
+              key={item.linkKey}
+              item={item}
+              onItemClick={onItemClick}
+            />
           ))}
         </ul>
       </PopoverContent>
