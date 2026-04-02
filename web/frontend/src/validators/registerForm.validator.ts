@@ -3,6 +3,7 @@ import { z } from "zod";
 
 export const registerFormSchema = z
   .object({
+    type: z.enum(["member", "company"]),
     name: z
       .string()
       .min(1, {
@@ -33,6 +34,7 @@ export const registerFormSchema = z
         }),
       })
       .optional(),
+    cnpj: z.string().optional(),
     crea_cau: z.string().optional(),
 
     birthdate: z
@@ -75,11 +77,16 @@ export const registerFormSchema = z
 
           return actualAge >= 18;
         },
-        { message: t("forms.minimumAge", { age: 18 }) }
+        { message: t("forms.minimumAge", { age: 18 }) },
       ),
     city: z.string().optional(),
     activity: z.string().optional(),
     enterprise: z.string().optional(),
+    cep: z.string().optional(),
+    state: z.string().optional(),
+    neighborhood: z.string().optional(),
+    street: z.string().optional(),
+    number: z.string().optional(),
     termsAccepted: z.literal(true, {
       errorMap: () => ({
         message: "Você deve aceitar os Termos de Uso para se registrar.",
