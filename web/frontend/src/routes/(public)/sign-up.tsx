@@ -719,7 +719,7 @@ const SignUp = () => {
                 )}
               />
 
-              <div className="grid grid-cols-3 gap-4 max-md:grid-cols-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="state"
@@ -761,7 +761,7 @@ const SignUp = () => {
                   control={form.control}
                   name="city"
                   render={({ field }) => (
-                    <FormItem className="col-span-2 max-md:col-span-1">
+                    <FormItem className="sm:col-span-2">
                       <FormLabel>{t("signUp.city")}</FormLabel>
                       <FormControl>
                         {filledByCep ? (
@@ -812,12 +812,12 @@ const SignUp = () => {
                 )}
               />
 
-              <div className="grid grid-cols-3 gap-4 max-md:grid-cols-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="street"
                   render={({ field }) => (
-                    <FormItem className="col-span-2 max-md:col-span-1">
+                    <FormItem className="sm:col-span-2">
                       <FormLabel>Rua</FormLabel>
                       <FormControl>
                         <Input

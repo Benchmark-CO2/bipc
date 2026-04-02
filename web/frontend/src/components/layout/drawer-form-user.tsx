@@ -364,7 +364,7 @@ export default function DrawerFormUser({
           </Button>
         </DrawerHeader>
         <Form {...form}>
-          <div className="max-h-[calc(100vh-100px)] overflow-y-auto px-8">
+          <div className="@container max-h-[calc(100vh-100px)] overflow-y-auto px-8">
             <form
               id="user-form"
               className="flex flex-col gap-3 rounded-md px-4 py-2 border-gray-shade-200 border bg-card"
@@ -696,7 +696,7 @@ export default function DrawerFormUser({
                 )}
               />
 
-              <div className="grid grid-cols-3 gap-4 max-md:grid-cols-1">
+              <div className="grid grid-cols-1 @md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="state"
@@ -740,7 +740,7 @@ export default function DrawerFormUser({
                   control={form.control}
                   name="city"
                   render={({ field }) => (
-                    <FormItem className="col-span-2 max-md:col-span-1">
+                    <FormItem className="@md:col-span-2">
                       <FormLabel>{t("signUp.city")}</FormLabel>
                       <FormControl>
                         {filledByCep ? (
@@ -793,12 +793,12 @@ export default function DrawerFormUser({
                 )}
               />
 
-              <div className="grid grid-cols-3 gap-4 max-md:grid-cols-1">
+              <div className="grid grid-cols-1 @md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="street"
                   render={({ field }) => (
-                    <FormItem className="col-span-2 max-md:col-span-1">
+                    <FormItem className="@md:col-span-2">
                       <FormLabel>Rua</FormLabel>
                       <FormControl>
                         <Input
