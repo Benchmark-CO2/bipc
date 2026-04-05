@@ -34,7 +34,7 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects", app.requireActivatedUser(app.createProjectHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects", app.requireAuthenticatedUser(app.listProjectsHandler))
-	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID", app.requireActivatedUser(app.showProjectHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID", app.requireProjectAssociation(app.showProjectHandler))
 	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID", app.requireRolesPermission("update:project", app.updateProjectHandler))
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID", app.requireRolesPermission("*:*", app.deleteProjectHandler))
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/invitations", app.requireRolesPermission("create:invite", app.inviteUserHandler))
