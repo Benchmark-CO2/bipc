@@ -360,6 +360,35 @@ func (app *application) requireRolesPermission(code string, next http.HandlerFun
 	return app.requireActivatedUser(fn)
 }
 
+func (app *application) requireProjectAssociation(next http.HandlerFunc) http.HandlerFunc {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		user := app.contextGetUser(r)
+
+		projectID, err := app.readUUIDParam(r, "projectID")
+		if err != nil {
+			v := validator.New()
+			v.AddError("url", err.Error())
+			app.failedValidationResponse(w, r, v.Errors)
+			return
+		}
+
+		isAssociated, err := app.models.Projects.IsUserInProject(user.ID, projectID)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		if !isAssociated {
+			app.notPermittedResponse(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	}
+
+	return app.requireActivatedUser(fn)
+}
+
 func (app *application) requireRoleAssociation(next http.HandlerFunc) http.HandlerFunc {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		user := app.contextGetUser(r)
