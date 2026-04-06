@@ -176,8 +176,16 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   const [hasZoomed, setHasZoomed] = useState(false);
   const transformRef = useRef({ k: 1, x: 0, y: 0 });
   const animationFrameRef = useRef<number | null>(null);
+  const initialTotalRef = useRef<number>(0);
 
-  // Inicializar o contador com o total de dados
+  // Salvar o total na primeira montagem do gráfico
+  useEffect(() => {
+    if (data.length > 0 && initialTotalRef.current === 0) {
+      initialTotalRef.current = data.length;
+    }
+  }, [data.length]);
+
+  // Inicializar o contador com o total de dados filtrados
   useEffect(() => {
     setBrushSelectionCount(data.length);
     brushSelectionCountRef.current = data.length;
@@ -913,7 +921,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
         <div className="flex max-sm:flex-col-reverse max-sm:gap-4 max-sm:mt-2">
           <span className="text-xs">
-            Exibindo: {brushSelectionCount} / {data?.length || 0}
+            Exibindo: {brushSelectionCount} de {initialTotalRef.current || data?.length || 0}
           </span>
           {isMobile && (
             <Indicators
