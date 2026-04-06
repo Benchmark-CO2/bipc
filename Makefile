@@ -169,7 +169,7 @@ audit:
 ## build/frontend: build the frontend application
 .PHONY: build/frontend
 build/frontend:
-	cd ./web/frontend && pnpm install && VITE_ENV=$(ENV) pnpm build
+	cd ./web/frontend && pnpm install && VITE_ENV=$$ENV pnpm build
 
 ## build/docs: build the documentation
 .PHONY: build/docs
