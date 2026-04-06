@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -411,6 +412,20 @@ func extractIntPointer(data map[string]interface{}, key string) *int {
 		return &intVal
 	}
 	return nil
+}
+
+func extractStringPointer(data map[string]interface{}, key string) *string {
+	val, ok := data[key].(string)
+	if !ok {
+		return nil
+	}
+
+	trimmed := strings.TrimSpace(val)
+	if trimmed == "" {
+		return nil
+	}
+
+	return &trimmed
 }
 
 // PrepareModuleTargetConsumptions creates target consumption records for floors and/or unit.

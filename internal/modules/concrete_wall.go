@@ -12,6 +12,7 @@ type ConcreteWall struct {
 	Consumption   *Consumption    `json:"consumption,omitempty"`
 	ConcreteWalls ConcreteElement `json:"concrete_walls"`
 	ConcreteSlabs ConcreteElement `json:"concrete_slabs"`
+	SlabType      *string         `json:"slab_type,omitempty"`
 
 	WallThickness *float64 `json:"wall_thickness,omitempty"`
 	SlabThickness *float64 `json:"slab_thickness,omitempty"`
@@ -32,6 +33,7 @@ func (w *ConcreteWall) Validate(v *validator.Validator) {
 
 	validateConcreteElement(v, w.ConcreteWalls, "concrete_walls")
 	validateConcreteElement(v, w.ConcreteSlabs, "concrete_slabs")
+	validateSlabType(v, w.SlabType)
 
 	if w.WallThickness != nil {
 		v.Check(*w.WallThickness >= 0, "wall_thickness", "cannot be negative")
@@ -131,6 +133,7 @@ func (w *ConcreteWall) toDataModule(moduleID, optionID uuid.UUID, result Consump
 	moduleData := map[string]interface{}{
 		"concrete_walls": w.ConcreteWalls,
 		"concrete_slabs": w.ConcreteSlabs,
+		"slab_type":      normalizeSlabType(w.SlabType),
 		"wall_thickness": w.WallThickness,
 		"slab_thickness": w.SlabThickness,
 		"wall_area":      w.WallArea,
@@ -170,6 +173,7 @@ func (w *ConcreteWall) fromDataModule(d *data.Module) Module {
 		Consumption:     consumption,
 		ConcreteWalls:   concreteWalls,
 		ConcreteSlabs:   concreteSlabs,
+		SlabType:        extractStringPointer(d.Data, "slab_type"),
 		WallThickness:   extractFloat64Pointer(d.Data, "wall_thickness"),
 		SlabThickness:   extractFloat64Pointer(d.Data, "slab_thickness"),
 		WallArea:        extractFloat64Pointer(d.Data, "wall_area"),

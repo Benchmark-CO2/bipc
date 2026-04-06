@@ -2379,6 +2379,58 @@ components:
         - volumes
         - steel
 
+    SlabType:
+      type: string
+      description: |
+        Optional short English identifier for the slab system.
+        Informational only and does not affect calculations.
+
+        Mapping to original names (ordered by category):
+
+        Feita em obra:
+        - solid: Laje maciça (concreto armado) com vigas ou paredes estruturais
+        - ribbed: Laje nervurada (unidirecional, bidirecional / tipo waffle)
+        - mushroom_solid: Laje maciça (concreto armado) cogumelo (com capitel)
+        - mushroom_ribbed: Laje nervurada (unidirecional, bidirecional / tipo waffle) cogumelo (com capitel)
+        - flat: Laje plana / sem vigas
+        - band_beam: Laje com vigas-faixa
+        - pt_solid: Laje protendida maciça
+        - pt_ribbed: Laje protendida nervurada
+        - pt_mushroom_solid: Laje protendida maciça cogumelo (com capitel)
+        - pt_mushroom_ribbed: Laje protendida nervurada cogumelo (com capitel)
+        - pt_flat: Laje plana protendida / sem vigas
+        - pt_band_beam: Laje protendida com vigas-faixa
+
+        Semi pré-fabricada ou pré-fabricada:
+        - trussed: Laje treliçada (vigota treliçada + enchimento + capa)
+        - joist: Laje de vigotas pré-moldadas (viga T/invertida etc. + enchimento + capa)
+        - filigree: Pré-laje / laje filigrana (placa fina pré-moldada + armaduras + capa)
+        - hollow_core: Laje alveolar (protendida)
+        - precast_solid: Painel maciço pré-moldado (placa maciça)
+        - precast_ribbed: Painéis nervurados pré-moldados (T, TT e variações industriais)
+        - pt_precast: Lajes protendidas pré-moldadas (maciças ou com alvéolos, conforme sistema)
+      enum:
+        - solid
+        - ribbed
+        - mushroom_solid
+        - mushroom_ribbed
+        - flat
+        - band_beam
+        - pt_solid
+        - pt_ribbed
+        - pt_mushroom_solid
+        - pt_mushroom_ribbed
+        - pt_flat
+        - pt_band_beam
+        - trussed
+        - joist
+        - filigree
+        - hollow_core
+        - precast_solid
+        - precast_ribbed
+        - pt_precast
+      example: flat
+
     BeamColumnData:
       type: object
       description: "Data for a 'beam_column' type module."
@@ -2402,6 +2454,8 @@ components:
           description: "Concrete and steel composition for all slabs in the specified floors."
           allOf:
             - $ref: "#/components/schemas/ConcreteElement"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
         form_columns:
           type: number
           description: "Total area of concrete forms for columns in square meters (m²)."
@@ -2455,6 +2509,8 @@ components:
           description: "Concrete and steel composition for all slabs in the specified floors."
           allOf:
             - $ref: "#/components/schemas/ConcreteElement"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
         wall_thickness:
           type: number
           description: "Average thickness of the concrete walls in meters (m)."
@@ -2506,6 +2562,8 @@ components:
           description: "Concrete and steel composition for slabs."
           allOf:
             - $ref: "#/components/schemas/ConcreteElement"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
         form_columns:
           type: number
           description: "Total area of concrete forms for columns in m²."

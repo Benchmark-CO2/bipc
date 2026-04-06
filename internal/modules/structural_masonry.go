@@ -44,6 +44,7 @@ type StructuralMasonry struct {
 	ConcreteColumns ConcreteElement `json:"concrete_columns"`
 	ConcreteBeams   ConcreteElement `json:"concrete_beams"`
 	ConcreteSlabs   ConcreteElement `json:"concrete_slabs"`
+	SlabType        *string         `json:"slab_type,omitempty"`
 	FormColumns     *float64        `json:"form_columns,omitempty"`
 	FormBeams       *float64        `json:"form_beams,omitempty"`
 	FormSlabs       *float64        `json:"form_slabs,omitempty"`
@@ -68,6 +69,7 @@ func (s *StructuralMasonry) Validate(v *validator.Validator) {
 		validateConcreteElement(v, s.ConcreteBeams, "concrete_beams")
 	}
 	validateConcreteElement(v, s.ConcreteSlabs, "concrete_slabs")
+	validateSlabType(v, s.SlabType)
 
 	fgkSet := make(map[int]struct{})
 
@@ -334,6 +336,7 @@ func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Co
 		"concrete_columns": s.ConcreteColumns,
 		"concrete_beams":   s.ConcreteBeams,
 		"concrete_slabs":   s.ConcreteSlabs,
+		"slab_type":        normalizeSlabType(s.SlabType),
 		"form_columns":     s.FormColumns,
 		"form_beams":       s.FormBeams,
 		"form_slabs":       s.FormSlabs,
@@ -436,6 +439,7 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 		ConcreteColumns: concreteColumns,
 		ConcreteBeams:   concreteBeams,
 		ConcreteSlabs:   concreteSlabs,
+		SlabType:        extractStringPointer(d.Data, "slab_type"),
 		FormColumns:     extractFloat64Pointer(d.Data, "form_columns"),
 		FormBeams:       extractFloat64Pointer(d.Data, "form_beams"),
 		FormSlabs:       extractFloat64Pointer(d.Data, "form_slabs"),
