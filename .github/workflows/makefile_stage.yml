@@ -1,8 +1,11 @@
 name: Deploy to Production
 
 on:
-  release:
-    types: [published, edited]
+  pull_request:
+    types: [closed]
+    branches: [develop]
+  push:
+    branches: [develop]
 
 jobs:
   deploy:
@@ -35,9 +38,9 @@ jobs:
       - name: Build backend
         run: make build/api
 
-      - name: Deploy to production
+      - name: Deploy to stage
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          ENV_FILE: ${{ secrets.ENV_FILE }}
-          DB_DSN: ${{ secrets.DB_DSN }}
-        run: make -f Makefile production/deploy/ci
+          SSH_PRIVATE_KEY_STAGE: ${{ secrets.SSH_PRIVATE_KEY_STAGE }}
+          ENV_FILE_STAGE: ${{ secrets.ENV_FILE_STAGE }}
+          DB_DSN_STAGE: ${{ secrets.DB_DSN_STAGE }}
+        run: make -f Makefile.stage.mk stage/deploy/ci
