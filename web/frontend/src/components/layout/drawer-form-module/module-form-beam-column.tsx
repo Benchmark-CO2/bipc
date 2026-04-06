@@ -6,13 +6,7 @@ import { useEffect, useState } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import { Button } from "../../ui/button";
 import { Card, CardContent } from "../../ui/card";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../../ui/form";
+import { FormControl, FormField, FormItem, FormLabel } from "../../ui/form";
 import { Input } from "../../ui/input";
 import {
   Select,
@@ -128,7 +122,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                           {totalVolume.toInternational(undefined, 2)}
                         </span>
                       </FormControl>
-                      <FormMessage />
                     </FormItem>
                   );
                 }}
@@ -202,7 +195,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                 </SelectContent>
                               </Select>
                             </FormControl>
-                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -240,7 +232,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                 <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
                             </div>
-                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -316,7 +307,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                   }
                 />
               </FormControl>
-              <FormMessage />
             </FormItem>
           )}
         />
@@ -337,7 +327,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                   }
                 />
               </FormControl>
-              <FormMessage />
             </FormItem>
           )}
         />
@@ -358,7 +347,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                   }
                 />
               </FormControl>
-              <FormMessage />
             </FormItem>
           )}
         />
@@ -400,7 +388,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         }
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -423,7 +410,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         }
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -446,7 +432,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         }
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />

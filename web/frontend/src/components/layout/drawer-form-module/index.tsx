@@ -13,11 +13,12 @@ import {
 } from "@/validators/moduleFormByType.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { /*Loader2,*/ Loader2, Plus, X } from "lucide-react";
+import { AlertTriangle, Loader2, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "../../ui/alert";
 import { Button } from "../../ui/button";
 import {
   Drawer,
@@ -33,7 +34,6 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "../../ui/form";
 import {
   Select,
@@ -512,6 +512,25 @@ const DrawerFormModule = ({
     }
   };
 
+  // Helper para coletar mensagens de erro únicas do formulário
+  const getFormErrorMessages = (errors: any): string[] => {
+    const messages = new Set<string>();
+    const traverse = (obj: any) => {
+      if (!obj || typeof obj !== "object") return;
+      if (typeof obj.message === "string" && obj.message.length > 0) {
+        messages.add(obj.message);
+        return;
+      }
+      for (const key of Object.keys(obj)) {
+        if (key !== "message" && key !== "type" && key !== "ref") {
+          traverse(obj[key]);
+        }
+      }
+    };
+    traverse(errors);
+    return Array.from(messages);
+  };
+
   const handleClose = () => {
     form.reset(getDefaultValuesByType(type) as any);
     setSelectedFloors([]);
@@ -702,7 +721,6 @@ const DrawerFormModule = ({
                                 </SelectContent>
                               </Select>
                             </FormControl>
-                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -743,6 +761,24 @@ const DrawerFormModule = ({
           )}
         </div>
         <DrawerFooter className="px-8">
+          {form.formState.isSubmitted &&
+            Object.keys(form.formState.errors).length > 0 && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <p className="font-medium mb-1">
+                    Corrija os seguintes erros antes de enviar:
+                  </p>
+                  <ul className="list-disc pl-4 text-xs space-y-0.5">
+                    {getFormErrorMessages(form.formState.errors).map(
+                      (msg, i) => (
+                        <li key={i}>{msg}</li>
+                      ),
+                    )}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
           <Button
             type="submit"
             variant="bipc"
@@ -751,7 +787,9 @@ const DrawerFormModule = ({
             disabled={
               isCreationPending ||
               isUpdatePending ||
-              (selectedFloors.length === 0 && isUsingPaviments)
+              (selectedFloors.length === 0 && isUsingPaviments) ||
+              (form.formState.isSubmitted &&
+                Object.keys(form.formState.errors).length > 0)
             }
           >
             {isCreationPending || isUpdatePending ? (

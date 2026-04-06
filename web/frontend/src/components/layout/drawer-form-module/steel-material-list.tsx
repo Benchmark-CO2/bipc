@@ -3,13 +3,7 @@ import { Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import { Button } from "../../ui/button";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../../ui/form";
+import { FormControl, FormField, FormItem, FormLabel } from "../../ui/form";
 import { Input } from "../../ui/input";
 import {
   Select,
@@ -136,7 +130,6 @@ const SteelMaterialItem = ({
                     </SelectContent>
                   </Select>
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
@@ -171,7 +164,6 @@ const SteelMaterialItem = ({
                     </SelectContent>
                   </Select>
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
@@ -196,7 +188,6 @@ const SteelMaterialItem = ({
                     }}
                   />
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
@@ -228,7 +219,6 @@ const SteelMaterialItem = ({
               <FormControl>
                 <Input {...field} placeholder="Ex: Aço especial" />
               </FormControl>
-              <FormMessage />
             </FormItem>
           )}
         />
@@ -252,7 +242,6 @@ const SteelMaterialItem = ({
                   onChange={(e) => field.onChange(Number(e.target.value))}
                 />
               </FormControl>
-              <FormMessage />
             </FormItem>
           )}
         />
