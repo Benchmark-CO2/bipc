@@ -12,19 +12,21 @@ import (
 )
 
 type TowerCreateData struct {
-	Floors []data.FloorCreate `json:"floors"`
+	Floors            []data.FloorCreate `json:"floors"`
+	HousingUnitsCount *int               `json:"housing_units_count,omitempty"`
 }
 
 type UnitCreate struct {
-	Name            string          `json:"name"`
-	Type            string          `json:"type"`
-	RepetitionCount *int            `json:"repetition_count,omitempty"`
-	Data            json.RawMessage `json:"data"`
+	Name              string          `json:"name"`
+	Type              string          `json:"type"`
+	RepetitionCount   *int            `json:"repetition_count,omitempty"`
+	HousingUnitsCount *int            `json:"housing_units_count,omitempty"`
+	Data              json.RawMessage `json:"data"`
 }
 
-func parseFloors(data json.RawMessage) ([]data.FloorCreate, error) {
+func parseTowerData(data json.RawMessage) (*TowerCreateData, error) {
 	if data == nil {
-		return nil, nil
+		return &TowerCreateData{}, nil
 	}
 
 	var towerData TowerCreateData
@@ -33,7 +35,21 @@ func parseFloors(data json.RawMessage) ([]data.FloorCreate, error) {
 		return nil, err
 	}
 
-	return towerData.Floors, nil
+	return &towerData, nil
+}
+
+func validateHousingUnitsCount(v *validator.Validator, housingUnitsCount *int) {
+	if housingUnitsCount == nil {
+		return
+	}
+	v.Check(*housingUnitsCount > 0, "housing_units_count", "must be greater than zero")
+}
+
+func resolveHousingUnitsCount(primary *int, fallback *int) *int {
+	if primary != nil {
+		return primary
+	}
+	return fallback
 }
 
 func validateFloors(v *validator.Validator, floors []data.FloorCreate) {
@@ -82,7 +98,6 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 	if input.RepetitionCount != nil {
 		unit.RepetitionCount = *input.RepetitionCount
 	}
-
 	v := validator.New()
 	data.ValidateUnit(v, unit)
 
@@ -90,12 +105,16 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 
 	switch input.Type {
 	case "tower":
-		floors, err = parseFloors(input.Data)
+		towerData, parseErr := parseTowerData(input.Data)
+		err = parseErr
 		if err != nil {
 			app.badRequestResponse(w, r, err)
 			return
 		}
+		unit.HousingUnitsCount = resolveHousingUnitsCount(input.HousingUnitsCount, towerData.HousingUnitsCount)
+		floors = towerData.Floors
 		validateFloors(v, floors)
+		validateHousingUnitsCount(v, unit.HousingUnitsCount)
 
 	default:
 		v.AddError("type", "invalid unit type")
@@ -212,9 +231,10 @@ func (app *application) readUnitHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 type UnitUpdate struct {
-	Name            string          `json:"name"`
-	RepetitionCount *int            `json:"repetition_count,omitempty"`
-	Data            json.RawMessage `json:"data"`
+	Name              string          `json:"name"`
+	RepetitionCount   *int            `json:"repetition_count,omitempty"`
+	HousingUnitsCount *int            `json:"housing_units_count,omitempty"`
+	Data              json.RawMessage `json:"data"`
 }
 
 func (app *application) updateUnitHandler(w http.ResponseWriter, r *http.Request) {
@@ -266,12 +286,21 @@ func (app *application) updateUnitHandler(w http.ResponseWriter, r *http.Request
 	var floors []data.FloorCreate
 
 	if unit.Type == "tower" && input.Data != nil {
-		floors, err = parseFloors(input.Data)
+		towerData, parseErr := parseTowerData(input.Data)
+		err = parseErr
 		if err != nil {
 			app.badRequestResponse(w, r, err)
 			return
 		}
+		unit.HousingUnitsCount = resolveHousingUnitsCount(input.HousingUnitsCount, towerData.HousingUnitsCount)
+		floors = towerData.Floors
 		validateFloors(v, floors)
+		validateHousingUnitsCount(v, unit.HousingUnitsCount)
+	}
+
+	if unit.Type == "tower" && input.Data == nil {
+		unit.HousingUnitsCount = resolveHousingUnitsCount(input.HousingUnitsCount, unit.HousingUnitsCount)
+		validateHousingUnitsCount(v, unit.HousingUnitsCount)
 	}
 
 	if !v.Valid() {
@@ -349,11 +378,12 @@ func (app *application) duplicateUnit(
 	}
 
 	duplicatedUnit := &data.Unit{
-		ID:              newUnitID,
-		ProjectID:       newProjectID,
-		Name:            name,
-		Type:            originalUnit.Type,
-		RepetitionCount: originalUnit.RepetitionCount,
+		ID:                newUnitID,
+		ProjectID:         newProjectID,
+		Name:              name,
+		Type:              originalUnit.Type,
+		RepetitionCount:   originalUnit.RepetitionCount,
+		HousingUnitsCount: originalUnit.HousingUnitsCount,
 	}
 
 	// Create floor index to ID mappings
