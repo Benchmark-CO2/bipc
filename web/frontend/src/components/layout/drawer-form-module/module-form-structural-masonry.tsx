@@ -6,7 +6,6 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -98,7 +97,6 @@ const GroutItem = ({
                     </SelectContent>
                   </Select>
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
@@ -186,7 +184,6 @@ const GroutItem = ({
                             </SelectContent>
                           </Select>
                         </FormControl>
-                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -207,7 +204,6 @@ const GroutItem = ({
                             }
                           />
                         </FormControl>
-                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -504,7 +500,6 @@ const ModuleFormStructuralMasonry = ({
                                 </SelectContent>
                               </Select>
                             </FormControl>
-                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -556,7 +551,6 @@ const ModuleFormStructuralMasonry = ({
                                 </SelectContent>
                               </Select>
                             </FormControl>
-                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -579,7 +573,6 @@ const ModuleFormStructuralMasonry = ({
                                 }
                               />
                             </FormControl>
-                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -823,7 +816,6 @@ const ModuleFormStructuralMasonry = ({
                                 </SelectContent>
                               </Select>
                             </FormControl>
-                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -846,7 +838,6 @@ const ModuleFormStructuralMasonry = ({
                                 }
                               />
                             </FormControl>
-                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -1081,7 +1072,6 @@ const ModuleFormStructuralMasonry = ({
                                 </SelectContent>
                               </Select>
                             </FormControl>
-                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -1104,7 +1094,6 @@ const ModuleFormStructuralMasonry = ({
                                 }
                               />
                             </FormControl>
-                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -1213,7 +1202,6 @@ const ModuleFormStructuralMasonry = ({
                         }
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -1236,7 +1224,6 @@ const ModuleFormStructuralMasonry = ({
                         }
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -1259,7 +1246,6 @@ const ModuleFormStructuralMasonry = ({
                         }
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
