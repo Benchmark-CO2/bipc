@@ -40,4 +40,4 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           ENV_FILE: ${{ secrets.ENV_FILE }}
           DB_DSN: ${{ secrets.DB_DSN }}
-        run: make -f Makefile production/deploy/ci
+        run: make production/deploy/ci
