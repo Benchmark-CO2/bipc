@@ -2056,6 +2056,11 @@ components:
         type:
           type: string
           readOnly: true
+        repetition_count:
+          type: integer
+          description: "Number of repeated instances represented by this unit in project-level weighted consumption calculations."
+          example: 1
+          readOnly: true
         area:
           type: number
           format: float
@@ -2103,6 +2108,15 @@ components:
         type:
           type: string
           example: "tower"
+        repetition_count:
+          type: integer
+          description: "Optional repetition factor for the unit. Used as a weight in project consumption aggregation. Defaults to 1."
+          example: 1
+        housing_units_count:
+          type: integer
+          nullable: true
+          description: "Optional number of housing units/apartments in the tower."
+          example: 48
 
     Tower:
       allOf:
@@ -2177,6 +2191,15 @@ components:
         type:
           type: string
           enum: [tower]
+        repetition_count:
+          type: integer
+          description: "Optional repetition factor for the unit. If omitted, defaults to 1."
+          example: 1
+        housing_units_count:
+          type: integer
+          nullable: true
+          description: "Optional number of housing units/apartments in the tower."
+          example: 48
         data:
           description: "Polymorphic data based on the unit type."
           oneOf:
@@ -2193,6 +2216,12 @@ components:
           minItems: 1
           items:
             $ref: "#/components/schemas/FloorCreate"
+        housing_units_count:
+          type: integer
+          nullable: true
+          deprecated: true
+          description: "Optional number of housing units/apartments in the tower. Prefer sending this field at the top level of the unit payload."
+          example: 48
 
     FloorCreate:
       type: object
