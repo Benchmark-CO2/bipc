@@ -212,6 +212,31 @@ stage/deploy/api:
 		&& sudo systemctl reload caddy \
 	'
 
+
+## stage/deploy/ci: deploy the api to stage from CI/CD
+.PHONY: stage/deploy/ci
+stage/deploy/ci:
+	@echo "Creating SSH key file..."
+	@printf "%s\n" "$$SSH_PRIVATE_KEY" > /tmp/deploy_key
+	@chmod 600 /tmp/deploy_key
+	@echo "--- Key file created ---"
+	@ls -lh /tmp/deploy_key
+	@echo "--- First 3 lines ---"
+	@head -n 3 /tmp/deploy_key
+	@echo "--- Last 3 lines ---"
+	@tail -n 3 /tmp/deploy_key
+	@echo "Creating .envrc file..."
+	@printf "%s\n" "$$ENV_FILE" > /tmp/.envrc
+	@mkdir -p ~/.ssh
+	@echo "Starting deployment..."
+	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./bin/linux_amd64/api ubuntu@$(stage_host_ip):~
+	rsync -rP --delete -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./migrations ubuntu@$(stage_host_ip):~
+	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" /tmp/.envrc ubuntu@$(stage_host_ip):~/.envrc
+	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./remote/stage/api.service ubuntu@$(stage_host_ip):~
+	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./remote/stage/Caddyfile ubuntu@$(stage_host_ip):~
+	ssh -t -i /tmp/deploy_key -o StrictHostKeyChecking=no ubuntu@$(stage_host_ip) "export DB_DSN='$$DB_DSN' && migrate -path ~/migrations -database \$$DB_DSN up && sudo mv ~/.envrc /etc/environment && sudo systemctl daemon-reload && sudo mv ~/api.service /etc/systemd/system/ && sudo systemctl enable api && sudo systemctl restart api && sudo mv ~/Caddyfile /etc/caddy/ && sudo systemctl reload caddy"
+	@rm -f /tmp/deploy_key /tmp/.envrc
+
 # ==================================================================================== #
 # PRODUCTION
 # ==================================================================================== #
