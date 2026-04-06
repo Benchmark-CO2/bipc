@@ -169,7 +169,7 @@ audit:
 ## build/frontend: build the frontend application
 .PHONY: build/frontend
 build/frontend:
-	cd ./web/frontend && pnpm install && pnpm build
+	cd ./web/frontend && pnpm install && VITE_ENV=staging pnpm build
 
 ## build/docs: build the documentation
 .PHONY: build/docs
@@ -234,7 +234,7 @@ stage/deploy/ci:
 	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./bin/linux_amd64/api ubuntu@$(stage_host_ip):~
 	rsync -rP --delete -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./migrations ubuntu@$(stage_host_ip):~
 	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" /tmp/.envrc ubuntu@$(stage_host_ip):~/.envrc
-	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./remote/stage/api.service ubuntu@$(stage_host_ip):~
-	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./remote/stage/Caddyfile ubuntu@$(stage_host_ip):~
+	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./remote/production/api.service ubuntu@$(stage_host_ip):~
+	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./remote/production/Caddyfile ubuntu@$(stage_host_ip):~
 	ssh -t -i /tmp/deploy_key -o StrictHostKeyChecking=no ubuntu@$(stage_host_ip) "export DB_DSN='$$DB_DSN_STAGE' && migrate -path ~/migrations -database \$$DB_DSN_STAGE up && sudo mv ~/.envrc /etc/environment && sudo systemctl daemon-reload && sudo mv ~/api.service /etc/systemd/system/ && sudo systemctl enable api && sudo systemctl restart api && sudo mv ~/Caddyfile /etc/caddy/ && sudo systemctl reload caddy"
 	@rm -f /tmp/deploy_key /tmp/.envrc
