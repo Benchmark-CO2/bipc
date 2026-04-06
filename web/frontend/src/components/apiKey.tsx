@@ -34,7 +34,7 @@ export const GenerateApiKey = () => {
     <div className="space-y-3">
       <Button
         variant="link"
-        className="p-0 h-auto"
+        className="p-0 h-auto no-underline"
         style={{ padding: 0 }}
         onClick={generateApiKey}
         disabled={loading}

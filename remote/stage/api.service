@@ -1,0 +1,22 @@
+[Unit]
+Description=BIPC API service (stage)
+
+After=network-online.target
+Wants=network-online.target
+
+StartLimitIntervalSec=600
+StartLimitBurst=5
+
+[Service]
+Type=exec
+User=ubuntu
+Group=ubuntu
+EnvironmentFile=/etc/environment
+WorkingDirectory=/home/ubuntu
+ExecStart=/home/ubuntu/api -port=4000 -env=stage -url=${URL} -db-dsn=${DB_DSN} -smtp-host=${SMTP_HOST} -smtp-port=${SMTP_PORT} -smtp-username=${SMTP_USERNAME} -smtp-password=${SMTP_PASSWORD} -smtp-sender=${SMTP_SENDER}
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

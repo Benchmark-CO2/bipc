@@ -142,7 +142,7 @@ const CustomBanner = ({
   };
 
   return (
-    <div className="w-full max-md:w-12/12 shadow-lg shadow-zinc-600 dark:shadow-zinc-900 rounded-lg mx-auto relative overflow-hidden transition-all duration-500">
+    <div className="w-full max-md:w-12/12 rounded-lg mx-auto relative overflow-hidden transition-all duration-500">
       {image && (
         <img
           className="h-full w-full object-cover z-1 absolute right-0 top-0 rounded-lg opacity-30"

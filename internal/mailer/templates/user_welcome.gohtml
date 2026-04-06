@@ -1,11 +1,20 @@
 {{define "subject"}}Welcome to BIPC!{{ end }}
 
 {{define "plainBody"}}
-Hi, Thanks for signing up for a BIPC account. We're excited to have you on board!
-For future reference, your user ID number is {{.userID}}.
-Access this link {{.url}}/activate?tkn={{.activationToken}} to activate your account.
-Please note that this is a one-time use token and it will expire in 3 days.
-Thanks, The BIPC Team
+Olá,
+
+Obrigado por se cadastrar no BIPc. Estamos felizes em ter você conosco!
+
+Para sua referência, o seu número de usuário é {{.userID}}.
+
+Para começar a usar a plataforma, ative sua conta acessando o link abaixo:
+
+{{.url}}/activate?tkn={{.activationToken}}
+
+Este link de ativação é de uso único e expirará em 3 dias.
+
+Atenciosamente,
+Equipe BIPc
 {{ end }}
 
 {{define "htmlBody"}}
@@ -17,19 +26,25 @@ Thanks, The BIPC Team
   </head>
 
   <body>
-    <p>Hi,</p>
     <p>
-      Thanks for signing up for a BIPC account. We're excited to have you on
-      board!
-    </p>
-    <p>For future reference, your user ID number is {{.userID}}.</p>
-    <p>Access <a href="{{.url}}/activate?tkn={{.activationToken}}">this link</a> to activate your account.</p>
-    <p>
-      Please note that this is a one-time use token and it will expire in 3 days.
+      Olá,
     </p>
     <p>
-      Thanks,<br />
-      The BIPC Team
+      Obrigado por se cadastrar no BIPc. Estamos felizes em ter você conosco!
+    </p>
+    <p>
+      Para sua referência, o seu número de usuário é {{.userID}}.
+    </p>
+    <p>
+      Para começar a usar a plataforma, ative sua conta acessando o link abaixo:
+    </p>
+    <p><a href="{{.url}}/activate?tkn={{.activationToken}}">Clique aqui para ativar sua conta</a></p>
+    <p>
+      Este link de ativação é de uso único e expirará em 3 dias.
+    </p>
+    <p>
+      Atenciosamente,<br />
+      Equipe BIPc
     </p>
   </body>
 </html>

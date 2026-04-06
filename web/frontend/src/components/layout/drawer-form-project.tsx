@@ -66,7 +66,9 @@ export default function DrawerFormProject({
   const [file, setFile] = useState<File | undefined>(undefined);
   const [isAgreementChecked, setIsAgreementChecked] = useState(false);
   const [filledByCep, setFilledByCep] = useState(false);
-  const [cepFilledFields, setCepFilledFields] = useState<Set<string>>(new Set());
+  const [cepFilledFields, setCepFilledFields] = useState<Set<string>>(
+    new Set(),
+  );
   const [selectedState, setSelectedState] = useState("");
 
   const queryClient = useQueryClient();
@@ -95,7 +97,11 @@ export default function DrawerFormProject({
     searchCep,
   } = useCep();
 
-  const { cities, isLoading: citiesLoading, isError: citiesError } = useCities(selectedState);
+  const {
+    cities,
+    isLoading: citiesLoading,
+    isError: citiesError,
+  } = useCities(selectedState);
 
   const navigate = useNavigate();
 
@@ -350,7 +356,7 @@ export default function DrawerFormProject({
           </Button>
         </DrawerHeader>
         <Form {...form}>
-          <div className="max-h-[calc(100vh-100px)] overflow-y-auto px-8">
+          <div className="@container max-h-[calc(100vh-100px)] overflow-y-auto px-8">
             <form
               id="project-form"
               className="flex flex-col gap-3 rounded-md px-4 py-2 border-gray-shade-200 border bg-card"
@@ -413,12 +419,12 @@ export default function DrawerFormProject({
                   </FormItem>
                 )}
               />
-              <div className="flex w-full gap-4">
+              <div className="grid grid-cols-1 @md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="state"
                   render={({ field }) => (
-                    <FormItem className="flex-1/3">
+                    <FormItem>
                       <FormLabel>{t("drawerFormProject.stateLabel")}</FormLabel>
                       <FormControl>
                         <Select
@@ -459,7 +465,7 @@ export default function DrawerFormProject({
                   control={form.control}
                   name="city"
                   render={({ field }) => (
-                    <FormItem className="flex-2/3">
+                    <FormItem className="@md:col-span-2">
                       <FormLabel>{t("drawerFormProject.cityLabel")}</FormLabel>
                       <FormControl>
                         {filledByCep ? (
@@ -493,7 +499,7 @@ export default function DrawerFormProject({
                 control={form.control}
                 name="neighborhood"
                 render={({ field }) => (
-                  <FormItem className="flex-2/3">
+                  <FormItem>
                     <FormLabel>
                       {t("drawerFormProject.neighborhoodLabel")}
                     </FormLabel>
@@ -502,7 +508,9 @@ export default function DrawerFormProject({
                         placeholder={t(
                           "drawerFormProject.neighborhoodPlaceholder",
                         )}
-                        disabled={cepFilledFields.has("neighborhood") || locationLoading}
+                        disabled={
+                          cepFilledFields.has("neighborhood") || locationLoading
+                        }
                         {...field}
                       />
                     </FormControl>
@@ -510,19 +518,21 @@ export default function DrawerFormProject({
                   </FormItem>
                 )}
               />
-              <div className="flex w-full gap-4">
+              <div className="grid grid-cols-1 @md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="street"
                   render={({ field }) => (
-                    <FormItem className="flex-2/3">
+                    <FormItem className="@md:col-span-2">
                       <FormLabel>
                         {t("drawerFormProject.streetLabel")}
                       </FormLabel>
                       <FormControl>
                         <Input
                           placeholder={t("drawerFormProject.streetPlaceholder")}
-                          disabled={cepFilledFields.has("street") || locationLoading}
+                          disabled={
+                            cepFilledFields.has("street") || locationLoading
+                          }
                           {...field}
                         />
                       </FormControl>
@@ -534,7 +544,7 @@ export default function DrawerFormProject({
                   control={form.control}
                   name="number"
                   render={({ field }) => (
-                    <FormItem className="flex-1/3">
+                    <FormItem>
                       <FormLabel>
                         {t("drawerFormProject.numberLabel")}
                       </FormLabel>

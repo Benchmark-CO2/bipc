@@ -40,7 +40,7 @@ const BreadCrumbs = () => {
           to={matches[index].pathname}
           className={`inline-flex items-center text-sm font-medium ${
             isLast
-              ? "text-secondary font-700 dark:text-secondary-300"
+              ? "text-secondary font-700 dark:text-secondary"
               : "text-zinc-700 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
           }`}
         >

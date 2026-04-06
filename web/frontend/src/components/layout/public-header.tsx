@@ -1,21 +1,45 @@
 import Logo from "@/assets/logo.svg";
+import BipcIcon from "@/assets/icons/bipc";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
 import {
   BarChart3,
-  Book,
   CircleHelp,
+  ClipboardList,
+  FileText,
+  Fingerprint,
+  FolderGit,
   GlobeLock,
-  Headset,
-  Info,
   Menu,
-  User,
+  MonitorPlay,
+  Newspaper,
+  Phone,
+  Rss,
+  UserCircle,
   X,
+  List,
 } from "lucide-react";
 import { useState } from "react";
 import { CustomLink } from "../ui/custom-link";
 import Divider from "../ui/divider";
+import { Button } from "../ui/button";
+import { SidebarHoverPopover, type PopoverItem } from "./sidebar-hover-popover";
+
+const saibaMaisItems: PopoverItem[] = [
+  { label: "Perguntas frequentes", icon: CircleHelp, linkKey: "faq" },
+  { label: "Glossário", icon: FileText, linkKey: "glossary" },
+  { label: "BIPc na mídia", icon: MonitorPlay, linkKey: "media" },
+  { label: "Lançamento", icon: Newspaper, linkKey: "launch" },
+  { label: "Repositório", icon: FolderGit, linkKey: "repository" },
+  { label: "Contato", icon: Phone, linkKey: "contact" },
+];
+
+const transparenciaItems: PopoverItem[] = [
+  { label: "Privacidade dos dados", icon: Fingerprint, linkKey: "privacy" },
+  { label: "Termos de uso", icon: ClipboardList, linkKey: "termsOfUse" },
+  { label: "Formulário de dados", icon: List, linkKey: "dataForm" },
+];
 
 const activeProps = {
   style: {
@@ -31,63 +55,47 @@ export default function PublicHeader() {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const handleCloseMenu = () => setIsMenuOpen(false);
+
   const NavLinks = () => (
     <>
       <CustomLink
         linkKey="about"
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
-        onClick={() => setIsMenuOpen(false)}
+        onClick={handleCloseMenu}
       >
-        <Info size={18} />
+        <BipcIcon size={18} />
         <span className="text-sm">Sobre o BIPc</span>
       </CustomLink>
-      {/* <Divider
-        className={cn("h-[28px] w-0.5 my-0", {
-          hidden: isMobile,
-          "mx-4": !isMobile,
-        })}
-      /> */}
-      <Link
-        to="/benchmark"
-        activeProps={activeProps}
-        className="flex items-center gap-2 hover:text-gray-300 transition-colors"
-        onClick={() => setIsMenuOpen(false)}
-      >
-        <BarChart3 size={18} />
-        <span className="text-sm">Benchmark</span>
-      </Link>
-      <CustomLink
-        linkKey="faq"
-        className="flex items-center gap-2 hover:text-gray-300 transition-colors"
-        onClick={() => setIsMenuOpen(false)}
-      >
-        <CircleHelp size={18} />
-        <span className="text-sm">FAQ</span>
-      </CustomLink>
-      <CustomLink
-        linkKey="glossary"
-        className="flex items-center gap-2 hover:text-gray-300 transition-colors"
-        onClick={() => setIsMenuOpen(false)}
-      >
-        <Book size={18} />
-        <span className="text-sm">Glossário</span>
-      </CustomLink>
-      <CustomLink
-        linkKey="contact"
-        className="flex items-center gap-2 hover:text-gray-300 transition-colors"
-        onClick={() => setIsMenuOpen(false)}
-      >
-        <Headset size={18} />
-        <span className="text-sm">Comunicação</span>
-      </CustomLink>
-      <CustomLink
-        linkKey="privacy"
-        className="flex items-center gap-2 hover:text-gray-300 transition-colors"
-        onClick={() => setIsMenuOpen(false)}
-      >
-        <GlobeLock size={18} />
-        <span className="text-sm">Políticas de Privacidade</span>
-      </CustomLink>
+
+      <SidebarHoverPopover
+        triggerClassName="flex items-center gap-2 hover:text-gray-300 transition-colors"
+        trigger={
+          <>
+            <Rss size={18} />
+            <span className="text-sm">Saiba mais</span>
+          </>
+        }
+        items={saibaMaisItems}
+        onItemClick={handleCloseMenu}
+        isMobile={isMobile}
+        side="bottom"
+      />
+
+      <SidebarHoverPopover
+        triggerClassName="flex items-center gap-2 hover:text-gray-300 transition-colors"
+        trigger={
+          <>
+            <GlobeLock size={18} />
+            <span className="text-sm">Transparência</span>
+          </>
+        }
+        items={transparenciaItems}
+        onItemClick={handleCloseMenu}
+        isMobile={isMobile}
+        side="bottom"
+      />
+
       <Divider
         className={cn("h-[28px] w-0.5 my-0", {
           hidden: isMobile,
@@ -96,13 +104,24 @@ export default function PublicHeader() {
       />
 
       <Link
-        to="/login"
+        to="/benchmark"
         activeProps={activeProps}
         className="flex items-center gap-2 hover:text-gray-300 transition-colors"
-        onClick={() => setIsMenuOpen(false)}
+        onClick={handleCloseMenu}
       >
-        <User size={18} />
-        <span className="text-sm">Entrar na Plataforma</span>
+        <BarChart3 size={18} />
+        <span className="text-sm">Benchmark</span>
+      </Link>
+
+      <Link to="/login" onClick={handleCloseMenu}>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="flex items-center gap-2 text-accent"
+        >
+          <UserCircle size={16} />
+          <span>Entrar</span>
+        </Button>
       </Link>
     </>
   );
@@ -110,7 +129,7 @@ export default function PublicHeader() {
   return (
     <nav className="bg-sidebar text-white relative">
       <div className="flex items-center justify-between px-4 md:px-8 py-0">
-        <Link to={"/benchmark"} className="p-0">
+        <Link to="/benchmark" className="p-0">
           <img
             src={Logo}
             alt="Logo"
