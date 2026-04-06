@@ -1,9 +1,6 @@
-name: Deploy to Production
+name: Deploy to Stage
 
 on:
-  pull_request:
-    types: [closed]
-    branches: [develop]
   push:
     branches: [develop]
 
@@ -30,7 +27,7 @@ jobs:
           version: 10.12.1
 
       - name: Build frontend
-        run: make build/frontend
+        run: make build/frontend 
 
       - name: Build documentation
         run: make build/docs
@@ -40,7 +37,9 @@ jobs:
 
       - name: Deploy to stage
         env:
-          SSH_PRIVATE_KEY_STAGE: ${{ secrets.SSH_PRIVATE_KEY_STAGE }}
-          ENV_FILE_STAGE: ${{ secrets.ENV_FILE_STAGE }}
-          DB_DSN_STAGE: ${{ secrets.DB_DSN_STAGE }}
-        run: make -f Makefile.stage.mk stage/deploy/ci
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY_STAGE }}
+          ENV_FILE: ${{ secrets.ENV_FILE_STAGE }}
+          DB_DSN: ${{ secrets.DB_DSN_STAGE }}
+          ENV: staging
+
+        run: make stage/deploy/ci
