@@ -27,6 +27,8 @@ jobs:
           version: 10.12.1
 
       - name: Build frontend
+        env:
+          ENV: staging
         run: make build/frontend 
 
       - name: Build documentation
