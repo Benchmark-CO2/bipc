@@ -1,5 +1,6 @@
 import { patchUser, UpdateUserParams } from "@/actions/users/patchUser";
 import { Button } from "@/components/ui/button";
+import { CityCombobox } from "@/components/ui/city-combobox";
 import {
   Drawer,
   DrawerContent,
@@ -25,17 +26,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
+import useCities from "@/hooks/useCities";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import useCep from "@/hooks/useLocation";
 import { cn } from "@/lib/utils";
-import { dateUtils } from '@/utils/date';
+import { dateUtils } from "@/utils/date";
 import { masks } from "@/utils/masks";
+import { states } from "@/utils/states";
 import {
   UpdateUserFormSchema,
   updateUserFormSchema,
 } from "@/validators/updateUserForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Eye, EyeOff, Loader2, X } from "lucide-react";
+import { Building2, Eye, EyeOff, Loader2, User, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -51,6 +55,11 @@ export default function DrawerFormUser({
   const [openDrawer, setOpenDrawer] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [filledByCep, setFilledByCep] = useState(false);
+  const [cepFilledFields, setCepFilledFields] = useState<Set<string>>(
+    new Set(),
+  );
+  const [selectedState, setSelectedState] = useState("");
 
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -59,6 +68,8 @@ export default function DrawerFormUser({
 
   // Extrai os dados do usuário corretamente (pode estar aninhado)
   const userData = (user as any)?.user || user;
+  const userType: "member" | "company" = userData?.type || "member";
+  const isCompany = userType === "company";
 
   const form = useForm<UpdateUserFormSchema>({
     resolver: zodResolver(updateUserFormSchema),
@@ -67,6 +78,7 @@ export default function DrawerFormUser({
       email: userData?.email || "",
       password: "",
       confirmPassword: "",
+      cnpj: userData?.cnpj || "",
       crea_cau: userData?.crea_cau || "",
       birthdate: userData?.birthdate
         ? new Date(userData.birthdate).toLocaleDateString("pt-BR")
@@ -74,8 +86,26 @@ export default function DrawerFormUser({
       city: userData?.city || "",
       activity: userData?.activity || "",
       enterprise: userData?.enterprise || "",
+      cep: userData?.cep || "",
+      state: userData?.state || "",
+      neighborhood: userData?.neighborhood || "",
+      street: userData?.street || "",
+      number: userData?.number || "",
     },
   });
+
+  const {
+    data: locationData,
+    isError: cepError,
+    isLoading: locationLoading,
+    searchCep,
+  } = useCep();
+
+  const {
+    cities,
+    isLoading: citiesLoading,
+    isError: citiesError,
+  } = useCities(selectedState);
 
   const {
     isPending: isUpdatePending,
@@ -163,14 +193,30 @@ export default function DrawerFormUser({
       updateData.birthdate = `${year}-${month}-${day}T00:00:00Z`;
     }
 
-    // Add optional fields
-    if (data.crea_cau && data.crea_cau.trim() !== "")
-      updateData.crea_cau = data.crea_cau;
+    // Add optional fields based on type
+    if (!isCompany) {
+      if (data.crea_cau && data.crea_cau.trim() !== "")
+        updateData.crea_cau = data.crea_cau;
+      if (data.activity && data.activity.trim() !== "")
+        updateData.activity = data.activity;
+      if (data.enterprise && data.enterprise.trim() !== "")
+        updateData.enterprise = data.enterprise;
+    } else {
+      if (data.cnpj && data.cnpj.trim() !== "")
+        updateData.cnpj = data.cnpj.replace(/\D/g, "");
+    }
+
     if (data.city && data.city.trim() !== "") updateData.city = data.city;
-    if (data.activity && data.activity.trim() !== "")
-      updateData.activity = data.activity;
-    if (data.enterprise && data.enterprise.trim() !== "")
-      updateData.enterprise = data.enterprise;
+
+    // Address fields
+    if (data.cep && data.cep.trim() !== "") updateData.cep = data.cep;
+    if (data.state && data.state.trim() !== "") updateData.state = data.state;
+    if (data.neighborhood && data.neighborhood.trim() !== "")
+      updateData.neighborhood = data.neighborhood;
+    if (data.street && data.street.trim() !== "")
+      updateData.street = data.street;
+    if (data.number && data.number.trim() !== "")
+      updateData.number = data.number;
 
     mutateUpdate(updateData);
   };
@@ -178,6 +224,9 @@ export default function DrawerFormUser({
   useEffect(() => {
     if (openDrawer && userData) {
       resetUpdate();
+      setFilledByCep(false);
+      setCepFilledFields(new Set());
+      setSelectedState(userData.state || "");
 
       // Format birthdate for display if it exists
       let formattedBirthdate = "";
@@ -191,11 +240,17 @@ export default function DrawerFormUser({
         email: userData.email || "",
         password: "",
         confirmPassword: "",
+        cnpj: userData.cnpj || "",
         crea_cau: userData.crea_cau || "",
         birthdate: formattedBirthdate,
         city: userData.city || "",
         activity: userData.activity || "",
         enterprise: userData.enterprise || "",
+        cep: userData.cep || "",
+        state: userData.state || "",
+        neighborhood: userData.neighborhood || "",
+        street: userData.street || "",
+        number: userData.number || "",
       });
     }
   }, [openDrawer, userData, form, resetUpdate]);
@@ -214,11 +269,17 @@ export default function DrawerFormUser({
         email: userData.email || "",
         password: "",
         confirmPassword: "",
+        cnpj: userData.cnpj || "",
         crea_cau: userData.crea_cau || "",
         birthdate: formattedBirthdate,
         city: userData.city || "",
         activity: userData.activity || "",
         enterprise: userData.enterprise || "",
+        cep: userData.cep || "",
+        state: userData.state || "",
+        neighborhood: userData.neighborhood || "",
+        street: userData.street || "",
+        number: userData.number || "",
       });
     }
   }, [userData]);
@@ -230,6 +291,46 @@ export default function DrawerFormUser({
   const toggleConfirmPasswordVisibility = () => {
     setShowConfirmPassword(!showConfirmPassword);
   };
+
+  // CEP auto-fill effect
+  useEffect(() => {
+    if (locationData && locationData.state) {
+      setFilledByCep(true);
+      setSelectedState(locationData.state);
+      form.clearErrors("cep");
+
+      const filled = new Set<string>();
+      if (locationData.state) filled.add("state");
+      if (locationData.city) filled.add("city");
+      if (locationData.neighborhood) filled.add("neighborhood");
+      if (locationData.street) filled.add("street");
+      setCepFilledFields(filled);
+
+      form.setValue("state", locationData.state ?? "");
+      form.setValue("city", locationData.city ?? "");
+      form.setValue("neighborhood", locationData.neighborhood ?? "");
+      form.setValue("street", locationData.street ?? "");
+    }
+  }, [locationData, form]);
+
+  // CEP error effect
+  useEffect(() => {
+    if (cepError) {
+      setFilledByCep(false);
+      setCepFilledFields(new Set());
+      setSelectedState("");
+      toast.error(t("error.errorFetchZipCode"), {
+        description: t("warn.verifyZipCode"),
+        duration: 5000,
+      });
+      form.setError("cep", {
+        type: "manual",
+        message: t("warn.verifyZipCode"),
+      });
+      form.setValue("state", "");
+      form.setValue("city", "");
+    }
+  }, [cepError, form, t]);
 
   return (
     <Drawer
@@ -262,22 +363,44 @@ export default function DrawerFormUser({
           </Button>
         </DrawerHeader>
         <Form {...form}>
-          <div className="max-h-[calc(100vh-100px)] overflow-y-auto px-8">
+          <div className="@container max-h-[calc(100vh-100px)] overflow-y-auto px-8">
             <form
               id="user-form"
               className="flex flex-col gap-3 rounded-md px-4 py-2 border-gray-shade-200 border bg-card"
               onSubmit={form.handleSubmit(onSubmit)}
             >
-              <p className="font-bold text-lg">Informações pessoais</p>
+              <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 mb-1">
+                {isCompany ? (
+                  <Building2 className="h-5 w-5 text-primary" />
+                ) : (
+                  <User className="h-5 w-5 text-primary" />
+                )}
+                <div>
+                  <p className="text-sm font-medium">
+                    {isCompany ? "Pessoa Jurídica" : "Pessoa Física"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    O tipo de conta não pode ser alterado
+                  </p>
+                </div>
+              </div>
+
+              <p className="font-bold text-lg">
+                {isCompany ? "Informações da empresa" : "Informações pessoais"}
+              </p>
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("signUp.name")} *</FormLabel>
+                    <FormLabel>
+                      {isCompany ? "Razão Social" : t("signUp.name")} *
+                    </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder={t("signUp.name")}
+                        placeholder={
+                          isCompany ? "Razão Social" : t("signUp.name")
+                        }
                         disabled={isUpdatePending}
                         autoComplete="name"
                         {...field}
@@ -309,42 +432,23 @@ export default function DrawerFormUser({
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-3 gap-4 max-md:grid-cols-1">
+              {/* CNPJ — company only */}
+              {isCompany && (
                 <FormField
                   control={form.control}
-                  name="crea_cau"
+                  name="cnpj"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Registro CREA/CAU</FormLabel>
+                      <FormLabel>CNPJ</FormLabel>
                       <FormControl>
                         <Input
                           type="text"
-                          placeholder="26.2024.9999999"
+                          placeholder="00.000.000/0000-00"
                           disabled={isUpdatePending}
                           autoComplete="none"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="birthdate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("signUp.birthDate")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="text"
-                          placeholder="DD/MM/AAAA"
-                          disabled={isUpdatePending}
-                          autoComplete="bday"
-                          value={masks.date(field.value || "")}
+                          value={masks.cnpj(field.value || "")}
                           onChange={(e) =>
-                            field.onChange(masks.date(e.target.value))
+                            field.onChange(masks.cnpj(e.target.value))
                           }
                         />
                       </FormControl>
@@ -352,24 +456,55 @@ export default function DrawerFormUser({
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("signUp.city")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          disabled={isUpdatePending}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              )}
+
+              {/* Member-only fields: CREA/CAU, birthdate */}
+              {!isCompany && (
+                <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
+                  <FormField
+                    control={form.control}
+                    name="crea_cau"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Registro CREA/CAU</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="26.2024.9999999"
+                            disabled={isUpdatePending}
+                            autoComplete="none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="birthdate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("signUp.birthDate")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="text"
+                            placeholder="DD/MM/AAAA"
+                            disabled={isUpdatePending}
+                            autoComplete="bday"
+                            value={masks.date(field.value || "")}
+                            onChange={(e) =>
+                              field.onChange(masks.date(e.target.value))
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
 
               <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <p className="text-sm text-blue-800 dark:text-blue-200">
@@ -451,59 +586,204 @@ export default function DrawerFormUser({
                 />
               </div>
 
-              <p className="font-bold text-lg mt-4">
-                Informações profissionais
-              </p>
+              {/* Member-only professional section */}
+              {!isCompany && (
+                <>
+                  <p className="font-bold text-lg mt-4">
+                    Informações profissionais
+                  </p>
+                  <FormField
+                    control={form.control}
+                    name="activity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("signUp.activityArea")}</FormLabel>
+                        <FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            value={field.value}
+                          >
+                            <SelectTrigger
+                              className="w-full"
+                              disabled={isUpdatePending}
+                            >
+                              <SelectValue
+                                placeholder={t("signUp.activityArea")}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Arquitetura">
+                                Arquitetura
+                              </SelectItem>
+                              <SelectItem value="Engenharia Civil">
+                                Engenharia Civil
+                              </SelectItem>
+                              <SelectItem value="Coordenação de Projetos">
+                                Coordenação de Projetos
+                              </SelectItem>
+                              <SelectItem value="Pesquisador(a)">
+                                Pesquisador(a)
+                              </SelectItem>
+                              <SelectItem value="Outro">Outro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="enterprise"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("signUp.companyName")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder={t("signUp.companyName")}
+                            disabled={isUpdatePending}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+
+              {/* Address section */}
+              <p className="font-bold text-lg mt-4">Endereço</p>
+
               <FormField
                 control={form.control}
-                name="activity"
+                name="cep"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("signUp.activityArea")}</FormLabel>
+                    <FormLabel>CEP</FormLabel>
                     <FormControl>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        value={field.value}
-                      >
-                        <SelectTrigger
-                          className="w-full"
+                      <div className="flex items-center gap-2">
+                        <Input
+                          placeholder="00000-000"
                           disabled={isUpdatePending}
-                        >
-                          <SelectValue placeholder={t("signUp.activityArea")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Arquitetura">
-                            Arquitetura
-                          </SelectItem>
-                          <SelectItem value="Engenharia Civil">
-                            Engenharia Civil
-                          </SelectItem>
-                          <SelectItem value="Coordenação de Projetos">
-                            Coordenação de Projetos
-                          </SelectItem>
-                          <SelectItem value="Pesquisador(a)">
-                            Pesquisador(a)
-                          </SelectItem>
-                          <SelectItem value="Outro">Outro</SelectItem>
-                        </SelectContent>
-                      </Select>
+                          value={masks.cep(field.value || "")}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/\D/g, "");
+                            field.onChange(e.target.value);
+                            if (raw.length === 0 && filledByCep) {
+                              setFilledByCep(false);
+                              setCepFilledFields(new Set());
+                              setSelectedState("");
+                              form.setValue("state", "");
+                              form.setValue("city", "");
+                              form.setValue("neighborhood", "");
+                              form.setValue("street", "");
+                            }
+                            if (e.target.value.length > 8)
+                              searchCep(e.target.value);
+                          }}
+                        />
+                        {locationLoading && (
+                          <div className="h-4 w-4 animate-spin rounded-full border-1 border-primary border-t-transparent" />
+                        )}
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              <div className="grid grid-cols-1 @md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estado</FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            setSelectedState(value);
+                            if (!filledByCep) {
+                              form.setValue("city", "");
+                            }
+                          }}
+                          value={field.value}
+                          disabled={
+                            filledByCep || locationLoading || isUpdatePending
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione o estado" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {states.map((state) => (
+                              <SelectItem
+                                key={state.label}
+                                value={state.value.toUpperCase()}
+                              >
+                                {state.label} - {state.value}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem className="@md:col-span-2">
+                      <FormLabel>{t("signUp.city")}</FormLabel>
+                      <FormControl>
+                        {filledByCep ? (
+                          <Input placeholder="Cidade" disabled {...field} />
+                        ) : (
+                          <CityCombobox
+                            cities={cities}
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            disabled={
+                              !selectedState ||
+                              locationLoading ||
+                              isUpdatePending
+                            }
+                            isLoading={citiesLoading}
+                            isError={citiesError}
+                            placeholder={
+                              !selectedState
+                                ? "Selecione o estado primeiro"
+                                : "Selecione a cidade"
+                            }
+                          />
+                        )}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
-                name="enterprise"
+                name="neighborhood"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("signUp.companyName")}</FormLabel>
+                    <FormLabel>Bairro</FormLabel>
                     <FormControl>
                       <Input
-                        type="text"
-                        placeholder={t("signUp.companyName")}
-                        disabled={isUpdatePending}
+                        placeholder="Bairro"
+                        disabled={
+                          cepFilledFields.has("neighborhood") ||
+                          locationLoading ||
+                          isUpdatePending
+                        }
                         {...field}
                       />
                     </FormControl>
@@ -511,6 +791,47 @@ export default function DrawerFormUser({
                   </FormItem>
                 )}
               />
+
+              <div className="grid grid-cols-1 @md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="street"
+                  render={({ field }) => (
+                    <FormItem className="@md:col-span-2">
+                      <FormLabel>Rua</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Rua"
+                          disabled={
+                            cepFilledFields.has("street") ||
+                            locationLoading ||
+                            isUpdatePending
+                          }
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Nº"
+                          disabled={isUpdatePending}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </form>
           </div>
         </Form>

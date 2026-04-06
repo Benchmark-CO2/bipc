@@ -1419,7 +1419,7 @@ paths:
                     column_number: 120
                     avg_beam_span: 6
                     avg_slab_span: 5
-              
+
               concrete_wall:
                 summary: "Concrete Wall Module"
                 value:
@@ -1453,7 +1453,7 @@ paths:
                     slab_area: 15000
                     wall_form_area: 6000
                     slab_form_area: 30000
-              
+
               structural_masonry:
                 summary: "Structural Masonry Module"
                 value:
@@ -1514,7 +1514,7 @@ paths:
                         - type: "inteiro (14x19x39)"
                           fbk: 8
                           quantity: 5000
-              
+
               raft_foundation:
                 summary: "Raft Foundation Module"
                 value:
@@ -1537,7 +1537,7 @@ paths:
                         resistance: "CP190"
                         mass: 150.0
                     unit_id: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
-              
+
               piles_foundation:
                 summary: "Piles Foundation Module"
                 value:
@@ -1578,7 +1578,7 @@ paths:
                           resistance: "CA60"
                           mass: 5.0
                     unit_id: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
-              
+
               raft_piles_foundation:
                 summary: "Raft + Piles Foundation Module"
                 value:
@@ -1796,6 +1796,7 @@ components:
         - name
         - email
         - password
+        - type
       properties:
         name:
           type: string
@@ -1805,6 +1806,14 @@ components:
         password:
           type: string
           format: password
+        type:
+          type: string
+          enum:
+            - member
+            - company
+        cnpj:
+          type: string
+          description: CNPJ number (for company users) digits only
         crea_cau:
           type: string
           description: CREA or CAU registration number
@@ -1816,6 +1825,16 @@ components:
         activity:
           type: string
         enterprise:
+          type: string
+        cep:
+          type: string
+        state:
+          type: string
+        neighborhood:
+          type: string
+        street:
+          type: string
+        number:
           type: string
 
     User:
@@ -1852,6 +1871,9 @@ components:
           type: string
           format: password
           description: "User's new password. Must be at least 8 characters long."
+        cnpj:
+          type: string
+          description: CNPJ number (for company users) digits only
         crea_cau:
           type: string
           description: CREA or CAU registration number
@@ -1863,6 +1885,16 @@ components:
         activity:
           type: string
         enterprise:
+          type: string
+        cep:
+          type: string
+        state:
+          type: string
+        neighborhood:
+          type: string
+        street:
+          type: string
+        number:
           type: string
 
     InvitationsWithDetails:
@@ -2218,7 +2250,15 @@ components:
         type:
           type: string
           description: "The type of structural module."
-          enum: [beam_column, concrete_wall, structural_masonry, raft_foundation, piles_foundation, raft_piles_foundation]
+          enum:
+            [
+              beam_column,
+              concrete_wall,
+              structural_masonry,
+              raft_foundation,
+              piles_foundation,
+              raft_piles_foundation,
+            ]
         data:
           description: "Polymorphic data containing the specific details for the chosen module type. The structure of this object depends on the 'type' field."
           oneOf:

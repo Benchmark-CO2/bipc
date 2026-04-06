@@ -183,6 +183,36 @@ build/api:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags='-s' -o=./bin/linux_amd64/api ./cmd/api
 
 # ==================================================================================== #
+# STAGE
+# ==================================================================================== #
+
+stage_host_ip = 18.231.253.169
+
+## stage/connect: connect to the stage server
+.PHONY: stage/connect
+stage/connect:
+	ssh -i ~/.ssh/mestra.pem ubuntu@$(stage_host_ip)
+
+## stage/deploy/api: deploy the api to stage
+.PHONY: stage/deploy/api
+stage/deploy/api:
+	rsync -P -e "ssh -i ~/.ssh/mestra.pem" ./bin/linux_amd64/api ubuntu@$(stage_host_ip):~
+	rsync -rP --delete -e "ssh -i ~/.ssh/mestra.pem" ./migrations ubuntu@$(stage_host_ip):~
+	rsync -P -e "ssh -i ~/.ssh/mestra.pem" .envrc ubuntu@$(stage_host_ip):~
+	rsync -P -e "ssh -i ~/.ssh/mestra.pem" ./remote/stage/api.service ubuntu@$(stage_host_ip):~
+	rsync -P -e "ssh -i ~/.ssh/mestra.pem" ./remote/stage/Caddyfile ubuntu@$(stage_host_ip):~
+	ssh -t -i ~/.ssh/mestra.pem ubuntu@$(stage_host_ip) '\
+		migrate -path ~/migrations -database $(DB_DSN) up \
+		&& sudo mv ~/.envrc /etc/environment \
+		&& sudo systemctl daemon-reload \
+		&& sudo mv ~/api.service /etc/systemd/system/ \
+		&& sudo systemctl enable api \
+		&& sudo systemctl restart api \
+		&& sudo mv ~/Caddyfile /etc/caddy/ \
+		&& sudo systemctl reload caddy \
+	'
+
+# ==================================================================================== #
 # PRODUCTION
 # ==================================================================================== #
 

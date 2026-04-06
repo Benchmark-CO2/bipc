@@ -105,12 +105,6 @@ func (app *application) createPasswordResetTokenHandler(w http.ResponseWriter, r
 		return
 	}
 
-	if !user.Activated {
-		v.AddError("email", "user account must be activated")
-		app.failedValidationResponse(w, r, v.Errors)
-		return
-	}
-
 	token, err := app.models.Tokens.New(user.ID, 1*time.Hour, data.ScopePasswordReset, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

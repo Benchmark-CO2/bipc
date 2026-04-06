@@ -2,6 +2,6 @@
   email contato@bipc.org.br
 }
 
-bipc.org.br {
+stage.bipc.org.br {
   reverse_proxy localhost:4000
 }

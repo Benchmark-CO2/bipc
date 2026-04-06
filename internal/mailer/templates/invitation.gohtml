@@ -1,12 +1,18 @@
 {{define "subject"}}Your project awaits. Start collaborating today{{ end }}
 
 {{define "plainBody"}}
-Hi, 
-You`ve been invited by {{.inviterName}} to join the project "{{.projectName}}".
-To accept the invitation, log in to the platform: {{.url}}/login
-This invitation will expire in 7 days.
-Thanks,
-The BIPC Team
+Olá,
+
+Você foi convidado(a) por {{.inviterName}} a participar do projeto “{{.projectName}}” na Plataforma BIPc.
+
+Para aceitar, faça login utilizando o mesmo endereço de e-mail que recebeu este convite, acessando o link abaixo:
+
+{{.url}}/login
+
+Este convite é válido por 7 dias.
+
+Atenciosamente,
+Equipe BIPc
 {{ end }}
 
 {{define "htmlBody"}}
@@ -17,15 +23,24 @@ The BIPC Team
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   </head>
   <body>
-    <p>Hi,</p>
-    <p>You`ve been invited by <strong>{{.inviterName}}</strong> to join the project "<strong>{{.projectName}}</strong>".</p>
     <p>
-      To accept the invitation, log in to the platform: <a href="{{.url}}/login">log in here</a>.
+      Olá,
     </p>
-    <p>This invitation will expire in 7 days.</p>
     <p>
-      Thanks,<br />
-      The BIPC Team
+      Você foi convidado(a) por <strong>{{.inviterName}}</strong> a participar do projeto "<strong>{{.projectName}}</strong>" na Plataforma BIPc.
+    </p>
+    <p>
+      Para aceitar, faça login utilizando o mesmo endereço de e-mail que recebeu este convite, acessando o link abaixo:
+    </p>
+    <p>
+      <a href="{{.url}}/login">Clique aqui para fazer login.</a>
+    </p>
+    <p>
+      Este convite é válido por 7 dias.
+    </p>
+    <p>
+      Atenciosamente,<br />
+      Equipe BIPc
     </p>
   </body>
 </html>

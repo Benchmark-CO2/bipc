@@ -346,10 +346,10 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 		project_consumption AS (
 			SELECT
 				u.project_id,
-				SUM(fc.co2_min) as co2_min,
-				SUM(fc.co2_max) as co2_max,
-				SUM(fc.energy_min) as energy_min,
-				SUM(fc.energy_max) as energy_max
+				SUM(fc.co2_min * u.repetition_count) / NULLIF(SUM(u.repetition_count), 0) as co2_min,
+				SUM(fc.co2_max * u.repetition_count) / NULLIF(SUM(u.repetition_count), 0) as co2_max,
+				SUM(fc.energy_min * u.repetition_count) / NULLIF(SUM(u.repetition_count), 0) as energy_min,
+				SUM(fc.energy_max * u.repetition_count) / NULLIF(SUM(u.repetition_count), 0) as energy_max
 			FROM units u
 			INNER JOIN filtered_consumption fc ON u.id = fc.unit_id
 			GROUP BY u.project_id

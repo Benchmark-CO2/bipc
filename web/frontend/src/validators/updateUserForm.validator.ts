@@ -54,6 +54,12 @@ export const updateUserFormSchema = z
     city: z.string().optional(),
     activity: z.string().optional(),
     enterprise: z.string().optional(),
+    cnpj: z.string().optional(),
+    cep: z.string().optional(),
+    state: z.string().optional(),
+    neighborhood: z.string().optional(),
+    street: z.string().optional(),
+    number: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     const { password, confirmPassword } = data;

@@ -23,7 +23,7 @@
     },
     "crumbs": {
       "home": "Início",
-      "projects": "Projetos",
+      "projects": "Empreendimentos",
       "versions": "Versões",
       "dashboard": "Dashboard",
       "settings": "Configurações"
@@ -81,10 +81,10 @@
     "profile": "Perfil"
   },
   "projects": {
-    "title": "Projetos",
-    "description": "Gerencie seus projetos aqui",
+    "title": "Empreendimentos",
+    "description": "Gerencie seus empreendimentos aqui",
     "addProject": "Adicionar Empreendimento",
-    "noProjects": "Você não possui projetos."
+    "noProjects": "Você não possui empreendimentos."
   },
   "units": {
     "title": "Edificações",
@@ -123,7 +123,7 @@
   "public": {
     "comingSoonTitle": "Em Construção 🚧",
     "comingSoonDescription": "Estamos trabalhando para trazer algo incrível para você.",
-    "accessProjects": "Acessar Projetos",
+    "accessProjects": "Acessar Empreendimentos",
     "login": "Fazer Login"
   },
   "loginPage": {
@@ -504,8 +504,8 @@
     "nameLabel": "Nome *",
     "namePlaceholder": "Digite o nome do usuário",
     "nameOrEmailPlaceholder": "Selecione o usuário ou digite o email",
-    "projectsLabel": "Projetos *",
-    "projectsPlaceholder": "Selecione um projeto",
+    "projectsLabel": "Empreendimentos *",
+    "projectsPlaceholder": "Selecione um empreendimento",
     "permissionsLabel": "Permissões *",
     "viewPermission": "Visualizar",
     "editPermission": "Editar",
