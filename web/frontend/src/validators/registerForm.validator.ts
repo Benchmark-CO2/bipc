@@ -87,6 +87,7 @@ export const registerFormSchema = z
     neighborhood: z.string().optional(),
     street: z.string().optional(),
     number: z.string().optional(),
+    complement: z.string().optional(),
     termsAccepted: z.literal(true, {
       errorMap: () => ({
         message: "Você deve aceitar os Termos de Uso para se registrar.",

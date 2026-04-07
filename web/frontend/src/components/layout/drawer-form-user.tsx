@@ -91,6 +91,7 @@ export default function DrawerFormUser({
       neighborhood: userData?.neighborhood || "",
       street: userData?.street || "",
       number: userData?.number || "",
+      complement: userData?.complement || "",
     },
   });
 
@@ -217,6 +218,8 @@ export default function DrawerFormUser({
       updateData.street = data.street;
     if (data.number && data.number.trim() !== "")
       updateData.number = data.number;
+    if (data.complement && data.complement.trim() !== "")
+      updateData.complement = data.complement;
 
     mutateUpdate(updateData);
   };
@@ -251,6 +254,7 @@ export default function DrawerFormUser({
         neighborhood: userData.neighborhood || "",
         street: userData.street || "",
         number: userData.number || "",
+        complement: userData.complement || "",
       });
     }
   }, [openDrawer, userData, form, resetUpdate]);
@@ -280,6 +284,7 @@ export default function DrawerFormUser({
         neighborhood: userData.neighborhood || "",
         street: userData.street || "",
         number: userData.number || "",
+        complement: userData.complement || "",
       });
     }
   }, [userData]);
@@ -680,6 +685,7 @@ export default function DrawerFormUser({
                               form.setValue("city", "");
                               form.setValue("neighborhood", "");
                               form.setValue("street", "");
+                              form.setValue("complement", "");
                             }
                             if (e.target.value.length > 8)
                               searchCep(e.target.value);
@@ -823,6 +829,26 @@ export default function DrawerFormUser({
                       <FormControl>
                         <Input
                           placeholder="Nº"
+                          disabled={isUpdatePending}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1">
+                <FormField
+                  control={form.control}
+                  name="complement"
+                  render={({ field }) => (
+                    <FormItem className="@md:col-span-2">
+                      <FormLabel>Complemento</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Complemento"
                           disabled={isUpdatePending}
                           {...field}
                         />

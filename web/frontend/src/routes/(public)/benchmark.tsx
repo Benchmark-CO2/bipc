@@ -47,7 +47,7 @@ function RouteComponent() {
 
   const maxData = chartData.map((d) => (d.max !== undefined ? d.max : 0));
   const minData = chartData.map((d) =>
-    d.min !== undefined ? d.min : Infinity
+    d.min !== undefined ? d.min : Infinity,
   );
 
   return (
@@ -67,8 +67,10 @@ function RouteComponent() {
                     <SelectValue placeholder="Gráfico" />
                   </SelectTrigger>
                   <SelectContent defaultValue={"co2"}>
-                    <SelectItem value="trend">Classificação</SelectItem>
-                    <SelectItem value="co2">Fração Acumulada</SelectItem>
+                    <SelectItem value="trend">
+                      Curva das pegadas máxima e mínima
+                    </SelectItem>
+                    <SelectItem value="co2">Benchmark</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
