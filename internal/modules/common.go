@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -50,13 +51,19 @@ type ConcreteVolumeItem struct {
 }
 
 type ConcreteElement struct {
-	Volumes []ConcreteVolumeItem `json:"volumes,omitempty"`
-	Steel   []SteelMaterial      `json:"steel,omitempty"`
+	Volumes []ConcreteVolumeItem `json:"volumes"`
+	Steel   []SteelMaterial      `json:"steel"`
 }
 
 func (c ConcreteElement) MarshalJSON() ([]byte, error) {
 	if len(c.Volumes) == 0 && len(c.Steel) == 0 {
 		return []byte("null"), nil
+	}
+	if c.Volumes == nil {
+		c.Volumes = []ConcreteVolumeItem{}
+	}
+	if c.Steel == nil {
+		c.Steel = []SteelMaterial{}
 	}
 	type Alias ConcreteElement
 	return json.Marshal((Alias)(c))
@@ -405,4 +412,84 @@ func extractIntPointer(data map[string]interface{}, key string) *int {
 		return &intVal
 	}
 	return nil
+}
+
+func extractStringPointer(data map[string]interface{}, key string) *string {
+	val, ok := data[key].(string)
+	if !ok {
+		return nil
+	}
+
+	trimmed := strings.TrimSpace(val)
+	if trimmed == "" {
+		return nil
+	}
+
+	return &trimmed
+}
+
+// PrepareModuleTargetConsumptions creates target consumption records for floors and/or unit.
+// It retrieves areas from the database and calculates consumption per m².
+func PrepareModuleTargetConsumptions(
+	models data.Models,
+	moduleID, optionID, roleID uuid.UUID,
+	result Consumption,
+	floorIDs []uuid.UUID,
+	unitID *uuid.UUID,
+) ([]data.ModuleTargetConsumption, error) {
+	targets := make([]data.ModuleTargetConsumption, 0)
+
+	if len(floorIDs) > 0 {
+		for _, floorID := range floorIDs {
+			area, err := models.Units.GetFloorArea(floorID)
+			if err != nil {
+				return nil, err
+			}
+
+			if area == 0 {
+				return nil, fmt.Errorf("%w: floor %s has zero area", data.ErrZeroArea, floorID)
+			}
+
+			targets = append(targets, data.ModuleTargetConsumption{
+				ModuleID:   moduleID,
+				TargetID:   floorID,
+				TargetType: "floor",
+				RoleID:     roleID,
+				OptionID:   optionID,
+				CO2Min:     result.CO2Min / area,
+				CO2Max:     result.CO2Max / area,
+				EnergyMin:  result.EnergyMin / area,
+				EnergyMax:  result.EnergyMax / area,
+			})
+		}
+	}
+
+	if unitID != nil {
+		totalArea, err := models.Units.GetUnitTotalArea(*unitID)
+		if err != nil {
+			return nil, err
+		}
+
+		if totalArea == 0 {
+			return nil, fmt.Errorf("unit %s has zero total area, please add floors with area before adding modules", *unitID)
+		}
+
+		targets = append(targets, data.ModuleTargetConsumption{
+			ModuleID:   moduleID,
+			TargetID:   *unitID,
+			TargetType: "unit",
+			RoleID:     roleID,
+			OptionID:   optionID,
+			CO2Min:     result.CO2Min / totalArea,
+			CO2Max:     result.CO2Max / totalArea,
+			EnergyMin:  result.EnergyMin / totalArea,
+			EnergyMax:  result.EnergyMax / totalArea,
+		})
+	}
+
+	if len(targets) == 0 {
+		return nil, errors.New("no valid targets provided")
+	}
+
+	return targets, nil
 }

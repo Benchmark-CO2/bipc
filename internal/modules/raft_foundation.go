@@ -70,7 +70,20 @@ func (r *RaftFoundation) Insert(models data.Models, optionID uuid.UUID, result C
 
 	moduleToInsert := r.toDataModule(moduleID, optionID, result)
 
-	insertedModule, err := models.Modules.Insert(moduleToInsert)
+	option, err := models.Options.GetByID(optionID)
+	if err != nil {
+		return nil, err
+	}
+
+	targets, err := PrepareModuleTargetConsumptions(
+		models, moduleID, optionID, option.RoleID,
+		result, nil, &r.UnitID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	insertedModule, err := models.Modules.Insert(moduleToInsert, targets)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +105,21 @@ func (r *RaftFoundation) Get(models data.Models, moduleID uuid.UUID) (Module, er
 
 func (r *RaftFoundation) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
 	module := r.toDataModule(moduleID, optionID, result)
-	return models.Modules.Update(module)
+
+	option, err := models.Options.GetByID(optionID)
+	if err != nil {
+		return err
+	}
+
+	targets, err := PrepareModuleTargetConsumptions(
+		models, moduleID, optionID, option.RoleID,
+		result, nil, &r.UnitID,
+	)
+	if err != nil {
+		return err
+	}
+
+	return models.Modules.Update(module, targets)
 }
 
 func (r *RaftFoundation) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {

@@ -1836,6 +1836,8 @@ components:
           type: string
         number:
           type: string
+        complement:
+          type: string
 
     User:
       allOf:
@@ -1895,6 +1897,8 @@ components:
         street:
           type: string
         number:
+          type: string
+        complement:
           type: string
 
     InvitationsWithDetails:
@@ -2056,6 +2060,11 @@ components:
         type:
           type: string
           readOnly: true
+        repetition_count:
+          type: integer
+          description: "Number of repeated instances represented by this unit in project-level weighted consumption calculations."
+          example: 1
+          readOnly: true
         area:
           type: number
           format: float
@@ -2103,6 +2112,15 @@ components:
         type:
           type: string
           example: "tower"
+        repetition_count:
+          type: integer
+          description: "Optional repetition factor for the unit. Used as a weight in project consumption aggregation. Defaults to 1."
+          example: 1
+        housing_units_count:
+          type: integer
+          nullable: true
+          description: "Optional number of housing units/apartments in the tower."
+          example: 48
 
     Tower:
       allOf:
@@ -2177,6 +2195,15 @@ components:
         type:
           type: string
           enum: [tower]
+        repetition_count:
+          type: integer
+          description: "Optional repetition factor for the unit. If omitted, defaults to 1."
+          example: 1
+        housing_units_count:
+          type: integer
+          nullable: true
+          description: "Optional number of housing units/apartments in the tower."
+          example: 48
         data:
           description: "Polymorphic data based on the unit type."
           oneOf:
@@ -2193,6 +2220,12 @@ components:
           minItems: 1
           items:
             $ref: "#/components/schemas/FloorCreate"
+        housing_units_count:
+          type: integer
+          nullable: true
+          deprecated: true
+          description: "Optional number of housing units/apartments in the tower. Prefer sending this field at the top level of the unit payload."
+          example: 48
 
     FloorCreate:
       type: object
@@ -2350,6 +2383,58 @@ components:
         - volumes
         - steel
 
+    SlabType:
+      type: string
+      description: |
+        Optional short English identifier for the slab system.
+        Informational only and does not affect calculations.
+
+        Mapping to original names (ordered by category):
+
+        Feita em obra:
+        - solid: Laje maciça (concreto armado) com vigas ou paredes estruturais
+        - ribbed: Laje nervurada (unidirecional, bidirecional / tipo waffle)
+        - mushroom_solid: Laje maciça (concreto armado) cogumelo (com capitel)
+        - mushroom_ribbed: Laje nervurada (unidirecional, bidirecional / tipo waffle) cogumelo (com capitel)
+        - flat: Laje plana / sem vigas
+        - band_beam: Laje com vigas-faixa
+        - pt_solid: Laje protendida maciça
+        - pt_ribbed: Laje protendida nervurada
+        - pt_mushroom_solid: Laje protendida maciça cogumelo (com capitel)
+        - pt_mushroom_ribbed: Laje protendida nervurada cogumelo (com capitel)
+        - pt_flat: Laje plana protendida / sem vigas
+        - pt_band_beam: Laje protendida com vigas-faixa
+
+        Semi pré-fabricada ou pré-fabricada:
+        - trussed: Laje treliçada (vigota treliçada + enchimento + capa)
+        - joist: Laje de vigotas pré-moldadas (viga T/invertida etc. + enchimento + capa)
+        - filigree: Pré-laje / laje filigrana (placa fina pré-moldada + armaduras + capa)
+        - hollow_core: Laje alveolar (protendida)
+        - precast_solid: Painel maciço pré-moldado (placa maciça)
+        - precast_ribbed: Painéis nervurados pré-moldados (T, TT e variações industriais)
+        - pt_precast: Lajes protendidas pré-moldadas (maciças ou com alvéolos, conforme sistema)
+      enum:
+        - solid
+        - ribbed
+        - mushroom_solid
+        - mushroom_ribbed
+        - flat
+        - band_beam
+        - pt_solid
+        - pt_ribbed
+        - pt_mushroom_solid
+        - pt_mushroom_ribbed
+        - pt_flat
+        - pt_band_beam
+        - trussed
+        - joist
+        - filigree
+        - hollow_core
+        - precast_solid
+        - precast_ribbed
+        - pt_precast
+      example: flat
+
     BeamColumnData:
       type: object
       description: "Data for a 'beam_column' type module."
@@ -2373,6 +2458,8 @@ components:
           description: "Concrete and steel composition for all slabs in the specified floors."
           allOf:
             - $ref: "#/components/schemas/ConcreteElement"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
         form_columns:
           type: number
           description: "Total area of concrete forms for columns in square meters (m²)."
@@ -2426,6 +2513,8 @@ components:
           description: "Concrete and steel composition for all slabs in the specified floors."
           allOf:
             - $ref: "#/components/schemas/ConcreteElement"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
         wall_thickness:
           type: number
           description: "Average thickness of the concrete walls in meters (m)."
@@ -2477,6 +2566,8 @@ components:
           description: "Concrete and steel composition for slabs."
           allOf:
             - $ref: "#/components/schemas/ConcreteElement"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
         form_columns:
           type: number
           description: "Total area of concrete forms for columns in m²."

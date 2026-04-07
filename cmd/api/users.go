@@ -27,6 +27,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		Neighborhood *string    `json:"neighborhood"`
 		Street       *string    `json:"street"`
 		Number       *string    `json:"number"`
+		Complement   *string    `json:"complement"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -51,6 +52,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		Neighborhood: input.Neighborhood,
 		Street:       input.Street,
 		Number:       input.Number,
+		Complement:   input.Complement,
 	}
 
 	if input.State != nil {
@@ -127,6 +129,7 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 		Neighborhood *string    `json:"neighborhood"`
 		Street       *string    `json:"street"`
 		Number       *string    `json:"number"`
+		Complement   *string    `json:"complement"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -195,6 +198,10 @@ func (app *application) updateUserHandler(w http.ResponseWriter, r *http.Request
 
 	if input.Number != nil {
 		user.Number = input.Number
+	}
+
+	if input.Complement != nil {
+		user.Complement = input.Complement
 	}
 
 	v := validator.New()

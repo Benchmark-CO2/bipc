@@ -14,6 +14,7 @@ type BeamColumn struct {
 	ConcreteColumns ConcreteElement `json:"concrete_columns,omitempty"`
 	ConcreteBeams   ConcreteElement `json:"concrete_beams,omitempty"`
 	ConcreteSlabs   ConcreteElement `json:"concrete_slabs,omitempty"`
+	SlabType        *string         `json:"slab_type,omitempty"`
 	FormColumns     *float64        `json:"form_columns,omitempty"`
 	FormBeams       *float64        `json:"form_beams,omitempty"`
 	FormSlabs       *float64        `json:"form_slabs,omitempty"`
@@ -34,6 +35,7 @@ func (b *BeamColumn) Validate(v *validator.Validator) {
 	validateConcreteElement(v, b.ConcreteColumns, "concrete_columns")
 	validateConcreteElement(v, b.ConcreteBeams, "concrete_beams")
 	validateConcreteElement(v, b.ConcreteSlabs, "concrete_slabs")
+	validateSlabType(v, b.SlabType)
 
 	if b.FormColumns != nil {
 		v.Check(*b.FormColumns >= 0, "form_columns", "cannot be negative")
@@ -82,7 +84,20 @@ func (b *BeamColumn) Insert(models data.Models, optionID uuid.UUID, result Consu
 
 	moduleToInsert := b.toDataModule(moduleID, optionID, result)
 
-	insertedModule, err := models.Modules.Insert(moduleToInsert)
+	option, err := models.Options.GetByID(optionID)
+	if err != nil {
+		return nil, err
+	}
+
+	targets, err := PrepareModuleTargetConsumptions(
+		models, moduleID, optionID, option.RoleID,
+		result, b.FloorIDs, nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	insertedModule, err := models.Modules.Insert(moduleToInsert, targets)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +119,21 @@ func (b *BeamColumn) Get(models data.Models, moduleID uuid.UUID) (Module, error)
 
 func (b *BeamColumn) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
 	module := b.toDataModule(moduleID, optionID, result)
-	return models.Modules.Update(module)
+
+	option, err := models.Options.GetByID(optionID)
+	if err != nil {
+		return err
+	}
+
+	targets, err := PrepareModuleTargetConsumptions(
+		models, moduleID, optionID, option.RoleID,
+		result, b.FloorIDs, nil,
+	)
+	if err != nil {
+		return err
+	}
+
+	return models.Modules.Update(module, targets)
 }
 
 func (b *BeamColumn) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
@@ -112,6 +141,7 @@ func (b *BeamColumn) toDataModule(moduleID, optionID uuid.UUID, result Consumpti
 		"concrete_columns": b.ConcreteColumns,
 		"concrete_beams":   b.ConcreteBeams,
 		"concrete_slabs":   b.ConcreteSlabs,
+		"slab_type":        normalizeSlabType(b.SlabType),
 		"form_columns":     b.FormColumns,
 		"form_beams":       b.FormBeams,
 		"form_slabs":       b.FormSlabs,
@@ -156,6 +186,7 @@ func (b *BeamColumn) fromDataModule(d *data.Module) Module {
 		ConcreteColumns: concreteColumns,
 		ConcreteBeams:   concreteBeams,
 		ConcreteSlabs:   concreteSlabs,
+		SlabType:        extractStringPointer(d.Data, "slab_type"),
 		FormColumns:     extractFloat64Pointer(d.Data, "form_columns"),
 		FormBeams:       extractFloat64Pointer(d.Data, "form_beams"),
 		FormSlabs:       extractFloat64Pointer(d.Data, "form_slabs"),

@@ -13,11 +13,12 @@ import {
 } from "@/validators/moduleFormByType.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { /*Loader2,*/ Loader2, Plus, X } from "lucide-react";
+import { AlertTriangle, Loader2, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "../../ui/alert";
 import { Button } from "../../ui/button";
 import {
   Drawer,
@@ -33,7 +34,6 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "../../ui/form";
 import {
   Select,
@@ -297,6 +297,7 @@ const DrawerFormModule = ({
             column_number: toLocalString(restAny.column_number ?? 0),
             avg_beam_span: toLocalString(restAny.avg_beam_span ?? 0),
             avg_slab_span: toLocalString(restAny.avg_slab_span ?? 0),
+            slab_type: restAny.slab_type,
           }),
 
           // Concrete wall specific fields
@@ -307,6 +308,7 @@ const DrawerFormModule = ({
             slab_area: restAny.slab_area ?? 0,
             wall_form_area: toLocalString(restAny.wall_form_area ?? 0),
             slab_form_area: toLocalString(restAny.slab_form_area ?? 0),
+            slab_type: restAny.slab_type,
           }),
 
           // Raft foundation specific fields
@@ -357,6 +359,7 @@ const DrawerFormModule = ({
             form_slabs: toLocalString(restAny.form_slabs ?? 0),
             form_columns: toLocalString(restAny.form_columns ?? 0),
             form_beams: toLocalString(restAny.form_beams ?? 0),
+            slab_type: restAny.slab_type,
             masonry_blocks: restAny.masonry?.blocks
               ? restAny.masonry.blocks.map((block: any) => ({
                   type: block.type,
@@ -429,6 +432,7 @@ const DrawerFormModule = ({
         column_number: data.column_number,
         avg_beam_span: data.avg_beam_span,
         avg_slab_span: data.avg_slab_span,
+        slab_type: data.slab_type,
       };
     } else if (moduleType === "concrete_wall") {
       filteredData = {
@@ -440,6 +444,7 @@ const DrawerFormModule = ({
         slab_area: data?.slab_area || 0,
         wall_form_area: data.wall_form_area,
         slab_form_area: data.slab_form_area,
+        slab_type: data.slab_type,
       };
     } else if (moduleType === "structural_masonry") {
       filteredData = {
@@ -465,6 +470,7 @@ const DrawerFormModule = ({
           data.form_beams !== 0 && {
             form_beams: data.form_beams,
           }),
+        slab_type: data.slab_type,
       };
     } else if (moduleType === "raft_foundation") {
       filteredData = {
@@ -510,6 +516,25 @@ const DrawerFormModule = ({
     } else {
       mutateCreation(baseFields);
     }
+  };
+
+  // Helper para coletar mensagens de erro únicas do formulário
+  const getFormErrorMessages = (errors: any): string[] => {
+    const messages = new Set<string>();
+    const traverse = (obj: any) => {
+      if (!obj || typeof obj !== "object") return;
+      if (typeof obj.message === "string" && obj.message.length > 0) {
+        messages.add(obj.message);
+        return;
+      }
+      for (const key of Object.keys(obj)) {
+        if (key !== "message" && key !== "type" && key !== "ref") {
+          traverse(obj[key]);
+        }
+      }
+    };
+    traverse(errors);
+    return Array.from(messages);
   };
 
   const handleClose = () => {
@@ -702,7 +727,6 @@ const DrawerFormModule = ({
                                 </SelectContent>
                               </Select>
                             </FormControl>
-                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -743,6 +767,24 @@ const DrawerFormModule = ({
           )}
         </div>
         <DrawerFooter className="px-8">
+          {form.formState.isSubmitted &&
+            Object.keys(form.formState.errors).length > 0 && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <p className="font-medium mb-1">
+                    Corrija os seguintes erros antes de enviar:
+                  </p>
+                  <ul className="list-disc pl-4 text-xs space-y-0.5">
+                    {getFormErrorMessages(form.formState.errors).map(
+                      (msg, i) => (
+                        <li key={i}>{msg}</li>
+                      ),
+                    )}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
           <Button
             type="submit"
             variant="bipc"
@@ -751,7 +793,9 @@ const DrawerFormModule = ({
             disabled={
               isCreationPending ||
               isUpdatePending ||
-              (selectedFloors.length === 0 && isUsingPaviments)
+              (selectedFloors.length === 0 && isUsingPaviments) ||
+              (form.formState.isSubmitted &&
+                Object.keys(form.formState.errors).length > 0)
             }
           >
             {isCreationPending || isUpdatePending ? (

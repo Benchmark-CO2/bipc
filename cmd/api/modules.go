@@ -82,7 +82,34 @@ func (app *application) duplicateModule(
 		UnitID:            unitID,
 	}
 
-	return app.models.Modules.Insert(duplicatedModule)
+	option, err := app.models.Options.GetByID(newOptionID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert module totals to Consumption type
+	result := modules.Consumption{
+		CO2Min:    *originalModule.TotalCO2Min,
+		CO2Max:    *originalModule.TotalCO2Max,
+		EnergyMin: *originalModule.TotalEnergyMin,
+		EnergyMax: *originalModule.TotalEnergyMax,
+	}
+
+	// Use centralized function to prepare targets with area calculations
+	targets, err := modules.PrepareModuleTargetConsumptions(
+		app.models,
+		newModuleID,
+		newOptionID,
+		option.RoleID,
+		result,
+		floorIDs,
+		unitID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return app.models.Modules.Insert(duplicatedModule, targets)
 }
 
 func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Request) {
@@ -115,6 +142,8 @@ func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Reque
 		case errors.Is(err, data.ErrInvalidFloorID):
 			app.badRequestResponse(w, r, err)
 		case errors.Is(err, data.ErrInvalidUnitID):
+			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrZeroArea):
 			app.badRequestResponse(w, r, err)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -226,6 +255,8 @@ func (app *application) updateModuleHandler(w http.ResponseWriter, r *http.Reque
 			app.badRequestResponse(w, r, err)
 		case errors.Is(err, data.ErrInvalidUnitID):
 			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrZeroArea):
+			app.badRequestResponse(w, r, err)
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
@@ -323,6 +354,8 @@ func (app *application) duplicateModuleHandler(w http.ResponseWriter, r *http.Re
 		case errors.Is(err, data.ErrInvalidFloorID):
 			app.badRequestResponse(w, r, err)
 		case errors.Is(err, data.ErrInvalidUnitID):
+			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrZeroArea):
 			app.badRequestResponse(w, r, err)
 		default:
 			app.serverErrorResponse(w, r, err)

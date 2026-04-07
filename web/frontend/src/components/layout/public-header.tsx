@@ -18,7 +18,7 @@ import {
   Rss,
   UserCircle,
   X,
-  List,
+  ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { CustomLink } from "../ui/custom-link";
@@ -38,7 +38,7 @@ const saibaMaisItems: PopoverItem[] = [
 const transparenciaItems: PopoverItem[] = [
   { label: "Privacidade dos dados", icon: Fingerprint, linkKey: "privacy" },
   { label: "Termos de uso", icon: ClipboardList, linkKey: "termsOfUse" },
-  { label: "Formulário de dados", icon: List, linkKey: "dataForm" },
+  { label: "Exercer meus direitos", icon: ShieldCheck, linkKey: "dataForm" },
 ];
 
 const activeProps = {

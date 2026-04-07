@@ -23,14 +23,14 @@ func (m BenchmarkModel) GetFloorsBenchmark() ([]*BenchmarkData, error) {
 	query := `
 		SELECT
 			f.id,
-			SUM(fc.co2_min) as co2_min,
-			SUM(fc.co2_max) as co2_max,
-			SUM(fc.energy_min) as energy_min,
-			SUM(fc.energy_max) as energy_max
+			COALESCE(SUM(mtc.co2_min), 0) as co2_min,
+			COALESCE(SUM(mtc.co2_max), 0) as co2_max,
+			COALESCE(SUM(mtc.energy_min), 0) as energy_min,
+			COALESCE(SUM(mtc.energy_max), 0) as energy_max
 		FROM floor f
 		INNER JOIN units u ON f.unit_id = u.id
 		INNER JOIN projects p ON u.project_id = p.id
-		LEFT JOIN element_consumption fc ON f.id = fc.floor_id
+		LEFT JOIN module_target_consumption mtc ON f.id = mtc.target_id AND mtc.target_type = 'floor'
 		WHERE p.benchmark = true
 		GROUP BY f.id`
 
@@ -81,19 +81,33 @@ func (m BenchmarkModel) GetFloorsBenchmark() ([]*BenchmarkData, error) {
 
 func (m BenchmarkModel) GetUnitsBenchmark() ([]*BenchmarkData, error) {
 	query := `
-		WITH unit_consumption_by_tech AS (
+		WITH floor_consumption AS (
 			SELECT
+				f.id as floor_id,
 				f.unit_id,
-				SUM(fc.co2_min * f.area) / NULLIF(SUM(f.area), 0) as co2_min,
-				SUM(fc.co2_max * f.area) / NULLIF(SUM(f.area), 0) as co2_max,
-				SUM(fc.energy_min * f.area) / NULLIF(SUM(f.area), 0) as energy_min,
-				SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max
+				f.area,
+				m.type as technology,
+				SUM(mtc.co2_min) as floor_co2_min,
+				SUM(mtc.co2_max) as floor_co2_max,
+				SUM(mtc.energy_min) as floor_energy_min,
+				SUM(mtc.energy_max) as floor_energy_max
 			FROM floor f
 			INNER JOIN units u ON f.unit_id = u.id
 			INNER JOIN projects p ON u.project_id = p.id
-			INNER JOIN element_consumption fc ON f.id = fc.floor_id
-			WHERE p.benchmark = true
-			GROUP BY f.unit_id, fc.technology
+			INNER JOIN module_target_consumption mtc ON f.id = mtc.target_id
+			INNER JOIN module m ON mtc.module_id = m.id
+			WHERE mtc.target_type = 'floor' AND p.benchmark = true
+			GROUP BY f.id, f.unit_id, f.area, m.type
+		),
+		unit_consumption_by_tech AS (
+			SELECT
+				unit_id,
+				SUM(floor_co2_min * area) / NULLIF(SUM(area), 0) as co2_min,
+				SUM(floor_co2_max * area) / NULLIF(SUM(area), 0) as co2_max,
+				SUM(floor_energy_min * area) / NULLIF(SUM(area), 0) as energy_min,
+				SUM(floor_energy_max * area) / NULLIF(SUM(area), 0) as energy_max
+			FROM floor_consumption
+			GROUP BY unit_id, technology
 		),
 		tower_total_consumption AS (
 			SELECT
@@ -271,19 +285,22 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 	}
 
 	query += `),
-		unit_consumption_by_tech AS (
+		floor_consumption AS (
 			SELECT
+				f.id as floor_id,
 				f.unit_id,
-				fc.technology,
-				SUM(fc.co2_min * f.area) / NULLIF(SUM(f.area), 0) as co2_min,
-				SUM(fc.co2_max * f.area) / NULLIF(SUM(f.area), 0) as co2_max,
-				SUM(fc.energy_min * f.area) / NULLIF(SUM(f.area), 0) as energy_min,
-				SUM(fc.energy_max * f.area) / NULLIF(SUM(f.area), 0) as energy_max
+				f.area,
+				m.type as technology,
+				SUM(mtc.co2_min) as floor_co2_min,
+				SUM(mtc.co2_max) as floor_co2_max,
+				SUM(mtc.energy_min) as floor_energy_min,
+				SUM(mtc.energy_max) as floor_energy_max
 			FROM floor f
 			INNER JOIN units u ON f.unit_id = u.id
 			INNER JOIN projects p ON u.project_id = p.id
-			INNER JOIN element_consumption fc ON f.id = fc.floor_id
-			WHERE p.benchmark = true`
+			INNER JOIN module_target_consumption mtc ON f.id = mtc.target_id
+			INNER JOIN module m ON mtc.module_id = m.id
+			WHERE mtc.target_type = 'floor' AND p.benchmark = true`
 
 	if filters.Technology != nil {
 		technologies := strings.Split(*filters.Technology, ",")
@@ -296,11 +313,21 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 		}
 
 		query += fmt.Sprintf(`
-			AND fc.technology = ANY(ARRAY[%s])`, strings.Join(techPlaceholders, ","))
+			AND m.type = ANY(ARRAY[%s])`, strings.Join(techPlaceholders, ","))
 	}
 
 	query += `
-			GROUP BY f.unit_id, fc.technology
+			GROUP BY f.id, f.unit_id, f.area, m.type
+		),
+		unit_consumption_by_tech AS (
+			SELECT
+				unit_id,
+				SUM(floor_co2_min * area) / NULLIF(SUM(area), 0) as co2_min,
+				SUM(floor_co2_max * area) / NULLIF(SUM(area), 0) as co2_max,
+				SUM(floor_energy_min * area) / NULLIF(SUM(area), 0) as energy_min,
+				SUM(floor_energy_max * area) / NULLIF(SUM(area), 0) as energy_max
+			FROM floor_consumption
+			GROUP BY unit_id, technology
 		),
 		filtered_consumption AS (
 			SELECT
@@ -319,10 +346,10 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 		project_consumption AS (
 			SELECT
 				u.project_id,
-				SUM(fc.co2_min) as co2_min,
-				SUM(fc.co2_max) as co2_max,
-				SUM(fc.energy_min) as energy_min,
-				SUM(fc.energy_max) as energy_max
+				SUM(fc.co2_min * u.repetition_count) / NULLIF(SUM(u.repetition_count), 0) as co2_min,
+				SUM(fc.co2_max * u.repetition_count) / NULLIF(SUM(u.repetition_count), 0) as co2_max,
+				SUM(fc.energy_min * u.repetition_count) / NULLIF(SUM(u.repetition_count), 0) as energy_min,
+				SUM(fc.energy_max * u.repetition_count) / NULLIF(SUM(u.repetition_count), 0) as energy_max
 			FROM units u
 			INNER JOIN filtered_consumption fc ON u.id = fc.unit_id
 			GROUP BY u.project_id

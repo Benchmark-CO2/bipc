@@ -1,15 +1,19 @@
+import BipcIcon from "@/assets/icons/bipc";
+import CollapseContentIcon from "@/assets/icons/collapse-content";
+import ExpandContentIcon from "@/assets/icons/expand-content";
 import Logo from "@/assets/logo.svg";
 import LogoFull from "@/assets/logo_full.svg";
-import BipcIcon from "@/assets/icons/bipc";
 import { useSummary } from "@/context/summaryContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useSidebar } from "@/hooks/useSidebar";
 import { cn } from "@/lib/utils";
+import { ENV } from "@/utils/constants";
 import { Link } from "@tanstack/react-router";
 import {
   BarChart3,
   Bell,
+  Building2,
   CircleHelp,
   ClipboardList,
   FileText,
@@ -23,20 +27,18 @@ import {
   Phone,
   Rss,
   Settings,
+  ShieldCheck,
   UserPlus,
-  List,
-  Building2,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { BetaWarning } from "../beta-warning";
+import { DevelopmentWarning } from "../development-warn";
 import { Notifications } from "../notifications";
 import { Button } from "../ui/button";
 import { CustomLink } from "../ui/custom-link";
 import Divider from "../ui/divider";
-import ExpandContentIcon from "@/assets/icons/expand-content";
-import CollapseContentIcon from "@/assets/icons/collapse-content";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { BetaWarning } from "../beta-warning";
 import ModalTraining from "./modal-training";
 import { SidebarHoverPopover, type PopoverItem } from "./sidebar-hover-popover";
 
@@ -52,7 +54,7 @@ const saibaMaisItems: PopoverItem[] = [
 const transparenciaItems: PopoverItem[] = [
   { label: "Privacidade dos dados", icon: Fingerprint, linkKey: "privacy" },
   { label: "Termos de uso", icon: ClipboardList, linkKey: "termsOfUse" },
-  { label: "Formulário de dados", icon: List, linkKey: "dataForm" },
+  { label: "Exercer meus direitos", icon: ShieldCheck, linkKey: "dataForm" },
 ];
 
 interface ISidebar {
@@ -139,6 +141,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
       </Tooltip>
 
       <div className="flex flex-col gap-2 w-full">
+        {ENV !== "production" && <DevelopmentWarning minimizedSidebar />}
         <BetaWarning minimizedSidebar />
         {isAuthenticated && (
           <ModalTraining
@@ -314,6 +317,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
       </div>
 
       <div className="p-4 flex flex-col gap-2 w-full">
+        {ENV !== "production" && <DevelopmentWarning />}
         <BetaWarning />
         {isAuthenticated && (
           <ModalTraining

@@ -6,13 +6,7 @@ import { useEffect, useState } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import { Button } from "../../ui/button";
 import { Card, CardContent } from "../../ui/card";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../../ui/form";
+import { FormControl, FormField, FormItem, FormLabel } from "../../ui/form";
 import { Input } from "../../ui/input";
 import {
   Select,
@@ -22,6 +16,7 @@ import {
   SelectValue,
 } from "../../ui/select";
 import SteelMaterialList from "./steel-material-list";
+import { slabTypeOptions } from "./module-default-values";
 
 interface ModuleFormBeamColumnProps {
   form: UseFormReturn<ModuleFormInput>;
@@ -128,7 +123,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                           {totalVolume.toInternational(undefined, 2)}
                         </span>
                       </FormControl>
-                      <FormMessage />
                     </FormItem>
                   );
                 }}
@@ -202,7 +196,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                 </SelectContent>
                               </Select>
                             </FormControl>
-                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -240,7 +233,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                 <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
                             </div>
-                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -299,6 +291,34 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
   return (
     <div className="space-y-6">
+      <FormField
+        control={form.control}
+        name="slab_type"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-xs">Tipo de laje (opcional)</FormLabel>
+            <Select
+              onValueChange={field.onChange}
+              value={field.value}
+              key={field.value}
+            >
+              <FormControl>
+                <SelectTrigger className="aria-invalid:border-destructive w-full">
+                  <SelectValue placeholder="Selecione o tipo de laje" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {slabTypeOptions.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormItem>
+        )}
+      />
+
       <div className="grid grid-cols-3 gap-4 items-end">
         <FormField
           control={form.control}
@@ -316,7 +336,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                   }
                 />
               </FormControl>
-              <FormMessage />
             </FormItem>
           )}
         />
@@ -337,7 +356,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                   }
                 />
               </FormControl>
-              <FormMessage />
             </FormItem>
           )}
         />
@@ -358,7 +376,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                   }
                 />
               </FormControl>
-              <FormMessage />
             </FormItem>
           )}
         />
@@ -400,7 +417,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         }
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -423,7 +439,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         }
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -446,7 +461,6 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         }
                       />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />

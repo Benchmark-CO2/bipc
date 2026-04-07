@@ -16,7 +16,12 @@ import {
   RegisterFormSchema,
 } from "@/validators/registerForm.validator";
 import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  redirect,
+  useNavigate,
+} from "@tanstack/react-router";
 
 import { DialogSuccessSignup } from "@/components/layout/dialogs/dialog-success-signup";
 import { DialogWarnSignup } from "@/components/layout/dialogs/dialog-warn-signup";
@@ -37,18 +42,26 @@ import { masks } from "@/utils/masks";
 import { states } from "@/utils/states";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
-import { Building2, Eye, EyeOff, Info, Loader2, User } from "lucide-react";
+import {
+  Building2,
+  Eye,
+  EyeOff,
+  Info,
+  Loader2,
+  ShieldCheck,
+  User,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import DrawerDocuments from "@/components/layout/drawer-documents";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { CustomLink } from "@/components/ui/custom-link";
 
 const SignUp = () => {
   const [successModal, setSuccessModal] = useState(false);
@@ -79,6 +92,7 @@ const SignUp = () => {
       neighborhood: "",
       street: "",
       number: "",
+      complement: "",
     },
   });
 
@@ -138,6 +152,7 @@ const SignUp = () => {
       neighborhood,
       street,
       number,
+      complement,
     } = data;
 
     // Converte a data de DD/MM/YYYY para ISO format com timezone (RFC3339)
@@ -167,6 +182,7 @@ const SignUp = () => {
       ...(neighborhood && neighborhood.trim() !== "" && { neighborhood }),
       ...(street && street.trim() !== "" && { street }),
       ...(number && number.trim() !== "" && { number }),
+      ...(complement && complement.trim() !== "" && { complement }),
     });
   };
 
@@ -853,6 +869,26 @@ const SignUp = () => {
                 />
               </div>
 
+              <div className="grid grid-cols-1">
+                <FormField
+                  control={form.control}
+                  name="complement"
+                  render={({ field }) => (
+                    <FormItem className="@md:col-span-2">
+                      <FormLabel>Complemento</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Complemento"
+                          disabled={isPending}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <div className="space-y-3 mt-2">
                 <FormField
                   control={form.control}
@@ -869,7 +905,12 @@ const SignUp = () => {
                           Eu declaro estar ciente sobre o uso dos meus dados
                           para as finalidades informadas no formulário de
                           cadastro e concordo a{" "}
-                          <DrawerDocuments documentType="privacy-policy" />.
+                          <CustomLink
+                            linkKey="privacy"
+                            className="underline text-active hover:text-active-50 underline-offset-2 transition-all"
+                          >
+                            Política de Privacidade
+                          </CustomLink>
                         </span>
                       </div>
                       <FormMessage className="ml-6" />
@@ -888,8 +929,13 @@ const SignUp = () => {
                         />
                         <span className="text-sm text-foreground">
                           Eu declaro estar de acordo com os{" "}
-                          <DrawerDocuments documentType="terms-of-use" /> da
-                          plataforma
+                          <CustomLink
+                            linkKey="termsOfUse"
+                            className="underline text-active hover:text-active-50 underline-offset-2 transition-all"
+                          >
+                            Termos de Uso
+                          </CustomLink>{" "}
+                          da plataforma
                         </span>
                       </div>
                       <FormMessage className="ml-6" />
@@ -897,6 +943,20 @@ const SignUp = () => {
                   )}
                 />
               </div>
+
+              <div className="flex items-center gap-2 rounded-md border border-active/20 bg-active/5 px-4 py-3 text-sm">
+                <ShieldCheck className="h-5 w-5 shrink-0 text-active" />
+                <span className="text-muted-foreground">
+                  Você pode gerenciar seus dados pessoais a qualquer momento.{" "}
+                  <CustomLink
+                    linkKey="dataForm"
+                    className="font-medium text-active hover:text-active-50 underline underline-offset-2 transition-all"
+                  >
+                    Exercer meus direitos
+                  </CustomLink>
+                </span>
+              </div>
+
               <Button
                 variant={"bipc"}
                 type="submit"

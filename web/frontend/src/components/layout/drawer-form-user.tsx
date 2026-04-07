@@ -39,7 +39,16 @@ import {
 } from "@/validators/updateUserForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Building2, Eye, EyeOff, Loader2, User, X } from "lucide-react";
+import {
+  Building2,
+  Eye,
+  EyeOff,
+  Loader2,
+  ShieldCheck,
+  User,
+  X,
+} from "lucide-react";
+import { CustomLink } from "@/components/ui/custom-link";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -91,6 +100,7 @@ export default function DrawerFormUser({
       neighborhood: userData?.neighborhood || "",
       street: userData?.street || "",
       number: userData?.number || "",
+      complement: userData?.complement || "",
     },
   });
 
@@ -217,6 +227,8 @@ export default function DrawerFormUser({
       updateData.street = data.street;
     if (data.number && data.number.trim() !== "")
       updateData.number = data.number;
+    if (data.complement && data.complement.trim() !== "")
+      updateData.complement = data.complement;
 
     mutateUpdate(updateData);
   };
@@ -251,6 +263,7 @@ export default function DrawerFormUser({
         neighborhood: userData.neighborhood || "",
         street: userData.street || "",
         number: userData.number || "",
+        complement: userData.complement || "",
       });
     }
   }, [openDrawer, userData, form, resetUpdate]);
@@ -280,6 +293,7 @@ export default function DrawerFormUser({
         neighborhood: userData.neighborhood || "",
         street: userData.street || "",
         number: userData.number || "",
+        complement: userData.complement || "",
       });
     }
   }, [userData]);
@@ -680,6 +694,7 @@ export default function DrawerFormUser({
                               form.setValue("city", "");
                               form.setValue("neighborhood", "");
                               form.setValue("street", "");
+                              form.setValue("complement", "");
                             }
                             if (e.target.value.length > 8)
                               searchCep(e.target.value);
@@ -832,6 +847,26 @@ export default function DrawerFormUser({
                   )}
                 />
               </div>
+
+              <div className="grid grid-cols-1">
+                <FormField
+                  control={form.control}
+                  name="complement"
+                  render={({ field }) => (
+                    <FormItem className="@md:col-span-2">
+                      <FormLabel>Complemento</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Complemento"
+                          disabled={isUpdatePending}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </form>
           </div>
         </Form>
@@ -851,6 +886,18 @@ export default function DrawerFormUser({
               "Salvar Alterações"
             )}
           </Button>
+          <div className="flex items-center gap-2 rounded-md border border-active/20 bg-active/5 px-4 py-3 text-sm">
+            <ShieldCheck className="h-5 w-5 shrink-0 text-active" />
+            <span className="text-muted-foreground">
+              Gerencie seus dados pessoais.{" "}
+              <CustomLink
+                linkKey="dataForm"
+                className="font-medium text-active hover:text-active-50 underline underline-offset-2 transition-all"
+              >
+                Exercer meus direitos
+              </CustomLink>
+            </span>
+          </div>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

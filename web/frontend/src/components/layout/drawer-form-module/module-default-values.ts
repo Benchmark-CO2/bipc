@@ -1,5 +1,51 @@
 import { TModulesTypes } from "@/types/modules";
 
+export const slabTypeOptions = [
+  {
+    value: "solid",
+    label: "Laje maciça (concreto armado) com vigas ou paredes estruturais",
+  },
+  {
+    value: "ribbed",
+    label: "Laje nervurada (unidirecional, bidirecional / tipo waffle)",
+  },
+  { value: "mushroom_solid", label: "Laje maciça cogumelo (com capitel)" },
+  { value: "mushroom_ribbed", label: "Laje nervurada cogumelo (com capitel)" },
+  { value: "flat", label: "Laje plana / sem vigas" },
+  { value: "band_beam", label: "Laje com vigas-faixa" },
+  { value: "pt_solid", label: "Laje protendida maciça" },
+  { value: "pt_ribbed", label: "Laje protendida nervurada" },
+  {
+    value: "pt_mushroom_solid",
+    label: "Laje protendida maciça cogumelo (com capitel)",
+  },
+  {
+    value: "pt_mushroom_ribbed",
+    label: "Laje protendida nervurada cogumelo (com capitel)",
+  },
+  { value: "pt_flat", label: "Laje plana protendida / sem vigas" },
+  { value: "pt_band_beam", label: "Laje protendida com vigas-faixa" },
+  {
+    value: "trussed",
+    label: "Laje treliçada (vigota treliçada + enchimento + capa)",
+  },
+  {
+    value: "joist",
+    label: "Laje de vigotas pré-moldadas (viga T/invertida etc.)",
+  },
+  {
+    value: "filigree",
+    label: "Pré-laje / laje filigrana (placa fina pré-moldada)",
+  },
+  { value: "hollow_core", label: "Laje alveolar (protendida)" },
+  { value: "precast_solid", label: "Painel maciço pré-moldado (placa maciça)" },
+  {
+    value: "precast_ribbed",
+    label: "Painéis nervurados pré-moldados (T, TT e variações)",
+  },
+  { value: "pt_precast", label: "Lajes protendidas pré-moldadas" },
+];
+
 export const concreteWallDefaultValues = {
   type: "concrete_wall" as const,
   concrete_walls: {
@@ -28,6 +74,7 @@ export const concreteWallDefaultValues = {
   slab_area: 0,
   wall_form_area: "0",
   slab_form_area: "0",
+  slab_type: undefined as string | undefined,
 };
 
 export const beamColumnDefaultValues = {
@@ -68,6 +115,7 @@ export const beamColumnDefaultValues = {
   column_number: "0",
   avg_beam_span: "0",
   avg_slab_span: "0",
+  slab_type: undefined as string | undefined,
 };
 
 export const structuralMasonryDefaultValues = {
@@ -100,6 +148,7 @@ export const structuralMasonryDefaultValues = {
     ],
   },
   form_slabs: "0",
+  slab_type: undefined as string | undefined,
 };
 
 export const raftFoundationDefaultValues = {

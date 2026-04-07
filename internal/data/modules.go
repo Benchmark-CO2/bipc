@@ -26,7 +26,7 @@ type Module struct {
 	RelativeEnergyMin *float64               `json:"relative_energy_min,omitempty"`
 	RelativeEnergyMax *float64               `json:"relative_energy_max,omitempty"`
 	Outdated          bool                   `json:"outdated"`
-	FloorIDs          []uuid.UUID            `json:"floor_ids,omitempty"`
+	FloorIDs          []uuid.UUID            `json:"floor_ids"`
 	UnitID            *uuid.UUID             `json:"unit_id,omitempty"`
 	CreatedAt         time.Time              `json:"created_at"`
 	UpdatedAt         time.Time              `json:"updated_at"`
@@ -36,11 +36,6 @@ type ModuleModel struct {
 	DB *sql.DB
 }
 
-type dbExecutor interface {
-	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
-}
-
 func checkForeignKeyError(err error) error {
 	if err == nil {
 		return nil
@@ -48,25 +43,20 @@ func checkForeignKeyError(err error) error {
 	if strings.Contains(err.Error(), "module_option_id_fkey") {
 		return ErrInvalidOptionID
 	}
-	if strings.Contains(err.Error(), "module_application_floor_id_fkey") ||
-		strings.Contains(err.Error(), "module_floor_floor_id_fkey") {
-		return ErrInvalidFloorID
-	}
-	if strings.Contains(err.Error(), "module_application_unit_id_fkey") {
-		return ErrInvalidUnitID
-	}
 	return err
 }
 
-func insertModuleFloors(db dbExecutor, moduleID uuid.UUID, floorIDs []uuid.UUID) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
+func insertModuleTargetConsumptions(tx *sql.Tx, ctx context.Context, targets []ModuleTargetConsumption) error {
+	insertQuery := `
+		INSERT INTO module_target_consumption 
+		(id, module_id, target_id, target_type, role_id, option_id, co2_min, co2_max, energy_min, energy_max)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
-	for _, floorID := range floorIDs {
-		_, err := db.ExecContext(ctx,
-			`INSERT INTO module_application (module_id, floor_id, unit_id) VALUES ($1, $2, NULL)`,
-			moduleID, floorID,
-		)
+	for _, target := range targets {
+		target.ID = uuid.Must(uuid.NewV7())
+		_, err := tx.ExecContext(ctx, insertQuery,
+			target.ID, target.ModuleID, target.TargetID, target.TargetType, target.RoleID, target.OptionID,
+			target.CO2Min, target.CO2Max, target.EnergyMin, target.EnergyMax)
 		if err != nil {
 			return err
 		}
@@ -74,34 +64,7 @@ func insertModuleFloors(db dbExecutor, moduleID uuid.UUID, floorIDs []uuid.UUID)
 	return nil
 }
 
-func insertModuleUnit(db dbExecutor, moduleID uuid.UUID, unitID uuid.UUID) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	_, err := db.ExecContext(ctx,
-		`INSERT INTO module_application (module_id, floor_id, unit_id) VALUES ($1, NULL, $2)`,
-		moduleID, unitID,
-	)
-	return err
-}
-
-func (m ModuleModel) Insert(module *Module) (*Module, error) {
-	hasFloors := len(module.FloorIDs) > 0
-	hasUnit := module.UnitID != nil
-
-	if hasFloors && hasUnit {
-		return nil, errors.New("module cannot have both floor_ids and unit_id")
-	}
-	if !hasFloors && !hasUnit {
-		return nil, errors.New("module must have either floor_ids or unit_id")
-	}
-
-	tx, err := m.DB.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
+func (m ModuleModel) insertTx(tx *sql.Tx, module *Module) (*Module, error) {
 	jsonData, err := json.Marshal(module.Data)
 	if err != nil {
 		return nil, err
@@ -126,24 +89,75 @@ func (m ModuleModel) Insert(module *Module) (*Module, error) {
 		return nil, checkForeignKeyError(err)
 	}
 
-	if len(module.FloorIDs) > 0 {
-		if err := insertModuleFloors(tx, module.ID, module.FloorIDs); err != nil {
-			return nil, checkForeignKeyError(err)
-		}
+	return module, nil
+}
 
-		if err := updateFloorMetricsById(tx, module.FloorIDs); err != nil {
-			return nil, err
+func (m ModuleModel) validateModuleTargets(tx *sql.Tx, ctx context.Context, module *Module) error {
+	var optionUnitID uuid.UUID
+
+	err := tx.QueryRowContext(ctx, `SELECT unit_id FROM options WHERE id = $1`, module.OptionID).Scan(&optionUnitID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrInvalidOptionID
 		}
+		return err
 	}
 
-	if module.UnitID != nil {
-		if err := insertModuleUnit(tx, module.ID, *module.UnitID); err != nil {
-			return nil, checkForeignKeyError(err)
-		}
+	if module.UnitID != nil && *module.UnitID != optionUnitID {
+		return ErrInvalidUnitID
+	}
 
-		if err := updateUnitMetricsById(tx, *module.UnitID); err != nil {
-			return nil, err
-		}
+	if len(module.FloorIDs) == 0 {
+		return nil
+	}
+
+	var validFloorCount int
+	err = tx.QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM floor
+		WHERE unit_id = $1 AND id = ANY($2)`, optionUnitID, pq.Array(module.FloorIDs)).Scan(&validFloorCount)
+	if err != nil {
+		return err
+	}
+
+	if validFloorCount != len(module.FloorIDs) {
+		return ErrInvalidFloorID
+	}
+
+	return nil
+}
+
+func (m ModuleModel) Insert(module *Module, targets []ModuleTargetConsumption) (*Module, error) {
+	hasFloors := len(module.FloorIDs) > 0
+	hasUnit := module.UnitID != nil
+
+	if hasFloors && hasUnit {
+		return nil, errors.New("module cannot have both floor_ids and unit_id")
+	}
+	if !hasFloors && !hasUnit {
+		return nil, errors.New("module must have either floor_ids or unit_id")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	tx, err := m.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	if err := m.validateModuleTargets(tx, ctx, module); err != nil {
+		return nil, err
+	}
+
+	_, err = m.insertTx(tx, module)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := insertModuleTargetConsumptions(tx, ctx, targets); err != nil {
+		return nil, err
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -188,8 +202,8 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 	}
 
 	rows, err := m.DB.QueryContext(ctx, `
-		SELECT floor_id FROM module_application 
-		WHERE module_id = $1 AND floor_id IS NOT NULL`, id)
+		SELECT DISTINCT target_id FROM module_target_consumption 
+		WHERE module_id = $1 AND target_type = 'floor'`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -207,8 +221,8 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 
 	var unitID uuid.UUID
 	err = m.DB.QueryRowContext(ctx, `
-		SELECT unit_id FROM module_application 
-		WHERE module_id = $1 AND unit_id IS NOT NULL`, id).Scan(&unitID)
+		SELECT DISTINCT target_id FROM module_target_consumption 
+		WHERE module_id = $1 AND target_type = 'unit'`, id).Scan(&unitID)
 	if err == nil {
 		module.UnitID = &unitID
 	} else if err != sql.ErrNoRows {
@@ -218,26 +232,10 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 	return &module, nil
 }
 
-func (m ModuleModel) Update(module *Module) error {
-	hasFloors := len(module.FloorIDs) > 0
-	hasUnit := module.UnitID != nil
-
-	if hasFloors && hasUnit {
-		return errors.New("module cannot have both floor_ids and unit_id")
-	}
-	if !hasFloors && !hasUnit {
-		return errors.New("module must have either floor_ids or unit_id")
-	}
-
-	tx, err := m.DB.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
+func (m ModuleModel) updateTx(tx *sql.Tx, module *Module) error {
 	query := `SELECT id FROM module WHERE id = $1 AND type = $2`
 	var existingID uuid.UUID
-	err = tx.QueryRowContext(context.Background(), query, module.ID, module.Type).Scan(&existingID)
+	err := tx.QueryRowContext(context.Background(), query, module.ID, module.Type).Scan(&existingID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return ErrRecordNotFound
@@ -269,41 +267,47 @@ func (m ModuleModel) Update(module *Module) error {
 		module.RelativeEnergyMin, module.RelativeEnergyMax,
 		module.ID)
 
+	return err
+}
+
+func (m ModuleModel) Update(module *Module, targets []ModuleTargetConsumption) error {
+	hasFloors := len(module.FloorIDs) > 0
+	hasUnit := module.UnitID != nil
+
+	if hasFloors && hasUnit {
+		return errors.New("module cannot have both floor_ids and unit_id")
+	}
+	if !hasFloors && !hasUnit {
+		return errors.New("module must have either floor_ids or unit_id")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	tx, err := m.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if err := m.validateModuleTargets(tx, ctx, module); err != nil {
+		return err
+	}
+
+	if err := m.updateTx(tx, module); err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, "DELETE FROM module_target_consumption WHERE module_id = $1", module.ID)
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.ExecContext(context.Background(), `DELETE FROM module_application WHERE module_id = $1`, module.ID)
-	if err != nil {
+	if err := insertModuleTargetConsumptions(tx, ctx, targets); err != nil {
 		return err
 	}
 
-	if len(module.FloorIDs) > 0 {
-		err = insertModuleFloors(tx, module.ID, module.FloorIDs)
-		if err != nil {
-			return checkForeignKeyError(err)
-		}
-
-		if err := updateFloorMetricsById(tx, module.FloorIDs); err != nil {
-			return err
-		}
-	}
-
-	if module.UnitID != nil {
-		if err := insertModuleUnit(tx, module.ID, *module.UnitID); err != nil {
-			return checkForeignKeyError(err)
-		}
-
-		if err := updateUnitMetricsById(tx, *module.UnitID); err != nil {
-			return err
-		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-
-	return nil
+	return tx.Commit()
 }
 
 func (m ModuleModel) Delete(id uuid.UUID) error {
@@ -315,33 +319,6 @@ func (m ModuleModel) Delete(id uuid.UUID) error {
 		return err
 	}
 	defer tx.Rollback()
-
-	var floorIDs []uuid.UUID
-	var unitID *uuid.UUID
-
-	rows, err := tx.QueryContext(ctx, `
-		SELECT floor_id, unit_id FROM module_application 
-		WHERE module_id = $1`, id)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var floorID *uuid.UUID
-		var uID *uuid.UUID
-		if err := rows.Scan(&floorID, &uID); err != nil {
-			return err
-		}
-		if floorID != nil {
-			floorIDs = append(floorIDs, *floorID)
-		}
-		if uID != nil {
-			unitID = uID
-		}
-	}
-	if err = rows.Err(); err != nil {
-		return err
-	}
 
 	query := `DELETE FROM module WHERE id = $1`
 	result, err := tx.ExecContext(ctx, query, id)
@@ -355,18 +332,6 @@ func (m ModuleModel) Delete(id uuid.UUID) error {
 	}
 	if rowsAffected == 0 {
 		return ErrRecordNotFound
-	}
-
-	if len(floorIDs) > 0 {
-		if err := updateFloorMetricsById(tx, floorIDs); err != nil {
-			return err
-		}
-	}
-
-	if unitID != nil {
-		if err := updateUnitMetricsById(tx, *unitID); err != nil {
-			return err
-		}
 	}
 
 	return tx.Commit()
@@ -397,8 +362,8 @@ func (m ModuleModel) HasModulesForUnit(tx *sql.Tx, unitID uuid.UUID) (bool, erro
 	query := `
 		SELECT COUNT(DISTINCT m.id)
 		FROM module m
-		INNER JOIN module_application mf ON m.id = mf.module_id
-		INNER JOIN floor f ON mf.floor_id = f.id
+		INNER JOIN module_target_consumption mtc ON m.id = mtc.module_id
+		INNER JOIN floor f ON mtc.target_id = f.id AND mtc.target_type = 'floor'
 		WHERE f.unit_id = $1`
 
 	var moduleCount int
@@ -414,9 +379,9 @@ func (m ModuleModel) MarkModulesAsOutdatedForUnit(tx *sql.Tx, unitID uuid.UUID) 
 	query := `
 		UPDATE module m
 		SET outdated = TRUE
-		FROM module_application mf
-		INNER JOIN floor f ON mf.floor_id = f.id
-		WHERE m.id = mf.module_id AND f.unit_id = $1`
+		FROM module_target_consumption mtc
+		INNER JOIN floor f ON mtc.target_id = f.id AND mtc.target_type = 'floor'
+		WHERE m.id = mtc.module_id AND f.unit_id = $1`
 
 	_, err := tx.Exec(query, unitID)
 	return err
@@ -426,8 +391,10 @@ func (m ModuleModel) MarkModulesAsOutdatedForFloors(tx *sql.Tx, floorIDs []uuid.
 	query := `
 		UPDATE module m
 		SET outdated = TRUE
-		FROM module_application mf
-		WHERE m.id = mf.module_id AND mf.floor_id = ANY($1)`
+		FROM module_target_consumption mtc
+		WHERE m.id = mtc.module_id 
+			AND mtc.target_type = 'floor' 
+			AND mtc.target_id = ANY($1)`
 
 	_, err := tx.Exec(query, pq.Array(floorIDs))
 	return err

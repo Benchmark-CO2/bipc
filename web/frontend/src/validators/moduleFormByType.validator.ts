@@ -5,7 +5,12 @@ import { z } from "zod";
 const concreteVolumeItemSchema = z
   .object({
     fck: z.number(),
-    volume: z.string().transform(parseNumber),
+    volume: z
+      .string()
+      .transform(parseNumber)
+      .refine((val) => !isNaN(val) && val > 0, {
+        message: "O volume de concreto deve ser maior que 0",
+      }),
     customFck: z.boolean().optional(),
   })
   // .superRefine((data, ctx) => {
@@ -31,7 +36,12 @@ const steelMaterialSchema = z
     other_name: z.string().optional(),
     resistance: z.enum(["CA50", "CA60", "CP190", "other"]),
     other_resistance: z.number().optional(),
-    mass: z.string().transform(parseNumber),
+    mass: z
+      .string()
+      .transform(parseNumber)
+      .refine((val) => !isNaN(val) && val > 0, {
+        message: "A massa de aço deve ser maior que 0",
+      }),
   })
   .refine(
     (data) => {
@@ -120,13 +130,12 @@ const blockItemSchema = z
 const groutVolumeItemSchema = z
   .object({
     fgk: z.number(),
-    volume: z.string().transform((val) => {
-      const parsed = parseNumber(val);
-      if (parsed <= 0) {
-        throw new Error("O volume deve ser positivo");
-      }
-      return parsed;
-    }),
+    volume: z
+      .string()
+      .transform(parseNumber)
+      .refine((val) => !isNaN(val) && val > 0, {
+        message: "O volume de graute deve ser maior que 0",
+      }),
     customFgk: z.boolean().optional(),
   })
   // .superRefine((data, ctx) => {
@@ -159,13 +168,12 @@ const groutItemSchema = z.object({
 const mortarItemSchema = z
   .object({
     fak: z.number(),
-    volume: z.string().transform((val) => {
-      const parsed = parseNumber(val);
-      if (parsed <= 0) {
-        throw new Error("O volume deve ser positivo");
-      }
-      return parsed;
-    }),
+    volume: z
+      .string()
+      .transform(parseNumber)
+      .refine((val) => !isNaN(val) && val > 0, {
+        message: "O volume de argamassa deve ser maior que 0",
+      }),
     customFak: z.boolean().optional(),
   })
   // .superRefine((data, ctx) => {
@@ -253,34 +261,95 @@ export const moduleFormSchema = z
       .optional(),
     mortar: z.array(mortarItemSchema).optional(),
 
+    // Slab type field (beam_column, concrete_wall, structural_masonry)
+    slab_type: z
+      .enum([
+        "solid",
+        "ribbed",
+        "mushroom_solid",
+        "mushroom_ribbed",
+        "flat",
+        "band_beam",
+        "pt_solid",
+        "pt_ribbed",
+        "pt_mushroom_solid",
+        "pt_mushroom_ribbed",
+        "pt_flat",
+        "pt_band_beam",
+        "trussed",
+        "joist",
+        "filigree",
+        "hollow_core",
+        "precast_solid",
+        "precast_ribbed",
+        "pt_precast",
+      ])
+      .optional(),
+
     // Raft foundation fields
-    area: z.string().transform(parseNumber).optional(),
-    thickness: z.string().transform(parseNumber).optional(),
+    area: z
+      .string()
+      .transform(parseNumber)
+      .refine((val) => !isNaN(val) && val > 0, {
+        message: "A área deve ser maior que 0",
+      })
+      .optional(),
+    thickness: z
+      .string()
+      .transform(parseNumber)
+      .refine((val) => !isNaN(val) && val > 0, {
+        message: "A espessura deve ser maior que 0",
+      })
+      .optional(),
     fck: z.number().optional(),
     steel: foundationSteelSchema.optional(),
 
     // Piles foundation fields
     piles: z
       .object({
-        volume: z.string().transform(parseNumber).optional(),
+        volume: z
+          .string()
+          .transform(parseNumber)
+          .refine((val) => !isNaN(val) && val > 0, {
+            message: "O volume de estacas deve ser maior que 0",
+          })
+          .optional(),
         steel: foundationSteelSchema.optional(),
       })
       .optional(),
     tie_beams: z
       .object({
-        volume: z.string().transform(parseNumber).optional(),
+        volume: z
+          .string()
+          .transform(parseNumber)
+          .refine((val) => !isNaN(val) && val > 0, {
+            message: "O volume de vigas de travamento deve ser maior que 0",
+          })
+          .optional(),
         steel: foundationSteelSchema.optional(),
       })
       .optional(),
     pile_caps: z
       .object({
-        volume: z.string().transform(parseNumber).optional(),
+        volume: z
+          .string()
+          .transform(parseNumber)
+          .refine((val) => !isNaN(val) && val > 0, {
+            message: "O volume de blocos deve ser maior que 0",
+          })
+          .optional(),
         steel: foundationSteelSchema.optional(),
       })
       .optional(),
     grade_beams: z
       .object({
-        volume: z.string().transform(parseNumber).optional(),
+        volume: z
+          .string()
+          .transform(parseNumber)
+          .refine((val) => !isNaN(val) && val > 0, {
+            message: "O volume de vigas baldrame deve ser maior que 0",
+          })
+          .optional(),
         steel: foundationSteelSchema.optional(),
       })
       .optional(),
@@ -288,8 +357,20 @@ export const moduleFormSchema = z
     // Raft piles foundation fields
     raft: z
       .object({
-        area: z.string().transform(parseNumber).optional(),
-        thickness: z.string().transform(parseNumber).optional(),
+        area: z
+          .string()
+          .transform(parseNumber)
+          .refine((val) => !isNaN(val) && val > 0, {
+            message: "A área do radier deve ser maior que 0",
+          })
+          .optional(),
+        thickness: z
+          .string()
+          .transform(parseNumber)
+          .refine((val) => !isNaN(val) && val > 0, {
+            message: "A espessura do radier deve ser maior que 0",
+          })
+          .optional(),
         steel: foundationSteelSchema.optional(),
       })
       .optional(),

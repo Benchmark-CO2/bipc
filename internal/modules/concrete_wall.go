@@ -12,6 +12,7 @@ type ConcreteWall struct {
 	Consumption   *Consumption    `json:"consumption,omitempty"`
 	ConcreteWalls ConcreteElement `json:"concrete_walls"`
 	ConcreteSlabs ConcreteElement `json:"concrete_slabs"`
+	SlabType      *string         `json:"slab_type,omitempty"`
 
 	WallThickness *float64 `json:"wall_thickness,omitempty"`
 	SlabThickness *float64 `json:"slab_thickness,omitempty"`
@@ -32,6 +33,7 @@ func (w *ConcreteWall) Validate(v *validator.Validator) {
 
 	validateConcreteElement(v, w.ConcreteWalls, "concrete_walls")
 	validateConcreteElement(v, w.ConcreteSlabs, "concrete_slabs")
+	validateSlabType(v, w.SlabType)
 
 	if w.WallThickness != nil {
 		v.Check(*w.WallThickness >= 0, "wall_thickness", "cannot be negative")
@@ -75,7 +77,20 @@ func (w *ConcreteWall) Insert(models data.Models, optionID uuid.UUID, result Con
 
 	moduleToInsert := w.toDataModule(moduleID, optionID, result)
 
-	insertedModule, err := models.Modules.Insert(moduleToInsert)
+	option, err := models.Options.GetByID(optionID)
+	if err != nil {
+		return nil, err
+	}
+
+	targets, err := PrepareModuleTargetConsumptions(
+		models, moduleID, optionID, option.RoleID,
+		result, w.FloorIDs, nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	insertedModule, err := models.Modules.Insert(moduleToInsert, targets)
 	if err != nil {
 		return nil, err
 	}
@@ -97,13 +112,28 @@ func (w *ConcreteWall) Get(models data.Models, moduleID uuid.UUID) (Module, erro
 
 func (w *ConcreteWall) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
 	module := w.toDataModule(moduleID, optionID, result)
-	return models.Modules.Update(module)
+
+	option, err := models.Options.GetByID(optionID)
+	if err != nil {
+		return err
+	}
+
+	targets, err := PrepareModuleTargetConsumptions(
+		models, moduleID, optionID, option.RoleID,
+		result, w.FloorIDs, nil,
+	)
+	if err != nil {
+		return err
+	}
+
+	return models.Modules.Update(module, targets)
 }
 
 func (w *ConcreteWall) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
 	moduleData := map[string]interface{}{
 		"concrete_walls": w.ConcreteWalls,
 		"concrete_slabs": w.ConcreteSlabs,
+		"slab_type":      normalizeSlabType(w.SlabType),
 		"wall_thickness": w.WallThickness,
 		"slab_thickness": w.SlabThickness,
 		"wall_area":      w.WallArea,
@@ -143,6 +173,7 @@ func (w *ConcreteWall) fromDataModule(d *data.Module) Module {
 		Consumption:     consumption,
 		ConcreteWalls:   concreteWalls,
 		ConcreteSlabs:   concreteSlabs,
+		SlabType:        extractStringPointer(d.Data, "slab_type"),
 		WallThickness:   extractFloat64Pointer(d.Data, "wall_thickness"),
 		SlabThickness:   extractFloat64Pointer(d.Data, "slab_thickness"),
 		WallArea:        extractFloat64Pointer(d.Data, "wall_area"),

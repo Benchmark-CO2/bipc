@@ -7,6 +7,16 @@ const baseUnitSchema = z.object({
     required_error: "Selecione um tipo de unidade",
     invalid_type_error: "Tipo de unidade inválido",
   }),
+  repetition_count: z
+    .number()
+    .int()
+    .positive("Repetição deve ser maior que zero")
+    .optional(),
+  housing_units_count: z
+    .number()
+    .int()
+    .positive("Quantidade de unidades habitacionais deve ser maior que zero")
+    .optional(),
 });
 
 // Schema para criação (com repetition)
@@ -20,7 +30,7 @@ export const floorFormSchema = z.object({
     {
       required_error: "Selecione uma categoria",
       invalid_type_error: "Categoria inválida",
-    }
+    },
   ),
   index: z.number().int(),
   repetition: z
@@ -67,7 +77,7 @@ export const floorSchema = z.object({
     {
       required_error: "Selecione uma categoria",
       invalid_type_error: "Categoria inválida",
-    }
+    },
   ),
   index: z.number().int(),
 });
@@ -105,6 +115,8 @@ export const unitFormSchema = baseUnitSchema.merge(towerFieldsSchema);
 export type UnitFormInput = {
   name: string;
   type: "tower";
+  housing_units_count?: number;
+  repetition_count?: number;
   data: {
     floors: FloorFormInput[];
   };

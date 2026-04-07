@@ -85,6 +85,7 @@ export interface IBasicModule {
   id?: string;
   consumption?: IConsumption;
   floor_ids?: string[];
+  slab_type?: string;
 }
 
 export interface IBeamColumn extends IBasicModule {
