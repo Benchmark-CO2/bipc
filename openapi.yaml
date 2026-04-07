@@ -1836,6 +1836,8 @@ components:
           type: string
         number:
           type: string
+        complement:
+          type: string
 
     User:
       allOf:
@@ -1895,6 +1897,8 @@ components:
         street:
           type: string
         number:
+          type: string
+        complement:
           type: string
 
     InvitationsWithDetails:
