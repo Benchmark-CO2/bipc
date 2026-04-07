@@ -1,10 +1,10 @@
 const BASE_URL = "https://bipc.org.br";
-export const CUR_USAGE: "internal" | "external" = "internal";
+export const CUR_USAGE: "internal" | "external" = "external";
 
 export const commonLinks = {
   about: {
     internal: "/about",
-    external: `${BASE_URL}/sobre`,
+    external: `${BASE_URL}/`,
   },
   faq: {
     internal: "",
@@ -16,7 +16,7 @@ export const commonLinks = {
   },
   contact: {
     internal: "/contact",
-    external: `${BASE_URL}/contato`,
+    external: `${BASE_URL}/contact`,
   },
   privacy: {
     internal: "/privacidade",
@@ -40,6 +40,6 @@ export const commonLinks = {
   },
   dataForm: {
     internal: "",
-    external: "https://forms.gle/ytcc9m3erCX5u4QZ9",
+    external: `${BASE_URL}/exercer-meus-direitos`,
   },
 };
