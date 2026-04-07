@@ -34,7 +34,7 @@ function CustomLink({
   return (
     <a
       href={url}
-      target="_blank"
+      target="_self"
       rel="noopener noreferrer"
       className={className}
       onClick={onClick}
