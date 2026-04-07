@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useSidebar } from "@/hooks/useSidebar";
 import { cn } from "@/lib/utils";
-import { ENV } from '@/utils/constants';
+import { ENV } from "@/utils/constants";
 import { Link } from "@tanstack/react-router";
 import {
   BarChart3,
@@ -33,7 +33,7 @@ import {
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BetaWarning } from "../beta-warning";
-import { DevelopmentWarning } from '../development-warn';
+import { DevelopmentWarning } from "../development-warn";
 import { Notifications } from "../notifications";
 import { Button } from "../ui/button";
 import { CustomLink } from "../ui/custom-link";
@@ -141,7 +141,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
       </Tooltip>
 
       <div className="flex flex-col gap-2 w-full">
-        {ENV !== 'production' && <DevelopmentWarning minimizedSidebar />}
+        {ENV !== "production" && <DevelopmentWarning minimizedSidebar />}
         <BetaWarning minimizedSidebar />
         {isAuthenticated && (
           <ModalTraining
@@ -317,7 +317,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
       </div>
 
       <div className="p-4 flex flex-col gap-2 w-full">
-        {ENV !== 'production' && <DevelopmentWarning />}
+        {ENV !== "production" && <DevelopmentWarning />}
         <BetaWarning />
         {isAuthenticated && (
           <ModalTraining

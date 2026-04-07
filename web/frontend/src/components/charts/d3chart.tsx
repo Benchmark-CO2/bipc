@@ -77,17 +77,24 @@ const useChartDimensions = (
   isExpanded: boolean,
   hasLessValue: boolean,
   hasMoreValue: boolean,
+  containerWidth: number,
 ) => {
   return useMemo(() => {
-    const screenWidth = window.innerWidth;
+    const margin = {
+      top: isExpanded ? 15 : 20,
+      right: isMobile ? 0 : 20,
+      bottom: isMobile ? 20 : 35,
+      left: isMobile ? 45 : 80,
+    };
 
     const width = () => {
       if (props.width && overrideDimensions) return props.width;
+      if (containerWidth > 0) return containerWidth - margin.left - margin.right;
+      // Fallback when container not yet measured
+      const screenWidth = window.innerWidth;
       if (isMobile) return screenWidth * 0.6;
       if (isExpanded) return screenWidth * 0.8;
-      if (screenWidth < 1300) return screenWidth * 0.35;
-      if (screenWidth > 1300) return screenWidth * 0.4;
-      return screenWidth * (hasLessValue || hasMoreValue ? 0.5 : 0.5);
+      return screenWidth * 0.4;
     };
 
     const height = () => {
@@ -96,13 +103,6 @@ const useChartDimensions = (
       if (isMobile && isExpanded) return 320;
       if (isExpanded) return window.innerHeight * 0.96 - 130;
       return window.innerHeight * 0.7 - 340;
-    };
-
-    const margin = {
-      top: isExpanded ? 15 : 20,
-      right: isMobile ? 0 : 20,
-      bottom: isMobile ? 20 : 35,
-      left: isMobile ? 45 : 80,
     };
 
     const _width = width();
@@ -117,6 +117,7 @@ const useChartDimensions = (
     isExpanded,
     hasLessValue,
     hasMoreValue,
+    containerWidth,
   ]);
 };
 
@@ -185,6 +186,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   const zoomRef = useRef<d3.ZoomBehavior<HTMLCanvasElement, unknown> | null>(
     null,
   );
+  const [containerWidth, setContainerWidth] = useState(0);
 
   // Salvar o total na primeira montagem do gráfico
   useEffect(() => {
@@ -229,6 +231,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     isExpanded,
     hasLessValue,
     hasMoreValue,
+    containerWidth,
   );
 
   // Scales and calculations
@@ -832,8 +835,15 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // Initial measurement
+    setContainerWidth(containerRef.current.getBoundingClientRect().width);
+
     let resizeTimer: NodeJS.Timeout;
-    const resizeObserver = new ResizeObserver(() => {
+    const resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setContainerWidth(entry.contentRect.width);
+      }
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
         if (animationFrameRef.current) {
