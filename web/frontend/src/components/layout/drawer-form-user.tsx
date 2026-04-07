@@ -39,7 +39,16 @@ import {
 } from "@/validators/updateUserForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Building2, Eye, EyeOff, Loader2, User, X } from "lucide-react";
+import {
+  Building2,
+  Eye,
+  EyeOff,
+  Loader2,
+  ShieldCheck,
+  User,
+  X,
+} from "lucide-react";
+import { CustomLink } from "@/components/ui/custom-link";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -877,6 +886,18 @@ export default function DrawerFormUser({
               "Salvar Alterações"
             )}
           </Button>
+          <div className="flex items-center gap-2 rounded-md border border-active/20 bg-active/5 px-4 py-3 text-sm">
+            <ShieldCheck className="h-5 w-5 shrink-0 text-active" />
+            <span className="text-muted-foreground">
+              Gerencie seus dados pessoais.{" "}
+              <CustomLink
+                linkKey="dataForm"
+                className="font-medium text-active hover:text-active-50 underline underline-offset-2 transition-all"
+              >
+                Exercer meus direitos
+              </CustomLink>
+            </span>
+          </div>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

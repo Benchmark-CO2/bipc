@@ -20,7 +20,6 @@ import {
   Fingerprint,
   FolderGit,
   GlobeLock,
-  List,
   LogIn,
   Menu,
   MonitorPlay,
@@ -28,6 +27,7 @@ import {
   Phone,
   Rss,
   Settings,
+  ShieldCheck,
   UserPlus,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -54,7 +54,7 @@ const saibaMaisItems: PopoverItem[] = [
 const transparenciaItems: PopoverItem[] = [
   { label: "Privacidade dos dados", icon: Fingerprint, linkKey: "privacy" },
   { label: "Termos de uso", icon: ClipboardList, linkKey: "termsOfUse" },
-  { label: "Formulário de dados", icon: List, linkKey: "dataForm" },
+  { label: "Exercer meus direitos", icon: ShieldCheck, linkKey: "dataForm" },
 ];
 
 interface ISidebar {

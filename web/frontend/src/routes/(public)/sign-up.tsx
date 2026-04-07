@@ -42,7 +42,15 @@ import { masks } from "@/utils/masks";
 import { states } from "@/utils/states";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
-import { Building2, Eye, EyeOff, Info, Loader2, User } from "lucide-react";
+import {
+  Building2,
+  Eye,
+  EyeOff,
+  Info,
+  Loader2,
+  ShieldCheck,
+  User,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -935,6 +943,20 @@ const SignUp = () => {
                   )}
                 />
               </div>
+
+              <div className="flex items-center gap-2 rounded-md border border-active/20 bg-active/5 px-4 py-3 text-sm">
+                <ShieldCheck className="h-5 w-5 shrink-0 text-active" />
+                <span className="text-muted-foreground">
+                  Você pode gerenciar seus dados pessoais a qualquer momento.{" "}
+                  <CustomLink
+                    linkKey="dataForm"
+                    className="font-medium text-active hover:text-active-50 underline underline-offset-2 transition-all"
+                  >
+                    Exercer meus direitos
+                  </CustomLink>
+                </span>
+              </div>
+
               <Button
                 variant={"bipc"}
                 type="submit"
