@@ -20,6 +20,7 @@ export const useSidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState<"open" | "closed">(
     getStoredSidebarStatus()
   );
+
   return {
     sidebarStatus: sidebarOpen,
     toggleSidebar: () =>

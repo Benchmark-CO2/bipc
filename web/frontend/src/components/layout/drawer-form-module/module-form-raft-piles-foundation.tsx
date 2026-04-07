@@ -3,13 +3,7 @@ import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
 import { useLayoutEffect, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Card, CardContent } from "../../ui/card";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../../ui/form";
+import { FormControl, FormField, FormItem, FormLabel } from "../../ui/form";
 import { Input } from "../../ui/input";
 import {
   Select,
@@ -97,7 +91,6 @@ const ModuleFormRaftPilesFoundation = ({
                   </SelectContent>
                 </Select>
               </FormControl>
-              <FormMessage />
             </FormItem>
           )}
         />
@@ -120,7 +113,6 @@ const ModuleFormRaftPilesFoundation = ({
                     }
                   />
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
@@ -149,7 +141,6 @@ const ModuleFormRaftPilesFoundation = ({
                       }}
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -170,7 +161,6 @@ const ModuleFormRaftPilesFoundation = ({
                       }}
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -210,7 +200,6 @@ const ModuleFormRaftPilesFoundation = ({
                     }}
                   />
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />

@@ -15,6 +15,7 @@ export interface UpdateUserParams {
   neighborhood?: string;
   street?: string;
   number?: string;
+  complement?: string;
 }
 
 export const patchUser = (userParams: UpdateUserParams) => {
