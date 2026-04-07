@@ -360,6 +360,58 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
             )}
           />
         </div>
+
+        <div className="grid grid-cols-2 gap-4 items-baseline max-sm:grid-cols-1">
+          <FormField
+            control={form.control as any}
+            name="housing_units_count"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Unidades habitacionais (opcional)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={1}
+                    step={1}
+                    placeholder="Ex: 10"
+                    value={field.value ?? ""}
+                    onChange={(e) =>
+                      field.onChange(
+                        e.target.value ? Number(e.target.value) : undefined,
+                      )
+                    }
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control as any}
+            name="repetition_count"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Repetição da unidade</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={1}
+                    step={1}
+                    placeholder="1"
+                    value={field.value ?? 1}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      field.onChange(val >= 1 ? val : 1);
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             Pavimentos

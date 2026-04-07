@@ -253,6 +253,31 @@ export const moduleFormSchema = z
       .optional(),
     mortar: z.array(mortarItemSchema).optional(),
 
+    // Slab type field (beam_column, concrete_wall, structural_masonry)
+    slab_type: z
+      .enum([
+        "solid",
+        "ribbed",
+        "mushroom_solid",
+        "mushroom_ribbed",
+        "flat",
+        "band_beam",
+        "pt_solid",
+        "pt_ribbed",
+        "pt_mushroom_solid",
+        "pt_mushroom_ribbed",
+        "pt_flat",
+        "pt_band_beam",
+        "trussed",
+        "joist",
+        "filigree",
+        "hollow_core",
+        "precast_solid",
+        "precast_ribbed",
+        "pt_precast",
+      ])
+      .optional(),
+
     // Raft foundation fields
     area: z.string().transform(parseNumber).optional(),
     thickness: z.string().transform(parseNumber).optional(),

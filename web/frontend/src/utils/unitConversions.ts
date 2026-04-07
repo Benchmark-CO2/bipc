@@ -9,7 +9,7 @@ import {
 // IMPORTANTE: Agora a categoria é definida pelo usuário, não automaticamente pelo índice
 // Esta função só é usada como fallback quando não há categoria definida
 export const getCategoryFromIndex = (
-  index: number
+  index: number,
 ): FloorSchema["category"] => {
   if (index < 0) return "basement_floor";
   // Para índices >= 0, retorna uma categoria padrão, mas o ideal é sempre ter category definida
@@ -19,7 +19,7 @@ export const getCategoryFromIndex = (
 // Função para determinar índice baseado na categoria
 export const getIndexFromCategory = (
   category: FloorSchema["category"],
-  currentIndex?: number
+  currentIndex?: number,
 ): number => {
   // Se já tem um índice, usa ele
   if (currentIndex !== undefined) return currentIndex;
@@ -43,7 +43,7 @@ export const getIndexFromCategory = (
 // IMPORTANTE: Agora cada floor é individual, sem agrupamento
 // A ordenação segue o índice de cada floor
 export const convertTowerFloorsToFloorSchema = (
-  towerFloors: TTowerFloorCategory[]
+  towerFloors: TTowerFloorCategory[],
 ): FloorSchema[] => {
   // Mapear cada floor individual diretamente
   const floors = towerFloors.map((floor) => ({
@@ -61,7 +61,7 @@ export const convertTowerFloorsToFloorSchema = (
 
 // Converte FloorSchema[] para TTowerFloorCategory[]
 export const convertFloorSchemaToTowerFloors = (
-  floors: FloorSchema[]
+  floors: FloorSchema[],
 ): TTowerFloorCategory[] => {
   return floors.map((floor) => ({
     id: floor.id || `temp-${floor.index}`,
@@ -81,6 +81,10 @@ export const convertUnitToFormData = (unit: IUnit): UnitFormInput => {
     return {
       name: unit.name,
       type: unit.type as "tower",
+      ...(unit.housing_units_count !== undefined && {
+        housing_units_count: unit.housing_units_count,
+      }),
+      repetition_count: unit.repetition_count ?? 1,
       data: {
         floors: [],
       },
@@ -105,6 +109,10 @@ export const convertUnitToFormData = (unit: IUnit): UnitFormInput => {
   return {
     name: unit.name,
     type: unit.type as "tower",
+    ...(unit.housing_units_count !== undefined && {
+      housing_units_count: unit.housing_units_count,
+    }),
+    repetition_count: unit.repetition_count ?? 1,
     data: {
       floors: floorFormInputs,
     },
@@ -123,7 +131,7 @@ export type UnifiedFloor = {
 
 // Converte TTowerFloorCategory[] para UnifiedFloor[]
 export const convertTowerFloorsToUnified = (
-  towerFloors: TTowerFloorCategory[]
+  towerFloors: TTowerFloorCategory[],
 ): UnifiedFloor[] => {
   return towerFloors.map((floor) => ({
     id: floor.id,
@@ -137,7 +145,7 @@ export const convertTowerFloorsToUnified = (
 
 // Converte FloorSchema[] para UnifiedFloor[]
 export const convertFloorSchemaToUnified = (
-  floors: FloorSchema[]
+  floors: FloorSchema[],
 ): UnifiedFloor[] => {
   return floors.map((floor) => ({
     id: floor.id || `floor-${floor.index}`,
@@ -151,7 +159,7 @@ export const convertFloorSchemaToUnified = (
 
 // Converte FloorFormInput[] para UnifiedFloor[] (para uso no formulário)
 export const convertFloorFormInputToUnified = (
-  floors: FloorFormInput[]
+  floors: FloorFormInput[],
 ): UnifiedFloor[] => {
   const unifiedFloors: UnifiedFloor[] = [];
 

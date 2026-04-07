@@ -51,6 +51,7 @@ const DrawerFormUnit = ({
     defaultValues: {
       name: "",
       type: "tower" as const,
+      repetition_count: 1,
       data: {
         floors: initialFloors,
       },
@@ -160,6 +161,10 @@ const DrawerFormUnit = ({
     const createData = {
       name: data.name,
       type: data.type,
+      ...(data.housing_units_count && {
+        housing_units_count: data.housing_units_count,
+      }),
+      ...(data.repetition_count && { repetition_count: data.repetition_count }),
       data: {
         floors: reindexedFloors,
       },

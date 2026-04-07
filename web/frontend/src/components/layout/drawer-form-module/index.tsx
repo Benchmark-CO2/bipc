@@ -297,6 +297,7 @@ const DrawerFormModule = ({
             column_number: toLocalString(restAny.column_number ?? 0),
             avg_beam_span: toLocalString(restAny.avg_beam_span ?? 0),
             avg_slab_span: toLocalString(restAny.avg_slab_span ?? 0),
+            slab_type: restAny.slab_type,
           }),
 
           // Concrete wall specific fields
@@ -307,6 +308,7 @@ const DrawerFormModule = ({
             slab_area: restAny.slab_area ?? 0,
             wall_form_area: toLocalString(restAny.wall_form_area ?? 0),
             slab_form_area: toLocalString(restAny.slab_form_area ?? 0),
+            slab_type: restAny.slab_type,
           }),
 
           // Raft foundation specific fields
@@ -357,6 +359,7 @@ const DrawerFormModule = ({
             form_slabs: toLocalString(restAny.form_slabs ?? 0),
             form_columns: toLocalString(restAny.form_columns ?? 0),
             form_beams: toLocalString(restAny.form_beams ?? 0),
+            slab_type: restAny.slab_type,
             masonry_blocks: restAny.masonry?.blocks
               ? restAny.masonry.blocks.map((block: any) => ({
                   type: block.type,
@@ -429,6 +432,7 @@ const DrawerFormModule = ({
         column_number: data.column_number,
         avg_beam_span: data.avg_beam_span,
         avg_slab_span: data.avg_slab_span,
+        slab_type: data.slab_type,
       };
     } else if (moduleType === "concrete_wall") {
       filteredData = {
@@ -440,6 +444,7 @@ const DrawerFormModule = ({
         slab_area: data?.slab_area || 0,
         wall_form_area: data.wall_form_area,
         slab_form_area: data.slab_form_area,
+        slab_type: data.slab_type,
       };
     } else if (moduleType === "structural_masonry") {
       filteredData = {
@@ -465,6 +470,7 @@ const DrawerFormModule = ({
           data.form_beams !== 0 && {
             form_beams: data.form_beams,
           }),
+        slab_type: data.slab_type,
       };
     } else if (moduleType === "raft_foundation") {
       filteredData = {

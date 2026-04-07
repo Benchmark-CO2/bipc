@@ -30,6 +30,8 @@ export interface IUnit {
   project_id: number;
   name: string;
   type: TUnitType;
+  housing_units_count?: number;
+  repetition_count?: number;
   created_at: string;
   updated_at: string;
   version: number;

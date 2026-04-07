@@ -23,6 +23,7 @@ import { AlertTriangle, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import SteelMaterialList from "./steel-material-list";
+import { slabTypeOptions } from "./module-default-values";
 
 interface ModuleFormStructuralMasonryProps {
   form: UseFormReturn<ModuleFormInput>;
@@ -1281,6 +1282,34 @@ const ModuleFormStructuralMasonry = ({
 
   return (
     <div className="space-y-6">
+      <FormField
+        control={form.control}
+        name="slab_type"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-xs">Tipo de laje (opcional)</FormLabel>
+            <Select
+              onValueChange={field.onChange}
+              value={field.value}
+              key={field.value}
+            >
+              <FormControl>
+                <SelectTrigger className="aria-invalid:border-destructive w-full">
+                  <SelectValue placeholder="Selecione o tipo de laje" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {slabTypeOptions.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormItem>
+        )}
+      />
+
       {renderBlockSection()}
       {renderGroutSection()}
       {renderMortarSection()}

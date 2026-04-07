@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "../../ui/select";
 import SteelMaterialList from "./steel-material-list";
+import { slabTypeOptions } from "./module-default-values";
 
 interface ModuleFormBeamColumnProps {
   form: UseFormReturn<ModuleFormInput>;
@@ -299,6 +300,34 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
   return (
     <div className="space-y-6">
+      <FormField
+        control={form.control}
+        name="slab_type"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-xs">Tipo de laje (opcional)</FormLabel>
+            <Select
+              onValueChange={field.onChange}
+              value={field.value}
+              key={field.value}
+            >
+              <FormControl>
+                <SelectTrigger className="aria-invalid:border-destructive w-full">
+                  <SelectValue placeholder="Selecione o tipo de laje" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {slabTypeOptions.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormItem>
+        )}
+      />
+
       <div className="grid grid-cols-3 gap-4 items-end">
         <FormField
           control={form.control}
