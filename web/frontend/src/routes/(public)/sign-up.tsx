@@ -84,6 +84,7 @@ const SignUp = () => {
       neighborhood: "",
       street: "",
       number: "",
+      complement: "",
     },
   });
 
@@ -143,6 +144,7 @@ const SignUp = () => {
       neighborhood,
       street,
       number,
+      complement,
     } = data;
 
     // Converte a data de DD/MM/YYYY para ISO format com timezone (RFC3339)
@@ -172,6 +174,7 @@ const SignUp = () => {
       ...(neighborhood && neighborhood.trim() !== "" && { neighborhood }),
       ...(street && street.trim() !== "" && { street }),
       ...(number && number.trim() !== "" && { number }),
+      ...(complement && complement.trim() !== "" && { complement }),
     });
   };
 
@@ -848,6 +851,26 @@ const SignUp = () => {
                       <FormControl>
                         <Input
                           placeholder="Nº"
+                          disabled={isPending}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1">
+                <FormField
+                  control={form.control}
+                  name="complement"
+                  render={({ field }) => (
+                    <FormItem className="@md:col-span-2">
+                      <FormLabel>Complemento</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Complemento"
                           disabled={isPending}
                           {...field}
                         />

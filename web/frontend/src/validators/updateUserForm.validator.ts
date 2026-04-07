@@ -60,6 +60,7 @@ export const updateUserFormSchema = z
     neighborhood: z.string().optional(),
     street: z.string().optional(),
     number: z.string().optional(),
+    complement: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     const { password, confirmPassword } = data;
