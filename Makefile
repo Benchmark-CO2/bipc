@@ -196,7 +196,6 @@ stage/connect:
 ## stage/deploy/api: deploy the api to stage
 .PHONY: stage/deploy/api
 stage/deploy/api:
-	cat $$ENV_FILE
 	rsync -P -e "ssh -i ~/.ssh/mestra.pem" ./bin/linux_amd64/api ubuntu@$(stage_host_ip):~
 	rsync -rP --delete -e "ssh -i ~/.ssh/mestra.pem" ./migrations ubuntu@$(stage_host_ip):~
 	rsync -P -e "ssh -i ~/.ssh/mestra.pem" .envrc ubuntu@$(stage_host_ip):~
@@ -255,6 +254,7 @@ production/connect:
 ## production/deploy/api: deploy the api to production
 .PHONY: production/deploy/api
 production/deploy/api:
+	cat $$ENV_FILE
 	rsync -P -e "ssh -i ~/.ssh/mestra.pem" ./bin/linux_amd64/api ubuntu@$(production_host_ip):~
 	rsync -rP --delete -e "ssh -i ~/.ssh/mestra.pem" ./migrations ubuntu@$(production_host_ip):~
 	rsync -P -e "ssh -i ~/.ssh/mestra.pem" .envrc ubuntu@$(production_host_ip):~
