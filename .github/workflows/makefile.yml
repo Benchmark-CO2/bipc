@@ -41,4 +41,6 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           ENV_FILE: ${{ secrets.ENV_FILE }}
           DB_DSN: ${{ secrets.DB_DSN }}
+        run:
+          echo $ENV_FILE
         run: make production/deploy/ci
