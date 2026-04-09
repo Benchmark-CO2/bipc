@@ -254,7 +254,9 @@ production/connect:
 ## production/deploy/api: deploy the api to production
 .PHONY: production/deploy/api
 production/deploy/api:
+	echo "Starting deployment..."
 	cat $$ENV_FILE
+	echo "************** end of env file **************"
 	rsync -P -e "ssh -i ~/.ssh/mestra.pem" ./bin/linux_amd64/api ubuntu@$(production_host_ip):~
 	rsync -rP --delete -e "ssh -i ~/.ssh/mestra.pem" ./migrations ubuntu@$(production_host_ip):~
 	rsync -P -e "ssh -i ~/.ssh/mestra.pem" .envrc ubuntu@$(production_host_ip):~
