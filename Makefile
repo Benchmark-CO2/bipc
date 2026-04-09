@@ -196,6 +196,7 @@ stage/connect:
 ## stage/deploy/api: deploy the api to stage
 .PHONY: stage/deploy/api
 stage/deploy/api:
+	cat $$ENV_FILE
 	rsync -P -e "ssh -i ~/.ssh/mestra.pem" ./bin/linux_amd64/api ubuntu@$(stage_host_ip):~
 	rsync -rP --delete -e "ssh -i ~/.ssh/mestra.pem" ./migrations ubuntu@$(stage_host_ip):~
 	rsync -P -e "ssh -i ~/.ssh/mestra.pem" .envrc ubuntu@$(stage_host_ip):~
