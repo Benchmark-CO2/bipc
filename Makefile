@@ -204,8 +204,8 @@ stage/deploy/api:
 	ssh -t -i ~/.ssh/mestra.pem ubuntu@$(stage_host_ip) '\
 		migrate -path ~/migrations -database $(DB_DSN) up \
 		&& sudo mv ~/.envrc /etc/environment \
-		&& sudo systemctl daemon-reload \
 		&& sudo mv ~/api.service /etc/systemd/system/ \
+		&& sudo systemctl daemon-reload \
 		&& sudo systemctl enable api \
 		&& sudo systemctl restart api \
 		&& sudo mv ~/Caddyfile /etc/caddy/ \
@@ -234,7 +234,7 @@ stage/deploy/ci:
 	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" /tmp/.envrc ubuntu@$(stage_host_ip):~/.envrc
 	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./remote/stage/api.service ubuntu@$(stage_host_ip):~
 	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./remote/stage/Caddyfile ubuntu@$(stage_host_ip):~
-	ssh -t -i /tmp/deploy_key -o StrictHostKeyChecking=no ubuntu@$(stage_host_ip) "export DB_DSN='$$DB_DSN' && migrate -path ~/migrations -database \$$DB_DSN up && sudo mv ~/.envrc /etc/environment && sudo systemctl daemon-reload && sudo mv ~/api.service /etc/systemd/system/ && sudo systemctl enable api && sudo systemctl restart api && sudo mv ~/Caddyfile /etc/caddy/ && sudo systemctl reload caddy"
+	ssh -t -i /tmp/deploy_key -o StrictHostKeyChecking=no ubuntu@$(stage_host_ip) "export DB_DSN='$$DB_DSN' && migrate -path ~/migrations -database \$$DB_DSN up && sudo mv ~/.envrc /etc/environment && sudo mv ~/api.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable api && sudo systemctl restart api && sudo mv ~/Caddyfile /etc/caddy/ && sudo systemctl reload caddy"
 	@rm -f /tmp/deploy_key /tmp/.envrc
 
 # ==================================================================================== #
@@ -250,6 +250,7 @@ production/connect:
 
 # journalctl -xeu api.service
 # sudo systemctl status api.service
+# sudo journalctl -u api.service --since "10 min ago" --no-pager
 
 ## production/deploy/api: deploy the api to production
 .PHONY: production/deploy/api
@@ -262,8 +263,8 @@ production/deploy/api:
 	ssh -t -i ~/.ssh/mestra.pem ubuntu@$(production_host_ip) '\
 		migrate -path ~/migrations -database $(DB_DSN) up \
 		&& sudo mv ~/.envrc /etc/environment \
-		&& sudo systemctl daemon-reload \
 		&& sudo mv ~/api.service /etc/systemd/system/ \
+		&& sudo systemctl daemon-reload \
 		&& sudo systemctl enable api \
 		&& sudo systemctl restart api \
 		&& sudo mv ~/Caddyfile /etc/caddy/ \
@@ -292,5 +293,5 @@ production/deploy/ci:
 	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" /tmp/.envrc ubuntu@$(production_host_ip):~/.envrc
 	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./remote/production/api.service ubuntu@$(production_host_ip):~
 	rsync -P -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=no" ./remote/production/Caddyfile ubuntu@$(production_host_ip):~
-	ssh -t -i /tmp/deploy_key -o StrictHostKeyChecking=no ubuntu@$(production_host_ip) "export DB_DSN='$$DB_DSN' && migrate -path ~/migrations -database \$$DB_DSN up && sudo mv ~/.envrc /etc/environment && sudo systemctl daemon-reload && sudo mv ~/api.service /etc/systemd/system/ && sudo systemctl enable api && sudo systemctl restart api && sudo mv ~/Caddyfile /etc/caddy/ && sudo systemctl reload caddy"
+	ssh -t -i /tmp/deploy_key -o StrictHostKeyChecking=no ubuntu@$(production_host_ip) "export DB_DSN='$$DB_DSN' && migrate -path ~/migrations -database \$$DB_DSN up && sudo mv ~/.envrc /etc/environment && sudo mv ~/api.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable api && sudo systemctl restart api && sudo mv ~/Caddyfile /etc/caddy/ && sudo systemctl reload caddy"
 	@rm -f /tmp/deploy_key /tmp/.envrc
