@@ -75,6 +75,9 @@
   --chart-5: hsl(27 87% 67%);
 
   --color-sidebar: hsl(188, 29%, 10%);
+
+  --selection-bg: hsl(188, 71%, 42%);
+  --selection-fg: hsl(0, 0%, 100%);
 }
 
 .dark {
@@ -440,6 +443,24 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: #71717a;
+}
+
+::selection,
+input::selection,
+textarea::selection,
+select::selection,
+[contenteditable]::selection {
+  background-color: var(--selection-bg) !important;
+  color: var(--selection-fg) !important;
+}
+
+::-moz-selection,
+input::-moz-selection,
+textarea::-moz-selection,
+select::-moz-selection,
+[contenteditable]::-moz-selection {
+  background-color: var(--selection-bg) !important;
+  color: var(--selection-fg) !important;
 }
 
 /* Sonner toast progress bar */
