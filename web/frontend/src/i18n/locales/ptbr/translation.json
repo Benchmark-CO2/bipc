@@ -307,7 +307,7 @@
   },
   "drawerAddModule": {
     "title": "Adicionar Módulo de Tecnologia Construtiva",
-    "description": "Um mesmo edifício costuma combinar mais de uma tecnologia construtiva, mesmo em um único subsistema da construção. Como a forma de quantificar material muda dependendo do tipo de tecnologia, cada tipo possui um módulo de cálculo que pode ser adicionado para compor a soma de CO2 da unidade.",
+    "description": "Um mesmo edifício costuma combinar mais de uma tecnologia construtiva, mesmo em um único subsistema da construção. Como a forma de quantificar material muda dependendo do tipo de tecnologia, cada tipo possui um módulo de cálculo que pode ser adicionado para compor a soma de CO₂ da unidade.",
     "createButton": "Criar Módulo de Tecnologia Construtiva",
     "defaultContext": "Módulo de Tecnologia Construtiva",
     "repeatUnit": "A unidade se repete? Quantas vezes?",
@@ -392,7 +392,7 @@
     "updateSimulation": "Atualizar Módulo",
     "addTitle": "Adicionar Módulo",
     "editTitle": "Atualizar Módulo",
-    "description": "Um mesmo edifício costuma combinar mais de uma tecnologia construtiva, mesmo em um único subsistema da construção. Como a forma de quantificar material muda dependendo do tipo de tecnologia, cada tipo possui um módulo de cálculo que pode ser adicionado para compor a soma de CO2 da edificação.",
+    "description": "Um mesmo edifício costuma combinar mais de uma tecnologia construtiva, mesmo em um único subsistema da construção. Como a forma de quantificar material muda dependendo do tipo de tecnologia, cada tipo possui um módulo de cálculo que pode ser adicionado para compor a soma de CO₂ da edificação.",
     "commonForm": {
       "nameLabel": "Nome do Módulo *",
       "namePlaceholder": "Pavimento 1 ao 3...",
@@ -464,8 +464,8 @@
       "floorRepetition": "Repetição de Andares",
       "totalConcrete": "Total de Concreto (kg)",
       "totalSteel": "Total de Aço (kg)",
-      "co2Min": "CO2 (Mín)",
-      "co2Max": "CO2 (Máx)",
+      "co2Min": "CO₂ (Mín)",
+      "co2Max": "CO₂ (Máx)",
       "energyMin": "Energia (Mín)",
       "energyMax": "Energia (Máx)",
       "versionInUse": "Versão Atual"
@@ -474,8 +474,8 @@
       "selectedModules": "Módulos Selecionados",
       "totalConcrete": "Concreto",
       "totalSteel": "Aço",
-      "co2Min": "CO2 Min. (Média)",
-      "co2Max": "CO2 Max. (Média)",
+      "co2Min": "CO₂ Min. (Média)",
+      "co2Max": "CO₂ Max. (Média)",
       "energyMin": "Energia Min. (Média)",
       "energyMax": "Energia Max. (Média)"
     },
