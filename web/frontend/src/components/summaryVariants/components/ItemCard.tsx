@@ -57,7 +57,7 @@ const ItemCard = ({
         />
         {!!item[type] && (
           <p className="text-base text-foreground">
-            {(item[type] as number).toFixed(1)} kg/m2
+            {(item[type] as number).toFixed(1)} kgCO₂/m²
           </p>
         )}
       </div>
