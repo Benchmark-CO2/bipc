@@ -110,7 +110,7 @@
     "userInfo": {
       "title": "Informações do Usuário",
       "name": "Nome",
-      "email": "Email",
+      "email": "E-mail",
       "memberSince": "Membro desde",
       "accountActivated": "Conta ativada"
     },
@@ -128,8 +128,8 @@
   },
   "loginPage": {
     "title": "LOGIN",
-    "error": "Email ou senha incorretos",
-    "placeholderEmail": "Email",
+    "error": "E-mail ou senha incorretos",
+    "placeholderEmail": "exemplo@email.com",
     "placeholderPassword": "Senha",
     "buttonLogin": "Entrar",
     "askRegister": "Ainda não tem cadastro? Cadastre-se aqui!",
@@ -138,19 +138,19 @@
   },
   "forgetPage": {
     "title": "ESQUECI MINHA SENHA",
-    "description": "Digite seu email para receber um link de redefinição de senha.",
-    "placeholderEmail": "Email",
-    "buttonSendEmail": "Enviar Email",
-    "successTitle": "Email Enviado!",
-    "successMessage": "Email enviado com sucesso! Se o seu email estiver correto, você receberá um link para redefinir sua senha.",
-    "errorMessage": "Erro ao enviar email. Cheque se o email está correto e tente novamente.",
-    "emailIsRequired": "O email é obrigatório",
+    "description": "Digite seu e-mail para receber um link de redefinição de senha.",
+    "placeholderEmail": "E-mail",
+    "buttonSendEmail": "Enviar E-mail",
+    "successTitle": "E-mail Enviado!",
+    "successMessage": "E-mail enviado com sucesso! Se o seu e-mail estiver correto, você receberá um link para redefinir sua senha.",
+    "errorMessage": "Erro ao enviar e-mail. Cheque se o e-mail está correto e tente novamente.",
+    "emailIsRequired": "O e-mail é obrigatório",
     "backToLogin": "Voltar ao Login"
   },
   "activateUser": {
     "invalid": {
       "title": "Link Inválido",
-      "description": "O link de ativação é inválido ou expirou. Solicite um novo email de confirmação.",
+      "description": "O link de ativação é inválido ou expirou. Solicite um novo e-mail de confirmação.",
       "goToLogin": "Voltar ao Login"
     },
     "success": {
@@ -177,7 +177,7 @@
   "resetPassword": {
     "invalid": {
       "title": "Link Inválido",
-      "description": "O link de ativação é inválido ou expirou. Solicite um novo email de confirmação.",
+      "description": "O link de ativação é inválido ou expirou. Solicite um novo e-mail de confirmação.",
       "goToLogin": "Voltar ao Login"
     },
     "success": {
@@ -208,18 +208,18 @@
     "birthDate": "Data de Nascimento",
     "city": "Cidade que reside",
     "activityArea": "Área de Atuação",
-    "professionalEmail": "Email Profissional",
+    "professionalEmail": "E-mail Profissional",
     "companyName": "Nome da Empresa",
     "password": "Senha",
     "confirmPassword": "Digite novamente a senha",
     "buttonSignUp": "Cadastrar",
     "buttonHaveAccount": "Já tem uma conta? Faça login",
-    "errorEmailExists": "Email já cadastrado",
+    "errorEmailExists": "E-mail já cadastrado",
     "dialog": {
       "success": {
         "title": "Cadastro realizado com sucesso",
         "description": "Você pode acessar sua conta agora.",
-        "content": "Um email de confirmação foi enviado para o seu endereço de email.",
+        "content": "Um e-mail de confirmação foi enviado para o seu endereço de e-mail.",
         "button": "Ir para Login"
       }
     }
@@ -499,11 +499,11 @@
   "drawerInvite": {
     "title": "Convidar Usuário",
     "description": "Preencha os detalhes abaixo para convidar um novo usuário.",
-    "emailLabel": "Email do Usuário *",
-    "emailPlaceholder": "Digite o email do usuário",
+    "emailLabel": "E-mail do Usuário *",
+    "emailPlaceholder": "Digite o e-mail do usuário",
     "nameLabel": "Nome *",
     "namePlaceholder": "Digite o nome do usuário",
-    "nameOrEmailPlaceholder": "Selecione o usuário ou digite o email",
+    "nameOrEmailPlaceholder": "Selecione o usuário ou digite o e-mail",
     "projectsLabel": "Empreendimentos *",
     "projectsPlaceholder": "Selecione um empreendimento",
     "permissionsLabel": "Permissões *",
@@ -515,7 +515,7 @@
   },
   "forms": {
     "requiredField": "Campo obrigatório",
-    "invalidEmail": "Email inválido",
+    "invalidEmail": "E-mail inválido",
     "minLength": "Mínimo de {{min}} caracteres",
     "maxLength": "Máximo de {{max}} caracteres",
     "selectOption": "Selecione uma opção",
@@ -524,11 +524,11 @@
     "passwordMinLength": "Senha deve ter pelo menos {{min}} caracteres",
     "fullNameRequired": "Por favor, insira seu nome completo",
     "passwordsDoNotMatch": "As senhas não coincidem",
-    "emailAlreadyExists": "Email já cadastrado",
+    "emailAlreadyExists": "E-mail já cadastrado",
     "minimumAge": "Você deve ter pelo menos {{age}} anos",
     "fields": {
       "name": "Nome",
-      "email": "Email",
+      "email": "E-mail",
       "password": "Senha",
       "confirmPassword": "Confirmar Senha"
     }

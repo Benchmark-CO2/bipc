@@ -31,13 +31,13 @@
     },
     "activeUserWarning": {
       "title": "Usuario no activo",
-      "description": "Verifica tu correo electrónico para continuar usando el sistema. Si ya lo activaste, por favor inicia sesión nuevamente. Si no lo recibiste, revisa tu carpeta de spam o",
+      "description": "Verifica tu e-mail para continuar usando el sistema. Si ya lo activaste, por favor inicia sesión nuevamente. Si no lo recibiste, revisa tu carpeta de spam o",
       "button": "solicita un nuevo acceso.",
-      "modalMessage": "Confirma abajo para activar tu cuenta. Recibirás un correo electrónico con el enlace de activación.",
-      "emailSentError": "Error al enviar el correo electrónico de activación. Inténtalo nuevamente más tarde.",
-      "emailSentSuccess": "Correo electrónico de activación enviado exitosamente. Verifica tu bandeja de entrada.",
-      "emailSentPending": "Enviando correo electrónico de activación...",
-      "sendEmail": "Enviar Correo Electrónico"
+      "modalMessage": "Confirma abajo para activar tu cuenta. Recibirás un e-mail con el enlace de activación.",
+      "emailSentError": "Error al enviar el e-mail de activación. Inténtalo nuevamente más tarde.",
+      "emailSentSuccess": "E-mail de activación enviado exitosamente. Verifica tu bandeja de entrada.",
+      "emailSentPending": "Enviando e-mail de activación...",
+      "sendEmail": "Enviar E-mail"
     },
     "noItemsFound": "No se encontraron elementos",
     "users_one": "Usuario",
@@ -104,7 +104,7 @@
     "userInfo": {
       "title": "Información del Usuario",
       "name": "Nombre",
-      "email": "Email",
+      "email": "E-mail",
       "memberSince": "Miembro desde",
       "accountActivated": "Cuenta activada"
     },
@@ -122,8 +122,8 @@
   },
   "loginPage": {
     "title": "INICIAR SESIÓN",
-    "error": "Correo electrónico o contraseña incorrectos",
-    "placeholderEmail": "Correo electrónico",
+    "error": "E-mail o contraseña incorrectos",
+    "placeholderEmail": "E-mail",
     "placeholderPassword": "Contraseña",
     "buttonLogin": "Iniciar Sesión",
     "askRegister": "¿Aún no tienes una cuenta? Regístrate aquí.",
@@ -132,19 +132,19 @@
   },
   "forgetPage": {
     "title": "OLVIDÉ MI CONTRASEÑA",
-    "description": "Introduce tu correo electrónico para recibir un enlace de restablecimiento de contraseña.",
-    "placeholderEmail": "Correo electrónico",
-    "buttonSendEmail": "Enviar Correo Electrónico",
-    "successTitle": "¡Correo electrónico enviado!",
-    "successMessage": "¡Correo electrónico enviado exitosamente! Verifica tu bandeja de entrada.",
-    "errorMessage": "Error al enviar el correo electrónico. Inténtalo nuevamente más tarde.",
-    "emailIsRequired": "El correo electrónico es obligatorio",
+    "description": "Introduce tu e-mail para recibir un enlace de restablecimiento de contraseña.",
+    "placeholderEmail": "E-mail",
+    "buttonSendEmail": "Enviar E-mail",
+    "successTitle": "¡E-mail enviado!",
+    "successMessage": "¡E-mail enviado exitosamente! Verifica tu bandeja de entrada.",
+    "errorMessage": "Error al enviar el e-mail. Inténtalo nuevamente más tarde.",
+    "emailIsRequired": "El e-mail es obligatorio",
     "backToLogin": "Volver al Inicio"
   },
   "activateUser": {
     "invalid": {
       "title": "Enlace Inválido",
-      "description": "El enlace de activación es inválido o ha expirado. Solicita un nuevo correo electrónico de confirmación.",
+      "description": "El enlace de activación es inválido o ha expirado. Solicita un nuevo e-mail de confirmación.",
       "goToLogin": "Volver al Inicio de Sesión"
     },
     "success": {
@@ -171,7 +171,7 @@
   "resetPassword": {
     "invalid": {
       "title": "Enlace Inválido",
-      "description": "El enlace de activación es inválido o ha expirado. Solicita un nuevo correo electrónico de confirmación.",
+      "description": "El enlace de restablecimiento es inválido o ha expirado. Solicita un nuevo e-mail de confirmación.",
       "goToLogin": "Volver al Inicio de Sesión"
     },
     "success": {
@@ -202,18 +202,18 @@
     "birthDate": "Fecha de Nacimiento",
     "city": "Ciudad que reside",
     "activityArea": "Área de Actividad",
-    "professionalEmail": "Correo Electrónico Profesional",
+    "professionalEmail": "E-mail Profesional",
     "companyName": "Nombre de la Empresa",
     "password": "Contraseña",
     "confirmPassword": "Ingresa la contraseña nuevamente",
     "buttonSignUp": "Registrarse",
     "buttonHaveAccount": "¿Ya tienes una cuenta? Inicia sesión",
-    "errorEmailExists": "Correo electrónico ya registrado",
+    "errorEmailExists": "E-mail ya registrado",
     "dialog": {
       "sucess": {
         "title": "Registro exitoso",
         "description": "Tu cuenta ha sido creada exitosamente. Ahora puedes iniciar sesión.",
-        "content": "Se ha enviado un correo electrónico de confirmación a tu dirección de correo electrónico.",
+        "content": "Se ha enviado un e-mail de confirmación a tu dirección de e-mail.",
         "button": "Iniciar Sesión"
       }
     }
@@ -503,12 +503,12 @@
   },
   "drawerInvite": {
     "title": "Invitar Usuario",
-    "description": "Invitar a un usuario al proyecto ingresando su correo electrónico y seleccionando permisos.",
-    "emailLabel": "Email *",
-    "emailPlaceholder": "Ingrese el correo electrónico del usuario",
+    "description": "Invitar a un usuario al proyecto ingresando su e-mail y seleccionando permisos.",
+    "emailLabel": "E-mail *",
+    "emailPlaceholder": "Ingrese el e-mail del usuario",
     "nameLabel": "Nombre *",
     "namePlaceholder": "Ingrese el nombre del usuario",
-    "nameOrEmailPlaceholder": "Seleccione el usuario o digite el email",
+    "nameOrEmailPlaceholder": "Seleccione el usuario o digite el e-mail",
     "projectsLabel": "Proyectos *",
     "projectsPlaceholder": "Seleccione un proyecto",
     "permissionsLabel": "Permisos *",
@@ -520,7 +520,7 @@
   },
   "forms": {
     "requiredField": "Este campo es obligatorio",
-    "invalidEmail": "Por favor, introduce una dirección de correo electrónico válida",
+    "invalidEmail": "Por favor, introduce una dirección de e-mail válida",
     "minLength": "La longitud mínima es de {{min}} caracteres",
     "maxLength": "La longitud máxima es de {{max}} caracteres",
     "selectOption": "Por favor, selecciona una opción",
@@ -529,11 +529,11 @@
     "passwordMinLength": "La contraseña debe tener al menos {{min}} caracteres",
     "fullNameRequired": "Por favor, introduce tu nombre completo",
     "passwordsDoNotMatch": "Las contraseñas no coinciden",
-    "emailAlreadyExists": "El correo electrónico ya está registrado",
+    "emailAlreadyExists": "El e-mail ya está registrado",
     "minimumAge": "Debes tener al menos {{age}} años",
     "fields": {
       "name": "Nombre",
-      "email": "Correo electrónico",
+      "email": "E-mail",
       "password": "Contraseña",
       "confirmPassword": "Confirmar Contraseña"
     }
