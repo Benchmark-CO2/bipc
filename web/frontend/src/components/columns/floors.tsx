@@ -24,7 +24,7 @@ export const floorsColumns: ColumnDef<
   },
   {
     accessorKey: "co2_min",
-    header: () => <div className="text-center">CO₂ Min. (kgCO₂/m²)</div>,
+    header: () => <div className="text-center">CO₂ Min. (kg CO₂/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
         {`${row.original.co2_min?.toInternational()}` || "-"}
@@ -33,7 +33,7 @@ export const floorsColumns: ColumnDef<
   },
   {
     accessorKey: "co2_max",
-    header: () => <div className="text-center">CO₂ Max. (kgCO₂/m²)</div>,
+    header: () => <div className="text-center">CO₂ Max. (kg CO₂/m²)</div>,
     cell: ({ row }) => (
       <div className="text-center">
         {`${row.original.co2_max?.toInternational()}` || "-"}

@@ -329,7 +329,7 @@
     "concreteVolumeFck45": "Volume de Concreto Fck45 (m³)",
     "steelConsumption": "Consumo de aço (kg)",
     "concreteComsumption": "Consumo de concreto (m³)",
-    "co2Emission": "Emissão de CO₂ (kgCO₂)",
+    "co2Emission": "Emissão de CO₂ (kg CO₂)",
     "addConstructiveTechnology": "Adicionar Módulo"
   },
   "drawerFormProject": {

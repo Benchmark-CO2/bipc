@@ -14,7 +14,7 @@ import React, {
 import Divider from "../ui/divider";
 
 const UNIT_LABELS = {
-  co2: "Emissão de CO₂ (kgCO₂/m²)",
+  co2: "Emissão de CO₂ (kg CO₂/m²)",
   energy: "Demanda de energia primária (MJ/m²)",
 } as const;
 

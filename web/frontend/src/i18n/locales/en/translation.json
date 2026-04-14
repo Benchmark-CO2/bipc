@@ -335,7 +335,7 @@
     "concreteVolumeFck45": "Concrete Volume Fck45 (m³)",
     "steelConsumption": "Steel Consumption (kg)",
     "concreteComsumption": "Concrete Consumption (m³)",
-    "co2Emission": "CO₂ Emission (kgCO₂)",
+    "co2Emission": "CO₂ Emission (kg CO₂)",
     "addConstructiveTechnology": "Add Constructive Technology Module"
   },
   "drawerFormProject": {

@@ -49,7 +49,7 @@ const CHART_CONFIG = {
 } as const;
 
 const UNIT_LABELS = {
-  "KgCO₂/m²": "Carbono Incorporado (kgCO₂/m²)",
+  "KgCO₂/m²": "Carbono Incorporado (kg CO₂/m²)",
   "MJ/m²": "Energia Incorporada (MJ/m²)",
 } as const;
 

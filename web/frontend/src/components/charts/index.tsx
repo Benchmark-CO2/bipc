@@ -286,7 +286,7 @@ function Chart({
             className="stroke-foreground/50"
             tick={{ fontSize: 12, stroke: "hsl(var(--foreground))" }}
             label={{
-              value: "Carbono incorporado (kgCO₂/m²)",
+              value: "Carbono incorporado (kg CO₂/m²)",
               position: "bottom",
             }}
           />
