@@ -87,7 +87,7 @@ export default function CommonTable({
     <div className="space-y-4 w-full">
       <div className="flex items-baseline justify-between">
         <div className="flex items-center gap-2 w-full">
-          <h2 className="text-h2 text-primary dark:text-gray-100">
+          <h2 className="text-h2 text-primary dark:text-gray-100 w-full">
             {tableName}
           </h2>
         </div>
