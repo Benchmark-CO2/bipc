@@ -171,7 +171,7 @@ const ModuleFormRaftFoundation = ({ form }: ModuleFormRaftFoundationProps) => {
         )}
       </div>
 
-      <h3 className="text-sm font-medium text-gray-900">Aço</h3>
+      <h3 className="text-base font-semibold text-primary">Aço</h3>
 
       <Card className="border-2 border-gray-200">
         <CardContent className="space-y-4 pt-4">

@@ -73,6 +73,9 @@
   --phase-executive-project: hsl(25, 80%, 55%);
   --phase-released-for-construction: hsl(130, 55%, 50%);
 
+  --table-row-even: #e3f3f6;
+  --table-row-odd: #fbfefe;
+
   --radius: 0.8rem;
   --chart-1: hsl(173 58% 39%);
   --chart-2: hsl(12 76% 61%);
@@ -129,6 +132,9 @@
   --phase-basic-project: hsl(48, 75%, 55%);
   --phase-executive-project: hsl(25, 80%, 55%);
   --phase-released-for-construction: hsl(130, 55%, 50%);
+
+  --table-row-even: hsl(190, 30%, 15%);
+  --table-row-odd: transparent;
 
   --chart-1: hsl(160 60% 45%);
   --chart-2: hsl(220 70% 50%);
@@ -208,6 +214,9 @@
   --color-phase-released-for-construction: var(
     --phase-released-for-construction
   );
+
+  --color-table-row-even: var(--table-row-even);
+  --color-table-row-odd: var(--table-row-odd);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

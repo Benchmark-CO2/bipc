@@ -192,8 +192,8 @@ export default function CommonTable({
                     key={row.id}
                     className={cn(
                       index % 2 === 0
-                        ? "bg-[#E3F3F6] dark:bg-white/[0.03]"
-                        : "bg-[#FBFEFE] dark:bg-transparent",
+                        ? "bg-table-row-even"
+                        : "bg-table-row-odd",
                       isInteractive &&
                         "hover:cursor-pointer hover:bg-dark-100 dark:hover:bg-white/[0.08]",
                     )}
