@@ -140,7 +140,7 @@ const CustomBanner = ({
         <div className={`flex flex-col ${isCollapsed ? "gap-0" : "gap-3"}`}>
           {/* Primeira linha: name, phase, botões */}
           <div className="flex items-center justify-between gap-4 flex-wrap min-h-[40px]">
-            <h1 className="text-lg max-md:text-base font-bold text-white flex-1 min-w-[200px] break-words my-auto">
+            <h1 className="text-h1 max-md:text-base text-white flex-1 min-w-[200px] break-words my-auto">
               {name}
             </h1>
 
