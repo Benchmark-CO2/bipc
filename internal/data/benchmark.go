@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 type BenchmarkModel struct {
@@ -17,6 +18,16 @@ type BenchmarkModel struct {
 type BenchmarkData struct {
 	ID          uuid.UUID    `json:"id"`
 	Consumption *Consumption `json:"consumption,omitempty"`
+}
+
+// ProjectBenchmarkData extends BenchmarkData with unit-level metadata needed
+// so the frontend can apply floor and technology filters on the client side.
+type ProjectBenchmarkData struct {
+	ID          uuid.UUID    `json:"id"`
+	Consumption *Consumption `json:"consumption,omitempty"`
+	Floors      int          `json:"floors"`
+	Technology  []string     `json:"technology"`
+	State       string       `json:"state"`
 }
 
 func (m BenchmarkModel) GetFloorsBenchmark() ([]*BenchmarkData, error) {
@@ -216,7 +227,7 @@ func parseFloorFilter(value string) (*FloorRange, error) {
 	return &floorRange, nil
 }
 
-func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters) ([]*BenchmarkData, error) {
+func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters) ([]*ProjectBenchmarkData, error) {
 	var args []any
 	argPosition := 1
 
@@ -306,7 +317,7 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 		technologies := strings.Split(*filters.Technology, ",")
 		techPlaceholders := make([]string, len(technologies))
 
-		for i, _ := range technologies {
+		for i := range technologies {
 			techPlaceholders[i] = fmt.Sprintf("$%d", argPosition)
 			args = append(args, strings.TrimSpace(technologies[i]))
 			argPosition++
@@ -336,32 +347,37 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 				SUM(co2_max) as co2_max,
 				SUM(energy_min) as energy_min,
 				SUM(energy_max) as energy_max
-			FROM unit_consumption_by_tech tct
-			WHERE EXISTS (
-				SELECT 1 FROM filtered_towers ft
-				WHERE ft.unit_id = tct.unit_id
-			)
+			FROM unit_consumption_by_tech
+			WHERE unit_id IN (SELECT unit_id FROM filtered_towers)
 			GROUP BY unit_id
 		),
-		project_consumption AS (
+		unit_technologies AS (
 			SELECT
-				u.project_id,
-				SUM(fc.co2_min * u.repetition_count) / NULLIF(SUM(u.repetition_count), 0) as co2_min,
-				SUM(fc.co2_max * u.repetition_count) / NULLIF(SUM(u.repetition_count), 0) as co2_max,
-				SUM(fc.energy_min * u.repetition_count) / NULLIF(SUM(u.repetition_count), 0) as energy_min,
-				SUM(fc.energy_max * u.repetition_count) / NULLIF(SUM(u.repetition_count), 0) as energy_max
-			FROM units u
-			INNER JOIN filtered_consumption fc ON u.id = fc.unit_id
-			GROUP BY u.project_id
+				f.unit_id,
+				array_agg(DISTINCT m.type) as technologies
+			FROM floor f
+			INNER JOIN units u ON f.unit_id = u.id
+			INNER JOIN projects p ON u.project_id = p.id
+			INNER JOIN module_target_consumption mtc ON f.id = mtc.target_id AND mtc.target_type = 'floor'
+			INNER JOIN module m ON mtc.module_id = m.id
+			WHERE p.benchmark = true
+			GROUP BY f.unit_id
 		)
 		SELECT
-			p.id,
-			pc.co2_min,
-			pc.co2_max,
-			pc.energy_min,
-			pc.energy_max
-		FROM projects p
-		LEFT JOIN project_consumption pc ON p.id = pc.project_id
+			u.id,
+			fc.co2_min,
+			fc.co2_max,
+			fc.energy_min,
+			fc.energy_max,
+			fpt.floor_count,
+			COALESCE(ut.technologies, ARRAY[]::text[]) as technologies,
+			p.state
+		FROM units u
+		INNER JOIN filtered_towers ft ON u.id = ft.unit_id
+		INNER JOIN projects p ON u.project_id = p.id
+		LEFT JOIN filtered_consumption fc ON u.id = fc.unit_id
+		LEFT JOIN floors_per_tower fpt ON u.id = fpt.unit_id
+		LEFT JOIN unit_technologies ut ON u.id = ut.unit_id
 		WHERE p.benchmark = true`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -373,11 +389,13 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 	}
 	defer rows.Close()
 
-	var projects []*BenchmarkData
+	var projects []*ProjectBenchmarkData
 
 	for rows.Next() {
-		var project BenchmarkData
+		var project ProjectBenchmarkData
 		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+		var floorCount sql.NullInt64
+		var technologies []string
 
 		err := rows.Scan(
 			&project.ID,
@@ -385,6 +403,9 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 			&co2Max,
 			&energyMin,
 			&energyMax,
+			&floorCount,
+			pq.Array(&technologies),
+			&project.State,
 		)
 		if err != nil {
 			return nil, err
@@ -398,6 +419,12 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 				EnergyMax: &energyMax.Float64,
 			}
 		}
+
+		if floorCount.Valid {
+			project.Floors = int(floorCount.Int64)
+		}
+
+		project.Technology = technologies
 
 		projects = append(projects, &project)
 	}
