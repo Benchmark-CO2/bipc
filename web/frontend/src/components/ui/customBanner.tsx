@@ -1,4 +1,5 @@
 import { IProject, TProjectPhase } from "@/types/projects";
+import { phaseColors, phaseLabels } from "@/utils/phaseConfig";
 import {
   ChevronDown,
   ChevronUp,
@@ -37,22 +38,6 @@ interface ICustomBanner {
   totalArea?: number;
   collapsed?: boolean;
 }
-
-const phaseLabels: Record<TProjectPhase, string> = {
-  preliminary_study: "Estudo Preliminar",
-  not_defined: "Não Definido",
-  basic_project: "Projeto Básico",
-  executive_project: "Projeto Executivo",
-  released_for_construction: "Liberado para Construção",
-};
-
-const phaseColors: Record<TProjectPhase, string> = {
-  preliminary_study: "bg-blue-500/90",
-  not_defined: "bg-gray-500/90",
-  basic_project: "bg-yellow-500/90",
-  executive_project: "bg-orange-500/90",
-  released_for_construction: "bg-green-500/90",
-};
 
 const CustomBanner = ({
   name,
