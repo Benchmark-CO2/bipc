@@ -125,9 +125,8 @@ var structuralMasonryHeaders = []string{
 	"module_grout_horizontal_steel_50",
 	"module_grout_horizontal_steel_60",
 
-	"module_mortar_4_5",
-	"module_mortar_8",
-	"module_mortar_14",
+	"module_mortar_fak",
+	"module_mortar_volume",
 
 	// Blocks - one FBK for all blocks, and one column per block type for quantity
 	"module_block_fbk",
@@ -236,7 +235,9 @@ type BaseCSVRowData struct {
 	ProjectPhase        string  `json:"project_phase,omitempty"`
 
 	// Unit fields
-	UnitName string `json:"unit_name,omitempty"`
+	UnitName              string `json:"unit_name,omitempty"`
+	UnitRepetitionCount   int    `json:"unit_repetition_count,omitempty"`
+	UnitHousingUnitsCount *int   `json:"unit_housing_units_count,omitempty"`
 
 	// Floor fields
 	FloorName       string  `json:"floor_name,omitempty"`
@@ -255,6 +256,7 @@ type ConcreteWallCSVRow struct {
 	ModuleSlabArea      float64                 `json:"module_slab_area,omitempty"`
 	ModuleWallFormArea  float64                 `json:"module_wall_form_area,omitempty"`
 	ModuleSlabFormArea  float64                 `json:"module_slab_form_area,omitempty"`
+	SlabType            *string                 `json:"slab_type,omitempty"`
 	WallConcrete        modules.ConcreteElement `json:"wall_concrete"`
 	SlabConcrete        modules.ConcreteElement `json:"slab_concrete"`
 }
@@ -269,6 +271,7 @@ type StructuralMasonryCSVRow struct {
 	ModuleFormBeams   *float64                `json:"module_form_beams,omitempty"`
 	ModuleFormSlabs   *float64                `json:"module_form_slabs,omitempty"`
 	ModuleBlockFbk    int                     `json:"module_block_fbk,omitempty"`
+	SlabType          *string                 `json:"slab_type,omitempty"`
 	Blocks            []modules.BlockInfo     `json:"blocks,omitempty"`
 	ColumnConcrete    modules.ConcreteElement `json:"column_concrete"`
 	BeamConcrete      modules.ConcreteElement `json:"beam_concrete"`
@@ -287,6 +290,7 @@ type BeamColumnCSVRow struct {
 	ModuleFormColumns *float64                `json:"module_form_columns,omitempty"`
 	ModuleFormBeams   *float64                `json:"module_form_beams,omitempty"`
 	ModuleFormSlabs   *float64                `json:"module_form_slabs,omitempty"`
+	SlabType          *string                 `json:"slab_type,omitempty"`
 	ColumnConcrete    modules.ConcreteElement `json:"column_concrete"`
 	BeamConcrete      modules.ConcreteElement `json:"beam_concrete"`
 	SlabConcrete      modules.ConcreteElement `json:"slab_concrete"`
@@ -319,669 +323,363 @@ func parseInt(s string) (int, error) {
 	return strconv.Atoi(s)
 }
 
-// parseFieldStringRequired safely parses a required string field from a record
-func parseFieldStringRequired(fieldName string, record []string, headerMap map[string]int) string {
-	idx, ok := headerMap[fieldName]
-	if !ok || idx >= len(record) {
-		return ""
-	}
-	return strings.TrimSpace(record[idx])
+// rowParser provides typed field access for a single CSV record, centralising
+// the repetitive "find index → parse → warn on error" logic that was previously
+// duplicated as inline closures inside each generator function.
+type rowParser struct {
+	record    []string
+	headerMap map[string]int
+	rowNum    int // 1-based, used in log messages
+	warnf     func(msg string, args ...any)
 }
 
-// parseFieldStringOptional safely parses an optional string field from a record
-func parseFieldStringOptional(fieldName string, record []string, headerMap map[string]int) string {
-	idx, ok := headerMap[fieldName]
-	if !ok || idx >= len(record) {
+func (p rowParser) str(field string) string {
+	idx, ok := p.headerMap[field]
+	if !ok || idx >= len(p.record) {
 		return ""
 	}
-	return strings.TrimSpace(record[idx])
+	return strings.TrimSpace(p.record[idx])
 }
 
-// generateConcreteWallRows generates ConcreteWallCSVRow from CSV data
+func (p rowParser) optStr(field string) *string {
+	s := p.str(field)
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func (p rowParser) float(field string) float64 {
+	idx, ok := p.headerMap[field]
+	if !ok || idx >= len(p.record) {
+		return 0
+	}
+	val, err := parseFloat(p.record[idx])
+	if err != nil {
+		p.warnf("Could not parse float", "field", field, "row", p.rowNum, "error", err)
+	}
+	return val
+}
+
+func (p rowParser) optFloat(field string) *float64 {
+	idx, ok := p.headerMap[field]
+	if !ok || idx >= len(p.record) {
+		return nil
+	}
+	val, err := parseFloat(p.record[idx])
+	if err != nil || val == 0 {
+		return nil
+	}
+	return &val
+}
+
+func (p rowParser) integer(field string) int {
+	idx, ok := p.headerMap[field]
+	if !ok || idx >= len(p.record) {
+		return 0
+	}
+	val, err := parseInt(p.record[idx])
+	if err != nil {
+		p.warnf("Could not parse int", "field", field, "row", p.rowNum, "error", err)
+	}
+	return val
+}
+
+func (p rowParser) optInt(field string) *int {
+	idx, ok := p.headerMap[field]
+	if !ok || idx >= len(p.record) {
+		return nil
+	}
+	valStr := strings.TrimSpace(p.record[idx])
+	if valStr == "" {
+		return nil
+	}
+	val, err := parseInt(valStr)
+	if err != nil || val <= 0 {
+		return nil
+	}
+	return &val
+}
+
+// parseBaseCSVRowData builds the BaseCSVRowData shared by all CSV row types.
+func parseBaseCSVRowData(p rowParser) BaseCSVRowData {
+	return BaseCSVRowData{
+		ProjectName:           p.str("project_name"),
+		ProjectCEP:            p.optStr("project_cep"),
+		ProjectState:          p.str("project_state"),
+		ProjectCity:           p.str("project_city"),
+		ProjectNeighborhood:   p.optStr("project_neighborhood"),
+		ProjectStreet:         p.optStr("project_street"),
+		ProjectNumber:         p.optStr("project_number"),
+		ProjectPhase:          p.str("project_phase"),
+		UnitName:              p.str("unit_name"),
+		UnitRepetitionCount:   p.integer("unit_repetition_count"),
+		UnitHousingUnitsCount: p.optInt("unit_housing_units_count"),
+		FloorName:             p.str("floor_name"),
+		FloorArea:             p.float("floor_area"),
+		FloorCategory:         p.str("floor_category"),
+		FloorHeight:           p.float("floor_height"),
+		FloorRepetition:       p.integer("floor_repetition"),
+	}
+}
+
+// parseConcreteElement scans all headers for the given concrete/steel prefix pair
+// and builds a ConcreteElement. Both prefixes must include the trailing underscore.
+func parseConcreteElement(p rowParser, concretePrefix, steelPrefix string) modules.ConcreteElement {
+	el := modules.ConcreteElement{
+		Volumes: []modules.ConcreteVolumeItem{},
+		Steel:   []modules.SteelMaterial{},
+	}
+	for h := range p.headerMap {
+		if strings.HasPrefix(h, concretePrefix) {
+			fck, _ := strconv.Atoi(strings.TrimPrefix(h, concretePrefix))
+			if fck > 0 {
+				if v := p.float(h); v > 0 {
+					el.Volumes = append(el.Volumes, modules.ConcreteVolumeItem{Fck: fck, Volume: v})
+				}
+			}
+		} else if strings.HasPrefix(h, steelPrefix) {
+			ca, _ := strconv.Atoi(strings.TrimPrefix(h, steelPrefix))
+			if ca > 0 {
+				if m := p.float(h); m > 0 {
+					el.Steel = append(el.Steel, convertCAToSteelMaterial(ca, m))
+				}
+			}
+		}
+	}
+	return el
+}
+
+// parseGroutGroup scans headers for the given volume/steel prefix pair and builds
+// a GroutInfo. steelPrefix is checked first because it is more specific (longer)
+// and shares the same leading substring as volumePrefix.
+func parseGroutGroup(p rowParser, volumePrefix, steelPrefix string) modules.GroutInfo {
+	g := modules.GroutInfo{
+		Volumes: []modules.GroutVolumeItem{},
+		Steel:   []modules.SteelMaterial{},
+	}
+	for h := range p.headerMap {
+		if strings.HasPrefix(h, steelPrefix) {
+			ca, _ := strconv.Atoi(strings.TrimPrefix(h, steelPrefix))
+			if ca > 0 {
+				if m := p.float(h); m > 0 {
+					g.Steel = append(g.Steel, convertCAToSteelMaterial(ca, m))
+				}
+			}
+		} else if strings.HasPrefix(h, volumePrefix) {
+			fgk, _ := strconv.Atoi(strings.TrimPrefix(h, volumePrefix))
+			if fgk > 0 {
+				if v := p.float(h); v > 0 {
+					g.Volumes = append(g.Volumes, modules.GroutVolumeItem{Fgk: fgk, Volume: v})
+				}
+			}
+		}
+	}
+	return g
+}
+
+// blockTypeMap maps CSV column names to the human-readable block type strings
+// expected by the domain model.
+var blockTypeMap = map[string]string{
+	"module_block_inteiro_14x19x29":            "inteiro (14x19x29)",
+	"module_block_meio_14x19x14":               "meio (14x19x14)",
+	"module_block_amarracao_t_14x19x44":        "amarração T (14x19x44)",
+	"module_block_canaleta_inteira_14x19x29":   "canaleta inteira (14x19x29)",
+	"module_block_meia_canaleta_14x19x14":      "meia canaleta (14x19x14)",
+	"module_block_inteiro_14x19x39":            "inteiro (14x19x39)",
+	"module_block_meio_14x19x19":               "meio (14x19x19)",
+	"module_block_amarracao_t_14x19x54":        "amarração T (14x19x54)",
+	"module_block_amarracao_l_14x19x34":        "amarração L (14x19x34)",
+	"module_block_canaleta_inteira_14x19x39":   "canaleta  inteira (14x19x39)",
+	"module_block_canaleta_amarracao_14x19x34": "canaleta de amarração (14x19x34)",
+	"module_block_meia_canaleta_14x19x19":      "meia canaleta (14x19x19)",
+	"module_block_compensador_1_4_14x19x9":     "compensador 1/4 (14x19x9)",
+	"module_block_compensador_1_8_14x19x4":     "compensador 1/8 (14x19x4)",
+	"module_block_inteiro_19x19x39":            "inteiro (19x19x39)",
+	"module_block_meio_19x19x19":               "meio (19x19x19)",
+	"module_block_canaleta_inteira_19x19x39":   "canaleta inteira (19x19x39)",
+	"module_block_meia_canaleta_19x19x19":      "meia canaleta (19x19x19)",
+	"module_block_compensador_1_4_19x19x9":     "compensador 1/4 (19x19x9)",
+	"module_block_compensador_1_8_19x19x4":     "compensador 1/8 (19x19x4)",
+}
+
 func (app *application) generateConcreteWallRows(dataRows [][]string, headerMap map[string]int) []ConcreteWallCSVRow {
-	allCSVRows := []ConcreteWallCSVRow{}
+	rows := make([]ConcreteWallCSVRow, len(dataRows))
 	for i, record := range dataRows {
-		// Helper for parsing with error logging
-		parseFieldFloat := func(fieldName string) float64 {
-			idx, ok := headerMap[fieldName]
-			if !ok {
-				return 0
-			}
-			if idx >= len(record) {
-				return 0
-			}
-			val, err := parseFloat(record[idx])
-			if err != nil {
-				app.logger.Warn("Could not parse float", "field", fieldName, "row", i+2, "error", err)
-			}
-			return val
-		}
-		parseFieldInt := func(fieldName string) int {
-			idx, ok := headerMap[fieldName]
-			if !ok {
-				return 0
-			}
-			if idx >= len(record) {
-				return 0
-			}
-			val, err := parseInt(record[idx])
-			if err != nil {
-				app.logger.Warn("Could not parse int", "field", fieldName, "row", i+2, "error", err)
-			}
-			return val
-		}
-		parseOptionalField := func(fieldName string) *string {
-			idx, ok := headerMap[fieldName]
-			if !ok || idx >= len(record) {
-				return nil
-			}
-			val := strings.TrimSpace(record[idx])
-			if val == "" {
-				return nil
-			}
-			return &val
-		}
+		p := rowParser{record: record, headerMap: headerMap, rowNum: i + 2, warnf: app.logger.Warn}
 
-		FloorName := ""
-		if idx, ok := headerMap["floor_name"]; ok && idx < len(record) {
-			FloorName = record[idx]
-		}
-		if FloorName == "" {
-			FloorName = "unique_floor"
-		}
-
-		unitName := ""
-		if idx, ok := headerMap["unit_name"]; ok && idx < len(record) {
-			unitName = record[idx]
-		}
-		if unitName == "" {
-			unitName = "unit"
-		}
-
-		row := ConcreteWallCSVRow{
-			BaseCSVRowData: BaseCSVRowData{
-				ProjectName:         parseFieldStringRequired("project_name", record, headerMap),
-				ProjectCEP:          parseOptionalField("project_cep"),
-				ProjectState:        parseFieldStringRequired("project_state", record, headerMap),
-				ProjectCity:         parseFieldStringRequired("project_city", record, headerMap),
-				ProjectNeighborhood: parseOptionalField("project_neighborhood"),
-				ProjectStreet:       parseOptionalField("project_street"),
-				ProjectNumber:       parseOptionalField("project_number"),
-				ProjectPhase:        parseFieldStringOptional("project_phase", record, headerMap),
-				UnitName:            unitName,
-				FloorName:           FloorName,
-				FloorArea:           parseFieldFloat("floor_area"),
-				FloorCategory:       parseFieldStringOptional("floor_category", record, headerMap),
-				FloorHeight:         parseFieldFloat("floor_height"),
-				FloorRepetition:     parseFieldInt("floor_repetition"),
-			},
-			ModuleWallThickness: parseFieldFloat("module_wall_thickness"),
-			ModuleSlabThickness: parseFieldFloat("module_slab_thickness"),
-			ModuleWallArea:      parseFieldFloat("module_wall_area"),
-			ModuleSlabArea:      parseFieldFloat("module_slab_area"),
-			ModuleWallFormArea:  parseFieldFloat("module_wall_form_area"),
-			ModuleSlabFormArea:  parseFieldFloat("module_slab_form_area"),
-			WallConcrete: modules.ConcreteElement{
-				Volumes: []modules.ConcreteVolumeItem{},
-				Steel:   []modules.SteelMaterial{},
-			},
-			SlabConcrete: modules.ConcreteElement{
-				Volumes: []modules.ConcreteVolumeItem{},
-				Steel:   []modules.SteelMaterial{},
-			},
-		}
-
-		// Parse concrete and steel volumes for concrete wall
-		// NOTE: This includes aggregation from stairs and structure elements as per business rules
-		// module_wall_concrete_XX now includes: wall + stairs + structure concrete
-		// module_wall_steel_XX now includes: wall + stairs + structure steel
-		for headerName := range headerMap {
-			if strings.HasPrefix(headerName, "module_wall_concrete_") {
-				fckStr := strings.TrimPrefix(headerName, "module_wall_concrete_")
-				fck, _ := strconv.Atoi(fckStr)
+		// Wall concrete aggregates wall + stairs + structure elements per business rules.
+		wall := modules.ConcreteElement{Volumes: []modules.ConcreteVolumeItem{}, Steel: []modules.SteelMaterial{}}
+		for h := range headerMap {
+			if strings.HasPrefix(h, "module_wall_concrete_") {
+				fck, _ := strconv.Atoi(strings.TrimPrefix(h, "module_wall_concrete_"))
 				if fck > 0 {
-					// Aggregate wall + stairs + structure concrete
-					volume := parseFieldFloat(headerName)
-
-					// Add stairs concrete if present
-					stairsHeaderName := strings.Replace(headerName, "module_wall_concrete_", "module_stairs_concrete_", 1)
-					stairsVolume := parseFieldFloat(stairsHeaderName)
-
-					// Add structure concrete if present
-					structureHeaderName := strings.Replace(headerName, "module_wall_concrete_", "module_structure_concrete_", 1)
-					structureVolume := parseFieldFloat(structureHeaderName)
-
-					totalVolume := volume + stairsVolume + structureVolume
-					if totalVolume > 0 {
-						row.WallConcrete.Volumes = append(row.WallConcrete.Volumes, modules.ConcreteVolumeItem{Fck: fck, Volume: totalVolume})
+					total := p.float(h) +
+						p.float(strings.Replace(h, "module_wall_concrete_", "module_stairs_concrete_", 1)) +
+						p.float(strings.Replace(h, "module_wall_concrete_", "module_structure_concrete_", 1))
+					if total > 0 {
+						wall.Volumes = append(wall.Volumes, modules.ConcreteVolumeItem{Fck: fck, Volume: total})
 					}
 				}
-			} else if strings.HasPrefix(headerName, "module_wall_steel_") {
-				caStr := strings.TrimPrefix(headerName, "module_wall_steel_")
-				ca, _ := strconv.Atoi(caStr)
+			} else if strings.HasPrefix(h, "module_wall_steel_") {
+				ca, _ := strconv.Atoi(strings.TrimPrefix(h, "module_wall_steel_"))
 				if ca > 0 {
-					// Aggregate wall + stairs + structure steel
-					mass := parseFieldFloat(headerName)
-
-					// Add stairs steel if present
-					stairsHeaderName := strings.Replace(headerName, "module_wall_steel_", "module_stairs_steel_", 1)
-					stairsMass := parseFieldFloat(stairsHeaderName)
-
-					// Add structure steel if present
-					structureHeaderName := strings.Replace(headerName, "module_wall_steel_", "module_structure_steel_", 1)
-					structureMass := parseFieldFloat(structureHeaderName)
-
-					totalMass := mass + stairsMass + structureMass
-					if totalMass > 0 {
-						row.WallConcrete.Steel = append(row.WallConcrete.Steel, convertCAToSteelMaterial(ca, totalMass))
-					}
-				}
-			} else if strings.HasPrefix(headerName, "module_slab_concrete_") {
-				fckStr := strings.TrimPrefix(headerName, "module_slab_concrete_")
-				fck, _ := strconv.Atoi(fckStr)
-				if fck > 0 {
-					volume := parseFieldFloat(headerName)
-					if volume > 0 {
-						row.SlabConcrete.Volumes = append(row.SlabConcrete.Volumes, modules.ConcreteVolumeItem{Fck: fck, Volume: volume})
-					}
-				}
-			} else if strings.HasPrefix(headerName, "module_slab_steel_") {
-				caStr := strings.TrimPrefix(headerName, "module_slab_steel_")
-				ca, _ := strconv.Atoi(caStr)
-				if ca > 0 {
-					mass := parseFieldFloat(headerName)
-					if mass > 0 {
-						row.SlabConcrete.Steel = append(row.SlabConcrete.Steel, convertCAToSteelMaterial(ca, mass))
+					total := p.float(h) +
+						p.float(strings.Replace(h, "module_wall_steel_", "module_stairs_steel_", 1)) +
+						p.float(strings.Replace(h, "module_wall_steel_", "module_structure_steel_", 1))
+					if total > 0 {
+						wall.Steel = append(wall.Steel, convertCAToSteelMaterial(ca, total))
 					}
 				}
 			}
 		}
 
-		allCSVRows = append(allCSVRows, row) // Add to the slice
+		rows[i] = ConcreteWallCSVRow{
+			BaseCSVRowData:      parseBaseCSVRowData(p),
+			ModuleWallThickness: p.float("module_wall_thickness"),
+			ModuleSlabThickness: p.float("module_slab_thickness"),
+			ModuleWallArea:      p.float("module_wall_area"),
+			ModuleSlabArea:      p.float("module_slab_area"),
+			ModuleWallFormArea:  p.float("module_wall_form_area"),
+			ModuleSlabFormArea:  p.float("module_slab_form_area"),
+			SlabType:            p.optStr("module_slab_type"),
+			WallConcrete:        wall,
+			SlabConcrete:        parseConcreteElement(p, "module_slab_concrete_", "module_slab_steel_"),
+		}
 	}
-	return allCSVRows
+	return rows
 }
 
-// generateStructuralMasonryRows generates StructuralMasonryCSVRow from CSV data
 func (app *application) generateStructuralMasonryRows(dataRows [][]string, headerMap map[string]int) []StructuralMasonryCSVRow {
-	allCSVRows := []StructuralMasonryCSVRow{}
+	rows := make([]StructuralMasonryCSVRow, len(dataRows))
 	for i, record := range dataRows {
-		// Helper for parsing with error logging
-		parseFieldFloat := func(fieldName string) float64 {
-			idx, ok := headerMap[fieldName]
-			if !ok {
-				return 0
-			}
-			if idx >= len(record) {
-				return 0
-			}
-			val, err := parseFloat(record[idx])
-			if err != nil {
-				app.logger.Warn("Could not parse float", "field", fieldName, "row", i+2, "error", err)
-			}
-			return val
-		}
-		parseFieldInt := func(fieldName string) int {
-			idx, ok := headerMap[fieldName]
-			if !ok {
-				return 0
-			}
-			if idx >= len(record) {
-				return 0
-			}
-			val, err := parseInt(record[idx])
-			if err != nil {
-				app.logger.Warn("Could not parse int", "field", fieldName, "row", i+2, "error", err)
-			}
-			return val
-		}
-		parseOptionalField := func(fieldName string) *string {
-			idx, ok := headerMap[fieldName]
-			if !ok || idx >= len(record) {
-				return nil
-			}
-			val := strings.TrimSpace(record[idx])
-			if val == "" {
-				return nil
-			}
-			return &val
-		}
+		p := rowParser{record: record, headerMap: headerMap, rowNum: i + 2, warnf: app.logger.Warn}
 
-		// Helper to safely parse optional float fields
-		parseOptionalFieldFloat := func(fieldName string) *float64 {
-			idx, ok := headerMap[fieldName]
-			if !ok {
-				return nil
-			}
-			if idx >= len(record) {
-				return nil
-			}
-			val, err := parseFloat(record[idx])
-			if err != nil || val == 0 {
-				return nil
-			}
-			return &val
-		}
-
-		FloorName := ""
-		if idx, ok := headerMap["floor_name"]; ok && idx < len(record) {
-			FloorName = record[idx]
-		}
-		if FloorName == "" {
-			FloorName = "unique_floor"
-		}
-
-		unitName := ""
-		if idx, ok := headerMap["unit_name"]; ok && idx < len(record) {
-			unitName = record[idx]
-		}
-		if unitName == "" {
-			unitName = "unit"
-		}
-
-		row := StructuralMasonryCSVRow{
-			BaseCSVRowData: BaseCSVRowData{
-				ProjectName:         parseFieldStringRequired("project_name", record, headerMap),
-				ProjectCEP:          parseOptionalField("project_cep"),
-				ProjectState:        parseFieldStringRequired("project_state", record, headerMap),
-				ProjectCity:         parseFieldStringRequired("project_city", record, headerMap),
-				ProjectNeighborhood: parseOptionalField("project_neighborhood"),
-				ProjectStreet:       parseOptionalField("project_street"),
-				ProjectNumber:       parseOptionalField("project_number"),
-				ProjectPhase:        parseFieldStringOptional("project_phase", record, headerMap),
-				UnitName:            unitName,
-				FloorName:           FloorName,
-				FloorArea:           parseFieldFloat("floor_area"),
-				FloorCategory:       parseFieldStringOptional("floor_category", record, headerMap),
-				FloorHeight:         parseFieldFloat("floor_height"),
-				FloorRepetition:     parseFieldInt("floor_repetition"),
-			},
-			ModuleFormColumns: parseOptionalFieldFloat("module_form_columns"),
-			ModuleFormBeams:   parseOptionalFieldFloat("module_form_beams"),
-			ModuleFormSlabs:   parseOptionalFieldFloat("module_form_slabs"),
-			ModuleBlockFbk:    parseFieldInt("module_block_fbk"),
-			Blocks:            []modules.BlockInfo{},
-			ColumnConcrete: modules.ConcreteElement{
-				Volumes: []modules.ConcreteVolumeItem{},
-				Steel:   []modules.SteelMaterial{},
-			},
-			BeamConcrete: modules.ConcreteElement{
-				Volumes: []modules.ConcreteVolumeItem{},
-				Steel:   []modules.SteelMaterial{},
-			},
-			SlabConcrete: modules.ConcreteElement{
-				Volumes: []modules.ConcreteVolumeItem{},
-				Steel:   []modules.SteelMaterial{},
-			},
-			GroutVertical: modules.GroutInfo{
-				Volumes: []modules.GroutVolumeItem{},
-				Steel:   []modules.SteelMaterial{},
-			},
-			GroutHorizontal: modules.GroutInfo{
-				Volumes: []modules.GroutVolumeItem{},
-				Steel:   []modules.SteelMaterial{},
-			},
-			Mortar: []modules.MortarItem{},
-		}
-
-		// Parse concrete, steel, grout, mortar, and blocks for structural masonry
-		for headerName := range headerMap {
-			if strings.HasPrefix(headerName, "module_column_concrete_") {
-				fckStr := strings.TrimPrefix(headerName, "module_column_concrete_")
-				fck, _ := strconv.Atoi(fckStr)
-				if fck > 0 {
-					volume := parseFieldFloat(headerName)
-					if volume > 0 {
-						row.ColumnConcrete.Volumes = append(row.ColumnConcrete.Volumes, modules.ConcreteVolumeItem{Fck: fck, Volume: volume})
-					}
-				}
-			} else if strings.HasPrefix(headerName, "module_column_steel_") {
-				caStr := strings.TrimPrefix(headerName, "module_column_steel_")
-				ca, _ := strconv.Atoi(caStr)
-				if ca > 0 {
-					mass := parseFieldFloat(headerName)
-					if mass > 0 {
-						row.ColumnConcrete.Steel = append(row.ColumnConcrete.Steel, convertCAToSteelMaterial(ca, mass))
-					}
-				}
-			} else if strings.HasPrefix(headerName, "module_beam_concrete_") {
-				fckStr := strings.TrimPrefix(headerName, "module_beam_concrete_")
-				fck, _ := strconv.Atoi(fckStr)
-				if fck > 0 {
-					volume := parseFieldFloat(headerName)
-					if volume > 0 {
-						row.BeamConcrete.Volumes = append(row.BeamConcrete.Volumes, modules.ConcreteVolumeItem{Fck: fck, Volume: volume})
-					}
-				}
-			} else if strings.HasPrefix(headerName, "module_beam_steel_") {
-				caStr := strings.TrimPrefix(headerName, "module_beam_steel_")
-				ca, _ := strconv.Atoi(caStr)
-				if ca > 0 {
-					mass := parseFieldFloat(headerName)
-					if mass > 0 {
-						row.BeamConcrete.Steel = append(row.BeamConcrete.Steel, convertCAToSteelMaterial(ca, mass))
-					}
-				}
-			} else if strings.HasPrefix(headerName, "module_slab_concrete_") {
-				fckStr := strings.TrimPrefix(headerName, "module_slab_concrete_")
-				fck, _ := strconv.Atoi(fckStr)
-				if fck > 0 {
-					volume := parseFieldFloat(headerName)
-					if volume > 0 {
-						row.SlabConcrete.Volumes = append(row.SlabConcrete.Volumes, modules.ConcreteVolumeItem{Fck: fck, Volume: volume})
-					}
-				}
-			} else if strings.HasPrefix(headerName, "module_slab_steel_") {
-				caStr := strings.TrimPrefix(headerName, "module_slab_steel_")
-				ca, _ := strconv.Atoi(caStr)
-				if ca > 0 {
-					mass := parseFieldFloat(headerName)
-					if mass > 0 {
-						row.SlabConcrete.Steel = append(row.SlabConcrete.Steel, convertCAToSteelMaterial(ca, mass))
-					}
-				}
-			} else if strings.HasPrefix(headerName, "module_grout_vertical_") && !strings.Contains(headerName, "steel") {
-				fgkStr := strings.TrimPrefix(headerName, "module_grout_vertical_")
-				fgk, _ := strconv.Atoi(fgkStr)
-				if fgk > 0 {
-					volume := parseFieldFloat(headerName)
-					if volume > 0 {
-						row.GroutVertical.Volumes = append(row.GroutVertical.Volumes, modules.GroutVolumeItem{Fgk: fgk, Volume: volume})
-					}
-				}
-			} else if strings.HasPrefix(headerName, "module_grout_vertical_steel_") {
-				caStr := strings.TrimPrefix(headerName, "module_grout_vertical_steel_")
-				ca, _ := strconv.Atoi(caStr)
-				if ca > 0 {
-					mass := parseFieldFloat(headerName)
-					if mass > 0 {
-						row.GroutVertical.Steel = append(row.GroutVertical.Steel, convertCAToSteelMaterial(ca, mass))
-					}
-				}
-			} else if strings.HasPrefix(headerName, "module_grout_horizontal_") && !strings.Contains(headerName, "steel") {
-				fgkStr := strings.TrimPrefix(headerName, "module_grout_horizontal_")
-				fgk, _ := strconv.Atoi(fgkStr)
-				if fgk > 0 {
-					volume := parseFieldFloat(headerName)
-					if volume > 0 {
-						row.GroutHorizontal.Volumes = append(row.GroutHorizontal.Volumes, modules.GroutVolumeItem{Fgk: fgk, Volume: volume})
-					}
-				}
-			} else if strings.HasPrefix(headerName, "module_grout_horizontal_steel_") {
-				caStr := strings.TrimPrefix(headerName, "module_grout_horizontal_steel_")
-				ca, _ := strconv.Atoi(caStr)
-				if ca > 0 {
-					mass := parseFieldFloat(headerName)
-					if mass > 0 {
-						row.GroutHorizontal.Steel = append(row.GroutHorizontal.Steel, convertCAToSteelMaterial(ca, mass))
-					}
-				}
-			} else if strings.HasPrefix(headerName, "module_mortar_") {
-				fakStr := strings.TrimPrefix(headerName, "module_mortar_")
-				// Replace underscore with dot for 4_5 -> 4.5
-				fakStr = strings.Replace(fakStr, "_", ".", -1)
-				fak, _ := strconv.ParseFloat(fakStr, 64)
-				if fak > 0 {
-					volume := parseFieldFloat(headerName)
-					if volume > 0 {
-						row.Mortar = append(row.Mortar, modules.MortarItem{Fak: fak, Volume: volume})
-					}
-				}
-			}
-		}
-
-		// Parse block data
-		blockTypeMap := map[string]string{
-			"module_block_inteiro_14x19x29":            "inteiro (14x19x29)",
-			"module_block_meio_14x19x14":               "meio (14x19x14)",
-			"module_block_amarracao_t_14x19x44":        "amarração T (14x19x44)",
-			"module_block_canaleta_inteira_14x19x29":   "canaleta inteira (14x19x29)",
-			"module_block_meia_canaleta_14x19x14":      "meia canaleta (14x19x14)",
-			"module_block_inteiro_14x19x39":            "inteiro (14x19x39)",
-			"module_block_meio_14x19x19":               "meio (14x19x19)",
-			"module_block_amarracao_t_14x19x54":        "amarração T (14x19x54)",
-			"module_block_amarracao_l_14x19x34":        "amarração L (14x19x34)",
-			"module_block_canaleta_inteira_14x19x39":   "canaleta  inteira (14x19x39)",
-			"module_block_canaleta_amarracao_14x19x34": "canaleta de amarração (14x19x34)",
-			"module_block_meia_canaleta_14x19x19":      "meia canaleta (14x19x19)",
-			"module_block_compensador_1_4_14x19x9":     "compensador 1/4 (14x19x9)",
-			"module_block_compensador_1_8_14x19x4":     "compensador 1/8 (14x19x4)",
-			"module_block_inteiro_19x19x39":            "inteiro (19x19x39)",
-			"module_block_meio_19x19x19":               "meio (19x19x19)",
-			"module_block_canaleta_inteira_19x19x39":   "canaleta inteira (19x19x39)",
-			"module_block_meia_canaleta_19x19x19":      "meia canaleta (19x19x19)",
-			"module_block_compensador_1_4_19x19x9":     "compensador 1/4 (19x19x9)",
-			"module_block_compensador_1_8_19x19x4":     "compensador 1/8 (19x19x4)",
-		}
-
-		for columnName, blockType := range blockTypeMap {
-			qtyIdx, hasQty := headerMap[columnName]
-			if hasQty {
+		fbk := p.integer("module_block_fbk")
+		var blocks []modules.BlockInfo
+		for colName, blockType := range blockTypeMap {
+			if qtyIdx, ok := headerMap[colName]; ok && qtyIdx < len(record) {
 				qty, _ := parseInt(record[qtyIdx])
-				if qty > 0 && row.ModuleBlockFbk > 0 {
-					row.Blocks = append(row.Blocks, modules.BlockInfo{
-						Type:     blockType,
-						Fbk:      row.ModuleBlockFbk,
-						Quantity: qty,
-					})
+				if qty > 0 && fbk > 0 {
+					blocks = append(blocks, modules.BlockInfo{Type: blockType, Fbk: fbk, Quantity: qty})
 				}
 			}
 		}
 
-		allCSVRows = append(allCSVRows, row)
+		var mortar []modules.MortarItem
+		if fak := p.float("module_mortar_fak"); fak > 0 {
+			if vol := p.float("module_mortar_volume"); vol > 0 {
+				mortar = append(mortar, modules.MortarItem{Fak: fak, Volume: vol})
+			}
+		}
+
+		rows[i] = StructuralMasonryCSVRow{
+			BaseCSVRowData:    parseBaseCSVRowData(p),
+			ModuleFormColumns: p.optFloat("module_form_columns"),
+			ModuleFormBeams:   p.optFloat("module_form_beams"),
+			ModuleFormSlabs:   p.optFloat("module_form_slabs"),
+			ModuleBlockFbk:    fbk,
+			SlabType:          p.optStr("module_slab_type"),
+			Blocks:            blocks,
+			ColumnConcrete:    parseConcreteElement(p, "module_column_concrete_", "module_column_steel_"),
+			BeamConcrete:      parseConcreteElement(p, "module_beam_concrete_", "module_beam_steel_"),
+			SlabConcrete:      parseConcreteElement(p, "module_slab_concrete_", "module_slab_steel_"),
+			GroutVertical:     parseGroutGroup(p, "module_grout_vertical_", "module_grout_vertical_steel_"),
+			GroutHorizontal:   parseGroutGroup(p, "module_grout_horizontal_", "module_grout_horizontal_steel_"),
+			Mortar:            mortar,
+		}
 	}
-	return allCSVRows
+	return rows
 }
 
-// generateBeamColumnRows generates BeamColumnCSVRow from CSV data
 func (app *application) generateBeamColumnRows(dataRows [][]string, headerMap map[string]int) []BeamColumnCSVRow {
-	allCSVRows := []BeamColumnCSVRow{}
-
+	rows := make([]BeamColumnCSVRow, len(dataRows))
 	for i, record := range dataRows {
-		// Helper for parsing with error logging
-		parseFieldFloat := func(fieldName string) float64 {
-			idx, ok := headerMap[fieldName]
-			if !ok {
-				return 0
-			}
-			if idx >= len(record) {
-				return 0
-			}
-			val, err := parseFloat(record[idx])
-			if err != nil {
-				app.logger.Warn("Could not parse float", "field", fieldName, "row", i+2, "error", err)
-			}
-			return val
+		p := rowParser{record: record, headerMap: headerMap, rowNum: i + 2, warnf: app.logger.Warn}
+		rows[i] = BeamColumnCSVRow{
+			BaseCSVRowData:    parseBaseCSVRowData(p),
+			ModuleFormColumns: p.optFloat("module_form_columns"),
+			ModuleFormBeams:   p.optFloat("module_form_beams"),
+			ModuleFormSlabs:   p.optFloat("module_form_slabs"),
+			SlabType:          p.optStr("module_slab_type"),
+			ColumnConcrete:    parseConcreteElement(p, "module_column_concrete_", "module_column_steel_"),
+			BeamConcrete:      parseConcreteElement(p, "module_beam_concrete_", "module_beam_steel_"),
+			SlabConcrete:      parseConcreteElement(p, "module_slab_concrete_", "module_slab_steel_"),
 		}
-		parseFieldInt := func(fieldName string) int {
-			idx, ok := headerMap[fieldName]
-			if !ok {
-				return 0
-			}
-			if idx >= len(record) {
-				return 0
-			}
-			val, err := parseInt(record[idx])
-			if err != nil {
-				app.logger.Warn("Could not parse int", "field", fieldName, "row", i+2, "error", err)
-			}
-			return val
-		}
-		parseOptionalField := func(fieldName string) *string {
-			idx, ok := headerMap[fieldName]
-			if !ok || idx >= len(record) {
-				return nil
-			}
-			val := strings.TrimSpace(record[idx])
-			if val == "" {
-				return nil
-			}
-			return &val
-		}
-
-		// Helper to safely parse optional float fields
-		parseOptionalFieldFloat := func(fieldName string) *float64 {
-			idx, ok := headerMap[fieldName]
-			if !ok {
-				return nil
-			}
-			if idx >= len(record) {
-				return nil
-			}
-			val, err := parseFloat(record[idx])
-			if err != nil || val == 0 {
-				return nil
-			}
-			return &val
-		}
-
-		FloorName := ""
-		if idx, ok := headerMap["floor_name"]; ok && idx < len(record) {
-			FloorName = record[idx]
-		}
-		if FloorName == "" {
-			FloorName = "unique_floor"
-		}
-
-		unitName := ""
-		if idx, ok := headerMap["unit_name"]; ok && idx < len(record) {
-			unitName = record[idx]
-		}
-		if unitName == "" {
-			unitName = "unit"
-		}
-
-		row := BeamColumnCSVRow{
-			BaseCSVRowData: BaseCSVRowData{
-				ProjectName:         parseFieldStringRequired("project_name", record, headerMap),
-				ProjectCEP:          parseOptionalField("project_cep"),
-				ProjectState:        parseFieldStringRequired("project_state", record, headerMap),
-				ProjectCity:         parseFieldStringRequired("project_city", record, headerMap),
-				ProjectNeighborhood: parseOptionalField("project_neighborhood"),
-				ProjectStreet:       parseOptionalField("project_street"),
-				ProjectNumber:       parseOptionalField("project_number"),
-				ProjectPhase:        parseFieldStringOptional("project_phase", record, headerMap),
-				UnitName:            unitName,
-				FloorName:           FloorName,
-				FloorArea:           parseFieldFloat("floor_area"),
-				FloorCategory:       parseFieldStringOptional("floor_category", record, headerMap),
-				FloorHeight:         parseFieldFloat("floor_height"),
-				FloorRepetition:     parseFieldInt("floor_repetition"),
-			},
-			ModuleFormColumns: parseOptionalFieldFloat("module_form_columns"),
-			ModuleFormBeams:   parseOptionalFieldFloat("module_form_beams"),
-			ModuleFormSlabs:   parseOptionalFieldFloat("module_form_slabs"),
-			ColumnConcrete: modules.ConcreteElement{
-				Volumes: []modules.ConcreteVolumeItem{},
-				Steel:   []modules.SteelMaterial{},
-			},
-			BeamConcrete: modules.ConcreteElement{
-				Volumes: []modules.ConcreteVolumeItem{},
-				Steel:   []modules.SteelMaterial{},
-			},
-			SlabConcrete: modules.ConcreteElement{
-				Volumes: []modules.ConcreteVolumeItem{},
-				Steel:   []modules.SteelMaterial{},
-			},
-		}
-
-		// Parse concrete and steel for beam_column
-		for headerName := range headerMap {
-			if strings.HasPrefix(headerName, "module_column_concrete_") {
-				fckStr := strings.TrimPrefix(headerName, "module_column_concrete_")
-				fck, _ := strconv.Atoi(fckStr)
-				if fck > 0 {
-					volume := parseFieldFloat(headerName)
-					if volume > 0 {
-						row.ColumnConcrete.Volumes = append(row.ColumnConcrete.Volumes, modules.ConcreteVolumeItem{Fck: fck, Volume: volume})
-					}
-				}
-			} else if strings.HasPrefix(headerName, "module_column_steel_") {
-				caStr := strings.TrimPrefix(headerName, "module_column_steel_")
-				ca, _ := strconv.Atoi(caStr)
-				if ca > 0 {
-					mass := parseFieldFloat(headerName)
-					if mass > 0 {
-						row.ColumnConcrete.Steel = append(row.ColumnConcrete.Steel, convertCAToSteelMaterial(ca, mass))
-					}
-				}
-			} else if strings.HasPrefix(headerName, "module_beam_concrete_") {
-				fckStr := strings.TrimPrefix(headerName, "module_beam_concrete_")
-				fck, _ := strconv.Atoi(fckStr)
-				if fck > 0 {
-					volume := parseFieldFloat(headerName)
-					if volume > 0 {
-						row.BeamConcrete.Volumes = append(row.BeamConcrete.Volumes, modules.ConcreteVolumeItem{Fck: fck, Volume: volume})
-					}
-				}
-			} else if strings.HasPrefix(headerName, "module_beam_steel_") {
-				caStr := strings.TrimPrefix(headerName, "module_beam_steel_")
-				ca, _ := strconv.Atoi(caStr)
-				if ca > 0 {
-					mass := parseFieldFloat(headerName)
-					if mass > 0 {
-						row.BeamConcrete.Steel = append(row.BeamConcrete.Steel, convertCAToSteelMaterial(ca, mass))
-					}
-				}
-			} else if strings.HasPrefix(headerName, "module_slab_concrete_") {
-				fckStr := strings.TrimPrefix(headerName, "module_slab_concrete_")
-				fck, _ := strconv.Atoi(fckStr)
-				if fck > 0 {
-					volume := parseFieldFloat(headerName)
-					if volume > 0 {
-						row.SlabConcrete.Volumes = append(row.SlabConcrete.Volumes, modules.ConcreteVolumeItem{Fck: fck, Volume: volume})
-					}
-				}
-			} else if strings.HasPrefix(headerName, "module_slab_steel_") {
-				caStr := strings.TrimPrefix(headerName, "module_slab_steel_")
-				ca, _ := strconv.Atoi(caStr)
-				if ca > 0 {
-					mass := parseFieldFloat(headerName)
-					if mass > 0 {
-						row.SlabConcrete.Steel = append(row.SlabConcrete.Steel, convertCAToSteelMaterial(ca, mass))
-					}
-				}
-			}
-		}
-
-		allCSVRows = append(allCSVRows, row)
 	}
-	return allCSVRows
+	return rows
 }
 
-// generateRowsByType dispatches to the appropriate generation function based on module type
-func (app *application) generateRowsByType(moduleType string, dataRows [][]string, headerMap map[string]int) []CSVRowData {
-	switch moduleType {
-	case "concrete_wall":
-		rows := app.generateConcreteWallRows(dataRows, headerMap)
-		result := make([]CSVRowData, len(rows))
-		for i := range rows {
-			result[i] = rows[i]
-		}
-		return result
-	case "structural_masonry":
-		rows := app.generateStructuralMasonryRows(dataRows, headerMap)
-		result := make([]CSVRowData, len(rows))
-		for i := range rows {
-			result[i] = rows[i]
-		}
-		return result
-	case "beam_column":
-		rows := app.generateBeamColumnRows(dataRows, headerMap)
-		result := make([]CSVRowData, len(rows))
-		for i := range rows {
-			result[i] = rows[i]
-		}
-		return result
-	default:
-		return []CSVRowData{}
-	}
+// hasDataConcreteWall reports whether a ConcreteWallCSVRow has any module data.
+func hasDataConcreteWall(row ConcreteWallCSVRow) bool {
+	return len(row.WallConcrete.Volumes) > 0 ||
+		len(row.WallConcrete.Steel) > 0 ||
+		len(row.SlabConcrete.Volumes) > 0 ||
+		len(row.SlabConcrete.Steel) > 0
 }
 
-func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID, moduleType string) ([]ProjectFromCSV, error) {
+// hasDataStructuralMasonry reports whether a StructuralMasonryCSVRow has any module data.
+func hasDataStructuralMasonry(row StructuralMasonryCSVRow) bool {
+	return len(row.ColumnConcrete.Volumes) > 0 ||
+		len(row.ColumnConcrete.Steel) > 0 ||
+		len(row.BeamConcrete.Volumes) > 0 ||
+		len(row.BeamConcrete.Steel) > 0 ||
+		len(row.SlabConcrete.Volumes) > 0 ||
+		len(row.SlabConcrete.Steel) > 0 ||
+		len(row.GroutVertical.Volumes) > 0 ||
+		len(row.GroutVertical.Steel) > 0 ||
+		len(row.GroutHorizontal.Volumes) > 0 ||
+		len(row.GroutHorizontal.Steel) > 0 ||
+		len(row.Mortar) > 0 ||
+		len(row.Blocks) > 0
+}
+
+// hasDataBeamColumn reports whether a BeamColumnCSVRow has any module data.
+func hasDataBeamColumn(row BeamColumnCSVRow) bool {
+	return len(row.ColumnConcrete.Volumes) > 0 ||
+		len(row.ColumnConcrete.Steel) > 0 ||
+		len(row.BeamConcrete.Volumes) > 0 ||
+		len(row.BeamConcrete.Steel) > 0 ||
+		len(row.SlabConcrete.Volumes) > 0 ||
+		len(row.SlabConcrete.Steel) > 0
+}
+
+// generateAutoRows executes all three generators with their respective normalised
+// header maps and returns one CSVRowData per raw CSV row. The type emitted is
+// determined by which column group has data. Context rows (no data in any type)
+// are emitted as ConcreteWallCSVRow so that project/unit/floor context is still
+// registered in the downstream consumer.
+func (app *application) generateAutoRows(dataRows [][]string, headerMap map[string]int) []CSVRowData {
+	cwMap := normalizeHeaderMapForModuleType(headerMap, "concrete_wall")
+	smMap := normalizeHeaderMapForModuleType(headerMap, "structural_masonry")
+	bcMap := normalizeHeaderMapForModuleType(headerMap, "beam_column")
+
+	cwRows := app.generateConcreteWallRows(dataRows, cwMap)
+	smRows := app.generateStructuralMasonryRows(dataRows, smMap)
+	bcRows := app.generateBeamColumnRows(dataRows, bcMap)
+
+	result := make([]CSVRowData, len(dataRows))
+	for i := range dataRows {
+		switch {
+		case hasDataConcreteWall(cwRows[i]):
+			result[i] = cwRows[i]
+		case hasDataStructuralMasonry(smRows[i]):
+			result[i] = smRows[i]
+		case hasDataBeamColumn(bcRows[i]):
+			result[i] = bcRows[i]
+		default:
+			// Context row: carries project/unit/floor fields but has no module data.
+			result[i] = cwRows[i]
+		}
+	}
+	return result
+}
+
+func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCSV, error) {
 	projects := []ProjectFromCSV{}
 	var currentProjectFormCSV *ProjectFromCSV
-	projectNameToUnit := make(map[string]*data.Unit) // To store the Unit associated with each ProjectName
+	contextToLastFloorIDs := make(map[string][]uuid.UUID)
+	contextToFloorNameToFloorIDs := make(map[string]map[string][]uuid.UUID)
 
 	for _, row := range rows {
 		// Get base data from interface
@@ -989,29 +687,26 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID, moduleType strin
 
 		// Check if it's a new project row
 		isNewProjectRow := row.GetProjectName() != "" && (currentProjectFormCSV == nil || row.GetProjectName() != currentProjectFormCSV.Project.Name)
+		isNewUnitRow := false
+		if !isNewProjectRow && currentProjectFormCSV != nil {
+			incomingUnitName := strings.TrimSpace(baseData.UnitName)
+			isNewUnitRow = incomingUnitName != "" && incomingUnitName != currentProjectFormCSV.Unit.Name
+		}
 
-		if isNewProjectRow {
-			// New project
+		if isNewProjectRow || isNewUnitRow {
+			// New project or new unit context.
 			if currentProjectFormCSV != nil {
 				projects = append(projects, *currentProjectFormCSV)
 			}
 
-			// Generate all IDs upfront - consistent with application pattern
-			projectID, err := uuid.NewV7()
-			if err != nil {
-				return nil, fmt.Errorf("failed to generate project ID: %w", err)
-			}
-			unitID, err := uuid.NewV7()
-			if err != nil {
-				return nil, fmt.Errorf("failed to generate unit ID: %w", err)
-			}
-			optionID, err := uuid.NewV7()
-			if err != nil {
-				return nil, fmt.Errorf("failed to generate option ID: %w", err)
-			}
+			projectData := data.Project{}
+			if isNewProjectRow {
+				projectID, err := uuid.NewV7()
+				if err != nil {
+					return nil, fmt.Errorf("failed to generate project ID: %w", err)
+				}
 
-			currentProjectFormCSV = &ProjectFromCSV{
-				Project: data.Project{
+				projectData = data.Project{
 					ID:           projectID,
 					Name:         baseData.ProjectName,
 					CEP:          baseData.ProjectCEP,
@@ -1022,24 +717,45 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID, moduleType strin
 					Number:       baseData.ProjectNumber,
 					Phase:        baseData.ProjectPhase,
 					Benchmark:    true, // Mark as benchmark project from CSV
-				},
+				}
+			} else {
+				projectData = currentProjectFormCSV.Project
+			}
+
+			unitID, err := uuid.NewV7()
+			if err != nil {
+				return nil, fmt.Errorf("failed to generate unit ID: %w", err)
+			}
+			optionID, err := uuid.NewV7()
+			if err != nil {
+				return nil, fmt.Errorf("failed to generate option ID: %w", err)
+			}
+
+			unitName := strings.TrimSpace(baseData.UnitName)
+			if unitName == "" {
+				unitName = "unit"
+			}
+
+			currentProjectFormCSV = &ProjectFromCSV{
+				Project: projectData,
 				Unit: data.Unit{
-					ID:        unitID,
-					ProjectID: projectID,
-					Name:      baseData.UnitName,
-					Type:      "tower",        // Assuming it's a tower if it has floors/modules
-					Floors:    []data.Floor{}, // Initialize floors slice
+					ID:                unitID,
+					ProjectID:         projectData.ID,
+					Name:              unitName,
+					Type:              "tower",        // Assuming it's a tower if it has floors/modules
+					RepetitionCount:   max(baseData.UnitRepetitionCount, 1),
+					HousingUnitsCount: baseData.UnitHousingUnitsCount,
+					Floors:            []data.Floor{}, // Initialize floors slice
 				},
 				Option: data.Option{
 					ID:      optionID,
 					UnitID:  unitID,
-					Name:    fmt.Sprintf("Option for %s", baseData.UnitName), // Default name
+					Name:    fmt.Sprintf("Option for %s", unitName), // Default name
 					Active:  true,
 					Modules: []data.ModuleInfo{},
 				},
 				Modules: []modules.Module{},
 			}
-			projectNameToUnit[row.GetProjectName()] = &currentProjectFormCSV.Unit
 		} else {
 			// Row belongs to the current project
 			if currentProjectFormCSV == nil {
@@ -1047,98 +763,133 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID, moduleType strin
 			}
 		}
 
-		// Retrieve the unit for the current project
-		unit := projectNameToUnit[currentProjectFormCSV.Project.Name]
-		if unit == nil {
-			return nil, errors.New("internal error: unit not found for current project")
+		unit := &currentProjectFormCSV.Unit
+
+		// Floor handling by floor_name context. If floor_name repeats, reuse the existing IDs.
+		var floorIDs []uuid.UUID
+		projectName := currentProjectFormCSV.Project.Name
+		contextKey := projectName + "|" + unit.ID.String()
+		floorNameKey := strings.ToLower(strings.TrimSpace(baseData.FloorName))
+
+		if floorNameKey == "" {
+			lastFloorIDs, ok := contextToLastFloorIDs[contextKey]
+			if !ok {
+				return nil, fmt.Errorf("CSV data error: floor_name must be provided for the first floor row of project '%s'", projectName)
+			}
+			floorIDs = lastFloorIDs
+		} else {
+			if _, ok := contextToFloorNameToFloorIDs[contextKey]; !ok {
+				contextToFloorNameToFloorIDs[contextKey] = make(map[string][]uuid.UUID)
+			}
+
+			if existingIDs, ok := contextToFloorNameToFloorIDs[contextKey][floorNameKey]; ok {
+				floorIDs = existingIDs
+				contextToLastFloorIDs[contextKey] = floorIDs
+			} else {
+				if baseData.FloorArea <= 0 {
+					return nil, fmt.Errorf("CSV data error: floor_area must be greater than zero when declaring a new floor '%s' in project '%s'", strings.TrimSpace(baseData.FloorName), projectName)
+				}
+
+				floorGroup := strings.TrimSpace(baseData.FloorName)
+				category := baseData.FloorCategory
+				if category == "" {
+					category = "standard_floor"
+				}
+				repetition := max(baseData.FloorRepetition, 1)
+
+				for range repetition {
+					generatedFloorID, err := uuid.NewV7()
+					if err != nil {
+						return nil, fmt.Errorf("failed to generate floor ID: %w", err)
+					}
+					unit.Floors = append(unit.Floors, data.Floor{
+						ID:         generatedFloorID,
+						UnitID:     unit.ID,
+						FloorGroup: floorGroup,
+						Category:   category,
+						Area:       baseData.FloorArea,
+						Height:     baseData.FloorHeight,
+						Index:      len(unit.Floors),
+					})
+					floorIDs = append(floorIDs, generatedFloorID)
+				}
+
+				contextToFloorNameToFloorIDs[contextKey][floorNameKey] = floorIDs
+				contextToLastFloorIDs[contextKey] = floorIDs
+			}
 		}
 
-		// Floor Handling - generate Floor ID upfront
-		floorID, err := uuid.NewV7()
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate floor ID: %w", err)
-		}
-
-		// Cria o Floor com ID pré-gerado
-		floor := data.Floor{
-			ID:         floorID,
-			UnitID:     unit.ID,
-			FloorGroup: baseData.FloorName,
-			Category:   "standard_floor", // Default category for CSV imports
-			Area:       baseData.FloorArea,
-			Height:     baseData.FloorHeight,
-			Index:      len(unit.Floors), // usa ordem como index
-		}
-		unit.Floors = append(unit.Floors, floor)
-
-		// Create module based on type with type assertions
+		// Create module via Go type switch on the concrete row type.
+		// Rows with no data for their module type (context rows that only set
+		// project / unit / floor) are silently skipped — their floor entry is
+		// already recorded in the context maps above, so the next row with
+		// actual data will inherit the correct floor ID.
 		var module modules.Module
-		switch moduleType {
-		case "concrete_wall":
-			concreteWallRow, ok := row.(ConcreteWallCSVRow)
-			if !ok {
-				return nil, fmt.Errorf("type assertion failed: expected ConcreteWallCSVRow")
+		switch typedRow := row.(type) {
+		case ConcreteWallCSVRow:
+			if hasDataConcreteWall(typedRow) {
+				module = &modules.ConcreteWall{
+					BasicModuleData: modules.BasicModuleData{Type: "concrete_wall"},
+					ConcreteWalls:   typedRow.WallConcrete,
+					ConcreteSlabs:   typedRow.SlabConcrete,
+					SlabType:        typedRow.SlabType,
+					WallThickness:   &typedRow.ModuleWallThickness,
+					SlabThickness:   &typedRow.ModuleSlabThickness,
+					WallArea:        &typedRow.ModuleWallArea,
+					SlabArea:        &typedRow.ModuleSlabArea,
+					WallFormArea:    &typedRow.ModuleWallFormArea,
+					SlabFormArea:    &typedRow.ModuleSlabFormArea,
+					FloorIDs:        floorIDs,
+				}
 			}
-			module = &modules.ConcreteWall{
-				BasicModuleData: modules.BasicModuleData{Type: "concrete_wall"},
-				ConcreteWalls:   concreteWallRow.WallConcrete,
-				ConcreteSlabs:   concreteWallRow.SlabConcrete,
-				WallThickness:   &concreteWallRow.ModuleWallThickness,
-				SlabThickness:   &concreteWallRow.ModuleSlabThickness,
-				WallArea:        &concreteWallRow.ModuleWallArea,
-				SlabArea:        &concreteWallRow.ModuleSlabArea,
-				WallFormArea:    &concreteWallRow.ModuleWallFormArea,
-				SlabFormArea:    &concreteWallRow.ModuleSlabFormArea,
-				FloorIDs:        []uuid.UUID{floorID},
-			}
-		case "structural_masonry":
-			masonryRow, ok := row.(StructuralMasonryCSVRow)
-			if !ok {
-				return nil, fmt.Errorf("type assertion failed: expected StructuralMasonryCSVRow")
-			}
-			// Build grout array
-			groutArray := []modules.GroutInfo{}
-			if len(masonryRow.GroutVertical.Volumes) > 0 || len(masonryRow.GroutVertical.Steel) > 0 {
-				groutArray = append(groutArray, masonryRow.GroutVertical)
-			}
-			if len(masonryRow.GroutHorizontal.Volumes) > 0 || len(masonryRow.GroutHorizontal.Steel) > 0 {
-				groutArray = append(groutArray, masonryRow.GroutHorizontal)
-			}
+		case StructuralMasonryCSVRow:
+			if hasDataStructuralMasonry(typedRow) {
+				// Build grout array with mandatory Position field.
+				groutArray := []modules.GroutInfo{}
+				if len(typedRow.GroutVertical.Volumes) > 0 || len(typedRow.GroutVertical.Steel) > 0 {
+					typedRow.GroutVertical.Position = "vertical"
+					groutArray = append(groutArray, typedRow.GroutVertical)
+				}
+				if len(typedRow.GroutHorizontal.Volumes) > 0 || len(typedRow.GroutHorizontal.Steel) > 0 {
+					typedRow.GroutHorizontal.Position = "horizontal"
+					groutArray = append(groutArray, typedRow.GroutHorizontal)
+				}
 
-			module = &modules.StructuralMasonry{
-				BasicModuleData: modules.BasicModuleData{Type: "structural_masonry"},
-				ConcreteColumns: masonryRow.ColumnConcrete,
-				ConcreteBeams:   masonryRow.BeamConcrete,
-				ConcreteSlabs:   masonryRow.SlabConcrete,
-				FormColumns:     masonryRow.ModuleFormColumns,
-				FormBeams:       masonryRow.ModuleFormBeams,
-				FormSlabs:       masonryRow.ModuleFormSlabs,
-				Masonry: modules.MasonryElement{
-					Grout:  groutArray,
-					Mortar: masonryRow.Mortar,
-					Blocks: masonryRow.Blocks,
-				},
-				FloorIDs: []uuid.UUID{floorID},
+				module = &modules.StructuralMasonry{
+					BasicModuleData: modules.BasicModuleData{Type: "structural_masonry"},
+					ConcreteColumns: typedRow.ColumnConcrete,
+					ConcreteBeams:   typedRow.BeamConcrete,
+					ConcreteSlabs:   typedRow.SlabConcrete,
+					SlabType:        typedRow.SlabType,
+					FormColumns:     typedRow.ModuleFormColumns,
+					FormBeams:       typedRow.ModuleFormBeams,
+					FormSlabs:       typedRow.ModuleFormSlabs,
+					Masonry: modules.MasonryElement{
+						Grout:  groutArray,
+						Mortar: typedRow.Mortar,
+						Blocks: typedRow.Blocks,
+					},
+					FloorIDs: floorIDs,
+				}
 			}
-		case "beam_column":
-			beamColumnRow, ok := row.(BeamColumnCSVRow)
-			if !ok {
-				return nil, fmt.Errorf("type assertion failed: expected BeamColumnCSVRow")
+		case BeamColumnCSVRow:
+			if hasDataBeamColumn(typedRow) {
+				module = &modules.BeamColumn{
+					BasicModuleData: modules.BasicModuleData{Type: "beam_column"},
+					ConcreteColumns: typedRow.ColumnConcrete,
+					ConcreteBeams:   typedRow.BeamConcrete,
+					ConcreteSlabs:   typedRow.SlabConcrete,
+					SlabType:        typedRow.SlabType,
+					FormColumns:     typedRow.ModuleFormColumns,
+					FormBeams:       typedRow.ModuleFormBeams,
+					FormSlabs:       typedRow.ModuleFormSlabs,
+					FloorIDs:        floorIDs,
+				}
 			}
-			module = &modules.BeamColumn{
-				BasicModuleData: modules.BasicModuleData{Type: "beam_column"},
-				ConcreteColumns: beamColumnRow.ColumnConcrete,
-				ConcreteBeams:   beamColumnRow.BeamConcrete,
-				ConcreteSlabs:   beamColumnRow.SlabConcrete,
-				FormColumns:     beamColumnRow.ModuleFormColumns,
-				FormBeams:       beamColumnRow.ModuleFormBeams,
-				FormSlabs:       beamColumnRow.ModuleFormSlabs,
-				FloorIDs:        []uuid.UUID{floorID},
-			}
-		default:
-			return nil, fmt.Errorf("unsupported module type: %s", moduleType)
 		}
-		currentProjectFormCSV.Modules = append(currentProjectFormCSV.Modules, module)
+		if module != nil {
+			currentProjectFormCSV.Modules = append(currentProjectFormCSV.Modules, module)
+		}
 	}
 
 	// Append the last project if it exists
@@ -1161,6 +912,79 @@ func validateCSVHeaders(headerMap map[string]int, moduleType string) error {
 		}
 	}
 	return nil
+}
+
+// validateBaseCSVHeaders validates that all project/unit/floor base headers are present.
+// Used in "auto" mode where module-type-specific headers are not enforced at request time.
+func validateBaseCSVHeaders(headerMap map[string]int) error {
+	for _, h := range baseRequiredHeaders {
+		if _, ok := headerMap[h]; !ok {
+			return fmt.Errorf("CSV header is missing the required '%s' column", h)
+		}
+	}
+	return nil
+}
+
+func buildHeaderMap(header []string) map[string]int {
+	headerMap := make(map[string]int)
+
+	for i, h := range header {
+		name := strings.TrimSpace(h)
+		if name == "" {
+			continue
+		}
+
+		headerMap[name] = i
+	}
+
+	return headerMap
+}
+
+func findHeaderRow(records [][]string) (int, map[string]int, error) {
+	for i, row := range records {
+		headerMap := buildHeaderMap(row)
+
+		if _, ok := headerMap["project_name"]; !ok {
+			continue
+		}
+
+		return i, headerMap, nil
+	}
+
+	return -1, nil, errors.New("CSV header row not found: expected a row containing 'project_name'")
+}
+
+func normalizeHeaderMapForModuleType(headerMap map[string]int, moduleType string) map[string]int {
+	normalized := make(map[string]int, len(headerMap))
+	for name, idx := range headerMap {
+		normalized[name] = idx
+	}
+
+	modulePrefixByType := map[string]string{
+		"concrete_wall":      "concrete_wall_",
+		"structural_masonry": "structural_masonry_",
+		"beam_column":        "beam_column_",
+	}
+
+	prefix, ok := modulePrefixByType[moduleType]
+	if !ok {
+		return normalized
+	}
+
+	for name, idx := range headerMap {
+		if !strings.HasPrefix(name, prefix) {
+			continue
+		}
+
+		alias := "module_" + strings.TrimPrefix(name, prefix)
+		if _, exists := normalized[alias]; exists {
+			continue
+		}
+
+		normalized[alias] = idx
+	}
+
+	return normalized
 }
 
 // getOrCreateBenchmarkUser gets or creates the default benchmark user
@@ -1218,26 +1042,6 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	// Get module type from form data
-	moduleType := r.FormValue("type")
-	if moduleType == "" {
-		moduleType = "concrete_wall" // Default to concrete_wall
-	}
-
-	// Validate module type
-	validTypes := []string{"concrete_wall", "structural_masonry", "beam_column"}
-	isValidType := false
-	for _, validType := range validTypes {
-		if moduleType == validType {
-			isValidType = true
-			break
-		}
-	}
-	if !isValidType {
-		app.badRequestResponse(w, r, fmt.Errorf("invalid module type: %s. Must be one of: concrete_wall, structural_masonry, beam_column", moduleType))
-		return
-	}
-
 	file, _, err := r.FormFile("csv")
 	if err != nil {
 		app.badRequestResponse(w, r, err)
@@ -1253,47 +1057,81 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 	}
 
 	if len(records) < 2 {
-		app.badRequestResponse(w, r, fmt.Errorf("CSV file must have at least a header and one data row"))
+		app.badRequestResponse(w, r, fmt.Errorf("CSV file must have at least one header row and one data row"))
 		return
 	}
 
-	header := records[0]
-	headerMap := make(map[string]int)
-	for i, h := range header {
-		if h != "" {
-			headerMap[strings.TrimSpace(h)] = i
-		}
-	}
-
-	// Validate all required headers at once
-	err = validateCSVHeaders(headerMap, moduleType)
+	headerRowIndex, headerMap, err := findHeaderRow(records)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	dataRows := records[1:]
+	err = validateBaseCSVHeaders(headerMap)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
 
-	allCSVRows := app.generateRowsByType(moduleType, dataRows, headerMap)
+	if headerRowIndex+1 >= len(records) {
+		app.badRequestResponse(w, r, fmt.Errorf("CSV file must contain at least one data row below the header"))
+		return
+	}
 
-	projectsFormCSV, err := toProjectsFromCSVData(allCSVRows, user.ID, moduleType)
+	dataRows := records[headerRowIndex+1:]
+
+	allCSVRows := app.generateAutoRows(dataRows, headerMap)
+
+	projectsFormCSV, err := toProjectsFromCSVData(allCSVRows, user.ID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	// Create a map to easily find the rows for a given project
-	rowsByProject := make(map[string][]CSVRowData)
-	for _, row := range allCSVRows {
-		rowsByProject[row.GetProjectName()] = append(rowsByProject[row.GetProjectName()], row)
-	}
+	insertedProjects := make(map[uuid.UUID]bool)
+	projectRoleIDs := make(map[uuid.UUID]uuid.UUID)
 
 	for i, projectData := range projectsFormCSV {
-		// Insert Project
-		err = app.models.Projects.Insert(&projectData.Project, user.ID)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
+		if !insertedProjects[projectData.Project.ID] {
+			// Insert Project once per unique project
+			err = app.models.Projects.Insert(&projectData.Project, user.ID)
+			if err != nil {
+				app.logger.Error("Failed to insert project", "error", err, "projectID", projectData.Project.ID, "projectName", projectData.Project.Name)
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+
+			// Create role "Estrutura" once per project
+			roleEstruturaName := "Estrutura"
+			roleID, err := uuid.NewV7()
+			if err != nil {
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+
+			roleEstrutura := &data.RoleWithUsersPermissions{
+				Role: data.Role{
+					ID:          roleID,
+					ProjectID:   projectData.Project.ID,
+					Name:        roleEstruturaName,
+					Simulation:  true,
+					IsProtected: false,
+				},
+				PermissionsIDs: []int32{},
+				UsersIDs:       []uuid.UUID{user.ID},
+			}
+
+			err = app.models.Roles.Insert(roleEstrutura)
+			if err != nil {
+				app.logger.Error("Failed to insert role", "error", err, "projectID", projectData.Project.ID)
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+
+			app.logger.Info("Role created successfully", "roleID", roleID, "roleName", roleEstruturaName, "projectID", projectData.Project.ID)
+
+			insertedProjects[projectData.Project.ID] = true
+			projectRoleIDs[projectData.Project.ID] = roleID
 		}
 
 		// Convert Unit.Floors to FloorCreate slice
@@ -1312,38 +1150,16 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 		// Insert Unit with floors (IDs already generated)
 		err = app.models.Units.Insert(&projectData.Unit, floorCreates)
 		if err != nil {
+			app.logger.Error("Failed to insert unit", "error", err, "unitID", projectData.Unit.ID, "unitName", projectData.Unit.Name, "projectID", projectData.Project.ID, "floorCount", len(floorCreates))
 			app.serverErrorResponse(w, r, err)
 			return
 		}
 
-		// Create role "Estrutura" for the project
-		roleEstruturaName := "Estrutura"
-		roleID, err := uuid.NewV7()
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
+		roleID, ok := projectRoleIDs[projectData.Project.ID]
+		if !ok {
+			app.serverErrorResponse(w, r, fmt.Errorf("internal error: role not found for project %s", projectData.Project.ID))
 			return
 		}
-
-		roleEstrutura := &data.RoleWithUsersPermissions{
-			Role: data.Role{
-				ID:          roleID,
-				ProjectID:   projectData.Project.ID,
-				Name:        roleEstruturaName,
-				Simulation:  true,
-				IsProtected: false,
-			},
-			PermissionsIDs: []int32{},
-			UsersIDs:       []uuid.UUID{user.ID},
-		}
-
-		err = app.models.Roles.Insert(roleEstrutura)
-		if err != nil {
-			app.logger.Error("Failed to insert role", "error", err, "projectID", projectData.Project.ID)
-			app.serverErrorResponse(w, r, err)
-			return
-		}
-
-		app.logger.Info("Role created successfully", "roleID", roleID, "roleName", roleEstruturaName, "projectID", projectData.Project.ID)
 
 		// Set the role_id for the option before inserting
 		projectsFormCSV[i].Option.RoleID = roleID
@@ -1363,12 +1179,14 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 			// Calculate consumption
 			result, err := module.Calculate()
 			if err != nil {
+				app.logger.Error("Failed to calculate module consumption", "error", err, "moduleType", module.GetType(), "unitID", projectData.Unit.ID, "projectID", projectData.Project.ID)
 				app.serverErrorResponse(w, r, err)
 				return
 			}
 
 			_, err = module.Insert(app.models, projectsFormCSV[i].Option.ID, result)
 			if err != nil {
+				app.logger.Error("Failed to insert module", "error", err, "moduleType", module.GetType(), "optionID", projectsFormCSV[i].Option.ID, "unitID", projectData.Unit.ID, "projectID", projectData.Project.ID)
 				switch {
 				case errors.Is(err, data.ErrInvalidOptionID):
 					app.badRequestResponse(w, r, err)
