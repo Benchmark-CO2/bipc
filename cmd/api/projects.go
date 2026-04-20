@@ -49,50 +49,13 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 		Apf:          input.Apf,
 	}
 
-	v := validator.New()
-
-	if data.ValidateProject(v, project); !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
-		return
-	}
-
-	projectID, err := uuid.NewV7()
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-	project.ID = projectID
-
-	err = app.models.Projects.Insert(project, user.ID)
-	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrInvalidProjectID):
-			v.AddError("projects(id)", "the provided projectID does not exist")
-			app.failedValidationResponse(w, r, v.Errors)
-		case errors.Is(err, data.ErrInvalidUserID):
-			v.AddError("users(id)", "the provided userID does not exist")
-			app.failedValidationResponse(w, r, v.Errors)
-		case errors.Is(err, data.ErrDuplicateUserProject):
-			v.AddError("users_projects", "user is already associated with the project")
-			app.failedValidationResponse(w, r, v.Errors)
-		case errors.Is(err, data.ErrDuplicateRoleName):
-			v.AddError("roles(name)", "you already have a role with this name")
-			app.failedValidationResponse(w, r, v.Errors)
-		case errors.Is(err, data.ErrInvalidPermissionID):
-			v.AddError("permissions(id)", "the provided permissionID does not exist")
-			app.failedValidationResponse(w, r, v.Errors)
-		case errors.Is(err, data.ErrInvalidRoleID):
-			v.AddError("roles(id)", "the provided roleID does not exist")
-			app.failedValidationResponse(w, r, v.Errors)
-		case errors.Is(err, data.ErrDuplicateRolePermission):
-			v.AddError("roles_permissions", "role already has permission associated")
-			app.failedValidationResponse(w, r, v.Errors)
-		case errors.Is(err, data.ErrDuplicateUserRole):
-			v.AddError("users_roles", "user already has role associated")
-			app.failedValidationResponse(w, r, v.Errors)
-		default:
-			app.serverErrorResponse(w, r, err)
+	if err := app.insertProject(project, user.ID); err != nil {
+		var ve *ValidationError
+		if errors.As(err, &ve) {
+			app.failedValidationResponse(w, r, ve.Errors)
+			return
 		}
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 
