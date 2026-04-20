@@ -38,7 +38,7 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 	project := &data.Project{
 		Name:         input.Name,
 		CEP:          input.CEP,
-		State:        strings.ToUpper(input.State),
+		State:        input.State,
 		City:         input.City,
 		Neighborhood: input.Neighborhood,
 		Street:       input.Street,

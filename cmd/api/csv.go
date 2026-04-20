@@ -25,6 +25,22 @@ func convertCAToSteelMaterial(ca int, mass float64) modules.SteelMaterial {
 	}
 }
 
+// normalizeCEP converts a raw CEP string to the expected format XXXXX-XXX.
+// Accepts digits-only input (e.g. "45810000") and returns "45810-000".
+// Already-formatted or nil values are returned unchanged.
+func normalizeCEP(raw *string) *string {
+	if raw == nil {
+		return nil
+	}
+	digits := strings.ReplaceAll(*raw, "-", "")
+	digits = strings.TrimSpace(digits)
+	if len(digits) != 8 {
+		return raw
+	}
+	formatted := digits[:5] + "-" + digits[5:]
+	return &formatted
+}
+
 // Define base required headers (common to all module types)
 var baseRequiredHeaders = []string{
 	"project_name",
@@ -306,6 +322,12 @@ type ProjectFromCSV struct {
 	Modules []modules.Module `json:"modules"`
 }
 
+type csvProjectResult struct {
+	ProjectName string   `json:"project"`
+	Status      string   `json:"status"`
+	Errors      []string `json:"errors,omitempty"`
+}
+
 // parseFloat is a helper to parse string to float64, handling comma as decimal separator.
 func parseFloat(s string) (float64, error) {
 	if s == "" {
@@ -405,7 +427,7 @@ func (p rowParser) optInt(field string) *int {
 func parseBaseCSVRowData(p rowParser) BaseCSVRowData {
 	return BaseCSVRowData{
 		ProjectName:           p.str("project_name"),
-		ProjectCEP:            p.optStr("project_cep"),
+		ProjectCEP:            normalizeCEP(p.optStr("project_cep")),
 		ProjectState:          p.str("project_state"),
 		ProjectCity:           p.str("project_city"),
 		ProjectNeighborhood:   p.optStr("project_neighborhood"),
@@ -742,7 +764,7 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 					ID:                unitID,
 					ProjectID:         projectData.ID,
 					Name:              unitName,
-					Type:              "tower",        // Assuming it's a tower if it has floors/modules
+					Type:              "tower", // Assuming it's a tower if it has floors/modules
 					RepetitionCount:   max(baseData.UnitRepetitionCount, 1),
 					HousingUnitsCount: baseData.UnitHousingUnitsCount,
 					Floors:            []data.Floor{}, // Initialize floors slice
@@ -987,56 +1009,10 @@ func normalizeHeaderMapForModuleType(headerMap map[string]int, moduleType string
 	return normalized
 }
 
-// getOrCreateBenchmarkUser gets or creates the default benchmark user
-func (app *application) getOrCreateBenchmarkUser() (uuid.UUID, error) {
-	benchmarkEmail := "benchmark@bipc.org.br"
-
-	// Try to get existing user
-	existingUser, err := app.models.Users.GetByEmail(benchmarkEmail)
-	if err == nil {
-		// User exists, return their ID
-		return existingUser.ID, nil
-	}
-
-	// User doesn't exist, create it
-	if !errors.Is(err, data.ErrRecordNotFound) {
-		// Unexpected error
-		return uuid.Nil, err
-	}
-
-	// Create new benchmark user
-	newUser := &data.User{
-		Name:      "Benchmark User",
-		Email:     benchmarkEmail,
-		Activated: true,
-	}
-
-	// Set password
-	err = newUser.Password.Set("benchmark0123")
-	if err != nil {
-		return uuid.Nil, err
-	}
-
-	// Insert user
-	err = app.models.Users.Insert(newUser)
-	if err != nil {
-		return uuid.Nil, err
-	}
-
-	return newUser.ID, nil
-}
-
 func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *http.Request) {
-	// Get or create benchmark user
-	benchmarkUserID, err := app.getOrCreateBenchmarkUser()
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
+	user := app.contextGetUser(r)
 
-	user := &data.User{ID: benchmarkUserID}
-
-	err = r.ParseMultipartForm(10 << 20)
+	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -1090,23 +1066,39 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 
 	insertedProjects := make(map[uuid.UUID]bool)
 	projectRoleIDs := make(map[uuid.UUID]uuid.UUID)
+	failedProjects := make(map[uuid.UUID]bool)
+	projectNames := make(map[uuid.UUID]string)
+	projectErrors := make(map[uuid.UUID][]string)
+	var projectOrder []uuid.UUID
 
+outerLoop:
 	for i, projectData := range projectsFormCSV {
+		if _, seen := projectNames[projectData.Project.ID]; !seen {
+			projectNames[projectData.Project.ID] = projectData.Project.Name
+			projectErrors[projectData.Project.ID] = []string{}
+			projectOrder = append(projectOrder, projectData.Project.ID)
+		}
+
+		if failedProjects[projectData.Project.ID] {
+			continue
+		}
+
 		if !insertedProjects[projectData.Project.ID] {
-			// Insert Project once per unique project
-			err = app.models.Projects.Insert(&projectData.Project, user.ID)
+			err = app.insertProject(&projectData.Project, user.ID)
 			if err != nil {
 				app.logger.Error("Failed to insert project", "error", err, "projectID", projectData.Project.ID, "projectName", projectData.Project.Name)
-				app.serverErrorResponse(w, r, err)
-				return
+				projectErrors[projectData.Project.ID] = append(projectErrors[projectData.Project.ID], err.Error())
+				failedProjects[projectData.Project.ID] = true
+				continue
 			}
 
-			// Create role "Estrutura" once per project
 			roleEstruturaName := "Estrutura"
 			roleID, err := uuid.NewV7()
 			if err != nil {
-				app.serverErrorResponse(w, r, err)
-				return
+				app.logger.Error("Failed to generate role ID", "error", err, "projectID", projectData.Project.ID)
+				projectErrors[projectData.Project.ID] = append(projectErrors[projectData.Project.ID], err.Error())
+				failedProjects[projectData.Project.ID] = true
+				continue
 			}
 
 			roleEstrutura := &data.RoleWithUsersPermissions{
@@ -1124,17 +1116,16 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 			err = app.models.Roles.Insert(roleEstrutura)
 			if err != nil {
 				app.logger.Error("Failed to insert role", "error", err, "projectID", projectData.Project.ID)
-				app.serverErrorResponse(w, r, err)
-				return
+				projectErrors[projectData.Project.ID] = append(projectErrors[projectData.Project.ID], err.Error())
+				failedProjects[projectData.Project.ID] = true
+				continue
 			}
 
 			app.logger.Info("Role created successfully", "roleID", roleID, "roleName", roleEstruturaName, "projectID", projectData.Project.ID)
-
 			insertedProjects[projectData.Project.ID] = true
 			projectRoleIDs[projectData.Project.ID] = roleID
 		}
 
-		// Convert Unit.Floors to FloorCreate slice
 		floorCreates := make([]data.FloorCreate, len(projectData.Unit.Floors))
 		for i, floor := range projectData.Unit.Floors {
 			floorCreates[i] = data.FloorCreate{
@@ -1147,61 +1138,64 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 			}
 		}
 
-		// Insert Unit with floors (IDs already generated)
 		err = app.models.Units.Insert(&projectData.Unit, floorCreates)
 		if err != nil {
-			app.logger.Error("Failed to insert unit", "error", err, "unitID", projectData.Unit.ID, "unitName", projectData.Unit.Name, "projectID", projectData.Project.ID, "floorCount", len(floorCreates))
-			app.serverErrorResponse(w, r, err)
-			return
+			app.logger.Error("Failed to insert unit", "error", err, "unitID", projectData.Unit.ID, "unitName", projectData.Unit.Name, "projectID", projectData.Project.ID)
+			projectErrors[projectData.Project.ID] = append(projectErrors[projectData.Project.ID], fmt.Sprintf("unit %q: %s", projectData.Unit.Name, err.Error()))
+			continue
 		}
 
 		roleID, ok := projectRoleIDs[projectData.Project.ID]
 		if !ok {
-			app.serverErrorResponse(w, r, fmt.Errorf("internal error: role not found for project %s", projectData.Project.ID))
-			return
+			msg := fmt.Sprintf("internal error: role not found for project %s", projectData.Project.ID)
+			app.logger.Error(msg)
+			projectErrors[projectData.Project.ID] = append(projectErrors[projectData.Project.ID], msg)
+			continue
 		}
 
-		// Set the role_id for the option before inserting
 		projectsFormCSV[i].Option.RoleID = roleID
 
-		app.logger.Info("Inserting option", "optionID", projectsFormCSV[i].Option.ID, "roleID", projectsFormCSV[i].Option.RoleID, "unitID", projectsFormCSV[i].Option.UnitID)
-
-		// Insert Option (ID already generated)
 		err = app.models.Options.Insert(&projectsFormCSV[i].Option)
 		if err != nil {
-			app.logger.Error("Failed to insert option", "error", err, "optionID", projectsFormCSV[i].Option.ID, "roleID", projectsFormCSV[i].Option.RoleID)
-			app.serverErrorResponse(w, r, err)
-			return
+			app.logger.Error("Failed to insert option", "error", err, "optionID", projectsFormCSV[i].Option.ID)
+			projectErrors[projectData.Project.ID] = append(projectErrors[projectData.Project.ID], fmt.Sprintf("unit %q option: %s", projectData.Unit.Name, err.Error()))
+			continue
 		}
 
-		// Process modules - FloorIDs already set correctly
 		for _, module := range projectData.Modules {
-			// Calculate consumption
 			result, err := module.Calculate()
 			if err != nil {
-				app.logger.Error("Failed to calculate module consumption", "error", err, "moduleType", module.GetType(), "unitID", projectData.Unit.ID, "projectID", projectData.Project.ID)
-				app.serverErrorResponse(w, r, err)
-				return
+				app.logger.Error("Failed to calculate module", "error", err, "moduleType", module.GetType(), "unitID", projectData.Unit.ID)
+				projectErrors[projectData.Project.ID] = append(projectErrors[projectData.Project.ID], fmt.Sprintf("unit %q module %s calculate: %s", projectData.Unit.Name, module.GetType(), err.Error()))
+				continue outerLoop
 			}
 
 			_, err = module.Insert(app.models, projectsFormCSV[i].Option.ID, result)
 			if err != nil {
-				app.logger.Error("Failed to insert module", "error", err, "moduleType", module.GetType(), "optionID", projectsFormCSV[i].Option.ID, "unitID", projectData.Unit.ID, "projectID", projectData.Project.ID)
-				switch {
-				case errors.Is(err, data.ErrInvalidOptionID):
-					app.badRequestResponse(w, r, err)
-				case errors.Is(err, data.ErrInvalidFloorID):
-					app.badRequestResponse(w, r, err)
-				default:
-					app.serverErrorResponse(w, r, err)
-				}
-				return
+				app.logger.Error("Failed to insert module", "error", err, "moduleType", module.GetType(), "optionID", projectsFormCSV[i].Option.ID)
+				projectErrors[projectData.Project.ID] = append(projectErrors[projectData.Project.ID], fmt.Sprintf("unit %q module %s insert: %s", projectData.Unit.Name, module.GetType(), err.Error()))
+				continue outerLoop
 			}
 		}
-		projectsFormCSV[i].Unit.Floors = nil
 	}
 
-	err = app.writeJSON(w, http.StatusAccepted, envelope{"projects": projectsFormCSV}, nil)
+	results := make([]csvProjectResult, 0, len(projectOrder))
+	for _, id := range projectOrder {
+		errs := projectErrors[id]
+		status := "success"
+		if failedProjects[id] {
+			status = "error"
+		} else if len(errs) > 0 {
+			status = "partial"
+		}
+		results = append(results, csvProjectResult{
+			ProjectName: projectNames[id],
+			Status:      status,
+			Errors:      errs,
+		})
+	}
+
+	err = app.writeJSON(w, http.StatusAccepted, envelope{"results": results}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

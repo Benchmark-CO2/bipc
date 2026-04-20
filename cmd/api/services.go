@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
@@ -23,18 +24,22 @@ func (e *ValidationError) Error() string {
 // Database sentinel errors are translated into *ValidationError so callers
 // don't need to import data-layer error types.
 func (app *application) insertProject(project *data.Project, userID uuid.UUID) error {
+	project.State = strings.ToUpper(project.State)
+
 	v := validator.New()
 	if data.ValidateProject(v, project); !v.Valid() {
 		return &ValidationError{Errors: v.Errors}
 	}
 
-	projectID, err := uuid.NewV7()
-	if err != nil {
-		return err
+	if project.ID == uuid.Nil {
+		projectID, err := uuid.NewV7()
+		if err != nil {
+			return err
+		}
+		project.ID = projectID
 	}
-	project.ID = projectID
 
-	err = app.models.Projects.Insert(project, userID)
+	err := app.models.Projects.Insert(project, userID)
 	if err != nil {
 		v := validator.New()
 		switch {
