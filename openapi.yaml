@@ -12,7 +12,7 @@ tags:
   - name: tokens
   - name: projects
 servers:
-  - url: https://bipc.org.br/v1
+  - url: https://app.bipc.org.br/v1
 
 paths:
   /users:
