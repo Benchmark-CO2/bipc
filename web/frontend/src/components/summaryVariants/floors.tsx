@@ -61,13 +61,14 @@ const FloorSummary = ({
     };
   });
 
-    const stackedData = useMemo(
-    () => newItems.map(el => ({
-      id: el[type].id,
-      label: el[type].label,
-      co2: (el.co2.max + el.co2.min) / 2,
-      energy: (el.energy.max + el.energy.min) / 2,
-    })),
+  const stackedData = useMemo(
+    () =>
+      newItems.map((el) => ({
+        id: el[type].id,
+        label: el[type].label,
+        co2: (el.co2.max + el.co2.min) / 2,
+        energy: (el.energy.max + el.energy.min) / 2,
+      })),
     [newItems],
   );
 
@@ -225,7 +226,7 @@ const FloorSummary = ({
                       >
                         <span className="text-black text-base p-2">
                           {f.name}: {Math.round((f.avg || 0) * 10) / 10}{" "}
-                          {type === "co2" ? "KgCO₂/m²" : "MJ/m²"}
+                          {type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
                         </span>
                       </TooltipContent>
                     </Tooltip>

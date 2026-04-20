@@ -281,7 +281,7 @@ function CustomChart({
                         : "#2C1D1B",
                   }}
                   className={cn(
-                    "fill-zinc-700 dark:fill-zinc-200 dark:data-[key=not-filled]:fill-zinc-400 data-[isglobal=true]:fill-accent-foreground/70 data-[isglobal=false]:stroke-1!"
+                    "fill-zinc-700 dark:fill-zinc-200 dark:data-[key=not-filled]:fill-zinc-400 data-[isglobal=true]:fill-accent-foreground/70 data-[isglobal=false]:stroke-1!",
                   )}
                 />
                 <text
@@ -337,9 +337,9 @@ function CustomChart({
             name="CO2"
             domain={[0, filledPoints ? maxX : 100]}
             className="stroke-black"
-            tick={{ fontSize: 12, stroke: 'black' }}
+            tick={{ fontSize: 12, stroke: "black" }}
             label={{
-              value: "Carbono incorporado (kg CO2/m²)",
+              value: "Carbono incorporado (kg CO₂/m²)",
               position: "bottom",
             }}
           />
@@ -349,7 +349,7 @@ function CustomChart({
             dataKey="y"
             name="Cumulative"
             className="stroke-black"
-            tick={{ fontSize: 12, stroke: 'black' }}
+            tick={{ fontSize: 12, stroke: "black" }}
             label={{
               value: "Cumulativo",
               angle: -90,
@@ -359,7 +359,7 @@ function CustomChart({
           />
           <Tooltip cursor={{ strokeDasharray: "3 3" }} />
           {scatters}
-          
+
           {!dataLoading &&
             referenceLines2.map((line, index) => (
               <g key={index}>

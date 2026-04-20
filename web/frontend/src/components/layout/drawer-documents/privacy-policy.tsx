@@ -120,7 +120,7 @@ const PrivacyPolicy: React.FC = () => {
                   </span>
                 </td>
                 <td className="border border-gray-300 p-3 align-top">
-                  Nome Completo, Email, Número de identidade de habilitação
+                  Nome Completo, E-mail, Número de identidade de habilitação
                   funcional (CREA ou CAU), Especificação da área de atuação
                   profissional (Engenharia ou Arquitetura), Nome da Empresa,
                   Data de Nascimento, Cidade que reside
