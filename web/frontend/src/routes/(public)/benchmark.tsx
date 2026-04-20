@@ -79,7 +79,7 @@ function RouteComponent() {
               {selectedChart === "trend" ? (
                 <D3GradientRangeLineChart
                   data={chartData}
-                  unit={type === "co2" ? "kgCO₂/m²" : "MJ/m²"}
+                  unit={type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
                   summary={false}
                 />
               ) : (
@@ -91,7 +91,7 @@ function RouteComponent() {
                   minData={minData}
                   maxData={maxData}
                   totalProjects={chartData.length}
-                  unit={type === "co2" ? "kgCO₂/m²" : "MJ/m²"}
+                  unit={type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
                 />
               )}
             </div>

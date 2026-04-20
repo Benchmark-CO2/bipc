@@ -237,7 +237,7 @@ const UnitsSummary = ({
                       >
                         <span className="text-black text-base p-2">
                           {f.name}: {Math.round((f.avg || 0) * 10) / 10}{" "}
-                          KgCO₂/m²
+                          {type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
                         </span>
                       </TooltipContent>
                     </Tooltip>
