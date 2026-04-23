@@ -322,10 +322,18 @@ type ProjectFromCSV struct {
 	Modules []modules.Module `json:"modules"`
 }
 
+// csvParseError represents a data error in the CSV content (user input), distinct
+// from internal failures. Returning this type causes the handler to respond 422.
+type csvParseError struct {
+	message string
+}
+
+func (e *csvParseError) Error() string { return e.message }
+
 type csvProjectResult struct {
-	ProjectName string   `json:"project"`
-	Status      string   `json:"status"`
-	Errors      []string `json:"errors,omitempty"`
+	ProjectName string            `json:"project"`
+	Status      string            `json:"status"`
+	Errors      map[string]string `json:"errors,omitempty"`
 }
 
 // parseFloat is a helper to parse string to float64, handling comma as decimal separator.
@@ -697,11 +705,19 @@ func (app *application) generateAutoRows(dataRows [][]string, headerMap map[stri
 	return result
 }
 
-func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCSV, error) {
+func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCSV, map[string]string, error) {
 	projects := []ProjectFromCSV{}
 	var currentProjectFormCSV *ProjectFromCSV
 	contextToLastFloorIDs := make(map[string][]uuid.UUID)
 	contextToFloorNameToFloorIDs := make(map[string]map[string][]uuid.UUID)
+	parseErrors := make(map[string]string)
+	skippedProjects := make(map[string]bool)
+
+	skipCurrentProject := func(projectName, key, msg string) {
+		parseErrors[key] = msg
+		skippedProjects[projectName] = true
+		currentProjectFormCSV = nil
+	}
 
 	for _, row := range rows {
 		// Get base data from interface
@@ -715,9 +731,24 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 			isNewUnitRow = incomingUnitName != "" && incomingUnitName != currentProjectFormCSV.Unit.Name
 		}
 
+		// Skip rows belonging to a project that already failed parsing.
+		if !isNewProjectRow {
+			if currentProjectFormCSV == nil {
+				// Either no project declared yet, or current project was skipped.
+				if len(skippedProjects) == 0 {
+					parseErrors["csv"] = "row with empty project_name found before any project was defined"
+					return nil, parseErrors, nil
+				}
+				continue
+			}
+			if skippedProjects[currentProjectFormCSV.Project.Name] {
+				continue
+			}
+		}
+
 		if isNewProjectRow || isNewUnitRow {
-			// New project or new unit context.
-			if currentProjectFormCSV != nil {
+			// Flush the current project before starting a new context.
+			if currentProjectFormCSV != nil && !skippedProjects[currentProjectFormCSV.Project.Name] {
 				projects = append(projects, *currentProjectFormCSV)
 			}
 
@@ -725,7 +756,7 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 			if isNewProjectRow {
 				projectID, err := uuid.NewV7()
 				if err != nil {
-					return nil, fmt.Errorf("failed to generate project ID: %w", err)
+					return nil, nil, fmt.Errorf("failed to generate project ID: %w", err)
 				}
 
 				projectData = data.Project{
@@ -738,7 +769,12 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 					Street:       baseData.ProjectStreet,
 					Number:       baseData.ProjectNumber,
 					Phase:        baseData.ProjectPhase,
-					Benchmark:    true, // Mark as benchmark project from CSV
+				}
+
+				unitName := strings.TrimSpace(baseData.UnitName)
+				if unitName == "" {
+					skipCurrentProject(baseData.ProjectName, fmt.Sprintf("project[%s].unit_name", baseData.ProjectName), fmt.Sprintf("unit_name must be provided for the first row of project '%s'", baseData.ProjectName))
+					continue
 				}
 			} else {
 				projectData = currentProjectFormCSV.Project
@@ -746,11 +782,11 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 
 			unitID, err := uuid.NewV7()
 			if err != nil {
-				return nil, fmt.Errorf("failed to generate unit ID: %w", err)
+				return nil, nil, fmt.Errorf("failed to generate unit ID: %w", err)
 			}
 			optionID, err := uuid.NewV7()
 			if err != nil {
-				return nil, fmt.Errorf("failed to generate option ID: %w", err)
+				return nil, nil, fmt.Errorf("failed to generate option ID: %w", err)
 			}
 
 			unitName := strings.TrimSpace(baseData.UnitName)
@@ -764,24 +800,19 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 					ID:                unitID,
 					ProjectID:         projectData.ID,
 					Name:              unitName,
-					Type:              "tower", // Assuming it's a tower if it has floors/modules
+					Type:              "tower",
 					RepetitionCount:   max(baseData.UnitRepetitionCount, 1),
 					HousingUnitsCount: baseData.UnitHousingUnitsCount,
-					Floors:            []data.Floor{}, // Initialize floors slice
+					Floors:            []data.Floor{},
 				},
 				Option: data.Option{
 					ID:      optionID,
 					UnitID:  unitID,
-					Name:    fmt.Sprintf("Option for %s", unitName), // Default name
+					Name:    fmt.Sprintf("Option for %s", unitName),
 					Active:  true,
 					Modules: []data.ModuleInfo{},
 				},
 				Modules: []modules.Module{},
-			}
-		} else {
-			// Row belongs to the current project
-			if currentProjectFormCSV == nil {
-				return nil, errors.New("CSV data error: row with empty ProjectName found before any project was defined")
 			}
 		}
 
@@ -796,7 +827,8 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 		if floorNameKey == "" {
 			lastFloorIDs, ok := contextToLastFloorIDs[contextKey]
 			if !ok {
-				return nil, fmt.Errorf("CSV data error: floor_name must be provided for the first floor row of project '%s'", projectName)
+				skipCurrentProject(projectName, fmt.Sprintf("project[%s].floor_name", projectName), fmt.Sprintf("floor_name must be provided for the first floor row of project '%s'", projectName))
+				continue
 			}
 			floorIDs = lastFloorIDs
 		} else {
@@ -809,7 +841,8 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 				contextToLastFloorIDs[contextKey] = floorIDs
 			} else {
 				if baseData.FloorArea <= 0 {
-					return nil, fmt.Errorf("CSV data error: floor_area must be greater than zero when declaring a new floor '%s' in project '%s'", strings.TrimSpace(baseData.FloorName), projectName)
+					skipCurrentProject(projectName, fmt.Sprintf("project[%s].floor_area", projectName), fmt.Sprintf("floor_area must be greater than zero when declaring a new floor '%s' in project '%s'", strings.TrimSpace(baseData.FloorName), projectName))
+					continue
 				}
 
 				floorGroup := strings.TrimSpace(baseData.FloorName)
@@ -822,7 +855,7 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 				for range repetition {
 					generatedFloorID, err := uuid.NewV7()
 					if err != nil {
-						return nil, fmt.Errorf("failed to generate floor ID: %w", err)
+						return nil, nil, fmt.Errorf("failed to generate floor ID: %w", err)
 					}
 					unit.Floors = append(unit.Floors, data.Floor{
 						ID:         generatedFloorID,
@@ -914,12 +947,12 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 		}
 	}
 
-	// Append the last project if it exists
-	if currentProjectFormCSV != nil {
+	// Append the last project if it exists and it was not skipped.
+	if currentProjectFormCSV != nil && !skippedProjects[currentProjectFormCSV.Project.Name] {
 		projects = append(projects, *currentProjectFormCSV)
 	}
 
-	return projects, nil
+	return projects, parseErrors, nil
 }
 
 // validateCSVHeaders checks if all required headers are present in the provided headerMap.
@@ -1058,7 +1091,7 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 
 	allCSVRows := app.generateAutoRows(dataRows, headerMap)
 
-	projectsFormCSV, err := toProjectsFromCSVData(allCSVRows, user.ID)
+	projectsFormCSV, parseErrors, err := toProjectsFromCSVData(allCSVRows, user.ID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -1068,14 +1101,24 @@ func (app *application) createProjectsFromCSVHandler(w http.ResponseWriter, r *h
 	projectRoleIDs := make(map[uuid.UUID]uuid.UUID)
 	failedProjects := make(map[uuid.UUID]bool)
 	projectNames := make(map[uuid.UUID]string)
-	projectErrors := make(map[uuid.UUID][]string)
+	projectErrors := make(map[uuid.UUID]map[string]string)
 	var projectOrder []uuid.UUID
+
+	addProjectError := func(id uuid.UUID, key, msg string) {
+		projectErrors[id][key] = msg
+	}
+
+	addValidationErrors := func(id uuid.UUID, prefix string, ve *ValidationError) {
+		for k, v := range ve.Errors {
+			projectErrors[id][prefix+k] = v
+		}
+	}
 
 outerLoop:
 	for i, projectData := range projectsFormCSV {
 		if _, seen := projectNames[projectData.Project.ID]; !seen {
 			projectNames[projectData.Project.ID] = projectData.Project.Name
-			projectErrors[projectData.Project.ID] = []string{}
+			projectErrors[projectData.Project.ID] = make(map[string]string)
 			projectOrder = append(projectOrder, projectData.Project.ID)
 		}
 
@@ -1087,7 +1130,12 @@ outerLoop:
 			err = app.insertProject(&projectData.Project, user.ID)
 			if err != nil {
 				app.logger.Error("Failed to insert project", "error", err, "projectID", projectData.Project.ID, "projectName", projectData.Project.Name)
-				projectErrors[projectData.Project.ID] = append(projectErrors[projectData.Project.ID], err.Error())
+				var ve *ValidationError
+				if errors.As(err, &ve) {
+					addValidationErrors(projectData.Project.ID, "", ve)
+				} else {
+					addProjectError(projectData.Project.ID, "project", err.Error())
+				}
 				failedProjects[projectData.Project.ID] = true
 				continue
 			}
@@ -1096,7 +1144,7 @@ outerLoop:
 			roleID, err := uuid.NewV7()
 			if err != nil {
 				app.logger.Error("Failed to generate role ID", "error", err, "projectID", projectData.Project.ID)
-				projectErrors[projectData.Project.ID] = append(projectErrors[projectData.Project.ID], err.Error())
+				addProjectError(projectData.Project.ID, "role", err.Error())
 				failedProjects[projectData.Project.ID] = true
 				continue
 			}
@@ -1116,7 +1164,7 @@ outerLoop:
 			err = app.models.Roles.Insert(roleEstrutura)
 			if err != nil {
 				app.logger.Error("Failed to insert role", "error", err, "projectID", projectData.Project.ID)
-				projectErrors[projectData.Project.ID] = append(projectErrors[projectData.Project.ID], err.Error())
+				addProjectError(projectData.Project.ID, "role", err.Error())
 				failedProjects[projectData.Project.ID] = true
 				continue
 			}
@@ -1138,18 +1186,23 @@ outerLoop:
 			}
 		}
 
-		err = app.models.Units.Insert(&projectData.Unit, floorCreates)
+		err = app.insertUnit(&projectData.Unit, floorCreates)
 		if err != nil {
 			app.logger.Error("Failed to insert unit", "error", err, "unitID", projectData.Unit.ID, "unitName", projectData.Unit.Name, "projectID", projectData.Project.ID)
-			projectErrors[projectData.Project.ID] = append(projectErrors[projectData.Project.ID], fmt.Sprintf("unit %q: %s", projectData.Unit.Name, err.Error()))
+			prefix := fmt.Sprintf("unit[%s].", projectData.Unit.Name)
+			var ve *ValidationError
+			if errors.As(err, &ve) {
+				addValidationErrors(projectData.Project.ID, prefix, ve)
+			} else {
+				addProjectError(projectData.Project.ID, prefix+"insert", err.Error())
+			}
 			continue
 		}
 
 		roleID, ok := projectRoleIDs[projectData.Project.ID]
 		if !ok {
-			msg := fmt.Sprintf("internal error: role not found for project %s", projectData.Project.ID)
-			app.logger.Error(msg)
-			projectErrors[projectData.Project.ID] = append(projectErrors[projectData.Project.ID], msg)
+			app.logger.Error("Role not found for project", "projectID", projectData.Project.ID)
+			addProjectError(projectData.Project.ID, fmt.Sprintf("unit[%s].role", projectData.Unit.Name), "internal error: role not found")
 			continue
 		}
 
@@ -1158,7 +1211,7 @@ outerLoop:
 		err = app.models.Options.Insert(&projectsFormCSV[i].Option)
 		if err != nil {
 			app.logger.Error("Failed to insert option", "error", err, "optionID", projectsFormCSV[i].Option.ID)
-			projectErrors[projectData.Project.ID] = append(projectErrors[projectData.Project.ID], fmt.Sprintf("unit %q option: %s", projectData.Unit.Name, err.Error()))
+			addProjectError(projectData.Project.ID, fmt.Sprintf("unit[%s].option", projectData.Unit.Name), err.Error())
 			continue
 		}
 
@@ -1166,14 +1219,14 @@ outerLoop:
 			result, err := module.Calculate()
 			if err != nil {
 				app.logger.Error("Failed to calculate module", "error", err, "moduleType", module.GetType(), "unitID", projectData.Unit.ID)
-				projectErrors[projectData.Project.ID] = append(projectErrors[projectData.Project.ID], fmt.Sprintf("unit %q module %s calculate: %s", projectData.Unit.Name, module.GetType(), err.Error()))
+				addProjectError(projectData.Project.ID, fmt.Sprintf("unit[%s].module[%s].calculate", projectData.Unit.Name, module.GetType()), err.Error())
 				continue outerLoop
 			}
 
 			_, err = module.Insert(app.models, projectsFormCSV[i].Option.ID, result)
 			if err != nil {
 				app.logger.Error("Failed to insert module", "error", err, "moduleType", module.GetType(), "optionID", projectsFormCSV[i].Option.ID)
-				projectErrors[projectData.Project.ID] = append(projectErrors[projectData.Project.ID], fmt.Sprintf("unit %q module %s insert: %s", projectData.Unit.Name, module.GetType(), err.Error()))
+				addProjectError(projectData.Project.ID, fmt.Sprintf("unit[%s].module[%s].insert", projectData.Unit.Name, module.GetType()), err.Error())
 				continue outerLoop
 			}
 		}
@@ -1188,10 +1241,29 @@ outerLoop:
 		} else if len(errs) > 0 {
 			status = "partial"
 		}
-		results = append(results, csvProjectResult{
+		result := csvProjectResult{
 			ProjectName: projectNames[id],
 			Status:      status,
-			Errors:      errs,
+		}
+		if len(errs) > 0 {
+			result.Errors = errs
+		}
+		results = append(results, result)
+	}
+
+	// Append parse-time failures (projects skipped before insertion).
+	for key, msg := range parseErrors {
+		// key format: "project[ProjectName].field" — extract project name from between brackets.
+		projectName := key
+		if start := strings.Index(key, "["); start != -1 {
+			if end := strings.Index(key[start:], "]"); end != -1 {
+				projectName = key[start+1 : start+end]
+			}
+		}
+		results = append(results, csvProjectResult{
+			ProjectName: projectName,
+			Status:      "error",
+			Errors:      map[string]string{key: msg},
 		})
 	}
 
