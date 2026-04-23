@@ -28,6 +28,7 @@ type ProjectBenchmarkData struct {
 	Floors      int          `json:"floors"`
 	Technology  []string     `json:"technology"`
 	State       string       `json:"state"`
+	City        string       `json:"city"`
 }
 
 func (m BenchmarkModel) GetFloorsBenchmark() ([]*BenchmarkData, error) {
@@ -371,7 +372,8 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 			fc.energy_max,
 			fpt.floor_count,
 			COALESCE(ut.technologies, ARRAY[]::text[]) as technologies,
-			p.state
+			p.state,
+			p.city
 		FROM units u
 		INNER JOIN filtered_towers ft ON u.id = ft.unit_id
 		INNER JOIN projects p ON u.project_id = p.id
@@ -406,6 +408,7 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 			&floorCount,
 			pq.Array(&technologies),
 			&project.State,
+			&project.City,
 		)
 		if err != nil {
 			return nil, err

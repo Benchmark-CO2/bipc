@@ -12,7 +12,7 @@ import (
 
 // BenchmarkValue represents a single ranked data point.
 // The Y field holds the Gini/Lorenz rank: (position+1)/total after ascending sort by Value.
-// Floors and Technology are only populated for the /benchmark/projects endpoint.
+// Floors, Technology, State and City are only populated for the /benchmark/projects endpoint.
 type BenchmarkValue struct {
 	ID         uuid.UUID `json:"id"`
 	Y          float64   `json:"y"`
@@ -20,6 +20,7 @@ type BenchmarkValue struct {
 	Floors     int       `json:"floors,omitempty"`
 	Technology []string  `json:"technology,omitempty"`
 	State      string    `json:"state,omitempty"`
+	City       string    `json:"city,omitempty"`
 }
 
 // BenchmarkCategory holds two independently sorted lists — one for min consumption
@@ -75,7 +76,7 @@ func separateConsumption(points []*data.BenchmarkData) (co2Min, co2Max, energyMi
 }
 
 // separateProjectConsumption does the same as separateConsumption but for the projects
-// endpoint, where each point carries extra unit metadata (floors, technology).
+// endpoint, where each point carries extra unit metadata (floors, technology, location).
 func separateProjectConsumption(points []*data.ProjectBenchmarkData) (co2Min, co2Max, energyMin, energyMax []BenchmarkValue) {
 	co2Min = []BenchmarkValue{}
 	co2Max = []BenchmarkValue{}
@@ -87,12 +88,12 @@ func separateProjectConsumption(points []*data.ProjectBenchmarkData) (co2Min, co
 			continue
 		}
 		if p.Consumption.CO2Min != nil {
-			co2Min = append(co2Min, BenchmarkValue{ID: p.ID, Value: *p.Consumption.CO2Min, Floors: p.Floors, Technology: p.Technology, State: p.State})
-			co2Max = append(co2Max, BenchmarkValue{ID: p.ID, Value: *p.Consumption.CO2Max, Floors: p.Floors, Technology: p.Technology, State: p.State})
+			co2Min = append(co2Min, BenchmarkValue{ID: p.ID, Value: *p.Consumption.CO2Min, Floors: p.Floors, Technology: p.Technology, State: p.State, City: p.City})
+			co2Max = append(co2Max, BenchmarkValue{ID: p.ID, Value: *p.Consumption.CO2Max, Floors: p.Floors, Technology: p.Technology, State: p.State, City: p.City})
 		}
 		if p.Consumption.EnergyMin != nil {
-			energyMin = append(energyMin, BenchmarkValue{ID: p.ID, Value: *p.Consumption.EnergyMin, Floors: p.Floors, Technology: p.Technology, State: p.State})
-			energyMax = append(energyMax, BenchmarkValue{ID: p.ID, Value: *p.Consumption.EnergyMax, Floors: p.Floors, Technology: p.Technology, State: p.State})
+			energyMin = append(energyMin, BenchmarkValue{ID: p.ID, Value: *p.Consumption.EnergyMin, Floors: p.Floors, Technology: p.Technology, State: p.State, City: p.City})
+			energyMax = append(energyMax, BenchmarkValue{ID: p.ID, Value: *p.Consumption.EnergyMax, Floors: p.Floors, Technology: p.Technology, State: p.State, City: p.City})
 		}
 	}
 
