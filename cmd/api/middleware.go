@@ -121,7 +121,7 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 
 func (app *application) commonHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdn.redocly.com; connect-src 'self' https://servicodados.ibge.gov.br https://cdn.redocly.com; img-src 'self' data: https://bipc-avatar.s3.sa-east-1.amazonaws.com https://cdn.redoc.ly; worker-src 'self' blob:")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdn.redocly.com; connect-src 'self' https://brasilapi.com.br https://servicodados.ibge.gov.br https://cdn.redocly.com; img-src 'self' data: https://bipc-avatar.s3.sa-east-1.amazonaws.com https://cdn.redoc.ly; worker-src 'self' blob:")
 		w.Header().Set("Referrer-Policy", "origin-when-cross-origin")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "deny")
