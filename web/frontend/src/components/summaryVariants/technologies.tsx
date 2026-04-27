@@ -11,7 +11,7 @@ import ItemCard from "./components/ItemCard";
 import Legend from "./components/Legend";
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
-import { barColors, recalculateY } from "./utils";
+import { barColors, normalizeBenchmarkSeries, recalculateY } from "./utils";
 
 type TModules = {
   consumption: {
@@ -55,13 +55,6 @@ type Item = SimulationData & {
   label: string;
 };
 
-const manageData = (data: ProjectsSummaryProps["data"]["benchmark"]["co2"]) => {
-  if (!data) return [];
-  return data.map((el) => ({
-    ...el,
-    label: "",
-  }));
-};
 const SimulationsSummary = ({
   projects,
   data,
@@ -93,14 +86,13 @@ const SimulationsSummary = ({
     },
   ) as any;
 
-  const managedData = manageData(
-    data.benchmark?.[type as "co2" | "energy"] || [],
+  const managedData = normalizeBenchmarkSeries(
+    data.benchmark?.[type as "co2" | "energy"],
   )
     .map((el) => ({
       ...el,
       label: projects.find((f) => f.id === el.id)?.name || "",
-    }))
-    .filter((f) => f.min && f.max);
+    }));
   const { isExpanded } = useSummary();
 
   const handleAddProject = (projectId: string) => {
@@ -154,10 +146,12 @@ const SimulationsSummary = ({
   ] as any;
   const minData = useMemo(() => newData.map((d: Item) => d.min), [newData]);
   const maxData = useMemo(() => newData.map((d: Item) => d.max), [newData]);
+  const minValue = minData.length ? Math.min(...minData) : 0;
+  const maxValue = maxData.length ? Math.max(...maxData) : 0;
   const updateYs = recalculateY(
     newData,
-    minData[0],
-    maxData[maxData.length - 1],
+    minValue,
+    maxValue,
   );
 
   return (
@@ -265,6 +259,9 @@ const SimulationsSummary = ({
             maxData={maxData}
             minData={minData}
             totalProjects={updateYs.length}
+            showBaseline
+            showTop5Line
+            showProcelScale
           />
         ) : (
           <D3GradientRangeLineChart

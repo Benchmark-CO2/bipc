@@ -3,11 +3,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useSummary } from "@/context/summaryContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
+import { structureTypes } from "@/utils/structureTypes";
 import * as d3 from "d3";
 import { Search, SearchX } from "lucide-react";
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -19,7 +21,7 @@ const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number,
 ): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout | null = null;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
   return (...args: Parameters<T>) => {
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
@@ -30,6 +32,8 @@ const debounce = <T extends (...args: any[]) => any>(
 const DEFAULT_COLORS = {
   START: "#3b82f6",
   END: "#E36F35",
+  GRAY_START: "#9ca3af",
+  GRAY_END: "#6b7280",
   GRADIENT_RANGE: [
     "#3b82f6",
     "hsl(97, 40%, 50%)",
@@ -48,6 +52,18 @@ const CHART_CONFIG = {
   TOOLTIP_DIMENSIONS: { width: 120, height: 40, offset: 10 },
 } as const;
 
+const PROCEL_SCALE_CONFIG = {
+  WIDTH: 28,
+  TICK_SIZE: 4,
+} as const;
+
+const PROCEL_CLASSES = [
+  { label: "A", color: "#00A650" },
+  { label: "B", color: "#8DC63F" },
+  { label: "C", color: "#FFF200" },
+  { label: "D", color: "#F26522" },
+] as const;
+
 const UNIT_LABELS = {
   "KgCO₂/m²": "Carbono Incorporado (kg CO₂/m²)",
   "MJ/m²": "Energia Incorporada (MJ/m²)",
@@ -56,6 +72,8 @@ const UNIT_LABELS = {
 // Types
 type ChartData = IBenchmarkItem & {
   label: string;
+  floors?: string | number;
+  technology?: string[];
 };
 
 type D3GradientRangeChartProps = {
@@ -68,6 +86,14 @@ type D3GradientRangeChartProps = {
   totalProjects: number;
   minData: number[];
   maxData: number[];
+  hideBars?: boolean;
+  showProcelScale?: boolean;
+  showBaseline?: boolean;
+  showTop5Line?: boolean;
+  /** Which field to use for the PPp line: "min" or "max". Default: "max" */
+  top5Field?: "min" | "max";
+  /** Percentile threshold for the PPp line (0–1). Default: 0.05 */
+  top5Percentile?: number;
 };
 // Custom hooks
 const useChartDimensions = (
@@ -78,19 +104,22 @@ const useChartDimensions = (
   hasLessValue: boolean,
   hasMoreValue: boolean,
   containerWidth: number,
+  showProcelScale?: boolean,
 ) => {
   return useMemo(() => {
     const margin = {
       top: isExpanded ? 15 : 20,
-      right: isMobile ? 0 : 20,
+      right: isMobile ? 0 : showProcelScale ? 112 : 20,
       bottom: isMobile ? 20 : 35,
       left: isMobile ? 45 : 80,
     };
 
     const width = () => {
-      if (props.width && overrideDimensions) return props.width;
-      if (containerWidth > 0)
-        return containerWidth - margin.left - margin.right;
+      if (props.width && overrideDimensions) {
+        // Reserve margins even when dimensions are provided by parent
+        return Math.max(0, props.width - margin.left - margin.right);
+      }
+      if (containerWidth > 0) return containerWidth - margin.left - margin.right;
       // Fallback when container not yet measured
       const screenWidth = window.innerWidth;
       if (isMobile) return screenWidth * 0.6;
@@ -99,11 +128,11 @@ const useChartDimensions = (
     };
 
     const height = () => {
-      if (props.height && overrideDimensions) return props.height;
+      if (props.height) return props.height;
       if (isMobile && !isExpanded) return 250;
       if (isMobile && isExpanded) return 320;
       if (isExpanded) return window.innerHeight * 0.96 - 130;
-      return window.innerHeight * 0.7 - 340;
+      return Math.min(420, Math.max(300, window.innerHeight * 0.45));
     };
 
     const _width = width();
@@ -119,6 +148,7 @@ const useChartDimensions = (
     hasLessValue,
     hasMoreValue,
     containerWidth,
+    showProcelScale,
   ]);
 };
 
@@ -166,6 +196,12 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   totalProjects,
   minData,
   maxData,
+  hideBars = false,
+  showProcelScale = false,
+  showBaseline = false,
+  showTop5Line = false,
+  top5Field = "max",
+  top5Percentile = 0.05,
   ...props
 }) => {
   const { isExpanded } = useSummary();
@@ -175,10 +211,15 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   const [tooltip, setTooltip] = useState<{
     x: number;
     y: number;
-    value: { min: number; max: number; label?: string };
+    value: {
+      min: number;
+      max: number;
+      label?: string;
+      floors?: string | number;
+      technology?: string[];
+    };
   } | null>(null);
-  const [brushSelectionCount, setBrushSelectionCount] = useState<number>(0);
-  const brushSelectionCountRef = useRef<number>(0);
+  const [, setBrushSelectionCount] = useState<number>(0);
   const [hasZoomed, setHasZoomed] = useState(false);
   const [zoomEnabled, setZoomEnabled] = useState(false);
   const transformRef = useRef({ k: 1, x: 0, y: 0 });
@@ -188,6 +229,17 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     null,
   );
   const [containerWidth, setContainerWidth] = useState(0);
+
+  // Measure container immediately before first paint so PROCEL scale renders correctly
+  useLayoutEffect(() => {
+    if (containerRef.current) {
+      setContainerWidth(containerRef.current.getBoundingClientRect().width);
+    }
+  }, []);
+  const selectedBarIds = useMemo(
+    () => new Set((selectedBars || []).map((id) => String(id))),
+    [selectedBars],
+  );
 
   // Salvar o total na primeira montagem do gráfico
   useEffect(() => {
@@ -199,12 +251,10 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   // Inicializar o contador com o total de dados filtrados
   useEffect(() => {
     setBrushSelectionCount(data.length);
-    brushSelectionCountRef.current = data.length;
   }, [data.length]);
 
   // Função auxiliar para atualizar o contador
   const updateBrushCount = useCallback((count: number) => {
-    brushSelectionCountRef.current = count;
     setBrushSelectionCount(count);
   }, []);
 
@@ -233,6 +283,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     hasLessValue,
     hasMoreValue,
     containerWidth,
+    showProcelScale,
   );
 
   // Scales and calculations
@@ -257,15 +308,6 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     return d3.scaleLinear().domain([0, 1.01]).range([_height, 0]);
   }, [_height]);
 
-  const colorScale = useMemo(
-    () =>
-      d3
-        .scaleLinear<string>()
-        .domain([0, maxValue * 0.25, maxValue * 0.5, maxValue])
-        .range(DEFAULT_COLORS.GRADIENT_RANGE),
-    [maxValue],
-  );
-
   const getTooltipPosition = useTooltipPosition();
 
   // Helper function to get data point under mouse
@@ -286,9 +328,10 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         const x1 = newXScale(d.min);
         const x2 = newXScale(d.max);
         const y = newYScale(d.y);
-        const radius = isExpanded
+        const baseRadius = isExpanded
           ? CHART_CONFIG.CIRCLE_RADIUS.expanded
           : CHART_CONFIG.CIRCLE_RADIUS.normal;
+        const radius = baseRadius * Math.max(1, transform.k);
 
         // Check start circle
         const distStart = Math.sqrt(
@@ -303,7 +346,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         if (distEnd <= radius + 5) return d;
 
         // Check bar area (if expanded or selected)
-        if (isExpanded || selectedBars.includes(d.id)) {
+        if (isExpanded || selectedBarIds.has(String(d.id))) {
           const barHeight = isExpanded
             ? CHART_CONFIG.BAR_HEIGHT
             : CHART_CONFIG.MINIMAL_BAR_HEIGHT;
@@ -318,7 +361,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       }
       return null;
     },
-    [data, xScale, yScale, isExpanded, selectedBars],
+    [data, xScale, yScale, isExpanded, selectedBarIds],
   );
 
   // Event handlers
@@ -339,7 +382,9 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           value: {
             min: d.min,
             max: d.max,
-            label: selectedBars?.includes(d.id) ? d.label : undefined,
+            label: selectedBarIds.has(String(d.id)) ? d.label : undefined,
+            floors: selectedBarIds.has(String(d.id)) ? d.floors : undefined,
+            technology: selectedBarIds.has(String(d.id)) ? d.technology : undefined,
           },
         });
         if (canvasRef.current) {
@@ -352,7 +397,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         }
       }
     },
-    [getDataAtPosition, getTooltipPosition, selectedBars, margin, canvasRef],
+    [getDataAtPosition, getTooltipPosition, selectedBarIds, margin, canvasRef],
   );
 
   const handleCanvasMouseLeave = useCallback(() => {
@@ -428,6 +473,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .scaleLinear()
       .domain(yScale.domain())
       .range(yScale.range().map((r) => r * transform.k + transform.y));
+    const zoomRadiusFactor = Math.max(1, transform.k);
 
     // Draw grid lines
     ctx.strokeStyle = DEFAULT_COLORS.GRID;
@@ -457,38 +503,28 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       }
     });
 
-    // Prepare selected items with positions for label collision detection
-    const selectedItems = data
-      .filter((d) => selectedBars.includes(d.id))
-      .map((d) => ({
-        ...d,
-        x1: newXScale(d.min),
-        x2: newXScale(d.max),
-        y: newYScale(d.y),
-        labelOffset: 0, // Will be adjusted for collision
-      }))
-      .sort((a, b) => a.y - b.y); // Sort by Y position
+    // Baseline — computed here, drawn after points
+    let baselineY: number | null = null;
+    if (showBaseline) {
+      const by = newYScale(0.5);
+      if (by >= 0 && by <= _height) baselineY = by;
+    }
 
-    // Detect collisions and adjust label positions
-    const minLabelSpacing = 24; // Minimum pixels between labels
-    for (let i = 0; i < selectedItems.length; i++) {
-      for (let j = i + 1; j < selectedItems.length; j++) {
-        const item1 = selectedItems[i];
-        const item2 = selectedItems[j];
-
-        const yDist = Math.abs(
-          item1.y + item1.labelOffset - (item2.y + item2.labelOffset),
-        );
-
-        if (yDist < minLabelSpacing) {
-          // Push item2 down to avoid collision
-          const adjustment = minLabelSpacing - yDist;
-          item2.labelOffset += adjustment;
-        }
-      }
+    // Vertical line at top 5% of best projects — computed here, drawn after points
+    let p5LineX: number | null = null;
+    let p5LineInView = false;
+    if (showTop5Line && data.length > 0) {
+      const sorted = [...data].map((d) => d[top5Field]).sort((a, b) => a - b);
+      const idx = Math.floor(sorted.length * top5Percentile);
+      const p5Value = sorted[Math.min(idx, sorted.length - 1)];
+      const lineX = newXScale(p5Value);
+      p5LineX = lineX;
+      p5LineInView = lineX >= 0 && lineX <= _width;
     }
 
     // First pass: Draw circles for non-selected items
+    const hasActiveFilter = selectedBars.length > 0;
+
     data.forEach((d) => {
       const x1 = newXScale(d.min);
       const x2 = newXScale(d.max);
@@ -497,19 +533,26 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       // Skip if outside visible area
       if (x2 < 0 || x1 > _width || y < 0 || y > _height) return;
 
-      const isSelected = selectedBars.includes(d.id);
+      const isSelected = selectedBarIds.has(String(d.id));
 
       // Only draw circles for non-selected items in first pass
       if (!isSelected) {
-        const radius = isExpanded
+        const baseRadius = isExpanded
           ? CHART_CONFIG.CIRCLE_RADIUS.expanded
           : CHART_CONFIG.CIRCLE_RADIUS.normal;
-        const strokeWidth = isExpanded ? (isMobile ? 1 : 2) : 0;
+        const radius = baseRadius * zoomRadiusFactor;
+        const strokeWidth = Math.max(
+          isExpanded ? (isMobile ? 1 : 2) : 0,
+          zoomRadiusFactor > 1 ? 1 : 0,
+        );
+        const useGray = hideBars && hasActiveFilter;
+        const circleOpacity = !hideBars && hasActiveFilter ? 0.35 : 1;
+        ctx.globalAlpha = circleOpacity;
 
         // Start circle
         ctx.beginPath();
         ctx.arc(x1, y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = DEFAULT_COLORS.START;
+        ctx.fillStyle = useGray ? DEFAULT_COLORS.GRAY_START : DEFAULT_COLORS.START;
         ctx.fill();
         if (strokeWidth > 0) {
           ctx.strokeStyle = "white";
@@ -520,17 +563,19 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         // End circle
         ctx.beginPath();
         ctx.arc(x2, y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = DEFAULT_COLORS.END;
+        ctx.fillStyle = useGray ? DEFAULT_COLORS.GRAY_END : DEFAULT_COLORS.END;
         ctx.fill();
         if (strokeWidth > 0) {
           ctx.strokeStyle = "white";
           ctx.lineWidth = isExpanded ? (isMobile ? 1 : 0.5) : 0;
           ctx.stroke();
         }
+
+        ctx.globalAlpha = 1;
       }
     });
 
-    // Second pass: Draw bars for selected items
+    // Second pass: Draw circles for selected items (on top)
     data.forEach((d) => {
       const x1 = newXScale(d.min);
       const x2 = newXScale(d.max);
@@ -539,64 +584,41 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       // Skip if outside visible area
       if (x2 < 0 || x1 > _width || y < 0 || y > _height) return;
 
-      const isSelected = selectedBars.includes(d.id);
+      const isSelected = selectedBarIds.has(String(d.id));
 
-      // Draw bar only for selected items
+      // Draw circles only for selected items
       if (isSelected) {
         const barHeight = isExpanded
           ? CHART_CONFIG.BAR_HEIGHT
           : CHART_CONFIG.MINIMAL_BAR_HEIGHT;
+        const barY = y - barHeight / 2;
+        const barWidth = Math.max(1, x2 - x1);
 
-        // Create gradient for bar
-        const gradient = ctx.createLinearGradient(x1, y, x2, y);
-        gradient.addColorStop(0, colorScale(d.min));
-        gradient.addColorStop(1, colorScale(d.max));
-
-        ctx.fillStyle = gradient;
-
-        if (isExpanded) {
+        // Bar connecting min and max when selected (skip if hideBars)
+        if (!hideBars) {
+          const barGradient = ctx.createLinearGradient(x1, y, x2, y);
+          barGradient.addColorStop(0, DEFAULT_COLORS.GRADIENT_RANGE[1]);
+          barGradient.addColorStop(1, DEFAULT_COLORS.GRADIENT_RANGE[3]);
+          ctx.fillStyle = barGradient;
           ctx.beginPath();
-          ctx.roundRect(
-            x1 - 12,
-            y - (barHeight + 4) / 2,
-            x2 - x1 + 24,
-            barHeight + 4,
-            15,
+          (ctx as any).roundRect(
+            x1,
+            barY,
+            barWidth,
+            barHeight,
+            isExpanded ? barHeight / 2 : 2,
           );
           ctx.fill();
-
-          ctx.strokeStyle = DEFAULT_COLORS.STROKE;
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        } else {
-          ctx.beginPath();
-          ctx.roundRect(x1, y - barHeight / 2, x2 - x1, barHeight, 5);
-          ctx.fill();
-
-          ctx.strokeStyle = DEFAULT_COLORS.STROKE;
-          ctx.lineWidth = 0.1;
-          ctx.stroke();
         }
-      }
-    });
 
-    // Third pass: Draw circles for selected items (on top)
-    data.forEach((d) => {
-      const x1 = newXScale(d.min);
-      const x2 = newXScale(d.max);
-      const y = newYScale(d.y);
-
-      // Skip if outside visible area
-      if (x2 < 0 || x1 > _width || y < 0 || y > _height) return;
-
-      const isSelected = selectedBars.includes(d.id);
-
-      // Draw circles only for selected items
-      if (isSelected) {
-        const radius = isExpanded
+        const baseRadius = isExpanded
           ? CHART_CONFIG.CIRCLE_RADIUS.expanded
           : CHART_CONFIG.CIRCLE_RADIUS.normal;
-        const strokeWidth = isExpanded ? (isMobile ? 1 : 2) : 0;
+        const radius = baseRadius * zoomRadiusFactor;
+        const strokeWidth = Math.max(
+          isExpanded ? (isMobile ? 1 : 2) : 0,
+          zoomRadiusFactor > 1 ? 1 : 0,
+        );
 
         // Start circle
         ctx.beginPath();
@@ -613,117 +635,88 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         ctx.fillStyle = DEFAULT_COLORS.END;
         ctx.fill();
         ctx.strokeStyle = "white";
-        ctx.lineWidth = isExpanded ? (isMobile ? 1 : 0.5) : 0;
+        ctx.lineWidth = Math.max(
+          isExpanded ? (isMobile ? 1 : 0.5) : 0,
+          zoomRadiusFactor > 1 ? 1 : 0,
+        );
         ctx.stroke();
+
+        // Arrow between PPp 5% line and x2 (max) for projects worse than top 5%
+        if (!hideBars && p5LineX !== null && x2 > p5LineX + radius * 2) {
+          const arrowY = y;
+          const arrowLeft = p5LineX + 2;
+          const arrowRight = x2 - radius;
+          const headSize = isExpanded ? 6 : 4;
+
+          ctx.save();
+          ctx.strokeStyle = "#00A650";
+          ctx.fillStyle = "#00A650";
+          ctx.lineWidth = 1.5;
+
+          // Horizontal line
+          ctx.beginPath();
+          ctx.moveTo(arrowLeft, arrowY);
+          ctx.lineTo(arrowRight, arrowY);
+          ctx.stroke();
+
+          // Left arrowhead (pointing left)
+          ctx.beginPath();
+          ctx.moveTo(arrowLeft, arrowY);
+          ctx.lineTo(arrowLeft + headSize, arrowY - headSize / 2);
+          ctx.lineTo(arrowLeft + headSize, arrowY + headSize / 2);
+          ctx.closePath();
+          ctx.fill();
+
+          // Right arrowhead (pointing right)
+          ctx.beginPath();
+          ctx.moveTo(arrowRight, arrowY);
+          ctx.lineTo(arrowRight - headSize, arrowY - headSize / 2);
+          ctx.lineTo(arrowRight - headSize, arrowY + headSize / 2);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.restore();
+        }
       }
     });
 
-    // Draw labels for selected items with collision-adjusted positions
-    selectedItems.forEach((item) => {
-      if (isExpanded) {
-        // In expanded mode, draw label inside the bar with collision adjustment
-        const adjustedY = item.y + item.labelOffset;
-        const avgX = (item.x1 + item.x2) / 2;
+    // Draw baseline on top of all points
+    if (baselineY !== null) {
+      ctx.save();
+      ctx.strokeStyle = "#64748b";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(0, baselineY);
+      ctx.lineTo(_width, baselineY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = "11px sans-serif";
+      ctx.fillStyle = "#64748b";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "bottom";
+      ctx.fillText("linha de base", 4, baselineY - 3);
+      ctx.restore();
+    }
 
-        // Draw connecting line if label was moved significantly
-        if (Math.abs(item.labelOffset) > 2) {
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
-          ctx.lineWidth = 1;
-          ctx.setLineDash([3, 3]);
-          ctx.beginPath();
-          ctx.moveTo(avgX, item.y);
-          ctx.lineTo(avgX, adjustedY);
-          ctx.stroke();
-          ctx.setLineDash([]);
-        }
-
-        // Draw label inside bar
-        ctx.font = "bold 14px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillStyle =
-          getComputedStyle(document.documentElement).getPropertyValue(
-            "--foreground",
-          ) || DEFAULT_COLORS.TEXT;
-        ctx.fillText(item.label, avgX, adjustedY + 5);
-      } else {
-        // In normal mode, draw labels outside the bar
-        const adjustedY = item.y + item.labelOffset;
-        const avgX = (item.x1 + item.x2) / 2;
-
-        // Determine if label should be on left or right based on position
-        const isLeftSide = avgX < _width * 0.5;
-
-        const foregroundColor =
-          getComputedStyle(document.documentElement).getPropertyValue(
-            "--foreground",
-          ) || DEFAULT_COLORS.TEXT;
-
-        // Draw connecting line for vertical offset (if label was moved)
-        if (Math.abs(item.labelOffset) > 2) {
-          ctx.strokeStyle = foregroundColor.trim();
-          ctx.lineWidth = 1;
-          ctx.setLineDash([4, 4]);
-          ctx.beginPath();
-          const connectX = isLeftSide ? item.x2 : item.x1;
-          ctx.moveTo(connectX, item.y);
-          ctx.lineTo(connectX, adjustedY);
-          ctx.stroke();
-          ctx.setLineDash([]);
-        }
-
-        ctx.fillStyle =
-          getComputedStyle(document.documentElement).getPropertyValue(
-            "--primary",
-          ) || DEFAULT_COLORS.TEXT;
-        ctx.font = "bold 14px sans-serif";
-
-        // Min value label
-        ctx.textAlign = "end";
-        ctx.fillText(
-          item.min.toInternational(undefined, 0),
-          item.x1 - 18,
-          adjustedY + 4,
-        );
-
-        // Max value label
-        ctx.textAlign = "start";
-        ctx.fillText(
-          item.max.toInternational(undefined, 0),
-          item.x2 + 18,
-          adjustedY + 4,
-        );
-
-        // Draw horizontal connecting line to project label
-        ctx.strokeStyle = foregroundColor.trim();
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 4]);
-        ctx.beginPath();
-
-        // Project label - positioned on the side with more space
-        ctx.font = "normal 12px sans-serif";
-        if (isLeftSide) {
-          // Draw line and label to the right
-          ctx.moveTo(item.x2, adjustedY);
-          ctx.lineTo(item.x2 + 65, adjustedY);
-          ctx.stroke();
-          ctx.setLineDash([]);
-
-          ctx.fillStyle = foregroundColor.trim();
-          ctx.textAlign = "start";
-          ctx.fillText(`${item.label}`, item.x2 + 70, adjustedY + 4);
-        } else {
-          // Draw line and label to the left
-          ctx.moveTo(item.x1, adjustedY);
-          ctx.lineTo(item.x1 - 65, adjustedY);
-          ctx.stroke();
-          ctx.setLineDash([]);
-
-          ctx.fillStyle = foregroundColor.trim();
-          ctx.textAlign = "end";
-          ctx.fillText(`${item.label}`, item.x1 - 70, adjustedY + 4);
-        }
-      }
-    });
+    // Draw PPp 5% line on top of all points
+    if (p5LineX !== null && p5LineInView) {
+      ctx.save();
+      ctx.strokeStyle = "#00A650";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(p5LineX, 0);
+      ctx.lineTo(p5LineX, _height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = "11px sans-serif";
+      ctx.fillStyle = "#00A650";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      ctx.fillText("PPp 5%", p5LineX + 4, 4);
+      ctx.restore();
+    }
 
     // Restore clipping region
     ctx.restore();
@@ -788,6 +781,69 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       }
     });
 
+    // PROCEL color scale on the right side — zoom-aware
+    if (showProcelScale && !isMobile) {
+      const barX = _width;
+      const barWidth = PROCEL_SCALE_CONFIG.WIDTH;
+
+      ctx.save();
+      // Clip to chart height so bands don't overflow vertically
+      ctx.beginPath();
+      ctx.rect(barX, 0, barWidth + PROCEL_SCALE_CONFIG.TICK_SIZE + 30, _height);
+      ctx.clip();
+
+      // Each class covers 25% of the domain [0,1]:
+      // D=[0.75,1.0], C=[0.50,0.75], B=[0.25,0.50], A=[0.00,0.25]
+      const reversed = [...PROCEL_CLASSES].reverse();
+      reversed.forEach((cls, i) => {
+        const domainTop = 1.0 - i * 0.25;
+        const domainBottom = 1.0 - (i + 1) * 0.25;
+        const bandTop = Math.max(0, newYScale(domainTop));
+        const bandBottom = Math.min(_height, newYScale(domainBottom));
+        if (bandBottom <= bandTop) return; // band outside view
+
+        ctx.fillStyle = cls.color;
+        ctx.fillRect(barX, bandTop, barWidth, Math.ceil(bandBottom - bandTop));
+        ctx.strokeStyle = "rgba(255,255,255,0.75)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(barX, bandTop, barWidth, Math.ceil(bandBottom - bandTop));
+
+        // Class label centered in the visible portion of the band
+        ctx.fillStyle = "#111827";
+        ctx.font = "bold 10px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(cls.label, barX + barWidth / 2, (bandTop + bandBottom) / 2);
+      });
+
+      // Percentage ticks at domain boundaries (100%=1.0, 75%=0.75, …, 0%=0.0)
+      const pctBoundaries = [
+        { pct: 100, domainVal: 1.0 },
+        { pct: 75, domainVal: 0.75 },
+        { pct: 50, domainVal: 0.5 },
+        { pct: 25, domainVal: 0.25 },
+        { pct: 0, domainVal: 0.0 },
+      ];
+      ctx.font = "10px sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillStyle = DEFAULT_COLORS.TEXT;
+      pctBoundaries.forEach(({ pct, domainVal }, idx) => {
+        const y = newYScale(domainVal);
+        if (y < 0 || y > _height) return; // outside view
+        const yText = idx === 0 ? y + 1 : idx === pctBoundaries.length - 1 ? y - 1 : y;
+        ctx.beginPath();
+        ctx.moveTo(barX + barWidth, y);
+        ctx.lineTo(barX + barWidth + PROCEL_SCALE_CONFIG.TICK_SIZE, y);
+        ctx.strokeStyle = DEFAULT_COLORS.TEXT;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.textBaseline = idx === 0 ? "top" : idx === pctBoundaries.length - 1 ? "bottom" : "middle";
+        ctx.fillText(`${pct}%`, barX + barWidth + PROCEL_SCALE_CONFIG.TICK_SIZE + 3, yText);
+      });
+
+      ctx.restore();
+    }
+
     ctx.restore();
 
     // Count visible points
@@ -807,11 +863,14 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     _width,
     _height,
     data,
-    selectedBars,
+    selectedBarIds,
     isExpanded,
     isMobile,
-    colorScale,
     maxValue,
+    hideBars,
+    showProcelScale,
+    showBaseline,
+    showTop5Line,
     updateBrushCount,
   ]);
 
@@ -839,7 +898,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     // Initial measurement
     setContainerWidth(containerRef.current.getBoundingClientRect().width);
 
-    let resizeTimer: NodeJS.Timeout;
+    let resizeTimer: ReturnType<typeof setTimeout>;
     const resizeObserver = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) {
@@ -884,16 +943,16 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         return !event.button && event.type !== "dblclick";
       })
       .on("zoom", (event) => {
-        const transform = event.transform;
-        transformRef.current = {
-          k: transform.k,
-          x: transform.x,
-          y: transform.y,
-        };
+        const t = event.transform;
+        // Clamp X: tx ≤ 0 (no empty left), tx ≥ _width*(1 - 1.1*k) (no empty right)
+        const tx = Math.min(0, Math.max(t.x, _width * (1 - 1.1 * t.k)));
+        // Clamp Y (inverted scale): ty ≤ 0 (no empty above), ty ≥ _height*(1-k) (no empty below)
+        const ty = Math.min(0, Math.max(t.y, _height * (1 - t.k)));
+
+        transformRef.current = { k: t.k, x: tx, y: ty };
 
         // Check if zoomed
-        const isZoomed =
-          transform.k !== 1 || transform.x !== 0 || transform.y !== 0;
+        const isZoomed = t.k !== 1 || tx !== 0 || ty !== 0;
         setHasZoomed(isZoomed);
 
         // Redraw with animation frame
@@ -976,6 +1035,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
   const labelX =
     UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Incorporado";
+  const displayedCount = selectedBars.length > 0 ? selectedBars.length : data.length;
+  const totalCount = totalProjects || initialTotalRef.current || data.length;
 
   return (
     <Card className={cn("shadow-none w-min-content min-w-1/2")}>
@@ -1054,14 +1115,28 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
                   {tooltip.value.max.toInternational()} {unit}
                 </b>
               </span>
+              {tooltip.value.floors !== undefined && tooltip.value.floors !== null && (
+                <span>
+                  Pavimentos: <b>{tooltip.value.floors}</b>
+                </span>
+              )}
+              {!!tooltip.value.technology?.length && (
+                <span>
+                  Tecnologia:{" "}
+                  <b>
+                    {tooltip.value.technology
+                      .map((t) => structureTypes[t as keyof typeof structureTypes] || t)
+                      .join(", ")}
+                  </b>
+                </span>
+              )}
             </div>
           )}
         </div>
 
         <div className="flex max-sm:flex-col-reverse max-sm:gap-4 max-sm:mt-2">
           <span className="text-xs">
-            Exibindo: {brushSelectionCount} de{" "}
-            {initialTotalRef.current || data?.length || 0}
+            Exibindo: {displayedCount} de {totalCount}
           </span>
           {isMobile && (
             <Indicators

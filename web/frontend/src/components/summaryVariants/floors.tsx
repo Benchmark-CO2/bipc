@@ -11,7 +11,7 @@ import ItemCard from "./components/ItemCard";
 import Legend from "./components/Legend";
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
-import { barColors, recalculateY } from "./utils";
+import { barColors, normalizeBenchmarkSeries, recalculateY } from "./utils";
 
 type ProjectsSummaryProps = {
   floors: any[];
@@ -34,12 +34,13 @@ const FloorSummary = ({
   const { chartType, ChartSelector } = useChartType();
   const filteredFloors = floors.filter((el) => !!el.co2_max);
 
-  const fakeFloors = data.benchmark?.[type as "co2" | "energy"]
+  const fakeFloors = normalizeBenchmarkSeries(
+    data.benchmark?.[type as "co2" | "energy"],
+  )
     ?.map((el) => ({
       ...el,
       label: selectedFloors.find((f) => f.id === el.id)?.group_name || "",
-    }))
-    .filter((f) => f.min && f.max);
+    }));
   const { isExpanded } = useSummary();
 
   const newItems = filteredFloors.map((el) => {
@@ -137,7 +138,7 @@ const FloorSummary = ({
       },
       {} as Record<string, number>,
     );
-  }, [floors, unit, fakeFloors]);
+  }, [floors, unit, type]);
 
   const sum = (Object.values(avgByUnit) as Array<{ avg: number }>).reduce(
     (acc: number, b: { avg: number }) => acc + b.avg,
@@ -148,10 +149,12 @@ const FloorSummary = ({
 
   const minData = useMemo(() => newDataItems.map((d) => d.min), [newDataItems]);
   const maxData = useMemo(() => newDataItems.map((d) => d.max), [newDataItems]);
+  const minValue = minData.length ? Math.min(...minData) : 0;
+  const maxValue = maxData.length ? Math.max(...maxData) : 0;
   const newData = recalculateY(
     newDataItems,
-    Math.min(...minData),
-    Math.max(...maxData),
+    minValue,
+    maxValue,
   );
 
   return (
@@ -178,7 +181,7 @@ const FloorSummary = ({
       </div>
       <div
         className={cn(
-          "w-full flex justify-between gap-4 max-md:flex-col max-md:flex-col 2xl:h-[85%] max-sm:h-max",
+          "w-full flex justify-between gap-4 max-md:flex-col 2xl:h-[85%] max-sm:h-max",
           {
             "flex flex-col": isExpanded,
           },
@@ -241,7 +244,7 @@ const FloorSummary = ({
               "max-h-[350px] overflow-y-auto ": !isExpanded,
             })}
           >
-            {stackedData.map((floor, idx) => {
+            {stackedData.map((floor) => {
               if (!floor) return null;
               return isExpanded ? (
                 <ItemCard
@@ -276,9 +279,12 @@ const FloorSummary = ({
           <D3GradientRangeChart
             data={newData}
             selectedBars={selectedProjects}
-            totalProjects={data?.benchmark[type].length || 0}
+            totalProjects={fakeFloors.length || newData.length}
             minData={minData}
             maxData={maxData}
+            showBaseline
+            showTop5Line
+            showProcelScale
           />
         ) : (
           <D3GradientRangeLineChart

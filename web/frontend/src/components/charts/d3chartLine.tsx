@@ -5,11 +5,11 @@ import { cn } from "@/lib/utils";
 import * as d3 from "d3";
 import { regressionPoly } from "d3-regression";
 import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
 import Divider from "../ui/divider";
 
@@ -46,9 +46,19 @@ type ChartData = {
   label: string;
 };
 
+export type SeriesPoint = {
+  id: string;
+  y: number;
+  value: number;
+  label?: string;
+};
+
 type D3GradientRangeChartProps = {
   selectedBars?: string[];
   data?: ChartData[];
+  minSeriesData?: SeriesPoint[];
+  maxSeriesData?: SeriesPoint[];
+  hideBars?: boolean;
   width?: number;
   height?: number;
   overrideDimensions?: boolean;
@@ -160,19 +170,49 @@ const useTooltipPosition = () => {
 
 const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   selectedBars = [],
-  data = [],
+  data: _data = [],
+  minSeriesData,
+  maxSeriesData,
+  hideBars,
   overrideDimensions = false,
   unit = "",
   summary = true,
   ...props
 }) => {
+  // Se vieram séries separadas, faz o join por id para montar ChartData
+  const data = useMemo<ChartData[]>(() => {
+    if (!minSeriesData && !maxSeriesData) return _data;
+    const minById = new Map((minSeriesData ?? []).map((p) => [p.id, p]));
+    const maxById = new Map((maxSeriesData ?? []).map((p) => [p.id, p]));
+    const ids = new Set([...minById.keys(), ...maxById.keys()]);
+    const merged: ChartData[] = [];
+    ids.forEach((id) => {
+      const minP = minById.get(id);
+      const maxP = maxById.get(id);
+      if (!minP || !maxP) return;
+      merged.push({
+        id,
+        y: minP.y,
+        min: minP.value,
+        max: maxP.value,
+        label: minP.label ?? maxP.label ?? "",
+      });
+    });
+    return merged;
+  }, [_data, minSeriesData, maxSeriesData]);
+
+  // Quando as séries vêm separadas, não faz sentido exibir as barras de ligação
+  const shouldHideBars = hideBars ?? !!(minSeriesData || maxSeriesData);
   const { isExpanded } = useSummary();
   const svgRef = useRef<SVGSVGElement>(null);
   const isMobile = useIsMobile();
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [isResized, setIsResized] = useState(0);
   const [containerWidth, setContainerWidth] = useState<number>(0);
-  const [containerHeight, setContainerHeight] = useState<number>(0);
+  const selectedBarIds = useMemo(
+    () => new Set((selectedBars || []).map((id) => String(id))),
+    [selectedBars],
+  );
   // const data = isMobile ? _data.map(el => ({ ...el, y: el.y * 10 })) : _data;
   const {
     width: _width,
@@ -359,7 +399,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   useEffect(() => {
     if (!svgRef.current?.parentElement) return;
 
-    let resizeTimer: NodeJS.Timeout;
+    let resizeTimer: ReturnType<typeof setTimeout>;
 
     const resizeObserver = new ResizeObserver(() => {
       // Clear previous timer
@@ -693,9 +733,10 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
     reversedData.forEach((d, i) => {
       const gradientId = `gradient-${i}`;
-      const isSelected = selectedBars.includes(d.id);
+      const isSelected = selectedBarIds.has(String(d.id));
 
-      if (isSelected) {
+      if (isSelected && !shouldHideBars) {
+        {
         // Create gradient
         const gradient = g
           .append("defs")
@@ -827,6 +868,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
             .text(`${d.label}`)
             .attr("id", `bar-label-name-${d.id}`);
         }
+        }
       } else {
         // Remove elements for unselected bars
         const idsToRemove = [
@@ -847,13 +889,14 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       }
     });
   }, [
-    selectedBars,
+    selectedBarIds,
     isExpanded,
     reversedData,
     isResized,
     xScale,
     yScale,
     colorScale,
+    shouldHideBars,
   ]);
 
   const labelX =
