@@ -209,6 +209,8 @@ function RouteComponent() {
                   unit={type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
                   hideBars
                   showProcelScale
+                  showBaseline
+                  showTop5Line
                 />
               )}
             </div>

@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useSummary } from "@/context/summaryContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
+import { structureTypes } from "@/utils/structureTypes";
 import * as d3 from "d3";
 import { Search, SearchX } from "lucide-react";
 import React, {
@@ -52,10 +53,9 @@ const CHART_CONFIG = {
 
 const PROCEL_CLASSES = [
   { label: "A", color: "#00A650" },
-  { label: "C", color: "#8DC63F" },
-  { label: "D", color: "#FFF200" },
-  { label: "E", color: "#FBB040" },
-  { label: "G", color: "#ED1C24" },
+  { label: "B", color: "#8DC63F" },
+  { label: "C", color: "#FFF200" },
+  { label: "D", color: "#F26522" },
 ] as const;
 
 const UNIT_LABELS = {
@@ -82,6 +82,8 @@ type D3GradientRangeChartProps = {
   maxData: number[];
   hideBars?: boolean;
   showProcelScale?: boolean;
+  showBaseline?: boolean;
+  showTop5Line?: boolean;
 };
 // Custom hooks
 const useChartDimensions = (
@@ -183,6 +185,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   maxData,
   hideBars = false,
   showProcelScale = false,
+  showBaseline = false,
+  showTop5Line = false,
   ...props
 }) => {
   const { isExpanded } = useSummary();
@@ -475,6 +479,54 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       }
     });
 
+    // Baseline at y=0.5 (50% split)
+    if (showBaseline) {
+      const baselineY = newYScale(0.5);
+      if (baselineY >= 0 && baselineY <= _height) {
+        ctx.save();
+        ctx.strokeStyle = "#64748b";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(0, baselineY);
+        ctx.lineTo(_width, baselineY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        // Label
+        ctx.font = "11px sans-serif";
+        ctx.fillStyle = "#64748b";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "bottom";
+        ctx.fillText("linha de base", 4, baselineY - 3);
+        ctx.restore();
+      }
+    }
+
+    // Vertical line at top 5% of best projects (5th percentile of min values)
+    if (showTop5Line && data.length > 0) {
+      const sorted = [...data].map((d) => d.min).sort((a, b) => a - b);
+      const idx = Math.floor(sorted.length * 0.05);
+      const p5Value = sorted[Math.min(idx, sorted.length - 1)];
+      const lineX = newXScale(p5Value);
+      if (lineX >= 0 && lineX <= _width) {
+        ctx.save();
+        ctx.strokeStyle = "#00A650";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(lineX, 0);
+        ctx.lineTo(lineX, _height);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.font = "11px sans-serif";
+        ctx.fillStyle = "#00A650";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        ctx.fillText("PPp 5%", lineX + 4, 4);
+        ctx.restore();
+      }
+    }
+
     // First pass: Draw circles for non-selected items
     const hasActiveFilter = selectedBars.length > 0;
 
@@ -695,6 +747,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     maxValue,
     hideBars,
     showProcelScale,
+    showBaseline,
+    showTop5Line,
     updateBrushCount,
   ]);
 
@@ -946,7 +1000,12 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
               )}
               {!!tooltip.value.technology?.length && (
                 <span>
-                  Tecnologia: <b>{tooltip.value.technology.join(", ")}</b>
+                  Tecnologia:{" "}
+                  <b>
+                    {tooltip.value.technology
+                      .map((t) => structureTypes[t as keyof typeof structureTypes] || t)
+                      .join(", ")}
+                  </b>
                 </span>
               )}
             </div>
