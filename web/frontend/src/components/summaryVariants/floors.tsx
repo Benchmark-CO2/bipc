@@ -281,6 +281,9 @@ const FloorSummary = ({
             totalProjects={fakeFloors.length || newData.length}
             minData={minData}
             maxData={maxData}
+            showBaseline
+            showTop5Line
+            showProcelScale
           />
         ) : (
           <D3GradientRangeLineChart

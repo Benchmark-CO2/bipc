@@ -51,6 +51,11 @@ const CHART_CONFIG = {
   TOOLTIP_DIMENSIONS: { width: 120, height: 40, offset: 10 },
 } as const;
 
+const PROCEL_SCALE_CONFIG = {
+  WIDTH: 28,
+  TICK_SIZE: 4,
+} as const;
+
 const PROCEL_CLASSES = [
   { label: "A", color: "#00A650" },
   { label: "B", color: "#8DC63F" },
@@ -99,13 +104,16 @@ const useChartDimensions = (
   return useMemo(() => {
     const margin = {
       top: isExpanded ? 15 : 20,
-      right: isMobile ? 0 : showProcelScale ? 54 : 20,
+      right: isMobile ? 0 : showProcelScale ? 112 : 20,
       bottom: isMobile ? 20 : 35,
       left: isMobile ? 45 : 80,
     };
 
     const width = () => {
-      if (props.width && overrideDimensions) return props.width;
+      if (props.width && overrideDimensions) {
+        // Reserve margins even when dimensions are provided by parent
+        return Math.max(0, props.width - margin.left - margin.right);
+      }
       if (containerWidth > 0) return containerWidth - margin.left - margin.right;
       // Fallback when container not yet measured
       const screenWidth = window.innerWidth;
@@ -306,9 +314,10 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         const x1 = newXScale(d.min);
         const x2 = newXScale(d.max);
         const y = newYScale(d.y);
-        const radius = isExpanded
+        const baseRadius = isExpanded
           ? CHART_CONFIG.CIRCLE_RADIUS.expanded
           : CHART_CONFIG.CIRCLE_RADIUS.normal;
+        const radius = baseRadius * Math.max(1, transform.k);
 
         // Check start circle
         const distStart = Math.sqrt(
@@ -450,6 +459,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .scaleLinear()
       .domain(yScale.domain())
       .range(yScale.range().map((r) => r * transform.k + transform.y));
+    const zoomRadiusFactor = Math.max(1, transform.k);
 
     // Draw grid lines
     ctx.strokeStyle = DEFAULT_COLORS.GRID;
@@ -503,11 +513,14 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     }
 
     // Vertical line at top 5% of best projects (5th percentile of min values)
+    // Compute p5Value for reuse in arrow drawing
+    let p5LineX: number | null = null;
     if (showTop5Line && data.length > 0) {
       const sorted = [...data].map((d) => d.min).sort((a, b) => a - b);
       const idx = Math.floor(sorted.length * 0.05);
       const p5Value = sorted[Math.min(idx, sorted.length - 1)];
       const lineX = newXScale(p5Value);
+      p5LineX = lineX;
       if (lineX >= 0 && lineX <= _width) {
         ctx.save();
         ctx.strokeStyle = "#00A650";
@@ -542,10 +555,14 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
       // Only draw circles for non-selected items in first pass
       if (!isSelected) {
-        const radius = isExpanded
+        const baseRadius = isExpanded
           ? CHART_CONFIG.CIRCLE_RADIUS.expanded
           : CHART_CONFIG.CIRCLE_RADIUS.normal;
-        const strokeWidth = isExpanded ? (isMobile ? 1 : 2) : 0;
+        const radius = baseRadius * zoomRadiusFactor;
+        const strokeWidth = Math.max(
+          isExpanded ? (isMobile ? 1 : 2) : 0,
+          zoomRadiusFactor > 1 ? 1 : 0,
+        );
         const useGray = hideBars && hasActiveFilter;
         const circleOpacity = !hideBars && hasActiveFilter ? 0.35 : 1;
         ctx.globalAlpha = circleOpacity;
@@ -612,10 +629,14 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           ctx.fill();
         }
 
-        const radius = isExpanded
+        const baseRadius = isExpanded
           ? CHART_CONFIG.CIRCLE_RADIUS.expanded
           : CHART_CONFIG.CIRCLE_RADIUS.normal;
-        const strokeWidth = isExpanded ? (isMobile ? 1 : 2) : 0;
+        const radius = baseRadius * zoomRadiusFactor;
+        const strokeWidth = Math.max(
+          isExpanded ? (isMobile ? 1 : 2) : 0,
+          zoomRadiusFactor > 1 ? 1 : 0,
+        );
 
         // Start circle
         ctx.beginPath();
@@ -632,8 +653,48 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         ctx.fillStyle = DEFAULT_COLORS.END;
         ctx.fill();
         ctx.strokeStyle = "white";
-        ctx.lineWidth = isExpanded ? (isMobile ? 1 : 0.5) : 0;
+        ctx.lineWidth = Math.max(
+          isExpanded ? (isMobile ? 1 : 0.5) : 0,
+          zoomRadiusFactor > 1 ? 1 : 0,
+        );
         ctx.stroke();
+
+        // Arrow between PPp 5% line and x2 (max) for projects worse than top 5%
+        if (!hideBars && p5LineX !== null && x2 > p5LineX + radius * 2) {
+          const arrowY = y;
+          const arrowLeft = p5LineX + 2;
+          const arrowRight = x2 - radius;
+          const headSize = isExpanded ? 6 : 4;
+
+          ctx.save();
+          ctx.strokeStyle = "#00A650";
+          ctx.fillStyle = "#00A650";
+          ctx.lineWidth = 1.5;
+
+          // Horizontal line
+          ctx.beginPath();
+          ctx.moveTo(arrowLeft, arrowY);
+          ctx.lineTo(arrowRight, arrowY);
+          ctx.stroke();
+
+          // Left arrowhead (pointing left)
+          ctx.beginPath();
+          ctx.moveTo(arrowLeft, arrowY);
+          ctx.lineTo(arrowLeft + headSize, arrowY - headSize / 2);
+          ctx.lineTo(arrowLeft + headSize, arrowY + headSize / 2);
+          ctx.closePath();
+          ctx.fill();
+
+          // Right arrowhead (pointing right)
+          ctx.beginPath();
+          ctx.moveTo(arrowRight, arrowY);
+          ctx.lineTo(arrowRight - headSize, arrowY - headSize / 2);
+          ctx.lineTo(arrowRight - headSize, arrowY + headSize / 2);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.restore();
+        }
       }
     });
 
@@ -703,23 +764,48 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     // PROCEL color scale on the right side
     if (showProcelScale && !isMobile) {
       const barX = _width;
-      const barWidth = 14;
+      const barWidth = PROCEL_SCALE_CONFIG.WIDTH;
       const bandHeight = _height / PROCEL_CLASSES.length;
 
-      // Draw from top (G = least efficient = y→1) to bottom (A = most efficient = y→0)
+      ctx.save();
+
+      // Draw from top (D = less efficient) to bottom (A = more efficient)
       const reversed = [...PROCEL_CLASSES].reverse();
       reversed.forEach((cls, i) => {
         const bandY = i * bandHeight;
         ctx.fillStyle = cls.color;
         ctx.fillRect(barX, bandY, barWidth, Math.ceil(bandHeight));
+        ctx.strokeStyle = "rgba(255,255,255,0.75)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(barX, bandY, barWidth, Math.ceil(bandHeight));
 
-        // Label
-        ctx.fillStyle = DEFAULT_COLORS.TEXT;
+        // Class label centered in the band
+        ctx.fillStyle = "#111827";
         ctx.font = "bold 10px sans-serif";
-        ctx.textAlign = "left";
+        ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(cls.label, barX + barWidth + 3, bandY + bandHeight / 2);
+        ctx.fillText(cls.label, barX + barWidth / 2, bandY + bandHeight / 2);
       });
+
+      // Percentage ticks at boundaries (100, 75, 50, 25, 0)
+      const pctLabels = [100, 75, 50, 25, 0];
+      ctx.font = "10px sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillStyle = DEFAULT_COLORS.TEXT;
+      pctLabels.forEach((pct, idx) => {
+        const y = (_height * idx) / (pctLabels.length - 1);
+        const yText = idx === 0 ? y + 1 : idx === pctLabels.length - 1 ? y - 1 : y;
+        ctx.beginPath();
+        ctx.moveTo(barX + barWidth, y);
+        ctx.lineTo(barX + barWidth + PROCEL_SCALE_CONFIG.TICK_SIZE, y);
+        ctx.strokeStyle = DEFAULT_COLORS.TEXT;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.textBaseline = idx === 0 ? "top" : idx === pctLabels.length - 1 ? "bottom" : "middle";
+        ctx.fillText(`${pct}%`, barX + barWidth + PROCEL_SCALE_CONFIG.TICK_SIZE + 3, yText);
+      });
+
+      ctx.restore();
     }
 
     ctx.restore();

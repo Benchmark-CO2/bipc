@@ -284,6 +284,9 @@ const UnitsSummary = ({
             minData={minData}
             maxData={maxData}
             totalProjects={fakeUnits.length || newData.length}
+            showBaseline
+            showTop5Line
+            showProcelScale
           />
         ) : (
           <D3GradientRangeLineChart

@@ -221,6 +221,9 @@ const ProjectsSummary = ({
             totalProjects={managedData.length || newData.length}
             minData={minData}
             maxData={maxData}
+            showBaseline
+            showTop5Line
+            showProcelScale
           />
         ) : (
           <D3GradientRangeLineChart

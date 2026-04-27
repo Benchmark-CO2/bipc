@@ -259,6 +259,9 @@ const SimulationsSummary = ({
             maxData={maxData}
             minData={minData}
             totalProjects={updateYs.length}
+            showBaseline
+            showTop5Line
+            showProcelScale
           />
         ) : (
           <D3GradientRangeLineChart
