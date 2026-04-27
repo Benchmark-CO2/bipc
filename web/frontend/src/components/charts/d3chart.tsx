@@ -50,6 +50,14 @@ const CHART_CONFIG = {
   TOOLTIP_DIMENSIONS: { width: 120, height: 40, offset: 10 },
 } as const;
 
+const PROCEL_CLASSES = [
+  { label: "A", color: "#00A650" },
+  { label: "C", color: "#8DC63F" },
+  { label: "D", color: "#FFF200" },
+  { label: "E", color: "#FBB040" },
+  { label: "G", color: "#ED1C24" },
+] as const;
+
 const UNIT_LABELS = {
   "KgCO₂/m²": "Carbono Incorporado (Kg CO₂/m²)",
   "MJ/m²": "Energia Incorporada (MJ/m²)",
@@ -73,6 +81,7 @@ type D3GradientRangeChartProps = {
   minData: number[];
   maxData: number[];
   hideBars?: boolean;
+  showProcelScale?: boolean;
 };
 // Custom hooks
 const useChartDimensions = (
@@ -83,11 +92,12 @@ const useChartDimensions = (
   hasLessValue: boolean,
   hasMoreValue: boolean,
   containerWidth: number,
+  showProcelScale?: boolean,
 ) => {
   return useMemo(() => {
     const margin = {
       top: isExpanded ? 15 : 20,
-      right: isMobile ? 0 : 20,
+      right: isMobile ? 0 : showProcelScale ? 54 : 20,
       bottom: isMobile ? 20 : 35,
       left: isMobile ? 45 : 80,
     };
@@ -123,6 +133,7 @@ const useChartDimensions = (
     hasLessValue,
     hasMoreValue,
     containerWidth,
+    showProcelScale,
   ]);
 };
 
@@ -171,6 +182,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   minData,
   maxData,
   hideBars = false,
+  showProcelScale = false,
   ...props
 }) => {
   const { isExpanded } = useSummary();
@@ -245,6 +257,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     hasLessValue,
     hasMoreValue,
     containerWidth,
+    showProcelScale,
   );
 
   // Scales and calculations
@@ -635,6 +648,28 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       }
     });
 
+    // PROCEL color scale on the right side
+    if (showProcelScale && !isMobile) {
+      const barX = _width;
+      const barWidth = 14;
+      const bandHeight = _height / PROCEL_CLASSES.length;
+
+      // Draw from top (G = least efficient = y→1) to bottom (A = most efficient = y→0)
+      const reversed = [...PROCEL_CLASSES].reverse();
+      reversed.forEach((cls, i) => {
+        const bandY = i * bandHeight;
+        ctx.fillStyle = cls.color;
+        ctx.fillRect(barX, bandY, barWidth, Math.ceil(bandHeight));
+
+        // Label
+        ctx.fillStyle = DEFAULT_COLORS.TEXT;
+        ctx.font = "bold 10px sans-serif";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        ctx.fillText(cls.label, barX + barWidth + 3, bandY + bandHeight / 2);
+      });
+    }
+
     ctx.restore();
 
     // Count visible points
@@ -658,6 +693,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     isExpanded,
     isMobile,
     maxValue,
+    hideBars,
+    showProcelScale,
     updateBrushCount,
   ]);
 

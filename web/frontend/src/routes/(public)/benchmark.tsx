@@ -208,6 +208,7 @@ function RouteComponent() {
                   totalProjects={baseChartData.length || chartData.length}
                   unit={type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
                   hideBars
+                  showProcelScale
                 />
               )}
             </div>
