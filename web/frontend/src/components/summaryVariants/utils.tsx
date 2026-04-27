@@ -1,5 +1,44 @@
-import { IBenchmarkResponse } from "@/actions/benchmarks/types";
+import {
+    IBenchmarkResponse,
+    IBenchmarkSeries,
+} from "@/actions/benchmarks/types";
 import { IProject } from "@/types/projects";
+
+export type SummaryBenchmarkPoint = {
+  id: string;
+  y: number;
+  min: number;
+  max: number;
+  label: string;
+  floors?: string | number;
+  technology?: string[];
+};
+
+export const normalizeBenchmarkSeries = (
+  series?: IBenchmarkSeries,
+): SummaryBenchmarkPoint[] => {
+  if (!series) return [];
+
+  const minList = series.min || [];
+  const maxById = new Map((series.max || []).map((item) => [item.id, item]));
+
+  return minList.reduce<SummaryBenchmarkPoint[]>((acc, minItem) => {
+    const maxItem = maxById.get(minItem.id);
+    if (!maxItem) return acc;
+
+    acc.push({
+      id: minItem.id,
+      y: minItem.y,
+      min: minItem.value,
+      max: maxItem.value,
+      label: "",
+      floors: minItem.floors ?? maxItem.floors,
+      technology: minItem.technology ?? maxItem.technology,
+    });
+
+    return acc;
+  }, []);
+};
 
 export const stackData = <T extends IProject>(item: T[], data: IBenchmarkResponse) => {
   return (item || [])
@@ -29,7 +68,7 @@ export function recalculateY(points: {
   min: number, 
   max: number,
   id: string
-}[], xMin: number, xMax: number): any[] {
+}[], _xMin: number, _xMax: number): any[] {
   // Filtrar pontos que estão visíveis (com overlap no range)
   // const filtered = points.filter(p => {
   //   // Incluir pontos que têm qualquer overlap com o range visível

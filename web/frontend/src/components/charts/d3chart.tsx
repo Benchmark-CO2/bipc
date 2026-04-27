@@ -19,7 +19,7 @@ const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number,
 ): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout | null = null;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
   return (...args: Parameters<T>) => {
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
@@ -72,6 +72,7 @@ type D3GradientRangeChartProps = {
   totalProjects: number;
   minData: number[];
   maxData: number[];
+  hideBars?: boolean;
 };
 // Custom hooks
 const useChartDimensions = (
@@ -169,6 +170,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   totalProjects,
   minData,
   maxData,
+  hideBars = false,
   ...props
 }) => {
   const { isExpanded } = useSummary();
@@ -186,8 +188,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       technology?: string[];
     };
   } | null>(null);
-  const [brushSelectionCount, setBrushSelectionCount] = useState<number>(0);
-  const brushSelectionCountRef = useRef<number>(0);
+  const [, setBrushSelectionCount] = useState<number>(0);
   const [hasZoomed, setHasZoomed] = useState(false);
   const [zoomEnabled, setZoomEnabled] = useState(false);
   const transformRef = useRef({ k: 1, x: 0, y: 0 });
@@ -197,6 +198,10 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     null,
   );
   const [containerWidth, setContainerWidth] = useState(0);
+  const selectedBarIds = useMemo(
+    () => new Set((selectedBars || []).map((id) => String(id))),
+    [selectedBars],
+  );
 
   // Salvar o total na primeira montagem do gráfico
   useEffect(() => {
@@ -208,12 +213,10 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   // Inicializar o contador com o total de dados filtrados
   useEffect(() => {
     setBrushSelectionCount(data.length);
-    brushSelectionCountRef.current = data.length;
   }, [data.length]);
 
   // Função auxiliar para atualizar o contador
   const updateBrushCount = useCallback((count: number) => {
-    brushSelectionCountRef.current = count;
     setBrushSelectionCount(count);
   }, []);
 
@@ -303,7 +306,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         if (distEnd <= radius + 5) return d;
 
         // Check bar area (if expanded or selected)
-        if (isExpanded || selectedBars.includes(d.id)) {
+        if (isExpanded || selectedBarIds.has(String(d.id))) {
           const barHeight = isExpanded
             ? CHART_CONFIG.BAR_HEIGHT
             : CHART_CONFIG.MINIMAL_BAR_HEIGHT;
@@ -318,7 +321,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       }
       return null;
     },
-    [data, xScale, yScale, isExpanded, selectedBars],
+    [data, xScale, yScale, isExpanded, selectedBarIds],
   );
 
   // Event handlers
@@ -339,9 +342,9 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           value: {
             min: d.min,
             max: d.max,
-            label: selectedBars?.includes(d.id) ? d.label : undefined,
-            floors: selectedBars?.includes(d.id) ? d.floors : undefined,
-            technology: selectedBars?.includes(d.id) ? d.technology : undefined,
+            label: selectedBarIds.has(String(d.id)) ? d.label : undefined,
+            floors: selectedBarIds.has(String(d.id)) ? d.floors : undefined,
+            technology: selectedBarIds.has(String(d.id)) ? d.technology : undefined,
           },
         });
         if (canvasRef.current) {
@@ -354,7 +357,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         }
       }
     },
-    [getDataAtPosition, getTooltipPosition, selectedBars, margin, canvasRef],
+    [getDataAtPosition, getTooltipPosition, selectedBarIds, margin, canvasRef],
   );
 
   const handleCanvasMouseLeave = useCallback(() => {
@@ -470,7 +473,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       // Skip if outside visible area
       if (x2 < 0 || x1 > _width || y < 0 || y > _height) return;
 
-      const isSelected = selectedBars.includes(d.id);
+      const isSelected = selectedBarIds.has(String(d.id));
 
       // Only draw circles for non-selected items in first pass
       if (!isSelected) {
@@ -478,17 +481,14 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           ? CHART_CONFIG.CIRCLE_RADIUS.expanded
           : CHART_CONFIG.CIRCLE_RADIUS.normal;
         const strokeWidth = isExpanded ? (isMobile ? 1 : 2) : 0;
-        const startColor = hasActiveFilter
-          ? DEFAULT_COLORS.GRAY_START
-          : DEFAULT_COLORS.START;
-        const endColor = hasActiveFilter
-          ? DEFAULT_COLORS.GRAY_END
-          : DEFAULT_COLORS.END;
+        const useGray = hideBars && hasActiveFilter;
+        const circleOpacity = !hideBars && hasActiveFilter ? 0.35 : 1;
+        ctx.globalAlpha = circleOpacity;
 
         // Start circle
         ctx.beginPath();
         ctx.arc(x1, y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = startColor;
+        ctx.fillStyle = useGray ? DEFAULT_COLORS.GRAY_START : DEFAULT_COLORS.START;
         ctx.fill();
         if (strokeWidth > 0) {
           ctx.strokeStyle = "white";
@@ -499,13 +499,15 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         // End circle
         ctx.beginPath();
         ctx.arc(x2, y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = endColor;
+        ctx.fillStyle = useGray ? DEFAULT_COLORS.GRAY_END : DEFAULT_COLORS.END;
         ctx.fill();
         if (strokeWidth > 0) {
           ctx.strokeStyle = "white";
           ctx.lineWidth = isExpanded ? (isMobile ? 1 : 0.5) : 0;
           ctx.stroke();
         }
+
+        ctx.globalAlpha = 1;
       }
     });
 
@@ -518,10 +520,33 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       // Skip if outside visible area
       if (x2 < 0 || x1 > _width || y < 0 || y > _height) return;
 
-      const isSelected = selectedBars.includes(d.id);
+      const isSelected = selectedBarIds.has(String(d.id));
 
       // Draw circles only for selected items
       if (isSelected) {
+        const barHeight = isExpanded
+          ? CHART_CONFIG.BAR_HEIGHT
+          : CHART_CONFIG.MINIMAL_BAR_HEIGHT;
+        const barY = y - barHeight / 2;
+        const barWidth = Math.max(1, x2 - x1);
+
+        // Bar connecting min and max when selected (skip if hideBars)
+        if (!hideBars) {
+          const barGradient = ctx.createLinearGradient(x1, y, x2, y);
+          barGradient.addColorStop(0, DEFAULT_COLORS.GRADIENT_RANGE[1]);
+          barGradient.addColorStop(1, DEFAULT_COLORS.GRADIENT_RANGE[3]);
+          ctx.fillStyle = barGradient;
+          ctx.beginPath();
+          (ctx as any).roundRect(
+            x1,
+            barY,
+            barWidth,
+            barHeight,
+            isExpanded ? barHeight / 2 : 2,
+          );
+          ctx.fill();
+        }
+
         const radius = isExpanded
           ? CHART_CONFIG.CIRCLE_RADIUS.expanded
           : CHART_CONFIG.CIRCLE_RADIUS.normal;
@@ -629,7 +654,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     _width,
     _height,
     data,
-    selectedBars,
+    selectedBarIds,
     isExpanded,
     isMobile,
     maxValue,
@@ -660,7 +685,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     // Initial measurement
     setContainerWidth(containerRef.current.getBoundingClientRect().width);
 
-    let resizeTimer: NodeJS.Timeout;
+    let resizeTimer: ReturnType<typeof setTimeout>;
     const resizeObserver = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) {

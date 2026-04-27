@@ -5,11 +5,11 @@ import { cn } from "@/lib/utils";
 import * as d3 from "d3";
 import { regressionPoly } from "d3-regression";
 import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
 import Divider from "../ui/divider";
 
@@ -209,7 +209,10 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [isResized, setIsResized] = useState(0);
   const [containerWidth, setContainerWidth] = useState<number>(0);
-  const [containerHeight, setContainerHeight] = useState<number>(0);
+  const selectedBarIds = useMemo(
+    () => new Set((selectedBars || []).map((id) => String(id))),
+    [selectedBars],
+  );
   // const data = isMobile ? _data.map(el => ({ ...el, y: el.y * 10 })) : _data;
   const {
     width: _width,
@@ -396,7 +399,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   useEffect(() => {
     if (!svgRef.current?.parentElement) return;
 
-    let resizeTimer: NodeJS.Timeout;
+    let resizeTimer: ReturnType<typeof setTimeout>;
 
     const resizeObserver = new ResizeObserver(() => {
       // Clear previous timer
@@ -730,7 +733,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
     reversedData.forEach((d, i) => {
       const gradientId = `gradient-${i}`;
-      const isSelected = selectedBars.includes(d.id);
+      const isSelected = selectedBarIds.has(String(d.id));
 
       if (isSelected && !shouldHideBars) {
         {
@@ -886,7 +889,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       }
     });
   }, [
-    selectedBars,
+    selectedBarIds,
     isExpanded,
     reversedData,
     isResized,

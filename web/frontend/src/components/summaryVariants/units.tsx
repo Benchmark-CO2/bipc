@@ -11,7 +11,7 @@ import ItemCard from "./components/ItemCard";
 import Legend from "./components/Legend";
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
-import { barColors, recalculateY } from "./utils";
+import { barColors, normalizeBenchmarkSeries, recalculateY } from "./utils";
 
 type ProjectsSummaryProps = {
   selectedUnits: (any & {
@@ -23,14 +23,6 @@ type ProjectsSummaryProps = {
   units: any[];
   data: IBenchmarkResponse;
   someSelected: boolean;
-};
-
-const generateFakeData = (units: ProjectsSummaryProps["units"]) => {
-  if (!units.length) return [];
-  return units.map((el) => ({
-    ...el,
-    label: ``,
-  }));
 };
 
 const UnitsSummary = ({
@@ -45,14 +37,13 @@ const UnitsSummary = ({
   const { chartType, ChartSelector } = useChartType();
   const filteredUnits = units.filter((el) => !!el.consumptions);
 
-  const fakeUnits = generateFakeData(
-    data.benchmark?.[type as "co2" | "energy"] || [],
+  const fakeUnits = normalizeBenchmarkSeries(
+    data.benchmark?.[type as "co2" | "energy"],
   )
     .map((el) => ({
       ...el,
       label: selectedUnits.find((f) => f.id === el.id)?.name || "",
-    }))
-    .filter((f) => f.min && f.max);
+    }));
 
   const newItems = filteredUnits.map((el) => {
     return {
@@ -148,7 +139,7 @@ const UnitsSummary = ({
       },
       {} as Record<string, number>,
     );
-  }, [units, project, fakeUnits]);
+  }, [units, project, type]);
 
   const sum = (Object.values(avgByUnit) as Array<{ avg: number }>).reduce(
     (acc: number, b: { avg: number }) => acc + b.avg,
@@ -159,10 +150,12 @@ const UnitsSummary = ({
 
   const minData = useMemo(() => newDataItems.map((d) => d.min), [newDataItems]);
   const maxData = useMemo(() => newDataItems.map((d) => d.max), [newDataItems]);
+  const minValue = minData.length ? Math.min(...minData) : 0;
+  const maxValue = maxData.length ? Math.max(...maxData) : 0;
   const newData = recalculateY(
     newDataItems,
-    Math.min(...minData),
-    Math.max(...maxData),
+    minValue,
+    maxValue,
   );
 
   return (
@@ -190,7 +183,7 @@ const UnitsSummary = ({
 
       <div
         className={cn(
-          "w-full flex justify-between gap-4 max-md:flex-col max-md:flex-col 2xl:h-[85%] max-sm:h-max",
+          "w-full flex justify-between gap-4 max-md:flex-col 2xl:h-[85%] max-sm:h-max",
           {
             "flex flex-col h-full justify-between": isExpanded,
           },
@@ -290,7 +283,7 @@ const UnitsSummary = ({
             unit={unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""}
             minData={minData}
             maxData={maxData}
-            totalProjects={data?.benchmark[type].length || 0}
+            totalProjects={fakeUnits.length || newData.length}
           />
         ) : (
           <D3GradientRangeLineChart

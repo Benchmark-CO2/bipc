@@ -11,7 +11,7 @@ import ItemCard from "./components/ItemCard";
 import Legend from "./components/Legend";
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
-import { barColors, recalculateY } from "./utils";
+import { barColors, normalizeBenchmarkSeries, recalculateY } from "./utils";
 
 type ProjectsSummaryProps = {
   projects: any[];
@@ -19,13 +19,6 @@ type ProjectsSummaryProps = {
   someSelected: boolean;
 };
 
-const manageData = (data: ProjectsSummaryProps["data"]["benchmark"]["co2"]) => {
-  if (!data) return [];
-  return data.map((el) => ({
-    ...el,
-    label: "",
-  }));
-};
 const ProjectsSummary = ({
   projects,
   data,
@@ -35,12 +28,13 @@ const ProjectsSummary = ({
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
   const filterProjects = projects.filter((el) => !!el.consumption);
-  const managedData = manageData(data.benchmark?.[type as "co2" | "energy"])
+  const managedData = normalizeBenchmarkSeries(
+    data.benchmark?.[type as "co2" | "energy"],
+  )
     .map((el) => ({
       ...el,
       label: projects.find((f) => f.id === el.id)?.name || "",
-    }))
-    .filter((f) => f.min && f.max);
+    }));
 
   const newItems = filterProjects
     .filter((el) => !!el.consumption)
@@ -127,10 +121,12 @@ const ProjectsSummary = ({
 
   const minData = useMemo(() => newDataItems.map((d) => d.min), [newDataItems]);
   const maxData = useMemo(() => newDataItems.map((d) => d.max), [newDataItems]);
+  const minValue = minData.length ? Math.min(...minData) : 0;
+  const maxValue = maxData.length ? Math.max(...maxData) : 0;
   const newData = recalculateY(
     newDataItems,
-    Math.min(...minData),
-    Math.max(...maxData),
+    minValue,
+    maxValue,
   );
 
   return (
@@ -182,7 +178,7 @@ const ProjectsSummary = ({
                 className="bg-transparent border-0 shadow-none"
               />
             )}
-            {(stackedData || []).map((project, idx) => {
+            {(stackedData || []).map((project) => {
               if (!project) return null;
               return isExpanded ? (
                 <ItemCard
@@ -222,7 +218,7 @@ const ProjectsSummary = ({
             data={newData}
             selectedBars={selectedProjects}
             unit={unitsOfMeasure[type] || ""}
-            totalProjects={data?.benchmark[type].length || 0}
+            totalProjects={managedData.length || newData.length}
             minData={minData}
             maxData={maxData}
           />
