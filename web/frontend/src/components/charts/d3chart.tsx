@@ -761,47 +761,63 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       }
     });
 
-    // PROCEL color scale on the right side
+    // PROCEL color scale on the right side — zoom-aware
     if (showProcelScale && !isMobile) {
       const barX = _width;
       const barWidth = PROCEL_SCALE_CONFIG.WIDTH;
-      const bandHeight = _height / PROCEL_CLASSES.length;
 
       ctx.save();
+      // Clip to chart height so bands don't overflow vertically
+      ctx.beginPath();
+      ctx.rect(barX, 0, barWidth + PROCEL_SCALE_CONFIG.TICK_SIZE + 30, _height);
+      ctx.clip();
 
-      // Draw from top (D = less efficient) to bottom (A = more efficient)
+      // Each class covers 25% of the domain [0,1]:
+      // D=[0.75,1.0], C=[0.50,0.75], B=[0.25,0.50], A=[0.00,0.25]
       const reversed = [...PROCEL_CLASSES].reverse();
       reversed.forEach((cls, i) => {
-        const bandY = i * bandHeight;
+        const domainTop = 1.0 - i * 0.25;
+        const domainBottom = 1.0 - (i + 1) * 0.25;
+        const bandTop = Math.max(0, newYScale(domainTop));
+        const bandBottom = Math.min(_height, newYScale(domainBottom));
+        if (bandBottom <= bandTop) return; // band outside view
+
         ctx.fillStyle = cls.color;
-        ctx.fillRect(barX, bandY, barWidth, Math.ceil(bandHeight));
+        ctx.fillRect(barX, bandTop, barWidth, Math.ceil(bandBottom - bandTop));
         ctx.strokeStyle = "rgba(255,255,255,0.75)";
         ctx.lineWidth = 1;
-        ctx.strokeRect(barX, bandY, barWidth, Math.ceil(bandHeight));
+        ctx.strokeRect(barX, bandTop, barWidth, Math.ceil(bandBottom - bandTop));
 
-        // Class label centered in the band
+        // Class label centered in the visible portion of the band
         ctx.fillStyle = "#111827";
         ctx.font = "bold 10px sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(cls.label, barX + barWidth / 2, bandY + bandHeight / 2);
+        ctx.fillText(cls.label, barX + barWidth / 2, (bandTop + bandBottom) / 2);
       });
 
-      // Percentage ticks at boundaries (100, 75, 50, 25, 0)
-      const pctLabels = [100, 75, 50, 25, 0];
+      // Percentage ticks at domain boundaries (100%=1.0, 75%=0.75, …, 0%=0.0)
+      const pctBoundaries = [
+        { pct: 100, domainVal: 1.0 },
+        { pct: 75, domainVal: 0.75 },
+        { pct: 50, domainVal: 0.5 },
+        { pct: 25, domainVal: 0.25 },
+        { pct: 0, domainVal: 0.0 },
+      ];
       ctx.font = "10px sans-serif";
       ctx.textAlign = "left";
       ctx.fillStyle = DEFAULT_COLORS.TEXT;
-      pctLabels.forEach((pct, idx) => {
-        const y = (_height * idx) / (pctLabels.length - 1);
-        const yText = idx === 0 ? y + 1 : idx === pctLabels.length - 1 ? y - 1 : y;
+      pctBoundaries.forEach(({ pct, domainVal }, idx) => {
+        const y = newYScale(domainVal);
+        if (y < 0 || y > _height) return; // outside view
+        const yText = idx === 0 ? y + 1 : idx === pctBoundaries.length - 1 ? y - 1 : y;
         ctx.beginPath();
         ctx.moveTo(barX + barWidth, y);
         ctx.lineTo(barX + barWidth + PROCEL_SCALE_CONFIG.TICK_SIZE, y);
         ctx.strokeStyle = DEFAULT_COLORS.TEXT;
         ctx.lineWidth = 1;
         ctx.stroke();
-        ctx.textBaseline = idx === 0 ? "top" : idx === pctLabels.length - 1 ? "bottom" : "middle";
+        ctx.textBaseline = idx === 0 ? "top" : idx === pctBoundaries.length - 1 ? "bottom" : "middle";
         ctx.fillText(`${pct}%`, barX + barWidth + PROCEL_SCALE_CONFIG.TICK_SIZE + 3, yText);
       });
 
