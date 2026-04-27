@@ -1,7 +1,8 @@
 import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
+import { IBenchmarkSeries } from "@/actions/benchmarks/types";
 import Logo from "@/assets/logo_full.svg";
 import D3GradientRangeChart from "@/components/charts/d3chart";
-import D3GradientRangeLineChart from "@/components/charts/d3chartLine";
+import D3GradientRangeLineChart, { SeriesPoint } from "@/components/charts/d3chartLine";
 import {
   Select,
   SelectContent,
@@ -11,13 +12,53 @@ import {
 } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { useBenchmarkFilters } from "@/hooks/useBenchmarkFilters";
 import { useIsMobile } from "@/hooks/useIsMobile";
+
+type BenchmarkPoint = {
+  id: string;
+  y: number;
+  min: number;
+  max: number;
+  label: string;
+  floors?: string | number;
+  technology?: string[];
+};
+
+// Para o scatter chart: join min+max pelo mesmo id (projetos que aparecem nos dois)
+const normalizeBenchmarkSeries = (series?: IBenchmarkSeries): BenchmarkPoint[] => {
+  if (!series) return [];
+
+  const minList = series.min || [];
+  const maxById = new Map((series.max || []).map((item) => [item.id, item]));
+
+  return minList.reduce<BenchmarkPoint[]>((acc, minItem) => {
+      const maxItem = maxById.get(minItem.id);
+      if (!maxItem) return acc;
+
+      acc.push({
+        id: minItem.id,
+        y: minItem.y,
+        min: minItem.value,
+        max: maxItem.value,
+        label: "",
+        floors: minItem.floors ?? maxItem.floors,
+        technology: minItem.technology ?? maxItem.technology,
+      });
+
+      return acc;
+    }, []);
+};
+
+// Para o line chart: cada série é independente, sem join por id
+const toSeriesPoints = (arr?: IBenchmarkSeries["min"]): SeriesPoint[] =>
+  (arr || []).map((p) => ({ id: p.id, y: p.y, value: p.value }));
+
 export const Route = createFileRoute("/(public)/benchmark")({
   component: RouteComponent,
-  loader: ({ context }) => {
+  loader: ({ context }: { context: any }) => {
     return {
       auth: context.auth,
     };
@@ -26,21 +67,88 @@ export const Route = createFileRoute("/(public)/benchmark")({
 
 function RouteComponent() {
   const { FilterSection, activeBuildFilter, type } = useBenchmarkFilters();
-  const { data } = useQuery({
+  const { data: filteredResponse } = useQuery({
     queryKey: ["units-benchmarks", JSON.stringify(activeBuildFilter)],
     queryFn: () =>
       getProjectsBenchmark({
-        technology: activeBuildFilter.technology,
-        floors: activeBuildFilter.floors.get(),
+        technology:
+          activeBuildFilter.technology.length > 0
+            ? activeBuildFilter.technology
+            : undefined,
+        floors: activeBuildFilter.floors.get() || undefined,
       }),
   });
-  const isMobile = useIsMobile();
 
-  const chartData =
-    data?.data?.benchmark?.[type]?.map((f) => ({
-      ...f,
-      label: "",
-    })) || [];
+  const { data: baseResponse, isLoading: isBaseLoading } = useQuery({
+    queryKey: ["units-benchmarks-base"],
+    queryFn: () => getProjectsBenchmark({}),
+  });
+
+  const isMobile = useIsMobile();
+  const hasActiveFilter =
+    activeBuildFilter.technology.length > 0 || !!activeBuildFilter.floors.get();
+
+  const baseChartData: BenchmarkPoint[] = normalizeBenchmarkSeries(
+    baseResponse?.data?.benchmark?.[type],
+  );
+
+  const filteredChartData: BenchmarkPoint[] = normalizeBenchmarkSeries(
+    filteredResponse?.data?.benchmark?.[type],
+  );
+
+  const chartData = useMemo(() => {
+    const merged = new Map(baseChartData.map((item) => [item.id, item]));
+
+    filteredChartData.forEach((item) => {
+      const baseItem = merged.get(item.id);
+
+      if (baseItem) {
+        // Keep baseline y to preserve visual ordering and only update range values.
+        merged.set(item.id, {
+          ...baseItem,
+          min: item.min,
+          max: item.max,
+          floors: item.floors,
+          technology: item.technology,
+        });
+        return;
+      }
+
+      merged.set(item.id, item);
+    });
+
+    return Array.from(merged.values());
+  }, [baseChartData, filteredChartData]);
+
+  // Line chart: séries independentes sem join por id
+  const baseMinSeries = useMemo(
+    () => toSeriesPoints(baseResponse?.data?.benchmark?.[type]?.min),
+    [baseResponse, type],
+  );
+  const baseMaxSeries = useMemo(
+    () => toSeriesPoints(baseResponse?.data?.benchmark?.[type]?.max),
+    [baseResponse, type],
+  );
+  const filteredMinSeries = useMemo(
+    () => toSeriesPoints(filteredResponse?.data?.benchmark?.[type]?.min),
+    [filteredResponse, type],
+  );
+  const filteredMaxSeries = useMemo(
+    () => toSeriesPoints(filteredResponse?.data?.benchmark?.[type]?.max),
+    [filteredResponse, type],
+  );
+
+  const lineMinSeries = hasActiveFilter ? filteredMinSeries : baseMinSeries;
+  const lineMaxSeries = hasActiveFilter ? filteredMaxSeries : baseMaxSeries;
+
+  const selectedFilteredIds = useMemo(
+    () =>
+      hasActiveFilter
+        ? [...filteredMinSeries.map((d) => d.id), ...filteredMaxSeries.map((d) => d.id)]
+        : [],
+    [hasActiveFilter, filteredMinSeries, filteredMaxSeries],
+  );
+
   const width = (window.innerWidth - 421) * 0.5;
   const height = window.innerHeight * 0.5;
   const [selectedChart, setSelectedChart] = useState("co2");
@@ -76,10 +184,16 @@ function RouteComponent() {
               </div>
             </div>
             <div className="w-full">
-              {selectedChart === "trend" ? (
+              {isBaseLoading ? (
+                <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
+                  Carregando dados...
+                </div>
+              ) : selectedChart === "trend" ? (
                 <D3GradientRangeLineChart
-                  data={chartData}
-                  unit={type === "co2" ? "kgCO₂/m²" : "MJ/m²"}
+                  minSeriesData={lineMinSeries}
+                  maxSeriesData={lineMaxSeries}
+                  selectedBars={selectedFilteredIds}
+                  unit={type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
                   summary={false}
                 />
               ) : (
@@ -87,11 +201,12 @@ function RouteComponent() {
                   width={width}
                   height={height}
                   data={chartData}
+                  selectedBars={selectedFilteredIds}
                   overrideDimensions={!isMobile}
                   minData={minData}
                   maxData={maxData}
-                  totalProjects={chartData.length}
-                  unit={type === "co2" ? "kgCO₂/m²" : "MJ/m²"}
+                  totalProjects={baseChartData.length || chartData.length}
+                  unit={type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
                 />
               )}
             </div>

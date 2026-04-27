@@ -7,11 +7,11 @@ export const stackData = <T extends IProject>(item: T[], data: IBenchmarkRespons
       const project = item.find((p) => p.id === id);
       if (!project) return null;
       
-      const co2Item = data.benchmark.co2.find((b) => b.id === id);
-      const energyItem = data.benchmark.energy.find((b) => b.id === id);
+      const co2Item = data.benchmark.co2.min.find((b) => b.id === id);
+      const energyItem = data.benchmark.energy.min.find((b) => b.id === id);
 
-      const co2 = co2Item ? (co2Item.min + co2Item.max) / 2 : 0;
-      const energy = energyItem ? (energyItem.min + energyItem.max) / 2 : 0;
+      const co2 = co2Item ? co2Item.value : 0;
+      const energy = energyItem ? energyItem.value : 0;
 
       return {
         id,
