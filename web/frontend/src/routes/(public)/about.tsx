@@ -237,7 +237,7 @@ const TopSection = () => {
         <div className="w-full flex flex-col gap-4 md:gap-6 text-sm md:text-base">
           <p>
             Em contraposição à matriz elétrica brasileira, uma das mais limpas
-            do mundo, a nossa construção civil é uma importante emissora de CO2,
+            do mundo, a nossa construção civil é uma importante emissora de CO₂,
             representando uma oportunidade de mitigação.
           </p>
           <p>
@@ -251,7 +251,7 @@ const TopSection = () => {
           <p>
             Por esse motivo foi desenvolvido o Benchmark Iterativo para Projetos
             de baixo Carbono: a plataforma BIPc – onde é possível estimar o
-            consumo de materiais e a pegada de CO2 embutido nas moradias, de
+            consumo de materiais e a pegada de CO₂ embutido nas moradias, de
             forma prática, inteligente e escalável. Projetistas e construtoras
             podem comparar o desempenho estimado de seu projeto com o de outros
             projetos já executados.

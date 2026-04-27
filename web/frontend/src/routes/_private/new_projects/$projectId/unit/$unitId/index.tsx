@@ -11,6 +11,12 @@ import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
 import { FilterTabs } from "@/components/ui/filter-tabs";
 import NotFoundList from "@/components/ui/not-found-list";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useSummary } from "@/context/summaryContext";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { TRoleConsumptions } from "@/types/disciplines";
@@ -110,13 +116,13 @@ function RouteComponent() {
   const navigate = Route.useNavigate();
   const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
   const [selectedTab, setSelectedTab] = useState<string>(
-    "Todas as Disciplinas",
+    "Todas as disciplinas",
   );
 
   const getFilteredConsumptions = () => {
     if (!roles || roles.length === 0) return [];
 
-    if (selectedTab === "Todas as Disciplinas") {
+    if (selectedTab === "Todas as disciplinas") {
       // Coletar todos os tipos únicos de todos os roles
       const allTypes = new Set<string>();
       roles.forEach((role) => {
@@ -338,7 +344,7 @@ function RouteComponent() {
 
   const onSelectedTabChange = (tab: string) => {
     let dcpId = "";
-    if (tab === "Todas as Disciplinas") {
+    if (tab === "Todas as disciplinas") {
       dcpId = roles?.find((role) => role.is_protected)?.id || "";
     } else {
       const selectedRole = roles?.find((role) => role.name === tab);
@@ -353,11 +359,36 @@ function RouteComponent() {
   };
 
   if (isLoading) {
-    return <div>Carregando unidade...</div>;
+    return (
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
   }
 
   if (!unit) {
-    return <div>Unidade não encontrada</div>;
+    return (
+      <NotFoundList
+        message="Unidade não encontrada"
+        description="Não foi possível encontrar a unidade solicitada. Ela pode ter sido removida ou o link está incorreto."
+        button={
+          <Button
+            variant="bipc"
+            onClick={() =>
+              navigate({
+                to: "/new_projects/$projectId",
+                params: { projectId },
+              })
+            }
+          >
+            Voltar ao empreendimento
+          </Button>
+        }
+      />
+    );
   }
 
   const handleClickConstructiveTechnologies = async () => {
@@ -393,7 +424,7 @@ function RouteComponent() {
             Simulações
             <div className="flex items-center gap-2 mt-4">
               <FilterTabs
-                tabs={["Todas as Disciplinas"]}
+                tabs={["Todas as disciplinas"]}
                 selectedTab={selectedTab}
                 onTabSelect={(tab) => onSelectedTabChange(tab)}
                 subTabs={roleTabs}
@@ -418,15 +449,26 @@ function RouteComponent() {
                 />
               )}
               {(hasPermission("*:*") || selectedRole?.is_member) && (
-                <Button
-                  variant="bipc"
-                  size="lg"
-                  onClick={handleClickConstructiveTechnologies}
-                  disabled={selectedTab === "Todas as Disciplinas"}
-                >
-                  <GraphIcon />
-                  Criar simulações
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button
+                        variant="bipc"
+                        size="lg"
+                        onClick={handleClickConstructiveTechnologies}
+                        disabled={selectedTab === "Todas as disciplinas"}
+                      >
+                        <GraphIcon />
+                        Criar simulações
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {selectedTab === "Todas as disciplinas" && (
+                    <TooltipContent>
+                      Selecione uma disciplina para criar simulações
+                    </TooltipContent>
+                  )}
+                </Tooltip>
               )}
             </div>
           </div>
@@ -465,13 +507,13 @@ function RouteComponent() {
           ) : filteredConsumptions.length === 0 ? (
             <NotFoundList
               message={
-                selectedTab === "Todas as Disciplinas"
+                selectedTab === "Todas as disciplinas"
                   ? "Sem simulações para exibir no momento"
                   : "Crie sua primeira simulação"
               }
               showIcon={false}
               description={
-                selectedTab === "Todas as Disciplinas"
+                selectedTab === "Todas as disciplinas"
                   ? `As tecnologias construtivas de todas as disciplinas serão exibidas aqui após a inserção de dados às simulações.`
                   : `Clique no botão "Criar simulações" e adicione os dados do projeto.`
               }

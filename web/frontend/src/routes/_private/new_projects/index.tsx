@@ -132,7 +132,7 @@ function RouteComponent() {
   return (
     <div>
       <div className="mb-6 mt-6 flex justify-between gap-1 flex-wrap">
-        <h1 className="text-4xl font-semibold text-primary dark:text-accent-foreground">
+        <h1 className="text-h1 text-primary dark:text-accent-foreground">
           Empreendimentos
         </h1>
         <div className="flex justify-end gap-2 ml-auto">
@@ -143,18 +143,15 @@ function RouteComponent() {
                 onClick={handleSelectAll}
                 className="min-w-[140px]"
               >
-                {allSelected ? "Desmarcar Todos" : "Selecionar Todos"} (
-                {projects.length})
+                {allSelected ? "Desmarcar Todos" : "Selecionar Todos"}
               </Button>
             </>
           )}
-          {projects?.length > 0 && (
-            <DrawerFormProject
-              componentTrigger={
-                <Button variant={"bipc"}>{t("projects.addProject")}</Button>
-              }
-            />
-          )}
+          <DrawerFormProject
+            componentTrigger={
+              <Button variant={"bipc"}>{t("projects.addProject")}</Button>
+            }
+          />
         </div>
       </div>
       {viewMode === "table" ? (

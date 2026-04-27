@@ -14,7 +14,7 @@ import React, {
 import Divider from "../ui/divider";
 
 const UNIT_LABELS = {
-  co2: "Emissão de CO2 (Kg/m²)",
+  co2: "Emissão de CO₂ (kg CO₂/m²)",
   energy: "Demanda de energia primária (MJ/m²)",
 } as const;
 
@@ -904,11 +904,6 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
   return (
     <Card className={cn("shadow-none w-min-content min-w-1/2")}>
-      {/* <CardHeader>
-        <CardTitle className="block w-full text-center">
-          Cumulative x KgCO2/m2
-        </CardTitle>
-      </CardHeader> */}
       <CardContent>
         <div className="w-full relative">
           <span className="absolute text-xs w-full text-center text-black/70 block rotate-270  left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
