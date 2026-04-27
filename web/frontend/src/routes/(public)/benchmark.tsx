@@ -15,7 +15,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import { useBenchmarkFilters } from "@/hooks/useBenchmarkFilters";
-import { useIsMobile } from "@/hooks/useIsMobile";
 
 type BenchmarkPoint = {
   id: string;
@@ -84,7 +83,6 @@ function RouteComponent() {
     queryFn: () => getProjectsBenchmark({}),
   });
 
-  const isMobile = useIsMobile();
   const hasActiveFilter =
     activeBuildFilter.technology.length > 0 || !!activeBuildFilter.floors.get();
 
@@ -149,8 +147,6 @@ function RouteComponent() {
     [hasActiveFilter, filteredMinSeries, filteredMaxSeries],
   );
 
-  const width = (window.innerWidth - 421) * 0.5;
-  const height = window.innerHeight * 0.5;
   const [selectedChart, setSelectedChart] = useState("co2");
 
   const maxData = chartData.map((d) => (d.max !== undefined ? d.max : 0));
@@ -198,11 +194,9 @@ function RouteComponent() {
                 />
               ) : (
                 <D3GradientRangeChart
-                  width={width}
-                  height={height}
+                  height={Math.round(window.innerHeight * 0.6)}
                   data={chartData}
                   selectedBars={selectedFilteredIds}
-                  overrideDimensions={!isMobile}
                   minData={minData}
                   maxData={maxData}
                   totalProjects={baseChartData.length || chartData.length}

@@ -163,10 +163,10 @@ const ProjectsSummary = ({
           {ChartSelector}
           <ul
             className={cn(
-              "flex flex-col gap-2 text-xl w-full text-black h-full",
+              "flex flex-col gap-2 text-xl w-full text-black flex-1 min-h-0",
               {
                 "flex-row gap-2 flex-wrap": isExpanded,
-                "max-h-[280px] overflow-y-auto xl:max-h-[200px] 2xl:max-h-[420px]":
+                "overflow-y-auto max-h-[180px] xl:max-h-[150px] 2xl:max-h-[320px]":
                   !isExpanded,
               },
             )}

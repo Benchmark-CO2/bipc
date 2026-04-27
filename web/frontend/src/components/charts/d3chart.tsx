@@ -9,6 +9,7 @@ import { Search, SearchX } from "lucide-react";
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -89,6 +90,10 @@ type D3GradientRangeChartProps = {
   showProcelScale?: boolean;
   showBaseline?: boolean;
   showTop5Line?: boolean;
+  /** Which field to use for the PPp line: "min" or "max". Default: "max" */
+  top5Field?: "min" | "max";
+  /** Percentile threshold for the PPp line (0–1). Default: 0.05 */
+  top5Percentile?: number;
 };
 // Custom hooks
 const useChartDimensions = (
@@ -123,11 +128,11 @@ const useChartDimensions = (
     };
 
     const height = () => {
-      if (props.height && overrideDimensions) return props.height;
+      if (props.height) return props.height;
       if (isMobile && !isExpanded) return 250;
       if (isMobile && isExpanded) return 320;
       if (isExpanded) return window.innerHeight * 0.96 - 130;
-      return window.innerHeight * 0.7 - 340;
+      return Math.min(420, Math.max(300, window.innerHeight * 0.45));
     };
 
     const _width = width();
@@ -195,6 +200,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   showProcelScale = false,
   showBaseline = false,
   showTop5Line = false,
+  top5Field = "max",
+  top5Percentile = 0.05,
   ...props
 }) => {
   const { isExpanded } = useSummary();
@@ -222,6 +229,13 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     null,
   );
   const [containerWidth, setContainerWidth] = useState(0);
+
+  // Measure container immediately before first paint so PROCEL scale renders correctly
+  useLayoutEffect(() => {
+    if (containerRef.current) {
+      setContainerWidth(containerRef.current.getBoundingClientRect().width);
+    }
+  }, []);
   const selectedBarIds = useMemo(
     () => new Set((selectedBars || []).map((id) => String(id))),
     [selectedBars],
@@ -489,55 +503,23 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       }
     });
 
-    // Baseline at y=0.5 (50% split)
+    // Baseline — computed here, drawn after points
+    let baselineY: number | null = null;
     if (showBaseline) {
-      const baselineY = newYScale(0.5);
-      if (baselineY >= 0 && baselineY <= _height) {
-        ctx.save();
-        ctx.strokeStyle = "#64748b";
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([6, 4]);
-        ctx.beginPath();
-        ctx.moveTo(0, baselineY);
-        ctx.lineTo(_width, baselineY);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        // Label
-        ctx.font = "11px sans-serif";
-        ctx.fillStyle = "#64748b";
-        ctx.textAlign = "left";
-        ctx.textBaseline = "bottom";
-        ctx.fillText("linha de base", 4, baselineY - 3);
-        ctx.restore();
-      }
+      const by = newYScale(0.5);
+      if (by >= 0 && by <= _height) baselineY = by;
     }
 
-    // Vertical line at top 5% of best projects (5th percentile of min values)
-    // Compute p5Value for reuse in arrow drawing
+    // Vertical line at top 5% of best projects — computed here, drawn after points
     let p5LineX: number | null = null;
+    let p5LineInView = false;
     if (showTop5Line && data.length > 0) {
-      const sorted = [...data].map((d) => d.min).sort((a, b) => a - b);
-      const idx = Math.floor(sorted.length * 0.05);
+      const sorted = [...data].map((d) => d[top5Field]).sort((a, b) => a - b);
+      const idx = Math.floor(sorted.length * top5Percentile);
       const p5Value = sorted[Math.min(idx, sorted.length - 1)];
       const lineX = newXScale(p5Value);
       p5LineX = lineX;
-      if (lineX >= 0 && lineX <= _width) {
-        ctx.save();
-        ctx.strokeStyle = "#00A650";
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([6, 4]);
-        ctx.beginPath();
-        ctx.moveTo(lineX, 0);
-        ctx.lineTo(lineX, _height);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.font = "11px sans-serif";
-        ctx.fillStyle = "#00A650";
-        ctx.textAlign = "left";
-        ctx.textBaseline = "top";
-        ctx.fillText("PPp 5%", lineX + 4, 4);
-        ctx.restore();
-      }
+      p5LineInView = lineX >= 0 && lineX <= _width;
     }
 
     // First pass: Draw circles for non-selected items
@@ -697,6 +679,44 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         }
       }
     });
+
+    // Draw baseline on top of all points
+    if (baselineY !== null) {
+      ctx.save();
+      ctx.strokeStyle = "#64748b";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(0, baselineY);
+      ctx.lineTo(_width, baselineY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = "11px sans-serif";
+      ctx.fillStyle = "#64748b";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "bottom";
+      ctx.fillText("linha de base", 4, baselineY - 3);
+      ctx.restore();
+    }
+
+    // Draw PPp 5% line on top of all points
+    if (p5LineX !== null && p5LineInView) {
+      ctx.save();
+      ctx.strokeStyle = "#00A650";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(p5LineX, 0);
+      ctx.lineTo(p5LineX, _height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = "11px sans-serif";
+      ctx.fillStyle = "#00A650";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      ctx.fillText("PPp 5%", p5LineX + 4, 4);
+      ctx.restore();
+    }
 
     // Restore clipping region
     ctx.restore();
