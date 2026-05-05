@@ -145,6 +145,8 @@ func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Reque
 			app.badRequestResponse(w, r, err)
 		case errors.Is(err, data.ErrZeroArea):
 			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.badRequestResponse(w, r, errors.New("one or more floors do not exist"))
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
