@@ -18,6 +18,8 @@ import { useBenchmarkFilters } from "@/hooks/useBenchmarkFilters";
 
 type BenchmarkPoint = {
   id: string;
+  minId: string;
+  maxId: string;
   y: number;
   min: number;
   max: number;
@@ -26,29 +28,32 @@ type BenchmarkPoint = {
   technology?: string[];
 };
 
-// Para o scatter chart: join min+max pelo mesmo id (projetos que aparecem nos dois)
+// Para o scatter chart: ordenar por y e parear min+max pela ordem
 const normalizeBenchmarkSeries = (series?: IBenchmarkSeries): BenchmarkPoint[] => {
   if (!series) return [];
 
-  const minList = series.min || [];
-  const maxById = new Map((series.max || []).map((item) => [item.id, item]));
+  const sortByY = (a: IBenchmarkSeries["min"][number], b: IBenchmarkSeries["min"][number]) =>
+    a.y - b.y;
+  const minList = [...(series.min || [])].sort(sortByY);
+  const maxList = [...(series.max || [])].sort(sortByY);
+  const pairCount = Math.min(minList.length, maxList.length);
 
-  return minList.reduce<BenchmarkPoint[]>((acc, minItem) => {
-      const maxItem = maxById.get(minItem.id);
-      if (!maxItem) return acc;
+  return Array.from({ length: pairCount }, (_, index) => {
+    const minItem = minList[index];
+    const maxItem = maxList[index];
 
-      acc.push({
-        id: minItem.id,
-        y: minItem.y,
-        min: minItem.value,
-        max: maxItem.value,
-        label: "",
-        floors: minItem.floors ?? maxItem.floors,
-        technology: minItem.technology ?? maxItem.technology,
-      });
-
-      return acc;
-    }, []);
+    return {
+      id: minItem.id,
+      minId: minItem.id,
+      maxId: maxItem.id,
+      y: minItem.y,
+      min: minItem.value,
+      max: maxItem.value,
+      label: "",
+      floors: minItem.floors ?? maxItem.floors,
+      technology: minItem.technology ?? maxItem.technology,
+    };
+  });
 };
 
 // Para o line chart: cada série é independente, sem join por id
@@ -94,29 +99,10 @@ function RouteComponent() {
     filteredResponse?.data?.benchmark?.[type],
   );
 
-  const chartData = useMemo(() => {
-    const merged = new Map(baseChartData.map((item) => [item.id, item]));
-
-    filteredChartData.forEach((item) => {
-      const baseItem = merged.get(item.id);
-
-      if (baseItem) {
-        // Keep baseline y to preserve visual ordering and only update range values.
-        merged.set(item.id, {
-          ...baseItem,
-          min: item.min,
-          max: item.max,
-          floors: item.floors,
-          technology: item.technology,
-        });
-        return;
-      }
-
-      merged.set(item.id, item);
-    });
-
-    return Array.from(merged.values());
-  }, [baseChartData, filteredChartData]);
+  const chartData = useMemo(
+    () => (baseChartData.length > 0 ? baseChartData : filteredChartData),
+    [baseChartData, filteredChartData],
+  );
 
   // Line chart: séries independentes sem join por id
   const baseMinSeries = useMemo(
@@ -138,13 +124,18 @@ function RouteComponent() {
 
   const lineMinSeries = hasActiveFilter ? filteredMinSeries : baseMinSeries;
   const lineMaxSeries = hasActiveFilter ? filteredMaxSeries : baseMaxSeries;
+  const selectedFilteredMinIds = useMemo(
+    () => (hasActiveFilter ? filteredMinSeries.map((d) => d.id) : []),
+    [hasActiveFilter, filteredMinSeries],
+  );
+  const selectedFilteredMaxIds = useMemo(
+    () => (hasActiveFilter ? filteredMaxSeries.map((d) => d.id) : []),
+    [hasActiveFilter, filteredMaxSeries],
+  );
 
   const selectedFilteredIds = useMemo(
-    () =>
-      hasActiveFilter
-        ? [...filteredMinSeries.map((d) => d.id), ...filteredMaxSeries.map((d) => d.id)]
-        : [],
-    [hasActiveFilter, filteredMinSeries, filteredMaxSeries],
+    () => (hasActiveFilter ? selectedFilteredMinIds : []),
+    [hasActiveFilter, selectedFilteredMinIds],
   );
 
   const [selectedChart, setSelectedChart] = useState("co2");
@@ -197,6 +188,8 @@ function RouteComponent() {
                   height={Math.round(window.innerHeight * 0.6)}
                   data={chartData}
                   selectedBars={selectedFilteredIds}
+                  selectedMinBars={selectedFilteredMinIds}
+                  selectedMaxBars={selectedFilteredMaxIds}
                   minData={minData}
                   maxData={maxData}
                   totalProjects={baseChartData.length || chartData.length}

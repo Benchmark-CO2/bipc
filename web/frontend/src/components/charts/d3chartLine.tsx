@@ -179,26 +179,26 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   summary = true,
   ...props
 }) => {
-  // Se vieram séries separadas, faz o join por id para montar ChartData
+  // Se vieram séries separadas, ordena por y e faz pareamento por ordem (índice)
   const data = useMemo<ChartData[]>(() => {
     if (!minSeriesData && !maxSeriesData) return _data;
-    const minById = new Map((minSeriesData ?? []).map((p) => [p.id, p]));
-    const maxById = new Map((maxSeriesData ?? []).map((p) => [p.id, p]));
-    const ids = new Set([...minById.keys(), ...maxById.keys()]);
-    const merged: ChartData[] = [];
-    ids.forEach((id) => {
-      const minP = minById.get(id);
-      const maxP = maxById.get(id);
-      if (!minP || !maxP) return;
-      merged.push({
-        id,
+    const sortByY = (a: SeriesPoint, b: SeriesPoint) => a.y - b.y;
+    const orderedMin = [...(minSeriesData ?? [])].sort(sortByY);
+    const orderedMax = [...(maxSeriesData ?? [])].sort(sortByY);
+    const pairCount = Math.min(orderedMin.length, orderedMax.length);
+
+    return Array.from({ length: pairCount }, (_, index) => {
+      const minP = orderedMin[index];
+      const maxP = orderedMax[index];
+
+      return {
+        id: minP.id,
         y: minP.y,
         min: minP.value,
         max: maxP.value,
         label: minP.label ?? maxP.label ?? "",
-      });
+      };
     });
-    return merged;
   }, [_data, minSeriesData, maxSeriesData]);
 
   // Quando as séries vêm separadas, não faz sentido exibir as barras de ligação
@@ -230,9 +230,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
   // Data transformations
   const reversedData = useMemo(
-    () =>
-      data?.map((f) => ({ ...f, y: 1 - f.y })).sort((a, b) => a.min - b.min) ||
-      [],
+    () => data?.map((f) => ({ ...f, y: 1 - f.y })) || [],
     [data],
   );
 

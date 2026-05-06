@@ -19,14 +19,17 @@ export const normalizeBenchmarkSeries = (
 ): SummaryBenchmarkPoint[] => {
   if (!series) return [];
 
-  const minList = series.min || [];
-  const maxById = new Map((series.max || []).map((item) => [item.id, item]));
+  const sortByY = (a: IBenchmarkSeries["min"][number], b: IBenchmarkSeries["min"][number]) =>
+    a.y - b.y;
+  const minList = [...(series.min || [])].sort(sortByY);
+  const maxList = [...(series.max || [])].sort(sortByY);
+  const pairCount = Math.min(minList.length, maxList.length);
 
-  return minList.reduce<SummaryBenchmarkPoint[]>((acc, minItem) => {
-    const maxItem = maxById.get(minItem.id);
-    if (!maxItem) return acc;
+  return Array.from({ length: pairCount }, (_, index) => {
+    const minItem = minList[index];
+    const maxItem = maxList[index];
 
-    acc.push({
+    return {
       id: minItem.id,
       y: minItem.y,
       min: minItem.value,
@@ -34,10 +37,8 @@ export const normalizeBenchmarkSeries = (
       label: "",
       floors: minItem.floors ?? maxItem.floors,
       technology: minItem.technology ?? maxItem.technology,
-    });
-
-    return acc;
-  }, []);
+    };
+  });
 };
 
 export const stackData = <T extends IProject>(item: T[], data: IBenchmarkResponse) => {
