@@ -1,7 +1,8 @@
 import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
+import { IBenchmarkSeries } from "@/actions/benchmarks/types";
 import Logo from "@/assets/logo_full.svg";
 import D3GradientRangeChart from "@/components/charts/d3chart";
-import D3GradientRangeLineChart from "@/components/charts/d3chartLine";
+import D3GradientRangeLineChart, { SeriesPoint } from "@/components/charts/d3chartLine";
 import {
   Select,
   SelectContent,
@@ -11,13 +12,57 @@ import {
 } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { useBenchmarkFilters } from "@/hooks/useBenchmarkFilters";
-import { useIsMobile } from "@/hooks/useIsMobile";
+
+type BenchmarkPoint = {
+  id: string;
+  minId: string;
+  maxId: string;
+  y: number;
+  min: number;
+  max: number;
+  label: string;
+  floors?: string | number;
+  technology?: string[];
+};
+
+// Para o scatter chart: ordenar por y e parear min+max pela ordem
+const normalizeBenchmarkSeries = (series?: IBenchmarkSeries): BenchmarkPoint[] => {
+  if (!series) return [];
+
+  const sortByY = (a: IBenchmarkSeries["min"][number], b: IBenchmarkSeries["min"][number]) =>
+    a.y - b.y;
+  const minList = [...(series.min || [])].sort(sortByY);
+  const maxList = [...(series.max || [])].sort(sortByY);
+  const pairCount = Math.min(minList.length, maxList.length);
+
+  return Array.from({ length: pairCount }, (_, index) => {
+    const minItem = minList[index];
+    const maxItem = maxList[index];
+
+    return {
+      id: minItem.id,
+      minId: minItem.id,
+      maxId: maxItem.id,
+      y: minItem.y,
+      min: minItem.value,
+      max: maxItem.value,
+      label: "",
+      floors: minItem.floors ?? maxItem.floors,
+      technology: minItem.technology ?? maxItem.technology,
+    };
+  });
+};
+
+// Para o line chart: cada série é independente, sem join por id
+const toSeriesPoints = (arr?: IBenchmarkSeries["min"]): SeriesPoint[] =>
+  (arr || []).map((p) => ({ id: p.id, y: p.y, value: p.value }));
+
 export const Route = createFileRoute("/(public)/benchmark")({
   component: RouteComponent,
-  loader: ({ context }) => {
+  loader: ({ context }: { context: any }) => {
     return {
       auth: context.auth,
     };
@@ -26,23 +71,73 @@ export const Route = createFileRoute("/(public)/benchmark")({
 
 function RouteComponent() {
   const { FilterSection, activeBuildFilter, type } = useBenchmarkFilters();
-  const { data } = useQuery({
+  const { data: filteredResponse } = useQuery({
     queryKey: ["units-benchmarks", JSON.stringify(activeBuildFilter)],
     queryFn: () =>
       getProjectsBenchmark({
-        technology: activeBuildFilter.technology,
-        floors: activeBuildFilter.floors.get(),
+        technology:
+          activeBuildFilter.technology.length > 0
+            ? activeBuildFilter.technology
+            : undefined,
+        floors: activeBuildFilter.floors.get() || undefined,
       }),
   });
-  const isMobile = useIsMobile();
 
-  const chartData =
-    data?.data?.benchmark?.[type]?.map((f) => ({
-      ...f,
-      label: "",
-    })) || [];
-  const width = (window.innerWidth - 421) * 0.5;
-  const height = window.innerHeight * 0.5;
+  const { data: baseResponse, isLoading: isBaseLoading } = useQuery({
+    queryKey: ["units-benchmarks-base"],
+    queryFn: () => getProjectsBenchmark({}),
+  });
+
+  const hasActiveFilter =
+    activeBuildFilter.technology.length > 0 || !!activeBuildFilter.floors.get();
+
+  const baseChartData: BenchmarkPoint[] = normalizeBenchmarkSeries(
+    baseResponse?.data?.benchmark?.[type],
+  );
+
+  const filteredChartData: BenchmarkPoint[] = normalizeBenchmarkSeries(
+    filteredResponse?.data?.benchmark?.[type],
+  );
+
+  const chartData = useMemo(
+    () => (baseChartData.length > 0 ? baseChartData : filteredChartData),
+    [baseChartData, filteredChartData],
+  );
+
+  // Line chart: séries independentes sem join por id
+  const baseMinSeries = useMemo(
+    () => toSeriesPoints(baseResponse?.data?.benchmark?.[type]?.min),
+    [baseResponse, type],
+  );
+  const baseMaxSeries = useMemo(
+    () => toSeriesPoints(baseResponse?.data?.benchmark?.[type]?.max),
+    [baseResponse, type],
+  );
+  const filteredMinSeries = useMemo(
+    () => toSeriesPoints(filteredResponse?.data?.benchmark?.[type]?.min),
+    [filteredResponse, type],
+  );
+  const filteredMaxSeries = useMemo(
+    () => toSeriesPoints(filteredResponse?.data?.benchmark?.[type]?.max),
+    [filteredResponse, type],
+  );
+
+  const lineMinSeries = hasActiveFilter ? filteredMinSeries : baseMinSeries;
+  const lineMaxSeries = hasActiveFilter ? filteredMaxSeries : baseMaxSeries;
+  const selectedFilteredMinIds = useMemo(
+    () => (hasActiveFilter ? filteredMinSeries.map((d) => d.id) : []),
+    [hasActiveFilter, filteredMinSeries],
+  );
+  const selectedFilteredMaxIds = useMemo(
+    () => (hasActiveFilter ? filteredMaxSeries.map((d) => d.id) : []),
+    [hasActiveFilter, filteredMaxSeries],
+  );
+
+  const selectedFilteredIds = useMemo(
+    () => (hasActiveFilter ? selectedFilteredMinIds : []),
+    [hasActiveFilter, selectedFilteredMinIds],
+  );
+
   const [selectedChart, setSelectedChart] = useState("co2");
 
   const maxData = chartData.map((d) => (d.max !== undefined ? d.max : 0));
@@ -76,22 +171,33 @@ function RouteComponent() {
               </div>
             </div>
             <div className="w-full">
-              {selectedChart === "trend" ? (
+              {isBaseLoading ? (
+                <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
+                  Carregando dados...
+                </div>
+              ) : selectedChart === "trend" ? (
                 <D3GradientRangeLineChart
-                  data={chartData}
+                  minSeriesData={lineMinSeries}
+                  maxSeriesData={lineMaxSeries}
+                  selectedBars={selectedFilteredIds}
                   unit={type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
                   summary={false}
                 />
               ) : (
                 <D3GradientRangeChart
-                  width={width}
-                  height={height}
+                  height={Math.round(window.innerHeight * 0.6)}
                   data={chartData}
-                  overrideDimensions={!isMobile}
+                  selectedBars={selectedFilteredIds}
+                  selectedMinBars={selectedFilteredMinIds}
+                  selectedMaxBars={selectedFilteredMaxIds}
                   minData={minData}
                   maxData={maxData}
-                  totalProjects={chartData.length}
+                  totalProjects={baseChartData.length || chartData.length}
                   unit={type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
+                  hideBars
+                  showProcelScale
+                  showBaseline
+                  showTop5Line
                 />
               )}
             </div>
