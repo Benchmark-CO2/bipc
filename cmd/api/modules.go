@@ -121,21 +121,14 @@ func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	v := validator.New()
-	module.Validate(v)
-	if !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
-		return
-	}
-
-	result, err := module.Calculate()
+	newModule, err := app.insertModule(module, optionID)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
+		var ve *ValidationError
+		if errors.As(err, &ve) {
+			app.failedValidationResponse(w, r, ve.Errors)
+			return
+		}
 
-	newModule, err := module.Insert(app.models, optionID, result)
-	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrInvalidOptionID):
 			app.badRequestResponse(w, r, err)

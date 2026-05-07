@@ -1216,15 +1216,14 @@ outerLoop:
 		}
 
 		for _, module := range projectData.Modules {
-			result, err := module.Calculate()
+			_, err = app.insertModule(module, projectsFormCSV[i].Option.ID)
 			if err != nil {
-				app.logger.Error("Failed to calculate module", "error", err, "moduleType", module.GetType(), "unitID", projectData.Unit.ID)
-				addProjectError(projectData.Project.ID, fmt.Sprintf("unit[%s].module[%s].calculate", projectData.Unit.Name, module.GetType()), err.Error())
-				continue outerLoop
-			}
+				var ve *ValidationError
+				if errors.As(err, &ve) {
+					addValidationErrors(projectData.Project.ID, fmt.Sprintf("unit[%s].module[%s].", projectData.Unit.Name, module.GetType()), ve)
+					continue outerLoop
+				}
 
-			_, err = module.Insert(app.models, projectsFormCSV[i].Option.ID, result)
-			if err != nil {
 				app.logger.Error("Failed to insert module", "error", err, "moduleType", module.GetType(), "optionID", projectsFormCSV[i].Option.ID)
 				addProjectError(projectData.Project.ID, fmt.Sprintf("unit[%s].module[%s].insert", projectData.Unit.Name, module.GetType()), err.Error())
 				continue outerLoop

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
+	"github.com/Benchmark-CO2/bipc/internal/modules"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/google/uuid"
 )
@@ -180,4 +181,27 @@ func (app *application) updateUnit(unit *data.Unit, floors []data.FloorCreate) e
 	}
 
 	return nil
+}
+
+// insertModule centralizes module validation, calculation and persistence.
+// It keeps handlers focused on HTTP concerns while reusing the same logic
+// across API and CSV ingestion flows.
+func (app *application) insertModule(module modules.Module, optionID uuid.UUID) (modules.Module, error) {
+	v := validator.New()
+	module.Validate(v)
+	if !v.Valid() {
+		return nil, &ValidationError{Errors: v.Errors}
+	}
+
+	result, err := module.Calculate()
+	if err != nil {
+		return nil, err
+	}
+
+	newModule, err := module.Insert(app.models, optionID, result)
+	if err != nil {
+		return nil, err
+	}
+
+	return newModule, nil
 }
