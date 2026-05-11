@@ -50,6 +50,13 @@ const categoryColors = {
   basement_floor: "#F59E0B", // Laranja
 };
 
+const categoryLabels = {
+  penthouse_floor: "Cobertura",
+  standard_floor: "Tipo",
+  ground_floor: "Térreo",
+  basement_floor: "Subsolo",
+};
+
 const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
@@ -248,8 +255,8 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
     // Criar novo pavimento individual (com repetition no modo criação)
     const newFloor = {
       floor_group: "",
-      area: "",
-      height: "",
+      area: "100",
+      height: "2",
       category: category,
       index: newIndex,
       repetition: 1,
@@ -299,6 +306,33 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
   const unitTypes = [
     { value: "tower", label: t("drawerFormUnit.unitTypeOptions.tower") },
   ];
+
+  // Ordem de exibição da tabela espelhando o BuildingVisualizer:
+  // cada categoria é ordenada por índice decrescente (maior índice = topo visual)
+  const sortedFieldIndices = React.useMemo(() => {
+    const groups: Record<string, number[]> = {
+      penthouse_floor: [],
+      standard_floor: [],
+      ground_floor: [],
+      basement_floor: [],
+    };
+    (watchedFloors || []).forEach((floor: any, idx: number) => {
+      const cat = floor?.category;
+      if (cat && cat in groups) groups[cat].push(idx);
+    });
+    for (const cat of Object.keys(groups)) {
+      groups[cat].sort(
+        (a, b) =>
+          (watchedFloors[b]?.index ?? 0) - (watchedFloors[a]?.index ?? 0),
+      );
+    }
+    return [
+      ...groups.penthouse_floor,
+      ...groups.standard_floor,
+      ...groups.ground_floor,
+      ...groups.basement_floor,
+    ];
+  }, [watchedFloors]);
 
   return (
     <div className={"flex gap-6 max-sm:flex-col"}>
@@ -433,10 +467,18 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="penthouse_floor">Cobertura</SelectItem>
-                <SelectItem value="standard_floor">Tipo</SelectItem>
-                <SelectItem value="ground_floor">Térreo</SelectItem>
-                <SelectItem value="basement_floor">Subsolo</SelectItem>
+                <SelectItem value="penthouse_floor">
+                  {categoryLabels.penthouse_floor}
+                </SelectItem>
+                <SelectItem value="standard_floor">
+                  {categoryLabels.standard_floor}
+                </SelectItem>
+                <SelectItem value="ground_floor">
+                  {categoryLabels.ground_floor}
+                </SelectItem>
+                <SelectItem value="basement_floor">
+                  {categoryLabels.basement_floor}
+                </SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -481,8 +523,9 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[...fields].reverse().map((field, reverseIndex) => {
-                  const index = fields.length - 1 - reverseIndex;
+                {sortedFieldIndices.map((index) => {
+                  const field = fields[index];
+                  if (!field) return null;
                   const canDropHere =
                     draggedIndex !== null &&
                     watchedFloors[draggedIndex]?.category ===
@@ -539,7 +582,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                 >
                                   <TooltipTrigger asChild>
                                     <Input
-                                      placeholder="Ex: Cobertura"
+                                      placeholder={`Ex: ${categoryLabels[watchedFloors[index]?.category as keyof typeof categoryLabels] || "Pavimento Tipo"}`}
                                       className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full max-sm:min-w-[100px] ${
                                         fieldState.error
                                           ? "border border-red-500"
