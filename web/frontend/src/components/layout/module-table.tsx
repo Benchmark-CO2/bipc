@@ -26,6 +26,7 @@ import { Button } from "../ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { getModule } from "@/actions/modules/getModule";
 import { toast } from "sonner";
+import { useTranslation } from "@/i18n";
 
 interface IModuleTable {
   tableId: TModulesTypes;
@@ -46,6 +47,7 @@ export default function ModuleTable({
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [moduleData, setModuleData] = useState<TModuleStructure | null>(null);
+  const { t } = useTranslation();
 
   const table = useReactTable({
     data: modules,
@@ -154,17 +156,17 @@ export default function ModuleTable({
     }
   };
 
-  const displayName = {
-    concrete_wall: "Parede de Concreto",
-    beam_column: "Viga Pilar",
-    structural_masonry: "Alvenaria",
+  const displayName: Record<string, string> = {
+    concrete_wall: t.modules.structureTypes.concreteWall,
+    beam_column: t.modules.structureTypes.beamColumn,
+    structural_masonry: t.modules.structureTypes.masonry,
   };
 
   const { mutate: mutateModule } = useMutation({
     mutationFn: (moduleId: string) =>
       getModule(projectId, unitId, moduleId, tableId),
     onError: () => {
-      toast.error("Erro ao carregar módulos");
+      toast.error(t.modules.table.fetchError);
       setModuleData(null);
     },
     onSuccess: (data) => {
@@ -203,7 +205,7 @@ export default function ModuleTable({
               variant="bipc"
               className="flex items-center gap-2"
             >
-              Criar Módulo
+              {t.modules.table.createButton}
             </Button>
           }
           // projectId={projectId}
@@ -214,8 +216,8 @@ export default function ModuleTable({
 
       {modules.length === 0 ? (
         <NotFoundList
-          message="Nenhum item encontrado"
-          description="Adicione um novo Módulo de Tecnologia Construtiva no botão acima."
+          message={t.modules.table.noItems}
+          description={t.modules.table.addNew}
           icon="file"
           showIcon={false}
         />

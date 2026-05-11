@@ -21,6 +21,7 @@ import {
   Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/i18n";
 
 const Skeleton = () => {
   return (
@@ -51,18 +52,19 @@ const Skeleton = () => {
 };
 
 const CardNotFound = () => {
+  const { t } = useTranslation();
   return (
     <Card>
       <CardContent className="flex flex-col items-center justify-center py-12 text-center">
         <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
           <Mail className="w-8 h-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold mb-2">Convite não encontrado</h3>
+        <h3 className="text-lg font-semibold mb-2">{t.invites.notFound}</h3>
         <p className="text-muted-foreground text-sm mb-6 max-w-sm">
-          O convite que você está procurando não existe ou já foi aceito.
+          {t.invites.notFoundDescription}
         </p>
         <Link to="/notifications">
-          <Button variant="outline">Mostrar Todos</Button>
+          <Button variant="outline">{t.invites.showAll}</Button>
         </Link>
       </CardContent>
     </Card>
@@ -81,21 +83,22 @@ const InviteCardItem = ({
   ) => void;
   disabled: boolean;
 }) => {
+  const { t } = useTranslation();
   const statusConfig = {
     pending: {
       icon: Clock,
       variant: "default" as const,
-      label: "Em espera",
+      label: t.invites.statusPending,
     },
     accepted: {
       icon: CheckCircle2,
       variant: "success" as const,
-      label: "Aceito",
+      label: t.invites.statusAccepted,
     },
     declined: {
       icon: XCircle,
       variant: "destructive" as const,
-      label: "Recusado",
+      label: t.invites.statusDeclined,
     },
   };
 
@@ -136,7 +139,9 @@ const InviteCardItem = ({
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-muted-foreground">Convidado por</p>
+            <p className="text-xs text-muted-foreground">
+              {t.common.invitedBy}
+            </p>
             <p className="font-medium truncate">{invite.inviter_name}</p>
           </div>
         </div>
@@ -159,7 +164,7 @@ const InviteCardItem = ({
               variant="bipc"
             >
               <CheckCircle2 className="w-4 h-4 mr-2" />
-              Aceitar
+              {t.invites.accept}
             </Button>
             <Button
               variant="outline"
@@ -168,7 +173,7 @@ const InviteCardItem = ({
               className="flex-1"
             >
               <XCircle className="w-4 h-4 mr-2" />
-              Rejeitar
+              {t.invites.reject}
             </Button>
           </div>
         )}

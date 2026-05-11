@@ -16,6 +16,7 @@ import {
 import { Check, EllipsisVertical } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { simulationColumns } from "../columns/simulations";
+import { useTranslation } from "@/i18n";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,11 +41,12 @@ function SimulationTable({
   onCheckSimulation,
 }: ISimulationTable) {
   const [reloadTrigger, setReloadTrigger] = useState(false);
+  const { t } = useTranslation();
   const table = useReactTable({
     data: simulations,
     columns: simulationColumns,
     getCoreRowModel: getCoreRowModel(),
-    renderFallbackValue: "Carregando...",
+    renderFallbackValue: t.common.loading,
   });
   const startReload = () => {
     setTimeout(() => {
@@ -117,7 +119,7 @@ function SimulationTable({
                         onClickSetValidVersion(row.original.version.toString())
                       }
                     >
-                      {t("simulationTable.setValidVersion")}
+                      {t.simulations.setValidVersion}
                       <Check className="stroke-primary" size={32} />
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -128,7 +130,7 @@ function SimulationTable({
         </TableBody>
       </Table>
       <span className="block w-full text-xs text-foreground/60 my-2">
-        {t("simulationTable.selectVersions")}
+        {t.simulations.selectVersions}
       </span>
     </div>
   );

@@ -49,6 +49,7 @@ import {
   X,
 } from "lucide-react";
 import { CustomLink } from "@/components/ui/custom-link";
+import { useTranslation } from "@/i18n";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -72,6 +73,7 @@ export default function DrawerFormUser({
   const queryClient = useQueryClient();
   const { user, refreshUser } = useAuth();
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
 
   // Extrai os dados do usuário corretamente (pode estar aninhado)
   const userData = (user as any)?.user || user;
@@ -128,8 +130,8 @@ export default function DrawerFormUser({
           message: "E-mail já cadastrado",
         });
       }
-      toast.error("Erro ao atualizar usuário", {
-        description: error.message || "Não foi possível atualizar os dados",
+      toast.error(t.common.unknownError, {
+        description: error.message || t.common.unknownError,
         duration: 5000,
       });
     },
@@ -176,7 +178,7 @@ export default function DrawerFormUser({
         form.reset();
       }
 
-      toast.success("Usuário atualizado com sucesso", {
+      toast.success(t.settings.userInfo.editData, {
         duration: 5000,
       });
     },
@@ -331,13 +333,13 @@ export default function DrawerFormUser({
       setFilledByCep(false);
       setCepFilledFields(new Set());
       setSelectedState("");
-      toast.error("Erro ao buscar CEP", {
-        description: "Por favor, verifique o CEP",
+      toast.error(t.cep.fetchError, {
+        description: t.cep.verifyMessage,
         duration: 5000,
       });
       form.setError("cep", {
         type: "manual",
-        message: "Por favor, verifique o CEP",
+        message: t.cep.verifyMessage,
       });
       form.setValue("state", "");
       form.setValue("city", "");
@@ -365,7 +367,7 @@ export default function DrawerFormUser({
         })}
       >
         <DrawerHeader className="px-8">
-          <DrawerTitle>Editar Dados da Conta</DrawerTitle>
+          <DrawerTitle>{t.settings.userInfo.editData}</DrawerTitle>
           <Button
             onClick={() => setOpenDrawer(false)}
             className="absolute right-4 top-2"
@@ -874,10 +876,10 @@ export default function DrawerFormUser({
             {isUpdatePending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Salvando...
+                {t.common.loading}
               </>
             ) : (
-              "Salvar Alterações"
+              t.common.update
             )}
           </Button>
           <div className="flex items-center gap-2 rounded-md border border-active/20 bg-active/5 px-4 py-3 text-sm">

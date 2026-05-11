@@ -1,4 +1,5 @@
 import { Check, EllipsisVertical } from "lucide-react";
+import { useTranslation } from "@/i18n";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +39,7 @@ function VersionsTable({
   onCheckVersion,
 }: IVersionsTableProps) {
   const [reloadTrigger, setReloadTrigger] = useState(false);
+  const { t } = useTranslation();
 
   const sortedVersions = useMemo(() => {
     return [...versions].reverse();
@@ -47,7 +49,7 @@ function VersionsTable({
     data: sortedVersions,
     columns: versionsColumns,
     getCoreRowModel: getCoreRowModel(),
-    renderFallbackValue: "Carregando...",
+    renderFallbackValue: t.common.loading,
   });
   const startReload = () => {
     setTimeout(() => {
@@ -120,7 +122,7 @@ function VersionsTable({
                         onClickSetValidVersion(+row.original.version);
                       }}
                     >
-                      Definir versão válida
+                      {t.simulations.setValidVersion}
                       <Check className="stroke-primary" size={32} />
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -131,7 +133,7 @@ function VersionsTable({
         </TableBody>
       </Table>
       <span className="block w-full text-xs text-foreground/60 my-2">
-        Selecione versões na tabela acima para comparar simulações.
+        {t.simulations.selectVersions}
       </span>
     </div>
   );

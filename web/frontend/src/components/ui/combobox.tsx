@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "@/i18n";
 import {
   Command,
   CommandEmpty,
@@ -24,6 +25,7 @@ interface IOption {
   label: string;
 }
 export function Combobox({ onChange }: { onChange?: (value: string) => void }) {
+  const { t } = useTranslation();
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");
   const [userEmail, setUserEmail] = React.useState("");
@@ -67,14 +69,14 @@ export function Combobox({ onChange }: { onChange?: (value: string) => void }) {
         >
           {value
             ? usersList.find((user) => user.value === value)?.label
-            : "Selecione o usuário ou digite o e-mail"}
+            : t.invites.nameOrEmailPlaceholder}
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
         <Command>
           <CommandInput
-            placeholder="Selecione o usuário ou digite o e-mail"
+            placeholder={t.invites.nameOrEmailPlaceholder}
             className="h-9"
             onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
               setUserEmail(e.target.value)

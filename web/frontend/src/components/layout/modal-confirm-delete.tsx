@@ -1,5 +1,6 @@
 import { Trash } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "@/i18n";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -22,6 +23,7 @@ const ModalConfirmDelete = ({
   title,
 }: ModalConfirmDeleteProps) => {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
 
   const onConfirmDeletion = async () => {
     await onConfirm?.();
@@ -33,7 +35,7 @@ const ModalConfirmDelete = ({
       <DialogTrigger asChild data-action="delete-project">
         {componentTrigger ?? (
           <div className=" w-full flex justify-between">
-            Excluir
+            {t.common.delete}
             <Trash size={20} className="delete-project hover:shadow-md" />
           </div>
         )}
@@ -42,15 +44,13 @@ const ModalConfirmDelete = ({
         <DialogHeader>
           <DialogTitle className="text-center">{title}</DialogTitle>
         </DialogHeader>
-        <p className="text-gray-700">
-          Esta ação não pode ser desfeita. Tem certeza de que deseja prosseguir?
-        </p>
+        <p className="text-gray-700">{t.modal.deleteDescription}</p>
         <DialogFooter className="flex justify-between">
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancelar
+            {t.modal.cancelButton}
           </Button>
           <Button variant="destructive" onClick={onConfirmDeletion}>
-            Excluir
+            {t.modal.deleteButton}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,4 +1,5 @@
 import Chart from "@/components/charts";
+import { useTranslation } from "@/i18n";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_private/dashboard")({
@@ -6,10 +7,11 @@ export const Route = createFileRoute("/_private/dashboard")({
 });
 
 function Dashboard() {
+  const { t } = useTranslation();
   return (
     <div>
-      <h1>Dashboard</h1>
-      <p>Esta é a página do dashboard.</p>
+      <h1>{t.dashboard.title}</h1>
+      <p>{t.dashboard.description}</p>
       <Chart />
     </div>
   );

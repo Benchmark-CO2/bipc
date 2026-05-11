@@ -15,6 +15,7 @@ import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
 import { Copy, GripVertical, Plus, Trash2 } from "lucide-react";
 import React from "react";
 import { UseFormReturn, useFieldArray, useWatch } from "react-hook-form";
+import { useTranslation } from "@/i18n";
 import { Button } from "../../ui/button";
 import { Card } from "../../ui/card";
 import {
@@ -301,7 +302,8 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
     setTimeout(() => recalculateIndices(), 0);
   };
 
-  const unitTypes = [{ value: "tower", label: "Torre" }];
+  const { t } = useTranslation();
+  const unitTypes = [{ value: "tower", label: t.units.form.towerType }];
 
   // Ordem de exibição da tabela espelhando o BuildingVisualizer:
   // cada categoria é ordenada por índice decrescente (maior índice = topo visual)
@@ -347,9 +349,12 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome da Edificação *</FormLabel>
+                <FormLabel>{t.units.form.buildingName}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Digite o nome da Edificação" {...field} />
+                  <Input
+                    placeholder={t.units.form.buildingNamePlaceholder}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -361,7 +366,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
             name="type"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tipo de Edificação *</FormLabel>
+                <FormLabel>{t.units.form.buildingType}</FormLabel>
                 <FormControl>
                   <Select
                     onValueChange={field.onChange}
@@ -369,7 +374,9 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                     disabled={unitTypes.length <= 1}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecione um tipo de edificação" />
+                      <SelectValue
+                        placeholder={t.units.form.buildingTypePlaceholder}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {unitTypes.map((type) => (

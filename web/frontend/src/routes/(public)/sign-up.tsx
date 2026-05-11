@@ -61,8 +61,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { CustomLink } from "@/components/ui/custom-link";
+import { useTranslation } from "@/i18n";
 
 const SignUp = () => {
+  const { t } = useTranslation();
   const [successModal, setSuccessModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -122,14 +124,13 @@ const SignUp = () => {
           message: "E-mail já cadastrado",
         });
       }
-      toast.error("Algo deu errado", {
-        description: error.message || "Não foi possível completar o cadastro",
+      toast.error(t.common.unknownError, {
+        description: error.message || t.common.unknownError,
       });
     },
     onSuccess() {
-      toast.success("Cadastro realizado com sucesso", {
-        description:
-          "Um e-mail de confirmação foi enviado para o seu endereço de e-mail.",
+      toast.success(t.auth.signUp.successTitle, {
+        description: t.auth.signUp.successContent,
       });
       setSuccessModal(true);
     },
@@ -225,13 +226,13 @@ const SignUp = () => {
       setFilledByCep(false);
       setCepFilledFields(new Set());
       setSelectedState("");
-      toast.error("Erro ao buscar CEP", {
-        description: "Por favor, verifique o CEP",
+      toast.error(t.cep.fetchError, {
+        description: t.cep.verifyMessage,
         duration: 5000,
       });
       form.setError("cep", {
         type: "manual",
-        message: "Por favor, verifique o CEP",
+        message: t.cep.verifyMessage,
       });
       form.setValue("state", "");
       form.setValue("city", "");
@@ -254,11 +255,9 @@ const SignUp = () => {
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="space-y-2 mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-primary">
-          Novo Usuário
+          {t.auth.signUp.name}
         </h1>
-        <p className="text-muted-foreground">
-          Crie sua conta para começar a usar a plataforma
-        </p>
+        <p className="text-muted-foreground">{t.auth.signUp.signUpButton}</p>
       </div>
       <Card>
         <CardContent className="space-y-6">
@@ -961,10 +960,10 @@ const SignUp = () => {
                 {isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Carregando...
+                    {t.common.loading}
                   </>
                 ) : (
-                  "Cadastrar"
+                  t.auth.signUp.signUpButton
                 )}
               </Button>
             </form>

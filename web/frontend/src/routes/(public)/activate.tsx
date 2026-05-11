@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import Divider from "@/components/ui/divider";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import {
@@ -37,6 +38,7 @@ export const Route = createFileRoute("/(public)/activate")({
 function RouteComponent() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
   const { tkn: token } = useSearch({ from: "/(public)/activate" });
 
   const activationMutation = useMutation({
@@ -75,10 +77,11 @@ function RouteComponent() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
               <XCircle className="h-6 w-6 text-red-600" />
             </div>
-            <CardTitle className="text-xl">Link Inválido</CardTitle>
+            <CardTitle className="text-xl">
+              {t.auth.activate.invalidTitle}
+            </CardTitle>
             <CardDescription>
-              O link de ativação é inválido ou expirou. Solicite um novo e-mail
-              de confirmação.
+              {t.auth.activate.invalidDescription}
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
@@ -87,7 +90,7 @@ function RouteComponent() {
               onClick={handleNavigateToLogin}
               className="w-full"
             >
-              Voltar ao Login
+              {t.auth.activate.goToLogin}
             </Button>
           </CardFooter>
         </Card>
@@ -114,10 +117,11 @@ function RouteComponent() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
-            <CardTitle className="text-xl">Conta Ativada!</CardTitle>
+            <CardTitle className="text-xl">
+              {t.auth.activate.successTitle}
+            </CardTitle>
             <CardDescription>
-              Sua conta foi ativada com sucesso. Agora você pode fazer login e
-              começar a usar nossa plataforma.
+              {t.auth.activate.successDescription}
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
@@ -126,7 +130,7 @@ function RouteComponent() {
               variant="bipc"
               className="w-full"
             >
-              Fazer Login
+              {t.auth.activate.makeLogin}
             </Button>
           </CardFooter>
         </Card>
@@ -153,16 +157,17 @@ function RouteComponent() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
               <XCircle className="h-6 w-6 text-red-600" />
             </div>
-            <CardTitle className="text-xl">Erro na Ativação</CardTitle>
+            <CardTitle className="text-xl">
+              {t.auth.activate.errorTitle}
+            </CardTitle>
             <CardDescription>
-              Não foi possível ativar sua conta. Tente novamente ou entre em
-              contato com o suporte.
+              {t.auth.activate.errorDescription}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Alert variant="destructive">
               <AlertDescription>
-                {activationMutation.error?.message || "Erro desconhecido"}
+                {activationMutation.error?.message || t.errors.unknownError}
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -172,11 +177,8 @@ function RouteComponent() {
               onClick={handleTryAgain}
               className="w-full"
             >
-              Tentar Novamente
+              {t.auth.activate.retry}
             </Button>
-            {/* <Button variant="outline" onClick={handleNavigateToContact}>
-              Entrar em contato com suporte
-            </Button> */}
           </CardFooter>
         </Card>
       </div>
@@ -202,9 +204,11 @@ function RouteComponent() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
               <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
             </div>
-            <CardTitle className="text-xl">Ativando Conta...</CardTitle>
+            <CardTitle className="text-xl">
+              {t.auth.activate.loadingTitle}
+            </CardTitle>
             <CardDescription>
-              Aguarde enquanto processamos a ativação da sua conta.
+              {t.auth.activate.loadingDescription}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -230,10 +234,11 @@ function RouteComponent() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
             <Mail className="h-6 w-6 text-blue-600" />
           </div>
-          <CardTitle className="text-xl">Confirmar Cadastro</CardTitle>
+          <CardTitle className="text-xl">
+            {t.auth.activate.confirmTitle}
+          </CardTitle>
           <CardDescription>
-            Clique no botão abaixo para ativar sua conta e começar a usar nossa
-            plataforma.
+            {t.auth.activate.confirmDescription}
           </CardDescription>
         </CardHeader>
         <CardFooter className="flex justify-center">
@@ -243,7 +248,7 @@ function RouteComponent() {
             variant="bipc"
             className="w-full"
           >
-            Confirmar
+            {t.auth.activate.confirmAction}
           </Button>
         </CardFooter>
       </Card>

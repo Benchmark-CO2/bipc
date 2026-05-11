@@ -17,6 +17,7 @@ import { AlertTriangle, Loader2, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { useTranslation } from "@/i18n";
 import { Alert, AlertDescription } from "../../ui/alert";
 import { Button } from "../../ui/button";
 import {
@@ -71,6 +72,7 @@ const DrawerFormModule = ({
 }: DrawerFormModuleProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
+  const { t } = useTranslation();
 
   const queryClient = useQueryClient();
 
@@ -90,14 +92,14 @@ const DrawerFormModule = ({
     mutationFn: (data: ModuleParamsProps) =>
       patchModule(data, projectId, unitId, optionId, moduleId!),
     onError: (error) => {
-      toast.error("Erro ao atualizar Módulo de Tecnologia Construtiva", {
+      toast.error(t.modules.form.updateError, {
         description:
-          error instanceof Error ? error.message : "Erro desconhecido",
+          error instanceof Error ? error.message : t.modules.form.unknownError,
         duration: 5000,
       });
     },
     onSuccess: () => {
-      toast.success("Módulo de Tecnologia Construtiva atualizado com sucesso", {
+      toast.success(t.modules.form.updateSuccess, {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -124,14 +126,14 @@ const DrawerFormModule = ({
     mutationFn: (data: ModuleParamsProps) =>
       postModule(data, projectId, unitId, optionId),
     onError: (error) => {
-      toast.error("Erro ao criar Módulo de Tecnologia Construtiva", {
+      toast.error(t.modules.form.createError, {
         description:
-          error instanceof Error ? error.message : "Erro desconhecido",
+          error instanceof Error ? error.message : t.modules.form.unknownError,
         duration: 5000,
       });
     },
     onSuccess: () => {
-      toast.success("Módulo de Tecnologia Construtiva criado com sucesso", {
+      toast.success(t.modules.form.createSuccess, {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -589,7 +591,9 @@ const DrawerFormModule = ({
       >
         <DrawerHeader className="px-8">
           <DrawerTitle className="text-h1 text-primary">
-            Dados da tecnologia
+            {moduleId
+              ? t.modules.form.updateSuccess.split(" ")[0]
+              : t.modules.table.createButton}
           </DrawerTitle>
           <Button
             onClick={handleClose}

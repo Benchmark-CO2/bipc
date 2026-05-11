@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-misused-promises */
 import { getSignedUrl } from "@/actions/files/getSigneedUrl";
 import { postFile } from "@/actions/files/postFile";
 import { patchProject } from "@/actions/projects/patchProject";
@@ -51,6 +50,7 @@ import {
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
 import { CityCombobox } from "../ui/city-combobox";
+import { useTranslation } from "@/i18n";
 
 interface IDrawerAddProject {
   componentTrigger: React.ReactNode;
@@ -69,6 +69,7 @@ export default function DrawerFormProject({
     new Set(),
   );
   const [selectedState, setSelectedState] = useState("");
+  const { t } = useTranslation();
 
   const queryClient = useQueryClient();
   const isEditMode = !!projectData;
@@ -111,13 +112,13 @@ export default function DrawerFormProject({
   } = useMutation({
     mutationFn: postProject,
     onError: (error) => {
-      toast.error("Erro ao criar projeto", {
+      toast.error(t.projects.form.createError, {
         description: error.message,
         duration: 5000,
       });
     },
     onSuccess: (data) => {
-      toast.success("Projeto criado com sucesso", {
+      toast.success(t.projects.form.createSuccess, {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -146,13 +147,13 @@ export default function DrawerFormProject({
     mutationFn: (data: ProjectFormSchema) =>
       patchProject(data as any, projectData!.id),
     onError: (error) => {
-      toast.error("Erro ao editar projeto", {
+      toast.error(t.projects.form.editError, {
         description: error.message,
         duration: 5000,
       });
     },
     onSuccess: () => {
-      toast.success("Projeto atualizado com sucesso", {
+      toast.success(t.projects.form.editSuccess, {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -186,7 +187,7 @@ export default function DrawerFormProject({
     try {
       await postFile(signedUrlData.data.url, fileParams);
     } catch (error) {
-      toast.error("Erro desconhecido", {
+      toast.error(t.projects.form.unknownError, {
         description: (error as Error).message,
         duration: 5000,
       });
@@ -305,13 +306,13 @@ export default function DrawerFormProject({
       setFilledByCep(false);
       setCepFilledFields(new Set());
       setSelectedState("");
-      toast.error("Erro ao buscar CEP", {
-        description: "Por favor, verifique o CEP",
+      toast.error(t.cep.fetchError, {
+        description: t.cep.verifyMessage,
         duration: 5000,
       });
       form.setError("cep", {
         type: "manual",
-        message: "Por favor, verifique o CEP",
+        message: t.cep.verifyMessage,
       });
       form.setValue("state", "");
       form.setValue("city", "");
@@ -341,7 +342,7 @@ export default function DrawerFormProject({
       >
         <DrawerHeader className="px-8">
           <DrawerTitle>
-            {isEditMode ? "Editar Projeto" : "Adicionar Empreendimento"}
+            {isEditMode ? t.projects.form.editTitle : t.projects.form.addTitle}
           </DrawerTitle>
           <Button
             onClick={() => setOpenDrawer(false)}
@@ -364,12 +365,10 @@ export default function DrawerFormProject({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome do Projeto *</FormLabel>
+                    <FormLabel>{t.projects.form.projectName}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder={t(
-                          "drawerFormProject.projectNamePlaceholder",
-                        )}
+                        placeholder={t.projects.form.projectName}
                         {...field}
                       />
                     </FormControl>
@@ -382,11 +381,11 @@ export default function DrawerFormProject({
                 name="cep"
                 render={({ field }) => (
                   <FormItem className="flex-1/3">
-                    <FormLabel>CEP</FormLabel>
+                    <FormLabel>{t.projects.form.cep}</FormLabel>
                     <FormControl>
                       <div className="flex items-center gap-2">
                         <Input
-                          placeholder="Digite o CEP"
+                          placeholder={t.projects.form.cepPlaceholder}
                           value={masks.cep((field.value as string) || "")}
                           onChange={(e) => {
                             const raw = e.target.value.replace(/\D/g, "");
@@ -419,7 +418,7 @@ export default function DrawerFormProject({
                   name="state"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Estado *</FormLabel>
+                      <FormLabel>{t.projects.form.state}</FormLabel>
                       <FormControl>
                         <Select
                           onValueChange={(value) => {
@@ -433,11 +432,7 @@ export default function DrawerFormProject({
                           disabled={filledByCep || locationLoading}
                         >
                           <SelectTrigger className="w-full">
-                            <SelectValue
-                              placeholder={t(
-                                "drawerFormProject.statePlaceholder",
-                              )}
-                            />
+                            <SelectValue placeholder={t.projects.form.state} />
                           </SelectTrigger>
                           <SelectContent>
                             {states.map((state) => (
@@ -460,11 +455,11 @@ export default function DrawerFormProject({
                   name="city"
                   render={({ field }) => (
                     <FormItem className="@md:col-span-2">
-                      <FormLabel>Cidade *</FormLabel>
+                      <FormLabel>{t.projects.form.city}</FormLabel>
                       <FormControl>
                         {filledByCep ? (
                           <Input
-                            placeholder="Selecione uma cidade"
+                            placeholder={t.projects.form.cityPlaceholder}
                             disabled
                             {...field}
                           />
@@ -478,8 +473,8 @@ export default function DrawerFormProject({
                             isError={citiesError}
                             placeholder={
                               !selectedState
-                                ? "Selecione um estado primeiro"
-                                : "Selecione uma cidade"
+                                ? t.projects.form.selectStateFirst
+                                : t.projects.form.cityPlaceholder
                             }
                           />
                         )}
@@ -494,12 +489,10 @@ export default function DrawerFormProject({
                 name="neighborhood"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Bairro</FormLabel>
+                    <FormLabel>{t.projects.form.neighborhood}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder={t(
-                          "drawerFormProject.neighborhoodPlaceholder",
-                        )}
+                        placeholder={t.projects.form.neighborhood}
                         disabled={
                           cepFilledFields.has("neighborhood") || locationLoading
                         }
@@ -516,10 +509,10 @@ export default function DrawerFormProject({
                   name="street"
                   render={({ field }) => (
                     <FormItem className="@md:col-span-2">
-                      <FormLabel>Rua</FormLabel>
+                      <FormLabel>{t.projects.form.street}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Digite o nome da rua"
+                          placeholder={t.projects.form.streetPlaceholder}
                           disabled={
                             cepFilledFields.has("street") || locationLoading
                           }
@@ -535,12 +528,10 @@ export default function DrawerFormProject({
                   name="number"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        {t("drawerFormProject.numberLabel")}
-                      </FormLabel>
+                      <FormLabel>{t.projects.form.number}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t("drawerFormProject.numberPlaceholder")}
+                          placeholder={t.projects.form.number}
                           {...field}
                         />
                       </FormControl>
@@ -554,9 +545,7 @@ export default function DrawerFormProject({
                 name="phase"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      {t("drawerFormProject.projectPhaseLabel")}
-                    </FormLabel>
+                    <FormLabel>{t.projects.form.phaseLabel}</FormLabel>
                     <FormControl>
                       <Select
                         defaultValue=""
@@ -565,28 +554,24 @@ export default function DrawerFormProject({
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue
-                            placeholder={t(
-                              "drawerFormProject.projectPhasePlaceholder",
-                            )}
+                            placeholder={t.projects.form.phasePlaceholder}
                           />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="not_defined">
-                            {t("common.projectPhaseOptions.not_defined")}
+                            {t.projects.form.phaseNotDefined}
                           </SelectItem>
                           <SelectItem value="preliminary_study">
-                            {t("common.projectPhaseOptions.preliminary_study")}
+                            {t.projects.form.phasePreliminaryStudy}
                           </SelectItem>
                           <SelectItem value="basic_project">
-                            {t("common.projectPhaseOptions.basic_project")}
+                            {t.projects.form.phaseBasicProject}
                           </SelectItem>
                           <SelectItem value="executive_project">
-                            {t("common.projectPhaseOptions.executive_project")}
+                            {t.projects.form.phaseExecutiveProject}
                           </SelectItem>
                           <SelectItem value="released_for_construction">
-                            {t(
-                              "common.projectPhaseOptions.released_for_construction",
-                            )}
+                            {t.projects.form.phaseReleasedForConstruction}
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -600,14 +585,10 @@ export default function DrawerFormProject({
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      {t("drawerFormProject.descriptionLabel")}
-                    </FormLabel>
+                    <FormLabel>{t.projects.form.description}</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder={t(
-                          "drawerFormProject.descriptionPlaceholder",
-                        )}
+                        placeholder={t.projects.form.descriptionPlaceholder}
                         minLength={10}
                         maxLength={200}
                         rows={4}
@@ -683,7 +664,7 @@ export default function DrawerFormProject({
               form="project-form"
               variant={"bipc"}
             >
-              {t("drawerFormProject.editProjectButton")}
+              {t.projects.form.editButton}
               {isUpdatePending && (
                 <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
               )}
@@ -697,7 +678,7 @@ export default function DrawerFormProject({
               type="submit"
               form="project-form"
             >
-              {t("drawerFormProject.addProjectButton")}
+              {t.projects.form.addButton}
               {isCreationPending && (
                 <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
               )}

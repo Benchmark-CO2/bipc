@@ -17,6 +17,7 @@ import { Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { FieldErrors, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { useTranslation } from "@/i18n";
 import { Button } from "../../ui/button";
 import {
   Drawer,
@@ -40,6 +41,7 @@ const DrawerFormUnit = ({
   unitId,
 }: DrawerFormUnitProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useTranslation();
 
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -63,14 +65,14 @@ const DrawerFormUnit = ({
   } = useMutation({
     mutationFn: (data: UnitFormSchema) => postUnit(data, projectId),
     onError: (error) => {
-      toast.error("Erro ao criar unidade", {
+      toast.error(t.units.form.createError, {
         description:
-          error instanceof Error ? error.message : "Erro desconhecido",
+          error instanceof Error ? error.message : t.units.form.unknownError,
         duration: 5000,
       });
     },
     onSuccess: (data) => {
-      toast.success("Edificação criada com sucesso", {
+      toast.success(t.units.form.createSuccess, {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -93,13 +95,13 @@ const DrawerFormUnit = ({
   const { isPending: isUpdatePending, mutate: mutateUpdate } = useMutation({
     mutationFn: (data: UnitFormSchema) => patchUnit(data, projectId, unitId!),
     onError: (error) => {
-      toast.error("Erro ao atualizar Edificação", {
-        description: error.message || "Erro desconhecido",
+      toast.error(t.units.form.updateError, {
+        description: error.message || t.units.form.unknownError,
         duration: 5000,
       });
     },
     onSuccess: async () => {
-      toast.success("Edificação atualizada com sucesso", {
+      toast.success(t.units.form.updateSuccess, {
         duration: 5000,
       });
       // Invalidar queries específicas e aguardar a refetch
@@ -226,7 +228,7 @@ const DrawerFormUnit = ({
       >
         <DrawerHeader className="px-8">
           <DrawerTitle className="text-2xl font-bold text-primary">
-            {unitId ? "Atualizar Edificação" : "Adicionar Edificação"}
+            {unitId ? t.units.form.editTitle : t.units.form.addTitle}
           </DrawerTitle>
           <Button
             onClick={handleClose}
@@ -267,7 +269,7 @@ const DrawerFormUnit = ({
                 form="unit-form"
                 disabled={isCreationPending}
               >
-                Adicionar Edificação
+                {t.units.form.addButton}
                 {isCreationPending && (
                   <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
                 )}
@@ -312,7 +314,7 @@ const DrawerFormUnit = ({
                 form="unit-form"
                 disabled={isUpdatePending}
               >
-                Atualizar Edificação
+                {t.units.form.editButton}
                 {isUpdatePending && (
                   <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
                 )}

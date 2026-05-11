@@ -15,6 +15,7 @@ import { IProject } from "@/types/projects";
 import { Edit, Trash } from "lucide-react";
 import ModalConfirmDelete from "./modal-confirm-delete";
 import DrawerFormProject from "./drawer-form-project";
+import { useTranslation } from "@/i18n";
 
 interface IProjectTable {
   projects: IProject[];
@@ -27,22 +28,23 @@ export default function ProjectTable({
   onClickProject,
   onDeleteProject,
 }: IProjectTable) {
+  const { t } = useTranslation();
   const table = useReactTable({
     data: projects,
     columns: [
       {
         id: "name",
-        header: "Nome",
+        header: t.projects.table.name,
         cell: ({ row }) => String(row.original.name),
       },
       {
         id: "description",
-        header: "Descrição",
+        header: t.projects.table.description,
         cell: ({ row }) => String(row.original.description) || "-",
       },
       {
         id: "createdAt",
-        header: "Criado em",
+        header: t.projects.table.createdAt,
         cell: ({ row }) =>
           new Intl.DateTimeFormat("pt-BR").format(
             new Date(row.original.created_at),
@@ -50,7 +52,7 @@ export default function ProjectTable({
       },
       {
         id: "updatedAt",
-        header: "Atualizado em",
+        header: t.projects.table.updatedAt,
         cell: ({ row }) =>
           new Intl.DateTimeFormat("pt-BR").format(
             new Date(row.original.updated_at),
@@ -116,7 +118,7 @@ export default function ProjectTable({
                   />
                   <ModalConfirmDelete
                     key={row.original.id}
-                    title="Excluir Projeto"
+                    title={t.projects.table.deleteTitle}
                     onConfirm={() => onDeleteProject?.(row.original.id)}
                     componentTrigger={
                       <Trash size={20} className="text-destructive" />

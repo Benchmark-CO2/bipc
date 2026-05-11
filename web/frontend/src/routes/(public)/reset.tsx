@@ -14,6 +14,7 @@ import Divider from "@/components/ui/divider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import {
   resetPasswordFormSchema,
@@ -58,6 +59,7 @@ export const Route = createFileRoute("/(public)/reset")({
 function RouteComponent() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
   const { tkn: token } = useSearch({ from: "/(public)/reset" });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -115,11 +117,10 @@ function RouteComponent() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
               <XCircle className="h-6 w-6 text-red-600" />
             </div>
-            <CardTitle className="text-xl">Link Inválido</CardTitle>
-            <CardDescription>
-              O link de ativação é inválido ou expirou. Solicite um novo e-mail
-              de confirmação.
-            </CardDescription>
+            <CardTitle className="text-xl">
+              {t.auth.reset.invalidTitle}
+            </CardTitle>
+            <CardDescription>{t.auth.reset.invalidDescription}</CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
             <Button
@@ -127,7 +128,7 @@ function RouteComponent() {
               onClick={handleNavigateToLogin}
               className="w-full"
             >
-              Voltar ao Login
+              {t.auth.reset.goToLogin}
             </Button>
           </CardFooter>
         </Card>
@@ -154,11 +155,10 @@ function RouteComponent() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
-            <CardTitle className="text-xl">Senha alterada!</CardTitle>
-            <CardDescription>
-              Sua senha foi alterada com sucesso. Agora você pode fazer login
-              com sua nova senha.
-            </CardDescription>
+            <CardTitle className="text-xl">
+              {t.auth.reset.successTitle}
+            </CardTitle>
+            <CardDescription>{t.auth.reset.successDescription}</CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
             <Button
@@ -166,7 +166,7 @@ function RouteComponent() {
               className="w-full"
               onClick={handleNavigateToLogin}
             >
-              Fazer Login
+              {t.auth.reset.makeLogin}
             </Button>
           </CardFooter>
         </Card>
@@ -193,16 +193,13 @@ function RouteComponent() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
               <XCircle className="h-6 w-6 text-red-600" />
             </div>
-            <CardTitle className="text-xl">Erro ao alterar senha</CardTitle>
-            <CardDescription>
-              Não foi possível alterar sua senha. Tente novamente ou entre em
-              contato com o suporte.
-            </CardDescription>
+            <CardTitle className="text-xl">{t.auth.reset.errorTitle}</CardTitle>
+            <CardDescription>{t.auth.reset.errorDescription}</CardDescription>
           </CardHeader>
           <CardContent>
             <Alert variant="destructive">
               <AlertDescription>
-                {resetPassMutation.error?.message || "Erro desconhecido"}
+                {resetPassMutation.error?.message || t.errors.unknownError}
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -212,11 +209,8 @@ function RouteComponent() {
               onClick={handleTryAgain}
               className="w-full"
             >
-              Tentar Novamente
+              {t.auth.reset.retry}
             </Button>
-            {/* <Button variant="outline" onClick={handleNavigateToContact}>
-                Entrar em contato com suporte
-              </Button> */}
           </CardFooter>
         </Card>
       </div>
@@ -242,10 +236,10 @@ function RouteComponent() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
               <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
             </div>
-            <CardTitle className="text-xl">Resetando senha...</CardTitle>
-            <CardDescription>
-              Aguarde enquanto processamos a alteração de senha.
-            </CardDescription>
+            <CardTitle className="text-xl">
+              {t.auth.reset.loadingTitle}
+            </CardTitle>
+            <CardDescription>{t.auth.reset.loadingDescription}</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -270,20 +264,18 @@ function RouteComponent() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
             <KeyRound className="h-6 w-6 text-blue-600" />
           </div>
-          <CardTitle className="text-xl">Alterar Senha</CardTitle>
-          <CardDescription>
-            Preencha os campos abaixo para alterar sua senha.
-          </CardDescription>
+          <CardTitle className="text-xl">{t.auth.reset.confirmTitle}</CardTitle>
+          <CardDescription>{t.auth.reset.confirmDescription}</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password">{t.auth.reset.passwordLabel}</Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Senha"
+                  placeholder={t.auth.reset.passwordLabel}
                   className={`pr-10 ${errors.password ? "border-red-500 focus-visible:border-red-500" : ""}`}
                   disabled={resetPassMutation.isPending}
                   autoComplete="new-password"
@@ -310,12 +302,14 @@ function RouteComponent() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar senha</Label>
+              <Label htmlFor="confirmPassword">
+                {t.auth.reset.confirmPasswordLabel}
+              </Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirmar senha"
+                  placeholder={t.auth.reset.confirmPasswordLabel}
                   className={`pr-10 ${errors.confirmPassword ? "border-red-500 focus-visible:border-red-500" : ""}`}
                   disabled={resetPassMutation.isPending}
                   autoComplete="new-password"
@@ -352,10 +346,10 @@ function RouteComponent() {
               {resetPassMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Resetando senha...
+                  {t.auth.reset.loadingTitle}
                 </>
               ) : (
-                "Confirmar"
+                t.auth.reset.confirmAction
               )}
             </Button>
           </CardFooter>

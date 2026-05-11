@@ -6,6 +6,7 @@ import Divider from "@/components/ui/divider";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
@@ -25,6 +26,7 @@ const Login = () => {
   });
 
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
 
   const { data, mutate, isPending, isError } = useMutation({
     mutationFn: login,
@@ -87,7 +89,7 @@ const Login = () => {
           {isError && (
             <div className="mb-4 p-3 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
               <h3 className="text-red-600 dark:text-red-400 text-sm font-medium">
-                E-mail ou senha incorretos
+                {t.auth.login.error}
               </h3>
             </div>
           )}
@@ -108,7 +110,7 @@ const Login = () => {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="exemplo@email.com"
+                    placeholder={t.auth.login.emailPlaceholder}
                     className={cn(
                       "text-lg pl-10",
                       fieldsError.email
@@ -119,7 +121,9 @@ const Login = () => {
                     autoComplete="email"
                   />
                   {fieldsError.email && (
-                    <p className="text-red-500 text-xs">E-mail é obrigatório</p>
+                    <p className="text-red-500 text-xs">
+                      {t.auth.login.emailRequired}
+                    </p>
                   )}
                 </div>
               </div>
@@ -162,7 +166,9 @@ const Login = () => {
                   </div>
                 </div>
                 {fieldsError.password && (
-                  <p className="text-red-500 text-xs">Senha é obrigatória</p>
+                  <p className="text-red-500 text-xs">
+                    {t.auth.login.passwordRequired}
+                  </p>
                 )}
               </div>
             </div>
@@ -179,10 +185,10 @@ const Login = () => {
                 {isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Carregando...
+                    {t.auth.login.loggingIn}
                   </>
                 ) : (
-                  Entrar
+                  t.auth.login.loginButton
                 )}
               </Button>
               <Button
@@ -194,7 +200,7 @@ const Login = () => {
                 disabled={isPending}
                 className="w-full"
               >
-                Esqueci minha senha
+                {t.auth.login.forgotPassword}
               </Button>
             </div>
           </form>
@@ -202,7 +208,7 @@ const Login = () => {
           <Divider className="w-[90%] mx-auto" />
           <div className="flex flex-col justify-end items-center gap-4">
             <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-              Não tem uma conta?
+              {t.auth.login.noAccount}
             </p>
             <Button
               className="w-full"
@@ -210,7 +216,7 @@ const Login = () => {
               onClick={() => navigateTo("/sign-up")}
               disabled={isPending}
             >
-              Cadastrar-se
+              {t.auth.login.signUpButton}
             </Button>
           </div>
 
