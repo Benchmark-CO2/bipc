@@ -1,4 +1,3 @@
-import { useTranslation } from "react-i18next";
 import ModalSimple from "./modal-simple";
 import { useMutation } from "@tanstack/react-query";
 import { postActivationUser } from "@/actions/users/postActivationUser";
@@ -7,24 +6,28 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 const UserActiveWarning = () => {
-  const { t } = useTranslation();
   const auth = useAuth();
   const [message, setMessage] = useState(
-    t("common.activeUserWarning.modalMessage")
+    "Confirme abaixo para ativar sua conta. Você receberá um e-mail com o link de ativação.",
   );
   const [emailSent, setEmailSent] = useState(false);
 
   const { isPending, mutate } = useMutation({
     mutationFn: postActivationUser,
     onError: (error) => {
-      toast.error(t("common.activeUserWarning.emailSentError"), {
-        description:
-          error instanceof Error ? error.message : t("error.errorUnknown"),
-      });
+      toast.error(
+        "Erro ao enviar o e-mail de ativação. Tente novamente mais tarde.",
+        {
+          description:
+            error instanceof Error ? error.message : "Erro desconhecido",
+        },
+      );
       setEmailSent(false);
     },
     onSuccess() {
-      setMessage(t("common.activeUserWarning.emailSentSuccess"));
+      setMessage(
+        "E-mail de ativação enviado com sucesso. Verifique sua caixa de entrada.",
+      );
       setEmailSent(true);
     },
   });
@@ -39,29 +42,30 @@ const UserActiveWarning = () => {
   };
 
   const handleModalClose = () => {
-    setMessage(t("common.activeUserWarning.modalMessage"));
+    setMessage(
+      "Confirme abaixo para ativar sua conta. Você receberá um e-mail com o link de ativação.",
+    );
     setEmailSent(false);
   };
 
   return (
     <div className="w-full p-2 bg-amber-500 text-white border mb-4">
       <p className="text-sm">
-        <strong>{t("common.activeUserWarning.title")} - </strong>
-        {t("common.activeUserWarning.description")}{" "}
+        <strong>Usuário não ativo - </strong>
+        Verifique seu e-mail para continuar usando o sistema. Se já ativou, faça
+        login novamente. Se não recebeu, confira sua caixa de spam ou{" "}
         <ModalSimple
-          title={t("common.activeUserWarning.title")}
+          title="Usuário não ativo"
           componentTrigger={
             <button className="underline hover:no-underline hover:font-bold font-medium">
-              {t("common.activeUserWarning.button")}
+              solicite um novo acesso.
             </button>
           }
           content={
-            isPending && !emailSent
-              ? t("common.activeUserWarning.emailSentPending")
-              : message
+            isPending && !emailSent ? "Enviando e-mail de ativação..." : message
           }
           onConfirm={!isPending && !emailSent ? handleActivation : undefined}
-          confirmTitle={t("common.activeUserWarning.sendEmail")}
+          confirmTitle="Enviar E-mail"
           onClose={handleModalClose}
         />
       </p>

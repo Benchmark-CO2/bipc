@@ -31,7 +31,6 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { BetaWarning } from "../beta-warning";
 import { DevelopmentWarning } from "../development-warn";
 import { Notifications } from "../notifications";
@@ -68,7 +67,6 @@ const activeProps = {
 const Sidebar = ({ handleLogout }: ISidebar) => {
   const { user, isAuthenticated } = useAuth();
   const { sidebarStatus, toggleSidebar } = useSidebar();
-  const { t } = useTranslation();
   const isMobile = useIsMobile();
   const { context, setSummaryContext } = useSummary();
 
@@ -474,7 +472,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                   onClick={handleLogout}
                   className="w-full"
                 >
-                  <span>{t("common.logout")}</span>
+                  <span>Sair</span>
                 </Button>
               )}
             </div>

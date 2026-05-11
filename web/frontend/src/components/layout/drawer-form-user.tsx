@@ -51,7 +51,6 @@ import {
 import { CustomLink } from "@/components/ui/custom-link";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 interface DrawerFormUserProps {
@@ -71,7 +70,6 @@ export default function DrawerFormUser({
   const [selectedState, setSelectedState] = useState("");
 
   const queryClient = useQueryClient();
-  const { t } = useTranslation();
   const { user, refreshUser } = useAuth();
   const isMobile = useIsMobile();
 
@@ -333,13 +331,13 @@ export default function DrawerFormUser({
       setFilledByCep(false);
       setCepFilledFields(new Set());
       setSelectedState("");
-      toast.error(t("error.errorFetchZipCode"), {
-        description: t("warn.verifyZipCode"),
+      toast.error("Erro ao buscar CEP", {
+        description: "Por favor, verifique o CEP",
         duration: 5000,
       });
       form.setError("cep", {
         type: "manual",
-        message: t("warn.verifyZipCode"),
+        message: "Por favor, verifique o CEP",
       });
       form.setValue("state", "");
       form.setValue("city", "");
@@ -408,13 +406,11 @@ export default function DrawerFormUser({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {isCompany ? "Razão Social" : t("signUp.name")} *
+                      {isCompany ? "Razão Social" : "Nome"} *
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder={
-                          isCompany ? "Razão Social" : t("signUp.name")
-                        }
+                        placeholder={isCompany ? "Razão Social" : "Nome"}
                         disabled={isUpdatePending}
                         autoComplete="name"
                         {...field}
@@ -499,7 +495,7 @@ export default function DrawerFormUser({
                     name="birthdate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("signUp.birthDate")}</FormLabel>
+                        <FormLabel>Data de Nascimento</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
@@ -611,7 +607,7 @@ export default function DrawerFormUser({
                     name="activity"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("signUp.activityArea")}</FormLabel>
+                        <FormLabel>Área de Atuação</FormLabel>
                         <FormControl>
                           <Select
                             onValueChange={field.onChange}
@@ -622,9 +618,7 @@ export default function DrawerFormUser({
                               className="w-full"
                               disabled={isUpdatePending}
                             >
-                              <SelectValue
-                                placeholder={t("signUp.activityArea")}
-                              />
+                              <SelectValue placeholder="Área de Atuação" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="Arquitetura">
@@ -652,11 +646,11 @@ export default function DrawerFormUser({
                     name="enterprise"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("signUp.companyName")}</FormLabel>
+                        <FormLabel>Nome da Empresa</FormLabel>
                         <FormControl>
                           <Input
                             type="text"
-                            placeholder={t("signUp.companyName")}
+                            placeholder="Nome da Empresa"
                             disabled={isUpdatePending}
                             {...field}
                           />
@@ -755,7 +749,7 @@ export default function DrawerFormUser({
                   name="city"
                   render={({ field }) => (
                     <FormItem className="@md:col-span-2">
-                      <FormLabel>{t("signUp.city")}</FormLabel>
+                      <FormLabel>Cidade que reside</FormLabel>
                       <FormControl>
                         {filledByCep ? (
                           <Input placeholder="Cidade" disabled {...field} />

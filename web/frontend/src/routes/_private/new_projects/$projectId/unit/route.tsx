@@ -18,7 +18,6 @@ import {
 } from "@tanstack/react-router";
 import { Copy, Edit, Loader2, Plus, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_private/new_projects/$projectId/unit")({
@@ -40,7 +39,6 @@ function RouteComponent() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { t } = useTranslation();
   const { projectId } = Route.useLoaderData();
   const params: { projectId: string; unitId: string; moduleId: string } =
     Route.useParams();
@@ -139,8 +137,8 @@ function RouteComponent() {
         <div className="flex h-full w-full flex-col items-center justify-center">
           <NotFoundList
             icon={"package"}
-            message={t("units.noUnits")}
-            description={t("units.description")}
+            message="Nenhuma Edificação"
+            description="Adicione uma Edificação para começar."
             showIcon
             button={
               <DrawerFormUnit
@@ -148,7 +146,7 @@ function RouteComponent() {
                 triggerComponent={
                   <Button variant="outline" className="mt-4">
                     <Plus />
-                    {t("units.addUnit")}
+                    Adicionar Edificação
                   </Button>
                 }
               />

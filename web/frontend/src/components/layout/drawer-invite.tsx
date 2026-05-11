@@ -5,7 +5,6 @@ import { useMutation } from "@tanstack/react-query";
 import { CircleX, UserPlus, X, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { Combobox } from "../ui/combobox";
@@ -31,7 +30,6 @@ import { queryClient } from "@/utils/queryClient";
 
 const DrawerInvite = ({ projectId }: { projectId: string }) => {
   const [openDrawer, setOpenDrawer] = useState(false);
-  const { t } = useTranslation();
 
   const form = useForm({
     resolver: zodResolver(AddUserToProjectFormSchema),
@@ -44,8 +42,8 @@ const DrawerInvite = ({ projectId }: { projectId: string }) => {
     mutationFn: ({ email }: AddUserToProjectFormSchema) =>
       postSendInvite(projectId, email),
     onSuccess: () => {
-      toast.success(t("drawerInvite.title"), {
-        description: t("drawerInvite.successMessage"),
+      toast.success("Convidar Usuário", {
+        description: "Usuário convidado com sucesso!",
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -55,8 +53,8 @@ const DrawerInvite = ({ projectId }: { projectId: string }) => {
       setOpenDrawer(false);
     },
     onError: () => {
-      toast.error(t("drawerInvite.title"), {
-        description: t("drawerInvite.errorMessage"),
+      toast.error("Convidar Usuário", {
+        description: "Erro ao convidar usuário. Tente novamente.",
         duration: 5000,
         icon: <CircleX className="stroke-destructive" size={24} />,
       });
@@ -93,9 +91,11 @@ const DrawerInvite = ({ projectId }: { projectId: string }) => {
         <DrawerHeader className="px-8">
           <DrawerTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-primary" />
-            {t("drawerInvite.title")}
+            Convidar Usuário
           </DrawerTitle>
-          <DrawerDescription>{t("drawerInvite.description")}</DrawerDescription>
+          <DrawerDescription>
+            Preencha os detalhes abaixo para convidar um novo usuário.
+          </DrawerDescription>
           <Button
             onClick={() => setOpenDrawer(false)}
             className="absolute right-4 top-2"
@@ -117,7 +117,7 @@ const DrawerInvite = ({ projectId }: { projectId: string }) => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("drawerInvite.emailLabel")}</FormLabel>
+                    <FormLabel>E-mail do Usuário *</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
@@ -144,7 +144,7 @@ const DrawerInvite = ({ projectId }: { projectId: string }) => {
             className="w-full"
           >
             <UserPlus className="mr-2 h-4 w-4" />
-            {isPending ? "Enviando convite..." : t("drawerInvite.inviteButton")}
+            {isPending ? "Enviando convite..." : "Convidar"}
           </Button>
         </DrawerFooter>
       </DrawerContent>

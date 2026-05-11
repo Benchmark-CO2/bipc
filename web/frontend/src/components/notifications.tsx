@@ -3,7 +3,6 @@ import useNotifications from "@/hooks/useNotifications";
 import { Link } from "@tanstack/react-router";
 import { Bell, CircleArrowRight } from "lucide-react";
 import { useRef } from "react";
-import { useTranslation } from "react-i18next";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 const NotificationCard = ({
@@ -46,7 +45,6 @@ export const Notifications = ({
   iconOnly = false,
 }: INotificationProps) => {
   const { notifications } = useNotifications();
-  const { t } = useTranslation();
   const ref = useRef<HTMLButtonElement>(null);
   const handleClickNotification = () => {
     if (ref.current) {
@@ -55,7 +53,7 @@ export const Notifications = ({
   };
 
   return (
-    <Popover modal i18nIsDynamicList>
+    <Popover modal>
       <PopoverTrigger ref={ref} className="relative cursor-pointer">
         {iconOnly ? (
           <Bell size={size} className="text-white" />
@@ -74,9 +72,7 @@ export const Notifications = ({
         className="w-80 max-h-[400px] overflow-y-auto "
       >
         <div className="p-2 border-b border-gray-200">
-          <h3 className="text-lg font-semibold">
-            {t("sidebar.notifications")}
-          </h3>
+          <h3 className="text-lg font-semibold">Notificações</h3>
         </div>
         {notifications.length ? (
           notifications.map((notification) => (

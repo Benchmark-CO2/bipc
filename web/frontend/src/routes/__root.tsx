@@ -19,7 +19,6 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
-import { useTranslation } from "react-i18next";
 import { trainingModalStorage } from "@/utils/trainingModalStorage";
 const TanStackRouterDevtools = import.meta.env.PROD
   ? () => null
@@ -122,11 +121,11 @@ export const Route = createRootRouteWithContext<{
     );
   },
   errorComponent: ({ error }) => {
-    const { t } = useTranslation();
-
     return (
       <div className="flex flex-col items-center justify-center h-screen w-full">
-        <h1 className="text-2xl font-bold">{t("error.unexpectedError")}</h1>
+        <h1 className="text-2xl font-bold">
+          Erro inesperado. Tente novamente mais tarde.
+        </h1>
 
         {ENV === "development" && (
           <div className="mt-4 text-base text-red-500 bg-red-300/40 p-4 flex flex-col font-semibold font-mono">

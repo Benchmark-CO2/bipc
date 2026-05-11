@@ -1,5 +1,4 @@
 import { GenerateApiKey } from "@/components/apiKey";
-import { LanguageToggle } from "@/components/language-toggle";
 import { SettingsSection } from "@/components/settings-section";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -9,23 +8,19 @@ import { UserInfo } from "@/components/user-info";
 import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
-import { createFileRoute } from "@tanstack/react-router";
 import {
-  Globe,
   KeySquare,
   Palette,
   ShieldCheck,
   ShieldHalf,
   TrendingUp,
 } from "lucide-react";
-import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_private/settings")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const { t } = useTranslation();
   const isMobile = useIsMobile();
 
   return (
@@ -35,7 +30,7 @@ function RouteComponent() {
       {/* Header */}
       <div className="space-y-2 mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-foreground">
-          {t("settings.title")}
+          Configurações
         </h1>
         <p className="text-muted-foreground">
           Gerencie suas preferências e informações de conta
@@ -58,28 +53,13 @@ function RouteComponent() {
         {/* Appearance and Language Settings */}
         <div className="grid gap-6 md:grid-cols-2">
           <SettingsSection
-            title={t("settings.appearance.title")}
-            description={t("settings.appearance.themeDescription")}
+            title="Aparência"
+            description="Escolha o tema da aplicação"
             icon={Palette}
           >
             <div className="space-y-3">
-              <label className="text-sm font-medium">
-                {t("settings.theme")}
-              </label>
+              <label className="text-sm font-medium">Tema</label>
               <ThemeToggle />
-            </div>
-          </SettingsSection>
-
-          <SettingsSection
-            title={t("settings.language")}
-            description={t("settings.appearance.languageDescription")}
-            icon={Globe}
-          >
-            <div className="space-y-3">
-              <label className="text-sm font-medium">
-                {t("settings.language")}
-              </label>
-              <LanguageToggle />
             </div>
           </SettingsSection>
         </div>

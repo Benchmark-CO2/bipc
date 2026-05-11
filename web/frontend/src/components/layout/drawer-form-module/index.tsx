@@ -16,7 +16,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "../../ui/alert";
 import { Button } from "../../ui/button";
@@ -73,7 +72,6 @@ const DrawerFormModule = ({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
 
-  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const form = useForm<ModuleFormInput>({
@@ -92,14 +90,14 @@ const DrawerFormModule = ({
     mutationFn: (data: ModuleParamsProps) =>
       patchModule(data, projectId, unitId, optionId, moduleId!),
     onError: (error) => {
-      toast.error(t("error.errorUpdateModule"), {
+      toast.error("Erro ao atualizar Módulo de Tecnologia Construtiva", {
         description:
-          error instanceof Error ? error.message : t("error.errorUnknown"),
+          error instanceof Error ? error.message : "Erro desconhecido",
         duration: 5000,
       });
     },
     onSuccess: () => {
-      toast.success(t("success.moduleUpdated"), {
+      toast.success("Módulo de Tecnologia Construtiva atualizado com sucesso", {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -126,14 +124,14 @@ const DrawerFormModule = ({
     mutationFn: (data: ModuleParamsProps) =>
       postModule(data, projectId, unitId, optionId),
     onError: (error) => {
-      toast.error(t("error.errorCreateModule"), {
+      toast.error("Erro ao criar Módulo de Tecnologia Construtiva", {
         description:
-          error instanceof Error ? error.message : t("error.errorUnknown"),
+          error instanceof Error ? error.message : "Erro desconhecido",
         duration: 5000,
       });
     },
     onSuccess: () => {
-      toast.success(t("success.moduleCreated"), {
+      toast.success("Módulo de Tecnologia Construtiva criado com sucesso", {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -544,9 +542,9 @@ const DrawerFormModule = ({
   };
 
   const structureTypes = [
-    { value: "beam_column", label: t("common.structureType.beamColumn") },
-    { value: "concrete_wall", label: t("common.structureType.concreteWall") },
-    { value: "structural_masonry", label: t("common.structureType.masonry") },
+    { value: "beam_column", label: "Viga Pilar" },
+    { value: "concrete_wall", label: "Parede de Concreto" },
+    { value: "structural_masonry", label: "Alvenaria" },
     { value: "raft_foundation", label: "Radier" },
     { value: "piles_foundation", label: "Estaca" },
     { value: "raft_piles_foundation", label: "Radier Estaqueado" },
@@ -799,9 +797,9 @@ const DrawerFormModule = ({
             {isCreationPending || isUpdatePending ? (
               <Loader2 className="animate-spin h-4 w-4" />
             ) : moduleId ? (
-              t("common.update")
+              Atualizar
             ) : (
-              t("common.add")
+              Adicionar
             )}
           </Button>
         </DrawerFooter>

@@ -7,7 +7,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
-import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
 interface ModalSimpleProps {
@@ -30,7 +29,6 @@ const ModalSimple = ({
   disableConfirm = false,
 }: ModalSimpleProps) => {
   const [open, setOpen] = useState(false);
-  const { t } = useTranslation();
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
@@ -49,7 +47,7 @@ const ModalSimple = ({
       <DialogTrigger asChild data-action="delete-project">
         {componentTrigger ?? (
           <Button variant="outline" onClick={() => setOpen(true)}>
-            {t("common.open")}
+            Abrir
           </Button>
         )}
       </DialogTrigger>
@@ -60,7 +58,7 @@ const ModalSimple = ({
         <div>{content}</div>
         <DialogFooter className="flex justify-between">
           <Button variant="outline" onClick={() => setOpen(false)}>
-            {t("common.cancel")}
+            Cancelar
           </Button>
           {onConfirm && (
             <Button

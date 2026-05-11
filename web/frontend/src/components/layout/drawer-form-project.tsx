@@ -23,7 +23,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { X } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import {
@@ -72,7 +71,6 @@ export default function DrawerFormProject({
   const [selectedState, setSelectedState] = useState("");
 
   const queryClient = useQueryClient();
-  const { t } = useTranslation();
   const isEditMode = !!projectData;
 
   const form = useForm<ProjectFormSchema>({
@@ -113,13 +111,13 @@ export default function DrawerFormProject({
   } = useMutation({
     mutationFn: postProject,
     onError: (error) => {
-      toast.error(t("error.errorCreateProject"), {
+      toast.error("Erro ao criar projeto", {
         description: error.message,
         duration: 5000,
       });
     },
     onSuccess: (data) => {
-      toast.success(t("success.projectCreated"), {
+      toast.success("Projeto criado com sucesso", {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -148,13 +146,13 @@ export default function DrawerFormProject({
     mutationFn: (data: ProjectFormSchema) =>
       patchProject(data as any, projectData!.id),
     onError: (error) => {
-      toast.error(t("error.errorEditProject"), {
+      toast.error("Erro ao editar projeto", {
         description: error.message,
         duration: 5000,
       });
     },
     onSuccess: () => {
-      toast.success(t("success.projectUpdated"), {
+      toast.success("Projeto atualizado com sucesso", {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -188,7 +186,7 @@ export default function DrawerFormProject({
     try {
       await postFile(signedUrlData.data.url, fileParams);
     } catch (error) {
-      toast.error(t("error.errorUnknown"), {
+      toast.error("Erro desconhecido", {
         description: (error as Error).message,
         duration: 5000,
       });
@@ -307,13 +305,13 @@ export default function DrawerFormProject({
       setFilledByCep(false);
       setCepFilledFields(new Set());
       setSelectedState("");
-      toast.error(t("error.errorFetchZipCode"), {
-        description: t("warn.verifyZipCode"),
+      toast.error("Erro ao buscar CEP", {
+        description: "Por favor, verifique o CEP",
         duration: 5000,
       });
       form.setError("cep", {
         type: "manual",
-        message: t("warn.verifyZipCode"),
+        message: "Por favor, verifique o CEP",
       });
       form.setValue("state", "");
       form.setValue("city", "");
@@ -343,9 +341,7 @@ export default function DrawerFormProject({
       >
         <DrawerHeader className="px-8">
           <DrawerTitle>
-            {isEditMode
-              ? t("drawerFormProject.editTitle")
-              : t("drawerFormProject.addTitle")}
+            {isEditMode ? "Editar Projeto" : "Adicionar Empreendimento"}
           </DrawerTitle>
           <Button
             onClick={() => setOpenDrawer(false)}
@@ -368,9 +364,7 @@ export default function DrawerFormProject({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      {t("drawerFormProject.projectNameLabel")}
-                    </FormLabel>
+                    <FormLabel>Nome do Projeto *</FormLabel>
                     <FormControl>
                       <Input
                         placeholder={t(
@@ -388,11 +382,11 @@ export default function DrawerFormProject({
                 name="cep"
                 render={({ field }) => (
                   <FormItem className="flex-1/3">
-                    <FormLabel>{t("drawerFormProject.cepLabel")}</FormLabel>
+                    <FormLabel>CEP</FormLabel>
                     <FormControl>
                       <div className="flex items-center gap-2">
                         <Input
-                          placeholder={t("drawerFormProject.cepPlaceholder")}
+                          placeholder="Digite o CEP"
                           value={masks.cep((field.value as string) || "")}
                           onChange={(e) => {
                             const raw = e.target.value.replace(/\D/g, "");
@@ -425,7 +419,7 @@ export default function DrawerFormProject({
                   name="state"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("drawerFormProject.stateLabel")}</FormLabel>
+                      <FormLabel>Estado *</FormLabel>
                       <FormControl>
                         <Select
                           onValueChange={(value) => {
@@ -466,11 +460,11 @@ export default function DrawerFormProject({
                   name="city"
                   render={({ field }) => (
                     <FormItem className="@md:col-span-2">
-                      <FormLabel>{t("drawerFormProject.cityLabel")}</FormLabel>
+                      <FormLabel>Cidade *</FormLabel>
                       <FormControl>
                         {filledByCep ? (
                           <Input
-                            placeholder={t("drawerFormProject.cityPlaceholder")}
+                            placeholder="Selecione uma cidade"
                             disabled
                             {...field}
                           />
@@ -484,8 +478,8 @@ export default function DrawerFormProject({
                             isError={citiesError}
                             placeholder={
                               !selectedState
-                                ? t("drawerFormProject.selectStateFirst")
-                                : t("drawerFormProject.cityPlaceholder")
+                                ? "Selecione um estado primeiro"
+                                : "Selecione uma cidade"
                             }
                           />
                         )}
@@ -500,9 +494,7 @@ export default function DrawerFormProject({
                 name="neighborhood"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      {t("drawerFormProject.neighborhoodLabel")}
-                    </FormLabel>
+                    <FormLabel>Bairro</FormLabel>
                     <FormControl>
                       <Input
                         placeholder={t(
@@ -524,12 +516,10 @@ export default function DrawerFormProject({
                   name="street"
                   render={({ field }) => (
                     <FormItem className="@md:col-span-2">
-                      <FormLabel>
-                        {t("drawerFormProject.streetLabel")}
-                      </FormLabel>
+                      <FormLabel>Rua</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t("drawerFormProject.streetPlaceholder")}
+                          placeholder="Digite o nome da rua"
                           disabled={
                             cepFilledFields.has("street") || locationLoading
                           }

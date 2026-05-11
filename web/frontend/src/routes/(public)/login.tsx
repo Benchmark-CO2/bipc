@@ -11,7 +11,6 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff, Loader2, User } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 const Login = () => {
   const auth = useAuth();
   const navigate = useNavigate({
@@ -25,7 +24,6 @@ const Login = () => {
     password: false,
   });
 
-  const { t } = useTranslation();
   const isMobile = useIsMobile();
 
   const { data, mutate, isPending, isError } = useMutation({
@@ -89,7 +87,7 @@ const Login = () => {
           {isError && (
             <div className="mb-4 p-3 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
               <h3 className="text-red-600 dark:text-red-400 text-sm font-medium">
-                {t("loginPage.error")}
+                E-mail ou senha incorretos
               </h3>
             </div>
           )}
@@ -101,7 +99,7 @@ const Login = () => {
                   className="text-xs font-semibold mb-1 text-gray-shade-500"
                   htmlFor="email"
                 >
-                  {t("common.user")}
+                  Usuário
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-2/4 -translate-y-1/2 text-gray-400 size-5 pointer-events-none" />
@@ -110,7 +108,7 @@ const Login = () => {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t("loginPage.placeholderEmail")}
+                    placeholder="exemplo@email.com"
                     className={cn(
                       "text-lg pl-10",
                       fieldsError.email
@@ -132,7 +130,7 @@ const Login = () => {
                     className="text-xs font-semibold mb-1 text-gray-shade-500"
                     htmlFor="password"
                   >
-                    {t("loginPage.placeholderPassword")}
+                    Senha
                   </label>
                   <div className="relative">
                     <Input
@@ -184,7 +182,7 @@ const Login = () => {
                     Carregando...
                   </>
                 ) : (
-                  t("loginPage.buttonLogin")
+                  Entrar
                 )}
               </Button>
               <Button
@@ -196,7 +194,7 @@ const Login = () => {
                 disabled={isPending}
                 className="w-full"
               >
-                {t("loginPage.buttonForgotPassword")}
+                Esqueci minha senha
               </Button>
             </div>
           </form>
@@ -204,7 +202,7 @@ const Login = () => {
           <Divider className="w-[90%] mx-auto" />
           <div className="flex flex-col justify-end items-center gap-4">
             <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-              {t("loginPage.askRegister")}
+              Não tem uma conta?
             </p>
             <Button
               className="w-full"
@@ -212,7 +210,7 @@ const Login = () => {
               onClick={() => navigateTo("/sign-up")}
               disabled={isPending}
             >
-              {t("loginPage.buttonRegister")}
+              Cadastrar-se
             </Button>
           </div>
 

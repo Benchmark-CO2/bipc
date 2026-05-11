@@ -15,7 +15,6 @@ import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
 import { Copy, GripVertical, Plus, Trash2 } from "lucide-react";
 import React from "react";
 import { UseFormReturn, useFieldArray, useWatch } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import { Button } from "../../ui/button";
 import { Card } from "../../ui/card";
 import {
@@ -58,7 +57,6 @@ const categoryLabels = {
 };
 
 const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
-  const { t } = useTranslation();
   const isMobile = useIsMobile();
   const { fields, remove, move } = useFieldArray({
     control: form.control as any,
@@ -303,9 +301,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
     setTimeout(() => recalculateIndices(), 0);
   };
 
-  const unitTypes = [
-    { value: "tower", label: t("drawerFormUnit.unitTypeOptions.tower") },
-  ];
+  const unitTypes = [{ value: "tower", label: "Torre" }];
 
   // Ordem de exibição da tabela espelhando o BuildingVisualizer:
   // cada categoria é ordenada por índice decrescente (maior índice = topo visual)
@@ -351,12 +347,9 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("drawerFormUnit.unitNameLabel")}</FormLabel>
+                <FormLabel>Nome da Edificação *</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder={t("drawerFormUnit.unitNamePlaceholder")}
-                    {...field}
-                  />
+                  <Input placeholder="Digite o nome da Edificação" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -368,7 +361,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
             name="type"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("drawerFormUnit.unitTypeLabel")}</FormLabel>
+                <FormLabel>Tipo de Edificação *</FormLabel>
                 <FormControl>
                   <Select
                     onValueChange={field.onChange}
@@ -376,9 +369,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                     disabled={unitTypes.length <= 1}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue
-                        placeholder={t("drawerFormUnit.unitTypePlaceholder")}
-                      />
+                      <SelectValue placeholder="Selecione um tipo de edificação" />
                     </SelectTrigger>
                     <SelectContent>
                       {unitTypes.map((type) => (

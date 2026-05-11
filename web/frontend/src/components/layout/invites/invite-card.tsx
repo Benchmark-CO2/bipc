@@ -20,7 +20,6 @@ import {
   Clock,
   Mail,
 } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 const Skeleton = () => {
@@ -52,22 +51,18 @@ const Skeleton = () => {
 };
 
 const CardNotFound = () => {
-  const { t } = useTranslation();
-
   return (
     <Card>
       <CardContent className="flex flex-col items-center justify-center py-12 text-center">
         <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
           <Mail className="w-8 h-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold mb-2">
-          {t("common.inviteNotFound")}
-        </h3>
+        <h3 className="text-lg font-semibold mb-2">Convite não encontrado</h3>
         <p className="text-muted-foreground text-sm mb-6 max-w-sm">
-          {t("common.inviteNotFoundDescription")}
+          O convite que você está procurando não existe ou já foi aceito.
         </p>
         <Link to="/notifications">
-          <Button variant="outline">{t("common.showAll")}</Button>
+          <Button variant="outline">Mostrar Todos</Button>
         </Link>
       </CardContent>
     </Card>
@@ -82,12 +77,10 @@ const InviteCardItem = ({
   invite: IInvite;
   handleSubmitReplyInvite: (
     invitedId: number,
-    status: PutReplyInviteRequest
+    status: PutReplyInviteRequest,
   ) => void;
   disabled: boolean;
 }) => {
-  const { t } = useTranslation();
-
   const statusConfig = {
     pending: {
       icon: Clock,
@@ -116,7 +109,7 @@ const InviteCardItem = ({
     <Card
       className={cn(
         "transition-all duration-200",
-        isPending && "border-primary/50 shadow-sm hover:shadow-md"
+        isPending && "border-primary/50 shadow-sm hover:shadow-md",
       )}
     >
       <CardHeader>
@@ -143,9 +136,7 @@ const InviteCardItem = ({
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-muted-foreground">
-              {t("common.invitedBy")}
-            </p>
+            <p className="text-xs text-muted-foreground">Convidado por</p>
             <p className="font-medium truncate">{invite.inviter_name}</p>
           </div>
         </div>
@@ -168,7 +159,7 @@ const InviteCardItem = ({
               variant="bipc"
             >
               <CheckCircle2 className="w-4 h-4 mr-2" />
-              {t("common.accept")}
+              Aceitar
             </Button>
             <Button
               variant="outline"
@@ -177,7 +168,7 @@ const InviteCardItem = ({
               className="flex-1"
             >
               <XCircle className="w-4 h-4 mr-2" />
-              {t("common.reject")}
+              Rejeitar
             </Button>
           </div>
         )}

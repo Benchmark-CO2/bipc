@@ -13,7 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
-import { useTranslation } from "react-i18next";
 import {
   flexRender,
   getCoreRowModel,
@@ -38,7 +37,6 @@ function VersionsTable({
   setSelectedVersions,
   onCheckVersion,
 }: IVersionsTableProps) {
-  const { t } = useTranslation();
   const [reloadTrigger, setReloadTrigger] = useState(false);
 
   const sortedVersions = useMemo(() => {
@@ -49,7 +47,7 @@ function VersionsTable({
     data: sortedVersions,
     columns: versionsColumns,
     getCoreRowModel: getCoreRowModel(),
-    renderFallbackValue: String(t("simulationTable.loading")),
+    renderFallbackValue: "Carregando...",
   });
   const startReload = () => {
     setTimeout(() => {
@@ -66,7 +64,7 @@ function VersionsTable({
   useEffect(() => {
     if (selectedVersions?.length !== table.getSelectedRowModel().rows.length) {
       setSelectedVersions(
-        table.getSelectedRowModel().rows.map((row) => row.original.version)
+        table.getSelectedRowModel().rows.map((row) => row.original.version),
       );
     }
   }, [onCheckVersion, table.getSelectedRowModel().rows]);
@@ -85,7 +83,7 @@ function VersionsTable({
                 <TableHead key={header.id}>
                   {flexRender(
                     header.column.columnDef.header,
-                    header.getContext()
+                    header.getContext(),
                   )}
                 </TableHead>
               ))}
@@ -122,7 +120,7 @@ function VersionsTable({
                         onClickSetValidVersion(+row.original.version);
                       }}
                     >
-                      {t("simulationTable.setValidVersion")}
+                      Definir versão válida
                       <Check className="stroke-primary" size={32} />
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -133,7 +131,7 @@ function VersionsTable({
         </TableBody>
       </Table>
       <span className="block w-full text-xs text-foreground/60 my-2">
-        {t("simulationTable.selectVersions")}
+        Selecione versões na tabela acima para comparar simulações.
       </span>
     </div>
   );

@@ -1,6 +1,5 @@
 import { User, Mail, Calendar, Edit, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
@@ -16,7 +15,6 @@ import { Separator } from "@/components/ui/separator";
 export function UserInfo() {
   const { user, logout } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const { t } = useTranslation();
   const navigate = useNavigate();
 
   // Extrai os dados do usuário corretamente (pode estar aninhado)
@@ -72,7 +70,7 @@ export function UserInfo() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <User size={20} />
-          {t("settings.userInfo.title")}
+          Informações do Usuário
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">

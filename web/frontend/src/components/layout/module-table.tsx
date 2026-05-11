@@ -18,7 +18,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { ChartLine, Pen } from "lucide-react";
 import { moduleColumns } from "../columns/modules";
 import { useMemo, useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import NotFoundList from "../ui/not-found-list";
 import { Checkbox } from "../ui/checkbox";
 import DrawerFormModule from "./drawer-form-module";
@@ -43,7 +42,6 @@ export default function ModuleTable({
   unitId,
   onSelectionChange,
 }: IModuleTable) {
-  const { t } = useTranslation();
   const navigate = useNavigate({ from: "/projects/$projectId" });
 
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -157,16 +155,16 @@ export default function ModuleTable({
   };
 
   const displayName = {
-    concrete_wall: t("common.structureType.concreteWall"),
-    beam_column: t("common.structureType.beamColumn"),
-    structural_masonry: t("common.structureType.masonry"),
+    concrete_wall: "Parede de Concreto",
+    beam_column: "Viga Pilar",
+    structural_masonry: "Alvenaria",
   };
 
   const { mutate: mutateModule } = useMutation({
     mutationFn: (moduleId: string) =>
       getModule(projectId, unitId, moduleId, tableId),
     onError: () => {
-      toast.error(t("error.errorFetchModules"));
+      toast.error("Erro ao carregar módulos");
       setModuleData(null);
     },
     onSuccess: (data) => {
@@ -205,7 +203,7 @@ export default function ModuleTable({
               variant="bipc"
               className="flex items-center gap-2"
             >
-              {t("drawerFormModule.createButtonTrigger")}
+              Criar Módulo
             </Button>
           }
           // projectId={projectId}
@@ -216,8 +214,8 @@ export default function ModuleTable({
 
       {modules.length === 0 ? (
         <NotFoundList
-          message={t("modulesTable.noItemsFound")}
-          description={t("modulesTable.addNewTechnology")}
+          message="Nenhum item encontrado"
+          description="Adicione um novo Módulo de Tecnologia Construtiva no botão acima."
           icon="file"
           showIcon={false}
         />

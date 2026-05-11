@@ -1,11 +1,9 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Switch } from "@/components/ui/switch";
-import { useTranslation } from "react-i18next";
 
 export function SidebarThemeToggle() {
   const { theme, setTheme } = useTheme();
-  const { t } = useTranslation();
 
   const isDark = theme === "dark";
 

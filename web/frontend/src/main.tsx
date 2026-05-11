@@ -8,7 +8,6 @@ import { Toaster } from "./components/ui/sonner";
 import { AuthContext } from "./context/authContext";
 import { SummaryProvider } from "./context/summaryContext";
 import { useAuth } from "./hooks/useAuth";
-import "./i18n";
 import { AuthProvider } from "./providers/authProvider";
 import { routeTree } from "./routeTree.gen";
 import { queryClient } from "./utils/queryClient";
@@ -56,5 +55,5 @@ createRoot(document.getElementById("root")!).render(
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
-  </StrictMode>
+  </StrictMode>,
 );

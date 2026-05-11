@@ -53,7 +53,6 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -100,7 +99,6 @@ const SignUp = () => {
   const isCompany = userType === "company";
 
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const [warnModalIsOpen, setWarnModalIsOpen] = useState(false);
 
   const {
@@ -129,8 +127,9 @@ const SignUp = () => {
       });
     },
     onSuccess() {
-      toast.success(t("signUp.dialog.success.title"), {
-        description: t("signUp.dialog.success.content"),
+      toast.success("Cadastro realizado com sucesso", {
+        description:
+          "Um e-mail de confirmação foi enviado para o seu endereço de e-mail.",
       });
       setSuccessModal(true);
     },
@@ -226,13 +225,13 @@ const SignUp = () => {
       setFilledByCep(false);
       setCepFilledFields(new Set());
       setSelectedState("");
-      toast.error(t("error.errorFetchZipCode"), {
-        description: t("warn.verifyZipCode"),
+      toast.error("Erro ao buscar CEP", {
+        description: "Por favor, verifique o CEP",
         duration: 5000,
       });
       form.setError("cep", {
         type: "manual",
-        message: t("warn.verifyZipCode"),
+        message: "Por favor, verifique o CEP",
       });
       form.setValue("state", "");
       form.setValue("city", "");
@@ -342,7 +341,7 @@ const SignUp = () => {
                   <FormItem>
                     <div className="flex items-center gap-1.5">
                       <FormLabel>
-                        {isCompany ? "Razão Social" : t("signUp.name")} *
+                        {isCompany ? "Razão Social" : "Nome"} *
                       </FormLabel>
                       <TooltipProvider>
                         <Tooltip>
@@ -361,9 +360,7 @@ const SignUp = () => {
                     </div>
                     <FormControl>
                       <Input
-                        placeholder={
-                          isCompany ? "Razão Social" : t("signUp.name")
-                        }
+                        placeholder={isCompany ? "Razão Social" : "Nome"}
                         disabled={isPending}
                         autoComplete="name"
                         {...field}
@@ -489,7 +486,7 @@ const SignUp = () => {
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center gap-1.5">
-                          <FormLabel>{t("signUp.birthDate")}</FormLabel>
+                          <FormLabel>Data de Nascimento</FormLabel>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger type="button">
@@ -529,12 +526,12 @@ const SignUp = () => {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("signUp.password")} *</FormLabel>
+                      <FormLabel>Senha *</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
                             type={showPassword ? "text" : "password"}
-                            placeholder={t("signUp.password")}
+                            placeholder="Senha"
                             disabled={isPending}
                             autoComplete="new-password"
                             className="pr-10"
@@ -564,12 +561,12 @@ const SignUp = () => {
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("signUp.confirmPassword")} *</FormLabel>
+                      <FormLabel>Digite novamente a senha *</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
                             type={showConfirmPassword ? "text" : "password"}
-                            placeholder={t("signUp.confirmPassword")}
+                            placeholder="Digite novamente a senha"
                             disabled={isPending}
                             autoComplete="new-password"
                             className="pr-10"
@@ -606,7 +603,7 @@ const SignUp = () => {
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center gap-1.5">
-                          <FormLabel>{t("signUp.activityArea")}</FormLabel>
+                          <FormLabel>Área de Atuação</FormLabel>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger type="button">
@@ -632,9 +629,7 @@ const SignUp = () => {
                               className="w-full"
                               disabled={isPending}
                             >
-                              <SelectValue
-                                placeholder={t("signUp.activityArea")}
-                              />
+                              <SelectValue placeholder="Área de Atuação" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="Arquitetura">
@@ -663,7 +658,7 @@ const SignUp = () => {
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center gap-1.5">
-                          <FormLabel>{t("signUp.companyName")}</FormLabel>
+                          <FormLabel>Nome da Empresa</FormLabel>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger type="button">
@@ -681,7 +676,7 @@ const SignUp = () => {
                         <FormControl>
                           <Input
                             type="text"
-                            placeholder={t("signUp.companyName")}
+                            placeholder="Nome da Empresa"
                             disabled={isPending}
                             {...field}
                           />
@@ -778,7 +773,7 @@ const SignUp = () => {
                   name="city"
                   render={({ field }) => (
                     <FormItem className="sm:col-span-2">
-                      <FormLabel>{t("signUp.city")}</FormLabel>
+                      <FormLabel>Cidade que reside</FormLabel>
                       <FormControl>
                         {filledByCep ? (
                           <Input placeholder="Cidade" disabled {...field} />
@@ -969,7 +964,7 @@ const SignUp = () => {
                     Carregando...
                   </>
                 ) : (
-                  t("signUp.buttonSignUp")
+                  "Cadastrar"
                 )}
               </Button>
             </form>

@@ -31,14 +31,12 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CheckCircle, Loader2, Mail, XCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/(public)/forget")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const { t } = useTranslation();
   const isMobile = useIsMobile();
   const { mutate, isPending, isError, isSuccess } = useMutation({
     mutationFn: postEmailToResetPassword,
@@ -74,7 +72,7 @@ function RouteComponent() {
           "flex h-full w-full items-center justify-center transition-all overflow-auto",
           {
             block: isMobile,
-          }
+          },
         )}
       >
         <Card className="w-full max-w-md rounded-md">
@@ -86,10 +84,11 @@ function RouteComponent() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
-            <CardTitle className="text-xl">
-              {t("forgetPage.successTitle")}
-            </CardTitle>
-            <CardDescription>{t("forgetPage.successMessage")}</CardDescription>
+            <CardTitle className="text-xl">E-mail Enviado!</CardTitle>
+            <CardDescription>
+              E-mail enviado com sucesso! Se o seu e-mail estiver correto, você
+              receberá um link para redefinir sua senha.
+            </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
             <Button
@@ -97,7 +96,7 @@ function RouteComponent() {
               variant="bipc"
               className="w-full"
             >
-              {t("forgetPage.backToLogin")}
+              Voltar ao Login
             </Button>
           </CardFooter>
         </Card>
@@ -112,7 +111,7 @@ function RouteComponent() {
           "flex h-full w-full items-center justify-center transition-all overflow-auto",
           {
             block: isMobile,
-          }
+          },
         )}
       >
         <Card className="w-full max-w-md rounded-md">
@@ -124,12 +123,13 @@ function RouteComponent() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
               <XCircle className="h-6 w-6 text-red-600" />
             </div>
-            <CardTitle className="text-xl">{t("forgetPage.title")}</CardTitle>
+            <CardTitle className="text-xl">ESQUECI MINHA SENHA</CardTitle>
           </CardHeader>
           <CardContent>
             <Alert variant="destructive">
               <AlertDescription>
-                {t("forgetPage.errorMessage")}
+                Erro ao enviar e-mail. Cheque se o e-mail está correto e tente
+                novamente.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -139,7 +139,7 @@ function RouteComponent() {
               onClick={() => navigateTo("/login")}
               className="w-full"
             >
-              {t("forgetPage.backToLogin")}
+              Voltar ao Login
             </Button>
           </CardFooter>
         </Card>
@@ -154,7 +154,7 @@ function RouteComponent() {
           "flex h-full w-full items-center justify-center transition-all overflow-auto",
           {
             block: isMobile,
-          }
+          },
         )}
       >
         <Card className="w-full max-w-md rounded-md">
@@ -166,10 +166,8 @@ function RouteComponent() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
               <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
             </div>
-            <CardTitle className="text-xl">{t("forgetPage.title")}</CardTitle>
-            <CardDescription>
-              {t("forgetPage.placeholderEmail")}
-            </CardDescription>
+            <CardTitle className="text-xl">ESQUECI MINHA SENHA</CardTitle>
+            <CardDescription>E-mail</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -182,7 +180,7 @@ function RouteComponent() {
         "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar",
         {
           block: isMobile,
-        }
+        },
       )}
     >
       <Card className="w-full max-w-md rounded-md">
@@ -194,7 +192,7 @@ function RouteComponent() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
             <Mail className="h-6 w-6 text-blue-600" />
           </div>
-          <CardTitle className="text-xl">{t("forgetPage.title")}</CardTitle>
+          <CardTitle className="text-xl">ESQUECI MINHA SENHA</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -207,11 +205,11 @@ function RouteComponent() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("forgetPage.placeholderEmail")}</FormLabel>
+                    <FormLabel>E-mail</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder={t("forgetPage.placeholderEmail")}
+                        placeholder="E-mail"
                         disabled={isPending}
                         autoComplete="email"
                         {...field}
@@ -230,10 +228,10 @@ function RouteComponent() {
                 {isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t("forgetPage.buttonSendEmail")}
+                    Enviar E-mail
                   </>
                 ) : (
-                  t("forgetPage.buttonSendEmail")
+                  "Enviar E-mail"
                 )}
               </Button>
             </form>
@@ -246,7 +244,7 @@ function RouteComponent() {
             disabled={isPending}
             className="w-full"
           >
-            {t("forgetPage.backToLogin")}
+            Voltar ao Login
           </Button>
         </CardFooter>
       </Card>

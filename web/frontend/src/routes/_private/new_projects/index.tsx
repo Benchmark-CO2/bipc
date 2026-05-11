@@ -12,7 +12,6 @@ import { queryClient } from "@/utils/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_private/new_projects/")({
@@ -32,7 +31,6 @@ export const Route = createFileRoute("/_private/new_projects/")({
 
 function RouteComponent() {
   const [viewMode, setViewMode] = useState<"table" | "grid">("grid");
-  const { t } = useTranslation();
   const { projects, selectedProjects, setSelectedProjects } = useProjects();
   const navigate = useNavigate({ from: "/new_projects" });
   const { setSummaryContext } = useSummary();
@@ -66,7 +64,7 @@ function RouteComponent() {
   const onDeleteProject = (projectUid: string) => {
     void deleteProject(projectUid)
       .then(async () => {
-        toast.success(t("success.projectDeleted"));
+        toast.success("Projeto deletado com sucesso");
         await queryClient.invalidateQueries({
           queryKey: ["projects"],
           refetchType: "all",
