@@ -1,5 +1,12 @@
+import { getProjectsBenchmark } from '@/actions/benchmarks/getProjects';
+import { deleteProject } from "@/actions/projects/deleteProjects";
+import { postDuplicateProject } from "@/actions/projects/postDuplicateProject";
+import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { IProject, TProjectPhase } from "@/types/projects";
 import { phaseColors, phaseLabels } from "@/utils/phaseConfig";
+import { queryClient } from "@/utils/queryClient";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import {
   ChevronDown,
   ChevronUp,
@@ -9,18 +16,14 @@ import {
   UserCheck,
 } from "lucide-react";
 import { useState } from "react";
-import { DrawerFormProject } from "../layout";
-import { Button } from "./button";
-import DialogTransferOwnership from "../layout/dialog-transfer-ownership";
-import { useProjectPermissions } from "@/hooks/useProjectPermissions";
-import ModalConfirmDelete from "../layout/modal-confirm-delete";
-import { useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/utils/queryClient";
 import { toast } from "sonner";
-import { deleteProject } from "@/actions/projects/deleteProjects";
-import { useNavigate } from "@tanstack/react-router";
+import { exportChartToPng } from '../charts/exportChart';
+import { DrawerFormProject } from "../layout";
+import DialogTransferOwnership from "../layout/dialog-transfer-ownership";
+import ModalConfirmDelete from "../layout/modal-confirm-delete";
 import ModalSimple from "../layout/modal-simple";
-import { postDuplicateProject } from "@/actions/projects/postDuplicateProject";
+import { normalizeBenchmarkSeries, recalculateY } from '../summaryVariants/utils';
+import { Button } from "./button";
 
 interface ICustomBanner {
   name: string;
@@ -118,12 +121,93 @@ const CustomBanner = ({
     },
   });
 
+  const { data: benchmarkData } = useQuery({
+    queryKey: ["benchmark", id],
+    queryFn: () => getProjectsBenchmark({}),
+  });
   const handleCollapseToggle = () => {
     setIsCollapsed((prev) => {
       const newState = !prev;
       localStorage.setItem("@banner/collapsed", String(newState));
       return newState;
     });
+  };
+
+  const handleExport = async () => {
+    const projectData = queryClient.getQueryData<any>(["project", id]);
+    const consumption = projectData?.data?.project?.consumption?.total;
+
+    const buildChartImage = async (
+      type: "co2" | "energy",
+      unit: string,
+      minField: string,
+      maxField: string,
+    ) => {
+      const series = benchmarkData?.data.benchmark[type];
+      const normalized = normalizeBenchmarkSeries(series);
+
+      const allData =
+        consumption
+          ? [
+              ...normalized,
+              {
+                id: id!,
+                minId: id!,
+                maxId: id!,
+                y: 0,
+                min: consumption[minField],
+                max: consumption[maxField],
+                label: name,
+              },
+            ]
+          : normalized;
+
+      const minData = allData.map((d) => d.min);
+      const maxData = allData.map((d) => d.max);
+      const minValue = minData.length ? Math.min(...minData) : 0;
+      const maxValue = maxData.length ? Math.max(...maxData) : 0;
+      const chartData = recalculateY(allData, minValue, maxValue);
+
+      const projectPoint = chartData.find((d) => d.id === id);
+      const procelClass = projectPoint
+        ? projectPoint.y < 0.25 ? "A"
+          : projectPoint.y < 0.5 ? "B"
+            : projectPoint.y < 0.75 ? "C"
+              : "D"
+        : null;
+
+      return exportChartToPng({
+        data: chartData,
+        selectedBars: id ? [id] : [],
+        showProcelScale: true,
+        procelHighlight: procelClass,
+        unit,
+        showBaseline: true,
+        showTop5Line: true,
+        top5Field: "min",
+        showMaxCurve: true,
+        showMinCurve: true,
+        showMidCurve: true,
+      });
+    };
+
+    const [co2Image, energyImage] = await Promise.all([
+      buildChartImage("co2", "KgCO₂/m²", "co2_min", "co2_max"),
+      buildChartImage("energy", "MJ/m²", "energy_min", "energy_max"),
+    ]);
+
+    const linkCo2 = document.createElement("a");
+    linkCo2.href = co2Image.dataUrl;
+    linkCo2.download = "grafico-co2.png";
+    linkCo2.click();
+
+    // Small delay so the browser doesn't block the second download
+    await new Promise((r) => setTimeout(r, 300));
+
+    const linkEnergy = document.createElement("a");
+    linkEnergy.href = energyImage.dataUrl;
+    linkEnergy.download = "grafico-energy.png";
+    linkEnergy.click();
   };
 
   return (
@@ -150,7 +234,9 @@ const CustomBanner = ({
               >
                 {phaseLabels[phase]}
               </span>
-
+              <Button onClick={handleExport}>
+                Exportar
+              </Button>
               {hasPermission("*:*") && (
                 <ModalSimple
                   componentTrigger={
@@ -216,11 +302,10 @@ const CustomBanner = ({
 
           {/* Conteúdo expansível */}
           <div
-            className={`grid transition-all duration-500 ease-in-out ${
-              isCollapsed
+            className={`grid transition-all duration-500 ease-in-out ${isCollapsed
                 ? "grid-rows-[0fr] opacity-0"
                 : "grid-rows-[1fr] opacity-100"
-            }`}
+              }`}
           >
             <div className="overflow-hidden">
               {/* Segunda linha: city, state, fullAddress, unitsCount, totalArea */}
