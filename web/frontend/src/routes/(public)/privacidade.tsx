@@ -16,7 +16,7 @@ function RouteComponent() {
         <p className="text-muted-foreground">
           Esta Política de Privacidade descreve como coletamos, usamos e
           protegemos suas informações pessoais ao utilizar nossa plataforma de
-          benchmark de emissões de CO2. Ao acessar ou usar nossa plataforma,
+          benchmark de emissões de CO₂. Ao acessar ou usar nossa plataforma,
           você concorda com os termos desta política.
         </p>
       </div>

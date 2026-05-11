@@ -590,10 +590,8 @@ const DrawerFormModule = ({
         })}
       >
         <DrawerHeader className="px-8">
-          <DrawerTitle className="text-2xl font-bold text-primary">
-            {moduleId
-              ? "Editar Módulo de Cálculo"
-              : "Adicionar Módulo de Cálculo"}
+          <DrawerTitle className="text-h1 text-primary">
+            Dados da tecnologia
           </DrawerTitle>
           <Button
             onClick={handleClose}
@@ -663,7 +661,7 @@ const DrawerFormModule = ({
                 <div className="flex-1 overflow-y-auto pr-2">
                   <div className="p-4 border rounded-lg border-gray-shade-200 space-y-4 bg-card">
                     <div>
-                      <span className="text-md font-semibold leading-2 text-primary dark:text-gray-300">
+                      <span className="text-h3 text-primary dark:text-gray-300">
                         Dados da tecnologia
                       </span>
                     </div>

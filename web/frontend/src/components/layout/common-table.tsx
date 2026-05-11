@@ -87,9 +87,9 @@ export default function CommonTable({
     <div className="space-y-4 w-full">
       <div className="flex items-baseline justify-between">
         <div className="flex items-center gap-2 w-full">
-          <h3 className="text-md font-semibold text-primary dark:text-gray-100 w-[inherit]">
+          <h2 className="text-h2 text-primary dark:text-gray-100 w-full">
             {tableName}
-          </h3>
+          </h2>
         </div>
         <div className="flex items-center gap-2">
           {actions}
@@ -192,8 +192,8 @@ export default function CommonTable({
                     key={row.id}
                     className={cn(
                       index % 2 === 0
-                        ? "bg-[#E3F3F6] dark:bg-white/[0.03]"
-                        : "bg-[#FBFEFE] dark:bg-transparent",
+                        ? "bg-table-row-even"
+                        : "bg-table-row-odd",
                       isInteractive &&
                         "hover:cursor-pointer hover:bg-dark-100 dark:hover:bg-white/[0.08]",
                     )}

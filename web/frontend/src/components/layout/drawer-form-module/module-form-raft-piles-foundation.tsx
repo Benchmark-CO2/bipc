@@ -120,7 +120,7 @@ const ModuleFormRaftPilesFoundation = ({
       </div>
 
       {/* Radier */}
-      <h3 className="text-sm font-medium text-gray-900">Radier</h3>
+      <h3 className="text-base font-semibold text-primary">Radier</h3>
       <Card className="border-2 border-blue-500">
         <CardContent className="space-y-4 pt-4">
           {/* Área e Espessura do Radier */}
@@ -178,7 +178,7 @@ const ModuleFormRaftPilesFoundation = ({
       </Card>
 
       {/* Estacas */}
-      <h3 className="text-sm font-medium text-gray-900">Estacas</h3>
+      <h3 className="text-base font-semibold text-primary">Estacas</h3>
       <Card className="border-2 border-blue-500">
         <CardContent className="space-y-4 pt-4">
           {/* Volume das Estacas */}

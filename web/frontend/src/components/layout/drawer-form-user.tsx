@@ -127,7 +127,7 @@ export default function DrawerFormUser({
       if (error.response?.status === 409) {
         form.setError("email", {
           type: "custom",
-          message: "Email já cadastrado",
+          message: "E-mail já cadastrado",
         });
       }
       toast.error("Erro ao atualizar usuário", {
@@ -429,11 +429,11 @@ export default function DrawerFormUser({
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email *</FormLabel>
+                    <FormLabel>E-mail *</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder="Email"
+                        placeholder="exemplo@email.com"
                         disabled={true}
                         autoComplete="email"
                         className="bg-muted/50 cursor-not-allowed"
@@ -441,7 +441,7 @@ export default function DrawerFormUser({
                       />
                     </FormControl>
                     <p className="text-xs text-muted-foreground mt-1">
-                      O email não pode ser alterado
+                      O e-mail não pode ser alterado
                     </p>
                   </FormItem>
                 )}

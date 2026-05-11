@@ -43,7 +43,7 @@ const transparenciaItems: PopoverItem[] = [
 
 const activeProps = {
   style: {
-    fontWeight: "bold",
+    textShadow: "0.4px 0 0 currentColor, -0.4px 0 0 currentColor",
   },
 };
 
@@ -97,7 +97,7 @@ export default function PublicHeader() {
       />
 
       <Divider
-        className={cn("h-[28px] w-0.5 my-0", {
+        className={cn("h-[28px] w-[1px] my-0", {
           hidden: isMobile,
           "mx-4": !isMobile,
         })}

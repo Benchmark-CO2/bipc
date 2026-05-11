@@ -1,191 +1,218 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from 'react';
-import { ReferenceLine, Scatter, ScatterChart, ScatterProps, Tooltip, XAxis, YAxis } from 'recharts';
-import { DataPoint } from './mock';
+import { useEffect, useState } from "react";
+import {
+  ReferenceLine,
+  Scatter,
+  ScatterChart,
+  ScatterProps,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { DataPoint } from "./mock";
 
 interface IProps {
-  cx: number | string
-  cy: number | string
-  fill?: string
-  stroke?: string
-  strokeWidth?: number
-  payload?: { fill: boolean; label: string, isGlobal?: boolean }
+  cx: number | string;
+  cy: number | string;
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  payload?: { fill: boolean; label: string; isGlobal?: boolean };
 }
 
 interface IChartProps {
   data?: {
-    x: number
-    y: number
-    fill: boolean
-    label?: string
-  }[]
-  maxHeight?: number
-  maxWidth?: number
-  filledPoints?: number
+    x: number;
+    y: number;
+    fill: boolean;
+    label?: string;
+  }[];
+  maxHeight?: number;
+  maxWidth?: number;
+  filledPoints?: number;
   datachart?: {
-    green: DataPoint[]
-    grey: DataPoint[]
-  }
+    green: DataPoint[];
+    grey: DataPoint[];
+  };
   globalData?: {
-    green: DataPoint[]
-    grey: DataPoint[]
-  }
+    green: DataPoint[];
+    grey: DataPoint[];
+  };
 }
 
 const Loader = ({ width, height }: { width: number; height: number }) => (
-  <svg xmlns='http://www.w3.org/2000/svg' width={width / 10} height={height / 10} viewBox='0 0 24 24'>
-    <rect width='10' height='10' x='1' y='1' className='fill-amber-600' rx='1'>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={width / 10}
+    height={height / 10}
+    viewBox="0 0 24 24"
+  >
+    <rect width="10" height="10" x="1" y="1" className="fill-amber-600" rx="1">
       <animate
-        id='svgSpinnersBlocksShuffle30'
-        fill='freeze'
-        attributeName='x'
-        begin='0;svgSpinnersBlocksShuffle3b.end'
-        dur='0.2s'
-        values='1;13'
+        id="svgSpinnersBlocksShuffle30"
+        fill="freeze"
+        attributeName="x"
+        begin="0;svgSpinnersBlocksShuffle3b.end"
+        dur="0.2s"
+        values="1;13"
       />
       <animate
-        id='svgSpinnersBlocksShuffle31'
-        fill='freeze'
-        attributeName='y'
-        begin='svgSpinnersBlocksShuffle38.end'
-        dur='0.2s'
-        values='1;13'
+        id="svgSpinnersBlocksShuffle31"
+        fill="freeze"
+        attributeName="y"
+        begin="svgSpinnersBlocksShuffle38.end"
+        dur="0.2s"
+        values="1;13"
       />
       <animate
-        id='svgSpinnersBlocksShuffle32'
-        fill='freeze'
-        attributeName='x'
-        begin='svgSpinnersBlocksShuffle39.end'
-        dur='0.2s'
-        values='13;1'
+        id="svgSpinnersBlocksShuffle32"
+        fill="freeze"
+        attributeName="x"
+        begin="svgSpinnersBlocksShuffle39.end"
+        dur="0.2s"
+        values="13;1"
       />
       <animate
-        id='svgSpinnersBlocksShuffle33'
-        fill='freeze'
-        attributeName='y'
-        begin='svgSpinnersBlocksShuffle3a.end'
-        dur='0.2s'
-        values='13;1'
-      />
-    </rect>
-    <rect width='10' height='10' x='1' y='13' className='fill-amber-600' rx='1'>
-      <animate
-        id='svgSpinnersBlocksShuffle34'
-        fill='freeze'
-        attributeName='y'
-        begin='svgSpinnersBlocksShuffle30.end'
-        dur='0.2s'
-        values='13;1'
-      />
-      <animate
-        id='svgSpinnersBlocksShuffle35'
-        fill='freeze'
-        attributeName='x'
-        begin='svgSpinnersBlocksShuffle31.end'
-        dur='0.2s'
-        values='1;13'
-      />
-      <animate
-        id='svgSpinnersBlocksShuffle36'
-        fill='freeze'
-        attributeName='y'
-        begin='svgSpinnersBlocksShuffle32.end'
-        dur='0.2s'
-        values='1;13'
-      />
-      <animate
-        id='svgSpinnersBlocksShuffle37'
-        fill='freeze'
-        attributeName='x'
-        begin='svgSpinnersBlocksShuffle33.end'
-        dur='0.2s'
-        values='13;1'
+        id="svgSpinnersBlocksShuffle33"
+        fill="freeze"
+        attributeName="y"
+        begin="svgSpinnersBlocksShuffle3a.end"
+        dur="0.2s"
+        values="13;1"
       />
     </rect>
-    <rect width='10' height='10' x='13' y='13' className='fill-amber-600' rx='1'>
+    <rect width="10" height="10" x="1" y="13" className="fill-amber-600" rx="1">
       <animate
-        id='svgSpinnersBlocksShuffle38'
-        fill='freeze'
-        attributeName='x'
-        begin='svgSpinnersBlocksShuffle34.end'
-        dur='0.2s'
-        values='13;1'
+        id="svgSpinnersBlocksShuffle34"
+        fill="freeze"
+        attributeName="y"
+        begin="svgSpinnersBlocksShuffle30.end"
+        dur="0.2s"
+        values="13;1"
       />
       <animate
-        id='svgSpinnersBlocksShuffle39'
-        fill='freeze'
-        attributeName='y'
-        begin='svgSpinnersBlocksShuffle35.end'
-        dur='0.2s'
-        values='13;1'
+        id="svgSpinnersBlocksShuffle35"
+        fill="freeze"
+        attributeName="x"
+        begin="svgSpinnersBlocksShuffle31.end"
+        dur="0.2s"
+        values="1;13"
       />
       <animate
-        id='svgSpinnersBlocksShuffle3a'
-        fill='freeze'
-        attributeName='x'
-        begin='svgSpinnersBlocksShuffle36.end'
-        dur='0.2s'
-        values='1;13'
+        id="svgSpinnersBlocksShuffle36"
+        fill="freeze"
+        attributeName="y"
+        begin="svgSpinnersBlocksShuffle32.end"
+        dur="0.2s"
+        values="1;13"
       />
       <animate
-        id='svgSpinnersBlocksShuffle3b'
-        fill='freeze'
-        attributeName='y'
-        begin='svgSpinnersBlocksShuffle37.end'
-        dur='0.2s'
-        values='1;13'
+        id="svgSpinnersBlocksShuffle37"
+        fill="freeze"
+        attributeName="x"
+        begin="svgSpinnersBlocksShuffle33.end"
+        dur="0.2s"
+        values="13;1"
+      />
+    </rect>
+    <rect
+      width="10"
+      height="10"
+      x="13"
+      y="13"
+      className="fill-amber-600"
+      rx="1"
+    >
+      <animate
+        id="svgSpinnersBlocksShuffle38"
+        fill="freeze"
+        attributeName="x"
+        begin="svgSpinnersBlocksShuffle34.end"
+        dur="0.2s"
+        values="13;1"
+      />
+      <animate
+        id="svgSpinnersBlocksShuffle39"
+        fill="freeze"
+        attributeName="y"
+        begin="svgSpinnersBlocksShuffle35.end"
+        dur="0.2s"
+        values="13;1"
+      />
+      <animate
+        id="svgSpinnersBlocksShuffle3a"
+        fill="freeze"
+        attributeName="x"
+        begin="svgSpinnersBlocksShuffle36.end"
+        dur="0.2s"
+        values="1;13"
+      />
+      <animate
+        id="svgSpinnersBlocksShuffle3b"
+        fill="freeze"
+        attributeName="y"
+        begin="svgSpinnersBlocksShuffle37.end"
+        dur="0.2s"
+        values="1;13"
       />
     </rect>
   </svg>
-)
-function Chart({ maxHeight, maxWidth, filledPoints, datachart, globalData }: IChartProps) {
+);
+function Chart({
+  maxHeight,
+  maxWidth,
+  filledPoints,
+  datachart,
+  globalData,
+}: IChartProps) {
+  const [width, setWidth] = useState(window.innerWidth);
+  const [height, setHeight] = useState(window.innerHeight);
 
-  const [width, setWidth] = useState(window.innerWidth)
-  const [height, setHeight] = useState(window.innerHeight)
+  const [referenceLines2, setReferenceLines] = useState<any[]>([]);
+  const [greenData, setGreenData] = useState<DataPoint[]>([]);
+  const [greyData, setGreyData] = useState<DataPoint[]>([]);
 
-  const [referenceLines2, setReferenceLines] = useState<any[]>([])
-  const [greenData, setGreenData] = useState<DataPoint[]>([])
-  const [greyData, setGreyData] = useState<DataPoint[]>([])
+  const [isMobileOrTable, setIsMobileOrTablet] = useState(false);
 
-  const [isMobileOrTable, setIsMobileOrTablet] = useState(false)
+  const [dataLoading, setDataLoading] = useState(true);
 
-  const [dataLoading, setDataLoading] = useState(true)
-
-  const maxX = Math.max(...greenData.map((item) => item.x))
+  const maxX = Math.max(...greenData.map((item) => item.x));
 
   const startLoading = () => {
     setTimeout(() => {
-      setDataLoading(false)
-    }, 2000)
-  }
- 
+      setDataLoading(false);
+    }, 2000);
+  };
+
   useEffect(() => {
     if (datachart) {
-      setGreenData(datachart.green.sort((a, b) => a.x - b.x))
-      setGreyData(datachart.grey.sort((a, b) => a.x - b.x))
+      setGreenData(datachart.green.sort((a, b) => a.x - b.x));
+      setGreyData(datachart.grey.sort((a, b) => a.x - b.x));
     }
-    startLoading()
-  }, [datachart])
+    startLoading();
+  }, [datachart]);
 
   useEffect(() => {
     const tempLines = greyData
       .map((item, idx) => {
         if (item.fill) {
-          const forwardItem = greyData.slice(idx + 1, greyData.length).find((item) => item.fill)
+          const forwardItem = greyData
+            .slice(idx + 1, greyData.length)
+            .find((item) => item.fill);
           const temp = {
             y1: greenData[idx].y,
             x1: greenData[idx].x,
             y2: item.y,
             x2: item.x,
-            width: forwardItem ? (forwardItem.x - item.x) : 0,
-            height: forwardItem ? (forwardItem.y - item.y) : 0,
+            width: forwardItem ? forwardItem.x - item.x : 0,
+            height: forwardItem ? forwardItem.y - item.y : 0,
             status: item.fill,
-            version: 'v' + idx
-          }
+            version: "v" + idx,
+          };
 
-          return temp
+          return temp;
         }
         return {
           y1: item.y,
@@ -195,48 +222,50 @@ function Chart({ maxHeight, maxWidth, filledPoints, datachart, globalData }: ICh
           width: 0,
           height: 0,
           version: 0,
-          status: false
-        }
+          status: false,
+        };
       })
-      .filter((item) => item.status === true)
-    
+      .filter((item) => item.status === true);
 
-    setReferenceLines(tempLines)
-  }, [greenData, greyData])
+    setReferenceLines(tempLines);
+  }, [greenData, greyData]);
 
   useEffect(() => {
     const handleResize = () => {
-      setWidth(window.innerWidth)
-      setHeight(window.innerHeight)
-      setIsMobileOrTablet(window.innerWidth <= 1280)
-    }
+      setWidth(window.innerWidth);
+      setHeight(window.innerHeight);
+      setIsMobileOrTablet(window.innerWidth <= 1280);
+    };
 
-    window.addEventListener('resize', handleResize)
+    window.addEventListener("resize", handleResize);
 
     return () => {
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [])
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   useEffect(() => {
-    setIsMobileOrTablet(window.innerWidth <= 1280)
-  }, [])
+    setIsMobileOrTablet(window.innerWidth <= 1280);
+  }, []);
 
-  const widthValue = isMobileOrTable ? width * 0.7 : width * 0.35
-  const heightValue = isMobileOrTable ? height * 0.4 : height * 0.5
+  const widthValue = isMobileOrTable ? width * 0.7 : width * 0.35;
+  const heightValue = isMobileOrTable ? height * 0.4 : height * 0.5;
 
   return (
-    <div className='flex h-full items-center justify-center p-2'>
-      <div className='rounded-lg p-8 shadow-lg relative'>
+    <div className="flex h-full items-center justify-center p-2">
+      <div className="rounded-lg p-8 shadow-lg relative">
         {dataLoading && (
           <div
             style={{
               top: (maxHeight ?? heightValue) / 2,
-              left: (maxWidth ?? widthValue) / 1.8
+              left: (maxWidth ?? widthValue) / 1.8,
             }}
-            className='absolute z-10 text-sm text-gray-500 dark:text-gray-400'
+            className="absolute z-10 text-sm text-gray-500 dark:text-gray-400"
           >
-            <Loader width={maxWidth ?? widthValue} height={maxHeight ?? heightValue} />
+            <Loader
+              width={maxWidth ?? widthValue}
+              height={maxHeight ?? heightValue}
+            />
           </div>
         )}
         <ScatterChart
@@ -250,98 +279,106 @@ function Chart({ maxHeight, maxWidth, filledPoints, datachart, globalData }: ICh
           }
         >
           <XAxis
-            type='number'
-            dataKey='x'
-            name='CO2'
+            type="number"
+            dataKey="x"
+            name="CO2"
             domain={[0, filledPoints ? maxX : 100]}
-            className='stroke-foreground/50'
-            tick={{ fontSize: 12, stroke: 'hsl(var(--foreground))' }}
-            label={{ value: 'Carbono incorporado (kg CO2/m²)', position: 'bottom' }}
+            className="stroke-foreground/50"
+            tick={{ fontSize: 12, stroke: "hsl(var(--foreground))" }}
+            label={{
+              value: "Carbono incorporado (kg CO₂/m²)",
+              position: "bottom",
+            }}
           />
           <YAxis
-            type='number'
+            type="number"
             domain={[0, 1]}
-            dataKey='y'
-            name='Cumulative'
-            className='stroke-foreground/50'
-            tick={{ fontSize: 12, stroke: 'hsl(var(--foreground))' }}
-            label={{ value: 'Cumulativo', angle: -90, position: 'left', props: { className: 'font-bold' } }}
+            dataKey="y"
+            name="Cumulative"
+            className="stroke-foreground/50"
+            tick={{ fontSize: 12, stroke: "hsl(var(--foreground))" }}
+            label={{
+              value: "Cumulativo",
+              angle: -90,
+              position: "left",
+              props: { className: "font-bold" },
+            }}
           />
-          <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+          <Tooltip cursor={{ strokeDasharray: "3 3" }} />
 
-         <Scatter
-                name='Series 1'
-                data={!dataLoading ? greenData : []}
-                shape={(props: ScatterProps['shape']) => {
-                  const { cx, cy, payload } = props as IProps
+          <Scatter
+            name="Series 1"
+            data={!dataLoading ? greenData : []}
+            shape={(props: ScatterProps["shape"]) => {
+              const { cx, cy, payload } = props as IProps;
 
-                  return (
-                    <g>
-                      <circle
-                        cx={cx}
-                        cy={cy}
-                        r={4}
-                        data-isglobal={!!payload?.isGlobal}
-                        data-filled={payload?.fill && !payload.isGlobal}
-                        className='fill-accent-foreground dark:stroke-primary dark:stroke-1! data-[isglobal=true]:fill-accent-foreground/50! data-[isglobal=true]:stroke-0! data-[filled=true]:fill-primary!'
-                        // stroke={payload?.fill ? '#4CAF50' : '#2C1D1B'}
-                        // strokeWidth={payload?.fill ? 1 : 0}
-                      />
-                      <text
-                        x={(cx as number) + 10}
-                        y={(cy as number) - 10}
-                        textAnchor='left'
-                        dominantBaseline='middle'
-                        fontSize={12}
-                        fill='#000000'
-                        className='dark:fill-zinc-200'
-                      >
-                        {payload?.label ? payload.label : ''}
-                      </text>
-                    </g>
-                  )
-                }}
-                className='stroke-accent-foreground/70! stroke-[0.5px]'
-                // line={{ stroke: '#000000' }}
-                // lineJointType={'natural'}
-              />
-         <Scatter
-                name='Series global 1'
-                data={!dataLoading ? globalData?.green : []}
-                shape={(props: ScatterProps['shape']) => {
-                  const { cx, cy, payload } = props as IProps
+              return (
+                <g>
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={4}
+                    data-isglobal={!!payload?.isGlobal}
+                    data-filled={payload?.fill && !payload.isGlobal}
+                    className="fill-accent-foreground dark:stroke-primary dark:stroke-1! data-[isglobal=true]:fill-accent-foreground/50! data-[isglobal=true]:stroke-0! data-[filled=true]:fill-primary!"
+                    // stroke={payload?.fill ? '#4CAF50' : '#2C1D1B'}
+                    // strokeWidth={payload?.fill ? 1 : 0}
+                  />
+                  <text
+                    x={(cx as number) + 10}
+                    y={(cy as number) - 10}
+                    textAnchor="left"
+                    dominantBaseline="middle"
+                    fontSize={12}
+                    fill="#000000"
+                    className="dark:fill-zinc-200"
+                  >
+                    {payload?.label ? payload.label : ""}
+                  </text>
+                </g>
+              );
+            }}
+            className="stroke-accent-foreground/70! stroke-[0.5px]"
+            // line={{ stroke: '#000000' }}
+            // lineJointType={'natural'}
+          />
+          <Scatter
+            name="Series global 1"
+            data={!dataLoading ? globalData?.green : []}
+            shape={(props: ScatterProps["shape"]) => {
+              const { cx, cy, payload } = props as IProps;
 
-                  return (
-                    <g>
-                      <circle
-                        cx={cx}
-                        cy={cy}
-                        r={4}
-                        data-isglobal={!!payload?.isGlobal}
-                        data-filled={payload?.fill && !payload.isGlobal}
-                        className='fill-accent-foreground dark:stroke-primary dark:stroke-1! data-[isglobal=true]:fill-accent-foreground/50! data-[isglobal=true]:stroke-0! data-[filled=true]:fill-primary!'
-                        // stroke={payload?.fill ? '#4CAF50' : '#2C1D1B'}
-                        // strokeWidth={payload?.fill ? 1 : 0}
-                      />
-                      <text
-                        x={(cx as number) + 10}
-                        y={(cy as number) - 10}
-                        textAnchor='left'
-                        dominantBaseline='middle'
-                        fontSize={12}
-                        fill='#000000'
-                        className='dark:fill-zinc-200'
-                      >
-                        {payload?.label ? payload.label : ''}
-                      </text>
-                    </g>
-                  )
-                }}
-                className='stroke-accent-foreground/70! stroke-[0.5px]'
-                // line={{ stroke: '#000000' }}
-                // lineJointType={'natural'}
-              />
-         {/* <Scatter
+              return (
+                <g>
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={4}
+                    data-isglobal={!!payload?.isGlobal}
+                    data-filled={payload?.fill && !payload.isGlobal}
+                    className="fill-accent-foreground dark:stroke-primary dark:stroke-1! data-[isglobal=true]:fill-accent-foreground/50! data-[isglobal=true]:stroke-0! data-[filled=true]:fill-primary!"
+                    // stroke={payload?.fill ? '#4CAF50' : '#2C1D1B'}
+                    // strokeWidth={payload?.fill ? 1 : 0}
+                  />
+                  <text
+                    x={(cx as number) + 10}
+                    y={(cy as number) - 10}
+                    textAnchor="left"
+                    dominantBaseline="middle"
+                    fontSize={12}
+                    fill="#000000"
+                    className="dark:fill-zinc-200"
+                  >
+                    {payload?.label ? payload.label : ""}
+                  </text>
+                </g>
+              );
+            }}
+            className="stroke-accent-foreground/70! stroke-[0.5px]"
+            // line={{ stroke: '#000000' }}
+            // lineJointType={'natural'}
+          />
+          {/* <Scatter
                 name='Series global 2'
                 data={!dataLoading ? globalData?.grey : []}
                 shape={(props: ScatterProps['shape']) => {
@@ -378,68 +415,69 @@ function Chart({ maxHeight, maxWidth, filledPoints, datachart, globalData }: ICh
                 // lineJointType={'natural'}
               /> */}
 
-              {/* Grey series */}
-              <Scatter
-                name='Series 2'
-                data={!dataLoading ? greyData  : []}
-                shape={(props: ScatterProps['shape']) => {
-                  const { cx, cy, payload } = props as IProps
-                  return (
-                    <g>
-                      <circle
-                        cx={cx as number}
-                        cy={cy as number}
-                        r={4}
-                        data-isglobal={payload?.isGlobal ? payload.isGlobal : false}
-                        data-filled={payload?.fill && !payload.isGlobal}
-                        className='fill-zinc-700 data-[filled=true]:fill-red-500 dark:fill-zinc-200 dark:data-[key=not-filled]:fill-zinc-400 data-[isglobal=true]:fill-accent-foreground/70 data-[isglobal=false]:stroke-1! data-[isglobal=false]:stroke-red-500!'
-                      />
-                      <text
-                        x={(cx as number) - 20}
-                        y={(cy as number) - 10}
-                        dominantBaseline='middle'
-                        fontSize={12}
-                        fill='#000000'
-                        className='dark:fill-zinc-200'
-                      >
-                        {payload?.label ? payload.label : ''}
-                      </text>
-                    </g>
-                  )
-                }}
-                className='stroke-foreground! stroke-[0.5px]'
-                // line={{ stroke: '#000000' }}
-                // lineJointType={'natural'}
-              />
-              {/* Reference lines and labels */}
-              {!dataLoading && referenceLines2.map((line, index) => (
-                <g key={index}>
-                  <ReferenceLine
-                    key={index}
-                    segment={[
-                      { x: line.x1, y: line.y1 },
-                      { x: line.x2 + line.width, y: line.y2 }
-                    ]}
-                    stroke='red'
-                    strokeDasharray='5 5'
-                    width={line.width}
+          {/* Grey series */}
+          <Scatter
+            name="Series 2"
+            data={!dataLoading ? greyData : []}
+            shape={(props: ScatterProps["shape"]) => {
+              const { cx, cy, payload } = props as IProps;
+              return (
+                <g>
+                  <circle
+                    cx={cx as number}
+                    cy={cy as number}
+                    r={4}
+                    data-isglobal={payload?.isGlobal ? payload.isGlobal : false}
+                    data-filled={payload?.fill && !payload.isGlobal}
+                    className="fill-zinc-700 data-[filled=true]:fill-red-500 dark:fill-zinc-200 dark:data-[key=not-filled]:fill-zinc-400 data-[isglobal=true]:fill-accent-foreground/70 data-[isglobal=false]:stroke-1! data-[isglobal=false]:stroke-red-500!"
                   />
-                  <ReferenceLine
-                    key={index * referenceLines2.length + 1}
-                    segment={[
-                      { x: line.x2 + line.width, y: line.y2 + line.height },
-                      { x: line.x2 + line.width, y: line.y2 }
-                    ]}
-                    stroke='green'
-                    strokeDasharray='5 5'
-                    width={line.height}
-                  />
+                  <text
+                    x={(cx as number) - 20}
+                    y={(cy as number) - 10}
+                    dominantBaseline="middle"
+                    fontSize={12}
+                    fill="#000000"
+                    className="dark:fill-zinc-200"
+                  >
+                    {payload?.label ? payload.label : ""}
+                  </text>
                 </g>
-              ))}
+              );
+            }}
+            className="stroke-foreground! stroke-[0.5px]"
+            // line={{ stroke: '#000000' }}
+            // lineJointType={'natural'}
+          />
+          {/* Reference lines and labels */}
+          {!dataLoading &&
+            referenceLines2.map((line, index) => (
+              <g key={index}>
+                <ReferenceLine
+                  key={index}
+                  segment={[
+                    { x: line.x1, y: line.y1 },
+                    { x: line.x2 + line.width, y: line.y2 },
+                  ]}
+                  stroke="red"
+                  strokeDasharray="5 5"
+                  width={line.width}
+                />
+                <ReferenceLine
+                  key={index * referenceLines2.length + 1}
+                  segment={[
+                    { x: line.x2 + line.width, y: line.y2 + line.height },
+                    { x: line.x2 + line.width, y: line.y2 },
+                  ]}
+                  stroke="green"
+                  strokeDasharray="5 5"
+                  width={line.height}
+                />
+              </g>
+            ))}
         </ScatterChart>
       </div>
     </div>
-  )
+  );
 }
 
-export default Chart
+export default Chart;

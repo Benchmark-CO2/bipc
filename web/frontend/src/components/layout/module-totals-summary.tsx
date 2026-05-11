@@ -15,7 +15,7 @@ export default function ModuleTotalsSummary({
     // Soma das repetições para cálculo de média ponderada
     const totalRepetitions = selectedModules.reduce(
       (acc, module) => acc + (module.floor_repetition || 1),
-      0
+      0,
     );
 
     return {
@@ -24,12 +24,12 @@ export default function ModuleTotalsSummary({
       total_concrete: selectedModules.reduce(
         (acc, module) =>
           acc + (module.total_concrete || 0) * (module.floor_repetition || 1),
-        0
+        0,
       ),
       total_steel: selectedModules.reduce(
         (acc, module) =>
           acc + (module.total_steel || 0) * (module.floor_repetition || 1),
-        0
+        0,
       ),
 
       // CO₂/Energia: média ponderada (valor × repetição, soma tudo, divide pela soma das repetições)
@@ -38,7 +38,7 @@ export default function ModuleTotalsSummary({
           ? selectedModules.reduce(
               (acc, module) =>
                 acc + (module.co2_min || 0) * (module.floor_repetition || 1),
-              0
+              0,
             ) / totalRepetitions
           : 0,
       co2_max:
@@ -46,7 +46,7 @@ export default function ModuleTotalsSummary({
           ? selectedModules.reduce(
               (acc, module) =>
                 acc + (module.co2_max || 0) * (module.floor_repetition || 1),
-              0
+              0,
             ) / totalRepetitions
           : 0,
       energy_min:
@@ -54,7 +54,7 @@ export default function ModuleTotalsSummary({
           ? selectedModules.reduce(
               (acc, module) =>
                 acc + (module.energy_min || 0) * (module.floor_repetition || 1),
-              0
+              0,
             ) / totalRepetitions
           : 0,
       energy_max:
@@ -62,7 +62,7 @@ export default function ModuleTotalsSummary({
           ? selectedModules.reduce(
               (acc, module) =>
                 acc + (module.energy_max || 0) * (module.floor_repetition || 1),
-              0
+              0,
             ) / totalRepetitions
           : 0,
     };
@@ -103,7 +103,7 @@ export default function ModuleTotalsSummary({
             {grandTotals.co2_min.toFixed(2)}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
-            kgCO₂/m²
+            kg CO₂/m²
           </div>
         </div>
 
@@ -115,7 +115,7 @@ export default function ModuleTotalsSummary({
             {grandTotals.co2_max.toFixed(2)}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
-            kgCO₂/m²
+            kg CO₂/m²
           </div>
         </div>
 

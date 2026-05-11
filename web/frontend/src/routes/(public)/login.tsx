@@ -121,7 +121,7 @@ const Login = () => {
                     autoComplete="email"
                   />
                   {fieldsError.email && (
-                    <p className="text-red-500 text-xs">Email é obrigatório</p>
+                    <p className="text-red-500 text-xs">E-mail é obrigatório</p>
                   )}
                 </div>
               </div>
@@ -139,7 +139,7 @@ const Login = () => {
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder={t("loginPage.placeholderPassword")}
+                      placeholder={"********"}
                       className={cn(
                         "pr-10 text-md",
                         fieldsError.password

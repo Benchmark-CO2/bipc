@@ -384,9 +384,7 @@ export default function DrawerFormDisciplines({
         })}
       >
         <DrawerHeader className="px-8">
-          <DrawerTitle>
-            {isEditMode ? "Editar Disciplina" : "Adicionar Disciplina"}
-          </DrawerTitle>
+          <DrawerTitle>Disciplinas</DrawerTitle>
           <DrawerDescription>
             Para realizar simulações, primeiro adicione uma disciplina como
             "Estrutural", "Fundação", "Vedações" ou qualquer outro título que
@@ -475,7 +473,7 @@ export default function DrawerFormDisciplines({
               <div className="flex flex-col border rounded-md overflow-hidden">
                 <button
                   type="button"
-                  className="flex items-center justify-between p-3 bg-[#00796B] text-white hover:bg-[#00796B]/90"
+                  className="flex items-center justify-between p-3 bg-primary text-white hover:bg-primary/90"
                   onClick={() => setManagementExpanded(!managementExpanded)}
                 >
                   <span className="font-medium">Permissões</span>
@@ -533,53 +531,6 @@ export default function DrawerFormDisciplines({
                   </div>
                 )}
               </div>
-
-              {/* <div className="flex flex-col border rounded-md overflow-hidden">
-                <button
-                  type="button"
-                  className="flex items-center justify-between p-3 bg-[#00796B] text-white hover:bg-[#00796B]/90"
-                  onClick={() => setSimulationExpanded(!simulationExpanded)}
-                >
-                  <span className="font-medium">Simulação</span>
-                  {simulationExpanded ? (
-                    <ChevronUp className="w-5 h-5" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5" />
-                  )}
-                </button>
-                {simulationExpanded && (
-                  <div className="flex flex-col gap-3 p-4 bg-card">
-                    <div className="flex items-center justify-between pb-2 border-b">
-                      <span className="text-sm font-medium">
-                        Selecionar todas
-                      </span>
-                      <Checkbox
-                        checked={mockPermissions.simulation.every((p) =>
-                          selectedPermissions.includes(p.id)
-                        )}
-                        onCheckedChange={toggleAllSimulation}
-                      />
-                    </div>
-
-                    {mockPermissions.simulation.map((permission) => (
-                      <div
-                        key={permission.id}
-                        className="flex items-center justify-between gap-2"
-                      >
-                        <span className="text-sm font-normal flex-1">
-                          {permission.label}
-                        </span>
-                        <Checkbox
-                          checked={selectedPermissions.includes(permission.id)}
-                          onCheckedChange={(checked) =>
-                            togglePermission(permission.id, checked as boolean)
-                          }
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div> */}
 
               {/* Buscar colaboradores */}
               <div className="flex flex-col gap-2">
@@ -665,11 +616,11 @@ export default function DrawerFormDisciplines({
                       className="flex items-center justify-between p-3 rounded-md border bg-card"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-[#00796B] text-white flex items-center justify-center font-medium">
+                        <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-medium">
                           {getInitials(collaborator.name)}
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-medium text-[#00796B]">
+                          <span className="font-medium text-primary">
                             {collaborator.name}
                           </span>
                           <span className="text-sm text-muted-foreground">

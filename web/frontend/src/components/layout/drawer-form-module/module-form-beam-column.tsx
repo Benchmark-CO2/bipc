@@ -104,7 +104,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">{title}</h3>
+        <h3 className="text-base font-semibold text-primary">{title}</h3>
 
         <Card className={`border-2 ${borderColor}`}>
           <CardContent className="space-y-4">
@@ -392,7 +392,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
       {/* Formas */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-700">
+        <h3 className="text-base font-semibold text-primary dark:text-gray-300">
           Área de formas (opcional)
         </h3>
 

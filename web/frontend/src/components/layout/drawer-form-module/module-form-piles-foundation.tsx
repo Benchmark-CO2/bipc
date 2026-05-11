@@ -120,7 +120,7 @@ const ModuleFormPilesFoundation = ({
       </div>
 
       {/* Estacas */}
-      <h3 className="text-sm font-medium text-gray-900">Estacas</h3>
+      <h3 className="text-base font-semibold text-primary">Estacas</h3>
       <Card className="border-2 border-gray-200">
         <CardContent className="space-y-4 pt-4">
           {/* Volume das Estacas */}
@@ -152,7 +152,7 @@ const ModuleFormPilesFoundation = ({
       </Card>
 
       {/* Blocos de Coroamento */}
-      <h3 className="text-sm font-medium text-gray-900">
+      <h3 className="text-base font-semibold text-primary">
         Blocos de Coroamento
       </h3>
       <Card className="border-2 border-gray-200">
@@ -186,7 +186,7 @@ const ModuleFormPilesFoundation = ({
       </Card>
 
       {/* Vigas Baldrame */}
-      <h3 className="text-sm font-medium text-gray-900">Vigas Baldrame</h3>
+      <h3 className="text-base font-semibold text-primary">Vigas Baldrame</h3>
       <Card className="border-2 border-gray-200">
         <CardContent className="space-y-4 pt-4">
           {/* Volume das Vigas Baldrame */}
@@ -218,7 +218,7 @@ const ModuleFormPilesFoundation = ({
       </Card>
 
       {/* Cintas */}
-      <h3 className="text-sm font-medium text-gray-900">Cintas</h3>
+      <h3 className="text-base font-semibold text-primary">Cintas</h3>
       <Card className="border-2 border-gray-200">
         <CardContent className="space-y-4 pt-4">
           {/* Volume das Cintas */}

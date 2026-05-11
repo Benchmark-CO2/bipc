@@ -81,7 +81,7 @@ export default function ModuleTable({
 
     const totalRepetitions = selected.reduce(
       (acc, row) => acc + (row.original.floor_repetition || 1),
-      0
+      0,
     );
 
     return {
@@ -90,14 +90,14 @@ export default function ModuleTable({
           acc +
           (row.original.total_concrete || 0) *
             (row.original.floor_repetition || 1),
-        0
+        0,
       ),
       total_steel: selected.reduce(
         (acc, row) =>
           acc +
           (row.original.total_steel || 0) *
             (row.original.floor_repetition || 1),
-        0
+        0,
       ),
 
       co2_min:
@@ -107,7 +107,7 @@ export default function ModuleTable({
                 acc +
                 (row.original.co2_min || 0) *
                   (row.original.floor_repetition || 1),
-              0
+              0,
             ) / totalRepetitions
           : 0,
       co2_max:
@@ -117,7 +117,7 @@ export default function ModuleTable({
                 acc +
                 (row.original.co2_max || 0) *
                   (row.original.floor_repetition || 1),
-              0
+              0,
             ) / totalRepetitions
           : 0,
       energy_min:
@@ -127,7 +127,7 @@ export default function ModuleTable({
                 acc +
                 (row.original.energy_min || 0) *
                   (row.original.floor_repetition || 1),
-              0
+              0,
             ) / totalRepetitions
           : 0,
       energy_max:
@@ -137,7 +137,7 @@ export default function ModuleTable({
                 acc +
                 (row.original.energy_max || 0) *
                   (row.original.floor_repetition || 1),
-              0
+              0,
             ) / totalRepetitions
           : 0,
     };
@@ -145,7 +145,7 @@ export default function ModuleTable({
 
   const handleClickRow = (
     e: React.MouseEvent<HTMLTableRowElement>,
-    module: IModuleItem
+    module: IModuleItem,
   ) => {
     const target = e.target as HTMLElement;
     const dataType = target
@@ -239,7 +239,7 @@ export default function ModuleTable({
                   <TableHead key={header.id}>
                     {flexRender(
                       header.column.columnDef.header,
-                      header.getContext()
+                      header.getContext(),
                     )}
                   </TableHead>
                 ))}
@@ -302,8 +302,8 @@ export default function ModuleTable({
               <TableCell colSpan={3}>Total</TableCell>
               <TableCell>{totals.total_concrete.toFixed(2)} kg/m²</TableCell>
               <TableCell>{totals.total_steel.toFixed(2)} kg/m²</TableCell>
-              <TableCell>{totals.co2_min.toFixed(2)} kgCO₂/m²</TableCell>
-              <TableCell>{totals.co2_max.toFixed(2)} kgCO₂/m²</TableCell>
+              <TableCell>{totals.co2_min.toFixed(2)} kg CO₂/m²</TableCell>
+              <TableCell>{totals.co2_max.toFixed(2)} kg CO₂/m²</TableCell>
               <TableCell>{totals.energy_min.toFixed(2)} MJ/m²</TableCell>
               <TableCell>{totals.energy_max.toFixed(2)} MJ/m²</TableCell>
             </TableRow>

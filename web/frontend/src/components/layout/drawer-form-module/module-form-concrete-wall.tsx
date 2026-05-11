@@ -115,7 +115,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
 
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">{title}</h3>
+        <h3 className="text-base font-semibold text-primary">{title}</h3>
 
         <Card className={`border-2 ${borderColor}`}>
           <CardContent className="space-y-4">
@@ -317,7 +317,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
 
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-700">{title}</h3>
+        <h3 className="text-base font-semibold text-primary dark:text-gray-300">
+          {title}
+        </h3>
 
         <Card className="border-2 border-gray-300">
           <CardContent className="space-y-4">

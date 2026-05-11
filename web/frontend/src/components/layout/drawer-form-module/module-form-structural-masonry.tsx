@@ -446,7 +446,7 @@ const ModuleFormStructuralMasonry = ({
 
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">Blocos *</h3>
+        <h3 className="text-base font-semibold text-primary">Blocos *</h3>
 
         <Card className="border-2 border-blue-500">
           <CardContent className="space-y-4">
@@ -677,7 +677,7 @@ const ModuleFormStructuralMasonry = ({
 
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">Graute *</h3>
+        <h3 className="text-base font-semibold text-primary">Graute *</h3>
 
         <div className="space-y-3">
           {groutFields.map((groutField, groutIndex) => (
@@ -742,7 +742,7 @@ const ModuleFormStructuralMasonry = ({
 
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">Argamassa *</h3>
+        <h3 className="text-base font-semibold text-primary">Argamassa *</h3>
 
         <Card className="border-2 border-blue-500">
           <CardContent className="space-y-4">
@@ -987,7 +987,7 @@ const ModuleFormStructuralMasonry = ({
 
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">{title}</h3>
+        <h3 className="text-base font-semibold text-primary">{title}</h3>
 
         {/* Warning para campos opcionais */}
         {!isRequired && sectionWarning && (
@@ -1178,7 +1178,7 @@ const ModuleFormStructuralMasonry = ({
 
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-700">
+        <h3 className="text-base font-semibold text-primary dark:text-gray-300">
           Área de formas (opcional)
         </h3>
 
@@ -1302,7 +1302,7 @@ const ModuleFormStructuralMasonry = ({
       {renderCompleteSection("concrete_slabs", "Laje de concreto", true)}
 
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-700">
+        <h3 className="text-base font-semibold text-primary dark:text-gray-300">
           Estrutura complementar (opcional)
         </h3>
         <div className="space-y-6">

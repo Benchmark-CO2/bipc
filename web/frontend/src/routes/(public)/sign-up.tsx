@@ -121,7 +121,7 @@ const SignUp = () => {
       if (error.response?.status === 409) {
         form.setError("email", {
           type: "custom",
-          message: "Email já cadastrado",
+          message: "E-mail já cadastrado",
         });
       }
       toast.error("Algo deu errado", {
@@ -379,7 +379,7 @@ const SignUp = () => {
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex items-center gap-1.5">
-                      <FormLabel>Email *</FormLabel>
+                      <FormLabel>E-mail *</FormLabel>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger type="button">
@@ -396,7 +396,7 @@ const SignUp = () => {
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder="Email"
+                        placeholder="exemplo@email.com"
                         disabled={isPending}
                         autoComplete="email"
                         {...field}
