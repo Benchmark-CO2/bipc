@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -30,26 +31,21 @@ import (
 )
 
 func (app *application) reportHandler(w http.ResponseWriter, r *http.Request) {
-	// projectID, err := app.readUUIDParam(r, "projectID")
-	// if err != nil {
-	// 	app.badRequestResponse(w, r, err)
-	// 	return
-	// }
+	projectID, err := app.readUUIDParam(r, "projectID")
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
 
-	// project, err := app.models.Projects.GetByID(projectID)
-	// if err != nil {
-	// 	switch {
-	// 	case errors.Is(err, data.ErrRecordNotFound):
-	// 		app.notFoundResponse(w, r)
-	// 	default:
-	// 		app.serverErrorResponse(w, r, err)
-	// 	}
-	// 	return
-	// }
+	report, err := app.buildProjectBenchmarkReport(projectID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
-	err := r.ParseMultipartForm(256 << 10)
+	err = r.ParseMultipartForm(256 << 10)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -81,7 +77,7 @@ func (app *application) reportHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m, err := GetMaroto(co2Bytes, energyBytes)
+	m, err := GetMaroto(co2Bytes, energyBytes, report)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -98,7 +94,7 @@ func (app *application) reportHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(document.GetBytes())
 }
 
-func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
+func GetMaroto(co2Bytes, energyBytes []byte, report *ProjectBenchmarkReport) (core.Maroto, error) {
 	customFonts := []*entity.CustomFont{
 		{Family: "Inter", Style: fontstyle.Normal, Bytes: assets.InterRegular},
 		{Family: "Inter", Style: fontstyle.Bold, Bytes: assets.InterBold},
@@ -289,7 +285,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   1,
 				Left:  1,
 			}),
-			text.New("128.577,25", props.Text{
+			text.New(formatNumber(report.Project.CO2.Min.Total), props.Text{
 				Size: 5.5,
 				Top:  4,
 				Left: 1,
@@ -300,7 +296,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   8,
 				Left:  1,
 			}),
-			text.New("45,83", props.Text{
+			text.New(formatNumber(report.Project.CO2.Min.Value), props.Text{
 				Size:   5.5,
 				Top:    11,
 				Left:   1,
@@ -315,7 +311,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   1,
 				Left:  1,
 			}),
-			text.New("211.205,95 ", props.Text{
+			text.New(formatNumber(report.Project.CO2.Max.Total), props.Text{
 				Size: 5.5,
 				Top:  4,
 				Left: 1,
@@ -326,7 +322,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   8,
 				Left:  1,
 			}),
-			text.New("75,28", props.Text{
+			text.New(formatNumber(report.Project.CO2.Max.Value), props.Text{
 				Size:   5.5,
 				Top:    11,
 				Left:   1,
@@ -341,7 +337,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   1,
 				Left:  1,
 			}),
-			text.New("211.205,95 ", props.Text{
+			text.New(formatNumber(report.Project.CO2.Reference.Total), props.Text{
 				Size: 5.5,
 				Top:  4,
 				Left: 1,
@@ -352,7 +348,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   8,
 				Left:  1,
 			}),
-			text.New("75,28", props.Text{
+			text.New(formatNumber(report.Project.CO2.Reference.Value), props.Text{
 				Size:   5.5,
 				Top:    11,
 				Left:   1,
@@ -367,7 +363,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   1,
 				Left:  1,
 			}),
-			text.New("128.577,25", props.Text{
+			text.New(formatNumber(report.Project.Energy.Min.Total), props.Text{
 				Size: 5.5,
 				Top:  4,
 				Left: 1,
@@ -378,7 +374,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   8,
 				Left:  1,
 			}),
-			text.New("45,83", props.Text{
+			text.New(formatNumber(report.Project.Energy.Min.Value), props.Text{
 				Size:   5.5,
 				Top:    11,
 				Left:   1,
@@ -393,7 +389,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   1,
 				Left:  1,
 			}),
-			text.New("211.205,95 ", props.Text{
+			text.New(formatNumber(report.Project.Energy.Max.Total), props.Text{
 				Size: 5.5,
 				Top:  4,
 				Left: 1,
@@ -404,7 +400,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   8,
 				Left:  1,
 			}),
-			text.New("75,28", props.Text{
+			text.New(formatNumber(report.Project.Energy.Max.Value), props.Text{
 				Size:   5.5,
 				Top:    11,
 				Left:   1,
@@ -419,7 +415,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   1,
 				Left:  1,
 			}),
-			text.New("211.205,95 ", props.Text{
+			text.New(formatNumber(report.Project.Energy.Reference.Total), props.Text{
 				Size: 5.5,
 				Top:  4,
 				Left: 1,
@@ -430,7 +426,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   8,
 				Left:  1,
 			}),
-			text.New("75,28", props.Text{
+			text.New(formatNumber(report.Project.Energy.Reference.Value), props.Text{
 				Size:   5.5,
 				Top:    11,
 				Left:   1,
@@ -475,7 +471,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   1,
 				Left:  1,
 			}),
-			text.New("128.577,25", props.Text{
+			text.New(formatNumber(report.Reductions.CO2.Min.Total), props.Text{
 				Size: 5.5,
 				Top:  4,
 				Left: 1,
@@ -486,7 +482,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   8,
 				Left:  1,
 			}),
-			text.New("45,83", props.Text{
+			text.New(formatNumber(report.Reductions.CO2.Min.Value), props.Text{
 				Size:   5.5,
 				Top:    11,
 				Left:   1,
@@ -501,7 +497,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   1,
 				Left:  1,
 			}),
-			text.New("211.205,95 ", props.Text{
+			text.New(formatNumber(report.Reductions.CO2.Max.Total), props.Text{
 				Size: 5.5,
 				Top:  4,
 				Left: 1,
@@ -512,7 +508,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   8,
 				Left:  1,
 			}),
-			text.New("75,28", props.Text{
+			text.New(formatNumber(report.Reductions.CO2.Max.Value), props.Text{
 				Size:   5.5,
 				Top:    11,
 				Left:   1,
@@ -527,7 +523,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   1,
 				Left:  1,
 			}),
-			text.New("211.205,95 ", props.Text{
+			text.New(formatNumber(report.Reductions.CO2.Reference.Total), props.Text{
 				Size: 5.5,
 				Top:  4,
 				Left: 1,
@@ -538,7 +534,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   8,
 				Left:  1,
 			}),
-			text.New("75,28", props.Text{
+			text.New(formatNumber(report.Reductions.CO2.Reference.Value), props.Text{
 				Size:   5.5,
 				Top:    11,
 				Left:   1,
@@ -553,7 +549,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   1,
 				Left:  1,
 			}),
-			text.New("128.577,25", props.Text{
+			text.New(formatNumber(report.Reductions.Energy.Min.Total), props.Text{
 				Size: 5.5,
 				Top:  4,
 				Left: 1,
@@ -564,7 +560,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   8,
 				Left:  1,
 			}),
-			text.New("45,83", props.Text{
+			text.New(formatNumber(report.Reductions.Energy.Min.Value), props.Text{
 				Size:   5.5,
 				Top:    11,
 				Left:   1,
@@ -579,7 +575,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   1,
 				Left:  1,
 			}),
-			text.New("211.205,95 ", props.Text{
+			text.New(formatNumber(report.Reductions.Energy.Max.Total), props.Text{
 				Size: 5.5,
 				Top:  4,
 				Left: 1,
@@ -590,7 +586,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   8,
 				Left:  1,
 			}),
-			text.New("75,28", props.Text{
+			text.New(formatNumber(report.Reductions.Energy.Max.Value), props.Text{
 				Size:   5.5,
 				Top:    11,
 				Left:   1,
@@ -605,7 +601,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   1,
 				Left:  1,
 			}),
-			text.New("211.205,95 ", props.Text{
+			text.New(formatNumber(report.Reductions.Energy.Reference.Total), props.Text{
 				Size: 5.5,
 				Top:  4,
 				Left: 1,
@@ -616,7 +612,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Top:   8,
 				Left:  1,
 			}),
-			text.New("75,28", props.Text{
+			text.New(formatNumber(report.Reductions.Energy.Reference.Value), props.Text{
 				Size:   5.5,
 				Top:    11,
 				Left:   1,
@@ -644,13 +640,29 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 	)
 
 	m.AddAutoRow(
-		text.NewCol(23, "Linha de base (50% melhores projetos): C53, R86, V71; 5% melhores projetos: C25, R42, V33", props.Text{
+		text.NewCol(23, fmt.Sprintf(
+			"Linha de base (50%% melhores projetos): C%s, R%s, V%s; 5%% melhores projetos: C%s, R%s, V%s",
+			formatNumber(report.Baseline.CO2.Min, 0),
+			formatNumber(report.Baseline.CO2.Max, 0),
+			formatNumber(*report.Baseline.CO2.Reference, 0),
+			formatNumber(report.BestProjects.CO2.Min, 0),
+			formatNumber(report.BestProjects.CO2.Max, 0),
+			formatNumber(*report.BestProjects.CO2.Reference, 0),
+		), props.Text{
 			Size:  5,
 			Color: getGrayColor(),
 			Align: align.Right,
 		}),
 		line.NewCol(2, getDividerStyle()),
-		text.NewCol(23, "Linha de base (50% melhores projetos): C26, R41, V18; 5% melhores projetos: C12, R20, V9", props.Text{
+		text.NewCol(23, fmt.Sprintf(
+			"Linha de base (50%% melhores projetos): C%s, R%s, V%s; 5%% melhores projetos: C%s, R%s, V%s",
+			formatNumber(report.Baseline.Energy.Min, 0),
+			formatNumber(report.Baseline.Energy.Max, 0),
+			formatNumber(*report.Baseline.Energy.Reference, 0),
+			formatNumber(report.BestProjects.Energy.Min, 0),
+			formatNumber(report.BestProjects.Energy.Max, 0),
+			formatNumber(*report.BestProjects.Energy.Reference, 0),
+		), props.Text{
 			Size:  5,
 			Color: getGrayColor(),
 			Align: align.Right,
@@ -674,7 +686,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Left:   1,
 				Bottom: 1.5,
 			}),
-			text.New(truncate("234.2342434", 9), props.Text{
+			text.New(formatNumber(report.BestProjects.CO2.Min), props.Text{
 				Size:   5.5,
 				Top:    1.25,
 				Left:   3,
@@ -691,7 +703,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Left:   1,
 				Bottom: 1.5,
 			}),
-			text.New(truncate("234.2342434", 9), props.Text{
+			text.New(formatNumber(report.Project.CO2.Min.Value), props.Text{
 				Size:   5.5,
 				Top:    1.25,
 				Left:   3,
@@ -708,7 +720,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Left:   1,
 				Bottom: 1.5,
 			}),
-			text.New(truncate("234.2342434", 9), props.Text{
+			text.New(formatNumber(report.Project.CO2.Reference.Value), props.Text{
 				Size:   5.5,
 				Top:    1.25,
 				Left:   3,
@@ -725,7 +737,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Left:   1,
 				Bottom: 1.5,
 			}),
-			text.New(truncate("234.2342434", 9), props.Text{
+			text.New(formatNumber(report.Project.CO2.Max.Value), props.Text{
 				Size:   5.5,
 				Top:    1.25,
 				Left:   3,
@@ -766,7 +778,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Left:   1,
 				Bottom: 1.5,
 			}),
-			text.New(truncate("234.2342434", 9), props.Text{
+			text.New(formatNumber(report.BestProjects.Energy.Min), props.Text{
 				Size:   5.5,
 				Top:    1.25,
 				Left:   3,
@@ -783,7 +795,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Left:   1,
 				Bottom: 1.5,
 			}),
-			text.New(truncate("234.2342434", 9), props.Text{
+			text.New(formatNumber(report.Project.Energy.Min.Value), props.Text{
 				Size:   5.5,
 				Top:    1.25,
 				Left:   3,
@@ -800,7 +812,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Left:   1,
 				Bottom: 1.5,
 			}),
-			text.New(truncate("234.2342434", 9), props.Text{
+			text.New(formatNumber(report.Project.Energy.Reference.Value), props.Text{
 				Size:   5.5,
 				Top:    1.25,
 				Left:   3,
@@ -817,7 +829,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 				Left:   1,
 				Bottom: 1.5,
 			}),
-			text.New(truncate("234.2342434", 9), props.Text{
+			text.New(formatNumber(report.Project.Energy.Max.Value), props.Text{
 				Size:   5.5,
 				Top:    1.25,
 				Left:   3,
@@ -1113,4 +1125,47 @@ func truncate(s string, maxRunes int) string {
 		return s
 	}
 	return string(r[:maxRunes-3]) + "..."
+}
+
+func formatNumber(v float64, decimals ...int) string {
+	precision := 2
+	if len(decimals) > 0 {
+		precision = decimals[0]
+	}
+
+	s := fmt.Sprintf("%.*f", precision, v)
+	dotIdx := len(s) - (precision + 1)
+	intPart := s
+	decPart := ""
+	if precision > 0 {
+		intPart = s[:dotIdx]
+		decPart = s[dotIdx+1:]
+	}
+
+	negative := len(intPart) > 0 && intPart[0] == '-'
+	digits := intPart
+	if negative {
+		digits = intPart[1:]
+	}
+
+	var result []byte
+	offset := len(digits) % 3
+	if offset == 0 {
+		offset = 3
+	}
+	result = append(result, digits[:offset]...)
+	for i := offset; i < len(digits); i += 3 {
+		result = append(result, '.')
+		result = append(result, digits[i:i+3]...)
+	}
+
+	formatted := string(result)
+	if precision > 0 {
+		formatted += "," + decPart
+	}
+	if negative {
+		return "-" + formatted
+	}
+
+	return formatted
 }
