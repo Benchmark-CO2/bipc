@@ -1,0 +1,2 @@
+ALTER TABLE projects ADD COLUMN siop TEXT;
+ALTER TABLE projects ADD COLUMN apf TEXT;
