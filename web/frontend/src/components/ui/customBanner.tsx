@@ -3,8 +3,9 @@ import { deleteProject } from "@/actions/projects/deleteProjects";
 import { postDuplicateProject } from "@/actions/projects/postDuplicateProject";
 import { generateReport } from '@/actions/report/generateReport';
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
+import { useTranslation } from "@/i18n";
 import { IProject, TProjectPhase } from "@/types/projects";
-import { phaseColors, phaseLabels } from "@/utils/phaseConfig";
+import { phaseColors } from "@/utils/phaseConfig";
 import { queryClient } from "@/utils/queryClient";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -26,6 +27,7 @@ import ModalConfirmDelete from "../layout/modal-confirm-delete";
 import ModalSimple from "../layout/modal-simple";
 import { normalizeBenchmarkSeries, recalculateY } from '../summaryVariants/utils';
 import { Button } from "./button";
+import { SimpleTooltip } from "./simple-tooltip";
 
 interface ICustomBanner {
   name: string;
@@ -63,6 +65,7 @@ const CustomBanner = ({
   const { hasPermission } = useProjectPermissions(id || "");
   const fullAddress = [street, number, neighborhood].filter(Boolean).join(", ");
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
+  const { t } = useTranslation();
 
   const navigate = useNavigate();
 
@@ -84,18 +87,18 @@ const CustomBanner = ({
       return deleteProject(projectId);
     },
     onSuccess: async () => {
-      toast.success("Empreendimento excluído com sucesso");
+      toast.success(t.projects.deleteSuccess);
       await queryClient.invalidateQueries({
         queryKey: ["projects"],
       });
       navigate({ to: `/new_projects` });
     },
     onError: (error: unknown) => {
-      toast.error("Erro ao excluir o empreendimento", {
+      toast.error(t.projects.deleteError, {
         description:
           error instanceof Error
             ? error.message
-            : "Ocorreu um erro desconhecido",
+            : t.common.unknownError,
         duration: 5000,
       });
     },
@@ -106,18 +109,18 @@ const CustomBanner = ({
       return postDuplicateProject(projectId);
     },
     onSuccess: async (data) => {
-      toast.success("Empreendimento duplicado com sucesso");
+      toast.success(t.projects.duplicateSuccess);
       await queryClient.invalidateQueries({
         queryKey: ["projects"],
       });
       navigate({ to: `/new_projects` });
     },
     onError: (error: unknown) => {
-      toast.error("Erro ao duplicar o empreendimento", {
+      toast.error(t.projects.duplicateError, {
         description:
           error instanceof Error
             ? error.message
-            : "Ocorreu um erro desconhecido",
+            : t.common.unknownError,
         duration: 5000,
       });
     },
@@ -135,20 +138,20 @@ const CustomBanner = ({
     });
   };
 
-   const { mutate: onGenerateReport } = useMutation({
-    mutationFn: (formData: { co2: File; energy: File, projectId: string }) => generateReport(formData.projectId, formData),
+  const { mutate: onGenerateReport } = useMutation({
+    mutationFn: (formData: { co2: File; energy: File, projectId: string; }) => generateReport(formData.projectId, formData),
     onSuccess: async (response) => {
-      toast.success("Relatório gerado com sucesso");
+      toast.success(t.customBanner.downloadReportSuccess);
       const blob = new Blob([response.data], { type: response.headers['content-type'] || 'application/pdf' });
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
     },
     onError: (error: unknown) => {
-      toast.error("Erro ao gerar o relatório", {
+      toast.error(t.customBanner.downloadReportError, {
         description:
           error instanceof Error
             ? error.message
-            : "Ocorreu um erro desconhecido",
+            : t.common.unknownError,
         duration: 5000,
       });
     },
@@ -169,17 +172,17 @@ const CustomBanner = ({
       const allData =
         consumption
           ? [
-              ...normalized,
-              {
-                id: id!,
-                minId: id!,
-                maxId: id!,
-                y: 0,
-                min: consumption[minField],
-                max: consumption[maxField],
-                label: name,
-              },
-            ]
+            ...normalized,
+            {
+              id: id!,
+              minId: id!,
+              maxId: id!,
+              y: 0,
+              min: consumption[minField],
+              max: consumption[maxField],
+              label: name,
+            },
+          ]
           : normalized;
 
       const minData = allData.map((d) => d.min);
@@ -247,21 +250,25 @@ const CustomBanner = ({
               <span
                 className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-white shadow-md ${phaseColors[phase]}`}
               >
-                {phaseLabels[phase]}
+                {t.phase[phase]}
               </span>
-              <Button onClick={handleExport} variant="outline-bipc" size="icon">
-                <Download className="w-4 h-4" />
-              </Button>
+              <SimpleTooltip content={t.projects.form.downloadReport} side="bottom">
+                <Button onClick={handleExport} variant="outline-bipc" size="icon">
+                  <Download className="w-4 h-4" />
+                </Button>
+              </SimpleTooltip>
               {hasPermission("*:*") && (
                 <ModalSimple
                   componentTrigger={
-                    <Button variant="outline-bipc" size="icon">
-                      <Copy className="w-4 h-4" />
-                    </Button>
+                    <SimpleTooltip content={t.projects.duplicateTitle} side="bottom">
+                      <Button variant="outline-bipc" size="icon">
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </SimpleTooltip>
                   }
-                  title="Duplicar empreendimento"
-                  content="Tem certeza que deseja duplicar este empreendimento? Esta ação criará uma cópia idêntica do empreendimento, incluindo todas as suas informações e configurações. Você poderá editar os detalhes do novo empreendimento após a duplicação."
-                  confirmTitle="Duplicar"
+                  title={t.projects.duplicateTitle}
+                  content={t.projects.duplicateContent}
+                  confirmTitle={t.projects.duplicateConfirm}
                   onConfirm={() => onDuplicateProject(project.id)}
                 />
               )}
@@ -269,9 +276,11 @@ const CustomBanner = ({
               {hasPermission("*:*") && (
                 <DialogTransferOwnership
                   componentTrigger={
-                    <Button variant="outline-bipc" size="icon">
-                      <UserCheck className="w-4 h-4" />
-                    </Button>
+                    <SimpleTooltip content={t.projects.projectTransfer.title} side="bottom">
+                      <Button variant="outline-bipc" size="icon">
+                        <UserCheck className="w-4 h-4" />
+                      </Button>
+                    </SimpleTooltip>
                   }
                   projectId={project.id}
                   projectName={name}
@@ -281,9 +290,11 @@ const CustomBanner = ({
               {hasPermission("update:project") && (
                 <DrawerFormProject
                   componentTrigger={
-                    <Button variant="bipc" size="icon">
-                      <Edit className="w-4 h-4" />
-                    </Button>
+                    <SimpleTooltip content={t.projects.form.editButton} side="bottom">
+                      <Button variant="bipc" size="icon">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    </SimpleTooltip>
                   }
                   projectData={project}
                 />
@@ -292,34 +303,38 @@ const CustomBanner = ({
               {hasPermission("*:*") && (
                 <ModalConfirmDelete
                   componentTrigger={
-                    <Button variant="destructive" size="icon">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <SimpleTooltip content={t.projects.confirmDelete.title} side="bottom">
+                      <Button variant="destructive" size="icon">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </SimpleTooltip>
                   }
-                  title="Confirmar exclusão do empreendimento"
+                  title={t.projects.confirmDelete.title}
                   onConfirm={() => onDeleteProject?.(project.id)}
                 />
               )}
 
-              <button
-                onClick={handleCollapseToggle}
-                className="text-slate-300 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
-                aria-label={isCollapsed ? "Expandir banner" : "Colapsar banner"}
-              >
-                {isCollapsed ? (
-                  <ChevronDown className="w-4 h-4 transition-transform duration-500" />
-                ) : (
-                  <ChevronUp className="w-4 h-4 transition-transform duration-500" />
-                )}
-              </button>
+              <SimpleTooltip content={isCollapsed ? t.common.expand : t.common.collapse} side="bottom">
+                <button
+                  onClick={handleCollapseToggle}
+                  className="text-slate-300 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
+                  aria-label={isCollapsed ? t.common.expand : t.common.collapse}
+                >
+                  {isCollapsed ? (
+                    <ChevronDown className="w-4 h-4 transition-transform duration-500" />
+                  ) : (
+                    <ChevronUp className="w-4 h-4 transition-transform duration-500" />
+                  )}
+                </button>
+              </SimpleTooltip>
             </div>
           </div>
 
           {/* Conteúdo expansível */}
           <div
             className={`grid transition-all duration-500 ease-in-out ${isCollapsed
-                ? "grid-rows-[0fr] opacity-0"
-                : "grid-rows-[1fr] opacity-100"
+              ? "grid-rows-[0fr] opacity-0"
+              : "grid-rows-[1fr] opacity-100"
               }`}
           >
             <div className="overflow-hidden">
@@ -348,7 +363,7 @@ const CustomBanner = ({
                     </span>
                     <span className="text-sm font-semibold text-white">
                       {unitsCount}{" "}
-                      {unitsCount === 1 ? "Edificação" : "Edificações"}
+                      {unitsCount === 1 ? t.customBanner.building : t.customBanner.buildings}
                     </span>
                   </div>
                 )}

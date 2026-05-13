@@ -16,8 +16,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useTranslation } from "@/i18n";
 import { Alert, AlertDescription } from "../../ui/alert";
 import { Button } from "../../ui/button";
 import {
@@ -72,8 +72,8 @@ const DrawerFormModule = ({
 }: DrawerFormModuleProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
-
   const { t } = useTranslation();
+
   const queryClient = useQueryClient();
 
   const form = useForm<ModuleFormInput>({
@@ -92,14 +92,14 @@ const DrawerFormModule = ({
     mutationFn: (data: ModuleParamsProps) =>
       patchModule(data, projectId, unitId, optionId, moduleId!),
     onError: (error) => {
-      toast.error(t("error.errorUpdateModule"), {
+      toast.error(t.modules.form.updateError, {
         description:
-          error instanceof Error ? error.message : t("error.errorUnknown"),
+          error instanceof Error ? error.message : t.modules.form.unknownError,
         duration: 5000,
       });
     },
     onSuccess: () => {
-      toast.success(t("success.moduleUpdated"), {
+      toast.success(t.modules.form.updateSuccess, {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -126,14 +126,14 @@ const DrawerFormModule = ({
     mutationFn: (data: ModuleParamsProps) =>
       postModule(data, projectId, unitId, optionId),
     onError: (error) => {
-      toast.error(t("error.errorCreateModule"), {
+      toast.error(t.modules.form.createError, {
         description:
-          error instanceof Error ? error.message : t("error.errorUnknown"),
+          error instanceof Error ? error.message : t.modules.form.unknownError,
         duration: 5000,
       });
     },
     onSuccess: () => {
-      toast.success(t("success.moduleCreated"), {
+      toast.success(t.modules.form.createSuccess, {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -544,12 +544,12 @@ const DrawerFormModule = ({
   };
 
   const structureTypes = [
-    { value: "beam_column", label: t("common.structureType.beamColumn") },
-    { value: "concrete_wall", label: t("common.structureType.concreteWall") },
-    { value: "structural_masonry", label: t("common.structureType.masonry") },
-    { value: "raft_foundation", label: "Radier" },
-    { value: "piles_foundation", label: "Estaca" },
-    { value: "raft_piles_foundation", label: "Radier Estaqueado" },
+    { value: "beam_column", label: t.modules.structureTypes.beamColumn },
+    { value: "concrete_wall", label: t.modules.structureTypes.concreteWall },
+    { value: "structural_masonry", label: t.modules.structureTypes.masonry },
+    { value: "raft_foundation", label: t.modules.structureTypes.raftFoundation },
+    { value: "piles_foundation", label: t.modules.structureTypes.pilesFoundation },
+    { value: "raft_piles_foundation", label: t.modules.structureTypes.raftPilesFoundation },
   ];
 
   const isMobile = useIsMobile();
@@ -591,7 +591,9 @@ const DrawerFormModule = ({
       >
         <DrawerHeader className="px-8">
           <DrawerTitle className="text-h1 text-primary">
-            Dados da tecnologia
+            {moduleId
+              ? t.modules.form.editTitle
+              : t.modules.table.createButton}
           </DrawerTitle>
           <Button
             onClick={handleClose}
@@ -626,9 +628,8 @@ const DrawerFormModule = ({
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(handleSubmit as any, () => {
-                  toast.error("Existem erros de validação", {
-                    description:
-                      "Evite campos com valores zerados ou inválidos.",
+                  toast.error(t.modules.form.validationErrors, {
+                    description: t.modules.form.validationDescription,
                     duration: 5000,
                   });
                 })}
@@ -662,7 +663,7 @@ const DrawerFormModule = ({
                   <div className="p-4 border rounded-lg border-gray-shade-200 space-y-4 bg-card">
                     <div>
                       <span className="text-h3 text-primary dark:text-gray-300">
-                        Dados da tecnologia
+                        {t.modules.form.technologyData}
                       </span>
                     </div>
                     {/* Campos básicos */}
@@ -674,9 +675,7 @@ const DrawerFormModule = ({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>
-                              {t(
-                                "drawerFormModule.commonForm.structureTypeLabel",
-                              )}
+                              {t.modules.form.structureTypeLabel}
                             </FormLabel>
                             <FormControl>
                               <Select
@@ -708,9 +707,7 @@ const DrawerFormModule = ({
                               >
                                 <SelectTrigger className="w-full">
                                   <SelectValue
-                                    placeholder={t(
-                                      "drawerFormModule.commonForm.structureTypePlaceholder",
-                                    )}
+                                    placeholder={t.modules.form.structureTypeLabel}
                                   />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -771,7 +768,7 @@ const DrawerFormModule = ({
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   <p className="font-medium mb-1">
-                    Corrija os seguintes erros antes de enviar:
+                    {t.modules.form.fixErrors}
                   </p>
                   <ul className="list-disc pl-4 text-xs space-y-0.5">
                     {getFormErrorMessages(form.formState.errors).map(
@@ -799,9 +796,9 @@ const DrawerFormModule = ({
             {isCreationPending || isUpdatePending ? (
               <Loader2 className="animate-spin h-4 w-4" />
             ) : moduleId ? (
-              t("common.update")
+              t.common.update
             ) : (
-              t("common.add")
+              t.common.add
             )}
           </Button>
         </DrawerFooter>

@@ -1,9 +1,9 @@
 import { IInvite } from "@/actions/invites/getInvites";
 import useNotifications from "@/hooks/useNotifications";
+import { useTranslation } from "@/i18n";
 import { Link } from "@tanstack/react-router";
 import { Bell, CircleArrowRight } from "lucide-react";
 import { useRef } from "react";
-import { useTranslation } from "react-i18next";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 const NotificationCard = ({
@@ -13,6 +13,7 @@ const NotificationCard = ({
   notification: IInvite;
   onClick: () => void;
 }) => {
+  const { t } = useTranslation();
   return (
     <Link
       to="/notifications"
@@ -20,7 +21,7 @@ const NotificationCard = ({
       onClick={onClick}
       className="p-2 pl-4 text-sm rounded-r-md my-1 bg-accent-foreground/20 hover:bg-accent/80 transition-colors flex justify-between flex-col gap-3 border-l-4 border-l-primary cursor-pointer"
     >
-      <h3 className="font-semibold">Novo convite</h3>
+      <h3 className="font-semibold">{t.notifications.newInvite}</h3>
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs">
           {notification.inviter_name} - {notification.project_name}
@@ -31,11 +32,14 @@ const NotificationCard = ({
   );
 };
 
-const EmptyList = () => (
-  <div className="py-3">
-    <h3>Nenhuma notificação</h3>
-  </div>
-);
+const EmptyList = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="py-3">
+      <h3>{t.notifications.empty}</h3>
+    </div>
+  );
+};
 
 interface INotificationProps {
   size?: number;
@@ -55,12 +59,12 @@ export const Notifications = ({
   };
 
   return (
-    <Popover modal i18nIsDynamicList>
+    <Popover modal>
       <PopoverTrigger ref={ref} className="relative cursor-pointer">
         {iconOnly ? (
           <Bell size={size} className="text-white" />
         ) : (
-          "Notificações"
+          t.notifications.title
         )}
         {notifications.length > 0 && (
           <span className="absolute -top-1 -right-4 scale-90 bg-destructive text-white rounded-full px-1 text-xs">
@@ -74,9 +78,7 @@ export const Notifications = ({
         className="w-80 max-h-[400px] overflow-y-auto "
       >
         <div className="p-2 border-b border-gray-200">
-          <h3 className="text-lg font-semibold">
-            {t("sidebar.notifications")}
-          </h3>
+          <h3 className="text-lg font-semibold">{t.notifications.title}</h3>
         </div>
         {notifications.length ? (
           notifications.map((notification) => (

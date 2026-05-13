@@ -24,9 +24,10 @@ import { Switch } from "../ui/switch";
 import { postOption } from "@/actions/options/postOption";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useTranslation } from "@/i18n";
 
 const createSimulationSchema = z.object({
-  name: z.string().min(1, "O nome é obrigatório"),
+  name: z.string().min(1, "nameRequired"),
   active: z.boolean().default(true).optional(),
 });
 
@@ -47,6 +48,7 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const createSimulationMutation = useMutation({
     mutationFn: (data: { name: string; active: boolean }) =>
@@ -55,12 +57,12 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
       queryClient.invalidateQueries({
         queryKey: ["options", projectId, unitId],
       });
-      toast.success("Simulação criada com sucesso");
+      toast.success(t.dialogCreateSimulation.successCreate);
       form.reset();
       setOpen(false);
     },
     onError: (error) => {
-      console.error("Erro ao criar simulação:", error);
+      console.error(t.dialogCreateSimulation.errorCreate, error);
     },
   });
 
@@ -88,13 +90,13 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
             className="ml-auto text-white"
             onClick={() => setOpen(true)}
           >
-            Fazer Nova Simulação
+            {t.constructiveTechView.newSimulation}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="text-center">
         <DialogHeader>
-          <DialogTitle className="text-center">Adicionar Simulação</DialogTitle>
+          <DialogTitle className="text-center">{t.constructiveTechView.newSimulation}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form
@@ -107,9 +109,9 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
               name={`name`}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm">Nome da Simulação *</FormLabel>
+                  <FormLabel className="text-sm">{t.dialogCreateSimulation.simulationName} *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Simulação 1" {...field} />
+                    <Input placeholder={t.dialogCreateSimulation.placeholder} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -128,7 +130,7 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
                     />
                   </FormControl>
                   <FormLabel className="text-sm text-center">
-                    Usar como referência
+                    {t.dialogCreateSimulation.useAsReference}
                   </FormLabel>
                   <FormMessage />
                 </FormItem>
@@ -138,7 +140,7 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
         </Form>
         <DialogFooter className="flex justify-between">
           <Button variant="outline" size={"lg"} onClick={() => setOpen(false)}>
-            Cancelar
+            {t.common.cancel}
           </Button>
 
           <Button
@@ -149,7 +151,7 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
             className="text-white"
             disabled={createSimulationMutation.isPending}
           >
-            {createSimulationMutation.isPending ? "Criando..." : "Criar"}
+            {createSimulationMutation.isPending ? t.dialogCreateSimulation.creating : t.dialogCreateSimulation.create}
           </Button>
         </DialogFooter>
       </DialogContent>

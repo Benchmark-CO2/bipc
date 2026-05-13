@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import Divider from "@/components/ui/divider";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import {
@@ -20,7 +21,6 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { CheckCircle, Loader2, Mail, XCircle } from "lucide-react";
-import { useTranslation } from "react-i18next";
 
 type ActivateSearch = {
   tkn?: string;
@@ -37,8 +37,8 @@ export const Route = createFileRoute("/(public)/activate")({
 
 function RouteComponent() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
   const { tkn: token } = useSearch({ from: "/(public)/activate" });
 
   const activationMutation = useMutation({
@@ -65,7 +65,7 @@ function RouteComponent() {
           "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar",
           {
             block: isMobile,
-          }
+          },
         )}
       >
         <Card className="w-full max-w-md rounded-md">
@@ -78,10 +78,10 @@ function RouteComponent() {
               <XCircle className="h-6 w-6 text-red-600" />
             </div>
             <CardTitle className="text-xl">
-              {t("activateUser.invalid.title")}
+              {t.auth.activate.invalidTitle}
             </CardTitle>
             <CardDescription>
-              {t("activateUser.invalid.description")}
+              {t.auth.activate.invalidDescription}
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
@@ -90,7 +90,7 @@ function RouteComponent() {
               onClick={handleNavigateToLogin}
               className="w-full"
             >
-              {t("activateUser.invalid.goToLogin")}
+              {t.auth.activate.goToLogin}
             </Button>
           </CardFooter>
         </Card>
@@ -105,7 +105,7 @@ function RouteComponent() {
           "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar",
           {
             block: isMobile,
-          }
+          },
         )}
       >
         <Card className="w-full max-w-md rounded-md">
@@ -118,10 +118,10 @@ function RouteComponent() {
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
             <CardTitle className="text-xl">
-              {t("activateUser.success.title")}
+              {t.auth.activate.successTitle}
             </CardTitle>
             <CardDescription>
-              {t("activateUser.success.description")}
+              {t.auth.activate.successDescription}
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
@@ -130,7 +130,7 @@ function RouteComponent() {
               variant="bipc"
               className="w-full"
             >
-              {t("activateUser.success.goToLogin")}
+              {t.auth.activate.makeLogin}
             </Button>
           </CardFooter>
         </Card>
@@ -145,7 +145,7 @@ function RouteComponent() {
           "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar",
           {
             block: isMobile,
-          }
+          },
         )}
       >
         <Card className="w-full max-w-md rounded-md">
@@ -158,16 +158,16 @@ function RouteComponent() {
               <XCircle className="h-6 w-6 text-red-600" />
             </div>
             <CardTitle className="text-xl">
-              {t("activateUser.error.title")}
+              {t.auth.activate.errorTitle}
             </CardTitle>
             <CardDescription>
-              {t("activateUser.error.description")}
+              {t.auth.activate.errorDescription}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Alert variant="destructive">
               <AlertDescription>
-                {activationMutation.error?.message || t("error.errorUnknown")}
+                {activationMutation.error?.message || t.errors.unknownError}
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -177,11 +177,8 @@ function RouteComponent() {
               onClick={handleTryAgain}
               className="w-full"
             >
-              {t("activateUser.error.retry")}
+              {t.auth.activate.retry}
             </Button>
-            {/* <Button variant="outline" onClick={handleNavigateToContact}>
-              {t("activateUser.error.support")}
-            </Button> */}
           </CardFooter>
         </Card>
       </div>
@@ -195,7 +192,7 @@ function RouteComponent() {
           "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar",
           {
             block: isMobile,
-          }
+          },
         )}
       >
         <Card className="w-full max-w-md rounded-md">
@@ -208,10 +205,10 @@ function RouteComponent() {
               <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
             </div>
             <CardTitle className="text-xl">
-              {t("activateUser.loading.title")}
+              {t.auth.activate.loadingTitle}
             </CardTitle>
             <CardDescription>
-              {t("activateUser.loading.description")}
+              {t.auth.activate.loadingDescription}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -225,7 +222,7 @@ function RouteComponent() {
         "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar",
         {
           block: isMobile,
-        }
+        },
       )}
     >
       <Card className="w-full max-w-md rounded-md">
@@ -238,10 +235,10 @@ function RouteComponent() {
             <Mail className="h-6 w-6 text-blue-600" />
           </div>
           <CardTitle className="text-xl">
-            {t("activateUser.confirm.title")}
+            {t.auth.activate.confirmTitle}
           </CardTitle>
           <CardDescription>
-            {t("activateUser.confirm.description")}
+            {t.auth.activate.confirmDescription}
           </CardDescription>
         </CardHeader>
         <CardFooter className="flex justify-center">
@@ -251,7 +248,7 @@ function RouteComponent() {
             variant="bipc"
             className="w-full"
           >
-            {t("activateUser.confirm.confirmAction")}
+            {t.auth.activate.confirmAction}
           </Button>
         </CardFooter>
       </Card>

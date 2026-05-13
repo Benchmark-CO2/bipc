@@ -1,12 +1,13 @@
-// import { getProjectByUUID } from "@/actions/projects/getProject";
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { postDuplicateUnit } from "@/actions/units/postDuplicateUnit";
 import { DrawerFormUnit } from "@/components/layout";
 import ModalSimple from "@/components/layout/modal-simple";
 import { Button } from "@/components/ui/button";
 import NotFoundList from "@/components/ui/not-found-list";
+import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 import { Tabs } from "@/components/ui/tabs";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
+import { useTranslation } from "@/i18n";
 import { TProjectUnit } from "@/types/projects";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -18,7 +19,6 @@ import {
 } from "@tanstack/react-router";
 import { Copy, Edit, Loader2, Plus, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_private/new_projects/$projectId/unit")({
@@ -40,10 +40,10 @@ function RouteComponent() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { t } = useTranslation();
   const { projectId } = Route.useLoaderData();
   const params: { projectId: string; unitId: string; moduleId: string } =
     Route.useParams();
+  const { t } = useTranslation();
 
   const { hasPermission } = useProjectPermissions(projectId);
 
@@ -80,7 +80,7 @@ function RouteComponent() {
       onSuccess: async (data) => {
         const unitData = await data?.data?.unit;
 
-        toast.success("Edificação duplicada com sucesso");
+        toast.success(t.units.duplicateSuccess);
         queryClient.invalidateQueries({
           queryKey: ["project", projectId],
         });
@@ -92,7 +92,7 @@ function RouteComponent() {
         });
       },
       onError: (error) => {
-        toast.error("Erro ao duplicar edificação", {
+        toast.error(t.units.duplicateError, {
           description: error.message,
         });
       },
@@ -126,11 +126,11 @@ function RouteComponent() {
   }, [tabs, params, projectId]);
 
   if (isLoading) {
-    return <div>Carregando projeto...</div>;
+    return <div>{t.common.loading}</div>;
   }
 
   if (error || !project) {
-    return <div>Erro ao carregar projeto</div>;
+    return <div>{t.errors.loadingProject}</div>;
   }
 
   if (tabs.length === 0) {
@@ -139,8 +139,8 @@ function RouteComponent() {
         <div className="flex h-full w-full flex-col items-center justify-center">
           <NotFoundList
             icon={"package"}
-            message={t("units.noUnits")}
-            description={t("units.description")}
+            message={t.units.noUnits}
+            description={t.units.noUnitsDescription}
             showIcon
             button={
               <DrawerFormUnit
@@ -148,7 +148,7 @@ function RouteComponent() {
                 triggerComponent={
                   <Button variant="outline" className="mt-4">
                     <Plus />
-                    {t("units.addUnit")}
+                    {t.units.addUnit}
                   </Button>
                 }
               />
@@ -176,20 +176,22 @@ function RouteComponent() {
               </Button>
               {params.unitId && hasPermission("create:unit") && (
                 <ModalSimple
-                  title="Duplicar Edificação"
-                  content="Tem certeza que deseja duplicar esta edificação? Esta ação criará uma cópia idêntica da edificação, incluindo todas as suas informações e configurações. Você poderá editar os detalhes da nova edificação após a duplicação."
-                  confirmTitle="Duplicar"
+                  title={t.units.duplicateTitle}
+                  content={t.units.duplicateContent}
+                  confirmTitle={t.units.duplicateConfirm}
                   onConfirm={() =>
                     mutateDuplicateUnit({ projectId, unitId: params.unitId })
                   }
                   componentTrigger={
-                    <Button variant="outline-bipc" size="icon-lg">
-                      {isDuplicating ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Copy />
-                      )}
-                    </Button>
+                    <SimpleTooltip content={t.units.duplicateTitle} side="bottom">
+                      <Button variant="outline-bipc" size="icon-lg">
+                        {isDuplicating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Copy />
+                        )}
+                      </Button>
+                    </SimpleTooltip>
                   }
                 />
               )}
@@ -198,9 +200,11 @@ function RouteComponent() {
                   projectId={projectId}
                   unitId={params.unitId}
                   triggerComponent={
-                    <Button variant="outline-bipc" size="icon-lg">
-                      <Edit />
-                    </Button>
+                    <SimpleTooltip content={t.units.form.editTitle} side="bottom">
+                      <Button variant="outline-bipc" size="icon-lg">
+                        <Edit />
+                      </Button>
+                    </SimpleTooltip>
                   }
                 />
               )}
@@ -208,9 +212,11 @@ function RouteComponent() {
                 <DrawerFormUnit
                   projectId={projectId}
                   triggerComponent={
-                    <Button variant="bipc" size="icon-lg">
-                      <Plus className="w-16 h-16" />
-                    </Button>
+                    <SimpleTooltip content={t.units.form.addTitle} side="bottom">
+                      <Button variant="bipc" size="icon-lg">
+                        <Plus className="w-16 h-16" />
+                      </Button>
+                    </SimpleTooltip>
                   }
                 />
               )}

@@ -3,6 +3,7 @@ import { TechIcon } from "@/components/techIcons";
 import Divider from "@/components/ui/divider";
 import { FilterTabs } from "@/components/ui/filter-tabs";
 import { useState } from "react";
+import { useTranslation } from "@/i18n";
 
 class FilterFloors {
 
@@ -44,6 +45,7 @@ export const useBenchmarkFilters = () => {
     technology: [],
   });
   const [type, setType] = useState<"co2" | "energy">("co2");
+  const { t } = useTranslation();
 
   const handleFloorsFilterChange = (filter: string) => {
     setActiveBuildFilter(oldState => ({
@@ -67,11 +69,11 @@ export const useBenchmarkFilters = () => {
   const FilterSection = (
     <section className="w-full md:w-1/3 min-w-[375px] flex flex-col items-center gap-4 mb-4 max-sm:self-center max-lg:w-full!">
       <h2 className="w-full text-left font-semibold text-primary">
-        Filtros de visualização:
+        {t.benchmark.filters.title}
       </h2>
       <div className="min-xl:self-start max-sm:w-full max-sm:flex max-sm:justify-center max-sm:flex-col pl-2">
         <h3 className="mb-2 font-semibold text-primary text-sm">
-          Indicadores:
+          {t.benchmark.filters.indicators}
         </h3>
         <FilterTabs
           tabs={["co2", "energy"]}
@@ -80,37 +82,9 @@ export const useBenchmarkFilters = () => {
           className="w-full max-w-[500px]"
           tabsStyle="w-full"
         />
-        {/* <div className="flex gap-2 w-full">
-          <Input
-            placeholder="Número de projetos"
-            className="mb-4 w-full"
-            type="number"
-          />
-        </div>
-
-        <Select>
-          <SelectTrigger className="w-full self-start mb-4">
-            <SelectValue placeholder="Região ou estado" />
-          </SelectTrigger>
-          <SelectContent
-            defaultValue={"co2"}
-            className=" max-sm:w-11/12  max-sm:self-center"
-          >
-            {regions.map((region) => (
-              <SelectItem value={region.value}>{region.label}</SelectItem>
-            ))}
-            {states.map((state) => (
-              <SelectItem value={state.value}>{state.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <div className="flex gap-2 max-sm:justify-center">
-          <Input type={"date"} />
-          <Input type={"date"} />
-        </div> */}
         <Divider className="my-6" />
         <h3 className="mb-6 font-semibold text-primary text-sm">
-          Números de pavimentos:
+          {t.benchmark.filters.floors}
         </h3>
         <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto overflow-x-auto">
           <BuildIcon
@@ -152,7 +126,7 @@ export const useBenchmarkFilters = () => {
         </div>
         <Divider className="my-6" />
         <h3 className="mb-6 font-semibold text-primary text-sm">
-          Tecnologias Construtivas:
+          {t.benchmark.filters.technology}
         </h3>
         <div className="flex items-baseline gap-6 max-sm:max-w-full max-sm:mx-auto overflow-x-auto">
           <TechIcon

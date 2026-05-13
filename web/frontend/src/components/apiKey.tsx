@@ -1,4 +1,5 @@
 import { getTokenKey } from "@/actions/auth/token";
+import { useTranslation } from "@/i18n";
 import { Check, Copy, RefreshCcw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -6,6 +7,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
 export const GenerateApiKey = () => {
+  const { t } = useTranslation();
   const [apiKey, setApiKey] = useState("");
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,7 @@ export const GenerateApiKey = () => {
     if (apiKey) {
       navigator.clipboard.writeText(apiKey);
       setCopied(true);
-      toast.info("Chave de API copiada para a área de transferência!");
+      toast.info(t.apiKey.copied);
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -39,7 +41,7 @@ export const GenerateApiKey = () => {
         onClick={generateApiKey}
         disabled={loading}
       >
-        {loading ? "Gerando..." : "Gerar nova chave de API"}
+        {loading ? t.apiKey.generating : t.apiKey.generate}
         <RefreshCcw
           className={`ml-1 size-4 ${loading ? "animate-spin" : ""}`}
         />
@@ -48,8 +50,7 @@ export const GenerateApiKey = () => {
       {apiKey && (
         <div className="space-y-2">
           <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
-            A chave de API é de visualização única. Copie-a agora, pois não será
-            possível vê-la novamente.
+            {t.apiKey.oneTimeWarning}
           </p>
           <div className="flex items-center gap-2">
             <Input
@@ -62,7 +63,7 @@ export const GenerateApiKey = () => {
               size="icon"
               className="shrink-0"
               onClick={handleCopy}
-              title="Copiar chave"
+              title={t.apiKey.copy}
             >
               {copied ? (
                 <Check className="size-4 text-green-500" />

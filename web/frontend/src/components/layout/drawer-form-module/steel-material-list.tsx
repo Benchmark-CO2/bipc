@@ -1,4 +1,5 @@
 import { masks } from "@/utils/masks";
+import { useTranslation } from "@/i18n";
 import { Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
@@ -14,13 +15,6 @@ import {
 } from "../../ui/select";
 
 type MaterialKey = "rebar" | "mesh" | "strand" | "other";
-
-const allMaterialOptions: Record<MaterialKey, string> = {
-  rebar: "Vergalhão",
-  mesh: "Tela",
-  strand: "Cordoalha",
-  other: "Outro",
-};
 
 const defaultResistanceByMaterial: Record<string, string> = {
   rebar: "CA50",
@@ -61,7 +55,7 @@ const SteelMaterialItem = ({
   onRemove,
   canRemove,
 }: SteelMaterialItemProps) => {
-  // Agora useWatch está no nível correto do componente
+  const { t } = useTranslation();
   const currentMaterial = useWatch({
     control: form.control,
     name: `${name}.${index}.material`,
@@ -108,7 +102,7 @@ const SteelMaterialItem = ({
             name={`${name}.${index}.material`}
             render={({ field }) => (
               <FormItem className="w-full space-y-1">
-                <FormLabel className="text-xs">Material *</FormLabel>
+                <FormLabel className="text-xs">{t.modules.form.material}</FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger className="h-9 w-full">
@@ -142,7 +136,7 @@ const SteelMaterialItem = ({
             name={`${name}.${index}.resistance`}
             render={({ field }) => (
               <FormItem className="w-full space-y-1">
-                <FormLabel className="text-xs">Tipo *</FormLabel>
+                <FormLabel className="text-xs">{t.modules.form.steelType}</FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger className="h-9 w-full">
@@ -176,7 +170,7 @@ const SteelMaterialItem = ({
             name={`${name}.${index}.mass`}
             render={({ field }) => (
               <FormItem className="w-full space-y-1">
-                <FormLabel className="text-xs">Massa (kg) *</FormLabel>
+                <FormLabel className="text-xs">{t.modules.form.massSteelKg}</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
@@ -215,7 +209,7 @@ const SteelMaterialItem = ({
           name={`${name}.${index}.other_name`}
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Nome do Material *</FormLabel>
+              <FormLabel className="text-xs">{t.modules.form.customMaterialName}</FormLabel>
               <FormControl>
                 <Input {...field} placeholder="Ex: Aço especial" />
               </FormControl>
@@ -232,7 +226,7 @@ const SteelMaterialItem = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">
-                Tipo de resistência customizada (MPa) *
+                {t.modules.form.customResistance}
               </FormLabel>
               <FormControl>
                 <Input
@@ -255,6 +249,7 @@ const SteelMaterialList = ({
   name,
   allowedMaterials = ["rebar", "other"],
 }: SteelMaterialListProps) => {
+  const { t } = useTranslation();
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name,
@@ -288,21 +283,26 @@ const SteelMaterialList = ({
 
   const materialOptions = allowedMaterials.map((key) => ({
     value: key,
-    label: allMaterialOptions[key],
+    label: {
+      rebar: t.modules.form.rebar,
+      mesh: t.modules.form.mesh,
+      strand: t.modules.form.strand,
+      other: t.modules.form.other,
+    }[key] ?? key,
   }));
 
   const resistanceOptions = [
     { value: "CA50", label: "CA-50" },
     { value: "CA60", label: "CA-60" },
     { value: "CP190", label: "CP-190" },
-    { value: "other", label: "Outro" },
+    { value: "other", label: t.modules.form.other },
   ];
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <FormLabel className="text-xs text-gray-700">
-          Materiais de Aço
+          {t.modules.form.steelMaterials}
         </FormLabel>
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-500">Total:</span>
@@ -346,7 +346,7 @@ const SteelMaterialList = ({
         }}
         className="w-full text-green-600 border-green-600 hover:bg-green-50"
       >
-        Adicionar
+        {t.common.add}
       </Button>
     </div>
   );

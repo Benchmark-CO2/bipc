@@ -6,12 +6,12 @@ import Divider from "@/components/ui/divider";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff, Loader2, User } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 const Login = () => {
   const auth = useAuth();
   const navigate = useNavigate({
@@ -25,8 +25,8 @@ const Login = () => {
     password: false,
   });
 
-  const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
 
   const { data, mutate, isPending, isError } = useMutation({
     mutationFn: login,
@@ -89,7 +89,7 @@ const Login = () => {
           {isError && (
             <div className="mb-4 p-3 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
               <h3 className="text-red-600 dark:text-red-400 text-sm font-medium">
-                {t("loginPage.error")}
+                {t.auth.login.error}
               </h3>
             </div>
           )}
@@ -101,7 +101,7 @@ const Login = () => {
                   className="text-xs font-semibold mb-1 text-gray-shade-500"
                   htmlFor="email"
                 >
-                  {t("common.user")}
+                  {t.auth.login.userLabel}
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-2/4 -translate-y-1/2 text-gray-400 size-5 pointer-events-none" />
@@ -110,7 +110,7 @@ const Login = () => {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t("loginPage.placeholderEmail")}
+                    placeholder={t.auth.login.emailPlaceholder}
                     className={cn(
                       "text-lg pl-10",
                       fieldsError.email
@@ -121,7 +121,9 @@ const Login = () => {
                     autoComplete="email"
                   />
                   {fieldsError.email && (
-                    <p className="text-red-500 text-xs">E-mail é obrigatório</p>
+                    <p className="text-red-500 text-xs">
+                      {t.auth.login.emailRequired}
+                    </p>
                   )}
                 </div>
               </div>
@@ -132,7 +134,7 @@ const Login = () => {
                     className="text-xs font-semibold mb-1 text-gray-shade-500"
                     htmlFor="password"
                   >
-                    {t("loginPage.placeholderPassword")}
+                    {t.auth.login.passwordLabel}
                   </label>
                   <div className="relative">
                     <Input
@@ -164,7 +166,9 @@ const Login = () => {
                   </div>
                 </div>
                 {fieldsError.password && (
-                  <p className="text-red-500 text-xs">Senha é obrigatória</p>
+                  <p className="text-red-500 text-xs">
+                    {t.auth.login.passwordRequired}
+                  </p>
                 )}
               </div>
             </div>
@@ -181,10 +185,10 @@ const Login = () => {
                 {isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Carregando...
+                    {t.auth.login.loggingIn}
                   </>
                 ) : (
-                  t("loginPage.buttonLogin")
+                  t.auth.login.loginButton
                 )}
               </Button>
               <Button
@@ -196,7 +200,7 @@ const Login = () => {
                 disabled={isPending}
                 className="w-full"
               >
-                {t("loginPage.buttonForgotPassword")}
+                {t.auth.login.forgotPassword}
               </Button>
             </div>
           </form>
@@ -204,7 +208,7 @@ const Login = () => {
           <Divider className="w-[90%] mx-auto" />
           <div className="flex flex-col justify-end items-center gap-4">
             <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-              {t("loginPage.askRegister")}
+              {t.auth.login.noAccount}
             </p>
             <Button
               className="w-full"
@@ -212,7 +216,7 @@ const Login = () => {
               onClick={() => navigateTo("/sign-up")}
               disabled={isPending}
             >
-              {t("loginPage.buttonRegister")}
+              {t.auth.login.signUpButton}
             </Button>
           </div>
 
@@ -224,8 +228,7 @@ const Login = () => {
                 className="hover:brightness-110 hover:font-semibold underline underline-offset-2 transition-all"
               >
                 <span style={{ color: "#187B8B" }}>
-                  Clique aqui e saiba como os seus dados estão sendo utilizados
-                  no BIPc.
+                  {t.auth.signUp.dataUsageInfo}
                 </span>
               </CustomLink>{" "}
             </p>

@@ -2,8 +2,8 @@ import { getFloorsBenchmark } from "@/actions/benchmarks/getFloors";
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { getUnitByUUID } from "@/actions/units/getUnit";
 import GraphIcon from "@/assets/icons/graph";
-import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
-import { floorsColumns } from "@/components/columns/floors";
+import { makeConstructiveTechnologiesColumns } from "@/components/columns/constructiveTechnologies";
+import { makeFloorsColumns } from "@/components/columns/floors";
 import { CommonTable } from "@/components/layout";
 import DrawerFormDisciplines from "@/components/layout/drawer-form-disciplines";
 import FloorSummary from "@/components/summaryVariants/floors";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useSummary } from "@/context/summaryContext";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
+import { useTranslation } from "@/i18n";
 import { TRoleConsumptions } from "@/types/disciplines";
 import { IConsumption } from "@/types/modules";
 import {
@@ -90,9 +91,8 @@ function RouteComponent() {
   });
   const search = useSearch({
     from: "/_private/new_projects/$projectId/unit/$unitId/",
-  });
-  const { hasPermission } = useProjectPermissions(projectId);
-
+  });  const { hasPermission } = useProjectPermissions(projectId);
+  const { t } = useTranslation();
   const { setSummaryContext } = useSummary();
   const { data: unitData, isLoading } = useQuery({
     queryKey: ["unit", projectId, unitId],
@@ -116,13 +116,13 @@ function RouteComponent() {
   const navigate = Route.useNavigate();
   const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
   const [selectedTab, setSelectedTab] = useState<string>(
-    "Todas as disciplinas",
+    t.unitView.tabAllDisciplines,
   );
 
   const getFilteredConsumptions = () => {
     if (!roles || roles.length === 0) return [];
 
-    if (selectedTab === "Todas as disciplinas") {
+    if (selectedTab === t.unitView.tabAllDisciplines) {
       // Coletar todos os tipos únicos de todos os roles
       const allTypes = new Set<string>();
       roles.forEach((role) => {
@@ -344,7 +344,7 @@ function RouteComponent() {
 
   const onSelectedTabChange = (tab: string) => {
     let dcpId = "";
-    if (tab === "Todas as disciplinas") {
+    if (tab === t.unitView.tabAllDisciplines) {
       dcpId = roles?.find((role) => role.is_protected)?.id || "";
     } else {
       const selectedRole = roles?.find((role) => role.name === tab);
@@ -372,8 +372,8 @@ function RouteComponent() {
   if (!unit) {
     return (
       <NotFoundList
-        message="Unidade não encontrada"
-        description="Não foi possível encontrar a unidade solicitada. Ela pode ter sido removida ou o link está incorreto."
+        message={t.unitView.notFound}
+        description={t.unitView.notFoundDescription}
         button={
           <Button
             variant="bipc"
@@ -384,7 +384,7 @@ function RouteComponent() {
               })
             }
           >
-            Voltar ao empreendimento
+            {t.unitView.backToEnterprise}
           </Button>
         }
       />
@@ -409,8 +409,8 @@ function RouteComponent() {
   return (
     <div className="flex flex-col gap-4">
       <CommonTable
-        tableName="Pavimentos"
-        columns={floorsColumns}
+        tableName={t.unitView.floors}
+        columns={makeFloorsColumns(t)}
         data={groupedFloors}
         isSelectable={true}
         isInteractive={true}
@@ -421,10 +421,10 @@ function RouteComponent() {
       <CommonTable
         tableName={
           <div>
-            Simulações
+            {t.unitView.simulations}
             <div className="flex items-center gap-2 mt-4">
               <FilterTabs
-                tabs={["Todas as disciplinas"]}
+                tabs={[t.unitView.tabAllDisciplines]}
                 selectedTab={selectedTab}
                 onTabSelect={(tab) => onSelectedTabChange(tab)}
                 subTabs={roleTabs}
@@ -440,7 +440,7 @@ function RouteComponent() {
                   componentTrigger={
                     <Button variant="outline-bipc" size="lg">
                       <Plus />
-                      Nova disciplina
+                      {t.unitView.newDiscipline}
                     </Button>
                   }
                   projectId={projectId}
@@ -456,16 +456,16 @@ function RouteComponent() {
                         variant="bipc"
                         size="lg"
                         onClick={handleClickConstructiveTechnologies}
-                        disabled={selectedTab === "Todas as disciplinas"}
+                        disabled={selectedTab === t.unitView.tabAllDisciplines}
                       >
                         <GraphIcon />
-                        Criar simulações
+                        {t.unitView.createSimulations}
                       </Button>
                     </span>
                   </TooltipTrigger>
-                  {selectedTab === "Todas as disciplinas" && (
+                  {selectedTab === t.unitView.tabAllDisciplines && (
                     <TooltipContent>
-                      Selecione uma disciplina para criar simulações
+                      {t.unitView.selectDisciplineTooltip}
                     </TooltipContent>
                   )}
                 </Tooltip>
@@ -474,7 +474,7 @@ function RouteComponent() {
           </div>
         }
         data={filteredConsumptions}
-        columns={constructiveTechnologies}
+        columns={makeConstructiveTechnologiesColumns(t)}
         isSelectable={false}
         isInteractive={false}
         isExpandable={false}
@@ -490,13 +490,13 @@ function RouteComponent() {
         customEmptyComponent={
           roleTabs.length === 0 ? (
             <NotFoundList
-              message="Sem Disciplinas para exibir"
+              message={t.unitView.noDisciplines}
               showIcon={false}
-              description={`Você ainda não criou nenhuma disciplina para esta unidade. Crie uma disciplina para começar a criar simulações.`}
+              description={t.unitView.noDisciplinesDescription}
               button={
                 <DrawerFormDisciplines
                   componentTrigger={
-                    <Button variant="bipc">Adicionar Disciplina</Button>
+                    <Button variant="bipc">{t.unitView.addDiscipline}</Button>
                   }
                   projectId={projectId}
                   unitId={unitId}
@@ -507,15 +507,15 @@ function RouteComponent() {
           ) : filteredConsumptions.length === 0 ? (
             <NotFoundList
               message={
-                selectedTab === "Todas as disciplinas"
-                  ? "Sem simulações para exibir no momento"
-                  : "Crie sua primeira simulação"
+                selectedTab === t.unitView.tabAllDisciplines
+                  ? t.unitView.noSimulations
+                  : t.unitView.createFirstSimulation
               }
               showIcon={false}
               description={
-                selectedTab === "Todas as disciplinas"
-                  ? `As tecnologias construtivas de todas as disciplinas serão exibidas aqui após a inserção de dados às simulações.`
-                  : `Clique no botão "Criar simulações" e adicione os dados do projeto.`
+                selectedTab === t.unitView.tabAllDisciplines
+                  ? t.unitView.noSimulationsDescription
+                  : t.unitView.createFirstSimulationDescription
               }
             />
           ) : null

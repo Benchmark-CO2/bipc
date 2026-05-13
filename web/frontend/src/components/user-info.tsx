@@ -1,6 +1,5 @@
 import { User, Mail, Calendar, Edit, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
@@ -12,12 +11,13 @@ import { deleteUser } from "@/actions/users/deleteUser";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 import { Separator } from "@/components/ui/separator";
+import { useTranslation } from "@/i18n";
 
 export function UserInfo() {
   const { user, logout } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const { t } = useTranslation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Extrai os dados do usuário corretamente (pode estar aninhado)
   const userData = (user as any)?.user || user;
@@ -26,24 +26,21 @@ export function UserInfo() {
     mutationFn: deleteUser,
     onError: (error: any) => {
       if (error.response?.status === 403) {
-        toast.error("Não é possível excluir a conta", {
-          description:
-            "Você possui projetos ativos. Exclua ou transfira todos os projetos antes de excluir sua conta.",
+        toast.error(t.user.deleteAccountError, {
+          description: t.user.deleteAccountProjectsActive,
           duration: 7000,
         });
       } else {
-        toast.error("Erro ao excluir conta", {
-          description:
-            error.message ||
-            "Não foi possível excluir a conta. Tente novamente.",
+        toast.error(t.user.deleteAccountFailed, {
+          description: error.message || t.user.deleteAccountRetry,
           duration: 5000,
         });
       }
       setDeleteDialogOpen(false);
     },
     onSuccess: () => {
-      toast.success("Conta excluída com sucesso", {
-        description: "Sua conta foi removida permanentemente.",
+      toast.success(t.user.deleteAccountSuccess, {
+        description: t.user.deleteAccountSuccessDescription,
         duration: 5000,
       });
       logout();
@@ -72,7 +69,7 @@ export function UserInfo() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <User size={20} />
-          {t("settings.userInfo.title")}
+          Informações do Usuário
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -90,7 +87,7 @@ export function UserInfo() {
               <div className="flex items-center gap-2 mt-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-                  {t("settings.userInfo.accountActivated")}
+                  {t.settings.userInfo.accountActivated}
                 </span>
               </div>
             )}
@@ -102,9 +99,7 @@ export function UserInfo() {
           <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
             <Mail size={16} className="text-muted-foreground" />
             <div>
-              <p className="text-sm font-medium">
-                {t("settings.userInfo.email")}
-              </p>
+              <p className="text-sm font-medium">{t.settings.userInfo.email}</p>
               <p className="text-sm text-muted-foreground">{userData.email}</p>
             </div>
           </div>
@@ -113,7 +108,7 @@ export function UserInfo() {
             <Calendar size={16} className="text-muted-foreground" />
             <div>
               <p className="text-sm font-medium">
-                {t("settings.userInfo.memberSince")}
+                {t.settings.userInfo.memberSince}
               </p>
               <p className="text-sm text-muted-foreground">
                 {formatDate(userData.created_at)}
@@ -126,14 +121,14 @@ export function UserInfo() {
         <Separator className="my-4" />
         <div className="space-y-3">
           <p className="text-sm font-medium text-muted-foreground">
-            Gerenciamento de Conta
+            {t.settings.userInfo.accountManagement}
           </p>
           <div className="flex gap-3 flex-wrap">
             <DrawerFormUser
               componentTrigger={
                 <Button variant="outline" className="flex-1 min-w-[200px]">
                   <Edit className="mr-2 h-4 w-4" />
-                  Editar Dados
+                  {t.settings.userInfo.editData}
                 </Button>
               }
             />
@@ -143,7 +138,7 @@ export function UserInfo() {
               onClick={() => setDeleteDialogOpen(true)}
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Excluir Conta
+              {t.settings.userInfo.deleteAccount}
             </Button>
           </div>
         </div>

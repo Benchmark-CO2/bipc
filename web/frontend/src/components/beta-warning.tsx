@@ -9,9 +9,11 @@ import {
 } from "./ui/dialog";
 import { useState } from "react";
 import { Button } from "./ui/button";
+import { useTranslation } from "@/i18n";
 
 export const BetaWarning = ({ minimizedSidebar = false }) => {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <>
@@ -23,21 +25,14 @@ export const BetaWarning = ({ minimizedSidebar = false }) => {
           <DialogHeader>
             <DialogTitle className="text-2xl text-center text-accent flex items-center gap-2 justify-center">
               <FlaskConical />
-              Em Beta
+              {t.beta.title}
             </DialogTitle>
             <DialogDescription className="text-center pt-4 text-accent/100">
               <p className="text-md mb-1">
-                A plataforma segue em desenvolvimento e recebe melhorias
-                constantes.
+                {t.beta.description}
               </p>
               <p className="text-md ">
-                Tem alguma sugestão de melhoria? Envie um e-mail para:{" "}
-                <a
-                  href="mailto:contato@bipc.org.br"
-                  className="font-bold hover:underline"
-                >
-                  contato@bipc.org.br
-                </a>
+                {t.beta.suggestion}
               </p>
             </DialogDescription>
           </DialogHeader>
@@ -48,7 +43,7 @@ export const BetaWarning = ({ minimizedSidebar = false }) => {
               className="w-full"
               onClick={() => setOpen(false)}
             >
-              Fechar
+              {t.beta.close}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -60,10 +55,10 @@ export const BetaWarning = ({ minimizedSidebar = false }) => {
       >
         <span className="flex items-center gap-2">
           <FlaskConical size={16} />
-          {!minimizedSidebar && <strong>Em beta</strong>}
+          {!minimizedSidebar && <strong>{t.beta.title}</strong>}
         </span>
         {!minimizedSidebar && (
-          <span className="text-sm ml-auto cursor-pointer">Saiba mais...</span>
+          <span className="text-sm ml-auto cursor-pointer">{t.beta.learnMore}</span>
         )}
       </div>
     </>

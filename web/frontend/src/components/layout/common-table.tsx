@@ -21,6 +21,8 @@ import { Button } from "../ui/button";
 import { ChevronDown } from "lucide-react";
 import NotFoundList from "../ui/not-found-list";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/i18n";
+import { SimpleTooltip } from "../ui/simple-tooltip";
 
 interface ICommonTableProps {
   tableName: string | React.ReactNode;
@@ -56,6 +58,7 @@ export default function CommonTable({
 }: ICommonTableProps) {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
+  const { t } = useTranslation();
 
   // Reset selection when isSelectable changes
   useEffect(() => {
@@ -94,18 +97,20 @@ export default function CommonTable({
         <div className="flex items-center gap-2">
           {actions}
           {data.length > 0 && isExpandable && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-2 transition-transform duration-200 ease-in-out hover:scale-110"
-            >
-              <div
-                className={`transition-transform duration-300 ease-in-out ${isCollapsed ? "rotate-0" : "rotate-180"}`}
+            <SimpleTooltip content={isCollapsed ? t.common.expand : t.common.collapse}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="p-2 transition-transform duration-200 ease-in-out hover:scale-110"
               >
-                <ChevronDown className="h-4 w-4" />
-              </div>
-            </Button>
+                <div
+                  className={`transition-transform duration-300 ease-in-out ${isCollapsed ? "rotate-0" : "rotate-180"}`}
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </div>
+              </Button>
+            </SimpleTooltip>
           )}
         </div>
       </div>
@@ -170,7 +175,7 @@ export default function CommonTable({
                               }
                             });
                           }}
-                          aria-label="Selecionar tudo"
+                          aria-label={t.commonTable.selectAll}
                         />
                       </TableHead>
                     )}
@@ -220,7 +225,7 @@ export default function CommonTable({
                               return newSelection;
                             });
                           }}
-                          aria-label="Selecionar linha"
+                          aria-label={t.commonTable.selectRow}
                         />
                       </TableCell>
                     )}
@@ -238,7 +243,9 @@ export default function CommonTable({
                   <TableRow className="bg-gray-shade-300 dark:bg-accent/80 hover:bg-gray-shade-300/30 dark:hover:bg-dark-950/80 font-semibold">
                     {isSelectable && <TableCell></TableCell>}
                     <TableCell className="font-semibold text-left">
-                      {lastRow.type}
+                      {lastRow.type === "Total"
+                        ? t.commonTable.total
+                        : t.commonTable.average}
                     </TableCell>
                     {table
                       .getHeaderGroups()[0]
@@ -262,9 +269,9 @@ export default function CommonTable({
       ) : (
         customEmptyComponent || (
           <NotFoundList
-            message="Sem dado para exibir"
+            message={t.commonTable.noData}
             showIcon={false}
-            description={`Sem dado ${typeof tableName === "string" ? `de ${tableName}` : ""} disponível nesta tabela no momento. ${isInteractive ? "Crie novos itens para que eles apareçam aqui." : ""}`}
+            description={`${typeof tableName === "string" ? t.commonTable.noDataDescription.replace("{name}", tableName) : t.commonTable.noData} ${isInteractive ? t.commonTable.noDataDescriptionInteractive : ""}`}
           />
         )
       )}

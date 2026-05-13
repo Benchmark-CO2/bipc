@@ -45,6 +45,8 @@ export interface IProject {
   created_at: string;
   updated_at: string;
   name: string;
+  siop: string;
+  apf: string;
   cep: string;
   state: string;
   city: string;

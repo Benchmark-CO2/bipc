@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "@/i18n";
 import {
   Command,
   CommandEmpty,
@@ -69,14 +69,14 @@ export function Combobox({ onChange }: { onChange?: (value: string) => void }) {
         >
           {value
             ? usersList.find((user) => user.value === value)?.label
-            : t("drawerInvite.nameOrEmailPlaceholder")}
+            : t.invites.nameOrEmailPlaceholder}
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
         <Command>
           <CommandInput
-            placeholder={t("drawerInvite.nameOrEmailPlaceholder")}
+            placeholder={t.invites.nameOrEmailPlaceholder}
             className="h-9"
             onInput={(e: React.ChangeEvent<HTMLInputElement>) =>
               setUserEmail(e.target.value)
@@ -109,7 +109,7 @@ export function Combobox({ onChange }: { onChange?: (value: string) => void }) {
                   <Check
                     className={cn(
                       "ml-auto",
-                      value === user.value ? "opacity-100" : "opacity-0"
+                      value === user.value ? "opacity-100" : "opacity-0",
                     )}
                   />
                 </CommandItem>

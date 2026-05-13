@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { type CityOption } from "@/hooks/useCities";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "@/i18n";
 
 interface CityComboboxProps {
   cities: CityOption[];
@@ -46,11 +46,10 @@ export function CityCombobox({
   const [open, setOpen] = React.useState(false);
   const { t } = useTranslation();
 
-  const displayPlaceholder =
-    placeholder ?? t("drawerFormProject.cityPlaceholder");
+  const displayPlaceholder = placeholder ?? t.city.placeholder;
   const displaySearchPlaceholder =
-    searchPlaceholder ?? t("drawerFormProject.citySearchPlaceholder");
-  const displayEmpty = emptyMessage ?? t("drawerFormProject.cityNotFound");
+    searchPlaceholder ?? t.city.searchPlaceholder;
+  const displayEmpty = emptyMessage ?? t.city.notFound;
 
   // Fallback to manual input when the cities API fails or returns empty (after loading)
   if (isError || (!isLoading && cities.length === 0 && !disabled)) {

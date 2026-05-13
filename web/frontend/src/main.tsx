@@ -8,11 +8,11 @@ import { Toaster } from "./components/ui/sonner";
 import { AuthContext } from "./context/authContext";
 import { SummaryProvider } from "./context/summaryContext";
 import { useAuth } from "./hooks/useAuth";
-import "./i18n";
 import { AuthProvider } from "./providers/authProvider";
 import { routeTree } from "./routeTree.gen";
 import { queryClient } from "./utils/queryClient";
 import { TooltipProvider } from "./components/ui/tooltip";
+import { LanguageProvider } from "./i18n";
 import "./lib/core.extension";
 
 const router = createRouter({
@@ -44,17 +44,19 @@ export const App = () => {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ThemeProvider defaultTheme="light">
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <SummaryProvider>
-            <TooltipProvider>
-              <App />
-              <Toaster position="bottom-right" />
-            </TooltipProvider>
-          </SummaryProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
-  </StrictMode>
+    <LanguageProvider>
+      <ThemeProvider defaultTheme="light">
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <SummaryProvider>
+              <TooltipProvider>
+                <App />
+                <Toaster position="bottom-right" />
+              </TooltipProvider>
+            </SummaryProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </LanguageProvider>
+  </StrictMode>,
 );

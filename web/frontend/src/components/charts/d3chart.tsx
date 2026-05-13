@@ -1,6 +1,7 @@
 import { IBenchmarkItem } from "@/actions/benchmarks/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSummary } from "@/context/summaryContext";
+import { useTranslation } from "@/i18n";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { structureTypes } from "@/utils/structureTypes";
@@ -221,6 +222,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   ...props
 }) => {
   const { isExpanded } = useSummary();
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -1248,12 +1250,12 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
               </span>
               {tooltip.value.floors !== undefined && tooltip.value.floors !== null && (
                 <span>
-                  Pavimentos: <b>{tooltip.value.floors}</b>
+                  {t.d3chart.floors}: <b>{tooltip.value.floors}</b>
                 </span>
               )}
               {!!tooltip.value.technology?.length && (
                 <span>
-                  Tecnologia:{" "}
+                  {t.d3chart.technology}:{" "}
                   <b>
                     {tooltip.value.technology
                       .map((t) => structureTypes[t as keyof typeof structureTypes] || t)
@@ -1267,7 +1269,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
         <div className="flex max-sm:flex-col-reverse max-sm:gap-4 max-sm:mt-2">
           <span className="text-xs">
-            Exibindo: {displayedCount} de {totalCount}
+            {t.d3chart.displaying}: {displayedCount} {t.d3chart.of} {totalCount}
           </span>
           {isMobile && (
             <Indicators
