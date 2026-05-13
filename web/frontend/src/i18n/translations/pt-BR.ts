@@ -979,7 +979,7 @@ export const ptBR = {
     successDuplicateTech: "Tecnologia Construtiva duplicada com sucesso",
     errorDuplicateTech: "Erro ao duplicar tecnologia construtiva",
     newSimulation: "Nova Simulação",
-    createSimulations: "Criar Simulações",
+    createSimulations: "Adicionar Tecnologia",
     favoriteOption: "Definir como referência",
   },
   disciplines: {

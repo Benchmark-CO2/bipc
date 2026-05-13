@@ -979,7 +979,7 @@ export const en: Translations = {
     successDuplicateTech: "Constructive Technology duplicated successfully",
     errorDuplicateTech: "Error duplicating constructive technology",
     newSimulation: "New Simulation",
-    createSimulations: "Create Simulations",
+    createSimulations: "Add Technology",
     favoriteOption: "Mark as reference"
   },
   disciplines: {
