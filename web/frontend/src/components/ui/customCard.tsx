@@ -1,10 +1,12 @@
 import { IProject } from "@/types/projects";
-import { phaseColors, phaseLabels } from "@/utils/phaseConfig";
+import { phaseColors } from "@/utils/phaseConfig";
 import { Calendar } from "lucide-react";
 import React, { useRef } from "react";
 import { DrawerFormProject } from "../layout";
 import ModalConfirmDelete from "../layout/modal-confirm-delete";
 import { Checkbox } from "./checkbox";
+import { useTranslation } from "@/i18n";
+
 interface CustomCardProps {
   project: IProject;
   onClick: () => void;
@@ -22,6 +24,7 @@ const CustomCard = ({
   const { name, phase, description, created_at } = project;
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
+  const { t } = useTranslation();
 
   const handleClickCard = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
@@ -50,11 +53,11 @@ const CustomCard = ({
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 0) return "Hoje";
-    if (diffDays === 1) return "Ontem";
-    if (diffDays < 7) return `${diffDays} dias atrás`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} semanas atrás`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} meses atrás`;
+    if (diffDays === 0) return t.card.today || "Hoje";
+    if (diffDays === 1) return t.card.yesterday || "Ontem";
+    if (diffDays < 7) return `${diffDays} ${t.card.daysAgo || "dias atrás"}`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} ${t.card.weeksAgo || "semanas atrás"}`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} ${t.card.monthsAgo || "meses atrás"}`;
     return date.toLocaleDateString("pt-BR");
   };
 
@@ -83,14 +86,14 @@ const CustomCard = ({
             <span
               className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold text-white shadow-sm ${phaseColors[phase]}`}
             >
-              {phaseLabels[phase]}
+              {t.phase[phase]}
             </span>
           </div>
 
           {/* Last Modified Date */}
           <div className="flex items-center gap-1.5 text-muted-foreground mb-4">
             <Calendar className="w-3.5 h-3.5" />
-            <span className="text-xs">Criado: {formatDate(created_at)}</span>
+            <span className="text-xs">{t.card.created}: {formatDate(created_at)}</span>
           </div>
 
           {/* Project Description */}
@@ -133,7 +136,7 @@ const CustomCard = ({
         componentTrigger={
           <button ref={deleteButtonRef} className="hidden" aria-hidden="true" />
         }
-        title="Confirmar exclusão do empreendimento"
+        title={t.projects.confirmDelete.title}
         onConfirm={() => onDeleteProject?.(project.id)}
       />
     </>

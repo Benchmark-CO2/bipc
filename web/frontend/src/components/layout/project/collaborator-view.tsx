@@ -15,6 +15,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { getProjectInvites } from "@/actions/invites/getProjectInvites";
 import { deleteProjectInvite } from "@/actions/invites/deleteProjectInvite";
+import { useTranslation } from "@/i18n";
 
 const CollaboratorsView = ({
   projectId,
@@ -26,6 +27,7 @@ const CollaboratorsView = ({
   const { email } = useAuth();
   const { hasPermission } = useProjectPermissions(projectId);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const { data: collaboratorsData, isLoading } = useQuery({
     queryKey: ["project-collaborators", projectId],
@@ -53,7 +55,7 @@ const CollaboratorsView = ({
         (c) => c.id === collaboratorId,
       );
 
-      toast.success("Colaborador removido com sucesso", {
+      toast.success(t.collaboratorsView.successRemoveCollaborator, {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -65,8 +67,8 @@ const CollaboratorsView = ({
       }
     },
     onError: (error) => {
-      toast.error("Erro ao remover colaborador", {
-        description: error.message || "Erro desconhecido",
+      toast.error(t.collaboratorsView.errorRemoveCollaborator, {
+        description: error.message || t.common.unknownError,
         duration: 5000,
       });
     },
@@ -77,7 +79,7 @@ const CollaboratorsView = ({
       mutationFn: (disciplineId: string) =>
         deleteDiscipline(projectId, disciplineId),
       onSuccess: () => {
-        toast.success("Disciplina removida com sucesso", {
+        toast.success(t.collaboratorsView.successRemoveDiscipline, {
           duration: 5000,
         });
         queryClient.invalidateQueries({
@@ -88,8 +90,8 @@ const CollaboratorsView = ({
         });
       },
       onError: (error) => {
-        toast.error("Erro ao remover disciplina", {
-          description: error.message || "Erro desconhecido",
+        toast.error(t.collaboratorsView.errorRemoveDiscipline, {
+          description: error.message || t.common.unknownError,
           duration: 5000,
         });
       },
@@ -100,7 +102,7 @@ const CollaboratorsView = ({
       mutationFn: (inviteId: string) =>
         deleteProjectInvite(projectId, inviteId),
       onSuccess: () => {
-        toast.success("Convite removido com sucesso", {
+        toast.success(t.collaboratorsView.successRemoveInvite, {
           duration: 5000,
         });
         queryClient.invalidateQueries({
@@ -108,8 +110,8 @@ const CollaboratorsView = ({
         });
       },
       onError: (error) => {
-        toast.error("Erro ao remover convite", {
-          description: error.message || "Erro desconhecido",
+        toast.error(t.collaboratorsView.errorRemoveInvite, {
+          description: error.message || t.common.unknownError,
           duration: 5000,
         });
       },
@@ -145,14 +147,14 @@ const CollaboratorsView = ({
       <div className="bg-white dark:bg-gray-800 rounded-lg dark:border-gray-700">
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-h2 text-primary dark:text-gray-200">
-            Disciplinas
+            {t.collaboratorsView.disciplines}
           </h2>
           {hasPermission("create:role") && (
             <DrawerFormDisciplines
               componentTrigger={
                 <Button variant="bipc" className="text-white">
                   <PlusIcon className="mr-1 h-4 w-4" />
-                  Nova Disciplina
+                  {t.collaboratorsView.newDiscipline}
                 </Button>
               }
               projectId={projectId}
@@ -201,7 +203,7 @@ const CollaboratorsView = ({
                           )}
                         </Button>
                       }
-                      title="Remover Disciplina"
+                      title={t.collaboratorsView.removeDiscipline}
                       onConfirm={() => mutateDeleteDiscipline(discipline.id)}
                     />
                   )}
@@ -233,7 +235,7 @@ const CollaboratorsView = ({
       <div className="bg-white dark:bg-gray-800 rounded-lg dark:border-gray-700">
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-h2 text-primary dark:text-gray-200">
-            Todos os Colaboradores
+            {t.collaboratorsView.allCollaborators}
           </h2>
 
           {hasPermission("create:invite") && (
@@ -308,10 +310,8 @@ const CollaboratorsView = ({
                           )}
                         </Button>
                       }
-                      title="Remover Colaborador"
-                      onConfirm={() =>
-                        mutateDeleteCollaborator(collaborator.id)
-                      }
+                      title={t.collaboratorsView.removeCollaborator}
+                      onConfirm={() => mutateDeleteCollaborator(collaborator.id)}
                     />
                   )}
                 </div>
@@ -325,11 +325,13 @@ const CollaboratorsView = ({
         <div className="bg-white dark:bg-gray-800 rounded-lg dark:border-gray-700">
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-h2 text-primary dark:text-gray-200">
-              Convites Pendentes
+              {t.collaboratorsView.pendingInvites}
             </h2>
             <span className="text-sm text-gray-500 dark:text-gray-400">
               {projectInvites.length}{" "}
-              {projectInvites.length === 1 ? "convite" : "convites"}
+              {projectInvites.length === 1
+                ? t.collaboratorsView.invite
+                : t.collaboratorsView.invites}
             </span>
           </div>
 
@@ -351,18 +353,18 @@ const CollaboratorsView = ({
                       {invite.email}
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Enviado em{" "}
+                      {t.collaboratorsView.sentAt}{" "}
                       {new Date(invite.created_at).toLocaleDateString("pt-BR")}
                     </p>
                     <p className="text-sm text-yellow-600 dark:text-yellow-400">
-                      Expira em{" "}
+                      {t.collaboratorsView.expiresAt}{" "}
                       {new Date(invite.expires_at).toLocaleDateString("pt-BR")}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="px-3 py-1 text-xs font-medium bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 rounded-full">
-                    Pendente
+                    {t.collaboratorsView.pending}
                   </span>
                   {hasPermission("delete:invite") && (
                     <ModalConfirmDelete
@@ -379,7 +381,7 @@ const CollaboratorsView = ({
                           )}
                         </Button>
                       }
-                      title="Remover Convite"
+                      title={t.collaboratorsView.removeInvite}
                       onConfirm={() => mutateDeleteInvite(invite.id)}
                     />
                   )}

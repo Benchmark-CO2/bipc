@@ -1,21 +1,22 @@
+import { Translations } from "@/i18n/translations/pt-BR";
 import { TConsumption } from "@/types/projects";
 import { TTowerFloorCategory } from "@/types/units";
 import { ColumnDef } from "@tanstack/react-table";
 
-export const floorsColumns: ColumnDef<
-  Pick<TTowerFloorCategory, "floor_group"> &
-    TConsumption & { repetitions: number; area: number }
->[] = [
+type FloorRow = Pick<TTowerFloorCategory, "floor_group"> &
+  TConsumption & { repetitions: number; area: number };
+
+export const makeFloorsColumns = (t: Translations): ColumnDef<FloorRow>[] => [
   {
     accessorKey: "floor_group",
-    header: "Nome",
+    header: t.columns.name,
     cell: ({ row }) => (
       <div className="text-left">{row.original.floor_group || "-"}</div>
     ),
   },
   {
     accessorKey: "area",
-    header: () => <div className="text-center">Área (m²)</div>,
+    header: () => <div className="text-center">{t.columns.area}</div>,
     cell: ({ row }) => (
       <div className="text-center">
         {`${row.original.area?.toInternational()}` || "-"}
@@ -24,7 +25,7 @@ export const floorsColumns: ColumnDef<
   },
   {
     accessorKey: "co2_min",
-    header: () => <div className="text-center">CO₂ Min. (kg CO₂/m²)</div>,
+    header: () => <div className="text-center">{t.columns.co2Min}</div>,
     cell: ({ row }) => (
       <div className="text-center">
         {`${row.original.co2_min?.toInternational()}` || "-"}
@@ -33,7 +34,7 @@ export const floorsColumns: ColumnDef<
   },
   {
     accessorKey: "co2_max",
-    header: () => <div className="text-center">CO₂ Max. (kg CO₂/m²)</div>,
+    header: () => <div className="text-center">{t.columns.co2Max}</div>,
     cell: ({ row }) => (
       <div className="text-center">
         {`${row.original.co2_max?.toInternational()}` || "-"}
@@ -42,7 +43,7 @@ export const floorsColumns: ColumnDef<
   },
   {
     accessorKey: "energy_min",
-    header: () => <div className="text-center">Energia Min. (MJ/m²)</div>,
+    header: () => <div className="text-center">{t.columns.energyMin}</div>,
     cell: ({ row }) => (
       <div className="text-center">
         {`${row.original.energy_min?.toInternational()}` || "-"}
@@ -51,7 +52,7 @@ export const floorsColumns: ColumnDef<
   },
   {
     accessorKey: "energy_max",
-    header: () => <div className="text-center">Energia Max. (MJ/m²)</div>,
+    header: () => <div className="text-center">{t.columns.energyMax}</div>,
     cell: ({ row }) => (
       <div className="text-center">
         {`${row.original.energy_max?.toInternational()}` || "-"}
@@ -60,7 +61,7 @@ export const floorsColumns: ColumnDef<
   },
   {
     accessorKey: "repetitions",
-    header: () => <div className="text-center">Quantidade</div>,
+    header: () => <div className="text-center">{t.columns.quantity}</div>,
     cell: ({ row }) => (
       <div className="text-center">{row.original.repetitions || "-"}</div>
     ),

@@ -25,6 +25,7 @@ import { getProjectCollaborators } from "@/actions/projectCollaborators/getProje
 import { queryClient } from "@/utils/queryClient";
 import { AlertTriangle, UserCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/i18n";
 
 interface DialogTransferOwnershipProps {
   componentTrigger: React.ReactNode;
@@ -39,6 +40,8 @@ export default function DialogTransferOwnership({
   projectName,
   preselectedUserId,
 }: DialogTransferOwnershipProps) {
+  const {t} = useTranslation();
+
   const [open, setOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>(
     preselectedUserId || "",
@@ -56,8 +59,8 @@ export default function DialogTransferOwnership({
     mutationFn: () =>
       transferOwnership(projectId, { new_owner_id: selectedUserId }),
     onSuccess: async () => {
-      toast.success("Propriedade transferida com sucesso!", {
-        description: "Você não é mais o administrador deste empreendimento.",
+      toast.success(t.projects.projectTransfer.transferSuccess, {
+        description: t.projects.projectTransfer.transferSuccessDescription,
         duration: 5000,
       });
 
@@ -85,11 +88,11 @@ export default function DialogTransferOwnership({
       }, 100);
     },
     onError: (error: unknown) => {
-      toast.error("Erro ao transferir propriedade", {
+      toast.error(t.projects.projectTransfer.transferError, {
         description:
           error instanceof Error
             ? error.message
-            : "Ocorreu um erro ao transferir a propriedade do empreendimento.",
+            : t.projects.projectTransfer.transferErrorDescription,
         duration: 5000,
       });
     },
@@ -104,8 +107,8 @@ export default function DialogTransferOwnership({
 
   const handleConfirm = () => {
     if (!selectedUserId) {
-      toast.error("Selecione um colaborador", {
-        description: "Você precisa selecionar um novo proprietário.",
+      toast.error(t.projects.projectTransfer.noUserSelectedError, {
+        description: t.projects.projectTransfer.noUserSelectedErrorDescription,
       });
       return;
     }
@@ -124,10 +127,10 @@ export default function DialogTransferOwnership({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserCheck className="h-5 w-5 text-primary" />
-            Transferir Propriedade do Empreendimento
+            {t.projects.projectTransfer.title}
           </DialogTitle>
           <DialogDescription>
-            Você está prestes a transferir a propriedade de{" "}
+            {t.projects.projectTransfer.subtitle}{" "}
             <span className="font-semibold text-foreground">{projectName}</span>
           </DialogDescription>
         </DialogHeader>
@@ -138,38 +141,32 @@ export default function DialogTransferOwnership({
               <div className="space-y-2 text-sm">
                 <p className="font-semibold text-yellow-900 dark:text-yellow-200 flex items-end gap-2">
                   <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
-                  Atenção: Esta ação é irreversível!
+                  {t.projects.projectTransfer.warning.title}
                 </p>
                 <ul className="list-disc list-inside space-y-1 text-yellow-800 dark:text-yellow-300">
-                  <li>Você perderá acesso administrativo completo</li>
-                  <li>
-                    O novo proprietário terá controle total do empreendimento
-                  </li>
-                  <li>
-                    Você permanecerá como colaborador sem permissões especiais
-                  </li>
-                  <li>
-                    Apenas o novo proprietário poderá transferir novamente
-                  </li>
+                  <li>{t.projects.projectTransfer.warning.point1}</li>
+                  <li>{t.projects.projectTransfer.warning.point2}</li>
+                  <li>{t.projects.projectTransfer.warning.point3}</li>
+                  <li>{t.projects.projectTransfer.warning.point4}</li>
                 </ul>
               </div>
             </div>
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="new-owner">Novo Proprietário *</Label>
+            <Label htmlFor="new-owner">{t.projects.projectTransfer.newOwner}</Label>
             <Select
               value={selectedUserId}
               onValueChange={setSelectedUserId}
               disabled={isLoading || isPending}
             >
               <SelectTrigger id="new-owner" className="w-full">
-                <SelectValue placeholder="Selecione um colaborador..." />
+                <SelectValue placeholder={t.projects.projectTransfer.newOwnerPlaceholder} />
               </SelectTrigger>
               <SelectContent>
                 {collaborators.length === 0 ? (
                   <SelectItem value="no-collaborators" disabled>
-                    Nenhum colaborador disponível
+                    {t.projects.projectTransfer.noCollaborators}
                   </SelectItem>
                 ) : (
                   collaborators.map((collaborator) => (
@@ -187,14 +184,13 @@ export default function DialogTransferOwnership({
             </Select>
             {collaborators.length === 0 && !isLoading && (
               <p className="text-sm text-muted-foreground">
-                Você precisa ter pelo menos um colaborador no empreendimento
-                para transferir a propriedade.{" "}
+                {t.projects.projectTransfer.newOwnerMessage}{" "}
                 <Link
                   to={`/new_projects/${projectId}?tab=colaboradores` as string}
                   className="text-primary underline"
                   onClick={() => setOpen(false)}
                 >
-                  Adicione colaboradores aqui.
+                  {t.projects.projectTransfer.collaboratorLink}
                 </Link>
               </p>
             )}
@@ -208,7 +204,7 @@ export default function DialogTransferOwnership({
             disabled={isPending}
             className="flex-1"
           >
-            Cancelar
+            {t.modal.cancelButton}
           </Button>
           <Button
             variant="bipc"
@@ -220,11 +216,11 @@ export default function DialogTransferOwnership({
           >
             {isPending ? (
               <>
-                Transferindo...
+                {t.modal.loading}
                 <div className="ml-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               </>
             ) : (
-              "Confirmar Transferência"
+              t.common.confirm
             )}
           </Button>
         </DialogFooter>

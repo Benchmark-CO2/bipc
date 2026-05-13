@@ -619,19 +619,10 @@ export default function DrawerFormProject({
                   </svg>
                   <div>
                     <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
-                      Importante: Confirmação de Dados
+                      {t.drawer.importantNote}
                     </h4>
                     <p className="text-sm text-yellow-800 dark:text-yellow-200 leading-relaxed">
-                      Os responsáveis pelos empreendimentos poderão ser
-                      contactados em até{" "}
-                      <strong>
-                        3 anos após o fim da fase do empreendimento
-                      </strong>{" "}
-                      indicada no momento de criação do empreendimento. Este
-                      contato busca confirmar a execução dos dados informados no
-                      momento do empreendimento. A confiabilidade do nosso
-                      benchmark depende da sua colaboração. Agradecemos a
-                      compreensão!
+                      {t.drawer.importantDescription || "Os responsáveis pelos empreendimentos poderão ser contactados em até 3 anos após o fim da fase do empreendimento indicada no momento de criação do empreendimento. Este contato busca confirmar a execução dos dados informados no momento do empreendimento. A confiabilidade do nosso benchmark depende da sua colaboração. Agradecemos a compreensão!"}
                     </p>
                   </div>
                 </div>
@@ -648,8 +639,7 @@ export default function DrawerFormProject({
                     htmlFor="agreement-checkbox"
                     className="text-sm font-medium text-gray-500 dark:text-gray-100 cursor-pointer select-none leading-relaxed"
                   >
-                    Estou ciente da possibilidade de ser contactado para
-                    confirmação dos dados do empreendimento, conforme informado
+                    {t.drawer.agreement || "Estou ciente da possibilidade de ser contactado para confirmação dos dados do empreendimento, conforme informado"}
                   </label>
                 </div>
               </div>

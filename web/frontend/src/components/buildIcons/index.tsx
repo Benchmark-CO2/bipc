@@ -1,8 +1,8 @@
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 const Icons = {
   house: {
-    label: "1 pavimento",
     render: (isActive: boolean, onClick: () => void) => (
       <svg
         width="43"
@@ -30,7 +30,6 @@ const Icons = {
     ),
   },
   townHouse: {
-    label: "Casa sobreposta",
     render: (isActive: boolean, onClick: () => void) => (
       <svg
         width="43"
@@ -61,7 +60,6 @@ const Icons = {
     ),
   },
   twofloors: {
-    label: "2 pavimentos",
     render: (isActive: boolean, onClick: () => void) => (
       <svg
         width="54"
@@ -141,7 +139,6 @@ const Icons = {
     ),
   },
   fourLess: {
-    label: "De 3 até 4 pavimentos",
     render: (isActive: boolean, onClick: () => void) => (
       <svg
         width="54"
@@ -202,7 +199,6 @@ const Icons = {
     ),
   },
   tenLess: {
-    label: "De 5 até 10 pavimentos",
     render: (isActive: boolean, onClick: () => void) => (
       <svg
         width="55"
@@ -287,7 +283,6 @@ const Icons = {
     ),
   },
   tenMore: {
-    label: "Mais de 10 pavimentos",
     render: (isActive: boolean, onClick: () => void) => (
       <svg
         width="54"
@@ -369,14 +364,18 @@ export const BuildIcon = ({
   isActive = false,
   onClick,
 }: IconProps & { onClick: () => void }) => {
+  const { t } = useTranslation();
   const IconComponent = Icons[name]
     ? Icons[name].render(isActive, onClick)
     : null;
+  const label = name in t.buildIcons
+    ? t.buildIcons[name as keyof typeof t.buildIcons]
+    : name;
   return (
     <div className="flex flex-col items-center gap-2 cursor-pointer">
       {IconComponent}
       <span className="text-center text-primary text-xs max-w-[100px]">
-        {Icons[name]?.label}
+        {label}
       </span>
     </div>
   );

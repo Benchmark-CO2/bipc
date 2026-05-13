@@ -15,7 +15,7 @@ import {
 } from "@tanstack/react-table";
 import { Check, EllipsisVertical } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { simulationColumns } from "../columns/simulations";
+import { makeSimulationColumns } from "../columns/simulations";
 import { useTranslation } from "@/i18n";
 import {
   DropdownMenu,
@@ -44,7 +44,7 @@ function SimulationTable({
   const { t } = useTranslation();
   const table = useReactTable({
     data: simulations,
-    columns: simulationColumns,
+    columns: makeSimulationColumns(t),
     getCoreRowModel: getCoreRowModel(),
     renderFallbackValue: t.common.loading,
   });

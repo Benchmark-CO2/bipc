@@ -1,3 +1,5 @@
+import { useTranslation } from "@/i18n";
+
 interface IFilterTabsProps {
   tabs: string[];
   selectedTab: string;
@@ -25,9 +27,11 @@ export function FilterTabs({
 }: IFilterTabsProps) {
   if (tabs.length === 0) return null;
 
+  const { t } = useTranslation();
+
   const convertTabName = (tab: string) => {
     if (tab.toLowerCase() === "co2") return "CO₂";
-    if (tab.toLowerCase() === "energy") return "Energia";
+    if (tab.toLowerCase() === "energy") return t.filterTabs.energy;
     return tab;
   };
 

@@ -1,8 +1,8 @@
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 const Icons = {
   beam_column: {
-    label: "Pórtico",
     render: (isActive: boolean, onClick: () => void) => (
       <svg
         width="113"
@@ -61,7 +61,6 @@ const Icons = {
     ),
   },
   concrete_wall: {
-    label: "Parede de concreto",
     render: (isActive: boolean, onClick: () => void) => (
       <svg
         width="113"
@@ -163,7 +162,6 @@ const Icons = {
     ),
   },
   structural_masonry: {
-    label: "Alvenaria estrutural",
     render: (isActive: boolean, onClick: () => void) => (
       <svg
         width="114"
@@ -386,14 +384,18 @@ export const TechIcon = ({
   isActive = false,
   onClick,
 }: IconProps & { onClick: () => void }) => {
+  const { t } = useTranslation();
   const IconComponent = Icons[name]
     ? Icons[name].render(isActive, onClick)
     : null;
+  const label = name in t.techIcons
+    ? t.techIcons[name as keyof typeof t.techIcons]
+    : name;
   return (
     <div className="flex flex-col items-center gap-2 cursor-pointer select-none">
       {IconComponent}
       <span className="text-center text-primary text-xs">
-        {Icons[name]?.label}
+        {label}
       </span>
     </div>
   );

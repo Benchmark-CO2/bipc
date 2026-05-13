@@ -143,7 +143,7 @@ function RouteComponent() {
                 onClick={handleSelectAll}
                 className="min-w-[140px]"
               >
-                {allSelected ? "Desmarcar Todos" : "Selecionar Todos"}
+                {allSelected ? t.projects.deselectAll : t.projects.selectAll}
               </Button>
             </>
           )}
@@ -180,8 +180,8 @@ function RouteComponent() {
         </div>
       ) : (
         <NotFoundList
-          message="Você ainda não possui projetos."
-          description="Crie seu primeiro projeto para começar a gerenciar suas unidades e simulações."
+          message={t.projects.noProjects}
+          description={t.projects.noProjectsDescription}
           button={
             <DrawerFormProject
               componentTrigger={

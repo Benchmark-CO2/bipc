@@ -1,5 +1,5 @@
 import { IProject, TProjectPhase } from "@/types/projects";
-import { phaseColors, phaseLabels } from "@/utils/phaseConfig";
+import { phaseColors } from "@/utils/phaseConfig";
 import {
   ChevronDown,
   ChevronUp,
@@ -21,6 +21,7 @@ import { deleteProject } from "@/actions/projects/deleteProjects";
 import { useNavigate } from "@tanstack/react-router";
 import ModalSimple from "../layout/modal-simple";
 import { postDuplicateProject } from "@/actions/projects/postDuplicateProject";
+import { useTranslation } from "@/i18n";
 
 interface ICustomBanner {
   name: string;
@@ -58,6 +59,7 @@ const CustomBanner = ({
   const { hasPermission } = useProjectPermissions(id || "");
   const fullAddress = [street, number, neighborhood].filter(Boolean).join(", ");
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
+  const { t } = useTranslation();
 
   const navigate = useNavigate();
 
@@ -79,18 +81,18 @@ const CustomBanner = ({
       return deleteProject(projectId);
     },
     onSuccess: async () => {
-      toast.success("Empreendimento excluído com sucesso");
+      toast.success(t.projects.deleteSuccess);
       await queryClient.invalidateQueries({
         queryKey: ["projects"],
       });
       navigate({ to: `/new_projects` });
     },
     onError: (error: unknown) => {
-      toast.error("Erro ao excluir o empreendimento", {
+      toast.error(t.projects.deleteError, {
         description:
           error instanceof Error
             ? error.message
-            : "Ocorreu um erro desconhecido",
+            : t.common.unknownError,
         duration: 5000,
       });
     },
@@ -101,18 +103,18 @@ const CustomBanner = ({
       return postDuplicateProject(projectId);
     },
     onSuccess: async (data) => {
-      toast.success("Empreendimento duplicado com sucesso");
+      toast.success(t.projects.duplicateSuccess);
       await queryClient.invalidateQueries({
         queryKey: ["projects"],
       });
       navigate({ to: `/new_projects` });
     },
     onError: (error: unknown) => {
-      toast.error("Erro ao duplicar o empreendimento", {
+      toast.error(t.projects.duplicateError, {
         description:
           error instanceof Error
             ? error.message
-            : "Ocorreu um erro desconhecido",
+            : t.common.unknownError,
         duration: 5000,
       });
     },
@@ -148,7 +150,7 @@ const CustomBanner = ({
               <span
                 className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold text-white shadow-md ${phaseColors[phase]}`}
               >
-                {phaseLabels[phase]}
+                {t.phase[phase]}
               </span>
 
               {hasPermission("*:*") && (
@@ -158,9 +160,9 @@ const CustomBanner = ({
                       <Copy className="w-4 h-4" />
                     </Button>
                   }
-                  title="Duplicar empreendimento"
-                  content="Tem certeza que deseja duplicar este empreendimento? Esta ação criará uma cópia idêntica do empreendimento, incluindo todas as suas informações e configurações. Você poderá editar os detalhes do novo empreendimento após a duplicação."
-                  confirmTitle="Duplicar"
+                  title={t.projects.duplicateTitle}
+                  content={t.projects.duplicateContent}
+                  confirmTitle={t.projects.duplicateConfirm}
                   onConfirm={() => onDuplicateProject(project.id)}
                 />
               )}
@@ -195,7 +197,7 @@ const CustomBanner = ({
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   }
-                  title="Confirmar exclusão do empreendimento"
+                  title={t.projects.confirmDelete.title}
                   onConfirm={() => onDeleteProject?.(project.id)}
                 />
               )}
@@ -248,7 +250,7 @@ const CustomBanner = ({
                     </span>
                     <span className="text-sm font-semibold text-white">
                       {unitsCount}{" "}
-                      {unitsCount === 1 ? "Edificação" : "Edificações"}
+                      {unitsCount === 1 ? t.customBanner.building : t.customBanner.buildings}
                     </span>
                   </div>
                 )}

@@ -1,5 +1,6 @@
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { IUnit } from "@/types/units";
 import { useEffect, useMemo, useState } from "react";
@@ -32,6 +33,7 @@ const FloorSummary = ({
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
+  const { t } = useTranslation();
   const filteredFloors = floors.filter((el) => !!el.co2_max);
 
   const fakeFloors = normalizeBenchmarkSeries(
@@ -109,7 +111,7 @@ const FloorSummary = ({
     }
   }, [previousProjects, selectedFloors, someSelected]);
 
-  const [subTabs, setSubTabs] = useState<"Pavimentos">("Pavimentos");
+  const [subTabs, setSubTabs] = useState<string>(t.summaryFloors.floors);
   const selectAll = () => {
     if (selectedProjects.length === filteredFloors.length) {
       setSelectedProjects([]);
@@ -166,15 +168,15 @@ const FloorSummary = ({
           selectedTab={type}
           fullWidth
           onSubTabSelect={(tab) => {
-            if (tab === "Pavimentos") setSubTabs(tab as "Pavimentos");
-            if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
+            if (tab === t.summaryFloors.floors) setSubTabs(tab);
+            if (tab === t.summary.selectAll || tab === t.summary.deselectAll)
               selectAll();
           }}
           subTabs={[
-            "Pavimentos",
+            t.summaryFloors.floors,
             selectedProjects.length === floors.length
-              ? "Desmarcar Todos"
-              : "Selecionar Todos",
+              ? t.summary.deselectAll
+              : t.summary.selectAll,
           ]}
           selectedSubTab={subTabs}
         />

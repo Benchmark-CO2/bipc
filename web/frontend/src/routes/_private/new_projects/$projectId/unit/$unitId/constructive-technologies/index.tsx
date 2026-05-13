@@ -6,7 +6,7 @@ import { getOptions } from "@/actions/options/getOptions";
 import { patchOption } from "@/actions/options/patchOption";
 import { duplicateOption } from "@/actions/options/postDuplicateOption";
 import { getUnitByUUID } from "@/actions/units/getUnit";
-import { constructiveTechnologies } from "@/components/columns/constructiveTechnologies";
+import { makeConstructiveTechnologiesColumns } from "@/components/columns/constructiveTechnologies";
 import {
   CommonTable,
   DialogCreateSimulation,
@@ -47,6 +47,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "@/i18n";
 
 export const Route = createFileRoute(
   "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies/",
@@ -73,6 +74,7 @@ const OptionMenu = ({
   selectedOptions?: TOption[];
 }) => {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [localName, setLocalName] = useState(option.name);
 
   useEffect(() => {
@@ -233,7 +235,7 @@ const OptionMenu = ({
       </Button>
       <Input
         type="text"
-        placeholder="Simulação"
+        placeholder={t.constructiveTechView.placeholder}
         value={localName}
         onChange={handleNameChange}
         onBlur={handleBlur}
@@ -245,14 +247,13 @@ const OptionMenu = ({
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 ml-2 rounded-full bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 cursor-help transition-all hover:shadow-sm">
               <TriangleAlert className="h-3.5 w-3.5 text-yellow-600 dark:text-yellow-500" />
               <span className="text-xs font-medium text-yellow-700 dark:text-yellow-400">
-                Desatualizado
+                {t.constructiveTechView.outdated}
               </span>
             </div>
           </TooltipTrigger>
           <TooltipContent className="max-w-[200px]">
             <span>
-              Algumas tecnologias construtivas desta simulação estão
-              desatualizadas devido a mudanças na unidade.
+              {t.constructiveTechView.outdatedTooltip}
             </span>
           </TooltipContent>
         </Tooltip>
@@ -269,6 +270,7 @@ function RouteComponent() {
   const { search } = location;
 
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<TOption[]>([]);
   const { setSummaryContext } = useSummary();
@@ -287,13 +289,13 @@ function RouteComponent() {
   const { mutate: deleteSimulation, isPending: isDeleting } = useMutation({
     mutationFn: (optionId: string) => deleteOption(projectId, unitId, optionId),
     onSuccess: () => {
-      toast.success("Simulação excluída com sucesso");
+      toast.success(t.constructiveTechView.successDeleteSimulation);
       queryClient.invalidateQueries({
         queryKey: ["options", projectId, unitId],
       });
     },
     onError: () => {
-      toast.error("Erro ao deletar Simulação");
+      toast.error(t.constructiveTechView.errorDeleteSimulation);
     },
   });
 
@@ -302,13 +304,13 @@ function RouteComponent() {
       mutationFn: (optionId: string) =>
         duplicateOption(projectId, unitId, optionId),
       onSuccess: () => {
-        toast.success("Simulação duplicada com sucesso");
+        toast.success(t.constructiveTechView.successDuplicateSimulation);
         queryClient.invalidateQueries({
           queryKey: ["options", projectId, unitId],
         });
       },
       onError: () => {
-        toast.error("Erro ao duplicar Simulação");
+        toast.error(t.constructiveTechView.errorDuplicateSimulation);
       },
     },
   );
@@ -328,13 +330,13 @@ function RouteComponent() {
       moduleId: string;
     }) => deleteModule(projectId, unitId, optionId, moduleId),
     onSuccess: () => {
-      toast.success("Tecnologia Construtiva excluída com sucesso");
+      toast.success(t.constructiveTechView.successDeleteTech);
       queryClient.invalidateQueries({
         queryKey: ["options", projectId, unitId],
       });
     },
     onError: (error) => {
-      toast.error("Erro ao excluir tecnologia construtiva", {
+      toast.error(t.constructiveTechView.errorDeleteTech, {
         description: error.message,
       });
     },
@@ -359,19 +361,18 @@ function RouteComponent() {
     }: {
       optionId: string;
       moduleId: string;
-    }) => postDuplicateModule(projectId, unitId, optionId, moduleId),
-    onSuccess: () => {
-      toast.success("Tecnologia Construtiva duplicada com sucesso");
-      queryClient.invalidateQueries({
-        queryKey: ["options", projectId, unitId],
-      });
-    },
-    onError: (error) => {
-      toast.error("Erro ao duplicar tecnologia construtiva", {
-        description: error.message,
-      });
-    },
-  });
+    }) => postDuplicateModule(projectId, unitId, optionId, moduleId),      onSuccess: () => {
+        toast.success(t.constructiveTechView.successDuplicateTech);
+        queryClient.invalidateQueries({
+          queryKey: ["options", projectId, unitId],
+        });
+      },
+      onError: (error) => {
+        toast.error(t.constructiveTechView.errorDuplicateTech, {
+          description: error.message,
+        });
+      },
+    });
 
   useEffect(() => {
     if (!benchmarkData?.data || !unitData?.unit) return;
@@ -391,7 +392,7 @@ function RouteComponent() {
   if (isLoadingOptions || isLoadingUnit) {
     return (
       <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 w-full">
-        Carregando tecnologias construtivas...
+        {t.common.loading}
       </div>
     );
   }
@@ -399,9 +400,9 @@ function RouteComponent() {
   if (!optionsData?.data?.options) {
     return (
       <NotFoundList
-        message="Nenhuma simulação encontrada"
+        message={t.constructiveTechView.noSimulationsFound}
         showIcon={false}
-        description="Nenhum dado disponível nesta tabela. Crie uma nova simulação para começar a adicionar dados."
+        description={t.constructiveTechView.noSimulationsDescription}
       />
     );
   }
@@ -456,7 +457,7 @@ function RouteComponent() {
   const newColumns: ColumnDef<
     Omit<IModuleItem, "consumption"> & TConsumption & { option_id: string }
   >[] = [
-    ...constructiveTechnologies,
+    ...makeConstructiveTechnologiesColumns(t),
     {
       id: "actions",
       header: "",
@@ -464,9 +465,9 @@ function RouteComponent() {
         return (
           <div className="flex items-center justify-end gap-2">
             <ModalSimple
-              title="Duplicar Tecnologia Construtiva"
-              content="Tem certeza que deseja duplicar esta tecnologia construtiva? Esta ação criará uma cópia idêntica da tecnologia construtiva, incluindo todos os seus dados técnicos. Você poderá editar os detalhes da nova tecnologia construtiva após a duplicação."
-              confirmTitle="Duplicar"
+              title={t.constructiveTechView.duplicateTech}
+              content={t.constructiveTechView.duplicateTechContent}
+              confirmTitle={t.columns.duplicate}
               onConfirm={() => {
                 if (!row.original.option_id) return;
                 if (!row.original.id) return;
@@ -499,7 +500,7 @@ function RouteComponent() {
               floors={unitFloors}
             />
             <ModalConfirmDelete
-              title="Excluir Tecnologia Construtiva"
+              title={t.constructiveTechView.deleteTech}
               onConfirm={() =>
                 mutateDeleteTec({
                   optionId: row.original.option_id,
@@ -525,15 +526,15 @@ function RouteComponent() {
   if (options.length === 0) {
     return (
       <NotFoundList
-        message="Crie sua primeira simulação"
+        message={t.constructiveTechView.createFirstSimulation}
         showIcon={false}
-        description="Clique em 'Nova Simulação' para adicionar os dados técnicos e das tecnologias construtivas deste projeto."
+        description={t.constructiveTechView.createFirstSimulationDescription}
         button={
           <DialogCreateSimulation
             projectId={projectId}
             unitId={unitId}
             roleId={roleId}
-            triggerComponent={<Button variant="bipc">Nova Simulação</Button>}
+            triggerComponent={<Button variant="bipc">{t.constructiveTechView.newSimulation}</Button>}
           />
         }
       />
@@ -589,13 +590,13 @@ function RouteComponent() {
                           )}
                         </Button>
                       }
-                      title="Excluir Simulação"
+                      title={t.constructiveTechView.deleteSimulation}
                       onConfirm={() => deleteSimulation(option.id)}
                     />
                     <ModalSimple
-                      title="Duplicar Simulação"
-                      content="Tem certeza que deseja duplicar esta simulação? Esta ação criará uma cópia idêntica da simulação, incluindo todas as tecnologias construtivas associadas. Você poderá editar os detalhes da nova simulação após a duplicação."
-                      confirmTitle="Duplicar"
+                      title={t.constructiveTechView.duplicateSimulation}
+                      content={t.constructiveTechView.duplicateSimulationContent}
+                      confirmTitle={t.columns.duplicate}
                       onConfirm={() => duplicateSimulation(option.id)}
                       componentTrigger={
                         <Button
@@ -614,7 +615,7 @@ function RouteComponent() {
                     <DrawerFormModule
                       triggerComponent={
                         <Button variant="outline-bipc">
-                          Criar Simulações
+                          {t.constructiveTechView.createSimulations}
                           <Plus className="ml-1 h-4 w-4" />
                         </Button>
                       }
@@ -628,9 +629,9 @@ function RouteComponent() {
                 }
                 customEmptyComponent={
                   <NotFoundList
-                    message="Nenhuma tecnologia construtiva encontrada"
+                    message={t.constructiveTechView.noTechFound}
                     showIcon={false}
-                    description={`Adicione tecnologias construtivas para essa simulação utilizando o botão "Adicionar Tecnologia".`}
+                    description={t.constructiveTechView.noTechDescription}
                   />
                 }
               />

@@ -1,10 +1,10 @@
-import { t } from "i18next";
+import { Translations } from "@/i18n/translations/pt-BR";
 
-export const structureTypes = {
-  concrete_wall: t("common.structureType.concreteWall"),
-  beam_column: t("common.structureType.beamColumn"),
-  structural_masonry: t("common.structureType.masonry"),
-  raft_foundation: "Radier",
-  piles_foundation: "Estacas",
-  raft_piles_foundation: "Radier Estaqueado",
-};
+export const structureTypes = (t: Translations) => ({
+  concrete_wall: t.modules.structureTypes.concreteWall,
+  beam_column: t.modules.structureTypes.beamColumn,
+  structural_masonry: t.modules.structureTypes.masonry,
+  raft_foundation: t.modules.structureTypes.raftFoundation,
+  piles_foundation: t.modules.structureTypes.pilesFoundation,
+  raft_piles_foundation: t.modules.structureTypes.raftPilesFoundation,
+});

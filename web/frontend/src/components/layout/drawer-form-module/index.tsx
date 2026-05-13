@@ -544,12 +544,12 @@ const DrawerFormModule = ({
   };
 
   const structureTypes = [
-    { value: "beam_column", label: "Viga Pilar" },
-    { value: "concrete_wall", label: "Parede de Concreto" },
-    { value: "structural_masonry", label: "Alvenaria" },
-    { value: "raft_foundation", label: "Radier" },
-    { value: "piles_foundation", label: "Estaca" },
-    { value: "raft_piles_foundation", label: "Radier Estaqueado" },
+    { value: "beam_column", label: t.modules.structureTypes.beamColumn },
+    { value: "concrete_wall", label: t.modules.structureTypes.concreteWall },
+    { value: "structural_masonry", label: t.modules.structureTypes.masonry },
+    { value: "raft_foundation", label: t.modules.structureTypes.raftFoundation },
+    { value: "piles_foundation", label: t.modules.structureTypes.pilesFoundation },
+    { value: "raft_piles_foundation", label: t.modules.structureTypes.raftPilesFoundation },
   ];
 
   const isMobile = useIsMobile();
@@ -676,9 +676,7 @@ const DrawerFormModule = ({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>
-                              {t(
-                                "drawerFormModule.commonForm.structureTypeLabel",
-                              )}
+                              {t.modules.form.structureTypeLabel}
                             </FormLabel>
                             <FormControl>
                               <Select
@@ -710,9 +708,7 @@ const DrawerFormModule = ({
                               >
                                 <SelectTrigger className="w-full">
                                   <SelectValue
-                                    placeholder={t(
-                                      "drawerFormModule.commonForm.structureTypePlaceholder",
-                                    )}
+                                    placeholder={t.modules.form.structureTypeLabel}
                                   />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -801,9 +797,9 @@ const DrawerFormModule = ({
             {isCreationPending || isUpdatePending ? (
               <Loader2 className="animate-spin h-4 w-4" />
             ) : moduleId ? (
-              Atualizar
+              t.common.update
             ) : (
-              Adicionar
+              t.common.add
             )}
           </Button>
         </DrawerFooter>

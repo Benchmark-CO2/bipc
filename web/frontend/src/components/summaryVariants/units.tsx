@@ -1,5 +1,6 @@
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
@@ -35,6 +36,7 @@ const UnitsSummary = ({
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
+  const { t } = useTranslation();
   const filteredUnits = units.filter((el) => !!el.consumptions);
 
   const fakeUnits = normalizeBenchmarkSeries(
@@ -110,7 +112,7 @@ const UnitsSummary = ({
     }
   };
   const [selectedSubTab, setSelectedSubTab] =
-    useState<"Edificações">("Edificações");
+    useState<string>(t.summary.buildings);
   const selectAll = () => {
     if (selectedProjects.length === filteredUnits.length) {
       setSelectedProjects([]);
@@ -167,14 +169,14 @@ const UnitsSummary = ({
           selectedTab={type}
           fullWidth
           subTabs={[
-            "Edificações",
+            t.summary.buildings,
             selectedProjects.length === units.length
-              ? "Desmarcar Todos"
-              : "Selecionar Todos",
+              ? t.summary.deselectAll
+              : t.summary.selectAll,
           ]}
           onSubTabSelect={(tab) => {
-            if (tab === "Edificações") setSelectedSubTab(tab as "Edificações");
-            if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
+            if (tab === t.summary.buildings) setSelectedSubTab(tab);
+            if (tab === t.summary.selectAll || tab === t.summary.deselectAll)
               selectAll();
           }}
           selectedSubTab={selectedSubTab}
