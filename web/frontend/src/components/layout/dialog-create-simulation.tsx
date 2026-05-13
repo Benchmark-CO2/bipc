@@ -90,13 +90,13 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
             className="ml-auto text-white"
             onClick={() => setOpen(true)}
           >
-            Fazer Nova Simulação
+            {t.constructiveTechView.newSimulation}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="text-center">
         <DialogHeader>
-          <DialogTitle className="text-center">Adicionar Simulação</DialogTitle>
+          <DialogTitle className="text-center">{t.constructiveTechView.newSimulation}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form
@@ -109,7 +109,7 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
               name={`name`}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm">Nome da Simulação *</FormLabel>
+                  <FormLabel className="text-sm">{t.dialogCreateSimulation.simulationName} *</FormLabel>
                   <FormControl>
                     <Input placeholder={t.dialogCreateSimulation.placeholder} {...field} />
                   </FormControl>
@@ -130,7 +130,7 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
                     />
                   </FormControl>
                   <FormLabel className="text-sm text-center">
-                    Usar como referência
+                    {t.dialogCreateSimulation.useAsReference}
                   </FormLabel>
                   <FormMessage />
                 </FormItem>
@@ -140,7 +140,7 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
         </Form>
         <DialogFooter className="flex justify-between">
           <Button variant="outline" size={"lg"} onClick={() => setOpen(false)}>
-            Cancelar
+            {t.common.cancel}
           </Button>
 
           <Button

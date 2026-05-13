@@ -22,6 +22,7 @@ import { ChevronDown } from "lucide-react";
 import NotFoundList from "../ui/not-found-list";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/i18n";
+import { SimpleTooltip } from "../ui/simple-tooltip";
 
 interface ICommonTableProps {
   tableName: string | React.ReactNode;
@@ -96,18 +97,20 @@ export default function CommonTable({
         <div className="flex items-center gap-2">
           {actions}
           {data.length > 0 && isExpandable && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-2 transition-transform duration-200 ease-in-out hover:scale-110"
-            >
-              <div
-                className={`transition-transform duration-300 ease-in-out ${isCollapsed ? "rotate-0" : "rotate-180"}`}
+            <SimpleTooltip content={isCollapsed ? t.common.expand : t.common.collapse}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="p-2 transition-transform duration-200 ease-in-out hover:scale-110"
               >
-                <ChevronDown className="h-4 w-4" />
-              </div>
-            </Button>
+                <div
+                  className={`transition-transform duration-300 ease-in-out ${isCollapsed ? "rotate-0" : "rotate-180"}`}
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </div>
+              </Button>
+            </SimpleTooltip>
           )}
         </div>
       </div>

@@ -261,7 +261,7 @@ const DrawerFormUnit = ({
           {!Boolean(unitId) && (
             <>
               <Button variant="outline-bipc" form="unit-form" disabled={true}>
-                Importar do IFC
+                {t.common.ifcImport}
               </Button>
               <Button
                 type="submit"

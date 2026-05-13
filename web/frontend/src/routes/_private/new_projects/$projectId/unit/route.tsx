@@ -4,6 +4,7 @@ import { DrawerFormUnit } from "@/components/layout";
 import ModalSimple from "@/components/layout/modal-simple";
 import { Button } from "@/components/ui/button";
 import NotFoundList from "@/components/ui/not-found-list";
+import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 import { Tabs } from "@/components/ui/tabs";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { useTranslation } from "@/i18n";
@@ -182,13 +183,15 @@ function RouteComponent() {
                     mutateDuplicateUnit({ projectId, unitId: params.unitId })
                   }
                   componentTrigger={
-                    <Button variant="outline-bipc" size="icon-lg">
-                      {isDuplicating ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Copy />
-                      )}
-                    </Button>
+                    <SimpleTooltip content={t.units.duplicateTitle} side="bottom">
+                      <Button variant="outline-bipc" size="icon-lg">
+                        {isDuplicating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Copy />
+                        )}
+                      </Button>
+                    </SimpleTooltip>
                   }
                 />
               )}
@@ -197,9 +200,11 @@ function RouteComponent() {
                   projectId={projectId}
                   unitId={params.unitId}
                   triggerComponent={
-                    <Button variant="outline-bipc" size="icon-lg">
-                      <Edit />
-                    </Button>
+                    <SimpleTooltip content={t.units.form.editTitle} side="bottom">
+                      <Button variant="outline-bipc" size="icon-lg">
+                        <Edit />
+                      </Button>
+                    </SimpleTooltip>
                   }
                 />
               )}
@@ -207,9 +212,11 @@ function RouteComponent() {
                 <DrawerFormUnit
                   projectId={projectId}
                   triggerComponent={
-                    <Button variant="bipc" size="icon-lg">
-                      <Plus className="w-16 h-16" />
-                    </Button>
+                    <SimpleTooltip content={t.units.form.addTitle} side="bottom">
+                      <Button variant="bipc" size="icon-lg">
+                        <Plus className="w-16 h-16" />
+                      </Button>
+                    </SimpleTooltip>
                   }
                 />
               )}

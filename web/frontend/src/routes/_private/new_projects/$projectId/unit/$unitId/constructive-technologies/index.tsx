@@ -48,6 +48,7 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
+import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 
 export const Route = createFileRoute(
   "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies/",
@@ -218,21 +219,23 @@ const OptionMenu = ({
         checked={selectedOptions?.some((opt) => opt.id === option.id) || false}
         onCheckedChange={() => (onSelectOption ? onSelectOption(option) : null)}
       />
-      <Button
-        variant="ghost"
-        size="icon"
-        className="hover:bg-gray-100 dark:hover:bg-gray-700"
-        onClick={handleActiveChange}
-        disabled={option.modules.some((mod) => mod.outdated)}
-      >
-        <Star
-          className={`h-4 w-4 ${
-            option.active
-              ? "fill-yellow-500 text-yellow-500"
-              : "text-gray-400 hover:text-yellow-500"
-          }`}
-        />
-      </Button>
+      <SimpleTooltip content={t.constructiveTechView.favoriteOption} side="bottom">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hover:bg-gray-100 dark:hover:bg-gray-700"
+          onClick={handleActiveChange}
+          disabled={option.modules.some((mod) => mod.outdated)}
+        >
+          <Star
+            className={`h-4 w-4 ${
+              option.active
+                ? "fill-yellow-500 text-yellow-500"
+                : "text-gray-400 hover:text-yellow-500"
+            }`}
+          />
+        </Button>
+        </SimpleTooltip>
       <Input
         type="text"
         placeholder={t.constructiveTechView.placeholder}
@@ -477,20 +480,24 @@ function RouteComponent() {
                 });
               }}
               componentTrigger={
-                <Button variant="ghost" size="icon" disabled={isDeletingTec}>
-                  {isDeletingTec ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Copy className="h-4 w-4 text-primary" />
-                  )}
-                </Button>
+                <SimpleTooltip content={t.modules.deleteTitle} side="bottom">
+                  <Button variant="ghost" size="icon" disabled={isDeletingTec}>
+                    {isDeletingTec ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Copy className="h-4 w-4 text-primary" />
+                    )}
+                  </Button>
+                </SimpleTooltip>
               }
             />
             <DrawerFormModule
               triggerComponent={
-                <Button variant="ghost" size="icon" disabled={isDeleting}>
-                  <Edit className="h-4 w-4 text-primary" />
-                </Button>
+                <SimpleTooltip content={t.modules.editTitle} side="bottom">
+                  <Button variant="ghost" size="icon" disabled={isDeleting}>
+                    <Edit className="h-4 w-4 text-primary" />
+                  </Button>
+                </SimpleTooltip>
               }
               type={row.original.type}
               projectId={projectId}
@@ -508,13 +515,15 @@ function RouteComponent() {
                 })
               }
               componentTrigger={
-                <Button variant="ghost" size="icon" disabled={isDeletingTec}>
-                  {isDeletingTec ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash className="h-4 w-4 text-red-700" />
-                  )}
-                </Button>
+                <SimpleTooltip content={t.modules.deleteTitle} side="bottom">
+                  <Button variant="ghost" size="icon" disabled={isDeletingTec}>
+                    {isDeletingTec ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash className="h-4 w-4 text-red-700" />
+                    )}
+                  </Button>
+                </SimpleTooltip>
               }
             />
           </div>
@@ -578,17 +587,19 @@ function RouteComponent() {
                   <>
                     <ModalConfirmDelete
                       componentTrigger={
-                        <Button
-                          variant="outline-destructive"
-                          size="icon-lg"
-                          disabled={isDeleting}
-                        >
-                          {isDeleting ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash className="h-4 w-4 text-red-700" />
-                          )}
-                        </Button>
+                        <SimpleTooltip content={t.constructiveTechView.deleteSimulation} side="bottom">
+                          <Button
+                            variant="outline-destructive"
+                            size="icon-lg"
+                            disabled={isDeleting}
+                          >
+                            {isDeleting ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash className="h-4 w-4 text-red-700" />
+                            )}
+                          </Button>
+                        </SimpleTooltip>
                       }
                       title={t.constructiveTechView.deleteSimulation}
                       onConfirm={() => deleteSimulation(option.id)}
@@ -599,17 +610,19 @@ function RouteComponent() {
                       confirmTitle={t.columns.duplicate}
                       onConfirm={() => duplicateSimulation(option.id)}
                       componentTrigger={
-                        <Button
-                          variant="outline-bipc"
-                          size="icon-lg"
-                          disabled={isDuplicating}
-                        >
-                          {isDuplicating ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
+                        <SimpleTooltip content={t.constructiveTechView.duplicateSimulation} side="bottom">
+                          <Button
+                            variant="outline-bipc"
+                            size="icon-lg"
+                            disabled={isDuplicating}
+                          >
+                            {isDuplicating ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </SimpleTooltip>
                       }
                     />
                     <DrawerFormModule

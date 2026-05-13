@@ -36,6 +36,7 @@ import {
 } from "../../ui/table";
 import BuildingVisualizer from "../building-visualizer";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 
 interface UnitFormTowerProps {
   form: UseFormReturn<UnitFormInput, any, UnitFormSchema>;
@@ -480,16 +481,16 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                 </SelectItem>
               </SelectContent>
             </Select>
-            <Button
-              type="button"
-              onClick={() => addFloor(selectedCategory)}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2 text-green-600 border-green-600 hover:bg-green-50"
-            >
-              <Plus className="h-4 w-4" />
-              {t.common.add}
-            </Button>
+              <Button
+                type="button"
+                onClick={() => addFloor(selectedCategory)}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 text-green-600 border-green-600 hover:bg-green-50"
+              >
+                <Plus className="h-4 w-4" />
+                {t.common.add}
+              </Button>
           </div>
         </div>
 
@@ -828,26 +829,30 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <Button
-                            type="button"
-                            onClick={() => duplicateFloor(index)}
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            title={t.unitForm.tower.duplicateFloorTitle}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            onClick={() => removeFloor(index)}
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            title={t.unitForm.tower.removeFloorTitle}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <SimpleTooltip content={t.unitForm.tower.duplicateFloor} side="bottom">
+                            <Button
+                              type="button"
+                              onClick={() => duplicateFloor(index)}
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              title={t.unitForm.tower.duplicateFloorTitle}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </SimpleTooltip>
+                          <SimpleTooltip content={t.unitForm.tower.removeFloor} side="bottom">
+                            <Button
+                              type="button"
+                              onClick={() => removeFloor(index)}
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              title={t.unitForm.tower.removeFloorTitle}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </SimpleTooltip>
                         </div>
                       </TableCell>
                     </TableRow>

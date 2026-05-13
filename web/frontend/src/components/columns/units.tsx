@@ -12,6 +12,7 @@ import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import ModalSimple from "../layout/modal-simple";
 import { postDuplicateUnit } from "@/actions/units/postDuplicateUnit";
 import { useTranslation } from "@/i18n";
+import { SimpleTooltip } from "../ui/simple-tooltip";
 
 export const unitsColumns: ColumnDef<
   Pick<TProjectUnit, "name" | "id" | "area"> & TConsumption
@@ -157,13 +158,15 @@ export const unitsColumns: ColumnDef<
               confirmTitle={t.columns.duplicate}
               onConfirm={mutateDuplicateUnit}
               componentTrigger={
-                <Button variant="ghost" size="icon" disabled={isDuplicating}>
-                  {isDuplicating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Copy className="h-4 w-4 text-primary" />
-                  )}
-                </Button>
+                <SimpleTooltip content={t.units.duplicateTitle} side="bottom">
+                  <Button variant="ghost" size="icon" disabled={isDuplicating}>
+                    {isDuplicating ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Copy className="h-4 w-4 text-primary" />
+                    )}
+                  </Button>
+                </SimpleTooltip>
               }
             />
           )}
@@ -172,9 +175,11 @@ export const unitsColumns: ColumnDef<
               projectId={projectId}
               unitId={row.original.id}
               triggerComponent={
-                <Button variant="ghost" size="icon" disabled={isDeleting}>
-                  <Edit className="h-4 w-4 text-primary" />
-                </Button>
+                <SimpleTooltip content={t.units.form.editTitle} side="bottom">
+                  <Button variant="ghost" size="icon" disabled={isDeleting}>
+                    <Edit className="h-4 w-4 text-primary" />
+                  </Button>
+                </SimpleTooltip>
               }
             />
           )}
@@ -183,13 +188,15 @@ export const unitsColumns: ColumnDef<
               title={t.units.deleteTitle}
               onConfirm={mutateDeleteUnit}
               componentTrigger={
-                <Button variant="ghost" size="icon" disabled={isDeleting}>
-                  {isDeleting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash className="h-4 w-4 text-red-700" />
-                  )}
-                </Button>
+                <SimpleTooltip content={t.units.deleteTitle} side="bottom">
+                  <Button variant="ghost" size="icon" disabled={isDeleting}>
+                    {isDeleting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash className="h-4 w-4 text-red-700" />
+                    )}
+                  </Button>
+                </SimpleTooltip>
               }
             />
           )}

@@ -16,6 +16,7 @@ import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { getProjectInvites } from "@/actions/invites/getProjectInvites";
 import { deleteProjectInvite } from "@/actions/invites/deleteProjectInvite";
 import { useTranslation } from "@/i18n";
+import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 
 const CollaboratorsView = ({
   projectId,
@@ -191,10 +192,11 @@ const CollaboratorsView = ({
                   {hasPermission("delete:role") && (
                     <ModalConfirmDelete
                       componentTrigger={
+                        <SimpleTooltip content={t.disciplines.deleteDiscipline} side="bottom">
                         <Button
                           variant="outline-destructive"
                           size="icon-lg"
-                          aria-label={`Excluir disciplina ${discipline.name}`}
+                          aria-label={`${t.disciplines.deleteDiscipline} ${discipline.name}`}
                         >
                           {isDeletingDiscipline ? (
                             <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
@@ -202,6 +204,7 @@ const CollaboratorsView = ({
                             <TrashIcon className="h-4 w-4" />
                           )}
                         </Button>
+                        </SimpleTooltip>
                       }
                       title={t.collaboratorsView.removeDiscipline}
                       onConfirm={() => mutateDeleteDiscipline(discipline.id)}
@@ -210,14 +213,16 @@ const CollaboratorsView = ({
                   {hasPermission("update:role") && (
                     <DrawerFormDisciplines
                       componentTrigger={
-                        <Button
-                          variant="outline-bipc"
-                          size="icon-lg"
-                          className="text-primary border-primary"
-                          aria-label={`Editar disciplina ${discipline.name}`}
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </Button>
+                        <SimpleTooltip content={t.disciplines.editDiscipline} side="bottom">
+                          <Button
+                            variant="outline-bipc"
+                            size="icon-lg"
+                            className="text-primary border-primary"
+                            aria-label={`Editar disciplina ${discipline.name}`}
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Button>
+                        </SimpleTooltip>
                       }
                       projectId={projectId}
                       roleData={discipline}
@@ -281,14 +286,16 @@ const CollaboratorsView = ({
                   {hasPermission("*:*") && (
                     <DialogTransferOwnership
                       componentTrigger={
-                        <Button
-                          variant="outline-bipc"
-                          size="icon-lg"
-                          className="text-primary border-primary"
-                          aria-label={`Transferir propriedade para ${collaborator.name}`}
-                        >
-                          <UserCheck className="h-4 w-4" />
-                        </Button>
+                        <SimpleTooltip content={t.projects.projectTransfer.title} side="bottom">
+                          <Button
+                            variant="outline-bipc"
+                            size="icon-lg"
+                            className="text-primary border-primary"
+                            aria-label={`${t.projects.projectTransfer.title}: ${collaborator.name}`}
+                          >
+                            <UserCheck className="h-4 w-4" />
+                          </Button>
+                        </SimpleTooltip>
                       }
                       projectId={projectId}
                       projectName={projectName || "este projeto"}
@@ -298,17 +305,19 @@ const CollaboratorsView = ({
                   {hasPermission("delete:collaborator") && (
                     <ModalConfirmDelete
                       componentTrigger={
-                        <Button
-                          variant="outline-destructive"
-                          size="icon-lg"
-                          aria-label={`Remover colaborador ${collaborator.name}`}
-                        >
-                          {isDeletingCollaborator ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
-                          ) : (
-                            <TrashIcon className="h-4 w-4" />
-                          )}
+                        <SimpleTooltip content={t.collaboratorsView.removeCollaborator} side="bottom">
+                          <Button
+                            variant="outline-destructive"
+                            size="icon-lg"
+                            aria-label={`${t.collaboratorsView.removeCollaborator} ${collaborator.name}`}
+                          >
+                            {isDeletingCollaborator ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                            ) : (
+                              <TrashIcon className="h-4 w-4" />
+                            )}
                         </Button>
+                        </SimpleTooltip>
                       }
                       title={t.collaboratorsView.removeCollaborator}
                       onConfirm={() => mutateDeleteCollaborator(collaborator.id)}
@@ -369,17 +378,19 @@ const CollaboratorsView = ({
                   {hasPermission("delete:invite") && (
                     <ModalConfirmDelete
                       componentTrigger={
-                        <Button
-                          variant="outline-destructive"
-                          size="icon-lg"
-                          aria-label={`Remover convite de ${invite.email}`}
-                        >
-                          {isDeletingInvite ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
-                          ) : (
-                            <TrashIcon className="h-4 w-4" />
-                          )}
-                        </Button>
+                        <SimpleTooltip content={t.collaboratorsView.removeInvite} side="bottom">
+                          <Button
+                            variant="outline-destructive"
+                            size="icon-lg"
+                            aria-label={`${t.collaboratorsView.removeInvite}: ${invite.email}`}
+                          >
+                            {isDeletingInvite ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                            ) : (
+                              <TrashIcon className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </SimpleTooltip>
                       }
                       title={t.collaboratorsView.removeInvite}
                       onConfirm={() => mutateDeleteInvite(invite.id)}

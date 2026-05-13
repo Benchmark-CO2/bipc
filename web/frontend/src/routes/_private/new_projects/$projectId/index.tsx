@@ -21,6 +21,7 @@ import { Plus, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { useTranslation } from "@/i18n";
+import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 
 type ProjectSearch = {
   tab?: "projeto" | "colaboradores";
@@ -115,9 +116,11 @@ function RouteComponent() {
             {hasPermission("create:unit") && (
               <DrawerFormUnit
                 triggerComponent={
-                  <Button variant="bipc" size="icon-lg">
-                    <Plus />
-                  </Button>
+                  <SimpleTooltip content={t.units.form.addTitle} side="bottom">
+                    <Button variant="bipc" size="icon-lg">
+                      <Plus />
+                    </Button>
+                  </SimpleTooltip>
                 }
                 projectId={projectId}
               />

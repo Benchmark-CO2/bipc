@@ -22,6 +22,7 @@ import { useNavigate } from "@tanstack/react-router";
 import ModalSimple from "../layout/modal-simple";
 import { postDuplicateProject } from "@/actions/projects/postDuplicateProject";
 import { useTranslation } from "@/i18n";
+import { SimpleTooltip } from "./simple-tooltip";
 
 interface ICustomBanner {
   name: string;
@@ -156,9 +157,11 @@ const CustomBanner = ({
               {hasPermission("*:*") && (
                 <ModalSimple
                   componentTrigger={
-                    <Button variant="outline-bipc" size="icon">
-                      <Copy className="w-4 h-4" />
-                    </Button>
+                    <SimpleTooltip content={t.projects.duplicateTitle} side="bottom">
+                      <Button variant="outline-bipc" size="icon">
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </SimpleTooltip>
                   }
                   title={t.projects.duplicateTitle}
                   content={t.projects.duplicateContent}
@@ -170,9 +173,11 @@ const CustomBanner = ({
               {hasPermission("*:*") && (
                 <DialogTransferOwnership
                   componentTrigger={
-                    <Button variant="outline-bipc" size="icon">
-                      <UserCheck className="w-4 h-4" />
-                    </Button>
+                    <SimpleTooltip content={t.projects.projectTransfer.title} side="bottom">
+                      <Button variant="outline-bipc" size="icon">
+                        <UserCheck className="w-4 h-4" />
+                      </Button>
+                    </SimpleTooltip>
                   }
                   projectId={project.id}
                   projectName={name}
@@ -182,9 +187,11 @@ const CustomBanner = ({
               {hasPermission("update:project") && (
                 <DrawerFormProject
                   componentTrigger={
-                    <Button variant="bipc" size="icon">
-                      <Edit className="w-4 h-4" />
-                    </Button>
+                    <SimpleTooltip content={t.projects.form.editButton} side="bottom">
+                      <Button variant="bipc" size="icon">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    </SimpleTooltip>
                   }
                   projectData={project}
                 />
@@ -193,26 +200,30 @@ const CustomBanner = ({
               {hasPermission("*:*") && (
                 <ModalConfirmDelete
                   componentTrigger={
-                    <Button variant="destructive" size="icon">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <SimpleTooltip content={t.projects.confirmDelete.title} side="bottom">
+                      <Button variant="destructive" size="icon">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </SimpleTooltip>
                   }
                   title={t.projects.confirmDelete.title}
                   onConfirm={() => onDeleteProject?.(project.id)}
                 />
               )}
 
-              <button
-                onClick={handleCollapseToggle}
-                className="text-slate-300 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
-                aria-label={isCollapsed ? "Expandir banner" : "Colapsar banner"}
-              >
-                {isCollapsed ? (
-                  <ChevronDown className="w-4 h-4 transition-transform duration-500" />
-                ) : (
-                  <ChevronUp className="w-4 h-4 transition-transform duration-500" />
-                )}
-              </button>
+              <SimpleTooltip content={isCollapsed ? t.common.expand : t.common.collapse} side="bottom">
+                <button
+                  onClick={handleCollapseToggle}
+                  className="text-slate-300 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
+                  aria-label={isCollapsed ? t.common.expand : t.common.collapse}
+                >
+                  {isCollapsed ? (
+                    <ChevronDown className="w-4 h-4 transition-transform duration-500" />
+                  ) : (
+                    <ChevronUp className="w-4 h-4 transition-transform duration-500" />
+                  )}
+                </button>
+              </SimpleTooltip>
             </div>
           </div>
 
