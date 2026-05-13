@@ -35,7 +35,7 @@ import { masks } from "@/utils/masks";
 import { states } from "@/utils/states";
 import {
   UpdateUserFormSchema,
-  updateUserFormSchema,
+  createUpdateUserFormSchema,
 } from "@/validators/updateUserForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -81,7 +81,7 @@ export default function DrawerFormUser({
   const isCompany = userType === "company";
 
   const form = useForm<UpdateUserFormSchema>({
-    resolver: zodResolver(updateUserFormSchema),
+    resolver: zodResolver(createUpdateUserFormSchema(t)),
     defaultValues: {
       name: userData?.name || "",
       email: userData?.email || "",

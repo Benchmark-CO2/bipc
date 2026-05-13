@@ -1,5 +1,8 @@
 import { postSendInvite } from "@/actions/invites/postSendInvite";
-import { AddUserToProjectFormSchema } from "@/validators/addUserToProject.validator";
+import {
+  AddUserToProjectFormSchema,
+  createAddUserToProjectFormSchema,
+} from "@/validators/addUserToProject.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { CircleX, UserPlus, X, Mail } from "lucide-react";
@@ -34,7 +37,7 @@ const DrawerInvite = ({ projectId }: { projectId: string }) => {
   const { t } = useTranslation();
 
   const form = useForm({
-    resolver: zodResolver(AddUserToProjectFormSchema),
+    resolver: zodResolver(createAddUserToProjectFormSchema(t)),
     defaultValues: {
       email: "",
     },

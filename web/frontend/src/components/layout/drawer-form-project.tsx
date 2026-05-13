@@ -14,7 +14,7 @@ import { masks } from "@/utils/masks";
 import { states } from "@/utils/states";
 import {
   ProjectFormSchema,
-  projectFormSchema,
+  createProjectFormSchema,
 } from "@/validators/projectForm.validador";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -75,7 +75,7 @@ export default function DrawerFormProject({
   const isEditMode = !!projectData;
 
   const form = useForm<ProjectFormSchema>({
-    resolver: zodResolver(projectFormSchema),
+    resolver: zodResolver(createProjectFormSchema(t)),
     defaultValues: {
       name: projectData?.name || "",
       siop: projectData?.siop || "",

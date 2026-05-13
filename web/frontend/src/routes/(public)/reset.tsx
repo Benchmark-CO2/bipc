@@ -17,7 +17,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import {
-  resetPasswordFormSchema,
+  createResetPasswordFormSchema,
   type ResetPasswordFormSchema,
 } from "@/validators/resetPasswordForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -69,7 +69,7 @@ function RouteComponent() {
     handleSubmit,
     formState: { errors },
   } = useForm<ResetPasswordFormSchema>({
-    resolver: zodResolver(resetPasswordFormSchema),
+    resolver: zodResolver(createResetPasswordFormSchema(t)),
   });
 
   const resetPassMutation = useMutation({

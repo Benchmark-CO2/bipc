@@ -7,7 +7,7 @@ import { convertUnitToFormData } from "@/utils/unitConversions";
 import {
   UnitFormInput,
   UnitFormSchema,
-  unitFormSchema,
+  createUnitFormSchema,
   FloorFormInput,
 } from "@/validators/unitForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,7 +47,7 @@ const DrawerFormUnit = ({
   const navigate = useNavigate();
 
   const form = useForm<UnitFormInput, any, UnitFormSchema>({
-    resolver: zodResolver(unitFormSchema) as any,
+    resolver: zodResolver(createUnitFormSchema(t)) as any,
     defaultValues: {
       name: "",
       type: "tower" as const,

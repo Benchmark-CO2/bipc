@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
-  registerFormSchema,
   RegisterFormSchema,
+  createRegisterFormSchema,
 } from "@/validators/registerForm.validator";
 import { useMutation } from "@tanstack/react-query";
 import {
@@ -74,7 +74,7 @@ const SignUp = () => {
   const [selectedState, setSelectedState] = useState("");
 
   const form = useForm<RegisterFormSchema>({
-    resolver: zodResolver(registerFormSchema),
+    resolver: zodResolver(createRegisterFormSchema(t)),
     defaultValues: {
       type: "member",
       name: "",

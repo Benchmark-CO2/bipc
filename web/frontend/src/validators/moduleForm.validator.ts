@@ -1,22 +1,29 @@
 import { z } from "zod";
+import type { Translations } from "@/i18n/translations/pt-BR";
 
 // Schemas baseados na nova tipagem type2.ts
-const concreteVolumeItemSchema = z.object({
-  fck: z.number().min(20).max(45, "Fck deve estar entre 20 e 45"),
-  volume: z.number().positive("O volume deve ser um número positivo"),
-});
+function createConcreteVolumeItemSchema(t: Translations) {
+  return z.object({
+    fck: z.number().min(20).max(45, t.validators.fckRange),
+    volume: z.number().positive(t.validators.positiveNumber),
+  });
+}
 
-const steelMassItemSchema = z.object({
-  ca: z.number().refine((val) => val === 50 || val === 60, {
-    message: "CA deve ser 50 ou 60",
-  }),
-  mass: z.number().nonnegative("A massa deve ser um número não negativo"),
-});
+function createSteelMassItemSchema(t: Translations) {
+  return z.object({
+    ca: z.number().refine((val) => val === 50 || val === 60, {
+      message: t.validators.caValue,
+    }),
+    mass: z.number().nonnegative(t.validators.nonNegativeNumber),
+  });
+}
 
-const concreteElementSchema = z.object({
-  volumes: z.array(concreteVolumeItemSchema).optional().default([]),
-  steel: z.array(steelMassItemSchema).optional().default([]),
-});
+function createConcreteElementSchema(t: Translations) {
+  return z.object({
+    volumes: z.array(createConcreteVolumeItemSchema(t)).optional().default([]),
+    steel: z.array(createSteelMassItemSchema(t)).optional().default([]),
+  });
+}
 
 // Schemas para structural masonry (comentado pois ainda não foi definido)
 // const blockSchema = z
@@ -29,14 +36,15 @@ const concreteElementSchema = z.object({
 //   )
 //   .optional();
 
-export const moduleFormSchema = z
-  .object({
-    name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
-    type: z.enum(["beam_column", "concrete_wall"], {
-      // removed structural_masonry for now
-      required_error: "Selecione um tipo de estrutura",
-      invalid_type_error: "Tipo de estrutura inválido",
-    }),
+export function createModuleFormSchema(t: Translations) {
+  const concreteElementSchema = createConcreteElementSchema(t);
+  return z
+    .object({
+      name: z.string().min(3, t.validators.nameMinLength),
+      type: z.enum(["beam_column", "concrete_wall"], {
+        required_error: t.validators.selectStructureType,
+        invalid_type_error: t.validators.invalidStructureType,
+      }),
 
     // Beam Column - seguindo a nova tipagem
     concrete_columns: concreteElementSchema.optional(),
@@ -82,8 +90,7 @@ export const moduleFormSchema = z
       return true;
     },
     {
-      message:
-        "Para Viga Pilar são obrigatórios: concreto (colunas, vigas, lajes), formas (colunas, vigas, lajes), número de colunas e vãos médios",
+      message: t.validators.beamColumnRequired,
       path: ["type"],
     },
   )
@@ -102,12 +109,11 @@ export const moduleFormSchema = z
       return true;
     },
     {
-      message:
-        "Para Parede de Concreto são obrigatórios: concreto (paredes, lajes), espessuras (parede, laje) e áreas (forma, parede)",
+      message: t.validators.concreteWallRequired,
       path: ["type"],
     },
   );
-// Comentado: validação para structural masonry
+}
 // .refine(
 //   (data) => {
 //     if (data.type === "structural_masonry") {
@@ -126,10 +132,12 @@ export const moduleFormSchema = z
 //   }
 // );
 
-export type ModuleFormSchema = z.infer<typeof moduleFormSchema>;
+export type ModuleFormSchema = z.infer<ReturnType<typeof createModuleFormSchema>>;
 
-export const addModuleFormSchema = z.object({
-  name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
-});
+export function createAddModuleFormSchema(t: Translations) {
+  return z.object({
+    name: z.string().min(3, t.validators.nameMinLength),
+  });
+}
 
-export type AddModuleFormSchema = z.infer<typeof addModuleFormSchema>;
+export type AddModuleFormSchema = z.infer<ReturnType<typeof createAddModuleFormSchema>>;
