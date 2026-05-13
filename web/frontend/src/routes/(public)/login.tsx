@@ -101,7 +101,7 @@ const Login = () => {
                   className="text-xs font-semibold mb-1 text-gray-shade-500"
                   htmlFor="email"
                 >
-                  Usuário
+                  {t.auth.login.userLabel}
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-2/4 -translate-y-1/2 text-gray-400 size-5 pointer-events-none" />
@@ -134,7 +134,7 @@ const Login = () => {
                     className="text-xs font-semibold mb-1 text-gray-shade-500"
                     htmlFor="password"
                   >
-                    Senha
+                    {t.auth.login.passwordLabel}
                   </label>
                   <div className="relative">
                     <Input
@@ -228,8 +228,7 @@ const Login = () => {
                 className="hover:brightness-110 hover:font-semibold underline underline-offset-2 transition-all"
               >
                 <span style={{ color: "#187B8B" }}>
-                  Clique aqui e saiba como os seus dados estão sendo utilizados
-                  no BIPc.
+                  {t.auth.signUp.dataUsageInfo}
                 </span>
               </CustomLink>{" "}
             </p>
