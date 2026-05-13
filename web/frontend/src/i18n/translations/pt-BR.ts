@@ -15,6 +15,9 @@ export const ptBR = {
     invitedBy: "Convidado por",
     user: "Usuário",
     learnMore: "Saiba mais",
+    expand: "Expandir",
+    collapse: "Recolher",
+    ifcImport: "Importar do IFC"
   },
   errors: {
     unexpectedError: "Erro inesperado. Tente novamente mais tarde.",
@@ -392,9 +395,9 @@ export const ptBR = {
     duplicateConfirm: "Duplicar",
     duplicateSuccess: "Edificação duplicada com sucesso",
     duplicateError: "Erro ao duplicar edificação",
-    deleteTitle: "Excluir Unidade",
-    deleteSuccess: "Unidade excluída com sucesso",
-    deleteError: "Erro ao excluir unidade",
+    deleteTitle: "Excluir Edificação",
+    deleteSuccess: "Edificação excluída com sucesso",
+    deleteError: "Erro ao excluir edificação",
     form: {
       addTitle: "Adicionar Edificação",
       editTitle: "Atualizar Edificação",
@@ -414,9 +417,14 @@ export const ptBR = {
       updateSuccess: "Edificação atualizada com sucesso",
       updateError: "Erro ao atualizar Edificação",
       unknownError: "Erro desconhecido",
+      duplicateFloor: "Duplicar Pavimento",
+      removeFloor: "Remover Pavimento",
     },
   },
   modules: {
+    deleteTitle: "Excluir Tecnologia Construtiva",
+    duplicateTitle: "Duplicar Tecnologia Construtiva",
+    editTitle: "Editar Tecnologia Construtiva",
     table: {
       noItems: "Nenhum item encontrado",
       addNew:
@@ -569,6 +577,8 @@ export const ptBR = {
     inviteButton: "Convidar",
     inviteSuccess: "Usuário convidado com sucesso!",
     inviteError: "Erro ao convidar usuário. Tente novamente.",
+    inviteResponseSuccess: "Convite respondido com sucesso!",
+    inviteResponseError: "Erro ao responder convite. Tente novamente.",
     sending: "Enviando convite...",
     statusPending: "Em espera",
     statusAccepted: "Aceito",
@@ -901,12 +911,14 @@ export const ptBR = {
     buildings: "Edificações",
   },
   dialogCreateSimulation: {
+    simulationName: "Nome da simulação",
     nameRequired: "O nome é obrigatório",
     successCreate: "Simulação criada com sucesso",
     errorCreate: "Erro ao criar simulação:",
     placeholder: "Simulação 1",
     creating: "Criando...",
     create: "Criar",
+    useAsReference: "Usar como referência",
   },
   columns: {
     version: "Versão",
@@ -968,9 +980,12 @@ export const ptBR = {
     errorDuplicateTech: "Erro ao duplicar tecnologia construtiva",
     newSimulation: "Nova Simulação",
     createSimulations: "Criar Simulações",
+    favoriteOption: "Definir como referência",
   },
   disciplines: {
     title: "Disciplinas",
+    editDiscipline: "Editar disciplina",
+    deleteDiscipline: "Excluir disciplina",
     description: "Para realizar simulações, primeiro adicione uma disciplina como \"Estrutural\", \"Fundação\", \"Vedações\" ou qualquer outro título que descreva a sua área de atuação.",
     nameLabel: "Nome da disciplina *",
     namePlaceholder: "Vedações",

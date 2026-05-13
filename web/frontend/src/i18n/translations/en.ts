@@ -17,6 +17,9 @@ export const en: Translations = {
     invitedBy: "Invited by",
     user: "User",
     learnMore: "Learn more",
+    expand: "Expand",
+    collapse: "Collapse",
+    ifcImport: "Import from IFC",
   },
   errors: {
     unexpectedError: "Unexpected error. Please try again later.",
@@ -415,9 +418,14 @@ export const en: Translations = {
       updateSuccess: "Building updated successfully",
       updateError: "Error updating building",
       unknownError: "Unknown error",
+      duplicateFloor: "Duplicate Floor",
+      removeFloor: "Remove Floor",
     },
   },
   modules: {
+    deleteTitle: "Delete Construction Technology",
+    duplicateTitle: "Duplicate Construction Technology",
+    editTitle: "Edit Construction Technology",
     table: {
       noItems: "No items found",
       addNew:
@@ -569,6 +577,8 @@ export const en: Translations = {
     inviteButton: "Invite",
     inviteSuccess: "User invited successfully!",
     inviteError: "Error inviting user. Please try again.",
+    inviteResponseSuccess: "Invitation responded successfully!",
+    inviteResponseError: "Error responding to invitation. Please try again.",
     sending: "Sending invitation...",
     statusPending: "Pending",
     statusAccepted: "Accepted",
@@ -898,14 +908,17 @@ export const en: Translations = {
   customBanner: {
     building: "Building",
     buildings: "Buildings",
+    
   },
   dialogCreateSimulation: {
+    simulationName: "Simulation Name",
     nameRequired: "Name is required",
     successCreate: "Simulation created successfully",
     errorCreate: "Error creating simulation:",
     placeholder: "Simulation 1",
     creating: "Creating...",
     create: "Create",
+    useAsReference: "Use as reference",
   },
   columns: {
     version: "Version",
@@ -967,9 +980,12 @@ export const en: Translations = {
     errorDuplicateTech: "Error duplicating constructive technology",
     newSimulation: "New Simulation",
     createSimulations: "Create Simulations",
+    favoriteOption: "Mark as reference"
   },
   disciplines: {
     title: "Disciplines",
+    editDiscipline: "Edit Discipline",
+    deleteDiscipline: "Delete Discipline",
     description: "To run simulations, first add a discipline such as \"Structural\", \"Foundation\", \"Enclosures\" or any other title that describes your area of expertise.",
     nameLabel: "Discipline name *",
     namePlaceholder: "Enclosures",
