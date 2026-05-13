@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
+  Download,
   Edit,
   Trash2,
   UserCheck,
@@ -136,9 +137,11 @@ const CustomBanner = ({
 
    const { mutate: onGenerateReport } = useMutation({
     mutationFn: (formData: { co2: File; energy: File, projectId: string }) => generateReport(formData.projectId, formData),
-    onSuccess: async (data) => {
+    onSuccess: async (response) => {
       toast.success("Relatório gerado com sucesso");
-      console.log("Relatório gerado:", data);
+      const blob = new Blob([response.data], { type: response.headers['content-type'] || 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
     },
     onError: (error: unknown) => {
       toast.error("Erro ao gerar o relatório", {
@@ -246,8 +249,8 @@ const CustomBanner = ({
               >
                 {phaseLabels[phase]}
               </span>
-              <Button onClick={handleExport}>
-                Exportar
+              <Button onClick={handleExport} variant="outline-bipc" size="icon">
+                <Download className="w-4 h-4" />
               </Button>
               {hasPermission("*:*") && (
                 <ModalSimple
