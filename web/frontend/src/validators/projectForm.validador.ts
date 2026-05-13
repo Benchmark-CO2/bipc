@@ -20,6 +20,8 @@ export const projectFormSchema = z.object({
     .string()
     .optional()
     .or(z.string().min(1, "O número deve ser informado")),
+  siop: z.string().optional().or(z.string().max(50, "O SIOP deve ter no máximo 50 caracteres")),
+  apf: z.string().optional().or(z.string().max(50, "O APF deve ter no máximo 50 caracteres")),
   phase: z.enum(
     [
       "not_defined",

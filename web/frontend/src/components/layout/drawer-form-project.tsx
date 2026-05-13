@@ -78,6 +78,8 @@ export default function DrawerFormProject({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
       name: projectData?.name || "",
+      siop: projectData?.siop || "",
+      apf: projectData?.apf || "",
       description: projectData?.description || "",
       state: projectData?.state || "",
       city: projectData?.city || "",
@@ -199,6 +201,8 @@ export default function DrawerFormProject({
     let imageUrl: string | undefined = undefined;
     const copyData: Partial<PostProjectRequest> = {
       name: data.name,
+      siop: data.siop || "",
+      apf: data.apf || "",
       description: data.description,
       state: data.state,
       city: data.city,
@@ -216,6 +220,8 @@ export default function DrawerFormProject({
     if (!copyData.street) delete copyData.street;
     if (!copyData.number) delete copyData.number;
     if (!copyData.description) delete copyData.description;
+    if (!copyData.siop) delete copyData.siop;
+    if (!copyData.apf) delete copyData.apf;
 
     if (file) {
       imageUrl = await uploadImage();
@@ -255,6 +261,8 @@ export default function DrawerFormProject({
       if (projectData) {
         form.reset({
           name: projectData.name || "",
+          siop: projectData.siop || "",
+          apf: projectData.apf || "",
           description: projectData.description || "",
           state: projectData.state || "",
           city: projectData.city || "",
@@ -268,6 +276,8 @@ export default function DrawerFormProject({
       } else {
         form.reset({
           name: "",
+          siop: "",
+          apf: "",
           description: "",
           state: "",
           city: "",
@@ -376,6 +386,34 @@ export default function DrawerFormProject({
                   </FormItem>
                 )}
               />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="siop"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.projects.form.siop}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t.projects.form.siopPlaceholder} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="apf"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.projects.form.apf}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t.projects.form.apfPlaceholder} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <FormField
                 control={form.control}
                 name="cep"
