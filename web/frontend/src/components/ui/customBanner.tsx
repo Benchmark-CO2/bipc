@@ -1,6 +1,7 @@
 import { getProjectsBenchmark } from '@/actions/benchmarks/getProjects';
 import { deleteProject } from "@/actions/projects/deleteProjects";
 import { postDuplicateProject } from "@/actions/projects/postDuplicateProject";
+import { generateReport } from '@/actions/report/generateReport';
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { IProject, TProjectPhase } from "@/types/projects";
 import { phaseColors, phaseLabels } from "@/utils/phaseConfig";
@@ -133,6 +134,22 @@ const CustomBanner = ({
     });
   };
 
+   const { mutate: onGenerateReport } = useMutation({
+    mutationFn: (formData: { co2: File; energy: File, projectId: string }) => generateReport(formData.projectId, formData),
+    onSuccess: async (data) => {
+      toast.success("Relatório gerado com sucesso");
+      console.log("Relatório gerado:", data);
+    },
+    onError: (error: unknown) => {
+      toast.error("Erro ao gerar o relatório", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Ocorreu um erro desconhecido",
+        duration: 5000,
+      });
+    },
+  });
   const handleExport = async () => {
     const projectData = queryClient.getQueryData<any>(["project", id]);
     const consumption = projectData?.data?.project?.consumption?.total;
@@ -196,18 +213,13 @@ const CustomBanner = ({
       buildChartImage("energy", "MJ/m²", "energy_min", "energy_max"),
     ]);
 
-    const linkCo2 = document.createElement("a");
-    linkCo2.href = co2Image.dataUrl;
-    linkCo2.download = "grafico-co2.png";
-    linkCo2.click();
-
-    // Small delay so the browser doesn't block the second download
-    await new Promise((r) => setTimeout(r, 300));
-
-    const linkEnergy = document.createElement("a");
-    linkEnergy.href = energyImage.dataUrl;
-    linkEnergy.download = "grafico-energy.png";
-    linkEnergy.click();
+    const co2File = new File([co2Image.blob], "co2_chart.png", { type: "image/png" });
+    const energyFile = new File([energyImage.blob], "energy_chart.png", { type: "image/png" });
+    onGenerateReport({
+      projectId: id!,
+      co2: co2File,
+      energy: energyFile,
+    });
   };
 
   return (
