@@ -1,5 +1,6 @@
 import { masks } from "@/utils/masks";
 import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
+import { useTranslation } from "@/i18n";
 import { useLayoutEffect, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Card, CardContent } from "../../ui/card";
@@ -21,6 +22,7 @@ interface ModuleFormRaftPilesFoundationProps {
 const ModuleFormRaftPilesFoundation = ({
   form,
 }: ModuleFormRaftPilesFoundationProps) => {
+  const { t } = useTranslation();
   const fckOptions = [20, 25, 30, 35, 40, 45];
   const [customFck, setCustomFck] = useState(false);
 
@@ -46,7 +48,7 @@ const ModuleFormRaftPilesFoundation = ({
           name="fck"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">fck do concreto (MPa) *</FormLabel>
+              <FormLabel className="text-xs">{t.modules.form.fckLabel}</FormLabel>
               <FormControl>
                 <Select
                   onValueChange={(value) => {
@@ -79,7 +81,7 @@ const ModuleFormRaftPilesFoundation = ({
                   })()}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione fck" />
+                    <SelectValue placeholder={t.modules.form.selectFck} />
                   </SelectTrigger>
                   <SelectContent>
                     {fckOptions.map((fck) => (
@@ -87,7 +89,7 @@ const ModuleFormRaftPilesFoundation = ({
                         {fck}
                       </SelectItem>
                     ))}
-                    <SelectItem value="other">Outro</SelectItem>
+                    <SelectItem value="other">{t.modules.form.other}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormControl>
@@ -101,7 +103,7 @@ const ModuleFormRaftPilesFoundation = ({
             name="fck"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-xs">Outro fck (MPa)</FormLabel>
+                <FormLabel className="text-xs">{t.modules.form.otherFck}</FormLabel>
                 <FormControl>
                   <Input
                     type="text"
@@ -120,7 +122,7 @@ const ModuleFormRaftPilesFoundation = ({
       </div>
 
       {/* Radier */}
-      <h3 className="text-base font-semibold text-primary">Radier</h3>
+      <h3 className="text-base font-semibold text-primary">{t.modules.form.raft}</h3>
       <Card className="border-2 border-blue-500">
         <CardContent className="space-y-4 pt-4">
           {/* Área e Espessura do Radier */}
@@ -130,7 +132,7 @@ const ModuleFormRaftPilesFoundation = ({
               name="raft.area"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs">Área (m²) *</FormLabel>
+                  <FormLabel className="text-xs">{t.modules.form.raftArea}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
@@ -150,7 +152,7 @@ const ModuleFormRaftPilesFoundation = ({
               name="raft.thickness"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs">Espessura (m) *</FormLabel>
+                  <FormLabel className="text-xs">{t.modules.form.raftThickness}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
@@ -178,7 +180,7 @@ const ModuleFormRaftPilesFoundation = ({
       </Card>
 
       {/* Estacas */}
-      <h3 className="text-base font-semibold text-primary">Estacas</h3>
+      <h3 className="text-base font-semibold text-primary">{t.modules.form.piles}</h3>
       <Card className="border-2 border-blue-500">
         <CardContent className="space-y-4 pt-4">
           {/* Volume das Estacas */}
@@ -188,7 +190,7 @@ const ModuleFormRaftPilesFoundation = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">
-                  Volume de concreto (m³)
+                  {t.modules.form.concreteVolume}
                 </FormLabel>
                 <FormControl>
                   <Input

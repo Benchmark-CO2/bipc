@@ -1,5 +1,6 @@
 import { masks } from "@/utils/masks";
 import { parseNumber } from "@/utils/numbers";
+import { useTranslation } from "@/i18n";
 import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -16,13 +17,15 @@ import {
   SelectValue,
 } from "../../ui/select";
 import SteelMaterialList from "./steel-material-list";
-import { slabTypeOptions } from "./module-default-values";
+import { useSlabTypeOptions } from "./module-default-values";
 
 interface ModuleFormConcreteWallProps {
   form: UseFormReturn<ModuleFormInput>;
 }
 
 const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
+  const { t } = useTranslation();
+  const slabTypeOptions = useSlabTypeOptions();
   const fckOptions = [20, 25, 30, 35, 40, 45];
 
   const [customFckSelected, setCustomFckSelected] = useState<
@@ -121,8 +124,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between py-2 px-1">
               <FormLabel className="text-xs text-gray-500">
-                Volume total de{" "}
-                {fieldName === "concrete_walls" ? "parede" : "laje"} (m³)
+                {fieldName === "concrete_walls"
+                  ? t.modules.form.totalWallVolume
+                  : t.modules.form.totalSlabVolume}
               </FormLabel>
               <FormField
                 control={form.control}
@@ -189,7 +193,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                 }
                               >
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Selecione fck" />
+                                  <SelectValue placeholder={t.modules.form.selectFck} />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {fckOptions.map((fck) => (
@@ -199,10 +203,10 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                       disabled={isFckUsed(fck, index)}
                                     >
                                       {fck}{" "}
-                                      {isFckUsed(fck, index) ? "(Em uso)" : ""}
+                                      {isFckUsed(fck, index) ? t.modules.form.inUse : ""}
                                     </SelectItem>
                                   ))}
-                                  <SelectItem value="other">Outro</SelectItem>
+                                  <SelectItem value="other">{t.modules.form.other}</SelectItem>
                                 </SelectContent>
                               </Select>
                             </FormControl>
@@ -216,7 +220,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                         render={({ field: volumeField }) => (
                           <FormItem>
                             <FormLabel className="text-xs">
-                              Volume (m³)
+                              {t.modules.form.volume}
                             </FormLabel>
                             <div className="flex gap-1">
                               <FormControl>
@@ -255,7 +259,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-xs">
-                              Outro fck (MPa)
+                              {t.modules.form.otherFck}
                             </FormLabel>
                             <Input
                               type="number"
@@ -269,7 +273,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                               <div className="flex items-center gap-1 mt-1 text-orange-600 text-xs">
                                 <AlertTriangle className="h-3 w-3" />
                                 <span>
-                                  Para cálculo será considerado fck 50
+                                  {t.modules.form.fckWarning}
                                 </span>
                               </div>
                             )}
@@ -291,7 +295,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
               }
               className="w-full text-green-600 border-green-600 hover:bg-green-50"
             >
-              Adicionar
+              {t.common.add}
             </Button>
 
             <div className="border-t border-gray-200 my-4"></div>
@@ -326,21 +330,21 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <FormLabel className="text-sm text-gray-600">
-                  Tipo de forma
+                  {t.modules.form.formType}
                 </FormLabel>
                 <Select defaultValue="metalica">
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="metalica">Metálica</SelectItem>
+                    <SelectItem value="metalica">{t.modules.form.metallic}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
                 <FormLabel className="text-sm text-gray-600">
-                  Forma total (m²)
+                  {t.modules.form.totalForm}
                 </FormLabel>
                 <Input
                   type="text"
@@ -358,7 +362,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">
-                      Forma de parede (m²)
+                      {t.modules.form.wallFormArea}
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -381,7 +385,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">
-                      Forma de laje (m²)
+                      {t.modules.form.slabFormArea}
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -411,7 +415,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
         name="slab_type"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-xs">Tipo de laje (opcional)</FormLabel>
+            <FormLabel className="text-xs">{t.modules.form.slabTypeOptional}</FormLabel>
             <Select
               onValueChange={field.onChange}
               value={field.value}
@@ -419,7 +423,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
             >
               <FormControl>
                 <SelectTrigger className="aria-invalid:border-destructive w-full">
-                  <SelectValue placeholder="Selecione o tipo de laje" />
+                  <SelectValue placeholder={t.modules.form.selectSlabType} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -440,7 +444,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
           name="wall_thickness"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Espessura da parede (m)</FormLabel>
+              <FormLabel className="text-xs">{t.modules.form.wallThickness}</FormLabel>
               <FormControl>
                 <Input
                   type="text"
@@ -460,7 +464,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
           name="slab_thickness"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Espessura da laje (m)</FormLabel>
+              <FormLabel className="text-xs">{t.modules.form.slabThickness}</FormLabel>
               <FormControl>
                 <Input
                   type="text"
@@ -480,7 +484,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
           name="wall_area"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Área de parede (m²)</FormLabel>
+              <FormLabel className="text-xs">{t.modules.form.wallArea}</FormLabel>
               <FormControl>
                 <Input
                   type="text"
@@ -497,16 +501,13 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
       </div>
 
       {/* Parede de concreto */}
-      {renderCompleteSection("concrete_walls", "Parede de concreto", true)}
+      {renderCompleteSection("concrete_walls", t.modules.form.concreteWall, true)}
 
       {/* Laje de concreto */}
-      {renderCompleteSection("concrete_slabs", "Laje de concreto", true, true)}
-
-      {/* Escada (opcional) */}
-      {/* {renderOptionalSection("Escada (opcional)")} */}
+      {renderCompleteSection("concrete_slabs", t.modules.form.concreteSlab, true, true)}
 
       {/* Área de formas (opcional) */}
-      {renderOptionalSection("Área de formas (opcional)")}
+      {renderOptionalSection(t.modules.form.formAreaOptional)}
     </div>
   );
 };

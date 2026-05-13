@@ -592,7 +592,7 @@ const DrawerFormModule = ({
         <DrawerHeader className="px-8">
           <DrawerTitle className="text-h1 text-primary">
             {moduleId
-              ? t.modules.form.updateSuccess.split(" ")[0]
+              ? t.modules.form.editTitle
               : t.modules.table.createButton}
           </DrawerTitle>
           <Button
@@ -628,9 +628,8 @@ const DrawerFormModule = ({
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(handleSubmit as any, () => {
-                  toast.error("Existem erros de validação", {
-                    description:
-                      "Evite campos com valores zerados ou inválidos.",
+                  toast.error(t.modules.form.validationErrors, {
+                    description: t.modules.form.validationDescription,
                     duration: 5000,
                   });
                 })}
@@ -664,7 +663,7 @@ const DrawerFormModule = ({
                   <div className="p-4 border rounded-lg border-gray-shade-200 space-y-4 bg-card">
                     <div>
                       <span className="text-h3 text-primary dark:text-gray-300">
-                        Dados da tecnologia
+                        {t.modules.form.technologyData}
                       </span>
                     </div>
                     {/* Campos básicos */}
@@ -769,7 +768,7 @@ const DrawerFormModule = ({
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   <p className="font-medium mb-1">
-                    Corrija os seguintes erros antes de enviar:
+                    {t.modules.form.fixErrors}
                   </p>
                   <ul className="list-disc pl-4 text-xs space-y-0.5">
                     {getFormErrorMessages(form.formState.errors).map(
