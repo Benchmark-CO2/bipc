@@ -633,6 +633,11 @@ export const en: Translations = {
     pageTitle: "Benchmark | Data Visualization",
     description: "Compare and analyze enterprise performance",
     visualization: "Visualization:",
+    chartType: "Chart Type",
+    chartTypes: {
+      cumulativeFraction: "Cumulative Fraction",
+      classification: "Classification",
+    },
     chartPlaceholder: "Chart",
     loadingData: "Loading data...",
     chartTrend: "Maximum and minimum footprint curve",
@@ -640,6 +645,7 @@ export const en: Translations = {
     legend: "Legend:",
     bestSupplier: "Best supplier",
     worstSupplier: "Worst supplier",
+    highlightedRange: "Highlighted range",
     howItWorks: "How the Benchmark works",
     aboutP1:
       "The BIPc platform was developed to provide support to designers and construction companies to improve the embodied carbon emissions of construction, still in the design phase.",

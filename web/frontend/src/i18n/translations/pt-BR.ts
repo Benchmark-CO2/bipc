@@ -634,6 +634,11 @@ export const ptBR = {
     pageTitle: "Benchmark | Visualização dos dados",
     description: "Compare e analise o desempenho de empreendimentos",
     visualization: "Visualização:",
+    chartType: "Tipo de gráfico",
+    chartTypes: {
+      cumulativeFraction: "Fração acumulada",
+      classification: "Classificação",
+    },
     chartPlaceholder: "Gráfico",
     loadingData: "Carregando dados...",
     chartTrend: "Curva das pegadas máxima e mínima",
@@ -641,6 +646,7 @@ export const ptBR = {
     legend: "Legenda:",
     bestSupplier: "Melhor fornecedor",
     worstSupplier: "Pior fornecedor",
+    highlightedRange: "Intervalo em destaque",
     howItWorks: "Como o Benchmark funciona",
     aboutP1:
       "A plataforma BIPc foi desenvolvida para oferecer subsídios à projetistas e construtoras a melhorar a emissão de carbono embutido da construção, ainda na fase de projeto.",
