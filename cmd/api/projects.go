@@ -25,6 +25,8 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 		Number       *string `json:"number"`
 		Phase        string  `json:"phase"`
 		Description  *string `json:"description"`
+		Siop         *string `json:"siop"`
+		Apf          *string `json:"apf"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -43,6 +45,8 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 		Number:       input.Number,
 		Phase:        input.Phase,
 		Description:  input.Description,
+		Siop:         input.Siop,
+		Apf:          input.Apf,
 	}
 
 	v := validator.New()
@@ -148,6 +152,8 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 		Number       *string `json:"number"`
 		Phase        *string `json:"phase"`
 		Description  *string `json:"description"`
+		Siop         *string `json:"siop"`
+		Apf          *string `json:"apf"`
 	}
 
 	err = app.readJSON(w, r, &input)
@@ -190,6 +196,14 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 
 	if input.Description != nil {
 		project.Description = input.Description
+	}
+
+	if input.Siop != nil {
+		project.Siop = input.Siop
+	}
+
+	if input.Apf != nil {
+		project.Apf = input.Apf
 	}
 
 	v := validator.New()
