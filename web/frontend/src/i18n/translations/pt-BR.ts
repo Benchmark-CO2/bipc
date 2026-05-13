@@ -353,6 +353,7 @@ export const ptBR = {
       editSuccess: "Empreendimento atualizado com sucesso",
       editError: "Erro ao editar empreendimento",
       unknownError: "Erro desconhecido",
+      downloadReport: "Baixar relatório",
     },
     confirmDelete: {
       title: "Excluir Empreendimento",
@@ -954,6 +955,8 @@ export const ptBR = {
   customBanner: {
     building: "Edificação",
     buildings: "Edificações",
+    downloadReportSuccess: "Relatório baixado com sucesso",
+    downloadReportError: "Erro ao baixar relatório",
   },
   dialogCreateSimulation: {
     simulationName: "Nome da simulação",

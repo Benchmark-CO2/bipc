@@ -6,6 +6,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { structureTypes } from "@/utils/structureTypes";
 import * as d3 from "d3";
+import { regressionPoly } from "d3-regression";
 import { Search, SearchX } from "lucide-react";
 import React, {
   useCallback,
@@ -66,7 +67,7 @@ const PROCEL_CLASSES = [
 ] as const;
 
 const UNIT_LABELS = {
-  "KgCO₂/m²": "Carbono Incorporado (kg CO₂/m²)",
+  "KgCO₂/m²": "Carbono Embutido (kg CO₂/m²)",
   "MJ/m²": "Energia Incorporada (MJ/m²)",
 } as const;
 
@@ -99,6 +100,12 @@ type D3GradientRangeChartProps = {
   top5Field?: "min" | "max";
   /** Percentile threshold for the PPp line (0–1). Default: 0.05 */
   top5Percentile?: number;
+  /** Show dashed curve following the max values */
+  showMaxCurve?: boolean;
+  /** Show dashed curve following the min values */
+  showMinCurve?: boolean;
+  /** Show dashed curve for Vn = (C5% - Cn) + (R5% - Rn) / 2 */
+  showMidCurve?: boolean;
 };
 // Custom hooks
 const useChartDimensions = (
@@ -207,8 +214,11 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   showProcelScale = false,
   showBaseline = false,
   showTop5Line = false,
-  top5Field = "max",
+  top5Field = "min",
   top5Percentile = 0.05,
+  showMaxCurve = false,
+  showMinCurve = false,
+  showMidCurve = false,
   ...props
 }) => {
   const { isExpanded } = useSummary();
@@ -774,6 +784,66 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       ctx.restore();
     }
 
+    // Dashed curves (min / mid / max) — polynomial regression trend lines
+    if (showMaxCurve || showMinCurve || showMidCurve) {
+      const sorted = [...data].sort((a, b) => a.y - b.y);
+
+      const buildTrendPoints = (
+        rawData: [number, number][],
+        steps = 80,
+        clampZero = true,
+      ): { x: number; y: number }[] => {
+        if (rawData.length < 3) return rawData.map(([x, y]) => ({ x: newXScale(x), y: newYScale(y) }));
+        const regression = regressionPoly()
+          .x((d: [number, number]) => d[1])
+          .y((d: [number, number]) => d[0])
+          .order(Math.min(4, rawData.length - 1));
+        const result = regression(rawData);
+        const predict = result.predict;
+        const yMin = Math.min(...rawData.map((d) => d[1]));
+        const yMax = Math.max(...rawData.map((d) => d[1]));
+        const pts: { x: number; y: number }[] = [];
+        for (let i = 0; i <= steps; i++) {
+          const yVal = yMin + (yMax - yMin) * (i / steps);
+          const xVal = clampZero ? Math.max(0, predict(yVal)) : predict(yVal);
+          pts.push({ x: newXScale(xVal), y: newYScale(yVal) });
+        }
+        return pts;
+      };
+
+      const drawTrendCurve = (points: { x: number; y: number }[]) => {
+        if (points.length < 2) return;
+        ctx.save();
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 0.75;
+        ctx.setLineDash([1, 3]);
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+          ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+      };
+
+      if (showMaxCurve) {
+        const raw: [number, number][] = sorted.map((d) => [d.max, d.y]);
+        drawTrendCurve(buildTrendPoints(raw));
+      }
+
+      if (showMinCurve) {
+        const raw: [number, number][] = sorted.map((d) => [d.min, d.y]);
+        drawTrendCurve(buildTrendPoints(raw));
+      }
+
+      if (showMidCurve) {
+        const raw: [number, number][] = sorted.map((d) => [(d.min + d.max) / 2, d.y]);
+        drawTrendCurve(buildTrendPoints(raw));
+      }
+    }
+
     // Restore clipping region
     ctx.restore();
 
@@ -928,6 +998,9 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     showProcelScale,
     showBaseline,
     showTop5Line,
+    showMaxCurve,
+    showMinCurve,
+    showMidCurve,
     updateBrushCount,
   ]);
 
@@ -1091,7 +1164,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   }, [selectedBars, selectedMinBars, selectedMaxBars, drawChart]);
 
   const labelX =
-    UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Incorporado";
+    UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Embutido";
   const displayedCount =
     selectedMinBarIds.size > 0 || selectedMaxBarIds.size > 0
       ? new Set([...selectedMinBarIds, ...selectedMaxBarIds]).size

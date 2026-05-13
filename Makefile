@@ -37,7 +37,7 @@
 # ==============================================================================
 # Define dependencies
 
-GOLANG     := golang:1.24
+GOLANG     := golang:1.26.1
 ALPINE     := alpine:3.22
 POSTGRES   := postgres:17.5
 NODE       := node:24-slim

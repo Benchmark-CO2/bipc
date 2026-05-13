@@ -354,6 +354,7 @@ export const en: Translations = {
       editSuccess: "Enterprise updated successfully",
       editError: "Error updating enterprise",
       unknownError: "Unknown error",
+      downloadReport: "Download report",
     },
     confirmDelete: {
       title: "Delete Enterprise",
@@ -953,7 +954,8 @@ export const en: Translations = {
   customBanner: {
     building: "Building",
     buildings: "Buildings",
-    
+    downloadReportSuccess: "Report downloaded successfully",
+    downloadReportError: "Error downloading report",
   },
   dialogCreateSimulation: {
     simulationName: "Simulation Name",
