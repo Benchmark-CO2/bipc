@@ -6,7 +6,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TriangleAlert } from "lucide-react";
-import { useTranslation } from "react-i18next";
 
 interface DialogSuccessSignupProps {
   handleClose: () => void;
@@ -16,7 +15,6 @@ export const DialogWarnSignup = ({
   handleClose,
   handleConfirm,
 }: DialogSuccessSignupProps) => {
-  const { t } = useTranslation();
   return (
     <Dialog onOpenChange={handleClose} open={true}>
       <DialogContent>

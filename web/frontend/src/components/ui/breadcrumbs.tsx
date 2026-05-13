@@ -1,8 +1,10 @@
 import BipcIcon from "@/assets/icons/bipc";
+import { useTranslation } from "@/i18n";
 import { Link, useMatches } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 
 const BreadCrumbs = () => {
+  const { t } = useTranslation();
   const matches = useMatches({
     select: (matches) => {
       return matches.filter(
@@ -15,7 +17,7 @@ const BreadCrumbs = () => {
   const crumbs = matches.map((match) => {
     const { crumb } = match.loaderData as { crumb: string };
 
-    if (crumb === "Empreendimentos") {
+    if (crumb === "Empreendimentos" || crumb === t.breadcrumbs.enterprises) {
       return (
         <div className="w-6 h-6 bg-active rounded-full flex items-center justify-center">
           <BipcIcon className="w-4 h-4" style={{ color: "white" }} />

@@ -8,6 +8,7 @@ import {
   convertFloorSchemaToUnified,
   convertFloorFormInputToUnified,
 } from "@/utils/unitConversions";
+import { useTranslation } from "@/i18n";
 
 // Helper para verificar se é FloorFormInput (com strings) ou FloorSchema (com números)
 const isFloorFormInput = (floor: any): floor is FloorFormInput => {
@@ -34,6 +35,8 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   complete = false,
   isFoundation = false,
 }) => {
+  const { t } = useTranslation();
+  
   const unifiedFloors: UnifiedFloor[] = towerFloors
     ? convertTowerFloorsToUnified(towerFloors)
     : floors
@@ -73,7 +76,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
 
   const foundationFloor: UnifiedFloor = {
     id: "foundation_floor",
-    name: "Mesoestrutura e fundação",
+    name: t.buildingVisualizer.foundation,
     area: biggestFloorArea,
     height: 2,
     category: "foundation_floor" as any,
@@ -197,9 +200,8 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
           <div className="text-left">
             <span className="text-md font-normal leading-2 dark:text-gray-300">
               {isSelectable
-                ? `Selecione os pavimentos em que esta tecnologia construtiva será
-                aplicada`
-                : `Os pavimentos abaixo são apenas para visualização e não podem ser editados ou selecionados aqui.`}
+                ? t.buildingVisualizer.selectFloors
+                : t.buildingVisualizer.viewOnlyFloors}
             </span>
           </div>
         )}
@@ -209,7 +211,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
           <div className="grid grid-cols-[2fr_auto_minmax(0,100px)] gap-2 items-center w-full max-w-64 ml-auto pb-2 border-b border-gray-300 dark:border-gray-600">
             <div className="flex items-center justify-end">
               <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                Selecionar todos
+                {t.buildingVisualizer.selectAll}
               </span>
             </div>
             <Checkbox
@@ -280,9 +282,9 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
 
         {unifiedFloors.length === 0 && (
           <div className="flex items-center justify-center h-32 text-gray-500 dark:text-gray-400 text-xs text-center">
-            Adicione pavimentos
+            {t.buildingVisualizer.addFloors}
             <br />
-            para visualizar a torre
+            {t.buildingVisualizer.toVisualizeTheTower}
           </div>
         )}
       </div>
@@ -292,7 +294,9 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
           <div className="text-xs space-y-1 text-gray-600 dark:text-gray-400">
             <div>
               <span className="font-medium">{unifiedFloors.length}</span>{" "}
-              {unifiedFloors.length === 1 ? "pavimento" : "pavimentos"}
+              {unifiedFloors.length === 1
+                ? t.buildingVisualizer.floorCount_one
+                : t.buildingVisualizer.floorCount_other}
             </div>
             <div>
               <span className="font-medium">

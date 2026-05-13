@@ -1,3 +1,4 @@
+import { createFileRoute } from "@tanstack/react-router";
 import { GenerateApiKey } from "@/components/apiKey";
 import { LanguageToggle } from "@/components/language-toggle";
 import { SettingsSection } from "@/components/settings-section";
@@ -6,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { CustomLink } from "@/components/ui/custom-link";
 import { Separator } from "@/components/ui/separator";
 import { UserInfo } from "@/components/user-info";
+import { useTranslation } from "@/i18n";
 import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
-import { createFileRoute } from "@tanstack/react-router";
 import {
   Globe,
   KeySquare,
@@ -18,15 +19,14 @@ import {
   ShieldHalf,
   TrendingUp,
 } from "lucide-react";
-import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_private/settings")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
 
   return (
     <div
@@ -35,11 +35,9 @@ function RouteComponent() {
       {/* Header */}
       <div className="space-y-2 mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-foreground">
-          {t("settings.title")}
+          {t.settings.title}
         </h1>
-        <p className="text-muted-foreground">
-          Gerencie suas preferências e informações de conta
-        </p>
+        <p className="text-muted-foreground">{t.settings.manage}</p>
       </div>
 
       <div className="space-y-6">
@@ -50,7 +48,7 @@ function RouteComponent() {
         <div className="flex items-center gap-4">
           <Separator className="flex-1" />
           <span className="text-sm text-muted-foreground font-medium">
-            Preferências
+            {t.settings.preferences}
           </span>
           <Separator className="flex-1" />
         </div>
@@ -58,26 +56,26 @@ function RouteComponent() {
         {/* Appearance and Language Settings */}
         <div className="grid gap-6 md:grid-cols-2">
           <SettingsSection
-            title={t("settings.appearance.title")}
-            description={t("settings.appearance.themeDescription")}
+            title={t.settings.appearance.title}
+            description={t.settings.appearance.description}
             icon={Palette}
           >
             <div className="space-y-3">
               <label className="text-sm font-medium">
-                {t("settings.theme")}
+                {t.settings.appearance.themeLabel}
               </label>
               <ThemeToggle />
             </div>
           </SettingsSection>
 
           <SettingsSection
-            title={t("settings.language")}
-            description={t("settings.appearance.languageDescription")}
+            title={t.settings.language.title}
+            description={t.settings.language.description}
             icon={Globe}
           >
             <div className="space-y-3">
               <label className="text-sm font-medium">
-                {t("settings.language")}
+                {t.settings.language.label}
               </label>
               <LanguageToggle />
             </div>
@@ -88,35 +86,35 @@ function RouteComponent() {
         <div className="flex items-center gap-4">
           <Separator className="flex-1" />
           <span className="text-sm text-muted-foreground font-medium">
-            Saiba mais
+            {t.settings.learnMore}
           </span>
           <Separator className="flex-1" />
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           <SettingsSection
-            title={"Privacidade e Proteção de Dados"}
-            description={"Entenda como tratamos seus dados pessoais"}
+            title={t.settings.privacy.title}
+            description={t.settings.privacy.description}
             icon={ShieldHalf}
           >
             <div className="space-y-3">
               <CustomLink linkKey="privacy">
                 <Button variant="link" className="p-0 h-auto">
-                  Saiba mais ➡️
+                  {t.settings.learnMoreLink}
                 </Button>
               </CustomLink>
             </div>
           </SettingsSection>
 
           <SettingsSection
-            title={"Uso de dados da plataforma"}
-            description={"Saiba como utilizamos os dados coletados"}
+            title={t.settings.dataUsage.title}
+            description={t.settings.dataUsage.description}
             icon={TrendingUp}
           >
             <div className="space-y-3">
               <CustomLink linkKey="faq">
                 <Button variant="link" className="p-0 h-auto">
-                  Saiba mais ➡️
+                  {t.settings.learnMoreLink}
                 </Button>
               </CustomLink>
             </div>
@@ -124,10 +122,8 @@ function RouteComponent() {
 
           {posLaunchFeatures.formExerciseRights.enabled && (
             <SettingsSection
-              title={"Exercer meus direitos"}
-              description={
-                "Você pode solicitar acesso, correção ou exclusão dos seus dados pessoais a qualquer momento."
-              }
+              title={t.settings.rights.title}
+              description={t.settings.rights.description}
               icon={ShieldCheck}
             >
               <div className="space-y-3">
@@ -137,7 +133,7 @@ function RouteComponent() {
                   rel="noopener noreferrer"
                 >
                   <Button variant="link" className="p-0 h-auto">
-                    Consultar formulário ➡️
+                    {t.settings.rights.formLink}
                   </Button>
                 </a>
               </div>
@@ -147,15 +143,15 @@ function RouteComponent() {
         <div className="flex items-center gap-4">
           <Separator className="flex-1" />
           <span className="text-sm text-muted-foreground font-medium">
-            Desenvolvimento
+            {t.settings.development}
           </span>
           <Separator className="flex-1" />
         </div>
 
         <div className="grid gap-6 md:grid-cols-1">
           <SettingsSection
-            title={"Chave de API"}
-            description={"Gerar uma chave de API para usar na plataforma"}
+            title={t.settings.apiKey.title}
+            description={t.settings.apiKey.description}
             icon={KeySquare}
           >
             <GenerateApiKey />

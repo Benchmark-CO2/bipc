@@ -14,6 +14,7 @@ import Divider from "@/components/ui/divider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import {
   resetPasswordFormSchema,
@@ -36,7 +37,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 
 type ActivateSearch = {
   tkn?: string;
@@ -105,7 +105,7 @@ function RouteComponent() {
           "flex h-full w-full items-center justify-center transition-all overflow-auto bg-sidebar",
           {
             block: isMobile,
-          }
+          },
         )}
       >
         <Card className="w-full max-w-md rounded-md">
@@ -118,11 +118,9 @@ function RouteComponent() {
               <XCircle className="h-6 w-6 text-red-600" />
             </div>
             <CardTitle className="text-xl">
-              {t("resetPassword.invalid.title")}
+              {t.auth.reset.invalidTitle}
             </CardTitle>
-            <CardDescription>
-              {t("resetPassword.invalid.description")}
-            </CardDescription>
+            <CardDescription>{t.auth.reset.invalidDescription}</CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
             <Button
@@ -130,7 +128,7 @@ function RouteComponent() {
               onClick={handleNavigateToLogin}
               className="w-full"
             >
-              {t("resetPassword.invalid.goToLogin")}
+              {t.auth.reset.goToLogin}
             </Button>
           </CardFooter>
         </Card>
@@ -145,7 +143,7 @@ function RouteComponent() {
           "flex h-full w-full items-center justify-center transition-all overflow-auto",
           {
             block: isMobile,
-          }
+          },
         )}
       >
         <Card className="w-full max-w-md">
@@ -158,11 +156,9 @@ function RouteComponent() {
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
             <CardTitle className="text-xl">
-              {t("resetPassword.success.title")}
+              {t.auth.reset.successTitle}
             </CardTitle>
-            <CardDescription>
-              {t("resetPassword.success.description")}
-            </CardDescription>
+            <CardDescription>{t.auth.reset.successDescription}</CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center">
             <Button
@@ -170,7 +166,7 @@ function RouteComponent() {
               className="w-full"
               onClick={handleNavigateToLogin}
             >
-              {t("resetPassword.success.goToLogin")}
+              {t.auth.reset.makeLogin}
             </Button>
           </CardFooter>
         </Card>
@@ -185,7 +181,7 @@ function RouteComponent() {
           "flex h-full w-full items-center justify-center transition-all overflow-auto",
           {
             block: isMobile,
-          }
+          },
         )}
       >
         <Card className="w-full max-w-md">
@@ -197,17 +193,13 @@ function RouteComponent() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
               <XCircle className="h-6 w-6 text-red-600" />
             </div>
-            <CardTitle className="text-xl">
-              {t("resetPassword.error.title")}
-            </CardTitle>
-            <CardDescription>
-              {t("resetPassword.error.description")}
-            </CardDescription>
+            <CardTitle className="text-xl">{t.auth.reset.errorTitle}</CardTitle>
+            <CardDescription>{t.auth.reset.errorDescription}</CardDescription>
           </CardHeader>
           <CardContent>
             <Alert variant="destructive">
               <AlertDescription>
-                {resetPassMutation.error?.message || t("error.errorUnknown")}
+                {resetPassMutation.error?.message || t.errors.unknownError}
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -217,11 +209,8 @@ function RouteComponent() {
               onClick={handleTryAgain}
               className="w-full"
             >
-              {t("resetPassword.error.retry")}
+              {t.auth.reset.retry}
             </Button>
-            {/* <Button variant="outline" onClick={handleNavigateToContact}>
-                {t("resetPassword.error.support")}
-              </Button> */}
           </CardFooter>
         </Card>
       </div>
@@ -235,7 +224,7 @@ function RouteComponent() {
           "flex h-full w-full items-center justify-center transition-all overflow-auto",
           {
             block: isMobile,
-          }
+          },
         )}
       >
         <Card className="w-full max-w-md">
@@ -248,11 +237,9 @@ function RouteComponent() {
               <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
             </div>
             <CardTitle className="text-xl">
-              {t("resetPassword.loading.title")}
+              {t.auth.reset.loadingTitle}
             </CardTitle>
-            <CardDescription>
-              {t("resetPassword.loading.description")}
-            </CardDescription>
+            <CardDescription>{t.auth.reset.loadingDescription}</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -265,7 +252,7 @@ function RouteComponent() {
         "flex h-full w-full items-center justify-center transition-all overflow-auto",
         {
           block: isMobile,
-        }
+        },
       )}
     >
       <Card className="w-full max-w-md">
@@ -277,22 +264,18 @@ function RouteComponent() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
             <KeyRound className="h-6 w-6 text-blue-600" />
           </div>
-          <CardTitle className="text-xl">
-            {t("resetPassword.confirm.title")}
-          </CardTitle>
-          <CardDescription>
-            {t("resetPassword.confirm.description")}
-          </CardDescription>
+          <CardTitle className="text-xl">{t.auth.reset.confirmTitle}</CardTitle>
+          <CardDescription>{t.auth.reset.confirmDescription}</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">{t("forms.fields.password")}</Label>
+              <Label htmlFor="password">{t.auth.reset.passwordLabel}</Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder={t("loginPage.placeholderPassword")}
+                  placeholder={t.auth.reset.passwordLabel}
                   className={`pr-10 ${errors.password ? "border-red-500 focus-visible:border-red-500" : ""}`}
                   disabled={resetPassMutation.isPending}
                   autoComplete="new-password"
@@ -320,13 +303,13 @@ function RouteComponent() {
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">
-                {t("forms.fields.confirmPassword")}
+                {t.auth.reset.confirmPasswordLabel}
               </Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
-                  placeholder={t("forms.fields.confirmPassword")}
+                  placeholder={t.auth.reset.confirmPasswordLabel}
                   className={`pr-10 ${errors.confirmPassword ? "border-red-500 focus-visible:border-red-500" : ""}`}
                   disabled={resetPassMutation.isPending}
                   autoComplete="new-password"
@@ -363,10 +346,10 @@ function RouteComponent() {
               {resetPassMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t("resetPassword.loading.title")}
+                  {t.auth.reset.loadingTitle}
                 </>
               ) : (
-                t("resetPassword.confirm.confirmAction")
+                t.auth.reset.confirmAction
               )}
             </Button>
           </CardFooter>

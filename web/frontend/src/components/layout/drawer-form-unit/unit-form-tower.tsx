@@ -15,7 +15,7 @@ import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
 import { Copy, GripVertical, Plus, Trash2 } from "lucide-react";
 import React from "react";
 import { UseFormReturn, useFieldArray, useWatch } from "react-hook-form";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "@/i18n";
 import { Button } from "../../ui/button";
 import { Card } from "../../ui/card";
 import {
@@ -36,6 +36,7 @@ import {
 } from "../../ui/table";
 import BuildingVisualizer from "../building-visualizer";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 
 interface UnitFormTowerProps {
   form: UseFormReturn<UnitFormInput, any, UnitFormSchema>;
@@ -50,16 +51,17 @@ const categoryColors = {
   basement_floor: "#F59E0B", // Laranja
 };
 
-const categoryLabels = {
-  penthouse_floor: "Cobertura",
-  standard_floor: "Tipo",
-  ground_floor: "Térreo",
-  basement_floor: "Subsolo",
-};
-
 const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
-  const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
+  
+  const categoryLabels = {
+    penthouse_floor: t.unitForm.tower.penthouse,
+    standard_floor: t.unitForm.tower.standard,
+    ground_floor: t.unitForm.tower.ground,
+    basement_floor: t.unitForm.tower.basement,
+  };
+  
   const { fields, remove, move } = useFieldArray({
     control: form.control as any,
     name: "data.floors",
@@ -303,9 +305,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
     setTimeout(() => recalculateIndices(), 0);
   };
 
-  const unitTypes = [
-    { value: "tower", label: t("drawerFormUnit.unitTypeOptions.tower") },
-  ];
+  const unitTypes = [{ value: "tower", label: t.units.form.towerType }];
 
   // Ordem de exibição da tabela espelhando o BuildingVisualizer:
   // cada categoria é ordenada por índice decrescente (maior índice = topo visual)
@@ -351,10 +351,10 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("drawerFormUnit.unitNameLabel")}</FormLabel>
+                <FormLabel>{t.units.form.buildingName}</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder={t("drawerFormUnit.unitNamePlaceholder")}
+                    placeholder={t.units.form.buildingNamePlaceholder}
                     {...field}
                   />
                 </FormControl>
@@ -368,7 +368,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
             name="type"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("drawerFormUnit.unitTypeLabel")}</FormLabel>
+                <FormLabel>{t.units.form.buildingType}</FormLabel>
                 <FormControl>
                   <Select
                     onValueChange={field.onChange}
@@ -377,7 +377,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue
-                        placeholder={t("drawerFormUnit.unitTypePlaceholder")}
+                        placeholder={t.units.form.buildingTypePlaceholder}
                       />
                     </SelectTrigger>
                     <SelectContent>
@@ -401,13 +401,13 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
             name="housing_units_count"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Unidades habitacionais (opcional)</FormLabel>
+                <FormLabel>{t.units.form.housingUnits}</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
                     min={1}
                     step={1}
-                    placeholder="Ex: 10"
+                    placeholder={t.units.form.housingUnitsPlaceholder}
                     value={field.value ?? ""}
                     onChange={(e) =>
                       field.onChange(
@@ -426,13 +426,13 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
             name="repetition_count"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Repetição da unidade</FormLabel>
+                <FormLabel>{t.units.form.unitRepetition}</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
                     min={1}
                     step={1}
-                    placeholder="1"
+                    placeholder={t.units.form.unitRepetitionPlaceholder}
                     value={field.value ?? 1}
                     onChange={(e) => {
                       const val = Number(e.target.value);
@@ -448,7 +448,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
 
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            Pavimentos
+            {t.unitForm.tower.floorsTab}
           </h4>
           <div className="flex items-center gap-2">
             <Select
@@ -481,24 +481,24 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                 </SelectItem>
               </SelectContent>
             </Select>
-            <Button
-              type="button"
-              onClick={() => addFloor(selectedCategory)}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2 text-green-600 border-green-600 hover:bg-green-50"
-            >
-              <Plus className="h-4 w-4" />
-              Adicionar
-            </Button>
+              <Button
+                type="button"
+                onClick={() => addFloor(selectedCategory)}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 text-green-600 border-green-600 hover:bg-green-50"
+              >
+                <Plus className="h-4 w-4" />
+                {t.common.add}
+              </Button>
           </div>
         </div>
 
         {fields.length === 0 ? (
           <Card className="p-6 text-center text-muted-foreground">
-            <p>Nenhum pavimento adicionado ainda.</p>
+            <p>{t.unitForm.tower.addFloor}</p>
             <p className="text-sm mt-1">
-              Selecione uma categoria e clique em "Adicionar" para começar.
+              {t.unitForm.tower.category}
             </p>
           </Card>
         ) : (
@@ -508,18 +508,18 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                 <TableRow>
                   <TableHead className="w-8"></TableHead>
                   <TableHead className="w-4"></TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="w-24">Área (m²)</TableHead>
+                  <TableHead>{t.unitForm.tower.floorName}</TableHead>
+                  <TableHead className="w-24">{t.unitForm.tower.area} (m²)</TableHead>
                   <TableHead className="w-24">
-                    {isMobile ? "Piso a piso (m)" : "Dist. piso a piso (m)"}
+                    {isMobile ? t.unitForm.tower.floorToFloorDistance : t.unitForm.tower.floorToFloorDistance + " (m)"}
                   </TableHead>
                   {!isEditMode && (
                     <TableHead className="w-20">
-                      {isMobile ? "Qtd." : "Quantidade"}
+                      {isMobile ? t.unitForm.tower.quantity : t.unitForm.tower.floorRepetition}
                     </TableHead>
                   )}
-                  <TableHead className="w-32">Categoria</TableHead>
-                  <TableHead className="w-24">Ações</TableHead>
+                  <TableHead className="w-32">{t.unitForm.tower.category}</TableHead>
+                  <TableHead className="w-24">{t.card.actions || "Ações"}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -582,7 +582,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                 >
                                   <TooltipTrigger asChild>
                                     <Input
-                                      placeholder={`Ex: ${categoryLabels[watchedFloors[index]?.category as keyof typeof categoryLabels] || "Pavimento Tipo"}`}
+                                      placeholder={`Ex: ${categoryLabels[watchedFloors[index]?.category as keyof typeof categoryLabels] || t.unitForm.tower.floorNamePlaceholder}`}
                                       className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full max-sm:min-w-[100px] ${
                                         fieldState.error
                                           ? "border border-red-500"
@@ -829,26 +829,30 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <Button
-                            type="button"
-                            onClick={() => duplicateFloor(index)}
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            title="Duplicar pavimento"
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            onClick={() => removeFloor(index)}
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            title="Remover pavimento"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <SimpleTooltip content={t.unitForm.tower.duplicateFloor} side="bottom">
+                            <Button
+                              type="button"
+                              onClick={() => duplicateFloor(index)}
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              title={t.unitForm.tower.duplicateFloorTitle}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </SimpleTooltip>
+                          <SimpleTooltip content={t.unitForm.tower.removeFloor} side="bottom">
+                            <Button
+                              type="button"
+                              onClick={() => removeFloor(index)}
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              title={t.unitForm.tower.removeFloorTitle}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </SimpleTooltip>
                         </div>
                       </TableCell>
                     </TableRow>

@@ -1,30 +1,28 @@
-import { useTranslation } from "react-i18next";
 import ModalSimple from "./modal-simple";
 import { useMutation } from "@tanstack/react-query";
 import { postActivationUser } from "@/actions/users/postActivationUser";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "@/i18n";
 
 const UserActiveWarning = () => {
-  const { t } = useTranslation();
   const auth = useAuth();
-  const [message, setMessage] = useState(
-    t("common.activeUserWarning.modalMessage")
-  );
+  const { t } = useTranslation();
+  const [message, setMessage] = useState(t.user.activation.modalMessage);
   const [emailSent, setEmailSent] = useState(false);
 
   const { isPending, mutate } = useMutation({
     mutationFn: postActivationUser,
     onError: (error) => {
-      toast.error(t("common.activeUserWarning.emailSentError"), {
+      toast.error(t.user.activation.emailSentError, {
         description:
-          error instanceof Error ? error.message : t("error.errorUnknown"),
+          error instanceof Error ? error.message : t.common.unknownError,
       });
       setEmailSent(false);
     },
     onSuccess() {
-      setMessage(t("common.activeUserWarning.emailSentSuccess"));
+      setMessage(t.user.activation.emailSentSuccess);
       setEmailSent(true);
     },
   });
@@ -39,29 +37,29 @@ const UserActiveWarning = () => {
   };
 
   const handleModalClose = () => {
-    setMessage(t("common.activeUserWarning.modalMessage"));
+    setMessage(t.user.activation.modalMessage);
     setEmailSent(false);
   };
 
   return (
     <div className="w-full p-2 bg-amber-500 text-white border mb-4">
       <p className="text-sm">
-        <strong>{t("common.activeUserWarning.title")} - </strong>
-        {t("common.activeUserWarning.description")}{" "}
+        <strong>{t.user.activation.title} - </strong>
+        {t.user.activation.description}{" "}
         <ModalSimple
-          title={t("common.activeUserWarning.title")}
+          title={t.user.activation.title}
           componentTrigger={
             <button className="underline hover:no-underline hover:font-bold font-medium">
-              {t("common.activeUserWarning.button")}
+              {t.user.activation.button}
             </button>
           }
           content={
             isPending && !emailSent
-              ? t("common.activeUserWarning.emailSentPending")
+              ? t.user.activation.emailSentPending
               : message
           }
           onConfirm={!isPending && !emailSent ? handleActivation : undefined}
-          confirmTitle={t("common.activeUserWarning.sendEmail")}
+          confirmTitle={t.user.activation.sendEmail}
           onClose={handleModalClose}
         />
       </p>

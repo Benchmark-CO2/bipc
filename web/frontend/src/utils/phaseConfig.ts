@@ -1,5 +1,7 @@
 import type { TProjectPhase } from "@/types/projects";
 
+// Note: These are now available in i18n translations as t.phase.*
+// Kept here for backwards compatibility
 export const phaseLabels: Record<TProjectPhase, string> = {
   preliminary_study: "Estudo Preliminar",
   not_defined: "Não Definido",

@@ -5,7 +5,6 @@ import { useMutation } from "@tanstack/react-query";
 import { CircleX, UserPlus, X, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { Combobox } from "../ui/combobox";
@@ -28,6 +27,7 @@ import {
 } from "../ui/form";
 import { Input } from "../ui/input";
 import { queryClient } from "@/utils/queryClient";
+import { useTranslation } from "@/i18n";
 
 const DrawerInvite = ({ projectId }: { projectId: string }) => {
   const [openDrawer, setOpenDrawer] = useState(false);
@@ -44,8 +44,8 @@ const DrawerInvite = ({ projectId }: { projectId: string }) => {
     mutationFn: ({ email }: AddUserToProjectFormSchema) =>
       postSendInvite(projectId, email),
     onSuccess: () => {
-      toast.success(t("drawerInvite.title"), {
-        description: t("drawerInvite.successMessage"),
+      toast.success(t.invites.drawerTitle, {
+        description: t.invites.inviteSuccess,
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -55,8 +55,8 @@ const DrawerInvite = ({ projectId }: { projectId: string }) => {
       setOpenDrawer(false);
     },
     onError: () => {
-      toast.error(t("drawerInvite.title"), {
-        description: t("drawerInvite.errorMessage"),
+      toast.error(t.invites.drawerTitle, {
+        description: t.invites.inviteError,
         duration: 5000,
         icon: <CircleX className="stroke-destructive" size={24} />,
       });
@@ -86,16 +86,16 @@ const DrawerInvite = ({ projectId }: { projectId: string }) => {
       >
         <Button variant="bipc" size="lg">
           <UserPlus className="mr-2 h-4 w-4" />
-          Novo Colaborador
+          {t.invites.drawerTitle}
         </Button>
       </DrawerTrigger>
       <DrawerContent className="min-w-2/5">
         <DrawerHeader className="px-8">
           <DrawerTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-primary" />
-            {t("drawerInvite.title")}
+            {t.invites.drawerTitle}
           </DrawerTitle>
-          <DrawerDescription>{t("drawerInvite.description")}</DrawerDescription>
+          <DrawerDescription>{t.invites.drawerDescription}</DrawerDescription>
           <Button
             onClick={() => setOpenDrawer(false)}
             className="absolute right-4 top-2"
@@ -117,7 +117,7 @@ const DrawerInvite = ({ projectId }: { projectId: string }) => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("drawerInvite.emailLabel")}</FormLabel>
+                    <FormLabel>{t.invites.emailLabel}</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
@@ -126,9 +126,6 @@ const DrawerInvite = ({ projectId }: { projectId: string }) => {
                       />
                     </FormControl>
                     <FormMessage />
-                    <p className="text-sm mt-1 text-muted-foreground">
-                      O convite será enviado para o email informado
-                    </p>
                   </FormItem>
                 )}
               />
@@ -144,7 +141,7 @@ const DrawerInvite = ({ projectId }: { projectId: string }) => {
             className="w-full"
           >
             <UserPlus className="mr-2 h-4 w-4" />
-            {isPending ? "Enviando convite..." : t("drawerInvite.inviteButton")}
+            {isPending ? t.invites.sending : t.invites.inviteButton}
           </Button>
         </DrawerFooter>
       </DrawerContent>

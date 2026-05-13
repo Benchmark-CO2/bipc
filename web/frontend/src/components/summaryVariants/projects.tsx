@@ -12,6 +12,7 @@ import Legend from "./components/Legend";
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
 import { barColors, normalizeBenchmarkSeries, recalculateY } from "./utils";
+import { useTranslation } from "@/i18n";
 
 type ProjectsSummaryProps = {
   projects: any[];
@@ -27,6 +28,7 @@ const ProjectsSummary = ({
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
+  const { t } = useTranslation();
   const filterProjects = projects.filter((el) => !!el.consumption);
   const managedData = normalizeBenchmarkSeries(
     data.benchmark?.[type as "co2" | "energy"],
@@ -104,7 +106,7 @@ const ProjectsSummary = ({
     }
   }, [previousProjects, projects, someSelected]);
 
-  const [subTabs, setSubTabs] = useState<"Empreendimentos">("Empreendimentos");
+  const [subTabs, setSubTabs] = useState<string>(t.summary.projects);
   const selectAll = () => {
     if (selectedProjects.length === projects.length) {
       setSelectedProjects([]);
@@ -138,15 +140,15 @@ const ProjectsSummary = ({
           selectedTab={type}
           fullWidth
           onSubTabSelect={(tab) => {
-            if (tab === "Empreendimentos") setSubTabs(tab as "Empreendimentos");
-            if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
+            if (tab === t.summary.projects) setSubTabs(tab);
+            if (tab === t.card.selectAll || tab === t.summary.deselectAll)
               selectAll();
           }}
           subTabs={[
-            "Empreendimentos",
+            t.summary.projects,
             selectedProjects.length === projects.length
-              ? "Desmarcar Todos"
-              : "Selecionar Todos",
+              ? t.summary.deselectAll
+              : t.card.selectAll,
           ]}
           selectedSubTab={subTabs}
         />

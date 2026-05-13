@@ -1,6 +1,6 @@
 import { Trash } from "lucide-react";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "@/i18n";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -22,8 +22,8 @@ const ModalConfirmDelete = ({
   onConfirm,
   title,
 }: ModalConfirmDeleteProps) => {
-  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
 
   const onConfirmDeletion = async () => {
     await onConfirm?.();
@@ -35,7 +35,7 @@ const ModalConfirmDelete = ({
       <DialogTrigger asChild data-action="delete-project">
         {componentTrigger ?? (
           <div className=" w-full flex justify-between">
-            {t("common.delete")}
+            {t.common.delete}
             <Trash size={20} className="delete-project hover:shadow-md" />
           </div>
         )}
@@ -44,13 +44,13 @@ const ModalConfirmDelete = ({
         <DialogHeader>
           <DialogTitle className="text-center">{title}</DialogTitle>
         </DialogHeader>
-        <p className="text-gray-700">{t("modalConfirmDelete.description")}</p>
+        <p className="text-gray-700">{t.modal.deleteDescription}</p>
         <DialogFooter className="flex justify-between">
           <Button variant="outline" onClick={() => setOpen(false)}>
-            {t("modalConfirmDelete.cancelButton")}
+            {t.modal.cancelButton}
           </Button>
           <Button variant="destructive" onClick={onConfirmDeletion}>
-            {t("modalConfirmDelete.deleteButton")}
+            {t.modal.deleteButton}
           </Button>
         </DialogFooter>
       </DialogContent>

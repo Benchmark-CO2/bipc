@@ -1,5 +1,6 @@
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
@@ -63,6 +64,7 @@ const SimulationsSummary = ({
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
+  const { t } = useTranslation();
   const filteredProjects = projects.filter((el) => !!el.consumption);
 
   const newItems: Record<"co2" | "energy", Item>[] = filteredProjects.map(
@@ -132,7 +134,7 @@ const SimulationsSummary = ({
     }
   }, [previousProjects, projects, someSelected]);
 
-  const [subTabs, setSubTabs] = useState<"Empreendimentos">("Empreendimentos");
+  const [subTabs, setSubTabs] = useState<string>(t.summaryTechnologies.enterprises);
   const selectAll = () => {
     if (selectedProjects.length === projects.length) {
       setSelectedProjects([]);
@@ -163,15 +165,15 @@ const SimulationsSummary = ({
           selectedTab={type}
           fullWidth
           onSubTabSelect={(tab) => {
-            if (tab === "Empreendimentos") setSubTabs(tab as "Empreendimentos");
-            if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
+            if (tab === t.summaryTechnologies.enterprises) setSubTabs(tab);
+            if (tab === t.summary.selectAll || tab === t.summary.deselectAll)
               selectAll();
           }}
           subTabs={[
-            "Empreendimentos",
+            t.summaryTechnologies.enterprises,
             selectedProjects.length === projects.length
-              ? "Desmarcar Todos"
-              : "Selecionar Todos",
+              ? t.summary.deselectAll
+              : t.summary.selectAll,
           ]}
           selectedSubTab={subTabs}
         />
@@ -192,8 +194,8 @@ const SimulationsSummary = ({
             {" "}
             {(!projects || projects.length === 0) && (
               <NotFoundList
-                message="Nenhum empreendimento selecionado."
-                description="Por favor, selecione ao menos um empreendimento para visualizar o resumo."
+                message={t.summaryTechnologies.noEnterpriseSelected}
+                description={t.summaryTechnologies.noEnterpriseDescription}
                 className="bg-transparent border-0 shadow-none"
               />
             )}
