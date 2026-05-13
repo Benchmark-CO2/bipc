@@ -9,7 +9,7 @@ import { TRole } from "@/types/disciplines";
 import { TUser } from "@/types/user";
 import { queryClient } from "@/utils/queryClient";
 import {
-  disciplineFormSchema,
+  createDisciplineFormSchema,
   DisciplineFormSchema,
 } from "@/validators/disciplineForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -80,9 +80,11 @@ export default function DrawerFormDisciplines({
   const [openPopover, setOpenPopover] = useState(false);
 
   const isEditMode = !!roleData;
+  const isMobile = useIsMobile();
+  const { t } = useTranslation();
 
   const form = useForm<DisciplineFormSchema>({
-    resolver: zodResolver(disciplineFormSchema),
+    resolver: zodResolver(createDisciplineFormSchema(t)),
     defaultValues: {
       name: "",
       description: "",
@@ -345,9 +347,6 @@ export default function DrawerFormDisciplines({
       }
     }
   }, [roleData, openDrawer, form, resetCreation, projectUsers]);
-
-  const isMobile = useIsMobile();
-  const { t } = useTranslation();
 
   const mockPermissions = {
     management: [

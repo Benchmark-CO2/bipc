@@ -24,7 +24,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import {
-  forgetPasswordFormSchema,
+  createForgetPasswordFormSchema,
   type ForgetPasswordFormSchema,
 } from "@/validators/forgetPasswordForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,7 +48,7 @@ function RouteComponent() {
   });
 
   const form = useForm<ForgetPasswordFormSchema>({
-    resolver: zodResolver(forgetPasswordFormSchema),
+    resolver: zodResolver(createForgetPasswordFormSchema(t)),
     defaultValues: {
       email: "",
     },
