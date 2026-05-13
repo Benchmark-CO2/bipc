@@ -178,7 +178,8 @@ export default function DrawerFormUser({
         form.reset();
       }
 
-      toast.success(t.settings.userInfo.editData, {
+      toast.success(t.settings.userInfo.editDataSuccess, {
+        description: t.settings.userInfo.editDataDescriptionSuccess,
         duration: 5000,
       });
     },

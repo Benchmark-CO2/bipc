@@ -231,6 +231,8 @@ export const ptBR = {
       memberSince: "Membro desde",
       accountManagement: "Gerenciamento de Conta",
       editData: "Editar Dados",
+      editDataSuccess: "Dados atualizados",
+      editDataDescriptionSuccess: "As informações foram atualizadas com sucesso",
       deleteAccount: "Excluir Conta",
       individual: "Pessoa Física",
       company: "Pessoa Jurídica",

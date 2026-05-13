@@ -232,6 +232,8 @@ export const en: Translations = {
       memberSince: "Member since",
       accountManagement: "Account Management",
       editData: "Edit Data",
+      editDataSuccess: "Data updated",
+      editDataDescriptionSuccess: "The information has been successfully updated",
       deleteAccount: "Delete Account",
       individual: "Individual",
       company: "Legal Entity",
