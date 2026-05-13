@@ -20,6 +20,14 @@ var (
 
 	phases = []string{"preliminary_study", "not_defined", "basic_project", "executive_project", "released_for_construction"}
 
+	PhaseMap = map[string]string{
+		"preliminary_study":         "Estudo Preliminar",
+		"not_defined":               "Não Definido",
+		"basic_project":             "Projeto Básico",
+		"executive_project":         "Projeto Executivo",
+		"released_for_construction": "Liberado para Construção",
+	}
+
 	ErrNilProjectID         = errors.New("project ID must be provided")
 	ErrInvalidProjectID     = errors.New("projectID does not exist")
 	ErrDuplicateUserProject = errors.New("duplicate user-project association")
@@ -47,6 +55,8 @@ type Project struct {
 	Phase        string    `json:"phase"`
 	Description  *string   `json:"description,omitzero"`
 	Benchmark    bool      `json:"benchmark"`
+	Siop         *string   `json:"siop,omitzero"`
+	Apf          *string   `json:"apf,omitzero"`
 }
 
 type ProjectWithUnits struct {
@@ -96,6 +106,16 @@ func ValidateProject(v *validator.Validator, project *Project) {
 		v.Check(*project.Description != "", "description", "empty description is not allowed")
 		v.Check(len(*project.Description) <= 500, "description", "must not be more than 500 bytes long")
 	}
+
+	if project.Siop != nil {
+		v.Check(*project.Siop != "", "siop", "empty siop is not allowed")
+		v.Check(len(*project.Siop) <= 50, "siop", "must not be more than 50 bytes long")
+	}
+
+	if project.Apf != nil {
+		v.Check(*project.Apf != "", "apf", "empty apf is not allowed")
+		v.Check(len(*project.Apf) <= 50, "apf", "must not be more than 50 bytes long")
+	}
 }
 
 type ProjectModel struct {
@@ -122,14 +142,14 @@ func (m ProjectModel) Insert(project *Project, userID uuid.UUID) error {
 	defer tx.Rollback()
 
 	query1 := `
-		INSERT INTO projects (id, name, cep, state, city, neighborhood, street, number, phase, description, benchmark)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-		RETURNING created_at, benchmark`
+		INSERT INTO projects (id, name, cep, state, city, neighborhood, street, number, phase, description, benchmark, siop, apf)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		RETURNING created_at`
 
 	args := []any{project.ID, project.Name, project.CEP, project.State, project.City, project.Neighborhood,
-		project.Street, project.Number, project.Phase, project.Description, project.Benchmark}
+		project.Street, project.Number, project.Phase, project.Description, project.Benchmark, project.Siop, project.Apf}
 
-	err = tx.QueryRow(query1, args...).Scan(&project.CreatedAt, &project.Benchmark)
+	err = tx.QueryRow(query1, args...).Scan(&project.CreatedAt)
 	if err != nil {
 		return err
 	}
@@ -213,7 +233,7 @@ func (m ProjectModel) Insert(project *Project, userID uuid.UUID) error {
 
 func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectWithUnits, error) {
 	query := `
-		SELECT id, created_at, name, cep, state, city, neighborhood, street, number, phase, description, benchmark
+		SELECT id, created_at, name, cep, state, city, neighborhood, street, number, phase, description, benchmark, siop, apf
 		FROM projects
 		WHERE id = $1`
 
@@ -235,6 +255,8 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectWithUnits, error) {
 		&project.Phase,
 		&project.Description,
 		&project.Benchmark,
+		&project.Siop,
+		&project.Apf,
 	)
 	if err != nil {
 		switch {
@@ -317,8 +339,8 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectWithUnits, error) {
 func (m ProjectModel) Update(project *Project) error {
 	query := `
 		UPDATE projects
-		SET name = $1, cep = $2, state = $3, city = $4, neighborhood = $5, street = $6, number = $7, phase = $8, description = $9
-		WHERE id = $10`
+		SET name = $1, cep = $2, state = $3, city = $4, neighborhood = $5, street = $6, number = $7, phase = $8, description = $9, siop = $10, apf = $11
+		WHERE id = $12`
 
 	args := []any{
 		project.Name,
@@ -330,6 +352,8 @@ func (m ProjectModel) Update(project *Project) error {
 		project.Number,
 		project.Phase,
 		project.Description,
+		project.Siop,
+		project.Apf,
 		project.ID,
 	}
 
@@ -382,7 +406,7 @@ func (m ProjectModel) Delete(projectID uuid.UUID) error {
 func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]*ProjectWithUnits, Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) OVER(), p.id, p.created_at, p.name,
-		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description,
+		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description, p.siop, p.apf,
 		EXISTS(
 			SELECT 1
 			FROM users_roles ur
@@ -433,6 +457,8 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 			&project.Number,
 			&project.Phase,
 			&project.Description,
+			&project.Siop,
+			&project.Apf,
 			&project.IsAdministrator,
 		)
 		if err != nil {
