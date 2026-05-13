@@ -113,6 +113,42 @@ func buildBenchmarkData(co2Min, co2Max, energyMin, energyMax []BenchmarkValue) B
 	}
 }
 
+func (app *application) readProjectsBenchmarkFilters(r *http.Request, v *validator.Validator) data.GetProjectsBenchmarkFilters {
+	filters := data.GetProjectsBenchmarkFilters{}
+
+	floorsFrom := app.readInt(r.URL.Query(), "floors_from", -1, v)
+	if floorsFrom != -1 {
+		filters.FloorsFrom = &floorsFrom
+	}
+
+	floorsTo := app.readInt(r.URL.Query(), "floors_to", -1, v)
+	if floorsTo != -1 {
+		filters.FloorsTo = &floorsTo
+	}
+
+	floors := app.readString(r.URL.Query(), "floors", "")
+	if floors != "" {
+		filters.Floors = &floors
+	}
+
+	technology := app.readString(r.URL.Query(), "technology", "")
+	if technology != "" {
+		filters.Technology = &technology
+	}
+
+	return filters
+}
+
+func (app *application) getProjectBenchmarkSeries(filters data.GetProjectsBenchmarkFilters) (co2Min, co2Max, energyMin, energyMax []BenchmarkValue, err error) {
+	projects, err := app.models.Benchmark.GetProjectsBenchmark(filters)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	co2Min, co2Max, energyMin, energyMax = separateProjectConsumption(projects)
+	return co2Min, co2Max, energyMin, energyMax, nil
+}
+
 func (app *application) getFloorsBenchmarkHandler(w http.ResponseWriter, r *http.Request) {
 	floors, err := app.models.Benchmark.GetFloorsBenchmark()
 	if err != nil {
@@ -156,59 +192,25 @@ func (app *application) getUnitsBenchmarkHandler(w http.ResponseWriter, r *http.
 }
 
 func (app *application) getProjectsBenchmarkHandler(w http.ResponseWriter, r *http.Request) {
-	var filters struct {
-		FloorsFrom *int    `json:"floors_from,omitempty"`
-		FloorsTo   *int    `json:"floors_to,omitempty"`
-		Floors     *string `json:"floors,omitempty"`
-		Technology *string `json:"technology,omitempty"`
-	}
-
 	v := validator.New()
-
-	floorsFrom := app.readInt(r.URL.Query(), "floors_from", -1, v)
-	if floorsFrom != -1 {
-		filters.FloorsFrom = &floorsFrom
-	}
-
-	floorsTo := app.readInt(r.URL.Query(), "floors_to", -1, v)
-	if floorsTo != -1 {
-		filters.FloorsTo = &floorsTo
-	}
-
-	floors := app.readString(r.URL.Query(), "floors", "")
-	if floors != "" {
-		filters.Floors = &floors
-	}
-
-	technology := app.readString(r.URL.Query(), "technology", "")
-	if technology != "" {
-		filters.Technology = &technology
-	}
+	projectFilters := app.readProjectsBenchmarkFilters(r, v)
 
 	if !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	projectFilters := data.GetProjectsBenchmarkFilters{
-		FloorsFrom: filters.FloorsFrom,
-		FloorsTo:   filters.FloorsTo,
-		Floors:     filters.Floors,
-		Technology: filters.Technology,
-	}
-
-	projects, err := app.models.Benchmark.GetProjectsBenchmark(projectFilters)
+	co2Min, co2Max, energyMin, energyMax, err := app.getProjectBenchmarkSeries(projectFilters)
 	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrInvalidFloorFilter):
+		if errors.Is(err, data.ErrInvalidFloorFilter) {
 			app.badRequestResponse(w, r, err)
-		default:
-			app.serverErrorResponse(w, r, err)
+			return
 		}
+
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	co2Min, co2Max, energyMin, energyMax := separateProjectConsumption(projects)
 	benchmarkData := buildBenchmarkData(co2Min, co2Max, energyMin, energyMax)
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"benchmark": benchmarkData}, nil)
