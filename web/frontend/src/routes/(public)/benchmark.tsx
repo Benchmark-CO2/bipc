@@ -199,6 +199,8 @@ function RouteComponent() {
                   showProcelScale
                   showBaseline
                   showTop5Line
+                  showMaxCurve
+                  showMinCurve
                 />
               )}
             </div>

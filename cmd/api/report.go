@@ -115,7 +115,7 @@ func GetMaroto(co2Bytes, energyBytes []byte) (core.Maroto, error) {
 	}
 
 	cfg := marotocfg.NewBuilder().
-		WithDebug(true).
+		// WithDebug(true).
 		WithCustomFonts(customFonts).
 		WithDefaultFont(&props.Font{Family: "Inter", Style: fontstyle.Normal, Size: 12, Color: getBlackColor()}).
 		WithPageNumber(pageNumber).

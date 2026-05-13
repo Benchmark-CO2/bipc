@@ -6,6 +6,8 @@ import { IProject } from "@/types/projects";
 
 export type SummaryBenchmarkPoint = {
   id: string;
+  minId: string;
+  maxId: string;
   y: number;
   min: number;
   max: number;
@@ -31,6 +33,8 @@ export const normalizeBenchmarkSeries = (
 
     return {
       id: minItem.id,
+      minId: minItem.id,
+      maxId: maxItem.id,
       y: minItem.y,
       min: minItem.value,
       max: maxItem.value,

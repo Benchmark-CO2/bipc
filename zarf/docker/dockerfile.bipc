@@ -13,7 +13,7 @@ COPY web/frontend .
 RUN pnpm build
 
 
-FROM golang:1.24 AS build_api
+FROM golang:1.26.1 AS build_api
 ENV CGO_ENABLED=0
 
 WORKDIR /bipc

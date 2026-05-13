@@ -5,11 +5,11 @@ import { cn } from "@/lib/utils";
 import * as d3 from "d3";
 import { regressionPoly } from "d3-regression";
 import React, {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import Divider from "../ui/divider";
 
@@ -898,7 +898,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   ]);
 
   const labelX =
-    UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Incorporado";
+    UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Embutido";
 
   return (
     <Card className={cn("shadow-none w-min-content min-w-1/2")}>
