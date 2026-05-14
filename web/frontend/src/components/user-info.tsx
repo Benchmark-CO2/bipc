@@ -69,7 +69,7 @@ export function UserInfo() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <User size={20} />
-          Informações do Usuário
+          {t.settings.userInfo.title}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
