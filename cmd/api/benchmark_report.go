@@ -51,13 +51,20 @@ type ProjectMetrics = MetricPair[ProjectRangeResult]
 type BenchmarkRangeResult = RangeWithOptionalReference[float64]
 type BenchmarkMetrics = MetricPair[BenchmarkRangeResult]
 
+type ProjectRank struct {
+	Y          float64 `json:"y"`
+	CountBelow int     `json:"count_below"`
+	Total      int     `json:"total"`
+}
+
 type ProjectBenchmarkReport struct {
-	ProjectID    uuid.UUID        `json:"project_id"`
-	Area         float64          `json:"area"`
-	Project      ProjectMetrics   `json:"project"`
-	Reductions   ProjectMetrics   `json:"reductions"`
-	BestProjects BenchmarkMetrics `json:"bestProjects"`
-	Baseline     BenchmarkMetrics `json:"baseline"`
+	ProjectID    uuid.UUID               `json:"project_id"`
+	Area         float64                 `json:"area"`
+	Rank         MetricPair[ProjectRank] `json:"rank"`
+	Project      ProjectMetrics          `json:"project"`
+	Reductions   ProjectMetrics          `json:"reductions"`
+	BestProjects BenchmarkMetrics        `json:"bestProjects"`
+	Baseline     BenchmarkMetrics        `json:"baseline"`
 }
 
 // buildProjectBenchmarkReport builds the project report payload using the same
@@ -94,6 +101,11 @@ func (app *application) buildProjectBenchmarkReport(projectID uuid.UUID) (*Proje
 		return nil, err
 	}
 
+	calculateGiniRank(co2MinPoints)
+	calculateGiniRank(co2MaxPoints)
+	calculateGiniRank(energyMinPoints)
+	calculateGiniRank(energyMaxPoints)
+
 	bestProjectsBounds, err := app.metricPairAtY(co2MinPoints, co2MaxPoints, energyMinPoints, energyMaxPoints, benchmarkBestProjectsY)
 	if err != nil {
 		return nil, err
@@ -114,10 +126,15 @@ func (app *application) buildProjectBenchmarkReport(projectID uuid.UUID) (*Proje
 	}
 
 	reductionsBounds := calculateReductionsBounds(projectBounds, baselineBounds)
+	rank := MetricPair[ProjectRank]{
+		CO2:    projectRankInSeries(co2MinPoints, projectBounds.CO2.Min),
+		Energy: projectRankInSeries(energyMinPoints, projectBounds.Energy.Min),
+	}
 
 	report := &ProjectBenchmarkReport{
 		ProjectID:  projectID,
 		Area:       project.Area,
+		Rank:       rank,
 		Project:    buildProjectsReportMetrics(projectBounds, project.Area),
 		Reductions: buildProjectsReportMetrics(reductionsBounds, project.Area),
 		BestProjects: BenchmarkMetrics{
@@ -171,8 +188,6 @@ func (app *application) metricValueAtY(points []BenchmarkValue, targetY Percenti
 	if len(points) == 0 {
 		return 0, errBenchmarkReferenceUnavailable
 	}
-
-	calculateGiniRank(points)
 
 	for _, point := range points {
 		if point.Y >= float64(targetY) {
@@ -282,5 +297,24 @@ func buildMetric(perArea, area float64) ReportMetricResult {
 	return ReportMetricResult{
 		Value: perArea,
 		Total: perArea * area,
+	}
+}
+
+func projectRankInSeries(points []BenchmarkValue, projectValue float64) ProjectRank {
+	if len(points) == 0 {
+		return ProjectRank{}
+	}
+
+	countBelow := 0
+	for _, p := range points {
+		if p.Value < projectValue {
+			countBelow++
+		}
+	}
+
+	return ProjectRank{
+		Y:          float64(countBelow) / float64(len(points)),
+		CountBelow: countBelow,
+		Total:      len(points),
 	}
 }
