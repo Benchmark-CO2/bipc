@@ -48,9 +48,9 @@ function RouteComponent() {
     from: "/_private/new_projects/$projectId/",
   });
 
-  const [selectedTab, setSelectedTab] = useState(t.projectView.tabEnterprise);
+  const [selectedTab, setSelectedTab] = useState(t.projectView.tabProject);
   const { setSummaryContext } = useSummary();
-  const tabs = [t.projectView.tabEnterprise, t.projectView.tabCollaborators];
+  const tabs = [t.projectView.tabProject, t.projectView.tabCollaborators];
 
   const { data: projectData } = useQuery({
     queryKey: ["projects"],
@@ -83,7 +83,7 @@ function RouteComponent() {
     if (searchParams.tab === "colaboradores") {
       setSelectedTab(t.projectView.tabCollaborators);
     } else {
-      setSelectedTab(t.projectView.tabEnterprise);
+      setSelectedTab(t.projectView.tabProject);
     }
   }, [searchParams.tab, t]);
 
@@ -108,7 +108,7 @@ function RouteComponent() {
           handleTabClick={handleTabClick}
           fullWidth
         />
-        {selectedTab === t.projectView.tabEnterprise && (
+        {selectedTab === t.projectView.tabProject && (
           <>
             <Button variant="outline-bipc" size="icon-lg" disabled>
               <Upload />
@@ -129,7 +129,7 @@ function RouteComponent() {
         )}
       </div>
 
-      {selectedTab === t.projectView.tabEnterprise && (
+      {selectedTab === t.projectView.tabProject && (
         <ProjectView
           projectId={projectId}
           projectConsumptions={projectConsumptions}

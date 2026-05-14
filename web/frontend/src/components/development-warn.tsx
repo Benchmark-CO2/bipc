@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { useTranslation } from "@/i18n";
+import { cn } from "@/lib/utils";
 
 export const DevelopmentWarning = ({ minimizedSidebar = false }) => {
   const [open, setOpen] = useState(false);
@@ -47,7 +48,9 @@ export const DevelopmentWarning = ({ minimizedSidebar = false }) => {
       </Dialog>
 
       <div
-        className="bg-amber-600 text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-amber-500/90 cursor-pointer border border-amber-500/50"
+        className={cn("bg-amber-600 text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-amber-500/90 cursor-pointer border border-amber-500/50", {
+          "px-0 justify-center": minimizedSidebar
+        })}
         onClick={() => setOpen(true)}
       >
         <span className="flex items-center gap-2">

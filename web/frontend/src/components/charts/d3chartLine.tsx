@@ -12,11 +12,13 @@ import React, {
   useState,
 } from "react";
 import Divider from "../ui/divider";
+import { useTranslation } from "@/i18n";
+import { Translations } from "@/i18n/translations/pt-BR";
 
-const UNIT_LABELS = {
-  co2: "Emissão de CO₂ (kg CO₂/m²)",
-  energy: "Demanda de energia primária (MJ/m²)",
-} as const;
+const UNIT_LABELS = (t: Translations) => ({
+  co2: `${t.benchmark.chartTypes.cumulativeFraction.yAxisLabel} (kg CO₂/m²)`,
+  energy: `${t.benchmark.chartTypes.cumulativeFraction.yAxisLabel} (MJ/m²)`,
+}) as const;
 
 // Constants
 const DEFAULT_COLORS = {
@@ -179,6 +181,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   summary = true,
   ...props
 }) => {
+  const {t} = useTranslation(); 
   // Se vieram séries separadas, ordena por y e faz pareamento por ordem (índice)
   const data = useMemo<ChartData[]>(() => {
     if (!minSeriesData && !maxSeriesData) return _data;
@@ -897,15 +900,15 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     shouldHideBars,
   ]);
 
-  const labelX =
-    UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Embutido";
+  const labelY =
+    UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || t.benchmark.chartTypes.classification.yAxisLabel;
 
   return (
     <Card className={cn("shadow-none w-min-content min-w-1/2")}>
       <CardContent>
         <div className="w-full relative">
           <span className="absolute text-xs w-full text-center text-black/70 block rotate-270  left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
-            {labelX}
+            {labelY}
           </span>
           <svg
             ref={svgRef}
@@ -949,10 +952,10 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
           })}
         >
           <span className="text-muted-foreground text-xs">
-            Nº de empreendimentos: {data?.length}
+            {t.d3chart.numberOfProjects}: {data?.length}
           </span>
           <span className="flex-1 text-xs text-center w-full text-black/70">
-            Eficiência
+            {t.benchmark.chartTypes.classification.xAxisLabelCarbon}
           </span>
         </div>
       </CardContent>

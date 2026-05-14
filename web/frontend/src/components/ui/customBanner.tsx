@@ -211,7 +211,7 @@ const CustomBanner = ({
         showMaxCurve: true,
         showMinCurve: true,
         showMidCurve: true,
-      });
+      }, t);
     };
 
     const [co2Image, energyImage] = await Promise.all([

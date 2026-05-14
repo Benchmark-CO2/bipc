@@ -384,7 +384,7 @@ function RouteComponent() {
               })
             }
           >
-            {t.unitView.backToEnterprise}
+            {t.unitView.backToProject}
           </Button>
         }
       />

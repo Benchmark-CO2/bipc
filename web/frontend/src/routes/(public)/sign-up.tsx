@@ -254,9 +254,9 @@ const SignUp = () => {
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="space-y-2 mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-primary">
-          {t.auth.signUp.name}
+          {t.auth.signUp.title}
         </h1>
-        <p className="text-muted-foreground">{t.auth.signUp.signUpButton}</p>
+        <p className="text-muted-foreground">{t.auth.signUp.description}</p>
       </div>
       <Card>
         <CardContent className="space-y-6">
@@ -358,7 +358,7 @@ const SignUp = () => {
                     </div>
                     <FormControl>
                       <Input
-                        placeholder={isCompany ? t.auth.signUp.razaoSocial : t.auth.signUp.name}
+                        placeholder={isCompany ? t.auth.signUp.razaoSocial : t.auth.signUp.fullName}
                         disabled={isPending}
                         autoComplete="name"
                         {...field}

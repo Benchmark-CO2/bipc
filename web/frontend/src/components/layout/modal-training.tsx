@@ -13,6 +13,7 @@ import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
 import { trainingModalStorage } from "@/utils/trainingModalStorage";
 import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "@/i18n";
+import { cn } from "@/lib/utils";
 
 interface ModalTrainingProps {
   isAuthenticated: boolean;
@@ -223,7 +224,9 @@ const ModalTraining = ({
       {/* Item inline no sidebar - apenas para usuários logados */}
       {isAuthenticated && (
         <div
-          className="bg-primary text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-primary/90 cursor-pointer border border-primary/50"
+          className={cn("bg-primary text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-primary/90 cursor-pointer border border-primary/50", {
+            "px-0 justify-center": minimizedSidebar
+          })}
           onClick={() => setOpen(true)}
           title={t.training.miniatureTooltip}
         >
