@@ -10,6 +10,7 @@ import {
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { useTranslation } from "@/i18n";
+import { cn } from "@/lib/utils";
 
 export const BetaWarning = ({ minimizedSidebar = false }) => {
   const [open, setOpen] = useState(false);
@@ -50,7 +51,9 @@ export const BetaWarning = ({ minimizedSidebar = false }) => {
       </Dialog>
 
       <div
-        className="bg-primary text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-primary/90 cursor-pointer border border-primary/50"
+        className={cn("bg-primary text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-primary/90 cursor-pointer border border-primary/50", {
+          "px-0 justify-center": minimizedSidebar
+        })}
         onClick={() => setOpen(true)}
       >
         <span className="flex items-center gap-2">
