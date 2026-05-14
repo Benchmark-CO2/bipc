@@ -1,4 +1,5 @@
 import { IBenchmarkItem } from "@/actions/benchmarks/types";
+import { Translations } from "@/i18n/translations/pt-BR";
 import * as d3 from "d3";
 import { regressionPoly } from "d3-regression";
 
@@ -166,6 +167,7 @@ function polyfillRoundRect(ctx: CanvasRenderingContext2D) {
  */
 export async function exportChartToPng(
   opts: ExportChartOptions,
+  t: Translations,
 ): Promise<ExportChartResult> {
   const {
     data,
@@ -743,7 +745,7 @@ export async function exportChartToPng(
   ctx.textBaseline = "middle";
   ctx.translate(-margin.left + 12, chartH / 2);
   ctx.rotate(-Math.PI / 2);
-  ctx.fillText("Potencial de mitigação", 0, 0);
+  ctx.fillText(t.benchmark.chartTypes.cumulativeFraction.yAxisLabel, 0, 0);
   ctx.restore();
 
   // X-axis label

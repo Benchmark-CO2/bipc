@@ -17,6 +17,7 @@ import React, {
   useState,
 } from "react";
 import Indicators from "./components/indicators";
+import { Translations } from "@/i18n/translations/pt-BR";
 
 // Utility: Debounce function
 const debounce = <T extends (...args: any[]) => any>(
@@ -66,10 +67,10 @@ const PROCEL_CLASSES = [
   { label: "D", color: "#F26522" },
 ] as const;
 
-const UNIT_LABELS = {
-  "KgCO₂/m²": "Carbono Embutido (kg CO₂/m²)",
-  "MJ/m²": "Energia Incorporada (MJ/m²)",
-} as const;
+const UNIT_LABELS = (t: Translations) => ({
+  "KgCO₂/m²": `${t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon} (kg CO₂/m²)`,
+  "MJ/m²": `${t.benchmark.chartTypes.cumulativeFraction.xAxisLabelEnergy} (MJ/m²)`,
+}) as const;
 
 // Types
 type ChartData = IBenchmarkItem & {
@@ -1164,7 +1165,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   }, [selectedBars, selectedMinBars, selectedMaxBars, drawChart]);
 
   const labelX =
-    UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Embutido";
+    UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon;
   const displayedCount =
     selectedMinBarIds.size > 0 || selectedMaxBarIds.size > 0
       ? new Set([...selectedMinBarIds, ...selectedMaxBarIds]).size
@@ -1176,7 +1177,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       <CardContent>
         <div ref={containerRef} className="w-full overflow-hidden relative">
           <span className="absolute text-xs w-full text-center text-foreground/70 block rotate-270 left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
-            Potencial de mitigação
+            {t.benchmark.chartTypes.cumulativeFraction.yAxisLabel}
           </span>
 
           <Indicators

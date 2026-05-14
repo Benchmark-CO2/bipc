@@ -17,7 +17,7 @@ const BreadCrumbs = () => {
   const crumbs = matches.map((match) => {
     const { crumb } = match.loaderData as { crumb: string };
 
-    if (crumb === "Empreendimentos" || crumb === t.breadcrumbs.enterprises) {
+    if (crumb === "Empreendimentos" || crumb === t.breadcrumbs.projects) {
       return (
         <div className="w-6 h-6 bg-active rounded-full flex items-center justify-center">
           <BipcIcon className="w-4 h-4" style={{ color: "white" }} />

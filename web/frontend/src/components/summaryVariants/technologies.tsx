@@ -134,7 +134,7 @@ const SimulationsSummary = ({
     }
   }, [previousProjects, projects, someSelected]);
 
-  const [subTabs, setSubTabs] = useState<string>(t.summaryTechnologies.enterprises);
+  const [subTabs, setSubTabs] = useState<string>(t.summaryTechnologies.projects);
   const selectAll = () => {
     if (selectedProjects.length === projects.length) {
       setSelectedProjects([]);
@@ -165,12 +165,12 @@ const SimulationsSummary = ({
           selectedTab={type}
           fullWidth
           onSubTabSelect={(tab) => {
-            if (tab === t.summaryTechnologies.enterprises) setSubTabs(tab);
+            if (tab === t.summaryTechnologies.projects) setSubTabs(tab);
             if (tab === t.summary.selectAll || tab === t.summary.deselectAll)
               selectAll();
           }}
           subTabs={[
-            t.summaryTechnologies.enterprises,
+            t.summaryTechnologies.projects,
             selectedProjects.length === projects.length
               ? t.summary.deselectAll
               : t.summary.selectAll,
@@ -194,8 +194,8 @@ const SimulationsSummary = ({
             {" "}
             {(!projects || projects.length === 0) && (
               <NotFoundList
-                message={t.summaryTechnologies.noEnterpriseSelected}
-                description={t.summaryTechnologies.noEnterpriseDescription}
+                message={t.summaryTechnologies.noProjectSelected}
+                description={t.summaryTechnologies.noProjectDescription}
                 className="bg-transparent border-0 shadow-none"
               />
             )}

@@ -26,10 +26,10 @@ export const useChartType = () => {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="scatter">
-            {t.benchmark.chartTypes.cumulativeFraction}
+            {t.benchmark.chartTypes.cumulativeFraction.name}
           </SelectItem>
           <SelectItem value="line">
-            {t.benchmark.chartTypes.classification}
+            {t.benchmark.chartTypes.classification.name}
           </SelectItem>
         </SelectContent>
       </Select>

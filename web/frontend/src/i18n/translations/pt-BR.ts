@@ -343,7 +343,7 @@ export const ptBR = {
       phasePlaceholder: "Selecione a fase",
       phaseNotDefined: "Não definida",
       phasePreliminaryStudy: "Estudo Preliminar",
-      phaseBasicProject: "Projeto Básico",
+      phaseBasicProject: "Anteprojeto",
       phaseExecutiveProject: "Projeto Executivo",
       phaseReleasedForConstruction: "Liberado para Construção",
       description: "Descrição",
@@ -653,8 +653,18 @@ export const ptBR = {
     visualization: "Visualização:",
     chartType: "Tipo de gráfico",
     chartTypes: {
-      cumulativeFraction: "Fração acumulada",
-      classification: "Classificação",
+      cumulativeFraction: {
+        name: "Benchmark",
+        yAxisLabel: "Potencial de mitigação",
+        xAxisLabelCarbon: "Carbono Embutido",
+        xAxisLabelEnergy: "Energia Embutida",
+      },
+      classification: {
+        name: "Classificação",
+        yAxisLabel: "Carbono Embutido",
+        xAxisLabelCarbon: "Eficiência",
+        xAxisLabelEnergy: "Eficiência",
+      },
     },
     chartPlaceholder: "Gráfico",
     loadingData: "Carregando dados...",
@@ -838,9 +848,10 @@ export const ptBR = {
     technology: "Tecnologia",
     displaying: "Exibindo",
     of: "de",
+    numberOfProjects: "Nº de empreendimentos",
   },
   projectView: {
-    tabEnterprise: "Empreendimento",
+    tabProject: "Empreendimento",
     tabCollaborators: "Colaboradores",
     buildings: "Edificações",
     addBuilding: "Adicionar Edificação",
@@ -937,7 +948,7 @@ export const ptBR = {
     average: "Média",
   },
   breadcrumbs: {
-    enterprises: "Empreendimentos",
+    projects: "Empreendimentos",
   },
   apiKey: {
     copy: "Copiar chave",
@@ -947,9 +958,9 @@ export const ptBR = {
     oneTimeWarning: "A chave de API é de visualização única. Copie-a agora, pois não será possível vê-la novamente.",
   },
   summaryTechnologies: {
-    enterprises: "Empreendimentos",
-    noEnterpriseSelected: "Nenhum empreendimento selecionado.",
-    noEnterpriseDescription: "Por favor, selecione ao menos um empreendimento para visualizar o resumo.",
+    projects: "Empreendimentos",
+    noProjectSelected: "Nenhum empreendimento selecionado.",
+    noProjectDescription: "Por favor, selecione ao menos um empreendimento para visualizar o resumo.",
   },
   summaryFloors: {
     floors: "Pavimentos",
@@ -990,7 +1001,7 @@ export const ptBR = {
     tabAllDisciplines: "Todas as disciplinas",
     notFound: "Unidade não encontrada",
     notFoundDescription: "Não foi possível encontrar a unidade solicitada. Ela pode ter sido removida ou o link está incorreto.",
-    backToEnterprise: "Voltar ao empreendimento",
+    backToProject: "Voltar ao empreendimento",
     newDiscipline: "Nova disciplina",
     createSimulations: "Criar simulações",
     selectDisciplineTooltip: "Selecione uma disciplina para criar simulações",
@@ -1077,7 +1088,7 @@ export const ptBR = {
     },
   },
   routes: {
-    enterprises: "Empreendimentos",
+    projects: "Empreendimentos",
     unknownProject: "Empreendimento",
     unknownUnit: "Unidade",
   },
