@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -34,6 +35,17 @@ func (app *application) reportHandler(w http.ResponseWriter, r *http.Request) {
 	projectID, err := app.readUUIDParam(r, "projectID")
 	if err != nil {
 		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	project, err := app.models.Projects.GetByID(projectID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 
@@ -77,7 +89,7 @@ func (app *application) reportHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m, err := GetMaroto(co2Bytes, energyBytes, report)
+	m, err := GetMaroto(co2Bytes, energyBytes, project, report)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -94,7 +106,7 @@ func (app *application) reportHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(document.GetBytes())
 }
 
-func GetMaroto(co2Bytes, energyBytes []byte, report *ProjectBenchmarkReport) (core.Maroto, error) {
+func GetMaroto(co2Bytes, energyBytes []byte, project *data.ProjectWithUnits, report *ProjectBenchmarkReport) (core.Maroto, error) {
 	customFonts := []*entity.CustomFont{
 		{Family: "Inter", Style: fontstyle.Normal, Bytes: assets.InterRegular},
 		{Family: "Inter", Style: fontstyle.Bold, Bytes: assets.InterBold},
@@ -146,9 +158,9 @@ func GetMaroto(co2Bytes, energyBytes []byte, report *ProjectBenchmarkReport) (co
 	)
 
 	m.AddAutoRow(
-		text.NewCol(7, "08.1234.567.890-12", getValueStyle()).WithStyle(getBorderStyle()),
+		text.NewCol(7, safe(project.Siop), getValueStyle()).WithStyle(getBorderStyle()),
 		col.New(1),
-		text.NewCol(7, "0123.4567.8901-23", getValueStyle()).WithStyle(getBorderStyle()),
+		text.NewCol(7, safe(project.Apf), getValueStyle()).WithStyle(getBorderStyle()),
 	)
 
 	m.AddRow(2)
@@ -170,19 +182,19 @@ func GetMaroto(co2Bytes, energyBytes []byte, report *ProjectBenchmarkReport) (co
 	)
 
 	m.AddAutoRow(
-		text.NewCol(10, truncate("Residencial modelo", 36), getValueStyle()).WithStyle(getBorderStyle()),
-		col.New(1),
-		text.NewCol(4, "Torre", getValueStyle()).WithStyle(getBorderStyle()),
+		text.NewCol(10, truncate(project.Name, 36), getValueStyle()).WithStyle(getBorderStyle()),
 		col.New(1),
 		text.NewCol(4, "", getValueStyle()).WithStyle(getBorderStyle()),
 		col.New(1),
-		text.NewCol(7, data.PhaseMap["released_for_construction"], getValueStyle()).WithStyle(getBorderStyle()),
+		text.NewCol(4, "", getValueStyle()).WithStyle(getBorderStyle()),
 		col.New(1),
-		text.NewCol(5, "36", getValueStyle()).WithStyle(getBorderStyle()),
+		text.NewCol(7, data.PhaseMap[project.Phase], getValueStyle()).WithStyle(getBorderStyle()),
 		col.New(1),
-		text.NewCol(4, "4", getValueStyle()).WithStyle(getBorderStyle()),
+		text.NewCol(5, "", getValueStyle()).WithStyle(getBorderStyle()),
 		col.New(1),
-		text.NewCol(5, "561,1", getValueStyle()).WithStyle(getBorderStyle()),
+		text.NewCol(4, "", getValueStyle()).WithStyle(getBorderStyle()),
+		col.New(1),
+		text.NewCol(5, "", getValueStyle()).WithStyle(getBorderStyle()),
 	)
 
 	m.AddRow(2)
@@ -192,7 +204,7 @@ func GetMaroto(co2Bytes, energyBytes []byte, report *ProjectBenchmarkReport) (co
 	)
 
 	m.AddAutoRow(
-		text.NewCol(5, "2244,4", getValueStyle()).WithStyle(getBorderStyle()),
+		text.NewCol(5, fmt.Sprintf("%.2f", project.Area), getValueStyle()).WithStyle(getBorderStyle()),
 	)
 
 	m.AddRow(2)
@@ -212,17 +224,17 @@ func GetMaroto(co2Bytes, energyBytes []byte, report *ProjectBenchmarkReport) (co
 	)
 
 	m.AddAutoRow(
-		text.NewCol(12, truncate("Avenida Álvaro Maia", 45), getValueStyle()).WithStyle(getBorderStyle()),
+		text.NewCol(12, truncate(safe(project.Street), 45), getValueStyle()).WithStyle(getBorderStyle()),
 		col.New(1),
-		text.NewCol(4, "69025-310", getValueStyle()).WithStyle(getBorderStyle()),
+		text.NewCol(4, safe(project.CEP), getValueStyle()).WithStyle(getBorderStyle()),
 		col.New(1),
-		text.NewCol(2, "486", getValueStyle()).WithStyle(getBorderStyle()),
+		text.NewCol(2, safe(project.Number), getValueStyle()).WithStyle(getBorderStyle()),
 		col.New(1),
-		text.NewCol(12, truncate("Centro", 45), getValueStyle()).WithStyle(getBorderStyle()),
+		text.NewCol(12, truncate(safe(project.Neighborhood), 45), getValueStyle()).WithStyle(getBorderStyle()),
 		col.New(1),
-		text.NewCol(11, truncate("Manaus", 39), getValueStyle()).WithStyle(getBorderStyle()),
+		text.NewCol(11, truncate(project.City, 39), getValueStyle()).WithStyle(getBorderStyle()),
 		col.New(1),
-		text.NewCol(2, "AM", getValueStyle()).WithStyle(getBorderStyle()),
+		text.NewCol(2, project.State, getValueStyle()).WithStyle(getBorderStyle()),
 	)
 
 	m.AddRow(5)
@@ -1125,6 +1137,13 @@ func truncate(s string, maxRunes int) string {
 		return s
 	}
 	return string(r[:maxRunes-3]) + "..."
+}
+
+func safe(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 func formatNumber(v float64, decimals ...int) string {
