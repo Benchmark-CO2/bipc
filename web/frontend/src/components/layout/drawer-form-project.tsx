@@ -386,34 +386,6 @@ export default function DrawerFormProject({
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="siop"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t.projects.form.siop}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t.projects.form.siopPlaceholder} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="apf"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t.projects.form.apf}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t.projects.form.apfPlaceholder} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
               <FormField
                 control={form.control}
                 name="cep"
@@ -638,6 +610,35 @@ export default function DrawerFormProject({
                   </FormItem>
                 )}
               />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="siop"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.projects.form.siop}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t.projects.form.siopPlaceholder} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="apf"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.projects.form.apf}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t.projects.form.apfPlaceholder} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <div className="p-5 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border-2 border-yellow-400 dark:border-yellow-600">
                 <div className="flex items-start gap-3 mb-4">
