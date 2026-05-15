@@ -105,6 +105,8 @@ export type ExportChartOptions = {
   heightPx?: number;
   /** DPI used for px→mm conversion. Default: 96 */
   dpi?: number;
+  /** Canvas pixel ratio for sharper output. Default: 2 */
+  scale?: number;
 
   // ── Visual style ───────────────────────────────────────────────────────────
   /** Use expanded (larger circles/bars) visual style. Default: true */
@@ -189,6 +191,7 @@ export async function exportChartToPng(
     widthPx = 550,
     heightPx = 383,
     dpi = 96,
+    scale = 2,
     expanded = true,
     bgColor = "#ffffff",
     xAxisLabel,
@@ -197,9 +200,9 @@ export async function exportChartToPng(
   // ── Dimensions ───────────────────────────────────────────────────────────
   const margin = {
     top: 15,
-    right: showProcelScale ? 112 : 20,
+    right: showProcelScale ? 26 : 20,
     bottom: 35,
-    left: 80,
+    left: 50,
   };
 
   const chartW = widthPx - margin.left - margin.right;
@@ -207,9 +210,10 @@ export async function exportChartToPng(
 
   // ── Offscreen canvas ─────────────────────────────────────────────────────
   const canvas = document.createElement("canvas");
-  canvas.width = widthPx;
-  canvas.height = heightPx;
+  canvas.width = widthPx * scale;
+  canvas.height = heightPx * scale;
   const ctx = canvas.getContext("2d", { alpha: false })!;
+  ctx.scale(scale, scale);
   polyfillRoundRect(ctx);
 
   // Background
@@ -657,12 +661,12 @@ export async function exportChartToPng(
 
   // ── PROCEL scale ─────────────────────────────────────────────────────────
   if (showProcelScale) {
-    const barX = chartW;
     const barWidth = PROCEL_SCALE_CONFIG.WIDTH;
+    const barX = chartW + (margin.right - barWidth) / 2;
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(barX, 0, barWidth + PROCEL_SCALE_CONFIG.TICK_SIZE + 30, chartH);
+    ctx.rect(barX - 1, 0, barWidth + 2, chartH);
     ctx.clip();
 
     const reversed = [...PROCEL_CLASSES].reverse();
@@ -672,6 +676,7 @@ export async function exportChartToPng(
       const bandTop = Math.max(0, yScale(domainTop));
       const bandBottom = Math.min(chartH, yScale(domainBottom));
       if (bandBottom <= bandTop) return;
+      const bandH = Math.ceil(bandBottom - bandTop);
 
       // Highlight logic: if a class is specified, fade all others
       const isHighlighted =
@@ -679,10 +684,10 @@ export async function exportChartToPng(
       ctx.globalAlpha = isHighlighted ? 1 : procelFadedOpacity;
 
       ctx.fillStyle = cls.color;
-      ctx.fillRect(barX, bandTop, barWidth, Math.ceil(bandBottom - bandTop));
+      ctx.fillRect(barX, bandTop, barWidth, bandH);
       ctx.strokeStyle = "rgba(255,255,255,0.75)";
       ctx.lineWidth = 1;
-      ctx.strokeRect(barX, bandTop, barWidth, Math.ceil(bandBottom - bandTop));
+      ctx.strokeRect(barX, bandTop, barWidth, bandH);
 
       ctx.fillStyle = "#111827";
       ctx.font = "bold 10px sans-serif";
@@ -691,45 +696,10 @@ export async function exportChartToPng(
       ctx.fillText(
         cls.label,
         barX + barWidth / 2,
-        (bandTop + bandBottom) / 2,
+        bandTop + bandH / 2,
       );
 
       ctx.globalAlpha = 1;
-    });
-
-    // Percentage ticks
-    const pctBoundaries = [
-      { pct: 100, domainVal: 1.0 },
-      { pct: 75, domainVal: 0.75 },
-      { pct: 50, domainVal: 0.5 },
-      { pct: 25, domainVal: 0.25 },
-      { pct: 0, domainVal: 0.0 },
-    ];
-    ctx.font = "10px sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillStyle = DEFAULT_COLORS.TEXT;
-    pctBoundaries.forEach(({ pct, domainVal }, idx) => {
-      const y = yScale(domainVal);
-      if (y < 0 || y > chartH) return;
-      const yText =
-        idx === 0 ? y + 1 : idx === pctBoundaries.length - 1 ? y - 1 : y;
-      ctx.beginPath();
-      ctx.moveTo(barX + barWidth, y);
-      ctx.lineTo(barX + barWidth + PROCEL_SCALE_CONFIG.TICK_SIZE, y);
-      ctx.strokeStyle = DEFAULT_COLORS.TEXT;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.textBaseline =
-        idx === 0
-          ? "top"
-          : idx === pctBoundaries.length - 1
-            ? "bottom"
-            : "middle";
-      ctx.fillText(
-        `${pct}%`,
-        barX + barWidth + PROCEL_SCALE_CONFIG.TICK_SIZE + 3,
-        yText,
-      );
     });
 
     ctx.restore();
