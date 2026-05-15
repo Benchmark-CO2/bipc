@@ -657,6 +657,8 @@ export const en: Translations = {
         yAxisLabel: "Potential Mitigation",
         xAxisLabelCarbon: "Embodied Carbon",
         xAxisLabelEnergy: "Energy Consumption",
+        baseLine: "baseline",
+        ppp5Line: "PPp 5%"
       },
       classification: {
         name: "Classification",

@@ -658,6 +658,8 @@ export const ptBR = {
         yAxisLabel: "Potencial de mitigação",
         xAxisLabelCarbon: "Carbono Embutido",
         xAxisLabelEnergy: "Energia Embutida",
+        baseLine: "linha de base",
+        ppp5Line: "PPp 5%"
       },
       classification: {
         name: "Classificação",
