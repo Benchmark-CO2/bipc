@@ -517,7 +517,7 @@ export async function exportChartToPng(
     ctx.fillStyle = "#00A650";
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
-    ctx.fillText("PPp 5%", p5LineX + 4, 4);
+    ctx.fillText("5%", p5LineX + 4, 4);
     ctx.restore();
   }
 
@@ -685,9 +685,6 @@ export async function exportChartToPng(
 
       ctx.fillStyle = cls.color;
       ctx.fillRect(barX, bandTop, barWidth, bandH);
-      ctx.strokeStyle = "rgba(255,255,255,0.75)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(barX, bandTop, barWidth, bandH);
 
       ctx.fillStyle = "#111827";
       ctx.font = "bold 10px sans-serif";
