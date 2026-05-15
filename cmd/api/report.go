@@ -107,6 +107,11 @@ func (app *application) reportHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetMaroto(co2Bytes, energyBytes []byte, project *data.ProjectWithUnits, report *ProjectBenchmarkReport) (core.Maroto, error) {
+	// Calcula classificação e total uma vez só para cada métrica
+	co2Class := classificationLetter(report.Rank.CO2.Y)
+	co2Total := report.Rank.CO2.Total
+	energyClass := classificationLetter(report.Rank.Energy.Y)
+	energyTotal := report.Rank.Energy.Total
 	customFonts := []*entity.CustomFont{
 		{Family: "Inter", Style: fontstyle.Normal, Bytes: assets.InterRegular},
 		{Family: "Inter", Style: fontstyle.Bold, Bytes: assets.InterBold},
@@ -758,7 +763,7 @@ func GetMaroto(co2Bytes, energyBytes []byte, project *data.ProjectWithUnits, rep
 		).WithStyle(getBorderStyle(getRedColor())),
 		col.New(1),
 		col.New(5).Add(
-			text.New("B", props.Text{
+			text.New(co2Class, props.Text{
 				Size:   6,
 				Style:  fontstyle.Bold,
 				Top:    1,
@@ -771,14 +776,14 @@ func GetMaroto(co2Bytes, energyBytes []byte, project *data.ProjectWithUnits, rep
 				Left:  4,
 				Style: fontstyle.Bold,
 			}),
-			text.New("N: 300 projetos", props.Text{
+			text.New(fmt.Sprintf("N: %d projetos", co2Total), props.Text{
 				Size:  5,
 				Top:   2.25,
 				Left:  4,
 				Color: getGrayColor(),
 			}),
 		).WithStyle(&props.Cell{
-			BackgroundColor: getClassificationColor("a"),
+			BackgroundColor: getClassificationColor(co2Class),
 		}),
 		line.NewCol(4, getDividerStyle()),
 		col.New(3).Add(
@@ -850,7 +855,7 @@ func GetMaroto(co2Bytes, energyBytes []byte, project *data.ProjectWithUnits, rep
 		).WithStyle(getBorderStyle(getRedColor())),
 		col.New(1),
 		col.New(5).Add(
-			text.New("B", props.Text{
+			text.New(energyClass, props.Text{
 				Size:   6,
 				Style:  fontstyle.Bold,
 				Top:    1,
@@ -863,14 +868,14 @@ func GetMaroto(co2Bytes, energyBytes []byte, project *data.ProjectWithUnits, rep
 				Left:  4,
 				Style: fontstyle.Bold,
 			}),
-			text.New("N: 300 projetos", props.Text{
+			text.New(fmt.Sprintf("N: %d projetos", energyTotal), props.Text{
 				Size:  5,
 				Top:   2.25,
 				Left:  4,
 				Color: getGrayColor(),
 			}),
 		).WithStyle(&props.Cell{
-			BackgroundColor: getClassificationColor("a"),
+			BackgroundColor: getClassificationColor(energyClass),
 		}),
 	)
 
@@ -1144,6 +1149,19 @@ func safe(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+func classificationLetter(y float64) string {
+	if y <= 0.25 {
+		return "A"
+	}
+	if y <= 0.50 {
+		return "B"
+	}
+	if y <= 0.75 {
+		return "C"
+	}
+	return "D"
 }
 
 func formatNumber(v float64, decimals ...int) string {
