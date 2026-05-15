@@ -1,8 +1,9 @@
 import { IBenchmarkItem } from "@/actions/benchmarks/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSummary } from "@/context/summaryContext";
-import { useTranslation } from "@/i18n";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useTranslation } from "@/i18n";
+import { Translations } from "@/i18n/translations/pt-BR";
 import { cn } from "@/lib/utils";
 import { structureTypes } from "@/utils/structureTypes";
 import * as d3 from "d3";
@@ -17,7 +18,6 @@ import React, {
   useState,
 } from "react";
 import Indicators from "./components/indicators";
-import { Translations } from "@/i18n/translations/pt-BR";
 
 // Utility: Debounce function
 const debounce = <T extends (...args: any[]) => any>(
@@ -931,9 +931,6 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
         ctx.fillStyle = cls.color;
         ctx.fillRect(barX, bandTop, barWidth, Math.ceil(bandBottom - bandTop));
-        ctx.strokeStyle = "rgba(255,255,255,0.75)";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(barX, bandTop, barWidth, Math.ceil(bandBottom - bandTop));
 
         // Class label centered in the visible portion of the band
         ctx.fillStyle = "#111827";
@@ -941,31 +938,6 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(cls.label, barX + barWidth / 2, (bandTop + bandBottom) / 2);
-      });
-
-      // Percentage ticks at domain boundaries (100%=1.0, 75%=0.75, …, 0%=0.0)
-      const pctBoundaries = [
-        { pct: 100, domainVal: 1.0 },
-        { pct: 75, domainVal: 0.75 },
-        { pct: 50, domainVal: 0.5 },
-        { pct: 25, domainVal: 0.25 },
-        { pct: 0, domainVal: 0.0 },
-      ];
-      ctx.font = "10px sans-serif";
-      ctx.textAlign = "left";
-      ctx.fillStyle = DEFAULT_COLORS.TEXT;
-      pctBoundaries.forEach(({ pct, domainVal }, idx) => {
-        const y = newYScale(domainVal);
-        if (y < 0 || y > _height) return; // outside view
-        const yText = idx === 0 ? y + 1 : idx === pctBoundaries.length - 1 ? y - 1 : y;
-        ctx.beginPath();
-        ctx.moveTo(barX + barWidth, y);
-        ctx.lineTo(barX + barWidth + PROCEL_SCALE_CONFIG.TICK_SIZE, y);
-        ctx.strokeStyle = DEFAULT_COLORS.TEXT;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.textBaseline = idx === 0 ? "top" : idx === pctBoundaries.length - 1 ? "bottom" : "middle";
-        ctx.fillText(`${pct}%`, barX + barWidth + PROCEL_SCALE_CONFIG.TICK_SIZE + 3, yText);
       });
 
       ctx.restore();
