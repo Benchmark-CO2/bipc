@@ -762,7 +762,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       ctx.fillStyle = "#64748b";
       ctx.textAlign = "left";
       ctx.textBaseline = "bottom";
-      ctx.fillText("linha de base", 4, baselineY - 3);
+      ctx.fillText(t.benchmark.chartTypes.cumulativeFraction.baseLine, 4, baselineY - 3);
       ctx.restore();
     }
 
@@ -781,7 +781,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       ctx.fillStyle = "#00A650";
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
-      ctx.fillText("PPp 5%", p5LineX + 4, 4);
+      ctx.fillText(t.benchmark.chartTypes.cumulativeFraction.ppp5Line, p5LineX + 4, 4);
       ctx.restore();
     }
 
