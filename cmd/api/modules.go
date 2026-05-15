@@ -41,6 +41,29 @@ func (app *application) parseModule(w http.ResponseWriter, r *http.Request) (mod
 	return module, nil
 }
 
+// insertModule centralizes module validation, calculation and persistence.
+// It keeps handlers focused on HTTP concerns while reusing the same logic
+// across API and CSV ingestion flows.
+func (app *application) insertModule(module modules.Module, optionID uuid.UUID) (modules.Module, error) {
+	v := validator.New()
+	module.Validate(v)
+	if !v.Valid() {
+		return nil, &ValidationError{Errors: v.Errors}
+	}
+
+	result, err := module.Calculate()
+	if err != nil {
+		return nil, err
+	}
+
+	newModule, err := module.Insert(app.models, optionID, result)
+	if err != nil {
+		return nil, err
+	}
+
+	return newModule, nil
+}
+
 // duplicateModule creates a copy of a module with optional customizations.
 // Parameters:
 //   - originalModule: the source module to duplicate
