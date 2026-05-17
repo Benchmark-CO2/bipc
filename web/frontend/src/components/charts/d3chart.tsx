@@ -122,7 +122,7 @@ const useChartDimensions = (
   return useMemo(() => {
     const margin = {
       top: isExpanded ? 15 : 20,
-      right: isMobile ? 0 : showProcelScale ? 112 : 20,
+      right: isMobile ? 0 : showProcelScale ? 40 : 20,
       bottom: isMobile ? 20 : 35,
       left: isMobile ? 45 : 80,
     };
@@ -133,11 +133,8 @@ const useChartDimensions = (
         return Math.max(0, props.width - margin.left - margin.right);
       }
       if (containerWidth > 0) return containerWidth - margin.left - margin.right;
-      // Fallback when container not yet measured
-      const screenWidth = window.innerWidth;
-      if (isMobile) return screenWidth * 0.6;
-      if (isExpanded) return screenWidth * 0.8;
-      return screenWidth * 0.4;
+      // Return 0 when container not yet measured - will skip drawing
+      return 0;
     };
 
     const height = () => {
@@ -252,9 +249,29 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   // Measure container immediately before first paint so PROCEL scale renders correctly
   useLayoutEffect(() => {
     if (containerRef.current) {
-      setContainerWidth(containerRef.current.getBoundingClientRect().width);
+      const width = containerRef.current.getBoundingClientRect().width;
+      if (width > 0) {
+        setContainerWidth(width);
+      }
     }
   }, []);
+
+  // Force redraw after initial mount when container is measured
+  useEffect(() => {
+    if (containerRef.current && containerWidth === 0) {
+      // Retry measurement after a short delay if initial measurement failed
+      const timer = setTimeout(() => {
+        if (containerRef.current) {
+          const width = containerRef.current.getBoundingClientRect().width;
+          if (width > 0) {
+            setContainerWidth(width);
+          }
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [containerWidth]);
+
   const selectedBarIds = useMemo(
     () => new Set((selectedBars || []).map((id) => String(id))),
     [selectedBars],
@@ -297,7 +314,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   const hasMoreValue =
     totalProjects > 0
       ? parseFloat((maxData[maxData.length - 1] || 0).toFixed(2)) >
-        maxMaxDataValue
+      maxMaxDataValue
       : false;
 
   const {
@@ -418,17 +435,17 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
             max: d.max,
             label:
               selectedMinBarIds.has(String(d.minId ?? d.id)) ||
-              selectedMaxBarIds.has(String(d.maxId ?? d.id))
+                selectedMaxBarIds.has(String(d.maxId ?? d.id))
                 ? d.label
                 : undefined,
             floors:
               selectedMinBarIds.has(String(d.minId ?? d.id)) ||
-              selectedMaxBarIds.has(String(d.maxId ?? d.id))
+                selectedMaxBarIds.has(String(d.maxId ?? d.id))
                 ? d.floors
                 : undefined,
             technology:
               selectedMinBarIds.has(String(d.minId ?? d.id)) ||
-              selectedMaxBarIds.has(String(d.maxId ?? d.id))
+                selectedMaxBarIds.has(String(d.maxId ?? d.id))
                 ? d.technology
                 : undefined,
           },
@@ -463,6 +480,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   // Canvas drawing function
   const drawChart = useCallback(() => {
     if (!canvasRef.current) return;
+    // Skip drawing if dimensions are not yet valid
+    if (_width <= 0 || _height <= 0) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d", { alpha: false });
@@ -526,7 +545,8 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       .scaleLinear()
       .domain(yScale.domain())
       .range(yScale.range().map((r) => r * transform.k + transform.y));
-    const zoomRadiusFactor = Math.max(1, transform.k);
+    // Keep circles at constant visual size regardless of zoom level
+    const zoomRadiusFactor = 1;
 
     // Draw grid lines
     ctx.strokeStyle = DEFAULT_COLORS.GRID;
@@ -573,6 +593,19 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       const lineX = newXScale(p5Value);
       p5LineX = lineX;
       p5LineInView = lineX >= 0 && lineX <= _width;
+    }
+
+    // Pre-compute mid curve regression for bar split point
+    let midPredict: ((yVal: number) => number) | null = null;
+    if (showMidCurve && data.length >= 3) {
+      const sorted = [...data].sort((a, b) => a.y - b.y);
+      const raw: [number, number][] = sorted.map((d) => [(d.min + d.max) / 2, d.y]);
+      const regression = regressionPoly()
+        .x((d: [number, number]) => d[1])
+        .y((d: [number, number]) => d[0])
+        .order(Math.min(4, raw.length - 1));
+      const result = regression(raw);
+      midPredict = (yVal: number) => Math.max(0, result.predict(yVal));
     }
 
     // First pass: Draw circles for non-selected items
@@ -655,18 +688,34 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         const barWidth = Math.max(1, x2 - x1);
 
         // Bar connecting min and max only when both endpoints are selected
+        // Split bar: blue from min to mid, orange from mid to max
         if (!hideBars && isPairSelected) {
-          const barGradient = ctx.createLinearGradient(x1, y, x2, y);
-          barGradient.addColorStop(0, DEFAULT_COLORS.GRADIENT_RANGE[1]);
-          barGradient.addColorStop(1, DEFAULT_COLORS.GRADIENT_RANGE[3]);
-          ctx.fillStyle = barGradient;
+          // Use midPredict regression if available, otherwise use simple average
+          const midValue = midPredict ? midPredict(d.y) : (d.min + d.max) / 2;
+          const xMid = newXScale(midValue);
+          const rr = isExpanded ? barHeight / 2 : 2;
+
+          // Blue half: min → mid
+          ctx.fillStyle = DEFAULT_COLORS.START;
           ctx.beginPath();
           (ctx as any).roundRect(
             x1,
             barY,
-            barWidth,
+            Math.max(1, xMid - x1),
             barHeight,
-            isExpanded ? barHeight / 2 : 2,
+            { upperLeft: rr, lowerLeft: rr, upperRight: 0, lowerRight: 0 },
+          );
+          ctx.fill();
+
+          // Orange half: mid → max
+          ctx.fillStyle = DEFAULT_COLORS.END;
+          ctx.beginPath();
+          (ctx as any).roundRect(
+            xMid,
+            barY,
+            Math.max(1, x2 - xMid),
+            barHeight,
+            { upperLeft: 0, lowerLeft: 0, upperRight: rr, lowerRight: rr },
           );
           ctx.fill();
         }
@@ -703,21 +752,21 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           ctx.stroke();
         }
 
-        // Arrow between PPp 5% line and x2 (max) for projects worse than top 5%
+        // Arrow between PPp 5% line and x1 (min/C) for projects worse than top 5%
         if (
           !hideBars &&
           isPairSelected &&
           p5LineX !== null &&
-          x2 > p5LineX + radius * 2
+          x1 > p5LineX + radius * 2
         ) {
           const arrowY = y;
           const arrowLeft = p5LineX + 2;
-          const arrowRight = x2 - radius;
+          const arrowRight = x1 - radius;
           const headSize = isExpanded ? 6 : 4;
 
           ctx.save();
-          ctx.strokeStyle = "#00A650";
-          ctx.fillStyle = "#00A650";
+          ctx.strokeStyle = "#7B2D8E";
+          ctx.fillStyle = "#7B2D8E";
           ctx.lineWidth = 1.5;
 
           // Horizontal line
@@ -752,12 +801,10 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       ctx.save();
       ctx.strokeStyle = "#64748b";
       ctx.lineWidth = 1.5;
-      ctx.setLineDash([6, 4]);
       ctx.beginPath();
       ctx.moveTo(0, baselineY);
       ctx.lineTo(_width, baselineY);
       ctx.stroke();
-      ctx.setLineDash([]);
       ctx.font = "11px sans-serif";
       ctx.fillStyle = "#64748b";
       ctx.textAlign = "left";
@@ -766,7 +813,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       ctx.restore();
     }
 
-    // Draw PPp 5% line on top of all points
+    // Draw 5% line on top of all points
     if (p5LineX !== null && p5LineInView) {
       ctx.save();
       ctx.strokeStyle = "#00A650";
@@ -781,7 +828,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       ctx.fillStyle = "#00A650";
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
-      ctx.fillText(t.benchmark.chartTypes.cumulativeFraction.ppp5Line, p5LineX + 4, 4);
+      ctx.fillText("5%", p5LineX + 4, 4);
       ctx.restore();
     }
 
@@ -916,7 +963,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       ctx.save();
       // Clip to chart height so bands don't overflow vertically
       ctx.beginPath();
-      ctx.rect(barX, 0, barWidth + PROCEL_SCALE_CONFIG.TICK_SIZE + 30, _height);
+      ctx.rect(barX, 0, barWidth + 5, _height);
       ctx.clip();
 
       // Each class covers 25% of the domain [0,1]:
@@ -1028,8 +1075,10 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    // Initial draw
-    drawChart();
+    // Initial draw with a small delay to ensure container is measured
+    const initialDrawTimer = setTimeout(() => {
+      drawChart();
+    }, 10);
 
     const canvas = canvasRef.current;
 
@@ -1093,6 +1142,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
     // Cleanup
     return () => {
+      clearTimeout(initialDrawTimer);
       canvas.removeEventListener("dblclick", handleDoubleClick);
       canvas.removeEventListener("mousemove", handleCanvasMouseMove as any);
       canvas.removeEventListener("mouseleave", handleCanvasMouseLeave);
@@ -1135,6 +1185,16 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     }
     animationFrameRef.current = requestAnimationFrame(drawChart);
   }, [selectedBars, selectedMinBars, selectedMaxBars, drawChart]);
+
+  // Redraw when container dimensions or showProcelScale changes
+  useEffect(() => {
+    if (containerWidth > 0) {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      animationFrameRef.current = requestAnimationFrame(drawChart);
+    }
+  }, [containerWidth, showProcelScale, drawChart]);
 
   const labelX =
     UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon;
