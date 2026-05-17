@@ -1,73 +1,60 @@
 import { z } from "zod";
+import type { Translations } from "@/i18n/translations/pt-BR";
 
-export const addModuleFormSchema = z.object({
-  nome: z
-    .string()
-    .min(3, "O nome deve ter pelo menos 3 caracteres")
-    .max(50, "O nome deve ter no máximo 50 caracteres"),
-  tipoDeEstrutura: z.enum(["beamColumn", "concreteWall", "masonry"], {
-    required_error: "Selecione um tipo de estrutura",
-    invalid_type_error: "Selecione um tipo de estrutura",
-  }),
-  numeroDeTorres: z.coerce
-    .number()
-    .min(1, "O número de torres deve ser maior que 0"),
-  pavimentosSemFundacao: z.coerce
-    .number()
-    .min(1, "O número total de pavimentos deve ser maior que 0"),
-  pavimentosTotalDaTorre: z.coerce
-    .number()
-    .min(1, "O número total de pavimentos da torre deve ser maior que 0"),
-  pavimentosDoEmbasamento: z.coerce
-    .number()
-    .min(1, "O número de pavimentos do embasamento deve ser maior que 0"),
-  numeroDeSubsolos: z.coerce
-    .number()
-    .min(1, "O número de subsolos deve ser maior que 0"),
-  pavimentosTipo: z.coerce
-    .number()
-    .min(1, "O número de pavimentos tipo deve ser maior que 0"),
-  areaConstruidaTotal: z.coerce
-    .number()
-    .min(1, "A área construída total deve ser maior que 0"),
-  alturaPisoAPisoTipo: z.coerce
-    .number()
-    .min(0, "A altura do piso a piso do tipo deve ser maior que 0")
-    .optional(),
-  maiorPisoAPisoExistente: z.coerce
-    .number()
-    .min(0, "A maior altura do piso a piso existente deve ser maior que 0")
-    .optional(),
-  espessuraDeParedes: z.coerce
-    .number()
-    .min(0, "A espessura de paredes deve ser maior que 0")
-    .optional(),
-  espessuraDeLajes: z.coerce
-    .number()
-    .min(0, "A espessura de lajes deve ser maior que 0")
-    .optional(),
-  volumeDeConcretoFck20: z.coerce
-    .number()
-    .min(0, "O volume de concreto fck20 deve ser maior que 0"),
-  volumeDeConcretoFck25: z.coerce
-    .number()
-    .min(0, "O volume de concreto fck25 deve ser maior que 0"),
-  volumeDeConcretoFck30: z.coerce
-    .number()
-    .min(0, "O volume de concreto fck30 deve ser maior que 0"),
-  volumeDeConcretoFck35: z.coerce
-    .number()
-    .min(0, "O volume de concreto fck35 deve ser maior que 0"),
-  volumeDeConcretoFck40: z.coerce
-    .number()
-    .min(0, "O volume de concreto fck40 deve ser maior que 0"),
-  volumeDeConcretoFck45: z.coerce
-    .number()
-    .min(0, "O volume de concreto fck45 deve ser maior que 0"),
-  created_at: z.coerce.string().optional(),
-});
+export function createAddModuleFormSchema(t: Translations) {
+  return z.object({
+    nome: z
+      .string()
+      .min(3, t.validators.nameMinLength)
+      .max(50, t.validators.nameMaxLength),
+    tipoDeEstrutura: z.enum(["beamColumn", "concreteWall", "masonry"], {
+      required_error: t.validators.selectStructureType,
+      invalid_type_error: t.validators.selectStructureType,
+    }),
+    numeroDeTorres: z.coerce.number().min(1, t.validators.towersMin),
+    pavimentosSemFundacao: z.coerce
+      .number()
+      .min(1, t.validators.floorsWithoutFoundationMin),
+    pavimentosTotalDaTorre: z.coerce
+      .number()
+      .min(1, t.validators.towerTotalFloorsMin),
+    pavimentosDoEmbasamento: z.coerce
+      .number()
+      .min(1, t.validators.basementFloorsMin),
+    numeroDeSubsolos: z.coerce
+      .number()
+      .min(1, t.validators.undergroundFloorsMin),
+    pavimentosTipo: z.coerce.number().min(1, t.validators.typicalFloorsMin),
+    areaConstruidaTotal: z.coerce
+      .number()
+      .min(1, t.validators.totalBuiltAreaMin),
+    alturaPisoAPisoTipo: z.coerce
+      .number()
+      .min(0, t.validators.typicalFloorHeightMin)
+      .optional(),
+    maiorPisoAPisoExistente: z.coerce
+      .number()
+      .min(0, t.validators.maxFloorHeightMin)
+      .optional(),
+    espessuraDeParedes: z.coerce
+      .number()
+      .min(0, t.validators.wallThicknessMin)
+      .optional(),
+    espessuraDeLajes: z.coerce
+      .number()
+      .min(0, t.validators.slabThicknessMin)
+      .optional(),
+    volumeDeConcretoFck20: z.coerce.number().min(0, t.validators.concreteVolumeMin),
+    volumeDeConcretoFck25: z.coerce.number().min(0, t.validators.concreteVolumeMin),
+    volumeDeConcretoFck30: z.coerce.number().min(0, t.validators.concreteVolumeMin),
+    volumeDeConcretoFck35: z.coerce.number().min(0, t.validators.concreteVolumeMin),
+    volumeDeConcretoFck40: z.coerce.number().min(0, t.validators.concreteVolumeMin),
+    volumeDeConcretoFck45: z.coerce.number().min(0, t.validators.concreteVolumeMin),
+    created_at: z.coerce.string().optional(),
+  });
+}
 
-export type AddModuleFormSchema = z.infer<typeof addModuleFormSchema>;
+export type AddModuleFormSchema = z.infer<ReturnType<typeof createAddModuleFormSchema>>;
 
 export const DEFAULT_VALUES: AddModuleFormSchema = {
   nome: "",

@@ -1,13 +1,15 @@
-import { t } from "i18next";
+import { Translations } from "@/i18n/translations/pt-BR";
 import { z } from "zod";
 
-export const AddUserToProjectFormSchema = z.object({
-  email: z
-    .string()
-    .email(t("forms.invalidEmail"))
-    .min(1, t("forms.requiredField")),
-});
+export function createAddUserToProjectFormSchema(t: Translations) {
+  return z.object({
+    email: z
+      .string()
+      .min(1, { message: t.validators.required })
+      .email({ message: t.validators.invalidEmail }),
+  });
+}
 
 export type AddUserToProjectFormSchema = z.infer<
-  typeof AddUserToProjectFormSchema
+  ReturnType<typeof createAddUserToProjectFormSchema>
 >;

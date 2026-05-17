@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { InviteCard } from "@/components/layout/invites/invite-card";
 import { useInvites } from "@/hooks/useInvites";
 import { Separator } from "@/components/ui/separator";
-import { useTranslation } from "react-i18next";
 import { Mail } from "lucide-react";
+import { useTranslation } from "@/i18n";
 
 type InvitesSearch = {
   inviteId?: string;
@@ -17,10 +17,10 @@ export const Route = createFileRoute("/_private/notifications")({
 });
 
 function RouteComponent() {
-  const { t } = useTranslation();
   const navigate = Route.useNavigate();
   const search = Route.useSearch();
   const inviteId = search?.inviteId;
+  const { t } = useTranslation();
 
   const { invites, isLoading, handleSubmitReplyInvite } = useInvites({
     navigate,
@@ -33,11 +33,9 @@ function RouteComponent() {
       <div className="space-y-2 mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-primary flex items-center gap-2">
           <Mail className="w-8 h-8" />
-          {t("common.invite_other", { count: 2 })}
+          {t.invites.title}
         </h1>
-        <p className="text-muted-foreground">
-          Gerencie seus convites de empreendimentos e colaborações
-        </p>
+        <p className="text-muted-foreground">{t.invites.manage}</p>
       </div>
 
       <Separator className="mb-6" />

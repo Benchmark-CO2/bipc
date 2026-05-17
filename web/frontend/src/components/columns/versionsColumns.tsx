@@ -1,9 +1,11 @@
+import { Translations } from "@/i18n/translations/pt-BR";
 import { TModuleStructure } from "@/types/modules";
 import { ColumnDef } from "@tanstack/react-table";
-import { t } from "i18next";
 import { Check, X } from "lucide-react";
 
-export const versionsColumns: ColumnDef<TModuleStructure>[] = [
+export const makeVersionsColumns = (
+  tLocal: Translations,
+): ColumnDef<TModuleStructure>[] => [
   {
     accessorKey: "selected",
     header: ({ table }) => (
@@ -25,40 +27,35 @@ export const versionsColumns: ColumnDef<TModuleStructure>[] = [
   },
   {
     accessorKey: "version",
-    header: "Versão",
-    cell: ({ row }) => row.original.version || "-",
+    header: tLocal.columns.version,
+    cell: ({ row }) => (row.original as any).version || "-",
   },
-  // {
-  //   accessorKey: "floor_repetition",
-  //   header: t("modulesTable.headers.floorRepetition"),
-  //   cell: ({ row }) => row.original.floor_repetition || "-",
-  // },
   {
     accessorKey: "co2_min",
-    header: t("modulesTable.headers.co2Min"),
-    cell: ({ row }) => row.original.co2_min?.toInternational() || "-",
+    header: "CO₂ Min.",
+    cell: ({ row }) => (row.original as any).co2_min?.toInternational() || "-",
   },
   {
     accessorKey: "co2_max",
-    header: t("modulesTable.headers.co2Max"),
-    cell: ({ row }) => row.original.co2_max?.toInternational() || "-",
+    header: "CO₂ Max.",
+    cell: ({ row }) => (row.original as any).co2_max?.toInternational() || "-",
   },
   {
     accessorKey: "energy_min",
-    header: t("modulesTable.headers.energyMin"),
-    cell: ({ row }) => row.original.energy_min?.toInternational() || "-",
+    header: "Energia Min.",
+    cell: ({ row }) => (row.original as any).energy_min?.toInternational() || "-",
   },
   {
     accessorKey: "energy_max",
-    header: t("modulesTable.headers.energyMax"),
-    cell: ({ row }) => row.original.energy_max?.toInternational() || "-",
+    header: "Energia Max.",
+    cell: ({ row }) => (row.original as any).energy_max?.toInternational() || "-",
   },
   {
     accessorKey: "in_use",
-    header: t("modulesTable.headers.versionInUse"),
+    header: "Em uso",
     cell: ({ row }) => (
       <div className="w-[50px] flex items-center justify-center">
-        {row.original.in_use ? (
+        {(row.original as any).in_use ? (
           <Check className="text-primary" />
         ) : (
           <X className="text-red-500" />

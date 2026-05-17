@@ -11,13 +11,11 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useTranslation } from "react-i18next";
-
-import i18n from "@/i18n";
 import { IProject } from "@/types/projects";
 import { Edit, Trash } from "lucide-react";
 import ModalConfirmDelete from "./modal-confirm-delete";
 import DrawerFormProject from "./drawer-form-project";
+import { useTranslation } from "@/i18n";
 
 interface IProjectTable {
   projects: IProject[];
@@ -31,34 +29,33 @@ export default function ProjectTable({
   onDeleteProject,
 }: IProjectTable) {
   const { t } = useTranslation();
-
   const table = useReactTable({
     data: projects,
     columns: [
       {
         id: "name",
-        header: t("projectTable.headers.name"),
+        header: t.projects.table.name,
         cell: ({ row }) => String(row.original.name),
       },
       {
         id: "description",
-        header: t("projectTable.headers.description"),
+        header: t.projects.table.description,
         cell: ({ row }) => String(row.original.description) || "-",
       },
       {
         id: "createdAt",
-        header: t("projectTable.headers.createdAt"),
+        header: t.projects.table.createdAt,
         cell: ({ row }) =>
-          new Intl.DateTimeFormat(i18n.languages[0]).format(
-            new Date(row.original.created_at)
+          new Intl.DateTimeFormat("pt-BR").format(
+            new Date(row.original.created_at),
           ),
       },
       {
         id: "updatedAt",
-        header: t("projectTable.headers.updatedAt"),
+        header: t.projects.table.updatedAt,
         cell: ({ row }) =>
-          new Intl.DateTimeFormat(i18n.languages[0]).format(
-            new Date(row.original.updated_at)
+          new Intl.DateTimeFormat("pt-BR").format(
+            new Date(row.original.updated_at),
           ),
       },
       // Add other columns here
@@ -68,7 +65,7 @@ export default function ProjectTable({
 
   const handleClickRow = (
     e: React.MouseEvent<HTMLTableRowElement>,
-    project: IProject
+    project: IProject,
   ) => {
     const target = e.target as HTMLElement;
     const dataType = target
@@ -91,7 +88,7 @@ export default function ProjectTable({
                 <TableHead key={header.id}>
                   {flexRender(
                     header.column.columnDef.header,
-                    header.getContext()
+                    header.getContext(),
                   )}
                 </TableHead>
               ))}
@@ -121,7 +118,7 @@ export default function ProjectTable({
                   />
                   <ModalConfirmDelete
                     key={row.original.id}
-                    title={t("modalConfirmDelete.projectTitle")}
+                    title={t.projects.table.deleteTitle}
                     onConfirm={() => onDeleteProject?.(row.original.id)}
                     componentTrigger={
                       <Trash size={20} className="text-destructive" />

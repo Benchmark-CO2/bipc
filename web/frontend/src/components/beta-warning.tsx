@@ -9,9 +9,12 @@ import {
 } from "./ui/dialog";
 import { useState } from "react";
 import { Button } from "./ui/button";
+import { useTranslation } from "@/i18n";
+import { cn } from "@/lib/utils";
 
 export const BetaWarning = ({ minimizedSidebar = false }) => {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <>
@@ -23,21 +26,14 @@ export const BetaWarning = ({ minimizedSidebar = false }) => {
           <DialogHeader>
             <DialogTitle className="text-2xl text-center text-accent flex items-center gap-2 justify-center">
               <FlaskConical />
-              Em Beta
+              {t.beta.title}
             </DialogTitle>
             <DialogDescription className="text-center pt-4 text-accent/100">
               <p className="text-md mb-1">
-                A plataforma segue em desenvolvimento e recebe melhorias
-                constantes.
+                {t.beta.description}
               </p>
               <p className="text-md ">
-                Tem alguma sugestão de melhoria? Envie um e-mail para:{" "}
-                <a
-                  href="mailto:contato@bipc.org.br"
-                  className="font-bold hover:underline"
-                >
-                  contato@bipc.org.br
-                </a>
+                {t.beta.suggestion}
               </p>
             </DialogDescription>
           </DialogHeader>
@@ -48,22 +44,24 @@ export const BetaWarning = ({ minimizedSidebar = false }) => {
               className="w-full"
               onClick={() => setOpen(false)}
             >
-              Fechar
+              {t.beta.close}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <div
-        className="bg-primary text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-primary/90 cursor-pointer border border-primary/50"
+        className={cn("bg-primary text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-primary/90 cursor-pointer border border-primary/50", {
+          "px-0 justify-center": minimizedSidebar
+        })}
         onClick={() => setOpen(true)}
       >
         <span className="flex items-center gap-2">
           <FlaskConical size={16} />
-          {!minimizedSidebar && <strong>Em beta</strong>}
+          {!minimizedSidebar && <strong>{t.beta.title}</strong>}
         </span>
         {!minimizedSidebar && (
-          <span className="text-sm ml-auto cursor-pointer">Saiba mais...</span>
+          <span className="text-sm ml-auto cursor-pointer">{t.beta.learnMore}</span>
         )}
       </div>
     </>

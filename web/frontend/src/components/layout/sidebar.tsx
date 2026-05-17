@@ -9,6 +9,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { useSidebar } from "@/hooks/useSidebar";
 import { cn } from "@/lib/utils";
 import { ENV } from "@/utils/constants";
+import { useTranslation } from "@/i18n";
 import { Link } from "@tanstack/react-router";
 import {
   BarChart3,
@@ -31,7 +32,6 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { BetaWarning } from "../beta-warning";
 import { DevelopmentWarning } from "../development-warn";
 import { Notifications } from "../notifications";
@@ -41,21 +41,6 @@ import Divider from "../ui/divider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ModalTraining from "./modal-training";
 import { SidebarHoverPopover, type PopoverItem } from "./sidebar-hover-popover";
-
-const saibaMaisItems: PopoverItem[] = [
-  { label: "Perguntas frequentes", icon: CircleHelp, linkKey: "faq" },
-  { label: "Glossário", icon: FileText, linkKey: "glossary" },
-  { label: "BIPc na mídia", icon: MonitorPlay, linkKey: "media" },
-  { label: "Lançamento", icon: Newspaper, linkKey: "launch" },
-  { label: "Repositório", icon: FolderGit, linkKey: "repository" },
-  { label: "Contato", icon: Phone, linkKey: "contact" },
-];
-
-const transparenciaItems: PopoverItem[] = [
-  { label: "Privacidade dos dados", icon: Fingerprint, linkKey: "privacy" },
-  { label: "Termos de uso", icon: ClipboardList, linkKey: "termsOfUse" },
-  { label: "Exercer meus direitos", icon: ShieldCheck, linkKey: "dataForm" },
-];
 
 interface ISidebar {
   handleLogout?: () => void;
@@ -68,9 +53,24 @@ const activeProps = {
 const Sidebar = ({ handleLogout }: ISidebar) => {
   const { user, isAuthenticated } = useAuth();
   const { sidebarStatus, toggleSidebar } = useSidebar();
-  const { t } = useTranslation();
   const isMobile = useIsMobile();
   const { context, setSummaryContext } = useSummary();
+  const { t } = useTranslation();
+
+  const saibaMaisItems: PopoverItem[] = [
+    { label: t.nav.faq, icon: CircleHelp, linkKey: "faq" },
+    { label: t.nav.glossary, icon: FileText, linkKey: "glossary" },
+    { label: t.nav.media, icon: MonitorPlay, linkKey: "media" },
+    { label: t.nav.launch, icon: Newspaper, linkKey: "launch" },
+    { label: t.nav.repository, icon: FolderGit, linkKey: "repository" },
+    { label: t.nav.contact, icon: Phone, linkKey: "contact" },
+  ];
+
+  const transparenciaItems: PopoverItem[] = [
+    { label: t.nav.privacy, icon: Fingerprint, linkKey: "privacy" },
+    { label: t.nav.termsOfUse, icon: ClipboardList, linkKey: "termsOfUse" },
+    { label: t.nav.dataForm, icon: ShieldCheck, linkKey: "dataForm" },
+  ];
 
   // Estado para controlar se o sidebar está minimizado
   const [isMinimized, setIsMinimized] = useState(() => {
@@ -136,7 +136,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           </button>
         </TooltipTrigger>
         <TooltipContent side="right">
-          <p>Expandir sidebar</p>
+          <p>{t.sidebar.expandSidebar}</p>
         </TooltipContent>
       </Tooltip>
 
@@ -164,7 +164,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             </CustomLink>
           </TooltipTrigger>
           <TooltipContent side="right">
-            <p>Sobre o BIPc</p>
+            <p>{t.sidebar.about}</p>
           </TooltipContent>
         </Tooltip>
 
@@ -193,7 +193,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
             </Link>
           </TooltipTrigger>
           <TooltipContent side="right">
-            <p>Benchmark</p>
+            <p>{t.sidebar.benchmark}</p>
           </TooltipContent>
         </Tooltip>
 
@@ -212,7 +212,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">
-                <p>Empreendimentos</p>
+                <p>{t.sidebar.projects}</p>
               </TooltipContent>
             </Tooltip>
 
@@ -227,7 +227,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">
-                <p>Configurações</p>
+                <p>{t.sidebar.settings}</p>
               </TooltipContent>
             </Tooltip>
 
@@ -238,7 +238,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 </div>
               </TooltipTrigger>
               <TooltipContent side="right">
-                <p>Notificações</p>
+                <p>{t.sidebar.notifications}</p>
               </TooltipContent>
             </Tooltip>
           </>
@@ -255,7 +255,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">
-                <p>Cadastre-se</p>
+                <p>{t.sidebar.signUp}</p>
               </TooltipContent>
             </Tooltip>
 
@@ -270,7 +270,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">
-                <p>Login</p>
+                <p>{t.sidebar.login}</p>
               </TooltipContent>
             </Tooltip>
           </>
@@ -290,7 +290,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               </button>
             </TooltipTrigger>
             <TooltipContent side="right">
-              <p>Sair</p>
+              <p>{t.sidebar.logout}</p>
             </TooltipContent>
           </Tooltip>
         </div>
@@ -309,7 +309,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
           <button
             onClick={toggleMinimize}
             className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors absolute right-4 top-4"
-            title="Minimizar sidebar"
+            title={t.sidebar.minimizeSidebar}
           >
             <CollapseContentIcon size={28} className="text-white" />
           </button>
@@ -342,7 +342,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               onClick={handleMobileNavigation}
             >
               <BipcIcon size={18} />
-              <span>Sobre o BIPc</span>
+              <span>{t.sidebar.about}</span>
             </CustomLink>
           </li>
 
@@ -352,7 +352,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               trigger={
                 <>
                   <Rss size={18} />
-                  <span>Saiba mais</span>
+                  <span>{t.sidebar.learnMore}</span>
                 </>
               }
               items={saibaMaisItems}
@@ -367,7 +367,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               trigger={
                 <>
                   <GlobeLock size={18} />
-                  <span>Transparência</span>
+                  <span>{t.sidebar.transparency}</span>
                 </>
               }
               items={transparenciaItems}
@@ -386,7 +386,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
             >
               <BarChart3 size={18} />
-              <span>Benchmark</span>
+              <span>{t.sidebar.benchmark}</span>
             </Link>
           </li>
 
@@ -404,7 +404,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                   className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
                 >
                   <Building2 size={18} />
-                  <span>Empreendimentos</span>
+                  <span>{t.sidebar.projects}</span>
                 </Link>
               </li>
 
@@ -416,7 +416,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                   className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
                 >
                   <Settings size={18} />
-                  <span>Configurações</span>
+                  <span>{t.sidebar.settings}</span>
                 </Link>
               </li>
 
@@ -444,7 +444,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                   className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
                 >
                   <UserPlus size={18} />
-                  <span>Cadastre-se</span>
+                  <span>{t.sidebar.signUp}</span>
                 </Link>
               </li>
 
@@ -456,7 +456,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                   className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"
                 >
                   <LogIn size={18} />
-                  <span>Login</span>
+                  <span>{t.sidebar.login}</span>
                 </Link>
               </li>
             </>
@@ -474,7 +474,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                   onClick={handleLogout}
                   className="w-full"
                 >
-                  <span>{t("common.logout")}</span>
+                  <span>{t.sidebar.logout}</span>
                 </Button>
               )}
             </div>

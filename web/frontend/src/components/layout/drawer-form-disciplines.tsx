@@ -2,13 +2,14 @@ import { patchDiscipline } from "@/actions/disciplines/patchDiscipline";
 import { postDiscipline } from "@/actions/disciplines/postDiscipline";
 import { getProjectCollaborators } from "@/actions/projectCollaborators/getProjectCollaborators";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { TCollaborator } from "@/types/collaborators";
 import { TRole } from "@/types/disciplines";
 import { TUser } from "@/types/user";
 import { queryClient } from "@/utils/queryClient";
 import {
-  disciplineFormSchema,
+  createDisciplineFormSchema,
   DisciplineFormSchema,
 } from "@/validators/disciplineForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -60,22 +61,7 @@ interface IDrawerFormDisciplines {
 }
 
 // Mock data for permissions - will be provided by backend
-const mockPermissions = {
-  management: [
-    // { id: 1, label: "Editar propriedades do empreendimento" },
-    { id: 2, label: "Atualizar empreendimento" },
-    { id: 3, label: "Convidar colaborador" },
-    { id: 4, label: "Remover colaborador" },
-    { id: 5, label: "Remover convite de colaborador" },
-    { id: 6, label: "Criar disciplina" },
-    { id: 7, label: "Atualizar disciplina" },
-    { id: 8, label: "Remover disciplina" },
-    { id: 9, label: "Criar edificação" },
-    { id: 10, label: "Atualizar edificação" },
-    { id: 11, label: "Remover edificação" },
-  ],
-  simulation: [],
-};
+// Labels are provided via t.disciplines.permissionLabels inside the component
 
 export default function DrawerFormDisciplines({
   componentTrigger,
@@ -87,7 +73,6 @@ export default function DrawerFormDisciplines({
 }: IDrawerFormDisciplines) {
   const [openDrawer, setOpenDrawer] = useState(false);
   const [managementExpanded, setManagementExpanded] = useState(true);
-  const [simulationExpanded, setSimulationExpanded] = useState(true);
   const [selectedCollaborators, setSelectedCollaborators] = useState<TUser[]>(
     [],
   );
@@ -95,9 +80,11 @@ export default function DrawerFormDisciplines({
   const [openPopover, setOpenPopover] = useState(false);
 
   const isEditMode = !!roleData;
+  const isMobile = useIsMobile();
+  const { t } = useTranslation();
 
   const form = useForm<DisciplineFormSchema>({
-    resolver: zodResolver(disciplineFormSchema),
+    resolver: zodResolver(createDisciplineFormSchema(t)),
     defaultValues: {
       name: "",
       description: "",
@@ -124,7 +111,7 @@ export default function DrawerFormDisciplines({
   } = useMutation({
     mutationFn: (data: DisciplineFormSchema) => postDiscipline(projectId, data),
     onSuccess: () => {
-      toast.success("Disciplina criada com sucesso!", {
+      toast.success(t.disciplines.createSuccess, {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -140,8 +127,8 @@ export default function DrawerFormDisciplines({
       setOpenDrawer(false);
     },
     onError: () => {
-      toast.error("Erro ao criar disciplina", {
-        description: "Ocorreu um erro ao criar a disciplina.",
+      toast.error(t.disciplines.createError, {
+        description: t.disciplines.createErrorDescription,
         duration: 5000,
       });
     },
@@ -155,7 +142,7 @@ export default function DrawerFormDisciplines({
     mutationFn: (data: DisciplineFormSchema) =>
       patchDiscipline(projectId, roleData!.id, data),
     onSuccess: () => {
-      toast.success("Disciplina atualizada com sucesso!", {
+      toast.success(t.disciplines.updateSuccess, {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -171,8 +158,8 @@ export default function DrawerFormDisciplines({
       setOpenDrawer(false);
     },
     onError: () => {
-      toast.error("Erro ao atualizar disciplina", {
-        description: "Ocorreu um erro ao atualizar a disciplina.",
+      toast.error(t.disciplines.updateError, {
+        description: t.disciplines.updateErrorDescription,
         duration: 5000,
       });
     },
@@ -361,7 +348,21 @@ export default function DrawerFormDisciplines({
     }
   }, [roleData, openDrawer, form, resetCreation, projectUsers]);
 
-  const isMobile = useIsMobile();
+  const mockPermissions = {
+    management: [
+      { id: 2, label: t.disciplines.permissionLabels.updateProject },
+      { id: 3, label: t.disciplines.permissionLabels.inviteCollaborator },
+      { id: 4, label: t.disciplines.permissionLabels.removeCollaborator },
+      { id: 5, label: t.disciplines.permissionLabels.removeCollaboratorInvite },
+      { id: 6, label: t.disciplines.permissionLabels.createDiscipline },
+      { id: 7, label: t.disciplines.permissionLabels.updateDiscipline },
+      { id: 8, label: t.disciplines.permissionLabels.removeDiscipline },
+      { id: 9, label: t.disciplines.permissionLabels.createBuilding },
+      { id: 10, label: t.disciplines.permissionLabels.updateBuilding },
+      { id: 11, label: t.disciplines.permissionLabels.removeBuilding },
+    ],
+    simulation: [],
+  };
 
   return (
     <Drawer
@@ -384,13 +385,9 @@ export default function DrawerFormDisciplines({
         })}
       >
         <DrawerHeader className="px-8">
-          <DrawerTitle>
-            {isEditMode ? "Editar Disciplina" : "Adicionar Disciplina"}
-          </DrawerTitle>
+          <DrawerTitle>{t.disciplines.title}</DrawerTitle>
           <DrawerDescription>
-            Para realizar simulações, primeiro adicione uma disciplina como
-            "Estrutural", "Fundação", "Vedações" ou qualquer outro título que
-            descreva a sua área de atuação.
+            {t.disciplines.description}
           </DrawerDescription>
           <Button
             onClick={() => setOpenDrawer(false)}
@@ -413,14 +410,14 @@ export default function DrawerFormDisciplines({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome da disciplina *</FormLabel>
+                    <FormLabel>{t.disciplines.nameLabel}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Vedações" {...field} />
+                      <Input placeholder={t.disciplines.namePlaceholder} {...field} />
                     </FormControl>
                     <FormMessage />
                     {isDuplicateName && (
                       <p className="text-[0.8rem] font-medium text-destructive">
-                        A disciplina já existe. Utilize outro nome.
+                        {t.disciplines.nameDuplicate}
                       </p>
                     )}
                   </FormItem>
@@ -433,10 +430,10 @@ export default function DrawerFormDisciplines({
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Descrição</FormLabel>
+                    <FormLabel>{t.disciplines.descriptionLabel}</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Empreendimentos de alvenaria estrutural"
+                        placeholder={t.disciplines.descriptionPlaceholder}
                         rows={3}
                         className="resize-none"
                         {...field}
@@ -455,10 +452,10 @@ export default function DrawerFormDisciplines({
                   <FormItem className="flex items-center justify-between space-y-0 rounded-lg border p-4">
                     <div className="space-y-0.5">
                       <FormLabel className="text-base">
-                        Visualizar na simulação
+                        {t.disciplines.showInSimulation}
                       </FormLabel>
                       <div className="text-sm text-muted-foreground">
-                        Habilita esta disciplina para aparecer nas simulações
+                        {t.disciplines.showInSimulationDescription}
                       </div>
                     </div>
                     <FormControl>
@@ -475,10 +472,10 @@ export default function DrawerFormDisciplines({
               <div className="flex flex-col border rounded-md overflow-hidden">
                 <button
                   type="button"
-                  className="flex items-center justify-between p-3 bg-[#00796B] text-white hover:bg-[#00796B]/90"
+                  className="flex items-center justify-between p-3 bg-primary text-white hover:bg-primary/90"
                   onClick={() => setManagementExpanded(!managementExpanded)}
                 >
-                  <span className="font-medium">Permissões</span>
+                  <span className="font-medium">{t.disciplines.permissions}</span>
                   {managementExpanded ? (
                     <ChevronUp className="w-5 h-5" />
                   ) : (
@@ -488,8 +485,7 @@ export default function DrawerFormDisciplines({
                 {managementExpanded && (
                   <div className="flex flex-col gap-3 p-4 bg-card">
                     <span className="text-muted-foreground text-sm">
-                      Selecione as permissões que as pessoas atribuídas a esta
-                      disciplina terão.
+                      {t.disciplines.permissionsDescription}
                     </span>
                     {/* Adicionar/Remover tudo */}
                     <div className="flex items-center justify-between pb-2 border-b">
@@ -497,7 +493,7 @@ export default function DrawerFormDisciplines({
                         className="text-sm font-bold"
                         htmlFor="select-all-management"
                       >
-                        Selecionar todas
+                        {t.disciplines.selectAll}
                       </label>
                       <Checkbox
                         id="select-all-management"
@@ -509,7 +505,7 @@ export default function DrawerFormDisciplines({
                     </div>
 
                     {/* Lista de permissões */}
-                    {mockPermissions.management.map((permission, idx) => (
+                    {mockPermissions.management.map((permission) => (
                       <div
                         key={permission.id}
                         className="flex items-center justify-between gap-2 "
@@ -534,62 +530,14 @@ export default function DrawerFormDisciplines({
                 )}
               </div>
 
-              {/* <div className="flex flex-col border rounded-md overflow-hidden">
-                <button
-                  type="button"
-                  className="flex items-center justify-between p-3 bg-[#00796B] text-white hover:bg-[#00796B]/90"
-                  onClick={() => setSimulationExpanded(!simulationExpanded)}
-                >
-                  <span className="font-medium">Simulação</span>
-                  {simulationExpanded ? (
-                    <ChevronUp className="w-5 h-5" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5" />
-                  )}
-                </button>
-                {simulationExpanded && (
-                  <div className="flex flex-col gap-3 p-4 bg-card">
-                    <div className="flex items-center justify-between pb-2 border-b">
-                      <span className="text-sm font-medium">
-                        Selecionar todas
-                      </span>
-                      <Checkbox
-                        checked={mockPermissions.simulation.every((p) =>
-                          selectedPermissions.includes(p.id)
-                        )}
-                        onCheckedChange={toggleAllSimulation}
-                      />
-                    </div>
-
-                    {mockPermissions.simulation.map((permission) => (
-                      <div
-                        key={permission.id}
-                        className="flex items-center justify-between gap-2"
-                      >
-                        <span className="text-sm font-normal flex-1">
-                          {permission.label}
-                        </span>
-                        <Checkbox
-                          checked={selectedPermissions.includes(permission.id)}
-                          onCheckedChange={(checked) =>
-                            togglePermission(permission.id, checked as boolean)
-                          }
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div> */}
-
               {/* Buscar colaboradores */}
               <div className="flex flex-col gap-2">
-                <FormLabel>Buscar colaboradores</FormLabel>
+                <FormLabel>{t.disciplines.searchCollaborators}</FormLabel>
                 <span className="text-sm text-muted-foreground">
-                  Selecione os colaboradores que fazem parte desta disciplina.{" "}
+                  {t.disciplines.searchCollaboratorsDescription}{" "}
                   <br />
                   <span className="text-sm text-yellow-600 font-medium">
-                    Importante: Se o seu usuário faz parte deste grupo, não
-                    esqueça de se adicionar.
+                    {t.disciplines.searchCollaboratorsWarning}
                   </span>
                 </span>
                 <Popover open={openPopover} onOpenChange={setOpenPopover}>
@@ -600,7 +548,7 @@ export default function DrawerFormDisciplines({
                       aria-expanded={openPopover}
                       className="w-full justify-start text-left font-normal"
                     >
-                      Colaborador...
+                      {t.disciplines.collaboratorPlaceholder}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent
@@ -611,13 +559,13 @@ export default function DrawerFormDisciplines({
                   >
                     <Command shouldFilter={false}>
                       <CommandInput
-                        placeholder="Buscar colaborador..."
+                        placeholder={t.disciplines.searchPlaceholder}
                         value={searchTerm}
                         onValueChange={setSearchTerm}
                       />
                       <CommandList>
                         <CommandEmpty>
-                          Nenhum colaborador encontrado.
+                          {t.disciplines.noCollaboratorFound}
                         </CommandEmpty>
                         <CommandGroup>
                           {getFilteredUsers().map((user) => (
@@ -652,8 +600,8 @@ export default function DrawerFormDisciplines({
               {/* Lista de colaboradores selecionados */}
               {selectedCollaborators.length === 0 ? (
                 <NotFoundList
-                  message="Nenhum colaborador adicionado"
-                  description="É necessário adicionar pelo menos 1 colaborador à disciplina."
+                  message={t.disciplines.noCollaboratorAdded}
+                  description={t.disciplines.noCollaboratorDescription}
                   icon="file"
                   showIcon={false}
                 />
@@ -665,11 +613,11 @@ export default function DrawerFormDisciplines({
                       className="flex items-center justify-between p-3 rounded-md border bg-card"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-[#00796B] text-white flex items-center justify-center font-medium">
+                        <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-medium">
                           {getInitials(collaborator.name)}
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-medium text-[#00796B]">
+                          <span className="font-medium text-primary">
                             {collaborator.name}
                           </span>
                           <span className="text-sm text-muted-foreground">
@@ -706,7 +654,7 @@ export default function DrawerFormDisciplines({
               variant={"bipc"}
               disabled={isDuplicateName || isUpdating}
             >
-              Salvar alterações
+              {t.disciplines.saveChanges}
               {isUpdating && (
                 <div className="ml-2 h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
               )}
@@ -718,7 +666,7 @@ export default function DrawerFormDisciplines({
               form="disciplines-form"
               disabled={isDuplicateName || isCreating}
             >
-              Adicionar disciplina
+              {t.disciplines.addDiscipline}
               {isCreating && (
                 <div className="ml-2 h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
               )}

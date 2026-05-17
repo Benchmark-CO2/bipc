@@ -20,6 +20,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Plus, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
+import { useTranslation } from "@/i18n";
+import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 
 type ProjectSearch = {
   tab?: "projeto" | "colaboradores";
@@ -39,15 +41,16 @@ function RouteComponent() {
     from: "/_private/new_projects/$projectId",
   });
   const { hasPermission } = useProjectPermissions(projectId);
+  const { t } = useTranslation();
   // const { projectConsumptions } = Route.useLoaderData({});
   const navigate = useNavigate();
   const searchParams = useSearch({
     from: "/_private/new_projects/$projectId/",
   });
 
-  const [selectedTab, setSelectedTab] = useState("Empreendimento");
+  const [selectedTab, setSelectedTab] = useState(t.projectView.tabProject);
   const { setSummaryContext } = useSummary();
-  const tabs = ["Empreendimento", "Colaboradores"];
+  const tabs = [t.projectView.tabProject, t.projectView.tabCollaborators];
 
   const { data: projectData } = useQuery({
     queryKey: ["projects"],
@@ -78,14 +81,14 @@ function RouteComponent() {
 
   useEffect(() => {
     if (searchParams.tab === "colaboradores") {
-      setSelectedTab("Colaboradores");
+      setSelectedTab(t.projectView.tabCollaborators);
     } else {
-      setSelectedTab("Empreendimento");
+      setSelectedTab(t.projectView.tabProject);
     }
-  }, [searchParams.tab]);
+  }, [searchParams.tab, t]);
 
   const handleTabClick = (tab: string) => {
-    const tabParam = tab === "Colaboradores" ? "colaboradores" : "projeto";
+    const tabParam = tab === t.projectView.tabCollaborators ? "colaboradores" : "projeto";
 
     navigate({
       to: ".",
@@ -105,7 +108,7 @@ function RouteComponent() {
           handleTabClick={handleTabClick}
           fullWidth
         />
-        {selectedTab === "Empreendimento" && (
+        {selectedTab === t.projectView.tabProject && (
           <>
             <Button variant="outline-bipc" size="icon-lg" disabled>
               <Upload />
@@ -113,9 +116,11 @@ function RouteComponent() {
             {hasPermission("create:unit") && (
               <DrawerFormUnit
                 triggerComponent={
-                  <Button variant="bipc" size="icon-lg">
-                    <Plus />
-                  </Button>
+                  <SimpleTooltip content={t.units.form.addTitle} side="bottom">
+                    <Button variant="bipc" size="icon-lg">
+                      <Plus />
+                    </Button>
+                  </SimpleTooltip>
                 }
                 projectId={projectId}
               />
@@ -124,13 +129,13 @@ function RouteComponent() {
         )}
       </div>
 
-      {selectedTab === "Empreendimento" && (
+      {selectedTab === t.projectView.tabProject && (
         <ProjectView
           projectId={projectId}
           projectConsumptions={projectConsumptions}
         />
       )}
-      {selectedTab === "Colaboradores" && (
+      {selectedTab === t.projectView.tabCollaborators && (
         <CollaboratorsView
           projectId={projectId}
           projectName={projectData?.name}

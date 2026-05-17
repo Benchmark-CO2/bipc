@@ -12,13 +12,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
-  registerFormSchema,
   RegisterFormSchema,
+  createRegisterFormSchema,
 } from "@/validators/registerForm.validator";
 import { useMutation } from "@tanstack/react-query";
 import {
   createFileRoute,
-  Link,
   redirect,
   useNavigate,
 } from "@tanstack/react-router";
@@ -53,7 +52,6 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -62,8 +60,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { CustomLink } from "@/components/ui/custom-link";
+import { useTranslation } from "@/i18n";
 
 const SignUp = () => {
+  const { t } = useTranslation();
   const [successModal, setSuccessModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -74,7 +74,7 @@ const SignUp = () => {
   const [selectedState, setSelectedState] = useState("");
 
   const form = useForm<RegisterFormSchema>({
-    resolver: zodResolver(registerFormSchema),
+    resolver: zodResolver(createRegisterFormSchema(t)),
     defaultValues: {
       type: "member",
       name: "",
@@ -100,7 +100,6 @@ const SignUp = () => {
   const isCompany = userType === "company";
 
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const [warnModalIsOpen, setWarnModalIsOpen] = useState(false);
 
   const {
@@ -121,16 +120,16 @@ const SignUp = () => {
       if (error.response?.status === 409) {
         form.setError("email", {
           type: "custom",
-          message: "Email já cadastrado",
+          message: t.auth.signUp.emailAlreadyRegistered,
         });
       }
-      toast.error("Algo deu errado", {
-        description: error.message || "Não foi possível completar o cadastro",
+      toast.error(t.common.unknownError, {
+        description: error.message || t.common.unknownError,
       });
     },
     onSuccess() {
-      toast.success(t("signUp.dialog.success.title"), {
-        description: t("signUp.dialog.success.content"),
+      toast.success(t.auth.signUp.successTitle, {
+        description: t.auth.signUp.successContent,
       });
       setSuccessModal(true);
     },
@@ -226,13 +225,13 @@ const SignUp = () => {
       setFilledByCep(false);
       setCepFilledFields(new Set());
       setSelectedState("");
-      toast.error(t("error.errorFetchZipCode"), {
-        description: t("warn.verifyZipCode"),
+      toast.error(t.cep.fetchError, {
+        description: t.cep.verifyMessage,
         duration: 5000,
       });
       form.setError("cep", {
         type: "manual",
-        message: t("warn.verifyZipCode"),
+        message: t.cep.verifyMessage,
       });
       form.setValue("state", "");
       form.setValue("city", "");
@@ -255,11 +254,9 @@ const SignUp = () => {
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="space-y-2 mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-primary">
-          Novo Usuário
+          {t.auth.signUp.title}
         </h1>
-        <p className="text-muted-foreground">
-          Crie sua conta para começar a usar a plataforma
-        </p>
+        <p className="text-muted-foreground">{t.auth.signUp.description}</p>
       </div>
       <Card>
         <CardContent className="space-y-6">
@@ -274,7 +271,7 @@ const SignUp = () => {
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tipo de conta *</FormLabel>
+                    <FormLabel>{t.auth.signUp.accountType}</FormLabel>
                     <FormControl>
                       <div className="grid grid-cols-2 gap-3">
                         <button
@@ -293,10 +290,10 @@ const SignUp = () => {
                             <p
                               className={`font-medium text-sm ${field.value === "member" ? "text-primary" : "text-foreground"}`}
                             >
-                              Pessoa Física
+                              {t.auth.signUp.individual}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              Profissional individual
+                              {t.auth.signUp.individualDescription}
                             </p>
                           </div>
                         </button>
@@ -316,10 +313,10 @@ const SignUp = () => {
                             <p
                               className={`font-medium text-sm ${field.value === "company" ? "text-primary" : "text-foreground"}`}
                             >
-                              Pessoa Jurídica
+                              {t.auth.signUp.company}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              Empresa ou organização
+                              {t.auth.signUp.companyDescription}
                             </p>
                           </div>
                         </button>
@@ -332,7 +329,7 @@ const SignUp = () => {
 
               <Divider className="bg-accent-foreground/10" />
               <p className="font-bold text-lg">
-                {isCompany ? "Informações da empresa" : "Informações pessoais"}
+                {isCompany ? t.auth.signUp.companyInfo : t.auth.signUp.personalInfo}
               </p>
 
               <FormField
@@ -342,7 +339,7 @@ const SignUp = () => {
                   <FormItem>
                     <div className="flex items-center gap-1.5">
                       <FormLabel>
-                        {isCompany ? "Razão Social" : t("signUp.name")} *
+                        {isCompany ? t.auth.signUp.nameLabelCompany : t.auth.signUp.nameLabel}
                       </FormLabel>
                       <TooltipProvider>
                         <Tooltip>
@@ -352,8 +349,8 @@ const SignUp = () => {
                           <TooltipContent>
                             <p>
                               {isCompany
-                                ? "Obrigatório. Razão social da empresa"
-                                : "Obrigatório. Para podermos te identificar"}
+                                ? t.auth.signUp.nameTooltipCompany
+                                : t.auth.signUp.nameTooltipMember}
                             </p>
                           </TooltipContent>
                         </Tooltip>
@@ -361,9 +358,7 @@ const SignUp = () => {
                     </div>
                     <FormControl>
                       <Input
-                        placeholder={
-                          isCompany ? "Razão Social" : t("signUp.name")
-                        }
+                        placeholder={isCompany ? t.auth.signUp.razaoSocial : t.auth.signUp.fullName}
                         disabled={isPending}
                         autoComplete="name"
                         {...field}
@@ -379,16 +374,14 @@ const SignUp = () => {
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex items-center gap-1.5">
-                      <FormLabel>Email *</FormLabel>
+                      <FormLabel>{t.auth.signUp.emailLabel}</FormLabel>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger type="button">
                             <Info className="h-4 w-4 text-muted-foreground" />
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>
-                              Obrigatório. Para permitir seu acesso a plataforma
-                            </p>
+                            <p>{t.auth.signUp.emailTooltip}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -396,7 +389,7 @@ const SignUp = () => {
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder="Email"
+                        placeholder={t.auth.signUp.emailPlaceholder}
                         disabled={isPending}
                         autoComplete="email"
                         {...field}
@@ -415,14 +408,14 @@ const SignUp = () => {
                   render={({ field }) => (
                     <FormItem>
                       <div className="flex items-center gap-1.5">
-                        <FormLabel>CNPJ</FormLabel>
+                        <FormLabel>{t.auth.signUp.cnpjLabel}</FormLabel>
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger type="button">
                               <Info className="h-4 w-4 text-muted-foreground" />
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Cadastro Nacional de Pessoa Jurídica</p>
+                              <p>{t.auth.signUp.cnpjTooltip}</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -430,7 +423,7 @@ const SignUp = () => {
                       <FormControl>
                         <Input
                           type="text"
-                          placeholder="00.000.000/0000-00"
+                          placeholder={t.auth.signUp.cnpjPlaceholder}
                           disabled={isPending}
                           autoComplete="none"
                           value={masks.cnpj(field.value || "")}
@@ -454,18 +447,14 @@ const SignUp = () => {
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center gap-1.5">
-                          <FormLabel>Registro CREA/CAU</FormLabel>
+                          <FormLabel>{t.auth.signUp.creaLabel}</FormLabel>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger type="button">
                                 <Info className="h-4 w-4 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>
-                                  Para nos certificarmos que relatórios
-                                  certificados sejam emitidos apenas para
-                                  profissionais ativos
-                                </p>
+                                <p>{t.auth.signUp.creaTooltip}</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -473,7 +462,7 @@ const SignUp = () => {
                         <FormControl>
                           <Input
                             type="text"
-                            placeholder={"26.2024.9999999"}
+                            placeholder={t.auth.signUp.creaPlaceholder}
                             disabled={isPending}
                             autoComplete="none"
                             {...field}
@@ -489,16 +478,14 @@ const SignUp = () => {
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center gap-1.5">
-                          <FormLabel>{t("signUp.birthDate")}</FormLabel>
+                          <FormLabel>{t.auth.signUp.birthDateLabel}</FormLabel>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger type="button">
                                 <Info className="h-4 w-4 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>
-                                  Para autenticar a veracidade da identidade
-                                </p>
+                                <p>{t.auth.signUp.birthDateTooltip}</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -507,7 +494,7 @@ const SignUp = () => {
                           <Input
                             {...field}
                             type="text"
-                            placeholder={"DD/MM/AAAA"}
+                            placeholder={t.auth.signUp.birthDatePlaceholder}
                             disabled={isPending}
                             autoComplete="bday"
                             value={masks.date(field.value || "")}
@@ -529,12 +516,12 @@ const SignUp = () => {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("signUp.password")} *</FormLabel>
+                      <FormLabel>{t.auth.signUp.passwordLabel}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
                             type={showPassword ? "text" : "password"}
-                            placeholder={t("signUp.password")}
+                            placeholder={t.auth.signUp.passwordPlaceholder}
                             disabled={isPending}
                             autoComplete="new-password"
                             className="pr-10"
@@ -564,12 +551,12 @@ const SignUp = () => {
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("signUp.confirmPassword")} *</FormLabel>
+                      <FormLabel>{t.auth.signUp.confirmPasswordLabel}</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
                             type={showConfirmPassword ? "text" : "password"}
-                            placeholder={t("signUp.confirmPassword")}
+                            placeholder={t.auth.signUp.confirmPasswordPlaceholder}
                             disabled={isPending}
                             autoComplete="new-password"
                             className="pr-10"
@@ -599,25 +586,21 @@ const SignUp = () => {
               {!isCompany && (
                 <>
                   <Divider className="bg-accent-foreground/10" />
-                  <p className="font-bold text-lg">Informações profissionais</p>
+                  <p className="font-bold text-lg">{t.auth.signUp.professionalInfo}</p>
                   <FormField
                     control={form.control}
                     name="activity"
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center gap-1.5">
-                          <FormLabel>{t("signUp.activityArea")}</FormLabel>
+                          <FormLabel>{t.auth.signUp.activityLabel}</FormLabel>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger type="button">
                                 <Info className="h-4 w-4 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>
-                                  Para identificar a função realizada em
-                                  colaboração com outros profissionais em um
-                                  empreendimento
-                                </p>
+                                <p>{t.auth.signUp.activityTooltip}</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -632,24 +615,22 @@ const SignUp = () => {
                               className="w-full"
                               disabled={isPending}
                             >
-                              <SelectValue
-                                placeholder={t("signUp.activityArea")}
-                              />
+                              <SelectValue placeholder={t.auth.signUp.activityPlaceholder} />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="Arquitetura">
-                                Arquitetura
+                                {t.auth.signUp.activityArchitecture}
                               </SelectItem>
                               <SelectItem value="Engenharia Civil">
-                                Engenharia Civil
+                                {t.auth.signUp.activityCivilEngineering}
                               </SelectItem>
                               <SelectItem value="Coordenação de Projetos">
-                                Coordenação de Projetos
+                                {t.auth.signUp.activityProjectCoordination}
                               </SelectItem>
                               <SelectItem value="Pesquisador(a)">
-                                Pesquisa
+                                {t.auth.signUp.activityResearch}
                               </SelectItem>
-                              <SelectItem value="Outro">Outro</SelectItem>
+                              <SelectItem value="Outro">{t.auth.signUp.activityOther}</SelectItem>
                             </SelectContent>
                           </Select>
                         </FormControl>
@@ -663,17 +644,14 @@ const SignUp = () => {
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center gap-1.5">
-                          <FormLabel>{t("signUp.companyName")}</FormLabel>
+                          <FormLabel>{t.auth.signUp.companyNameLabel}</FormLabel>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger type="button">
                                 <Info className="h-4 w-4 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>
-                                  Para identificar a organização em que o
-                                  profissional colabora
-                                </p>
+                                <p>{t.auth.signUp.companyNameTooltip}</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -681,7 +659,7 @@ const SignUp = () => {
                         <FormControl>
                           <Input
                             type="text"
-                            placeholder={t("signUp.companyName")}
+                            placeholder={t.auth.signUp.companyNamePlaceholder}
                             disabled={isPending}
                             {...field}
                           />
@@ -695,14 +673,14 @@ const SignUp = () => {
 
               {/* Address section */}
               <Divider className="bg-accent-foreground/10" />
-              <p className="font-bold text-lg">Endereço</p>
+              <p className="font-bold text-lg">{t.auth.signUp.addressSection}</p>
 
               <FormField
                 control={form.control}
                 name="cep"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>CEP</FormLabel>
+                    <FormLabel>{t.auth.signUp.cepLabel}</FormLabel>
                     <FormControl>
                       <div className="flex items-center gap-2">
                         <Input
@@ -741,7 +719,7 @@ const SignUp = () => {
                   name="state"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Estado</FormLabel>
+                      <FormLabel>{t.auth.signUp.stateLabel}</FormLabel>
                       <FormControl>
                         <Select
                           onValueChange={(value) => {
@@ -755,7 +733,7 @@ const SignUp = () => {
                           disabled={filledByCep || locationLoading || isPending}
                         >
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecione o estado" />
+                            <SelectValue placeholder={t.auth.signUp.statePlaceholder} />
                           </SelectTrigger>
                           <SelectContent>
                             {states.map((state) => (
@@ -778,10 +756,10 @@ const SignUp = () => {
                   name="city"
                   render={({ field }) => (
                     <FormItem className="sm:col-span-2">
-                      <FormLabel>{t("signUp.city")}</FormLabel>
+                      <FormLabel>{t.auth.signUp.cityLabel}</FormLabel>
                       <FormControl>
                         {filledByCep ? (
-                          <Input placeholder="Cidade" disabled {...field} />
+                          <Input placeholder={t.auth.signUp.cityPlaceholder} disabled {...field} />
                         ) : (
                           <CityCombobox
                             cities={cities}
@@ -794,8 +772,8 @@ const SignUp = () => {
                             isError={citiesError}
                             placeholder={
                               !selectedState
-                                ? "Selecione o estado primeiro"
-                                : "Selecione a cidade"
+                                ? t.auth.signUp.citySelectFirst
+                                : t.auth.signUp.citySelect
                             }
                           />
                         )}
@@ -811,10 +789,10 @@ const SignUp = () => {
                 name="neighborhood"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Bairro</FormLabel>
+                    <FormLabel>{t.auth.signUp.neighborhoodLabel}</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Bairro"
+                        placeholder={t.auth.signUp.neighborhoodPlaceholder}
                         disabled={
                           cepFilledFields.has("neighborhood") ||
                           locationLoading ||
@@ -834,10 +812,10 @@ const SignUp = () => {
                   name="street"
                   render={({ field }) => (
                     <FormItem className="sm:col-span-2">
-                      <FormLabel>Rua</FormLabel>
+                      <FormLabel>{t.auth.signUp.streetLabel}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Rua"
+                          placeholder={t.auth.signUp.streetPlaceholder}
                           disabled={
                             cepFilledFields.has("street") ||
                             locationLoading ||
@@ -855,10 +833,10 @@ const SignUp = () => {
                   name="number"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Número</FormLabel>
+                      <FormLabel>{t.auth.signUp.numberLabel}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Nº"
+                          placeholder={t.auth.signUp.numberPlaceholder}
                           disabled={isPending}
                           {...field}
                         />
@@ -875,10 +853,10 @@ const SignUp = () => {
                   name="complement"
                   render={({ field }) => (
                     <FormItem className="@md:col-span-2">
-                      <FormLabel>Complemento</FormLabel>
+                      <FormLabel>{t.auth.signUp.complementLabel}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Complemento"
+                          placeholder={t.auth.signUp.complementPlaceholder}
                           disabled={isPending}
                           {...field}
                         />
@@ -902,14 +880,12 @@ const SignUp = () => {
                           onCheckedChange={field.onChange}
                         />
                         <span className="text-sm text-foreground">
-                          Eu declaro estar ciente sobre o uso dos meus dados
-                          para as finalidades informadas no formulário de
-                          cadastro e concordo a{" "}
+                          {t.auth.signUp.privacyAccept}{" "}
                           <CustomLink
                             linkKey="privacy"
                             className="underline text-active hover:text-active-50 underline-offset-2 transition-all"
                           >
-                            Política de Privacidade
+                            {t.auth.signUp.privacyLink}
                           </CustomLink>
                         </span>
                       </div>
@@ -928,14 +904,14 @@ const SignUp = () => {
                           onCheckedChange={field.onChange}
                         />
                         <span className="text-sm text-foreground">
-                          Eu declaro estar de acordo com os{" "}
+                          {t.auth.signUp.termsAccept}{" "}
                           <CustomLink
                             linkKey="termsOfUse"
                             className="underline text-active hover:text-active-50 underline-offset-2 transition-all"
                           >
-                            Termos de Uso
+                            {t.auth.signUp.termsLink}
                           </CustomLink>{" "}
-                          da plataforma
+                          {t.auth.signUp.termsSuffix}
                         </span>
                       </div>
                       <FormMessage className="ml-6" />
@@ -947,12 +923,12 @@ const SignUp = () => {
               <div className="flex items-center gap-2 rounded-md border border-active/20 bg-active/5 px-4 py-3 text-sm">
                 <ShieldCheck className="h-5 w-5 shrink-0 text-active" />
                 <span className="text-muted-foreground">
-                  Você pode gerenciar seus dados pessoais a qualquer momento.{" "}
+                  {t.auth.signUp.dataManagement}{" "}
                   <CustomLink
                     linkKey="dataForm"
                     className="font-medium text-active hover:text-active-50 underline underline-offset-2 transition-all"
                   >
-                    Exercer meus direitos
+                    {t.auth.signUp.dataRights}
                   </CustomLink>
                 </span>
               </div>
@@ -966,10 +942,10 @@ const SignUp = () => {
                 {isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Carregando...
+                    {t.common.loading}
                   </>
                 ) : (
-                  t("signUp.buttonSignUp")
+                  t.auth.signUp.signUpButton
                 )}
               </Button>
             </form>

@@ -8,6 +8,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { UseNavigateResult } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "@/i18n";
 
 export const useInvites = (props: {
   navigate?: UseNavigateResult<string>;
@@ -16,6 +17,8 @@ export const useInvites = (props: {
   const [hasOpened, setHasOpened] = useState<boolean>(false);
   const [newInvitesCount, setNewInvitesCount] = useState<number>(0);
   const [isInviteLoading, setIsInviteLoading] = useState<boolean>(true);
+
+  const { t } = useTranslation();
 
   const { data, isLoading } = useQuery({
     queryKey: ["invites"],
@@ -38,7 +41,7 @@ export const useInvites = (props: {
       response: PutReplyInviteRequest;
     }) => putReplyInvite(String(inviteId), response),
     onSuccess: () => {
-      toast.success("Resposta ao convite enviada com sucesso.");
+      toast.success(t.invites.inviteResponseSuccess);
       if (props?.navigate) {
         props.navigate({
           to: "/new_projects",
@@ -48,7 +51,7 @@ export const useInvites = (props: {
     },
     onError: () => {
       toast.error(
-        "Erro ao enviar resposta ao convite. Por favor, tente novamente mais tarde."
+        t.invites.inviteResponseError
       );
     },
   });

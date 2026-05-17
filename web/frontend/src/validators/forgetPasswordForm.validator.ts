@@ -1,17 +1,15 @@
-import { t } from "i18next";
+import { Translations } from "@/i18n/translations/pt-BR";
 import { z } from "zod";
 
-export const forgetPasswordFormSchema = z.object({
-  email: z
-    .string()
-    .min(1, {
-      message: t("forms.customRequiredField", {
-        field: t("forms.fields.email"),
-      }),
-    })
-    .email({
-      message: t("forms.invalidEmail"),
-    }),
-});
+export function createForgetPasswordFormSchema(t: Translations) {
+  return z.object({
+    email: z
+      .string()
+      .min(1, { message: t.validators.required })
+      .email({ message: t.validators.invalidEmail }),
+  });
+}
 
-export type ForgetPasswordFormSchema = z.infer<typeof forgetPasswordFormSchema>;
+export type ForgetPasswordFormSchema = z.infer<
+  ReturnType<typeof createForgetPasswordFormSchema>
+>;

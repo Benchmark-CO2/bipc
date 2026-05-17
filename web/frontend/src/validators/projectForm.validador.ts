@@ -1,39 +1,46 @@
+import { Translations } from "@/i18n/translations/pt-BR";
 import { z } from "zod";
 
-export const projectFormSchema = z.object({
-  name: z.string().min(2, "O nome deve ter pelo menos 3 caracteres"),
-  cep: z
-    .string()
-    .optional()
-    .or(z.string().min(9, "O CEP deve ter pelo menos 8 caracteres")),
-  state: z.string().min(2, "O estado deve ter pelo menos 3 caracteres"),
-  city: z.string().min(2, "A cidade deve ter pelo menos 3 caracteres"),
-  neighborhood: z
-    .string()
-    .optional()
-    .or(z.string().min(2, "O bairro deve ter pelo menos 3 caracteres")),
-  street: z
-    .string()
-    .optional()
-    .or(z.string().min(3, "A rua deve ter pelo menos 3 caracteres")),
-  number: z
-    .string()
-    .optional()
-    .or(z.string().min(1, "O número deve ser informado")),
-  phase: z.enum(
-    [
-      "not_defined",
-      "preliminary_study",
-      "basic_project",
-      "executive_project",
-      "released_for_construction",
-    ],
-    {
-      required_error: "Selecione uma fase do projeto",
-      invalid_type_error: "Selecione uma fase do projeto",
-    }
-  ),
-  description: z.string().optional(),
-});
+export function createProjectFormSchema(t: Translations) {
+  return z.object({
+    name: z.string().min(2, t.validators.nameMinLength),
+    cep: z
+      .string()
+      .optional()
+      .or(z.string().min(9, t.validators.invalidCep)),
+    state: z.string().min(2, t.validators.required),
+    city: z.string().min(2, t.validators.required),
+    neighborhood: z
+      .string()
+      .optional()
+      .or(z.string().min(2, t.validators.required)),
+    street: z
+      .string()
+      .optional()
+      .or(z.string().min(3, t.validators.required)),
+    number: z
+      .string()
+      .optional()
+      .or(z.string().min(1, t.validators.required)),
+    siop: z.string().optional().or(z.string().max(50)),
+    apf: z.string().optional().or(z.string().max(50)),
+    phase: z.enum(
+      [
+        "not_defined",
+        "preliminary_study",
+        "basic_project",
+        "executive_project",
+        "released_for_construction",
+      ],
+      {
+        required_error: t.validators.selectPhase,
+        invalid_type_error: t.validators.selectPhase,
+      }
+    ),
+    description: z.string().optional(),
+  });
+}
 
-export type ProjectFormSchema = z.infer<typeof projectFormSchema>;
+export type ProjectFormSchema = z.infer<
+  ReturnType<typeof createProjectFormSchema>
+>;

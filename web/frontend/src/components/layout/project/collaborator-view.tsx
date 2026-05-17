@@ -15,6 +15,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { getProjectInvites } from "@/actions/invites/getProjectInvites";
 import { deleteProjectInvite } from "@/actions/invites/deleteProjectInvite";
+import { useTranslation } from "@/i18n";
+import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 
 const CollaboratorsView = ({
   projectId,
@@ -26,6 +28,7 @@ const CollaboratorsView = ({
   const { email } = useAuth();
   const { hasPermission } = useProjectPermissions(projectId);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const { data: collaboratorsData, isLoading } = useQuery({
     queryKey: ["project-collaborators", projectId],
@@ -53,7 +56,7 @@ const CollaboratorsView = ({
         (c) => c.id === collaboratorId,
       );
 
-      toast.success("Colaborador removido com sucesso", {
+      toast.success(t.collaboratorsView.successRemoveCollaborator, {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -65,8 +68,8 @@ const CollaboratorsView = ({
       }
     },
     onError: (error) => {
-      toast.error("Erro ao remover colaborador", {
-        description: error.message || "Erro desconhecido",
+      toast.error(t.collaboratorsView.errorRemoveCollaborator, {
+        description: error.message || t.common.unknownError,
         duration: 5000,
       });
     },
@@ -77,7 +80,7 @@ const CollaboratorsView = ({
       mutationFn: (disciplineId: string) =>
         deleteDiscipline(projectId, disciplineId),
       onSuccess: () => {
-        toast.success("Disciplina removida com sucesso", {
+        toast.success(t.collaboratorsView.successRemoveDiscipline, {
           duration: 5000,
         });
         queryClient.invalidateQueries({
@@ -88,8 +91,8 @@ const CollaboratorsView = ({
         });
       },
       onError: (error) => {
-        toast.error("Erro ao remover disciplina", {
-          description: error.message || "Erro desconhecido",
+        toast.error(t.collaboratorsView.errorRemoveDiscipline, {
+          description: error.message || t.common.unknownError,
           duration: 5000,
         });
       },
@@ -100,7 +103,7 @@ const CollaboratorsView = ({
       mutationFn: (inviteId: string) =>
         deleteProjectInvite(projectId, inviteId),
       onSuccess: () => {
-        toast.success("Convite removido com sucesso", {
+        toast.success(t.collaboratorsView.successRemoveInvite, {
           duration: 5000,
         });
         queryClient.invalidateQueries({
@@ -108,8 +111,8 @@ const CollaboratorsView = ({
         });
       },
       onError: (error) => {
-        toast.error("Erro ao remover convite", {
-          description: error.message || "Erro desconhecido",
+        toast.error(t.collaboratorsView.errorRemoveInvite, {
+          description: error.message || t.common.unknownError,
           duration: 5000,
         });
       },
@@ -144,15 +147,15 @@ const CollaboratorsView = ({
     <div className="flex flex-col gap-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg dark:border-gray-700">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-md font-semibold text-primary dark:text-gray-200">
-            Disciplinas
+          <h2 className="text-h2 text-primary dark:text-gray-200">
+            {t.collaboratorsView.disciplines}
           </h2>
           {hasPermission("create:role") && (
             <DrawerFormDisciplines
               componentTrigger={
                 <Button variant="bipc" className="text-white">
                   <PlusIcon className="mr-1 h-4 w-4" />
-                  Nova Disciplina
+                  {t.collaboratorsView.newDiscipline}
                 </Button>
               }
               projectId={projectId}
@@ -169,11 +172,14 @@ const CollaboratorsView = ({
               className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg"
             >
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                <div
+                  className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center text-sm font-medium text-gray-700 dark:text-gray-300"
+                  aria-label={discipline.name}
+                >
                   {discipline.name.slice(0, 2)}
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900 dark:text-gray-100">
+                  <h3 className="text-h3 text-primary dark:text-gray-100">
                     {discipline.name}
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -186,28 +192,37 @@ const CollaboratorsView = ({
                   {hasPermission("delete:role") && (
                     <ModalConfirmDelete
                       componentTrigger={
-                        <Button variant="outline-destructive" size="icon-lg">
+                        <SimpleTooltip content={t.disciplines.deleteDiscipline} side="bottom">
+                        <Button
+                          variant="outline-destructive"
+                          size="icon-lg"
+                          aria-label={`${t.disciplines.deleteDiscipline} ${discipline.name}`}
+                        >
                           {isDeletingDiscipline ? (
                             <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
                           ) : (
                             <TrashIcon className="h-4 w-4" />
                           )}
                         </Button>
+                        </SimpleTooltip>
                       }
-                      title="Remover Disciplina"
+                      title={t.collaboratorsView.removeDiscipline}
                       onConfirm={() => mutateDeleteDiscipline(discipline.id)}
                     />
                   )}
                   {hasPermission("update:role") && (
                     <DrawerFormDisciplines
                       componentTrigger={
-                        <Button
-                          variant="outline-bipc"
-                          size="icon-lg"
-                          className="text-primary border-primary"
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </Button>
+                        <SimpleTooltip content={t.disciplines.editDiscipline} side="bottom">
+                          <Button
+                            variant="outline-bipc"
+                            size="icon-lg"
+                            className="text-primary border-primary"
+                            aria-label={`Editar disciplina ${discipline.name}`}
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Button>
+                        </SimpleTooltip>
                       }
                       projectId={projectId}
                       roleData={discipline}
@@ -224,8 +239,8 @@ const CollaboratorsView = ({
 
       <div className="bg-white dark:bg-gray-800 rounded-lg dark:border-gray-700">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-md font-semibold text-primary dark:text-gray-200">
-            Todos os Colaboradores
+          <h2 className="text-h2 text-primary dark:text-gray-200">
+            {t.collaboratorsView.allCollaborators}
           </h2>
 
           {hasPermission("create:invite") && (
@@ -240,7 +255,10 @@ const CollaboratorsView = ({
               className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg"
             >
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-primary dark:bg-secondary rounded-full flex items-center justify-center text-sm font-medium text-accent dark:text-gray-300">
+                <div
+                  className="w-10 h-10 bg-primary dark:bg-secondary rounded-full flex items-center justify-center text-sm font-medium text-accent dark:text-gray-300"
+                  aria-label={collaborator.name}
+                >
                   {collaborator.name
                     .split(" ")
                     .map((n) => n[0])
@@ -248,7 +266,7 @@ const CollaboratorsView = ({
                     .slice(0, 2)}
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900 dark:text-gray-100">
+                  <h3 className="text-h3 text-primary dark:text-gray-100">
                     {collaborator.name}
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -268,13 +286,16 @@ const CollaboratorsView = ({
                   {hasPermission("*:*") && (
                     <DialogTransferOwnership
                       componentTrigger={
-                        <Button
-                          variant="outline-bipc"
-                          size="icon-lg"
-                          className="text-primary border-primary"
-                        >
-                          <UserCheck className="h-4 w-4" />
-                        </Button>
+                        <SimpleTooltip content={t.projects.projectTransfer.title} side="bottom">
+                          <Button
+                            variant="outline-bipc"
+                            size="icon-lg"
+                            className="text-primary border-primary"
+                            aria-label={`${t.projects.projectTransfer.title}: ${collaborator.name}`}
+                          >
+                            <UserCheck className="h-4 w-4" />
+                          </Button>
+                        </SimpleTooltip>
                       }
                       projectId={projectId}
                       projectName={projectName || "este projeto"}
@@ -284,18 +305,22 @@ const CollaboratorsView = ({
                   {hasPermission("delete:collaborator") && (
                     <ModalConfirmDelete
                       componentTrigger={
-                        <Button variant="outline-destructive" size="icon-lg">
-                          {isDeletingCollaborator ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
-                          ) : (
-                            <TrashIcon className="h-4 w-4" />
-                          )}
+                        <SimpleTooltip content={t.collaboratorsView.removeCollaborator} side="bottom">
+                          <Button
+                            variant="outline-destructive"
+                            size="icon-lg"
+                            aria-label={`${t.collaboratorsView.removeCollaborator} ${collaborator.name}`}
+                          >
+                            {isDeletingCollaborator ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                            ) : (
+                              <TrashIcon className="h-4 w-4" />
+                            )}
                         </Button>
+                        </SimpleTooltip>
                       }
-                      title="Remover Colaborador"
-                      onConfirm={() =>
-                        mutateDeleteCollaborator(collaborator.id)
-                      }
+                      title={t.collaboratorsView.removeCollaborator}
+                      onConfirm={() => mutateDeleteCollaborator(collaborator.id)}
                     />
                   )}
                 </div>
@@ -308,12 +333,14 @@ const CollaboratorsView = ({
       {projectInvites && projectInvites.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg dark:border-gray-700">
           <div className="flex justify-between items-center mb-3">
-            <h2 className="text-md font-semibold text-primary dark:text-gray-200">
-              Convites Pendentes
+            <h2 className="text-h2 text-primary dark:text-gray-200">
+              {t.collaboratorsView.pendingInvites}
             </h2>
             <span className="text-sm text-gray-500 dark:text-gray-400">
               {projectInvites.length}{" "}
-              {projectInvites.length === 1 ? "convite" : "convites"}
+              {projectInvites.length === 1
+                ? t.collaboratorsView.invite
+                : t.collaboratorsView.invites}
             </span>
           </div>
 
@@ -324,39 +351,48 @@ const CollaboratorsView = ({
                 className="flex items-center justify-between p-4 border border-yellow-200 dark:border-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-yellow-200 dark:bg-yellow-600 rounded-full flex items-center justify-center text-sm font-medium text-yellow-700 dark:text-yellow-300">
+                  <div
+                    className="w-10 h-10 bg-yellow-200 dark:bg-yellow-600 rounded-full flex items-center justify-center text-sm font-medium text-yellow-700 dark:text-yellow-300"
+                    aria-label={invite.email}
+                  >
                     {invite.email.slice(0, 2).toUpperCase()}
                   </div>
                   <div>
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100">
+                    <h3 className="text-h3 text-primary dark:text-gray-100">
                       {invite.email}
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Enviado em{" "}
+                      {t.collaboratorsView.sentAt}{" "}
                       {new Date(invite.created_at).toLocaleDateString("pt-BR")}
                     </p>
                     <p className="text-sm text-yellow-600 dark:text-yellow-400">
-                      Expira em{" "}
+                      {t.collaboratorsView.expiresAt}{" "}
                       {new Date(invite.expires_at).toLocaleDateString("pt-BR")}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="px-3 py-1 text-xs font-medium bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 rounded-full">
-                    Pendente
+                    {t.collaboratorsView.pending}
                   </span>
                   {hasPermission("delete:invite") && (
                     <ModalConfirmDelete
                       componentTrigger={
-                        <Button variant="outline-destructive" size="icon-lg">
-                          {isDeletingInvite ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
-                          ) : (
-                            <TrashIcon className="h-4 w-4" />
-                          )}
-                        </Button>
+                        <SimpleTooltip content={t.collaboratorsView.removeInvite} side="bottom">
+                          <Button
+                            variant="outline-destructive"
+                            size="icon-lg"
+                            aria-label={`${t.collaboratorsView.removeInvite}: ${invite.email}`}
+                          >
+                            {isDeletingInvite ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                            ) : (
+                              <TrashIcon className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </SimpleTooltip>
                       }
-                      title="Remover Convite"
+                      title={t.collaboratorsView.removeInvite}
                       onConfirm={() => mutateDeleteInvite(invite.id)}
                     />
                   )}

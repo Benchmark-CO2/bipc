@@ -11,6 +11,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { ENV } from "@/utils/constants";
 import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
+import { useTranslation } from "@/i18n";
 import { QueryClient } from "@tanstack/react-query";
 import {
   createRootRouteWithContext,
@@ -19,7 +20,6 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
-import { useTranslation } from "react-i18next";
 import { trainingModalStorage } from "@/utils/trainingModalStorage";
 const TanStackRouterDevtools = import.meta.env.PROD
   ? () => null
@@ -123,10 +123,9 @@ export const Route = createRootRouteWithContext<{
   },
   errorComponent: ({ error }) => {
     const { t } = useTranslation();
-
     return (
       <div className="flex flex-col items-center justify-center h-screen w-full">
-        <h1 className="text-2xl font-bold">{t("error.unexpectedError")}</h1>
+        <h1 className="text-2xl font-bold">{t.errors.unexpectedError}</h1>
 
         {ENV === "development" && (
           <div className="mt-4 text-base text-red-500 bg-red-300/40 p-4 flex flex-col font-semibold font-mono">

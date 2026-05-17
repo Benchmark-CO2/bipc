@@ -8,11 +8,11 @@ import CustomCard from "@/components/ui/customCard";
 import NotFoundList from "@/components/ui/not-found-list";
 import { useSummary } from "@/context/summaryContext";
 import { useProjects } from "@/hooks/useProjects";
+import { useTranslation } from "@/i18n";
 import { queryClient } from "@/utils/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_private/new_projects/")({
@@ -32,10 +32,10 @@ export const Route = createFileRoute("/_private/new_projects/")({
 
 function RouteComponent() {
   const [viewMode, setViewMode] = useState<"table" | "grid">("grid");
-  const { t } = useTranslation();
   const { projects, selectedProjects, setSelectedProjects } = useProjects();
   const navigate = useNavigate({ from: "/new_projects" });
   const { setSummaryContext } = useSummary();
+  const { t } = useTranslation();
   const { data } = useQuery({
     queryKey: ["projects"],
     queryFn: getAllProjectsByUser,
@@ -66,16 +66,16 @@ function RouteComponent() {
   const onDeleteProject = (projectUid: string) => {
     void deleteProject(projectUid)
       .then(async () => {
-        toast.success(t("success.projectDeleted"));
+        toast.success(t.projects.deleteSuccess);
         await queryClient.invalidateQueries({
           queryKey: ["projects"],
           refetchType: "all",
         });
       })
       .catch((error) => {
-        toast.error(t("error.errorDeleteProject"), {
+        toast.error(t.projects.deleteError, {
           description:
-            error instanceof Error ? error.message : t("error.errorUnknown"),
+            error instanceof Error ? error.message : t.errors.unknownError,
           duration: 5000,
         });
       });
@@ -132,8 +132,8 @@ function RouteComponent() {
   return (
     <div>
       <div className="mb-6 mt-6 flex justify-between gap-1 flex-wrap">
-        <h1 className="text-4xl font-semibold text-primary dark:text-accent-foreground">
-          Empreendimentos
+        <h1 className="text-h1 text-primary dark:text-accent-foreground">
+          {t.projects.title}
         </h1>
         <div className="flex justify-end gap-2 ml-auto">
           {viewMode === "grid" && projects && projects.length > 0 && (
@@ -143,18 +143,15 @@ function RouteComponent() {
                 onClick={handleSelectAll}
                 className="min-w-[140px]"
               >
-                {allSelected ? "Desmarcar Todos" : "Selecionar Todos"} (
-                {projects.length})
+                {allSelected ? t.projects.deselectAll : t.projects.selectAll}
               </Button>
             </>
           )}
-          {projects?.length > 0 && (
-            <DrawerFormProject
-              componentTrigger={
-                <Button variant={"bipc"}>{t("projects.addProject")}</Button>
-              }
-            />
-          )}
+          <DrawerFormProject
+            componentTrigger={
+              <Button variant={"bipc"}>{t.projects.add}</Button>
+            }
+          />
         </div>
       </div>
       {viewMode === "table" ? (
@@ -183,12 +180,12 @@ function RouteComponent() {
         </div>
       ) : (
         <NotFoundList
-          message="Você ainda não possui projetos."
-          description="Crie seu primeiro projeto para começar a gerenciar suas unidades e simulações."
+          message={t.projects.noProjects}
+          description={t.projects.noProjectsDescription}
           button={
             <DrawerFormProject
               componentTrigger={
-                <Button variant={"bipc"}>Criar Novo Projeto</Button>
+                <Button variant={"bipc"}>{t.projects.add}</Button>
               }
             />
           }

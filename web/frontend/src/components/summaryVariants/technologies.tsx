@@ -1,5 +1,6 @@
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
@@ -11,7 +12,7 @@ import ItemCard from "./components/ItemCard";
 import Legend from "./components/Legend";
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
-import { barColors, recalculateY } from "./utils";
+import { barColors, normalizeBenchmarkSeries, recalculateY } from "./utils";
 
 type TModules = {
   consumption: {
@@ -55,13 +56,6 @@ type Item = SimulationData & {
   label: string;
 };
 
-const manageData = (data: ProjectsSummaryProps["data"]["benchmark"]["co2"]) => {
-  if (!data) return [];
-  return data.map((el) => ({
-    ...el,
-    label: "",
-  }));
-};
 const SimulationsSummary = ({
   projects,
   data,
@@ -70,6 +64,7 @@ const SimulationsSummary = ({
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
+  const { t } = useTranslation();
   const filteredProjects = projects.filter((el) => !!el.consumption);
 
   const newItems: Record<"co2" | "energy", Item>[] = filteredProjects.map(
@@ -93,14 +88,13 @@ const SimulationsSummary = ({
     },
   ) as any;
 
-  const managedData = manageData(
-    data.benchmark?.[type as "co2" | "energy"] || [],
+  const managedData = normalizeBenchmarkSeries(
+    data.benchmark?.[type as "co2" | "energy"],
   )
     .map((el) => ({
       ...el,
       label: projects.find((f) => f.id === el.id)?.name || "",
-    }))
-    .filter((f) => f.min && f.max);
+    }));
   const { isExpanded } = useSummary();
 
   const handleAddProject = (projectId: string) => {
@@ -140,7 +134,7 @@ const SimulationsSummary = ({
     }
   }, [previousProjects, projects, someSelected]);
 
-  const [subTabs, setSubTabs] = useState<"Empreendimentos">("Empreendimentos");
+  const [subTabs, setSubTabs] = useState<string>(t.summaryTechnologies.projects);
   const selectAll = () => {
     if (selectedProjects.length === projects.length) {
       setSelectedProjects([]);
@@ -154,10 +148,12 @@ const SimulationsSummary = ({
   ] as any;
   const minData = useMemo(() => newData.map((d: Item) => d.min), [newData]);
   const maxData = useMemo(() => newData.map((d: Item) => d.max), [newData]);
+  const minValue = minData.length ? Math.min(...minData) : 0;
+  const maxValue = maxData.length ? Math.max(...maxData) : 0;
   const updateYs = recalculateY(
     newData,
-    minData[0],
-    maxData[maxData.length - 1],
+    minValue,
+    maxValue,
   );
 
   return (
@@ -169,15 +165,15 @@ const SimulationsSummary = ({
           selectedTab={type}
           fullWidth
           onSubTabSelect={(tab) => {
-            if (tab === "Empreendimentos") setSubTabs(tab as "Empreendimentos");
-            if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
+            if (tab === t.summaryTechnologies.projects) setSubTabs(tab);
+            if (tab === t.summary.selectAll || tab === t.summary.deselectAll)
               selectAll();
           }}
           subTabs={[
-            "Empreendimentos",
+            t.summaryTechnologies.projects,
             selectedProjects.length === projects.length
-              ? "Desmarcar Todos"
-              : "Selecionar Todos",
+              ? t.summary.deselectAll
+              : t.summary.selectAll,
           ]}
           selectedSubTab={subTabs}
         />
@@ -198,8 +194,8 @@ const SimulationsSummary = ({
             {" "}
             {(!projects || projects.length === 0) && (
               <NotFoundList
-                message="Nenhum empreendimento selecionado."
-                description="Por favor, selecione ao menos um empreendimento para visualizar o resumo."
+                message={t.summaryTechnologies.noProjectSelected}
+                description={t.summaryTechnologies.noProjectDescription}
                 className="bg-transparent border-0 shadow-none"
               />
             )}
@@ -265,6 +261,12 @@ const SimulationsSummary = ({
             maxData={maxData}
             minData={minData}
             totalProjects={updateYs.length}
+            showBaseline
+            showTop5Line
+            showProcelScale
+            showMaxCurve
+            showMinCurve
+            showMidCurve
           />
         ) : (
           <D3GradientRangeLineChart

@@ -1,4 +1,5 @@
 import { masks } from "@/utils/masks";
+import { useTranslation } from "@/i18n";
 import { Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
@@ -14,13 +15,6 @@ import {
 } from "../../ui/select";
 
 type MaterialKey = "rebar" | "mesh" | "strand" | "other";
-
-const allMaterialOptions: Record<MaterialKey, string> = {
-  rebar: "Vergalhão",
-  mesh: "Tela",
-  strand: "Cordoalha",
-  other: "Outro",
-};
 
 const defaultResistanceByMaterial: Record<string, string> = {
   rebar: "CA50",
@@ -42,8 +36,7 @@ interface SteelMaterialItemProps {
   fieldId: string;
   materialOptions: Array<{ value: string; label: string }>;
   resistanceOptions: Array<{ value: string; label: string }>;
-  usedMaterials: string[];
-  usedResistances: string[];
+  otherCombinations: string[]; // "material:resistance" pairs from OTHER rows
   onRemove: () => void;
   canRemove: boolean;
 }
@@ -56,12 +49,11 @@ const SteelMaterialItem = ({
   fieldId,
   materialOptions,
   resistanceOptions,
-  usedMaterials,
-  usedResistances,
+  otherCombinations,
   onRemove,
   canRemove,
 }: SteelMaterialItemProps) => {
-  // Agora useWatch está no nível correto do componente
+  const { t } = useTranslation();
   const currentMaterial = useWatch({
     control: form.control,
     name: `${name}.${index}.material`,
@@ -84,6 +76,13 @@ const SteelMaterialItem = ({
   const filteredResistanceOptions = resistanceOptions.filter((opt) =>
     allowedResistances.includes(opt.value),
   );
+
+  // Uma combinação está desabilitada se já existe em outra linha,
+  // exceto quando material === "other" E resistance === "other"
+  const isCombinationUsed = (mat: string, res: string) => {
+    if (mat === "other" && res === "other") return false;
+    return otherCombinations.includes(`${mat}:${res}`);
+  };
 
   // Resetar resistência quando o material muda e o valor atual não é mais válido
   useEffect(() => {
@@ -108,25 +107,37 @@ const SteelMaterialItem = ({
             name={`${name}.${index}.material`}
             render={({ field }) => (
               <FormItem className="w-full space-y-1">
-                <FormLabel className="text-xs">Material *</FormLabel>
+                <FormLabel className="text-xs">{t.modules.form.material}</FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger className="h-9 w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {materialOptions.map((opt) => (
-                        <SelectItem
-                          key={opt.value}
-                          value={opt.value}
-                          disabled={
-                            usedMaterials.includes(opt.value) &&
-                            currentMaterial !== opt.value
-                          }
-                        >
-                          {opt.label}
-                        </SelectItem>
-                      ))}
+                      {materialOptions.map((opt) => {
+                        // A material option is disabled if ALL its allowed resistances
+                        // are already used in other rows (and it's not "other"+"other")
+                        const matResistances =
+                          allowedResistancesByMaterial[opt.value] ??
+                          resistanceOptions.map((r) => r.value);
+                        const allCombinationsUsed =
+                          opt.value !== "other" &&
+                          matResistances.every((res) =>
+                            isCombinationUsed(opt.value, res),
+                          );
+                        return (
+                          <SelectItem
+                            key={opt.value}
+                            value={opt.value}
+                            disabled={
+                              allCombinationsUsed &&
+                              currentMaterial !== opt.value
+                            }
+                          >
+                            {opt.label}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </FormControl>
@@ -142,7 +153,7 @@ const SteelMaterialItem = ({
             name={`${name}.${index}.resistance`}
             render={({ field }) => (
               <FormItem className="w-full space-y-1">
-                <FormLabel className="text-xs">Tipo *</FormLabel>
+                <FormLabel className="text-xs">{t.modules.form.steelType}</FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger className="h-9 w-full">
@@ -154,7 +165,7 @@ const SteelMaterialItem = ({
                           key={opt.value}
                           value={opt.value}
                           disabled={
-                            usedResistances.includes(opt.value) &&
+                            isCombinationUsed(currentMaterial, opt.value) &&
                             currentResistance !== opt.value
                           }
                         >
@@ -176,7 +187,7 @@ const SteelMaterialItem = ({
             name={`${name}.${index}.mass`}
             render={({ field }) => (
               <FormItem className="w-full space-y-1">
-                <FormLabel className="text-xs">Massa (kg) *</FormLabel>
+                <FormLabel className="text-xs">{t.modules.form.massSteelKg}</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
@@ -215,7 +226,7 @@ const SteelMaterialItem = ({
           name={`${name}.${index}.other_name`}
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Nome do Material *</FormLabel>
+              <FormLabel className="text-xs">{t.modules.form.customMaterialName}</FormLabel>
               <FormControl>
                 <Input {...field} placeholder="Ex: Aço especial" />
               </FormControl>
@@ -232,7 +243,7 @@ const SteelMaterialItem = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">
-                Tipo de resistência customizada (MPa) *
+                {t.modules.form.customResistance}
               </FormLabel>
               <FormControl>
                 <Input
@@ -255,6 +266,7 @@ const SteelMaterialList = ({
   name,
   allowedMaterials = ["rebar", "other"],
 }: SteelMaterialListProps) => {
+  const { t } = useTranslation();
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name,
@@ -277,32 +289,28 @@ const SteelMaterialList = ({
     return sum + (isNaN(numericValue) ? 0 : numericValue);
   }, 0);
 
-  // Coletar materiais e resistências já utilizados
-  const usedMaterials = (steelArray || [])
-    .map((item: any) => item?.material)
-    .filter(Boolean);
-
-  const usedResistances = (steelArray || [])
-    .map((item: any) => item?.resistance)
-    .filter(Boolean);
-
   const materialOptions = allowedMaterials.map((key) => ({
     value: key,
-    label: allMaterialOptions[key],
+    label: {
+      rebar: t.modules.form.rebar,
+      mesh: t.modules.form.mesh,
+      strand: t.modules.form.strand,
+      other: t.modules.form.other,
+    }[key] ?? key,
   }));
 
   const resistanceOptions = [
     { value: "CA50", label: "CA-50" },
     { value: "CA60", label: "CA-60" },
     { value: "CP190", label: "CP-190" },
-    { value: "other", label: "Outro" },
+    { value: "other", label: t.modules.form.other },
   ];
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <FormLabel className="text-xs text-gray-700">
-          Materiais de Aço
+          {t.modules.form.steelMaterials}
         </FormLabel>
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-500">Total:</span>
@@ -316,37 +324,76 @@ const SteelMaterialList = ({
         </div>
       </div>
 
-      {fields.map((field, index) => (
-        <SteelMaterialItem
-          key={field.id}
-          form={form}
-          name={name}
-          index={index}
-          fieldId={field.id}
-          materialOptions={materialOptions}
-          resistanceOptions={resistanceOptions}
-          usedMaterials={usedMaterials}
-          usedResistances={usedResistances}
-          onRemove={() => remove(index)}
-          canRemove={fields.length > 1}
-        />
-      ))}
+      {fields.map((field, index) => {
+        // combinations from all OTHER rows (by index)
+        const otherCombinations = (steelArray || [])
+          .map((item: any, i: number) => {
+            if (i === index || !item?.material || !item?.resistance) return null;
+            return `${item.material}:${item.resistance}`;
+          })
+          .filter(Boolean) as string[];
+        return (
+          <SteelMaterialItem
+            key={field.id}
+            form={form}
+            name={name}
+            index={index}
+            fieldId={field.id}
+            materialOptions={materialOptions}
+            resistanceOptions={resistanceOptions}
+            otherCombinations={otherCombinations}
+            onRemove={() => remove(index)}
+            canRemove={fields.length > 1}
+          />
+        );
+      })}
 
       <Button
         type="button"
         variant="outline"
         size="sm"
         onClick={() => {
-          const defaultMaterial = allowedMaterials[0] ?? "rebar";
+          const allowedResistancesByMaterial: Record<string, string[]> = {
+            rebar: ["CA50", "CA60", "other"],
+            mesh: ["CA60", "other"],
+            strand: ["CP190", "other"],
+            other: ["CA50", "CA60", "CP190", "other"],
+          };
+
+          const currentCombinations = (steelArray || [])
+            .filter((item: any) => item?.material && item?.resistance)
+            .map((item: any) => `${item.material}:${item.resistance}`);
+
+          // Encontrar a primeira combinação material+resistance não utilizada
+          let foundMaterial = allowedMaterials[0] ?? "rebar";
+          let foundResistance = defaultResistanceByMaterial[foundMaterial] ?? "CA50";
+
+          outer: for (const mat of allowedMaterials) {
+            const resistances = allowedResistancesByMaterial[mat] ?? ["CA50"];
+            for (const res of resistances) {
+              // other+other sempre é permitido
+              if (mat === "other" && res === "other") {
+                foundMaterial = mat;
+                foundResistance = res;
+                break outer;
+              }
+              if (!currentCombinations.includes(`${mat}:${res}`)) {
+                foundMaterial = mat;
+                foundResistance = res;
+                break outer;
+              }
+            }
+          }
+
           append({
-            material: defaultMaterial,
-            resistance: defaultResistanceByMaterial[defaultMaterial] ?? "CA50",
+            material: foundMaterial,
+            resistance: foundResistance,
             mass: "0",
           });
         }}
         className="w-full text-green-600 border-green-600 hover:bg-green-50"
       >
-        Adicionar
+        {t.common.add}
       </Button>
     </div>
   );

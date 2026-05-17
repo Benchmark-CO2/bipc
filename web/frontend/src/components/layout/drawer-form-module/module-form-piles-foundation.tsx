@@ -1,5 +1,6 @@
 import { masks } from "@/utils/masks";
 import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
+import { useTranslation } from "@/i18n";
 import { useLayoutEffect, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Card, CardContent } from "../../ui/card";
@@ -21,6 +22,7 @@ interface ModuleFormPilesFoundationProps {
 const ModuleFormPilesFoundation = ({
   form,
 }: ModuleFormPilesFoundationProps) => {
+  const { t } = useTranslation();
   const fckOptions = [20, 25, 30, 35, 40, 45];
   const [customFck, setCustomFck] = useState(false);
 
@@ -46,7 +48,7 @@ const ModuleFormPilesFoundation = ({
           name="fck"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">fck do concreto (MPa) *</FormLabel>
+              <FormLabel className="text-xs">{t.modules.form.fckLabel}</FormLabel>
               <FormControl>
                 <Select
                   onValueChange={(value) => {
@@ -79,7 +81,7 @@ const ModuleFormPilesFoundation = ({
                   })()}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione fck" />
+                    <SelectValue placeholder={t.modules.form.selectFck} />
                   </SelectTrigger>
                   <SelectContent>
                     {fckOptions.map((fck) => (
@@ -87,7 +89,7 @@ const ModuleFormPilesFoundation = ({
                         {fck}
                       </SelectItem>
                     ))}
-                    <SelectItem value="other">Outro</SelectItem>
+                    <SelectItem value="other">{t.modules.form.other}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormControl>
@@ -101,7 +103,7 @@ const ModuleFormPilesFoundation = ({
             name="fck"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-xs">Outro fck (MPa)</FormLabel>
+                <FormLabel className="text-xs">{t.modules.form.otherFck}</FormLabel>
                 <FormControl>
                   <Input
                     type="text"
@@ -120,7 +122,7 @@ const ModuleFormPilesFoundation = ({
       </div>
 
       {/* Estacas */}
-      <h3 className="text-sm font-medium text-gray-900">Estacas</h3>
+      <h3 className="text-base font-semibold text-primary">{t.modules.form.piles}</h3>
       <Card className="border-2 border-gray-200">
         <CardContent className="space-y-4 pt-4">
           {/* Volume das Estacas */}
@@ -130,7 +132,7 @@ const ModuleFormPilesFoundation = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">
-                  Volume de concreto (m³)
+                  {t.modules.form.concreteVolume}
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -152,9 +154,7 @@ const ModuleFormPilesFoundation = ({
       </Card>
 
       {/* Blocos de Coroamento */}
-      <h3 className="text-sm font-medium text-gray-900">
-        Blocos de Coroamento
-      </h3>
+      <h3 className="text-base font-semibold text-primary">{t.modules.form.pileCaps}</h3>
       <Card className="border-2 border-gray-200">
         <CardContent className="space-y-4 pt-4">
           {/* Volume dos Blocos */}
@@ -164,7 +164,7 @@ const ModuleFormPilesFoundation = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">
-                  Volume de concreto (m³)
+                  {t.modules.form.concreteVolume}
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -186,7 +186,7 @@ const ModuleFormPilesFoundation = ({
       </Card>
 
       {/* Vigas Baldrame */}
-      <h3 className="text-sm font-medium text-gray-900">Vigas Baldrame</h3>
+      <h3 className="text-base font-semibold text-primary">{t.modules.form.gradeBeams}</h3>
       <Card className="border-2 border-gray-200">
         <CardContent className="space-y-4 pt-4">
           {/* Volume das Vigas Baldrame */}
@@ -196,7 +196,7 @@ const ModuleFormPilesFoundation = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">
-                  Volume de concreto (m³)
+                  {t.modules.form.concreteVolume}
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -218,7 +218,7 @@ const ModuleFormPilesFoundation = ({
       </Card>
 
       {/* Cintas */}
-      <h3 className="text-sm font-medium text-gray-900">Cintas</h3>
+      <h3 className="text-base font-semibold text-primary">{t.modules.form.tieBeams}</h3>
       <Card className="border-2 border-gray-200">
         <CardContent className="space-y-4 pt-4">
           {/* Volume das Cintas */}
@@ -228,7 +228,7 @@ const ModuleFormPilesFoundation = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">
-                  Volume de concreto (m³)
+                  {t.modules.form.concreteVolume}
                 </FormLabel>
                 <FormControl>
                   <Input

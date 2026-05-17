@@ -9,9 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
+import { useTranslation } from "@/i18n";
+import { cn } from "@/lib/utils";
 
 export const DevelopmentWarning = ({ minimizedSidebar = false }) => {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <>
@@ -23,11 +26,11 @@ export const DevelopmentWarning = ({ minimizedSidebar = false }) => {
           <DialogHeader>
             <DialogTitle className="text-2xl text-center text-accent flex items-center gap-2 justify-center">
               <FlaskConical />
-              Ambiente de Testes
+              {t.development.title}
             </DialogTitle>
             <DialogDescription className="text-center pt-4 text-accent/100">
               <p className="text-md mb-1">
-                Esta é uma versão de testes da plataforma, onde novas funcionalidades são experimentadas antes de serem lançadas para todos os usuários.
+                {t.development.description}
               </p>
             </DialogDescription>
           </DialogHeader>
@@ -38,19 +41,21 @@ export const DevelopmentWarning = ({ minimizedSidebar = false }) => {
               className="w-full"
               onClick={() => setOpen(false)}
             >
-              Fechar
+              {t.development.close}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <div
-        className="bg-amber-600 text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-amber-500/90 cursor-pointer border border-amber-500/50"
+        className={cn("bg-amber-600 text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-amber-500/90 cursor-pointer border border-amber-500/50", {
+          "px-0 justify-center": minimizedSidebar
+        })}
         onClick={() => setOpen(true)}
       >
         <span className="flex items-center gap-2">
           <FlaskConical size={16} />
-          {!minimizedSidebar && <strong>Ambiente de Testes</strong>}
+          {!minimizedSidebar && <strong>{t.development.title}</strong>}
         </span>
       </div>
     </>

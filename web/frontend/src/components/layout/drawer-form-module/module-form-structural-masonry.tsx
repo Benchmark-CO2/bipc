@@ -17,12 +17,13 @@ import {
 } from "@/components/ui/select";
 import { masks } from "@/utils/masks";
 import { parseNumber } from "@/utils/numbers";
+import { useTranslation } from "@/i18n";
 import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import SteelMaterialList from "./steel-material-list";
-import { slabTypeOptions } from "./module-default-values";
+import { useSlabTypeOptions } from "./module-default-values";
 
 interface ModuleFormStructuralMasonryProps {
   form: UseFormReturn<ModuleFormInput>;
@@ -55,6 +56,7 @@ const GroutItem = ({
   customFgkSelected,
   setCustomFgkSelected,
 }: GroutItemProps) => {
+  const { t } = useTranslation();
   const volumesFieldArray = useFieldArray({
     control: form.control,
     name: `grout.${groutIndex}.volumes`,
@@ -78,12 +80,12 @@ const GroutItem = ({
             render={({ field }) => (
               <FormItem className="flex-1">
                 <FormLabel className="text-xs font-medium">
-                  Tipo de graute *
+                  {t.modules.form.groutType}
                 </FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecione o tipo" />
+                      <SelectValue placeholder={t.modules.form.selectType} />
                     </SelectTrigger>
                     <SelectContent>
                       {groutTypes.map((type) => (
@@ -120,7 +122,7 @@ const GroutItem = ({
         {/* Volumes Section */}
         <div className="space-y-3">
           <div className="flex items-center justify-between py-2 px-1">
-            <FormLabel className="text-xs text-gray-700">Graute</FormLabel>
+            <FormLabel className="text-xs text-gray-700">{t.modules.form.groutSection.replace(" *", "")}</FormLabel>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500">Total:</span>
               <span className="text-sm font-semibold text-gray-900">
@@ -181,7 +183,7 @@ const GroutItem = ({
                                   {fgk}
                                 </SelectItem>
                               ))}
-                              <SelectItem value="custom">Outro</SelectItem>
+                              <SelectItem value="custom">{t.modules.form.other}</SelectItem>
                             </SelectContent>
                           </Select>
                         </FormControl>
@@ -194,7 +196,7 @@ const GroutItem = ({
                     name={`grout.${groutIndex}.volumes.${volumeIndex}.volume`}
                     render={({ field }) => (
                       <FormItem className="flex-1">
-                        <FormLabel className="text-xs">Volume (m³)</FormLabel>
+                        <FormLabel className="text-xs">{t.modules.form.volume}</FormLabel>
                         <FormControl>
                           <Input
                             type="text"
@@ -228,7 +230,7 @@ const GroutItem = ({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs">
-                          Outro Fgk (MPa)
+                        {t.modules.form.otherFgk}
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -258,7 +260,7 @@ const GroutItem = ({
             onClick={() => volumesFieldArray.append({ fgk: 20, volume: "0" })}
             className="w-full text-green-600 border-green-600 hover:bg-green-50"
           >
-            Adicionar
+            {t.common.add}
           </Button>
         </div>
 
@@ -278,6 +280,8 @@ const GroutItem = ({
 const ModuleFormStructuralMasonry = ({
   form,
 }: ModuleFormStructuralMasonryProps) => {
+  const { t } = useTranslation();
+  const slabTypeOptions = useSlabTypeOptions();
   const fckOptions = [20, 25, 30, 35, 40, 45];
   const fbkOptions = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26];
   const fgkOptions = [15, 20, 25, 30];
@@ -446,13 +450,13 @@ const ModuleFormStructuralMasonry = ({
 
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">Blocos *</h3>
+        <h3 className="text-base font-semibold text-primary">{t.modules.form.blocks}</h3>
 
         <Card className="border-2 border-blue-500">
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between py-2 px-1">
               <FormLabel className="text-xs text-gray-500">
-                Quantidade total
+                {t.modules.form.totalQuantity}
               </FormLabel>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-900">
@@ -479,14 +483,14 @@ const ModuleFormStructuralMasonry = ({
                         name={`masonry_blocks.${index}.type`}
                         render={({ field }) => (
                           <FormItem className="flex-1">
-                            <FormLabel className="text-xs">Tipo *</FormLabel>
+                            <FormLabel className="text-xs">{t.modules.form.blockType}</FormLabel>
                             <FormControl>
                               <Select
                                 onValueChange={field.onChange}
                                 value={field.value}
                               >
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Selecione" />
+                                  <SelectValue placeholder={t.modules.form.selectType} />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {blockTypes.map((type) => (
@@ -511,7 +515,7 @@ const ModuleFormStructuralMasonry = ({
                         render={({ field }) => (
                           <FormItem className="flex-1">
                             <FormLabel className="text-xs">
-                              Fbk (MPa) *
+                              {t.modules.form.blockFbk}
                             </FormLabel>
                             <FormControl>
                               <Select
@@ -548,7 +552,7 @@ const ModuleFormStructuralMasonry = ({
                                       {fbk}
                                     </SelectItem>
                                   ))}
-                                  <SelectItem value="custom">Outro</SelectItem>
+                                  <SelectItem value="custom">{t.modules.form.other}</SelectItem>
                                 </SelectContent>
                               </Select>
                             </FormControl>
@@ -562,7 +566,7 @@ const ModuleFormStructuralMasonry = ({
                         render={({ field }) => (
                           <FormItem className="flex-1">
                             <FormLabel className="text-xs">
-                              Quantidade *
+                              {t.modules.form.blockQuantity}
                             </FormLabel>
                             <FormControl>
                               <Input
@@ -597,7 +601,7 @@ const ModuleFormStructuralMasonry = ({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-xs">
-                              Outro Fbk (MPa)
+                              {t.modules.form.otherFbk}
                             </FormLabel>
                             <FormControl>
                               <Input
@@ -633,8 +637,9 @@ const ModuleFormStructuralMasonry = ({
                 })
               }
               className="w-full text-green-600 border-green-600 hover:bg-green-50"
+              disabled={blockFields.length === blockTypes.length}
             >
-              Adicionar
+              {t.common.add}
             </Button>
           </CardContent>
         </Card>
@@ -677,7 +682,7 @@ const ModuleFormStructuralMasonry = ({
 
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">Graute *</h3>
+        <h3 className="text-base font-semibold text-primary">{t.modules.form.groutSection}</h3>
 
         <div className="space-y-3">
           {groutFields.map((groutField, groutIndex) => (
@@ -717,7 +722,7 @@ const ModuleFormStructuralMasonry = ({
               className="ml-auto text-green-600 border-green-600 hover:bg-green-50"
               disabled={groutFields.length >= 3}
             >
-              Adicionar Graute
+              {t.modules.form.addGrout}
             </Button>
           </div>
         </div>
@@ -742,13 +747,13 @@ const ModuleFormStructuralMasonry = ({
 
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">Argamassa *</h3>
+        <h3 className="text-base font-semibold text-primary">{t.modules.form.mortarSection}</h3>
 
         <Card className="border-2 border-blue-500">
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between py-2 px-1">
               <FormLabel className="text-xs text-gray-500">
-                Volume total (m³)
+                {t.modules.form.volume.replace("(m³)", "")} total (m³)
               </FormLabel>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-900">
@@ -812,23 +817,22 @@ const ModuleFormStructuralMasonry = ({
                                     >
                                       {fak}
                                     </SelectItem>
-                                  ))}
-                                  <SelectItem value="custom">Outro</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
+                                  ))}                              <SelectItem value="custom">{t.modules.form.other}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
 
-                      <FormField
-                        control={form.control}
-                        name={`mortar.${index}.volume`}
-                        render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="text-xs">
-                              Volume (m³) *
-                            </FormLabel>
+                  <FormField
+                    control={form.control}
+                    name={`mortar.${index}.volume`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel className="text-xs">
+                          {t.modules.form.volume}
+                        </FormLabel>
                             <FormControl>
                               <Input
                                 type="text"
@@ -862,7 +866,7 @@ const ModuleFormStructuralMasonry = ({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-xs">
-                              Outro Fak (MPa)
+                              {t.modules.form.otherFak}
                             </FormLabel>
                             <FormControl>
                               <Input
@@ -898,7 +902,7 @@ const ModuleFormStructuralMasonry = ({
               }
               className="w-full text-green-600 border-green-600 hover:bg-green-50"
             >
-              Adicionar
+              {t.common.add}
             </Button>
           </CardContent>
         </Card>
@@ -938,30 +942,30 @@ const ModuleFormStructuralMasonry = ({
         const hasSteelWithValue = currentSteel.some((s: any) => s.mass > 0);
 
         if ((hasVolumes || hasVolumeWithValue) && !hasSteel) {
-          return "Você adicionou volumes de concreto. É necessário também adicionar aço.";
+          return t.modules.form.warningConcreteNoSteel;
         } else if ((hasSteel || hasSteelWithValue) && !hasVolumes) {
-          return "Você adicionou aço. É necessário também adicionar volumes de concreto.";
+          return t.modules.form.warningSteelNoConcrete;
         } else if (
           hasVolumes &&
           hasSteel &&
           !hasVolumeWithValue &&
           hasSteelWithValue
         ) {
-          return "Os volumes de concreto devem ser maiores que 0.";
+          return t.modules.form.warningConcreteZero;
         } else if (
           hasVolumes &&
           hasSteel &&
           hasVolumeWithValue &&
           !hasSteelWithValue
         ) {
-          return "As massas de aço devem ser maiores que 0.";
+          return t.modules.form.warningSteelZero;
         } else if (
           hasVolumes &&
           hasSteel &&
           !hasVolumeWithValue &&
           !hasSteelWithValue
         ) {
-          return "Tanto os volumes de concreto quanto as massas de aço devem ser maiores que 0.";
+          return t.modules.form.warningBothZero;
         }
       }
       return "";
@@ -987,7 +991,7 @@ const ModuleFormStructuralMasonry = ({
 
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">{title}</h3>
+        <h3 className="text-base font-semibold text-primary">{title}</h3>
 
         {/* Warning para campos opcionais */}
         {!isRequired && sectionWarning && (
@@ -1003,7 +1007,7 @@ const ModuleFormStructuralMasonry = ({
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between py-2 px-1">
               <FormLabel className="text-xs text-gray-500">
-                Volume total de concreto (m³)
+                {t.modules.form.totalConcreteVolume}
               </FormLabel>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-900">
@@ -1069,7 +1073,7 @@ const ModuleFormStructuralMasonry = ({
                                       {fck}
                                     </SelectItem>
                                   ))}
-                                  <SelectItem value="custom">Outro</SelectItem>
+                                  <SelectItem value="custom">{t.modules.form.other}</SelectItem>
                                 </SelectContent>
                               </Select>
                             </FormControl>
@@ -1083,7 +1087,7 @@ const ModuleFormStructuralMasonry = ({
                         render={({ field }) => (
                           <FormItem className="flex-1">
                             <FormLabel className="text-xs">
-                              Volume (m³)
+                              {t.modules.form.volume}
                             </FormLabel>
                             <FormControl>
                               <Input
@@ -1118,7 +1122,7 @@ const ModuleFormStructuralMasonry = ({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-xs">
-                              Outro Fck (MPa)
+                              {t.modules.form.otherFck}
                             </FormLabel>
                             <FormControl>
                               <Input
@@ -1151,7 +1155,7 @@ const ModuleFormStructuralMasonry = ({
               }
               className="w-full text-green-600 border-green-600 hover:bg-green-50"
             >
-              Adicionar
+              {t.common.add}
             </Button>
 
             <div className="border-t border-gray-200 my-4"></div>
@@ -1178,8 +1182,8 @@ const ModuleFormStructuralMasonry = ({
 
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-700">
-          Área de formas (opcional)
+        <h3 className="text-base font-semibold text-primary dark:text-gray-300">
+          {t.modules.form.formAreaOptional}
         </h3>
 
         <Card className="border-2 border-gray-300">
@@ -1191,7 +1195,7 @@ const ModuleFormStructuralMasonry = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">
-                      Forma de lajes (m²)
+                      {t.modules.form.formSlabs}
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -1213,7 +1217,7 @@ const ModuleFormStructuralMasonry = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">
-                      Forma de pilares (m²)
+                      {t.modules.form.formColumns}
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -1235,7 +1239,7 @@ const ModuleFormStructuralMasonry = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">
-                      Forma de vigas (m²)
+                      {t.modules.form.formBeams}
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -1252,7 +1256,7 @@ const ModuleFormStructuralMasonry = ({
               />
 
               <FormItem>
-                <FormLabel className="text-xs">Total (m²)</FormLabel>
+                <FormLabel className="text-xs">{t.modules.form.totalForm}</FormLabel>
                 <div className="flex items-center h-10 px-3 border border-input rounded-md bg-muted">
                   <span className="text-sm font-semibold">
                     {totalFormArea.toInternational(undefined, 2)}
@@ -1273,7 +1277,7 @@ const ModuleFormStructuralMasonry = ({
         name="slab_type"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-xs">Tipo de laje (opcional)</FormLabel>
+            <FormLabel className="text-xs">{t.modules.form.slabTypeOptional}</FormLabel>
             <Select
               onValueChange={field.onChange}
               value={field.value}
@@ -1281,7 +1285,7 @@ const ModuleFormStructuralMasonry = ({
             >
               <FormControl>
                 <SelectTrigger className="aria-invalid:border-destructive w-full">
-                  <SelectValue placeholder="Selecione o tipo de laje" />
+                  <SelectValue placeholder={t.modules.form.selectSlabType} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -1299,19 +1303,19 @@ const ModuleFormStructuralMasonry = ({
       {renderBlockSection()}
       {renderGroutSection()}
       {renderMortarSection()}
-      {renderCompleteSection("concrete_slabs", "Laje de concreto", true)}
+      {renderCompleteSection("concrete_slabs", t.modules.form.concreteSlab, true)}
 
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-700">
-          Estrutura complementar (opcional)
+        <h3 className="text-base font-semibold text-primary dark:text-gray-300">
+          {t.modules.form.complementaryStructure}
         </h3>
         <div className="space-y-6">
           {renderCompleteSection(
             "concrete_columns",
-            "Pilar de concreto",
+            t.modules.form.concreteColumn,
             false,
           )}
-          {renderCompleteSection("concrete_beams", "Viga de concreto", false)}
+          {renderCompleteSection("concrete_beams", t.modules.form.concreteBeam, false)}
         </div>
       </div>
 

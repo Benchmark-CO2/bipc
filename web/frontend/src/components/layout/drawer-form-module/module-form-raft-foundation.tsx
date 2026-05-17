@@ -1,5 +1,6 @@
 import { masks } from "@/utils/masks";
 import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
+import { useTranslation } from "@/i18n";
 import { useLayoutEffect, useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Card, CardContent } from "../../ui/card";
@@ -19,6 +20,7 @@ interface ModuleFormRaftFoundationProps {
 }
 
 const ModuleFormRaftFoundation = ({ form }: ModuleFormRaftFoundationProps) => {
+  const { t } = useTranslation();
   const fckOptions = [20, 25, 30, 35, 40, 45];
   const [customFck, setCustomFck] = useState(false);
 
@@ -42,7 +44,7 @@ const ModuleFormRaftFoundation = ({ form }: ModuleFormRaftFoundationProps) => {
           name="area"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Área (m²)</FormLabel>
+              <FormLabel className="text-xs">{t.modules.form.area}</FormLabel>
               <FormControl>
                 <Input
                   {...field}
@@ -62,7 +64,7 @@ const ModuleFormRaftFoundation = ({ form }: ModuleFormRaftFoundationProps) => {
           name="thickness"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Espessura (m)</FormLabel>
+              <FormLabel className="text-xs">{t.modules.form.thickness}</FormLabel>
               <FormControl>
                 <Input
                   {...field}
@@ -87,7 +89,7 @@ const ModuleFormRaftFoundation = ({ form }: ModuleFormRaftFoundationProps) => {
           name="fck"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">fck (MPa) *</FormLabel>
+              <FormLabel className="text-xs">{t.modules.form.fckLabel}</FormLabel>
               <FormControl>
                 <Select
                   onValueChange={(value) => {
@@ -128,7 +130,7 @@ const ModuleFormRaftFoundation = ({ form }: ModuleFormRaftFoundationProps) => {
                   })()}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione fck" />
+                    <SelectValue placeholder={t.modules.form.selectFck} />
                   </SelectTrigger>
                   <SelectContent>
                     {fckOptions.map((fck) => (
@@ -136,7 +138,7 @@ const ModuleFormRaftFoundation = ({ form }: ModuleFormRaftFoundationProps) => {
                         {fck}
                       </SelectItem>
                     ))}
-                    <SelectItem value="other">Outro</SelectItem>
+                    <SelectItem value="other">{t.modules.form.other}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormControl>
@@ -153,7 +155,7 @@ const ModuleFormRaftFoundation = ({ form }: ModuleFormRaftFoundationProps) => {
             name="fck"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-xs">Outro fck (MPa)</FormLabel>
+                <FormLabel className="text-xs">{t.modules.form.otherFck}</FormLabel>
                 <FormControl>
                   <Input
                     type="text"
@@ -171,7 +173,7 @@ const ModuleFormRaftFoundation = ({ form }: ModuleFormRaftFoundationProps) => {
         )}
       </div>
 
-      <h3 className="text-sm font-medium text-gray-900">Aço</h3>
+      <h3 className="text-base font-semibold text-primary">{t.modules.form.steel}</h3>
 
       <Card className="border-2 border-gray-200">
         <CardContent className="space-y-4 pt-4">

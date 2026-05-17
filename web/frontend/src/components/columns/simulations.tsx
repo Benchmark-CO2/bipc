@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
+import { Translations } from "@/i18n/translations/pt-BR";
 import { TSimulation } from "@/types/projects";
 import { ColumnDef } from "@tanstack/react-table";
-import { t } from "i18next";
 import { Check, X } from "lucide-react";
 import { Checkbox } from "../ui/checkbox";
 
-export const simulationColumns: ColumnDef<TSimulation>[] = [
+export const makeSimulationColumns = (
+  t: Translations,
+): ColumnDef<TSimulation>[] => [
   {
     accessorKey: "selected",
     header: ({ table }) => (
@@ -13,7 +15,7 @@ export const simulationColumns: ColumnDef<TSimulation>[] = [
         checked={table.getIsAllRowsSelected()}
         onCheckedChange={() => table.toggleAllRowsSelected()}
         onClick={(e) => e.stopPropagation()}
-        aria-label="Selecionar linha"
+        aria-label={t.columns.selectRow}
       />
     ),
     cell: ({ row }) => (
@@ -21,44 +23,43 @@ export const simulationColumns: ColumnDef<TSimulation>[] = [
         checked={row.getIsSelected()}
         onCheckedChange={() => row.toggleSelected()}
         onClick={(e) => e.stopPropagation()}
-        aria-label="Selecionar linha"
+        aria-label={t.columns.selectRow}
       />
     ),
   },
   {
     accessorKey: "name",
-    header: t("simulationTable.headers.name"),
+    header: t.columns.name,
     cell: ({ row }) => row.original.name,
   },
-
   {
     accessorKey: "co2_min",
-    header: t("modulesTable.headers.co2Min"),
+    header: "CO\u2082 Min",
     cell: ({ row }) => row.original.co2_min?.toInternational() || "-",
   },
   {
     accessorKey: "co2_max",
-    header: t("modulesTable.headers.co2Max"),
+    header: "CO\u2082 Max",
     cell: ({ row }) => row.original.co2_max?.toInternational() || "-",
   },
   {
     accessorKey: "energy_min",
-    header: t("modulesTable.headers.energyMin"),
+    header: "Energy Min",
     cell: ({ row }) => row.original.energy_min?.toInternational() || "-",
   },
   {
     accessorKey: "energy_max",
-    header: t("modulesTable.headers.energyMax"),
+    header: "Energy Max",
     cell: ({ row }) => row.original.energy_max?.toInternational() || "-",
   },
   {
     accessorKey: "version",
-    header: t("simulationTable.headers.version"),
-    cell: ({ row }) => row.original.version || "Desconhecida",
+    header: t.columns.version,
+    cell: ({ row }) => row.original.version || t.columns.unknown,
   },
   {
     accessorKey: "in_use",
-    header: t("simulationTable.headers.isValid"),
+    header: "In Use",
     cell: ({ row }) => {
       return (
         <div className="w-[50px] flex items-center justify-center">

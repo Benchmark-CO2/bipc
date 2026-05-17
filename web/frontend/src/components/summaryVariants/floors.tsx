@@ -1,5 +1,6 @@
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { IUnit } from "@/types/units";
 import { useEffect, useMemo, useState } from "react";
@@ -11,7 +12,7 @@ import ItemCard from "./components/ItemCard";
 import Legend from "./components/Legend";
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
-import { barColors, recalculateY } from "./utils";
+import { barColors, normalizeBenchmarkSeries, recalculateY } from "./utils";
 
 type ProjectsSummaryProps = {
   floors: any[];
@@ -32,14 +33,16 @@ const FloorSummary = ({
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
+  const { t } = useTranslation();
   const filteredFloors = floors.filter((el) => !!el.co2_max);
 
-  const fakeFloors = data.benchmark?.[type as "co2" | "energy"]
+  const fakeFloors = normalizeBenchmarkSeries(
+    data.benchmark?.[type as "co2" | "energy"],
+  )
     ?.map((el) => ({
       ...el,
       label: selectedFloors.find((f) => f.id === el.id)?.group_name || "",
-    }))
-    .filter((f) => f.min && f.max);
+    }));
   const { isExpanded } = useSummary();
 
   const newItems = filteredFloors.map((el) => {
@@ -61,13 +64,14 @@ const FloorSummary = ({
     };
   });
 
-    const stackedData = useMemo(
-    () => newItems.map(el => ({
-      id: el[type].id,
-      label: el[type].label,
-      co2: (el.co2.max + el.co2.min) / 2,
-      energy: (el.energy.max + el.energy.min) / 2,
-    })),
+  const stackedData = useMemo(
+    () =>
+      newItems.map((el) => ({
+        id: el[type].id,
+        label: el[type].label,
+        co2: (el.co2.max + el.co2.min) / 2,
+        energy: (el.energy.max + el.energy.min) / 2,
+      })),
     [newItems],
   );
 
@@ -107,7 +111,7 @@ const FloorSummary = ({
     }
   }, [previousProjects, selectedFloors, someSelected]);
 
-  const [subTabs, setSubTabs] = useState<"Pavimentos">("Pavimentos");
+  const [subTabs, setSubTabs] = useState<string>(t.summaryFloors.floors);
   const selectAll = () => {
     if (selectedProjects.length === filteredFloors.length) {
       setSelectedProjects([]);
@@ -136,7 +140,7 @@ const FloorSummary = ({
       },
       {} as Record<string, number>,
     );
-  }, [floors, unit, fakeFloors]);
+  }, [floors, unit, type]);
 
   const sum = (Object.values(avgByUnit) as Array<{ avg: number }>).reduce(
     (acc: number, b: { avg: number }) => acc + b.avg,
@@ -147,10 +151,12 @@ const FloorSummary = ({
 
   const minData = useMemo(() => newDataItems.map((d) => d.min), [newDataItems]);
   const maxData = useMemo(() => newDataItems.map((d) => d.max), [newDataItems]);
+  const minValue = minData.length ? Math.min(...minData) : 0;
+  const maxValue = maxData.length ? Math.max(...maxData) : 0;
   const newData = recalculateY(
     newDataItems,
-    Math.min(...minData),
-    Math.max(...maxData),
+    minValue,
+    maxValue,
   );
 
   return (
@@ -162,22 +168,22 @@ const FloorSummary = ({
           selectedTab={type}
           fullWidth
           onSubTabSelect={(tab) => {
-            if (tab === "Pavimentos") setSubTabs(tab as "Pavimentos");
-            if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
+            if (tab === t.summaryFloors.floors) setSubTabs(tab);
+            if (tab === t.summary.selectAll || tab === t.summary.deselectAll)
               selectAll();
           }}
           subTabs={[
-            "Pavimentos",
+            t.summaryFloors.floors,
             selectedProjects.length === floors.length
-              ? "Desmarcar Todos"
-              : "Selecionar Todos",
+              ? t.summary.deselectAll
+              : t.summary.selectAll,
           ]}
           selectedSubTab={subTabs}
         />
       </div>
       <div
         className={cn(
-          "w-full flex justify-between gap-4 max-md:flex-col max-md:flex-col 2xl:h-[85%] max-sm:h-max",
+          "w-full flex justify-between gap-4 max-md:flex-col 2xl:h-[85%] max-sm:h-max",
           {
             "flex flex-col": isExpanded,
           },
@@ -225,7 +231,7 @@ const FloorSummary = ({
                       >
                         <span className="text-black text-base p-2">
                           {f.name}: {Math.round((f.avg || 0) * 10) / 10}{" "}
-                          {type === "co2" ? "KgCO₂/m²" : "MJ/m²"}
+                          {type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
                         </span>
                       </TooltipContent>
                     </Tooltip>
@@ -240,7 +246,7 @@ const FloorSummary = ({
               "max-h-[350px] overflow-y-auto ": !isExpanded,
             })}
           >
-            {stackedData.map((floor, idx) => {
+            {stackedData.map((floor) => {
               if (!floor) return null;
               return isExpanded ? (
                 <ItemCard
@@ -275,9 +281,15 @@ const FloorSummary = ({
           <D3GradientRangeChart
             data={newData}
             selectedBars={selectedProjects}
-            totalProjects={data?.benchmark[type].length || 0}
+            totalProjects={fakeFloors.length || newData.length}
             minData={minData}
             maxData={maxData}
+            showBaseline
+            showTop5Line
+            showProcelScale
+            showMaxCurve
+            showMinCurve
+            showMidCurve
           />
         ) : (
           <D3GradientRangeLineChart

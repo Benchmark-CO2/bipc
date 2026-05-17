@@ -1,9 +1,12 @@
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState } from "react";
+import { useTranslation } from "@/i18n";
 
 export const useChartType = () => {
   const [chartType, setChartType] = useState<"line" | "scatter">("scatter");
+
+  const { t } = useTranslation();
 
   const changeChartType = (chartType: string) => {
     setChartType(chartType as "line" | "scatter");
@@ -11,22 +14,22 @@ export const useChartType = () => {
 
   const ChartSelector = (
     <div className='w-11/12 max-sm:w-full'>
-      <Label className="mb-2">Tipo de Gráfico:</Label>
+      <Label className="mb-2">{t.benchmark.chartType}:</Label>
       <Select
         value={chartType}
         onValueChange={changeChartType}
       >
         <SelectTrigger className="w-full mb-4">
           <SelectValue
-            placeholder="Tipo de Gráfico"
+            placeholder={t.benchmark.chartType}
           />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="scatter">
-            Fração acumulada
+            {t.benchmark.chartTypes.cumulativeFraction.name}
           </SelectItem>
           <SelectItem value="line">
-            Classificação
+            {t.benchmark.chartTypes.classification.name}
           </SelectItem>
         </SelectContent>
       </Select>

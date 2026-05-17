@@ -7,7 +7,7 @@ import { convertUnitToFormData } from "@/utils/unitConversions";
 import {
   UnitFormInput,
   UnitFormSchema,
-  unitFormSchema,
+  createUnitFormSchema,
   FloorFormInput,
 } from "@/validators/unitForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,8 +16,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { FieldErrors, useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useTranslation } from "@/i18n";
 import { Button } from "../../ui/button";
 import {
   Drawer,
@@ -40,14 +40,14 @@ const DrawerFormUnit = ({
   projectId,
   unitId,
 }: DrawerFormUnitProps) => {
-  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useTranslation();
 
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const form = useForm<UnitFormInput, any, UnitFormSchema>({
-    resolver: zodResolver(unitFormSchema) as any,
+    resolver: zodResolver(createUnitFormSchema(t)) as any,
     defaultValues: {
       name: "",
       type: "tower" as const,
@@ -65,14 +65,14 @@ const DrawerFormUnit = ({
   } = useMutation({
     mutationFn: (data: UnitFormSchema) => postUnit(data, projectId),
     onError: (error) => {
-      toast.error(t("error.errorCreateUnit"), {
+      toast.error(t.units.form.createError, {
         description:
-          error instanceof Error ? error.message : t("error.errorUnknown"),
+          error instanceof Error ? error.message : t.units.form.unknownError,
         duration: 5000,
       });
     },
     onSuccess: (data) => {
-      toast.success(t("success.unitCreated"), {
+      toast.success(t.units.form.createSuccess, {
         duration: 5000,
       });
       queryClient.invalidateQueries({
@@ -95,13 +95,13 @@ const DrawerFormUnit = ({
   const { isPending: isUpdatePending, mutate: mutateUpdate } = useMutation({
     mutationFn: (data: UnitFormSchema) => patchUnit(data, projectId, unitId!),
     onError: (error) => {
-      toast.error(t("error.errorUpdateUnit"), {
-        description: error.message || t("error.errorUnknown"),
+      toast.error(t.units.form.updateError, {
+        description: error.message || t.units.form.unknownError,
         duration: 5000,
       });
     },
     onSuccess: async () => {
-      toast.success(t("success.unitUpdated"), {
+      toast.success(t.units.form.updateSuccess, {
         duration: 5000,
       });
       // Invalidar queries específicas e aguardar a refetch
@@ -228,9 +228,7 @@ const DrawerFormUnit = ({
       >
         <DrawerHeader className="px-8">
           <DrawerTitle className="text-2xl font-bold text-primary">
-            {unitId
-              ? t("drawerFormUnit.editTitle")
-              : t("drawerFormUnit.addTitle")}
+            {unitId ? t.units.form.editTitle : t.units.form.addTitle}
           </DrawerTitle>
           <Button
             onClick={handleClose}
@@ -263,7 +261,7 @@ const DrawerFormUnit = ({
           {!Boolean(unitId) && (
             <>
               <Button variant="outline-bipc" form="unit-form" disabled={true}>
-                Importar do IFC
+                {t.common.ifcImport}
               </Button>
               <Button
                 type="submit"
@@ -271,7 +269,7 @@ const DrawerFormUnit = ({
                 form="unit-form"
                 disabled={isCreationPending}
               >
-                {t("drawerFormUnit.addUnitButton")}
+                {t.units.form.addButton}
                 {isCreationPending && (
                   <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
                 )}
@@ -316,7 +314,7 @@ const DrawerFormUnit = ({
                 form="unit-form"
                 disabled={isUpdatePending}
               >
-                {t("drawerFormUnit.editUnitButton")}
+                {t.units.form.editButton}
                 {isUpdatePending && (
                   <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
                 )}

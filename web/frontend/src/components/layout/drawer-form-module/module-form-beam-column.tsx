@@ -1,5 +1,6 @@
 import { masks } from "@/utils/masks";
 import { parseNumber } from "@/utils/numbers";
+import { useTranslation } from "@/i18n";
 import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -16,13 +17,16 @@ import {
   SelectValue,
 } from "../../ui/select";
 import SteelMaterialList from "./steel-material-list";
-import { slabTypeOptions } from "./module-default-values";
+import { useSlabTypeOptions } from "./module-default-values";
+
 
 interface ModuleFormBeamColumnProps {
   form: UseFormReturn<ModuleFormInput>;
 }
 
 const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
+  const { t } = useTranslation();
+  const slabTypeOptions = useSlabTypeOptions();
   const fckOptions = [20, 25, 30, 35, 40, 45];
 
   const [customFckSelected, setCustomFckSelected] = useState<
@@ -104,13 +108,13 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
 
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-900">{title}</h3>
+        <h3 className="text-base font-semibold text-primary">{title}</h3>
 
         <Card className={`border-2 ${borderColor}`}>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between py-2 px-1">
               <FormLabel className="text-xs text-gray-500">
-                Volume total de concreto (m³)
+                {t.modules.form.totalConcreteVolume}
               </FormLabel>
               <FormField
                 control={form.control}
@@ -179,7 +183,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                 }
                               >
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Selecione fck" />
+                                  <SelectValue placeholder={t.modules.form.selectFck} />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {fckOptions.map((fck) => (
@@ -189,10 +193,10 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                       disabled={isFckUsed(fck, index)}
                                     >
                                       {fck}{" "}
-                                      {isFckUsed(fck, index) ? "(Em uso)" : ""}
+                                      {isFckUsed(fck, index) ? t.modules.form.inUse : ""}
                                     </SelectItem>
                                   ))}
-                                  <SelectItem value="other">Outro</SelectItem>
+                                  <SelectItem value="other">{t.modules.form.other}</SelectItem>
                                 </SelectContent>
                               </Select>
                             </FormControl>
@@ -206,7 +210,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         render={({ field: volumeField }) => (
                           <FormItem>
                             <FormLabel className="text-xs">
-                              Volume (m³)
+                              {t.modules.form.volume}
                             </FormLabel>
                             <div className="flex gap-1">
                               <FormControl>
@@ -245,7 +249,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-xs">
-                              Outro fck (MPa)
+                              {t.modules.form.otherFck}
                             </FormLabel>
                             <Input
                               type="number"
@@ -273,7 +277,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
               }
               className="w-full text-green-600 border-green-600 hover:bg-green-50"
             >
-              Adicionar
+              {t.common.add}
             </Button>
 
             <div className="border-t border-gray-200 my-4"></div>
@@ -296,7 +300,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
         name="slab_type"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-xs">Tipo de laje (opcional)</FormLabel>
+            <FormLabel className="text-xs">{t.modules.form.slabTypeOptional}</FormLabel>
             <Select
               onValueChange={field.onChange}
               value={field.value}
@@ -304,7 +308,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
             >
               <FormControl>
                 <SelectTrigger className="aria-invalid:border-destructive w-full">
-                  <SelectValue placeholder="Selecione o tipo de laje" />
+                  <SelectValue placeholder={t.modules.form.selectSlabType} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -325,7 +329,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
           name="column_number"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Número de pilares</FormLabel>
+              <FormLabel className="text-xs">{t.modules.form.columnCount}</FormLabel>
               <FormControl>
                 <Input
                   type="text"
@@ -345,7 +349,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
           name="avg_beam_span"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Vão médio das vigas (m)</FormLabel>
+              <FormLabel className="text-xs">{t.modules.form.avgBeamSpan}</FormLabel>
               <FormControl>
                 <Input
                   type="text"
@@ -365,7 +369,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
           name="avg_slab_span"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">Vão médio das lajes (m)</FormLabel>
+              <FormLabel className="text-xs">{t.modules.form.avgSlabSpan}</FormLabel>
               <FormControl>
                 <Input
                   type="text"
@@ -382,18 +386,18 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
       </div>
 
       {/* Pilares */}
-      {renderCompleteSection("concrete_columns", "Pilar de concreto", true)}
+      {renderCompleteSection("concrete_columns", t.modules.form.concreteColumn, true)}
 
       {/* Vigas */}
-      {renderCompleteSection("concrete_beams", "Viga de concreto", true)}
+      {renderCompleteSection("concrete_beams", t.modules.form.concreteBeam, true)}
 
       {/* Lajes */}
-      {renderCompleteSection("concrete_slabs", "Laje de concreto", true)}
+      {renderCompleteSection("concrete_slabs", t.modules.form.concreteSlab, true)}
 
       {/* Formas */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-700">
-          Área de formas (opcional)
+        <h3 className="text-base font-semibold text-primary dark:text-gray-300">
+          {t.modules.form.formAreaOptional}
         </h3>
 
         <Card className="border-2 border-gray-300">
@@ -405,7 +409,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">
-                      Forma de pilares (m²)
+                      {t.modules.form.formColumns}
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -427,7 +431,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">
-                      Forma de vigas (m²)
+                      {t.modules.form.formBeams}
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -449,7 +453,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">
-                      Forma de lajes (m²)
+                      {t.modules.form.formSlabs}
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -466,7 +470,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
               />
 
               <div>
-                <FormLabel className="text-xs">Forma total (m²)</FormLabel>
+                <FormLabel className="text-xs">{t.modules.form.totalForm}</FormLabel>
                 {(() => {
                   const formColumns = form.watch("form_columns") || 0;
                   const formBeams = form.watch("form_beams") || 0;

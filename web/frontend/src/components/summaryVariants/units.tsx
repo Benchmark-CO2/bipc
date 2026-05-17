@@ -1,5 +1,6 @@
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
@@ -11,7 +12,7 @@ import ItemCard from "./components/ItemCard";
 import Legend from "./components/Legend";
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
-import { barColors, recalculateY } from "./utils";
+import { barColors, normalizeBenchmarkSeries, recalculateY } from "./utils";
 
 type ProjectsSummaryProps = {
   selectedUnits: (any & {
@@ -25,14 +26,6 @@ type ProjectsSummaryProps = {
   someSelected: boolean;
 };
 
-const generateFakeData = (units: ProjectsSummaryProps["units"]) => {
-  if (!units.length) return [];
-  return units.map((el) => ({
-    ...el,
-    label: ``,
-  }));
-};
-
 const UnitsSummary = ({
   units,
   data,
@@ -43,16 +36,16 @@ const UnitsSummary = ({
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
+  const { t } = useTranslation();
   const filteredUnits = units.filter((el) => !!el.consumptions);
 
-  const fakeUnits = generateFakeData(
-    data.benchmark?.[type as "co2" | "energy"] || [],
+  const fakeUnits = normalizeBenchmarkSeries(
+    data.benchmark?.[type as "co2" | "energy"],
   )
     .map((el) => ({
       ...el,
       label: selectedUnits.find((f) => f.id === el.id)?.name || "",
-    }))
-    .filter((f) => f.min && f.max);
+    }));
 
   const newItems = filteredUnits.map((el) => {
     return {
@@ -119,7 +112,7 @@ const UnitsSummary = ({
     }
   };
   const [selectedSubTab, setSelectedSubTab] =
-    useState<"Edificações">("Edificações");
+    useState<string>(t.summary.buildings);
   const selectAll = () => {
     if (selectedProjects.length === filteredUnits.length) {
       setSelectedProjects([]);
@@ -148,7 +141,7 @@ const UnitsSummary = ({
       },
       {} as Record<string, number>,
     );
-  }, [units, project, fakeUnits]);
+  }, [units, project, type]);
 
   const sum = (Object.values(avgByUnit) as Array<{ avg: number }>).reduce(
     (acc: number, b: { avg: number }) => acc + b.avg,
@@ -159,10 +152,12 @@ const UnitsSummary = ({
 
   const minData = useMemo(() => newDataItems.map((d) => d.min), [newDataItems]);
   const maxData = useMemo(() => newDataItems.map((d) => d.max), [newDataItems]);
+  const minValue = minData.length ? Math.min(...minData) : 0;
+  const maxValue = maxData.length ? Math.max(...maxData) : 0;
   const newData = recalculateY(
     newDataItems,
-    Math.min(...minData),
-    Math.max(...maxData),
+    minValue,
+    maxValue,
   );
 
   return (
@@ -174,14 +169,14 @@ const UnitsSummary = ({
           selectedTab={type}
           fullWidth
           subTabs={[
-            "Edificações",
+            t.summary.buildings,
             selectedProjects.length === units.length
-              ? "Desmarcar Todos"
-              : "Selecionar Todos",
+              ? t.summary.deselectAll
+              : t.summary.selectAll,
           ]}
           onSubTabSelect={(tab) => {
-            if (tab === "Edificações") setSelectedSubTab(tab as "Edificações");
-            if (tab === "Selecionar Todos" || tab === "Desmarcar Todos")
+            if (tab === t.summary.buildings) setSelectedSubTab(tab);
+            if (tab === t.summary.selectAll || tab === t.summary.deselectAll)
               selectAll();
           }}
           selectedSubTab={selectedSubTab}
@@ -190,7 +185,7 @@ const UnitsSummary = ({
 
       <div
         className={cn(
-          "w-full flex justify-between gap-4 max-md:flex-col max-md:flex-col 2xl:h-[85%] max-sm:h-max",
+          "w-full flex justify-between gap-4 max-md:flex-col 2xl:h-[85%] max-sm:h-max",
           {
             "flex flex-col h-full justify-between": isExpanded,
           },
@@ -237,7 +232,7 @@ const UnitsSummary = ({
                       >
                         <span className="text-black text-base p-2">
                           {f.name}: {Math.round((f.avg || 0) * 10) / 10}{" "}
-                          KgCO₂/m²
+                          {type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
                         </span>
                       </TooltipContent>
                     </Tooltip>
@@ -290,7 +285,13 @@ const UnitsSummary = ({
             unit={unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""}
             minData={minData}
             maxData={maxData}
-            totalProjects={data?.benchmark[type].length || 0}
+            totalProjects={fakeUnits.length || newData.length}
+            showBaseline
+            showTop5Line
+            showProcelScale
+            showMaxCurve
+            showMinCurve
+            showMidCurve
           />
         ) : (
           <D3GradientRangeLineChart

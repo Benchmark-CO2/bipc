@@ -11,20 +11,30 @@ import { DrawerFormUnit } from "../layout";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import ModalSimple from "../layout/modal-simple";
 import { postDuplicateUnit } from "@/actions/units/postDuplicateUnit";
+import { useTranslation } from "@/i18n";
+import { SimpleTooltip } from "../ui/simple-tooltip";
 
 export const unitsColumns: ColumnDef<
   Pick<TProjectUnit, "name" | "id" | "area"> & TConsumption
 >[] = [
   {
     accessorKey: "name",
-    header: "Nome",
+    header: () => {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const { t } = useTranslation();
+      return t.columns.name;
+    },
     cell: ({ row }) => (
       <div className="text-left">{row.original.name || "-"}</div>
     ),
   },
   {
     accessorKey: "area",
-    header: () => <div className="text-center">Área Total (m²)</div>,
+    header: () => {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const { t } = useTranslation();
+      return <div className="text-center">{t.columns.totalArea}</div>;
+    },
     cell: ({ row }) => (
       <div className="text-center">
         {row.original?.area?.toInternational()
@@ -35,7 +45,11 @@ export const unitsColumns: ColumnDef<
   },
   {
     accessorKey: "co2_max",
-    header: () => <div className="text-center">CO₂ Max. (KgCO₂/m²)</div>,
+    header: () => {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const { t } = useTranslation();
+      return <div className="text-center">{t.columns.co2Max}</div>;
+    },
     cell: ({ row }) => (
       <div className="text-center">
         {row.original?.co2_max?.toInternational()
@@ -46,7 +60,11 @@ export const unitsColumns: ColumnDef<
   },
   {
     accessorKey: "co2_min",
-    header: () => <div className="text-center">CO₂ Min. (KgCO₂/m²)</div>,
+    header: () => {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const { t } = useTranslation();
+      return <div className="text-center">{t.columns.co2Min}</div>;
+    },
     cell: ({ row }) => (
       <div className="text-center">
         {row.original?.co2_min?.toInternational()
@@ -57,7 +75,11 @@ export const unitsColumns: ColumnDef<
   },
   {
     accessorKey: "energy_max",
-    header: () => <div className="text-center">Energia Max. (MJ/m²)</div>,
+    header: () => {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const { t } = useTranslation();
+      return <div className="text-center">{t.columns.energyMax}</div>;
+    },
     cell: ({ row }) => (
       <div className="text-center">
         {row.original?.energy_max?.toInternational()
@@ -68,7 +90,11 @@ export const unitsColumns: ColumnDef<
   },
   {
     accessorKey: "energy_min",
-    header: () => <div className="text-center">Energia Min. (MJ/m²)</div>,
+    header: () => {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const { t } = useTranslation();
+      return <div className="text-center">{t.columns.energyMin}</div>;
+    },
     cell: ({ row }) => (
       <div className="text-center">
         {row.original?.energy_min?.toInternational()
@@ -87,47 +113,34 @@ export const unitsColumns: ColumnDef<
         from: "/_private/new_projects/$projectId/",
       });
       const { hasPermission } = useProjectPermissions(projectId);
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const { t } = useTranslation();
 
       const { mutate: mutateDeleteUnit, isPending: isDeleting } = useMutation({
         mutationFn: () => deleteUnit(projectId, row.original.id),
         onSuccess: () => {
-          toast.success("Unidade excluída com sucesso");
-          queryClient.invalidateQueries({
-            queryKey: ["project", projectId],
-          });
-          queryClient.invalidateQueries({
-            queryKey: ["projects"],
-          });
+          toast.success(t.units.deleteSuccess);
+          queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+          queryClient.invalidateQueries({ queryKey: ["projects"] });
           navigate({ to: `/new_projects/${projectId}` });
         },
         onError: (error) => {
-          toast.error("Erro ao excluir unidade", {
-            description: error.message,
-          });
+          toast.error(t.units.deleteError, { description: error.message });
         },
       });
 
       const { mutate: mutateDuplicateUnit, isPending: isDuplicating } =
         useMutation({
-          mutationFn: () => {
-            return postDuplicateUnit(projectId, row.original.id);
-          },
+          mutationFn: () => postDuplicateUnit(projectId, row.original.id),
           onSuccess: async (data) => {
             const unitData = await data?.data?.unit;
-
-            toast.success("Edificação duplicada com sucesso");
-            queryClient.invalidateQueries({
-              queryKey: ["project", projectId],
-            });
-            queryClient.invalidateQueries({
-              queryKey: ["projects"],
-            });
-            navigate({
-              to: `/new_projects/${projectId}/unit/${unitData.id}`,
-            });
+            toast.success(t.units.duplicateSuccess);
+            queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+            queryClient.invalidateQueries({ queryKey: ["projects"] });
+            navigate({ to: `/new_projects/${projectId}/unit/${unitData.id}` });
           },
           onError: (error) => {
-            toast.error("Erro ao duplicar edificação", {
+            toast.error(t.units.duplicateError, {
               description: error.message,
             });
           },
@@ -140,18 +153,20 @@ export const unitsColumns: ColumnDef<
         >
           {hasPermission("create:unit") && (
             <ModalSimple
-              title="Duplicar Edificação"
-              content="Tem certeza que deseja duplicar esta edificação? Esta ação criará uma cópia idêntica da edificação, incluindo todas as suas informações e configurações. Você poderá editar os detalhes da nova edificação após a duplicação."
-              confirmTitle="Duplicar"
+              title={t.units.duplicateTitle}
+              content={t.units.duplicateContent}
+              confirmTitle={t.columns.duplicate}
               onConfirm={mutateDuplicateUnit}
               componentTrigger={
-                <Button variant="ghost" size="icon" disabled={isDuplicating}>
-                  {isDuplicating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Copy className="h-4 w-4 text-primary" />
-                  )}
-                </Button>
+                <SimpleTooltip content={t.units.duplicateTitle} side="bottom">
+                  <Button variant="ghost" size="icon" disabled={isDuplicating}>
+                    {isDuplicating ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Copy className="h-4 w-4 text-primary" />
+                    )}
+                  </Button>
+                </SimpleTooltip>
               }
             />
           )}
@@ -160,24 +175,28 @@ export const unitsColumns: ColumnDef<
               projectId={projectId}
               unitId={row.original.id}
               triggerComponent={
-                <Button variant="ghost" size="icon" disabled={isDeleting}>
-                  <Edit className="h-4 w-4 text-primary" />
-                </Button>
+                <SimpleTooltip content={t.units.form.editTitle} side="bottom">
+                  <Button variant="ghost" size="icon" disabled={isDeleting}>
+                    <Edit className="h-4 w-4 text-primary" />
+                  </Button>
+                </SimpleTooltip>
               }
             />
           )}
           {hasPermission("delete:unit") && (
             <ModalConfirmDelete
-              title="Excluir Unidade"
+              title={t.units.deleteTitle}
               onConfirm={mutateDeleteUnit}
               componentTrigger={
-                <Button variant="ghost" size="icon" disabled={isDeleting}>
-                  {isDeleting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash className="h-4 w-4 text-red-700" />
-                  )}
-                </Button>
+                <SimpleTooltip content={t.units.deleteTitle} side="bottom">
+                  <Button variant="ghost" size="icon" disabled={isDeleting}>
+                    {isDeleting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash className="h-4 w-4 text-red-700" />
+                    )}
+                  </Button>
+                </SimpleTooltip>
               }
             />
           )}

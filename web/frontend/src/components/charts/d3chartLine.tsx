@@ -12,11 +12,13 @@ import React, {
   useState,
 } from "react";
 import Divider from "../ui/divider";
+import { useTranslation } from "@/i18n";
+import { Translations } from "@/i18n/translations/pt-BR";
 
-const UNIT_LABELS = {
-  co2: "Emissão de CO2 (Kg/m²)",
-  energy: "Demanda de energia primária (MJ/m²)",
-} as const;
+const UNIT_LABELS = (t: Translations) => ({
+  co2: `${t.benchmark.chartTypes.cumulativeFraction.yAxisLabel} (kg CO₂/m²)`,
+  energy: `${t.benchmark.chartTypes.cumulativeFraction.yAxisLabel} (MJ/m²)`,
+}) as const;
 
 // Constants
 const DEFAULT_COLORS = {
@@ -46,9 +48,19 @@ type ChartData = {
   label: string;
 };
 
+export type SeriesPoint = {
+  id: string;
+  y: number;
+  value: number;
+  label?: string;
+};
+
 type D3GradientRangeChartProps = {
   selectedBars?: string[];
   data?: ChartData[];
+  minSeriesData?: SeriesPoint[];
+  maxSeriesData?: SeriesPoint[];
+  hideBars?: boolean;
   width?: number;
   height?: number;
   overrideDimensions?: boolean;
@@ -160,19 +172,50 @@ const useTooltipPosition = () => {
 
 const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   selectedBars = [],
-  data = [],
+  data: _data = [],
+  minSeriesData,
+  maxSeriesData,
+  hideBars,
   overrideDimensions = false,
   unit = "",
   summary = true,
   ...props
 }) => {
+  const {t} = useTranslation(); 
+  // Se vieram séries separadas, ordena por y e faz pareamento por ordem (índice)
+  const data = useMemo<ChartData[]>(() => {
+    if (!minSeriesData && !maxSeriesData) return _data;
+    const sortByY = (a: SeriesPoint, b: SeriesPoint) => a.y - b.y;
+    const orderedMin = [...(minSeriesData ?? [])].sort(sortByY);
+    const orderedMax = [...(maxSeriesData ?? [])].sort(sortByY);
+    const pairCount = Math.min(orderedMin.length, orderedMax.length);
+
+    return Array.from({ length: pairCount }, (_, index) => {
+      const minP = orderedMin[index];
+      const maxP = orderedMax[index];
+
+      return {
+        id: minP.id,
+        y: minP.y,
+        min: minP.value,
+        max: maxP.value,
+        label: minP.label ?? maxP.label ?? "",
+      };
+    });
+  }, [_data, minSeriesData, maxSeriesData]);
+
+  // Quando as séries vêm separadas, não faz sentido exibir as barras de ligação
+  const shouldHideBars = hideBars ?? !!(minSeriesData || maxSeriesData);
   const { isExpanded } = useSummary();
   const svgRef = useRef<SVGSVGElement>(null);
   const isMobile = useIsMobile();
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [isResized, setIsResized] = useState(0);
   const [containerWidth, setContainerWidth] = useState<number>(0);
-  const [containerHeight, setContainerHeight] = useState<number>(0);
+  const selectedBarIds = useMemo(
+    () => new Set((selectedBars || []).map((id) => String(id))),
+    [selectedBars],
+  );
   // const data = isMobile ? _data.map(el => ({ ...el, y: el.y * 10 })) : _data;
   const {
     width: _width,
@@ -190,9 +233,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
   // Data transformations
   const reversedData = useMemo(
-    () =>
-      data?.map((f) => ({ ...f, y: 1 - f.y })).sort((a, b) => a.min - b.min) ||
-      [],
+    () => data?.map((f) => ({ ...f, y: 1 - f.y })) || [],
     [data],
   );
 
@@ -359,7 +400,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   useEffect(() => {
     if (!svgRef.current?.parentElement) return;
 
-    let resizeTimer: NodeJS.Timeout;
+    let resizeTimer: ReturnType<typeof setTimeout>;
 
     const resizeObserver = new ResizeObserver(() => {
       // Clear previous timer
@@ -693,9 +734,10 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
 
     reversedData.forEach((d, i) => {
       const gradientId = `gradient-${i}`;
-      const isSelected = selectedBars.includes(d.id);
+      const isSelected = selectedBarIds.has(String(d.id));
 
-      if (isSelected) {
+      if (isSelected && !shouldHideBars) {
+        {
         // Create gradient
         const gradient = g
           .append("defs")
@@ -827,6 +869,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
             .text(`${d.label}`)
             .attr("id", `bar-label-name-${d.id}`);
         }
+        }
       } else {
         // Remove elements for unselected bars
         const idsToRemove = [
@@ -847,29 +890,25 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
       }
     });
   }, [
-    selectedBars,
+    selectedBarIds,
     isExpanded,
     reversedData,
     isResized,
     xScale,
     yScale,
     colorScale,
+    shouldHideBars,
   ]);
 
-  const labelX =
-    UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || "Carbono Incorporado";
+  const labelY =
+    UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || t.benchmark.chartTypes.classification.yAxisLabel;
 
   return (
     <Card className={cn("shadow-none w-min-content min-w-1/2")}>
-      {/* <CardHeader>
-        <CardTitle className="block w-full text-center">
-          Cumulative x KgCO2/m2
-        </CardTitle>
-      </CardHeader> */}
       <CardContent>
         <div className="w-full relative">
           <span className="absolute text-xs w-full text-center text-black/70 block rotate-270  left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
-            {labelX}
+            {labelY}
           </span>
           <svg
             ref={svgRef}
@@ -913,10 +952,10 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
           })}
         >
           <span className="text-muted-foreground text-xs">
-            Nº de empreendimentos: {data?.length}
+            {t.d3chart.numberOfProjects}: {data?.length}
           </span>
           <span className="flex-1 text-xs text-center w-full text-black/70">
-            Eficiência
+            {t.benchmark.chartTypes.classification.xAxisLabelCarbon}
           </span>
         </div>
       </CardContent>

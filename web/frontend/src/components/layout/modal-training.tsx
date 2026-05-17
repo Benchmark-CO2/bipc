@@ -12,6 +12,8 @@ import { X } from "lucide-react";
 import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
 import { trainingModalStorage } from "@/utils/trainingModalStorage";
 import { useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "@/i18n";
+import { cn } from "@/lib/utils";
 
 interface ModalTrainingProps {
   isAuthenticated: boolean;
@@ -30,6 +32,7 @@ const ModalTraining = ({
   const [showMiniature, setShowMiniature] = useState(false);
   const shouldMinimizeOnCloseRef = useRef(true);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const formUrl = posLaunchFeatures.trainingModal.formUrl;
 
@@ -138,20 +141,13 @@ const ModalTraining = ({
 
           <DialogHeader>
             <DialogTitle className="text-2xl text-center text-accent">
-              Participe da Capacitação
+              {t.training.title}
             </DialogTitle>
             <DialogDescription className="text-center pt-4 text-accent/100">
               {isAuthenticated ? (
-                <>
-                  O primeiro grupo de capacitação para a plataforma BIPc está
-                  completo. Se você tem interesse em participar dos próximos
-                  grupos indique aqui.
-                </>
+                <>{t.training.descriptionAuthenticated}</>
               ) : (
-                <>
-                  Inscreva-se para participar do treinamento para uso da
-                  plataforma. O primeiro passo é criar sua conta na plataforma.
-                </>
+                <>{t.training.descriptionUnauthenticated}</>
               )}
             </DialogDescription>
           </DialogHeader>
@@ -165,14 +161,14 @@ const ModalTraining = ({
                   className="w-full"
                   onClick={handleOpenForm}
                 >
-                  Quero participar
+                  {t.training.wantToParticipate}
                 </Button>
                 <Button
                   variant="default"
                   onClick={handleAlreadyRegistered}
                   className="mx-auto border-none shadow-none"
                 >
-                  Já estou inscrito(a)
+                  {t.training.alreadyRegistered}
                 </Button>
               </>
             ) : (
@@ -183,14 +179,14 @@ const ModalTraining = ({
                   onClick={handleNavigateToSignUp}
                   className="w-full"
                 >
-                  Cadastre-se na plataforma
+                  {t.training.signUp}
                 </Button>
                 <Button
                   variant="default"
                   onClick={handleHasAccount}
                   className="mx-auto border-none shadow-none"
                 >
-                  Já tenho minha conta
+                  {t.training.alreadyHaveAccount}
                 </Button>
               </>
             )}
@@ -203,7 +199,7 @@ const ModalTraining = ({
         <div
           onClick={handleRestoreFromMiniature}
           className="fixed bottom-4 right-4 z-50 cursor-pointer bg-primary text-primary-foreground rounded-lg shadow-lg p-4 hover:scale-105 transition-transform"
-          title="Clique para abrir"
+          title={t.training.miniatureTooltip}
         >
           <div className="flex items-center gap-2">
             <svg
@@ -220,7 +216,7 @@ const ModalTraining = ({
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
               <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
             </svg>
-            <span className="font-semibold text-sm">Capacitação</span>
+            <span className="font-semibold text-sm">{t.training.miniatureTitle}</span>
           </div>
         </div>
       )}
@@ -228,9 +224,11 @@ const ModalTraining = ({
       {/* Item inline no sidebar - apenas para usuários logados */}
       {isAuthenticated && (
         <div
-          className="bg-primary text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-primary/90 cursor-pointer border border-primary/50"
+          className={cn("bg-primary text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-primary/90 cursor-pointer border border-primary/50", {
+            "px-0 justify-center": minimizedSidebar
+          })}
           onClick={() => setOpen(true)}
-          title="Clique para abrir"
+          title={t.training.miniatureTooltip}
         >
           <span className="flex items-center gap-2">
             <svg
@@ -247,11 +245,11 @@ const ModalTraining = ({
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
               <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
             </svg>
-            {!minimizedSidebar && <strong>Capacitação</strong>}
+            {!minimizedSidebar && <strong>{t.training.miniatureTitle}</strong>}
           </span>
           {!minimizedSidebar && (
             <span className="text-sm ml-auto cursor-pointer">
-              Saiba mais...
+              {t.training.learnMore}
             </span>
           )}
         </div>

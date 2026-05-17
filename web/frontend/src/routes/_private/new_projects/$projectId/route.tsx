@@ -27,15 +27,9 @@ export const Route = createFileRoute("/_private/new_projects/$projectId")({
 
     const project: IProject = projectData?.data?.project;
 
-    const bannerCollapsed =
-      typeof window !== "undefined"
-        ? localStorage.getItem("@banner/collapsed") === "true"
-        : false;
-
     return {
       project,
       crumb: project?.name || "Projeto",
-      bannerCollapsed,
     };
   },
 });
@@ -44,8 +38,9 @@ function RouteComponent() {
   const { projectId } = useParams({
     from: "/_private/new_projects/$projectId",
   });
-  const { bannerCollapsed: initialCollapsed } = Route.useLoaderData();
-  const [bannerCollapsed] = useState(initialCollapsed);
+  const [bannerCollapsed] = useState(
+    () => localStorage.getItem("@banner/collapsed") === "true",
+  );
 
   const { data: projectData } = useQuery({
     queryKey: ["project", projectId],
@@ -58,7 +53,7 @@ function RouteComponent() {
 
   const summedAreaOfUnits = project?.units?.reduce(
     (sum, unit) => sum + (unit.area || 0),
-    0
+    0,
   );
 
   return (

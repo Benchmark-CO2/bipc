@@ -1,7 +1,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Switch } from "@/components/ui/switch";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "@/i18n";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -22,7 +22,7 @@ export function ThemeToggle() {
           {isDark ? <Moon size={14} /> : <Sun size={14} />}
         </div>
         <span className="text-sm font-medium">
-          {isDark ? t("sidebar.dark") : t("sidebar.light")}
+          {isDark ? t.settings.theme.dark : t.settings.theme.light}
         </span>
       </div>
       <Switch
