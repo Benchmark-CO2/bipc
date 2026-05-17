@@ -1,5 +1,6 @@
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
@@ -12,7 +13,6 @@ import Legend from "./components/Legend";
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
 import { barColors, normalizeBenchmarkSeries, recalculateY } from "./utils";
-import { useTranslation } from "@/i18n";
 
 type ProjectsSummaryProps = {
   projects: any[];
@@ -226,6 +226,9 @@ const ProjectsSummary = ({
             showBaseline
             showTop5Line
             showProcelScale
+            showMaxCurve
+            showMinCurve
+            showMidCurve
           />
         ) : (
           <D3GradientRangeLineChart

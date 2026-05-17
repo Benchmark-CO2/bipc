@@ -280,13 +280,23 @@ export async function exportChartToPng(
     if (by >= 0 && by <= chartH) baselineY = by;
   }
 
-  // PPp 5% line
+  // PPp 5% line and 5% reference values for V calculation
   let p5LineX: number | null = null;
   let p5LineInView = false;
+  let c5Value: number | null = null; // C5% - min value at 5th percentile
+  let r5Value: number | null = null; // R5% - max value at 5th percentile
   if (showTop5Line && data.length > 0) {
-    const sorted = [...data].map((d) => d[top5Field]).sort((a, b) => a - b);
-    const idx = Math.floor(sorted.length * top5Percentile);
-    const p5Value = sorted[Math.min(idx, sorted.length - 1)];
+    // Calculate C5% (5th percentile of min values)
+    const sortedMin = [...data].map((d) => d.min).sort((a, b) => a - b);
+    const idx = Math.floor(sortedMin.length * top5Percentile);
+    c5Value = sortedMin[Math.min(idx, sortedMin.length - 1)];
+    
+    // Calculate R5% (5th percentile of max values)
+    const sortedMax = [...data].map((d) => d.max).sort((a, b) => a - b);
+    r5Value = sortedMax[Math.min(idx, sortedMax.length - 1)];
+    
+    // Use the specified field for the PPp line (default: min)
+    const p5Value = top5Field === "min" ? c5Value : r5Value;
     p5LineX = xScale(p5Value);
     p5LineInView = p5LineX >= 0 && p5LineX <= chartW;
   }
@@ -295,7 +305,10 @@ export async function exportChartToPng(
   let midPredict: ((yVal: number) => number) | null = null;
   if (showMidCurve && data.length >= 3) {
     const sorted = [...data].sort((a, b) => a.y - b.y);
-    const raw: [number, number][] = sorted.map((d) => [(d.min + d.max) / 2, d.y]);
+    const raw: [number, number][] = sorted.map((d) => [
+      (d.min + d.max) / 2,
+      d.y,
+    ]);
     const regression = regressionPoly()
       .x((d: [number, number]) => d[1])
       .y((d: [number, number]) => d[0])
@@ -347,7 +360,13 @@ export async function exportChartToPng(
   });
 
   // ── Pass 2: selected points (on top) ────────────────────────────────────
-  let selectedAnnotation: { x1: number; x2: number; xMid: number; y: number; barHeight: number } | null = null;
+  let selectedAnnotation: {
+    x1: number;
+    x2: number;
+    xMid: number;
+    y: number;
+    barHeight: number;
+  } | null = null;
   data.forEach((d) => {
     const x1 = xScale(d.min);
     const x2 = xScale(d.max);
@@ -414,9 +433,25 @@ export async function exportChartToPng(
 
       // ── Collect annotation data for drawing outside clip ────────────
       if (isPairSelected) {
-        const midValue = midPredict ? midPredict(d.y) : (d.min + d.max) / 2;
+        // Calculate V using the formula: Vn = (C5% - Cn) + (R5% - Rn) / 2
+        let midValue: number;
+        if (c5Value !== null && r5Value !== null) {
+          midValue = (c5Value - d.min) + (r5Value - d.max) / 2;
+          // If V is negative, use simple average as fallback
+          if (midValue < 0) midValue = (d.min + d.max) / 2;
+        } else {
+          midValue = (d.min + d.max) / 2;
+        }
         const xMid = xScale(midValue);
-        selectedAnnotation = { x1, x2, xMid, y, barHeight: expanded ? CHART_CONFIG.BAR_HEIGHT : CHART_CONFIG.MINIMAL_BAR_HEIGHT };
+        selectedAnnotation = {
+          x1,
+          x2,
+          xMid,
+          y,
+          barHeight: expanded
+            ? CHART_CONFIG.BAR_HEIGHT
+            : CHART_CONFIG.MINIMAL_BAR_HEIGHT,
+        };
       }
     }
   });
@@ -450,7 +485,8 @@ export async function exportChartToPng(
       steps = 80,
       clampZero = true,
     ): { x: number; y: number }[] => {
-      if (rawData.length < 3) return rawData.map(([x, y]) => ({ x: xScale(x), y: yScale(y) }));
+      if (rawData.length < 3)
+        return rawData.map(([x, y]) => ({ x: xScale(x), y: yScale(y) }));
       const regression = regressionPoly()
         .x((d: [number, number]) => d[1])
         .y((d: [number, number]) => d[0])
@@ -496,7 +532,10 @@ export async function exportChartToPng(
     }
 
     if (showMidCurve) {
-      const raw: [number, number][] = sorted.map((d) => [(d.min + d.max) / 2, d.y]);
+      const raw: [number, number][] = sorted.map((d) => [
+        (d.min + d.max) / 2,
+        d.y,
+      ]);
       drawTrendCurve(buildTrendPoints(raw));
     }
   }
@@ -559,9 +598,8 @@ export async function exportChartToPng(
     ctx.fillStyle = "#ffffff";
     ctx.fillText("R", x2, labelY);
 
-    // Purple arrow from C (min) to PPp 5% line
+    // Purple arrow from C (min) to PPp 5% line - aligned with the bar
     if (p5LineX !== null && Math.abs(p5LineX - x1) > labelR) {
-      const arrowY = y + barHeight / 2 + 6;
       const arrowLeft = Math.min(x1, p5LineX);
       const arrowRight = Math.max(x1, p5LineX);
       const headSize = 4;
@@ -570,36 +608,36 @@ export async function exportChartToPng(
       ctx.fillStyle = "#7B2D8E";
       ctx.lineWidth = 1;
 
-      // Line
+      // Line - aligned with bar center (y)
       ctx.beginPath();
-      ctx.moveTo(arrowLeft, arrowY);
-      ctx.lineTo(arrowRight, arrowY);
+      ctx.moveTo(arrowLeft, y);
+      ctx.lineTo(arrowRight, y);
       ctx.stroke();
 
       // Left arrowhead
       ctx.beginPath();
-      ctx.moveTo(arrowLeft, arrowY);
-      ctx.lineTo(arrowLeft + headSize, arrowY - headSize / 2);
-      ctx.lineTo(arrowLeft + headSize, arrowY + headSize / 2);
+      ctx.moveTo(arrowLeft, y);
+      ctx.lineTo(arrowLeft + headSize, y - headSize / 2);
+      ctx.lineTo(arrowLeft + headSize, y + headSize / 2);
       ctx.closePath();
       ctx.fill();
 
       // Right arrowhead
       ctx.beginPath();
-      ctx.moveTo(arrowRight, arrowY);
-      ctx.lineTo(arrowRight - headSize, arrowY - headSize / 2);
-      ctx.lineTo(arrowRight - headSize, arrowY + headSize / 2);
+      ctx.moveTo(arrowRight, y);
+      ctx.lineTo(arrowRight - headSize, y - headSize / 2);
+      ctx.lineTo(arrowRight - headSize, y + headSize / 2);
       ctx.closePath();
       ctx.fill();
 
-      // "P" label at midpoint of arrow
+      // "P" label at midpoint of arrow, aligned with the bar
       const arrowMidX = (arrowLeft + arrowRight) / 2;
       ctx.fillStyle = "#7B2D8E";
       ctx.beginPath();
-      ctx.arc(arrowMidX, arrowY, labelR, 0, Math.PI * 2);
+      ctx.arc(arrowMidX, y, labelR, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#ffffff";
-      ctx.fillText("P", arrowMidX, arrowY);
+      ctx.fillText("P", arrowMidX, y);
     }
 
     ctx.restore();
@@ -690,11 +728,7 @@ export async function exportChartToPng(
       ctx.font = "bold 10px sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(
-        cls.label,
-        barX + barWidth / 2,
-        bandTop + bandH / 2,
-      );
+      ctx.fillText(cls.label, barX + barWidth / 2, bandTop + bandH / 2);
 
       ctx.globalAlpha = 1;
     });
@@ -716,8 +750,7 @@ export async function exportChartToPng(
   ctx.restore();
 
   // X-axis label
-  const labelX =
-    xAxisLabel ?? UNIT_LABELS[unit] ?? "Carbono Embutido";
+  const labelX = xAxisLabel ?? UNIT_LABELS[unit] ?? "Carbono Embutido";
   ctx.font = "11px sans-serif";
   ctx.fillStyle = DEFAULT_COLORS.TEXT;
   ctx.textAlign = "center";

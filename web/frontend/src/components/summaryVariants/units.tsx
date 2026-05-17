@@ -289,6 +289,9 @@ const UnitsSummary = ({
             showBaseline
             showTop5Line
             showProcelScale
+            showMaxCurve
+            showMinCurve
+            showMidCurve
           />
         ) : (
           <D3GradientRangeLineChart
