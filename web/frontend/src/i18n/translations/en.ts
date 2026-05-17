@@ -731,11 +731,11 @@ export const en: Translations = {
     learnMore: "Learn more...",
   },
   phase: {
-    preliminary_study: "Schematic Design (SD)",
+    preliminary_study: "Schematic Design",
     not_defined: "Not Defined",
-    basic_project: "Design Development (DD)",
-    executive_project: "Construction Documents (CD)",
-    released_for_construction: "Issued for Construction (IFC)",
+    basic_project: "Design Development",
+    executive_project: "Construction Documents",
+    released_for_construction: "Issued for Construction",
   },
   card: {
     created: "Created",
