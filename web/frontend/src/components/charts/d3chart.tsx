@@ -107,6 +107,8 @@ type D3GradientRangeChartProps = {
   showMinCurve?: boolean;
   /** Show dashed curve for Vn = (C5% - Cn) + (R5% - Rn) / 2 */
   showMidCurve?: boolean;
+  /** Show project name next to the selected bar */
+  showProjectName?: boolean;
 };
 // Custom hooks
 const useChartDimensions = (
@@ -217,6 +219,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   showMaxCurve = false,
   showMinCurve = false,
   showMidCurve = false,
+  showProjectName = false,
   ...props
 }) => {
   const { isExpanded } = useSummary();
@@ -796,6 +799,53 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       }
     });
 
+    // Draw project names for selected bars
+    if (showProjectName) {
+      data.forEach((d) => {
+        const isMinSelected = selectedMinBarIds.has(String(d.minId ?? d.id));
+        const isMaxSelected = selectedMaxBarIds.has(String(d.maxId ?? d.id));
+        const isPairSelected = isMinSelected && isMaxSelected;
+        
+        if (isPairSelected && d.label) {
+          const x1 = newXScale(d.min);
+          const x2 = newXScale(d.max);
+          const y = newYScale(d.y);
+          
+          // Skip if outside visible area
+          if (x2 < 0 || x1 > _width || y < 0 || y > _height) return;
+          
+          // Position text to the right of the max point
+          const textX = x2 + 10;
+          const textY = y;
+          
+          ctx.save();
+          ctx.font = isExpanded ? "12px sans-serif" : "10px sans-serif";
+          ctx.fillStyle = "#111827";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "middle";
+          
+          // Add a semi-transparent background for better readability
+          const textMetrics = ctx.measureText(d.label);
+          const textWidth = textMetrics.width;
+          const textHeight = isExpanded ? 16 : 14;
+          const padding = 4;
+          
+          ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+          ctx.fillRect(
+            textX - padding,
+            textY - textHeight / 2,
+            textWidth + padding * 2,
+            textHeight
+          );
+          
+          // Draw the text
+          ctx.fillStyle = "#111827";
+          ctx.fillText(d.label, textX, textY);
+          ctx.restore();
+        }
+      });
+    }
+
     // Draw baseline on top of all points
     if (baselineY !== null) {
       ctx.save();
@@ -1021,6 +1071,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
     showMaxCurve,
     showMinCurve,
     showMidCurve,
+    showProjectName,
     updateBrushCount,
   ]);
 
