@@ -18,12 +18,14 @@ type ProjectsSummaryProps = {
   projects: any[];
   data: IBenchmarkResponse;
   someSelected: boolean;
+  showProjectName?: boolean;
 };
 
 const ProjectsSummary = ({
   projects,
   data,
   someSelected,
+  showProjectName = true,
 }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
@@ -229,12 +231,14 @@ const ProjectsSummary = ({
             showMaxCurve
             showMinCurve
             showMidCurve
+            showProjectName={showProjectName}
           />
         ) : (
           <D3GradientRangeLineChart
             data={newData}
             selectedBars={selectedProjects}
             unit={type}
+            showProjectName={showProjectName}
           />
         )}
       </div>
