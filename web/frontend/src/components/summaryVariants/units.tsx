@@ -292,6 +292,7 @@ const UnitsSummary = ({
             showMaxCurve
             showMinCurve
             showMidCurve
+            showProjectName
           />
         ) : (
           <D3GradientRangeLineChart
