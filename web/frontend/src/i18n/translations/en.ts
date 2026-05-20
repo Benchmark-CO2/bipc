@@ -1093,4 +1093,10 @@ export const en: Translations = {
     unknownProject: "Project",
     unknownUnit: "Unit",
   },
+  underConstruction: {
+    title: "We're building this page",
+    description:
+      "This page is still under development and is not available at the moment. We're working hard to launch it soon. Thank you for your understanding!",
+    predictDate: "Expected launch date: {date}",
+  }
 };
