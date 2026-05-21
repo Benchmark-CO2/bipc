@@ -43,11 +43,13 @@ type SteelMaterial struct {
 	Resistance      string  `json:"resistance"`
 	OtherResistance float64 `json:"other_resistance,omitempty"`
 	Mass            float64 `json:"mass"`
+	Position        string  `json:"position,omitempty"` // "wall", "slab", etc.
 }
 
 type ConcreteVolumeItem struct {
-	Fck    int     `json:"fck"`
-	Volume float64 `json:"volume"`
+	Fck      int     `json:"fck"`
+	Volume   float64 `json:"volume"`
+	Position string  `json:"position,omitempty"`
 }
 
 type ConcreteElement struct {

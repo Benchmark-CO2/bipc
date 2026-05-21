@@ -1421,7 +1421,42 @@ paths:
                     avg_slab_span: 5
 
               concrete_wall:
-                summary: "Concrete Wall Module"
+                summary: "Concrete Wall Module (new format)"
+                value:
+                  type: "concrete_wall"
+                  data:
+                    floor_ids:
+                      - "f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6"
+                      - "e7f8a9b0-c1d2-e3f4-a5b6-c7d8e9f0a1b2"
+                    concrete:
+                      - fck: 30
+                        volume: 180.0
+                        position: wall
+                      - fck: 25
+                        volume: 300.0
+                        position: slab
+                    steel:
+                      - material: "rebar"
+                        resistance: "CA50"
+                        mass: 9000.0
+                        position: wall
+                      - material: "mesh"
+                        resistance: "CA60"
+                        mass: 500.0
+                        position: wall
+                      - material: "rebar"
+                        resistance: "CA50"
+                        mass: 15000.0
+                        position: slab
+                    wall_thickness: 0.20
+                    slab_thickness: 0.15
+                    wall_area: 3000
+                    slab_area: 15000
+                    wall_form_area: 6000
+                    slab_form_area: 30000
+
+              concrete_wall_legacy:
+                summary: "Concrete Wall Module (legacy format - deprecated)"
                 value:
                   type: "concrete_wall"
                   data:
@@ -2317,6 +2352,10 @@ components:
           type: number
           format: float
           description: "Volume of concrete with the specified fck in cubic meters (m³)."
+        position:
+          type: string
+          description: "Application position for this concrete volume. Used by concrete_wall in the new format."
+          enum: [wall, slab]
       required:
         - fck
         - volume
@@ -2358,6 +2397,10 @@ components:
           format: float
           description: "Total mass of steel reinforcement in kilograms (kg)."
           example: 22500.0
+        position:
+          type: string
+          description: "Application position for this steel item. Used by concrete_wall in the new format."
+          enum: [wall, slab]
       required:
         - material
         - resistance
@@ -2496,7 +2539,10 @@ components:
 
     ConcreteWallData:
       type: object
-      description: "Data for a 'concrete_wall' type module."
+      description: "Data for a 'concrete_wall' type module. Prefer the new aggregate format (concrete/steel). Legacy fields are still accepted for backward compatibility."
+      oneOf:
+        - required: [concrete, steel]
+        - required: [concrete_walls, concrete_slabs]
       properties:
         floor_ids:
           type: array
@@ -2505,11 +2551,25 @@ components:
             type: string
             format: uuid
             example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+        concrete:
+          type: array
+          description: "New format: concrete volumes grouped in a single list with position discriminator."
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ConcreteVolumeItem"
+        steel:
+          type: array
+          description: "New format: steel materials grouped in a single list with position discriminator."
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/SteelMaterial"
         concrete_walls:
+          deprecated: true
           description: "Concrete and steel composition for all walls in the specified floors."
           allOf:
             - $ref: "#/components/schemas/ConcreteElement"
         concrete_slabs:
+          deprecated: true
           description: "Concrete and steel composition for all slabs in the specified floors."
           allOf:
             - $ref: "#/components/schemas/ConcreteElement"
@@ -2540,8 +2600,7 @@ components:
           description: "Total area of concrete forms for slabs in square meters (m²)."
           example: 30000
       required:
-        - concrete_walls
-        - concrete_slabs
+        - floor_ids
 
     StructuralMasonryData:
       type: object
