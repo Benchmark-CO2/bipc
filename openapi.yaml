@@ -1374,7 +1374,45 @@ paths:
               $ref: "#/components/schemas/ModuleCreateRequest"
             examples:
               beam_column:
-                summary: "Beam Column Module"
+                summary: "Beam Column Module (new format)"
+                value:
+                  type: "beam_column"
+                  data:
+                    floor_ids:
+                      - "f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6"
+                      - "e7f8a9b0-c1d2-e3f4-a5b6-c7d8e9f0a1b2"
+                    concrete:
+                      - fck: 30
+                        volume: 150.5
+                        position: column
+                      - fck: 30
+                        volume: 200.0
+                        position: beam
+                      - fck: 25
+                        volume: 450.0
+                        position: slab
+                    steel:
+                      - material: "rebar"
+                        resistance: "CA50"
+                        mass: 7500.0
+                        position: column
+                      - material: "rebar"
+                        resistance: "CA50"
+                        mass: 10000.0
+                        position: beam
+                      - material: "rebar"
+                        resistance: "CA50"
+                        mass: 22500.0
+                        position: slab
+                    form_columns: 1200
+                    form_beams: 2500
+                    form_slabs: 9000
+                    column_number: 120
+                    avg_beam_span: 6
+                    avg_slab_span: 5
+
+              beam_column_legacy:
+                summary: "Beam Column Module (legacy format - deprecated)"
                 value:
                   type: "beam_column"
                   data:
@@ -2352,10 +2390,6 @@ components:
           type: number
           format: float
           description: "Volume of concrete with the specified fck in cubic meters (m³)."
-        position:
-          type: string
-          description: "Application position for this concrete volume. Used by concrete_wall in the new format."
-          enum: [wall, slab]
       required:
         - fck
         - volume
@@ -2397,14 +2431,58 @@ components:
           format: float
           description: "Total mass of steel reinforcement in kilograms (kg)."
           example: 22500.0
-        position:
-          type: string
-          description: "Application position for this steel item. Used by concrete_wall in the new format."
-          enum: [wall, slab]
       required:
         - material
         - resistance
         - mass
+
+    BeamColumnConcrete:
+      allOf:
+        - $ref: "#/components/schemas/ConcreteVolumeItem"
+        - type: object
+          properties:
+            position:
+              type: string
+              description: "Application position for beam-column concrete in aggregated format."
+              enum: [column, beam, slab]
+          required:
+            - position
+
+    BeamColumnSteel:
+      allOf:
+        - $ref: "#/components/schemas/SteelMaterial"
+        - type: object
+          properties:
+            position:
+              type: string
+              description: "Application position for beam-column steel in aggregated format."
+              enum: [column, beam, slab]
+          required:
+            - position
+
+    ConcreteWallConcrete:
+      allOf:
+        - $ref: "#/components/schemas/ConcreteVolumeItem"
+        - type: object
+          properties:
+            position:
+              type: string
+              description: "Application position for concrete-wall concrete in aggregated format."
+              enum: [wall, slab]
+          required:
+            - position
+
+    ConcreteWallSteel:
+      allOf:
+        - $ref: "#/components/schemas/SteelMaterial"
+        - type: object
+          properties:
+            position:
+              type: string
+              description: "Application position for concrete-wall steel in aggregated format."
+              enum: [wall, slab]
+          required:
+            - position
 
     # Schema for the array of steel materials
     SteelMaterials:
@@ -2480,7 +2558,10 @@ components:
 
     BeamColumnData:
       type: object
-      description: "Data for a 'beam_column' type module."
+      description: "Data for a 'beam_column' type module. Prefer the new aggregate format (concrete/steel). Legacy fields are still accepted for backward compatibility. If both are provided, the new format has precedence."
+      oneOf:
+        - required: [concrete, steel]
+        - required: [concrete_columns, concrete_beams, concrete_slabs]
       properties:
         floor_ids:
           type: array
@@ -2489,15 +2570,30 @@ components:
             type: string
             format: uuid
           minItems: 1
+        concrete:
+          type: array
+          description: "New format: concrete volumes grouped in a single list with position discriminator (column, beam, slab)."
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/BeamColumnConcrete"
+        steel:
+          type: array
+          description: "New format: steel materials grouped in a single list with position discriminator (column, beam, slab)."
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/BeamColumnSteel"
         concrete_columns:
+          deprecated: true
           description: "Concrete and steel composition for all columns in the specified floors."
           allOf:
             - $ref: "#/components/schemas/ConcreteElement"
         concrete_beams:
+          deprecated: true
           description: "Concrete and steel composition for all beams in the specified floors."
           allOf:
             - $ref: "#/components/schemas/ConcreteElement"
         concrete_slabs:
+          deprecated: true
           description: "Concrete and steel composition for all slabs in the specified floors."
           allOf:
             - $ref: "#/components/schemas/ConcreteElement"
@@ -2533,9 +2629,6 @@ components:
           example: 5.0
       required:
         - floor_ids
-        - concrete_columns
-        - concrete_beams
-        - concrete_slabs
 
     ConcreteWallData:
       type: object
@@ -2553,16 +2646,16 @@ components:
             example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
         concrete:
           type: array
-          description: "New format: concrete volumes grouped in a single list with position discriminator."
+          description: "New format: concrete volumes grouped in a single list with position discriminator (wall, slab)."
           minItems: 1
           items:
-            $ref: "#/components/schemas/ConcreteVolumeItem"
+            $ref: "#/components/schemas/ConcreteWallConcrete"
         steel:
           type: array
-          description: "New format: steel materials grouped in a single list with position discriminator."
+          description: "New format: steel materials grouped in a single list with position discriminator (wall, slab)."
           minItems: 1
           items:
-            $ref: "#/components/schemas/SteelMaterial"
+            $ref: "#/components/schemas/ConcreteWallSteel"
         concrete_walls:
           deprecated: true
           description: "Concrete and steel composition for all walls in the specified floors."

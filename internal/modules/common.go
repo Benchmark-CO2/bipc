@@ -38,24 +38,33 @@ type SteelMassItem struct {
 }
 
 type SteelMaterial struct {
-	Material        string  `json:"material"`
-	OtherName       string  `json:"other_name,omitempty"`
-	Resistance      string  `json:"resistance"`
-	OtherResistance float64 `json:"other_resistance,omitempty"`
-	Mass            float64 `json:"mass"`
-	Position        string  `json:"position,omitempty"` // "wall", "slab", etc.
+	Material        string          `json:"material"`
+	OtherName       string          `json:"other_name,omitempty"`
+	Resistance      string          `json:"resistance"`
+	OtherResistance float64         `json:"other_resistance,omitempty"`
+	Mass            float64         `json:"mass"`
+	Position        ElementPosition `json:"position,omitempty"` // "wall", "slab", etc.
 }
 
 type ConcreteVolumeItem struct {
-	Fck      int     `json:"fck"`
-	Volume   float64 `json:"volume"`
-	Position string  `json:"position,omitempty"`
+	Fck      int             `json:"fck"`
+	Volume   float64         `json:"volume"`
+	Position ElementPosition `json:"position,omitempty"`
 }
 
 type ConcreteElement struct {
 	Volumes []ConcreteVolumeItem `json:"volumes"`
 	Steel   []SteelMaterial      `json:"steel"`
 }
+
+type ElementPosition string
+
+const (
+	ElementPositionWall   ElementPosition = "wall"
+	ElementPositionSlab   ElementPosition = "slab"
+	ElementPositionColumn ElementPosition = "column"
+	ElementPositionBeam   ElementPosition = "beam"
+)
 
 func (c ConcreteElement) MarshalJSON() ([]byte, error) {
 	if len(c.Volumes) == 0 && len(c.Steel) == 0 {
@@ -240,6 +249,30 @@ func CalculateSteelConsumption(materials []SteelMaterial) (Consumption, error) {
 	return result, nil
 }
 
+func CalculateConcreteConsumption(items []ConcreteVolumeItem) Consumption {
+	var result Consumption
+
+	for _, item := range items {
+		fck := float64(item.Fck)
+
+		co2Val, ok := sidacConcreteData.KgCO2[fck]
+		if !ok {
+			co2Val = sidacConcreteData.KgCO2[40]
+		}
+		result.CO2Min += co2Val.Min * item.Volume
+		result.CO2Max += co2Val.Max * item.Volume
+
+		energyVal, ok := sidacConcreteData.MJ[fck]
+		if !ok {
+			energyVal = sidacConcreteData.MJ[40]
+		}
+		result.EnergyMin += energyVal.Min * item.Volume
+		result.EnergyMax += energyVal.Max * item.Volume
+	}
+
+	return result
+}
+
 func ParseModuleType(t string) (Module, error) {
 	switch t {
 	case "beam_column":
@@ -284,6 +317,142 @@ func validateConcreteElement(v *validator.Validator, el ConcreteElement, fieldPr
 
 	ValidateSteelMaterials(v, el.Steel, fieldPrefix+".steel")
 	v.Check(len(el.Steel) > 0, fieldPrefix+".steel", "must have at least one item")
+}
+
+func validatePositionedConcrete(
+	v *validator.Validator,
+	concrete []ConcreteVolumeItem,
+	validPositions []ElementPosition,
+) {
+	const concreteField = "concrete"
+
+	fckPositionSet := make(map[string]struct{})
+	shouldValidatePosition := len(validPositions) > 0
+	validPositionStrings := elementPositionsAsStrings(validPositions)
+
+	for i, item := range concrete {
+		prefix := fmt.Sprintf("%s[%d]", concreteField, i)
+		v.Check(item.Volume > 0, prefix+".volume", "must be greater than 0")
+		v.Check(item.Fck != 0, prefix+".fck", "must be provided")
+
+		if shouldValidatePosition {
+			v.Check(item.Position != "", prefix+".position", "must be provided")
+			v.Check(validator.PermittedValue(string(item.Position), validPositionStrings...), prefix+".position", fmt.Sprintf("must be one of: %s", strings.Join(validPositionStrings, ", ")))
+		}
+
+		key := fmt.Sprintf("%s_%d", string(item.Position), item.Fck)
+		if _, exists := fckPositionSet[key]; exists {
+			v.Check(false, prefix+".fck", fmt.Sprintf("duplicate fck %d for position %s", item.Fck, string(item.Position)))
+			continue
+		}
+
+		fckPositionSet[key] = struct{}{}
+	}
+
+	v.Check(len(concrete) > 0, concreteField, "must have at least one item")
+}
+
+func validatePositionedSteel(
+	v *validator.Validator,
+	steel []SteelMaterial,
+	validPositions []ElementPosition,
+) {
+	const steelField = "steel"
+
+	shouldValidatePosition := len(validPositions) > 0
+	validPositionStrings := elementPositionsAsStrings(validPositions)
+
+	ValidateSteelMaterials(v, steel, steelField)
+	for i, item := range steel {
+		prefix := fmt.Sprintf("%s[%d]", steelField, i)
+		if shouldValidatePosition {
+			v.Check(item.Position != "", prefix+".position", "must be provided")
+			v.Check(validator.PermittedValue(string(item.Position), validPositionStrings...), prefix+".position", fmt.Sprintf("must be one of: %s", strings.Join(validPositionStrings, ", ")))
+		}
+	}
+
+	v.Check(len(steel) > 0, steelField, "must have at least one item")
+}
+
+func elementPositionsAsStrings(positions []ElementPosition) []string {
+	result := make([]string, 0, len(positions))
+	for _, position := range positions {
+		result = append(result, string(position))
+	}
+
+	return result
+}
+
+func flattenConcreteByPosition(positions []ElementPosition, elementsByPosition map[ElementPosition]ConcreteElement) (concrete []ConcreteVolumeItem) {
+	for _, position := range positions {
+		element, ok := elementsByPosition[position]
+		if !ok {
+			continue
+		}
+
+		for _, v := range element.Volumes {
+			concrete = append(concrete, ConcreteVolumeItem{Fck: v.Fck, Volume: v.Volume, Position: position})
+		}
+	}
+
+	return concrete
+}
+
+func flattenSteelByPosition(positions []ElementPosition, elementsByPosition map[ElementPosition]ConcreteElement) (steel []SteelMaterial) {
+	for _, position := range positions {
+		element, ok := elementsByPosition[position]
+		if !ok {
+			continue
+		}
+
+		for _, s := range element.Steel {
+			steel = append(steel, SteelMaterial{
+				Material:        s.Material,
+				OtherName:       s.OtherName,
+				Resistance:      s.Resistance,
+				OtherResistance: s.OtherResistance,
+				Mass:            s.Mass,
+				Position:        position,
+			})
+		}
+	}
+
+	return steel
+}
+
+func groupConcreteByPosition(concrete []ConcreteVolumeItem) map[ElementPosition]ConcreteElement {
+	elementsByPosition := map[ElementPosition]ConcreteElement{}
+
+	for _, item := range concrete {
+		position := item.Position
+		element := elementsByPosition[position]
+		element.Volumes = append(element.Volumes, ConcreteVolumeItem{Fck: item.Fck, Volume: item.Volume})
+		elementsByPosition[position] = element
+	}
+
+	return elementsByPosition
+}
+
+func groupSteelByPosition(elementsByPosition map[ElementPosition]ConcreteElement, steel []SteelMaterial) map[ElementPosition]ConcreteElement {
+	if elementsByPosition == nil {
+		elementsByPosition = map[ElementPosition]ConcreteElement{}
+	}
+
+	for _, s := range steel {
+		position := s.Position
+		element := elementsByPosition[position]
+		element.Steel = append(element.Steel, SteelMaterial{
+			Material:        s.Material,
+			OtherName:       s.OtherName,
+			Resistance:      s.Resistance,
+			OtherResistance: s.OtherResistance,
+			Mass:            s.Mass,
+			Position:        s.Position,
+		})
+		elementsByPosition[position] = element
+	}
+
+	return elementsByPosition
 }
 
 func (ce *ConcreteElement) calculate(sidacConcrete, sidacSteel SidacMaterial) (Consumption, error) {
@@ -370,6 +539,9 @@ func steelMaterialsFromData(steelData []interface{}) []SteelMaterial {
 			if otherRes, ok := steelMap["other_resistance"].(float64); ok {
 				steel.OtherResistance = otherRes
 			}
+			if position, ok := steelMap["position"].(string); ok {
+				steel.Position = ElementPosition(position)
+			}
 			materials = append(materials, steel)
 		} else if ca, ok := steelMap["ca"].(float64); ok {
 			// Backward compatibility: read old format (SteelMassItem) and convert
@@ -386,6 +558,45 @@ func steelMaterialsFromData(steelData []interface{}) []SteelMaterial {
 	}
 
 	return materials
+}
+
+func concreteVolumesFromInterface(data interface{}) []ConcreteVolumeItem {
+	items, ok := data.([]interface{})
+	if !ok {
+		return nil
+	}
+
+	result := make([]ConcreteVolumeItem, 0, len(items))
+	for _, item := range items {
+		volumeMap, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		volume := ConcreteVolumeItem{}
+		if fck, ok := volumeMap["fck"].(float64); ok {
+			volume.Fck = int(fck)
+		}
+		if amount, ok := volumeMap["volume"].(float64); ok {
+			volume.Volume = amount
+		}
+		if position, ok := volumeMap["position"].(string); ok {
+			volume.Position = ElementPosition(position)
+		}
+
+		result = append(result, volume)
+	}
+
+	return result
+}
+
+func steelMaterialsFromInterface(data interface{}) []SteelMaterial {
+	items, ok := data.([]interface{})
+	if !ok {
+		return nil
+	}
+
+	return steelMaterialsFromData(items)
 }
 
 func consumptionFromDataModule(d *data.Module) *Consumption {

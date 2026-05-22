@@ -1,22 +1,14 @@
 package modules
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 	"github.com/google/uuid"
 )
 
-const (
-	ConcreteWallPositionWall = "wall"
-	ConcreteWallPositionSlab = "slab"
-)
-
-var concreteWallValidPositions = []string{
-	ConcreteWallPositionWall,
-	ConcreteWallPositionSlab,
+var concreteWallValidPositions = []ElementPosition{
+	ElementPositionWall,
+	ElementPositionSlab,
 }
 
 type ConcreteWall struct {
@@ -46,6 +38,10 @@ type ConcreteWall struct {
 
 func (w *ConcreteWall) GetType() string { return w.Type }
 
+func (w *ConcreteWall) validPositions() []ElementPosition {
+	return append([]ElementPosition(nil), concreteWallValidPositions...)
+}
+
 func (w *ConcreteWall) hasNewFormat() bool {
 	return len(w.Concrete) > 0 || len(w.Steel) > 0
 }
@@ -56,10 +52,12 @@ func (w *ConcreteWall) normalizeToNewFormat() {
 		return
 	}
 
-	w.Concrete, w.Steel = flattenConcreteAndSteelByPosition(map[string]ConcreteElement{
-		ConcreteWallPositionWall: w.ConcreteWalls,
-		ConcreteWallPositionSlab: w.ConcreteSlabs,
-	})
+	elementsByPosition := map[ElementPosition]ConcreteElement{
+		ElementPositionWall: w.ConcreteWalls,
+		ElementPositionSlab: w.ConcreteSlabs,
+	}
+	w.Concrete = flattenConcreteByPosition(w.validPositions(), elementsByPosition)
+	w.Steel = flattenSteelByPosition(w.validPositions(), elementsByPosition)
 }
 
 func (w *ConcreteWall) Validate(v *validator.Validator) {
@@ -69,7 +67,8 @@ func (w *ConcreteWall) Validate(v *validator.Validator) {
 	validateSlabType(v, w.SlabType)
 
 	w.normalizeToNewFormat()
-	w.validateNewFormat(v)
+	validatePositionedConcrete(v, w.Concrete, w.validPositions())
+	validatePositionedSteel(v, w.Steel, w.validPositions())
 
 	if w.WallThickness != nil {
 		v.Check(*w.WallThickness >= 0, "wall_thickness", "cannot be negative")
@@ -91,98 +90,10 @@ func (w *ConcreteWall) Validate(v *validator.Validator) {
 	}
 }
 
-func (w *ConcreteWall) validateNewFormat(v *validator.Validator) {
-	fckPositionSet := make(map[string]struct{})
-	for i, item := range w.Concrete {
-		prefix := fmt.Sprintf("concrete[%d]", i)
-		v.Check(item.Volume > 0, prefix+".volume", "must be greater than 0")
-		v.Check(item.Fck != 0, prefix+".fck", "must be provided")
-		v.Check(item.Position != "", prefix+".position", "must be provided")
-		v.Check(validator.PermittedValue(item.Position, concreteWallValidPositions...), prefix+".position", fmt.Sprintf("must be one of: %s", strings.Join(concreteWallValidPositions, ", ")))
-
-		key := fmt.Sprintf("%s_%d", item.Position, item.Fck)
-		if _, exists := fckPositionSet[key]; exists {
-			v.Check(false, prefix+".fck", fmt.Sprintf("duplicate fck %d for position %s", item.Fck, item.Position))
-		} else {
-			fckPositionSet[key] = struct{}{}
-		}
-	}
-	v.Check(len(w.Concrete) > 0, "concrete", "must have at least one item")
-
-	ValidateSteelMaterials(v, w.Steel, "steel")
-	for i, item := range w.Steel {
-		prefix := fmt.Sprintf("steel[%d]", i)
-		v.Check(item.Position != "", prefix+".position", "must be provided")
-		v.Check(validator.PermittedValue(item.Position, concreteWallValidPositions...), prefix+".position", fmt.Sprintf("must be one of: %s", strings.Join(concreteWallValidPositions, ", ")))
-	}
-	v.Check(len(w.Steel) > 0, "steel", "must have at least one item")
-}
-
-func flattenConcreteAndSteelByPosition(elementsByPosition map[string]ConcreteElement) (concrete []ConcreteVolumeItem, steel []SteelMaterial) {
-	for position, element := range elementsByPosition {
-		for _, v := range element.Volumes {
-			concrete = append(concrete, ConcreteVolumeItem{Fck: v.Fck, Volume: v.Volume, Position: position})
-		}
-		for _, s := range element.Steel {
-			steel = append(steel, SteelMaterial{
-				Material:        s.Material,
-				OtherName:       s.OtherName,
-				Resistance:      s.Resistance,
-				OtherResistance: s.OtherResistance,
-				Mass:            s.Mass,
-				Position:        position,
-			})
-		}
-	}
-	return concrete, steel
-}
-
-func groupConcreteAndSteelByPosition(concrete []ConcreteVolumeItem, steel []SteelMaterial) map[string]ConcreteElement {
-	elementsByPosition := map[string]ConcreteElement{}
-
-	for _, item := range concrete {
-		element := elementsByPosition[item.Position]
-		element.Volumes = append(element.Volumes, ConcreteVolumeItem{Fck: item.Fck, Volume: item.Volume})
-		elementsByPosition[item.Position] = element
-	}
-
-	for _, s := range steel {
-		element := elementsByPosition[s.Position]
-		element.Steel = append(element.Steel, SteelMaterial{
-			Material:        s.Material,
-			OtherName:       s.OtherName,
-			Resistance:      s.Resistance,
-			OtherResistance: s.OtherResistance,
-			Mass:            s.Mass,
-			Position:        s.Position,
-		})
-		elementsByPosition[s.Position] = element
-	}
-
-	return elementsByPosition
-}
-
 func (w *ConcreteWall) Calculate() (Consumption, error) {
 	w.normalizeToNewFormat()
 
-	var total Consumption
-	for _, item := range w.Concrete {
-		fck := float64(item.Fck)
-
-		co2Val, ok := sidacConcreteData.KgCO2[fck]
-		if !ok {
-			co2Val = sidacConcreteData.KgCO2[40]
-		}
-		total.CO2Min += co2Val.Min * item.Volume
-		total.CO2Max += co2Val.Max * item.Volume
-
-		energyVal, ok := sidacConcreteData.MJ[fck]
-		if !ok {
-			energyVal = sidacConcreteData.MJ[40]
-		}
-		total.EnergyMin += energyVal.Min * item.Volume
-		total.EnergyMax += energyVal.Max * item.Volume
-	}
+	total := CalculateConcreteConsumption(w.Concrete)
 
 	steelConsumption, err := CalculateSteelConsumption(w.Steel)
 	if err != nil {
@@ -284,48 +195,8 @@ func (w *ConcreteWall) toDataModule(moduleID, optionID uuid.UUID, result Consump
 func (w *ConcreteWall) fromDataModule(d *data.Module) Module {
 	consumption := consumptionFromDataModule(d)
 
-	var concreteItems []ConcreteVolumeItem
-	if rawItems, ok := d.Data["concrete"].([]interface{}); ok {
-		for _, v := range rawItems {
-			volMap, ok := v.(map[string]interface{})
-			if !ok {
-				continue
-			}
-			item := ConcreteVolumeItem{
-				Fck:    int(volMap["fck"].(float64)),
-				Volume: volMap["volume"].(float64),
-			}
-			if pos, ok := volMap["position"].(string); ok {
-				item.Position = pos
-			}
-			concreteItems = append(concreteItems, item)
-		}
-	}
-
-	var steelItems []SteelMaterial
-	if steelData, ok := d.Data["steel"].([]interface{}); ok {
-		for _, v := range steelData {
-			steelMap, ok := v.(map[string]interface{})
-			if !ok {
-				continue
-			}
-			s := SteelMaterial{
-				Material:   steelMap["material"].(string),
-				Resistance: steelMap["resistance"].(string),
-				Mass:       steelMap["mass"].(float64),
-			}
-			if otherName, ok := steelMap["other_name"].(string); ok {
-				s.OtherName = otherName
-			}
-			if otherRes, ok := steelMap["other_resistance"].(float64); ok {
-				s.OtherResistance = otherRes
-			}
-			if pos, ok := steelMap["position"].(string); ok {
-				s.Position = pos
-			}
-			steelItems = append(steelItems, s)
-		}
-	}
+	concreteItems := concreteVolumesFromInterface(d.Data["concrete"])
+	steelItems := steelMaterialsFromInterface(d.Data["steel"])
 
 	if len(concreteItems) == 0 && len(steelItems) == 0 {
 		var legacyWalls, legacySlabs ConcreteElement
@@ -336,15 +207,18 @@ func (w *ConcreteWall) fromDataModule(d *data.Module) Module {
 			legacySlabs = concreteElementFromMap(slabData)
 		}
 
-		concreteItems, steelItems = flattenConcreteAndSteelByPosition(map[string]ConcreteElement{
-			ConcreteWallPositionWall: legacyWalls,
-			ConcreteWallPositionSlab: legacySlabs,
-		})
+		legacyByPosition := map[ElementPosition]ConcreteElement{
+			ElementPositionWall: legacyWalls,
+			ElementPositionSlab: legacySlabs,
+		}
+		concreteItems = flattenConcreteByPosition(w.validPositions(), legacyByPosition)
+		steelItems = flattenSteelByPosition(w.validPositions(), legacyByPosition)
 	}
 
-	elementsByPosition := groupConcreteAndSteelByPosition(concreteItems, steelItems)
-	legacyWalls := elementsByPosition[ConcreteWallPositionWall]
-	legacySlabs := elementsByPosition[ConcreteWallPositionSlab]
+	elementsByPosition := groupConcreteByPosition(concreteItems)
+	elementsByPosition = groupSteelByPosition(elementsByPosition, steelItems)
+	legacyWalls := elementsByPosition[ElementPositionWall]
+	legacySlabs := elementsByPosition[ElementPositionSlab]
 
 	return &ConcreteWall{
 		ID:              d.ID,
