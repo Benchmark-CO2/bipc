@@ -1528,7 +1528,67 @@ paths:
                     slab_form_area: 30000
 
               structural_masonry:
-                summary: "Structural Masonry Module"
+                summary: "Structural Masonry Module (new format)"
+                value:
+                  type: "structural_masonry"
+                  data:
+                    floor_ids:
+                      - "f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6"
+                    concrete:
+                      - fck: 25
+                        volume: 50.0
+                        position: column
+                      - fck: 25
+                        volume: 80.0
+                        position: beam
+                      - fck: 25
+                        volume: 200.0
+                        position: slab
+                    steel:
+                      - material: "rebar"
+                        resistance: "CA50"
+                        mass: 2500.0
+                        position: column
+                      - material: "rebar"
+                        resistance: "CA50"
+                        mass: 4000.0
+                        position: beam
+                      - material: "rebar"
+                        resistance: "CA50"
+                        mass: 10000.0
+                        position: slab
+                    form_columns: 500
+                    form_beams: 800
+                    form_slabs: 5000
+                    form_total: 6300
+                    masonry:
+                      grout:
+                        - position: "vertical"
+                          volumes:
+                            - fgk: 15
+                              volume: 10.5
+                          steel:
+                            - material: "rebar"
+                              resistance: "CA50"
+                              mass: 500.0
+                        - position: "horizontal"
+                          volumes:
+                            - fgk: 15
+                              volume: 5.0
+                          steel:
+                            - material: "rebar"
+                              resistance: "CA50"
+                              mass: 250.0
+                      mortar:
+                        - fak: 8.5
+                          volume: 15.0
+                      blocks:
+                        - type: "inteiro (14x19x39)"
+                          fbk: 8
+                          quantity: 5000
+
+              structural_masonry_legacy:
+                summary: "Structural Masonry Module (legacy format - deprecated)"
                 value:
                   type: "structural_masonry"
                   data:
@@ -2484,6 +2544,30 @@ components:
           required:
             - position
 
+    StructuralMasonryConcrete:
+      allOf:
+        - $ref: "#/components/schemas/ConcreteVolumeItem"
+        - type: object
+          properties:
+            position:
+              type: string
+              description: "Application position for structural-masonry concrete in aggregated format."
+              enum: [column, beam, slab]
+          required:
+            - position
+
+    StructuralMasonrySteel:
+      allOf:
+        - $ref: "#/components/schemas/SteelMaterial"
+        - type: object
+          properties:
+            position:
+              type: string
+              description: "Application position for structural-masonry steel in aggregated format."
+              enum: [column, beam, slab]
+          required:
+            - position
+
     # Schema for the array of steel materials
     SteelMaterials:
       type: array
@@ -2697,7 +2781,7 @@ components:
 
     StructuralMasonryData:
       type: object
-      description: "Data for a 'structural_masonry' type module. Structural masonry combines concrete structural elements (columns, beams, slabs) with masonry block construction."
+      description: "Data for a 'structural_masonry' type module. Prefer the new aggregate format (concrete/steel). Legacy concrete_* fields are still accepted for backward compatibility. Masonry structure remains the same."
       properties:
         floor_ids:
           type: array
@@ -2706,15 +2790,30 @@ components:
             type: string
             format: uuid
           minItems: 1
+        concrete:
+          type: array
+          description: "New format: concrete volumes grouped in a single list with position discriminator (column, beam, slab). Optional in this module."
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/StructuralMasonryConcrete"
+        steel:
+          type: array
+          description: "New format: steel materials grouped in a single list with position discriminator (column, beam, slab). Optional in this module."
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/StructuralMasonrySteel"
         concrete_columns:
+          deprecated: true
           description: "Concrete and steel composition for columns."
           allOf:
             - $ref: "#/components/schemas/ConcreteElement"
         concrete_beams:
+          deprecated: true
           description: "Concrete and steel composition for beams."
           allOf:
             - $ref: "#/components/schemas/ConcreteElement"
         concrete_slabs:
+          deprecated: true
           description: "Concrete and steel composition for slabs."
           allOf:
             - $ref: "#/components/schemas/ConcreteElement"
@@ -2808,9 +2907,6 @@ components:
           required: [grout, mortar, blocks]
       required:
         - floor_ids
-        - concrete_columns
-        - concrete_beams
-        - concrete_slabs
         - masonry
 
     RaftFoundationData:

@@ -9,6 +9,12 @@ import (
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
+var structuralMasonryValidPositions = []ElementPosition{
+	ElementPositionColumn,
+	ElementPositionBeam,
+	ElementPositionSlab,
+}
+
 type BlockInfo struct {
 	Type     string `json:"type"`
 	Fbk      int    `json:"fbk"`
@@ -40,7 +46,13 @@ type MasonryElement struct {
 type StructuralMasonry struct {
 	ID uuid.UUID `json:"id"`
 	BasicModuleData
-	Consumption     *Consumption    `json:"consumption,omitempty"`
+	Consumption *Consumption `json:"consumption,omitempty"`
+
+	// Preferred format: flat list with Position per item.
+	Concrete []ConcreteVolumeItem `json:"concrete,omitempty"`
+	Steel    []SteelMaterial      `json:"steel,omitempty"`
+
+	// Legacy compatibility fields.
 	ConcreteColumns ConcreteElement `json:"concrete_columns"`
 	ConcreteBeams   ConcreteElement `json:"concrete_beams"`
 	ConcreteSlabs   ConcreteElement `json:"concrete_slabs"`
@@ -57,18 +69,41 @@ type StructuralMasonry struct {
 
 func (s *StructuralMasonry) GetType() string { return s.Type }
 
+func (s *StructuralMasonry) validPositions() []ElementPosition {
+	return append([]ElementPosition(nil), structuralMasonryValidPositions...)
+}
+
+func (s *StructuralMasonry) hasNewFormat() bool {
+	return len(s.Concrete) > 0 || len(s.Steel) > 0
+}
+
+func (s *StructuralMasonry) normalizeToNewFormat() {
+	if s.hasNewFormat() {
+		// New format has precedence; ignore legacy payload when both are provided.
+		return
+	}
+
+	elementsByPosition := map[ElementPosition]ConcreteElement{
+		ElementPositionColumn: s.ConcreteColumns,
+		ElementPositionBeam:   s.ConcreteBeams,
+		ElementPositionSlab:   s.ConcreteSlabs,
+	}
+	s.Concrete = flattenConcreteByPosition(s.validPositions(), elementsByPosition)
+	s.Steel = flattenSteelByPosition(s.validPositions(), elementsByPosition)
+}
+
 func (s *StructuralMasonry) Validate(v *validator.Validator) {
 	v.Check(s.Type != "", "type", "must be provided")
 	v.Check(len(s.FloorIDs) > 0, "floor_ids", "must be provided")
 	v.Check(validator.Unique(s.FloorIDs), "floor_ids", "must not contain duplicate values")
 
-	if len(s.ConcreteColumns.Volumes) > 0 || len(s.ConcreteColumns.Steel) > 0 {
-		validateConcreteElement(v, s.ConcreteColumns, "concrete_columns")
+	s.normalizeToNewFormat()
+	if len(s.Concrete) > 0 {
+		validatePositionedConcrete(v, s.Concrete, s.validPositions())
 	}
-	if len(s.ConcreteBeams.Volumes) > 0 || len(s.ConcreteBeams.Steel) > 0 {
-		validateConcreteElement(v, s.ConcreteBeams, "concrete_beams")
+	if len(s.Steel) > 0 {
+		validatePositionedSteel(v, s.Steel, s.validPositions())
 	}
-	validateConcreteElement(v, s.ConcreteSlabs, "concrete_slabs")
 	validateSlabType(v, s.SlabType)
 
 	fgkSet := make(map[int]struct{})
@@ -190,21 +225,15 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 }
 
 func (s *StructuralMasonry) Calculate() (Consumption, error) {
-	total := Consumption{}
+	s.normalizeToNewFormat()
 
-	if len(s.ConcreteColumns.Volumes) > 0 || len(s.ConcreteColumns.Steel) > 0 {
-		if err := addConcreteElement(&total, s.ConcreteColumns, sidacConcreteData, sidacSteelData); err != nil {
-			return Consumption{}, err
-		}
-	}
-	if len(s.ConcreteBeams.Volumes) > 0 || len(s.ConcreteBeams.Steel) > 0 {
-		if err := addConcreteElement(&total, s.ConcreteBeams, sidacConcreteData, sidacSteelData); err != nil {
-			return Consumption{}, err
-		}
-	}
-	if err := addConcreteElement(&total, s.ConcreteSlabs, sidacConcreteData, sidacSteelData); err != nil {
+	total := CalculateConcreteConsumption(s.Concrete)
+
+	steelConsumption, err := CalculateSteelConsumption(s.Steel)
+	if err != nil {
 		return Consumption{}, err
 	}
+	total.sum(steelConsumption)
 
 	if err := addMansonryElement(&total, s.Masonry, sidacGroutData, sidacSteelData, sidacMortarData); err != nil {
 		return Consumption{}, err
@@ -219,6 +248,7 @@ func (s *StructuralMasonry) Insert(models data.Models, optionID uuid.UUID, resul
 		return nil, err
 	}
 
+	s.normalizeToNewFormat()
 	moduleToInsert := s.toDataModule(moduleID, optionID, result)
 
 	option, err := models.Options.GetByID(optionID)
@@ -255,6 +285,7 @@ func (s *StructuralMasonry) Get(models data.Models, moduleID uuid.UUID) (Module,
 }
 
 func (s *StructuralMasonry) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
+	s.normalizeToNewFormat()
 	module := s.toDataModule(moduleID, optionID, result)
 
 	option, err := models.Options.GetByID(optionID)
@@ -333,15 +364,14 @@ func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Co
 	}
 
 	moduleData := map[string]interface{}{
-		"concrete_columns": s.ConcreteColumns,
-		"concrete_beams":   s.ConcreteBeams,
-		"concrete_slabs":   s.ConcreteSlabs,
-		"slab_type":        normalizeSlabType(s.SlabType),
-		"form_columns":     s.FormColumns,
-		"form_beams":       s.FormBeams,
-		"form_slabs":       s.FormSlabs,
-		"form_total":       s.FormTotal,
-		"masonry":          masonry,
+		"concrete":     s.Concrete,
+		"steel":        s.Steel,
+		"slab_type":    normalizeSlabType(s.SlabType),
+		"form_columns": s.FormColumns,
+		"form_beams":   s.FormBeams,
+		"form_slabs":   s.FormSlabs,
+		"form_total":   s.FormTotal,
+		"masonry":      masonry,
 	}
 
 	return &data.Module{
@@ -360,17 +390,36 @@ func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Co
 func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 	consumption := consumptionFromDataModule(d)
 
-	var concreteColumns, concreteBeams, concreteSlabs ConcreteElement
+	concreteItems := concreteVolumesFromInterface(d.Data["concrete"])
+	steelItems := steelMaterialsFromInterface(d.Data["steel"])
 
-	if colData, ok := d.Data["concrete_columns"].(map[string]interface{}); ok {
-		concreteColumns = concreteElementFromMap(colData)
+	if len(concreteItems) == 0 && len(steelItems) == 0 {
+		var legacyColumns, legacyBeams, legacySlabs ConcreteElement
+
+		if colData, ok := d.Data["concrete_columns"].(map[string]interface{}); ok {
+			legacyColumns = concreteElementFromMap(colData)
+		}
+		if beamData, ok := d.Data["concrete_beams"].(map[string]interface{}); ok {
+			legacyBeams = concreteElementFromMap(beamData)
+		}
+		if slabData, ok := d.Data["concrete_slabs"].(map[string]interface{}); ok {
+			legacySlabs = concreteElementFromMap(slabData)
+		}
+
+		legacyByPosition := map[ElementPosition]ConcreteElement{
+			ElementPositionColumn: legacyColumns,
+			ElementPositionBeam:   legacyBeams,
+			ElementPositionSlab:   legacySlabs,
+		}
+		concreteItems = flattenConcreteByPosition(s.validPositions(), legacyByPosition)
+		steelItems = flattenSteelByPosition(s.validPositions(), legacyByPosition)
 	}
-	if beamData, ok := d.Data["concrete_beams"].(map[string]interface{}); ok {
-		concreteBeams = concreteElementFromMap(beamData)
-	}
-	if slabData, ok := d.Data["concrete_slabs"].(map[string]interface{}); ok {
-		concreteSlabs = concreteElementFromMap(slabData)
-	}
+
+	elementsByPosition := groupConcreteByPosition(concreteItems)
+	elementsByPosition = groupSteelByPosition(elementsByPosition, steelItems)
+	concreteColumns := elementsByPosition[ElementPositionColumn]
+	concreteBeams := elementsByPosition[ElementPositionBeam]
+	concreteSlabs := elementsByPosition[ElementPositionSlab]
 
 	var masonry MasonryElement
 
@@ -436,6 +485,8 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 		ID:              d.ID,
 		BasicModuleData: BasicModuleData{Type: "structural_masonry", Outdated: d.Outdated},
 		Consumption:     consumption,
+		Concrete:        concreteItems,
+		Steel:           steelItems,
 		ConcreteColumns: concreteColumns,
 		ConcreteBeams:   concreteBeams,
 		ConcreteSlabs:   concreteSlabs,
