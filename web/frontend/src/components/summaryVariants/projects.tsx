@@ -1,5 +1,6 @@
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
@@ -12,18 +13,19 @@ import Legend from "./components/Legend";
 import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
 import { barColors, normalizeBenchmarkSeries, recalculateY } from "./utils";
-import { useTranslation } from "@/i18n";
 
 type ProjectsSummaryProps = {
   projects: any[];
   data: IBenchmarkResponse;
   someSelected: boolean;
+  showProjectName?: boolean;
 };
 
 const ProjectsSummary = ({
   projects,
   data,
   someSelected,
+  showProjectName = true,
 }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
@@ -226,12 +228,17 @@ const ProjectsSummary = ({
             showBaseline
             showTop5Line
             showProcelScale
+            showMaxCurve
+            showMinCurve
+            showMidCurve
+            showProjectName={showProjectName}
           />
         ) : (
           <D3GradientRangeLineChart
             data={newData}
             selectedBars={selectedProjects}
             unit={type}
+            showProjectName={showProjectName}
           />
         )}
       </div>

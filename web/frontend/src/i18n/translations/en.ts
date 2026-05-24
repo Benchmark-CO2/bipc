@@ -343,10 +343,10 @@ export const en: Translations = {
       phaseLabel: "Project Phase",
       phasePlaceholder: "Select phase",
       phaseNotDefined: "Not defined",
-      phasePreliminaryStudy: "Schematic Design (SD)",
-      phaseBasicProject: "Design Development (DD)",
-      phaseExecutiveProject: "Design Development (DD)",
-      phaseReleasedForConstruction: "Issued for Construction (IFC)",
+      phasePreliminaryStudy: "Schematic Design",
+      phaseBasicProject: "Design Development",
+      phaseExecutiveProject: "Construction Documents",
+      phaseReleasedForConstruction: "Issued for Construction",
       description: "Description",
       descriptionPlaceholder: "Describe the project...",
       editButton: "Update Project",
@@ -657,6 +657,8 @@ export const en: Translations = {
         yAxisLabel: "Potential Mitigation",
         xAxisLabelCarbon: "Embodied Carbon",
         xAxisLabelEnergy: "Energy Consumption",
+        baseLine: "baseline",
+        ppp5Line: "PPp 5%"
       },
       classification: {
         name: "Classification",
@@ -729,11 +731,11 @@ export const en: Translations = {
     learnMore: "Learn more...",
   },
   phase: {
-    preliminary_study: "Schematic Design (SD)",
+    preliminary_study: "Schematic Design",
     not_defined: "Not Defined",
-    basic_project: "Design Development (DD)",
-    executive_project: "Construction Documents (CD)",
-    released_for_construction: "Issued for Construction (IFC)",
+    basic_project: "Design Development",
+    executive_project: "Construction Documents",
+    released_for_construction: "Issued for Construction",
   },
   card: {
     created: "Created",
@@ -1091,4 +1093,10 @@ export const en: Translations = {
     unknownProject: "Project",
     unknownUnit: "Unit",
   },
+  underConstruction: {
+    title: "We're building this page",
+    description:
+      "This page is still under development and is not available at the moment. We're working hard to launch it soon. Thank you for your understanding!",
+    predictDate: "Expected launch date: {date}",
+  }
 };

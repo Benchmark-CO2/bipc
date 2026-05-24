@@ -1,19 +1,19 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { useSummary } from "@/context/summaryContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useTranslation } from "@/i18n";
+import { Translations } from "@/i18n/translations/pt-BR";
 import { cn } from "@/lib/utils";
 import * as d3 from "d3";
 import { regressionPoly } from "d3-regression";
 import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
 import Divider from "../ui/divider";
-import { useTranslation } from "@/i18n";
-import { Translations } from "@/i18n/translations/pt-BR";
 
 const UNIT_LABELS = (t: Translations) => ({
   co2: `${t.benchmark.chartTypes.cumulativeFraction.yAxisLabel} (kg CO₂/m²)`,
@@ -67,6 +67,7 @@ type D3GradientRangeChartProps = {
   customData?: any;
   unit?: string;
   summary?: boolean;
+  showProjectName?: boolean;
 };
 
 type TooltipData = {
@@ -179,6 +180,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
   overrideDimensions = false,
   unit = "",
   summary = true,
+  showProjectName = false,
   ...props
 }) => {
   const {t} = useTranslation(); 
@@ -857,13 +859,13 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
           .text(`${d.label} -> `)
           .attr("id", `bar-label-min-${d.id}`);
 
-        // Project name (expanded only)
-        if (isExpanded) {
+        // Project name (controlled by showProjectName prop)
+        if (showProjectName) {
           g.append("text")
             .attr("x", (y1 + y2) / 2)
             .attr("y", x + 5)
             .attr("text-anchor", "middle")
-            .attr("font-size", 14)
+            .attr("font-size", isExpanded ? 14 : 12)
             .attr("font-weight", "bold")
             .attr("fill", "#FFF")
             .text(`${d.label}`)
@@ -898,6 +900,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     yScale,
     colorScale,
     shouldHideBars,
+    showProjectName,
   ]);
 
   const labelY =

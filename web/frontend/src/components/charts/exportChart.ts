@@ -105,6 +105,8 @@ export type ExportChartOptions = {
   heightPx?: number;
   /** DPI used for px→mm conversion. Default: 96 */
   dpi?: number;
+  /** Canvas pixel ratio for sharper output. Default: 2 */
+  scale?: number;
 
   // ── Visual style ───────────────────────────────────────────────────────────
   /** Use expanded (larger circles/bars) visual style. Default: true */
@@ -189,6 +191,7 @@ export async function exportChartToPng(
     widthPx = 550,
     heightPx = 383,
     dpi = 96,
+    scale = 2,
     expanded = true,
     bgColor = "#ffffff",
     xAxisLabel,
@@ -197,9 +200,9 @@ export async function exportChartToPng(
   // ── Dimensions ───────────────────────────────────────────────────────────
   const margin = {
     top: 15,
-    right: showProcelScale ? 112 : 20,
+    right: showProcelScale ? 26 : 20,
     bottom: 35,
-    left: 80,
+    left: 50,
   };
 
   const chartW = widthPx - margin.left - margin.right;
@@ -207,9 +210,10 @@ export async function exportChartToPng(
 
   // ── Offscreen canvas ─────────────────────────────────────────────────────
   const canvas = document.createElement("canvas");
-  canvas.width = widthPx;
-  canvas.height = heightPx;
+  canvas.width = widthPx * scale;
+  canvas.height = heightPx * scale;
   const ctx = canvas.getContext("2d", { alpha: false })!;
+  ctx.scale(scale, scale);
   polyfillRoundRect(ctx);
 
   // Background
@@ -276,13 +280,23 @@ export async function exportChartToPng(
     if (by >= 0 && by <= chartH) baselineY = by;
   }
 
-  // PPp 5% line
+  // PPp 5% line and 5% reference values for V calculation
   let p5LineX: number | null = null;
   let p5LineInView = false;
+  let c5Value: number | null = null; // C5% - min value at 5th percentile
+  let r5Value: number | null = null; // R5% - max value at 5th percentile
   if (showTop5Line && data.length > 0) {
-    const sorted = [...data].map((d) => d[top5Field]).sort((a, b) => a - b);
-    const idx = Math.floor(sorted.length * top5Percentile);
-    const p5Value = sorted[Math.min(idx, sorted.length - 1)];
+    // Calculate C5% (5th percentile of min values)
+    const sortedMin = [...data].map((d) => d.min).sort((a, b) => a - b);
+    const idx = Math.floor(sortedMin.length * top5Percentile);
+    c5Value = sortedMin[Math.min(idx, sortedMin.length - 1)];
+    
+    // Calculate R5% (5th percentile of max values)
+    const sortedMax = [...data].map((d) => d.max).sort((a, b) => a - b);
+    r5Value = sortedMax[Math.min(idx, sortedMax.length - 1)];
+    
+    // Use the specified field for the PPp line (default: min)
+    const p5Value = top5Field === "min" ? c5Value : r5Value;
     p5LineX = xScale(p5Value);
     p5LineInView = p5LineX >= 0 && p5LineX <= chartW;
   }
@@ -291,7 +305,10 @@ export async function exportChartToPng(
   let midPredict: ((yVal: number) => number) | null = null;
   if (showMidCurve && data.length >= 3) {
     const sorted = [...data].sort((a, b) => a.y - b.y);
-    const raw: [number, number][] = sorted.map((d) => [(d.min + d.max) / 2, d.y]);
+    const raw: [number, number][] = sorted.map((d) => [
+      (d.min + d.max) / 2,
+      d.y,
+    ]);
     const regression = regressionPoly()
       .x((d: [number, number]) => d[1])
       .y((d: [number, number]) => d[0])
@@ -343,7 +360,13 @@ export async function exportChartToPng(
   });
 
   // ── Pass 2: selected points (on top) ────────────────────────────────────
-  let selectedAnnotation: { x1: number; x2: number; xMid: number; y: number; barHeight: number } | null = null;
+  let selectedAnnotation: {
+    x1: number;
+    x2: number;
+    xMid: number;
+    y: number;
+    barHeight: number;
+  } | null = null;
   data.forEach((d) => {
     const x1 = xScale(d.min);
     const x2 = xScale(d.max);
@@ -410,9 +433,25 @@ export async function exportChartToPng(
 
       // ── Collect annotation data for drawing outside clip ────────────
       if (isPairSelected) {
-        const midValue = midPredict ? midPredict(d.y) : (d.min + d.max) / 2;
+        // Calculate V using the formula: Vn = (C5% - Cn) + (R5% - Rn) / 2
+        let midValue: number;
+        if (c5Value !== null && r5Value !== null) {
+          midValue = (c5Value - d.min) + (r5Value - d.max) / 2;
+          // If V is negative, use simple average as fallback
+          if (midValue < 0) midValue = (d.min + d.max) / 2;
+        } else {
+          midValue = (d.min + d.max) / 2;
+        }
         const xMid = xScale(midValue);
-        selectedAnnotation = { x1, x2, xMid, y, barHeight: expanded ? CHART_CONFIG.BAR_HEIGHT : CHART_CONFIG.MINIMAL_BAR_HEIGHT };
+        selectedAnnotation = {
+          x1,
+          x2,
+          xMid,
+          y,
+          barHeight: expanded
+            ? CHART_CONFIG.BAR_HEIGHT
+            : CHART_CONFIG.MINIMAL_BAR_HEIGHT,
+        };
       }
     }
   });
@@ -446,7 +485,8 @@ export async function exportChartToPng(
       steps = 80,
       clampZero = true,
     ): { x: number; y: number }[] => {
-      if (rawData.length < 3) return rawData.map(([x, y]) => ({ x: xScale(x), y: yScale(y) }));
+      if (rawData.length < 3)
+        return rawData.map(([x, y]) => ({ x: xScale(x), y: yScale(y) }));
       const regression = regressionPoly()
         .x((d: [number, number]) => d[1])
         .y((d: [number, number]) => d[0])
@@ -492,7 +532,10 @@ export async function exportChartToPng(
     }
 
     if (showMidCurve) {
-      const raw: [number, number][] = sorted.map((d) => [(d.min + d.max) / 2, d.y]);
+      const raw: [number, number][] = sorted.map((d) => [
+        (d.min + d.max) / 2,
+        d.y,
+      ]);
       drawTrendCurve(buildTrendPoints(raw));
     }
   }
@@ -513,7 +556,7 @@ export async function exportChartToPng(
     ctx.fillStyle = "#00A650";
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
-    ctx.fillText("PPp 5%", p5LineX + 4, 4);
+    ctx.fillText("5%", p5LineX + 4, 4);
     ctx.restore();
   }
 
@@ -555,9 +598,8 @@ export async function exportChartToPng(
     ctx.fillStyle = "#ffffff";
     ctx.fillText("R", x2, labelY);
 
-    // Purple arrow from C (min) to PPp 5% line
+    // Purple arrow from C (min) to PPp 5% line - aligned with the bar
     if (p5LineX !== null && Math.abs(p5LineX - x1) > labelR) {
-      const arrowY = y + barHeight / 2 + 6;
       const arrowLeft = Math.min(x1, p5LineX);
       const arrowRight = Math.max(x1, p5LineX);
       const headSize = 4;
@@ -566,36 +608,36 @@ export async function exportChartToPng(
       ctx.fillStyle = "#7B2D8E";
       ctx.lineWidth = 1;
 
-      // Line
+      // Line - aligned with bar center (y)
       ctx.beginPath();
-      ctx.moveTo(arrowLeft, arrowY);
-      ctx.lineTo(arrowRight, arrowY);
+      ctx.moveTo(arrowLeft, y);
+      ctx.lineTo(arrowRight, y);
       ctx.stroke();
 
       // Left arrowhead
       ctx.beginPath();
-      ctx.moveTo(arrowLeft, arrowY);
-      ctx.lineTo(arrowLeft + headSize, arrowY - headSize / 2);
-      ctx.lineTo(arrowLeft + headSize, arrowY + headSize / 2);
+      ctx.moveTo(arrowLeft, y);
+      ctx.lineTo(arrowLeft + headSize, y - headSize / 2);
+      ctx.lineTo(arrowLeft + headSize, y + headSize / 2);
       ctx.closePath();
       ctx.fill();
 
       // Right arrowhead
       ctx.beginPath();
-      ctx.moveTo(arrowRight, arrowY);
-      ctx.lineTo(arrowRight - headSize, arrowY - headSize / 2);
-      ctx.lineTo(arrowRight - headSize, arrowY + headSize / 2);
+      ctx.moveTo(arrowRight, y);
+      ctx.lineTo(arrowRight - headSize, y - headSize / 2);
+      ctx.lineTo(arrowRight - headSize, y + headSize / 2);
       ctx.closePath();
       ctx.fill();
 
-      // "P" label at midpoint of arrow
+      // "P" label at midpoint of arrow, aligned with the bar
       const arrowMidX = (arrowLeft + arrowRight) / 2;
       ctx.fillStyle = "#7B2D8E";
       ctx.beginPath();
-      ctx.arc(arrowMidX, arrowY, labelR, 0, Math.PI * 2);
+      ctx.arc(arrowMidX, y, labelR, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#ffffff";
-      ctx.fillText("P", arrowMidX, arrowY);
+      ctx.fillText("P", arrowMidX, y);
     }
 
     ctx.restore();
@@ -657,12 +699,12 @@ export async function exportChartToPng(
 
   // ── PROCEL scale ─────────────────────────────────────────────────────────
   if (showProcelScale) {
-    const barX = chartW;
     const barWidth = PROCEL_SCALE_CONFIG.WIDTH;
+    const barX = chartW + (margin.right - barWidth) / 2;
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(barX, 0, barWidth + PROCEL_SCALE_CONFIG.TICK_SIZE + 30, chartH);
+    ctx.rect(barX - 1, 0, barWidth + 2, chartH);
     ctx.clip();
 
     const reversed = [...PROCEL_CLASSES].reverse();
@@ -672,6 +714,7 @@ export async function exportChartToPng(
       const bandTop = Math.max(0, yScale(domainTop));
       const bandBottom = Math.min(chartH, yScale(domainBottom));
       if (bandBottom <= bandTop) return;
+      const bandH = Math.ceil(bandBottom - bandTop);
 
       // Highlight logic: if a class is specified, fade all others
       const isHighlighted =
@@ -679,57 +722,15 @@ export async function exportChartToPng(
       ctx.globalAlpha = isHighlighted ? 1 : procelFadedOpacity;
 
       ctx.fillStyle = cls.color;
-      ctx.fillRect(barX, bandTop, barWidth, Math.ceil(bandBottom - bandTop));
-      ctx.strokeStyle = "rgba(255,255,255,0.75)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(barX, bandTop, barWidth, Math.ceil(bandBottom - bandTop));
+      ctx.fillRect(barX, bandTop, barWidth, bandH);
 
       ctx.fillStyle = "#111827";
       ctx.font = "bold 10px sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(
-        cls.label,
-        barX + barWidth / 2,
-        (bandTop + bandBottom) / 2,
-      );
+      ctx.fillText(cls.label, barX + barWidth / 2, bandTop + bandH / 2);
 
       ctx.globalAlpha = 1;
-    });
-
-    // Percentage ticks
-    const pctBoundaries = [
-      { pct: 100, domainVal: 1.0 },
-      { pct: 75, domainVal: 0.75 },
-      { pct: 50, domainVal: 0.5 },
-      { pct: 25, domainVal: 0.25 },
-      { pct: 0, domainVal: 0.0 },
-    ];
-    ctx.font = "10px sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillStyle = DEFAULT_COLORS.TEXT;
-    pctBoundaries.forEach(({ pct, domainVal }, idx) => {
-      const y = yScale(domainVal);
-      if (y < 0 || y > chartH) return;
-      const yText =
-        idx === 0 ? y + 1 : idx === pctBoundaries.length - 1 ? y - 1 : y;
-      ctx.beginPath();
-      ctx.moveTo(barX + barWidth, y);
-      ctx.lineTo(barX + barWidth + PROCEL_SCALE_CONFIG.TICK_SIZE, y);
-      ctx.strokeStyle = DEFAULT_COLORS.TEXT;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.textBaseline =
-        idx === 0
-          ? "top"
-          : idx === pctBoundaries.length - 1
-            ? "bottom"
-            : "middle";
-      ctx.fillText(
-        `${pct}%`,
-        barX + barWidth + PROCEL_SCALE_CONFIG.TICK_SIZE + 3,
-        yText,
-      );
     });
 
     ctx.restore();
@@ -749,8 +750,7 @@ export async function exportChartToPng(
   ctx.restore();
 
   // X-axis label
-  const labelX =
-    xAxisLabel ?? UNIT_LABELS[unit] ?? "Carbono Embutido";
+  const labelX = xAxisLabel ?? UNIT_LABELS[unit] ?? "Carbono Embutido";
   ctx.font = "11px sans-serif";
   ctx.fillStyle = DEFAULT_COLORS.TEXT;
   ctx.textAlign = "center";

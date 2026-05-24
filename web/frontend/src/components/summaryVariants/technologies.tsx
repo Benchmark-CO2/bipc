@@ -264,6 +264,10 @@ const SimulationsSummary = ({
             showBaseline
             showTop5Line
             showProcelScale
+            showMaxCurve
+            showMinCurve
+            showMidCurve
+            showProjectName
           />
         ) : (
           <D3GradientRangeLineChart

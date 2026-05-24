@@ -480,7 +480,7 @@ function RouteComponent() {
                 });
               }}
               componentTrigger={
-                <SimpleTooltip content={t.modules.deleteTitle} side="bottom">
+                <SimpleTooltip content={t.modules.duplicateTitle} side="bottom">
                   <Button variant="ghost" size="icon" disabled={isDeletingTec}>
                     {isDeletingTec ? (
                       <Loader2 className="h-4 w-4 animate-spin" />

@@ -36,8 +36,7 @@ interface SteelMaterialItemProps {
   fieldId: string;
   materialOptions: Array<{ value: string; label: string }>;
   resistanceOptions: Array<{ value: string; label: string }>;
-  usedMaterials: string[];
-  usedResistances: string[];
+  otherCombinations: string[]; // "material:resistance" pairs from OTHER rows
   onRemove: () => void;
   canRemove: boolean;
 }
@@ -50,8 +49,7 @@ const SteelMaterialItem = ({
   fieldId,
   materialOptions,
   resistanceOptions,
-  usedMaterials,
-  usedResistances,
+  otherCombinations,
   onRemove,
   canRemove,
 }: SteelMaterialItemProps) => {
@@ -78,6 +76,13 @@ const SteelMaterialItem = ({
   const filteredResistanceOptions = resistanceOptions.filter((opt) =>
     allowedResistances.includes(opt.value),
   );
+
+  // Uma combinação está desabilitada se já existe em outra linha,
+  // exceto quando material === "other" E resistance === "other"
+  const isCombinationUsed = (mat: string, res: string) => {
+    if (mat === "other" && res === "other") return false;
+    return otherCombinations.includes(`${mat}:${res}`);
+  };
 
   // Resetar resistência quando o material muda e o valor atual não é mais válido
   useEffect(() => {
@@ -109,18 +114,30 @@ const SteelMaterialItem = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {materialOptions.map((opt) => (
-                        <SelectItem
-                          key={opt.value}
-                          value={opt.value}
-                          disabled={
-                            usedMaterials.includes(opt.value) &&
-                            currentMaterial !== opt.value
-                          }
-                        >
-                          {opt.label}
-                        </SelectItem>
-                      ))}
+                      {materialOptions.map((opt) => {
+                        // A material option is disabled if ALL its allowed resistances
+                        // are already used in other rows (and it's not "other"+"other")
+                        const matResistances =
+                          allowedResistancesByMaterial[opt.value] ??
+                          resistanceOptions.map((r) => r.value);
+                        const allCombinationsUsed =
+                          opt.value !== "other" &&
+                          matResistances.every((res) =>
+                            isCombinationUsed(opt.value, res),
+                          );
+                        return (
+                          <SelectItem
+                            key={opt.value}
+                            value={opt.value}
+                            disabled={
+                              allCombinationsUsed &&
+                              currentMaterial !== opt.value
+                            }
+                          >
+                            {opt.label}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </FormControl>
@@ -148,7 +165,7 @@ const SteelMaterialItem = ({
                           key={opt.value}
                           value={opt.value}
                           disabled={
-                            usedResistances.includes(opt.value) &&
+                            isCombinationUsed(currentMaterial, opt.value) &&
                             currentResistance !== opt.value
                           }
                         >
@@ -272,15 +289,6 @@ const SteelMaterialList = ({
     return sum + (isNaN(numericValue) ? 0 : numericValue);
   }, 0);
 
-  // Coletar materiais e resistências já utilizados
-  const usedMaterials = (steelArray || [])
-    .map((item: any) => item?.material)
-    .filter(Boolean);
-
-  const usedResistances = (steelArray || [])
-    .map((item: any) => item?.resistance)
-    .filter(Boolean);
-
   const materialOptions = allowedMaterials.map((key) => ({
     value: key,
     label: {
@@ -316,31 +324,70 @@ const SteelMaterialList = ({
         </div>
       </div>
 
-      {fields.map((field, index) => (
-        <SteelMaterialItem
-          key={field.id}
-          form={form}
-          name={name}
-          index={index}
-          fieldId={field.id}
-          materialOptions={materialOptions}
-          resistanceOptions={resistanceOptions}
-          usedMaterials={usedMaterials}
-          usedResistances={usedResistances}
-          onRemove={() => remove(index)}
-          canRemove={fields.length > 1}
-        />
-      ))}
+      {fields.map((field, index) => {
+        // combinations from all OTHER rows (by index)
+        const otherCombinations = (steelArray || [])
+          .map((item: any, i: number) => {
+            if (i === index || !item?.material || !item?.resistance) return null;
+            return `${item.material}:${item.resistance}`;
+          })
+          .filter(Boolean) as string[];
+        return (
+          <SteelMaterialItem
+            key={field.id}
+            form={form}
+            name={name}
+            index={index}
+            fieldId={field.id}
+            materialOptions={materialOptions}
+            resistanceOptions={resistanceOptions}
+            otherCombinations={otherCombinations}
+            onRemove={() => remove(index)}
+            canRemove={fields.length > 1}
+          />
+        );
+      })}
 
       <Button
         type="button"
         variant="outline"
         size="sm"
         onClick={() => {
-          const defaultMaterial = allowedMaterials[0] ?? "rebar";
+          const allowedResistancesByMaterial: Record<string, string[]> = {
+            rebar: ["CA50", "CA60", "other"],
+            mesh: ["CA60", "other"],
+            strand: ["CP190", "other"],
+            other: ["CA50", "CA60", "CP190", "other"],
+          };
+
+          const currentCombinations = (steelArray || [])
+            .filter((item: any) => item?.material && item?.resistance)
+            .map((item: any) => `${item.material}:${item.resistance}`);
+
+          // Encontrar a primeira combinação material+resistance não utilizada
+          let foundMaterial = allowedMaterials[0] ?? "rebar";
+          let foundResistance = defaultResistanceByMaterial[foundMaterial] ?? "CA50";
+
+          outer: for (const mat of allowedMaterials) {
+            const resistances = allowedResistancesByMaterial[mat] ?? ["CA50"];
+            for (const res of resistances) {
+              // other+other sempre é permitido
+              if (mat === "other" && res === "other") {
+                foundMaterial = mat;
+                foundResistance = res;
+                break outer;
+              }
+              if (!currentCombinations.includes(`${mat}:${res}`)) {
+                foundMaterial = mat;
+                foundResistance = res;
+                break outer;
+              }
+            }
+          }
+
           append({
-            material: defaultMaterial,
-            resistance: defaultResistanceByMaterial[defaultMaterial] ?? "CA50",
+            material: foundMaterial,
+            resistance: foundResistance,
             mass: "0",
           });
         }}

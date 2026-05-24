@@ -658,6 +658,8 @@ export const ptBR = {
         yAxisLabel: "Potencial de mitigação",
         xAxisLabelCarbon: "Carbono Embutido",
         xAxisLabelEnergy: "Energia Embutida",
+        baseLine: "linha de base",
+        ppp5Line: "PPp 5%"
       },
       classification: {
         name: "Classificação",
@@ -1092,6 +1094,12 @@ export const ptBR = {
     unknownProject: "Empreendimento",
     unknownUnit: "Unidade",
   },
+  underConstruction: {
+    title: "Estamos construindo esta página",
+    description:
+      "Esta página ainda está em desenvolvimento e não está disponível no momento. Estamos trabalhando para lançá-la em breve. Agradecemos a compreensão!",
+    predictDate: "Previsão de lançamento: {date}",
+  }
 } as const;
 
 type StringifyValues<T> = {

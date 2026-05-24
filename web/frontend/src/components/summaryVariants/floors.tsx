@@ -45,6 +45,7 @@ const FloorSummary = ({
     }));
   const { isExpanded } = useSummary();
 
+  console.log("filteredFloors", filteredFloors);
   const newItems = filteredFloors.map((el) => {
     return {
       co2: {
@@ -52,14 +53,14 @@ const FloorSummary = ({
         y: 0,
         min: el.co2_min,
         max: el.co2_max,
-        label: el.group_name,
+        label: el.floor_group,
       },
       energy: {
         id: el.id,
         y: 0,
         min: el.energy_min,
         max: el.energy_max,
-        label: el.group_name,
+        label: el.floor_group,
       },
     };
   });
@@ -159,6 +160,7 @@ const FloorSummary = ({
     maxValue,
   );
 
+  console.log("newData", newItems);
   return (
     <>
       <div className="w-full flex gap-2 mb-4">
@@ -287,6 +289,10 @@ const FloorSummary = ({
             showBaseline
             showTop5Line
             showProcelScale
+            showMaxCurve
+            showMinCurve
+            showMidCurve
+            showProjectName
           />
         ) : (
           <D3GradientRangeLineChart
