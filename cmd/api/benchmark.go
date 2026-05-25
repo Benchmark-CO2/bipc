@@ -32,8 +32,18 @@ type BenchmarkCategory struct {
 
 // BenchmarkData is the top-level response shape for all benchmark endpoints.
 type BenchmarkData struct {
-	CO2    BenchmarkCategory `json:"co2"`
-	Energy BenchmarkCategory `json:"energy"`
+	CO2      BenchmarkCategory `json:"co2"`
+	Energy   BenchmarkCategory `json:"energy"`
+	Material []BenchmarkValue  `json:"material"`
+}
+
+// BenchmarkSeries groups all benchmark series for a project query.
+type BenchmarkSeries struct {
+	CO2Min    []BenchmarkValue
+	CO2Max    []BenchmarkValue
+	EnergyMin []BenchmarkValue
+	EnergyMax []BenchmarkValue
+	Material  []BenchmarkValue
 }
 
 // calculateGiniRank sorts the slice ascending by Value and assigns each point
@@ -49,14 +59,13 @@ func calculateGiniRank(points []BenchmarkValue) {
 	}
 }
 
-// separateConsumption fans out a flat slice of BenchmarkData into four independent
-// lists: co2Min, co2Max, energyMin, energyMax. Each list is later sorted and ranked
-// independently, which is why min and max are separated from the start.
-func separateConsumption(points []*data.BenchmarkData) (co2Min, co2Max, energyMin, energyMax []BenchmarkValue) {
-	co2Min = []BenchmarkValue{}
-	co2Max = []BenchmarkValue{}
-	energyMin = []BenchmarkValue{}
-	energyMax = []BenchmarkValue{}
+// separateConsumption fans out a flat slice of BenchmarkData into BenchmarkSeries.
+func separateConsumption(points []*data.BenchmarkData) BenchmarkSeries {
+	co2Min := []BenchmarkValue{}
+	co2Max := []BenchmarkValue{}
+	energyMin := []BenchmarkValue{}
+	energyMax := []BenchmarkValue{}
+	material := []BenchmarkValue{}
 
 	for _, p := range points {
 		if p.Consumption == nil {
@@ -70,18 +79,32 @@ func separateConsumption(points []*data.BenchmarkData) (co2Min, co2Max, energyMi
 			energyMin = append(energyMin, BenchmarkValue{ID: p.ID, Value: *p.Consumption.EnergyMin})
 			energyMax = append(energyMax, BenchmarkValue{ID: p.ID, Value: *p.Consumption.EnergyMax})
 		}
+		if p.Consumption.Material != nil {
+			if *p.Consumption.Material == 0 {
+				continue
+			}
+
+			material = append(material, BenchmarkValue{ID: p.ID, Value: *p.Consumption.Material})
+		}
 	}
 
-	return co2Min, co2Max, energyMin, energyMax
+	return BenchmarkSeries{
+		CO2Min:    co2Min,
+		CO2Max:    co2Max,
+		EnergyMin: energyMin,
+		EnergyMax: energyMax,
+		Material:  material,
+	}
 }
 
 // separateProjectConsumption does the same as separateConsumption but for the projects
 // endpoint, where each point carries extra unit metadata (floors, technology, location).
-func separateProjectConsumption(points []*data.ProjectBenchmarkData) (co2Min, co2Max, energyMin, energyMax []BenchmarkValue) {
-	co2Min = []BenchmarkValue{}
-	co2Max = []BenchmarkValue{}
-	energyMin = []BenchmarkValue{}
-	energyMax = []BenchmarkValue{}
+func separateProjectConsumption(points []*data.ProjectBenchmarkData) BenchmarkSeries {
+	co2Min := []BenchmarkValue{}
+	co2Max := []BenchmarkValue{}
+	energyMin := []BenchmarkValue{}
+	energyMax := []BenchmarkValue{}
+	material := []BenchmarkValue{}
 
 	for _, p := range points {
 		if p.Consumption == nil {
@@ -95,21 +118,36 @@ func separateProjectConsumption(points []*data.ProjectBenchmarkData) (co2Min, co
 			energyMin = append(energyMin, BenchmarkValue{ID: p.ID, Value: *p.Consumption.EnergyMin, Floors: p.Floors, Technology: p.Technology, State: p.State, City: p.City})
 			energyMax = append(energyMax, BenchmarkValue{ID: p.ID, Value: *p.Consumption.EnergyMax, Floors: p.Floors, Technology: p.Technology, State: p.State, City: p.City})
 		}
+		if p.Consumption.Material != nil {
+			if *p.Consumption.Material == 0 {
+				continue
+			}
+
+			material = append(material, BenchmarkValue{ID: p.ID, Value: *p.Consumption.Material, Floors: p.Floors, Technology: p.Technology, State: p.State, City: p.City})
+		}
 	}
 
-	return co2Min, co2Max, energyMin, energyMax
+	return BenchmarkSeries{
+		CO2Min:    co2Min,
+		CO2Max:    co2Max,
+		EnergyMin: energyMin,
+		EnergyMax: energyMax,
+		Material:  material,
+	}
 }
 
-// buildBenchmarkData sorts and ranks all four lists then packs them into a BenchmarkData.
-func buildBenchmarkData(co2Min, co2Max, energyMin, energyMax []BenchmarkValue) BenchmarkData {
+// buildBenchmarkData sorts and ranks all benchmark lists then packs them into a BenchmarkData.
+func buildBenchmarkData(co2Min, co2Max, energyMin, energyMax, material []BenchmarkValue) BenchmarkData {
 	calculateGiniRank(co2Min)
 	calculateGiniRank(co2Max)
 	calculateGiniRank(energyMin)
 	calculateGiniRank(energyMax)
+	calculateGiniRank(material)
 
 	return BenchmarkData{
-		CO2:    BenchmarkCategory{Min: co2Min, Max: co2Max},
-		Energy: BenchmarkCategory{Min: energyMin, Max: energyMax},
+		CO2:      BenchmarkCategory{Min: co2Min, Max: co2Max},
+		Energy:   BenchmarkCategory{Min: energyMin, Max: energyMax},
+		Material: material,
 	}
 }
 
@@ -139,14 +177,13 @@ func (app *application) readProjectsBenchmarkFilters(r *http.Request, v *validat
 	return filters
 }
 
-func (app *application) getProjectBenchmarkSeries(filters data.GetProjectsBenchmarkFilters) (co2Min, co2Max, energyMin, energyMax []BenchmarkValue, err error) {
+func (app *application) getProjectBenchmarkSeries(filters data.GetProjectsBenchmarkFilters) (BenchmarkSeries, error) {
 	projects, err := app.models.Benchmark.GetProjectsBenchmark(filters)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return BenchmarkSeries{}, err
 	}
 
-	co2Min, co2Max, energyMin, energyMax = separateProjectConsumption(projects)
-	return co2Min, co2Max, energyMin, energyMax, nil
+	return separateProjectConsumption(projects), nil
 }
 
 func (app *application) getFloorsBenchmarkHandler(w http.ResponseWriter, r *http.Request) {
@@ -157,11 +194,11 @@ func (app *application) getFloorsBenchmarkHandler(w http.ResponseWriter, r *http
 	}
 
 	emptyCategory := BenchmarkCategory{Min: []BenchmarkValue{}, Max: []BenchmarkValue{}}
-	benchmarkData := BenchmarkData{CO2: emptyCategory, Energy: emptyCategory}
+	benchmarkData := BenchmarkData{CO2: emptyCategory, Energy: emptyCategory, Material: []BenchmarkValue{}}
 
 	if len(floors) != 0 {
-		co2Min, co2Max, energyMin, energyMax := separateConsumption(floors)
-		benchmarkData = buildBenchmarkData(co2Min, co2Max, energyMin, energyMax)
+		series := separateConsumption(floors)
+		benchmarkData = buildBenchmarkData(series.CO2Min, series.CO2Max, series.EnergyMin, series.EnergyMax, series.Material)
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"benchmark": benchmarkData}, nil)
@@ -178,11 +215,11 @@ func (app *application) getUnitsBenchmarkHandler(w http.ResponseWriter, r *http.
 	}
 
 	emptyCategory := BenchmarkCategory{Min: []BenchmarkValue{}, Max: []BenchmarkValue{}}
-	benchmarkData := BenchmarkData{CO2: emptyCategory, Energy: emptyCategory}
+	benchmarkData := BenchmarkData{CO2: emptyCategory, Energy: emptyCategory, Material: []BenchmarkValue{}}
 
 	if len(units) != 0 {
-		co2Min, co2Max, energyMin, energyMax := separateConsumption(units)
-		benchmarkData = buildBenchmarkData(co2Min, co2Max, energyMin, energyMax)
+		series := separateConsumption(units)
+		benchmarkData = buildBenchmarkData(series.CO2Min, series.CO2Max, series.EnergyMin, series.EnergyMax, series.Material)
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"benchmark": benchmarkData}, nil)
@@ -200,7 +237,7 @@ func (app *application) getProjectsBenchmarkHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
-	co2Min, co2Max, energyMin, energyMax, err := app.getProjectBenchmarkSeries(projectFilters)
+	series, err := app.getProjectBenchmarkSeries(projectFilters)
 	if err != nil {
 		if errors.Is(err, data.ErrInvalidFloorFilter) {
 			app.badRequestResponse(w, r, err)
@@ -211,7 +248,7 @@ func (app *application) getProjectsBenchmarkHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
-	benchmarkData := buildBenchmarkData(co2Min, co2Max, energyMin, energyMax)
+	benchmarkData := buildBenchmarkData(series.CO2Min, series.CO2Max, series.EnergyMin, series.EnergyMax, series.Material)
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"benchmark": benchmarkData}, nil)
 	if err != nil {

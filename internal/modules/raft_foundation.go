@@ -38,6 +38,7 @@ func (r *RaftFoundation) Calculate() (Consumption, error) {
 	var result Consumption
 
 	concreteVolume := r.Area * r.Thickness
+	result.Material += concreteVolume
 
 	concreteCO2, ok := sidacConcreteData.KgCO2[float64(r.Fck)]
 	if !ok {
@@ -140,21 +141,14 @@ func (r *RaftFoundation) toDataModule(moduleID, optionID uuid.UUID, result Consu
 		TotalCO2Max:    &result.CO2Max,
 		TotalEnergyMin: &result.EnergyMin,
 		TotalEnergyMax: &result.EnergyMax,
+		TotalMaterial:  &result.Material,
 		FloorIDs:       []uuid.UUID{},
 		UnitID:         &r.UnitID,
 	}
 }
 
 func (r *RaftFoundation) fromDataModule(d *data.Module) Module {
-	var consumption *Consumption
-	if d.TotalCO2Min != nil {
-		consumption = &Consumption{
-			CO2Min:    *d.TotalCO2Min,
-			CO2Max:    *d.TotalCO2Max,
-			EnergyMin: *d.TotalEnergyMin,
-			EnergyMax: *d.TotalEnergyMax,
-		}
-	}
+	consumption := consumptionFromDataModule(d)
 
 	var area, thickness float64
 	var fck int

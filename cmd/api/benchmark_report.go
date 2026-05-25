@@ -96,10 +96,15 @@ func (app *application) buildProjectBenchmarkReport(projectID uuid.UUID) (*Proje
 		return nil, err
 	}
 
-	co2MinPoints, co2MaxPoints, energyMinPoints, energyMaxPoints, err := app.getProjectBenchmarkSeries(data.GetProjectsBenchmarkFilters{})
+	series, err := app.getProjectBenchmarkSeries(data.GetProjectsBenchmarkFilters{})
 	if err != nil {
 		return nil, err
 	}
+
+	co2MinPoints := series.CO2Min
+	co2MaxPoints := series.CO2Max
+	energyMinPoints := series.EnergyMin
+	energyMaxPoints := series.EnergyMax
 
 	calculateGiniRank(co2MinPoints)
 	calculateGiniRank(co2MaxPoints)

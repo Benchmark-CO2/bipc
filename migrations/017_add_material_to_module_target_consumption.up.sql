@@ -1,0 +1,9 @@
+BEGIN;
+
+ALTER TABLE module_target_consumption
+    ADD COLUMN IF NOT EXISTS material FLOAT8;
+
+ALTER TABLE module
+    ADD COLUMN IF NOT EXISTS total_material FLOAT8 NOT NULL DEFAULT 0;
+
+COMMIT;

@@ -52,6 +52,8 @@ func (rp *RaftPilesFoundation) Calculate() (Consumption, error) {
 
 	// Calculate raft concrete
 	raftConcreteVolume := rp.Raft.Area * rp.Raft.Thickness
+	totalConcreteVolume := raftConcreteVolume + rp.Piles.Volume
+	result.Material += totalConcreteVolume
 	concreteCO2, ok := sidacConcreteData.KgCO2[float64(rp.Fck)]
 	if !ok {
 		concreteCO2 = sidacConcreteData.KgCO2[30]
@@ -170,21 +172,14 @@ func (rp *RaftPilesFoundation) toDataModule(moduleID, optionID uuid.UUID, result
 		TotalCO2Max:    &result.CO2Max,
 		TotalEnergyMin: &result.EnergyMin,
 		TotalEnergyMax: &result.EnergyMax,
+		TotalMaterial:  &result.Material,
 		FloorIDs:       []uuid.UUID{},
 		UnitID:         &rp.UnitID,
 	}
 }
 
 func (rp *RaftPilesFoundation) fromDataModule(d *data.Module) Module {
-	var consumption *Consumption
-	if d.TotalCO2Min != nil {
-		consumption = &Consumption{
-			CO2Min:    *d.TotalCO2Min,
-			CO2Max:    *d.TotalCO2Max,
-			EnergyMin: *d.TotalEnergyMin,
-			EnergyMax: *d.TotalEnergyMax,
-		}
-	}
+	consumption := consumptionFromDataModule(d)
 
 	var fck int
 	if val, ok := d.Data["fck"].(float64); ok {

@@ -21,6 +21,7 @@ type Module struct {
 	TotalCO2Max       *float64               `json:"total_co2_max,omitempty"`
 	TotalEnergyMin    *float64               `json:"total_energy_min,omitempty"`
 	TotalEnergyMax    *float64               `json:"total_energy_max,omitempty"`
+	TotalMaterial     *float64               `json:"total_material,omitempty"`
 	RelativeCO2Min    *float64               `json:"relative_co2_min,omitempty"`
 	RelativeCO2Max    *float64               `json:"relative_co2_max,omitempty"`
 	RelativeEnergyMin *float64               `json:"relative_energy_min,omitempty"`
@@ -49,19 +50,121 @@ func checkForeignKeyError(err error) error {
 func insertModuleTargetConsumptions(tx *sql.Tx, ctx context.Context, targets []ModuleTargetConsumption) error {
 	insertQuery := `
 		INSERT INTO module_target_consumption 
-		(id, module_id, target_id, target_type, role_id, option_id, co2_min, co2_max, energy_min, energy_max)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+		(id, module_id, target_id, target_type, role_id, option_id, co2_min, co2_max, energy_min, energy_max, material)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 
 	for _, target := range targets {
 		target.ID = uuid.Must(uuid.NewV7())
 		_, err := tx.ExecContext(ctx, insertQuery,
 			target.ID, target.ModuleID, target.TargetID, target.TargetType, target.RoleID, target.OptionID,
-			target.CO2Min, target.CO2Max, target.EnergyMin, target.EnergyMax)
+			target.CO2Min, target.CO2Max, target.EnergyMin, target.EnergyMax, target.Material)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (m ModuleModel) UpsertModuleTargetConsumptions(moduleID uuid.UUID, targets []ModuleTargetConsumption) error {
+	if len(targets) == 0 {
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	tx, err := m.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	query := `
+		INSERT INTO module_target_consumption
+		(module_id, target_id, target_type, role_id, option_id, co2_min, co2_max, energy_min, energy_max, material)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		ON CONFLICT (module_id, target_id)
+		DO UPDATE SET
+			target_type = EXCLUDED.target_type,
+			role_id = EXCLUDED.role_id,
+			option_id = EXCLUDED.option_id,
+			co2_min = EXCLUDED.co2_min,
+			co2_max = EXCLUDED.co2_max,
+			energy_min = EXCLUDED.energy_min,
+			energy_max = EXCLUDED.energy_max,
+			material = EXCLUDED.material`
+
+	for _, target := range targets {
+		_, err := tx.ExecContext(ctx, query,
+			target.ModuleID,
+			target.TargetID,
+			target.TargetType,
+			target.RoleID,
+			target.OptionID,
+			target.CO2Min,
+			target.CO2Max,
+			target.EnergyMin,
+			target.EnergyMax,
+			target.Material,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+func (m ModuleModel) ListModuleIDsMissingConsumption() ([]uuid.UUID, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+		SELECT DISTINCT m.id
+		FROM module m
+		INNER JOIN module_target_consumption mtc ON m.id = mtc.module_id
+		WHERE mtc.material IS NULL
+		  AND NOT EXISTS (
+			SELECT 1
+			FROM module_target_consumption mtc_floor
+			LEFT JOIN floor f ON f.id = mtc_floor.target_id
+			WHERE mtc_floor.module_id = m.id
+			  AND mtc_floor.target_type = 'floor'
+			  AND (f.id IS NULL OR COALESCE(f.area, 0) = 0)
+		  )
+		  AND NOT EXISTS (
+			SELECT 1
+			FROM module_target_consumption mtc_unit
+			WHERE mtc_unit.module_id = m.id
+			  AND mtc_unit.target_type = 'unit'
+			  AND COALESCE((
+				SELECT SUM(f.area)
+				FROM floor f
+				WHERE f.unit_id = mtc_unit.target_id
+			), 0) = 0
+		  )`
+
+	rows, err := m.DB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	moduleIDs := make([]uuid.UUID, 0)
+	for rows.Next() {
+		var moduleID uuid.UUID
+		err := rows.Scan(&moduleID)
+		if err != nil {
+			return nil, err
+		}
+		moduleIDs = append(moduleIDs, moduleID)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return moduleIDs, nil
 }
 
 func (m ModuleModel) insertTx(tx *sql.Tx, module *Module) (*Module, error) {
@@ -72,15 +175,15 @@ func (m ModuleModel) insertTx(tx *sql.Tx, module *Module) (*Module, error) {
 
 	query := `
         INSERT INTO module (id, option_id, type, data,
-            total_co2_min, total_co2_max, total_energy_min, total_energy_max,
-            relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max,
-            outdated)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+			total_co2_min, total_co2_max, total_energy_min, total_energy_max, total_material,
+			relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max,
+			outdated)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         RETURNING created_at, updated_at`
 
 	err = tx.QueryRowContext(context.Background(), query,
 		module.ID, module.OptionID, module.Type, jsonData,
-		module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax,
+		module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax, module.TotalMaterial,
 		module.RelativeCO2Min, module.RelativeCO2Max, module.RelativeEnergyMin, module.RelativeEnergyMax,
 		module.Outdated,
 	).Scan(&module.CreatedAt, &module.UpdatedAt)
@@ -177,7 +280,7 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 	query := `
 		SELECT 
 			m.id, m.option_id, m.type, m.data,
-			m.total_co2_min, m.total_co2_max, m.total_energy_min, m.total_energy_max,
+			m.total_co2_min, m.total_co2_max, m.total_energy_min, m.total_energy_max, m.total_material,
 			m.relative_co2_min, m.relative_co2_max, m.relative_energy_min, m.relative_energy_max,
 			m.outdated, m.created_at, m.updated_at
 		FROM module m
@@ -185,7 +288,7 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 
 	err := m.DB.QueryRowContext(ctx, query, id).Scan(
 		&module.ID, &module.OptionID, &module.Type, &jsonData,
-		&module.TotalCO2Min, &module.TotalCO2Max, &module.TotalEnergyMin, &module.TotalEnergyMax,
+		&module.TotalCO2Min, &module.TotalCO2Max, &module.TotalEnergyMin, &module.TotalEnergyMax, &module.TotalMaterial,
 		&module.RelativeCO2Min, &module.RelativeCO2Max, &module.RelativeEnergyMin, &module.RelativeEnergyMax,
 		&module.Outdated, &module.CreatedAt, &module.UpdatedAt,
 	)
@@ -252,17 +355,19 @@ func (m ModuleModel) updateTx(tx *sql.Tx, module *Module) error {
         UPDATE module
         SET data = $1,
             total_co2_min = $2, total_co2_max = $3,
-            total_energy_min = $4, total_energy_max = $5,
-            relative_co2_min = $6, relative_co2_max = $7,
-            relative_energy_min = $8, relative_energy_max = $9,
+			total_energy_min = $4, total_energy_max = $5,
+			total_material = $6,
+			relative_co2_min = $7, relative_co2_max = $8,
+			relative_energy_min = $9, relative_energy_max = $10,
             outdated = FALSE,
             updated_at = NOW()
-        WHERE id = $10`
+		WHERE id = $11`
 
 	_, err = tx.ExecContext(context.Background(), query,
 		jsonData,
 		module.TotalCO2Min, module.TotalCO2Max,
 		module.TotalEnergyMin, module.TotalEnergyMax,
+		module.TotalMaterial,
 		module.RelativeCO2Min, module.RelativeCO2Max,
 		module.RelativeEnergyMin, module.RelativeEnergyMax,
 		module.ID)

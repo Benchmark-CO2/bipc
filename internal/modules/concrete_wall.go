@@ -66,6 +66,9 @@ func (w *ConcreteWall) Calculate() (Consumption, error) {
 		return Consumption{}, err
 	}
 
+	total.Material += concreteVolumeFromElement(w.ConcreteWalls)
+	total.Material += concreteVolumeFromElement(w.ConcreteSlabs)
+
 	return total, nil
 }
 
@@ -151,6 +154,7 @@ func (w *ConcreteWall) toDataModule(moduleID, optionID uuid.UUID, result Consump
 		TotalCO2Max:    &result.CO2Max,
 		TotalEnergyMin: &result.EnergyMin,
 		TotalEnergyMax: &result.EnergyMax,
+		TotalMaterial:  &result.Material,
 		FloorIDs:       w.FloorIDs,
 	}
 }
