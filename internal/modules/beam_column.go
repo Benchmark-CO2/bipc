@@ -11,6 +11,7 @@ var beamColumnValidPositions = []ElementPosition{
 	ElementPositionColumn,
 	ElementPositionBeam,
 	ElementPositionSlab,
+	ElementPositionStair,
 }
 
 type BeamColumn struct {
@@ -21,6 +22,7 @@ type BeamColumn struct {
 	// Preferred format: flat list with Position per item.
 	Concrete []ConcreteVolumeItem `json:"concrete,omitempty"`
 	Steel    []SteelMaterial      `json:"steel,omitempty"`
+	Form     []FormAreaItem       `json:"form,omitempty"`
 
 	// Legacy compatibility fields.
 	ConcreteColumns ConcreteElement `json:"concrete_columns,omitempty"`
@@ -49,18 +51,32 @@ func (b *BeamColumn) hasNewFormat() bool {
 }
 
 func (b *BeamColumn) normalizeToNewFormat() {
-	if b.hasNewFormat() {
-		// New format has precedence; ignore legacy payload when both are provided.
+	if !b.hasNewFormat() {
+		elementsByPosition := map[ElementPosition]ConcreteElement{
+			ElementPositionColumn: b.ConcreteColumns,
+			ElementPositionBeam:   b.ConcreteBeams,
+			ElementPositionSlab:   b.ConcreteSlabs,
+		}
+		b.Concrete = flattenConcreteByPosition(b.validPositions(), elementsByPosition)
+		b.Steel = flattenSteelByPosition(b.validPositions(), elementsByPosition)
+	}
+
+	if len(b.Form) > 0 {
 		return
 	}
 
-	elementsByPosition := map[ElementPosition]ConcreteElement{
-		ElementPositionColumn: b.ConcreteColumns,
-		ElementPositionBeam:   b.ConcreteBeams,
-		ElementPositionSlab:   b.ConcreteSlabs,
+	if b.FormColumns != nil {
+		b.Form = append(b.Form, FormAreaItem{Area: *b.FormColumns, Position: ElementPositionColumn})
 	}
-	b.Concrete = flattenConcreteByPosition(b.validPositions(), elementsByPosition)
-	b.Steel = flattenSteelByPosition(b.validPositions(), elementsByPosition)
+	if b.FormBeams != nil {
+		b.Form = append(b.Form, FormAreaItem{Area: *b.FormBeams, Position: ElementPositionBeam})
+	}
+	if b.FormSlabs != nil {
+		b.Form = append(b.Form, FormAreaItem{Area: *b.FormSlabs, Position: ElementPositionSlab})
+	}
+	if b.FormTotal != nil {
+		b.Form = append(b.Form, FormAreaItem{Area: *b.FormTotal})
+	}
 }
 
 func (b *BeamColumn) Validate(v *validator.Validator) {
@@ -73,6 +89,7 @@ func (b *BeamColumn) Validate(v *validator.Validator) {
 	b.normalizeToNewFormat()
 	validatePositionedConcrete(v, b.Concrete, b.validPositions())
 	validatePositionedSteel(v, b.Steel, b.validPositions())
+	validatePositionedForm(v, b.Form, b.validPositions())
 
 	if b.FormColumns != nil {
 		v.Check(*b.FormColumns >= 0, "form_columns", "cannot be negative")
@@ -177,6 +194,7 @@ func (b *BeamColumn) toDataModule(moduleID, optionID uuid.UUID, result Consumpti
 	moduleData := map[string]interface{}{
 		"concrete":      b.Concrete,
 		"steel":         b.Steel,
+		"form":          b.Form,
 		"slab_type":     normalizeSlabType(b.SlabType),
 		"form_columns":  b.FormColumns,
 		"form_beams":    b.FormBeams,
@@ -205,6 +223,7 @@ func (b *BeamColumn) fromDataModule(d *data.Module) Module {
 
 	concreteItems := concreteVolumesFromInterface(d.Data["concrete"])
 	steelItems := steelMaterialsFromInterface(d.Data["steel"])
+	formItems := formAreasFromInterface(d.Data["form"])
 
 	if len(concreteItems) == 0 && len(steelItems) == 0 {
 		var legacyColumns, legacyBeams, legacySlabs ConcreteElement
@@ -234,12 +253,28 @@ func (b *BeamColumn) fromDataModule(d *data.Module) Module {
 	legacyBeams := elementsByPosition[ElementPositionBeam]
 	legacySlabs := elementsByPosition[ElementPositionSlab]
 
+	if len(formItems) == 0 {
+		if formColumns := extractFloat64Pointer(d.Data, "form_columns"); formColumns != nil {
+			formItems = append(formItems, FormAreaItem{Area: *formColumns, Position: ElementPositionColumn})
+		}
+		if formBeams := extractFloat64Pointer(d.Data, "form_beams"); formBeams != nil {
+			formItems = append(formItems, FormAreaItem{Area: *formBeams, Position: ElementPositionBeam})
+		}
+		if formSlabs := extractFloat64Pointer(d.Data, "form_slabs"); formSlabs != nil {
+			formItems = append(formItems, FormAreaItem{Area: *formSlabs, Position: ElementPositionSlab})
+		}
+		if formTotal := extractFloat64Pointer(d.Data, "form_total"); formTotal != nil {
+			formItems = append(formItems, FormAreaItem{Area: *formTotal})
+		}
+	}
+
 	return &BeamColumn{
 		ID:              d.ID,
 		BasicModuleData: BasicModuleData{Type: "beam_column", Outdated: d.Outdated},
 		Consumption:     consumption,
 		Concrete:        concreteItems,
 		Steel:           steelItems,
+		Form:            formItems,
 		ConcreteColumns: legacyColumns,
 		ConcreteBeams:   legacyBeams,
 		ConcreteSlabs:   legacySlabs,

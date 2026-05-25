@@ -41,6 +41,70 @@ func normalizeCEP(raw *string) *string {
 	return &formatted
 }
 
+func normalizeLookupKey(value string) string {
+	value = strings.TrimSpace(value)
+	value = strings.ToUpper(value)
+	replacer := strings.NewReplacer(
+		"Á", "A", "À", "A", "Â", "A", "Ã", "A", "Ä", "A",
+		"É", "E", "È", "E", "Ê", "E", "Ë", "E",
+		"Í", "I", "Ì", "I", "Î", "I", "Ï", "I",
+		"Ó", "O", "Ò", "O", "Ô", "O", "Õ", "O", "Ö", "O",
+		"Ú", "U", "Ù", "U", "Û", "U", "Ü", "U",
+		"Ç", "C",
+	)
+	value = replacer.Replace(value)
+	value = strings.NewReplacer(" ", "", "-", "", ".", "", "_", "", "/", "").Replace(value)
+	return value
+}
+
+var brazilianStateCodes = map[string]string{
+	"AC": "AC", "ACRE": "AC",
+	"AL": "AL", "ALAGOAS": "AL",
+	"AP": "AP", "AMAPA": "AP",
+	"AM": "AM", "AMAZONAS": "AM",
+	"BA": "BA", "BAHIA": "BA",
+	"CE": "CE", "CEARA": "CE",
+	"DF": "DF", "DISTRITOFEDERAL": "DF",
+	"ES": "ES", "ESPIRITOSANTO": "ES",
+	"GO": "GO", "GOIAS": "GO",
+	"MA": "MA", "MARANHAO": "MA",
+	"MT": "MT", "MATOGROSSO": "MT",
+	"MS": "MS", "MATOGROSSODOSUL": "MS",
+	"MG": "MG", "MINASGERAIS": "MG",
+	"PA": "PA", "PARA": "PA",
+	"PB": "PB", "PARAIBA": "PB",
+	"PR": "PR", "PARANA": "PR",
+	"PE": "PE", "PERNAMBUCO": "PE",
+	"PI": "PI", "PIAUI": "PI",
+	"RJ": "RJ", "RIODEJANEIRO": "RJ",
+	"RN": "RN", "RIOGRANDEDONORTE": "RN",
+	"RS": "RS", "RIOGRANDEDOSUL": "RS",
+	"RO": "RO", "RONDONIA": "RO",
+	"RR": "RR", "RORAIMA": "RR",
+	"SC": "SC", "SANTACATARINA": "SC",
+	"SP": "SP", "SAOPAULO": "SP",
+	"SE": "SE", "SERGIPE": "SE",
+	"TO": "TO", "TOCANTINS": "TO",
+}
+
+func normalizeBrazilianState(raw string) string {
+	key := normalizeLookupKey(raw)
+	if state, ok := brazilianStateCodes[key]; ok {
+		return state
+	}
+
+	return strings.ToUpper(strings.TrimSpace(raw))
+}
+
+func normalizeProjectPhase(raw string) string {
+	key := normalizeLookupKey(raw)
+	if key == normalizeLookupKey("Não definido") {
+		return "not_defined"
+	}
+
+	return strings.TrimSpace(raw)
+}
+
 // Define base required headers (common to all module types)
 var baseRequiredHeaders = []string{
 	"project_name",
@@ -69,6 +133,8 @@ var concreteWallHeaders = []string{
 	"module_slab_area",
 	"module_wall_form_area",
 	"module_slab_form_area",
+	"module_stair_form_area",
+	"module_general_form_area",
 
 	"module_wall_concrete_20",
 	"module_wall_concrete_25",
@@ -129,17 +195,37 @@ var structuralMasonryHeaders = []string{
 	"module_grout_vertical_20",
 	"module_grout_vertical_25",
 	"module_grout_vertical_30",
+	"module_grout_vertical_35",
+	"module_grout_vertical_40",
+	"module_grout_vertical_45",
+	"module_grout_vertical_50",
 
 	"module_grout_horizontal_15",
 	"module_grout_horizontal_20",
 	"module_grout_horizontal_25",
 	"module_grout_horizontal_30",
+	"module_grout_horizontal_35",
+	"module_grout_horizontal_40",
+	"module_grout_horizontal_45",
+	"module_grout_horizontal_50",
+
+	"module_grout_general_15",
+	"module_grout_general_20",
+	"module_grout_general_25",
+	"module_grout_general_30",
+	"module_grout_general_35",
+	"module_grout_general_40",
+	"module_grout_general_45",
+	"module_grout_general_50",
 
 	"module_grout_vertical_steel_50",
 	"module_grout_vertical_steel_60",
 
 	"module_grout_horizontal_steel_50",
 	"module_grout_horizontal_steel_60",
+
+	"module_grout_general_steel_50",
+	"module_grout_general_steel_60",
 
 	"module_mortar_fak",
 	"module_mortar_volume",
@@ -173,9 +259,11 @@ var structuralMasonryHeaders = []string{
 	"module_block_compensador_1_4_19x19x9",
 	"module_block_compensador_1_8_19x19x4",
 
-	"module_form_columns",
-	"module_form_beams",
-	"module_form_slabs",
+	"module_column_form_area",
+	"module_beam_form_area",
+	"module_slab_form_area",
+	"module_stair_form_area",
+	"module_general_form_area",
 }
 
 // Module-specific required headers for beam_column
@@ -210,9 +298,11 @@ var beamColumnHeaders = []string{
 	"module_slab_steel_50",
 	"module_slab_steel_60",
 
-	"module_form_columns",
-	"module_form_beams",
-	"module_form_slabs",
+	"module_column_form_area",
+	"module_beam_form_area",
+	"module_slab_form_area",
+	"module_stair_form_area",
+	"module_general_form_area",
 }
 
 // getRequiredHeaders returns the required headers for a given module type
@@ -266,15 +356,16 @@ type BaseCSVRowData struct {
 // ConcreteWallCSVRow holds data specific to concrete wall modules
 type ConcreteWallCSVRow struct {
 	BaseCSVRowData
-	ModuleWallThickness float64                 `json:"module_wall_thickness,omitempty"`
-	ModuleSlabThickness float64                 `json:"module_slab_thickness,omitempty"`
-	ModuleWallArea      float64                 `json:"module_wall_area,omitempty"`
-	ModuleSlabArea      float64                 `json:"module_slab_area,omitempty"`
-	ModuleWallFormArea  float64                 `json:"module_wall_form_area,omitempty"`
-	ModuleSlabFormArea  float64                 `json:"module_slab_form_area,omitempty"`
-	SlabType            *string                 `json:"slab_type,omitempty"`
-	WallConcrete        modules.ConcreteElement `json:"wall_concrete"`
-	SlabConcrete        modules.ConcreteElement `json:"slab_concrete"`
+	ModuleWallThickness float64                      `json:"module_wall_thickness,omitempty"`
+	ModuleSlabThickness float64                      `json:"module_slab_thickness,omitempty"`
+	ModuleWallArea      float64                      `json:"module_wall_area,omitempty"`
+	ModuleSlabArea      float64                      `json:"module_slab_area,omitempty"`
+	ModuleWallFormArea  float64                      `json:"module_wall_form_area,omitempty"`
+	ModuleSlabFormArea  float64                      `json:"module_slab_form_area,omitempty"`
+	SlabType            *string                      `json:"slab_type,omitempty"`
+	Concrete            []modules.ConcreteVolumeItem `json:"concrete"`
+	Steel               []modules.SteelMaterial      `json:"steel"`
+	Form                []modules.FormAreaItem       `json:"form"`
 }
 
 func (r ConcreteWallCSVRow) GetProjectName() string      { return r.ProjectName }
@@ -283,18 +374,20 @@ func (r ConcreteWallCSVRow) GetBaseData() BaseCSVRowData { return r.BaseCSVRowDa
 // StructuralMasonryCSVRow holds data specific to structural masonry modules
 type StructuralMasonryCSVRow struct {
 	BaseCSVRowData
-	ModuleFormColumns *float64                `json:"module_form_columns,omitempty"`
-	ModuleFormBeams   *float64                `json:"module_form_beams,omitempty"`
-	ModuleFormSlabs   *float64                `json:"module_form_slabs,omitempty"`
-	ModuleBlockFbk    int                     `json:"module_block_fbk,omitempty"`
-	SlabType          *string                 `json:"slab_type,omitempty"`
-	Blocks            []modules.BlockInfo     `json:"blocks,omitempty"`
-	ColumnConcrete    modules.ConcreteElement `json:"column_concrete"`
-	BeamConcrete      modules.ConcreteElement `json:"beam_concrete"`
-	SlabConcrete      modules.ConcreteElement `json:"slab_concrete"`
-	GroutVertical     modules.GroutInfo       `json:"grout_vertical"`
-	GroutHorizontal   modules.GroutInfo       `json:"grout_horizontal"`
-	Mortar            []modules.MortarItem    `json:"mortar"`
+	ModuleFormColumns *float64                     `json:"module_form_columns,omitempty"`
+	ModuleFormBeams   *float64                     `json:"module_form_beams,omitempty"`
+	ModuleFormSlabs   *float64                     `json:"module_form_slabs,omitempty"`
+	ModuleFormTotal   *float64                     `json:"module_form_total,omitempty"`
+	ModuleBlockFbk    int                          `json:"module_block_fbk,omitempty"`
+	SlabType          *string                      `json:"slab_type,omitempty"`
+	Blocks            []modules.BlockInfo          `json:"blocks,omitempty"`
+	Concrete          []modules.ConcreteVolumeItem `json:"concrete"`
+	Steel             []modules.SteelMaterial      `json:"steel"`
+	Form              []modules.FormAreaItem       `json:"form"`
+	GroutVertical     modules.GroutInfo            `json:"grout_vertical"`
+	GroutHorizontal   modules.GroutInfo            `json:"grout_horizontal"`
+	GroutGeneral      modules.GroutInfo            `json:"grout_general"`
+	Mortar            []modules.MortarItem         `json:"mortar"`
 }
 
 func (r StructuralMasonryCSVRow) GetProjectName() string      { return r.ProjectName }
@@ -303,13 +396,14 @@ func (r StructuralMasonryCSVRow) GetBaseData() BaseCSVRowData { return r.BaseCSV
 // BeamColumnCSVRow holds data specific to beam column modules
 type BeamColumnCSVRow struct {
 	BaseCSVRowData
-	ModuleFormColumns *float64                `json:"module_form_columns,omitempty"`
-	ModuleFormBeams   *float64                `json:"module_form_beams,omitempty"`
-	ModuleFormSlabs   *float64                `json:"module_form_slabs,omitempty"`
-	SlabType          *string                 `json:"slab_type,omitempty"`
-	ColumnConcrete    modules.ConcreteElement `json:"column_concrete"`
-	BeamConcrete      modules.ConcreteElement `json:"beam_concrete"`
-	SlabConcrete      modules.ConcreteElement `json:"slab_concrete"`
+	ModuleFormColumns *float64                     `json:"module_form_columns,omitempty"`
+	ModuleFormBeams   *float64                     `json:"module_form_beams,omitempty"`
+	ModuleFormSlabs   *float64                     `json:"module_form_slabs,omitempty"`
+	ModuleFormTotal   *float64                     `json:"module_form_total,omitempty"`
+	SlabType          *string                      `json:"slab_type,omitempty"`
+	Concrete          []modules.ConcreteVolumeItem `json:"concrete"`
+	Steel             []modules.SteelMaterial      `json:"steel"`
+	Form              []modules.FormAreaItem       `json:"form"`
 }
 
 func (r BeamColumnCSVRow) GetProjectName() string      { return r.ProjectName }
@@ -403,6 +497,18 @@ func (p rowParser) optFloat(field string) *float64 {
 	return &val
 }
 
+// firstOptFloat returns the first non-zero float found among candidate fields.
+// Useful to keep backward compatibility while preferring standardized headers.
+func (p rowParser) firstOptFloat(fields ...string) *float64 {
+	for _, field := range fields {
+		if val := p.optFloat(field); val != nil {
+			return val
+		}
+	}
+
+	return nil
+}
+
 func (p rowParser) integer(field string) int {
 	idx, ok := p.headerMap[field]
 	if !ok || idx >= len(p.record) {
@@ -436,12 +542,12 @@ func parseBaseCSVRowData(p rowParser) BaseCSVRowData {
 	return BaseCSVRowData{
 		ProjectName:           p.str("project_name"),
 		ProjectCEP:            normalizeCEP(p.optStr("project_cep")),
-		ProjectState:          p.str("project_state"),
+		ProjectState:          normalizeBrazilianState(p.str("project_state")),
 		ProjectCity:           p.str("project_city"),
 		ProjectNeighborhood:   p.optStr("project_neighborhood"),
 		ProjectStreet:         p.optStr("project_street"),
 		ProjectNumber:         p.optStr("project_number"),
-		ProjectPhase:          p.str("project_phase"),
+		ProjectPhase:          normalizeProjectPhase(p.str("project_phase")),
 		UnitName:              p.str("unit_name"),
 		UnitRepetitionCount:   p.integer("unit_repetition_count"),
 		UnitHousingUnitsCount: p.optInt("unit_housing_units_count"),
@@ -453,31 +559,88 @@ func parseBaseCSVRowData(p rowParser) BaseCSVRowData {
 	}
 }
 
-// parseConcreteElement scans all headers for the given concrete/steel prefix pair
-// and builds a ConcreteElement. Both prefixes must include the trailing underscore.
-func parseConcreteElement(p rowParser, concretePrefix, steelPrefix string) modules.ConcreteElement {
-	el := modules.ConcreteElement{
-		Volumes: []modules.ConcreteVolumeItem{},
-		Steel:   []modules.SteelMaterial{},
-	}
+// parseConcreteAndSteelByPosition scans all headers for the given concrete/steel prefix pair
+// and appends positioned items to the provided slices. Both prefixes must include the trailing underscore.
+func parseConcreteAndSteelByPosition(
+	p rowParser,
+	concretePrefix, steelPrefix string,
+	position modules.ElementPosition,
+	concrete []modules.ConcreteVolumeItem,
+	steel []modules.SteelMaterial,
+) ([]modules.ConcreteVolumeItem, []modules.SteelMaterial) {
 	for h := range p.headerMap {
 		if strings.HasPrefix(h, concretePrefix) {
 			fck, _ := strconv.Atoi(strings.TrimPrefix(h, concretePrefix))
 			if fck > 0 {
 				if v := p.float(h); v > 0 {
-					el.Volumes = append(el.Volumes, modules.ConcreteVolumeItem{Fck: fck, Volume: v})
+					concrete = append(concrete, modules.ConcreteVolumeItem{Fck: fck, Volume: v, Position: position})
 				}
 			}
 		} else if strings.HasPrefix(h, steelPrefix) {
 			ca, _ := strconv.Atoi(strings.TrimPrefix(h, steelPrefix))
 			if ca > 0 {
 				if m := p.float(h); m > 0 {
-					el.Steel = append(el.Steel, convertCAToSteelMaterial(ca, m))
+					sm := convertCAToSteelMaterial(ca, m)
+					sm.Position = position
+					steel = append(steel, sm)
 				}
 			}
 		}
 	}
-	return el
+	return concrete, steel
+}
+
+type concreteSteelGroup struct {
+	concretePrefix string
+	steelPrefix    string
+	position       modules.ElementPosition
+}
+
+type formAreaGroup struct {
+	fieldAliases []string
+	position     modules.ElementPosition
+}
+
+func parseConcreteAndSteelByGroups(
+	p rowParser,
+	groups []concreteSteelGroup,
+) ([]modules.ConcreteVolumeItem, []modules.SteelMaterial) {
+	var concrete []modules.ConcreteVolumeItem
+	var steel []modules.SteelMaterial
+
+	for _, group := range groups {
+		concrete, steel = parseConcreteAndSteelByPosition(
+			p,
+			group.concretePrefix,
+			group.steelPrefix,
+			group.position,
+			concrete,
+			steel,
+		)
+	}
+
+	return concrete, steel
+}
+
+func parseFormByGroups(
+	p rowParser,
+	groups []formAreaGroup,
+) []modules.FormAreaItem {
+	form := make([]modules.FormAreaItem, 0, len(groups))
+
+	for _, group := range groups {
+		for _, field := range group.fieldAliases {
+			area := p.float(field)
+			if area <= 0 {
+				continue
+			}
+
+			form = append(form, modules.FormAreaItem{Area: area, Position: group.position})
+			break
+		}
+	}
+
+	return form
 }
 
 // parseGroutGroup scans headers for the given volume/steel prefix pair and builds
@@ -538,31 +701,18 @@ func (app *application) generateConcreteWallRows(dataRows [][]string, headerMap 
 	for i, record := range dataRows {
 		p := rowParser{record: record, headerMap: headerMap, rowNum: i + 2, warnf: app.logger.Warn}
 
-		// Wall concrete aggregates wall + stairs + structure elements per business rules.
-		wall := modules.ConcreteElement{Volumes: []modules.ConcreteVolumeItem{}, Steel: []modules.SteelMaterial{}}
-		for h := range headerMap {
-			if strings.HasPrefix(h, "module_wall_concrete_") {
-				fck, _ := strconv.Atoi(strings.TrimPrefix(h, "module_wall_concrete_"))
-				if fck > 0 {
-					total := p.float(h) +
-						p.float(strings.Replace(h, "module_wall_concrete_", "module_stairs_concrete_", 1)) +
-						p.float(strings.Replace(h, "module_wall_concrete_", "module_structure_concrete_", 1))
-					if total > 0 {
-						wall.Volumes = append(wall.Volumes, modules.ConcreteVolumeItem{Fck: fck, Volume: total})
-					}
-				}
-			} else if strings.HasPrefix(h, "module_wall_steel_") {
-				ca, _ := strconv.Atoi(strings.TrimPrefix(h, "module_wall_steel_"))
-				if ca > 0 {
-					total := p.float(h) +
-						p.float(strings.Replace(h, "module_wall_steel_", "module_stairs_steel_", 1)) +
-						p.float(strings.Replace(h, "module_wall_steel_", "module_structure_steel_", 1))
-					if total > 0 {
-						wall.Steel = append(wall.Steel, convertCAToSteelMaterial(ca, total))
-					}
-				}
-			}
-		}
+		concrete, steel := parseConcreteAndSteelByGroups(p, []concreteSteelGroup{
+			{concretePrefix: "module_wall_concrete_", steelPrefix: "module_wall_steel_", position: modules.ElementPositionWall},
+			{concretePrefix: "module_slab_concrete_", steelPrefix: "module_slab_steel_", position: modules.ElementPositionSlab},
+			{concretePrefix: "module_stair_concrete_", steelPrefix: "module_stair_steel_", position: modules.ElementPositionStair},
+			{concretePrefix: "module_general_concrete_", steelPrefix: "module_general_steel_", position: ""},
+		})
+		form := parseFormByGroups(p, []formAreaGroup{
+			{fieldAliases: []string{"module_wall_form_area"}, position: modules.ElementPositionWall},
+			{fieldAliases: []string{"module_slab_form_area"}, position: modules.ElementPositionSlab},
+			{fieldAliases: []string{"module_stair_form_area", "module_form_stairs"}, position: modules.ElementPositionStair},
+			{fieldAliases: []string{"module_general_form_area", "module_form_general", "module_structure_formwork"}, position: ""},
+		})
 
 		rows[i] = ConcreteWallCSVRow{
 			BaseCSVRowData:      parseBaseCSVRowData(p),
@@ -573,8 +723,9 @@ func (app *application) generateConcreteWallRows(dataRows [][]string, headerMap 
 			ModuleWallFormArea:  p.float("module_wall_form_area"),
 			ModuleSlabFormArea:  p.float("module_slab_form_area"),
 			SlabType:            p.optStr("module_slab_type"),
-			WallConcrete:        wall,
-			SlabConcrete:        parseConcreteElement(p, "module_slab_concrete_", "module_slab_steel_"),
+			Concrete:            concrete,
+			Steel:               steel,
+			Form:                form,
 		}
 	}
 	return rows
@@ -603,19 +754,36 @@ func (app *application) generateStructuralMasonryRows(dataRows [][]string, heade
 			}
 		}
 
+		concrete, steel := parseConcreteAndSteelByGroups(p, []concreteSteelGroup{
+			{concretePrefix: "module_column_concrete_", steelPrefix: "module_column_steel_", position: modules.ElementPositionColumn},
+			{concretePrefix: "module_beam_concrete_", steelPrefix: "module_beam_steel_", position: modules.ElementPositionBeam},
+			{concretePrefix: "module_slab_concrete_", steelPrefix: "module_slab_steel_", position: modules.ElementPositionSlab},
+			{concretePrefix: "module_stair_concrete_", steelPrefix: "module_stair_steel_", position: modules.ElementPositionStair},
+			{concretePrefix: "module_general_concrete_", steelPrefix: "module_general_steel_", position: ""},
+		})
+		form := parseFormByGroups(p, []formAreaGroup{
+			{fieldAliases: []string{"module_column_form_area", "module_form_columns"}, position: modules.ElementPositionColumn},
+			{fieldAliases: []string{"module_beam_form_area", "module_form_beams"}, position: modules.ElementPositionBeam},
+			{fieldAliases: []string{"module_slab_form_area", "module_form_slabs"}, position: modules.ElementPositionSlab},
+			{fieldAliases: []string{"module_stair_form_area", "module_form_stairs"}, position: modules.ElementPositionStair},
+			{fieldAliases: []string{"module_general_form_area", "module_form_general", "module_form_total"}, position: ""},
+		})
+
 		rows[i] = StructuralMasonryCSVRow{
 			BaseCSVRowData:    parseBaseCSVRowData(p),
-			ModuleFormColumns: p.optFloat("module_form_columns"),
-			ModuleFormBeams:   p.optFloat("module_form_beams"),
-			ModuleFormSlabs:   p.optFloat("module_form_slabs"),
+			ModuleFormColumns: p.firstOptFloat("module_column_form_area", "module_form_columns"),
+			ModuleFormBeams:   p.firstOptFloat("module_beam_form_area", "module_form_beams"),
+			ModuleFormSlabs:   p.firstOptFloat("module_slab_form_area", "module_form_slabs"),
+			ModuleFormTotal:   p.firstOptFloat("module_general_form_area", "module_form_general", "module_form_total"),
 			ModuleBlockFbk:    fbk,
 			SlabType:          p.optStr("module_slab_type"),
 			Blocks:            blocks,
-			ColumnConcrete:    parseConcreteElement(p, "module_column_concrete_", "module_column_steel_"),
-			BeamConcrete:      parseConcreteElement(p, "module_beam_concrete_", "module_beam_steel_"),
-			SlabConcrete:      parseConcreteElement(p, "module_slab_concrete_", "module_slab_steel_"),
+			Concrete:          concrete,
+			Steel:             steel,
+			Form:              form,
 			GroutVertical:     parseGroutGroup(p, "module_grout_vertical_", "module_grout_vertical_steel_"),
 			GroutHorizontal:   parseGroutGroup(p, "module_grout_horizontal_", "module_grout_horizontal_steel_"),
+			GroutGeneral:      parseGroutGroup(p, "module_grout_general_", "module_grout_general_steel_"),
 			Mortar:            mortar,
 		}
 	}
@@ -626,15 +794,31 @@ func (app *application) generateBeamColumnRows(dataRows [][]string, headerMap ma
 	rows := make([]BeamColumnCSVRow, len(dataRows))
 	for i, record := range dataRows {
 		p := rowParser{record: record, headerMap: headerMap, rowNum: i + 2, warnf: app.logger.Warn}
+		concrete, steel := parseConcreteAndSteelByGroups(p, []concreteSteelGroup{
+			{concretePrefix: "module_column_concrete_", steelPrefix: "module_column_steel_", position: modules.ElementPositionColumn},
+			{concretePrefix: "module_beam_concrete_", steelPrefix: "module_beam_steel_", position: modules.ElementPositionBeam},
+			{concretePrefix: "module_slab_concrete_", steelPrefix: "module_slab_steel_", position: modules.ElementPositionSlab},
+			{concretePrefix: "module_stair_concrete_", steelPrefix: "module_stair_steel_", position: modules.ElementPositionStair},
+			{concretePrefix: "module_general_concrete_", steelPrefix: "module_general_steel_", position: ""},
+		})
+		form := parseFormByGroups(p, []formAreaGroup{
+			{fieldAliases: []string{"module_column_form_area", "module_form_columns"}, position: modules.ElementPositionColumn},
+			{fieldAliases: []string{"module_beam_form_area", "module_form_beams"}, position: modules.ElementPositionBeam},
+			{fieldAliases: []string{"module_slab_form_area", "module_form_slabs"}, position: modules.ElementPositionSlab},
+			{fieldAliases: []string{"module_stair_form_area", "module_form_stairs"}, position: modules.ElementPositionStair},
+			{fieldAliases: []string{"module_general_form_area", "module_form_general", "module_form_total"}, position: ""},
+		})
+
 		rows[i] = BeamColumnCSVRow{
 			BaseCSVRowData:    parseBaseCSVRowData(p),
-			ModuleFormColumns: p.optFloat("module_form_columns"),
-			ModuleFormBeams:   p.optFloat("module_form_beams"),
-			ModuleFormSlabs:   p.optFloat("module_form_slabs"),
+			ModuleFormColumns: p.firstOptFloat("module_column_form_area", "module_form_columns"),
+			ModuleFormBeams:   p.firstOptFloat("module_beam_form_area", "module_form_beams"),
+			ModuleFormSlabs:   p.firstOptFloat("module_slab_form_area", "module_form_slabs"),
+			ModuleFormTotal:   p.firstOptFloat("module_general_form_area", "module_form_general", "module_form_total"),
 			SlabType:          p.optStr("module_slab_type"),
-			ColumnConcrete:    parseConcreteElement(p, "module_column_concrete_", "module_column_steel_"),
-			BeamConcrete:      parseConcreteElement(p, "module_beam_concrete_", "module_beam_steel_"),
-			SlabConcrete:      parseConcreteElement(p, "module_slab_concrete_", "module_slab_steel_"),
+			Concrete:          concrete,
+			Steel:             steel,
+			Form:              form,
 		}
 	}
 	return rows
@@ -642,36 +826,27 @@ func (app *application) generateBeamColumnRows(dataRows [][]string, headerMap ma
 
 // hasDataConcreteWall reports whether a ConcreteWallCSVRow has any module data.
 func hasDataConcreteWall(row ConcreteWallCSVRow) bool {
-	return len(row.WallConcrete.Volumes) > 0 ||
-		len(row.WallConcrete.Steel) > 0 ||
-		len(row.SlabConcrete.Volumes) > 0 ||
-		len(row.SlabConcrete.Steel) > 0
+	return len(row.Concrete) > 0 || len(row.Steel) > 0 || len(row.Form) > 0
 }
 
 // hasDataStructuralMasonry reports whether a StructuralMasonryCSVRow has any module data.
 func hasDataStructuralMasonry(row StructuralMasonryCSVRow) bool {
-	return len(row.ColumnConcrete.Volumes) > 0 ||
-		len(row.ColumnConcrete.Steel) > 0 ||
-		len(row.BeamConcrete.Volumes) > 0 ||
-		len(row.BeamConcrete.Steel) > 0 ||
-		len(row.SlabConcrete.Volumes) > 0 ||
-		len(row.SlabConcrete.Steel) > 0 ||
+	return len(row.Concrete) > 0 ||
+		len(row.Steel) > 0 ||
+		len(row.Form) > 0 ||
 		len(row.GroutVertical.Volumes) > 0 ||
 		len(row.GroutVertical.Steel) > 0 ||
 		len(row.GroutHorizontal.Volumes) > 0 ||
 		len(row.GroutHorizontal.Steel) > 0 ||
+		len(row.GroutGeneral.Volumes) > 0 ||
+		len(row.GroutGeneral.Steel) > 0 ||
 		len(row.Mortar) > 0 ||
 		len(row.Blocks) > 0
 }
 
 // hasDataBeamColumn reports whether a BeamColumnCSVRow has any module data.
 func hasDataBeamColumn(row BeamColumnCSVRow) bool {
-	return len(row.ColumnConcrete.Volumes) > 0 ||
-		len(row.ColumnConcrete.Steel) > 0 ||
-		len(row.BeamConcrete.Volumes) > 0 ||
-		len(row.BeamConcrete.Steel) > 0 ||
-		len(row.SlabConcrete.Volumes) > 0 ||
-		len(row.SlabConcrete.Steel) > 0
+	return len(row.Concrete) > 0 || len(row.Steel) > 0 || len(row.Form) > 0
 }
 
 // generateAutoRows executes all three generators with their respective normalised
@@ -885,8 +1060,9 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 			if hasDataConcreteWall(typedRow) {
 				module = &modules.ConcreteWall{
 					BasicModuleData: modules.BasicModuleData{Type: "concrete_wall"},
-					ConcreteWalls:   typedRow.WallConcrete,
-					ConcreteSlabs:   typedRow.SlabConcrete,
+					Concrete:        typedRow.Concrete,
+					Steel:           typedRow.Steel,
+					Form:            typedRow.Form,
 					SlabType:        typedRow.SlabType,
 					WallThickness:   &typedRow.ModuleWallThickness,
 					SlabThickness:   &typedRow.ModuleSlabThickness,
@@ -909,16 +1085,20 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 					typedRow.GroutHorizontal.Position = "horizontal"
 					groutArray = append(groutArray, typedRow.GroutHorizontal)
 				}
+				if len(typedRow.GroutGeneral.Volumes) > 0 || len(typedRow.GroutGeneral.Steel) > 0 {
+					groutArray = append(groutArray, typedRow.GroutGeneral)
+				}
 
 				module = &modules.StructuralMasonry{
 					BasicModuleData: modules.BasicModuleData{Type: "structural_masonry"},
-					ConcreteColumns: typedRow.ColumnConcrete,
-					ConcreteBeams:   typedRow.BeamConcrete,
-					ConcreteSlabs:   typedRow.SlabConcrete,
+					Concrete:        typedRow.Concrete,
+					Steel:           typedRow.Steel,
+					Form:            typedRow.Form,
 					SlabType:        typedRow.SlabType,
 					FormColumns:     typedRow.ModuleFormColumns,
 					FormBeams:       typedRow.ModuleFormBeams,
 					FormSlabs:       typedRow.ModuleFormSlabs,
+					FormTotal:       typedRow.ModuleFormTotal,
 					Masonry: modules.MasonryElement{
 						Grout:  groutArray,
 						Mortar: typedRow.Mortar,
@@ -931,13 +1111,14 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 			if hasDataBeamColumn(typedRow) {
 				module = &modules.BeamColumn{
 					BasicModuleData: modules.BasicModuleData{Type: "beam_column"},
-					ConcreteColumns: typedRow.ColumnConcrete,
-					ConcreteBeams:   typedRow.BeamConcrete,
-					ConcreteSlabs:   typedRow.SlabConcrete,
+					Concrete:        typedRow.Concrete,
+					Steel:           typedRow.Steel,
+					Form:            typedRow.Form,
 					SlabType:        typedRow.SlabType,
 					FormColumns:     typedRow.ModuleFormColumns,
 					FormBeams:       typedRow.ModuleFormBeams,
 					FormSlabs:       typedRow.ModuleFormSlabs,
+					FormTotal:       typedRow.ModuleFormTotal,
 					FloorIDs:        floorIDs,
 				}
 			}
@@ -1032,10 +1213,8 @@ func normalizeHeaderMapForModuleType(headerMap map[string]int, moduleType string
 		}
 
 		alias := "module_" + strings.TrimPrefix(name, prefix)
-		if _, exists := normalized[alias]; exists {
-			continue
-		}
-
+		// Prefer module-scoped columns (e.g. structural_masonry_*) over generic
+		// module_* columns when both are present in the same CSV.
 		normalized[alias] = idx
 	}
 

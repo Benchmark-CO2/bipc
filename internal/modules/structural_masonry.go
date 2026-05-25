@@ -13,6 +13,7 @@ var structuralMasonryValidPositions = []ElementPosition{
 	ElementPositionColumn,
 	ElementPositionBeam,
 	ElementPositionSlab,
+	ElementPositionStair,
 }
 
 type BlockInfo struct {
@@ -32,7 +33,7 @@ type MortarItem struct {
 }
 
 type GroutInfo struct {
-	Position string            `json:"position"`
+	Position string            `json:"position,omitempty"`
 	Volumes  []GroutVolumeItem `json:"volumes"`
 	Steel    []SteelMaterial   `json:"steel"`
 }
@@ -51,6 +52,7 @@ type StructuralMasonry struct {
 	// Preferred format: flat list with Position per item.
 	Concrete []ConcreteVolumeItem `json:"concrete,omitempty"`
 	Steel    []SteelMaterial      `json:"steel,omitempty"`
+	Form     []FormAreaItem       `json:"form,omitempty"`
 
 	// Legacy compatibility fields.
 	ConcreteColumns ConcreteElement `json:"concrete_columns"`
@@ -78,18 +80,32 @@ func (s *StructuralMasonry) hasNewFormat() bool {
 }
 
 func (s *StructuralMasonry) normalizeToNewFormat() {
-	if s.hasNewFormat() {
-		// New format has precedence; ignore legacy payload when both are provided.
+	if !s.hasNewFormat() {
+		elementsByPosition := map[ElementPosition]ConcreteElement{
+			ElementPositionColumn: s.ConcreteColumns,
+			ElementPositionBeam:   s.ConcreteBeams,
+			ElementPositionSlab:   s.ConcreteSlabs,
+		}
+		s.Concrete = flattenConcreteByPosition(s.validPositions(), elementsByPosition)
+		s.Steel = flattenSteelByPosition(s.validPositions(), elementsByPosition)
+	}
+
+	if len(s.Form) > 0 {
 		return
 	}
 
-	elementsByPosition := map[ElementPosition]ConcreteElement{
-		ElementPositionColumn: s.ConcreteColumns,
-		ElementPositionBeam:   s.ConcreteBeams,
-		ElementPositionSlab:   s.ConcreteSlabs,
+	if s.FormColumns != nil {
+		s.Form = append(s.Form, FormAreaItem{Area: *s.FormColumns, Position: ElementPositionColumn})
 	}
-	s.Concrete = flattenConcreteByPosition(s.validPositions(), elementsByPosition)
-	s.Steel = flattenSteelByPosition(s.validPositions(), elementsByPosition)
+	if s.FormBeams != nil {
+		s.Form = append(s.Form, FormAreaItem{Area: *s.FormBeams, Position: ElementPositionBeam})
+	}
+	if s.FormSlabs != nil {
+		s.Form = append(s.Form, FormAreaItem{Area: *s.FormSlabs, Position: ElementPositionSlab})
+	}
+	if s.FormTotal != nil {
+		s.Form = append(s.Form, FormAreaItem{Area: *s.FormTotal})
+	}
 }
 
 func (s *StructuralMasonry) Validate(v *validator.Validator) {
@@ -104,6 +120,7 @@ func (s *StructuralMasonry) Validate(v *validator.Validator) {
 	if len(s.Steel) > 0 {
 		validatePositionedSteel(v, s.Steel, s.validPositions())
 	}
+	validatePositionedForm(v, s.Form, s.validPositions())
 	validateSlabType(v, s.SlabType)
 
 	fgkSet := make(map[int]struct{})
@@ -111,8 +128,8 @@ func (s *StructuralMasonry) Validate(v *validator.Validator) {
 	for i, grout := range s.Masonry.Grout {
 		prefix := fmt.Sprintf("masonry.grout[%d]", i)
 
-		v.Check(grout.Position == "vertical" || grout.Position == "horizontal",
-			prefix+".position", "must be 'vertical' or 'horizontal'")
+		v.Check(grout.Position == "" || grout.Position == "vertical" || grout.Position == "horizontal",
+			prefix+".position", "must be empty, 'vertical' or 'horizontal'")
 
 		v.Check(len(grout.Volumes) > 0, prefix+".volumes", "must have at least one item")
 		fgkSet = make(map[int]struct{})
@@ -120,12 +137,15 @@ func (s *StructuralMasonry) Validate(v *validator.Validator) {
 			volPrefix := fmt.Sprintf("%s.volumes[%d]", prefix, j)
 			v.Check(vol.Volume > 0, volPrefix+".volume", "must be greater than 0")
 			v.Check(vol.Fgk != 0, volPrefix+".fgk", "must be provided")
+			v.Check(isSupportedGroutFgk(vol.Fgk), volPrefix+".fgk", "must match a supported grout fgk value")
 			if _, exists := fgkSet[vol.Fgk]; exists {
 				v.Check(false, volPrefix+".fgk", "duplicate fgk value")
 			} else {
 				fgkSet[vol.Fgk] = struct{}{}
 			}
 		}
+
+		ValidateSteelMaterials(v, grout.Steel, prefix+".steel")
 	}
 
 	v.Check(len(s.Masonry.Mortar) > 0, "masonry.mortar", "must have at least one item")
@@ -311,9 +331,11 @@ func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Co
 		groutList := []map[string]interface{}{}
 		for _, grout := range s.Masonry.Grout {
 			groutData := map[string]interface{}{
-				"position": grout.Position,
-				"volumes":  []map[string]interface{}{},
-				"steel":    []map[string]interface{}{},
+				"volumes": []map[string]interface{}{},
+				"steel":   []map[string]interface{}{},
+			}
+			if grout.Position != "" {
+				groutData["position"] = grout.Position
 			}
 			for _, vol := range grout.Volumes {
 				groutData["volumes"] = append(groutData["volumes"].([]map[string]interface{}), map[string]interface{}{
@@ -366,6 +388,7 @@ func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Co
 	moduleData := map[string]interface{}{
 		"concrete":     s.Concrete,
 		"steel":        s.Steel,
+		"form":         s.Form,
 		"slab_type":    normalizeSlabType(s.SlabType),
 		"form_columns": s.FormColumns,
 		"form_beams":   s.FormBeams,
@@ -392,6 +415,7 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 
 	concreteItems := concreteVolumesFromInterface(d.Data["concrete"])
 	steelItems := steelMaterialsFromInterface(d.Data["steel"])
+	formItems := formAreasFromInterface(d.Data["form"])
 
 	if len(concreteItems) == 0 && len(steelItems) == 0 {
 		var legacyColumns, legacyBeams, legacySlabs ConcreteElement
@@ -421,14 +445,30 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 	concreteBeams := elementsByPosition[ElementPositionBeam]
 	concreteSlabs := elementsByPosition[ElementPositionSlab]
 
+	if len(formItems) == 0 {
+		if formColumns := extractFloat64Pointer(d.Data, "form_columns"); formColumns != nil {
+			formItems = append(formItems, FormAreaItem{Area: *formColumns, Position: ElementPositionColumn})
+		}
+		if formBeams := extractFloat64Pointer(d.Data, "form_beams"); formBeams != nil {
+			formItems = append(formItems, FormAreaItem{Area: *formBeams, Position: ElementPositionBeam})
+		}
+		if formSlabs := extractFloat64Pointer(d.Data, "form_slabs"); formSlabs != nil {
+			formItems = append(formItems, FormAreaItem{Area: *formSlabs, Position: ElementPositionSlab})
+		}
+		if formTotal := extractFloat64Pointer(d.Data, "form_total"); formTotal != nil {
+			formItems = append(formItems, FormAreaItem{Area: *formTotal})
+		}
+	}
+
 	var masonry MasonryElement
 
 	if masonryData, ok := d.Data["masonry"].(map[string]interface{}); ok {
 		if groutData, ok := masonryData["grout"].([]interface{}); ok {
 			for _, g := range groutData {
 				if groutMap, ok := g.(map[string]interface{}); ok {
-					grout := GroutInfo{
-						Position: groutMap["position"].(string),
+					grout := GroutInfo{}
+					if position, ok := groutMap["position"].(string); ok {
+						grout.Position = position
 					}
 
 					if volumesData, ok := groutMap["volumes"].([]interface{}); ok {
@@ -487,6 +527,7 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 		Consumption:     consumption,
 		Concrete:        concreteItems,
 		Steel:           steelItems,
+		Form:            formItems,
 		ConcreteColumns: concreteColumns,
 		ConcreteBeams:   concreteBeams,
 		ConcreteSlabs:   concreteSlabs,

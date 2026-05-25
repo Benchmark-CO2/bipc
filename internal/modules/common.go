@@ -52,6 +52,11 @@ type ConcreteVolumeItem struct {
 	Position ElementPosition `json:"position,omitempty"`
 }
 
+type FormAreaItem struct {
+	Area     float64         `json:"area"`
+	Position ElementPosition `json:"position,omitempty"`
+}
+
 type ConcreteElement struct {
 	Volumes []ConcreteVolumeItem `json:"volumes"`
 	Steel   []SteelMaterial      `json:"steel"`
@@ -64,6 +69,7 @@ const (
 	ElementPositionSlab   ElementPosition = "slab"
 	ElementPositionColumn ElementPosition = "column"
 	ElementPositionBeam   ElementPosition = "beam"
+	ElementPositionStair  ElementPosition = "stair"
 )
 
 func (c ConcreteElement) MarshalJSON() ([]byte, error) {
@@ -177,10 +183,34 @@ func ValidateSteelMaterials(v *validator.Validator, materials []SteelMaterial, f
 		if material.Resistance == "other" {
 			v.Check(material.OtherResistance > 0, prefix+".other_resistance",
 				"must be provided and greater than 0 when resistance is 'other'")
+			v.Check(isSupportedOtherResistance(material.OtherResistance), prefix+".other_resistance",
+				"must match a supported resistance value")
+		}
+
+		if material.Resistance != "other" {
+			v.Check(material.OtherResistance == 0, prefix+".other_resistance",
+				"must be empty when resistance is not 'other'")
 		}
 
 		v.Check(material.Mass >= 0, prefix+".mass", "cannot be negative")
 	}
+}
+
+func isSupportedOtherResistance(value float64) bool {
+	if _, ok := sidacSteelData.KgCO2[value]; ok {
+		return true
+	}
+
+	if _, ok := sidacStrandData.KgCO2[value]; ok {
+		return true
+	}
+
+	return false
+}
+
+func isSupportedGroutFgk(value int) bool {
+	_, ok := sidacGroutData.KgCO2[float64(value)]
+	return ok
 }
 
 func CalculateSteelConsumption(materials []SteelMaterial) (Consumption, error) {
@@ -335,8 +365,7 @@ func validatePositionedConcrete(
 		v.Check(item.Volume > 0, prefix+".volume", "must be greater than 0")
 		v.Check(item.Fck != 0, prefix+".fck", "must be provided")
 
-		if shouldValidatePosition {
-			v.Check(item.Position != "", prefix+".position", "must be provided")
+		if shouldValidatePosition && item.Position != "" {
 			v.Check(validator.PermittedValue(string(item.Position), validPositionStrings...), prefix+".position", fmt.Sprintf("must be one of: %s", strings.Join(validPositionStrings, ", ")))
 		}
 
@@ -365,13 +394,69 @@ func validatePositionedSteel(
 	ValidateSteelMaterials(v, steel, steelField)
 	for i, item := range steel {
 		prefix := fmt.Sprintf("%s[%d]", steelField, i)
-		if shouldValidatePosition {
-			v.Check(item.Position != "", prefix+".position", "must be provided")
+		if shouldValidatePosition && item.Position != "" {
 			v.Check(validator.PermittedValue(string(item.Position), validPositionStrings...), prefix+".position", fmt.Sprintf("must be one of: %s", strings.Join(validPositionStrings, ", ")))
 		}
 	}
 
 	v.Check(len(steel) > 0, steelField, "must have at least one item")
+}
+
+func validatePositionedForm(
+	v *validator.Validator,
+	form []FormAreaItem,
+	validPositions []ElementPosition,
+) {
+	const formField = "form"
+
+	shouldValidatePosition := len(validPositions) > 0
+	validPositionStrings := elementPositionsAsStrings(validPositions)
+	positionSet := make(map[string]struct{})
+
+	for i, item := range form {
+		prefix := fmt.Sprintf("%s[%d]", formField, i)
+		v.Check(item.Area >= 0, prefix+".area", "cannot be negative")
+
+		if shouldValidatePosition && item.Position != "" {
+			v.Check(validator.PermittedValue(string(item.Position), validPositionStrings...), prefix+".position", fmt.Sprintf("must be one of: %s", strings.Join(validPositionStrings, ", ")))
+		}
+
+		key := string(item.Position)
+		if _, exists := positionSet[key]; exists {
+			v.Check(false, prefix+".position", fmt.Sprintf("duplicate form for position %s", key))
+			continue
+		}
+
+		positionSet[key] = struct{}{}
+	}
+}
+
+func formAreasFromInterface(data interface{}) []FormAreaItem {
+	var form []FormAreaItem
+
+	formData, ok := data.([]interface{})
+	if !ok {
+		return form
+	}
+
+	for _, item := range formData {
+		itemMap, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		formItem := FormAreaItem{}
+		if area, ok := itemMap["area"].(float64); ok {
+			formItem.Area = area
+		}
+		if position, ok := itemMap["position"].(string); ok {
+			formItem.Position = ElementPosition(position)
+		}
+
+		form = append(form, formItem)
+	}
+
+	return form
 }
 
 func elementPositionsAsStrings(positions []ElementPosition) []string {
@@ -447,7 +532,6 @@ func groupSteelByPosition(elementsByPosition map[ElementPosition]ConcreteElement
 			Resistance:      s.Resistance,
 			OtherResistance: s.OtherResistance,
 			Mass:            s.Mass,
-			Position:        s.Position,
 		})
 		elementsByPosition[position] = element
 	}

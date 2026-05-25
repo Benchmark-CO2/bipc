@@ -9,6 +9,7 @@ import (
 var concreteWallValidPositions = []ElementPosition{
 	ElementPositionWall,
 	ElementPositionSlab,
+	ElementPositionStair,
 }
 
 type ConcreteWall struct {
@@ -19,6 +20,7 @@ type ConcreteWall struct {
 	// Preferred format: flat list with Position per item.
 	Concrete []ConcreteVolumeItem `json:"concrete,omitempty"`
 	Steel    []SteelMaterial      `json:"steel,omitempty"`
+	Form     []FormAreaItem       `json:"form,omitempty"`
 
 	// Legacy compatibility fields.
 	ConcreteWalls ConcreteElement `json:"concrete_walls"`
@@ -47,17 +49,25 @@ func (w *ConcreteWall) hasNewFormat() bool {
 }
 
 func (w *ConcreteWall) normalizeToNewFormat() {
-	if w.hasNewFormat() {
-		// New format has precedence; ignore legacy payload when both are provided.
+	if !w.hasNewFormat() {
+		elementsByPosition := map[ElementPosition]ConcreteElement{
+			ElementPositionWall: w.ConcreteWalls,
+			ElementPositionSlab: w.ConcreteSlabs,
+		}
+		w.Concrete = flattenConcreteByPosition(w.validPositions(), elementsByPosition)
+		w.Steel = flattenSteelByPosition(w.validPositions(), elementsByPosition)
+	}
+
+	if len(w.Form) > 0 {
 		return
 	}
 
-	elementsByPosition := map[ElementPosition]ConcreteElement{
-		ElementPositionWall: w.ConcreteWalls,
-		ElementPositionSlab: w.ConcreteSlabs,
+	if w.WallFormArea != nil {
+		w.Form = append(w.Form, FormAreaItem{Area: *w.WallFormArea, Position: ElementPositionWall})
 	}
-	w.Concrete = flattenConcreteByPosition(w.validPositions(), elementsByPosition)
-	w.Steel = flattenSteelByPosition(w.validPositions(), elementsByPosition)
+	if w.SlabFormArea != nil {
+		w.Form = append(w.Form, FormAreaItem{Area: *w.SlabFormArea, Position: ElementPositionSlab})
+	}
 }
 
 func (w *ConcreteWall) Validate(v *validator.Validator) {
@@ -69,6 +79,7 @@ func (w *ConcreteWall) Validate(v *validator.Validator) {
 	w.normalizeToNewFormat()
 	validatePositionedConcrete(v, w.Concrete, w.validPositions())
 	validatePositionedSteel(v, w.Steel, w.validPositions())
+	validatePositionedForm(v, w.Form, w.validPositions())
 
 	if w.WallThickness != nil {
 		v.Check(*w.WallThickness >= 0, "wall_thickness", "cannot be negative")
@@ -170,6 +181,7 @@ func (w *ConcreteWall) toDataModule(moduleID, optionID uuid.UUID, result Consump
 	moduleData := map[string]interface{}{
 		"concrete":       w.Concrete,
 		"steel":          w.Steel,
+		"form":           w.Form,
 		"slab_type":      normalizeSlabType(w.SlabType),
 		"wall_thickness": w.WallThickness,
 		"slab_thickness": w.SlabThickness,
@@ -197,6 +209,7 @@ func (w *ConcreteWall) fromDataModule(d *data.Module) Module {
 
 	concreteItems := concreteVolumesFromInterface(d.Data["concrete"])
 	steelItems := steelMaterialsFromInterface(d.Data["steel"])
+	formItems := formAreasFromInterface(d.Data["form"])
 
 	if len(concreteItems) == 0 && len(steelItems) == 0 {
 		var legacyWalls, legacySlabs ConcreteElement
@@ -220,12 +233,22 @@ func (w *ConcreteWall) fromDataModule(d *data.Module) Module {
 	legacyWalls := elementsByPosition[ElementPositionWall]
 	legacySlabs := elementsByPosition[ElementPositionSlab]
 
+	if len(formItems) == 0 {
+		if wallFormArea := extractFloat64Pointer(d.Data, "wall_form_area"); wallFormArea != nil {
+			formItems = append(formItems, FormAreaItem{Area: *wallFormArea, Position: ElementPositionWall})
+		}
+		if slabFormArea := extractFloat64Pointer(d.Data, "slab_form_area"); slabFormArea != nil {
+			formItems = append(formItems, FormAreaItem{Area: *slabFormArea, Position: ElementPositionSlab})
+		}
+	}
+
 	return &ConcreteWall{
 		ID:              d.ID,
 		BasicModuleData: BasicModuleData{Type: "concrete_wall", Outdated: d.Outdated},
 		Consumption:     consumption,
 		Concrete:        concreteItems,
 		Steel:           steelItems,
+		Form:            formItems,
 		ConcreteWalls:   legacyWalls,
 		ConcreteSlabs:   legacySlabs,
 		SlabType:        extractStringPointer(d.Data, "slab_type"),
