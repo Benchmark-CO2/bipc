@@ -85,6 +85,13 @@
 
   --color-sidebar: hsl(188, 29%, 10%);
 
+  --map-empty: #D4D4D8;
+  --map-scale-1: #B6E5ED;
+  --map-scale-2: #6EC2CF;
+  --map-scale-3: #3BBACE;
+  --map-scale-4: #20A2B6;
+  --map-scale-5: #187B8B;
+
   --selection-bg: hsl(188, 71%, 42%);
   --selection-fg: hsl(0, 0%, 100%);
 }
@@ -146,6 +153,13 @@
   --chart-5: hsl(340 75% 55%);
 
   --color-sidebar: hsl(188, 29%, 10%);
+
+  --map-empty: #D4D4D8;
+  --map-scale-1: #B6E5ED;
+  --map-scale-2: #6EC2CF;
+  --map-scale-3: #3BBACE;
+  --map-scale-4: #20A2B6;
+  --map-scale-5: #187B8B;
 }
 
 @theme inline {
