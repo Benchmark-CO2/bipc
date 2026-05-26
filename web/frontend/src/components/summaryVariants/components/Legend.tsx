@@ -2,7 +2,13 @@ import { useSummary } from "@/context/summaryContext";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/i18n";
 
-const Legend = () => {
+const MAP_COLORS = ["#D4D4D8", "#B6E5ED", "#6EC2CF", "#3BBACE", "#20A2B6", "#187B8B"];
+
+interface LegendProps {
+  variant?: "default" | "map";
+}
+
+const Legend = ({ variant = "default" }: LegendProps) => {
   const { isExpanded } = useSummary();
   const { t } = useTranslation();
 
@@ -12,7 +18,25 @@ const Legend = () => {
         "w-2/3 my-6": isExpanded,
       })}
     >
-      <div className="w-full">
+      {variant === "map" ? (
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold">{t.benchmark.legend}</span>
+          <span className="italic text-xs">{t.benchmark.mapLegendMin}</span>
+          <div className="flex">
+            {MAP_COLORS.map((color, i) => (
+              <div
+                key={color}
+                className={cn("w-8 h-4 border-t border-b border-r border-border", {
+                  "rounded-l-sm border-l": i === 0,
+                  "rounded-r-sm": i === MAP_COLORS.length - 1,
+                })}
+                style={{ background: color }}
+              />
+            ))}
+          </div>
+          <span className="italic text-xs">{t.benchmark.mapLegendMax}</span>
+        </div>
+      ) : (
         <div className="grid grid-cols-4 w-full items-end max-sm:grid-cols-1 max-2xl:grid-cols-2 3xl:grid-cols-4 max-sm:gap-2 max-sm:my-4">
           <div className="w-full flex flex-col justify-center">
             <h2 className="text-sm font-bold mb-2">{t.benchmark.legend}</h2>
@@ -39,7 +63,7 @@ const Legend = () => {
             </div>
           </div>
         </div>
-      </div>
+      )}
     </section>
   );
 };
