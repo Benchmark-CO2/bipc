@@ -67,7 +67,7 @@ function hitTest(
   const scaleY = (hitCanvas.height / dpr) / rect.height;
   const px = Math.round((clientX - rect.left) * scaleX * dpr);
   const py = Math.round((clientY - rect.top) * scaleY * dpr);
-  const ctx = hitCanvas.getContext("2d");
+  const ctx = hitCanvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) return null;
   const [r, g, b] = ctx.getImageData(px, py, 1, 1).data;
   return colorToKey.get(`${r},${g},${b}`) ?? null;
@@ -113,7 +113,7 @@ export default function GeoCanvas<P extends { sigla?: string; codarea?: string }
     const dpr = window.devicePixelRatio || 1;
     hitCanvas.width = width * dpr;
     hitCanvas.height = height * dpr;
-    const ctx = hitCanvas.getContext("2d")!;
+    const ctx = hitCanvas.getContext("2d", { willReadFrequently: true })!;
     ctx.save();
     ctx.scale(dpr, dpr);
     const path = d3.geoPath(projection);
