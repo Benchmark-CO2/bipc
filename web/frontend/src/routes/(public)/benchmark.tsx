@@ -3,6 +3,7 @@ import { IBenchmarkSeries } from "@/actions/benchmarks/types";
 import Logo from "@/assets/logo_full.svg";
 import D3GradientRangeChart from "@/components/charts/d3chart";
 import D3GradientRangeLineChart, { SeriesPoint } from "@/components/charts/d3chartLine";
+import BrazilMapChart from "@/components/charts/brazilMapChart";
 import {
   Select,
   SelectContent,
@@ -14,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useBenchmarkFilters } from "@/hooks/useBenchmarkFilters";
+import { useBenchmarkMapData } from "@/hooks/useBenchmarkMapData";
 import { useTranslation } from "@/i18n";
 
 type BenchmarkPoint = {
@@ -92,6 +94,10 @@ function RouteComponent() {
   const hasActiveFilter =
     activeBuildFilter.technology.length > 0 || !!activeBuildFilter.floors.get();
 
+  const mapData = useBenchmarkMapData(baseResponse, type);
+  const filteredMapData = useBenchmarkMapData(filteredResponse, type);
+  const activeMapResult = hasActiveFilter && filteredMapData.states.length > 0 ? filteredMapData : mapData;
+
   const baseChartData: BenchmarkPoint[] = normalizeBenchmarkSeries(
     baseResponse?.data?.benchmark?.[type],
   );
@@ -167,6 +173,7 @@ function RouteComponent() {
                       {t.benchmark.chartTrend}
                     </SelectItem>
                     <SelectItem value="co2">{t.benchmark.chartBenchmark}</SelectItem>
+                    <SelectItem value="map">{t.benchmark.chartMap}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -183,6 +190,14 @@ function RouteComponent() {
                   selectedBars={selectedFilteredIds}
                   unit={type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
                   summary={false}
+                />
+              ) : selectedChart === "map" ? (
+                <BrazilMapChart
+                  data={activeMapResult.states}
+                  totalCount={activeMapResult.totalCount}
+                  noStateCount={activeMapResult.noStateCount}
+                  unit={type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
+                  className="w-full"
                 />
               ) : (
                 <D3GradientRangeChart
@@ -205,17 +220,19 @@ function RouteComponent() {
               )}
             </div>
 
-            <div className="flex flex-col gap-1 mt-4">
-              <strong className="text-xs text-gray-shade-500">{t.benchmark.legend}</strong>
-              <p className="flex items-center gap-2 text-xs">
-                <div className="w-3 h-3 block rounded-full bg-[#3b82f6]"></div>{" "}
-                <i>{t.benchmark.bestSupplier}</i>
-              </p>
-              <p className="flex items-center gap-2 text-xs">
-                <div className="w-3 h-3 block rounded-full bg-[#E36F35]"></div>{" "}
-                <i>{t.benchmark.worstSupplier}</i>
-              </p>
-            </div>
+            {selectedChart !== "map" && (
+              <div className="flex flex-col gap-1 mt-4">
+                <strong className="text-xs text-gray-shade-500">{t.benchmark.legend}</strong>
+                <p className="flex items-center gap-2 text-xs">
+                  <div className="w-3 h-3 block rounded-full bg-[#3b82f6]"></div>{" "}
+                  <i>{t.benchmark.bestSupplier}</i>
+                </p>
+                <p className="flex items-center gap-2 text-xs">
+                  <div className="w-3 h-3 block rounded-full bg-[#E36F35]"></div>{" "}
+                  <i>{t.benchmark.worstSupplier}</i>
+                </p>
+              </div>
+            )}
           </div>
         </div>
         <section className="w-full mt-30">
