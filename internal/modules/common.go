@@ -96,6 +96,7 @@ type Consumption struct {
 	CO2Max    float64 `json:"co2_max"`
 	EnergyMin float64 `json:"energy_min"`
 	EnergyMax float64 `json:"energy_max"`
+	Material  float64 `json:"material"`
 }
 
 func (c *Consumption) sum(value Consumption) {
@@ -103,6 +104,16 @@ func (c *Consumption) sum(value Consumption) {
 	c.CO2Max += value.CO2Max
 	c.EnergyMin += value.EnergyMin
 	c.EnergyMax += value.EnergyMax
+	c.Material += value.Material
+}
+
+func concreteVolumeFromElement(ce ConcreteElement) float64 {
+	total := 0.0
+	for _, volume := range ce.Volumes {
+		total += volume.Volume
+	}
+
+	return total
 }
 
 func findClosestResistance(targetValue float64, material SidacMaterial) float64 {
@@ -547,6 +558,7 @@ func (ce *ConcreteElement) calculate(sidacConcrete, sidacSteel SidacMaterial) (C
 			// return result, fmt.Errorf("fck not found in sidacConcreteData: %d", c.Fck)
 			val = sidacConcrete.KgCO2[40]
 		}
+		result.Material += c.Volume
 		result.CO2Min += val.Min * c.Volume
 		result.CO2Max += val.Max * c.Volume
 
@@ -688,11 +700,17 @@ func consumptionFromDataModule(d *data.Module) *Consumption {
 		return nil
 	}
 
+	material := 0.0
+	if d.TotalMaterial != nil {
+		material = *d.TotalMaterial
+	}
+
 	return &Consumption{
 		CO2Min:    *d.TotalCO2Min,
 		CO2Max:    *d.TotalCO2Max,
 		EnergyMin: *d.TotalEnergyMin,
 		EnergyMax: *d.TotalEnergyMax,
+		Material:  material,
 	}
 }
 
@@ -757,6 +775,7 @@ func PrepareModuleTargetConsumptions(
 				CO2Max:     result.CO2Max / area,
 				EnergyMin:  result.EnergyMin / area,
 				EnergyMax:  result.EnergyMax / area,
+				Material:   result.Material / area,
 			})
 		}
 	}
@@ -781,6 +800,7 @@ func PrepareModuleTargetConsumptions(
 			CO2Max:     result.CO2Max / totalArea,
 			EnergyMin:  result.EnergyMin / totalArea,
 			EnergyMax:  result.EnergyMax / totalArea,
+			Material:   result.Material / totalArea,
 		})
 	}
 

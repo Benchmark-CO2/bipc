@@ -17,5 +17,6 @@ type ModuleTargetConsumption struct {
 	CO2Max     float64
 	EnergyMin  float64
 	EnergyMax  float64
+	Material   float64
 	CreatedAt  time.Time
 }

@@ -69,6 +69,7 @@ func (p *PilesFoundation) Calculate() (Consumption, error) {
 	var result Consumption
 
 	totalConcreteVolume := p.Piles.Volume + p.Blocks.Volume + p.GradeBeams.Volume + p.TieBeams.Volume
+	result.Material += totalConcreteVolume
 
 	concreteCO2, ok := sidacConcreteData.KgCO2[float64(p.Fck)]
 	if !ok {
@@ -191,21 +192,14 @@ func (p *PilesFoundation) toDataModule(moduleID, optionID uuid.UUID, result Cons
 		TotalCO2Max:    &result.CO2Max,
 		TotalEnergyMin: &result.EnergyMin,
 		TotalEnergyMax: &result.EnergyMax,
+		TotalMaterial:  &result.Material,
 		FloorIDs:       []uuid.UUID{},
 		UnitID:         &p.UnitID,
 	}
 }
 
 func (p *PilesFoundation) fromDataModule(d *data.Module) Module {
-	var consumption *Consumption
-	if d.TotalCO2Min != nil {
-		consumption = &Consumption{
-			CO2Min:    *d.TotalCO2Min,
-			CO2Max:    *d.TotalCO2Max,
-			EnergyMin: *d.TotalEnergyMin,
-			EnergyMax: *d.TotalEnergyMax,
-		}
-	}
+	consumption := consumptionFromDataModule(d)
 
 	var fck int
 	var piles PilesFoundationPiles

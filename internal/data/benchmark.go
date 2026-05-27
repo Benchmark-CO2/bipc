@@ -38,7 +38,8 @@ func (m BenchmarkModel) GetFloorsBenchmark() ([]*BenchmarkData, error) {
 			COALESCE(SUM(mtc.co2_min), 0) as co2_min,
 			COALESCE(SUM(mtc.co2_max), 0) as co2_max,
 			COALESCE(SUM(mtc.energy_min), 0) as energy_min,
-			COALESCE(SUM(mtc.energy_max), 0) as energy_max
+			COALESCE(SUM(mtc.energy_max), 0) as energy_max,
+			COALESCE(SUM(mtc.material), 0) as material
 		FROM floor f
 		INNER JOIN units u ON f.unit_id = u.id
 		INNER JOIN projects p ON u.project_id = p.id
@@ -59,7 +60,7 @@ func (m BenchmarkModel) GetFloorsBenchmark() ([]*BenchmarkData, error) {
 
 	for rows.Next() {
 		var floor BenchmarkData
-		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+		var co2Min, co2Max, energyMin, energyMax, material sql.NullFloat64
 
 		err := rows.Scan(
 			&floor.ID,
@@ -67,6 +68,7 @@ func (m BenchmarkModel) GetFloorsBenchmark() ([]*BenchmarkData, error) {
 			&co2Max,
 			&energyMin,
 			&energyMax,
+			&material,
 		)
 		if err != nil {
 			return nil, err
@@ -78,6 +80,7 @@ func (m BenchmarkModel) GetFloorsBenchmark() ([]*BenchmarkData, error) {
 				CO2Max:    &co2Max.Float64,
 				EnergyMin: &energyMin.Float64,
 				EnergyMax: &energyMax.Float64,
+				Material:  &material.Float64,
 			}
 		}
 
@@ -102,7 +105,8 @@ func (m BenchmarkModel) GetUnitsBenchmark() ([]*BenchmarkData, error) {
 				SUM(mtc.co2_min) as floor_co2_min,
 				SUM(mtc.co2_max) as floor_co2_max,
 				SUM(mtc.energy_min) as floor_energy_min,
-				SUM(mtc.energy_max) as floor_energy_max
+				SUM(mtc.energy_max) as floor_energy_max,
+				SUM(mtc.material) as floor_material
 			FROM floor f
 			INNER JOIN units u ON f.unit_id = u.id
 			INNER JOIN projects p ON u.project_id = p.id
@@ -117,7 +121,8 @@ func (m BenchmarkModel) GetUnitsBenchmark() ([]*BenchmarkData, error) {
 				SUM(floor_co2_min * area) / NULLIF(SUM(area), 0) as co2_min,
 				SUM(floor_co2_max * area) / NULLIF(SUM(area), 0) as co2_max,
 				SUM(floor_energy_min * area) / NULLIF(SUM(area), 0) as energy_min,
-				SUM(floor_energy_max * area) / NULLIF(SUM(area), 0) as energy_max
+				SUM(floor_energy_max * area) / NULLIF(SUM(area), 0) as energy_max,
+				SUM(floor_material * area) / NULLIF(SUM(area), 0) as material
 			FROM floor_consumption
 			GROUP BY unit_id, technology
 		),
@@ -127,7 +132,8 @@ func (m BenchmarkModel) GetUnitsBenchmark() ([]*BenchmarkData, error) {
 				SUM(co2_min) as co2_min,
 				SUM(co2_max) as co2_max,
 				SUM(energy_min) as energy_min,
-				SUM(energy_max) as energy_max
+				SUM(energy_max) as energy_max,
+				SUM(material) as material
 			FROM unit_consumption_by_tech
 			GROUP BY unit_id
 		)
@@ -136,7 +142,8 @@ func (m BenchmarkModel) GetUnitsBenchmark() ([]*BenchmarkData, error) {
 			ttc.co2_min,
 			ttc.co2_max,
 			ttc.energy_min,
-			ttc.energy_max
+			ttc.energy_max,
+			ttc.material
 		FROM units u
 		INNER JOIN projects p ON u.project_id = p.id
 		LEFT JOIN tower_total_consumption ttc ON u.id = ttc.unit_id
@@ -156,6 +163,7 @@ func (m BenchmarkModel) GetUnitsBenchmark() ([]*BenchmarkData, error) {
 	for rows.Next() {
 		var unit BenchmarkData
 		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+		var material sql.NullFloat64
 
 		err := rows.Scan(
 			&unit.ID,
@@ -163,6 +171,7 @@ func (m BenchmarkModel) GetUnitsBenchmark() ([]*BenchmarkData, error) {
 			&co2Max,
 			&energyMin,
 			&energyMax,
+			&material,
 		)
 		if err != nil {
 			return nil, err
@@ -174,6 +183,7 @@ func (m BenchmarkModel) GetUnitsBenchmark() ([]*BenchmarkData, error) {
 				CO2Max:    &co2Max.Float64,
 				EnergyMin: &energyMin.Float64,
 				EnergyMax: &energyMax.Float64,
+				Material:  &material.Float64,
 			}
 		}
 
@@ -306,7 +316,8 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 				SUM(mtc.co2_min) as floor_co2_min,
 				SUM(mtc.co2_max) as floor_co2_max,
 				SUM(mtc.energy_min) as floor_energy_min,
-				SUM(mtc.energy_max) as floor_energy_max
+				SUM(mtc.energy_max) as floor_energy_max,
+				SUM(mtc.material) as floor_material
 			FROM floor f
 			INNER JOIN units u ON f.unit_id = u.id
 			INNER JOIN projects p ON u.project_id = p.id
@@ -337,7 +348,8 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 				SUM(floor_co2_min * area) / NULLIF(SUM(area), 0) as co2_min,
 				SUM(floor_co2_max * area) / NULLIF(SUM(area), 0) as co2_max,
 				SUM(floor_energy_min * area) / NULLIF(SUM(area), 0) as energy_min,
-				SUM(floor_energy_max * area) / NULLIF(SUM(area), 0) as energy_max
+				SUM(floor_energy_max * area) / NULLIF(SUM(area), 0) as energy_max,
+				SUM(floor_material * area) / NULLIF(SUM(area), 0) as material
 			FROM floor_consumption
 			GROUP BY unit_id, technology
 		),
@@ -347,7 +359,8 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 				SUM(co2_min) as co2_min,
 				SUM(co2_max) as co2_max,
 				SUM(energy_min) as energy_min,
-				SUM(energy_max) as energy_max
+				SUM(energy_max) as energy_max,
+				SUM(material) as material
 			FROM unit_consumption_by_tech
 			WHERE unit_id IN (SELECT unit_id FROM filtered_towers)
 			GROUP BY unit_id
@@ -370,6 +383,7 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 			fc.co2_max,
 			fc.energy_min,
 			fc.energy_max,
+			fc.material,
 			fpt.floor_count,
 			COALESCE(ut.technologies, ARRAY[]::text[]) as technologies,
 			p.state,
@@ -395,7 +409,7 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 
 	for rows.Next() {
 		var project ProjectBenchmarkData
-		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+		var co2Min, co2Max, energyMin, energyMax, material sql.NullFloat64
 		var floorCount sql.NullInt64
 		var technologies []string
 
@@ -405,6 +419,7 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 			&co2Max,
 			&energyMin,
 			&energyMax,
+			&material,
 			&floorCount,
 			pq.Array(&technologies),
 			&project.State,
@@ -420,6 +435,7 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 				CO2Max:    &co2Max.Float64,
 				EnergyMin: &energyMin.Float64,
 				EnergyMax: &energyMax.Float64,
+				Material:  &material.Float64,
 			}
 		}
 

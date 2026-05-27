@@ -105,6 +105,19 @@ func main() {
 	defer db.Close()
 	logger.Info("database connection pool established")
 
+	app := &application{
+		config: cfg,
+		logger: logger,
+		models: data.NewModels(db),
+	}
+
+	err = app.backfillMissingModuleConsumptions()
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+	logger.Info("material backfill completed")
+
 	mailer, err := mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender, cfg.env)
 	if err != nil {
 		logger.Error(err.Error())
@@ -125,12 +138,7 @@ func main() {
 		return time.Now().Unix()
 	}))
 
-	app := &application{
-		config: cfg,
-		logger: logger,
-		models: data.NewModels(db),
-		mailer: mailer,
-	}
+	app.mailer = mailer
 
 	err = app.serve()
 	if err != nil {

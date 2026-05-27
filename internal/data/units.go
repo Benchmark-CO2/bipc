@@ -41,6 +41,7 @@ type Consumption struct {
 	CO2Max    *float64 `json:"co2_max,omitempty"`
 	EnergyMin *float64 `json:"energy_min,omitempty"`
 	EnergyMax *float64 `json:"energy_max,omitempty"`
+	Material  *float64 `json:"material,omitempty"`
 }
 
 type Floor struct {
