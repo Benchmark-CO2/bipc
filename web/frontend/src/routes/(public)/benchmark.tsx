@@ -18,6 +18,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useBenchmarkFilters } from "@/hooks/useBenchmarkFilters";
 import { useBenchmarkMapData } from "@/hooks/useBenchmarkMapData";
+import { useWindowSize } from "@/hooks/useWindowSize";
 import { useTranslation } from "@/i18n";
 
 type BenchmarkPoint = {
@@ -155,6 +156,8 @@ function RouteComponent() {
   );
 
   const [selectedChart, setSelectedChart] = useState("co2");
+  const { height: viewportHeight } = useWindowSize();
+  const chartMaxHeight = Math.round(viewportHeight * 0.6);
 
   const maxData = chartData.map((d) => (d.max !== undefined ? d.max : 0));
   const minData = chartData.map((d) =>
@@ -211,7 +214,7 @@ function RouteComponent() {
                   noStateCount={activeMapResult.noStateCount}
                   unit={type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
                   className="w-full"
-                  maxHeight={Math.round(window.innerHeight * 0.6)}
+                  maxHeight={chartMaxHeight}
                   allowZoom
                 />
               ) : (
