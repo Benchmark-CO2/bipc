@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { Search, SearchX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -33,6 +34,10 @@ export interface GeoCanvasProps<P extends { sigla?: string; codarea?: string }> 
   noProjectsLabel?: string;
   projectLabel?: string;
   projectsLabel?: string;
+  allowZoom?: boolean;
+  zoomEnableTitle?: string;
+  zoomDisableTitle?: string;
+  zoomButtonLabel?: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -86,10 +91,18 @@ export default function GeoCanvas<P extends { sigla?: string; codarea?: string }
   noProjectsLabel = "Sem projetos",
   projectLabel = "projeto",
   projectsLabel = "projetos",
+  allowZoom = false,
+  zoomEnableTitle = "Habilitar zoom",
+  zoomDisableTitle = "Desabilitar zoom",
+  zoomButtonLabel = "Zoom",
 }: GeoCanvasProps<P>) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hitCanvasRef = useRef<HTMLCanvasElement>(null);
+  const zoomRef = useRef<d3.ZoomBehavior<HTMLCanvasElement, unknown> | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const transformRef = useRef(d3.zoomIdentity);
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+  const [zoomEnabled, setZoomEnabled] = useState(false);
   const [tooltip, setTooltip] = useState<TooltipState>({
     visible: false,
     x: 0,
@@ -106,53 +119,114 @@ export default function GeoCanvas<P extends { sigla?: string; codarea?: string }
     return { colorMaps, projection };
   }, [geo, keyProp, width, height]);
 
-  // Paint hit canvas (invisible, used for mouse picking)
-  useEffect(() => {
+  const drawCanvases = useCallback(() => {
+    const canvas = canvasRef.current;
     const hitCanvas = hitCanvasRef.current;
-    if (!hitCanvas) return;
+    if (!canvas || !hitCanvas) return;
+
     const dpr = window.devicePixelRatio || 1;
+    const transform = transformRef.current;
+    const path = d3.geoPath(projection);
+
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+
+    const visibleCtx = canvas.getContext("2d");
+    if (!visibleCtx) return;
+    visibleCtx.save();
+    visibleCtx.scale(dpr, dpr);
+    visibleCtx.clearRect(0, 0, width, height);
+    visibleCtx.translate(transform.x, transform.y);
+    visibleCtx.scale(transform.k, transform.k);
+    for (const feat of geo.features) {
+      const key = feat.properties[keyProp] as string;
+      const isHovered = key === hoveredKey;
+      visibleCtx.beginPath();
+      path.context(visibleCtx)(feat.geometry);
+      visibleCtx.fillStyle = colorScale(key);
+      visibleCtx.fill();
+      visibleCtx.strokeStyle = isHovered ? "#187B8B" : "#000";
+      visibleCtx.lineWidth = (isHovered ? 1.5 : 0.4) / transform.k;
+      visibleCtx.stroke();
+    }
+    visibleCtx.restore();
+
     hitCanvas.width = width * dpr;
     hitCanvas.height = height * dpr;
-    const ctx = hitCanvas.getContext("2d", { willReadFrequently: true })!;
-    ctx.save();
-    ctx.scale(dpr, dpr);
-    const path = d3.geoPath(projection);
+
+    const hitCtx = hitCanvas.getContext("2d", { willReadFrequently: true });
+    if (!hitCtx) return;
+    hitCtx.save();
+    hitCtx.scale(dpr, dpr);
+    hitCtx.clearRect(0, 0, width, height);
+    hitCtx.translate(transform.x, transform.y);
+    hitCtx.scale(transform.k, transform.k);
     for (const feat of geo.features) {
       const key = feat.properties[keyProp] as string;
       const color = colorMaps.keyToColor.get(key);
       if (!color) continue;
-      ctx.beginPath();
-      path.context(ctx)(feat.geometry);
-      ctx.fillStyle = color;
-      ctx.fill();
+      hitCtx.beginPath();
+      path.context(hitCtx)(feat.geometry);
+      hitCtx.fillStyle = color;
+      hitCtx.fill();
     }
-    ctx.restore();
-  }, [geo, projection, colorMaps, keyProp, width, height]);
+    hitCtx.restore();
+  }, [geo, projection, colorScale, hoveredKey, keyProp, width, height, colorMaps]);
 
-  // Paint visible canvas
+  useEffect(() => {
+    drawCanvases();
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [drawCanvases]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    const ctx = canvas.getContext("2d")!;
-    ctx.save();
-    ctx.scale(dpr, dpr);
-    const path = d3.geoPath(projection);
-    for (const feat of geo.features) {
-      const key = feat.properties[keyProp] as string;
-      const isHovered = key === hoveredKey;
-      ctx.beginPath();
-      path.context(ctx)(feat.geometry);
-      ctx.fillStyle = colorScale(key);
-      ctx.fill();
-      ctx.strokeStyle = isHovered ? "#187B8B" : "#000";
-      ctx.lineWidth = isHovered ? 1.5 : 0.4;
-      ctx.stroke();
+
+    const zoom = d3
+      .zoom<HTMLCanvasElement, unknown>()
+      .scaleExtent([1, 8])
+      .filter((event) => {
+        if (!allowZoom || !zoomEnabled) return false;
+        return !event.button && event.type !== "dblclick";
+      })
+      .on("zoom", (event) => {
+        transformRef.current = event.transform;
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+        animationFrameRef.current = requestAnimationFrame(drawCanvases);
+      });
+
+    zoomRef.current = zoom;
+    d3.select(canvas).call(zoom as any);
+
+    return () => {
+      d3.select(canvas).on(".zoom", null);
+    };
+  }, [allowZoom, zoomEnabled, drawCanvases]);
+
+  useEffect(() => {
+    if (!allowZoom) {
+      setZoomEnabled(false);
     }
-    ctx.restore();
-  }, [geo, projection, colorScale, hoveredKey, keyProp, width, height]);
+  }, [allowZoom]);
+
+  useEffect(() => {
+    if (zoomEnabled || !canvasRef.current || !zoomRef.current) return;
+    d3.select(canvasRef.current)
+      .transition()
+      .duration(250)
+      .call(zoomRef.current.transform as any, d3.zoomIdentity);
+    transformRef.current = d3.zoomIdentity;
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    animationFrameRef.current = requestAnimationFrame(drawCanvases);
+  }, [zoomEnabled, drawCanvases]);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -191,10 +265,31 @@ export default function GeoCanvas<P extends { sigla?: string; codarea?: string }
 
   return (
     <div className={`relative ${className ?? ""}`} style={{ width: "100%", height }}>
+      {allowZoom && (
+        <button
+          type="button"
+          onClick={() => setZoomEnabled((prev) => !prev)}
+          className={`absolute top-2 left-2 z-10 p-1.5 rounded-md border text-xs flex items-center gap-1 transition-colors ${
+            zoomEnabled
+              ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
+              : "bg-background text-muted-foreground border-border hover:bg-muted"
+          }`}
+          title={zoomEnabled ? zoomDisableTitle : zoomEnableTitle}
+        >
+          {zoomEnabled ? <Search className="size-3.5" /> : <SearchX className="size-3.5" />}
+          <span className="max-sm:hidden">{zoomButtonLabel}</span>
+        </button>
+      )}
       <canvas
         ref={canvasRef}
         style={{ width: "100%", height, display: "block" }}
-        className={onFeatureClick ? "cursor-pointer" : "cursor-default"}
+        className={
+          allowZoom && zoomEnabled
+            ? "cursor-grab active:cursor-grabbing"
+            : onFeatureClick
+              ? "cursor-pointer"
+              : "cursor-default"
+        }
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}

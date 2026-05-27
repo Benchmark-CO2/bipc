@@ -11,13 +11,22 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/i18n";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface StateProperties { codarea: string; sigla: string; name: string; }
-interface GeoFeature<P> { type: "Feature"; properties: P; geometry: d3.GeoPermissibleObjects; }
-interface GeoCollection<P> { type: "FeatureCollection"; features: GeoFeature<P>[]; }
+interface StateProperties {
+  codarea: string;
+  sigla: string;
+  name: string;
+}
+interface GeoFeature<P> {
+  type: "Feature";
+  properties: P;
+  geometry: d3.GeoPermissibleObjects;
+}
+interface GeoCollection<P> {
+  type: "FeatureCollection";
+  features: GeoFeature<P>[];
+}
 
-type ViewMode =
-  | { type: "country" }
-  | { type: "state"; sigla: string };
+type ViewMode = { type: "country" } | { type: "state"; sigla: string };
 
 export interface BrazilMapChartProps {
   data: StateMapData[];
@@ -25,30 +34,47 @@ export interface BrazilMapChartProps {
   noStateCount?: number;
   unit?: string;
   className?: string;
+  maxHeight?: number;
+  allowZoom?: boolean;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ASPECT_RATIO = 720 / 800;
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export default function BrazilMapChart({ data, totalCount, noStateCount = 0, className }: BrazilMapChartProps) {
+export default function BrazilMapChart({
+  data,
+  totalCount,
+  noStateCount = 0,
+  className,
+  maxHeight,
+  allowZoom = false,
+}: BrazilMapChartProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
-  const [statesGeo, setStatesGeo] = useState<GeoCollection<StateProperties> | null>(null);
+  const [statesGeo, setStatesGeo] =
+    useState<GeoCollection<StateProperties> | null>(null);
   const [view, setView] = useState<ViewMode>({ type: "country" });
 
   const activeSigla = view.type === "state" ? view.sigla : null;
-  const { data: munData, isLoading: munLoading } = useIBGEMunicipalities(activeSigla);
+  const { data: munData, isLoading: munLoading } =
+    useIBGEMunicipalities(activeSigla);
 
-  const height = Math.round(containerWidth * ASPECT_RATIO);
+  const autoHeight = Math.round(containerWidth * ASPECT_RATIO);
+  const height = maxHeight ? Math.min(autoHeight, maxHeight) : autoHeight;
 
   // Observe container width
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const update = (w: number) => { const r = Math.round(w); if (r > 0) setContainerWidth(r); };
-    const observer = new ResizeObserver(entries => { update(entries[0]?.contentRect.width ?? 0); });
+    const update = (w: number) => {
+      const r = Math.round(w);
+      if (r > 0) setContainerWidth(r);
+    };
+    const observer = new ResizeObserver((entries) => {
+      update(entries[0]?.contentRect.width ?? 0);
+    });
     observer.observe(el);
     update(el.getBoundingClientRect().width);
     return () => observer.disconnect();
@@ -57,7 +83,7 @@ export default function BrazilMapChart({ data, totalCount, noStateCount = 0, cla
   // Load brazil states GeoJSON (bundled in /public)
   useEffect(() => {
     fetch("/brazil-states.json")
-      .then(r => r.json())
+      .then((r) => r.json())
       .then((json: GeoCollection<StateProperties>) => setStatesGeo(json));
   }, []);
 
@@ -67,7 +93,7 @@ export default function BrazilMapChart({ data, totalCount, noStateCount = 0, cla
     const { geo, nameMap } = munData;
     return {
       ...geo,
-      features: geo.features.map(f => ({
+      features: geo.features.map((f) => ({
         ...f,
         geometry: f.geometry as d3.GeoPermissibleObjects,
         properties: {
@@ -79,20 +105,32 @@ export default function BrazilMapChart({ data, totalCount, noStateCount = 0, cla
   }, [munData]);
 
   // ── Data maps ──────────────────────────────────────────────────────────────
-  const dataMap = useMemo(() => new Map(data.map(d => [d.sigla, d])), [data]);
-  const maxStateCount = useMemo(() => Math.max(...data.map(d => d.value), 1), [data]);
+  const dataMap = useMemo(() => new Map(data.map((d) => [d.sigla, d])), [data]);
+  const maxStateCount = useMemo(
+    () => Math.max(...data.map((d) => d.value), 1),
+    [data],
+  );
 
   // ── State view helpers ─────────────────────────────────────────────────────
   const stateColorScale = useCallback(
-    (sigla: string) => countToColor(dataMap.get(sigla)?.value ?? 0, maxStateCount),
+    (sigla: string) =>
+      countToColor(dataMap.get(sigla)?.value ?? 0, maxStateCount),
     [dataMap, maxStateCount],
   );
 
-  const stateTooltipLabel = useCallback((sigla: string) => {
-    const feat = statesGeo?.features.find(f => f.properties.sigla === sigla);
-    const count = dataMap.get(sigla)?.value ?? 0;
-    return { label: `${feat?.properties.name ?? sigla} (${sigla})`, count: count > 0 ? count : null };
-  }, [statesGeo, dataMap]);
+  const stateTooltipLabel = useCallback(
+    (sigla: string) => {
+      const feat = statesGeo?.features.find(
+        (f) => f.properties.sigla === sigla,
+      );
+      const count = dataMap.get(sigla)?.value ?? 0;
+      return {
+        label: `${feat?.properties.name ?? sigla} (${sigla})`,
+        count: count > 0 ? count : null,
+      };
+    },
+    [statesGeo, dataMap],
+  );
 
   // ── Municipality view helpers ──────────────────────────────────────────────
   const munCityLookup = useMemo(() => {
@@ -118,25 +156,35 @@ export default function BrazilMapChart({ data, totalCount, noStateCount = 0, cla
     if (!munGeo) return null;
     const maxMun = Math.max(...munCityLookup.values(), 1);
     return (codarea: string) => {
-      const feat = munGeo.features.find(f => f.properties.codarea === codarea);
-      const count = munCityLookup.get(normalizeCity(feat?.properties.name ?? "")) ?? 0;
+      const feat = munGeo.features.find(
+        (f) => f.properties.codarea === codarea,
+      );
+      const count =
+        munCityLookup.get(normalizeCity(feat?.properties.name ?? "")) ?? 0;
       return countToColor(count, maxMun);
     };
   }, [munGeo, munCityLookup]);
 
-  const munTooltipLabel = useCallback((codarea: string) => {
-    if (!munGeo) return { label: "", count: null as number | null };
-    const feat = munGeo.features.find(f => f.properties.codarea === codarea);
-    const munName = feat?.properties.name ?? codarea;
-    const count = munCityLookup.get(normalizeCity(munName)) ?? 0;
-    return { label: munName, count: count > 0 ? count : null };
-  }, [munGeo, munCityLookup]);
+  const munTooltipLabel = useCallback(
+    (codarea: string) => {
+      if (!munGeo) return { label: "", count: null as number | null };
+      const feat = munGeo.features.find(
+        (f) => f.properties.codarea === codarea,
+      );
+      const munName = feat?.properties.name ?? codarea;
+      const count = munCityLookup.get(normalizeCity(munName)) ?? 0;
+      return { label: munName, count: count > 0 ? count : null };
+    },
+    [munGeo, munCityLookup],
+  );
 
   // ── Unmatched cities (registered with a city not found in IBGE) ────────────
   const unmatchedCount = useMemo(() => {
     if (view.type !== "state" || !munGeo) return 0;
     const cities = dataMap.get(view.sigla)?.cities ?? {};
-    const ibgeNormNames = munGeo.features.map(f => normalizeCity(f.properties.name ?? ""));
+    const ibgeNormNames = munGeo.features.map((f) =>
+      normalizeCity(f.properties.name ?? ""),
+    );
     return Object.entries(cities)
       .filter(([name]) => !ibgeNormNames.includes(normalizeCity(name)))
       .reduce((sum, [, count]) => sum + count, 0);
@@ -145,44 +193,67 @@ export default function BrazilMapChart({ data, totalCount, noStateCount = 0, cla
   // ── Derived state info ─────────────────────────────────────────────────────
   const stateName = useMemo(() => {
     if (view.type !== "state") return "";
-    return statesGeo?.features.find(f => f.properties.sigla === view.sigla)?.properties.name ?? view.sigla;
+    return (
+      statesGeo?.features.find((f) => f.properties.sigla === view.sigla)
+        ?.properties.name ?? view.sigla
+    );
   }, [view, statesGeo]);
 
   const stateProjectCount = useMemo(() => {
     if (view.type !== "state") return 0;
-    return Object.values(dataMap.get(view.sigla)?.cities ?? {}).reduce((s, c) => s + c, 0);
+    return Object.values(dataMap.get(view.sigla)?.cities ?? {}).reduce(
+      (s, c) => s + c,
+      0,
+    );
   }, [view, dataMap]);
 
   const isReady = containerWidth > 0 && statesGeo;
   const isLoadingDrilldown = view.type === "state" && munLoading;
 
   return (
-    <div ref={containerRef} className={className} style={{ width: "100%", overflow: "hidden" }}>
+    <div
+      ref={containerRef}
+      className={className}
+      style={{ width: "100%", overflow: "hidden" }}
+    >
       {!isReady || isLoadingDrilldown ? (
         <div
           className="flex items-center justify-center gap-2 text-muted-foreground text-sm"
           style={{ height: height || 320 }}
         >
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
-          {isLoadingDrilldown ? t.brazilMap.loadingMunicipalities : t.brazilMap.loadingMap}
+          {isLoadingDrilldown
+            ? t.brazilMap.loadingMunicipalities
+            : t.brazilMap.loadingMap}
         </div>
       ) : (
         <div className="flex flex-col gap-4">
           {/* ── Header ── */}
           {view.type === "state" ? (
             <div className="flex flex-col gap-1">
-              <Button onClick={() => setView({ type: "country" })} variant="outline-bipc" size="sm" className="w-fit">
+              <Button
+                onClick={() => setView({ type: "country" })}
+                variant="outline-bipc"
+                size="sm"
+                className="w-fit"
+              >
                 <ArrowLeft className="mr-1" size={16} />
                 {t.brazilMap.backToCountry}
               </Button>
               <div className="flex items-baseline gap-2">
-                <h2 className="text-xl font-bold text-foreground">{stateName}</h2>
-                <span className="text-sm text-muted-foreground font-medium">{view.sigla}</span>
+                <h2 className="text-xl font-bold text-foreground">
+                  {stateName}
+                </h2>
+                <span className="text-sm text-muted-foreground font-medium">
+                  {view.sigla}
+                </span>
               </div>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span>
                   {t.d3chart.numberOfProjects}:{" "}
-                  <span className="font-medium text-foreground">{stateProjectCount}</span>
+                  <span className="font-medium text-foreground">
+                    {stateProjectCount}
+                  </span>
                 </span>
                 {unmatchedCount > 0 && (
                   <span title={t.brazilMap.unmatchedTooltip}>
@@ -193,7 +264,9 @@ export default function BrazilMapChart({ data, totalCount, noStateCount = 0, cla
             </div>
           ) : (
             <div className="flex flex-col gap-1">
-              <h2 className="text-xl font-bold text-foreground">{t.brazilMap.title}</h2>
+              <h2 className="text-xl font-bold text-foreground">
+                {t.brazilMap.title}
+              </h2>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span>
                   {t.d3chart.numberOfProjects}:{" "}
@@ -222,6 +295,10 @@ export default function BrazilMapChart({ data, totalCount, noStateCount = 0, cla
               noProjectsLabel={t.brazilMap.noProjects}
               projectLabel={t.brazilMap.project}
               projectsLabel={t.brazilMap.projects}
+              allowZoom={allowZoom}
+              zoomEnableTitle={t.d3chart.enableZoom}
+              zoomDisableTitle={t.d3chart.disableZoom}
+              zoomButtonLabel={t.d3chart.zoomLabel}
             />
           ) : (
             <GeoCanvas
@@ -235,6 +312,10 @@ export default function BrazilMapChart({ data, totalCount, noStateCount = 0, cla
               noProjectsLabel={t.brazilMap.noProjects}
               projectLabel={t.brazilMap.project}
               projectsLabel={t.brazilMap.projects}
+              allowZoom={allowZoom}
+              zoomEnableTitle={t.d3chart.enableZoom}
+              zoomDisableTitle={t.d3chart.disableZoom}
+              zoomButtonLabel={t.d3chart.zoomLabel}
             />
           )}
 
