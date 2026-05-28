@@ -1279,14 +1279,14 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
                 ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
                 : "bg-background text-muted-foreground border-border hover:bg-muted",
             )}
-            title={zoomEnabled ? "Desabilitar zoom" : "Habilitar zoom"}
+            title={zoomEnabled ? t.d3chart.disableZoom : t.d3chart.enableZoom}
           >
             {zoomEnabled ? (
               <Search className="size-3.5" />
             ) : (
               <SearchX className="size-3.5" />
             )}
-            <span className="max-sm:hidden">Zoom</span>
+            <span className="max-sm:hidden">{t.d3chart.zoomLabel}</span>
           </button>
 
           <canvas

@@ -855,6 +855,9 @@ export const ptBR = {
     displaying: "Exibindo",
     of: "de",
     numberOfProjects: "Nº de empreendimentos",
+    enableZoom: "Habilitar zoom",
+    disableZoom: "Desabilitar zoom",
+    zoomLabel: "Zoom",
   },
   brazilMap: {
     title: "Brasil",

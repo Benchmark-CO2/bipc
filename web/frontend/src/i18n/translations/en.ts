@@ -854,6 +854,9 @@ export const en: Translations = {
     displaying: "Displaying",
     of: "of",
     numberOfProjects: "Number of projects",
+    enableZoom: "Enable zoom",
+    disableZoom: "Disable zoom",
+    zoomLabel: "Zoom",
   },
   brazilMap: {
     title: "Brazil",

@@ -2,7 +2,9 @@ import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
 import { IBenchmarkSeries } from "@/actions/benchmarks/types";
 import Logo from "@/assets/logo_full.svg";
 import D3GradientRangeChart from "@/components/charts/d3chart";
-import D3GradientRangeLineChart, { SeriesPoint } from "@/components/charts/d3chartLine";
+import D3GradientRangeLineChart, {
+  SeriesPoint,
+} from "@/components/charts/d3chartLine";
 import BrazilMapChart from "@/components/charts/brazilMapChart";
 import {
   Select,
@@ -11,11 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FilterTabs } from "@/components/ui/filter-tabs";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useBenchmarkFilters } from "@/hooks/useBenchmarkFilters";
 import { useBenchmarkMapData } from "@/hooks/useBenchmarkMapData";
+import { useWindowSize } from "@/hooks/useWindowSize";
 import { useTranslation } from "@/i18n";
 
 type BenchmarkPoint = {
@@ -31,11 +35,15 @@ type BenchmarkPoint = {
 };
 
 // Para o scatter chart: ordenar por y e parear min+max pela ordem
-const normalizeBenchmarkSeries = (series?: IBenchmarkSeries): BenchmarkPoint[] => {
+const normalizeBenchmarkSeries = (
+  series?: IBenchmarkSeries,
+): BenchmarkPoint[] => {
   if (!series) return [];
 
-  const sortByY = (a: IBenchmarkSeries["min"][number], b: IBenchmarkSeries["min"][number]) =>
-    a.y - b.y;
+  const sortByY = (
+    a: IBenchmarkSeries["min"][number],
+    b: IBenchmarkSeries["min"][number],
+  ) => a.y - b.y;
   const minList = [...(series.min || [])].sort(sortByY);
   const maxList = [...(series.max || [])].sort(sortByY);
   const pairCount = Math.min(minList.length, maxList.length);
@@ -72,7 +80,8 @@ export const Route = createFileRoute("/(public)/benchmark")({
 });
 
 function RouteComponent() {
-  const { FilterSection, activeBuildFilter, type } = useBenchmarkFilters();
+  const { FilterSection, activeBuildFilter, type, setType } =
+    useBenchmarkFilters();
   const { t } = useTranslation();
   const { data: filteredResponse } = useQuery({
     queryKey: ["units-benchmarks", JSON.stringify(activeBuildFilter)],
@@ -96,7 +105,10 @@ function RouteComponent() {
 
   const mapData = useBenchmarkMapData(baseResponse, type);
   const filteredMapData = useBenchmarkMapData(filteredResponse, type);
-  const activeMapResult = hasActiveFilter && filteredMapData.states.length > 0 ? filteredMapData : mapData;
+  const activeMapResult =
+    hasActiveFilter && filteredMapData.states.length > 0
+      ? filteredMapData
+      : mapData;
 
   const baseChartData: BenchmarkPoint[] = normalizeBenchmarkSeries(
     baseResponse?.data?.benchmark?.[type],
@@ -146,6 +158,8 @@ function RouteComponent() {
   );
 
   const [selectedChart, setSelectedChart] = useState("co2");
+  const { height: viewportHeight } = useWindowSize();
+  const chartMaxHeight = Math.round(viewportHeight * 0.6);
 
   const maxData = chartData.map((d) => (d.max !== undefined ? d.max : 0));
   const minData = chartData.map((d) =>
@@ -161,22 +175,39 @@ function RouteComponent() {
         <div className="h-full w-full flex items-start pt-10 justify-between max-lg:flex-col-reverse gap-10 xl:gap-20 transition-all">
           {FilterSection}
           <div className="w-full max-lg:w-full! flex flex-col items-start">
-            <div className="flex flex-col w-full gap-4 ">
-              <h2 className="text-primary font-semibold">{t.benchmark.visualization}</h2>
-              <div className="flex flex-wrap gap-4 justify-between items-center mb-2">
+            <div className="flex flex-wrap items-start gap-x-4 gap-y-4 mb-2">
+              <div className="flex flex-col gap-2">
+                <h2 className="text-primary font-semibold">
+                  {t.benchmark.visualization}
+                </h2>
                 <Select onValueChange={setSelectedChart} value={selectedChart}>
-                  <SelectTrigger className="w-[200px] self-start mb-4">
+                  <SelectTrigger className="w-[200px] !h-10">
                     <SelectValue placeholder={t.benchmark.chartPlaceholder} />
                   </SelectTrigger>
                   <SelectContent defaultValue={"co2"}>
                     <SelectItem value="trend">
                       {t.benchmark.chartTrend}
                     </SelectItem>
-                    <SelectItem value="co2">{t.benchmark.chartBenchmark}</SelectItem>
+                    <SelectItem value="co2">
+                      {t.benchmark.chartBenchmark}
+                    </SelectItem>
                     <SelectItem value="map">{t.benchmark.chartMap}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+              {selectedChart !== "map" && (
+                <div className="flex flex-col gap-2">
+                  <h2 className="text-primary font-semibold">
+                    {t.benchmark.filters.indicators}
+                  </h2>
+                  <FilterTabs
+                    tabs={["co2", "energy"]}
+                    onTabSelect={(tab) => setType(tab as "co2" | "energy")}
+                    selectedTab={type}
+                    className="!h-10"
+                  />
+                </div>
+              )}
             </div>
             <div className="w-full">
               {isBaseLoading ? (
@@ -198,6 +229,8 @@ function RouteComponent() {
                   noStateCount={activeMapResult.noStateCount}
                   unit={type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
                   className="w-full"
+                  maxHeight={chartMaxHeight}
+                  allowZoom
                 />
               ) : (
                 <D3GradientRangeChart
@@ -222,7 +255,9 @@ function RouteComponent() {
 
             {selectedChart !== "map" && (
               <div className="flex flex-col gap-1 mt-4">
-                <strong className="text-xs text-gray-shade-500">{t.benchmark.legend}</strong>
+                <strong className="text-xs text-gray-shade-500">
+                  {t.benchmark.legend}
+                </strong>
                 <p className="flex items-center gap-2 text-xs">
                   <div className="w-3 h-3 block rounded-full bg-[#3b82f6]"></div>{" "}
                   <i>{t.benchmark.bestSupplier}</i>
