@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FilterTabs } from "@/components/ui/filter-tabs";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
@@ -79,7 +80,8 @@ export const Route = createFileRoute("/(public)/benchmark")({
 });
 
 function RouteComponent() {
-  const { FilterSection, activeBuildFilter, type } = useBenchmarkFilters();
+  const { FilterSection, activeBuildFilter, type, setType } =
+    useBenchmarkFilters();
   const { t } = useTranslation();
   const { data: filteredResponse } = useQuery({
     queryKey: ["units-benchmarks", JSON.stringify(activeBuildFilter)],
@@ -173,13 +175,13 @@ function RouteComponent() {
         <div className="h-full w-full flex items-start pt-10 justify-between max-lg:flex-col-reverse gap-10 xl:gap-20 transition-all">
           {FilterSection}
           <div className="w-full max-lg:w-full! flex flex-col items-start">
-            <div className="flex flex-col w-full gap-4 ">
-              <h2 className="text-primary font-semibold">
-                {t.benchmark.visualization}
-              </h2>
-              <div className="flex flex-wrap gap-4 justify-between items-center mb-2">
+            <div className="flex flex-wrap items-start gap-x-4 gap-y-4 mb-2">
+              <div className="flex flex-col gap-2">
+                <h2 className="text-primary font-semibold">
+                  {t.benchmark.visualization}
+                </h2>
                 <Select onValueChange={setSelectedChart} value={selectedChart}>
-                  <SelectTrigger className="w-[200px] self-start mb-4">
+                  <SelectTrigger className="w-[200px] !h-10">
                     <SelectValue placeholder={t.benchmark.chartPlaceholder} />
                   </SelectTrigger>
                   <SelectContent defaultValue={"co2"}>
@@ -193,6 +195,19 @@ function RouteComponent() {
                   </SelectContent>
                 </Select>
               </div>
+              {selectedChart !== "map" && (
+                <div className="flex flex-col gap-2">
+                  <h2 className="text-primary font-semibold">
+                    {t.benchmark.filters.indicators}
+                  </h2>
+                  <FilterTabs
+                    tabs={["co2", "energy"]}
+                    onTabSelect={(tab) => setType(tab as "co2" | "energy")}
+                    selectedTab={type}
+                    className="!h-10"
+                  />
+                </div>
+              )}
             </div>
             <div className="w-full">
               {isBaseLoading ? (
