@@ -1345,6 +1345,7 @@ paths:
   /v1/projects/{projectID}/units/{unitID}/options/{optionID}/modules:
     post:
       summary: Create a new module for a unit option
+      description: Compatibility endpoint. For beam_column, concrete_wall, and structural_masonry, v1 only accepts legacy concrete_* structures and rejects aggregated concrete/steel payload fields. Use /v2 endpoints for aggregated concrete/steel format.
       tags:
         - Modules
       parameters:
@@ -1371,7 +1372,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ModuleCreateRequest"
+              $ref: "#/components/schemas/ModuleCreateRequestV1"
             examples:
               beam_column:
                 summary: "Beam Column Module (new format)"
@@ -1744,10 +1745,15 @@ paths:
       responses:
         "201":
           description: Module created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModuleResponseV1"
 
   /v1/projects/{projectID}/units/{unitID}/options/{optionID}/modules/{moduleID}:
     get:
       summary: Get a module by ID
+      description: Compatibility endpoint. For beam_column, concrete_wall, and structural_masonry, response omits aggregated concrete/steel fields and removes steel item position from legacy nested structures.
       tags:
         - Modules
       parameters:
@@ -1778,6 +1784,10 @@ paths:
       responses:
         "200":
           description: A single module
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModuleResponseV1"
     delete:
       summary: Delete a module
       tags:
@@ -1812,6 +1822,7 @@ paths:
           description: Successfully deleted
     patch:
       summary: Update a module
+      description: Compatibility endpoint. For beam_column, concrete_wall, and structural_masonry, v1 only accepts legacy concrete_* structures and rejects aggregated concrete/steel payload fields. Use /v2 endpoints for aggregated concrete/steel format.
       tags:
         - Modules
       parameters:
@@ -1844,7 +1855,124 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ModuleCreateRequest"
+              $ref: "#/components/schemas/ModuleCreateRequestV1"
+      responses:
+        "200":
+          description: module successfully updated
+
+  /v2/projects/{projectID}/units/{unitID}/options/{optionID}/modules:
+    post:
+      summary: Create a new module for a unit option (v2)
+      description: Preferred endpoint for module creation with full support for aggregated concrete/steel payload format.
+      tags:
+        - Modules
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: optionID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModuleCreateRequestV2"
+      responses:
+        "201":
+          description: Module created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModuleResponseV2"
+
+  /v2/projects/{projectID}/units/{unitID}/options/{optionID}/modules/{moduleID}:
+    get:
+      summary: Get a module by ID (v2)
+      description: Preferred endpoint for module reads, returning full module representation including aggregated fields when applicable.
+      tags:
+        - Modules
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: optionID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: moduleID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: A single module
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModuleResponseV2"
+    patch:
+      summary: Update a module (v2)
+      description: Preferred endpoint for module updates with full support for aggregated concrete/steel payload format.
+      tags:
+        - Modules
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: optionID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: moduleID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModuleCreateRequestV2"
       responses:
         "200":
           description: module successfully updated
@@ -2409,8 +2537,91 @@ components:
         - active
 
     # --- Module Schemas ---
+    ModulePayloadV1:
+      type: object
+      description: "Polymorphic module payload for v1 endpoints. For beam_column, concrete_wall, and structural_masonry, only legacy concrete_* structures are accepted."
+      properties:
+        type:
+          type: string
+          description: "The type of structural module."
+          enum:
+            [
+              beam_column,
+              concrete_wall,
+              structural_masonry,
+              raft_foundation,
+              piles_foundation,
+              raft_piles_foundation,
+            ]
+        data:
+          description: "Polymorphic data containing the specific details for the chosen module type."
+          oneOf:
+            - $ref: "#/components/schemas/BeamColumnDataV1"
+            - $ref: "#/components/schemas/ConcreteWallDataV1"
+            - $ref: "#/components/schemas/StructuralMasonryDataV1"
+            - $ref: "#/components/schemas/RaftFoundationData"
+            - $ref: "#/components/schemas/PilesFoundationData"
+            - $ref: "#/components/schemas/RaftPilesFoundationData"
+      required:
+        - type
+        - data
+
+    ModulePayloadV2:
+      type: object
+      description: "Polymorphic module payload for v2 endpoints. Supports aggregated concrete/steel fields and keeps legacy concrete_* fields as deprecated for backward compatibility."
+      properties:
+        type:
+          type: string
+          description: "The type of structural module."
+          enum:
+            [
+              beam_column,
+              concrete_wall,
+              structural_masonry,
+              raft_foundation,
+              piles_foundation,
+              raft_piles_foundation,
+            ]
+        data:
+          description: "Polymorphic data containing the specific details for the chosen module type."
+          oneOf:
+            - $ref: "#/components/schemas/BeamColumnDataV2"
+            - $ref: "#/components/schemas/ConcreteWallDataV2"
+            - $ref: "#/components/schemas/StructuralMasonryDataV2"
+            - $ref: "#/components/schemas/RaftFoundationData"
+            - $ref: "#/components/schemas/PilesFoundationData"
+            - $ref: "#/components/schemas/RaftPilesFoundationData"
+      required:
+        - type
+        - data
+
+    ModuleCreateRequestV1:
+      allOf:
+        - $ref: "#/components/schemas/ModulePayloadV1"
+
+    ModuleCreateRequestV2:
+      allOf:
+        - $ref: "#/components/schemas/ModulePayloadV2"
+
+    ModuleResponseV1:
+      type: object
+      properties:
+        module:
+          $ref: "#/components/schemas/ModulePayloadV1"
+      required:
+        - module
+
+    ModuleResponseV2:
+      type: object
+      properties:
+        module:
+          $ref: "#/components/schemas/ModulePayloadV2"
+      required:
+        - module
+
     ModuleCreateRequest:
       type: object
+      deprecated: true
       description: "Request body for creating a new structural module. A module represents a specific structural system (e.g., beam-column or concrete wall) applied to a set of floors within a unit option."
       properties:
         type:
@@ -2437,6 +2648,273 @@ components:
       required:
         - type
         - data
+
+    BeamColumnDataV1:
+      type: object
+      description: "Legacy-only data for a 'beam_column' module in v1 endpoints."
+      properties:
+        floor_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        concrete_columns:
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        concrete_beams:
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        concrete_slabs:
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
+        form_columns:
+          type: number
+        form_beams:
+          type: number
+        form_slabs:
+          type: number
+        form_total:
+          type: number
+        column_number:
+          type: integer
+        avg_beam_span:
+          type: number
+        avg_slab_span:
+          type: number
+      required:
+        - floor_ids
+        - concrete_columns
+        - concrete_beams
+        - concrete_slabs
+
+    BeamColumnDataV2:
+      type: object
+      description: "Preferred data for a 'beam_column' module in v2 endpoints."
+      oneOf:
+        - required: [concrete, steel]
+        - required: [concrete_columns, concrete_beams, concrete_slabs]
+      properties:
+        floor_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        concrete:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/BeamColumnConcrete"
+        steel:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/BeamColumnSteel"
+        concrete_columns:
+          deprecated: true
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        concrete_beams:
+          deprecated: true
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        concrete_slabs:
+          deprecated: true
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
+        form_columns:
+          type: number
+        form_beams:
+          type: number
+        form_slabs:
+          type: number
+        form_total:
+          type: number
+        column_number:
+          type: integer
+        avg_beam_span:
+          type: number
+        avg_slab_span:
+          type: number
+      required:
+        - floor_ids
+
+    ConcreteWallDataV1:
+      type: object
+      description: "Legacy-only data for a 'concrete_wall' module in v1 endpoints."
+      properties:
+        floor_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        concrete_walls:
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        concrete_slabs:
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
+        wall_thickness:
+          type: number
+        slab_thickness:
+          type: number
+        wall_area:
+          type: number
+        slab_area:
+          type: number
+        wall_form_area:
+          type: number
+        slab_form_area:
+          type: number
+      required:
+        - floor_ids
+        - concrete_walls
+        - concrete_slabs
+
+    ConcreteWallDataV2:
+      type: object
+      description: "Preferred data for a 'concrete_wall' module in v2 endpoints."
+      oneOf:
+        - required: [concrete, steel]
+        - required: [concrete_walls, concrete_slabs]
+      properties:
+        floor_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        concrete:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ConcreteWallConcrete"
+        steel:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ConcreteWallSteel"
+        concrete_walls:
+          deprecated: true
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        concrete_slabs:
+          deprecated: true
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
+        wall_thickness:
+          type: number
+        slab_thickness:
+          type: number
+        wall_area:
+          type: number
+        slab_area:
+          type: number
+        wall_form_area:
+          type: number
+        slab_form_area:
+          type: number
+      required:
+        - floor_ids
+
+    StructuralMasonryDataV1:
+      type: object
+      description: "Legacy-only data for a 'structural_masonry' module in v1 endpoints."
+      properties:
+        floor_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        concrete_columns:
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        concrete_beams:
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        concrete_slabs:
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
+        form_columns:
+          type: number
+        form_beams:
+          type: number
+        form_slabs:
+          type: number
+        form_total:
+          type: number
+        masonry:
+          type: object
+        wall_area:
+          type: number
+        wall_form_area:
+          type: number
+      required:
+        - floor_ids
+        - masonry
+
+    StructuralMasonryDataV2:
+      type: object
+      description: "Preferred data for a 'structural_masonry' module in v2 endpoints."
+      properties:
+        floor_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        concrete:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/StructuralMasonryConcrete"
+        steel:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/StructuralMasonrySteel"
+        concrete_columns:
+          deprecated: true
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        concrete_beams:
+          deprecated: true
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        concrete_slabs:
+          deprecated: true
+          allOf:
+            - $ref: "#/components/schemas/ConcreteElement"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
+        form_columns:
+          type: number
+        form_beams:
+          type: number
+        form_slabs:
+          type: number
+        form_total:
+          type: number
+        masonry:
+          type: object
+        wall_area:
+          type: number
+        wall_form_area:
+          type: number
+      required:
+        - floor_ids
+        - masonry
 
     # Schema for a single concrete volume item
     ConcreteVolumeItem:

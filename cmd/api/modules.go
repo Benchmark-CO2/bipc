@@ -12,23 +12,35 @@ import (
 	"github.com/google/uuid"
 )
 
-func (app *application) parseModule(w http.ResponseWriter, r *http.Request) (modules.Module, error) {
-	var wrapper struct {
-		Type string          `json:"type"`
-		Data json.RawMessage `json:"data"`
-	}
+type modulePayloadWrapper struct {
+	Type string          `json:"type"`
+	Data json.RawMessage `json:"data"`
+}
+
+var v1LegacyOnlyModuleTypes = map[string]bool{
+	"beam_column":        true,
+	"concrete_wall":      true,
+	"structural_masonry": true,
+}
+
+func (app *application) parseModulePayload(w http.ResponseWriter, r *http.Request) (modulePayloadWrapper, error) {
+	var wrapper modulePayloadWrapper
 
 	if err := app.readJSON(w, r, &wrapper); err != nil {
-		return nil, err
+		return modulePayloadWrapper{}, err
 	}
 
 	if wrapper.Type == "" {
-		return nil, errors.New("missing or invalid 'type' field")
+		return modulePayloadWrapper{}, errors.New("missing or invalid 'type' field")
 	}
 	if wrapper.Data == nil {
-		return nil, errors.New("missing or invalid 'data' field")
+		return modulePayloadWrapper{}, errors.New("missing or invalid 'data' field")
 	}
 
+	return wrapper, nil
+}
+
+func (app *application) parseModuleFromPayload(wrapper modulePayloadWrapper) (modules.Module, error) {
 	module, err := modules.ParseModuleType(wrapper.Type)
 	if err != nil {
 		return nil, err
@@ -39,6 +51,97 @@ func (app *application) parseModule(w http.ResponseWriter, r *http.Request) (mod
 	}
 
 	return module, nil
+}
+
+func validateV1LegacyModulePayload(wrapper modulePayloadWrapper) error {
+	if !v1LegacyOnlyModuleTypes[wrapper.Type] {
+		return nil
+	}
+
+	data := map[string]any{}
+	if err := json.Unmarshal(wrapper.Data, &data); err != nil {
+		return fmt.Errorf("invalid json format for module data: %w", err)
+	}
+
+	if _, hasConcrete := data["concrete"]; hasConcrete {
+		return errors.New("v1 does not accept 'concrete' aggregated field; use legacy concrete_* fields or /v2 endpoints")
+	}
+
+	if _, hasSteel := data["steel"]; hasSteel {
+		return errors.New("v1 does not accept 'steel' aggregated field; use legacy concrete_* fields or /v2 endpoints")
+	}
+
+	return nil
+}
+
+func removePositionFromLegacySteelItems(moduleMap map[string]any) {
+	legacyConcreteKeys := []string{
+		"concrete_columns",
+		"concrete_beams",
+		"concrete_slabs",
+		"concrete_walls",
+	}
+
+	for _, key := range legacyConcreteKeys {
+		elRaw, ok := moduleMap[key]
+		if !ok {
+			continue
+		}
+
+		element, ok := elRaw.(map[string]any)
+		if !ok {
+			continue
+		}
+
+		steelRaw, ok := element["steel"]
+		if !ok {
+			continue
+		}
+
+		steelItems, ok := steelRaw.([]any)
+		if !ok {
+			continue
+		}
+
+		for _, item := range steelItems {
+			steelItem, ok := item.(map[string]any)
+			if !ok {
+				continue
+			}
+
+			delete(steelItem, "position")
+		}
+	}
+}
+
+func toV1ModuleResponse(module modules.Module) (map[string]any, error) {
+	encoded, err := json.Marshal(module)
+	if err != nil {
+		return nil, err
+	}
+
+	moduleMap := map[string]any{}
+	if err := json.Unmarshal(encoded, &moduleMap); err != nil {
+		return nil, err
+	}
+
+	typeValue, _ := moduleMap["type"].(string)
+	if v1LegacyOnlyModuleTypes[typeValue] {
+		delete(moduleMap, "concrete")
+		delete(moduleMap, "steel")
+		removePositionFromLegacySteelItems(moduleMap)
+	}
+
+	return moduleMap, nil
+}
+
+func (app *application) parseModule(w http.ResponseWriter, r *http.Request) (modules.Module, error) {
+	wrapper, err := app.parseModulePayload(w, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return app.parseModuleFromPayload(wrapper)
 }
 
 // insertModule centralizes module validation, calculation and persistence.
@@ -182,6 +285,63 @@ func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+func (app *application) createModuleV1Handler(w http.ResponseWriter, r *http.Request) {
+	optionID, _ := app.readUUIDParam(r, "optionID")
+
+	wrapper, err := app.parseModulePayload(w, r)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if err := validateV1LegacyModulePayload(wrapper); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	module, err := app.parseModuleFromPayload(wrapper)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	newModule, err := app.insertModule(module, optionID)
+	if err != nil {
+		var ve *ValidationError
+		if errors.As(err, &ve) {
+			app.failedValidationResponse(w, r, ve.Errors)
+			return
+		}
+
+		switch {
+		case errors.Is(err, data.ErrInvalidOptionID):
+			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrInvalidFloorID):
+			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrInvalidUnitID):
+			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrZeroArea):
+			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.badRequestResponse(w, r, errors.New("one or more floors do not exist"))
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	v1Module, err := toV1ModuleResponse(newModule)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"module": v1Module}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
 func (app *application) readModuleHandler(w http.ResponseWriter, r *http.Request) {
 	moduleID, err := app.readUUIDParam(r, "moduleID")
 	if err != nil {
@@ -218,6 +378,53 @@ func (app *application) readModuleHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"module": module}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) readModuleV1Handler(w http.ResponseWriter, r *http.Request) {
+	moduleID, err := app.readUUIDParam(r, "moduleID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	moduleType, err := app.models.Modules.GetModuleType(moduleID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	moduleAPI, err := modules.ParseModuleType(moduleType)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	module, err := moduleAPI.Get(app.models, moduleID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	v1Module, err := toV1ModuleResponse(module)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"module": v1Module}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -295,6 +502,100 @@ func (app *application) updateModuleHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"module": updatedModule}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) updateModuleV1Handler(w http.ResponseWriter, r *http.Request) {
+	moduleID, err := app.readUUIDParam(r, "moduleID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	optionID, err := app.readUUIDParam(r, "optionID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	wrapper, err := app.parseModulePayload(w, r)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if err := validateV1LegacyModulePayload(wrapper); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	module, err := app.parseModuleFromPayload(wrapper)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	existingModuleType, err := app.models.Modules.GetModuleType(moduleID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	if module.GetType() != existingModuleType {
+		app.badRequestResponse(w, r, fmt.Errorf("module type mismatch: existing type is '%s', but received '%s'", existingModuleType, module.GetType()))
+		return
+	}
+
+	v := validator.New()
+	module.Validate(v)
+	if !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	result, err := module.Calculate()
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = module.Update(app.models, moduleID, optionID, result)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		case errors.Is(err, data.ErrInvalidFloorID):
+			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrInvalidUnitID):
+			app.badRequestResponse(w, r, err)
+		case errors.Is(err, data.ErrZeroArea):
+			app.badRequestResponse(w, r, err)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	updatedModule, err := module.Get(app.models, moduleID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	v1Module, err := toV1ModuleResponse(updatedModule)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"module": v1Module}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

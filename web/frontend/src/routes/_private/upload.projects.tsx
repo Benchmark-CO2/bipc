@@ -1,6 +1,6 @@
 import api from '@/service/api';
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 export const Route = createFileRoute('/_private/upload/projects')({
   component: CsvUploadPage,
@@ -9,9 +9,24 @@ export const Route = createFileRoute('/_private/upload/projects')({
 function CsvUploadPage() {
   const [response, setResponse] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const uploadLockRef = useRef(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (uploadLockRef.current) {
+      return;
+    }
+
+    uploadLockRef.current = true;
+    setIsUploading(true);
+
+    const releaseUploadLock = () => {
+      uploadLockRef.current = false;
+      setIsUploading(false);
+    };
+
     setResponse(null);
     setError(null);
 
@@ -21,6 +36,7 @@ function CsvUploadPage() {
 
     if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
         setError('Please select a file.');
+      releaseUploadLock();
         return;
     }
 
@@ -36,6 +52,7 @@ function CsvUploadPage() {
 
     if (!token) {
         setError('Authentication token not found. Please log in again.');
+      releaseUploadLock();
         return;
     }
 
@@ -58,6 +75,8 @@ function CsvUploadPage() {
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
         setError(errorMessage);
         setResponse(null);
+      } finally {
+        releaseUploadLock();
     }
   };
 
@@ -73,14 +92,16 @@ function CsvUploadPage() {
             name="csv" 
             accept=".csv" 
             required 
+            disabled={isUploading}
             className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" 
           />
         </div>
         <button 
           type="submit" 
+          disabled={isUploading}
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
-          Upload
+          {isUploading ? 'Uploading...' : 'Upload'}
         </button>
       </form>
       {response && (

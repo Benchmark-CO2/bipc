@@ -194,8 +194,6 @@ func ValidateSteelMaterials(v *validator.Validator, materials []SteelMaterial, f
 		if material.Resistance == "other" {
 			v.Check(material.OtherResistance > 0, prefix+".other_resistance",
 				"must be provided and greater than 0 when resistance is 'other'")
-			v.Check(isSupportedOtherResistance(material.OtherResistance), prefix+".other_resistance",
-				"must match a supported resistance value")
 		}
 
 		if material.Resistance != "other" {
@@ -205,18 +203,6 @@ func ValidateSteelMaterials(v *validator.Validator, materials []SteelMaterial, f
 
 		v.Check(material.Mass >= 0, prefix+".mass", "cannot be negative")
 	}
-}
-
-func isSupportedOtherResistance(value float64) bool {
-	if _, ok := sidacSteelData.KgCO2[value]; ok {
-		return true
-	}
-
-	if _, ok := sidacStrandData.KgCO2[value]; ok {
-		return true
-	}
-
-	return false
 }
 
 func isSupportedGroutFgk(value int) bool {

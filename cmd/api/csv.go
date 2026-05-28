@@ -97,12 +97,12 @@ func normalizeBrazilianState(raw string) string {
 }
 
 func normalizeProjectPhase(raw string) string {
-	key := normalizeLookupKey(raw)
-	if key == normalizeLookupKey("Não definido") {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
 		return "not_defined"
 	}
 
-	return strings.TrimSpace(raw)
+	return raw
 }
 
 // Define base required headers (common to all module types)
@@ -432,6 +432,7 @@ type csvProjectResult struct {
 
 // parseFloat is a helper to parse string to float64, handling comma as decimal separator.
 func parseFloat(s string) (float64, error) {
+	s = strings.TrimSpace(s)
 	if s == "" {
 		return 0, nil
 	}
@@ -441,6 +442,7 @@ func parseFloat(s string) (float64, error) {
 
 // parseInt is a helper to parse string to int.
 func parseInt(s string) (int, error) {
+	s = strings.TrimSpace(s)
 	if s == "" {
 		return 0, nil
 	}
@@ -537,6 +539,21 @@ func (p rowParser) optInt(field string) *int {
 	return &val
 }
 
+func parseFloorHeight(p rowParser) float64 {
+	raw := p.str("floor_height")
+	if raw == "" {
+		return 2.8
+	}
+
+	val, err := parseFloat(raw)
+	if err != nil {
+		p.warnf("Could not parse float", "field", "floor_height", "row", p.rowNum, "error", err)
+		return 0
+	}
+
+	return val
+}
+
 // parseBaseCSVRowData builds the BaseCSVRowData shared by all CSV row types.
 func parseBaseCSVRowData(p rowParser) BaseCSVRowData {
 	return BaseCSVRowData{
@@ -554,7 +571,7 @@ func parseBaseCSVRowData(p rowParser) BaseCSVRowData {
 		FloorName:             p.str("floor_name"),
 		FloorArea:             p.float("floor_area"),
 		FloorCategory:         p.str("floor_category"),
-		FloorHeight:           p.float("floor_height"),
+		FloorHeight:           parseFloorHeight(p),
 		FloorRepetition:       p.integer("floor_repetition"),
 	}
 }
@@ -884,7 +901,7 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 	projects := []ProjectFromCSV{}
 	var currentProjectFormCSV *ProjectFromCSV
 	contextToLastFloorIDs := make(map[string][]uuid.UUID)
-	contextToFloorNameToFloorIDs := make(map[string]map[string][]uuid.UUID)
+	projectByName := make(map[string]data.Project)
 	parseErrors := make(map[string]string)
 	skippedProjects := make(map[string]bool)
 
@@ -897,6 +914,7 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 	for _, row := range rows {
 		// Get base data from interface
 		baseData := row.GetBaseData()
+		projectNameKey := strings.ToLower(strings.TrimSpace(baseData.ProjectName))
 
 		// Check if it's a new project row
 		isNewProjectRow := row.GetProjectName() != "" && (currentProjectFormCSV == nil || row.GetProjectName() != currentProjectFormCSV.Project.Name)
@@ -904,6 +922,10 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 		if !isNewProjectRow && currentProjectFormCSV != nil {
 			incomingUnitName := strings.TrimSpace(baseData.UnitName)
 			isNewUnitRow = incomingUnitName != "" && incomingUnitName != currentProjectFormCSV.Unit.Name
+		}
+
+		if isNewProjectRow && skippedProjects[baseData.ProjectName] {
+			continue
 		}
 
 		// Skip rows belonging to a project that already failed parsing.
@@ -929,27 +951,33 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 
 			projectData := data.Project{}
 			if isNewProjectRow {
-				projectID, err := uuid.NewV7()
-				if err != nil {
-					return nil, nil, fmt.Errorf("failed to generate project ID: %w", err)
-				}
+				if existingProject, ok := projectByName[projectNameKey]; ok {
+					projectData = existingProject
+				} else {
+					projectID, err := uuid.NewV7()
+					if err != nil {
+						return nil, nil, fmt.Errorf("failed to generate project ID: %w", err)
+					}
 
-				projectData = data.Project{
-					ID:           projectID,
-					Name:         baseData.ProjectName,
-					CEP:          baseData.ProjectCEP,
-					State:        baseData.ProjectState,
-					City:         baseData.ProjectCity,
-					Neighborhood: baseData.ProjectNeighborhood,
-					Street:       baseData.ProjectStreet,
-					Number:       baseData.ProjectNumber,
-					Phase:        baseData.ProjectPhase,
-				}
+					projectData = data.Project{
+						ID:           projectID,
+						Name:         baseData.ProjectName,
+						CEP:          baseData.ProjectCEP,
+						State:        baseData.ProjectState,
+						City:         baseData.ProjectCity,
+						Neighborhood: baseData.ProjectNeighborhood,
+						Street:       baseData.ProjectStreet,
+						Number:       baseData.ProjectNumber,
+						Phase:        baseData.ProjectPhase,
+					}
 
-				unitName := strings.TrimSpace(baseData.UnitName)
-				if unitName == "" {
-					skipCurrentProject(baseData.ProjectName, fmt.Sprintf("project[%s].unit_name", baseData.ProjectName), fmt.Sprintf("unit_name must be provided for the first row of project '%s'", baseData.ProjectName))
-					continue
+					unitName := strings.TrimSpace(baseData.UnitName)
+					if unitName == "" {
+						skipCurrentProject(baseData.ProjectName, fmt.Sprintf("project[%s].unit_name", baseData.ProjectName), fmt.Sprintf("unit_name must be provided for the first row of project '%s'", baseData.ProjectName))
+						continue
+					}
+
+					projectByName[projectNameKey] = projectData
 				}
 			} else {
 				projectData = currentProjectFormCSV.Project
@@ -983,7 +1011,7 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 				Option: data.Option{
 					ID:      optionID,
 					UnitID:  unitID,
-					Name:    fmt.Sprintf("Option for %s", unitName),
+					Name:    "Simulação 1",
 					Active:  true,
 					Modules: []data.ModuleInfo{},
 				},
@@ -993,7 +1021,9 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 
 		unit := &currentProjectFormCSV.Unit
 
-		// Floor handling by floor_name context. If floor_name repeats, reuse the existing IDs.
+		// Floor handling by row context.
+		// Non-empty floor_name always declares a new floor group, even with repeated names.
+		// Empty floor_name keeps using the latest declared floor IDs in the same context.
 		var floorIDs []uuid.UUID
 		projectName := currentProjectFormCSV.Project.Name
 		contextKey := projectName + "|" + unit.ID.String()
@@ -1007,19 +1037,16 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 			}
 			floorIDs = lastFloorIDs
 		} else {
-			if _, ok := contextToFloorNameToFloorIDs[contextKey]; !ok {
-				contextToFloorNameToFloorIDs[contextKey] = make(map[string][]uuid.UUID)
-			}
-
-			if existingIDs, ok := contextToFloorNameToFloorIDs[contextKey][floorNameKey]; ok {
-				floorIDs = existingIDs
-				contextToLastFloorIDs[contextKey] = floorIDs
-			} else {
-				if baseData.FloorArea <= 0 {
-					skipCurrentProject(projectName, fmt.Sprintf("project[%s].floor_area", projectName), fmt.Sprintf("floor_area must be greater than zero when declaring a new floor '%s' in project '%s'", strings.TrimSpace(baseData.FloorName), projectName))
+			if baseData.FloorArea <= 0 {
+				// TODO: Confirm with researcher whether this fallback should remain the default behavior.
+				lastFloorIDs, ok := contextToLastFloorIDs[contextKey]
+				if !ok {
+					skipCurrentProject(projectName, fmt.Sprintf("project[%s].floor_area", projectName), fmt.Sprintf("floor_area is required to declare the first floor '%s' in project '%s'", strings.TrimSpace(baseData.FloorName), projectName))
 					continue
 				}
 
+				floorIDs = lastFloorIDs
+			} else {
 				floorGroup := strings.TrimSpace(baseData.FloorName)
 				category := baseData.FloorCategory
 				if category == "" {
@@ -1044,7 +1071,6 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 					floorIDs = append(floorIDs, generatedFloorID)
 				}
 
-				contextToFloorNameToFloorIDs[contextKey][floorNameKey] = floorIDs
 				contextToLastFloorIDs[contextKey] = floorIDs
 			}
 		}
@@ -1077,15 +1103,15 @@ func toProjectsFromCSVData(rows []CSVRowData, userID uuid.UUID) ([]ProjectFromCS
 			if hasDataStructuralMasonry(typedRow) {
 				// Build grout array with mandatory Position field.
 				groutArray := []modules.GroutInfo{}
-				if len(typedRow.GroutVertical.Volumes) > 0 || len(typedRow.GroutVertical.Steel) > 0 {
+				if len(typedRow.GroutVertical.Volumes) > 0 {
 					typedRow.GroutVertical.Position = "vertical"
 					groutArray = append(groutArray, typedRow.GroutVertical)
 				}
-				if len(typedRow.GroutHorizontal.Volumes) > 0 || len(typedRow.GroutHorizontal.Steel) > 0 {
+				if len(typedRow.GroutHorizontal.Volumes) > 0 {
 					typedRow.GroutHorizontal.Position = "horizontal"
 					groutArray = append(groutArray, typedRow.GroutHorizontal)
 				}
-				if len(typedRow.GroutGeneral.Volumes) > 0 || len(typedRow.GroutGeneral.Steel) > 0 {
+				if len(typedRow.GroutGeneral.Volumes) > 0 {
 					groutArray = append(groutArray, typedRow.GroutGeneral)
 				}
 
@@ -1426,7 +1452,9 @@ outerLoop:
 		if len(errs) > 0 {
 			result.Errors = errs
 		}
-		results = append(results, result)
+		if status != "success" {
+			results = append(results, result)
+		}
 	}
 
 	// Append parse-time failures (projects skipped before insertion).
