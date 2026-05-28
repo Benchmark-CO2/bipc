@@ -172,9 +172,9 @@ function RouteComponent() {
         <h1 className="text-3xl font-bold text-primary">
           {t.benchmark.pageTitle}
         </h1>
-        <div className="h-full w-full flex items-start pt-10 justify-between max-lg:flex-col-reverse gap-10 xl:gap-20 transition-all">
+        <div className="h-full w-full flex flex-col-reverse items-start gap-10 pt-10 xl:gap-20 xl:grid xl:grid-cols-[clamp(300px,33vw,440px)_1fr] transition-all">
           {FilterSection}
-          <div className="w-full max-lg:w-full! flex flex-col items-start">
+          <div className="w-full min-w-0 flex flex-col items-start">
             <div className="flex flex-wrap items-start gap-x-4 gap-y-4 mb-2">
               <div className="flex flex-col gap-2">
                 <h2 className="text-primary font-semibold">
@@ -204,7 +204,7 @@ function RouteComponent() {
                     tabs={["co2", "energy"]}
                     onTabSelect={(tab) => setType(tab as "co2" | "energy")}
                     selectedTab={type}
-                    className="!h-10"
+                    className="!h-10 !py-0"
                   />
                 </div>
               )}

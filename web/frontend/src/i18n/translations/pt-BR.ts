@@ -17,7 +17,7 @@ export const ptBR = {
     learnMore: "Saiba mais",
     expand: "Expandir",
     collapse: "Recolher",
-    ifcImport: "Importar do IFC"
+    ifcImport: "Importar do IFC",
   },
   errors: {
     unexpectedError: "Erro inesperado. Tente novamente mais tarde.",
@@ -130,7 +130,8 @@ export const ptBR = {
     },
     signUp: {
       title: "Cadastre-se",
-      description: "Crie sua conta para acessar o BIPc e começar a gerenciar seus empreendimentos de forma sustentável.",
+      description:
+        "Crie sua conta para acessar o BIPc e começar a gerenciar seus empreendimentos de forma sustentável.",
       razaoSocial: "Razão Social",
       birthDate: "Data de Nascimento",
       password: "Senha",
@@ -162,7 +163,8 @@ export const ptBR = {
       cnpjTooltip: "Cadastro Nacional de Pessoa Jurídica",
       cnpjPlaceholder: "00.000.000/0000-00",
       creaLabel: "Registro CREA/CAU",
-      creaTooltip: "Para nos certificarmos que relatórios certificados sejam emitidos apenas para profissionais ativos",
+      creaTooltip:
+        "Para nos certificarmos que relatórios certificados sejam emitidos apenas para profissionais ativos",
       creaPlaceholder: "26.2024.9999999",
       birthDateLabel: "Data de Nascimento",
       birthDateTooltip: "Para autenticar a veracidade da identidade",
@@ -172,7 +174,8 @@ export const ptBR = {
       confirmPasswordLabel: "Digite novamente a senha *",
       confirmPasswordPlaceholder: "Digite novamente a senha",
       activityLabel: "Área de Atuação",
-      activityTooltip: "Para identificar a função realizada em colaboração com outros profissionais em um empreendimento",
+      activityTooltip:
+        "Para identificar a função realizada em colaboração com outros profissionais em um empreendimento",
       activityPlaceholder: "Área de Atuação",
       activityArchitecture: "Arquitetura",
       activityCivilEngineering: "Engenharia Civil",
@@ -180,7 +183,8 @@ export const ptBR = {
       activityResearch: "Pesquisa",
       activityOther: "Outro",
       companyNameLabel: "Nome da Empresa",
-      companyNameTooltip: "Para identificar a organização em que o profissional colabora",
+      companyNameTooltip:
+        "Para identificar a organização em que o profissional colabora",
       companyNamePlaceholder: "Nome da Empresa",
       addressSection: "Endereço",
       cepLabel: "CEP",
@@ -198,14 +202,17 @@ export const ptBR = {
       numberPlaceholder: "Nº",
       complementLabel: "Complemento",
       complementPlaceholder: "Complemento",
-      privacyAccept: "Eu declaro estar ciente sobre o uso dos meus dados para as finalidades informadas no formulário de cadastro e concordo a",
+      privacyAccept:
+        "Eu declaro estar ciente sobre o uso dos meus dados para as finalidades informadas no formulário de cadastro e concordo a",
       privacyLink: "Política de Privacidade",
       termsAccept: "Eu declaro estar de acordo com os",
       termsLink: "Termos de Uso",
       termsSuffix: "da plataforma",
-      dataManagement: "Você pode gerenciar seus dados pessoais a qualquer momento.",
+      dataManagement:
+        "Você pode gerenciar seus dados pessoais a qualquer momento.",
       dataRights: "Exercer meus direitos",
-      dataUsageInfo: "Clique aqui e saiba como os seus dados estão sendo utilizados no BIPc.",
+      dataUsageInfo:
+        "Clique aqui e saiba como os seus dados estão sendo utilizados no BIPc.",
       emailAlreadyRegistered: "E-mail já cadastrado",
     },
   },
@@ -237,14 +244,16 @@ export const ptBR = {
       accountManagement: "Gerenciamento de Conta",
       editData: "Editar Dados",
       editDataSuccess: "Dados atualizados",
-      editDataDescriptionSuccess: "As informações foram atualizadas com sucesso",
+      editDataDescriptionSuccess:
+        "As informações foram atualizadas com sucesso",
       deleteAccount: "Excluir Conta",
       individual: "Pessoa Física",
       company: "Pessoa Jurídica",
       accountTypeReadonly: "O tipo de conta não pode ser alterado",
       emailReadonly: "O e-mail não pode ser alterado",
       changePassword: "Alterar senha",
-      changePasswordHint: "Preencha os campos abaixo apenas se desejar alterar sua senha. Deixe em branco para manter a senha atual.",
+      changePasswordHint:
+        "Preencha os campos abaixo apenas se desejar alterar sua senha. Deixe em branco para manter a senha atual.",
       newPasswordLabel: "Nova Senha",
       newPasswordPlaceholder: "Nova senha (opcional)",
       confirmNewPasswordLabel: "Confirmar Nova Senha",
@@ -377,19 +386,24 @@ export const ptBR = {
       newOwner: "Novo Proprietário *",
       newOwnerPlaceholder: "Selecione um colaborador",
       noCollaborators: "Nenhum colaborador disponível",
-      newOwnerMessage: "Você precisa ter pelo menos um colaborador no empreendimento para transferir a propriedade.",
+      newOwnerMessage:
+        "Você precisa ter pelo menos um colaborador no empreendimento para transferir a propriedade.",
       collaboratorLink: "Adicione colaboradores aqui.",
       transferSuccess: "Propriedade transferida com sucesso!",
-      transferSuccessDescription: "Você não é mais o administrador deste empreendimento.",
+      transferSuccessDescription:
+        "Você não é mais o administrador deste empreendimento.",
       transferError: "Erro ao transferir propriedade",
-      transferErrorDescription: "Ocorreu um erro ao transferir a propriedade do empreendimento.",
+      transferErrorDescription:
+        "Ocorreu um erro ao transferir a propriedade do empreendimento.",
       noUserSelectedError: "Selecione um colaborador",
-      noUserSelectedErrorDescription: "Você precisa selecionar um novo proprietário.",
+      noUserSelectedErrorDescription:
+        "Você precisa selecionar um novo proprietário.",
     },
     selectAll: "Selecionar Todos",
     deselectAll: "Desmarcar Todos",
     noProjects: "Você ainda não possui empreendimentos.",
-    noProjectsDescription: "Crie seu primeiro empreendimento para começar a gerenciar suas unidades e simulações.",
+    noProjectsDescription:
+      "Crie seu primeiro empreendimento para começar a gerenciar suas unidades e simulações.",
   },
   units: {
     noUnits: "Nenhuma Edificação",
@@ -509,11 +523,14 @@ export const ptBR = {
       selectType: "Selecione o tipo",
       addGrout: "Adicionar Graute",
       complementaryStructure: "Estrutura complementar (opcional)",
-      warningConcreteNoSteel: "Você adicionou volumes de concreto. É necessário também adicionar aço.",
-      warningSteelNoConcrete: "Você adicionou aço. É necessário também adicionar volumes de concreto.",
+      warningConcreteNoSteel:
+        "Você adicionou volumes de concreto. É necessário também adicionar aço.",
+      warningSteelNoConcrete:
+        "Você adicionou aço. É necessário também adicionar volumes de concreto.",
       warningConcreteZero: "Os volumes de concreto devem ser maiores que 0.",
       warningSteelZero: "As massas de aço devem ser maiores que 0.",
-      warningBothZero: "Tanto os volumes de concreto quanto as massas de aço devem ser maiores que 0.",
+      warningBothZero:
+        "Tanto os volumes de concreto quanto as massas de aço devem ser maiores que 0.",
       blockType: "Tipo *",
       blockFbk: "Fbk (MPa) *",
       blockQuantity: "Quantidade *",
@@ -659,7 +676,7 @@ export const ptBR = {
         xAxisLabelCarbon: "Carbono Embutido",
         xAxisLabelEnergy: "Energia Embutida",
         baseLine: "linha de base",
-        ppp5Line: "PPp 5%"
+        ppp5Line: "PPp 5%",
       },
       classification: {
         name: "Classificação",
@@ -725,8 +742,10 @@ export const ptBR = {
     formButton: "Acessar Formulário",
     hasAccount: "Já tenho conta",
     close: "Fechar",
-    descriptionAuthenticated: "O primeiro grupo de capacitação para a plataforma BIPc está completo. Se você tem interesse em participar dos próximos grupos indique aqui.",
-    descriptionUnauthenticated: "Inscreva-se para participar do treinamento para uso da plataforma. O primeiro passo é criar sua conta na plataforma.",
+    descriptionAuthenticated:
+      "O primeiro grupo de capacitação para a plataforma BIPc está completo. Se você tem interesse em participar dos próximos grupos indique aqui.",
+    descriptionUnauthenticated:
+      "Inscreva-se para participar do treinamento para uso da plataforma. O primeiro passo é criar sua conta na plataforma.",
     wantToParticipate: "Quero participar",
     alreadyRegistered: "Já estou inscrito(a)",
     signUp: "Cadastre-se na plataforma",
@@ -803,8 +822,10 @@ export const ptBR = {
     floor: "Pavimento",
     area: "Área",
     height: "Altura",
-    selectFloors: "Selecione os pavimentos em que esta tecnologia construtiva será aplicada",
-    viewOnlyFloors: "Os pavimentos abaixo são apenas para visualização e não podem ser editados ou selecionados aqui.",
+    selectFloors:
+      "Selecione os pavimentos em que esta tecnologia construtiva será aplicada",
+    viewOnlyFloors:
+      "Os pavimentos abaixo são apenas para visualização e não podem ser editados ou selecionados aqui.",
     addFloors: "Adicione pavimentos",
     toVisualizeTheTower: "para visualizar a torre",
     floorCount_one: "pavimento",
@@ -866,7 +887,8 @@ export const ptBR = {
     loadingMunicipalities: "Carregando municípios...",
     noProjects: "Sem projetos",
     unmatchedWarning: "sem localização precisa",
-    unmatchedTooltip: "Projetos cadastrados com município inconsistente (cidade de outro estado)",
+    unmatchedTooltip:
+      "Projetos cadastrados com município inconsistente (cidade de outro estado)",
     noStateWarning: "sem estado cadastrado",
     noStateTooltip: "Projetos sem estado cadastrado não são exibidos no mapa",
     projects: "projetos",
@@ -878,10 +900,12 @@ export const ptBR = {
     buildings: "Edificações",
     addBuilding: "Adicionar Edificação",
     noBuildingsFound: "Nenhuma edificação encontrada",
-    noBuildingsDescription: "Defina os pavimentos e unidades para organizar a estrutura deste empreendimento.",
+    noBuildingsDescription:
+      "Defina os pavimentos e unidades para organizar a estrutura deste empreendimento.",
     constructiveTechnologies: "Tecnologias Construtivas",
     noTechFound: "Nenhuma tecnologia construtiva encontrada",
-    noTechDescription: "As tecnologias construtivas serão exibidas aqui após as simulações.",
+    noTechDescription:
+      "As tecnologias construtivas serão exibidas aqui após as simulações.",
   },
   collaboratorsView: {
     disciplines: "Disciplinas",
@@ -922,13 +946,15 @@ export const ptBR = {
     passwordMinLength: "A senha deve ter no mínimo 8 caracteres",
     minimumAge: "Você deve ter pelo menos 18 anos",
     termsRequired: "Você deve aceitar os Termos de Uso para se registrar",
-    privacyRequired: "Você deve aceitar a Política de Privacidade para se registrar",
+    privacyRequired:
+      "Você deve aceitar a Política de Privacidade para se registrar",
     nameMinLength: "O nome deve ter pelo menos 3 caracteres",
     selectPhase: "Selecione uma fase do empreendimento",
     selectUnitType: "Selecione um tipo de unidade",
     invalidUnitType: "Tipo de unidade inválido",
     repetitionPositive: "Repetição deve ser maior que zero",
-    housingUnitsPositive: "Quantidade de unidades habitacionais deve ser maior que zero",
+    housingUnitsPositive:
+      "Quantidade de unidades habitacionais deve ser maior que zero",
     floorGroupRequired: "Nome do grupo de pavimento é obrigatório",
     areaRequired: "Área é obrigatória",
     heightRequired: "Altura é obrigatória",
@@ -945,17 +971,24 @@ export const ptBR = {
     nonNegativeNumber: "Deve ser um número não negativo",
     selectStructureType: "Selecione um tipo de estrutura",
     invalidStructureType: "Tipo de estrutura inválido",
-    beamColumnRequired: "Para Viga Pilar são obrigatórios: concreto (colunas, vigas, lajes), formas (colunas, vigas, lajes), número de colunas e vãos médios",
-    concreteWallRequired: "Para Parede de Concreto são obrigatórios: concreto (paredes, lajes), espessuras (parede, laje) e áreas (forma, parede)",
+    beamColumnRequired:
+      "Para Viga Pilar são obrigatórios: concreto (colunas, vigas, lajes), formas (colunas, vigas, lajes), número de colunas e vãos médios",
+    concreteWallRequired:
+      "Para Parede de Concreto são obrigatórios: concreto (paredes, lajes), espessuras (parede, laje) e áreas (forma, parede)",
     towersMin: "O número de torres deve ser maior que 0",
-    floorsWithoutFoundationMin: "O número total de pavimentos deve ser maior que 0",
-    towerTotalFloorsMin: "O número total de pavimentos da torre deve ser maior que 0",
-    basementFloorsMin: "O número de pavimentos do embasamento deve ser maior que 0",
+    floorsWithoutFoundationMin:
+      "O número total de pavimentos deve ser maior que 0",
+    towerTotalFloorsMin:
+      "O número total de pavimentos da torre deve ser maior que 0",
+    basementFloorsMin:
+      "O número de pavimentos do embasamento deve ser maior que 0",
     undergroundFloorsMin: "O número de subsolos deve ser maior que 0",
     typicalFloorsMin: "O número de pavimentos tipo deve ser maior que 0",
     totalBuiltAreaMin: "A área construída total deve ser maior que 0",
-    typicalFloorHeightMin: "A altura do piso a piso do tipo deve ser maior que 0",
-    maxFloorHeightMin: "A maior altura do piso a piso existente deve ser maior que 0",
+    typicalFloorHeightMin:
+      "A altura do piso a piso do tipo deve ser maior que 0",
+    maxFloorHeightMin:
+      "A maior altura do piso a piso existente deve ser maior que 0",
     wallThicknessMin: "A espessura de paredes deve ser maior que 0",
     slabThicknessMin: "A espessura de lajes deve ser maior que 0",
     concreteVolumeMin: "O volume de concreto deve ser maior que 0",
@@ -965,7 +998,8 @@ export const ptBR = {
     selectRow: "Selecionar linha",
     noData: "Sem dado para exibir",
     noDataDescription: "Sem dado de {name} disponível nesta tabela no momento.",
-    noDataDescriptionInteractive: "Crie novos itens para que eles apareçam aqui.",
+    noDataDescriptionInteractive:
+      "Crie novos itens para que eles apareçam aqui.",
     total: "Total",
     average: "Média",
   },
@@ -977,12 +1011,14 @@ export const ptBR = {
     generating: "Gerando...",
     generate: "Gerar nova chave de API",
     copied: "Chave de API copiada para a área de transferência!",
-    oneTimeWarning: "A chave de API é de visualização única. Copie-a agora, pois não será possível vê-la novamente.",
+    oneTimeWarning:
+      "A chave de API é de visualização única. Copie-a agora, pois não será possível vê-la novamente.",
   },
   summaryTechnologies: {
     projects: "Empreendimentos",
     noProjectSelected: "Nenhum empreendimento selecionado.",
-    noProjectDescription: "Por favor, selecione ao menos um empreendimento para visualizar o resumo.",
+    noProjectDescription:
+      "Por favor, selecione ao menos um empreendimento para visualizar o resumo.",
   },
   summaryFloors: {
     floors: "Pavimentos",
@@ -1015,43 +1051,54 @@ export const ptBR = {
     energyMax: "Energia Max. (MJ/m²)",
     quantity: "Quantidade",
     unknown: "Desconhecida",
-    outdatedTech: "Essa tecnologia construtiva está desatualizada devido a mudanças na unidade. Atualize-a!",
+    outdatedTech:
+      "Essa tecnologia construtiva está desatualizada devido a mudanças na unidade. Atualize-a!",
     duplicate: "Duplicar",
     selectRow: "Selecionar linha",
   },
   unitView: {
     tabAllDisciplines: "Todas as disciplinas",
     notFound: "Unidade não encontrada",
-    notFoundDescription: "Não foi possível encontrar a unidade solicitada. Ela pode ter sido removida ou o link está incorreto.",
+    notFoundDescription:
+      "Não foi possível encontrar a unidade solicitada. Ela pode ter sido removida ou o link está incorreto.",
     backToProject: "Voltar ao empreendimento",
     newDiscipline: "Nova disciplina",
     createSimulations: "Criar simulações",
     selectDisciplineTooltip: "Selecione uma disciplina para criar simulações",
     noDisciplines: "Sem Disciplinas para exibir",
-    noDisciplinesDescription: "Você ainda não criou nenhuma disciplina para esta unidade. Crie uma disciplina para começar a criar simulações.",
+    noDisciplinesDescription:
+      "Você ainda não criou nenhuma disciplina para esta unidade. Crie uma disciplina para começar a criar simulações.",
     addDiscipline: "Adicionar Disciplina",
     noSimulations: "Sem simulações para exibir no momento",
-    noSimulationsDescription: "As tecnologias construtivas de todas as disciplinas serão exibidas aqui após a inserção de dados às simulações.",
+    noSimulationsDescription:
+      "As tecnologias construtivas de todas as disciplinas serão exibidas aqui após a inserção de dados às simulações.",
     createFirstSimulation: "Crie sua primeira simulação",
-    createFirstSimulationDescription: "Clique no botão \"Criar simulações\" e adicione os dados do empreendimento.",
+    createFirstSimulationDescription:
+      'Clique no botão "Criar simulações" e adicione os dados do empreendimento.',
     floors: "Pavimentos",
     simulations: "Simulações",
   },
   constructiveTechView: {
     placeholder: "Simulação",
     outdated: "Desatualizado",
-    outdatedTooltip: "Algumas tecnologias construtivas desta simulação estão desatualizadas devido a mudanças na unidade.",
+    outdatedTooltip:
+      "Algumas tecnologias construtivas desta simulação estão desatualizadas devido a mudanças na unidade.",
     noSimulationsFound: "Nenhuma simulação encontrada",
-    noSimulationsDescription: "Nenhum dado disponível nesta tabela. Crie uma nova simulação para começar a adicionar dados.",
+    noSimulationsDescription:
+      "Nenhum dado disponível nesta tabela. Crie uma nova simulação para começar a adicionar dados.",
     duplicateTech: "Duplicar Tecnologia Construtiva",
-    duplicateTechContent: "Tem certeza que deseja duplicar esta tecnologia construtiva? Esta ação criará uma cópia idêntica da tecnologia construtiva, incluindo todos os seus dados técnicos. Você poderá editar os detalhes da nova tecnologia construtiva após a duplicação.",
+    duplicateTechContent:
+      "Tem certeza que deseja duplicar esta tecnologia construtiva? Esta ação criará uma cópia idêntica da tecnologia construtiva, incluindo todos os seus dados técnicos. Você poderá editar os detalhes da nova tecnologia construtiva após a duplicação.",
     deleteTech: "Excluir Tecnologia Construtiva",
     createFirstSimulation: "Crie sua primeira simulação",
-    createFirstSimulationDescription: "Clique em 'Nova Simulação' para adicionar os dados técnicos e das tecnologias construtivas deste empreendimento.",
+    createFirstSimulationDescription:
+      "Clique em 'Nova Simulação' para adicionar os dados técnicos e das tecnologias construtivas deste empreendimento.",
     noTechFound: "Nenhuma tecnologia construtiva encontrada",
-    noTechDescription: "Adicione tecnologias construtivas para essa simulação utilizando o botão \"Adicionar Tecnologia\".",
+    noTechDescription:
+      'Adicione tecnologias construtivas para essa simulação utilizando o botão "Adicionar Tecnologia".',
     duplicateSimulation: "Duplicar Simulação",
-    duplicateSimulationContent: "Tem certeza que deseja duplicar esta simulação? Esta ação criará uma cópia idêntica da simulação, incluindo todas as tecnologias construtivas associadas. Você poderá editar os detalhes da nova simulação após a duplicação.",
+    duplicateSimulationContent:
+      "Tem certeza que deseja duplicar esta simulação? Esta ação criará uma cópia idêntica da simulação, incluindo todas as tecnologias construtivas associadas. Você poderá editar os detalhes da nova simulação após a duplicação.",
     deleteSimulation: "Excluir Simulação",
     successDeleteSimulation: "Simulação excluída com sucesso",
     errorDeleteSimulation: "Erro ao deletar Simulação",
@@ -1069,25 +1116,31 @@ export const ptBR = {
     title: "Disciplinas",
     editDiscipline: "Editar disciplina",
     deleteDiscipline: "Excluir disciplina",
-    description: "Para realizar simulações, primeiro adicione uma disciplina como \"Estrutural\", \"Fundação\", \"Vedações\" ou qualquer outro título que descreva a sua área de atuação.",
+    description:
+      'Para realizar simulações, primeiro adicione uma disciplina como "Estrutural", "Fundação", "Vedações" ou qualquer outro título que descreva a sua área de atuação.',
     nameLabel: "Nome da disciplina *",
     namePlaceholder: "Vedações",
     nameDuplicate: "A disciplina já existe. Utilize outro nome.",
     descriptionLabel: "Descrição",
     descriptionPlaceholder: "Empreendimentos de alvenaria estrutural",
     showInSimulation: "Visualizar na simulação",
-    showInSimulationDescription: "Habilita esta disciplina para aparecer nas simulações",
+    showInSimulationDescription:
+      "Habilita esta disciplina para aparecer nas simulações",
     permissions: "Permissões",
-    permissionsDescription: "Selecione as permissões que as pessoas atribuídas a esta disciplina terão.",
+    permissionsDescription:
+      "Selecione as permissões que as pessoas atribuídas a esta disciplina terão.",
     selectAll: "Selecionar todas",
     searchCollaborators: "Buscar colaboradores",
-    searchCollaboratorsDescription: "Selecione os colaboradores que fazem parte desta disciplina.",
-    searchCollaboratorsWarning: "Importante: Se o seu usuário faz parte deste grupo, não esqueça de se adicionar.",
+    searchCollaboratorsDescription:
+      "Selecione os colaboradores que fazem parte desta disciplina.",
+    searchCollaboratorsWarning:
+      "Importante: Se o seu usuário faz parte deste grupo, não esqueça de se adicionar.",
     collaboratorPlaceholder: "Colaborador...",
     searchPlaceholder: "Buscar colaborador...",
     noCollaboratorFound: "Nenhum colaborador encontrado.",
     noCollaboratorAdded: "Nenhum colaborador adicionado",
-    noCollaboratorDescription: "É necessário adicionar pelo menos 1 colaborador à disciplina.",
+    noCollaboratorDescription:
+      "É necessário adicionar pelo menos 1 colaborador à disciplina.",
     saveChanges: "Salvar alterações",
     addDiscipline: "Adicionar disciplina",
     createSuccess: "Disciplina criada com sucesso!",
@@ -1119,7 +1172,7 @@ export const ptBR = {
     description:
       "Esta página ainda está em desenvolvimento e não está disponível no momento. Estamos trabalhando para lançá-la em breve. Agradecemos a compreensão!",
     predictDate: "Previsão de lançamento: {date}",
-  }
+  },
 } as const;
 
 type StringifyValues<T> = {
