@@ -22,7 +22,9 @@ interface GeoCollection<P> {
   features: GeoFeature<P>[];
 }
 
-export interface GeoCanvasProps<P extends { sigla?: string; codarea?: string }> {
+export interface GeoCanvasProps<
+  P extends { sigla?: string; codarea?: string },
+> {
   geo: GeoCollection<P>;
   keyProp: "sigla" | "codarea";
   colorScale: (key: string) => string;
@@ -38,6 +40,7 @@ export interface GeoCanvasProps<P extends { sigla?: string; codarea?: string }> 
   zoomEnableTitle?: string;
   zoomDisableTitle?: string;
   zoomButtonLabel?: string;
+  labelFn?: (key: string) => string | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -68,8 +71,8 @@ function hitTest(
 ): string | null {
   const rect = visibleCanvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  const scaleX = (hitCanvas.width / dpr) / rect.width;
-  const scaleY = (hitCanvas.height / dpr) / rect.height;
+  const scaleX = hitCanvas.width / dpr / rect.width;
+  const scaleY = hitCanvas.height / dpr / rect.height;
   const px = Math.round((clientX - rect.left) * scaleX * dpr);
   const py = Math.round((clientY - rect.top) * scaleY * dpr);
   const ctx = hitCanvas.getContext("2d", { willReadFrequently: true });
@@ -79,7 +82,9 @@ function hitTest(
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export default function GeoCanvas<P extends { sigla?: string; codarea?: string }>({
+export default function GeoCanvas<
+  P extends { sigla?: string; codarea?: string },
+>({
   geo,
   keyProp,
   colorScale,
@@ -95,10 +100,13 @@ export default function GeoCanvas<P extends { sigla?: string; codarea?: string }
   zoomEnableTitle = "Habilitar zoom",
   zoomDisableTitle = "Desabilitar zoom",
   zoomButtonLabel = "Zoom",
+  labelFn,
 }: GeoCanvasProps<P>) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hitCanvasRef = useRef<HTMLCanvasElement>(null);
-  const zoomRef = useRef<d3.ZoomBehavior<HTMLCanvasElement, unknown> | null>(null);
+  const zoomRef = useRef<d3.ZoomBehavior<HTMLCanvasElement, unknown> | null>(
+    null,
+  );
   const animationFrameRef = useRef<number | null>(null);
   const transformRef = useRef(d3.zoomIdentity);
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
@@ -151,6 +159,31 @@ export default function GeoCanvas<P extends { sigla?: string; codarea?: string }
     }
     visibleCtx.restore();
 
+    // ── Count labels at state centroids (screen space, zoom-invariant) ──────
+    if (labelFn) {
+      visibleCtx.save();
+      visibleCtx.scale(dpr, dpr);
+      visibleCtx.font = "bold 9px sans-serif";
+      visibleCtx.textAlign = "center";
+      visibleCtx.textBaseline = "middle";
+      for (const feat of geo.features) {
+        const key = feat.properties[keyProp] as string;
+        const label = labelFn(key);
+        if (!label) continue;
+        const centroid = path.centroid(feat.geometry);
+        if (!centroid || isNaN(centroid[0]) || isNaN(centroid[1])) continue;
+        const sx = transform.applyX(centroid[0]);
+        const sy = transform.applyY(centroid[1]);
+        if (sx < 0 || sx > width || sy < 0 || sy > height) continue;
+        visibleCtx.lineWidth = 2.5;
+        visibleCtx.strokeStyle = "rgba(0,0,0,0.65)";
+        visibleCtx.strokeText(label, sx, sy);
+        visibleCtx.fillStyle = "white";
+        visibleCtx.fillText(label, sx, sy);
+      }
+      visibleCtx.restore();
+    }
+
     hitCanvas.width = width * dpr;
     hitCanvas.height = height * dpr;
 
@@ -171,7 +204,17 @@ export default function GeoCanvas<P extends { sigla?: string; codarea?: string }
       hitCtx.fill();
     }
     hitCtx.restore();
-  }, [geo, projection, colorScale, hoveredKey, keyProp, width, height, colorMaps]);
+  }, [
+    geo,
+    projection,
+    colorScale,
+    hoveredKey,
+    keyProp,
+    width,
+    height,
+    colorMaps,
+    labelFn,
+  ]);
 
   useEffect(() => {
     drawCanvases();
@@ -233,12 +276,24 @@ export default function GeoCanvas<P extends { sigla?: string; codarea?: string }
       const canvas = canvasRef.current;
       const hitCanvas = hitCanvasRef.current;
       if (!canvas || !hitCanvas) return;
-      const key = hitTest(e.clientX, e.clientY, canvas, hitCanvas, colorMaps.colorToKey);
+      const key = hitTest(
+        e.clientX,
+        e.clientY,
+        canvas,
+        hitCanvas,
+        colorMaps.colorToKey,
+      );
       setHoveredKey(key);
       if (key) {
         const { label, count } = tooltipLabel(key);
         const rect = canvas.getBoundingClientRect();
-        setTooltip({ visible: true, x: e.clientX - rect.left, y: e.clientY - rect.top, label, count });
+        setTooltip({
+          visible: true,
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+          label,
+          count,
+        });
       } else {
         setTooltip((p) => ({ ...p, visible: false }));
       }
@@ -257,14 +312,23 @@ export default function GeoCanvas<P extends { sigla?: string; codarea?: string }
       const canvas = canvasRef.current;
       const hitCanvas = hitCanvasRef.current;
       if (!canvas || !hitCanvas) return;
-      const key = hitTest(e.clientX, e.clientY, canvas, hitCanvas, colorMaps.colorToKey);
+      const key = hitTest(
+        e.clientX,
+        e.clientY,
+        canvas,
+        hitCanvas,
+        colorMaps.colorToKey,
+      );
       if (key) onFeatureClick(key);
     },
     [colorMaps, onFeatureClick],
   );
 
   return (
-    <div className={`relative ${className ?? ""}`} style={{ width: "100%", height }}>
+    <div
+      className={`relative ${className ?? ""}`}
+      style={{ width: "100%", height }}
+    >
       {allowZoom && (
         <button
           type="button"
@@ -276,7 +340,11 @@ export default function GeoCanvas<P extends { sigla?: string; codarea?: string }
           }`}
           title={zoomEnabled ? zoomDisableTitle : zoomEnableTitle}
         >
-          {zoomEnabled ? <Search className="size-3.5" /> : <SearchX className="size-3.5" />}
+          {zoomEnabled ? (
+            <Search className="size-3.5" />
+          ) : (
+            <SearchX className="size-3.5" />
+          )}
           <span className="max-sm:hidden">{zoomButtonLabel}</span>
         </button>
       )}
@@ -302,7 +370,9 @@ export default function GeoCanvas<P extends { sigla?: string; codarea?: string }
             left: tooltip.x + 14,
             top: tooltip.y - 12,
             transform:
-              tooltip.x > width * 0.65 ? "translateX(calc(-100% - 28px))" : undefined,
+              tooltip.x > width * 0.65
+                ? "translateX(calc(-100% - 28px))"
+                : undefined,
           }}
         >
           <p className="font-semibold text-foreground">{tooltip.label}</p>
