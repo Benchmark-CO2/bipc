@@ -5,7 +5,6 @@ import { ArrowLeft } from "lucide-react";
 import { StateMapData } from "@/hooks/useBenchmarkMapData";
 import { useIBGEMunicipalities } from "@/hooks/useIBGEMunicipalities";
 import { countToColor, normalizeCity } from "@/utils/geoUtils";
-import Legend from "@/components/summaryVariants/components/Legend";
 import GeoCanvas from "@/components/charts/components/geo-canvas";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/i18n";
@@ -28,6 +27,16 @@ interface GeoCollection<P> {
 
 type ViewMode = { type: "country" } | { type: "state"; sigla: string };
 
+export interface MapChartStats {
+  isStateView: boolean;
+  sigla?: string;
+  stateName: string;
+  projectCount: number;
+  noStateCount: number;
+  unmatchedCount: number;
+  maxCount: number;
+}
+
 export interface BrazilMapChartProps {
   data: StateMapData[];
   totalCount?: number;
@@ -36,6 +45,7 @@ export interface BrazilMapChartProps {
   className?: string;
   maxHeight?: number;
   allowZoom?: boolean;
+  onStatsChange?: (stats: MapChartStats) => void;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -49,6 +59,7 @@ export default function BrazilMapChart({
   className,
   maxHeight,
   allowZoom = false,
+  onStatsChange,
 }: BrazilMapChartProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -211,6 +222,33 @@ export default function BrazilMapChart({
     );
   }, [view, dataMap]);
 
+  useEffect(() => {
+    if (!onStatsChange) return;
+    onStatsChange({
+      isStateView: view.type === "state",
+      sigla: view.type === "state" ? view.sigla : undefined,
+      stateName,
+      projectCount:
+        view.type === "state"
+          ? stateProjectCount
+          : (totalCount ?? data.reduce((s, d) => s + d.value, 0)),
+      noStateCount,
+      unmatchedCount,
+      maxCount: view.type === "state" ? maxMunCount : maxStateCount,
+    });
+  }, [
+    view,
+    stateName,
+    stateProjectCount,
+    unmatchedCount,
+    noStateCount,
+    maxMunCount,
+    maxStateCount,
+    totalCount,
+    data,
+    onStatsChange,
+  ]);
+
   const isReady = containerWidth > 0 && statesGeo;
   const isLoadingDrilldown = view.type === "state" && munLoading;
 
@@ -232,69 +270,25 @@ export default function BrazilMapChart({
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {/* ── Header ── */}
-          {view.type === "state" ? (
-            <div className="flex flex-col gap-1">
-              <Button
-                onClick={() => setView({ type: "country" })}
-                variant="outline-bipc"
-                size="sm"
-                className="w-fit"
-              >
-                <ArrowLeft className="mr-1" size={16} />
-                {t.brazilMap.backToCountry}
-              </Button>
-              <div className="flex items-baseline gap-2">
-                <h2 className="text-xl font-bold text-foreground">
-                  {stateName}
-                </h2>
-                <span className="text-sm text-muted-foreground font-medium">
-                  {view.sigla}
-                </span>
-              </div>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span>
-                  {t.d3chart.numberOfProjects}:{" "}
-                  <span className="font-medium text-foreground">
-                    {stateProjectCount}
-                  </span>
-                </span>
-                {unmatchedCount > 0 && (
-                  <span title={t.brazilMap.unmatchedTooltip}>
-                    · ⚠ {unmatchedCount} {t.brazilMap.unmatchedWarning}
-                  </span>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-1">
-              <h2 className="text-xl font-bold text-foreground">
-                {t.brazilMap.title}
-              </h2>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span>
-                  {t.d3chart.numberOfProjects}:{" "}
-                  <span className="font-medium text-foreground">
-                    {totalCount ?? data.reduce((s, d) => s + d.value, 0)}
-                  </span>
-                </span>
-                {noStateCount > 0 && (
-                  <span title={t.brazilMap.noStateTooltip}>
-                    · ⚠ {noStateCount} {t.brazilMap.noStateWarning}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground italic mt-0.5">
-                {t.brazilMap.clickStateHint}
-              </p>
-            </div>
+          {/* ── Navigation ── */}
+          {view.type === "state" && (
+            <Button
+              onClick={() => setView({ type: "country" })}
+              variant="outline-bipc"
+              size="sm"
+              className="w-fit"
+            >
+              <ArrowLeft className="mr-1" size={16} />
+              {t.brazilMap.backToCountry}
+            </Button>
           )}
 
-          {/* ── Legend ── */}
-          <Legend
-            variant="map"
-            maxCount={view.type === "state" ? maxMunCount : maxStateCount}
-          />
+          {/* ── Hint ── */}
+          {view.type === "country" && (
+            <p className="text-xs text-muted-foreground italic">
+              {t.brazilMap.clickStateHint}
+            </p>
+          )}
 
           {/* ── Map canvas ── */}
           {view.type === "state" && munGeo ? (

@@ -22,7 +22,7 @@ const Legend = ({ variant = "default", maxCount }: LegendProps) => {
     >
       {variant === "map" ? (
         <div className="flex items-start gap-3">
-          <span className="text-sm font-bold shrink-0 pt-0.5">
+          <span className="text-xs font-bold text-gray-shade-500 shrink-0 pt-0.5">
             {t.benchmark.legend}
           </span>
           <div className="flex flex-col gap-0.5">
