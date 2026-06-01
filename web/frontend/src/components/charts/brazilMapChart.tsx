@@ -152,18 +152,22 @@ export default function BrazilMapChart({
     return lookup;
   }, [view, dataMap]);
 
+  const maxMunCount = useMemo(
+    () => Math.max(...munCityLookup.values(), 1),
+    [munCityLookup],
+  );
+
   const munColorScale = useMemo(() => {
     if (!munGeo) return null;
-    const maxMun = Math.max(...munCityLookup.values(), 1);
     return (codarea: string) => {
       const feat = munGeo.features.find(
         (f) => f.properties.codarea === codarea,
       );
       const count =
         munCityLookup.get(normalizeCity(feat?.properties.name ?? "")) ?? 0;
-      return countToColor(count, maxMun);
+      return countToColor(count, maxMunCount);
     };
-  }, [munGeo, munCityLookup]);
+  }, [munGeo, munCityLookup, maxMunCount]);
 
   const munTooltipLabel = useCallback(
     (codarea: string) => {
@@ -280,8 +284,17 @@ export default function BrazilMapChart({
                   </span>
                 )}
               </div>
+              <p className="text-xs text-muted-foreground italic mt-0.5">
+                {t.brazilMap.clickStateHint}
+              </p>
             </div>
           )}
+
+          {/* ── Legend ── */}
+          <Legend
+            variant="map"
+            maxCount={view.type === "state" ? maxMunCount : maxStateCount}
+          />
 
           {/* ── Map canvas ── */}
           {view.type === "state" && munGeo ? (
@@ -318,9 +331,6 @@ export default function BrazilMapChart({
               zoomButtonLabel={t.d3chart.zoomLabel}
             />
           )}
-
-          {/* ── Legend ── */}
-          <Legend variant="map" />
         </div>
       )}
     </div>

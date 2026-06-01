@@ -687,7 +687,7 @@ export const en: Translations = {
     loadingData: "Loading data...",
     chartTrend: "Maximum and minimum footprint curve",
     chartBenchmark: "Benchmark",
-    chartMap: "Map by State",
+    chartMap: "Map",
     mapNoData: "No data for this state",
     mapLegendMin: "Minimum",
     mapLegendMax: "Maximum",
@@ -887,9 +887,11 @@ export const en: Translations = {
     unmatchedWarning: "without precise location",
     unmatchedTooltip:
       "Projects registered with inconsistent municipality (city from another state)",
-    noStateWarning: "without registered state",
+    noStateWarning: "without state and municipality identification",
     noStateTooltip:
-      "Projects without a registered state are not shown on the map",
+      "Projects without a registered state and municipality are not shown on the map",
+    clickStateHint:
+      "Click on a state to see the detailed distribution of projects by municipality",
     projects: "projects",
     project: "project",
   },

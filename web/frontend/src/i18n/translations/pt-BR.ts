@@ -689,7 +689,7 @@ export const ptBR = {
     loadingData: "Carregando dados...",
     chartTrend: "Curva das pegadas máxima e mínima",
     chartBenchmark: "Benchmark",
-    chartMap: "Mapa por Estado",
+    chartMap: "Mapa",
     mapNoData: "Sem dados para o estado",
     mapLegendMin: "Mínima",
     mapLegendMax: "Máxima",
@@ -889,8 +889,11 @@ export const ptBR = {
     unmatchedWarning: "sem localização precisa",
     unmatchedTooltip:
       "Projetos cadastrados com município inconsistente (cidade de outro estado)",
-    noStateWarning: "sem estado cadastrado",
-    noStateTooltip: "Projetos sem estado cadastrado não são exibidos no mapa",
+    noStateWarning: "sem identificação de estado e município",
+    noStateTooltip:
+      "Empreendimentos sem estado e município cadastrados não são exibidos no mapa",
+    clickStateHint:
+      "Clique em um estado para verificar em detalhe a distribuição de empreendimentos por município",
     projects: "projetos",
     project: "projeto",
   },
