@@ -1,8 +1,15 @@
 import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
 import { IBenchmarkSeries, IBenchmarkSeriesPoint } from "@/actions/benchmarks/types";
 import Logo from "@/assets/logo_full.svg";
+import BrazilMapChart, {
+  type MapChartStats,
+} from "@/components/charts/brazilMapChart";
 import D3RangeChart from '@/components/charts/d3chartCUM';
-import D3GradientRangeLineChart, { SeriesPoint } from "@/components/charts/d3chartLine";
+import D3GradientRangeLineChart, {
+  SeriesPoint,
+} from "@/components/charts/d3chartLine";
+import Legend from "@/components/summaryVariants/components/Legend";
+import { FilterTabs } from "@/components/ui/filter-tabs";
 import {
   Select,
   SelectContent,
@@ -11,6 +18,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useBenchmarkFilters } from "@/hooks/useBenchmarkFilters";
+import { useBenchmarkMapData } from "@/hooks/useBenchmarkMapData";
+import { useWindowSize } from "@/hooks/useWindowSize";
 import { useTranslation } from "@/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -71,7 +80,8 @@ export const Route = createFileRoute("/(public)/benchmark")({
 });
 
 function RouteComponent() {
-  const { FilterSection, activeBuildFilter, type } = useBenchmarkFilters();
+  const { FilterSection, activeBuildFilter, type, setType } =
+    useBenchmarkFilters();
   const { t } = useTranslation();
   const { data: filteredResponse } = useQuery({
     queryKey: ["units-benchmarks", JSON.stringify(activeBuildFilter)],
@@ -92,6 +102,13 @@ function RouteComponent() {
 
   const hasActiveFilter =
     activeBuildFilter.technology.length > 0 || !!activeBuildFilter.floors.get();
+
+  const mapData = useBenchmarkMapData(baseResponse, type === "material" ? "co2" : type);
+  const filteredMapData = useBenchmarkMapData(filteredResponse, type === "material" ? "co2" : type);
+  const activeMapResult =
+    hasActiveFilter && filteredMapData.states.length > 0
+      ? filteredMapData
+      : mapData;
 
   const baseChartData: BenchmarkPoint[] = normalizeBenchmarkSeries(
     baseResponse?.data?.benchmark?.[type],
@@ -141,6 +158,9 @@ function RouteComponent() {
   );
 
   const [selectedChart, setSelectedChart] = useState("co2");
+  const [mapStats, setMapStats] = useState<MapChartStats | null>(null);
+  const { height: viewportHeight } = useWindowSize();
+  const chartMaxHeight = Math.round(viewportHeight * 0.6);
 
   const maxData = chartData.map((d) => (d.max !== undefined ? d.max : 0));
   const minData = chartData.map((d) =>
@@ -153,24 +173,91 @@ function RouteComponent() {
         <h1 className="text-3xl font-bold text-primary">
           {t.benchmark.pageTitle}
         </h1>
-        <div className="h-full w-full flex items-start pt-10 justify-between max-lg:flex-col-reverse gap-10 xl:gap-20 transition-all">
+        <div className="h-full w-full flex flex-col-reverse items-start gap-10 pt-10 xl:gap-20 xl:grid xl:grid-cols-[clamp(300px,33vw,440px)_1fr] transition-all">
           {FilterSection}
-          <div className="w-full max-lg:w-full! flex flex-col items-start">
-            <div className="flex flex-col w-full gap-4 ">
-              <h2 className="text-primary font-semibold">{t.benchmark.visualization}</h2>
-              <div className="flex flex-wrap gap-4 justify-between items-center mb-2">
+          <div className="w-full min-w-0 flex flex-col items-start">
+            <div className="w-full flex flex-wrap items-start gap-x-4 gap-y-4 mb-2">
+              <div className="w-full sm:w-auto flex flex-col gap-2">
+                <h2 className="text-primary font-semibold">
+                  {t.benchmark.visualization}
+                </h2>
                 <Select onValueChange={setSelectedChart} value={selectedChart}>
-                  <SelectTrigger className="w-[200px] self-start mb-4">
+                  <SelectTrigger className="w-full sm:w-[200px] !h-10">
                     <SelectValue placeholder={t.benchmark.chartPlaceholder} />
                   </SelectTrigger>
                   <SelectContent defaultValue={"co2"}>
                     <SelectItem value="trend">
                       {t.benchmark.chartTrend}
                     </SelectItem>
-                    <SelectItem value="co2">{t.benchmark.chartBenchmark}</SelectItem>
+                    <SelectItem value="co2">
+                      {t.benchmark.chartBenchmark}
+                    </SelectItem>
+                    <SelectItem value="map">{t.benchmark.chartMap}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+              {selectedChart !== "map" && (
+                <div className="flex flex-col gap-2">
+                  <h2 className="text-primary font-semibold">
+                    {t.benchmark.filters.indicators}
+                  </h2>
+                  <FilterTabs
+                    tabs={["co2", "energy", "material"]}
+                    onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
+                    selectedTab={type}
+                    className="!h-10 !py-0"
+                  />
+                </div>
+              )}
+              {selectedChart === "map" && mapStats && (
+                <div className="flex-1 min-w-[280px] flex items-stretch gap-4">
+                  <div className="hidden sm:block w-px bg-border" />
+                  <div className="flex flex-col gap-1.5 flex-1">
+                    <div className="flex items-baseline gap-2">
+                      <h2 className="text-primary font-semibold">
+                        {mapStats.isStateView
+                          ? mapStats.stateName
+                          : t.brazilMap.title}
+                      </h2>
+                      {mapStats.isStateView && (
+                        <span className="text-sm text-muted-foreground font-medium">
+                          {mapStats.sigla}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                      <span>
+                        {t.d3chart.numberOfProjects}:{" "}
+                        <span className="font-medium text-foreground">
+                          {mapStats.projectCount}
+                        </span>
+                      </span>
+                      {(mapStats.isStateView
+                        ? mapStats.unmatchedCount
+                        : mapStats.noStateCount) > 0 && (
+                        <span
+                          title={
+                            mapStats.isStateView
+                              ? t.brazilMap.unmatchedTooltip
+                              : t.brazilMap.noStateTooltip
+                          }
+                        >
+                          · ⚠{" "}
+                          {mapStats.isStateView
+                            ? mapStats.unmatchedCount
+                            : mapStats.noStateCount}{" "}
+                          {mapStats.isStateView
+                            ? t.brazilMap.unmatchedWarning
+                            : t.brazilMap.noStateWarning}
+                        </span>
+                      )}
+                    </div>
+                    <div className="self-end">
+                      <Legend variant="map" maxCount={mapStats.maxCount} />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="w-full">
               {isBaseLoading ? (
@@ -184,6 +271,17 @@ function RouteComponent() {
                   selectedBars={selectedFilteredIds}
                   unit={type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
                   summary={false}
+                />
+              ) : selectedChart === "map" ? (
+                <BrazilMapChart
+                  data={activeMapResult.states}
+                  totalCount={activeMapResult.totalCount}
+                  noStateCount={activeMapResult.noStateCount}
+                  unit={type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
+                  className="w-full"
+                  maxHeight={chartMaxHeight}
+                  allowZoom
+                  onStatsChange={setMapStats}
                 />
               ) : (
                 <D3RangeChart
@@ -209,17 +307,21 @@ function RouteComponent() {
               )}
             </div>
 
-            <div className="flex flex-col gap-1 mt-4">
-              <strong className="text-xs text-gray-shade-500">{t.benchmark.legend}</strong>
-              <p className="flex items-center gap-2 text-xs">
-                <div className="w-3 h-3 block rounded-full bg-[#3b82f6]"></div>{" "}
-                <i>{t.benchmark.bestSupplier}</i>
-              </p>
-              <p className="flex items-center gap-2 text-xs">
-                <div className="w-3 h-3 block rounded-full bg-[#E36F35]"></div>{" "}
-                <i>{t.benchmark.worstSupplier}</i>
-              </p>
-            </div>
+            {selectedChart !== "map" && (
+              <div className="flex flex-col gap-1 mt-4">
+                <strong className="text-xs text-gray-shade-500">
+                  {t.benchmark.legend}
+                </strong>
+                <p className="flex items-center gap-2 text-xs">
+                  <div className="w-3 h-3 block rounded-full bg-[#3b82f6]"></div>{" "}
+                  <i>{t.benchmark.bestSupplier}</i>
+                </p>
+                <p className="flex items-center gap-2 text-xs">
+                  <div className="w-3 h-3 block rounded-full bg-[#E36F35]"></div>{" "}
+                  <i>{t.benchmark.worstSupplier}</i>
+                </p>
+              </div>
+            )}
           </div>
         </div>
         <section className="w-full mt-30">

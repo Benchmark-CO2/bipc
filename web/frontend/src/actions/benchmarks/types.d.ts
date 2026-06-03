@@ -11,6 +11,8 @@ export type IBenchmarkSeriesPoint = {
   value: number;
   floors?: string | number;
   technology?: string[];
+  city?: string;
+  state?: string;
 };
 
 export type IBenchmarkSeries = {

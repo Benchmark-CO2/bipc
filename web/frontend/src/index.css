@@ -85,6 +85,13 @@
 
   --color-sidebar: hsl(188, 29%, 10%);
 
+  --map-empty: #D4D4D8;
+  --map-scale-1: #B6E5ED;
+  --map-scale-2: #6EC2CF;
+  --map-scale-3: #3BBACE;
+  --map-scale-4: #20A2B6;
+  --map-scale-5: #187B8B;
+
   --selection-bg: hsl(188, 71%, 42%);
   --selection-fg: hsl(0, 0%, 100%);
 }
@@ -146,6 +153,13 @@
   --chart-5: hsl(340 75% 55%);
 
   --color-sidebar: hsl(188, 29%, 10%);
+
+  --map-empty: #D4D4D8;
+  --map-scale-1: #B6E5ED;
+  --map-scale-2: #6EC2CF;
+  --map-scale-3: #3BBACE;
+  --map-scale-4: #20A2B6;
+  --map-scale-5: #187B8B;
 }
 
 @theme inline {
@@ -377,7 +391,7 @@
   font-style: italic;
   font-weight: 100 900;
   font-display: swap;
-  src: url("./assets/fonts/Roboto-Flex.woff2") format("woff2");
+  src: url("./assets/fonts/robotoflex.woff2") format("woff2");
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
     U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
