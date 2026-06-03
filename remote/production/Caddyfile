@@ -5,3 +5,7 @@
 app.bipc.org.br {
   reverse_proxy localhost:4000
 }
+
+www.app.bipc.org.br {
+  redir https://app.bipc.org.br{uri} permanent
+}
