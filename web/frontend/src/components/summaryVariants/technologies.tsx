@@ -61,7 +61,7 @@ const SimulationsSummary = ({
   data,
   someSelected,
 }: ProjectsSummaryProps) => {
-  const [type, setType] = useState<"co2" | "energy">("co2");
+  const [type, setType] = useState<"co2" | "energy" | "material">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
   const { t } = useTranslation();
@@ -89,7 +89,7 @@ const SimulationsSummary = ({
   ) as any;
 
   const managedData = normalizeBenchmarkSeries(
-    data.benchmark?.[type as "co2" | "energy"],
+    data.benchmark?.[type as "co2" | "energy" | "material"],
   )
     .map((el) => ({
       ...el,
@@ -142,9 +142,11 @@ const SimulationsSummary = ({
       setSelectedProjects(filteredProjects.map((p) => p.id));
     }
   };
+  const listType: "co2" | "energy" = type === "material" ? "co2" : type;
+
   const newData = [
     ...managedData,
-    ...(newItems.map((item) => item[type]) || []),
+    ...(type !== "material" ? (newItems.map((item) => item[listType]) || []) : []),
   ] as any;
   const minData = useMemo(() => newData.map((d: Item) => d.min), [newData]);
   const maxData = useMemo(() => newData.map((d: Item) => d.max), [newData]);
@@ -156,12 +158,16 @@ const SimulationsSummary = ({
     maxValue,
   );
 
+  const listSum = type !== "material"
+    ? newItems.flatMap((el) => el[listType]).reduce((acc, curr) => acc + curr.max, 0)
+    : 0;
+
   return (
     <>
       <div className="w-full flex gap-2 mb-4">
         <FilterTabs
-          tabs={["co2", "energy"]}
-          onTabSelect={(tab) => setType(tab as "co2" | "energy")}
+          tabs={["co2", "energy", "material"]}
+          onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
           selectedTab={type}
           fullWidth
           onSubTabSelect={(tab) => {
@@ -200,7 +206,7 @@ const SimulationsSummary = ({
               />
             )}
             {[
-              ...newItems.map((el) => el[type as "co2" | "energy"] || []),
+              ...(type !== "material" ? newItems.map((el) => el[listType]) : []),
               ...projects.filter(
                 (el) =>
                   !el.consumption &&
@@ -222,11 +228,9 @@ const SimulationsSummary = ({
                       }
                       selectedProjects={selectedProjects}
                       handleAddProject={handleAddProject}
-                      sum={newItems
-                        .flatMap((el) => el[type])
-                        .reduce((acc, curr) => acc + curr.max, 0)}
+                      sum={listSum}
                       color={barColors}
-                      type={type}
+                      type={listType}
                       hasConsumption={!!project.min}
                     />
                   ) : (
@@ -235,11 +239,9 @@ const SimulationsSummary = ({
                       item={project as any}
                       selectedProjects={selectedProjects}
                       handleAddProject={handleAddProject}
-                      sum={newItems
-                        .flatMap((el) => el[type])
-                        .reduce((acc, curr) => acc + curr.max, 0)}
+                      sum={listSum}
                       color={barColors}
-                      type={type}
+                      type={listType}
                       hasConsumption={
                         !!projects.find((el) => el.id === project.id)
                           ?.consumption
@@ -261,13 +263,16 @@ const SimulationsSummary = ({
             maxData={maxData}
             minData={minData}
             totalProjects={updateYs.length}
-            showBaseline
-            showTop5Line
+            showBaseline={type !== "material"}
+            showTop5Line={type !== "material"}
             showProcelScale
-            showMaxCurve
-            showMinCurve
-            showMidCurve
+            showMaxCurve={type !== "material"}
+            showMinCurve={type !== "material"}
+            showMidCurve={type !== "material"}
             showProjectName
+            variant={type === "material" ? "cumulative" : "range"}
+            xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
+            yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
           />
         ) : (
           <D3GradientRangeLineChart

@@ -2,8 +2,8 @@ import { BuildIcon } from "@/components/buildIcons";
 import { TechIcon } from "@/components/techIcons";
 import Divider from "@/components/ui/divider";
 import { FilterTabs } from "@/components/ui/filter-tabs";
-import { useState } from "react";
 import { useTranslation } from "@/i18n";
+import { useState } from "react";
 
 class FilterFloors {
 
@@ -44,7 +44,7 @@ export const useBenchmarkFilters = () => {
     floors: new FilterFloors(),
     technology: [],
   });
-  const [type, setType] = useState<"co2" | "energy">("co2");
+  const [type, setType] = useState<"co2" | "energy" | "material">("co2");
   const { t } = useTranslation();
 
   const handleFloorsFilterChange = (filter: string) => {
@@ -76,8 +76,8 @@ export const useBenchmarkFilters = () => {
           {t.benchmark.filters.indicators}
         </h3>
         <FilterTabs
-          tabs={["co2", "energy"]}
-          onTabSelect={(tab) => setType(tab as "co2" | "energy")}
+          tabs={["co2", "energy", "material"]}
+          onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
           selectedTab={type}
           className="w-full max-w-[500px]"
           tabsStyle="w-full"

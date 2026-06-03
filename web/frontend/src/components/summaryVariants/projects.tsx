@@ -27,13 +27,13 @@ const ProjectsSummary = ({
   someSelected,
   showProjectName = true,
 }: ProjectsSummaryProps) => {
-  const [type, setType] = useState<"co2" | "energy">("co2");
+  const [type, setType] = useState<"co2" | "energy" | "material">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
   const { t } = useTranslation();
   const filterProjects = projects.filter((el) => !!el.consumption);
   const managedData = normalizeBenchmarkSeries(
-    data.benchmark?.[type as "co2" | "energy"],
+    data.benchmark?.[type as "co2" | "energy" | "material"],
   )
     .map((el) => ({
       ...el,
@@ -64,13 +64,15 @@ const ProjectsSummary = ({
 
   const stackedData = useMemo(
     () =>
-      newItems.map((el) => ({
-        id: el[type].id,
-        label: el[type].label,
-        co2: (el.co2.max + el.co2.min) / 2,
-        energy: (el.energy.max + el.energy.min) / 2,
-      })),
-    [newItems],
+      type !== "material"
+        ? newItems.map((el) => ({
+            id: el[type].id,
+            label: el[type].label,
+            co2: (el.co2.max + el.co2.min) / 2,
+            energy: (el.energy.max + el.energy.min) / 2,
+          }))
+        : [],
+    [newItems, type],
   );
 
   const handleAddProject = (projectId: string) => {
@@ -121,7 +123,7 @@ const ProjectsSummary = ({
     0,
   );
 
-  const newDataItems = [...managedData, ...newItems.map((item) => item[type])];
+  const newDataItems = [...managedData, ...(type !== "material" ? newItems.map((item) => item[type]) : [])];
 
   const minData = useMemo(() => newDataItems.map((d) => d.min), [newDataItems]);
   const maxData = useMemo(() => newDataItems.map((d) => d.max), [newDataItems]);
@@ -137,8 +139,8 @@ const ProjectsSummary = ({
     <>
       <div className="w-full flex gap-2 mb-4">
         <FilterTabs
-          tabs={["co2", "energy"]}
-          onTabSelect={(tab) => setType(tab as "co2" | "energy")}
+          tabs={["co2", "energy", "material"]}
+          onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
           selectedTab={type}
           fullWidth
           onSubTabSelect={(tab) => {
@@ -192,7 +194,7 @@ const ProjectsSummary = ({
                   handleAddProject={handleAddProject}
                   sum={sum}
                   color={barColors}
-                  type={type}
+                  type={type as "co2" | "energy"}
                   hasConsumption={
                     !!projects.find((el) => el.id === project.id)?.consumption
                   }
@@ -205,7 +207,7 @@ const ProjectsSummary = ({
                   handleAddProject={handleAddProject}
                   sum={sum}
                   color={barColors}
-                  type={type}
+                  type={type as "co2" | "energy"}
                   hasConsumption={
                     !!projects.find((el) => el.id === project.id)?.consumption
                   }
@@ -225,13 +227,16 @@ const ProjectsSummary = ({
             totalProjects={managedData.length || newData.length}
             minData={minData}
             maxData={maxData}
-            showBaseline
-            showTop5Line
+            showBaseline={type !== "material"}
+            showTop5Line={type !== "material"}
             showProcelScale
-            showMaxCurve
-            showMinCurve
-            showMidCurve
+            showMaxCurve={type !== "material"}
+            showMinCurve={type !== "material"}
+            showMidCurve={type !== "material"}
             showProjectName={showProjectName}
+            variant={type === "material" ? "cumulative" : "range"}
+            xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
+            yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
           />
         ) : (
           <D3GradientRangeLineChart

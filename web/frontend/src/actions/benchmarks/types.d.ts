@@ -22,5 +22,6 @@ export type IBenchmarkResponse = {
   benchmark: {
     co2: IBenchmarkSeries;
     energy: IBenchmarkSeries;
+    material: IBenchmarkSeriesPoint[];
   };
 };

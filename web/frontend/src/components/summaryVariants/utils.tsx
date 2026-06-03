@@ -1,6 +1,7 @@
 import {
-    IBenchmarkResponse,
-    IBenchmarkSeries,
+  IBenchmarkResponse,
+  IBenchmarkSeries,
+  IBenchmarkSeriesPoint,
 } from "@/actions/benchmarks/types";
 import { IProject } from "@/types/projects";
 
@@ -17,14 +18,15 @@ export type SummaryBenchmarkPoint = {
 };
 
 export const normalizeBenchmarkSeries = (
-  series?: IBenchmarkSeries,
+  series?: IBenchmarkSeries | IBenchmarkSeriesPoint[] | undefined,
 ): SummaryBenchmarkPoint[] => {
   if (!series) return [];
+  if (series instanceof Array && series.length > 0 && "value" in series[0]) return series as unknown as SummaryBenchmarkPoint[]; // Apenas para material, que já vem pareado e ordenado
 
   const sortByY = (a: IBenchmarkSeries["min"][number], b: IBenchmarkSeries["min"][number]) =>
     a.y - b.y;
-  const minList = [...(series.min || [])].sort(sortByY);
-  const maxList = [...(series.max || [])].sort(sortByY);
+  const minList = [...((series as IBenchmarkSeries).min || [])].sort(sortByY);
+  const maxList = [...((series as IBenchmarkSeries).max || [])].sort(sortByY);
   const pairCount = Math.min(minList.length, maxList.length);
 
   return Array.from({ length: pairCount }, (_, index) => {

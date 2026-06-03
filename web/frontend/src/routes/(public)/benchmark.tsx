@@ -1,7 +1,7 @@
 import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
-import { IBenchmarkSeries } from "@/actions/benchmarks/types";
+import { IBenchmarkSeries, IBenchmarkSeriesPoint } from "@/actions/benchmarks/types";
 import Logo from "@/assets/logo_full.svg";
-import D3GradientRangeChart from "@/components/charts/d3chart";
+import D3RangeChart from '@/components/charts/d3chartCUM';
 import D3GradientRangeLineChart, { SeriesPoint } from "@/components/charts/d3chartLine";
 import {
   Select,
@@ -10,11 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useBenchmarkFilters } from "@/hooks/useBenchmarkFilters";
+import { useTranslation } from "@/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useBenchmarkFilters } from "@/hooks/useBenchmarkFilters";
-import { useTranslation } from "@/i18n";
 
 type BenchmarkPoint = {
   id: string;
@@ -29,13 +29,14 @@ type BenchmarkPoint = {
 };
 
 // Para o scatter chart: ordenar por y e parear min+max pela ordem
-const normalizeBenchmarkSeries = (series?: IBenchmarkSeries): BenchmarkPoint[] => {
+const normalizeBenchmarkSeries = (series?: IBenchmarkSeries | IBenchmarkSeriesPoint[] | undefined): BenchmarkPoint[] => {
   if (!series) return [];
+  if (series instanceof Array && series.length > 0 && "value" in series[0]) return series as unknown as BenchmarkPoint[]; // Apenas para material, que já vem pareado e ordenado
 
   const sortByY = (a: IBenchmarkSeries["min"][number], b: IBenchmarkSeries["min"][number]) =>
     a.y - b.y;
-  const minList = [...(series.min || [])].sort(sortByY);
-  const maxList = [...(series.max || [])].sort(sortByY);
+  const minList = [...((series as IBenchmarkSeries).min || [])].sort(sortByY);
+  const maxList = [...((series as IBenchmarkSeries).max || [])].sort(sortByY);
   const pairCount = Math.min(minList.length, maxList.length);
 
   return Array.from({ length: pairCount }, (_, index) => {
@@ -107,19 +108,19 @@ function RouteComponent() {
 
   // Line chart: séries independentes sem join por id
   const baseMinSeries = useMemo(
-    () => toSeriesPoints(baseResponse?.data?.benchmark?.[type]?.min),
+    () => toSeriesPoints(type !== 'material' ? baseResponse?.data?.benchmark?.[type]?.min : undefined),
     [baseResponse, type],
   );
   const baseMaxSeries = useMemo(
-    () => toSeriesPoints(baseResponse?.data?.benchmark?.[type]?.max),
+    () => toSeriesPoints(type !== 'material' ? baseResponse?.data?.benchmark?.[type]?.max : undefined),
     [baseResponse, type],
   );
   const filteredMinSeries = useMemo(
-    () => toSeriesPoints(filteredResponse?.data?.benchmark?.[type]?.min),
+    () => toSeriesPoints(type !== 'material' ? filteredResponse?.data?.benchmark?.[type]?.min : undefined),
     [filteredResponse, type],
   );
   const filteredMaxSeries = useMemo(
-    () => toSeriesPoints(filteredResponse?.data?.benchmark?.[type]?.max),
+    () => toSeriesPoints(type !== 'material' ? filteredResponse?.data?.benchmark?.[type]?.max : undefined),
     [filteredResponse, type],
   );
 
@@ -185,7 +186,7 @@ function RouteComponent() {
                   summary={false}
                 />
               ) : (
-                <D3GradientRangeChart
+                <D3RangeChart
                   height={Math.round(window.innerHeight * 0.6)}
                   data={chartData}
                   selectedBars={selectedFilteredIds}
@@ -197,10 +198,13 @@ function RouteComponent() {
                   unit={type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
                   hideBars
                   showProcelScale
-                  showBaseline
-                  showTop5Line
-                  showMaxCurve
-                  showMinCurve
+                  showBaseline={type !== "material"}
+                  showTop5Line={type !== "material"}
+                  showMaxCurve={type !== "material"}
+                  showMinCurve={type !== "material"}
+                  variant={type === "material" ? "cumulative" : "range"}
+                  xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
+                  yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
                 />
               )}
             </div>
