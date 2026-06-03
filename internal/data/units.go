@@ -24,16 +24,16 @@ var (
 )
 
 type Unit struct {
-	ID              uuid.UUID `json:"id"`
-	ProjectID       uuid.UUID `json:"project_id"`
-	Name            string    `json:"name"`
-	Type            string    `json:"type"`
-	RepetitionCount int       `json:"repetition_count"`
-	HousingUnitsCount *int    `json:"housing_units_count,omitempty"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
-	Version         int32     `json:"version"`
-	Floors          []Floor   `json:"floors,omitempty"`
+	ID                uuid.UUID `json:"id"`
+	ProjectID         uuid.UUID `json:"project_id"`
+	Name              string    `json:"name"`
+	Type              string    `json:"type"`
+	RepetitionCount   int       `json:"repetition_count"`
+	HousingUnitsCount *int      `json:"housing_units_count,omitempty"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+	Version           int32     `json:"version"`
+	Floors            []Floor   `json:"floors,omitempty"`
 }
 
 type Consumption struct {
@@ -41,6 +41,7 @@ type Consumption struct {
 	CO2Max    *float64 `json:"co2_max,omitempty"`
 	EnergyMin *float64 `json:"energy_min,omitempty"`
 	EnergyMax *float64 `json:"energy_max,omitempty"`
+	Material  *float64 `json:"material,omitempty"`
 }
 
 type Floor struct {

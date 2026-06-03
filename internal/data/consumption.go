@@ -16,6 +16,7 @@ func newConsumption() *Consumption {
 		CO2Max:    new(float64),
 		EnergyMin: new(float64),
 		EnergyMax: new(float64),
+		Material:  new(float64),
 	}
 }
 
@@ -42,6 +43,9 @@ func (c *Consumption) Add(other *Consumption) {
 	}
 	if other.EnergyMax != nil {
 		*c.EnergyMax += *other.EnergyMax
+	}
+	if other.Material != nil {
+		*c.Material += *other.Material
 	}
 }
 

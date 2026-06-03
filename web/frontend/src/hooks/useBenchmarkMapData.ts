@@ -22,7 +22,7 @@ export interface BenchmarkMapResult {
  */
 export function useBenchmarkMapData(
   response: { data?: IBenchmarkResponse } | undefined,
-  type: "co2" | "energy",
+  type: "co2" | "energy" ,
 ): BenchmarkMapResult {
   return useMemo(() => {
     // Combina min + max e deduplica por id para contar projetos únicos

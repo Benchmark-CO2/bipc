@@ -210,6 +210,8 @@ func (s *StructuralMasonry) Calculate() (Consumption, error) {
 		return Consumption{}, err
 	}
 
+	// TODO: material
+
 	return total, nil
 }
 
@@ -353,6 +355,7 @@ func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Co
 		TotalCO2Max:    &result.CO2Max,
 		TotalEnergyMin: &result.EnergyMin,
 		TotalEnergyMax: &result.EnergyMax,
+		TotalMaterial:  &result.Material,
 		FloorIDs:       s.FloorIDs,
 	}
 }

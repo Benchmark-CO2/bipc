@@ -1,8 +1,8 @@
 import { BuildIcon } from "@/components/buildIcons";
 import { TechIcon } from "@/components/techIcons";
 import Divider from "@/components/ui/divider";
-import { useState } from "react";
 import { useTranslation } from "@/i18n";
+import { useState } from "react";
 
 class FilterFloors {
   constructor(private filterList: string[] = []) {}
@@ -41,7 +41,7 @@ export const useBenchmarkFilters = () => {
     floors: new FilterFloors(),
     technology: [],
   });
-  const [type, setType] = useState<"co2" | "energy">("co2");
+  const [type, setType] = useState<"co2" | "energy" | "material">("co2");
   const { t } = useTranslation();
 
   const handleFloorsFilterChange = (filter: string) => {

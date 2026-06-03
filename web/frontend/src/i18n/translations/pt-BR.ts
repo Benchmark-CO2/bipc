@@ -684,11 +684,18 @@ export const ptBR = {
         xAxisLabelCarbon: "Eficiência",
         xAxisLabelEnergy: "Eficiência",
       },
+      material: {
+        name: "CUM",
+        yAxisLabel: "Classificação dos projetos",
+        xAxisLabelCarbon: "Consumo Unitário de Materiais - CUM (m³/m²)",
+        xAxisLabelEnergy: "Consumo Unitário de Materiais - CUM (m³/m²)",
+      }
     },
     chartPlaceholder: "Gráfico",
     loadingData: "Carregando dados...",
     chartTrend: "Curva das pegadas máxima e mínima",
     chartBenchmark: "Benchmark",
+    chartCum: "CUM",
     chartMap: "Mapa",
     mapNoData: "Sem dados para o estado",
     mapLegendMin: "Mínima",

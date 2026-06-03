@@ -32,6 +32,7 @@ export function FilterTabs({
   const convertTabName = (tab: string) => {
     if (tab.toLowerCase() === "co2") return "CO₂";
     if (tab.toLowerCase() === "energy") return t.filterTabs.energy;
+    if (tab.toLowerCase() === "material") return "CUM";
     return tab;
   };
 

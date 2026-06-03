@@ -73,6 +73,7 @@ func (app *application) duplicateModule(
 		TotalCO2Max:       originalModule.TotalCO2Max,
 		TotalEnergyMin:    originalModule.TotalEnergyMin,
 		TotalEnergyMax:    originalModule.TotalEnergyMax,
+		TotalMaterial:     originalModule.TotalMaterial,
 		RelativeCO2Min:    originalModule.RelativeCO2Min,
 		RelativeCO2Max:    originalModule.RelativeCO2Max,
 		RelativeEnergyMin: originalModule.RelativeEnergyMin,
@@ -88,11 +89,17 @@ func (app *application) duplicateModule(
 	}
 
 	// Convert module totals to Consumption type
+	var material float64
+	if originalModule.TotalMaterial != nil {
+		material = *originalModule.TotalMaterial
+	}
+
 	result := modules.Consumption{
 		CO2Min:    *originalModule.TotalCO2Min,
 		CO2Max:    *originalModule.TotalCO2Max,
 		EnergyMin: *originalModule.TotalEnergyMin,
 		EnergyMax: *originalModule.TotalEnergyMax,
+		Material:  material,
 	}
 
 	// Use centralized function to prepare targets with area calculations
