@@ -687,7 +687,7 @@ export const en: Translations = {
         yAxisLabel: "Project Classification",
         xAxisLabelCarbon: "Unitary Material Consumption - UMC (m³/m²)",
         xAxisLabelEnergy: "Unitary Material Consumption - UMC (m³/m²)",
-      }
+      },
     },
     chartPlaceholder: "Chart",
     loadingData: "Loading data...",
@@ -1174,5 +1174,21 @@ export const en: Translations = {
     description:
       "This page is still under development and is not available at the moment. We're working hard to launch it soon. Thank you for your understanding!",
     predictDate: "Expected launch date: {date}",
+  },
+  apiErrors: {
+    networkError:
+      "No connection to the server. Check your internet connection and try again.",
+    accountNotActivated:
+      "Your account has not been activated yet. Check your email for the activation link.",
+    insufficientPermissions:
+      "You do not have permission to perform this action.",
+    cannotDeleteAdmin:
+      "Cannot delete account: the user is an administrator of one or more projects. Please delete or transfer ownership first.",
+    authRequired: "You must be authenticated to access this resource.",
+    notFound: "The requested resource could not be found.",
+    editConflict:
+      "Unable to update the record due to a conflict. Please try again.",
+    rateLimitExceeded: "Too many requests. Please wait a moment and try again.",
+    serverError: "A server error occurred. Please try again later.",
   },
 };

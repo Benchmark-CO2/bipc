@@ -689,7 +689,7 @@ export const ptBR = {
         yAxisLabel: "Classificação dos projetos",
         xAxisLabelCarbon: "Consumo Unitário de Materiais - CUM (m³/m²)",
         xAxisLabelEnergy: "Consumo Unitário de Materiais - CUM (m³/m²)",
-      }
+      },
     },
     chartPlaceholder: "Gráfico",
     loadingData: "Carregando dados...",
@@ -1182,6 +1182,23 @@ export const ptBR = {
     description:
       "Esta página ainda está em desenvolvimento e não está disponível no momento. Estamos trabalhando para lançá-la em breve. Agradecemos a compreensão!",
     predictDate: "Previsão de lançamento: {date}",
+  },
+  apiErrors: {
+    networkError:
+      "Sem conexão com o servidor. Verifique sua internet e tente novamente.",
+    accountNotActivated:
+      "Sua conta ainda não foi ativada. Verifique seu e-mail para o link de ativação.",
+    insufficientPermissions: "Você não tem permissão para realizar esta ação.",
+    cannotDeleteAdmin:
+      "Não é possível excluir a conta: o usuário é administrador de um ou mais empreendimentos. Exclua ou transfira a propriedade primeiro.",
+    authRequired: "Você precisa estar autenticado para acessar este recurso.",
+    notFound: "O recurso solicitado não foi encontrado.",
+    editConflict:
+      "Não foi possível atualizar o registro devido a um conflito. Tente novamente.",
+    rateLimitExceeded:
+      "Muitas requisições em pouco tempo. Aguarde um momento e tente novamente.",
+    serverError:
+      "Ocorreu um erro no servidor. Por favor, tente novamente mais tarde.",
   },
 } as const;
 
