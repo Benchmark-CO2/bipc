@@ -23,6 +23,12 @@ export const ptBR = {
     unexpectedError: "Erro inesperado. Tente novamente mais tarde.",
     unknownError: "Erro desconhecido",
     loadingProject: "Erro ao carregar projeto",
+    crashTitle: "Algo deu errado",
+    crashDescription:
+      "Ocorreu um erro inesperado na aplicação. Você pode nos ajudar reportando o problema.",
+    tryAgain: "Tentar novamente",
+    goHome: "Ir para o início",
+    reportProblem: "Reportar problema",
   },
   sidebar: {
     about: "Sobre o BIPc",

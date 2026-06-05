@@ -25,6 +25,12 @@ export const en: Translations = {
     unexpectedError: "Unexpected error. Please try again later.",
     unknownError: "Unknown error",
     loadingProject: "Error loading project",
+    crashTitle: "Something went wrong",
+    crashDescription:
+      "An unexpected error occurred in the application. You can help us by reporting the problem.",
+    tryAgain: "Try again",
+    goHome: "Go to home",
+    reportProblem: "Report problem",
   },
   sidebar: {
     about: "About BIPc",
