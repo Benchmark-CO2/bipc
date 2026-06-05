@@ -18,6 +18,7 @@ import { useEffect, useState } from "react";
 import { FieldErrors, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 import { Button } from "../../ui/button";
 import {
   Drawer,
@@ -66,8 +67,7 @@ const DrawerFormUnit = ({
     mutationFn: (data: UnitFormSchema) => postUnit(data, projectId),
     onError: (error) => {
       toast.error(t.units.form.createError, {
-        description:
-          error instanceof Error ? error.message : t.units.form.unknownError,
+        description: parseApiError(error, t),
         duration: 5000,
       });
     },
@@ -96,7 +96,7 @@ const DrawerFormUnit = ({
     mutationFn: (data: UnitFormSchema) => patchUnit(data, projectId, unitId!),
     onError: (error) => {
       toast.error(t.units.form.updateError, {
-        description: error.message || t.units.form.unknownError,
+        description: parseApiError(error, t),
         duration: 5000,
       });
     },

@@ -48,6 +48,7 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 
 export const Route = createFileRoute(
@@ -219,7 +220,10 @@ const OptionMenu = ({
         checked={selectedOptions?.some((opt) => opt.id === option.id) || false}
         onCheckedChange={() => (onSelectOption ? onSelectOption(option) : null)}
       />
-      <SimpleTooltip content={t.constructiveTechView.favoriteOption} side="bottom">
+      <SimpleTooltip
+        content={t.constructiveTechView.favoriteOption}
+        side="bottom"
+      >
         <Button
           variant="ghost"
           size="icon"
@@ -235,7 +239,7 @@ const OptionMenu = ({
             }`}
           />
         </Button>
-        </SimpleTooltip>
+      </SimpleTooltip>
       <Input
         type="text"
         placeholder={t.constructiveTechView.placeholder}
@@ -255,9 +259,7 @@ const OptionMenu = ({
             </div>
           </TooltipTrigger>
           <TooltipContent className="max-w-[200px]">
-            <span>
-              {t.constructiveTechView.outdatedTooltip}
-            </span>
+            <span>{t.constructiveTechView.outdatedTooltip}</span>
           </TooltipContent>
         </Tooltip>
       )}
@@ -297,8 +299,10 @@ function RouteComponent() {
         queryKey: ["options", projectId, unitId],
       });
     },
-    onError: () => {
-      toast.error(t.constructiveTechView.errorDeleteSimulation);
+    onError: (error) => {
+      toast.error(t.constructiveTechView.errorDeleteSimulation, {
+        description: parseApiError(error, t),
+      });
     },
   });
 
@@ -312,8 +316,10 @@ function RouteComponent() {
           queryKey: ["options", projectId, unitId],
         });
       },
-      onError: () => {
-        toast.error(t.constructiveTechView.errorDuplicateSimulation);
+      onError: (error) => {
+        toast.error(t.constructiveTechView.errorDuplicateSimulation, {
+          description: parseApiError(error, t),
+        });
       },
     },
   );
@@ -340,7 +346,7 @@ function RouteComponent() {
     },
     onError: (error) => {
       toast.error(t.constructiveTechView.errorDeleteTech, {
-        description: error.message,
+        description: parseApiError(error, t),
       });
     },
   });
@@ -364,18 +370,19 @@ function RouteComponent() {
     }: {
       optionId: string;
       moduleId: string;
-    }) => postDuplicateModule(projectId, unitId, optionId, moduleId),      onSuccess: () => {
-        toast.success(t.constructiveTechView.successDuplicateTech);
-        queryClient.invalidateQueries({
-          queryKey: ["options", projectId, unitId],
-        });
-      },
-      onError: (error) => {
-        toast.error(t.constructiveTechView.errorDuplicateTech, {
-          description: error.message,
-        });
-      },
-    });
+    }) => postDuplicateModule(projectId, unitId, optionId, moduleId),
+    onSuccess: () => {
+      toast.success(t.constructiveTechView.successDuplicateTech);
+      queryClient.invalidateQueries({
+        queryKey: ["options", projectId, unitId],
+      });
+    },
+    onError: (error) => {
+      toast.error(t.constructiveTechView.errorDuplicateTech, {
+        description: parseApiError(error, t),
+      });
+    },
+  });
 
   useEffect(() => {
     if (!benchmarkData?.data || !unitData?.unit) return;
@@ -543,7 +550,11 @@ function RouteComponent() {
             projectId={projectId}
             unitId={unitId}
             roleId={roleId}
-            triggerComponent={<Button variant="bipc">{t.constructiveTechView.newSimulation}</Button>}
+            triggerComponent={
+              <Button variant="bipc">
+                {t.constructiveTechView.newSimulation}
+              </Button>
+            }
           />
         }
       />
@@ -587,7 +598,10 @@ function RouteComponent() {
                   <>
                     <ModalConfirmDelete
                       componentTrigger={
-                        <SimpleTooltip content={t.constructiveTechView.deleteSimulation} side="bottom">
+                        <SimpleTooltip
+                          content={t.constructiveTechView.deleteSimulation}
+                          side="bottom"
+                        >
                           <Button
                             variant="outline-destructive"
                             size="icon-lg"
@@ -606,11 +620,16 @@ function RouteComponent() {
                     />
                     <ModalSimple
                       title={t.constructiveTechView.duplicateSimulation}
-                      content={t.constructiveTechView.duplicateSimulationContent}
+                      content={
+                        t.constructiveTechView.duplicateSimulationContent
+                      }
                       confirmTitle={t.columns.duplicate}
                       onConfirm={() => duplicateSimulation(option.id)}
                       componentTrigger={
-                        <SimpleTooltip content={t.constructiveTechView.duplicateSimulation} side="bottom">
+                        <SimpleTooltip
+                          content={t.constructiveTechView.duplicateSimulation}
+                          side="bottom"
+                        >
                           <Button
                             variant="outline-bipc"
                             size="icon-lg"

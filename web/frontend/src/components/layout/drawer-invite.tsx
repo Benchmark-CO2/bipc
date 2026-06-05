@@ -57,9 +57,9 @@ const DrawerInvite = ({ projectId }: { projectId: string }) => {
       form.reset();
       setOpenDrawer(false);
     },
-    onError: () => {
+    onError: (error) => {
       toast.error(t.invites.drawerTitle, {
-        description: t.invites.inviteError,
+        description: parseApiError(error, t),
         duration: 5000,
         icon: <CircleX className="stroke-destructive" size={24} />,
       });

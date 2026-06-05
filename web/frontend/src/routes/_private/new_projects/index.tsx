@@ -9,6 +9,7 @@ import NotFoundList from "@/components/ui/not-found-list";
 import { useSummary } from "@/context/summaryContext";
 import { useProjects } from "@/hooks/useProjects";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 import { queryClient } from "@/utils/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -74,8 +75,7 @@ function RouteComponent() {
       })
       .catch((error) => {
         toast.error(t.projects.deleteError, {
-          description:
-            error instanceof Error ? error.message : t.errors.unknownError,
+          description: parseApiError(error, t),
           duration: 5000,
         });
       });
