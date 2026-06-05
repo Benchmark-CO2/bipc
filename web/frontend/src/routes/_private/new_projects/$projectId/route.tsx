@@ -4,11 +4,24 @@ import { getProjectByUUID } from "@/actions/projects/getProject";
 import CustomBanner from "@/components/ui/customBanner";
 import { IProject } from "@/types/projects";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Outlet, useParams } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Outlet,
+  redirect,
+  useParams,
+} from "@tanstack/react-router";
 import { useState } from "react";
 
 export const Route = createFileRoute("/_private/new_projects/$projectId")({
   component: RouteComponent,
+  beforeLoad: ({ context }) => {
+    if (context.auth.activated === false) {
+      throw redirect({
+        to: "/new_projects",
+        search: { activationRequired: true },
+      });
+    }
+  },
   loader: async ({ params, context }) => {
     const { projectId } = params;
     if (!projectId) {

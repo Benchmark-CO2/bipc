@@ -641,7 +641,8 @@ export const en: Translations = {
         "Check your email to continue using the system. If already activated, log in again. If you didn't receive it, check your spam folder or",
       button: "request new access.",
       modalMessage:
-        "Confirm below to activate your account. You will receive an email with the activation link.",
+        'Your account has not been activated yet. To access projects and use the platform, you need to confirm your email. Click "Send Email" to receive the activation link.',
+      alreadyActivatedHint: "Already activated? Log out and sign in again.",
       emailSentSuccess: "Activation email sent successfully. Check your inbox.",
       emailSentPending: "Sending activation email...",
       emailSentError: "Error sending activation email. Please try again later.",

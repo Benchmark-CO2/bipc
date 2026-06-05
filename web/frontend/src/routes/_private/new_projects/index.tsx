@@ -2,22 +2,31 @@ import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
 import { deleteProject } from "@/actions/projects/deleteProjects";
 import { getAllProjectsByUser } from "@/actions/projects/getProjects";
 import { DrawerFormProject, ProjectTable } from "@/components/layout";
+import { ActivationRequiredModal } from "@/components/layout/activation-required-modal";
 import ProjectsSummary from "@/components/summaryVariants/projects";
 import { Button } from "@/components/ui/button";
 import CustomCard from "@/components/ui/customCard";
 import NotFoundList from "@/components/ui/not-found-list";
 import { useSummary } from "@/context/summaryContext";
+import { useAuth } from "@/hooks/useAuth";
 import { useProjects } from "@/hooks/useProjects";
 import { useTranslation } from "@/i18n";
 import { parseApiError } from "@/utils/parseApiError";
 import { queryClient } from "@/utils/queryClient";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_private/new_projects/")({
   component: RouteComponent,
+  validateSearch: (search: Record<string, unknown>) => ({
+    activationRequired: search.activationRequired === true,
+  }),
   staleTime: 1000 * 60 * 5,
   preloadStaleTime: 1000 * 60 * 5,
 
@@ -37,6 +46,22 @@ function RouteComponent() {
   const navigate = useNavigate({ from: "/new_projects" });
   const { setSummaryContext } = useSummary();
   const { t } = useTranslation();
+  const { activated } = useAuth();
+  const { activationRequired } = useSearch({ from: "/_private/new_projects/" });
+  const [isActivationModalOpen, setIsActivationModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (activationRequired) {
+      setIsActivationModalOpen(true);
+      void navigate({ search: {}, replace: true });
+    }
+  }, [activationRequired, navigate]);
+
+  const handleAddProjectClick = () => {
+    if (activated === false) {
+      setIsActivationModalOpen(true);
+    }
+  };
   const { data } = useQuery({
     queryKey: ["projects"],
     queryFn: getAllProjectsByUser,
@@ -147,11 +172,21 @@ function RouteComponent() {
               </Button>
             </>
           )}
-          <DrawerFormProject
-            componentTrigger={
-              <Button variant={"bipc"}>{t.projects.add}</Button>
-            }
+          <ActivationRequiredModal
+            open={isActivationModalOpen}
+            onOpenChange={setIsActivationModalOpen}
           />
+          {activated === false ? (
+            <Button variant={"bipc"} onClick={handleAddProjectClick}>
+              {t.projects.add}
+            </Button>
+          ) : (
+            <DrawerFormProject
+              componentTrigger={
+                <Button variant={"bipc"}>{t.projects.add}</Button>
+              }
+            />
+          )}
         </div>
       </div>
       {viewMode === "table" ? (
@@ -183,11 +218,17 @@ function RouteComponent() {
           message={t.projects.noProjects}
           description={t.projects.noProjectsDescription}
           button={
-            <DrawerFormProject
-              componentTrigger={
-                <Button variant={"bipc"}>{t.projects.add}</Button>
-              }
-            />
+            activated === false ? (
+              <Button variant={"bipc"} onClick={handleAddProjectClick}>
+                {t.projects.add}
+              </Button>
+            ) : (
+              <DrawerFormProject
+                componentTrigger={
+                  <Button variant={"bipc"}>{t.projects.add}</Button>
+                }
+              />
+            )
           }
         />
       )}

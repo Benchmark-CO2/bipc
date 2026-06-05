@@ -641,7 +641,9 @@ export const ptBR = {
         "Verifique seu e-mail para continuar usando o sistema. Se já ativou, faça login novamente. Se não recebeu, confira sua caixa de spam ou",
       button: "solicite um novo acesso.",
       modalMessage:
-        "Confirme abaixo para ativar sua conta. Você receberá um e-mail com o link de ativação.",
+        'Sua conta ainda não foi ativada. Para acessar os empreendimentos e utilizar a plataforma, você precisa confirmar seu e-mail. Clique em "Enviar E-mail" para receber o link de ativação.',
+      alreadyActivatedHint:
+        "Já ativou sua conta? Faça logout e entre novamente.",
       emailSentSuccess:
         "E-mail de ativação enviado com sucesso. Verifique sua caixa de entrada.",
       emailSentPending: "Enviando e-mail de ativação...",
