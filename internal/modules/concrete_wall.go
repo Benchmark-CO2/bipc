@@ -40,6 +40,17 @@ type ConcreteWall struct {
 
 func (w *ConcreteWall) GetType() string { return w.Type }
 
+func (w *ConcreteWall) VersionContract() moduleVersionContract {
+	return moduleVersionContract{
+		v1Disallowed: []string{"concrete", "steel", "form"},
+		v2Disallowed: []string{"concrete_walls", "concrete_slabs", "wall_form_area", "slab_form_area"},
+		toV1:         applyV1LegacyResponse,
+		toV2: func(moduleMap map[string]any) {
+			removeKeys(moduleMap, "concrete_walls", "concrete_slabs", "wall_form_area", "slab_form_area")
+		},
+	}
+}
+
 func (w *ConcreteWall) validPositions() []ElementPosition {
 	return append([]ElementPosition(nil), concreteWallValidPositions...)
 }
@@ -112,8 +123,7 @@ func (w *ConcreteWall) Calculate() (Consumption, error) {
 	}
 	total.sum(steelConsumption)
 
-	total.Material += concreteVolumeFromElement(w.ConcreteWalls)
-	total.Material += concreteVolumeFromElement(w.ConcreteSlabs)
+	total.Material += concreteVolumeFromItems(w.Concrete)
 
 	return total, nil
 }

@@ -17,9 +17,9 @@ var structuralMasonryValidPositions = []ElementPosition{
 }
 
 type BlockInfo struct {
-	Type     string `json:"type"`
-	Fbk      int    `json:"fbk"`
-	Quantity int    `json:"quantity"`
+	Type     string  `json:"type"`
+	Fbk      float64 `json:"fbk"`
+	Quantity int     `json:"quantity"`
 }
 
 type GroutVolumeItem struct {
@@ -71,8 +71,27 @@ type StructuralMasonry struct {
 
 func (s *StructuralMasonry) GetType() string { return s.Type }
 
+func (s *StructuralMasonry) VersionContract() moduleVersionContract {
+	return moduleVersionContract{
+		v1Disallowed: []string{"concrete", "steel"},
+		v2Disallowed: []string{"concrete_walls", "concrete_slabs", "form_columns", "form_beams", "form_slabs", "form_total"},
+		toV1:         applyV1LegacyResponse,
+		toV2: func(moduleMap map[string]any) {
+			removeKeys(moduleMap, "concrete_columns", "concrete_beams", "concrete_slabs")
+		},
+	}
+}
+
 func (s *StructuralMasonry) validPositions() []ElementPosition {
 	return append([]ElementPosition(nil), structuralMasonryValidPositions...)
+}
+
+func normalizeMasonryResistance(value float64) float64 {
+	if value == 4 || value == 4.5 {
+		return 4.5
+	}
+
+	return value
 }
 
 func (s *StructuralMasonry) hasNewFormat() bool {
@@ -148,12 +167,12 @@ func (s *StructuralMasonry) Validate(v *validator.Validator) {
 		ValidateSteelMaterials(v, grout.Steel, prefix+".steel")
 	}
 
-	v.Check(len(s.Masonry.Mortar) > 0, "masonry.mortar", "must have at least one item")
 	fakSet := make(map[float64]struct{})
 	for i, mortar := range s.Masonry.Mortar {
 		prefix := fmt.Sprintf("masonry.mortar[%d]", i)
 		v.Check(mortar.Volume > 0, prefix+".volume", "must be greater than 0")
 		v.Check(mortar.Fak != 0, prefix+".fak", "must be provided")
+		v.Check(IsSupportedMortarFak(mortar.Fak), prefix+".fak", "must match a supported mortar fak value")
 		if _, exists := fakSet[mortar.Fak]; exists {
 			v.Check(false, prefix+".fak", "duplicate fak value")
 		} else {
@@ -161,12 +180,12 @@ func (s *StructuralMasonry) Validate(v *validator.Validator) {
 		}
 	}
 
-	v.Check(len(s.Masonry.Blocks) > 0, "masonry.blocks", "must have at least one item")
 	for i, block := range s.Masonry.Blocks {
 		prefix := fmt.Sprintf("masonry.blocks[%d]", i)
 		v.Check(block.Type != "", prefix+".type", "must be provided")
 		v.Check(IsValidBlockType(block.Type), prefix+".type", "invalid block type")
 		v.Check(block.Fbk > 0, prefix+".fbk", "must be greater than 0")
+		v.Check(IsSupportedBlockFbk(block.Fbk), prefix+".fbk", "must match a supported block fbk value")
 		v.Check(block.Quantity >= 0, prefix+".quantity", "cannot be negative")
 	}
 }
@@ -498,7 +517,7 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 			for _, m := range mortarData {
 				if mortarMap, ok := m.(map[string]interface{}); ok {
 					masonry.Mortar = append(masonry.Mortar, MortarItem{
-						Fak:    mortarMap["fak"].(float64),
+						Fak:    normalizeMasonryResistance(mortarMap["fak"].(float64)),
 						Volume: mortarMap["volume"].(float64),
 					})
 				}
@@ -513,7 +532,7 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 						block.Type = typeVal
 					}
 					if fbkVal, ok := blockMap["fbk"].(float64); ok {
-						block.Fbk = int(fbkVal)
+						block.Fbk = normalizeMasonryResistance(fbkVal)
 					}
 					if quantityVal, ok := blockMap["quantity"].(float64); ok {
 						block.Quantity = int(quantityVal)

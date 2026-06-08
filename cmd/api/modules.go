@@ -17,12 +17,6 @@ type modulePayloadWrapper struct {
 	Data json.RawMessage `json:"data"`
 }
 
-var v1LegacyOnlyModuleTypes = map[string]bool{
-	"beam_column":        true,
-	"concrete_wall":      true,
-	"structural_masonry": true,
-}
-
 func (app *application) parseModulePayload(w http.ResponseWriter, r *http.Request) (modulePayloadWrapper, error) {
 	var wrapper modulePayloadWrapper
 
@@ -51,88 +45,6 @@ func (app *application) parseModuleFromPayload(wrapper modulePayloadWrapper) (mo
 	}
 
 	return module, nil
-}
-
-func validateV1LegacyModulePayload(wrapper modulePayloadWrapper) error {
-	if !v1LegacyOnlyModuleTypes[wrapper.Type] {
-		return nil
-	}
-
-	data := map[string]any{}
-	if err := json.Unmarshal(wrapper.Data, &data); err != nil {
-		return fmt.Errorf("invalid json format for module data: %w", err)
-	}
-
-	if _, hasConcrete := data["concrete"]; hasConcrete {
-		return errors.New("v1 does not accept 'concrete' aggregated field; use legacy concrete_* fields or /v2 endpoints")
-	}
-
-	if _, hasSteel := data["steel"]; hasSteel {
-		return errors.New("v1 does not accept 'steel' aggregated field; use legacy concrete_* fields or /v2 endpoints")
-	}
-
-	return nil
-}
-
-func removePositionFromLegacySteelItems(moduleMap map[string]any) {
-	legacyConcreteKeys := []string{
-		"concrete_columns",
-		"concrete_beams",
-		"concrete_slabs",
-		"concrete_walls",
-	}
-
-	for _, key := range legacyConcreteKeys {
-		elRaw, ok := moduleMap[key]
-		if !ok {
-			continue
-		}
-
-		element, ok := elRaw.(map[string]any)
-		if !ok {
-			continue
-		}
-
-		steelRaw, ok := element["steel"]
-		if !ok {
-			continue
-		}
-
-		steelItems, ok := steelRaw.([]any)
-		if !ok {
-			continue
-		}
-
-		for _, item := range steelItems {
-			steelItem, ok := item.(map[string]any)
-			if !ok {
-				continue
-			}
-
-			delete(steelItem, "position")
-		}
-	}
-}
-
-func toV1ModuleResponse(module modules.Module) (map[string]any, error) {
-	encoded, err := json.Marshal(module)
-	if err != nil {
-		return nil, err
-	}
-
-	moduleMap := map[string]any{}
-	if err := json.Unmarshal(encoded, &moduleMap); err != nil {
-		return nil, err
-	}
-
-	typeValue, _ := moduleMap["type"].(string)
-	if v1LegacyOnlyModuleTypes[typeValue] {
-		delete(moduleMap, "concrete")
-		delete(moduleMap, "steel")
-		removePositionFromLegacySteelItems(moduleMap)
-	}
-
-	return moduleMap, nil
 }
 
 func (app *application) parseModule(w http.ResponseWriter, r *http.Request) (modules.Module, error) {
@@ -248,8 +160,19 @@ func (app *application) duplicateModule(
 func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Request) {
 	optionID, _ := app.readUUIDParam(r, "optionID")
 
-	module, err := app.parseModule(w, r)
+	wrapper, err := app.parseModulePayload(w, r)
 	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	module, err := app.parseModuleFromPayload(wrapper)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if err := modules.ValidateV2PayloadForModule(module, wrapper.Data); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
@@ -279,7 +202,13 @@ func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"module": newModule}, nil)
+	v2Module, err := modules.ToV2Response(newModule)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"module": v2Module}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -294,13 +223,13 @@ func (app *application) createModuleV1Handler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := validateV1LegacyModulePayload(wrapper); err != nil {
+	module, err := app.parseModuleFromPayload(wrapper)
+	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	module, err := app.parseModuleFromPayload(wrapper)
-	if err != nil {
+	if err := modules.ValidateV1LegacyPayloadForModule(module, wrapper.Data); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
@@ -330,7 +259,7 @@ func (app *application) createModuleV1Handler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	v1Module, err := toV1ModuleResponse(newModule)
+	v1Module, err := modules.ToV1Response(newModule)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -377,7 +306,13 @@ func (app *application) readModuleHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"module": module}, nil)
+	v2Module, err := modules.ToV2Response(module)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"module": v2Module}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -418,7 +353,7 @@ func (app *application) readModuleV1Handler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	v1Module, err := toV1ModuleResponse(module)
+	v1Module, err := modules.ToV1Response(module)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -443,8 +378,19 @@ func (app *application) updateModuleHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	module, err := app.parseModule(w, r)
+	wrapper, err := app.parseModulePayload(w, r)
 	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	module, err := app.parseModuleFromPayload(wrapper)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if err := modules.ValidateV2PayloadForModule(module, wrapper.Data); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
@@ -501,7 +447,13 @@ func (app *application) updateModuleHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"module": updatedModule}, nil)
+	v2Module, err := modules.ToV2Response(updatedModule)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"module": v2Module}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -526,13 +478,13 @@ func (app *application) updateModuleV1Handler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := validateV1LegacyModulePayload(wrapper); err != nil {
+	module, err := app.parseModuleFromPayload(wrapper)
+	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	module, err := app.parseModuleFromPayload(wrapper)
-	if err != nil {
+	if err := modules.ValidateV1LegacyPayloadForModule(module, wrapper.Data); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
@@ -589,7 +541,7 @@ func (app *application) updateModuleV1Handler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	v1Module, err := toV1ModuleResponse(updatedModule)
+	v1Module, err := modules.ToV1Response(updatedModule)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

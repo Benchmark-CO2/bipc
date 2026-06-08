@@ -1,0 +1,1253 @@
+components:
+  schemas:
+    ModulePayloadV1:
+      type: object
+      description: |
+        Polymorphic module payload for v1 endpoints.
+
+        Structural modules in v1 (beam_column, concrete_wall, structural_masonry) accept only
+        legacy grouped fields (concrete_*), not aggregated arrays (concrete/steel/form).
+
+        Structural v1 does not support stair position.
+      properties:
+        type:
+          type: string
+          enum:
+            - beam_column
+            - concrete_wall
+            - structural_masonry
+            - raft_foundation
+            - piles_foundation
+            - raft_piles_foundation
+        data:
+          oneOf:
+            - $ref: "#/components/schemas/BeamColumnDataV1"
+            - $ref: "#/components/schemas/ConcreteWallDataV1"
+            - $ref: "#/components/schemas/StructuralMasonryDataV1"
+            - $ref: "#/components/schemas/RaftFoundationDataV1"
+            - $ref: "#/components/schemas/PilesFoundationDataV1"
+            - $ref: "#/components/schemas/RaftPilesFoundationDataV1"
+      required:
+        - type
+        - data
+
+    ModulePayloadV2:
+      type: object
+      description: |
+        Polymorphic module payload for v2 endpoints.
+
+        Structural modules in v2 require aggregated arrays and do not accept legacy concrete_* fields.
+        Form values must be sent inside data.form (array), never in root legacy form fields.
+
+        For positioned arrays (concrete, steel and form), each item must include explicit position.
+        General/non-positioned material entries are not accepted.
+      properties:
+        type:
+          type: string
+          enum:
+            - beam_column
+            - concrete_wall
+            - structural_masonry
+            - raft_foundation
+            - piles_foundation
+            - raft_piles_foundation
+        data:
+          oneOf:
+            - $ref: "#/components/schemas/BeamColumnDataV2"
+            - $ref: "#/components/schemas/ConcreteWallDataV2"
+            - $ref: "#/components/schemas/StructuralMasonryDataV2"
+            - $ref: "#/components/schemas/RaftFoundationDataV2"
+            - $ref: "#/components/schemas/PilesFoundationDataV2"
+            - $ref: "#/components/schemas/RaftPilesFoundationDataV2"
+      required:
+        - type
+        - data
+
+    ModuleCreateRequestV1:
+      allOf:
+        - $ref: "#/components/schemas/ModulePayloadV1"
+
+    ModuleCreateRequestV2:
+      allOf:
+        - $ref: "#/components/schemas/ModulePayloadV2"
+
+    ModuleResponseV1:
+      type: object
+      properties:
+        module:
+          $ref: "#/components/schemas/ModulePayloadV1"
+      required:
+        - module
+
+    ModuleResponseV2:
+      type: object
+      properties:
+        module:
+          $ref: "#/components/schemas/ModulePayloadV2"
+      required:
+        - module
+
+    ModuleCreateRequest:
+      allOf:
+        - $ref: "#/components/schemas/ModuleCreateRequestV1"
+
+    BeamColumnDataV1:
+      type: object
+      description: |
+        v1 beam_column payload using legacy grouped structures only.
+        v1 structural modules do not support stair position.
+      properties:
+        floor_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        concrete_columns:
+          $ref: "#/components/schemas/ConcreteElement"
+        concrete_beams:
+          $ref: "#/components/schemas/ConcreteElement"
+        concrete_slabs:
+          $ref: "#/components/schemas/ConcreteElement"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
+        form_columns:
+          type: number
+        form_beams:
+          type: number
+        form_slabs:
+          type: number
+        form_total:
+          type: number
+        column_number:
+          type: integer
+        avg_beam_span:
+          type: number
+        avg_slab_span:
+          type: number
+      required:
+        - floor_ids
+        - concrete_columns
+        - concrete_beams
+        - concrete_slabs
+
+    BeamColumnDataV2:
+      type: object
+      description: |
+        v2 beam_column payload.
+
+        Must use aggregated arrays. Legacy concrete_columns/concrete_beams/concrete_slabs and
+        root form_* fields are not accepted.
+      properties:
+        floor_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        concrete:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/BeamColumnConcrete"
+        steel:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/BeamColumnSteel"
+        form:
+          type: array
+          items:
+            $ref: "#/components/schemas/BeamColumnForm"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
+        column_number:
+          type: integer
+        avg_beam_span:
+          type: number
+        avg_slab_span:
+          type: number
+      required:
+        - floor_ids
+        - concrete
+        - steel
+
+    ConcreteWallDataV1:
+      type: object
+      description: |
+        v1 concrete_wall payload using legacy grouped structures only.
+        v1 structural modules do not support stair position.
+      properties:
+        floor_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        concrete_walls:
+          $ref: "#/components/schemas/ConcreteElement"
+        concrete_slabs:
+          $ref: "#/components/schemas/ConcreteElement"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
+        wall_thickness:
+          type: number
+        slab_thickness:
+          type: number
+        wall_area:
+          type: number
+        slab_area:
+          type: number
+        wall_form_area:
+          type: number
+        slab_form_area:
+          type: number
+      required:
+        - floor_ids
+        - concrete_walls
+        - concrete_slabs
+
+    ConcreteWallDataV2:
+      type: object
+      description: |
+        v2 concrete_wall payload.
+
+        Must use aggregated arrays. Legacy concrete_walls/concrete_slabs and
+        root wall_form_area/slab_form_area are not accepted.
+      properties:
+        floor_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        concrete:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ConcreteWallConcrete"
+        steel:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ConcreteWallSteel"
+        form:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConcreteWallForm"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
+        wall_thickness:
+          type: number
+        slab_thickness:
+          type: number
+        wall_area:
+          type: number
+        slab_area:
+          type: number
+      required:
+        - floor_ids
+        - concrete
+        - steel
+
+    StructuralMasonryDataV1:
+      type: object
+      description: |
+        v1 structural_masonry payload using legacy grouped structures only.
+        v1 structural modules do not support stair position.
+      properties:
+        floor_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        concrete_columns:
+          $ref: "#/components/schemas/ConcreteElement"
+        concrete_beams:
+          $ref: "#/components/schemas/ConcreteElement"
+        concrete_slabs:
+          $ref: "#/components/schemas/ConcreteElement"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
+        form_columns:
+          type: number
+        form_beams:
+          type: number
+        form_slabs:
+          type: number
+        form_total:
+          type: number
+        masonry:
+          $ref: "#/components/schemas/MasonryElement"
+      required:
+        - floor_ids
+        - masonry
+
+    StructuralMasonryDataV2:
+      type: object
+      description: |
+        v2 structural_masonry payload.
+
+        Must use aggregated arrays. Legacy concrete_* and root form_* fields are not accepted.
+      properties:
+        floor_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        concrete:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/StructuralMasonryConcrete"
+        steel:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/StructuralMasonrySteel"
+        form:
+          type: array
+          items:
+            $ref: "#/components/schemas/StructuralMasonryForm"
+        slab_type:
+          $ref: "#/components/schemas/SlabType"
+        masonry:
+          $ref: "#/components/schemas/MasonryElement"
+      required:
+        - floor_ids
+        - masonry
+
+    ConcreteVolumeItem:
+      type: object
+      properties:
+        fck:
+          type: integer
+          enum: [20, 25, 30, 35, 40, 45, 50]
+        volume:
+          type: number
+          format: float
+        position:
+          description: when not provided refeers to any position material
+      required:
+        - fck
+        - volume
+
+    ConcreteVolumes:
+      type: array
+      minItems: 1
+      items:
+        $ref: "#/components/schemas/ConcreteVolumeItem"
+
+    SteelMaterial:
+      type: object
+      properties:
+        material:
+          type: string
+          enum: [general, rebar, mesh, strand, other]
+        other_name:
+          type: string
+          description: Necessary when material is "other". Alternative name to refere to material
+        resistance:
+          type: string
+          enum: [CA50, CA60, CP190, other]
+        other_resistance:
+          type: number
+          format: float
+          description: Necessary when resistance is "other".
+        mass:
+          type: number
+          format: float
+        position:
+          description: when not provided refeers to any position material
+      required:
+        - material
+        - resistance
+        - mass
+
+    FormAreaItem:
+      type: object
+      properties:
+        area:
+          type: number
+          format: float
+        position:
+          type: string
+      required:
+        - area
+
+    BeamColumnConcrete:
+      allOf:
+        - $ref: "#/components/schemas/ConcreteVolumeItem"
+        - type: object
+          properties:
+            position:
+              type: string
+              enum: [column, beam, slab, stair]
+
+    BeamColumnSteel:
+      allOf:
+        - $ref: "#/components/schemas/SteelMaterial"
+        - type: object
+          properties:
+            position:
+              type: string
+              enum: [column, beam, slab, stair]
+
+    BeamColumnForm:
+      allOf:
+        - $ref: "#/components/schemas/FormAreaItem"
+        - type: object
+          properties:
+            position:
+              type: string
+              enum: [column, beam, slab, stair]
+
+    ConcreteWallConcrete:
+      allOf:
+        - $ref: "#/components/schemas/ConcreteVolumeItem"
+        - type: object
+          properties:
+            position:
+              type: string
+              enum: [wall, slab, stair]
+
+    ConcreteWallSteel:
+      allOf:
+        - $ref: "#/components/schemas/SteelMaterial"
+        - type: object
+          properties:
+            position:
+              type: string
+              enum: [wall, slab, stair]
+
+    ConcreteWallForm:
+      allOf:
+        - $ref: "#/components/schemas/FormAreaItem"
+        - type: object
+          properties:
+            position:
+              type: string
+              enum: [wall, slab, stair]
+
+    StructuralMasonryConcrete:
+      allOf:
+        - $ref: "#/components/schemas/ConcreteVolumeItem"
+        - type: object
+          properties:
+            position:
+              type: string
+              enum: [column, beam, slab, stair]
+
+    StructuralMasonrySteel:
+      allOf:
+        - $ref: "#/components/schemas/SteelMaterial"
+        - type: object
+          properties:
+            position:
+              type: string
+              enum: [column, beam, slab, stair]
+
+    StructuralMasonryForm:
+      allOf:
+        - $ref: "#/components/schemas/FormAreaItem"
+        - type: object
+          properties:
+            position:
+              type: string
+              enum: [column, beam, slab, stair]
+
+    SteelMaterials:
+      type: array
+      minItems: 1
+      items:
+        $ref: "#/components/schemas/SteelMaterial"
+
+    ConcreteElement:
+      type: object
+      properties:
+        volumes:
+          $ref: "#/components/schemas/ConcreteVolumes"
+        steel:
+          $ref: "#/components/schemas/SteelMaterials"
+      required:
+        - volumes
+        - steel
+
+    SlabType:
+      type: string
+      enum:
+        - solid
+        - ribbed
+        - mushroom_solid
+        - mushroom_ribbed
+        - flat
+        - band_beam
+        - pt_solid
+        - pt_ribbed
+        - pt_mushroom_solid
+        - pt_mushroom_ribbed
+        - pt_flat
+        - pt_band_beam
+        - trussed
+        - joist
+        - filigree
+        - hollow_core
+        - precast_solid
+        - precast_ribbed
+        - pt_precast
+      example: flat
+
+    BeamColumnData:
+      allOf:
+        - $ref: "#/components/schemas/BeamColumnDataV2"
+
+    ConcreteWallData:
+      allOf:
+        - $ref: "#/components/schemas/ConcreteWallDataV2"
+
+    StructuralMasonryData:
+      allOf:
+        - $ref: "#/components/schemas/StructuralMasonryDataV2"
+
+    GroutVolumeItem:
+      type: object
+      properties:
+        fgk:
+          type: integer
+        volume:
+          type: number
+          format: float
+      required:
+        - fgk
+        - volume
+
+    MortarItem:
+      type: object
+      properties:
+        fak:
+          type: number
+          format: float
+        volume:
+          type: number
+          format: float
+      required:
+        - fak
+        - volume
+
+    BlockInfo:
+      type: object
+      properties:
+        type:
+          type: string
+        fbk:
+          type: number
+          format: float
+        quantity:
+          type: integer
+      required:
+        - type
+        - fbk
+        - quantity
+
+    GroutInfo:
+      type: object
+      properties:
+        position:
+          type: string
+          enum: [vertical, horizontal]
+        volumes:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/GroutVolumeItem"
+        steel:
+          $ref: "#/components/schemas/SteelMaterials"
+      required:
+        - position
+        - volumes
+        - steel
+
+    MasonryElement:
+      type: object
+      properties:
+        grout:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroutInfo"
+        mortar:
+          type: array
+          items:
+            $ref: "#/components/schemas/MortarItem"
+        blocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/BlockInfo"
+      required:
+        - grout
+        - mortar
+        - blocks
+
+    RaftFoundationDataV1:
+      type: object
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+        area:
+          type: number
+          format: float
+        thickness:
+          type: number
+          format: float
+        fck:
+          type: integer
+          enum: [20, 25, 30, 35, 40, 45]
+        steel:
+          $ref: "#/components/schemas/SteelMaterials"
+      required:
+        - unit_id
+        - area
+        - thickness
+        - fck
+        - steel
+
+    RaftFoundationDataV2:
+      type: object
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+        raft_area:
+          type: number
+          format: float
+          readOnly: true
+          description: Legacy raft area preserved in v2 responses.
+        raft_thickness:
+          type: number
+          format: float
+          readOnly: true
+          description: Legacy raft thickness preserved in v2 responses.
+        concrete:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/RaftFoundationConcrete"
+        steel:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/RaftFoundationSteel"
+      required:
+        - unit_id
+        - concrete
+        - steel
+
+    PilesFoundationDataV1:
+      type: object
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+        fck:
+          type: integer
+          enum: [20, 25, 30, 35, 40, 45]
+        piles:
+          $ref: "#/components/schemas/FoundationElement"
+        blocks:
+          $ref: "#/components/schemas/FoundationElement"
+        grade_beams:
+          $ref: "#/components/schemas/FoundationElement"
+        tie_beams:
+          $ref: "#/components/schemas/FoundationElement"
+      required:
+        - unit_id
+        - fck
+        - piles
+        - blocks
+        - grade_beams
+        - tie_beams
+
+    PilesFoundationDataV2:
+      type: object
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+        concrete:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/PilesFoundationConcrete"
+        steel:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/PilesFoundationSteel"
+      required:
+        - unit_id
+        - concrete
+        - steel
+
+    RaftPilesFoundationDataV1:
+      type: object
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+        fck:
+          type: integer
+          enum: [20, 25, 30, 35, 40, 45]
+        raft:
+          $ref: "#/components/schemas/RaftElement"
+        piles:
+          $ref: "#/components/schemas/FoundationElement"
+      required:
+        - unit_id
+        - fck
+        - raft
+        - piles
+
+    RaftPilesFoundationDataV2:
+      type: object
+      properties:
+        unit_id:
+          type: string
+          format: uuid
+        raft_area:
+          type: number
+          format: float
+          readOnly: true
+          description: Legacy raft area preserved in v2 responses.
+        raft_thickness:
+          type: number
+          format: float
+          readOnly: true
+          description: Legacy raft thickness preserved in v2 responses.
+        concrete:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/RaftPilesFoundationConcrete"
+        steel:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/RaftPilesFoundationSteel"
+      required:
+        - unit_id
+        - concrete
+        - steel
+
+    RaftFoundationConcrete:
+      allOf:
+        - $ref: "#/components/schemas/ConcreteVolumeItem"
+        - type: object
+          properties:
+            position:
+              type: string
+              enum: [raft]
+
+    RaftFoundationSteel:
+      allOf:
+        - $ref: "#/components/schemas/SteelMaterial"
+        - type: object
+          properties:
+            position:
+              type: string
+              enum: [raft]
+
+    PilesFoundationConcrete:
+      allOf:
+        - $ref: "#/components/schemas/ConcreteVolumeItem"
+        - type: object
+          properties:
+            position:
+              type: string
+              enum: [pile, block, grade_beam, tie_beam]
+
+    PilesFoundationSteel:
+      allOf:
+        - $ref: "#/components/schemas/SteelMaterial"
+        - type: object
+          properties:
+            position:
+              type: string
+              enum: [pile, block, grade_beam, tie_beam]
+
+    RaftPilesFoundationConcrete:
+      allOf:
+        - $ref: "#/components/schemas/ConcreteVolumeItem"
+        - type: object
+          properties:
+            position:
+              type: string
+              enum: [raft, pile]
+
+    RaftPilesFoundationSteel:
+      allOf:
+        - $ref: "#/components/schemas/SteelMaterial"
+        - type: object
+          properties:
+            position:
+              type: string
+              enum: [raft, pile]
+
+    RaftFoundationData:
+      allOf:
+        - $ref: "#/components/schemas/RaftFoundationDataV2"
+
+    PilesFoundationData:
+      allOf:
+        - $ref: "#/components/schemas/PilesFoundationDataV2"
+
+    RaftPilesFoundationData:
+      allOf:
+        - $ref: "#/components/schemas/RaftPilesFoundationDataV2"
+
+    FoundationElement:
+      type: object
+      properties:
+        volume:
+          type: number
+          format: float
+        steel:
+          $ref: "#/components/schemas/SteelMaterials"
+      required:
+        - volume
+        - steel
+
+    RaftElement:
+      type: object
+      properties:
+        area:
+          type: number
+          format: float
+        thickness:
+          type: number
+          format: float
+        steel:
+          $ref: "#/components/schemas/SteelMaterials"
+      required:
+        - area
+        - thickness
+        - steel
+
+  examples:
+    ModuleCreateBeamColumnV1:
+      summary: Beam column module (v1)
+      value:
+        type: beam_column
+        data:
+          floor_ids:
+            - f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6
+          concrete_columns:
+            volumes:
+              - fck: 30
+                volume: 150.5
+            steel:
+              - material: rebar
+                resistance: CA50
+                mass: 7500
+          concrete_beams:
+            volumes:
+              - fck: 30
+                volume: 200
+            steel:
+              - material: rebar
+                resistance: CA50
+                mass: 10000
+          concrete_slabs:
+            volumes:
+              - fck: 25
+                volume: 450
+            steel:
+              - material: rebar
+                resistance: CA50
+                mass: 22500
+          form_columns: 1200
+          form_beams: 2500
+          form_slabs: 9000
+          column_number: 120
+          avg_beam_span: 6
+          avg_slab_span: 5
+
+    ModuleCreateConcreteWallV1:
+      summary: Concrete wall module (v1)
+      value:
+        type: concrete_wall
+        data:
+          floor_ids:
+            - f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6
+          concrete_walls:
+            volumes:
+              - fck: 30
+                volume: 180
+            steel:
+              - material: rebar
+                resistance: CA50
+                mass: 9000
+          concrete_slabs:
+            volumes:
+              - fck: 25
+                volume: 300
+            steel:
+              - material: rebar
+                resistance: CA50
+                mass: 15000
+          wall_thickness: 0.2
+          slab_thickness: 0.15
+          wall_area: 3000
+          slab_area: 15000
+          wall_form_area: 6000
+          slab_form_area: 30000
+
+    ModuleCreateStructuralMasonryV1:
+      summary: Structural masonry module (v1)
+      value:
+        type: structural_masonry
+        data:
+          floor_ids:
+            - f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6
+          concrete_columns:
+            volumes:
+              - fck: 25
+                volume: 50
+            steel:
+              - material: rebar
+                resistance: CA50
+                mass: 2500
+          concrete_beams:
+            volumes:
+              - fck: 25
+                volume: 80
+            steel:
+              - material: rebar
+                resistance: CA50
+                mass: 4000
+          concrete_slabs:
+            volumes:
+              - fck: 25
+                volume: 200
+            steel:
+              - material: rebar
+                resistance: CA50
+                mass: 10000
+          form_columns: 500
+          form_beams: 800
+          form_slabs: 5000
+          form_total: 6300
+          masonry:
+            grout:
+              - position: vertical
+                volumes:
+                  - fgk: 15
+                    volume: 10.5
+                steel:
+                  - material: rebar
+                    resistance: CA50
+                    mass: 500
+            mortar:
+              - fak: 8
+                volume: 15
+            blocks:
+              - type: inteiro (14x19x39)
+                fbk: 8
+                quantity: 5000
+
+    ModuleCreateRaftFoundationV1:
+      summary: Raft foundation module (v1)
+      value:
+        type: raft_foundation
+        data:
+          unit_id: a1b2c3d4-e5f6-7890-1234-567890abcdef
+          area: 150.5
+          thickness: 0.25
+          fck: 30
+          steel:
+            - material: mesh
+              resistance: CA60
+              mass: 120.5
+
+    ModuleCreatePilesFoundationV1:
+      summary: Piles foundation module (v1)
+      value:
+        type: piles_foundation
+        data:
+          unit_id: a1b2c3d4-e5f6-7890-1234-567890abcdef
+          fck: 30
+          piles:
+            volume: 45.5
+            steel:
+              - material: rebar
+                resistance: CA50
+                mass: 450
+          blocks:
+            volume: 15
+            steel:
+              - material: rebar
+                resistance: CA50
+                mass: 220
+          grade_beams:
+            volume: 8.5
+            steel:
+              - material: rebar
+                resistance: CA50
+                mass: 120
+          tie_beams:
+            volume: 2
+            steel:
+              - material: rebar
+                resistance: CA50
+                mass: 30
+
+    ModuleCreateRaftPilesFoundationV1:
+      summary: Raft + piles foundation module (v1)
+      value:
+        type: raft_piles_foundation
+        data:
+          unit_id: a1b2c3d4-e5f6-7890-1234-567890abcdef
+          fck: 25
+          raft:
+            area: 100
+            thickness: 0.25
+            steel:
+              - material: mesh
+                resistance: CA60
+                mass: 150
+          piles:
+            volume: 35.8
+            steel:
+              - material: rebar
+                resistance: CA50
+                mass: 630
+
+    ModuleCreateBeamColumnV2:
+      summary: Beam column module (v2)
+      value:
+        type: beam_column
+        data:
+          floor_ids:
+            - f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6
+          concrete:
+            - fck: 30
+              volume: 150.5
+              position: column
+            - fck: 30
+              volume: 200
+              position: beam
+            - fck: 25
+              volume: 450
+              position: slab
+          steel:
+            - material: rebar
+              resistance: CA50
+              mass: 7500
+              position: column
+            - material: rebar
+              resistance: CA50
+              mass: 10000
+              position: beam
+            - material: rebar
+              resistance: CA50
+              mass: 22500
+              position: slab
+          form:
+            - area: 1200
+              position: column
+            - area: 2500
+              position: beam
+            - area: 9000
+              position: slab
+          column_number: 120
+          avg_beam_span: 6
+          avg_slab_span: 5
+
+    ModuleCreateConcreteWallV2:
+      summary: Concrete wall module (v2)
+      value:
+        type: concrete_wall
+        data:
+          floor_ids:
+            - f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6
+          concrete:
+            - fck: 30
+              volume: 180
+              position: wall
+            - fck: 25
+              volume: 300
+              position: slab
+          steel:
+            - material: rebar
+              resistance: CA50
+              mass: 9000
+              position: wall
+            - material: rebar
+              resistance: CA50
+              mass: 15000
+              position: slab
+          form:
+            - area: 6000
+              position: wall
+            - area: 30000
+              position: slab
+          wall_thickness: 0.2
+          slab_thickness: 0.15
+          wall_area: 3000
+          slab_area: 15000
+
+    ModuleCreateStructuralMasonryV2:
+      summary: Structural masonry module (v2)
+      value:
+        type: structural_masonry
+        data:
+          floor_ids:
+            - f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6
+          concrete:
+            - fck: 25
+              volume: 50
+              position: column
+            - fck: 25
+              volume: 80
+              position: beam
+            - fck: 25
+              volume: 200
+              position: slab
+          steel:
+            - material: rebar
+              resistance: CA50
+              mass: 2500
+              position: column
+            - material: rebar
+              resistance: CA50
+              mass: 4000
+              position: beam
+            - material: rebar
+              resistance: CA50
+              mass: 10000
+              position: slab
+          form:
+            - area: 500
+              position: column
+            - area: 800
+              position: beam
+            - area: 5000
+              position: slab
+          masonry:
+            grout:
+              - position: vertical
+                volumes:
+                  - fgk: 15
+                    volume: 10.5
+                steel:
+                  - material: rebar
+                    resistance: CA50
+                    mass: 500
+            mortar:
+              - fak: 8
+                volume: 15
+            blocks:
+              - type: inteiro (14x19x39)
+                fbk: 8
+                quantity: 5000
+
+    ModuleCreateRaftFoundationV2:
+      summary: Raft foundation module (v2)
+      value:
+        type: raft_foundation
+        data:
+          unit_id: a1b2c3d4-e5f6-7890-1234-567890abcdef
+          concrete:
+            - fck: 30
+              volume: 37.625
+              position: raft
+          steel:
+            - material: mesh
+              resistance: CA60
+              mass: 120.5
+              position: raft
+
+    ModuleCreatePilesFoundationV2:
+      summary: Piles foundation module (v2)
+      value:
+        type: piles_foundation
+        data:
+          unit_id: a1b2c3d4-e5f6-7890-1234-567890abcdef
+          concrete:
+            - fck: 30
+              volume: 45.5
+              position: pile
+            - fck: 30
+              volume: 15
+              position: block
+            - fck: 30
+              volume: 8.5
+              position: grade_beam
+            - fck: 30
+              volume: 2
+              position: tie_beam
+          steel:
+            - material: rebar
+              resistance: CA50
+              mass: 450
+              position: pile
+            - material: rebar
+              resistance: CA50
+              mass: 220
+              position: block
+            - material: rebar
+              resistance: CA60
+              mass: 40
+              position: block
+            - material: rebar
+              resistance: CA50
+              mass: 120
+              position: grade_beam
+            - material: rebar
+              resistance: CA60
+              mass: 20
+              position: grade_beam
+            - material: rebar
+              resistance: CA50
+              mass: 30
+              position: tie_beam
+            - material: rebar
+              resistance: CA60
+              mass: 5
+              position: tie_beam
+
+    ModuleCreateRaftPilesFoundationV2:
+      summary: Raft + piles foundation module (v2)
+      value:
+        type: raft_piles_foundation
+        data:
+          unit_id: a1b2c3d4-e5f6-7890-1234-567890abcdef
+          concrete:
+            - fck: 25
+              volume: 25
+              position: raft
+            - fck: 25
+              volume: 35.8
+              position: pile
+          steel:
+            - material: mesh
+              resistance: CA60
+              mass: 150
+              position: raft
+            - material: rebar
+              resistance: CA50
+              mass: 200
+              position: raft
+            - material: rebar
+              resistance: CA60
+              mass: 50
+              position: raft
+            - material: strand
+              resistance: CP190
+              mass: 100
+              position: raft
+            - material: rebar
+              resistance: CA50
+              mass: 630
+              position: pile

@@ -70,6 +70,11 @@ const (
 	ElementPositionColumn ElementPosition = "column"
 	ElementPositionBeam   ElementPosition = "beam"
 	ElementPositionStair  ElementPosition = "stair"
+	ElementPositionRaft   ElementPosition = "raft"
+	ElementPositionPile   ElementPosition = "pile"
+	ElementPositionBlock  ElementPosition = "block"
+	ElementPositionGrade  ElementPosition = "grade_beam"
+	ElementPositionTie    ElementPosition = "tie_beam"
 )
 
 func (c ConcreteElement) MarshalJSON() ([]byte, error) {
@@ -111,6 +116,15 @@ func concreteVolumeFromElement(ce ConcreteElement) float64 {
 	total := 0.0
 	for _, volume := range ce.Volumes {
 		total += volume.Volume
+	}
+
+	return total
+}
+
+func concreteVolumeFromItems(items []ConcreteVolumeItem) float64 {
+	total := 0.0
+	for _, item := range items {
+		total += item.Volume
 	}
 
 	return total
@@ -234,16 +248,26 @@ func CalculateSteelConsumption(materials []SteelMaterial) (Consumption, error) {
 		var steelCO2, steelEnergy SidacValue
 		var found bool
 
-		if val, ok := sidacSteelData.KgCO2[ca]; ok {
-			steelCO2 = val
-			steelEnergy = sidacSteelData.MJ[ca]
-			found = true
-		} else {
-			closest := findClosestResistance(ca, sidacSteelData)
-			if val, ok := sidacSteelData.KgCO2[closest]; ok {
+		if ca == 190 {
+			if val, ok := sidacStrandData.KgCO2[ca]; ok {
 				steelCO2 = val
-				steelEnergy = sidacSteelData.MJ[closest]
+				steelEnergy = sidacStrandData.MJ[ca]
 				found = true
+			}
+		}
+
+		if !found {
+			if val, ok := sidacSteelData.KgCO2[ca]; ok {
+				steelCO2 = val
+				steelEnergy = sidacSteelData.MJ[ca]
+				found = true
+			} else {
+				closest := findClosestResistance(ca, sidacSteelData)
+				if val, ok := sidacSteelData.KgCO2[closest]; ok {
+					steelCO2 = val
+					steelEnergy = sidacSteelData.MJ[closest]
+					found = true
+				}
 			}
 		}
 
@@ -300,27 +324,179 @@ func CalculateConcreteConsumption(items []ConcreteVolumeItem) Consumption {
 	return result
 }
 
+type moduleVersionContract struct {
+	v1Disallowed []string
+	v2Disallowed []string
+	toV1         func(map[string]any)
+	toV2         func(map[string]any)
+}
+
+func ValidateV1LegacyPayloadForModule(module Module, payload json.RawMessage) error {
+	moduleType := module.GetType()
+	contract := module.VersionContract()
+
+	data, err := payloadDataAsMap(payload)
+	if err != nil {
+		return fmt.Errorf("invalid json format for module data: %w", err)
+	}
+
+	for _, key := range contract.v1Disallowed {
+		if _, exists := data[key]; exists {
+			return fmt.Errorf("v1 does not accept '%s' for module type '%s'; use legacy fields or /v2 endpoints", key, moduleType)
+		}
+	}
+
+	return nil
+}
+
+func ValidateV2PayloadForModule(module Module, payload json.RawMessage) error {
+	moduleType := module.GetType()
+	contract := module.VersionContract()
+
+	data, err := payloadDataAsMap(payload)
+	if err != nil {
+		return fmt.Errorf("invalid json format for module data: %w", err)
+	}
+
+	for _, key := range contract.v2Disallowed {
+		if _, exists := data[key]; exists {
+			return fmt.Errorf("v2 does not accept legacy field '%s' for module type '%s'; use v2 format fields", key, moduleType)
+		}
+	}
+
+	return nil
+}
+
+func ToV1Response(module Module) (map[string]any, error) {
+	moduleMap, err := moduleToMap(module)
+	if err != nil {
+		return nil, err
+	}
+
+	contract := module.VersionContract()
+	if contract.toV1 != nil {
+		contract.toV1(moduleMap)
+	}
+
+	return moduleMap, nil
+}
+
+func ToV2Response(module Module) (map[string]any, error) {
+	moduleMap, err := moduleToMap(module)
+	if err != nil {
+		return nil, err
+	}
+
+	contract := module.VersionContract()
+	if contract.toV2 != nil {
+		contract.toV2(moduleMap)
+	}
+
+	return moduleMap, nil
+}
+
+func payloadDataAsMap(payload json.RawMessage) (map[string]any, error) {
+	data := map[string]any{}
+	if err := json.Unmarshal(payload, &data); err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func moduleToMap(module Module) (map[string]any, error) {
+	encoded, err := json.Marshal(module)
+	if err != nil {
+		return nil, err
+	}
+
+	moduleMap := map[string]any{}
+	if err := json.Unmarshal(encoded, &moduleMap); err != nil {
+		return nil, err
+	}
+
+	return moduleMap, nil
+}
+
+func removeKeys(moduleMap map[string]any, keys ...string) {
+	for _, key := range keys {
+		delete(moduleMap, key)
+	}
+}
+
+func applyV1LegacyResponse(moduleMap map[string]any) {
+	removeKeys(moduleMap, "concrete", "steel")
+	removePositionFromLegacySteelItems(moduleMap)
+}
+
+func removePositionFromLegacySteelItems(moduleMap map[string]any) {
+	legacyConcreteKeys := []string{"concrete_columns", "concrete_beams", "concrete_slabs", "concrete_walls"}
+
+	for _, key := range legacyConcreteKeys {
+		elRaw, ok := moduleMap[key]
+		if !ok {
+			continue
+		}
+
+		element, ok := elRaw.(map[string]any)
+		if !ok {
+			continue
+		}
+
+		steelRaw, ok := element["steel"]
+		if !ok {
+			continue
+		}
+
+		steelItems, ok := steelRaw.([]any)
+		if !ok {
+			continue
+		}
+
+		for _, item := range steelItems {
+			steelItem, ok := item.(map[string]any)
+			if !ok {
+				continue
+			}
+
+			delete(steelItem, "position")
+		}
+	}
+}
+
+var moduleFactories = map[string]func() Module{
+	"beam_column": func() Module {
+		return &BeamColumn{BasicModuleData: BasicModuleData{Type: "beam_column"}}
+	},
+	"concrete_wall": func() Module {
+		return &ConcreteWall{BasicModuleData: BasicModuleData{Type: "concrete_wall"}}
+	},
+	"structural_masonry": func() Module {
+		return &StructuralMasonry{BasicModuleData: BasicModuleData{Type: "structural_masonry"}}
+	},
+	"raft_foundation": func() Module {
+		return &RaftFoundation{BasicModuleData: BasicModuleData{Type: "raft_foundation"}}
+	},
+	"piles_foundation": func() Module {
+		return &PilesFoundation{BasicModuleData: BasicModuleData{Type: "piles_foundation"}}
+	},
+	"raft_piles_foundation": func() Module {
+		return &RaftPilesFoundation{BasicModuleData: BasicModuleData{Type: "raft_piles_foundation"}}
+	},
+}
+
 func ParseModuleType(t string) (Module, error) {
-	switch t {
-	case "beam_column":
-		return &BeamColumn{BasicModuleData: BasicModuleData{Type: t}}, nil
-	case "concrete_wall":
-		return &ConcreteWall{BasicModuleData: BasicModuleData{Type: t}}, nil
-	case "structural_masonry":
-		return &StructuralMasonry{BasicModuleData: BasicModuleData{Type: t}}, nil
-	case "raft_foundation":
-		return &RaftFoundation{BasicModuleData: BasicModuleData{Type: t}}, nil
-	case "piles_foundation":
-		return &PilesFoundation{BasicModuleData: BasicModuleData{Type: t}}, nil
-	case "raft_piles_foundation":
-		return &RaftPilesFoundation{BasicModuleData: BasicModuleData{Type: t}}, nil
-	default:
+	factory, ok := moduleFactories[t]
+	if !ok {
 		return nil, errors.New("invalid module type")
 	}
+
+	return factory(), nil
 }
 
 type Module interface {
 	GetType() string
+	VersionContract() moduleVersionContract
 	Validate(v *validator.Validator)
 	Calculate() (Consumption, error)
 	Insert(models data.Models, optionID uuid.UUID, result Consumption) (Module, error)

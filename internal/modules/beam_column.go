@@ -42,6 +42,17 @@ type BeamColumn struct {
 
 func (b *BeamColumn) GetType() string { return b.Type }
 
+func (b *BeamColumn) VersionContract() moduleVersionContract {
+	return moduleVersionContract{
+		v1Disallowed: []string{"concrete", "steel", "form"},
+		v2Disallowed: []string{"concrete_columns", "concrete_beams", "concrete_slabs", "form_columns", "form_beams", "form_slabs", "form_total"},
+		toV1:         applyV1LegacyResponse,
+		toV2: func(moduleMap map[string]any) {
+			removeKeys(moduleMap, "concrete_columns", "concrete_beams", "concrete_slabs")
+		},
+	}
+}
+
 func (b *BeamColumn) validPositions() []ElementPosition {
 	return append([]ElementPosition(nil), beamColumnValidPositions...)
 }
@@ -125,9 +136,7 @@ func (b *BeamColumn) Calculate() (Consumption, error) {
 	}
 	total.sum(steelConsumption)
 
-	total.Material += concreteVolumeFromElement(b.ConcreteColumns)
-	total.Material += concreteVolumeFromElement(b.ConcreteBeams)
-	total.Material += concreteVolumeFromElement(b.ConcreteSlabs)
+	total.Material += concreteVolumeFromItems(b.Concrete)
 
 	return total, nil
 }
