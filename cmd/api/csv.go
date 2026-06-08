@@ -16,9 +16,13 @@ import (
 // convertCAToSteelMaterial converts a CA (resistance) value to SteelMaterial format
 func convertCAToSteelMaterial(ca int, mass float64) modules.SteelMaterial {
 	resistance, otherResistance := modules.ConvertCAToResistance(ca)
+	material := "rebar"
+	if ca == 190 {
+		material = "strand"
+	}
 
 	return modules.SteelMaterial{
-		Material:        "rebar",
+		Material:        material,
 		Resistance:      resistance,
 		OtherResistance: otherResistance,
 		Mass:            mass,
@@ -378,7 +382,7 @@ type StructuralMasonryCSVRow struct {
 	ModuleFormBeams   *float64                     `json:"module_form_beams,omitempty"`
 	ModuleFormSlabs   *float64                     `json:"module_form_slabs,omitempty"`
 	ModuleFormTotal   *float64                     `json:"module_form_total,omitempty"`
-	ModuleBlockFbk    int                          `json:"module_block_fbk,omitempty"`
+	ModuleBlockFbk    float64                      `json:"module_block_fbk,omitempty"`
 	SlabType          *string                      `json:"slab_type,omitempty"`
 	Blocks            []modules.BlockInfo          `json:"blocks,omitempty"`
 	Concrete          []modules.ConcreteVolumeItem `json:"concrete"`
@@ -447,6 +451,40 @@ func parseInt(s string) (int, error) {
 		return 0, nil
 	}
 	return strconv.Atoi(s)
+}
+
+func parseBlockQuantity(s string) (int, error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return 0, nil
+	}
+
+	if commaIndex := strings.Index(s, ","); commaIndex >= 0 {
+		s = strings.TrimSpace(s[:commaIndex])
+	}
+
+	if s == "" {
+		return 0, nil
+	}
+
+	return strconv.Atoi(s)
+}
+
+func normalizeModuleSlabType(raw *string) *string {
+	if raw == nil {
+		return nil
+	}
+
+	normalized := strings.TrimSpace(*raw)
+	if normalized == "" {
+		return nil
+	}
+
+	if normalized == "0" {
+		return nil
+	}
+
+	return &normalized
 }
 
 // rowParser provides typed field access for a single CSV record, centralising
@@ -541,7 +579,7 @@ func (p rowParser) optInt(field string) *int {
 
 func parseFloorHeight(p rowParser) float64 {
 	raw := p.str("floor_height")
-	if raw == "" {
+	if raw == "" || raw == "0" {
 		return 2.8
 	}
 
@@ -739,7 +777,7 @@ func (app *application) generateConcreteWallRows(dataRows [][]string, headerMap 
 			ModuleSlabArea:      p.float("module_slab_area"),
 			ModuleWallFormArea:  p.float("module_wall_form_area"),
 			ModuleSlabFormArea:  p.float("module_slab_form_area"),
-			SlabType:            p.optStr("module_slab_type"),
+			SlabType:            normalizeModuleSlabType(p.optStr("module_slab_type")),
 			Concrete:            concrete,
 			Steel:               steel,
 			Form:                form,
@@ -753,11 +791,11 @@ func (app *application) generateStructuralMasonryRows(dataRows [][]string, heade
 	for i, record := range dataRows {
 		p := rowParser{record: record, headerMap: headerMap, rowNum: i + 2, warnf: app.logger.Warn}
 
-		fbk := p.integer("module_block_fbk")
+		fbk := modules.NormalizeBlockFbkToFirstSupportedAbove(p.float("module_block_fbk"))
 		var blocks []modules.BlockInfo
 		for colName, blockType := range blockTypeMap {
 			if qtyIdx, ok := headerMap[colName]; ok && qtyIdx < len(record) {
-				qty, _ := parseInt(record[qtyIdx])
+				qty, _ := parseBlockQuantity(record[qtyIdx])
 				if qty > 0 && fbk > 0 {
 					blocks = append(blocks, modules.BlockInfo{Type: blockType, Fbk: fbk, Quantity: qty})
 				}
@@ -765,7 +803,7 @@ func (app *application) generateStructuralMasonryRows(dataRows [][]string, heade
 		}
 
 		var mortar []modules.MortarItem
-		if fak := p.float("module_mortar_fak"); fak > 0 {
+		if fak := modules.NormalizeMortarFakToFirstSupportedAbove(p.float("module_mortar_fak")); fak > 0 {
 			if vol := p.float("module_mortar_volume"); vol > 0 {
 				mortar = append(mortar, modules.MortarItem{Fak: fak, Volume: vol})
 			}
@@ -793,7 +831,7 @@ func (app *application) generateStructuralMasonryRows(dataRows [][]string, heade
 			ModuleFormSlabs:   p.firstOptFloat("module_slab_form_area", "module_form_slabs"),
 			ModuleFormTotal:   p.firstOptFloat("module_general_form_area", "module_form_general", "module_form_total"),
 			ModuleBlockFbk:    fbk,
-			SlabType:          p.optStr("module_slab_type"),
+			SlabType:          normalizeModuleSlabType(p.optStr("module_slab_type")),
 			Blocks:            blocks,
 			Concrete:          concrete,
 			Steel:             steel,
@@ -832,7 +870,7 @@ func (app *application) generateBeamColumnRows(dataRows [][]string, headerMap ma
 			ModuleFormBeams:   p.firstOptFloat("module_beam_form_area", "module_form_beams"),
 			ModuleFormSlabs:   p.firstOptFloat("module_slab_form_area", "module_form_slabs"),
 			ModuleFormTotal:   p.firstOptFloat("module_general_form_area", "module_form_general", "module_form_total"),
-			SlabType:          p.optStr("module_slab_type"),
+			SlabType:          normalizeModuleSlabType(p.optStr("module_slab_type")),
 			Concrete:          concrete,
 			Steel:             steel,
 			Form:              form,

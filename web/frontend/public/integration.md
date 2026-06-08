@@ -168,7 +168,7 @@ Como alternativa ao endpoint da unidade, é possível obter todos os roles do pr
 
 **Para evitar módulos duplicados**, o software deve criar uma nova option exclusiva para os módulos gerados:
 
-**Endpoint**: `POST /v1/projects/{projectID}/units/{unitID}/roles/{roleID}/options`
+**Endpoint**: `POST /v2/projects/{projectID}/units/{unitID}/roles/{roleID}/options`
 
 **Body**:
 ```json
