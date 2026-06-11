@@ -3,23 +3,7 @@ import BipcIcon from "@/assets/icons/bipc";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
-import {
-  BarChart3,
-  CircleHelp,
-  ClipboardList,
-  FileText,
-  Fingerprint,
-  FolderGit,
-  GlobeLock,
-  Menu,
-  MonitorPlay,
-  Newspaper,
-  Phone,
-  Rss,
-  UserCircle,
-  X,
-  ShieldCheck,
-} from "lucide-react";
+import { BarChart3, GlobeLock, Menu, Rss, UserCircle, X } from "lucide-react";
 import { useState } from "react";
 import { CustomLink } from "../ui/custom-link";
 import Divider from "../ui/divider";
