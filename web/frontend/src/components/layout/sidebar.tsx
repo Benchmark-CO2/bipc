@@ -15,20 +15,11 @@ import {
   BarChart3,
   Bell,
   Building2,
-  CircleHelp,
-  ClipboardList,
-  FileText,
-  Fingerprint,
-  FolderGit,
   GlobeLock,
   LogIn,
   Menu,
-  MonitorPlay,
-  Newspaper,
-  Phone,
   Rss,
   Settings,
-  ShieldCheck,
   UserPlus,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -52,7 +43,7 @@ const activeProps = {
 };
 
 const Sidebar = ({ handleLogout }: ISidebar) => {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { sidebarStatus, toggleSidebar } = useSidebar();
   const isMobile = useIsMobile();
   const { context, setSummaryContext } = useSummary();
