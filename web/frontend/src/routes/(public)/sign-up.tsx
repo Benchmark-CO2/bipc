@@ -641,6 +641,21 @@ const SignUp = () => {
                               <SelectItem value="Coordenação de Projetos">
                                 {t.auth.signUp.activityProjectCoordination}
                               </SelectItem>
+                              <SelectItem value="Gerenciamento">
+                                {t.auth.signUp.activityManagement}
+                              </SelectItem>
+                              <SelectItem value="Consultoria">
+                                {t.auth.signUp.activityConsulting}
+                              </SelectItem>
+                              <SelectItem value="Cliente">
+                                {t.auth.signUp.activityClient}
+                              </SelectItem>
+                              <SelectItem value="Análise">
+                                {t.auth.signUp.activityAnalysis}
+                              </SelectItem>
+                              <SelectItem value="Auditoria">
+                                {t.auth.signUp.activityAudit}
+                              </SelectItem>
                               <SelectItem value="Pesquisador(a)">
                                 {t.auth.signUp.activityResearch}
                               </SelectItem>
@@ -654,6 +669,7 @@ const SignUp = () => {
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={form.control}
                     name="enterprise"
