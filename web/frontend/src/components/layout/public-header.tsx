@@ -24,22 +24,9 @@ import { useState } from "react";
 import { CustomLink } from "../ui/custom-link";
 import Divider from "../ui/divider";
 import { Button } from "../ui/button";
-import { SidebarHoverPopover, type PopoverItem } from "./sidebar-hover-popover";
-
-const saibaMaisItems: PopoverItem[] = [
-  { label: "Perguntas frequentes", icon: CircleHelp, linkKey: "faq" },
-  { label: "Glossário", icon: FileText, linkKey: "glossary" },
-  { label: "BIPc na mídia", icon: MonitorPlay, linkKey: "media" },
-  { label: "Lançamento", icon: Newspaper, linkKey: "launch" },
-  { label: "Repositório", icon: FolderGit, linkKey: "repository" },
-  { label: "Contato", icon: Phone, linkKey: "contact" },
-];
-
-const transparenciaItems: PopoverItem[] = [
-  { label: "Privacidade dos dados", icon: Fingerprint, linkKey: "privacy" },
-  { label: "Termos de uso", icon: ClipboardList, linkKey: "termsOfUse" },
-  { label: "Exercer meus direitos", icon: ShieldCheck, linkKey: "dataForm" },
-];
+import { SidebarHoverPopover } from "./sidebar-hover-popover";
+import { links } from "@/utils/commonLinks";
+import { useTranslation } from "@/i18n";
 
 const activeProps = {
   style: {
@@ -50,6 +37,8 @@ const activeProps = {
 export default function PublicHeader() {
   const isMobile = useIsMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { t } = useTranslation();
+  const { aboutItems, transparencyItems } = links(t);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -65,7 +54,7 @@ export default function PublicHeader() {
         onClick={handleCloseMenu}
       >
         <BipcIcon size={18} />
-        <span className="text-sm">Sobre o BIPc</span>
+        <span className="text-sm">{t.sidebar.about}</span>
       </CustomLink>
 
       <SidebarHoverPopover
@@ -73,10 +62,10 @@ export default function PublicHeader() {
         trigger={
           <>
             <Rss size={18} />
-            <span className="text-sm">Saiba mais</span>
+            <span className="text-sm">{t.sidebar.learnMore}</span>
           </>
         }
-        items={saibaMaisItems}
+        items={aboutItems}
         onItemClick={handleCloseMenu}
         isMobile={isMobile}
         side="bottom"
@@ -87,10 +76,10 @@ export default function PublicHeader() {
         trigger={
           <>
             <GlobeLock size={18} />
-            <span className="text-sm">Transparência</span>
+            <span className="text-sm">{t.sidebar.transparency}</span>
           </>
         }
-        items={transparenciaItems}
+        items={transparencyItems}
         onItemClick={handleCloseMenu}
         isMobile={isMobile}
         side="bottom"
@@ -110,7 +99,7 @@ export default function PublicHeader() {
         onClick={handleCloseMenu}
       >
         <BarChart3 size={18} />
-        <span className="text-sm">Benchmark</span>
+        <span className="text-sm">{t.sidebar.benchmark}</span>
       </Link>
 
       <Link to="/login" onClick={handleCloseMenu}>
@@ -120,7 +109,7 @@ export default function PublicHeader() {
           className="flex items-center gap-2 text-accent"
         >
           <UserCircle size={16} />
-          <span>Entrar</span>
+          <span>{t.sidebar.login}</span>
         </Button>
       </Link>
     </>
