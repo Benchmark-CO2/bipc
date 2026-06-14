@@ -158,11 +158,12 @@ function RouteComponent() {
                 co2_max: acc.co2_max + (roleConsumption.co2_max || 0),
                 energy_min: acc.energy_min + (roleConsumption.energy_min || 0),
                 energy_max: acc.energy_max + (roleConsumption.energy_max || 0),
+                material: acc.material + (roleConsumption.material || 0),
               };
             }
             return acc;
           },
-          { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0 },
+          { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0, material: 0 },
         );
 
         return {
@@ -190,6 +191,7 @@ function RouteComponent() {
             co2_max: consumption?.co2_max || 0,
             energy_min: consumption?.energy_min || 0,
             energy_max: consumption?.energy_max || 0,
+            material: consumption?.material || 0,
           };
         });
     }
@@ -204,8 +206,9 @@ function RouteComponent() {
         co2_max: acc.co2_max + (curr.co2_max || 0),
         energy_min: acc.energy_min + (curr.energy_min || 0),
         energy_max: acc.energy_max + (curr.energy_max || 0),
+        material: acc.material + (curr.material || 0),
       }),
-      { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0 },
+      { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0, material: 0 },
     );
   };
 
@@ -322,6 +325,16 @@ function RouteComponent() {
       0,
     );
 
+    console.log("[calculateAverageMetrics] floors:", floors);
+    console.log("[calculateAverageMetrics] floorTotal:", floorTotal);
+
+    if (floorTotal === 0) {
+      console.warn(
+        "[calculateAverageMetrics] floorTotal is 0, cannot compute averages",
+      );
+      return { co2_range: "-", energy_range: "-", repetitions: "-", area: "-" };
+    }
+
     const sumCO2Min = floors.reduce(
       (acc, curr) => acc + curr.co2_min * curr.area * curr.repetitions,
       0,
@@ -338,19 +351,20 @@ function RouteComponent() {
       (acc, curr) => acc + curr.energy_max * curr.area * curr.repetitions,
       0,
     );
-    const sumMaterial = floors.reduce(
-      (acc, curr) => acc + curr.material * curr.area * curr.repetitions,
-      0,
-    );
 
-    return {
-      co2_min: `${(sumCO2Min / floorTotal).toInternational()}`,
-      co2_max: `${(sumCO2Max / floorTotal).toInternational()}`,
-      energy_min: `${(sumEnergyMin / floorTotal).toInternational()}`,
-      energy_max: `${(sumEnergyMax / floorTotal).toInternational()}`,
-      material: `${(sumMaterial / floorTotal).toInternational()}`,
-      area: `-`,
+    const avgCO2Min = (sumCO2Min / floorTotal).toInternational();
+    const avgCO2Max = (sumCO2Max / floorTotal).toInternational();
+    const avgEnergyMin = (sumEnergyMin / floorTotal).toInternational();
+    const avgEnergyMax = (sumEnergyMax / floorTotal).toInternational();
+
+    const result = {
+      co2_range: `${avgCO2Min} - ${avgCO2Max}`,
+      energy_range: `${avgEnergyMin} - ${avgEnergyMax}`,
+      repetitions: "-",
+      area: "-",
     };
+
+    return result;
   };
 
   const onSelectedTabChange = (tab: string) => {
@@ -499,10 +513,9 @@ function RouteComponent() {
         isExpandable={false}
         lastRow={{
           data: {
-            co2_min: `${totalConsumptions.co2_min.toInternational()}`,
-            co2_max: `${totalConsumptions.co2_max.toInternational()}`,
-            energy_min: `${totalConsumptions.energy_min.toInternational()}`,
-            energy_max: `${totalConsumptions.energy_max.toInternational()}`,
+            co2_range: `${totalConsumptions.co2_min.toInternational()} - ${totalConsumptions.co2_max.toInternational()}`,
+            energy_range: `${totalConsumptions.energy_min.toInternational()} - ${totalConsumptions.energy_max.toInternational()}`,
+            material: `${totalConsumptions.material.toInternational()}`,
           },
           type: "Total",
         }}

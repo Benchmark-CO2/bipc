@@ -354,7 +354,7 @@ export const ptBR = {
       phasePreliminaryStudy: "Estudo Preliminar",
       phaseBasicProject: "Anteprojeto",
       phaseExecutiveProject: "Projeto Executivo",
-      phaseReleasedForConstruction: "Liberado para Construção",
+      phaseReleasedForConstruction: "Liberado para Obra",
       description: "Descrição",
       descriptionPlaceholder: "Descreva o empreendimento...",
       editButton: "Atualizar Empreendimento",
@@ -766,7 +766,7 @@ export const ptBR = {
     not_defined: "Não Definido",
     basic_project: "Projeto Básico",
     executive_project: "Projeto Executivo",
-    released_for_construction: "Liberado para Construção",
+    released_for_construction: "Liberado para Obra",
   },
   card: {
     created: "Criado",

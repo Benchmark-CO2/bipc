@@ -7,7 +7,7 @@ export const phaseLabels: Record<TProjectPhase, string> = {
   not_defined: "Não Definido",
   basic_project: "Projeto Básico",
   executive_project: "Projeto Executivo",
-  released_for_construction: "Liberado para Construção",
+  released_for_construction: "Liberado para Obra",
 };
 
 export const phaseColors: Record<TProjectPhase, string> = {
