@@ -1068,8 +1068,8 @@ export const en: Translations = {
       "The requested unit could not be found. It may have been removed or the link is incorrect.",
     backToProject: "Back to project",
     newDiscipline: "New discipline",
-    createSimulations: "Create simulations",
-    selectDisciplineTooltip: "Select a discipline to create simulations",
+    createSimulations: "Manage simulations",
+    selectDisciplineTooltip: "Select a discipline to manage simulations",
     noDisciplines: "No disciplines to display",
     noDisciplinesDescription:
       "You haven't created any discipline for this unit yet. Create a discipline to start creating simulations.",
@@ -1079,7 +1079,7 @@ export const en: Translations = {
       "Constructive technologies from all disciplines will be shown here after data is entered into the simulations.",
     createFirstSimulation: "Create your first simulation",
     createFirstSimulationDescription:
-      'Click the "Create simulations" button and add the project data.',
+      'Click the "Manage simulations" button and add the project data.',
     floors: "Floors",
     simulations: "Simulations",
   },

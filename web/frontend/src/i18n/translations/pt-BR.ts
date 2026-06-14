@@ -1076,8 +1076,9 @@ export const ptBR = {
       "Não foi possível encontrar a unidade solicitada. Ela pode ter sido removida ou o link está incorreto.",
     backToProject: "Voltar ao empreendimento",
     newDiscipline: "Nova disciplina",
-    createSimulations: "Criar simulações",
-    selectDisciplineTooltip: "Selecione uma disciplina para criar simulações",
+    createSimulations: "Gerenciar simulações",
+    selectDisciplineTooltip:
+      "Selecione uma disciplina para gerenciar simulações",
     noDisciplines: "Sem Disciplinas para exibir",
     noDisciplinesDescription:
       "Você ainda não criou nenhuma disciplina para esta unidade. Crie uma disciplina para começar a criar simulações.",
@@ -1087,7 +1088,7 @@ export const ptBR = {
       "As tecnologias construtivas de todas as disciplinas serão exibidas aqui após a inserção de dados às simulações.",
     createFirstSimulation: "Crie sua primeira simulação",
     createFirstSimulationDescription:
-      'Clique no botão "Criar simulações" e adicione os dados do empreendimento.',
+      'Clique no botão "Gerenciar simulações" e adicione os dados do empreendimento.',
     floors: "Pavimentos",
     simulations: "Simulações",
   },

@@ -446,9 +446,16 @@ function RouteComponent() {
                   hasPermission("create:role") ? (
                     <DrawerFormDisciplines
                       componentTrigger={
-                        <Button variant="outline-bipc" size="icon">
-                          <Plus />
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline-bipc" size="icon">
+                              <Plus />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t.unitView.newDiscipline}
+                          </TooltipContent>
+                        </Tooltip>
                       }
                       projectId={projectId}
                       unitId={unitId}
