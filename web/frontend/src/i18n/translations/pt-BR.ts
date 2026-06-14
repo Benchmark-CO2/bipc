@@ -348,7 +348,7 @@ export const ptBR = {
       street: "Rua",
       streetPlaceholder: "Digite o nome da rua",
       number: "Número",
-      phaseLabel: "Fase do Empreendimento",
+      phaseLabel: "Fase do Projeto / Empreendimento",
       phasePlaceholder: "Selecione a fase",
       phaseNotDefined: "Não definida",
       phasePreliminaryStudy: "Estudo Preliminar",
