@@ -20,6 +20,7 @@ type TModules = {
     co2_min: number;
     energy_max: number;
     energy_min: number;
+    material: number;
   };
   id: string;
   type: string;
@@ -37,9 +38,9 @@ type SimulationData = {
       co2_max: number;
       co2_min: number;
       energy_max: number;
-      energy_min: number;
+      energy_min: number;    
+      material: number;
     };
-  };
 };
 
 type ProjectsSummaryProps = {

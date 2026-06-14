@@ -91,7 +91,8 @@ function RouteComponent() {
   });
   const search = useSearch({
     from: "/_private/new_projects/$projectId/unit/$unitId/",
-  });  const { hasPermission } = useProjectPermissions(projectId);
+  });
+  const { hasPermission } = useProjectPermissions(projectId);
   const { t } = useTranslation();
   const { setSummaryContext } = useSummary();
   const { data: unitData, isLoading } = useQuery({
@@ -249,6 +250,7 @@ function RouteComponent() {
               co2_max: 0,
               energy_min: 0,
               energy_max: 0,
+              material: 0,
             };
 
             if (!acc[groupKey]) {
@@ -275,6 +277,10 @@ function RouteComponent() {
               acc[groupKey].energy_max =
                 (acc[groupKey].energy_max * (acc[groupKey].repetitions - 1) +
                   (safeConsumption.energy_max || 0)) /
+                acc[groupKey].repetitions;
+              acc[groupKey].material =
+                (acc[groupKey].material * (acc[groupKey].repetitions - 1) +
+                  (safeConsumption.material || 0)) /
                 acc[groupKey].repetitions;
             }
 
@@ -332,12 +338,17 @@ function RouteComponent() {
       (acc, curr) => acc + curr.energy_max * curr.area * curr.repetitions,
       0,
     );
+    const sumMaterial = floors.reduce(
+      (acc, curr) => acc + curr.material * curr.area * curr.repetitions,
+      0,
+    );
 
     return {
       co2_min: `${(sumCO2Min / floorTotal).toInternational()}`,
       co2_max: `${(sumCO2Max / floorTotal).toInternational()}`,
       energy_min: `${(sumEnergyMin / floorTotal).toInternational()}`,
       energy_max: `${(sumEnergyMax / floorTotal).toInternational()}`,
+      material: `${(sumMaterial / floorTotal).toInternational()}`,
       area: `-`,
     };
   };
@@ -431,23 +442,24 @@ function RouteComponent() {
                 selectedSubTab={selectedTab}
                 onSubTabSelect={(tab) => onSelectedTabChange(tab)}
                 fullWidth
+                addTabAction={
+                  hasPermission("create:role") ? (
+                    <DrawerFormDisciplines
+                      componentTrigger={
+                        <Button variant="outline-bipc" size="icon">
+                          <Plus />
+                        </Button>
+                      }
+                      projectId={projectId}
+                      unitId={unitId}
+                      roles={roleTabs}
+                    />
+                  ) : undefined
+                }
               />
               <Button variant="outline-bipc" size="icon-lg" disabled>
                 <Upload />
               </Button>
-              {hasPermission("create:role") && (
-                <DrawerFormDisciplines
-                  componentTrigger={
-                    <Button variant="outline-bipc" size="lg">
-                      <Plus />
-                      {t.unitView.newDiscipline}
-                    </Button>
-                  }
-                  projectId={projectId}
-                  unitId={unitId}
-                  roles={roleTabs}
-                />
-              )}
               {(hasPermission("*:*") || selectedRole?.is_member) && (
                 <Tooltip>
                   <TooltipTrigger asChild>

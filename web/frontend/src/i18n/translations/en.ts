@@ -687,7 +687,7 @@ export const en: Translations = {
         yAxisLabel: "Project Classification",
         xAxisLabelCarbon: "Unitary Material Consumption - UMC (m³/m²)",
         xAxisLabelEnergy: "Unitary Material Consumption - UMC (m³/m²)",
-      }
+      },
     },
     chartPlaceholder: "Chart",
     loadingData: "Loading data...",
@@ -1049,8 +1049,11 @@ export const en: Translations = {
     area: "Area (m²)",
     co2Min: "CO₂ Min. (kg CO₂/m²)",
     co2Max: "CO₂ Max. (kg CO₂/m²)",
+    co2Range: "CO₂ (kg CO₂/m²)",
     energyMin: "Energy Min. (MJ/m²)",
     energyMax: "Energy Max. (MJ/m²)",
+    energyRange: "Energy (MJ/m²)",
+    material: "Material (kg/m²)",
     quantity: "Quantity",
     unknown: "Unknown",
     outdatedTech:

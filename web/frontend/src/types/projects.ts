@@ -17,6 +17,7 @@ export type TConsumption = {
   co2_min: number;
   energy_max: number;
   energy_min: number;
+  material: number;
 };
 
 export type TConsumptionPerModule = {

@@ -689,7 +689,7 @@ export const ptBR = {
         yAxisLabel: "Classificação dos projetos",
         xAxisLabelCarbon: "Consumo Unitário de Materiais - CUM (m³/m²)",
         xAxisLabelEnergy: "Consumo Unitário de Materiais - CUM (m³/m²)",
-      }
+      },
     },
     chartPlaceholder: "Gráfico",
     loadingData: "Carregando dados...",
@@ -1057,8 +1057,11 @@ export const ptBR = {
     area: "Área (m²)",
     co2Min: "CO₂ Min. (kg CO₂/m²)",
     co2Max: "CO₂ Max. (kg CO₂/m²)",
+    co2Range: "CO₂ (kg CO₂/m²)",
     energyMin: "Energia Min. (MJ/m²)",
     energyMax: "Energia Max. (MJ/m²)",
+    energyRange: "Energia (MJ/m²)",
+    material: "Material (kg/m²)",
     quantity: "Quantidade",
     unknown: "Desconhecida",
     outdatedTech:
