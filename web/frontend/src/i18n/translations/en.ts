@@ -131,7 +131,8 @@ export const en: Translations = {
     },
     signUp: {
       title: "Sign Up",
-      description: "Create your account to access BIPc and start managing your projects sustainably.",
+      description:
+        "Create your account to access BIPc and start managing your projects sustainably.",
       razaoSocial: "Company Name",
       birthDate: "Date of Birth",
       password: "Password",
@@ -163,7 +164,8 @@ export const en: Translations = {
       cnpjTooltip: "National Corporate Taxpayer Registry",
       cnpjPlaceholder: "00.000.000/0000-00",
       creaLabel: "CREA/CAU Registration",
-      creaTooltip: "To ensure certified reports are issued only to active professionals",
+      creaTooltip:
+        "To ensure certified reports are issued only to active professionals",
       creaPlaceholder: "26.2024.9999999",
       birthDateLabel: "Date of Birth",
       birthDateTooltip: "To authenticate the veracity of the identity",
@@ -173,7 +175,8 @@ export const en: Translations = {
       confirmPasswordLabel: "Retype password *",
       confirmPasswordPlaceholder: "Retype password",
       activityLabel: "Area of Activity",
-      activityTooltip: "To identify the role performed in collaboration with other professionals in a project",
+      activityTooltip:
+        "To identify the role performed in collaboration with other professionals in a project",
       activityPlaceholder: "Area of Activity",
       activityArchitecture: "Architecture",
       activityCivilEngineering: "Civil Engineering",
@@ -181,7 +184,8 @@ export const en: Translations = {
       activityResearch: "Research",
       activityOther: "Other",
       companyNameLabel: "Company Name",
-      companyNameTooltip: "To identify the organization the professional works with",
+      companyNameTooltip:
+        "To identify the organization the professional works with",
       companyNamePlaceholder: "Company Name",
       addressSection: "Address",
       cepLabel: "Zip Code",
@@ -199,7 +203,8 @@ export const en: Translations = {
       numberPlaceholder: "No.",
       complementLabel: "Complement",
       complementPlaceholder: "Complement",
-      privacyAccept: "I declare that I am aware of the use of my data for the purposes informed in the registration form and agree to the",
+      privacyAccept:
+        "I declare that I am aware of the use of my data for the purposes informed in the registration form and agree to the",
       privacyLink: "Privacy Policy",
       termsAccept: "I declare that I agree to the",
       termsLink: "Terms of Use",
@@ -238,14 +243,16 @@ export const en: Translations = {
       accountManagement: "Account Management",
       editData: "Edit Data",
       editDataSuccess: "Data updated",
-      editDataDescriptionSuccess: "The information has been successfully updated",
+      editDataDescriptionSuccess:
+        "The information has been successfully updated",
       deleteAccount: "Delete Account",
       individual: "Individual",
       company: "Legal Entity",
       accountTypeReadonly: "Account type cannot be changed",
       emailReadonly: "Email cannot be changed",
       changePassword: "Change password",
-      changePasswordHint: "Fill in the fields below only if you want to change your password. Leave blank to keep your current password.",
+      changePasswordHint:
+        "Fill in the fields below only if you want to change your password. Leave blank to keep your current password.",
       newPasswordLabel: "New Password",
       newPasswordPlaceholder: "New password (optional)",
       confirmNewPasswordLabel: "Confirm New Password",
@@ -378,19 +385,23 @@ export const en: Translations = {
       newOwner: "New Owner *",
       newOwnerPlaceholder: "Select a collaborator",
       noCollaborators: "No collaborators available",
-      newOwnerMessage: "You must have at least one collaborator in the project to transfer ownership.",
+      newOwnerMessage:
+        "You must have at least one collaborator in the project to transfer ownership.",
       collaboratorLink: "Add collaborators here.",
       transferSuccess: "Ownership transferred successfully!",
-      transferSuccessDescription: "You are no longer the administrator of this project.",
+      transferSuccessDescription:
+        "You are no longer the administrator of this project.",
       transferError: "Error transferring ownership",
-      transferErrorDescription: "An error occurred while transferring the ownership of the project.",
+      transferErrorDescription:
+        "An error occurred while transferring the ownership of the project.",
       noUserSelectedError: "Select a collaborator",
       noUserSelectedErrorDescription: "You need to select a new owner.",
     },
     selectAll: "Select All",
     deselectAll: "Deselect All",
     noProjects: "You don't have any projects yet.",
-    noProjectsDescription: "Create your first project to start managing your units and simulations.",
+    noProjectsDescription:
+      "Create your first project to start managing your units and simulations.",
   },
   units: {
     noUnits: "No Buildings",
@@ -510,11 +521,14 @@ export const en: Translations = {
       selectType: "Select type",
       addGrout: "Add Grout",
       complementaryStructure: "Complementary structure (optional)",
-      warningConcreteNoSteel: "You added concrete volumes. You must also add steel.",
-      warningSteelNoConcrete: "You added steel. You must also add concrete volumes.",
+      warningConcreteNoSteel:
+        "You added concrete volumes. You must also add steel.",
+      warningSteelNoConcrete:
+        "You added steel. You must also add concrete volumes.",
       warningConcreteZero: "Concrete volumes must be greater than 0.",
       warningSteelZero: "Steel masses must be greater than 0.",
-      warningBothZero: "Both concrete volumes and steel masses must be greater than 0.",
+      warningBothZero:
+        "Both concrete volumes and steel masses must be greater than 0.",
       blockType: "Type *",
       blockFbk: "Fbk (MPa) *",
       blockQuantity: "Quantity *",
@@ -540,7 +554,8 @@ export const en: Translations = {
       mesh: "Mesh",
       strand: "Strand",
       slabTypes: {
-        solid: "Solid slab (reinforced concrete) with beams or structural walls",
+        solid:
+          "Solid slab (reinforced concrete) with beams or structural walls",
         ribbed: "Ribbed slab (one-way, two-way / waffle type)",
         mushroom_solid: "Solid mushroom slab (with capital)",
         mushroom_ribbed: "Ribbed mushroom slab (with capital)",
@@ -549,7 +564,8 @@ export const en: Translations = {
         pt_solid: "Post-tensioned solid slab",
         pt_ribbed: "Post-tensioned ribbed slab",
         pt_mushroom_solid: "Post-tensioned solid mushroom slab (with capital)",
-        pt_mushroom_ribbed: "Post-tensioned ribbed mushroom slab (with capital)",
+        pt_mushroom_ribbed:
+          "Post-tensioned ribbed mushroom slab (with capital)",
         pt_flat: "Post-tensioned flat slab / no beams",
         pt_band_beam: "Post-tensioned slab with band beams",
         trussed: "Trussed slab (trussed joist + filler + topping)",
@@ -658,7 +674,7 @@ export const en: Translations = {
         xAxisLabelCarbon: "Embodied Carbon",
         xAxisLabelEnergy: "Energy Consumption",
         baseLine: "baseline",
-        ppp5Line: "PPp 5%"
+        ppp5Line: "PPp 5%",
       },
       classification: {
         name: "Classification",
@@ -666,12 +682,19 @@ export const en: Translations = {
         xAxisLabelCarbon: "Efficiency",
         xAxisLabelEnergy: "Energy Consumption",
       },
+      material: {
+        name: "CUM",
+        yAxisLabel: "Project Classification",
+        xAxisLabelCarbon: "Unitary Material Consumption - UMC (m³/m²)",
+        xAxisLabelEnergy: "Unitary Material Consumption - UMC (m³/m²)",
+      }
     },
     chartPlaceholder: "Chart",
     loadingData: "Loading data...",
     chartTrend: "Maximum and minimum footprint curve",
     chartBenchmark: "Benchmark",
-    chartMap: "Map by State",
+    chartCum: "CUM",
+    chartMap: "Map",
     mapNoData: "No data for this state",
     mapLegendMin: "Minimum",
     mapLegendMax: "Maximum",
@@ -724,8 +747,10 @@ export const en: Translations = {
     formButton: "Access Form",
     hasAccount: "I already have an account",
     close: "Close",
-    descriptionAuthenticated: "The first training group for the BIPc platform is complete. If you are interested in joining the next groups, indicate here.",
-    descriptionUnauthenticated: "Sign up to participate in the training for using the platform. The first step is to create your account on the platform.",
+    descriptionAuthenticated:
+      "The first training group for the BIPc platform is complete. If you are interested in joining the next groups, indicate here.",
+    descriptionUnauthenticated:
+      "Sign up to participate in the training for using the platform. The first step is to create your account on the platform.",
     wantToParticipate: "I want to participate",
     alreadyRegistered: "I'm already registered",
     signUp: "Sign up on the platform",
@@ -802,8 +827,10 @@ export const en: Translations = {
     floor: "Floor",
     area: "Area",
     height: "Height",
-    selectFloors: "Select the floors where this constructive technology will be applied",
-    viewOnlyFloors: "The floors below are for visualization only and cannot be edited or selected here.",
+    selectFloors:
+      "Select the floors where this constructive technology will be applied",
+    viewOnlyFloors:
+      "The floors below are for visualization only and cannot be edited or selected here.",
     addFloors: "Add floors",
     toVisualizeTheTower: "to visualize the tower",
     floorCount_one: "floor",
@@ -854,6 +881,9 @@ export const en: Translations = {
     displaying: "Displaying",
     of: "of",
     numberOfProjects: "Number of projects",
+    enableZoom: "Enable zoom",
+    disableZoom: "Disable zoom",
+    zoomLabel: "Zoom",
   },
   brazilMap: {
     title: "Brazil",
@@ -862,9 +892,13 @@ export const en: Translations = {
     loadingMunicipalities: "Loading municipalities...",
     noProjects: "No projects",
     unmatchedWarning: "without precise location",
-    unmatchedTooltip: "Projects registered with inconsistent municipality (city from another state)",
-    noStateWarning: "without registered state",
-    noStateTooltip: "Projects without a registered state are not shown on the map",
+    unmatchedTooltip:
+      "Projects registered with inconsistent municipality (city from another state)",
+    noStateWarning: "without state and municipality identification",
+    noStateTooltip:
+      "Projects without a registered state and municipality are not shown on the map",
+    clickStateHint:
+      "Click on a state to see the detailed distribution of projects by municipality",
     projects: "projects",
     project: "project",
   },
@@ -874,10 +908,12 @@ export const en: Translations = {
     buildings: "Buildings",
     addBuilding: "Add Building",
     noBuildingsFound: "No buildings found",
-    noBuildingsDescription: "Define floors and units to organize the structure of this project.",
+    noBuildingsDescription:
+      "Define floors and units to organize the structure of this project.",
     constructiveTechnologies: "Constructive Technologies",
     noTechFound: "No constructive technology found",
-    noTechDescription: "Constructive technologies will be shown here after simulations.",
+    noTechDescription:
+      "Constructive technologies will be shown here after simulations.",
   },
   collaboratorsView: {
     disciplines: "Disciplines",
@@ -941,8 +977,10 @@ export const en: Translations = {
     nonNegativeNumber: "Must be a non-negative number",
     selectStructureType: "Select a structure type",
     invalidStructureType: "Invalid structure type",
-    beamColumnRequired: "For Beam Column, the following are required: concrete (columns, beams, slabs), formwork (columns, beams, slabs), number of columns and average spans",
-    concreteWallRequired: "For Concrete Wall, the following are required: concrete (walls, slabs), thicknesses (wall, slab) and areas (formwork, wall)",
+    beamColumnRequired:
+      "For Beam Column, the following are required: concrete (columns, beams, slabs), formwork (columns, beams, slabs), number of columns and average spans",
+    concreteWallRequired:
+      "For Concrete Wall, the following are required: concrete (walls, slabs), thicknesses (wall, slab) and areas (formwork, wall)",
     towersMin: "Number of towers must be greater than 0",
     floorsWithoutFoundationMin: "Total number of floors must be greater than 0",
     towerTotalFloorsMin: "Total number of tower floors must be greater than 0",
@@ -950,8 +988,10 @@ export const en: Translations = {
     undergroundFloorsMin: "Number of underground floors must be greater than 0",
     typicalFloorsMin: "Number of typical floors must be greater than 0",
     totalBuiltAreaMin: "Total built area must be greater than 0",
-    typicalFloorHeightMin: "Typical floor-to-floor height must be greater than 0",
-    maxFloorHeightMin: "Maximum existing floor-to-floor height must be greater than 0",
+    typicalFloorHeightMin:
+      "Typical floor-to-floor height must be greater than 0",
+    maxFloorHeightMin:
+      "Maximum existing floor-to-floor height must be greater than 0",
     wallThicknessMin: "Wall thickness must be greater than 0",
     slabThicknessMin: "Slab thickness must be greater than 0",
     concreteVolumeMin: "Concrete volume must be greater than 0",
@@ -973,12 +1013,14 @@ export const en: Translations = {
     generating: "Generating...",
     generate: "Generate new API key",
     copied: "API key copied to clipboard!",
-    oneTimeWarning: "The API key is for one-time viewing only. Copy it now, as it will not be possible to see it again.",
+    oneTimeWarning:
+      "The API key is for one-time viewing only. Copy it now, as it will not be possible to see it again.",
   },
   summaryTechnologies: {
     projects: "Projects",
     noProjectSelected: "No project selected.",
-    noProjectDescription: "Please select at least one project to view the summary.",
+    noProjectDescription:
+      "Please select at least one project to view the summary.",
   },
   summaryFloors: {
     floors: "Floors",
@@ -1011,43 +1053,54 @@ export const en: Translations = {
     energyMax: "Energy Max. (MJ/m²)",
     quantity: "Quantity",
     unknown: "Unknown",
-    outdatedTech: "This constructive technology is outdated due to changes in the unit. Please update it!",
+    outdatedTech:
+      "This constructive technology is outdated due to changes in the unit. Please update it!",
     duplicate: "Duplicate",
     selectRow: "Select row",
   },
   unitView: {
     tabAllDisciplines: "All disciplines",
     notFound: "Unit not found",
-    notFoundDescription: "The requested unit could not be found. It may have been removed or the link is incorrect.",
+    notFoundDescription:
+      "The requested unit could not be found. It may have been removed or the link is incorrect.",
     backToProject: "Back to project",
     newDiscipline: "New discipline",
     createSimulations: "Create simulations",
     selectDisciplineTooltip: "Select a discipline to create simulations",
     noDisciplines: "No disciplines to display",
-    noDisciplinesDescription: "You haven't created any discipline for this unit yet. Create a discipline to start creating simulations.",
+    noDisciplinesDescription:
+      "You haven't created any discipline for this unit yet. Create a discipline to start creating simulations.",
     addDiscipline: "Add Discipline",
     noSimulations: "No simulations to display at the moment",
-    noSimulationsDescription: "Constructive technologies from all disciplines will be shown here after data is entered into the simulations.",
+    noSimulationsDescription:
+      "Constructive technologies from all disciplines will be shown here after data is entered into the simulations.",
     createFirstSimulation: "Create your first simulation",
-    createFirstSimulationDescription: "Click the \"Create simulations\" button and add the project data.",
+    createFirstSimulationDescription:
+      'Click the "Create simulations" button and add the project data.',
     floors: "Floors",
     simulations: "Simulations",
   },
   constructiveTechView: {
     placeholder: "Simulation",
     outdated: "Outdated",
-    outdatedTooltip: "Some constructive technologies in this simulation are outdated due to changes in the unit.",
+    outdatedTooltip:
+      "Some constructive technologies in this simulation are outdated due to changes in the unit.",
     noSimulationsFound: "No simulations found",
-    noSimulationsDescription: "No data available in this table. Create a new simulation to start adding data.",
+    noSimulationsDescription:
+      "No data available in this table. Create a new simulation to start adding data.",
     duplicateTech: "Duplicate Constructive Technology",
-    duplicateTechContent: "Are you sure you want to duplicate this constructive technology? This action will create an identical copy of the constructive technology, including all its technical data. You will be able to edit the details of the new constructive technology after duplication.",
+    duplicateTechContent:
+      "Are you sure you want to duplicate this constructive technology? This action will create an identical copy of the constructive technology, including all its technical data. You will be able to edit the details of the new constructive technology after duplication.",
     deleteTech: "Delete Constructive Technology",
     createFirstSimulation: "Create your first simulation",
-    createFirstSimulationDescription: "Click 'New Simulation' to add technical data and constructive technologies for this project.",
+    createFirstSimulationDescription:
+      "Click 'New Simulation' to add technical data and constructive technologies for this project.",
     noTechFound: "No constructive technology found",
-    noTechDescription: "Add constructive technologies for this simulation using the \"Add Technology\" button.",
+    noTechDescription:
+      'Add constructive technologies for this simulation using the "Add Technology" button.',
     duplicateSimulation: "Duplicate Simulation",
-    duplicateSimulationContent: "Are you sure you want to duplicate this simulation? This action will create an identical copy of the simulation, including all associated constructive technologies. You will be able to edit the details of the new simulation after duplication.",
+    duplicateSimulationContent:
+      "Are you sure you want to duplicate this simulation? This action will create an identical copy of the simulation, including all associated constructive technologies. You will be able to edit the details of the new simulation after duplication.",
     deleteSimulation: "Delete Simulation",
     successDeleteSimulation: "Simulation deleted successfully",
     errorDeleteSimulation: "Error deleting simulation",
@@ -1059,31 +1112,37 @@ export const en: Translations = {
     errorDuplicateTech: "Error duplicating constructive technology",
     newSimulation: "New Simulation",
     createSimulations: "Add Technology",
-    favoriteOption: "Mark as reference"
+    favoriteOption: "Mark as reference",
   },
   disciplines: {
     title: "Disciplines",
     editDiscipline: "Edit Discipline",
     deleteDiscipline: "Delete Discipline",
-    description: "To run simulations, first add a discipline such as \"Structural\", \"Foundation\", \"Enclosures\" or any other title that describes your area of expertise.",
+    description:
+      'To run simulations, first add a discipline such as "Structural", "Foundation", "Enclosures" or any other title that describes your area of expertise.',
     nameLabel: "Discipline name *",
     namePlaceholder: "Enclosures",
     nameDuplicate: "Discipline already exists. Please use a different name.",
     descriptionLabel: "Description",
     descriptionPlaceholder: "Structural masonry projects",
     showInSimulation: "Show in simulation",
-    showInSimulationDescription: "Enables this discipline to appear in simulations",
+    showInSimulationDescription:
+      "Enables this discipline to appear in simulations",
     permissions: "Permissions",
-    permissionsDescription: "Select the permissions that people assigned to this discipline will have.",
+    permissionsDescription:
+      "Select the permissions that people assigned to this discipline will have.",
     selectAll: "Select all",
     searchCollaborators: "Search collaborators",
-    searchCollaboratorsDescription: "Select the collaborators who are part of this discipline.",
-    searchCollaboratorsWarning: "Important: If your user is part of this group, don't forget to add yourself.",
+    searchCollaboratorsDescription:
+      "Select the collaborators who are part of this discipline.",
+    searchCollaboratorsWarning:
+      "Important: If your user is part of this group, don't forget to add yourself.",
     collaboratorPlaceholder: "Collaborator...",
     searchPlaceholder: "Search collaborator...",
     noCollaboratorFound: "No collaborator found.",
     noCollaboratorAdded: "No collaborator added",
-    noCollaboratorDescription: "At least 1 collaborator must be added to the discipline.",
+    noCollaboratorDescription:
+      "At least 1 collaborator must be added to the discipline.",
     saveChanges: "Save changes",
     addDiscipline: "Add discipline",
     createSuccess: "Discipline created successfully!",
@@ -1115,5 +1174,5 @@ export const en: Translations = {
     description:
       "This page is still under development and is not available at the moment. We're working hard to launch it soon. Thank you for your understanding!",
     predictDate: "Expected launch date: {date}",
-  }
+  },
 };

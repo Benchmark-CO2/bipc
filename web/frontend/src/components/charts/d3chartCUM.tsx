@@ -10,12 +10,12 @@ import * as d3 from "d3";
 import { regressionPoly } from "d3-regression";
 import { Search, SearchX } from "lucide-react";
 import React, {
-    useCallback,
-    useEffect,
-    useLayoutEffect,
-    useMemo,
-    useRef,
-    useState,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import Indicators from "./components/indicators";
 
@@ -35,8 +35,8 @@ const debounce = <T extends (...args: any[]) => any>(
 const DEFAULT_COLORS = {
   START: "#3b82f6",
   END: "#E36F35",
-  GRAY_START: "#cbd5e1",
-  GRAY_END: "#94a3b8",
+  GRAY_START: "#94a3b8",
+  GRAY_END: "#64748b",
   GRADIENT_RANGE: [
     "#3b82f6",
     "hsl(97, 40%, 50%)",
@@ -90,7 +90,7 @@ type ChartData = IBenchmarkItem & {
   value?: number;
 };
 
-type D3GradientRangeChartProps = {
+type D3RangeChartProps = {
   /** Chart variant: "range" shows min/max pairs, "cumulative" shows single-value gray dots */
   variant?: "range" | "cumulative";
   selectedBars?: string[];
@@ -127,7 +127,7 @@ type D3GradientRangeChartProps = {
 };
 // Custom hooks
 const useChartDimensions = (
-  props: Pick<D3GradientRangeChartProps, "width" | "height">,
+  props: Pick<D3RangeChartProps, "width" | "height">,
   overrideDimensions: boolean,
   isMobile: boolean,
   isExpanded: boolean,
@@ -215,7 +215,7 @@ const useTooltipPosition = () => {
   );
 };
 
-const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
+const D3RangeChart: React.FC<D3RangeChartProps> = ({
   variant = "range",
   selectedBars = [],
   selectedMinBars,
@@ -769,7 +769,9 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         } else {
           // Range mode: bars and colored circles
           // Bar connecting min and max only when both endpoints are selected
+          // Split bar: blue from min to mid, orange from mid to max
           if (!hideBars && isPairSelected) {
+            // Use midPredict regression if available, otherwise use simple average
             const midValue = midPredict ? midPredict(d.y) : (d.min + d.max) / 2;
             const xMid = newXScale(midValue);
             const rr = isExpanded ? barHeight / 2 : 2;
@@ -1365,14 +1367,14 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
                 ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
                 : "bg-background text-muted-foreground border-border hover:bg-muted",
             )}
-            title={zoomEnabled ? t.d3chart.disableZoom : t.d3chart.enableZoom}
+            title={zoomEnabled ? "Desabilitar zoom" : "Habilitar zoom"}
           >
             {zoomEnabled ? (
               <Search className="size-3.5" />
             ) : (
               <SearchX className="size-3.5" />
             )}
-            <span className="max-sm:hidden">{t.d3chart.zoomLabel}</span>
+            <span className="max-sm:hidden">Zoom</span>
           </button>
 
           <canvas
@@ -1408,7 +1410,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
             >
               {isCumulative ? (
                 <span>
-                  {xAxisLabelProp ?? t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon}:{" "}
+                  {t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon}:{" "}
                   <b>
                     {tooltip.value.min.toInternational()} {unit}
                   </b>
@@ -1469,4 +1471,4 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   );
 };
 
-export default D3GradientRangeChart;
+export default D3RangeChart;

@@ -18,7 +18,7 @@ const Icons = {
             "fill-white stroke-transparent transition-colors duration-200",
             {
               "fill-primary": isActive,
-            }
+            },
           )}
           stroke="#A1A1AA"
         />
@@ -76,7 +76,7 @@ const Icons = {
             "fill-white stroke-transparent transition-colors duration-200",
             {
               "fill-primary": isActive,
-            }
+            },
           )}
         />
         <path
@@ -177,7 +177,7 @@ const Icons = {
             "fill-white stroke-transparent transition-colors duration-200",
             {
               "fill-primary": isActive,
-            }
+            },
           )}
         />
         <path
@@ -383,20 +383,23 @@ export const TechIcon = ({
   name,
   isActive = false,
   onClick,
-}: IconProps & { onClick: () => void }) => {
+  className,
+}: IconProps & { onClick: () => void; className?: string }) => {
   const { t } = useTranslation();
   const IconComponent = Icons[name]
     ? Icons[name].render(isActive, onClick)
     : null;
-  const label = name in t.techIcons
-    ? t.techIcons[name as keyof typeof t.techIcons]
-    : name;
+  const label =
+    name in t.techIcons ? t.techIcons[name as keyof typeof t.techIcons] : name;
   return (
-    <div className="flex flex-col items-center gap-2 cursor-pointer select-none">
+    <div
+      className={cn(
+        "flex flex-col items-center gap-2 cursor-pointer select-none",
+        className,
+      )}
+    >
       {IconComponent}
-      <span className="text-center text-primary text-xs">
-        {label}
-      </span>
+      <span className="text-center text-primary text-[12px]">{label}</span>
     </div>
   );
 };

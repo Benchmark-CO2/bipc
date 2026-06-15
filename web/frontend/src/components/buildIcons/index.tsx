@@ -45,7 +45,7 @@ const Icons = {
             "fill-white stroke-gray-400 transition-colors duration-200",
             {
               "fill-primary": isActive,
-            }
+            },
           )}
           stroke="#A1A1AA"
         />
@@ -75,7 +75,7 @@ const Icons = {
             "fill-white stroke-gray-400 transition-colors duration-200",
             {
               "fill-primary": isActive,
-            }
+            },
           )}
           stroke="#A1A1AA"
         />
@@ -154,7 +154,7 @@ const Icons = {
             "fill-white stroke-gray-400 transition-colors duration-200",
             {
               "fill-primary": isActive,
-            }
+            },
           )}
           stroke="#A1A1AA"
         />
@@ -214,7 +214,7 @@ const Icons = {
             "fill-white stroke-gray-400 transition-colors duration-200",
             {
               "fill-primary": isActive,
-            }
+            },
           )}
           stroke="#A1A1AA"
         />
@@ -298,7 +298,7 @@ const Icons = {
             "fill-white stroke-gray-400 transition-colors duration-200",
             {
               "fill-primary": isActive,
-            }
+            },
           )}
           stroke="#A1A1AA"
         />
@@ -363,18 +363,25 @@ export const BuildIcon = ({
   name,
   isActive = false,
   onClick,
-}: IconProps & { onClick: () => void }) => {
+  className,
+}: IconProps & { onClick: () => void; className?: string }) => {
   const { t } = useTranslation();
   const IconComponent = Icons[name]
     ? Icons[name].render(isActive, onClick)
     : null;
-  const label = name in t.buildIcons
-    ? t.buildIcons[name as keyof typeof t.buildIcons]
-    : name;
+  const label =
+    name in t.buildIcons
+      ? t.buildIcons[name as keyof typeof t.buildIcons]
+      : name;
   return (
-    <div className="flex flex-col items-center gap-2 cursor-pointer">
+    <div
+      className={cn(
+        "flex flex-col items-center gap-2 cursor-pointer",
+        className,
+      )}
+    >
       {IconComponent}
-      <span className="text-center text-primary text-xs max-w-[100px]">
+      <span className="text-center text-primary text-[12px] max-w-[100px]">
         {label}
       </span>
     </div>
