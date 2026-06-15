@@ -16,7 +16,8 @@ export interface PostProjectRequest {
     | "not_defined"
     | "basic_project"
     | "executive_project"
-    | "released_for_construction";
+    | "released_for_construction"
+    | "as_built";
   description?: string | undefined;
   image_url?: string | undefined;
 }

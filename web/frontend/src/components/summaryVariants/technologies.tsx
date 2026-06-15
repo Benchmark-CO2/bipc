@@ -20,6 +20,7 @@ type TModules = {
     co2_min: number;
     energy_max: number;
     energy_min: number;
+    material: number;
   };
   id: string;
   type: string;
@@ -97,11 +98,10 @@ const SimulationsSummary = ({
 
   const managedData = normalizeBenchmarkSeries(
     data.benchmark?.[type as "co2" | "energy" | "material"],
-  )
-    .map((el) => ({
-      ...el,
-      label: projects.find((f) => f.id === el.id)?.name || "",
-    }));
+  ).map((el) => ({
+    ...el,
+    label: projects.find((f) => f.id === el.id)?.name || "",
+  }));
   const { isExpanded } = useSummary();
 
   const handleAddProject = (projectId: string) => {
@@ -141,7 +141,9 @@ const SimulationsSummary = ({
     }
   }, [previousProjects, projects, someSelected]);
 
-  const [subTabs, setSubTabs] = useState<string>(t.summaryTechnologies.projects);
+  const [subTabs, setSubTabs] = useState<string>(
+    t.summaryTechnologies.projects,
+  );
   const selectAll = () => {
     if (selectedProjects.length === projects.length) {
       setSelectedProjects([]);
@@ -153,21 +155,22 @@ const SimulationsSummary = ({
 
   const newData = [
     ...managedData,
-    ...(newItems.map((item) => item[listType]) || []),
+    ...(type !== "material"
+      ? newItems.map((item) => item[listType]) || []
+      : []),
   ] as any;
   const minData = useMemo(() => newData.map((d: Item) => d.min), [newData]);
   const maxData = useMemo(() => newData.map((d: Item) => d.max), [newData]);
   const minValue = minData.length ? Math.min(...minData) : 0;
   const maxValue = maxData.length ? Math.max(...maxData) : 0;
-  const updateYs = recalculateY(
-    newData,
-    minValue,
-    maxValue,
-  );
+  const updateYs = recalculateY(newData, minValue, maxValue);
 
-  const listSum = type !== "material"
-    ? newItems.flatMap((el) => el[listType]).reduce((acc, curr) => acc + curr.max, 0)
-    : 0;
+  const listSum =
+    type !== "material"
+      ? newItems
+          .flatMap((el) => el[listType])
+          .reduce((acc, curr) => acc + curr.max, 0)
+      : 0;
 
   return (
     <>
@@ -278,8 +281,20 @@ const SimulationsSummary = ({
             showMidCurve={type !== "material"}
             showProjectName
             variant={type === "material" ? "cumulative" : "range"}
-            xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
-            yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
+            xAxisLabel={
+              t.benchmark.chartTypes[
+                type === "co2" || type === "energy"
+                  ? "cumulativeFraction"
+                  : "material"
+              ][type === "co2" ? "xAxisLabelCarbon" : "xAxisLabelEnergy"]
+            }
+            yAxisLabel={
+              t.benchmark.chartTypes[
+                type === "co2" || type === "energy"
+                  ? "cumulativeFraction"
+                  : "material"
+              ].yAxisLabel
+            }
           />
         ) : (
           <D3GradientRangeLineChart

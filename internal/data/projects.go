@@ -18,7 +18,7 @@ var (
 		"MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI",
 		"RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"}
 
-	phases = []string{"preliminary_study", "not_defined", "basic_project", "executive_project", "released_for_construction"}
+	phases = []string{"preliminary_study", "not_defined", "basic_project", "executive_project", "released_for_construction", "as_built"}
 
 	PhaseMap = map[string]string{
 		"preliminary_study":         "Estudo Preliminar",

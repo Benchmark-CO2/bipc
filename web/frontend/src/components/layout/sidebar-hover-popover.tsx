@@ -6,22 +6,12 @@ import {
   PopoverTrigger,
 } from "../ui/popover";
 import { cn } from "@/lib/utils";
-import { commonLinks, CUR_USAGE } from "@/utils/commonLinks";
+import { commonLinks, CUR_USAGE, ILinkItem } from "@/utils/commonLinks";
 import { Link } from "@tanstack/react-router";
-import type { LucideIcon } from "lucide-react";
 import { ChevronDown } from "lucide-react";
-
-type CommonLinkKey = keyof typeof commonLinks;
-
-export interface PopoverItem {
-  label: string;
-  icon: LucideIcon;
-  linkKey: CommonLinkKey;
-}
-
 interface SidebarHoverPopoverProps {
   trigger: React.ReactNode;
-  items: PopoverItem[];
+  items: ILinkItem[];
   triggerClassName?: string;
   onItemClick?: () => void;
   isMobile?: boolean;
@@ -32,7 +22,7 @@ function PopoverLink({
   item,
   onItemClick,
 }: {
-  item: PopoverItem;
+  item: ILinkItem;
   onItemClick?: () => void;
 }) {
   const urls = commonLinks[item.linkKey];
