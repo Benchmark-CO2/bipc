@@ -38,6 +38,7 @@ type SimulationData = {
       co2_min: number;
       energy_max: number;
       energy_min: number;
+      material: number;
     };
   };
 };
@@ -67,7 +68,7 @@ const SimulationsSummary = ({
   const { t } = useTranslation();
   const filteredProjects = projects.filter((el) => !!el.consumption);
 
-  const newItems: Record<"co2" | "energy", Item>[] = filteredProjects.map(
+  const newItems: Record<"co2" | "energy" | "material", Item>[] = filteredProjects.map(
     (el) => {
       return {
         co2: {
@@ -82,6 +83,12 @@ const SimulationsSummary = ({
           y: 0,
           min: el?.consumption?.total.energy_min,
           max: el?.consumption?.total.energy_max,
+          label: el.name,
+        },
+        material: {
+          id: el.id,
+          y: 0,
+          value: el?.consumption?.total.material || 0,
           label: el.name,
         },
       };
@@ -142,11 +149,11 @@ const SimulationsSummary = ({
       setSelectedProjects(filteredProjects.map((p) => p.id));
     }
   };
-  const listType: "co2" | "energy" = type === "material" ? "co2" : type;
+  const listType: "co2" | "energy" | "material" = type ;
 
   const newData = [
     ...managedData,
-    ...(type !== "material" ? (newItems.map((item) => item[listType]) || []) : []),
+    ...(newItems.map((item) => item[listType]) || []),
   ] as any;
   const minData = useMemo(() => newData.map((d: Item) => d.min), [newData]);
   const maxData = useMemo(() => newData.map((d: Item) => d.max), [newData]);
@@ -206,7 +213,7 @@ const SimulationsSummary = ({
               />
             )}
             {[
-              ...(type !== "material" ? newItems.map((el) => el[listType]) : []),
+              ...(newItems.map((el) => el[listType])),
               ...projects.filter(
                 (el) =>
                   !el.consumption &&

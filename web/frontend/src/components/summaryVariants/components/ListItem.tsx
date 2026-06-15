@@ -8,12 +8,13 @@ type ListItemProps = {
     co2: number;
     id: string;
     energy: number;
+    material: number;
   }>;
   selectedProjects: string[];
   handleAddProject: (id: string) => void;
   sum: number;
   color?: string;
-  type: "co2" | "energy";
+  type: "co2" | "energy" | "material";
   hasConsumption?: boolean;
 };
 const ListItem = ({

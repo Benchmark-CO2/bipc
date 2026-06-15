@@ -683,7 +683,7 @@ export const en: Translations = {
         xAxisLabelEnergy: "Energy Consumption",
       },
       material: {
-        name: "CUM",
+        name: "UMC",
         yAxisLabel: "Project Classification",
         xAxisLabelCarbon: "Unitary Material Consumption - UMC (m³/m²)",
         xAxisLabelEnergy: "Unitary Material Consumption - UMC (m³/m²)",
@@ -693,7 +693,7 @@ export const en: Translations = {
     loadingData: "Loading data...",
     chartTrend: "Maximum and minimum footprint curve",
     chartBenchmark: "Benchmark",
-    chartCum: "CUM",
+    chartCum: "UMC",
     chartMap: "Map",
     mapNoData: "No data for this state",
     mapLegendMin: "Minimum",
@@ -874,6 +874,7 @@ export const en: Translations = {
   },
   filterTabs: {
     energy: "Energy",
+    material: "Material",
   },
   d3chart: {
     floors: "Floors",

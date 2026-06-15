@@ -7,12 +7,13 @@ type ItemCardProps = {
     label: string;
     co2: number;
     energy: number;
+    material: number;
   }>;
   selectedProjects: string[];
   handleAddProject: (id: string) => void;
   sum: number;
   color: string;
-  type: "co2" | "energy";
+  type: "co2" | "energy" | "material";
   hasConsumption: boolean;
 };
 const ItemCard = ({
