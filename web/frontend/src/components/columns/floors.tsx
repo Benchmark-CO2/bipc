@@ -35,7 +35,7 @@ export const makeFloorsColumns = (t: Translations): ColumnDef<FloorRow>[] => [
     header: () => (
       <div className="text-center">
         <div>{t.columns.co2Range}</div>
-        <div className="text-xs font-normal text-white/70">(min - max)</div>
+        <div className="text-xs font-normal text-inherit">(min - max)</div>
       </div>
     ),
     cell: ({ row }) => {
@@ -53,7 +53,7 @@ export const makeFloorsColumns = (t: Translations): ColumnDef<FloorRow>[] => [
     header: () => (
       <div className="text-center">
         <div>{t.columns.energyRange}</div>
-        <div className="text-xs font-normal text-white/70">(min - max)</div>
+        <div className="text-xs font-normal text-inherit">(min - max)</div>
       </div>
     ),
     cell: ({ row }) => {
