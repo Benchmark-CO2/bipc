@@ -51,6 +51,7 @@ import {
 import { Textarea } from "../ui/textarea";
 import { CityCombobox } from "../ui/city-combobox";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 
 interface IDrawerAddProject {
   componentTrigger: React.ReactNode;
@@ -115,7 +116,7 @@ export default function DrawerFormProject({
     mutationFn: postProject,
     onError: (error) => {
       toast.error(t.projects.form.createError, {
-        description: error.message,
+        description: parseApiError(error, t),
         duration: 5000,
       });
     },
@@ -150,7 +151,7 @@ export default function DrawerFormProject({
       patchProject(data as any, projectData!.id),
     onError: (error) => {
       toast.error(t.projects.form.editError, {
-        description: error.message,
+        description: parseApiError(error, t),
         duration: 5000,
       });
     },
@@ -190,7 +191,7 @@ export default function DrawerFormProject({
       await postFile(signedUrlData.data.url, fileParams);
     } catch (error) {
       toast.error(t.projects.form.unknownError, {
-        description: (error as Error).message,
+        description: parseApiError(error, t),
         duration: 5000,
       });
       return;

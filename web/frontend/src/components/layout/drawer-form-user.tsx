@@ -50,6 +50,7 @@ import {
 } from "lucide-react";
 import { CustomLink } from "@/components/ui/custom-link";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -129,9 +130,10 @@ export default function DrawerFormUser({
           type: "custom",
           message: t.settings.userInfo.emailAlreadyRegistered,
         });
+        return;
       }
-      toast.error(t.common.unknownError, {
-        description: error.message || t.common.unknownError,
+      toast.error(t.errors.unexpectedError, {
+        description: parseApiError(error, t),
         duration: 5000,
       });
     },
@@ -392,7 +394,9 @@ export default function DrawerFormUser({
                 )}
                 <div>
                   <p className="text-sm font-medium">
-                    {isCompany ? t.settings.userInfo.company : t.settings.userInfo.individual}
+                    {isCompany
+                      ? t.settings.userInfo.company
+                      : t.settings.userInfo.individual}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {t.settings.userInfo.accountTypeReadonly}
@@ -401,7 +405,9 @@ export default function DrawerFormUser({
               </div>
 
               <p className="font-bold text-lg">
-                {isCompany ? t.settings.userInfo.companyInfo : t.settings.userInfo.personalInfo}
+                {isCompany
+                  ? t.settings.userInfo.companyInfo
+                  : t.settings.userInfo.personalInfo}
               </p>
               <FormField
                 control={form.control}
@@ -409,11 +415,17 @@ export default function DrawerFormUser({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {isCompany ? t.settings.userInfo.nameLabelCompany : t.settings.userInfo.nameLabel}
+                      {isCompany
+                        ? t.settings.userInfo.nameLabelCompany
+                        : t.settings.userInfo.nameLabel}
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder={isCompany ? t.settings.userInfo.namePlaceholderCompany : t.settings.userInfo.namePlaceholder}
+                        placeholder={
+                          isCompany
+                            ? t.settings.userInfo.namePlaceholderCompany
+                            : t.settings.userInfo.namePlaceholder
+                        }
                         disabled={isUpdatePending}
                         autoComplete="name"
                         {...field}
@@ -498,7 +510,9 @@ export default function DrawerFormUser({
                     name="birthdate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t.settings.userInfo.birthdateLabel}</FormLabel>
+                        <FormLabel>
+                          {t.settings.userInfo.birthdateLabel}
+                        </FormLabel>
                         <FormControl>
                           <Input
                             {...field}
@@ -521,7 +535,8 @@ export default function DrawerFormUser({
 
               <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <p className="text-sm text-blue-800 dark:text-blue-200">
-                  <strong>{t.settings.userInfo.changePassword}:</strong> {t.settings.userInfo.changePasswordHint}
+                  <strong>{t.settings.userInfo.changePassword}:</strong>{" "}
+                  {t.settings.userInfo.changePasswordHint}
                 </p>
               </div>
 
@@ -531,12 +546,16 @@ export default function DrawerFormUser({
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t.settings.userInfo.newPasswordLabel}</FormLabel>
+                      <FormLabel>
+                        {t.settings.userInfo.newPasswordLabel}
+                      </FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
                             type={showPassword ? "text" : "password"}
-                            placeholder={t.settings.userInfo.newPasswordPlaceholder}
+                            placeholder={
+                              t.settings.userInfo.newPasswordPlaceholder
+                            }
                             disabled={isUpdatePending}
                             autoComplete="new-password"
                             className="pr-10"
@@ -566,12 +585,16 @@ export default function DrawerFormUser({
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t.settings.userInfo.confirmNewPasswordLabel}</FormLabel>
+                      <FormLabel>
+                        {t.settings.userInfo.confirmNewPasswordLabel}
+                      </FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
                             type={showConfirmPassword ? "text" : "password"}
-                            placeholder={t.settings.userInfo.confirmNewPasswordPlaceholder}
+                            placeholder={
+                              t.settings.userInfo.confirmNewPasswordPlaceholder
+                            }
                             disabled={isUpdatePending}
                             autoComplete="new-password"
                             className="pr-10"
@@ -608,7 +631,9 @@ export default function DrawerFormUser({
                     name="activity"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t.settings.userInfo.activityLabel}</FormLabel>
+                        <FormLabel>
+                          {t.settings.userInfo.activityLabel}
+                        </FormLabel>
                         <FormControl>
                           <Select
                             onValueChange={field.onChange}
@@ -619,7 +644,11 @@ export default function DrawerFormUser({
                               className="w-full"
                               disabled={isUpdatePending}
                             >
-                              <SelectValue placeholder={t.settings.userInfo.activityPlaceholder} />
+                              <SelectValue
+                                placeholder={
+                                  t.settings.userInfo.activityPlaceholder
+                                }
+                              />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="Arquitetura">
@@ -631,10 +660,27 @@ export default function DrawerFormUser({
                               <SelectItem value="Coordenação de Projetos">
                                 {t.auth.signUp.activityProjectCoordination}
                               </SelectItem>
+                              <SelectItem value="Gerenciamento">
+                                {t.auth.signUp.activityManagement}
+                              </SelectItem>
+                              <SelectItem value="Consultoria">
+                                {t.auth.signUp.activityConsulting}
+                              </SelectItem>
+                              <SelectItem value="Cliente">
+                                {t.auth.signUp.activityClient}
+                              </SelectItem>
+                              <SelectItem value="Análise">
+                                {t.auth.signUp.activityAnalysis}
+                              </SelectItem>
+                              <SelectItem value="Auditoria">
+                                {t.auth.signUp.activityAudit}
+                              </SelectItem>
                               <SelectItem value="Pesquisador(a)">
                                 {t.auth.signUp.activityResearch}
                               </SelectItem>
-                              <SelectItem value="Outro">{t.auth.signUp.activityOther}</SelectItem>
+                              <SelectItem value="Outro">
+                                {t.auth.signUp.activityOther}
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </FormControl>
@@ -642,16 +688,21 @@ export default function DrawerFormUser({
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={form.control}
                     name="enterprise"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t.settings.userInfo.companyNameLabel}</FormLabel>
+                        <FormLabel>
+                          {t.settings.userInfo.companyNameLabel}
+                        </FormLabel>
                         <FormControl>
                           <Input
                             type="text"
-                            placeholder={t.settings.userInfo.companyNamePlaceholder}
+                            placeholder={
+                              t.settings.userInfo.companyNamePlaceholder
+                            }
                             disabled={isUpdatePending}
                             {...field}
                           />
@@ -664,7 +715,9 @@ export default function DrawerFormUser({
               )}
 
               {/* Address section */}
-              <p className="font-bold text-lg mt-4">{t.settings.userInfo.addressSection}</p>
+              <p className="font-bold text-lg mt-4">
+                {t.settings.userInfo.addressSection}
+              </p>
 
               <FormField
                 control={form.control}
@@ -705,28 +758,32 @@ export default function DrawerFormUser({
                 )}
               />
 
-              <div className="grid grid-cols-1 @md:grid-cols-3 gap-4">                  <FormField
-                    control={form.control}
-                    name="state"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t.settings.userInfo.stateLabel}</FormLabel>
-                        <FormControl>
-                          <Select
-                            onValueChange={(value) => {
-                              field.onChange(value);
-                              setSelectedState(value);
-                              if (!filledByCep) {
-                                form.setValue("city", "");
-                              }
-                            }}
-                            value={field.value}
-                            disabled={
-                              filledByCep || locationLoading || isUpdatePending
+              <div className="grid grid-cols-1 @md:grid-cols-3 gap-4">
+                {" "}
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.settings.userInfo.stateLabel}</FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            setSelectedState(value);
+                            if (!filledByCep) {
+                              form.setValue("city", "");
                             }
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder={t.settings.userInfo.statePlaceholder} />
+                          }}
+                          value={field.value}
+                          disabled={
+                            filledByCep || locationLoading || isUpdatePending
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue
+                              placeholder={t.settings.userInfo.statePlaceholder}
+                            />
                           </SelectTrigger>
                           <SelectContent>
                             {states.map((state) => (
@@ -743,33 +800,38 @@ export default function DrawerFormUser({
                       <FormMessage />
                     </FormItem>
                   )}
-                />                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem className="@md:col-span-2">
-                        <FormLabel>{t.settings.userInfo.cityLabel}</FormLabel>
-                        <FormControl>
-                          {filledByCep ? (
-                            <Input placeholder={t.settings.userInfo.cityPlaceholder} disabled {...field} />
-                          ) : (
-                            <CityCombobox
-                              cities={cities}
-                              value={field.value || ""}
-                              onChange={field.onChange}
-                              disabled={
-                                !selectedState ||
-                                locationLoading ||
-                                isUpdatePending
-                              }
-                              isLoading={citiesLoading}
-                              isError={citiesError}
-                              placeholder={
-                                !selectedState
-                                  ? t.settings.userInfo.citySelectFirst
-                                  : t.settings.userInfo.citySelect
-                              }
-                            />
+                />{" "}
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem className="@md:col-span-2">
+                      <FormLabel>{t.settings.userInfo.cityLabel}</FormLabel>
+                      <FormControl>
+                        {filledByCep ? (
+                          <Input
+                            placeholder={t.settings.userInfo.cityPlaceholder}
+                            disabled
+                            {...field}
+                          />
+                        ) : (
+                          <CityCombobox
+                            cities={cities}
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            disabled={
+                              !selectedState ||
+                              locationLoading ||
+                              isUpdatePending
+                            }
+                            isLoading={citiesLoading}
+                            isError={citiesError}
+                            placeholder={
+                              !selectedState
+                                ? t.settings.userInfo.citySelectFirst
+                                : t.settings.userInfo.citySelect
+                            }
+                          />
                         )}
                       </FormControl>
                       <FormMessage />
@@ -783,10 +845,14 @@ export default function DrawerFormUser({
                 name="neighborhood"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t.settings.userInfo.neighborhoodLabel}</FormLabel>
+                    <FormLabel>
+                      {t.settings.userInfo.neighborhoodLabel}
+                    </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder={t.settings.userInfo.neighborhoodPlaceholder}
+                        placeholder={
+                          t.settings.userInfo.neighborhoodPlaceholder
+                        }
                         disabled={
                           cepFilledFields.has("neighborhood") ||
                           locationLoading ||
@@ -800,15 +866,17 @@ export default function DrawerFormUser({
                 )}
               />
 
-              <div className="grid grid-cols-1 @md:grid-cols-3 gap-4">                  <FormField
-                    control={form.control}
-                    name="street"
-                    render={({ field }) => (
-                      <FormItem className="@md:col-span-2">
-                        <FormLabel>{t.settings.userInfo.streetLabel}</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder={t.settings.userInfo.streetPlaceholder}
+              <div className="grid grid-cols-1 @md:grid-cols-3 gap-4">
+                {" "}
+                <FormField
+                  control={form.control}
+                  name="street"
+                  render={({ field }) => (
+                    <FormItem className="@md:col-span-2">
+                      <FormLabel>{t.settings.userInfo.streetLabel}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t.settings.userInfo.streetPlaceholder}
                           disabled={
                             cepFilledFields.has("street") ||
                             locationLoading ||
@@ -820,15 +888,16 @@ export default function DrawerFormUser({
                       <FormMessage />
                     </FormItem>
                   )}
-                />                  <FormField
-                    control={form.control}
-                    name="number"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t.settings.userInfo.numberLabel}</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder={t.settings.userInfo.numberPlaceholder}
+                />{" "}
+                <FormField
+                  control={form.control}
+                  name="number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.settings.userInfo.numberLabel}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t.settings.userInfo.numberPlaceholder}
                           disabled={isUpdatePending}
                           {...field}
                         />
@@ -845,10 +914,14 @@ export default function DrawerFormUser({
                   name="complement"
                   render={({ field }) => (
                     <FormItem className="@md:col-span-2">
-                      <FormLabel>{t.settings.userInfo.complementLabel}</FormLabel>
+                      <FormLabel>
+                        {t.settings.userInfo.complementLabel}
+                      </FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={t.settings.userInfo.complementPlaceholder}
+                          placeholder={
+                            t.settings.userInfo.complementPlaceholder
+                          }
                           disabled={isUpdatePending}
                           {...field}
                         />

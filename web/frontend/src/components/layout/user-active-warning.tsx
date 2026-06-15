@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 
 const UserActiveWarning = () => {
   const auth = useAuth();
@@ -16,8 +17,7 @@ const UserActiveWarning = () => {
     mutationFn: postActivationUser,
     onError: (error) => {
       toast.error(t.user.activation.emailSentError, {
-        description:
-          error instanceof Error ? error.message : t.common.unknownError,
+        description: parseApiError(error, t),
       });
       setEmailSent(false);
     },
@@ -32,7 +32,7 @@ const UserActiveWarning = () => {
     if (auth?.email) {
       mutate(auth.email);
     } else {
-      toast.error("No e-mail");
+      toast.error(t.errors.unexpectedError);
     }
   };
 

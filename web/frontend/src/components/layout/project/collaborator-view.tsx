@@ -16,6 +16,7 @@ import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { getProjectInvites } from "@/actions/invites/getProjectInvites";
 import { deleteProjectInvite } from "@/actions/invites/deleteProjectInvite";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 
 const CollaboratorsView = ({
@@ -69,7 +70,7 @@ const CollaboratorsView = ({
     },
     onError: (error) => {
       toast.error(t.collaboratorsView.errorRemoveCollaborator, {
-        description: error.message || t.common.unknownError,
+        description: parseApiError(error, t),
         duration: 5000,
       });
     },
@@ -92,7 +93,7 @@ const CollaboratorsView = ({
       },
       onError: (error) => {
         toast.error(t.collaboratorsView.errorRemoveDiscipline, {
-          description: error.message || t.common.unknownError,
+          description: parseApiError(error, t),
           duration: 5000,
         });
       },
@@ -112,7 +113,7 @@ const CollaboratorsView = ({
       },
       onError: (error) => {
         toast.error(t.collaboratorsView.errorRemoveInvite, {
-          description: error.message || t.common.unknownError,
+          description: parseApiError(error, t),
           duration: 5000,
         });
       },
@@ -192,18 +193,21 @@ const CollaboratorsView = ({
                   {hasPermission("delete:role") && (
                     <ModalConfirmDelete
                       componentTrigger={
-                        <SimpleTooltip content={t.disciplines.deleteDiscipline} side="bottom">
-                        <Button
-                          variant="outline-destructive"
-                          size="icon-lg"
-                          aria-label={`${t.disciplines.deleteDiscipline} ${discipline.name}`}
+                        <SimpleTooltip
+                          content={t.disciplines.deleteDiscipline}
+                          side="bottom"
                         >
-                          {isDeletingDiscipline ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
-                          ) : (
-                            <TrashIcon className="h-4 w-4" />
-                          )}
-                        </Button>
+                          <Button
+                            variant="outline-destructive"
+                            size="icon-lg"
+                            aria-label={`${t.disciplines.deleteDiscipline} ${discipline.name}`}
+                          >
+                            {isDeletingDiscipline ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-1 border-secondary border-t-transparent" />
+                            ) : (
+                              <TrashIcon className="h-4 w-4" />
+                            )}
+                          </Button>
                         </SimpleTooltip>
                       }
                       title={t.collaboratorsView.removeDiscipline}
@@ -213,7 +217,10 @@ const CollaboratorsView = ({
                   {hasPermission("update:role") && (
                     <DrawerFormDisciplines
                       componentTrigger={
-                        <SimpleTooltip content={t.disciplines.editDiscipline} side="bottom">
+                        <SimpleTooltip
+                          content={t.disciplines.editDiscipline}
+                          side="bottom"
+                        >
                           <Button
                             variant="outline-bipc"
                             size="icon-lg"
@@ -286,7 +293,10 @@ const CollaboratorsView = ({
                   {hasPermission("*:*") && (
                     <DialogTransferOwnership
                       componentTrigger={
-                        <SimpleTooltip content={t.projects.projectTransfer.title} side="bottom">
+                        <SimpleTooltip
+                          content={t.projects.projectTransfer.title}
+                          side="bottom"
+                        >
                           <Button
                             variant="outline-bipc"
                             size="icon-lg"
@@ -305,7 +315,10 @@ const CollaboratorsView = ({
                   {hasPermission("delete:collaborator") && (
                     <ModalConfirmDelete
                       componentTrigger={
-                        <SimpleTooltip content={t.collaboratorsView.removeCollaborator} side="bottom">
+                        <SimpleTooltip
+                          content={t.collaboratorsView.removeCollaborator}
+                          side="bottom"
+                        >
                           <Button
                             variant="outline-destructive"
                             size="icon-lg"
@@ -316,11 +329,13 @@ const CollaboratorsView = ({
                             ) : (
                               <TrashIcon className="h-4 w-4" />
                             )}
-                        </Button>
+                          </Button>
                         </SimpleTooltip>
                       }
                       title={t.collaboratorsView.removeCollaborator}
-                      onConfirm={() => mutateDeleteCollaborator(collaborator.id)}
+                      onConfirm={() =>
+                        mutateDeleteCollaborator(collaborator.id)
+                      }
                     />
                   )}
                 </div>
@@ -378,7 +393,10 @@ const CollaboratorsView = ({
                   {hasPermission("delete:invite") && (
                     <ModalConfirmDelete
                       componentTrigger={
-                        <SimpleTooltip content={t.collaboratorsView.removeInvite} side="bottom">
+                        <SimpleTooltip
+                          content={t.collaboratorsView.removeInvite}
+                          side="bottom"
+                        >
                           <Button
                             variant="outline-destructive"
                             size="icon-lg"

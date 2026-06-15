@@ -4,6 +4,7 @@ import Screen from "@/components/layout/screen";
 import UserActiveWarning from "@/components/layout/user-active-warning";
 import ModalTraining from "@/components/layout/modal-training";
 import BreadCrumbs from "@/components/ui/breadcrumbs";
+import { Button } from "@/components/ui/button";
 // import { ModeToggle } from '@/components/mode-toggle'
 import { AuthContext } from "@/context/authContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { ENV } from "@/utils/constants";
 import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
 import { useTranslation } from "@/i18n";
+import { AlertTriangle, Home, MessageSquare, RefreshCw } from "lucide-react";
 import { QueryClient } from "@tanstack/react-query";
 import {
   createRootRouteWithContext,
@@ -121,19 +123,84 @@ export const Route = createRootRouteWithContext<{
       </div>
     );
   },
-  errorComponent: ({ error }) => {
+  errorComponent: ({ error, reset }) => {
     const { t } = useTranslation();
-    return (
-      <div className="flex flex-col items-center justify-center h-screen w-full">
-        <h1 className="text-2xl font-bold">{t.errors.unexpectedError}</h1>
+    const { isAuthenticated, logout } = useAuth();
+    const navigate = useNavigate();
+    const isMobile = useIsMobile();
 
-        {ENV === "development" && (
-          <div className="mt-4 text-base text-red-500 bg-red-300/40 p-4 flex flex-col font-semibold font-mono">
-            <div className="flex justify-between items-center">
-              <pre>{JSON.stringify(error, null, 2)}</pre>
-            </div>
+    const handleLogout = () => {
+      logout();
+      void navigate({ to: "/login", replace: true });
+    };
+
+    const handleGoHome = () => {
+      reset();
+      void navigate({ to: "/" });
+    };
+
+    const errorDetails =
+      ENV === "development" && error ? (
+        <div className="mt-8 w-full max-w-2xl overflow-auto rounded-lg bg-red-50 p-4 font-mono text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
+          <pre className="whitespace-pre-wrap break-words">
+            {error instanceof Error
+              ? `${error.name}: ${error.message}\n\n${error.stack ?? ""}`
+              : JSON.stringify(error, null, 2)}
+          </pre>
+        </div>
+      ) : null;
+
+    const errorContent = (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-8">
+        <AlertTriangle
+          size={56}
+          strokeWidth={1.5}
+          className="text-destructive"
+        />
+        <div className="flex flex-col items-center gap-2 text-center">
+          <h1 className="text-2xl font-bold">{t.errors.crashTitle}</h1>
+          <p className="max-w-md text-muted-foreground">
+            {t.errors.crashDescription}
+          </p>
+        </div>
+        <div className="mt-2 flex flex-wrap justify-center gap-3">
+          <Button onClick={handleGoHome}>
+            <Home size={16} />
+            {t.errors.goHome}
+          </Button>
+          <Button variant="outline" onClick={reset}>
+            <RefreshCw size={16} />
+            {t.errors.tryAgain}
+          </Button>
+          <Button variant="outline" asChild>
+            <a
+              href="https://bipc.org.br/contact/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageSquare size={16} />
+              {t.errors.reportProblem}
+            </a>
+          </Button>
+        </div>
+        {errorDetails}
+      </div>
+    );
+
+    if (isAuthenticated) {
+      return (
+        <div className="flex h-screen w-full transition-all">
+          <div className={cn("flex w-full", { "flex-col": isMobile })}>
+            <Sidebar handleLogout={handleLogout} />
+            <Screen>{errorContent}</Screen>
           </div>
-        )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        {errorContent}
       </div>
     );
   },

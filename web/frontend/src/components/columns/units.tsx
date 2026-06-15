@@ -12,6 +12,7 @@ import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import ModalSimple from "../layout/modal-simple";
 import { postDuplicateUnit } from "@/actions/units/postDuplicateUnit";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 import { SimpleTooltip } from "../ui/simple-tooltip";
 
 export const unitsColumns: ColumnDef<
@@ -125,7 +126,9 @@ export const unitsColumns: ColumnDef<
           navigate({ to: `/new_projects/${projectId}` });
         },
         onError: (error) => {
-          toast.error(t.units.deleteError, { description: error.message });
+          toast.error(t.units.deleteError, {
+            description: parseApiError(error, t),
+          });
         },
       });
 
@@ -141,7 +144,7 @@ export const unitsColumns: ColumnDef<
           },
           onError: (error) => {
             toast.error(t.units.duplicateError, {
-              description: error.message,
+              description: parseApiError(error, t),
             });
           },
         });

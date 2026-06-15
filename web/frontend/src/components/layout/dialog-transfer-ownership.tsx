@@ -26,6 +26,7 @@ import { queryClient } from "@/utils/queryClient";
 import { AlertTriangle, UserCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 
 interface DialogTransferOwnershipProps {
   componentTrigger: React.ReactNode;
@@ -40,7 +41,7 @@ export default function DialogTransferOwnership({
   projectName,
   preselectedUserId,
 }: DialogTransferOwnershipProps) {
-  const {t} = useTranslation();
+  const { t } = useTranslation();
 
   const [open, setOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>(
@@ -89,10 +90,7 @@ export default function DialogTransferOwnership({
     },
     onError: (error: unknown) => {
       toast.error(t.projects.projectTransfer.transferError, {
-        description:
-          error instanceof Error
-            ? error.message
-            : t.projects.projectTransfer.transferErrorDescription,
+        description: parseApiError(error, t),
         duration: 5000,
       });
     },
@@ -154,14 +152,18 @@ export default function DialogTransferOwnership({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="new-owner">{t.projects.projectTransfer.newOwner}</Label>
+            <Label htmlFor="new-owner">
+              {t.projects.projectTransfer.newOwner}
+            </Label>
             <Select
               value={selectedUserId}
               onValueChange={setSelectedUserId}
               disabled={isLoading || isPending}
             >
               <SelectTrigger id="new-owner" className="w-full">
-                <SelectValue placeholder={t.projects.projectTransfer.newOwnerPlaceholder} />
+                <SelectValue
+                  placeholder={t.projects.projectTransfer.newOwnerPlaceholder}
+                />
               </SelectTrigger>
               <SelectContent>
                 {collaborators.length === 0 ? (

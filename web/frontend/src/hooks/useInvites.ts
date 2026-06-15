@@ -9,6 +9,7 @@ import { UseNavigateResult } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 
 export const useInvites = (props: {
   navigate?: UseNavigateResult<string>;
@@ -27,7 +28,7 @@ export const useInvites = (props: {
 
   const getInviteById = (id?: string) => {
     const invite = data?.data.invitations.find(
-      (invite) => String(invite.id) === String(id)
+      (invite) => String(invite.id) === String(id),
     );
     return invite ? [invite] : null;
   };
@@ -49,10 +50,10 @@ export const useInvites = (props: {
       }
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
-    onError: () => {
-      toast.error(
-        t.invites.inviteResponseError
-      );
+    onError: (error) => {
+      toast.error(t.invites.inviteResponseError, {
+        description: parseApiError(error, t),
+      });
     },
   });
 
@@ -66,7 +67,7 @@ export const useInvites = (props: {
       if (lastCountNumber < data.data.invitations.length) {
         localStorage.setItem(
           "invitesCount",
-          String(data.data.invitations.length)
+          String(data.data.invitations.length),
         );
         setHasOpened(false);
         setNewInvitesCount(data.data.invitations.length - lastCountNumber);
@@ -91,13 +92,15 @@ export const useInvites = (props: {
 
   const handleSubmitReplyInvite = async (
     inviteId: number,
-    response: PutReplyInviteRequest
+    response: PutReplyInviteRequest,
   ) => {
     setIsInviteLoading(true);
     try {
       mutate({ inviteId, response });
     } catch (error) {
-      toast.error("Error processing invite response. Please try again later.");
+      toast.error(t.invites.inviteResponseError, {
+        description: parseApiError(error, t),
+      });
     } finally {
       setIsInviteLoading(false);
     }

@@ -15,20 +15,11 @@ import {
   BarChart3,
   Bell,
   Building2,
-  CircleHelp,
-  ClipboardList,
-  FileText,
-  Fingerprint,
-  FolderGit,
   GlobeLock,
   LogIn,
   Menu,
-  MonitorPlay,
-  Newspaper,
-  Phone,
   Rss,
   Settings,
-  ShieldCheck,
   UserPlus,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -40,7 +31,8 @@ import { CustomLink } from "../ui/custom-link";
 import Divider from "../ui/divider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import ModalTraining from "./modal-training";
-import { SidebarHoverPopover, type PopoverItem } from "./sidebar-hover-popover";
+import { SidebarHoverPopover } from "./sidebar-hover-popover";
+import { links } from "@/utils/commonLinks";
 
 interface ISidebar {
   handleLogout?: () => void;
@@ -51,26 +43,12 @@ const activeProps = {
 };
 
 const Sidebar = ({ handleLogout }: ISidebar) => {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { sidebarStatus, toggleSidebar } = useSidebar();
   const isMobile = useIsMobile();
   const { context, setSummaryContext } = useSummary();
   const { t } = useTranslation();
-
-  const saibaMaisItems: PopoverItem[] = [
-    { label: t.nav.faq, icon: CircleHelp, linkKey: "faq" },
-    { label: t.nav.glossary, icon: FileText, linkKey: "glossary" },
-    { label: t.nav.media, icon: MonitorPlay, linkKey: "media" },
-    { label: t.nav.launch, icon: Newspaper, linkKey: "launch" },
-    { label: t.nav.repository, icon: FolderGit, linkKey: "repository" },
-    { label: t.nav.contact, icon: Phone, linkKey: "contact" },
-  ];
-
-  const transparenciaItems: PopoverItem[] = [
-    { label: t.nav.privacy, icon: Fingerprint, linkKey: "privacy" },
-    { label: t.nav.termsOfUse, icon: ClipboardList, linkKey: "termsOfUse" },
-    { label: t.nav.dataForm, icon: ShieldCheck, linkKey: "dataForm" },
-  ];
+  const { aboutItems, transparencyItems } = links(t);
 
   // Estado para controlar se o sidebar está minimizado
   const [isMinimized, setIsMinimized] = useState(() => {
@@ -171,13 +149,13 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
         <SidebarHoverPopover
           triggerClassName="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
           trigger={<Rss size={18} className="text-white" />}
-          items={saibaMaisItems}
+          items={aboutItems}
         />
 
         <SidebarHoverPopover
           triggerClassName="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
           trigger={<GlobeLock size={18} className="text-white" />}
-          items={transparenciaItems}
+          items={transparencyItems}
         />
 
         <div className="h-px bg-zinc-700/50 my-2" />
@@ -205,6 +183,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               <TooltipTrigger asChild>
                 <Link
                   to="/new_projects"
+                  search={{ activationRequired: false }}
                   activeProps={{ className: "bg-zinc-700/30" }}
                   className="p-2 hover:bg-zinc-700/30 rounded-md transition-colors flex items-center justify-center"
                 >
@@ -355,7 +334,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                   <span>{t.sidebar.learnMore}</span>
                 </>
               }
-              items={saibaMaisItems}
+              items={aboutItems}
               onItemClick={handleMobileNavigation}
               isMobile={isMobile}
             />
@@ -370,7 +349,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
                   <span>{t.sidebar.transparency}</span>
                 </>
               }
-              items={transparenciaItems}
+              items={transparencyItems}
               onItemClick={handleMobileNavigation}
               isMobile={isMobile}
             />
@@ -399,6 +378,7 @@ const Sidebar = ({ handleLogout }: ISidebar) => {
               <li>
                 <Link
                   to="/new_projects"
+                  search={{ activationRequired: false }}
                   onClick={handleMobileNavigation}
                   activeProps={activeProps}
                   className="flex gap-3 items-center w-full p-2 hover:bg-zinc-700/30 rounded-md transition-colors"

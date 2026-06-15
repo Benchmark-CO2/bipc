@@ -48,6 +48,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 
 export const Route = createFileRoute(
@@ -299,8 +300,10 @@ function RouteComponent() {
         queryKey: ["options", projectId, unitId],
       });
     },
-    onError: () => {
-      toast.error(t.constructiveTechView.errorDeleteSimulation);
+    onError: (error) => {
+      toast.error(t.constructiveTechView.errorDeleteSimulation, {
+        description: parseApiError(error, t),
+      });
     },
   });
 
@@ -314,8 +317,10 @@ function RouteComponent() {
           queryKey: ["options", projectId, unitId],
         });
       },
-      onError: () => {
-        toast.error(t.constructiveTechView.errorDuplicateSimulation);
+      onError: (error) => {
+        toast.error(t.constructiveTechView.errorDuplicateSimulation, {
+          description: parseApiError(error, t),
+        });
       },
     },
   );
@@ -353,7 +358,7 @@ function RouteComponent() {
     },
     onError: (error) => {
       toast.error(t.constructiveTechView.errorDeleteTech, {
-        description: error.message,
+        description: parseApiError(error, t),
       });
     },
   });
@@ -386,7 +391,7 @@ function RouteComponent() {
     },
     onError: (error) => {
       toast.error(t.constructiveTechView.errorDuplicateTech, {
-        description: error.message,
+        description: parseApiError(error, t),
       });
     },
   });
