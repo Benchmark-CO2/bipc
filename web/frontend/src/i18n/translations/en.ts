@@ -354,6 +354,7 @@ export const en: Translations = {
       phaseBasicProject: "Design Development",
       phaseExecutiveProject: "Construction Documents",
       phaseReleasedForConstruction: "Issued for Construction",
+      phaseAsBuilt: "As Built",
       description: "Description",
       descriptionPlaceholder: "Describe the project...",
       editButton: "Update Project",
@@ -765,6 +766,7 @@ export const en: Translations = {
     basic_project: "Design Development",
     executive_project: "Construction Documents",
     released_for_construction: "Issued for Construction",
+    as_built: "As Built",
   },
   card: {
     created: "Created",

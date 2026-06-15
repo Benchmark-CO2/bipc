@@ -355,6 +355,7 @@ export const ptBR = {
       phaseBasicProject: "Anteprojeto",
       phaseExecutiveProject: "Projeto Executivo",
       phaseReleasedForConstruction: "Liberado para Obra",
+      phaseAsBuilt: "Como construído (as built)",
       description: "Descrição",
       descriptionPlaceholder: "Descreva o empreendimento...",
       editButton: "Atualizar Empreendimento",
@@ -767,6 +768,7 @@ export const ptBR = {
     basic_project: "Projeto Básico",
     executive_project: "Projeto Executivo",
     released_for_construction: "Liberado para Obra",
+    as_built: "Como construído (as built)",
   },
   card: {
     created: "Criado",
