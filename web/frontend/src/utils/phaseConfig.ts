@@ -8,6 +8,7 @@ export const phaseLabels: Record<TProjectPhase, string> = {
   basic_project: "Projeto Básico",
   executive_project: "Projeto Executivo",
   released_for_construction: "Liberado para Obra",
+  as_built: "Como Construído (As Built)",
 };
 
 export const phaseColors: Record<TProjectPhase, string> = {
@@ -16,4 +17,5 @@ export const phaseColors: Record<TProjectPhase, string> = {
   basic_project: "bg-phase-basic-project/90",
   executive_project: "bg-phase-executive-project/90",
   released_for_construction: "bg-phase-released-for-construction/90",
+  as_built: "bg-phase-as-built/90",
 };
