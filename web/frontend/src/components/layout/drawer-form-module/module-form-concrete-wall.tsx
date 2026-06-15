@@ -2,7 +2,7 @@ import { masks } from "@/utils/masks";
 import { parseNumber } from "@/utils/numbers";
 import { useTranslation } from "@/i18n";
 import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
-import { AlertTriangle, Trash2 } from "lucide-react";
+import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import { Button } from "../../ui/button";
@@ -193,7 +193,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                 }
                               >
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder={t.modules.form.selectFck} />
+                                  <SelectValue
+                                    placeholder={t.modules.form.selectFck}
+                                  />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {fckOptions.map((fck) => (
@@ -203,10 +205,14 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                                       disabled={isFckUsed(fck, index)}
                                     >
                                       {fck}{" "}
-                                      {isFckUsed(fck, index) ? t.modules.form.inUse : ""}
+                                      {isFckUsed(fck, index)
+                                        ? t.modules.form.inUse
+                                        : ""}
                                     </SelectItem>
                                   ))}
-                                  <SelectItem value="other">{t.modules.form.other}</SelectItem>
+                                  <SelectItem value="other">
+                                    {t.modules.form.other}
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                             </FormControl>
@@ -272,9 +278,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                             {showCustomFckWarning && (
                               <div className="flex items-center gap-1 mt-1 text-orange-600 text-xs">
                                 <AlertTriangle className="h-3 w-3" />
-                                <span>
-                                  {t.modules.form.fckWarning}
-                                </span>
+                                <span>{t.modules.form.fckWarning}</span>
                               </div>
                             )}
                           </FormItem>
@@ -295,7 +299,7 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
               }
               className="w-full text-green-600 border-green-600 hover:bg-green-50"
             >
-              {t.common.add}
+              <Plus className="h-4 w-4" />
             </Button>
 
             <div className="border-t border-gray-200 my-4"></div>
@@ -337,7 +341,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="metalica">{t.modules.form.metallic}</SelectItem>
+                    <SelectItem value="metalica">
+                      {t.modules.form.metallic}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -415,7 +421,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
         name="slab_type"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-xs">{t.modules.form.slabTypeOptional}</FormLabel>
+            <FormLabel className="text-xs">
+              {t.modules.form.slabTypeOptional}
+            </FormLabel>
             <Select
               onValueChange={field.onChange}
               value={field.value}
@@ -444,7 +452,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
           name="wall_thickness"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">{t.modules.form.wallThickness}</FormLabel>
+              <FormLabel className="text-xs">
+                {t.modules.form.wallThickness}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="text"
@@ -464,7 +474,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
           name="slab_thickness"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">{t.modules.form.slabThickness}</FormLabel>
+              <FormLabel className="text-xs">
+                {t.modules.form.slabThickness}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="text"
@@ -484,7 +496,9 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
           name="wall_area"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">{t.modules.form.wallArea}</FormLabel>
+              <FormLabel className="text-xs">
+                {t.modules.form.wallArea}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="text"
@@ -501,10 +515,19 @@ const ModuleFormConcreteWall = ({ form }: ModuleFormConcreteWallProps) => {
       </div>
 
       {/* Parede de concreto */}
-      {renderCompleteSection("concrete_walls", t.modules.form.concreteWall, true)}
+      {renderCompleteSection(
+        "concrete_walls",
+        t.modules.form.concreteWall,
+        true,
+      )}
 
       {/* Laje de concreto */}
-      {renderCompleteSection("concrete_slabs", t.modules.form.concreteSlab, true, true)}
+      {renderCompleteSection(
+        "concrete_slabs",
+        t.modules.form.concreteSlab,
+        true,
+        true,
+      )}
 
       {/* Área de formas (opcional) */}
       {renderOptionalSection(t.modules.form.formAreaOptional)}

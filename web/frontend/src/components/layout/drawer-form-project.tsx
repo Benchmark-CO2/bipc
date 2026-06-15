@@ -584,6 +584,9 @@ export default function DrawerFormProject({
                           <SelectItem value="released_for_construction">
                             {t.projects.form.phaseReleasedForConstruction}
                           </SelectItem>
+                          <SelectItem value="as_built">
+                            {t.projects.form.phaseAsBuilt}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>

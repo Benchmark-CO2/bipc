@@ -45,7 +45,7 @@ import {
   Trash,
   TriangleAlert,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
 import { parseApiError } from "@/utils/parseApiError";
@@ -278,6 +278,7 @@ function RouteComponent() {
   const { t } = useTranslation();
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<TOption[]>([]);
+  const initializedRef = useRef(false);
   const { setSummaryContext } = useSummary();
 
   const roleId = (search as { dcp?: string }).dcp || "";
@@ -329,6 +330,17 @@ function RouteComponent() {
     queryFn: () => getOptions(projectId, unitId, roleId!),
     enabled: !!projectId && !!unitId,
   });
+
+  useEffect(() => {
+    if (initializedRef.current || !optionsData?.data?.options) return;
+    const activeOption = optionsData.data.options.find(
+      (opt: TOption) => opt.active,
+    );
+    if (activeOption) {
+      setSelectedOptions([activeOption]);
+    }
+    initializedRef.current = true;
+  }, [optionsData]);
 
   const { mutate: mutateDeleteTec, isPending: isDeletingTec } = useMutation({
     mutationFn: ({
@@ -430,18 +442,16 @@ function RouteComponent() {
       !consumption?.energy_max
     ) {
       return {
-        co2_min: "0",
-        co2_max: "0",
-        energy_min: "0",
-        energy_max: "0",
+        co2_range: "0 - 0",
+        energy_range: "0 - 0",
+        material: (0).toInternational(),
       };
     }
 
     return {
-      co2_min: `${(consumption.co2_min || 0).toInternational()}`,
-      co2_max: `${(consumption.co2_max || 0).toInternational()}`,
-      energy_min: `${(consumption.energy_min || 0).toInternational()}`,
-      energy_max: `${(consumption.energy_max || 0).toInternational()}`,
+      co2_range: `${(consumption.co2_min || 0).toInternational()} - ${(consumption.co2_max || 0).toInternational()}`,
+      energy_range: `${(consumption.energy_min || 0).toInternational()} - ${(consumption.energy_max || 0).toInternational()}`,
+      material: `${(consumption.material || 0).toInternational()}`,
     };
   };
 
@@ -467,7 +477,9 @@ function RouteComponent() {
   const newColumns: ColumnDef<
     Omit<IModuleItem, "consumption"> & TConsumption & { option_id: string }
   >[] = [
-    ...makeConstructiveTechnologiesColumns(t),
+    ...makeConstructiveTechnologiesColumns(t).filter(
+      (col) => (col as any).accessorKey !== "material" && col.id !== "material",
+    ),
     {
       id: "actions",
       header: "",
@@ -563,6 +575,11 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-col gap-4">
+      <DialogCreateSimulation
+        projectId={projectId}
+        unitId={unitId}
+        roleId={roleId}
+      />
       {options.map((option) => {
         const modules = option.modules.map((mod) => ({
           ...mod,
@@ -646,10 +663,14 @@ function RouteComponent() {
                     />
                     <DrawerFormModule
                       triggerComponent={
-                        <Button variant="outline-bipc">
-                          {t.constructiveTechView.createSimulations}
-                          <Plus className="ml-1 h-4 w-4" />
-                        </Button>
+                        <SimpleTooltip
+                          content={t.constructiveTechView.createSimulations}
+                          side="bottom"
+                        >
+                          <Button variant="outline-bipc" size="icon-lg">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </SimpleTooltip>
                       }
                       type="concrete_wall"
                       floors={unitFloors}
@@ -671,11 +692,6 @@ function RouteComponent() {
           </div>
         );
       })}
-      <DialogCreateSimulation
-        projectId={projectId}
-        unitId={unitId}
-        roleId={roleId}
-      />
     </div>
   );
 }

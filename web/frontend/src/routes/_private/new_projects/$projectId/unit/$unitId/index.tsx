@@ -91,7 +91,8 @@ function RouteComponent() {
   });
   const search = useSearch({
     from: "/_private/new_projects/$projectId/unit/$unitId/",
-  });  const { hasPermission } = useProjectPermissions(projectId);
+  });
+  const { hasPermission } = useProjectPermissions(projectId);
   const { t } = useTranslation();
   const { setSummaryContext } = useSummary();
   const { data: unitData, isLoading } = useQuery({
@@ -157,11 +158,12 @@ function RouteComponent() {
                 co2_max: acc.co2_max + (roleConsumption.co2_max || 0),
                 energy_min: acc.energy_min + (roleConsumption.energy_min || 0),
                 energy_max: acc.energy_max + (roleConsumption.energy_max || 0),
+                material: acc.material + (roleConsumption.material || 0),
               };
             }
             return acc;
           },
-          { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0 },
+          { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0, material: 0 },
         );
 
         return {
@@ -189,6 +191,7 @@ function RouteComponent() {
             co2_max: consumption?.co2_max || 0,
             energy_min: consumption?.energy_min || 0,
             energy_max: consumption?.energy_max || 0,
+            material: consumption?.material || 0,
           };
         });
     }
@@ -203,8 +206,9 @@ function RouteComponent() {
         co2_max: acc.co2_max + (curr.co2_max || 0),
         energy_min: acc.energy_min + (curr.energy_min || 0),
         energy_max: acc.energy_max + (curr.energy_max || 0),
+        material: acc.material + (curr.material || 0),
       }),
-      { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0 },
+      { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0, material: 0 },
     );
   };
 
@@ -249,6 +253,7 @@ function RouteComponent() {
               co2_max: 0,
               energy_min: 0,
               energy_max: 0,
+              material: 0,
             };
 
             if (!acc[groupKey]) {
@@ -275,6 +280,10 @@ function RouteComponent() {
               acc[groupKey].energy_max =
                 (acc[groupKey].energy_max * (acc[groupKey].repetitions - 1) +
                   (safeConsumption.energy_max || 0)) /
+                acc[groupKey].repetitions;
+              acc[groupKey].material =
+                (acc[groupKey].material * (acc[groupKey].repetitions - 1) +
+                  (safeConsumption.material || 0)) /
                 acc[groupKey].repetitions;
             }
 
@@ -316,6 +325,16 @@ function RouteComponent() {
       0,
     );
 
+    console.log("[calculateAverageMetrics] floors:", floors);
+    console.log("[calculateAverageMetrics] floorTotal:", floorTotal);
+
+    if (floorTotal === 0) {
+      console.warn(
+        "[calculateAverageMetrics] floorTotal is 0, cannot compute averages",
+      );
+      return { co2_range: "-", energy_range: "-", repetitions: "-", area: "-" };
+    }
+
     const sumCO2Min = floors.reduce(
       (acc, curr) => acc + curr.co2_min * curr.area * curr.repetitions,
       0,
@@ -333,13 +352,19 @@ function RouteComponent() {
       0,
     );
 
-    return {
-      co2_min: `${(sumCO2Min / floorTotal).toInternational()}`,
-      co2_max: `${(sumCO2Max / floorTotal).toInternational()}`,
-      energy_min: `${(sumEnergyMin / floorTotal).toInternational()}`,
-      energy_max: `${(sumEnergyMax / floorTotal).toInternational()}`,
-      area: `-`,
+    const avgCO2Min = (sumCO2Min / floorTotal).toInternational();
+    const avgCO2Max = (sumCO2Max / floorTotal).toInternational();
+    const avgEnergyMin = (sumEnergyMin / floorTotal).toInternational();
+    const avgEnergyMax = (sumEnergyMax / floorTotal).toInternational();
+
+    const result = {
+      co2_range: `${avgCO2Min} - ${avgCO2Max}`,
+      energy_range: `${avgEnergyMin} - ${avgEnergyMax}`,
+      repetitions: "-",
+      area: "-",
     };
+
+    return result;
   };
 
   const onSelectedTabChange = (tab: string) => {
@@ -431,23 +456,31 @@ function RouteComponent() {
                 selectedSubTab={selectedTab}
                 onSubTabSelect={(tab) => onSelectedTabChange(tab)}
                 fullWidth
+                addTabAction={
+                  hasPermission("create:role") ? (
+                    <DrawerFormDisciplines
+                      componentTrigger={
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline-bipc" size="icon">
+                              <Plus />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t.unitView.newDiscipline}
+                          </TooltipContent>
+                        </Tooltip>
+                      }
+                      projectId={projectId}
+                      unitId={unitId}
+                      roles={roleTabs}
+                    />
+                  ) : undefined
+                }
               />
               <Button variant="outline-bipc" size="icon-lg" disabled>
                 <Upload />
               </Button>
-              {hasPermission("create:role") && (
-                <DrawerFormDisciplines
-                  componentTrigger={
-                    <Button variant="outline-bipc" size="lg">
-                      <Plus />
-                      {t.unitView.newDiscipline}
-                    </Button>
-                  }
-                  projectId={projectId}
-                  unitId={unitId}
-                  roles={roleTabs}
-                />
-              )}
               {(hasPermission("*:*") || selectedRole?.is_member) && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -480,10 +513,9 @@ function RouteComponent() {
         isExpandable={false}
         lastRow={{
           data: {
-            co2_min: `${totalConsumptions.co2_min.toInternational()}`,
-            co2_max: `${totalConsumptions.co2_max.toInternational()}`,
-            energy_min: `${totalConsumptions.energy_min.toInternational()}`,
-            energy_max: `${totalConsumptions.energy_max.toInternational()}`,
+            co2_range: `${totalConsumptions.co2_min.toInternational()} - ${totalConsumptions.co2_max.toInternational()}`,
+            energy_range: `${totalConsumptions.energy_min.toInternational()} - ${totalConsumptions.energy_max.toInternational()}`,
+            material: `${totalConsumptions.material.toInternational()}`,
           },
           type: "Total",
         }}

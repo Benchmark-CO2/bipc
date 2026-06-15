@@ -72,6 +72,7 @@
   --phase-basic-project: hsl(48, 75%, 55%);
   --phase-executive-project: hsl(25, 80%, 55%);
   --phase-released-for-construction: hsl(130, 55%, 50%);
+  --phase-as-built: hsl(200, 50%, 40%);
 
   --table-row-even: #e3f3f6;
   --table-row-odd: #fbfefe;
@@ -85,12 +86,12 @@
 
   --color-sidebar: hsl(188, 29%, 10%);
 
-  --map-empty: #D4D4D8;
-  --map-scale-1: #B6E5ED;
-  --map-scale-2: #6EC2CF;
-  --map-scale-3: #3BBACE;
-  --map-scale-4: #20A2B6;
-  --map-scale-5: #187B8B;
+  --map-empty: #d4d4d8;
+  --map-scale-1: #b6e5ed;
+  --map-scale-2: #6ec2cf;
+  --map-scale-3: #3bbace;
+  --map-scale-4: #20a2b6;
+  --map-scale-5: #187b8b;
 
   --selection-bg: hsl(188, 71%, 42%);
   --selection-fg: hsl(0, 0%, 100%);
@@ -142,6 +143,7 @@
   --phase-basic-project: hsl(48, 75%, 55%);
   --phase-executive-project: hsl(25, 80%, 55%);
   --phase-released-for-construction: hsl(130, 55%, 50%);
+  --phase-as-built: hsl(200, 50%, 40%);
 
   --table-row-even: hsl(190, 30%, 15%);
   --table-row-odd: transparent;
@@ -154,12 +156,12 @@
 
   --color-sidebar: hsl(188, 29%, 10%);
 
-  --map-empty: #D4D4D8;
-  --map-scale-1: #B6E5ED;
-  --map-scale-2: #6EC2CF;
-  --map-scale-3: #3BBACE;
-  --map-scale-4: #20A2B6;
-  --map-scale-5: #187B8B;
+  --map-empty: #d4d4d8;
+  --map-scale-1: #b6e5ed;
+  --map-scale-2: #6ec2cf;
+  --map-scale-3: #3bbace;
+  --map-scale-4: #20a2b6;
+  --map-scale-5: #187b8b;
 }
 
 @theme inline {
@@ -231,6 +233,7 @@
   --color-phase-released-for-construction: var(
     --phase-released-for-construction
   );
+  --color-phase-as-built: var(--phase-as-built);
 
   --color-table-row-even: var(--table-row-even);
   --color-table-row-odd: var(--table-row-odd);

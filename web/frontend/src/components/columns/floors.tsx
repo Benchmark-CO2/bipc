@@ -15,6 +15,13 @@ export const makeFloorsColumns = (t: Translations): ColumnDef<FloorRow>[] => [
     ),
   },
   {
+    accessorKey: "repetitions",
+    header: () => <div className="text-center">{t.columns.quantity}</div>,
+    cell: ({ row }) => (
+      <div className="text-center">{row.original.repetitions || "-"}</div>
+    ),
+  },
+  {
     accessorKey: "area",
     header: () => <div className="text-center">{t.columns.area}</div>,
     cell: ({ row }) => (
@@ -24,46 +31,50 @@ export const makeFloorsColumns = (t: Translations): ColumnDef<FloorRow>[] => [
     ),
   },
   {
-    accessorKey: "co2_min",
-    header: () => <div className="text-center">{t.columns.co2Min}</div>,
-    cell: ({ row }) => (
+    id: "co2_range",
+    header: () => (
       <div className="text-center">
-        {`${row.original.co2_min?.toInternational()}` || "-"}
+        <div>{t.columns.co2Range}</div>
+        <div className="text-xs font-normal text-inherit">(min - max)</div>
       </div>
     ),
+    cell: ({ row }) => {
+      const min = row.original.co2_min?.toInternational();
+      const max = row.original.co2_max?.toInternational();
+      return (
+        <div className="text-center">
+          {min && max ? `${min} - ${max}` : (min ?? max ?? "-")}
+        </div>
+      );
+    },
   },
   {
-    accessorKey: "co2_max",
-    header: () => <div className="text-center">{t.columns.co2Max}</div>,
-    cell: ({ row }) => (
+    id: "energy_range",
+    header: () => (
       <div className="text-center">
-        {`${row.original.co2_max?.toInternational()}` || "-"}
+        <div>{t.columns.energyRange}</div>
+        <div className="text-xs font-normal text-inherit">(min - max)</div>
       </div>
     ),
+    cell: ({ row }) => {
+      const min = row.original.energy_min?.toInternational();
+      const max = row.original.energy_max?.toInternational();
+      return (
+        <div className="text-center">
+          {min && max ? `${min} - ${max}` : (min ?? max ?? "-")}
+        </div>
+      );
+    },
   },
   {
-    accessorKey: "energy_min",
-    header: () => <div className="text-center">{t.columns.energyMin}</div>,
+    id: "material",
+    header: () => <div className="text-center">{t.columns.material}</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original.energy_min?.toInternational()}` || "-"}
+        {row.original.material
+          ? `${row.original.material.toInternational()}`
+          : "-"}
       </div>
-    ),
-  },
-  {
-    accessorKey: "energy_max",
-    header: () => <div className="text-center">{t.columns.energyMax}</div>,
-    cell: ({ row }) => (
-      <div className="text-center">
-        {`${row.original.energy_max?.toInternational()}` || "-"}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "repetitions",
-    header: () => <div className="text-center">{t.columns.quantity}</div>,
-    cell: ({ row }) => (
-      <div className="text-center">{row.original.repetitions || "-"}</div>
     ),
   },
 ];

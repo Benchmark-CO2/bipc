@@ -9,7 +9,8 @@ export type TProjectPhase =
   | "not_defined"
   | "basic_project"
   | "executive_project"
-  | "released_for_construction";
+  | "released_for_construction"
+  | "as_built";
 
 export type TConsumption = {
   type?: TModulesTypes;
@@ -17,6 +18,7 @@ export type TConsumption = {
   co2_min: number;
   energy_max: number;
   energy_min: number;
+  material: number;
 };
 
 export type TConsumptionPerModule = {
