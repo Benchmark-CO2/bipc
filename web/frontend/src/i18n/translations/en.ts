@@ -25,6 +25,12 @@ export const en: Translations = {
     unexpectedError: "Unexpected error. Please try again later.",
     unknownError: "Unknown error",
     loadingProject: "Error loading project",
+    crashTitle: "Something went wrong",
+    crashDescription:
+      "An unexpected error occurred in the application. You can help us by reporting the problem.",
+    tryAgain: "Try again",
+    goHome: "Go to home",
+    reportProblem: "Report problem",
   },
   sidebar: {
     about: "About BIPc",
@@ -178,11 +184,17 @@ export const en: Translations = {
       activityTooltip:
         "To identify the role performed in collaboration with other professionals in a project",
       activityPlaceholder: "Area of Activity",
-      activityArchitecture: "Architecture",
-      activityCivilEngineering: "Civil Engineering",
-      activityProjectCoordination: "Project Coordination",
+      activityArchitecture: "Design (architecture)",
+      activityCivilEngineering: "Design (engineering)",
+      activityProjectCoordination: "Coordination",
       activityResearch: "Research",
       activityOther: "Other",
+      activityManagement: "Management",
+      activityConsulting: "Consulting",
+      activityClient: "Client",
+      activityAnalysis: "Analysis",
+      activityAudit: "Audit",
+      activityCustomPlaceholder: "Describe your activity",
       companyNameLabel: "Company Name",
       companyNameTooltip:
         "To identify the organization the professional works with",
@@ -635,7 +647,8 @@ export const en: Translations = {
         "Check your email to continue using the system. If already activated, log in again. If you didn't receive it, check your spam folder or",
       button: "request new access.",
       modalMessage:
-        "Confirm below to activate your account. You will receive an email with the activation link.",
+        'Your account has not been activated yet. To access projects and use the platform, you need to confirm your email. Click "Send Email" to receive the activation link.',
+      alreadyActivatedHint: "Already activated? Log out and sign in again.",
       emailSentSuccess: "Activation email sent successfully. Check your inbox.",
       emailSentPending: "Sending activation email...",
       emailSentError: "Error sending activation email. Please try again later.",
@@ -687,7 +700,7 @@ export const en: Translations = {
         yAxisLabel: "Project Classification",
         xAxisLabelCarbon: "Unitary Material Consumption - UMC (m³/m²)",
         xAxisLabelEnergy: "Unitary Material Consumption - UMC (m³/m²)",
-      }
+      },
     },
     chartPlaceholder: "Chart",
     loadingData: "Loading data...",
@@ -1174,5 +1187,21 @@ export const en: Translations = {
     description:
       "This page is still under development and is not available at the moment. We're working hard to launch it soon. Thank you for your understanding!",
     predictDate: "Expected launch date: {date}",
+  },
+  apiErrors: {
+    networkError:
+      "No connection to the server. Check your internet connection and try again.",
+    accountNotActivated:
+      "Your account has not been activated yet. Check your email for the activation link.",
+    insufficientPermissions:
+      "You do not have permission to perform this action.",
+    cannotDeleteAdmin:
+      "Cannot delete account: the user is an administrator of one or more projects. Please delete or transfer ownership first.",
+    authRequired: "You must be authenticated to access this resource.",
+    notFound: "The requested resource could not be found.",
+    editConflict:
+      "Unable to update the record due to a conflict. Please try again.",
+    rateLimitExceeded: "Too many requests. Please wait a moment and try again.",
+    serverError: "A server error occurred. Please try again later.",
   },
 };

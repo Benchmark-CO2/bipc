@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 import { Separator } from "@/components/ui/separator";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 
 export function UserInfo() {
   const { user, logout } = useAuth();
@@ -32,7 +33,7 @@ export function UserInfo() {
         });
       } else {
         toast.error(t.user.deleteAccountFailed, {
-          description: error.message || t.user.deleteAccountRetry,
+          description: parseApiError(error, t),
           duration: 5000,
         });
       }

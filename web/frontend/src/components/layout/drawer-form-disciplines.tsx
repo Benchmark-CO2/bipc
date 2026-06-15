@@ -3,6 +3,7 @@ import { postDiscipline } from "@/actions/disciplines/postDiscipline";
 import { getProjectCollaborators } from "@/actions/projectCollaborators/getProjectCollaborators";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 import { cn } from "@/lib/utils";
 import { TCollaborator } from "@/types/collaborators";
 import { TRole } from "@/types/disciplines";
@@ -126,9 +127,9 @@ export default function DrawerFormDisciplines({
       form.reset();
       setOpenDrawer(false);
     },
-    onError: () => {
+    onError: (error) => {
       toast.error(t.disciplines.createError, {
-        description: t.disciplines.createErrorDescription,
+        description: parseApiError(error, t),
         duration: 5000,
       });
     },
@@ -157,9 +158,9 @@ export default function DrawerFormDisciplines({
       form.reset();
       setOpenDrawer(false);
     },
-    onError: () => {
+    onError: (error) => {
       toast.error(t.disciplines.updateError, {
-        description: t.disciplines.updateErrorDescription,
+        description: parseApiError(error, t),
         duration: 5000,
       });
     },
@@ -386,9 +387,7 @@ export default function DrawerFormDisciplines({
       >
         <DrawerHeader className="px-8">
           <DrawerTitle>{t.disciplines.title}</DrawerTitle>
-          <DrawerDescription>
-            {t.disciplines.description}
-          </DrawerDescription>
+          <DrawerDescription>{t.disciplines.description}</DrawerDescription>
           <Button
             onClick={() => setOpenDrawer(false)}
             className="absolute right-4 top-2"
@@ -412,7 +411,10 @@ export default function DrawerFormDisciplines({
                   <FormItem>
                     <FormLabel>{t.disciplines.nameLabel}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t.disciplines.namePlaceholder} {...field} />
+                      <Input
+                        placeholder={t.disciplines.namePlaceholder}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                     {isDuplicateName && (
@@ -475,7 +477,9 @@ export default function DrawerFormDisciplines({
                   className="flex items-center justify-between p-3 bg-primary text-white hover:bg-primary/90"
                   onClick={() => setManagementExpanded(!managementExpanded)}
                 >
-                  <span className="font-medium">{t.disciplines.permissions}</span>
+                  <span className="font-medium">
+                    {t.disciplines.permissions}
+                  </span>
                   {managementExpanded ? (
                     <ChevronUp className="w-5 h-5" />
                   ) : (
@@ -534,8 +538,7 @@ export default function DrawerFormDisciplines({
               <div className="flex flex-col gap-2">
                 <FormLabel>{t.disciplines.searchCollaborators}</FormLabel>
                 <span className="text-sm text-muted-foreground">
-                  {t.disciplines.searchCollaboratorsDescription}{" "}
-                  <br />
+                  {t.disciplines.searchCollaboratorsDescription} <br />
                   <span className="text-sm text-yellow-600 font-medium">
                     {t.disciplines.searchCollaboratorsWarning}
                   </span>

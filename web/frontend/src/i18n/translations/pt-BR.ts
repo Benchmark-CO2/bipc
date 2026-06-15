@@ -23,6 +23,12 @@ export const ptBR = {
     unexpectedError: "Erro inesperado. Tente novamente mais tarde.",
     unknownError: "Erro desconhecido",
     loadingProject: "Erro ao carregar projeto",
+    crashTitle: "Algo deu errado",
+    crashDescription:
+      "Ocorreu um erro inesperado na aplicação. Você pode nos ajudar reportando o problema.",
+    tryAgain: "Tentar novamente",
+    goHome: "Ir para o início",
+    reportProblem: "Reportar problema",
   },
   sidebar: {
     about: "Sobre o BIPc",
@@ -177,11 +183,17 @@ export const ptBR = {
       activityTooltip:
         "Para identificar a função realizada em colaboração com outros profissionais em um empreendimento",
       activityPlaceholder: "Área de Atuação",
-      activityArchitecture: "Arquitetura",
-      activityCivilEngineering: "Engenharia Civil",
-      activityProjectCoordination: "Coordenação de Projetos",
+      activityArchitecture: "Projeto (arquitetura)",
+      activityCivilEngineering: "Projeto (engenharia)",
+      activityProjectCoordination: "Coordenação",
       activityResearch: "Pesquisa",
       activityOther: "Outro",
+      activityManagement: "Gerenciamento",
+      activityConsulting: "Consultoria",
+      activityClient: "Cliente",
+      activityAnalysis: "Análise",
+      activityAudit: "Auditoria",
+      activityCustomPlaceholder: "Descreva sua atividade",
       companyNameLabel: "Nome da Empresa",
       companyNameTooltip:
         "Para identificar a organização em que o profissional colabora",
@@ -635,7 +647,9 @@ export const ptBR = {
         "Verifique seu e-mail para continuar usando o sistema. Se já ativou, faça login novamente. Se não recebeu, confira sua caixa de spam ou",
       button: "solicite um novo acesso.",
       modalMessage:
-        "Confirme abaixo para ativar sua conta. Você receberá um e-mail com o link de ativação.",
+        'Sua conta ainda não foi ativada. Para acessar os empreendimentos e utilizar a plataforma, você precisa confirmar seu e-mail. Clique em "Enviar E-mail" para receber o link de ativação.',
+      alreadyActivatedHint:
+        "Já ativou sua conta? Faça logout e entre novamente.",
       emailSentSuccess:
         "E-mail de ativação enviado com sucesso. Verifique sua caixa de entrada.",
       emailSentPending: "Enviando e-mail de ativação...",
@@ -689,7 +703,7 @@ export const ptBR = {
         yAxisLabel: "Classificação dos projetos",
         xAxisLabelCarbon: "Consumo Unitário de Materiais - CUM (m³/m²)",
         xAxisLabelEnergy: "Consumo Unitário de Materiais - CUM (m³/m²)",
-      }
+      },
     },
     chartPlaceholder: "Gráfico",
     loadingData: "Carregando dados...",
@@ -1182,6 +1196,23 @@ export const ptBR = {
     description:
       "Esta página ainda está em desenvolvimento e não está disponível no momento. Estamos trabalhando para lançá-la em breve. Agradecemos a compreensão!",
     predictDate: "Previsão de lançamento: {date}",
+  },
+  apiErrors: {
+    networkError:
+      "Sem conexão com o servidor. Verifique sua internet e tente novamente.",
+    accountNotActivated:
+      "Sua conta ainda não foi ativada. Verifique seu e-mail para o link de ativação.",
+    insufficientPermissions: "Você não tem permissão para realizar esta ação.",
+    cannotDeleteAdmin:
+      "Não é possível excluir a conta: o usuário é administrador de um ou mais empreendimentos. Exclua ou transfira a propriedade primeiro.",
+    authRequired: "Você precisa estar autenticado para acessar este recurso.",
+    notFound: "O recurso solicitado não foi encontrado.",
+    editConflict:
+      "Não foi possível atualizar o registro devido a um conflito. Tente novamente.",
+    rateLimitExceeded:
+      "Muitas requisições em pouco tempo. Aguarde um momento e tente novamente.",
+    serverError:
+      "Ocorreu um erro no servidor. Por favor, tente novamente mais tarde.",
   },
 } as const;
 

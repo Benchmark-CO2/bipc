@@ -51,6 +51,7 @@ import {
 import { Textarea } from "../ui/textarea";
 import { CityCombobox } from "../ui/city-combobox";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 
 interface IDrawerAddProject {
   componentTrigger: React.ReactNode;
@@ -115,7 +116,7 @@ export default function DrawerFormProject({
     mutationFn: postProject,
     onError: (error) => {
       toast.error(t.projects.form.createError, {
-        description: error.message,
+        description: parseApiError(error, t),
         duration: 5000,
       });
     },
@@ -150,7 +151,7 @@ export default function DrawerFormProject({
       patchProject(data as any, projectData!.id),
     onError: (error) => {
       toast.error(t.projects.form.editError, {
-        description: error.message,
+        description: parseApiError(error, t),
         duration: 5000,
       });
     },
@@ -190,7 +191,7 @@ export default function DrawerFormProject({
       await postFile(signedUrlData.data.url, fileParams);
     } catch (error) {
       toast.error(t.projects.form.unknownError, {
-        description: (error as Error).message,
+        description: parseApiError(error, t),
         duration: 5000,
       });
       return;
@@ -619,7 +620,10 @@ export default function DrawerFormProject({
                     <FormItem>
                       <FormLabel>{t.projects.form.siop}</FormLabel>
                       <FormControl>
-                        <Input placeholder={t.projects.form.siopPlaceholder} {...field} />
+                        <Input
+                          placeholder={t.projects.form.siopPlaceholder}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -632,7 +636,10 @@ export default function DrawerFormProject({
                     <FormItem>
                       <FormLabel>{t.projects.form.apf}</FormLabel>
                       <FormControl>
-                        <Input placeholder={t.projects.form.apfPlaceholder} {...field} />
+                        <Input
+                          placeholder={t.projects.form.apfPlaceholder}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -661,7 +668,8 @@ export default function DrawerFormProject({
                       {t.drawer.importantNote}
                     </h4>
                     <p className="text-sm text-yellow-800 dark:text-yellow-200 leading-relaxed">
-                      {t.drawer.importantDescription || "Os responsáveis pelos empreendimentos poderão ser contactados em até 3 anos após o fim da fase do empreendimento indicada no momento de criação do empreendimento. Este contato busca confirmar a execução dos dados informados no momento do empreendimento. A confiabilidade do nosso benchmark depende da sua colaboração. Agradecemos a compreensão!"}
+                      {t.drawer.importantDescription ||
+                        "Os responsáveis pelos empreendimentos poderão ser contactados em até 3 anos após o fim da fase do empreendimento indicada no momento de criação do empreendimento. Este contato busca confirmar a execução dos dados informados no momento do empreendimento. A confiabilidade do nosso benchmark depende da sua colaboração. Agradecemos a compreensão!"}
                     </p>
                   </div>
                 </div>
@@ -678,7 +686,8 @@ export default function DrawerFormProject({
                     htmlFor="agreement-checkbox"
                     className="text-sm font-medium text-gray-500 dark:text-gray-100 cursor-pointer select-none leading-relaxed"
                   >
-                    {t.drawer.agreement || "Estou ciente da possibilidade de ser contactado para confirmação dos dados do empreendimento, conforme informado"}
+                    {t.drawer.agreement ||
+                      "Estou ciente da possibilidade de ser contactado para confirmação dos dados do empreendimento, conforme informado"}
                   </label>
                 </div>
               </div>
