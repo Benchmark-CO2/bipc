@@ -35,7 +35,6 @@ const FloorSummary = ({
   const { chartType, ChartSelector } = useChartType();
   const { t } = useTranslation();
   const filteredFloors = floors.filter((el) => !!el.co2_max);
-
   const fakeFloors = normalizeBenchmarkSeries(
     data.benchmark?.[type as "co2" | "energy" | "material"],
   )
@@ -44,7 +43,7 @@ const FloorSummary = ({
       label: selectedFloors.find((f) => f.id === el.id)?.group_name || "",
     }));
   const { isExpanded } = useSummary();
-
+   
   const newItems = filteredFloors.map((el) => {
     return {
       co2: {
@@ -61,17 +60,26 @@ const FloorSummary = ({
         max: el.energy_max,
         label: el.floor_group,
       },
+      material: {
+        id: el.id,
+        y: 0,
+        min: el.material,
+        max: el.material,
+        value: el.material,
+        label: el.floor_group,
+      },
     };
   });
 
   const stackedData = useMemo(
     () =>
-      type !== "material" ? newItems.map((el) => ({
+       newItems.map((el) => ({
         id: el[type].id,
         label: el[type].label,
         co2: (el.co2.max + el.co2.min) / 2,
         energy: (el.energy.max + el.energy.min) / 2,
-      })) : [],
+        material: el.material?.value
+      })),
     [newItems, type],
   );
 
@@ -158,7 +166,10 @@ const FloorSummary = ({
     minValue,
     maxValue,
   );
-
+  const newNewDataItems = newDataItems.map(el => ({
+    ...el,
+    label: stackedData.find(eel => eel.id === el.id)?.label
+  }))
   return (
     <>
       <div className="w-full flex gap-2 mb-4">
@@ -279,7 +290,7 @@ const FloorSummary = ({
         </div>
         {chartType == "scatter" ? (
           <D3GradientRangeChart
-            data={newData}
+            data={newNewDataItems}
             selectedBars={selectedProjects}
             totalProjects={fakeFloors.length || newData.length}
             minData={minData}

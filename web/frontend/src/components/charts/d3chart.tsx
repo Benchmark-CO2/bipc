@@ -10,12 +10,12 @@ import * as d3 from "d3";
 import { regressionPoly } from "d3-regression";
 import { Search, SearchX } from "lucide-react";
 import React, {
-    useCallback,
-    useEffect,
-    useLayoutEffect,
-    useMemo,
-    useRef,
-    useState,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import Indicators from "./components/indicators";
 
@@ -241,7 +241,6 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   ...props
 }) => {
   const isCumulative = variant === "cumulative";
-
   // Normalize data: in cumulative mode, map `value` to both min and max
   const data = useMemo(() => {
     if (!isCumulative) return rawData;
@@ -396,6 +395,19 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   }, [_height]);
 
   const getTooltipPosition = useTooltipPosition();
+
+  const getProcelColor = useCallback(
+    (y: number) => {
+      const normalizedY = Math.max(0, Math.min(1, y));
+      const procelClasses = isCumulative ? PROCEL_CLASSES_5 : PROCEL_CLASSES;
+      const index = Math.min(
+        procelClasses.length - 1,
+        Math.floor(normalizedY * procelClasses.length),
+      );
+      return procelClasses[index].color;
+    },
+    [isCumulative],
+  );
 
   // Helper function to get data point under mouse
   const getDataAtPosition = useCallback(
@@ -747,7 +759,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         const barWidth = Math.max(1, x2 - x1);
 
         if (isCumulative) {
-          // Cumulative mode: single gray circle (darker for selected)
+          // Cumulative mode: single circle for selected items
           const baseRadius = isExpanded
             ? CHART_CONFIG.CIRCLE_RADIUS.expanded
             : CHART_CONFIG.CIRCLE_RADIUS.normal;
@@ -759,7 +771,16 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
           ctx.beginPath();
           ctx.arc(x1, y, radius, 0, Math.PI * 2);
-          ctx.fillStyle = DEFAULT_COLORS.GRAY_END;
+          const minIdStr = String(d.minId ?? d.id);
+          const maxIdStr = String(d.maxId ?? d.id);
+          const isSelectedCumulative =
+            selectedBarIds.has(String(d.id)) ||
+            selectedMinBarIds.has(minIdStr) ||
+            selectedMaxBarIds.has(maxIdStr);
+          console.log("Drawing cumulative point for", d.label, "selected:", d);
+          ctx.fillStyle = isSelectedCumulative
+            ? getProcelColor(d.y)
+            : DEFAULT_COLORS.GRAY_END;
           ctx.fill();
           if (strokeWidth > 0) {
             ctx.strokeStyle = "white";
@@ -889,39 +910,115 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         const isMinSelected = selectedMinBarIds.has(String(d.minId ?? d.id));
         const isMaxSelected = selectedMaxBarIds.has(String(d.maxId ?? d.id));
         const isPairSelected = isMinSelected && isMaxSelected;
-        
-        if (isPairSelected && d.label) {
+        const isSelectedCumulative = selectedBarIds.has(String(d.id));
+       
+        if (isCumulative && isSelectedCumulative && d.label) {
           const x1 = newXScale(d.min);
-          const x2 = newXScale(d.max);
           const y = newYScale(d.y);
           
           // Skip if outside visible area
+          if (x1 < 0 || x1 > _width || y < 0 || y > _height) return;
+
+          const baseRadius = isExpanded
+            ? CHART_CONFIG.CIRCLE_RADIUS.expanded
+            : CHART_CONFIG.CIRCLE_RADIUS.normal;
+          const radius = baseRadius * zoomRadiusFactor;
+          const text = d.label;
+          ctx.font = isExpanded ? "12px sans-serif" : "10px sans-serif";
+          const textMetrics = ctx.measureText(text);
+          const textWidth = textMetrics.width;
+          const textHeight =
+            (textMetrics.actualBoundingBoxAscent ?? 8) +
+            (textMetrics.actualBoundingBoxDescent ?? 6);
+          const padding = 6;
+          const boxWidth = textWidth + padding * 2;
+          const boxHeight = textHeight + 6;
+          const procelColor = getProcelColor(d.y);
+
+          const placeRight = x1 <= _width * 0.5;
+          const boxX = placeRight
+            ? x1 + radius + 10
+            : x1 - radius - 10 - boxWidth;
+          const arrowStartX = placeRight
+            ? x1 + radius * 0.8
+            : x1 - radius * 0.8;
+          const arrowEndX = placeRight ? boxX - 6 : boxX + boxWidth + 6;
+          const arrowY = y;
+          const textY = y;
+          const boxY = textY - boxHeight / 2;
+
+          ctx.save();
+          ctx.strokeStyle = procelColor;
+          ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+          ctx.lineWidth = 1.5;
+          ctx.font = isExpanded ? "12px sans-serif" : "10px sans-serif";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "middle";
+
+          // Label background box
+          ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+          ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+          // Arrow line
+          ctx.beginPath();
+          ctx.moveTo(arrowStartX, arrowY);
+          ctx.lineTo(arrowEndX, arrowY);
+          ctx.stroke();
+
+          // Arrow head
+          ctx.beginPath();
+          if (placeRight) {
+            ctx.moveTo(arrowEndX, arrowY);
+            ctx.lineTo(arrowEndX - 5, arrowY - 4);
+            ctx.lineTo(arrowEndX - 5, arrowY + 4);
+          } else {
+            ctx.moveTo(arrowEndX, arrowY);
+            ctx.lineTo(arrowEndX + 5, arrowY - 4);
+            ctx.lineTo(arrowEndX + 5, arrowY + 4);
+          }
+          ctx.closePath();
+          ctx.fill();
+
+          // Draw text
+          ctx.fillStyle = "#111827";
+          ctx.fillText(text, boxX + padding, textY);
+          ctx.restore();
+
+          return;
+        }
+
+        if (!isCumulative && isPairSelected && d.label) {
+          const x1 = newXScale(d.min);
+          const x2 = newXScale(d.max);
+          const y = newYScale(d.y);
+
+          // Skip if outside visible area
           if (x2 < 0 || x1 > _width || y < 0 || y > _height) return;
-          
+
           // Position text to the right of the max point
           const textX = x2 + 10;
           const textY = y;
-          
+
           ctx.save();
           ctx.font = isExpanded ? "12px sans-serif" : "10px sans-serif";
           ctx.fillStyle = "#111827";
           ctx.textAlign = "left";
           ctx.textBaseline = "middle";
-          
+
           // Add a semi-transparent background for better readability
           const textMetrics = ctx.measureText(d.label);
           const textWidth = textMetrics.width;
           const textHeight = isExpanded ? 16 : 14;
           const padding = 4;
-          
+
           ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
           ctx.fillRect(
             textX - padding,
             textY - textHeight / 2,
             textWidth + padding * 2,
-            textHeight
+            textHeight,
           );
-          
+
           // Draw the text
           ctx.fillStyle = "#111827";
           ctx.fillText(d.label, textX, textY);

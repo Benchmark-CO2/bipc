@@ -892,6 +892,7 @@ export const ptBR = {
   },
   filterTabs: {
     energy: "Energia",
+    material: "Material",
   },
   d3chart: {
     floors: "Pavimentos",
