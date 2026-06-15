@@ -105,7 +105,6 @@ export SMTP_PORT=1025
 export SMTP_USERNAME=
 export SMTP_PASSWORD=
 export SMTP_SENDER=noreply@bipc.org.br
-export CORS_TRUSTED_ORIGINS="http://localhost:5173"
 ```
 
 ### Instalação de Dependências
