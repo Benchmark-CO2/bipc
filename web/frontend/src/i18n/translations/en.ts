@@ -910,7 +910,7 @@ export const en: Translations = {
     unmatchedWarning: "without precise location",
     unmatchedTooltip:
       "Projects registered with inconsistent municipality (city from another state)",
-    noStateWarning: "without state and municipality identification",
+    noStateWarning: "projects from benchmark without location",
     noStateTooltip:
       "Projects without a registered state and municipality are not shown on the map",
     clickStateHint:

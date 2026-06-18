@@ -913,7 +913,8 @@ export const ptBR = {
     unmatchedWarning: "sem localização precisa",
     unmatchedTooltip:
       "Projetos cadastrados com município inconsistente (cidade de outro estado)",
-    noStateWarning: "sem identificação de estado e município",
+    noStateWarning:
+      "empreendimentos do benchmark sem identificação de localidade",
     noStateTooltip:
       "Empreendimentos sem estado e município cadastrados não são exibidos no mapa",
     clickStateHint:
