@@ -1,10 +1,13 @@
 import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
-import { IBenchmarkSeries, IBenchmarkSeriesPoint } from "@/actions/benchmarks/types";
+import {
+  IBenchmarkSeries,
+  IBenchmarkSeriesPoint,
+} from "@/actions/benchmarks/types";
 import Logo from "@/assets/logo_full.svg";
 import BrazilMapChart, {
   type MapChartStats,
 } from "@/components/charts/brazilMapChart";
-import D3RangeChart from '@/components/charts/d3chartCUM';
+import D3RangeChart from "@/components/charts/d3chartCUM";
 import D3GradientRangeLineChart, {
   SeriesPoint,
 } from "@/components/charts/d3chartLine";
@@ -38,12 +41,17 @@ type BenchmarkPoint = {
 };
 
 // Para o scatter chart: ordenar por y e parear min+max pela ordem
-const normalizeBenchmarkSeries = (series?: IBenchmarkSeries | IBenchmarkSeriesPoint[] | undefined): BenchmarkPoint[] => {
+const normalizeBenchmarkSeries = (
+  series?: IBenchmarkSeries | IBenchmarkSeriesPoint[] | undefined,
+): BenchmarkPoint[] => {
   if (!series) return [];
-  if (series instanceof Array && series.length > 0 && "value" in series[0]) return series as unknown as BenchmarkPoint[]; // Apenas para material, que já vem pareado e ordenado
+  if (series instanceof Array && series.length > 0 && "value" in series[0])
+    return series as unknown as BenchmarkPoint[]; // Apenas para material, que já vem pareado e ordenado
 
-  const sortByY = (a: IBenchmarkSeries["min"][number], b: IBenchmarkSeries["min"][number]) =>
-    a.y - b.y;
+  const sortByY = (
+    a: IBenchmarkSeries["min"][number],
+    b: IBenchmarkSeries["min"][number],
+  ) => a.y - b.y;
   const minList = [...((series as IBenchmarkSeries).min || [])].sort(sortByY);
   const maxList = [...((series as IBenchmarkSeries).max || [])].sort(sortByY);
   const pairCount = Math.min(minList.length, maxList.length);
@@ -103,8 +111,14 @@ function RouteComponent() {
   const hasActiveFilter =
     activeBuildFilter.technology.length > 0 || !!activeBuildFilter.floors.get();
 
-  const mapData = useBenchmarkMapData(baseResponse, type === "material" ? "co2" : type);
-  const filteredMapData = useBenchmarkMapData(filteredResponse, type === "material" ? "co2" : type);
+  const mapData = useBenchmarkMapData(
+    baseResponse,
+    type === "material" ? "co2" : type,
+  );
+  const filteredMapData = useBenchmarkMapData(
+    filteredResponse,
+    type === "material" ? "co2" : type,
+  );
   const activeMapResult =
     hasActiveFilter && filteredMapData.states.length > 0
       ? filteredMapData
@@ -125,19 +139,39 @@ function RouteComponent() {
 
   // Line chart: séries independentes sem join por id
   const baseMinSeries = useMemo(
-    () => toSeriesPoints(type !== 'material' ? baseResponse?.data?.benchmark?.[type]?.min : undefined),
+    () =>
+      toSeriesPoints(
+        type !== "material"
+          ? baseResponse?.data?.benchmark?.[type]?.min
+          : undefined,
+      ),
     [baseResponse, type],
   );
   const baseMaxSeries = useMemo(
-    () => toSeriesPoints(type !== 'material' ? baseResponse?.data?.benchmark?.[type]?.max : undefined),
+    () =>
+      toSeriesPoints(
+        type !== "material"
+          ? baseResponse?.data?.benchmark?.[type]?.max
+          : undefined,
+      ),
     [baseResponse, type],
   );
   const filteredMinSeries = useMemo(
-    () => toSeriesPoints(type !== 'material' ? filteredResponse?.data?.benchmark?.[type]?.min : undefined),
+    () =>
+      toSeriesPoints(
+        type !== "material"
+          ? filteredResponse?.data?.benchmark?.[type]?.min
+          : undefined,
+      ),
     [filteredResponse, type],
   );
   const filteredMaxSeries = useMemo(
-    () => toSeriesPoints(type !== 'material' ? filteredResponse?.data?.benchmark?.[type]?.max : undefined),
+    () =>
+      toSeriesPoints(
+        type !== "material"
+          ? filteredResponse?.data?.benchmark?.[type]?.max
+          : undefined,
+      ),
     [filteredResponse, type],
   );
 
@@ -186,9 +220,9 @@ function RouteComponent() {
                     <SelectValue placeholder={t.benchmark.chartPlaceholder} />
                   </SelectTrigger>
                   <SelectContent defaultValue={"co2"}>
-                    <SelectItem value="trend">
+                    {/* <SelectItem value="trend">
                       {t.benchmark.chartTrend}
-                    </SelectItem>
+                    </SelectItem> */}
                     <SelectItem value="co2">
                       {t.benchmark.chartBenchmark}
                     </SelectItem>
@@ -203,7 +237,9 @@ function RouteComponent() {
                   </h2>
                   <FilterTabs
                     tabs={["co2", "energy", "material"]}
-                    onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
+                    onTabSelect={(tab) =>
+                      setType(tab as "co2" | "energy" | "material")
+                    }
                     selectedTab={type}
                     className="!h-10 !py-0"
                   />
@@ -301,8 +337,20 @@ function RouteComponent() {
                   showMaxCurve={type !== "material"}
                   showMinCurve={type !== "material"}
                   variant={type === "material" ? "cumulative" : "range"}
-                  xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
-                  yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
+                  xAxisLabel={
+                    t.benchmark.chartTypes[
+                      type === "co2" || type === "energy"
+                        ? "cumulativeFraction"
+                        : "material"
+                    ][type === "co2" ? "xAxisLabelCarbon" : "xAxisLabelEnergy"]
+                  }
+                  yAxisLabel={
+                    t.benchmark.chartTypes[
+                      type === "co2" || type === "energy"
+                        ? "cumulativeFraction"
+                        : "material"
+                    ].yAxisLabel
+                  }
                 />
               )}
             </div>
