@@ -229,6 +229,7 @@ function RouteComponent() {
                     <SelectItem value="map">{t.benchmark.chartMap}</SelectItem>
                   </SelectContent>
                 </Select>
+
               </div>
               {selectedChart !== "map" && (
                 <div className="flex flex-col gap-2">
@@ -294,6 +295,21 @@ function RouteComponent() {
                   </div>
                 </div>
               )}
+              {selectedChart !== "map" && (
+              <div className="flex flex-col gap-1 mt-4">
+                <strong className="text-xs text-gray-shade-500">
+                  {t.benchmark.legend}
+                </strong>
+                <p className="flex items-center gap-2 text-xs">
+                  <div className="w-3 h-3 block rounded-full bg-[#3b82f6]"></div>{" "}
+                  <i>{t.benchmark.bestSupplier}</i>
+                </p>
+                <p className="flex items-center gap-2 text-xs">
+                  <div className="w-3 h-3 block rounded-full bg-[#E36F35]"></div>{" "}
+                  <i>{t.benchmark.worstSupplier}</i>
+                </p>
+              </div>
+            )}
             </div>
             <div className="w-full">
               {isBaseLoading ? (
@@ -355,21 +371,7 @@ function RouteComponent() {
               )}
             </div>
 
-            {selectedChart !== "map" && (
-              <div className="flex flex-col gap-1 mt-4">
-                <strong className="text-xs text-gray-shade-500">
-                  {t.benchmark.legend}
-                </strong>
-                <p className="flex items-center gap-2 text-xs">
-                  <div className="w-3 h-3 block rounded-full bg-[#3b82f6]"></div>{" "}
-                  <i>{t.benchmark.bestSupplier}</i>
-                </p>
-                <p className="flex items-center gap-2 text-xs">
-                  <div className="w-3 h-3 block rounded-full bg-[#E36F35]"></div>{" "}
-                  <i>{t.benchmark.worstSupplier}</i>
-                </p>
-              </div>
-            )}
+            
           </div>
         </div>
         <section className="w-full mt-30">
