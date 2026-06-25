@@ -9,10 +9,17 @@ import (
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
+var structuralMasonryValidPositions = []ElementPosition{
+	ElementPositionColumn,
+	ElementPositionBeam,
+	ElementPositionSlab,
+	ElementPositionStair,
+}
+
 type BlockInfo struct {
-	Type     string `json:"type"`
-	Fbk      int    `json:"fbk"`
-	Quantity int    `json:"quantity"`
+	Type     string  `json:"type"`
+	Fbk      float64 `json:"fbk"`
+	Quantity int     `json:"quantity"`
 }
 
 type GroutVolumeItem struct {
@@ -26,7 +33,7 @@ type MortarItem struct {
 }
 
 type GroutInfo struct {
-	Position string            `json:"position"`
+	Position string            `json:"position,omitempty"`
 	Volumes  []GroutVolumeItem `json:"volumes"`
 	Steel    []SteelMaterial   `json:"steel"`
 }
@@ -40,7 +47,14 @@ type MasonryElement struct {
 type StructuralMasonry struct {
 	ID uuid.UUID `json:"id"`
 	BasicModuleData
-	Consumption     *Consumption    `json:"consumption,omitempty"`
+	Consumption *Consumption `json:"consumption,omitempty"`
+
+	// Preferred format: flat list with Position per item.
+	Concrete []ConcreteVolumeItem `json:"concrete,omitempty"`
+	Steel    []SteelMaterial      `json:"steel,omitempty"`
+	Form     []FormAreaItem       `json:"form,omitempty"`
+
+	// Legacy compatibility fields.
 	ConcreteColumns ConcreteElement `json:"concrete_columns"`
 	ConcreteBeams   ConcreteElement `json:"concrete_beams"`
 	ConcreteSlabs   ConcreteElement `json:"concrete_slabs"`
@@ -57,18 +71,75 @@ type StructuralMasonry struct {
 
 func (s *StructuralMasonry) GetType() string { return s.Type }
 
+func (s *StructuralMasonry) VersionContract() moduleVersionContract {
+	return moduleVersionContract{
+		v1Disallowed: []string{"concrete", "steel"},
+		v2Disallowed: []string{"concrete_walls", "concrete_slabs", "form_columns", "form_beams", "form_slabs", "form_total"},
+		toV1:         applyV1LegacyResponse,
+		toV2: func(moduleMap map[string]any) {
+			removeKeys(moduleMap, "concrete_columns", "concrete_beams", "concrete_slabs")
+		},
+	}
+}
+
+func (s *StructuralMasonry) validPositions() []ElementPosition {
+	return append([]ElementPosition(nil), structuralMasonryValidPositions...)
+}
+
+func normalizeMasonryResistance(value float64) float64 {
+	if value == 4 || value == 4.5 {
+		return 4.5
+	}
+
+	return value
+}
+
+func (s *StructuralMasonry) hasNewFormat() bool {
+	return len(s.Concrete) > 0 || len(s.Steel) > 0
+}
+
+func (s *StructuralMasonry) normalizeToNewFormat() {
+	if !s.hasNewFormat() {
+		elementsByPosition := map[ElementPosition]ConcreteElement{
+			ElementPositionColumn: s.ConcreteColumns,
+			ElementPositionBeam:   s.ConcreteBeams,
+			ElementPositionSlab:   s.ConcreteSlabs,
+		}
+		s.Concrete = flattenConcreteByPosition(s.validPositions(), elementsByPosition)
+		s.Steel = flattenSteelByPosition(s.validPositions(), elementsByPosition)
+	}
+
+	if len(s.Form) > 0 {
+		return
+	}
+
+	if s.FormColumns != nil {
+		s.Form = append(s.Form, FormAreaItem{Area: *s.FormColumns, Position: ElementPositionColumn})
+	}
+	if s.FormBeams != nil {
+		s.Form = append(s.Form, FormAreaItem{Area: *s.FormBeams, Position: ElementPositionBeam})
+	}
+	if s.FormSlabs != nil {
+		s.Form = append(s.Form, FormAreaItem{Area: *s.FormSlabs, Position: ElementPositionSlab})
+	}
+	if s.FormTotal != nil {
+		s.Form = append(s.Form, FormAreaItem{Area: *s.FormTotal})
+	}
+}
+
 func (s *StructuralMasonry) Validate(v *validator.Validator) {
 	v.Check(s.Type != "", "type", "must be provided")
 	v.Check(len(s.FloorIDs) > 0, "floor_ids", "must be provided")
 	v.Check(validator.Unique(s.FloorIDs), "floor_ids", "must not contain duplicate values")
 
-	if len(s.ConcreteColumns.Volumes) > 0 || len(s.ConcreteColumns.Steel) > 0 {
-		validateConcreteElement(v, s.ConcreteColumns, "concrete_columns")
+	s.normalizeToNewFormat()
+	if len(s.Concrete) > 0 {
+		validatePositionedConcrete(v, s.Concrete, s.validPositions())
 	}
-	if len(s.ConcreteBeams.Volumes) > 0 || len(s.ConcreteBeams.Steel) > 0 {
-		validateConcreteElement(v, s.ConcreteBeams, "concrete_beams")
+	if len(s.Steel) > 0 {
+		validatePositionedSteel(v, s.Steel, s.validPositions())
 	}
-	validateConcreteElement(v, s.ConcreteSlabs, "concrete_slabs")
+	validatePositionedForm(v, s.Form, s.validPositions())
 	validateSlabType(v, s.SlabType)
 
 	fgkSet := make(map[int]struct{})
@@ -76,8 +147,8 @@ func (s *StructuralMasonry) Validate(v *validator.Validator) {
 	for i, grout := range s.Masonry.Grout {
 		prefix := fmt.Sprintf("masonry.grout[%d]", i)
 
-		v.Check(grout.Position == "vertical" || grout.Position == "horizontal",
-			prefix+".position", "must be 'vertical' or 'horizontal'")
+		v.Check(grout.Position == "" || grout.Position == "vertical" || grout.Position == "horizontal",
+			prefix+".position", "must be empty, 'vertical' or 'horizontal'")
 
 		v.Check(len(grout.Volumes) > 0, prefix+".volumes", "must have at least one item")
 		fgkSet = make(map[int]struct{})
@@ -85,20 +156,23 @@ func (s *StructuralMasonry) Validate(v *validator.Validator) {
 			volPrefix := fmt.Sprintf("%s.volumes[%d]", prefix, j)
 			v.Check(vol.Volume > 0, volPrefix+".volume", "must be greater than 0")
 			v.Check(vol.Fgk != 0, volPrefix+".fgk", "must be provided")
+			v.Check(isSupportedGroutFgk(vol.Fgk), volPrefix+".fgk", "must match a supported grout fgk value")
 			if _, exists := fgkSet[vol.Fgk]; exists {
 				v.Check(false, volPrefix+".fgk", "duplicate fgk value")
 			} else {
 				fgkSet[vol.Fgk] = struct{}{}
 			}
 		}
+
+		ValidateSteelMaterials(v, grout.Steel, prefix+".steel")
 	}
 
-	v.Check(len(s.Masonry.Mortar) > 0, "masonry.mortar", "must have at least one item")
 	fakSet := make(map[float64]struct{})
 	for i, mortar := range s.Masonry.Mortar {
 		prefix := fmt.Sprintf("masonry.mortar[%d]", i)
 		v.Check(mortar.Volume > 0, prefix+".volume", "must be greater than 0")
 		v.Check(mortar.Fak != 0, prefix+".fak", "must be provided")
+		v.Check(IsSupportedMortarFak(mortar.Fak), prefix+".fak", "must match a supported mortar fak value")
 		if _, exists := fakSet[mortar.Fak]; exists {
 			v.Check(false, prefix+".fak", "duplicate fak value")
 		} else {
@@ -106,12 +180,12 @@ func (s *StructuralMasonry) Validate(v *validator.Validator) {
 		}
 	}
 
-	v.Check(len(s.Masonry.Blocks) > 0, "masonry.blocks", "must have at least one item")
 	for i, block := range s.Masonry.Blocks {
 		prefix := fmt.Sprintf("masonry.blocks[%d]", i)
 		v.Check(block.Type != "", prefix+".type", "must be provided")
 		v.Check(IsValidBlockType(block.Type), prefix+".type", "invalid block type")
 		v.Check(block.Fbk > 0, prefix+".fbk", "must be greater than 0")
+		v.Check(IsSupportedBlockFbk(block.Fbk), prefix+".fbk", "must match a supported block fbk value")
 		v.Check(block.Quantity >= 0, prefix+".quantity", "cannot be negative")
 	}
 }
@@ -190,21 +264,15 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 }
 
 func (s *StructuralMasonry) Calculate() (Consumption, error) {
-	total := Consumption{}
+	s.normalizeToNewFormat()
 
-	if len(s.ConcreteColumns.Volumes) > 0 || len(s.ConcreteColumns.Steel) > 0 {
-		if err := addConcreteElement(&total, s.ConcreteColumns, sidacConcreteData, sidacSteelData); err != nil {
-			return Consumption{}, err
-		}
-	}
-	if len(s.ConcreteBeams.Volumes) > 0 || len(s.ConcreteBeams.Steel) > 0 {
-		if err := addConcreteElement(&total, s.ConcreteBeams, sidacConcreteData, sidacSteelData); err != nil {
-			return Consumption{}, err
-		}
-	}
-	if err := addConcreteElement(&total, s.ConcreteSlabs, sidacConcreteData, sidacSteelData); err != nil {
+	total := CalculateConcreteConsumption(s.Concrete)
+
+	steelConsumption, err := CalculateSteelConsumption(s.Steel)
+	if err != nil {
 		return Consumption{}, err
 	}
+	total.sum(steelConsumption)
 
 	if err := addMansonryElement(&total, s.Masonry, sidacGroutData, sidacSteelData, sidacMortarData); err != nil {
 		return Consumption{}, err
@@ -221,6 +289,7 @@ func (s *StructuralMasonry) Insert(models data.Models, optionID uuid.UUID, resul
 		return nil, err
 	}
 
+	s.normalizeToNewFormat()
 	moduleToInsert := s.toDataModule(moduleID, optionID, result)
 
 	option, err := models.Options.GetByID(optionID)
@@ -257,6 +326,7 @@ func (s *StructuralMasonry) Get(models data.Models, moduleID uuid.UUID) (Module,
 }
 
 func (s *StructuralMasonry) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
+	s.normalizeToNewFormat()
 	module := s.toDataModule(moduleID, optionID, result)
 
 	option, err := models.Options.GetByID(optionID)
@@ -282,9 +352,11 @@ func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Co
 		groutList := []map[string]interface{}{}
 		for _, grout := range s.Masonry.Grout {
 			groutData := map[string]interface{}{
-				"position": grout.Position,
-				"volumes":  []map[string]interface{}{},
-				"steel":    []map[string]interface{}{},
+				"volumes": []map[string]interface{}{},
+				"steel":   []map[string]interface{}{},
+			}
+			if grout.Position != "" {
+				groutData["position"] = grout.Position
 			}
 			for _, vol := range grout.Volumes {
 				groutData["volumes"] = append(groutData["volumes"].([]map[string]interface{}), map[string]interface{}{
@@ -335,15 +407,15 @@ func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Co
 	}
 
 	moduleData := map[string]interface{}{
-		"concrete_columns": s.ConcreteColumns,
-		"concrete_beams":   s.ConcreteBeams,
-		"concrete_slabs":   s.ConcreteSlabs,
-		"slab_type":        normalizeSlabType(s.SlabType),
-		"form_columns":     s.FormColumns,
-		"form_beams":       s.FormBeams,
-		"form_slabs":       s.FormSlabs,
-		"form_total":       s.FormTotal,
-		"masonry":          masonry,
+		"concrete":     s.Concrete,
+		"steel":        s.Steel,
+		"form":         s.Form,
+		"slab_type":    normalizeSlabType(s.SlabType),
+		"form_columns": s.FormColumns,
+		"form_beams":   s.FormBeams,
+		"form_slabs":   s.FormSlabs,
+		"form_total":   s.FormTotal,
+		"masonry":      masonry,
 	}
 
 	return &data.Module{
@@ -363,16 +435,51 @@ func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Co
 func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 	consumption := consumptionFromDataModule(d)
 
-	var concreteColumns, concreteBeams, concreteSlabs ConcreteElement
+	concreteItems := concreteVolumesFromInterface(d.Data["concrete"])
+	steelItems := steelMaterialsFromInterface(d.Data["steel"])
+	formItems := formAreasFromInterface(d.Data["form"])
 
-	if colData, ok := d.Data["concrete_columns"].(map[string]interface{}); ok {
-		concreteColumns = concreteElementFromMap(colData)
+	if len(concreteItems) == 0 && len(steelItems) == 0 {
+		var legacyColumns, legacyBeams, legacySlabs ConcreteElement
+
+		if colData, ok := d.Data["concrete_columns"].(map[string]interface{}); ok {
+			legacyColumns = concreteElementFromMap(colData)
+		}
+		if beamData, ok := d.Data["concrete_beams"].(map[string]interface{}); ok {
+			legacyBeams = concreteElementFromMap(beamData)
+		}
+		if slabData, ok := d.Data["concrete_slabs"].(map[string]interface{}); ok {
+			legacySlabs = concreteElementFromMap(slabData)
+		}
+
+		legacyByPosition := map[ElementPosition]ConcreteElement{
+			ElementPositionColumn: legacyColumns,
+			ElementPositionBeam:   legacyBeams,
+			ElementPositionSlab:   legacySlabs,
+		}
+		concreteItems = flattenConcreteByPosition(s.validPositions(), legacyByPosition)
+		steelItems = flattenSteelByPosition(s.validPositions(), legacyByPosition)
 	}
-	if beamData, ok := d.Data["concrete_beams"].(map[string]interface{}); ok {
-		concreteBeams = concreteElementFromMap(beamData)
-	}
-	if slabData, ok := d.Data["concrete_slabs"].(map[string]interface{}); ok {
-		concreteSlabs = concreteElementFromMap(slabData)
+
+	elementsByPosition := groupConcreteByPosition(concreteItems)
+	elementsByPosition = groupSteelByPosition(elementsByPosition, steelItems)
+	concreteColumns := elementsByPosition[ElementPositionColumn]
+	concreteBeams := elementsByPosition[ElementPositionBeam]
+	concreteSlabs := elementsByPosition[ElementPositionSlab]
+
+	if len(formItems) == 0 {
+		if formColumns := extractFloat64Pointer(d.Data, "form_columns"); formColumns != nil {
+			formItems = append(formItems, FormAreaItem{Area: *formColumns, Position: ElementPositionColumn})
+		}
+		if formBeams := extractFloat64Pointer(d.Data, "form_beams"); formBeams != nil {
+			formItems = append(formItems, FormAreaItem{Area: *formBeams, Position: ElementPositionBeam})
+		}
+		if formSlabs := extractFloat64Pointer(d.Data, "form_slabs"); formSlabs != nil {
+			formItems = append(formItems, FormAreaItem{Area: *formSlabs, Position: ElementPositionSlab})
+		}
+		if formTotal := extractFloat64Pointer(d.Data, "form_total"); formTotal != nil {
+			formItems = append(formItems, FormAreaItem{Area: *formTotal})
+		}
 	}
 
 	var masonry MasonryElement
@@ -381,8 +488,9 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 		if groutData, ok := masonryData["grout"].([]interface{}); ok {
 			for _, g := range groutData {
 				if groutMap, ok := g.(map[string]interface{}); ok {
-					grout := GroutInfo{
-						Position: groutMap["position"].(string),
+					grout := GroutInfo{}
+					if position, ok := groutMap["position"].(string); ok {
+						grout.Position = position
 					}
 
 					if volumesData, ok := groutMap["volumes"].([]interface{}); ok {
@@ -409,7 +517,7 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 			for _, m := range mortarData {
 				if mortarMap, ok := m.(map[string]interface{}); ok {
 					masonry.Mortar = append(masonry.Mortar, MortarItem{
-						Fak:    mortarMap["fak"].(float64),
+						Fak:    normalizeMasonryResistance(mortarMap["fak"].(float64)),
 						Volume: mortarMap["volume"].(float64),
 					})
 				}
@@ -424,7 +532,7 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 						block.Type = typeVal
 					}
 					if fbkVal, ok := blockMap["fbk"].(float64); ok {
-						block.Fbk = int(fbkVal)
+						block.Fbk = normalizeMasonryResistance(fbkVal)
 					}
 					if quantityVal, ok := blockMap["quantity"].(float64); ok {
 						block.Quantity = int(quantityVal)
@@ -439,6 +547,9 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 		ID:              d.ID,
 		BasicModuleData: BasicModuleData{Type: "structural_masonry", Outdated: d.Outdated},
 		Consumption:     consumption,
+		Concrete:        concreteItems,
+		Steel:           steelItems,
+		Form:            formItems,
 		ConcreteColumns: concreteColumns,
 		ConcreteBeams:   concreteBeams,
 		ConcreteSlabs:   concreteSlabs,

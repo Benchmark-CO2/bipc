@@ -7,52 +7,106 @@ import (
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
+var raftFoundationValidPositions = []ElementPosition{ElementPositionRaft}
+
 type RaftFoundation struct {
 	ID uuid.UUID `json:"id"`
 	BasicModuleData
 	Consumption *Consumption `json:"consumption,omitempty"`
 
-	Area      float64         `json:"area"`
-	Thickness float64         `json:"thickness"`
-	Fck       int             `json:"fck"`
-	Steel     []SteelMaterial `json:"steel"`
+	// Preferred format: flat list with Position per item.
+	Concrete []ConcreteVolumeItem `json:"concrete,omitempty"`
+	Steel    []SteelMaterial      `json:"steel,omitempty"`
+
+	// Legacy compatibility fields.
+	Area      float64 `json:"area"`
+	Thickness float64 `json:"thickness"`
+	Fck       int     `json:"fck"`
 
 	UnitID uuid.UUID `json:"unit_id"`
 }
 
 func (r *RaftFoundation) GetType() string { return r.Type }
 
+func (r *RaftFoundation) VersionContract() moduleVersionContract {
+	return moduleVersionContract{
+		v1Disallowed: []string{"concrete"},
+		v2Disallowed: []string{"area", "thickness", "fck"},
+		toV1:         applyV1LegacyResponse,
+		toV2: func(moduleMap map[string]any) {
+			if area, ok := moduleMap["area"].(float64); ok && area != 0 {
+				moduleMap["raft_area"] = area
+			}
+
+			if thickness, ok := moduleMap["thickness"].(float64); ok && thickness != 0 {
+				moduleMap["raft_thickness"] = thickness
+			}
+
+			removeKeys(moduleMap, "area", "thickness", "fck")
+		},
+	}
+}
+
+func (r *RaftFoundation) validPositions() []ElementPosition {
+	return append([]ElementPosition(nil), raftFoundationValidPositions...)
+}
+
+func (r *RaftFoundation) hasNewFormat() bool {
+	return len(r.Concrete) > 0
+}
+
+func (r *RaftFoundation) normalizeToNewFormat() {
+	if !r.hasNewFormat() {
+		volume := r.Area * r.Thickness
+		if volume > 0 && r.Fck > 0 {
+			r.Concrete = append(r.Concrete, ConcreteVolumeItem{Fck: r.Fck, Volume: volume, Position: ElementPositionRaft})
+		}
+	}
+
+	if len(r.Steel) == 0 {
+		return
+	}
+
+	normalizedSteel := make([]SteelMaterial, 0, len(r.Steel))
+	for _, steel := range r.Steel {
+		if steel.Position == "" {
+			steel.Position = ElementPositionRaft
+		}
+		normalizedSteel = append(normalizedSteel, steel)
+	}
+
+	r.Steel = normalizedSteel
+
+	if r.Fck == 0 && len(r.Concrete) > 0 {
+		r.Fck = r.Concrete[0].Fck
+	}
+}
+
 func (r *RaftFoundation) Validate(v *validator.Validator) {
+	r.normalizeToNewFormat()
+
 	v.Check(r.Type != "", "type", "must be provided")
 	v.Check(r.UnitID != uuid.Nil, "unit_id", "must be provided")
 
-	v.Check(r.Area >= 0, "area", "cannot be negative")
-	v.Check(r.Thickness >= 0, "thickness", "cannot be negative")
-	v.Check(r.Fck != 0, "fck", "must be provided")
+	if r.Area != 0 {
+		v.Check(r.Area >= 0, "area", "cannot be negative")
+	}
+	if r.Thickness != 0 {
+		v.Check(r.Thickness >= 0, "thickness", "cannot be negative")
+	}
+	if r.Fck != 0 {
+		v.Check(r.Fck > 0, "fck", "must be greater than 0")
+	}
 
-	v.Check(len(r.Steel) > 0, "steel", "must have at least one item")
-	ValidateSteelMaterials(v, r.Steel, "steel")
+	validatePositionedConcrete(v, r.Concrete, r.validPositions())
+	validatePositionedSteel(v, r.Steel, r.validPositions())
 }
 
 func (r *RaftFoundation) Calculate() (Consumption, error) {
-	var result Consumption
+	r.normalizeToNewFormat()
 
-	concreteVolume := r.Area * r.Thickness
-	result.Material += concreteVolume
-
-	concreteCO2, ok := sidacConcreteData.KgCO2[float64(r.Fck)]
-	if !ok {
-		concreteCO2 = sidacConcreteData.KgCO2[30]
-	}
-	concreteEnergy, ok := sidacConcreteData.MJ[float64(r.Fck)]
-	if !ok {
-		concreteEnergy = sidacConcreteData.MJ[30]
-	}
-
-	result.CO2Min += concreteCO2.Min * concreteVolume
-	result.CO2Max += concreteCO2.Max * concreteVolume
-	result.EnergyMin += concreteEnergy.Min * concreteVolume
-	result.EnergyMax += concreteEnergy.Max * concreteVolume
+	result := CalculateConcreteConsumption(r.Concrete)
+	result.Material += concreteVolumeFromItems(r.Concrete)
 
 	steelConsumption, err := CalculateSteelConsumption(r.Steel)
 	if err != nil {
@@ -68,6 +122,8 @@ func (r *RaftFoundation) Insert(models data.Models, optionID uuid.UUID, result C
 	if err != nil {
 		return nil, err
 	}
+
+	r.normalizeToNewFormat()
 
 	moduleToInsert := r.toDataModule(moduleID, optionID, result)
 
@@ -105,6 +161,8 @@ func (r *RaftFoundation) Get(models data.Models, moduleID uuid.UUID) (Module, er
 }
 
 func (r *RaftFoundation) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
+	r.normalizeToNewFormat()
+
 	module := r.toDataModule(moduleID, optionID, result)
 
 	option, err := models.Options.GetByID(optionID)
@@ -125,10 +183,11 @@ func (r *RaftFoundation) Update(models data.Models, moduleID, optionID uuid.UUID
 
 func (r *RaftFoundation) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
 	moduleData := map[string]interface{}{
+		"concrete":  r.Concrete,
+		"steel":     r.Steel,
 		"area":      r.Area,
 		"thickness": r.Thickness,
 		"fck":       r.Fck,
-		"steel":     r.Steel,
 		"unit_id":   r.UnitID.String(),
 	}
 
@@ -150,30 +209,30 @@ func (r *RaftFoundation) toDataModule(moduleID, optionID uuid.UUID, result Consu
 func (r *RaftFoundation) fromDataModule(d *data.Module) Module {
 	consumption := consumptionFromDataModule(d)
 
-	var area, thickness float64
-	var fck int
-	var steel []SteelMaterial
-
-	if val, ok := d.Data["area"].(float64); ok {
-		area = val
-	}
-	if val, ok := d.Data["thickness"].(float64); ok {
-		thickness = val
-	}
-	if val, ok := d.Data["fck"].(float64); ok {
-		fck = int(val)
-	}
-
-	steel = deserializeSteelMaterialsFromInterface(d.Data["steel"])
-
-	return &RaftFoundation{
+	raft := &RaftFoundation{
 		ID:              d.ID,
 		BasicModuleData: BasicModuleData{Type: "raft_foundation", Outdated: d.Outdated},
 		Consumption:     consumption,
-		Area:            area,
-		Thickness:       thickness,
-		Fck:             fck,
-		Steel:           steel,
+		Concrete:        concreteVolumesFromInterface(d.Data["concrete"]),
+		Steel:           deserializeSteelMaterialsFromInterface(d.Data["steel"]),
 		UnitID:          *d.UnitID,
 	}
+
+	if val, ok := d.Data["area"].(float64); ok {
+		raft.Area = val
+	}
+	if val, ok := d.Data["thickness"].(float64); ok {
+		raft.Thickness = val
+	}
+	if val, ok := d.Data["fck"].(float64); ok {
+		raft.Fck = int(val)
+	}
+
+	raft.normalizeToNewFormat()
+
+	if raft.Fck == 0 && len(raft.Concrete) > 0 {
+		raft.Fck = raft.Concrete[0].Fck
+	}
+
+	return raft
 }

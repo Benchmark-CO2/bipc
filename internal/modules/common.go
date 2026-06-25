@@ -38,22 +38,44 @@ type SteelMassItem struct {
 }
 
 type SteelMaterial struct {
-	Material        string  `json:"material"`
-	OtherName       string  `json:"other_name,omitempty"`
-	Resistance      string  `json:"resistance"`
-	OtherResistance float64 `json:"other_resistance,omitempty"`
-	Mass            float64 `json:"mass"`
+	Material        string          `json:"material"`
+	OtherName       string          `json:"other_name,omitempty"`
+	Resistance      string          `json:"resistance"`
+	OtherResistance float64         `json:"other_resistance,omitempty"`
+	Mass            float64         `json:"mass"`
+	Position        ElementPosition `json:"position,omitempty"` // "wall", "slab", etc.
 }
 
 type ConcreteVolumeItem struct {
-	Fck    int     `json:"fck"`
-	Volume float64 `json:"volume"`
+	Fck      int             `json:"fck"`
+	Volume   float64         `json:"volume"`
+	Position ElementPosition `json:"position,omitempty"`
+}
+
+type FormAreaItem struct {
+	Area     float64         `json:"area"`
+	Position ElementPosition `json:"position,omitempty"`
 }
 
 type ConcreteElement struct {
 	Volumes []ConcreteVolumeItem `json:"volumes"`
 	Steel   []SteelMaterial      `json:"steel"`
 }
+
+type ElementPosition string
+
+const (
+	ElementPositionWall   ElementPosition = "wall"
+	ElementPositionSlab   ElementPosition = "slab"
+	ElementPositionColumn ElementPosition = "column"
+	ElementPositionBeam   ElementPosition = "beam"
+	ElementPositionStair  ElementPosition = "stair"
+	ElementPositionRaft   ElementPosition = "raft"
+	ElementPositionPile   ElementPosition = "pile"
+	ElementPositionBlock  ElementPosition = "block"
+	ElementPositionGrade  ElementPosition = "grade_beam"
+	ElementPositionTie    ElementPosition = "tie_beam"
+)
 
 func (c ConcreteElement) MarshalJSON() ([]byte, error) {
 	if len(c.Volumes) == 0 && len(c.Steel) == 0 {
@@ -94,6 +116,15 @@ func concreteVolumeFromElement(ce ConcreteElement) float64 {
 	total := 0.0
 	for _, volume := range ce.Volumes {
 		total += volume.Volume
+	}
+
+	return total
+}
+
+func concreteVolumeFromItems(items []ConcreteVolumeItem) float64 {
+	total := 0.0
+	for _, item := range items {
+		total += item.Volume
 	}
 
 	return total
@@ -179,8 +210,18 @@ func ValidateSteelMaterials(v *validator.Validator, materials []SteelMaterial, f
 				"must be provided and greater than 0 when resistance is 'other'")
 		}
 
+		if material.Resistance != "other" {
+			v.Check(material.OtherResistance == 0, prefix+".other_resistance",
+				"must be empty when resistance is not 'other'")
+		}
+
 		v.Check(material.Mass >= 0, prefix+".mass", "cannot be negative")
 	}
+}
+
+func isSupportedGroutFgk(value int) bool {
+	_, ok := sidacGroutData.KgCO2[float64(value)]
+	return ok
 }
 
 func CalculateSteelConsumption(materials []SteelMaterial) (Consumption, error) {
@@ -207,16 +248,26 @@ func CalculateSteelConsumption(materials []SteelMaterial) (Consumption, error) {
 		var steelCO2, steelEnergy SidacValue
 		var found bool
 
-		if val, ok := sidacSteelData.KgCO2[ca]; ok {
-			steelCO2 = val
-			steelEnergy = sidacSteelData.MJ[ca]
-			found = true
-		} else {
-			closest := findClosestResistance(ca, sidacSteelData)
-			if val, ok := sidacSteelData.KgCO2[closest]; ok {
+		if ca == 190 {
+			if val, ok := sidacStrandData.KgCO2[ca]; ok {
 				steelCO2 = val
-				steelEnergy = sidacSteelData.MJ[closest]
+				steelEnergy = sidacStrandData.MJ[ca]
 				found = true
+			}
+		}
+
+		if !found {
+			if val, ok := sidacSteelData.KgCO2[ca]; ok {
+				steelCO2 = val
+				steelEnergy = sidacSteelData.MJ[ca]
+				found = true
+			} else {
+				closest := findClosestResistance(ca, sidacSteelData)
+				if val, ok := sidacSteelData.KgCO2[closest]; ok {
+					steelCO2 = val
+					steelEnergy = sidacSteelData.MJ[closest]
+					found = true
+				}
 			}
 		}
 
@@ -249,27 +300,203 @@ func CalculateSteelConsumption(materials []SteelMaterial) (Consumption, error) {
 	return result, nil
 }
 
+func CalculateConcreteConsumption(items []ConcreteVolumeItem) Consumption {
+	var result Consumption
+
+	for _, item := range items {
+		fck := float64(item.Fck)
+
+		co2Val, ok := sidacConcreteData.KgCO2[fck]
+		if !ok {
+			co2Val = sidacConcreteData.KgCO2[40]
+		}
+		result.CO2Min += co2Val.Min * item.Volume
+		result.CO2Max += co2Val.Max * item.Volume
+
+		energyVal, ok := sidacConcreteData.MJ[fck]
+		if !ok {
+			energyVal = sidacConcreteData.MJ[40]
+		}
+		result.EnergyMin += energyVal.Min * item.Volume
+		result.EnergyMax += energyVal.Max * item.Volume
+	}
+
+	return result
+}
+
+type moduleVersionContract struct {
+	v1Disallowed []string
+	v2Disallowed []string
+	toV1         func(map[string]any)
+	toV2         func(map[string]any)
+}
+
+func ValidateV1LegacyPayloadForModule(module Module, payload json.RawMessage) error {
+	moduleType := module.GetType()
+	contract := module.VersionContract()
+
+	data, err := payloadDataAsMap(payload)
+	if err != nil {
+		return fmt.Errorf("invalid json format for module data: %w", err)
+	}
+
+	for _, key := range contract.v1Disallowed {
+		if _, exists := data[key]; exists {
+			return fmt.Errorf("v1 does not accept '%s' for module type '%s'; use legacy fields or /v2 endpoints", key, moduleType)
+		}
+	}
+
+	return nil
+}
+
+func ValidateV2PayloadForModule(module Module, payload json.RawMessage) error {
+	moduleType := module.GetType()
+	contract := module.VersionContract()
+
+	data, err := payloadDataAsMap(payload)
+	if err != nil {
+		return fmt.Errorf("invalid json format for module data: %w", err)
+	}
+
+	for _, key := range contract.v2Disallowed {
+		if _, exists := data[key]; exists {
+			return fmt.Errorf("v2 does not accept legacy field '%s' for module type '%s'; use v2 format fields", key, moduleType)
+		}
+	}
+
+	return nil
+}
+
+func ToV1Response(module Module) (map[string]any, error) {
+	moduleMap, err := moduleToMap(module)
+	if err != nil {
+		return nil, err
+	}
+
+	contract := module.VersionContract()
+	if contract.toV1 != nil {
+		contract.toV1(moduleMap)
+	}
+
+	return moduleMap, nil
+}
+
+func ToV2Response(module Module) (map[string]any, error) {
+	moduleMap, err := moduleToMap(module)
+	if err != nil {
+		return nil, err
+	}
+
+	contract := module.VersionContract()
+	if contract.toV2 != nil {
+		contract.toV2(moduleMap)
+	}
+
+	return moduleMap, nil
+}
+
+func payloadDataAsMap(payload json.RawMessage) (map[string]any, error) {
+	data := map[string]any{}
+	if err := json.Unmarshal(payload, &data); err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func moduleToMap(module Module) (map[string]any, error) {
+	encoded, err := json.Marshal(module)
+	if err != nil {
+		return nil, err
+	}
+
+	moduleMap := map[string]any{}
+	if err := json.Unmarshal(encoded, &moduleMap); err != nil {
+		return nil, err
+	}
+
+	return moduleMap, nil
+}
+
+func removeKeys(moduleMap map[string]any, keys ...string) {
+	for _, key := range keys {
+		delete(moduleMap, key)
+	}
+}
+
+func applyV1LegacyResponse(moduleMap map[string]any) {
+	removeKeys(moduleMap, "concrete", "steel")
+	removePositionFromLegacySteelItems(moduleMap)
+}
+
+func removePositionFromLegacySteelItems(moduleMap map[string]any) {
+	legacyConcreteKeys := []string{"concrete_columns", "concrete_beams", "concrete_slabs", "concrete_walls"}
+
+	for _, key := range legacyConcreteKeys {
+		elRaw, ok := moduleMap[key]
+		if !ok {
+			continue
+		}
+
+		element, ok := elRaw.(map[string]any)
+		if !ok {
+			continue
+		}
+
+		steelRaw, ok := element["steel"]
+		if !ok {
+			continue
+		}
+
+		steelItems, ok := steelRaw.([]any)
+		if !ok {
+			continue
+		}
+
+		for _, item := range steelItems {
+			steelItem, ok := item.(map[string]any)
+			if !ok {
+				continue
+			}
+
+			delete(steelItem, "position")
+		}
+	}
+}
+
+var moduleFactories = map[string]func() Module{
+	"beam_column": func() Module {
+		return &BeamColumn{BasicModuleData: BasicModuleData{Type: "beam_column"}}
+	},
+	"concrete_wall": func() Module {
+		return &ConcreteWall{BasicModuleData: BasicModuleData{Type: "concrete_wall"}}
+	},
+	"structural_masonry": func() Module {
+		return &StructuralMasonry{BasicModuleData: BasicModuleData{Type: "structural_masonry"}}
+	},
+	"raft_foundation": func() Module {
+		return &RaftFoundation{BasicModuleData: BasicModuleData{Type: "raft_foundation"}}
+	},
+	"piles_foundation": func() Module {
+		return &PilesFoundation{BasicModuleData: BasicModuleData{Type: "piles_foundation"}}
+	},
+	"raft_piles_foundation": func() Module {
+		return &RaftPilesFoundation{BasicModuleData: BasicModuleData{Type: "raft_piles_foundation"}}
+	},
+}
+
 func ParseModuleType(t string) (Module, error) {
-	switch t {
-	case "beam_column":
-		return &BeamColumn{BasicModuleData: BasicModuleData{Type: t}}, nil
-	case "concrete_wall":
-		return &ConcreteWall{BasicModuleData: BasicModuleData{Type: t}}, nil
-	case "structural_masonry":
-		return &StructuralMasonry{BasicModuleData: BasicModuleData{Type: t}}, nil
-	case "raft_foundation":
-		return &RaftFoundation{BasicModuleData: BasicModuleData{Type: t}}, nil
-	case "piles_foundation":
-		return &PilesFoundation{BasicModuleData: BasicModuleData{Type: t}}, nil
-	case "raft_piles_foundation":
-		return &RaftPilesFoundation{BasicModuleData: BasicModuleData{Type: t}}, nil
-	default:
+	factory, ok := moduleFactories[t]
+	if !ok {
 		return nil, errors.New("invalid module type")
 	}
+
+	return factory(), nil
 }
 
 type Module interface {
 	GetType() string
+	VersionContract() moduleVersionContract
 	Validate(v *validator.Validator)
 	Calculate() (Consumption, error)
 	Insert(models data.Models, optionID uuid.UUID, result Consumption) (Module, error)
@@ -293,6 +520,196 @@ func validateConcreteElement(v *validator.Validator, el ConcreteElement, fieldPr
 
 	ValidateSteelMaterials(v, el.Steel, fieldPrefix+".steel")
 	v.Check(len(el.Steel) > 0, fieldPrefix+".steel", "must have at least one item")
+}
+
+func validatePositionedConcrete(
+	v *validator.Validator,
+	concrete []ConcreteVolumeItem,
+	validPositions []ElementPosition,
+) {
+	const concreteField = "concrete"
+
+	fckPositionSet := make(map[string]struct{})
+	shouldValidatePosition := len(validPositions) > 0
+	validPositionStrings := elementPositionsAsStrings(validPositions)
+
+	for i, item := range concrete {
+		prefix := fmt.Sprintf("%s[%d]", concreteField, i)
+		v.Check(item.Volume > 0, prefix+".volume", "must be greater than 0")
+		v.Check(item.Fck != 0, prefix+".fck", "must be provided")
+
+		if shouldValidatePosition && item.Position != "" {
+			v.Check(validator.PermittedValue(string(item.Position), validPositionStrings...), prefix+".position", fmt.Sprintf("must be one of: %s", strings.Join(validPositionStrings, ", ")))
+		}
+
+		key := fmt.Sprintf("%s_%d", string(item.Position), item.Fck)
+		if _, exists := fckPositionSet[key]; exists {
+			v.Check(false, prefix+".fck", fmt.Sprintf("duplicate fck %d for position %s", item.Fck, string(item.Position)))
+			continue
+		}
+
+		fckPositionSet[key] = struct{}{}
+	}
+
+	v.Check(len(concrete) > 0, concreteField, "must have at least one item")
+}
+
+func validatePositionedSteel(
+	v *validator.Validator,
+	steel []SteelMaterial,
+	validPositions []ElementPosition,
+) {
+	const steelField = "steel"
+
+	shouldValidatePosition := len(validPositions) > 0
+	validPositionStrings := elementPositionsAsStrings(validPositions)
+
+	ValidateSteelMaterials(v, steel, steelField)
+	for i, item := range steel {
+		prefix := fmt.Sprintf("%s[%d]", steelField, i)
+		if shouldValidatePosition && item.Position != "" {
+			v.Check(validator.PermittedValue(string(item.Position), validPositionStrings...), prefix+".position", fmt.Sprintf("must be one of: %s", strings.Join(validPositionStrings, ", ")))
+		}
+	}
+
+	v.Check(len(steel) > 0, steelField, "must have at least one item")
+}
+
+func validatePositionedForm(
+	v *validator.Validator,
+	form []FormAreaItem,
+	validPositions []ElementPosition,
+) {
+	const formField = "form"
+
+	shouldValidatePosition := len(validPositions) > 0
+	validPositionStrings := elementPositionsAsStrings(validPositions)
+	positionSet := make(map[string]struct{})
+
+	for i, item := range form {
+		prefix := fmt.Sprintf("%s[%d]", formField, i)
+		v.Check(item.Area >= 0, prefix+".area", "cannot be negative")
+
+		if shouldValidatePosition && item.Position != "" {
+			v.Check(validator.PermittedValue(string(item.Position), validPositionStrings...), prefix+".position", fmt.Sprintf("must be one of: %s", strings.Join(validPositionStrings, ", ")))
+		}
+
+		key := string(item.Position)
+		if _, exists := positionSet[key]; exists {
+			v.Check(false, prefix+".position", fmt.Sprintf("duplicate form for position %s", key))
+			continue
+		}
+
+		positionSet[key] = struct{}{}
+	}
+}
+
+func formAreasFromInterface(data interface{}) []FormAreaItem {
+	var form []FormAreaItem
+
+	formData, ok := data.([]interface{})
+	if !ok {
+		return form
+	}
+
+	for _, item := range formData {
+		itemMap, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		formItem := FormAreaItem{}
+		if area, ok := itemMap["area"].(float64); ok {
+			formItem.Area = area
+		}
+		if position, ok := itemMap["position"].(string); ok {
+			formItem.Position = ElementPosition(position)
+		}
+
+		form = append(form, formItem)
+	}
+
+	return form
+}
+
+func elementPositionsAsStrings(positions []ElementPosition) []string {
+	result := make([]string, 0, len(positions))
+	for _, position := range positions {
+		result = append(result, string(position))
+	}
+
+	return result
+}
+
+func flattenConcreteByPosition(positions []ElementPosition, elementsByPosition map[ElementPosition]ConcreteElement) (concrete []ConcreteVolumeItem) {
+	for _, position := range positions {
+		element, ok := elementsByPosition[position]
+		if !ok {
+			continue
+		}
+
+		for _, v := range element.Volumes {
+			concrete = append(concrete, ConcreteVolumeItem{Fck: v.Fck, Volume: v.Volume, Position: position})
+		}
+	}
+
+	return concrete
+}
+
+func flattenSteelByPosition(positions []ElementPosition, elementsByPosition map[ElementPosition]ConcreteElement) (steel []SteelMaterial) {
+	for _, position := range positions {
+		element, ok := elementsByPosition[position]
+		if !ok {
+			continue
+		}
+
+		for _, s := range element.Steel {
+			steel = append(steel, SteelMaterial{
+				Material:        s.Material,
+				OtherName:       s.OtherName,
+				Resistance:      s.Resistance,
+				OtherResistance: s.OtherResistance,
+				Mass:            s.Mass,
+				Position:        position,
+			})
+		}
+	}
+
+	return steel
+}
+
+func groupConcreteByPosition(concrete []ConcreteVolumeItem) map[ElementPosition]ConcreteElement {
+	elementsByPosition := map[ElementPosition]ConcreteElement{}
+
+	for _, item := range concrete {
+		position := item.Position
+		element := elementsByPosition[position]
+		element.Volumes = append(element.Volumes, ConcreteVolumeItem{Fck: item.Fck, Volume: item.Volume})
+		elementsByPosition[position] = element
+	}
+
+	return elementsByPosition
+}
+
+func groupSteelByPosition(elementsByPosition map[ElementPosition]ConcreteElement, steel []SteelMaterial) map[ElementPosition]ConcreteElement {
+	if elementsByPosition == nil {
+		elementsByPosition = map[ElementPosition]ConcreteElement{}
+	}
+
+	for _, s := range steel {
+		position := s.Position
+		element := elementsByPosition[position]
+		element.Steel = append(element.Steel, SteelMaterial{
+			Material:        s.Material,
+			OtherName:       s.OtherName,
+			Resistance:      s.Resistance,
+			OtherResistance: s.OtherResistance,
+			Mass:            s.Mass,
+		})
+		elementsByPosition[position] = element
+	}
+
+	return elementsByPosition
 }
 
 func (ce *ConcreteElement) calculate(sidacConcrete, sidacSteel SidacMaterial) (Consumption, error) {
@@ -380,6 +797,9 @@ func steelMaterialsFromData(steelData []interface{}) []SteelMaterial {
 			if otherRes, ok := steelMap["other_resistance"].(float64); ok {
 				steel.OtherResistance = otherRes
 			}
+			if position, ok := steelMap["position"].(string); ok {
+				steel.Position = ElementPosition(position)
+			}
 			materials = append(materials, steel)
 		} else if ca, ok := steelMap["ca"].(float64); ok {
 			// Backward compatibility: read old format (SteelMassItem) and convert
@@ -396,6 +816,45 @@ func steelMaterialsFromData(steelData []interface{}) []SteelMaterial {
 	}
 
 	return materials
+}
+
+func concreteVolumesFromInterface(data interface{}) []ConcreteVolumeItem {
+	items, ok := data.([]interface{})
+	if !ok {
+		return nil
+	}
+
+	result := make([]ConcreteVolumeItem, 0, len(items))
+	for _, item := range items {
+		volumeMap, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		volume := ConcreteVolumeItem{}
+		if fck, ok := volumeMap["fck"].(float64); ok {
+			volume.Fck = int(fck)
+		}
+		if amount, ok := volumeMap["volume"].(float64); ok {
+			volume.Volume = amount
+		}
+		if position, ok := volumeMap["position"].(string); ok {
+			volume.Position = ElementPosition(position)
+		}
+
+		result = append(result, volume)
+	}
+
+	return result
+}
+
+func steelMaterialsFromInterface(data interface{}) []SteelMaterial {
+	items, ok := data.([]interface{})
+	if !ok {
+		return nil
+	}
+
+	return steelMaterialsFromData(items)
 }
 
 func consumptionFromDataModule(d *data.Module) *Consumption {

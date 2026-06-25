@@ -7,35 +7,100 @@ import (
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
+var beamColumnValidPositions = []ElementPosition{
+	ElementPositionColumn,
+	ElementPositionBeam,
+	ElementPositionSlab,
+	ElementPositionStair,
+}
+
 type BeamColumn struct {
 	ID uuid.UUID `json:"id"`
 	BasicModuleData
-	Consumption     *Consumption    `json:"consumption,omitempty"`
+	Consumption *Consumption `json:"consumption,omitempty"`
+
+	// Preferred format: flat list with Position per item.
+	Concrete []ConcreteVolumeItem `json:"concrete,omitempty"`
+	Steel    []SteelMaterial      `json:"steel,omitempty"`
+	Form     []FormAreaItem       `json:"form,omitempty"`
+
+	// Legacy compatibility fields.
 	ConcreteColumns ConcreteElement `json:"concrete_columns,omitempty"`
 	ConcreteBeams   ConcreteElement `json:"concrete_beams,omitempty"`
 	ConcreteSlabs   ConcreteElement `json:"concrete_slabs,omitempty"`
-	SlabType        *string         `json:"slab_type,omitempty"`
-	FormColumns     *float64        `json:"form_columns,omitempty"`
-	FormBeams       *float64        `json:"form_beams,omitempty"`
-	FormSlabs       *float64        `json:"form_slabs,omitempty"`
-	FormTotal       *float64        `json:"form_total,omitempty"`
-	ColumnNumber    *int            `json:"column_number,omitempty"`
-	AvgBeamSpan     *float64        `json:"avg_beam_span,omitempty"`
-	AvgSlabSpan     *float64        `json:"avg_slab_span,omitempty"`
-	FloorIDs        []uuid.UUID     `json:"floor_ids"`
+
+	SlabType     *string     `json:"slab_type,omitempty"`
+	FormColumns  *float64    `json:"form_columns,omitempty"`
+	FormBeams    *float64    `json:"form_beams,omitempty"`
+	FormSlabs    *float64    `json:"form_slabs,omitempty"`
+	FormTotal    *float64    `json:"form_total,omitempty"`
+	ColumnNumber *int        `json:"column_number,omitempty"`
+	AvgBeamSpan  *float64    `json:"avg_beam_span,omitempty"`
+	AvgSlabSpan  *float64    `json:"avg_slab_span,omitempty"`
+	FloorIDs     []uuid.UUID `json:"floor_ids"`
 }
 
 func (b *BeamColumn) GetType() string { return b.Type }
+
+func (b *BeamColumn) VersionContract() moduleVersionContract {
+	return moduleVersionContract{
+		v1Disallowed: []string{"concrete", "steel", "form"},
+		v2Disallowed: []string{"concrete_columns", "concrete_beams", "concrete_slabs", "form_columns", "form_beams", "form_slabs", "form_total"},
+		toV1:         applyV1LegacyResponse,
+		toV2: func(moduleMap map[string]any) {
+			removeKeys(moduleMap, "concrete_columns", "concrete_beams", "concrete_slabs")
+		},
+	}
+}
+
+func (b *BeamColumn) validPositions() []ElementPosition {
+	return append([]ElementPosition(nil), beamColumnValidPositions...)
+}
+
+func (b *BeamColumn) hasNewFormat() bool {
+	return len(b.Concrete) > 0 || len(b.Steel) > 0
+}
+
+func (b *BeamColumn) normalizeToNewFormat() {
+	if !b.hasNewFormat() {
+		elementsByPosition := map[ElementPosition]ConcreteElement{
+			ElementPositionColumn: b.ConcreteColumns,
+			ElementPositionBeam:   b.ConcreteBeams,
+			ElementPositionSlab:   b.ConcreteSlabs,
+		}
+		b.Concrete = flattenConcreteByPosition(b.validPositions(), elementsByPosition)
+		b.Steel = flattenSteelByPosition(b.validPositions(), elementsByPosition)
+	}
+
+	if len(b.Form) > 0 {
+		return
+	}
+
+	if b.FormColumns != nil {
+		b.Form = append(b.Form, FormAreaItem{Area: *b.FormColumns, Position: ElementPositionColumn})
+	}
+	if b.FormBeams != nil {
+		b.Form = append(b.Form, FormAreaItem{Area: *b.FormBeams, Position: ElementPositionBeam})
+	}
+	if b.FormSlabs != nil {
+		b.Form = append(b.Form, FormAreaItem{Area: *b.FormSlabs, Position: ElementPositionSlab})
+	}
+	if b.FormTotal != nil {
+		b.Form = append(b.Form, FormAreaItem{Area: *b.FormTotal})
+	}
+}
 
 func (b *BeamColumn) Validate(v *validator.Validator) {
 	v.Check(b.Type != "", "type", "must be provided")
 	v.Check(len(b.FloorIDs) > 0, "floor_ids", "must be provided")
 	v.Check(validator.Unique(b.FloorIDs), "floor_ids", "must not contain duplicate values")
 
-	validateConcreteElement(v, b.ConcreteColumns, "concrete_columns")
-	validateConcreteElement(v, b.ConcreteBeams, "concrete_beams")
-	validateConcreteElement(v, b.ConcreteSlabs, "concrete_slabs")
 	validateSlabType(v, b.SlabType)
+
+	b.normalizeToNewFormat()
+	validatePositionedConcrete(v, b.Concrete, b.validPositions())
+	validatePositionedSteel(v, b.Steel, b.validPositions())
+	validatePositionedForm(v, b.Form, b.validPositions())
 
 	if b.FormColumns != nil {
 		v.Check(*b.FormColumns >= 0, "form_columns", "cannot be negative")
@@ -61,21 +126,17 @@ func (b *BeamColumn) Validate(v *validator.Validator) {
 }
 
 func (b *BeamColumn) Calculate() (Consumption, error) {
-	total := Consumption{}
+	b.normalizeToNewFormat()
 
-	if err := addConcreteElement(&total, b.ConcreteColumns, sidacConcreteData, sidacSteelData); err != nil {
-		return Consumption{}, err
-	}
-	if err := addConcreteElement(&total, b.ConcreteBeams, sidacConcreteData, sidacSteelData); err != nil {
-		return Consumption{}, err
-	}
-	if err := addConcreteElement(&total, b.ConcreteSlabs, sidacConcreteData, sidacSteelData); err != nil {
-		return Consumption{}, err
-	}
+	total := CalculateConcreteConsumption(b.Concrete)
 
-	total.Material += concreteVolumeFromElement(b.ConcreteColumns)
-	total.Material += concreteVolumeFromElement(b.ConcreteBeams)
-	total.Material += concreteVolumeFromElement(b.ConcreteSlabs)
+	steelConsumption, err := CalculateSteelConsumption(b.Steel)
+	if err != nil {
+		return Consumption{}, err
+	}
+	total.sum(steelConsumption)
+
+	total.Material += concreteVolumeFromItems(b.Concrete)
 
 	return total, nil
 }
@@ -86,6 +147,7 @@ func (b *BeamColumn) Insert(models data.Models, optionID uuid.UUID, result Consu
 		return nil, err
 	}
 
+	b.normalizeToNewFormat()
 	moduleToInsert := b.toDataModule(moduleID, optionID, result)
 
 	option, err := models.Options.GetByID(optionID)
@@ -122,6 +184,7 @@ func (b *BeamColumn) Get(models data.Models, moduleID uuid.UUID) (Module, error)
 }
 
 func (b *BeamColumn) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
+	b.normalizeToNewFormat()
 	module := b.toDataModule(moduleID, optionID, result)
 
 	option, err := models.Options.GetByID(optionID)
@@ -142,17 +205,17 @@ func (b *BeamColumn) Update(models data.Models, moduleID, optionID uuid.UUID, re
 
 func (b *BeamColumn) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
 	moduleData := map[string]interface{}{
-		"concrete_columns": b.ConcreteColumns,
-		"concrete_beams":   b.ConcreteBeams,
-		"concrete_slabs":   b.ConcreteSlabs,
-		"slab_type":        normalizeSlabType(b.SlabType),
-		"form_columns":     b.FormColumns,
-		"form_beams":       b.FormBeams,
-		"form_slabs":       b.FormSlabs,
-		"form_total":       b.FormTotal,
-		"column_number":    b.ColumnNumber,
-		"avg_beam_span":    b.AvgBeamSpan,
-		"avg_slab_span":    b.AvgSlabSpan,
+		"concrete":      b.Concrete,
+		"steel":         b.Steel,
+		"form":          b.Form,
+		"slab_type":     normalizeSlabType(b.SlabType),
+		"form_columns":  b.FormColumns,
+		"form_beams":    b.FormBeams,
+		"form_slabs":    b.FormSlabs,
+		"form_total":    b.FormTotal,
+		"column_number": b.ColumnNumber,
+		"avg_beam_span": b.AvgBeamSpan,
+		"avg_slab_span": b.AvgSlabSpan,
 	}
 
 	return &data.Module{
@@ -172,25 +235,63 @@ func (b *BeamColumn) toDataModule(moduleID, optionID uuid.UUID, result Consumpti
 func (b *BeamColumn) fromDataModule(d *data.Module) Module {
 	consumption := consumptionFromDataModule(d)
 
-	var concreteColumns, concreteBeams, concreteSlabs ConcreteElement
+	concreteItems := concreteVolumesFromInterface(d.Data["concrete"])
+	steelItems := steelMaterialsFromInterface(d.Data["steel"])
+	formItems := formAreasFromInterface(d.Data["form"])
 
-	if colData, ok := d.Data["concrete_columns"].(map[string]interface{}); ok {
-		concreteColumns = concreteElementFromMap(colData)
+	if len(concreteItems) == 0 && len(steelItems) == 0 {
+		var legacyColumns, legacyBeams, legacySlabs ConcreteElement
+
+		if colData, ok := d.Data["concrete_columns"].(map[string]interface{}); ok {
+			legacyColumns = concreteElementFromMap(colData)
+		}
+		if beamData, ok := d.Data["concrete_beams"].(map[string]interface{}); ok {
+			legacyBeams = concreteElementFromMap(beamData)
+		}
+		if slabData, ok := d.Data["concrete_slabs"].(map[string]interface{}); ok {
+			legacySlabs = concreteElementFromMap(slabData)
+		}
+
+		legacyByPosition := map[ElementPosition]ConcreteElement{
+			ElementPositionColumn: legacyColumns,
+			ElementPositionBeam:   legacyBeams,
+			ElementPositionSlab:   legacySlabs,
+		}
+		concreteItems = flattenConcreteByPosition(b.validPositions(), legacyByPosition)
+		steelItems = flattenSteelByPosition(b.validPositions(), legacyByPosition)
 	}
-	if beamData, ok := d.Data["concrete_beams"].(map[string]interface{}); ok {
-		concreteBeams = concreteElementFromMap(beamData)
-	}
-	if slabData, ok := d.Data["concrete_slabs"].(map[string]interface{}); ok {
-		concreteSlabs = concreteElementFromMap(slabData)
+
+	elementsByPosition := groupConcreteByPosition(concreteItems)
+	elementsByPosition = groupSteelByPosition(elementsByPosition, steelItems)
+	legacyColumns := elementsByPosition[ElementPositionColumn]
+	legacyBeams := elementsByPosition[ElementPositionBeam]
+	legacySlabs := elementsByPosition[ElementPositionSlab]
+
+	if len(formItems) == 0 {
+		if formColumns := extractFloat64Pointer(d.Data, "form_columns"); formColumns != nil {
+			formItems = append(formItems, FormAreaItem{Area: *formColumns, Position: ElementPositionColumn})
+		}
+		if formBeams := extractFloat64Pointer(d.Data, "form_beams"); formBeams != nil {
+			formItems = append(formItems, FormAreaItem{Area: *formBeams, Position: ElementPositionBeam})
+		}
+		if formSlabs := extractFloat64Pointer(d.Data, "form_slabs"); formSlabs != nil {
+			formItems = append(formItems, FormAreaItem{Area: *formSlabs, Position: ElementPositionSlab})
+		}
+		if formTotal := extractFloat64Pointer(d.Data, "form_total"); formTotal != nil {
+			formItems = append(formItems, FormAreaItem{Area: *formTotal})
+		}
 	}
 
 	return &BeamColumn{
 		ID:              d.ID,
 		BasicModuleData: BasicModuleData{Type: "beam_column", Outdated: d.Outdated},
 		Consumption:     consumption,
-		ConcreteColumns: concreteColumns,
-		ConcreteBeams:   concreteBeams,
-		ConcreteSlabs:   concreteSlabs,
+		Concrete:        concreteItems,
+		Steel:           steelItems,
+		Form:            formItems,
+		ConcreteColumns: legacyColumns,
+		ConcreteBeams:   legacyBeams,
+		ConcreteSlabs:   legacySlabs,
 		SlabType:        extractStringPointer(d.Data, "slab_type"),
 		FormColumns:     extractFloat64Pointer(d.Data, "form_columns"),
 		FormBeams:       extractFloat64Pointer(d.Data, "form_beams"),

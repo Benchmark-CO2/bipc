@@ -7,6 +7,13 @@ import (
 	"github.com/Benchmark-CO2/bipc/internal/validator"
 )
 
+var pilesFoundationValidPositions = []ElementPosition{
+	ElementPositionPile,
+	ElementPositionBlock,
+	ElementPositionGrade,
+	ElementPositionTie,
+}
+
 type PilesFoundationPiles struct {
 	Volume float64         `json:"volume"`
 	Steel  []SteelMaterial `json:"steel"`
@@ -32,6 +39,11 @@ type PilesFoundation struct {
 	BasicModuleData
 	Consumption *Consumption `json:"consumption,omitempty"`
 
+	// Preferred format: flat list with Position per item.
+	Concrete []ConcreteVolumeItem `json:"concrete,omitempty"`
+	Steel    []SteelMaterial      `json:"steel,omitempty"`
+
+	// Legacy compatibility fields.
 	Fck        int                       `json:"fck"`
 	Piles      PilesFoundationPiles      `json:"piles"`
 	Blocks     PilesFoundationBlocks     `json:"blocks"`
@@ -42,57 +54,119 @@ type PilesFoundation struct {
 
 func (p *PilesFoundation) GetType() string { return p.Type }
 
+func (p *PilesFoundation) VersionContract() moduleVersionContract {
+	return moduleVersionContract{
+		v1Disallowed: []string{"concrete", "steel"},
+		v2Disallowed: []string{"fck", "piles", "blocks", "grade_beams", "tie_beams"},
+		toV1:         applyV1LegacyResponse,
+		toV2: func(moduleMap map[string]any) {
+			removeKeys(moduleMap, "fck", "piles", "blocks", "grade_beams", "tie_beams")
+		},
+	}
+}
+
+func (p *PilesFoundation) validPositions() []ElementPosition {
+	return append([]ElementPosition(nil), pilesFoundationValidPositions...)
+}
+
+func (p *PilesFoundation) hasNewFormat() bool {
+	return len(p.Concrete) > 0 || len(p.Steel) > 0
+}
+
+func (p *PilesFoundation) syncLegacyFromNewFormat() {
+	legacyAlreadyPresent := p.Piles.Volume > 0 || p.Blocks.Volume > 0 || p.GradeBeams.Volume > 0 || p.TieBeams.Volume > 0 ||
+		len(p.Piles.Steel) > 0 || len(p.Blocks.Steel) > 0 || len(p.GradeBeams.Steel) > 0 || len(p.TieBeams.Steel) > 0
+	if legacyAlreadyPresent {
+		return
+	}
+
+	elementsByPosition := groupConcreteByPosition(p.Concrete)
+	elementsByPosition = groupSteelByPosition(elementsByPosition, p.Steel)
+
+	pilesElement := elementsByPosition[ElementPositionPile]
+	blocksElement := elementsByPosition[ElementPositionBlock]
+	gradeElement := elementsByPosition[ElementPositionGrade]
+	tieElement := elementsByPosition[ElementPositionTie]
+
+	p.Piles = PilesFoundationPiles{
+		Volume: concreteVolumeFromElement(pilesElement),
+		Steel:  pilesElement.Steel,
+	}
+	p.Blocks = PilesFoundationBlocks{
+		Volume: concreteVolumeFromElement(blocksElement),
+		Steel:  blocksElement.Steel,
+	}
+	p.GradeBeams = PilesFoundationGradeBeams{
+		Volume: concreteVolumeFromElement(gradeElement),
+		Steel:  gradeElement.Steel,
+	}
+	p.TieBeams = PilesFoundationTieBeams{
+		Volume: concreteVolumeFromElement(tieElement),
+		Steel:  tieElement.Steel,
+	}
+}
+
+func (p *PilesFoundation) normalizeToNewFormat() {
+	if !p.hasNewFormat() {
+		if p.Piles.Volume > 0 {
+			p.Concrete = append(p.Concrete, ConcreteVolumeItem{Fck: p.Fck, Volume: p.Piles.Volume, Position: ElementPositionPile})
+		}
+		if p.Blocks.Volume > 0 {
+			p.Concrete = append(p.Concrete, ConcreteVolumeItem{Fck: p.Fck, Volume: p.Blocks.Volume, Position: ElementPositionBlock})
+		}
+		if p.GradeBeams.Volume > 0 {
+			p.Concrete = append(p.Concrete, ConcreteVolumeItem{Fck: p.Fck, Volume: p.GradeBeams.Volume, Position: ElementPositionGrade})
+		}
+		if p.TieBeams.Volume > 0 {
+			p.Concrete = append(p.Concrete, ConcreteVolumeItem{Fck: p.Fck, Volume: p.TieBeams.Volume, Position: ElementPositionTie})
+		}
+
+		for _, steel := range p.Piles.Steel {
+			steel.Position = ElementPositionPile
+			p.Steel = append(p.Steel, steel)
+		}
+		for _, steel := range p.Blocks.Steel {
+			steel.Position = ElementPositionBlock
+			p.Steel = append(p.Steel, steel)
+		}
+		for _, steel := range p.GradeBeams.Steel {
+			steel.Position = ElementPositionGrade
+			p.Steel = append(p.Steel, steel)
+		}
+		for _, steel := range p.TieBeams.Steel {
+			steel.Position = ElementPositionTie
+			p.Steel = append(p.Steel, steel)
+		}
+	}
+
+	if p.Fck == 0 && len(p.Concrete) > 0 {
+		p.Fck = p.Concrete[0].Fck
+	}
+
+	p.syncLegacyFromNewFormat()
+}
+
 func (p *PilesFoundation) Validate(v *validator.Validator) {
+	p.normalizeToNewFormat()
+
 	v.Check(p.Type != "", "type", "must be provided")
 	v.Check(p.UnitID != uuid.Nil, "unit_id", "must be provided")
 
-	v.Check(p.Fck != 0, "fck", "must be provided")
+	if p.Fck != 0 {
+		v.Check(p.Fck > 0, "fck", "must be greater than 0")
+	}
 
-	v.Check(p.Piles.Volume >= 0, "piles.volume", "cannot be negative")
-	v.Check(len(p.Piles.Steel) > 0, "piles.steel", "must have at least one item")
-	ValidateSteelMaterials(v, p.Piles.Steel, "piles.steel")
-
-	v.Check(p.Blocks.Volume >= 0, "blocks.volume", "cannot be negative")
-	v.Check(len(p.Blocks.Steel) > 0, "blocks.steel", "must have at least one item")
-	ValidateSteelMaterials(v, p.Blocks.Steel, "blocks.steel")
-
-	v.Check(p.GradeBeams.Volume >= 0, "grade_beams.volume", "cannot be negative")
-	v.Check(len(p.GradeBeams.Steel) > 0, "grade_beams.steel", "must have at least one item")
-	ValidateSteelMaterials(v, p.GradeBeams.Steel, "grade_beams.steel")
-
-	v.Check(p.TieBeams.Volume >= 0, "tie_beams.volume", "cannot be negative")
-	v.Check(len(p.TieBeams.Steel) > 0, "tie_beams.steel", "must have at least one item")
-	ValidateSteelMaterials(v, p.TieBeams.Steel, "tie_beams.steel")
+	validatePositionedConcrete(v, p.Concrete, p.validPositions())
+	validatePositionedSteel(v, p.Steel, p.validPositions())
 }
 
 func (p *PilesFoundation) Calculate() (Consumption, error) {
-	var result Consumption
+	p.normalizeToNewFormat()
 
-	totalConcreteVolume := p.Piles.Volume + p.Blocks.Volume + p.GradeBeams.Volume + p.TieBeams.Volume
-	result.Material += totalConcreteVolume
+	result := CalculateConcreteConsumption(p.Concrete)
+	result.Material += concreteVolumeFromItems(p.Concrete)
 
-	concreteCO2, ok := sidacConcreteData.KgCO2[float64(p.Fck)]
-	if !ok {
-		concreteCO2 = sidacConcreteData.KgCO2[30]
-	}
-	concreteEnergy, ok := sidacConcreteData.MJ[float64(p.Fck)]
-	if !ok {
-		concreteEnergy = sidacConcreteData.MJ[30]
-	}
-
-	result.CO2Min += concreteCO2.Min * totalConcreteVolume
-	result.CO2Max += concreteCO2.Max * totalConcreteVolume
-	result.EnergyMin += concreteEnergy.Min * totalConcreteVolume
-	result.EnergyMax += concreteEnergy.Max * totalConcreteVolume
-
-	// Calculate steel for all components
-	var allSteel []SteelMaterial
-	allSteel = append(allSteel, p.Piles.Steel...)
-	allSteel = append(allSteel, p.Blocks.Steel...)
-	allSteel = append(allSteel, p.GradeBeams.Steel...)
-	allSteel = append(allSteel, p.TieBeams.Steel...)
-
-	steelConsumption, err := CalculateSteelConsumption(allSteel)
+	steelConsumption, err := CalculateSteelConsumption(p.Steel)
 	if err != nil {
 		return result, err
 	}
@@ -106,6 +180,8 @@ func (p *PilesFoundation) Insert(models data.Models, optionID uuid.UUID, result 
 	if err != nil {
 		return nil, err
 	}
+
+	p.normalizeToNewFormat()
 
 	moduleToInsert := p.toDataModule(moduleID, optionID, result)
 
@@ -143,6 +219,8 @@ func (p *PilesFoundation) Get(models data.Models, moduleID uuid.UUID) (Module, e
 }
 
 func (p *PilesFoundation) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
+	p.normalizeToNewFormat()
+
 	module := p.toDataModule(moduleID, optionID, result)
 
 	option, err := models.Options.GetByID(optionID)
@@ -163,7 +241,9 @@ func (p *PilesFoundation) Update(models data.Models, moduleID, optionID uuid.UUI
 
 func (p *PilesFoundation) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
 	moduleData := map[string]interface{}{
-		"fck": p.Fck,
+		"concrete": p.Concrete,
+		"steel":    p.Steel,
+		"fck":      p.Fck,
 		"piles": map[string]interface{}{
 			"volume": p.Piles.Volume,
 			"steel":  p.Piles.Steel,
@@ -201,53 +281,52 @@ func (p *PilesFoundation) toDataModule(moduleID, optionID uuid.UUID, result Cons
 func (p *PilesFoundation) fromDataModule(d *data.Module) Module {
 	consumption := consumptionFromDataModule(d)
 
-	var fck int
-	var piles PilesFoundationPiles
-	var blocks PilesFoundationBlocks
-	var gradeBeams PilesFoundationGradeBeams
-	var tieBeams PilesFoundationTieBeams
+	foundation := &PilesFoundation{
+		ID:              d.ID,
+		BasicModuleData: BasicModuleData{Type: "piles_foundation", Outdated: d.Outdated},
+		Consumption:     consumption,
+		Concrete:        concreteVolumesFromInterface(d.Data["concrete"]),
+		Steel:           deserializeSteelMaterialsFromInterface(d.Data["steel"]),
+		UnitID:          *d.UnitID,
+	}
 
 	if val, ok := d.Data["fck"].(float64); ok {
-		fck = int(val)
+		foundation.Fck = int(val)
 	}
 
 	if pilesData, ok := d.Data["piles"].(map[string]interface{}); ok {
 		if val, ok := pilesData["volume"].(float64); ok {
-			piles.Volume = val
+			foundation.Piles.Volume = val
 		}
-		piles.Steel = deserializeSteelMaterialsFromInterface(pilesData["steel"])
+		foundation.Piles.Steel = deserializeSteelMaterialsFromInterface(pilesData["steel"])
 	}
 
 	if blocksData, ok := d.Data["blocks"].(map[string]interface{}); ok {
 		if val, ok := blocksData["volume"].(float64); ok {
-			blocks.Volume = val
+			foundation.Blocks.Volume = val
 		}
-		blocks.Steel = deserializeSteelMaterialsFromInterface(blocksData["steel"])
+		foundation.Blocks.Steel = deserializeSteelMaterialsFromInterface(blocksData["steel"])
 	}
 
 	if gradeBeamsData, ok := d.Data["grade_beams"].(map[string]interface{}); ok {
 		if val, ok := gradeBeamsData["volume"].(float64); ok {
-			gradeBeams.Volume = val
+			foundation.GradeBeams.Volume = val
 		}
-		gradeBeams.Steel = deserializeSteelMaterialsFromInterface(gradeBeamsData["steel"])
+		foundation.GradeBeams.Steel = deserializeSteelMaterialsFromInterface(gradeBeamsData["steel"])
 	}
 
 	if tieBeamsData, ok := d.Data["tie_beams"].(map[string]interface{}); ok {
 		if val, ok := tieBeamsData["volume"].(float64); ok {
-			tieBeams.Volume = val
+			foundation.TieBeams.Volume = val
 		}
-		tieBeams.Steel = deserializeSteelMaterialsFromInterface(tieBeamsData["steel"])
+		foundation.TieBeams.Steel = deserializeSteelMaterialsFromInterface(tieBeamsData["steel"])
 	}
 
-	return &PilesFoundation{
-		ID:              d.ID,
-		BasicModuleData: BasicModuleData{Type: "piles_foundation", Outdated: d.Outdated},
-		Consumption:     consumption,
-		Fck:             fck,
-		Piles:           piles,
-		Blocks:          blocks,
-		GradeBeams:      gradeBeams,
-		TieBeams:        tieBeams,
-		UnitID:          *d.UnitID,
+	foundation.normalizeToNewFormat()
+
+	if foundation.Fck == 0 && len(foundation.Concrete) > 0 {
+		foundation.Fck = foundation.Concrete[0].Fck
 	}
+
+	return foundation
 }

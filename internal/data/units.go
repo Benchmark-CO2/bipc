@@ -238,7 +238,12 @@ func (m UnitModel) GetFloorArea(floorID uuid.UUID) (float64, error) {
 	var area float64
 	err := m.DB.QueryRowContext(ctx, query, floorID).Scan(&area)
 	if err != nil {
-		return 0, err
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return 0, ErrRecordNotFound
+		default:
+			return 0, err
+		}
 	}
 
 	return area, nil
@@ -253,7 +258,12 @@ func (m UnitModel) GetUnitTotalArea(unitID uuid.UUID) (float64, error) {
 	var totalArea float64
 	err := m.DB.QueryRowContext(ctx, query, unitID).Scan(&totalArea)
 	if err != nil {
-		return 0, err
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return 0, ErrRecordNotFound
+		default:
+			return 0, err
+		}
 	}
 
 	return totalArea, nil

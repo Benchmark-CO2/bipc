@@ -69,11 +69,15 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.requireOptionRoleAssociation(app.deleteOptionHandler))
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/duplicate", app.requireOptionRoleAssociation(app.duplicateOptionHandler))
 
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules", app.requireOptionRoleAssociation(app.createModuleHandler))
-	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.readModuleHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules", app.requireOptionRoleAssociation(app.createModuleV1Handler))
+	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.readModuleV1Handler))
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.deleteModuleHandler))
-	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.updateModuleHandler))
+	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.updateModuleV1Handler))
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID/duplicate", app.requireOptionRoleAssociation(app.duplicateModuleHandler))
+
+	router.HandlerFunc(http.MethodPost, "/v2/projects/:projectID/units/:unitID/options/:optionID/modules", app.requireOptionRoleAssociation(app.createModuleHandler))
+	router.HandlerFunc(http.MethodGet, "/v2/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.readModuleHandler))
+	router.HandlerFunc(http.MethodPatch, "/v2/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.updateModuleHandler))
 
 	router.HandlerFunc(http.MethodGet, "/v1/benchmark/floors", app.getFloorsBenchmarkHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/benchmark/units", app.getUnitsBenchmarkHandler)
