@@ -12,7 +12,7 @@ export LC_ALL=en_US.UTF-8
 # SCRIPT LOGIC
 # ==================================================================================== #
 
-apt --yes install software-properties-common
+apt --yes install software-properties-common libnss3 libasound2t64
 
 add-apt-repository --yes universe
 

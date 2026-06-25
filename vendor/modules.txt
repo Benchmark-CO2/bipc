@@ -1,71 +1,19 @@
-# github.com/boombuler/barcode v1.1.0
-## explicit
-github.com/boombuler/barcode
-github.com/boombuler/barcode/code128
-github.com/boombuler/barcode/datamatrix
-github.com/boombuler/barcode/ean
-github.com/boombuler/barcode/qr
-github.com/boombuler/barcode/utils
-# github.com/clipperhouse/uax29/v2 v2.7.0
-## explicit; go 1.18
-github.com/clipperhouse/uax29/v2/graphemes
-# github.com/f-amaral/go-async v0.3.0
+# github.com/go-rod/rod v0.116.2
 ## explicit; go 1.21
-github.com/f-amaral/go-async/async
-github.com/f-amaral/go-async/pool
-github.com/f-amaral/go-async/sort
+github.com/go-rod/rod
+github.com/go-rod/rod/lib/assets
+github.com/go-rod/rod/lib/cdp
+github.com/go-rod/rod/lib/defaults
+github.com/go-rod/rod/lib/devices
+github.com/go-rod/rod/lib/input
+github.com/go-rod/rod/lib/js
+github.com/go-rod/rod/lib/launcher
+github.com/go-rod/rod/lib/launcher/flags
+github.com/go-rod/rod/lib/proto
+github.com/go-rod/rod/lib/utils
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
-# github.com/hhrutter/lzw v1.0.0
-## explicit; go 1.19
-github.com/hhrutter/lzw
-# github.com/hhrutter/pkcs7 v0.2.0
-## explicit; go 1.23
-github.com/hhrutter/pkcs7
-# github.com/hhrutter/tiff v1.0.2
-## explicit; go 1.19
-github.com/hhrutter/tiff
-# github.com/johnfercher/go-tree v1.1.0
-## explicit; go 1.21.1
-github.com/johnfercher/go-tree/node
-# github.com/johnfercher/maroto/v2 v2.4.0
-## explicit; go 1.26.1
-github.com/johnfercher/maroto/v2
-github.com/johnfercher/maroto/v2/internal/cache
-github.com/johnfercher/maroto/v2/internal/code
-github.com/johnfercher/maroto/v2/internal/math
-github.com/johnfercher/maroto/v2/internal/merror
-github.com/johnfercher/maroto/v2/internal/providers/gofpdf
-github.com/johnfercher/maroto/v2/internal/providers/gofpdf/cellwriter
-github.com/johnfercher/maroto/v2/internal/providers/gofpdf/gofpdfwrapper
-github.com/johnfercher/maroto/v2/internal/time
-github.com/johnfercher/maroto/v2/pkg/components/code
-github.com/johnfercher/maroto/v2/pkg/components/col
-github.com/johnfercher/maroto/v2/pkg/components/image
-github.com/johnfercher/maroto/v2/pkg/components/line
-github.com/johnfercher/maroto/v2/pkg/components/page
-github.com/johnfercher/maroto/v2/pkg/components/row
-github.com/johnfercher/maroto/v2/pkg/components/text
-github.com/johnfercher/maroto/v2/pkg/config
-github.com/johnfercher/maroto/v2/pkg/consts/align
-github.com/johnfercher/maroto/v2/pkg/consts/barcode
-github.com/johnfercher/maroto/v2/pkg/consts/border
-github.com/johnfercher/maroto/v2/pkg/consts/breakline
-github.com/johnfercher/maroto/v2/pkg/consts/extension
-github.com/johnfercher/maroto/v2/pkg/consts/fontfamily
-github.com/johnfercher/maroto/v2/pkg/consts/fontstyle
-github.com/johnfercher/maroto/v2/pkg/consts/generation
-github.com/johnfercher/maroto/v2/pkg/consts/linestyle
-github.com/johnfercher/maroto/v2/pkg/consts/orientation
-github.com/johnfercher/maroto/v2/pkg/consts/pagesize
-github.com/johnfercher/maroto/v2/pkg/consts/protection
-github.com/johnfercher/maroto/v2/pkg/consts/provider
-github.com/johnfercher/maroto/v2/pkg/core
-github.com/johnfercher/maroto/v2/pkg/core/entity
-github.com/johnfercher/maroto/v2/pkg/merge
-github.com/johnfercher/maroto/v2/pkg/metrics
-github.com/johnfercher/maroto/v2/pkg/props
 # github.com/julienschmidt/httprouter v1.3.0
 ## explicit; go 1.7
 github.com/julienschmidt/httprouter
@@ -74,55 +22,34 @@ github.com/julienschmidt/httprouter
 github.com/lib/pq
 github.com/lib/pq/oid
 github.com/lib/pq/scram
-# github.com/mattn/go-runewidth v0.0.21
-## explicit; go 1.20
-github.com/mattn/go-runewidth
-# github.com/pdfcpu/pdfcpu v0.11.1
-## explicit; go 1.24.0
-github.com/pdfcpu/pdfcpu/internal/corefont/metrics
-github.com/pdfcpu/pdfcpu/pkg/api
-github.com/pdfcpu/pdfcpu/pkg/filter
-github.com/pdfcpu/pdfcpu/pkg/font
-github.com/pdfcpu/pdfcpu/pkg/log
-github.com/pdfcpu/pdfcpu/pkg/pdfcpu
-github.com/pdfcpu/pdfcpu/pkg/pdfcpu/color
-github.com/pdfcpu/pdfcpu/pkg/pdfcpu/create
-github.com/pdfcpu/pdfcpu/pkg/pdfcpu/draw
-github.com/pdfcpu/pdfcpu/pkg/pdfcpu/font
-github.com/pdfcpu/pdfcpu/pkg/pdfcpu/form
-github.com/pdfcpu/pdfcpu/pkg/pdfcpu/format
-github.com/pdfcpu/pdfcpu/pkg/pdfcpu/matrix
-github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model
-github.com/pdfcpu/pdfcpu/pkg/pdfcpu/primitives
-github.com/pdfcpu/pdfcpu/pkg/pdfcpu/scan
-github.com/pdfcpu/pdfcpu/pkg/pdfcpu/sign
-github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types
-github.com/pdfcpu/pdfcpu/pkg/pdfcpu/validate
-# github.com/phpdave11/gofpdf v1.4.3
-## explicit; go 1.12
-github.com/phpdave11/gofpdf
-# github.com/pkg/errors v0.9.1
-## explicit
-github.com/pkg/errors
 # github.com/wneessen/go-mail v0.6.2
 ## explicit; go 1.16
 github.com/wneessen/go-mail
 github.com/wneessen/go-mail/internal/pkcs7
 github.com/wneessen/go-mail/log
 github.com/wneessen/go-mail/smtp
+# github.com/ysmood/fetchup v0.3.0
+## explicit; go 1.21
+github.com/ysmood/fetchup
+# github.com/ysmood/goob v0.4.0
+## explicit; go 1.15
+github.com/ysmood/goob
+# github.com/ysmood/got v0.41.0
+## explicit; go 1.21
+github.com/ysmood/got/lib/lcs
+# github.com/ysmood/gson v0.7.3
+## explicit; go 1.15
+github.com/ysmood/gson
+# github.com/ysmood/leakless v0.9.0
+## explicit; go 1.15
+github.com/ysmood/leakless
+github.com/ysmood/leakless/pkg/shared
+github.com/ysmood/leakless/pkg/utils
 # golang.org/x/crypto v0.49.0
 ## explicit; go 1.25.0
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/blowfish
-golang.org/x/crypto/ocsp
 golang.org/x/crypto/pbkdf2
-# golang.org/x/image v0.37.0
-## explicit; go 1.25.0
-golang.org/x/image/ccitt
-golang.org/x/image/riff
-golang.org/x/image/vp8
-golang.org/x/image/vp8l
-golang.org/x/image/webp
 # golang.org/x/text v0.35.0
 ## explicit; go 1.25.0
 golang.org/x/text/cases
@@ -141,6 +68,3 @@ golang.org/x/text/width
 # golang.org/x/time v0.11.0
 ## explicit; go 1.23.0
 golang.org/x/time/rate
-# gopkg.in/yaml.v2 v2.4.0
-## explicit; go 1.15
-gopkg.in/yaml.v2

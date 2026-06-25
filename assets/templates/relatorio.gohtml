@@ -1,0 +1,23 @@
+{{define "report"}}
+<html>
+<head>
+	<meta charset="utf-8">
+	<style>{{.FontFaceCSS}}</style>
+	<script>{{.D3Script}}</script>
+	<style>
+		
+	</style>
+</head>
+<body>
+	<h1>Relatório</h1>
+	
+	<script>
+		window.chartReady = false;
+
+		const data = {{.JSONData}};
+
+		window.chartReady = true;
+	</script>
+</body>
+</html>
+{{ end }}

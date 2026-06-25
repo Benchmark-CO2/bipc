@@ -51,7 +51,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate", app.requireActivatedUser(app.duplicateProjectHandler))
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate/:targetUserID", app.requireActivatedUser(app.duplicateProjectToUserHandler))
 
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/report", app.reportHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/screenshot", app.screenshotHandler)
 
 	// ----------------------------------------------------------------------------------------------------------------------------------
 
