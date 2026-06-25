@@ -2,12 +2,10 @@ package main
 
 import (
 	"errors"
-	"expvar"
 	"fmt"
 	"net"
 	"net/http"
 	"path"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -39,70 +37,6 @@ func extractRealIP(r *http.Request) string {
 		return ""
 	}
 	return ip
-}
-
-type metricsResponseWriter struct {
-	wrapped       http.ResponseWriter
-	statusCode    int
-	headerWritten bool
-}
-
-func newMetricsResponseWriter(w http.ResponseWriter) *metricsResponseWriter {
-	return &metricsResponseWriter{
-		wrapped:    w,
-		statusCode: http.StatusOK,
-	}
-}
-
-func (mw *metricsResponseWriter) Header() http.Header {
-	return mw.wrapped.Header()
-}
-
-func (mw *metricsResponseWriter) WriteHeader(statusCode int) {
-	mw.wrapped.WriteHeader(statusCode)
-
-	if !mw.headerWritten {
-		mw.statusCode = statusCode
-		mw.headerWritten = true
-	}
-}
-
-func (mw *metricsResponseWriter) Write(b []byte) (int, error) {
-	mw.headerWritten = true
-	return mw.wrapped.Write(b)
-}
-
-func (mw *metricsResponseWriter) Unwrap() http.ResponseWriter {
-	return mw.wrapped
-}
-
-func (app *application) metrics(next http.Handler) http.Handler {
-	var (
-		totalRequestsReceived           = expvar.NewInt("total_requests_received")
-		inFlightRequests                = expvar.NewInt("in_flight_requests")
-		totalResponsesSent              = expvar.NewInt("total_responses_sent")
-		totalResponsesSentByStatus      = expvar.NewMap("total_responses_sent_by_status")
-		totalProcessingTimeMicroseconds = expvar.NewInt("total_processing_time_μs")
-	)
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-
-		totalRequestsReceived.Add(1)
-
-		inFlightRequests.Add(1)
-		defer inFlightRequests.Add(-1)
-
-		mw := newMetricsResponseWriter(w)
-		next.ServeHTTP(mw, r)
-
-		totalResponsesSent.Add(1)
-
-		totalResponsesSentByStatus.Add(strconv.Itoa(mw.statusCode), 1)
-
-		duration := time.Since(start).Microseconds()
-		totalProcessingTimeMicroseconds.Add(duration)
-	})
 }
 
 func (app *application) recoverPanic(next http.Handler) http.Handler {

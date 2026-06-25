@@ -14,7 +14,6 @@ func (app *application) routes() http.Handler {
 	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
 	router.NotFound = app.notFound(http.FileServer(http.FS(web.DistFs)))
 
-	router.HandlerFunc(http.MethodGet, "/v1/metrics", app.metricsHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
 
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
@@ -79,5 +78,5 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/benchmark/units", app.getUnitsBenchmarkHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/benchmark/projects", app.getProjectsBenchmarkHandler)
 
-	return app.metrics(app.recoverPanic(app.commonHeaders(app.enableCORS(app.realIP(app.rateLimit(app.authenticate(router)))))))
+	return app.recoverPanic(app.commonHeaders(app.enableCORS(app.realIP(app.rateLimit(app.authenticate(router))))))
 }
