@@ -138,7 +138,7 @@ export function FilterTabs({
           )}
           {addTabAction && (
             <>
-              <div className="h-6 w-px bg-gray-shade-300 dark:bg-gray-shade-500 mx-1 shrink-0" />
+              <div className="h-6 w-px bg-gray-shade-300 dark:bg-gray-shade-500 mx-2 shrink-0" />
               {addTabAction}
             </>
           )}

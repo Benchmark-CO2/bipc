@@ -921,6 +921,7 @@ export const en: Translations = {
   projectView: {
     tabProject: "Project",
     tabCollaborators: "Collaborators",
+    tabDisciplines: "Disciplines",
     buildings: "Buildings",
     addBuilding: "Add Building",
     noBuildingsFound: "No buildings found",
@@ -1084,6 +1085,7 @@ export const en: Translations = {
       "The requested unit could not be found. It may have been removed or the link is incorrect.",
     backToProject: "Back to project",
     newDiscipline: "New discipline",
+    manageDisciplines: "Manage disciplines",
     createSimulations: "Manage simulations",
     selectDisciplineTooltip: "Select a discipline to manage simulations",
     noDisciplines: "No disciplines to display",

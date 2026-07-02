@@ -925,6 +925,7 @@ export const ptBR = {
   projectView: {
     tabProject: "Empreendimento",
     tabCollaborators: "Colaboradores",
+    tabDisciplines: "Disciplinas",
     buildings: "Edificações",
     addBuilding: "Adicionar Edificação",
     noBuildingsFound: "Nenhuma edificação encontrada",
@@ -1094,6 +1095,7 @@ export const ptBR = {
       "Não foi possível encontrar a unidade solicitada. Ela pode ter sido removida ou o link está incorreto.",
     backToProject: "Voltar ao empreendimento",
     newDiscipline: "Nova disciplina",
+    manageDisciplines: "Gerenciar disciplinas",
     createSimulations: "Gerenciar simulações",
     selectDisciplineTooltip:
       "Selecione uma disciplina para gerenciar simulações",
