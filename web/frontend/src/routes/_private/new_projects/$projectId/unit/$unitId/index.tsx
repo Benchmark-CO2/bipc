@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
 import { FilterTabs } from "@/components/ui/filter-tabs";
 import NotFoundList from "@/components/ui/not-found-list";
+import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
@@ -37,7 +38,7 @@ import {
   useParams,
   useSearch,
 } from "@tanstack/react-router";
-import { Plus, SquareArrowOutUpRight, Upload } from "lucide-react";
+import { Plus, Settings, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type TGroupedFloor = IConsumption &
@@ -457,25 +458,43 @@ function RouteComponent() {
                 onSubTabSelect={(tab) => onSelectedTabChange(tab)}
                 fullWidth
                 addTabAction={
-                  hasPermission("create:role") ? (
-                    <DrawerFormDisciplines
-                      componentTrigger={
-                        <Tooltip>
-                          <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2">
+                    <SimpleTooltip
+                      content={t.unitView.manageDisciplines}
+                      side="bottom"
+                    >
+                      <Button
+                        variant="outline-bipc"
+                        size="icon"
+                        onClick={() =>
+                          navigate({
+                            to: "/new_projects/$projectId",
+                            params: { projectId },
+                            search: { tab: "disciplinas" },
+                          })
+                        }
+                      >
+                        <Settings />
+                      </Button>
+                    </SimpleTooltip>
+                    {hasPermission("create:role") && (
+                      <DrawerFormDisciplines
+                        componentTrigger={
+                          <SimpleTooltip
+                            content={t.unitView.newDiscipline}
+                            side="bottom"
+                          >
                             <Button variant="outline-bipc" size="icon">
                               <Plus />
                             </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {t.unitView.newDiscipline}
-                          </TooltipContent>
-                        </Tooltip>
-                      }
-                      projectId={projectId}
-                      unitId={unitId}
-                      roles={roleTabs}
-                    />
-                  ) : undefined
+                          </SimpleTooltip>
+                        }
+                        projectId={projectId}
+                        unitId={unitId}
+                        roles={roleTabs}
+                      />
+                    )}
+                  </div>
                 }
               />
               <Button variant="outline-bipc" size="icon-lg" disabled>

@@ -2,6 +2,7 @@ import { getProjectByUUID } from "@/actions/projects/getProject";
 import { getAllProjectsByUser } from "@/actions/projects/getProjects";
 import {
   CollaboratorsView,
+  DisciplinesView,
   DrawerFormUnit,
   ProjectView,
 } from "@/components/layout";
@@ -24,14 +25,14 @@ import { useTranslation } from "@/i18n";
 import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 
 type ProjectSearch = {
-  tab?: "projeto" | "colaboradores";
+  tab?: "projeto" | "colaboradores" | "disciplinas";
 };
 
 export const Route = createFileRoute("/_private/new_projects/$projectId/")({
   component: RouteComponent,
   validateSearch: (search: Record<string, unknown>): ProjectSearch => {
     return {
-      tab: search.tab as "projeto" | "colaboradores",
+      tab: search.tab as "projeto" | "colaboradores" | "disciplinas",
     };
   },
 });
@@ -50,7 +51,11 @@ function RouteComponent() {
 
   const [selectedTab, setSelectedTab] = useState(t.projectView.tabProject);
   const { setSummaryContext } = useSummary();
-  const tabs = [t.projectView.tabProject, t.projectView.tabCollaborators];
+  const tabs = [
+    t.projectView.tabProject,
+    t.projectView.tabCollaborators,
+    t.projectView.tabDisciplines,
+  ];
 
   const { data: projectData } = useQuery({
     queryKey: ["projects"],
@@ -76,19 +81,29 @@ function RouteComponent() {
         co2_min: consumption?.co2_min ?? 0,
         energy_max: consumption?.energy_max ?? 0,
         energy_min: consumption?.energy_min ?? 0,
+        material: consumption?.material ?? 0,
       };
     });
 
   useEffect(() => {
     if (searchParams.tab === "colaboradores") {
       setSelectedTab(t.projectView.tabCollaborators);
+    } else if (searchParams.tab === "disciplinas") {
+      setSelectedTab(t.projectView.tabDisciplines);
     } else {
       setSelectedTab(t.projectView.tabProject);
     }
   }, [searchParams.tab, t]);
 
   const handleTabClick = (tab: string) => {
-    const tabParam = tab === t.projectView.tabCollaborators ? "colaboradores" : "projeto";
+    let tabParam: "projeto" | "colaboradores" | "disciplinas";
+    if (tab === t.projectView.tabCollaborators) {
+      tabParam = "colaboradores";
+    } else if (tab === t.projectView.tabDisciplines) {
+      tabParam = "disciplinas";
+    } else {
+      tabParam = "projeto";
+    }
 
     navigate({
       to: ".",
@@ -140,6 +155,9 @@ function RouteComponent() {
           projectId={projectId}
           projectName={projectData?.name}
         />
+      )}
+      {selectedTab === t.projectView.tabDisciplines && (
+        <DisciplinesView projectId={projectId} />
       )}
     </div>
   );
