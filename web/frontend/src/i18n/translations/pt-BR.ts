@@ -898,6 +898,7 @@ export const ptBR = {
     floors: "Pavimentos",
     technology: "Tecnologia",
     displaying: "Exibindo",
+    selected: "Selecionados",
     of: "de",
     numberOfProjects: "Nº de empreendimentos",
     enableZoom: "Habilitar zoom",

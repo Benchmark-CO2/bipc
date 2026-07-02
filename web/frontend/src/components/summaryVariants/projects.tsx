@@ -142,9 +142,6 @@ const ProjectsSummary = ({
     maxValue,
   );
 
-  console.debug('selected projects', selectedProjects)
-  console.debug('stacked data', newDataItems.find(el => selectedProjects.includes(el.id)));
-
   return (
     <>
       <div className="w-full flex gap-2 mb-4">

@@ -35,8 +35,8 @@ const debounce = <T extends (...args: any[]) => any>(
 const DEFAULT_COLORS = {
   START: "#3b82f6",
   END: "#E36F35",
-  GRAY_START: "#cbd5e1",
-  GRAY_END: "#94a3b8",
+  GRAY_START: "#94a3b8",
+  GRAY_END: "#64748b",
   GRADIENT_RANGE: [
     "#3b82f6",
     "hsl(97, 40%, 50%)",
@@ -90,7 +90,7 @@ type ChartData = IBenchmarkItem & {
   value?: number;
 };
 
-type D3GradientRangeChartProps = {
+type D3RangeChartProps = {
   /** Chart variant: "range" shows min/max pairs, "cumulative" shows single-value gray dots */
   variant?: "range" | "cumulative";
   selectedBars?: string[];
@@ -127,7 +127,7 @@ type D3GradientRangeChartProps = {
 };
 // Custom hooks
 const useChartDimensions = (
-  props: Pick<D3GradientRangeChartProps, "width" | "height">,
+  props: Pick<D3RangeChartProps, "width" | "height">,
   overrideDimensions: boolean,
   isMobile: boolean,
   isExpanded: boolean,
@@ -215,7 +215,7 @@ const useTooltipPosition = () => {
   );
 };
 
-const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
+const D3RangeChart: React.FC<D3RangeChartProps> = ({
   variant = "range",
   selectedBars = [],
   selectedMinBars,
@@ -241,6 +241,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   ...props
 }) => {
   const isCumulative = variant === "cumulative";
+
   // Normalize data: in cumulative mode, map `value` to both min and max
   const data = useMemo(() => {
     if (!isCumulative) return rawData;
@@ -275,7 +276,11 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
       technology?: string[];
     };
   } | null>(null);
-  const [, setBrushSelectionCount] = useState<number>(0);
+  const [visibleCount, setVisibleCount] = useState<number>(0);
+  const [outSmallerCount, setOutSmallerCount] = useState<number>(0);
+  const [outLargerCount, setOutLargerCount] = useState<number>(0);
+  const outSmallerRef = useRef<number>(0);
+  const outLargerRef = useRef<number>(0);
   const [hasZoomed, setHasZoomed] = useState(false);
   const [zoomEnabled, setZoomEnabled] = useState(false);
   const transformRef = useRef({ k: 1, x: 0, y: 0 });
@@ -336,17 +341,18 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
   // Inicializar o contador com o total de dados filtrados
   useEffect(() => {
-    setBrushSelectionCount(data.length);
-  }, [data.length]);
+    setVisibleCount(selectedBarIds.size || data.length);
+  }, [data.length, selectedBarIds]);
 
   // Função auxiliar para atualizar o contador
   const updateBrushCount = useCallback((count: number) => {
-    setBrushSelectionCount(count);
+    setVisibleCount(count);
   }, []);
 
   const minLessDataValue = useMemo(() => Math.min(...minData), [minData]);
   const maxLessDataValue = useMemo(() => Math.max(...minData), [minData]);
   const maxMaxDataValue = useMemo(() => Math.max(...maxData), [maxData]);
+  const minMaxDataValue = useMemo(() => Math.min(...maxData), [maxData]);
   const hasLessValue =
     totalProjects > 0
       ? parseFloat((minData[0] || 0).toFixed(2)) < minLessDataValue
@@ -395,19 +401,6 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   }, [_height]);
 
   const getTooltipPosition = useTooltipPosition();
-
-  const getProcelColor = useCallback(
-    (y: number) => {
-      const normalizedY = Math.max(0, Math.min(1, y));
-      const procelClasses = isCumulative ? PROCEL_CLASSES_5 : PROCEL_CLASSES;
-      const index = Math.min(
-        procelClasses.length - 1,
-        Math.floor(normalizedY * procelClasses.length),
-      );
-      return procelClasses[index].color;
-    },
-    [isCumulative],
-  );
 
   // Helper function to get data point under mouse
   const getDataAtPosition = useCallback(
@@ -759,7 +752,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         const barWidth = Math.max(1, x2 - x1);
 
         if (isCumulative) {
-          // Cumulative mode: single circle for selected items
+          // Cumulative mode: single gray circle (darker for selected)
           const baseRadius = isExpanded
             ? CHART_CONFIG.CIRCLE_RADIUS.expanded
             : CHART_CONFIG.CIRCLE_RADIUS.normal;
@@ -771,26 +764,14 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
           ctx.beginPath();
           ctx.arc(x1, y, radius, 0, Math.PI * 2);
-          const minIdStr = String(d.minId ?? d.id);
-          const maxIdStr = String(d.maxId ?? d.id);
-          const isSelectedCumulative =
-            selectedBarIds.has(String(d.id)) ||
-            selectedMinBarIds.has(minIdStr) ||
-            selectedMaxBarIds.has(maxIdStr);
-          console.log("Drawing cumulative point for", d.label, "selected:", d);
-          ctx.fillStyle = isSelectedCumulative
-            ? getProcelColor(d.y)
-            : DEFAULT_COLORS.GRAY_END;
+          ctx.fillStyle = DEFAULT_COLORS.GRAY_END;
           ctx.fill();
-          if (strokeWidth > 0) {
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = strokeWidth;
-            ctx.stroke();
-          }
         } else {
           // Range mode: bars and colored circles
           // Bar connecting min and max only when both endpoints are selected
+          // Split bar: blue from min to mid, orange from mid to max
           if (!hideBars && isPairSelected) {
+            // Use midPredict regression if available, otherwise use simple average
             const midValue = midPredict ? midPredict(d.y) : (d.min + d.max) / 2;
             const xMid = newXScale(midValue);
             const rr = isExpanded ? barHeight / 2 : 2;
@@ -834,9 +815,6 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
             ctx.arc(x1, y, radius, 0, Math.PI * 2);
             ctx.fillStyle = DEFAULT_COLORS.START;
             ctx.fill();
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = strokeWidth;
-            ctx.stroke();
           }
 
           if (isMaxSelected) {
@@ -844,12 +822,6 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
             ctx.arc(x2, y, radius, 0, Math.PI * 2);
             ctx.fillStyle = DEFAULT_COLORS.END;
             ctx.fill();
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = Math.max(
-              isExpanded ? (isMobile ? 1 : 0.5) : 0,
-              zoomRadiusFactor > 1 ? 1 : 0,
-            );
-            ctx.stroke();
           }
         }
 
@@ -910,115 +882,39 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         const isMinSelected = selectedMinBarIds.has(String(d.minId ?? d.id));
         const isMaxSelected = selectedMaxBarIds.has(String(d.maxId ?? d.id));
         const isPairSelected = isMinSelected && isMaxSelected;
-        const isSelectedCumulative = selectedBarIds.has(String(d.id));
-       
-        if (isCumulative && isSelectedCumulative && d.label) {
-          const x1 = newXScale(d.min);
-          const y = newYScale(d.y);
-          
-          // Skip if outside visible area
-          if (x1 < 0 || x1 > _width || y < 0 || y > _height) return;
-
-          const baseRadius = isExpanded
-            ? CHART_CONFIG.CIRCLE_RADIUS.expanded
-            : CHART_CONFIG.CIRCLE_RADIUS.normal;
-          const radius = baseRadius * zoomRadiusFactor;
-          const text = d.label;
-          ctx.font = isExpanded ? "12px sans-serif" : "10px sans-serif";
-          const textMetrics = ctx.measureText(text);
-          const textWidth = textMetrics.width;
-          const textHeight =
-            (textMetrics.actualBoundingBoxAscent ?? 8) +
-            (textMetrics.actualBoundingBoxDescent ?? 6);
-          const padding = 6;
-          const boxWidth = textWidth + padding * 2;
-          const boxHeight = textHeight + 6;
-          const procelColor = getProcelColor(d.y);
-
-          const placeRight = x1 <= _width * 0.5;
-          const boxX = placeRight
-            ? x1 + radius + 10
-            : x1 - radius - 10 - boxWidth;
-          const arrowStartX = placeRight
-            ? x1 + radius * 0.8
-            : x1 - radius * 0.8;
-          const arrowEndX = placeRight ? boxX - 6 : boxX + boxWidth + 6;
-          const arrowY = y;
-          const textY = y;
-          const boxY = textY - boxHeight / 2;
-
-          ctx.save();
-          ctx.strokeStyle = procelColor;
-          ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-          ctx.lineWidth = 1.5;
-          ctx.font = isExpanded ? "12px sans-serif" : "10px sans-serif";
-          ctx.textAlign = "left";
-          ctx.textBaseline = "middle";
-
-          // Label background box
-          ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-          ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
-
-          // Arrow line
-          ctx.beginPath();
-          ctx.moveTo(arrowStartX, arrowY);
-          ctx.lineTo(arrowEndX, arrowY);
-          ctx.stroke();
-
-          // Arrow head
-          ctx.beginPath();
-          if (placeRight) {
-            ctx.moveTo(arrowEndX, arrowY);
-            ctx.lineTo(arrowEndX - 5, arrowY - 4);
-            ctx.lineTo(arrowEndX - 5, arrowY + 4);
-          } else {
-            ctx.moveTo(arrowEndX, arrowY);
-            ctx.lineTo(arrowEndX + 5, arrowY - 4);
-            ctx.lineTo(arrowEndX + 5, arrowY + 4);
-          }
-          ctx.closePath();
-          ctx.fill();
-
-          // Draw text
-          ctx.fillStyle = "#111827";
-          ctx.fillText(text, boxX + padding, textY);
-          ctx.restore();
-
-          return;
-        }
-
-        if (!isCumulative && isPairSelected && d.label) {
+        
+        if (isPairSelected && d.label) {
           const x1 = newXScale(d.min);
           const x2 = newXScale(d.max);
           const y = newYScale(d.y);
-
+          
           // Skip if outside visible area
           if (x2 < 0 || x1 > _width || y < 0 || y > _height) return;
-
+          
           // Position text to the right of the max point
           const textX = x2 + 10;
           const textY = y;
-
+          
           ctx.save();
           ctx.font = isExpanded ? "12px sans-serif" : "10px sans-serif";
           ctx.fillStyle = "#111827";
           ctx.textAlign = "left";
           ctx.textBaseline = "middle";
-
+          
           // Add a semi-transparent background for better readability
           const textMetrics = ctx.measureText(d.label);
           const textWidth = textMetrics.width;
           const textHeight = isExpanded ? 16 : 14;
           const padding = 4;
-
+          
           ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
           ctx.fillRect(
             textX - padding,
             textY - textHeight / 2,
             textWidth + padding * 2,
-            textHeight,
+            textHeight
           );
-
+          
           // Draw the text
           ctx.fillStyle = "#111827";
           ctx.fillText(d.label, textX, textY);
@@ -1223,15 +1119,38 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
     ctx.restore();
 
-    // Count visible points
-    const [x0, x1] = newXScale.domain();
-    const [y0, y1] = newYScale.domain();
-    const countInView = data.filter((d) => {
-      const xInRange = d.min >= x0 && d.max <= x1;
-      const yInRange = d.y >= y0 && d.y <= y1;
-      return xInRange && yInRange;
-    }).length;
-    updateBrushCount(countInView);
+    // Count items by pixel position — same criteria as the renderer skip conditions.
+    // "smaller" = left of view (lower X) or below view (lower cumulative fraction = best buildings)
+    // "larger"  = right of view (higher X) or above view (higher cumulative fraction = worst buildings)
+    let _countInView = 0;
+    let _countSmaller = 0;
+    let _countLarger = 0;
+    const hasSelection = selectedMinBarIds.size > 0 || selectedMaxBarIds.size > 0;
+    const _countSource = hasSelection
+      ? data.filter((d) =>
+          selectedMinBarIds.has(String(d.minId ?? d.id)) &&
+          selectedMaxBarIds.has(String(d.maxId ?? d.id)),
+        )
+      : data;
+    for (const d of _countSource) {
+      const px1 = newXScale(d.min);
+      const px2 = newXScale(d.max);
+      const py  = newYScale(d.y);
+      if (px2 < 0)       { _countSmaller++; continue; } // left  = smaller X
+      if (px1 > _width)  { _countLarger++;  continue; } // right = larger X
+      if (py  > _height) { _countSmaller++; continue; } // below = lower cumulative
+      if (py  < 0)       { _countLarger++;  continue; } // above = higher cumulative
+      _countInView++;
+    }
+    updateBrushCount(_countInView);
+    if (outSmallerRef.current !== _countSmaller) {
+      outSmallerRef.current = _countSmaller;
+      setOutSmallerCount(_countSmaller);
+    }
+    if (outLargerRef.current !== _countLarger) {
+      outLargerRef.current = _countLarger;
+      setOutLargerCount(_countLarger);
+    }
   }, [
     canvasRef,
     margin,
@@ -1360,7 +1279,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         .call(zoom.transform as any, d3.zoomIdentity);
 
       transformRef.current = { k: 1, x: 0, y: 0 };
-      updateBrushCount(data.length);
+      updateBrushCount(selectedBarIds.size || data.length);
       setHasZoomed(false);
 
       if (animationFrameRef.current) {
@@ -1401,7 +1320,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         .call(zoomRef.current.transform as any, d3.zoomIdentity);
 
       transformRef.current = { k: 1, x: 0, y: 0 };
-      updateBrushCount(data.length);
+      updateBrushCount(selectedBarIds.size || data.length);
       setHasZoomed(false);
 
       if (animationFrameRef.current) {
@@ -1432,11 +1351,9 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   const labelX = xAxisLabelProp ??
     (UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon);
   const labelY = yAxisLabelProp ?? t.benchmark.chartTypes.cumulativeFraction.yAxisLabel;
-  const displayedCount =
-    selectedMinBarIds.size > 0 || selectedMaxBarIds.size > 0
-      ? new Set([...selectedMinBarIds, ...selectedMaxBarIds]).size
-      : data.length;
-  const totalCount = totalProjects || initialTotalRef.current || data.length;
+  const displayedCount = hasZoomed ? visibleCount : data.length;
+  const totalCount = Math.max(totalProjects || 0, initialTotalRef.current || 0, data.length);
+  const selectedCount = new Set([...selectedMinBarIds, ...selectedMaxBarIds]).size;
 
   return (
     <Card className={cn("shadow-none w-min-content min-w-1/2")}>
@@ -1447,10 +1364,12 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
           </span>
 
           <Indicators
-            max={maxLessDataValue}
-            min={minLessDataValue}
+            max={maxMaxDataValue}
+            min={maxLessDataValue}
             hasZoomed={hasZoomed}
             position="end"
+            countLarger={outLargerCount}
+            countSmaller={outSmallerCount}
           />
 
           <button
@@ -1462,14 +1381,14 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
                 ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
                 : "bg-background text-muted-foreground border-border hover:bg-muted",
             )}
-            title={zoomEnabled ? t.d3chart.disableZoom : t.d3chart.enableZoom}
+            title={zoomEnabled ? "Desabilitar zoom" : "Habilitar zoom"}
           >
             {zoomEnabled ? (
               <Search className="size-3.5" />
             ) : (
               <SearchX className="size-3.5" />
             )}
-            <span className="max-sm:hidden">{t.d3chart.zoomLabel}</span>
+            <span className="max-sm:hidden">Zoom</span>
           </button>
 
           <canvas
@@ -1488,10 +1407,12 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
 
           {!isMobile && (
             <Indicators
-              max={maxLessDataValue}
+              max={minMaxDataValue}
               min={minLessDataValue}
               hasZoomed={hasZoomed}
               position="start"
+              countLarger={outLargerCount}
+              countSmaller={outSmallerCount}
             />
           )}
 
@@ -1505,7 +1426,7 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
             >
               {isCumulative ? (
                 <span>
-                  {xAxisLabelProp ?? t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon}:{" "}
+                  {t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon}:{" "}
                   <b>
                     {tooltip.value.min.toInternational()} {unit}
                   </b>
@@ -1546,15 +1467,24 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
         </div>
 
         <div className="flex max-sm:flex-col-reverse max-sm:gap-4 max-sm:mt-2">
-          <span className="text-xs">
-            {t.d3chart.displaying}: {displayedCount} {t.d3chart.of} {totalCount}
-          </span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs">
+              {t.d3chart.displaying}: {displayedCount} {t.d3chart.of} {totalCount}
+            </span>
+            {selectedCount > 0 && (
+              <span className="text-xs text-foreground/60">
+                {t.d3chart.selected}: {selectedCount} {t.d3chart.of} {data.length}
+              </span>
+            )}
+          </div>
           {isMobile && (
             <Indicators
-              max={maxLessDataValue}
+              max={minMaxDataValue}
               min={minLessDataValue}
               hasZoomed={hasZoomed}
               position="start"
+              countLarger={outLargerCount}
+              countSmaller={outSmallerCount}
             />
           )}
           <span className="flex-1 text-xs text-center w-full text-foreground/70">
@@ -1566,4 +1496,4 @@ const D3GradientRangeChart: React.FC<D3GradientRangeChartProps> = ({
   );
 };
 
-export default D3GradientRangeChart;
+export default D3RangeChart;

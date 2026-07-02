@@ -895,6 +895,7 @@ export const en: Translations = {
     floors: "Floors",
     technology: "Technology",
     displaying: "Displaying",
+    selected: "Selected",
     of: "of",
     numberOfProjects: "Number of projects",
     enableZoom: "Enable zoom",

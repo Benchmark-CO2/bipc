@@ -276,7 +276,11 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       technology?: string[];
     };
   } | null>(null);
-  const [, setBrushSelectionCount] = useState<number>(0);
+  const [visibleCount, setVisibleCount] = useState<number>(0);
+  const [outSmallerCount, setOutSmallerCount] = useState<number>(0);
+  const [outLargerCount, setOutLargerCount] = useState<number>(0);
+  const outSmallerRef = useRef<number>(0);
+  const outLargerRef = useRef<number>(0);
   const [hasZoomed, setHasZoomed] = useState(false);
   const [zoomEnabled, setZoomEnabled] = useState(false);
   const transformRef = useRef({ k: 1, x: 0, y: 0 });
@@ -337,17 +341,18 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
 
   // Inicializar o contador com o total de dados filtrados
   useEffect(() => {
-    setBrushSelectionCount(data.length);
-  }, [data.length]);
+    setVisibleCount(selectedBarIds.size || data.length);
+  }, [data.length, selectedBarIds]);
 
   // Função auxiliar para atualizar o contador
   const updateBrushCount = useCallback((count: number) => {
-    setBrushSelectionCount(count);
+    setVisibleCount(count);
   }, []);
 
   const minLessDataValue = useMemo(() => Math.min(...minData), [minData]);
   const maxLessDataValue = useMemo(() => Math.max(...minData), [minData]);
   const maxMaxDataValue = useMemo(() => Math.max(...maxData), [maxData]);
+  const minMaxDataValue = useMemo(() => Math.min(...maxData), [maxData]);
   const hasLessValue =
     totalProjects > 0
       ? parseFloat((minData[0] || 0).toFixed(2)) < minLessDataValue
@@ -761,11 +766,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           ctx.arc(x1, y, radius, 0, Math.PI * 2);
           ctx.fillStyle = DEFAULT_COLORS.GRAY_END;
           ctx.fill();
-          if (strokeWidth > 0) {
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = strokeWidth;
-            ctx.stroke();
-          }
         } else {
           // Range mode: bars and colored circles
           // Bar connecting min and max only when both endpoints are selected
@@ -815,9 +815,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             ctx.arc(x1, y, radius, 0, Math.PI * 2);
             ctx.fillStyle = DEFAULT_COLORS.START;
             ctx.fill();
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = strokeWidth;
-            ctx.stroke();
           }
 
           if (isMaxSelected) {
@@ -825,12 +822,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             ctx.arc(x2, y, radius, 0, Math.PI * 2);
             ctx.fillStyle = DEFAULT_COLORS.END;
             ctx.fill();
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = Math.max(
-              isExpanded ? (isMobile ? 1 : 0.5) : 0,
-              zoomRadiusFactor > 1 ? 1 : 0,
-            );
-            ctx.stroke();
           }
         }
 
@@ -1128,15 +1119,38 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
 
     ctx.restore();
 
-    // Count visible points
-    const [x0, x1] = newXScale.domain();
-    const [y0, y1] = newYScale.domain();
-    const countInView = data.filter((d) => {
-      const xInRange = d.min >= x0 && d.max <= x1;
-      const yInRange = d.y >= y0 && d.y <= y1;
-      return xInRange && yInRange;
-    }).length;
-    updateBrushCount(countInView);
+    // Count items by pixel position — same criteria as the renderer skip conditions.
+    // "smaller" = left of view (lower X) or below view (lower cumulative fraction = best buildings)
+    // "larger"  = right of view (higher X) or above view (higher cumulative fraction = worst buildings)
+    let _countInView = 0;
+    let _countSmaller = 0;
+    let _countLarger = 0;
+    const hasSelection = selectedMinBarIds.size > 0 || selectedMaxBarIds.size > 0;
+    const _countSource = hasSelection
+      ? data.filter((d) =>
+          selectedMinBarIds.has(String(d.minId ?? d.id)) &&
+          selectedMaxBarIds.has(String(d.maxId ?? d.id)),
+        )
+      : data;
+    for (const d of _countSource) {
+      const px1 = newXScale(d.min);
+      const px2 = newXScale(d.max);
+      const py  = newYScale(d.y);
+      if (px2 < 0)       { _countSmaller++; continue; } // left  = smaller X
+      if (px1 > _width)  { _countLarger++;  continue; } // right = larger X
+      if (py  > _height) { _countSmaller++; continue; } // below = lower cumulative
+      if (py  < 0)       { _countLarger++;  continue; } // above = higher cumulative
+      _countInView++;
+    }
+    updateBrushCount(_countInView);
+    if (outSmallerRef.current !== _countSmaller) {
+      outSmallerRef.current = _countSmaller;
+      setOutSmallerCount(_countSmaller);
+    }
+    if (outLargerRef.current !== _countLarger) {
+      outLargerRef.current = _countLarger;
+      setOutLargerCount(_countLarger);
+    }
   }, [
     canvasRef,
     margin,
@@ -1265,7 +1279,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         .call(zoom.transform as any, d3.zoomIdentity);
 
       transformRef.current = { k: 1, x: 0, y: 0 };
-      updateBrushCount(data.length);
+      updateBrushCount(selectedBarIds.size || data.length);
       setHasZoomed(false);
 
       if (animationFrameRef.current) {
@@ -1306,7 +1320,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         .call(zoomRef.current.transform as any, d3.zoomIdentity);
 
       transformRef.current = { k: 1, x: 0, y: 0 };
-      updateBrushCount(data.length);
+      updateBrushCount(selectedBarIds.size || data.length);
       setHasZoomed(false);
 
       if (animationFrameRef.current) {
@@ -1337,11 +1351,9 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const labelX = xAxisLabelProp ??
     (UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon);
   const labelY = yAxisLabelProp ?? t.benchmark.chartTypes.cumulativeFraction.yAxisLabel;
-  const displayedCount =
-    selectedMinBarIds.size > 0 || selectedMaxBarIds.size > 0
-      ? new Set([...selectedMinBarIds, ...selectedMaxBarIds]).size
-      : data.length;
-  const totalCount = totalProjects || initialTotalRef.current || data.length;
+  const displayedCount = hasZoomed ? visibleCount : data.length;
+  const totalCount = Math.max(totalProjects || 0, initialTotalRef.current || 0, data.length);
+  const selectedCount = new Set([...selectedMinBarIds, ...selectedMaxBarIds]).size;
 
   return (
     <Card className={cn("shadow-none w-min-content min-w-1/2")}>
@@ -1352,10 +1364,12 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           </span>
 
           <Indicators
-            max={maxLessDataValue}
-            min={minLessDataValue}
+            max={maxMaxDataValue}
+            min={maxLessDataValue}
             hasZoomed={hasZoomed}
             position="end"
+            countLarger={outLargerCount}
+            countSmaller={outSmallerCount}
           />
 
           <button
@@ -1393,10 +1407,12 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
 
           {!isMobile && (
             <Indicators
-              max={maxLessDataValue}
+              max={minMaxDataValue}
               min={minLessDataValue}
               hasZoomed={hasZoomed}
               position="start"
+              countLarger={outLargerCount}
+              countSmaller={outSmallerCount}
             />
           )}
 
@@ -1451,15 +1467,24 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         </div>
 
         <div className="flex max-sm:flex-col-reverse max-sm:gap-4 max-sm:mt-2">
-          <span className="text-xs">
-            {t.d3chart.displaying}: {displayedCount} {t.d3chart.of} {totalCount}
-          </span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs">
+              {t.d3chart.displaying}: {displayedCount} {t.d3chart.of} {totalCount}
+            </span>
+            {selectedCount > 0 && (
+              <span className="text-xs text-foreground/60">
+                {t.d3chart.selected}: {selectedCount} {t.d3chart.of} {data.length}
+              </span>
+            )}
+          </div>
           {isMobile && (
             <Indicators
-              max={maxLessDataValue}
+              max={minMaxDataValue}
               min={minLessDataValue}
               hasZoomed={hasZoomed}
               position="start"
+              countLarger={outLargerCount}
+              countSmaller={outSmallerCount}
             />
           )}
           <span className="flex-1 text-xs text-center w-full text-foreground/70">
