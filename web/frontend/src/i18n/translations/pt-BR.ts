@@ -920,6 +920,8 @@ export const ptBR = {
       "Empreendimentos sem estado e município cadastrados não são exibidos no mapa",
     clickStateHint:
       "Clique em um estado para verificar em detalhe a distribuição de empreendimentos por município",
+    colorScaleDescription:
+      "As cores indicam a quantidade de empreendimentos por estado. A escala progride do menor para o maior volume: cinza (nenhum registro), azul (1 a 5), verde (6 a 10), amarelo (11 a 20), laranja (21 a 40) e vermelho (mais de 41).",
     projects: "projetos",
     project: "projeto",
   },
