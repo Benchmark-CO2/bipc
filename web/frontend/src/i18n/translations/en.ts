@@ -916,6 +916,8 @@ export const en: Translations = {
       "Projects without a registered state and municipality are not shown on the map",
     clickStateHint:
       "Click on a state to see the detailed distribution of projects by municipality",
+    colorScaleDescription:
+      "Colors indicate the number of projects per state. The scale progresses from smallest to largest volume: grey (no records), blue (1 to 5), green (6 to 10), yellow (11 to 20), orange (21 to 40) and red (more than 41).",
     projects: "projects",
     project: "project",
   },

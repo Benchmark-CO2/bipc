@@ -1,16 +1,24 @@
 import { useSummary } from "@/context/summaryContext";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/i18n";
-import { MAP_COLORS, MAP_EMPTY } from "@/utils/geoUtils";
+import { MAP_COLORS, MAP_EMPTY, MAP_THRESHOLDS } from "@/utils/geoUtils";
 
 const DISPLAY_COLORS = [MAP_EMPTY, ...MAP_COLORS];
+
+/** Fixed range labels derived from MAP_THRESHOLDS, e.g. ["1-5", "6-10", "11-20", "21-40", ">41"] */
+const MAP_RANGE_LABELS = MAP_COLORS.map((_, i) => {
+  const lo = i === 0 ? 1 : MAP_THRESHOLDS[i - 1] + 1;
+  if (i === MAP_COLORS.length - 1)
+    return `>${MAP_THRESHOLDS[MAP_THRESHOLDS.length - 1]}`;
+  return `${lo}-${MAP_THRESHOLDS[i]}`;
+});
 
 interface LegendProps {
   variant?: "default" | "map";
   maxCount?: number;
 }
 
-const Legend = ({ variant = "default", maxCount }: LegendProps) => {
+const Legend = ({ variant = "default" }: LegendProps) => {
   const { isExpanded } = useSummary();
   const { t } = useTranslation();
 
@@ -44,30 +52,12 @@ const Legend = ({ variant = "default", maxCount }: LegendProps) => {
             <div className="flex text-[9px] text-muted-foreground leading-tight">
               {/* Empty cell: always "0" */}
               <div className="w-10 text-center">0</div>
-              {/* Active color cells: compute the count range for each */}
-              {MAP_COLORS.map((_, k) => {
-                const lo =
-                  k === 0
-                    ? 1
-                    : Math.ceil((k * (maxCount ?? 0)) / MAP_COLORS.length);
-                const hi =
-                  k === MAP_COLORS.length - 1
-                    ? (maxCount ?? 0)
-                    : Math.ceil(
-                        ((k + 1) * (maxCount ?? 0)) / MAP_COLORS.length,
-                      ) - 1;
-                const label =
-                  !maxCount || maxCount === 0 || lo > hi
-                    ? "–"
-                    : lo === hi
-                      ? String(lo)
-                      : `${lo}-${hi}`;
-                return (
-                  <div key={k} className="w-10 text-center">
-                    {label}
-                  </div>
-                );
-              })}
+              {/* Fixed range labels — independent of maxCount */}
+              {MAP_RANGE_LABELS.map((label, k) => (
+                <div key={k} className="w-10 text-center">
+                  {label}
+                </div>
+              ))}
             </div>
           </div>
         </div>
