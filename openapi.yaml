@@ -1354,7 +1354,7 @@ paths:
     post:
       operationId: createModule
       summary: Create a new module for a unit option
-      description: Compatibility endpoint. v1 accepts only legacy grouped fields (concrete_* and legacy form fields). v1 does not support stair position in structural modules. Use /v2 endpoints for aggregated concrete/steel/form arrays.
+      description: Compatibility endpoint. v1 accepts only legacy grouped fields (concrete_* and legacy form fields). v1 does not support stair position in structural modules. The same endpoint also accepts batch creation when payload root contains modules [] with v1 module items.
       tags:
         - Modules v1
       parameters:
@@ -1381,10 +1381,63 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ModuleCreateRequestV1"
+              oneOf:
+                - $ref: "#/components/schemas/ModuleCreateRequestV1"
+                - $ref: "#/components/schemas/ModuleBatchCreateRequestV1"
             examples:
               beam_column_v1:
                 $ref: "./openapi-modules-schemas.yaml#/components/examples/ModuleCreateBeamColumnV1"
+              batch_v1:
+                value:
+                  modules:
+                    - type: beam_column
+                      data:
+                        floor_ids:
+                          - f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6
+                        concrete_columns:
+                          volumes:
+                            - fck: 30
+                              volume: 120
+                          steel:
+                            - material: rebar
+                              resistance: CA50
+                              mass: 6000
+                        concrete_beams:
+                          volumes:
+                            - fck: 30
+                              volume: 150
+                          steel:
+                            - material: rebar
+                              resistance: CA50
+                              mass: 7500
+                        concrete_slabs:
+                          volumes:
+                            - fck: 25
+                              volume: 350
+                          steel:
+                            - material: rebar
+                              resistance: CA60
+                              mass: 13000
+                    - type: concrete_wall
+                      data:
+                        floor_ids:
+                          - a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                        concrete_walls:
+                          volumes:
+                            - fck: 30
+                              volume: 80
+                          steel:
+                            - material: rebar
+                              resistance: CA50
+                              mass: 4200
+                        concrete_slabs:
+                          volumes:
+                            - fck: 25
+                              volume: 140
+                          steel:
+                            - material: rebar
+                              resistance: CA60
+                              mass: 5000
               concrete_wall_v1:
                 $ref: "./openapi-modules-schemas.yaml#/components/examples/ModuleCreateConcreteWallV1"
               structural_masonry_v1:
@@ -1397,11 +1450,13 @@ paths:
                 $ref: "./openapi-modules-schemas.yaml#/components/examples/ModuleCreateRaftPilesFoundationV1"
       responses:
         "201":
-          description: Module created successfully
+          description: Module(s) created successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ModuleResponseV1"
+                oneOf:
+                  - $ref: "#/components/schemas/ModuleResponseV1"
+                  - $ref: "#/components/schemas/ModuleBatchResponseV1"
 
   /v1/projects/{projectID}/units/{unitID}/options/{optionID}/modules/{moduleID}:
     get:
@@ -1520,7 +1575,7 @@ paths:
     post:
       operationId: createModuleV2
       summary: Create a new module for a unit option
-      description: Preferred endpoint for module creation. Structural modules must use aggregated concrete/steel/form arrays. Legacy grouped fields and legacy root form fields are not accepted.
+      description: Preferred endpoint for module creation. Structural modules must use aggregated concrete/steel/form arrays. Legacy grouped fields and legacy root form fields are not accepted. When batch payload items use floor_index, do not send floor_ids in the same item. The same endpoint also accepts batch creation when payload root contains modules [] with v2 module items.
       tags:
         - Modules v2
       parameters:
@@ -1547,10 +1602,39 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ModuleCreateRequestV2"
+              oneOf:
+                - $ref: "#/components/schemas/ModuleCreateRequestV2"
+                - $ref: "#/components/schemas/ModuleBatchCreateRequestV2"
             examples:
               beam_column_v2:
                 $ref: "./openapi-modules-schemas.yaml#/components/examples/ModuleCreateBeamColumnV2"
+              batch_v2:
+                value:
+                  modules:
+                    - type: beam_column
+                      data:
+                        floor_index: 2
+                        concrete:
+                          - fck: 30
+                            volume: 120
+                            position: column
+                        steel:
+                          - material: rebar
+                            resistance: CA50
+                            mass: 6000
+                            position: column
+                    - type: piles_foundation
+                      data:
+                        unit_id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                        concrete:
+                          - fck: 30
+                            volume: 60
+                            position: pile
+                        steel:
+                          - material: rebar
+                            resistance: CA50
+                            mass: 2200
+                            position: pile
               concrete_wall_v2:
                 $ref: "./openapi-modules-schemas.yaml#/components/examples/ModuleCreateConcreteWallV2"
               structural_masonry_v2:
@@ -1563,11 +1647,13 @@ paths:
                 $ref: "./openapi-modules-schemas.yaml#/components/examples/ModuleCreateRaftPilesFoundationV2"
       responses:
         "201":
-          description: Module created successfully
+          description: Module(s) created successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ModuleResponseV2"
+                oneOf:
+                  - $ref: "#/components/schemas/ModuleResponseV2"
+                  - $ref: "#/components/schemas/ModuleBatchResponseV2"
         "400":
           description: Bad Request.
         "404":
@@ -2202,10 +2288,48 @@ components:
       $ref: "./openapi-modules-schemas.yaml#/components/schemas/ModuleCreateRequestV1"
     ModuleCreateRequestV2:
       $ref: "./openapi-modules-schemas.yaml#/components/schemas/ModuleCreateRequestV2"
+    ModuleBatchCreateRequestV1:
+      type: object
+      properties:
+        modules:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ModulePayloadV1"
+      required:
+        - modules
+    ModuleBatchCreateRequestV2:
+      type: object
+      properties:
+        modules:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ModulePayloadV2"
+      required:
+        - modules
     ModuleResponseV1:
       $ref: "./openapi-modules-schemas.yaml#/components/schemas/ModuleResponseV1"
     ModuleResponseV2:
       $ref: "./openapi-modules-schemas.yaml#/components/schemas/ModuleResponseV2"
+    ModuleBatchResponseV1:
+      type: object
+      properties:
+        modules:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModulePayloadV1"
+      required:
+        - modules
+    ModuleBatchResponseV2:
+      type: object
+      properties:
+        modules:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModulePayloadV2"
+      required:
+        - modules
     ModuleCreateRequest:
       $ref: "./openapi-modules-schemas.yaml#/components/schemas/ModuleCreateRequest"
     BeamColumnDataV1:

@@ -79,9 +79,10 @@ As informações básicas das unidades (id e nome) já vêm na resposta do GET `
       {
         "id": "uuid",
         "index": 1,
+        "category": "standard_floor",
         "area": 450.5,
         "height": 2.8,
-        "group_name": "Pavimentos Tipo"
+        "floor_group": "Pavimentos Tipo"
       }
     ],
     "created_at": "2024-01-15T10:30:00Z",
@@ -107,10 +108,6 @@ O software deve:
 - Após seleção, fazer GET na unidade específica para obter detalhes completos
 - Armazenar os IDs dos pavimentos (`floors[].id`) para usar no campo `floor_ids` ao criar módulos
 - **Filtrar roles onde `is_member = true`** - a API já retorna apenas roles com `simulation = true`
-
-**Disciplinas/Roles disponíveis**:
-- **Estruturas**: beam_column, concrete_wall, structural_masonry
-- **Fundações**: raft_foundation, piles_foundation, raft_piles_foundation
 
 ### Alternativa: Obter Roles através de Collaborators
 
@@ -168,7 +165,7 @@ Como alternativa ao endpoint da unidade, é possível obter todos os roles do pr
 
 **Para evitar módulos duplicados**, o software deve criar uma nova option exclusiva para os módulos gerados:
 
-**Endpoint**: `POST /v2/projects/{projectID}/units/{unitID}/roles/{roleID}/options`
+**Endpoint**: `POST /v1/projects/{projectID}/units/{unitID}/roles/{roleID}/options`
 
 **Body**:
 ```json
@@ -186,9 +183,7 @@ Como alternativa ao endpoint da unidade, é possível obter todos os roles do pr
     "name": "Software XYZ - Exportação 2024-03-09",
     "active": true,
     "unit_id": "uuid",
-    "role_id": "uuid",
-    "created_at": "2024-03-09T10:30:00Z",
-    "updated_at": "2024-03-09T10:30:00Z"
+    "role_id": "uuid"
   }
 }
 ```
@@ -216,18 +211,102 @@ Com as informações coletadas, o software pode criar um módulo.
 
 Recomendação: implemente em **V2** por padrão. Use **V1** apenas quando precisar manter compatibilidade com payloads antigos.
 
+Quando enviar `floor_index`, não envie `floor_ids` no mesmo item. O `floor_index` fica dentro de `data`, no mesmo nível de `floor_ids`.
+
+### Criação em lote no mesmo endpoint
+
+Os endpoints acima aceitam **dois formatos** de body:
+
+- **Módulo único** (formato atual):
+  - `{ "type": "...", "data": { ... } }`
+- **Lista de módulos**:
+  - `{ "modules": [ { "type": "...", "data": { ... } }, ... ] }`
+
+Regra importante:
+
+- Ao enviar `modules`, não envie `type` e `data` na raiz do payload.
+
+### Exemplo V2 em lote (mesmo endpoint)
+
+```json
+{
+  "modules": [
+    {
+      "type": "beam_column",
+      "data": {
+        "floor_index": 1,
+        "concrete": [
+          { "fck": 30, "volume": 21, "position": "column" }
+        ],
+        "steel": [
+          { "material": "rebar", "resistance": "CA50", "mass": 43, "position": "column" }
+        ]
+      }
+    },
+    {
+      "type": "piles_foundation",
+      "data": {
+        "unit_id": "uuid-da-unidade",
+        "concrete": [
+          { "fck": 30, "volume": 45.5, "position": "pile" }
+        ],
+        "steel": [
+          { "material": "rebar", "resistance": "CA50", "mass": 450, "position": "pile" }
+        ]
+      }
+    }
+  ]
+}
+```
+
+### Exemplo V1 em lote (mesmo endpoint)
+
+```json
+{
+  "modules": [
+    {
+      "type": "beam_column",
+      "data": {
+        "floor_ids": ["uuid-pavimento-1"],
+        "concrete_columns": {
+          "volumes": [{ "fck": 25, "volume": 21 }],
+          "steel": [{ "material": "rebar", "resistance": "CA50", "mass": 43 }]
+        },
+        "concrete_beams": {
+          "volumes": [{ "fck": 30, "volume": 33 }],
+          "steel": [{ "material": "rebar", "resistance": "CA50", "mass": 21 }]
+        },
+        "concrete_slabs": {
+          "volumes": [{ "fck": 30, "volume": 11 }],
+          "steel": [{ "material": "rebar", "resistance": "CA50", "mass": 22 }]
+        }
+      }
+    },
+    {
+      "type": "concrete_wall",
+      "data": {
+        "floor_ids": ["uuid-pavimento-2"],
+        "concrete_walls": {
+          "volumes": [{ "fck": 30, "volume": 18 }],
+          "steel": [{ "material": "rebar", "resistance": "CA50", "mass": 15 }]
+        },
+        "concrete_slabs": {
+          "volumes": [{ "fck": 25, "volume": 12 }],
+          "steel": [{ "material": "rebar", "resistance": "CA50", "mass": 10 }]
+        }
+      }
+    }
+  ]
+}
+```
+
 ### Exemplo V2 (preferencial) - Módulo Estrutural `beam_column`
 
 ```json
 {
   "type": "beam_column",
   "data": {
-    "floor_ids": [
-      "uuid-pavimento-1",
-      "uuid-pavimento-2"
-      // Este módulo será aplicado aos pavimentos 1 e 2
-      // Adicione quantos pavimentos necessário se o sistema estrutural for o mesmo
-    ],
+    "floor_index": 2,
     "concrete": [
       {
         "fck": 25,
@@ -451,6 +530,9 @@ Recomendação: implemente em **V2** por padrão. Use **V1** apenas quando preci
 
 **Resposta**: `201 Created` - Módulo criado com sucesso com cálculo de consumo (CO2 e energia)
 
+- Para payload de **módulo único**, a resposta vem com chave `module`.
+- Para payload em **lote**, a resposta vem com chave `modules`.
+
 ## Resumo do Fluxo
 
 1. **Autenticar**: Usuário fornece chave de API
@@ -460,7 +542,7 @@ Recomendação: implemente em **V2** por padrão. Use **V1** apenas quando preci
 5. **Criar Módulos** (executado quando usuário decide sincronizar): 
   - Criar todos os módulos na option criada usando **preferencialmente** `POST /v2/projects/{projectID}/units/{unitID}/options/{optionID}/modules`
   - O endpoint `POST /v1/projects/{projectID}/units/{unitID}/options/{optionID}/modules` continua funcional para compatibilidade
-  - Enviar dados com `floor_ids` (estrutura - pode incluir múltiplos pavimentos) ou `unit_id` (fundação)
+  - Enviar dados com `floor_ids` (estrutura) ou `floor_index` (estrutura em lote, sem `floor_ids`) ou `unit_id` (fundação)
   - Repetir para cada módulo diferente
 
 ## Valores Permitidos

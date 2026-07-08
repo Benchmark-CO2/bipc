@@ -89,18 +89,18 @@ var sidacConcreteData = SidacMaterial{
 var sidacSteelData = SidacMaterial{
 	KgCO2: map[float64]SidacValue{
 		50: {Min: 0.4259, Max: 1.061},
-		60: {Min: 0.5, Max: 1.1},
+		60: {Min: 0.4259, Max: 1.061},
 	},
 	MJ: map[float64]SidacValue{
 		50: {Min: 8.025, Max: 16.05},
-		60: {Min: 8.1, Max: 16.1},
+		60: {Min: 8.025, Max: 16.05},
 	},
 }
 
 // Prestressing strands CP190 RB 12.7
 var sidacStrandData = SidacMaterial{
 	KgCO2: map[float64]SidacValue{
-		190: {Min: 2.3, Max: 2.3},
+		190: {Min: 0.4259, Max: 1.061},
 	},
 	MJ: map[float64]SidacValue{
 		190: {Min: 8.025, Max: 16.05},

@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/modules"
@@ -15,6 +17,12 @@ import (
 type modulePayloadWrapper struct {
 	Type string          `json:"type"`
 	Data json.RawMessage `json:"data"`
+}
+
+type moduleCreateRequestPayload struct {
+	Type    string                  `json:"type"`
+	Data    json.RawMessage         `json:"data"`
+	Modules *[]modulePayloadWrapper `json:"modules"`
 }
 
 func (app *application) parseModulePayload(w http.ResponseWriter, r *http.Request) (modulePayloadWrapper, error) {
@@ -32,6 +40,188 @@ func (app *application) parseModulePayload(w http.ResponseWriter, r *http.Reques
 	}
 
 	return wrapper, nil
+}
+
+func validateModulePayloadWrapper(wrapper modulePayloadWrapper, listIndex int, fromList bool) error {
+	fieldPrefix := ""
+	if fromList {
+		fieldPrefix = fmt.Sprintf("modules[%d].", listIndex)
+	}
+
+	if wrapper.Type == "" {
+		return fmt.Errorf("missing or invalid '%stype' field", fieldPrefix)
+	}
+
+	if wrapper.Data == nil {
+		return fmt.Errorf("missing or invalid '%sdata' field", fieldPrefix)
+	}
+
+	return nil
+}
+
+func (app *application) normalizeWrappersWithFloorIndex(optionID uuid.UUID, wrappers []modulePayloadWrapper) ([]modulePayloadWrapper, error) {
+	return app.resolveWrappersFloorIndex(optionID, wrappers)
+}
+
+func (app *application) resolveWrappersFloorIndex(optionID uuid.UUID, wrappers []modulePayloadWrapper) ([]modulePayloadWrapper, error) {
+	option, err := app.models.Options.GetByID(optionID)
+	if err != nil {
+		return nil, err
+	}
+
+	unit, err := app.models.Units.GetByID(option.UnitID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(unit.Floors) == 0 {
+		return wrappers, nil
+	}
+
+	type floorIndexEntry struct {
+		wrapperIndex int
+		value        int
+	}
+
+	entries := make([]floorIndexEntry, 0, len(wrappers))
+	for i, wrapper := range wrappers {
+		floorIndex, hasFloorIndex, err := readFloorIndexFromData(wrapper.Data)
+		if err != nil {
+			return nil, &ValidationError{Errors: map[string]string{
+				fmt.Sprintf("modules[%d].data.floor_index", i): "must be an integer",
+			}}
+		}
+
+		if !hasFloorIndex {
+			continue
+		}
+
+		entries = append(entries, floorIndexEntry{wrapperIndex: i, value: floorIndex})
+	}
+
+	if len(entries) == 0 {
+		return wrappers, nil
+	}
+
+	for i := 1; i < len(entries); i++ {
+		if len(entries) != len(unit.Floors) {
+			break
+		}
+
+		if entries[i].value == entries[i-1].value+1 {
+			continue
+		}
+
+		return nil, &ValidationError{Errors: map[string]string{
+			fmt.Sprintf("modules[%d].data.floor_index", entries[i].wrapperIndex): "must form a contiguous sequence without gaps",
+		}}
+	}
+
+	floorIDByRealIndex := make(map[int]uuid.UUID, len(unit.Floors))
+	for _, floor := range unit.Floors {
+		floorIDByRealIndex[floor.Index] = floor.ID
+	}
+
+	normalized := append([]modulePayloadWrapper(nil), wrappers...)
+	for i, entry := range entries {
+		resolvedFloorID := uuid.Nil
+		if len(entries) == len(unit.Floors) {
+			resolvedFloorID = unit.Floors[i].ID
+		} else {
+			floorID, ok := floorIDByRealIndex[entry.value]
+			if !ok {
+				return nil, &ValidationError{Errors: map[string]string{
+					fmt.Sprintf("modules[%d].data.floor_index", entry.wrapperIndex): "must match an existing floor index when the amount of floor_index modules differs from floor count",
+				}}
+			}
+
+			resolvedFloorID = floorID
+		}
+
+		normalizedData, err := overrideFloorTargets(normalized[entry.wrapperIndex].Data, resolvedFloorID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid json format for modules[%d].data: %w", entry.wrapperIndex, err)
+		}
+
+		normalized[entry.wrapperIndex].Data = normalizedData
+	}
+
+	return normalized, nil
+}
+
+func overrideFloorTargets(data json.RawMessage, floorID uuid.UUID) (json.RawMessage, error) {
+	var payload map[string]any
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return nil, err
+	}
+
+	delete(payload, "floor_index")
+	delete(payload, "floor_id")
+	payload["floor_ids"] = []string{floorID.String()}
+
+	normalizedData, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return normalizedData, nil
+}
+
+func readFloorIndexFromData(data json.RawMessage) (int, bool, error) {
+	var payload map[string]any
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return 0, false, err
+	}
+
+	rawFloorIndex, exists := payload["floor_index"]
+	if !exists {
+		return 0, false, nil
+	}
+
+	floorIndexFloat, ok := rawFloorIndex.(float64)
+	if !ok {
+		return 0, true, errors.New("floor_index must be a number")
+	}
+
+	floorIndex := int(floorIndexFloat)
+	if float64(floorIndex) != floorIndexFloat {
+		return 0, true, errors.New("floor_index must be an integer")
+	}
+
+	return floorIndex, true, nil
+}
+
+func (app *application) parseCreateModulesPayload(w http.ResponseWriter, r *http.Request) ([]modulePayloadWrapper, error) {
+	var payload moduleCreateRequestPayload
+
+	if err := app.readJSON(w, r, &payload); err != nil {
+		return nil, err
+	}
+
+	if payload.Modules != nil {
+		if payload.Type != "" || payload.Data != nil {
+			return nil, errors.New("when 'modules' is provided, do not send root 'type' or 'data' fields")
+		}
+
+		if len(*payload.Modules) == 0 {
+			return nil, errors.New("'modules' must contain at least one item")
+		}
+
+		for i, wrapper := range *payload.Modules {
+			if err := validateModulePayloadWrapper(wrapper, i, true); err != nil {
+				return nil, err
+			}
+		}
+
+		return *payload.Modules, nil
+	}
+
+	singleWrapper := modulePayloadWrapper{Type: payload.Type, Data: payload.Data}
+	if err := validateModulePayloadWrapper(singleWrapper, 0, false); err != nil {
+		return nil, err
+	}
+
+	return []modulePayloadWrapper{singleWrapper}, nil
 }
 
 func (app *application) parseModuleFromPayload(wrapper modulePayloadWrapper) (modules.Module, error) {
@@ -56,10 +246,142 @@ func (app *application) parseModule(w http.ResponseWriter, r *http.Request) (mod
 	return app.parseModuleFromPayload(wrapper)
 }
 
+func (app *application) createModulesFromPayloads(
+	optionID uuid.UUID,
+	wrappers []modulePayloadWrapper,
+	payloadValidator func(modules.Module, json.RawMessage) error,
+	responseConverter func(modules.Module) (map[string]any, error),
+) ([]map[string]any, error) {
+	normalizedWrappers, err := app.normalizeWrappersWithFloorIndex(optionID, wrappers)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(wrappers) <= 1 {
+		return app.createModulesFromPayloadsWithModels(optionID, normalizedWrappers, app.models, payloadValidator, responseConverter)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	tx, err := app.models.Modules.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	txModels := app.models
+	txModels.Modules = data.ModuleModel{DB: app.models.Modules.DB, Tx: tx}
+
+	createdModules, err := app.createModulesFromPayloadsWithModels(optionID, normalizedWrappers, txModels, payloadValidator, responseConverter)
+	if err != nil {
+		_ = tx.Rollback()
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return createdModules, nil
+}
+
+func (app *application) createModulesFromPayloadsWithModels(
+	optionID uuid.UUID,
+	wrappers []modulePayloadWrapper,
+	modelsSet data.Models,
+	payloadValidator func(modules.Module, json.RawMessage) error,
+	responseConverter func(modules.Module) (map[string]any, error),
+) ([]map[string]any, error) {
+	createdModules := make([]map[string]any, 0, len(wrappers))
+
+	for _, wrapper := range wrappers {
+		module, err := app.parseModuleFromPayload(wrapper)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := payloadValidator(module, wrapper.Data); err != nil {
+			return nil, err
+		}
+
+		newModule, err := app.insertModuleWithModels(module, optionID, modelsSet)
+		if err != nil {
+			return nil, err
+		}
+
+		responseModule, err := responseConverter(newModule)
+		if err != nil {
+			return nil, err
+		}
+
+		createdModules = append(createdModules, responseModule)
+	}
+
+	return createdModules, nil
+}
+
+func (app *application) writeCreateModulesResponse(
+	w http.ResponseWriter,
+	r *http.Request,
+	modulesList []map[string]any,
+) {
+	if len(modulesList) == 1 {
+		err := app.writeJSON(w, http.StatusCreated, envelope{"module": modulesList[0]}, nil)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err := app.writeJSON(w, http.StatusCreated, envelope{"modules": modulesList}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) handleCreateModuleError(w http.ResponseWriter, r *http.Request, err error) {
+	var ve *ValidationError
+	if errors.As(err, &ve) {
+		app.failedValidationResponse(w, r, ve.Errors)
+		return
+	}
+
+	if errors.Is(err, data.ErrInvalidOptionID) {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if errors.Is(err, data.ErrInvalidFloorID) {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if errors.Is(err, data.ErrInvalidUnitID) {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if errors.Is(err, data.ErrZeroArea) {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if errors.Is(err, data.ErrRecordNotFound) {
+		app.badRequestResponse(w, r, errors.New("one or more floors do not exist"))
+		return
+	}
+
+	app.serverErrorResponse(w, r, err)
+}
+
 // insertModule centralizes module validation, calculation and persistence.
 // It keeps handlers focused on HTTP concerns while reusing the same logic
 // across API and CSV ingestion flows.
 func (app *application) insertModule(module modules.Module, optionID uuid.UUID) (modules.Module, error) {
+	return app.insertModuleWithModels(module, optionID, app.models)
+}
+
+func (app *application) insertModuleWithModels(module modules.Module, optionID uuid.UUID, modelsSet data.Models) (modules.Module, error) {
 	v := validator.New()
 	module.Validate(v)
 	if !v.Valid() {
@@ -71,7 +393,7 @@ func (app *application) insertModule(module modules.Module, optionID uuid.UUID) 
 		return nil, err
 	}
 
-	newModule, err := module.Insert(app.models, optionID, result)
+	newModule, err := module.Insert(modelsSet, optionID, result)
 	if err != nil {
 		return nil, err
 	}
@@ -160,115 +482,48 @@ func (app *application) duplicateModule(
 func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Request) {
 	optionID, _ := app.readUUIDParam(r, "optionID")
 
-	wrapper, err := app.parseModulePayload(w, r)
+	wrappers, err := app.parseCreateModulesPayload(w, r)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	module, err := app.parseModuleFromPayload(wrapper)
+	createdModules, err := app.createModulesFromPayloads(
+		optionID,
+		wrappers,
+		modules.ValidateV2PayloadForModule,
+		modules.ToV2Response,
+	)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		app.handleCreateModuleError(w, r, err)
 		return
 	}
 
-	if err := modules.ValidateV2PayloadForModule(module, wrapper.Data); err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
-	newModule, err := app.insertModule(module, optionID)
-	if err != nil {
-		var ve *ValidationError
-		if errors.As(err, &ve) {
-			app.failedValidationResponse(w, r, ve.Errors)
-			return
-		}
-
-		switch {
-		case errors.Is(err, data.ErrInvalidOptionID):
-			app.badRequestResponse(w, r, err)
-		case errors.Is(err, data.ErrInvalidFloorID):
-			app.badRequestResponse(w, r, err)
-		case errors.Is(err, data.ErrInvalidUnitID):
-			app.badRequestResponse(w, r, err)
-		case errors.Is(err, data.ErrZeroArea):
-			app.badRequestResponse(w, r, err)
-		case errors.Is(err, data.ErrRecordNotFound):
-			app.badRequestResponse(w, r, errors.New("one or more floors do not exist"))
-		default:
-			app.serverErrorResponse(w, r, err)
-		}
-		return
-	}
-
-	v2Module, err := modules.ToV2Response(newModule)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
-	err = app.writeJSON(w, http.StatusCreated, envelope{"module": v2Module}, nil)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-	}
+	app.writeCreateModulesResponse(w, r, createdModules)
 }
 
 func (app *application) createModuleV1Handler(w http.ResponseWriter, r *http.Request) {
 	optionID, _ := app.readUUIDParam(r, "optionID")
 
-	wrapper, err := app.parseModulePayload(w, r)
+	wrappers, err := app.parseCreateModulesPayload(w, r)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	module, err := app.parseModuleFromPayload(wrapper)
+	createdModules, err := app.createModulesFromPayloads(
+		optionID,
+		wrappers,
+		modules.ValidateV1LegacyPayloadForModule,
+		modules.ToV1Response,
+	)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		app.handleCreateModuleError(w, r, err)
 		return
 	}
 
-	if err := modules.ValidateV1LegacyPayloadForModule(module, wrapper.Data); err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
+	app.writeCreateModulesResponse(w, r, createdModules)
 
-	newModule, err := app.insertModule(module, optionID)
-	if err != nil {
-		var ve *ValidationError
-		if errors.As(err, &ve) {
-			app.failedValidationResponse(w, r, ve.Errors)
-			return
-		}
-
-		switch {
-		case errors.Is(err, data.ErrInvalidOptionID):
-			app.badRequestResponse(w, r, err)
-		case errors.Is(err, data.ErrInvalidFloorID):
-			app.badRequestResponse(w, r, err)
-		case errors.Is(err, data.ErrInvalidUnitID):
-			app.badRequestResponse(w, r, err)
-		case errors.Is(err, data.ErrZeroArea):
-			app.badRequestResponse(w, r, err)
-		case errors.Is(err, data.ErrRecordNotFound):
-			app.badRequestResponse(w, r, errors.New("one or more floors do not exist"))
-		default:
-			app.serverErrorResponse(w, r, err)
-		}
-		return
-	}
-
-	v1Module, err := modules.ToV1Response(newModule)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
-	err = app.writeJSON(w, http.StatusCreated, envelope{"module": v1Module}, nil)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-	}
 }
 
 func (app *application) readModuleHandler(w http.ResponseWriter, r *http.Request) {
