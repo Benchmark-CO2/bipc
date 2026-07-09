@@ -35,6 +35,36 @@ type Module struct {
 
 type ModuleModel struct {
 	DB *sql.DB
+	Tx *sql.Tx
+}
+
+func validateModuleTargetScope(module *Module) error {
+	hasFloors := len(module.FloorIDs) > 0
+	hasUnit := module.UnitID != nil
+
+	if hasFloors && hasUnit {
+		return errors.New("module cannot have both floor_ids and unit_id")
+	}
+
+	if !hasFloors && !hasUnit {
+		return errors.New("module must have either floor_ids or unit_id")
+	}
+
+	return nil
+}
+
+func runInTx(ctx context.Context, db *sql.DB, fn func(tx *sql.Tx) error) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if err := fn(tx); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func checkForeignKeyError(err error) error {
@@ -230,31 +260,12 @@ func (m ModuleModel) validateModuleTargets(tx *sql.Tx, ctx context.Context, modu
 	return nil
 }
 
-func (m ModuleModel) Insert(module *Module, targets []ModuleTargetConsumption) (*Module, error) {
-	hasFloors := len(module.FloorIDs) > 0
-	hasUnit := module.UnitID != nil
-
-	if hasFloors && hasUnit {
-		return nil, errors.New("module cannot have both floor_ids and unit_id")
-	}
-	if !hasFloors && !hasUnit {
-		return nil, errors.New("module must have either floor_ids or unit_id")
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	tx, err := m.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
+func (m ModuleModel) insertWithTx(tx *sql.Tx, ctx context.Context, module *Module, targets []ModuleTargetConsumption) (*Module, error) {
 	if err := m.validateModuleTargets(tx, ctx, module); err != nil {
 		return nil, err
 	}
 
-	_, err = m.insertTx(tx, module)
+	_, err := m.insertTx(tx, module)
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +274,29 @@ func (m ModuleModel) Insert(module *Module, targets []ModuleTargetConsumption) (
 		return nil, err
 	}
 
-	if err := tx.Commit(); err != nil {
+	return module, nil
+}
+
+func (m ModuleModel) Insert(module *Module, targets []ModuleTargetConsumption) (*Module, error) {
+	if err := validateModuleTargetScope(module); err != nil {
+		return nil, err
+	}
+
+	if m.Tx != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		return m.insertWithTx(m.Tx, ctx, module, targets)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := runInTx(ctx, m.DB, func(tx *sql.Tx) error {
+		_, txErr := m.insertWithTx(tx, ctx, module, targets)
+		return txErr
+	})
+	if err != nil {
 		return nil, err
 	}
 
@@ -376,70 +409,52 @@ func (m ModuleModel) updateTx(tx *sql.Tx, module *Module) error {
 }
 
 func (m ModuleModel) Update(module *Module, targets []ModuleTargetConsumption) error {
-	hasFloors := len(module.FloorIDs) > 0
-	hasUnit := module.UnitID != nil
-
-	if hasFloors && hasUnit {
-		return errors.New("module cannot have both floor_ids and unit_id")
-	}
-	if !hasFloors && !hasUnit {
-		return errors.New("module must have either floor_ids or unit_id")
+	if err := validateModuleTargetScope(module); err != nil {
+		return err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	tx, err := m.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
+	return runInTx(ctx, m.DB, func(tx *sql.Tx) error {
+		if err := m.validateModuleTargets(tx, ctx, module); err != nil {
+			return err
+		}
 
-	if err := m.validateModuleTargets(tx, ctx, module); err != nil {
-		return err
-	}
+		if err := m.updateTx(tx, module); err != nil {
+			return err
+		}
 
-	if err := m.updateTx(tx, module); err != nil {
-		return err
-	}
+		_, err := tx.ExecContext(ctx, "DELETE FROM module_target_consumption WHERE module_id = $1", module.ID)
+		if err != nil {
+			return err
+		}
 
-	_, err = tx.ExecContext(ctx, "DELETE FROM module_target_consumption WHERE module_id = $1", module.ID)
-	if err != nil {
-		return err
-	}
-
-	if err := insertModuleTargetConsumptions(tx, ctx, targets); err != nil {
-		return err
-	}
-
-	return tx.Commit()
+		return insertModuleTargetConsumptions(tx, ctx, targets)
+	})
 }
 
 func (m ModuleModel) Delete(id uuid.UUID) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	tx, err := m.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
+	return runInTx(ctx, m.DB, func(tx *sql.Tx) error {
+		query := `DELETE FROM module WHERE id = $1`
+		result, err := tx.ExecContext(ctx, query, id)
+		if err != nil {
+			return err
+		}
 
-	query := `DELETE FROM module WHERE id = $1`
-	result, err := tx.ExecContext(ctx, query, id)
-	if err != nil {
-		return err
-	}
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if rowsAffected == 0 {
+			return ErrRecordNotFound
+		}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected == 0 {
-		return ErrRecordNotFound
-	}
-
-	return tx.Commit()
+		return nil
+	})
 }
 
 func (m ModuleModel) GetModuleType(id uuid.UUID) (string, error) {

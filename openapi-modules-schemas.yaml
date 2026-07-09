@@ -41,6 +41,9 @@ components:
 
         For positioned arrays (concrete, steel and form), each item must include explicit position.
         General/non-positioned material entries are not accepted.
+
+        Structural v2 modules may receive floor_ids or floor_index inside data, but not both.
+        floor_index is used by batch creation to map the module to the corresponding floor order.
       properties:
         type:
           type: string
@@ -138,6 +141,8 @@ components:
 
         Must use aggregated arrays. Legacy concrete_columns/concrete_beams/concrete_slabs and
         root form_* fields are not accepted.
+
+        floor_index is an alternative to floor_ids for batch creation and must not be sent together with floor_ids.
       properties:
         floor_ids:
           type: array
@@ -145,6 +150,9 @@ components:
             type: string
             format: uuid
           minItems: 1
+        floor_index:
+          type: integer
+          description: Sequential floor index used to resolve the target floor in batch creation.
         concrete:
           type: array
           minItems: 1
@@ -214,6 +222,8 @@ components:
 
         Must use aggregated arrays. Legacy concrete_walls/concrete_slabs and
         root wall_form_area/slab_form_area are not accepted.
+
+        floor_index is an alternative to floor_ids for batch creation and must not be sent together with floor_ids.
       properties:
         floor_ids:
           type: array
@@ -221,6 +231,9 @@ components:
             type: string
             format: uuid
           minItems: 1
+        floor_index:
+          type: integer
+          description: Sequential floor index used to resolve the target floor in batch creation.
         concrete:
           type: array
           minItems: 1
@@ -290,6 +303,8 @@ components:
         v2 structural_masonry payload.
 
         Must use aggregated arrays. Legacy concrete_* and root form_* fields are not accepted.
+
+        floor_index is an alternative to floor_ids for batch creation and must not be sent together with floor_ids.
       properties:
         floor_ids:
           type: array
@@ -297,6 +312,9 @@ components:
             type: string
             format: uuid
           minItems: 1
+        floor_index:
+          type: integer
+          description: Sequential floor index used to resolve the target floor in batch creation.
         concrete:
           type: array
           minItems: 1
@@ -1028,8 +1046,7 @@ components:
       value:
         type: beam_column
         data:
-          floor_ids:
-            - f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6
+          floor_index: 2
           concrete:
             - fck: 30
               volume: 150.5
