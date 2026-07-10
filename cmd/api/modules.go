@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
@@ -23,6 +24,12 @@ type moduleCreateRequestPayload struct {
 	Type    string                  `json:"type"`
 	Data    json.RawMessage         `json:"data"`
 	Modules *[]modulePayloadWrapper `json:"modules"`
+}
+
+var moduleTypesWithUnitID = map[string]struct{}{
+	"raft_foundation":       {},
+	"piles_foundation":      {},
+	"raft_piles_foundation": {},
 }
 
 func (app *application) parseModulePayload(w http.ResponseWriter, r *http.Request) (modulePayloadWrapper, error) {
@@ -191,6 +198,61 @@ func readFloorIndexFromData(data json.RawMessage) (int, bool, error) {
 	return floorIndex, true, nil
 }
 
+func moduleRequiresUnitID(moduleType string) bool {
+	_, ok := moduleTypesWithUnitID[moduleType]
+	return ok
+}
+
+func injectUnitIDIntoWrapperData(wrapper modulePayloadWrapper, unitID uuid.UUID) (modulePayloadWrapper, error) {
+	if !moduleRequiresUnitID(wrapper.Type) {
+		return wrapper, nil
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(wrapper.Data, &payload); err != nil {
+		return modulePayloadWrapper{}, fmt.Errorf("invalid json format for module data: %w", err)
+	}
+
+	rawUnitID, hasUnitID := payload["unit_id"]
+	if hasUnitID {
+		if value, ok := rawUnitID.(string); ok && value != "" {
+			return wrapper, nil
+		}
+
+		if rawUnitID != nil {
+			return wrapper, nil
+		}
+	}
+
+	payload["unit_id"] = unitID.String()
+
+	normalizedData, err := json.Marshal(payload)
+	if err != nil {
+		return modulePayloadWrapper{}, fmt.Errorf("invalid json format for module data: %w", err)
+	}
+
+	wrapper.Data = normalizedData
+	return wrapper, nil
+}
+
+func injectUnitIDIntoWrappersData(wrappers []modulePayloadWrapper, unitID uuid.UUID) ([]modulePayloadWrapper, error) {
+	if len(wrappers) == 0 {
+		return wrappers, nil
+	}
+
+	normalized := append([]modulePayloadWrapper(nil), wrappers...)
+	for i := range normalized {
+		updatedWrapper, err := injectUnitIDIntoWrapperData(normalized[i], unitID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid json format for modules[%d].data: %w", i, err)
+		}
+
+		normalized[i] = updatedWrapper
+	}
+
+	return normalized, nil
+}
+
 func (app *application) parseCreateModulesPayload(w http.ResponseWriter, r *http.Request) ([]modulePayloadWrapper, error) {
 	var payload moduleCreateRequestPayload
 
@@ -346,6 +408,11 @@ func (app *application) handleCreateModuleError(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	if isModulePayloadBadRequest(err) {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
 	if errors.Is(err, data.ErrInvalidOptionID) {
 		app.badRequestResponse(w, r, err)
 		return
@@ -372,6 +439,25 @@ func (app *application) handleCreateModuleError(w http.ResponseWriter, r *http.R
 	}
 
 	app.serverErrorResponse(w, r, err)
+}
+
+func isModulePayloadBadRequest(err error) bool {
+	var syntaxError *json.SyntaxError
+	if errors.As(err, &syntaxError) {
+		return true
+	}
+
+	var unmarshalTypeError *json.UnmarshalTypeError
+	if errors.As(err, &unmarshalTypeError) {
+		return true
+	}
+
+	message := err.Error()
+
+	return message == "invalid module type" ||
+		strings.HasPrefix(message, "invalid json format for module data:") ||
+		strings.Contains(message, "does not accept legacy field") ||
+		strings.HasPrefix(message, "v1 does not accept '")
 }
 
 // insertModule centralizes module validation, calculation and persistence.
@@ -481,8 +567,19 @@ func (app *application) duplicateModule(
 
 func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Request) {
 	optionID, _ := app.readUUIDParam(r, "optionID")
+	unitID, err := app.readUUIDParam(r, "unitID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
 
 	wrappers, err := app.parseCreateModulesPayload(w, r)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	wrappers, err = injectUnitIDIntoWrappersData(wrappers, unitID)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -504,8 +601,19 @@ func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Reque
 
 func (app *application) createModuleV1Handler(w http.ResponseWriter, r *http.Request) {
 	optionID, _ := app.readUUIDParam(r, "optionID")
+	unitID, err := app.readUUIDParam(r, "unitID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
 
 	wrappers, err := app.parseCreateModulesPayload(w, r)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	wrappers, err = injectUnitIDIntoWrappersData(wrappers, unitID)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -633,7 +741,19 @@ func (app *application) updateModuleHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	unitID, err := app.readUUIDParam(r, "unitID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
 	wrapper, err := app.parseModulePayload(w, r)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	wrapper, err = injectUnitIDIntoWrapperData(wrapper, unitID)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -727,7 +847,19 @@ func (app *application) updateModuleV1Handler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	unitID, err := app.readUUIDParam(r, "unitID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
 	wrapper, err := app.parseModulePayload(w, r)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	wrapper, err = injectUnitIDIntoWrapperData(wrapper, unitID)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
 		return

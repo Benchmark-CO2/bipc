@@ -63,6 +63,8 @@ type StructuralMasonry struct {
 	FormBeams       *float64        `json:"form_beams,omitempty"`
 	FormSlabs       *float64        `json:"form_slabs,omitempty"`
 	FormTotal       *float64        `json:"form_total,omitempty"`
+	BeamNumber      *int            `json:"beam_number,omitempty"`
+	SlabNumber      *int            `json:"slab_number,omitempty"`
 
 	Masonry MasonryElement `json:"masonry"`
 
@@ -141,6 +143,12 @@ func (s *StructuralMasonry) Validate(v *validator.Validator) {
 	}
 	validatePositionedForm(v, s.Form, s.validPositions())
 	validateSlabType(v, s.SlabType)
+	if s.BeamNumber != nil {
+		v.Check(*s.BeamNumber >= 0, "beam_number", "cannot be negative")
+	}
+	if s.SlabNumber != nil {
+		v.Check(*s.SlabNumber >= 0, "slab_number", "cannot be negative")
+	}
 
 	fgkSet := make(map[int]struct{})
 
@@ -415,6 +423,8 @@ func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Co
 		"form_beams":   s.FormBeams,
 		"form_slabs":   s.FormSlabs,
 		"form_total":   s.FormTotal,
+		"beam_number":  s.BeamNumber,
+		"slab_number":  s.SlabNumber,
 		"masonry":      masonry,
 	}
 
@@ -558,6 +568,8 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 		FormBeams:       extractFloat64Pointer(d.Data, "form_beams"),
 		FormSlabs:       extractFloat64Pointer(d.Data, "form_slabs"),
 		FormTotal:       extractFloat64Pointer(d.Data, "form_total"),
+		BeamNumber:      extractIntPointer(d.Data, "beam_number"),
+		SlabNumber:      extractIntPointer(d.Data, "slab_number"),
 		Masonry:         masonry,
 		FloorIDs:        d.FloorIDs,
 	}

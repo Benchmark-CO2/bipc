@@ -211,7 +211,13 @@ Com as informações coletadas, o software pode criar um módulo.
 
 Recomendação: implemente em **V2** por padrão. Use **V1** apenas quando precisar manter compatibilidade com payloads antigos.
 
-Quando enviar `floor_index`, não envie `floor_ids` no mesmo item. O `floor_index` fica dentro de `data`, no mesmo nível de `floor_ids`.
+### Quando usar `floor_ids` e quando usar `floor_index`
+
+- Use `floor_ids` quando você já possui os IDs reais dos pavimentos e quer aplicar o módulo diretamente nesses pavimentos.
+- Use `floor_index` apenas em payload **em lote** (`modules: []`) para módulos estruturais (`beam_column`, `concrete_wall`, `structural_masonry`).
+- `floor_index` deve ser enviado dentro de `data` e não pode ser enviado junto com `floor_ids` no mesmo item.
+- Em lote com `floor_index`, o backend resolve automaticamente o pavimento de destino com base na unidade e na ordem dos pavimentos.
+- Para payload de módulo único, prefira sempre `floor_ids`.
 
 ### Criação em lote no mesmo endpoint
 
@@ -359,6 +365,8 @@ Regra importante:
       }
     ],
     "column_number": 10,
+    "beam_number": 8,
+    "slab_number": 5,
     "avg_beam_span": 0.51,
     "avg_slab_span": 0.5
   }
@@ -528,6 +536,8 @@ Regra importante:
 - `piles_foundation`: Fundação em estacas
 - `raft_piles_foundation`: Fundação mista (radier + estacas)
 
+Observação: nos endpoints `/v1/.../units/{unitID}/.../modules` e `/v2/.../units/{unitID}/.../modules`, se `unit_id` não for enviado no `data` de módulos de fundação, a API usa automaticamente o `unitID` da URL.
+
 **Resposta**: `201 Created` - Módulo criado com sucesso com cálculo de consumo (CO2 e energia)
 
 - Para payload de **módulo único**, a resposta vem com chave `module`.
@@ -580,16 +590,17 @@ Regra importante:
 - **Momento da sincronização**: Quando o usuário decidir sincronizar/exportar, o software deve criar a option e todos os módulos
 - **Módulos Estruturais** usam campo `floor_ids` (array de IDs de pavimentos da unidade)
 - **Um módulo pode abranger múltiplos pavimentos**: Use o array `floor_ids` para aplicar o mesmo módulo a vários pavimentos de uma vez
-- **Módulos de Fundação** usam campo `unit_id` (ID da unidade)
+- **Módulos de Fundação** usam campo `unit_id` (ID da unidade). Se omitido, a API preenche com o `unitID` da URL
 - **Versão recomendada**: prefira sempre os endpoints e payloads **V2** para novas integrações
 - **Compatibilidade**: V1 permanece funcional para sistemas legados
 - **Estrutura de aço unificada**: Todos os módulos agora usam os campos `material`, `resistance` e `mass` na estrutura de aço
+- **Campos opcionais adicionais em módulos estruturais**: `beam_number` e `slab_number` também são aceitos
 - **Formato novo por posição**:
   - `beam_column`: use `position` com `column`, `beam`, `slab` ou `stair`
   - `concrete_wall`: use `position` com `wall`, `slab` ou `stair`
   - `structural_masonry`: use `position` com `column`, `beam`, `slab` ou `stair`
-- O campo `floor_ids` é obrigatório para módulos estruturais
-- O campo `unit_id` é obrigatório para módulos de fundação
+- O campo `floor_ids` é obrigatório para módulos estruturais, exceto quando usar `floor_index` em itens de lote
+- O campo `unit_id` é recomendado para módulos de fundação (quando omitido, a API usa o `unitID` da URL)
 - **A API retorna apenas roles com `simulation = true`** - o software deve filtrar por `is_member = true` para exibir apenas roles nos quais o usuário pode criar módulos
 - Volumes são em metros cúbicos (m³)
 - Massas de aço são em quilogramas (kg)

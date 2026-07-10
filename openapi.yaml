@@ -1354,7 +1354,7 @@ paths:
     post:
       operationId: createModule
       summary: Create a new module for a unit option
-      description: Compatibility endpoint. v1 accepts only legacy grouped fields (concrete_* and legacy form fields). v1 does not support stair position in structural modules. The same endpoint also accepts batch creation when payload root contains modules [] with v1 module items.
+      description: Compatibility endpoint. v1 accepts only legacy grouped fields (concrete_* and legacy form fields). v1 does not support stair position in structural modules. Structural modules also accept optional beam_number and slab_number fields. For foundation modules, unit_id may be omitted and will be automatically inferred from the unitID path parameter. The same endpoint also accepts batch creation when payload root contains modules [] with v1 module items.
       tags:
         - Modules v1
       parameters:
@@ -1533,7 +1533,7 @@ paths:
     patch:
       operationId: updateModule
       summary: Update a module
-      description: Compatibility endpoint. For beam_column, concrete_wall, and structural_masonry, v1 accepts only legacy grouped fields (concrete_* and legacy form fields). v1 does not support stair position in structural modules.
+      description: Compatibility endpoint. For beam_column, concrete_wall, and structural_masonry, v1 accepts only legacy grouped fields (concrete_* and legacy form fields). v1 does not support stair position in structural modules. Structural modules also accept optional beam_number and slab_number fields. For foundation modules, unit_id may be omitted and will be automatically inferred from the unitID path parameter.
       tags:
         - Modules v1
       parameters:
@@ -1575,7 +1575,7 @@ paths:
     post:
       operationId: createModuleV2
       summary: Create a new module for a unit option
-      description: Preferred endpoint for module creation. Structural modules must use aggregated concrete/steel/form arrays. Legacy grouped fields and legacy root form fields are not accepted. When batch payload items use floor_index, do not send floor_ids in the same item. The same endpoint also accepts batch creation when payload root contains modules [] with v2 module items.
+      description: Preferred endpoint for module creation. Structural modules must use aggregated concrete/steel/form arrays. Legacy grouped fields and legacy root form fields are not accepted. Structural modules also accept optional beam_number and slab_number fields. Use floor_index only in batch payload items and only as an alternative to floor_ids (never send both in the same item). For foundation modules, unit_id may be omitted and will be automatically inferred from the unitID path parameter. The same endpoint also accepts batch creation when payload root contains modules [] with v2 module items.
       tags:
         - Modules v2
       parameters:
@@ -1704,7 +1704,7 @@ paths:
     patch:
       operationId: updateModuleV2
       summary: Update a module
-      description: Preferred endpoint for updates. Structural modules must use aggregated concrete/steel/form arrays with explicit position per item.
+      description: Preferred endpoint for updates. Structural modules must use aggregated concrete/steel/form arrays with explicit position per item and may include optional beam_number and slab_number fields. For foundation modules, unit_id may be omitted and will be automatically inferred from the unitID path parameter.
       tags:
         - Modules v2
       parameters:

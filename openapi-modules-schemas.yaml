@@ -122,6 +122,10 @@ components:
           type: number
         form_total:
           type: number
+        beam_number:
+          type: integer
+        slab_number:
+          type: integer
         column_number:
           type: integer
         avg_beam_span:
@@ -169,6 +173,10 @@ components:
             $ref: "#/components/schemas/BeamColumnForm"
         slab_type:
           $ref: "#/components/schemas/SlabType"
+        beam_number:
+          type: integer
+        slab_number:
+          type: integer
         column_number:
           type: integer
         avg_beam_span:
@@ -210,6 +218,10 @@ components:
           type: number
         slab_form_area:
           type: number
+        beam_number:
+          type: integer
+        slab_number:
+          type: integer
       required:
         - floor_ids
         - concrete_walls
@@ -258,6 +270,10 @@ components:
           type: number
         slab_area:
           type: number
+        beam_number:
+          type: integer
+        slab_number:
+          type: integer
       required:
         - floor_ids
         - concrete
@@ -291,6 +307,10 @@ components:
           type: number
         form_total:
           type: number
+        beam_number:
+          type: integer
+        slab_number:
+          type: integer
         masonry:
           $ref: "#/components/schemas/MasonryElement"
       required:
@@ -331,6 +351,10 @@ components:
             $ref: "#/components/schemas/StructuralMasonryForm"
         slab_type:
           $ref: "#/components/schemas/SlabType"
+        beam_number:
+          type: integer
+        slab_number:
+          type: integer
         masonry:
           $ref: "#/components/schemas/MasonryElement"
       required:
