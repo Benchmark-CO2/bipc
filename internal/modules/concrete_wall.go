@@ -26,7 +26,9 @@ type ConcreteWall struct {
 	ConcreteWalls ConcreteElement `json:"concrete_walls"`
 	ConcreteSlabs ConcreteElement `json:"concrete_slabs"`
 
-	SlabType *string `json:"slab_type,omitempty"`
+	SlabType   *string `json:"slab_type,omitempty"`
+	BeamNumber *int    `json:"beam_number,omitempty"`
+	SlabNumber *int    `json:"slab_number,omitempty"`
 
 	WallThickness *float64 `json:"wall_thickness,omitempty"`
 	SlabThickness *float64 `json:"slab_thickness,omitempty"`
@@ -109,6 +111,12 @@ func (w *ConcreteWall) Validate(v *validator.Validator) {
 	}
 	if w.SlabFormArea != nil {
 		v.Check(*w.SlabFormArea >= 0, "slab_form_area", "cannot be negative")
+	}
+	if w.BeamNumber != nil {
+		v.Check(*w.BeamNumber >= 0, "beam_number", "cannot be negative")
+	}
+	if w.SlabNumber != nil {
+		v.Check(*w.SlabNumber >= 0, "slab_number", "cannot be negative")
 	}
 }
 
@@ -196,6 +204,8 @@ func (w *ConcreteWall) toDataModule(moduleID, optionID uuid.UUID, result Consump
 		"steel":          w.Steel,
 		"form":           w.Form,
 		"slab_type":      normalizeSlabType(w.SlabType),
+		"beam_number":    w.BeamNumber,
+		"slab_number":    w.SlabNumber,
 		"wall_thickness": w.WallThickness,
 		"slab_thickness": w.SlabThickness,
 		"wall_area":      w.WallArea,
@@ -266,6 +276,8 @@ func (w *ConcreteWall) fromDataModule(d *data.Module) Module {
 		ConcreteWalls:   legacyWalls,
 		ConcreteSlabs:   legacySlabs,
 		SlabType:        extractStringPointer(d.Data, "slab_type"),
+		BeamNumber:      extractIntPointer(d.Data, "beam_number"),
+		SlabNumber:      extractIntPointer(d.Data, "slab_number"),
 		WallThickness:   extractFloat64Pointer(d.Data, "wall_thickness"),
 		SlabThickness:   extractFloat64Pointer(d.Data, "slab_thickness"),
 		WallArea:        extractFloat64Pointer(d.Data, "wall_area"),

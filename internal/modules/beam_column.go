@@ -34,6 +34,8 @@ type BeamColumn struct {
 	FormBeams    *float64    `json:"form_beams,omitempty"`
 	FormSlabs    *float64    `json:"form_slabs,omitempty"`
 	FormTotal    *float64    `json:"form_total,omitempty"`
+	BeamNumber   *int        `json:"beam_number,omitempty"`
+	SlabNumber   *int        `json:"slab_number,omitempty"`
 	ColumnNumber *int        `json:"column_number,omitempty"`
 	AvgBeamSpan  *float64    `json:"avg_beam_span,omitempty"`
 	AvgSlabSpan  *float64    `json:"avg_slab_span,omitempty"`
@@ -113,6 +115,12 @@ func (b *BeamColumn) Validate(v *validator.Validator) {
 	}
 	if b.FormTotal != nil {
 		v.Check(*b.FormTotal >= 0, "form_total", "cannot be negative")
+	}
+	if b.BeamNumber != nil {
+		v.Check(*b.BeamNumber >= 0, "beam_number", "cannot be negative")
+	}
+	if b.SlabNumber != nil {
+		v.Check(*b.SlabNumber >= 0, "slab_number", "cannot be negative")
 	}
 	if b.ColumnNumber != nil {
 		v.Check(*b.ColumnNumber >= 0, "column_number", "cannot be negative")
@@ -213,6 +221,8 @@ func (b *BeamColumn) toDataModule(moduleID, optionID uuid.UUID, result Consumpti
 		"form_beams":    b.FormBeams,
 		"form_slabs":    b.FormSlabs,
 		"form_total":    b.FormTotal,
+		"beam_number":   b.BeamNumber,
+		"slab_number":   b.SlabNumber,
 		"column_number": b.ColumnNumber,
 		"avg_beam_span": b.AvgBeamSpan,
 		"avg_slab_span": b.AvgSlabSpan,
@@ -297,6 +307,8 @@ func (b *BeamColumn) fromDataModule(d *data.Module) Module {
 		FormBeams:       extractFloat64Pointer(d.Data, "form_beams"),
 		FormSlabs:       extractFloat64Pointer(d.Data, "form_slabs"),
 		FormTotal:       extractFloat64Pointer(d.Data, "form_total"),
+		BeamNumber:      extractIntPointer(d.Data, "beam_number"),
+		SlabNumber:      extractIntPointer(d.Data, "slab_number"),
 		ColumnNumber:    extractIntPointer(d.Data, "column_number"),
 		AvgBeamSpan:     extractFloat64Pointer(d.Data, "avg_beam_span"),
 		AvgSlabSpan:     extractFloat64Pointer(d.Data, "avg_slab_span"),
