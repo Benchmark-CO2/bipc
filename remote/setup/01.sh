@@ -12,7 +12,8 @@ export LC_ALL=en_US.UTF-8
 # SCRIPT LOGIC
 # ==================================================================================== #
 
-apt --yes install software-properties-common libnss3 libasound2t64
+apt --yes install software-properties-common libnss3 libasound2t64 libatk1.0-0 libatk-bridge2.0-0 libcups2 libxcomposite1 libxdamage1 libxfixes3 \
+  libxrandr2 libgbm1 libpango-1.0-0 libcairo2
 
 add-apt-repository --yes universe
 
