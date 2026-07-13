@@ -18,6 +18,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 import { Alert, AlertDescription } from "../../ui/alert";
 import { Button } from "../../ui/button";
 import {
@@ -93,8 +94,7 @@ const DrawerFormModule = ({
       patchModule(data, projectId, unitId, optionId, moduleId!),
     onError: (error) => {
       toast.error(t.modules.form.updateError, {
-        description:
-          error instanceof Error ? error.message : t.modules.form.unknownError,
+        description: parseApiError(error, t),
         duration: 5000,
       });
     },
@@ -127,8 +127,7 @@ const DrawerFormModule = ({
       postModule(data, projectId, unitId, optionId),
     onError: (error) => {
       toast.error(t.modules.form.createError, {
-        description:
-          error instanceof Error ? error.message : t.modules.form.unknownError,
+        description: parseApiError(error, t),
         duration: 5000,
       });
     },
@@ -547,9 +546,18 @@ const DrawerFormModule = ({
     { value: "beam_column", label: t.modules.structureTypes.beamColumn },
     { value: "concrete_wall", label: t.modules.structureTypes.concreteWall },
     { value: "structural_masonry", label: t.modules.structureTypes.masonry },
-    { value: "raft_foundation", label: t.modules.structureTypes.raftFoundation },
-    { value: "piles_foundation", label: t.modules.structureTypes.pilesFoundation },
-    { value: "raft_piles_foundation", label: t.modules.structureTypes.raftPilesFoundation },
+    {
+      value: "raft_foundation",
+      label: t.modules.structureTypes.raftFoundation,
+    },
+    {
+      value: "piles_foundation",
+      label: t.modules.structureTypes.pilesFoundation,
+    },
+    {
+      value: "raft_piles_foundation",
+      label: t.modules.structureTypes.raftPilesFoundation,
+    },
   ];
 
   const isMobile = useIsMobile();
@@ -591,9 +599,7 @@ const DrawerFormModule = ({
       >
         <DrawerHeader className="px-8">
           <DrawerTitle className="text-h1 text-primary">
-            {moduleId
-              ? t.modules.form.editTitle
-              : t.modules.table.createButton}
+            {moduleId ? t.modules.form.editTitle : t.modules.table.createButton}
           </DrawerTitle>
           <Button
             onClick={handleClose}
@@ -707,7 +713,9 @@ const DrawerFormModule = ({
                               >
                                 <SelectTrigger className="w-full">
                                   <SelectValue
-                                    placeholder={t.modules.form.structureTypeLabel}
+                                    placeholder={
+                                      t.modules.form.structureTypeLabel
+                                    }
                                   />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -767,9 +775,7 @@ const DrawerFormModule = ({
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  <p className="font-medium mb-1">
-                    {t.modules.form.fixErrors}
-                  </p>
+                  <p className="font-medium mb-1">{t.modules.form.fixErrors}</p>
                   <ul className="list-disc pl-4 text-xs space-y-0.5">
                     {getFormErrorMessages(form.formState.errors).map(
                       (msg, i) => (

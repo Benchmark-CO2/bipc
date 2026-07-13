@@ -1,9 +1,10 @@
-import { getProjectsBenchmark } from '@/actions/benchmarks/getProjects';
+import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
 import { deleteProject } from "@/actions/projects/deleteProjects";
 import { postDuplicateProject } from "@/actions/projects/postDuplicateProject";
-import { generateReport } from '@/actions/report/generateReport';
+import { generateReport } from "@/actions/report/generateReport";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 import { IProject, TProjectPhase } from "@/types/projects";
 import { phaseColors } from "@/utils/phaseConfig";
 import { queryClient } from "@/utils/queryClient";
@@ -20,12 +21,15 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { exportChartToPng } from '../charts/exportChart';
+import { exportChartToPng } from "../charts/exportChart";
 import { DrawerFormProject } from "../layout";
 import DialogTransferOwnership from "../layout/dialog-transfer-ownership";
 import ModalConfirmDelete from "../layout/modal-confirm-delete";
 import ModalSimple from "../layout/modal-simple";
-import { normalizeBenchmarkSeries, recalculateY } from '../summaryVariants/utils';
+import {
+  normalizeBenchmarkSeries,
+  recalculateY,
+} from "../summaryVariants/utils";
 import { Button } from "./button";
 import { SimpleTooltip } from "./simple-tooltip";
 
@@ -95,10 +99,7 @@ const CustomBanner = ({
     },
     onError: (error: unknown) => {
       toast.error(t.projects.deleteError, {
-        description:
-          error instanceof Error
-            ? error.message
-            : t.common.unknownError,
+        description: parseApiError(error, t),
         duration: 5000,
       });
     },
@@ -117,10 +118,7 @@ const CustomBanner = ({
     },
     onError: (error: unknown) => {
       toast.error(t.projects.duplicateError, {
-        description:
-          error instanceof Error
-            ? error.message
-            : t.common.unknownError,
+        description: parseApiError(error, t),
         duration: 5000,
       });
     },
@@ -139,19 +137,19 @@ const CustomBanner = ({
   };
 
   const { mutate: onGenerateReport } = useMutation({
-    mutationFn: (formData: { co2: File; energy: File, projectId: string; }) => generateReport(formData.projectId, formData),
+    mutationFn: (formData: { co2: File; energy: File; projectId: string }) =>
+      generateReport(formData.projectId, formData),
     onSuccess: async (response) => {
       toast.success(t.customBanner.downloadReportSuccess);
-      const blob = new Blob([response.data], { type: response.headers['content-type'] || 'application/pdf' });
+      const blob = new Blob([response.data], {
+        type: response.headers["content-type"] || "application/pdf",
+      });
       const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
+      window.open(url, "_blank");
     },
     onError: (error: unknown) => {
       toast.error(t.customBanner.downloadReportError, {
-        description:
-          error instanceof Error
-            ? error.message
-            : t.common.unknownError,
+        description: parseApiError(error, t),
         duration: 5000,
       });
     },
@@ -169,9 +167,8 @@ const CustomBanner = ({
       const series = benchmarkData?.data.benchmark[type];
       const normalized = normalizeBenchmarkSeries(series);
 
-      const allData =
-        consumption
-          ? [
+      const allData = consumption
+        ? [
             ...normalized,
             {
               id: id!,
@@ -183,7 +180,7 @@ const CustomBanner = ({
               label: name,
             },
           ]
-          : normalized;
+        : normalized;
 
       const minData = allData.map((d) => d.min);
       const maxData = allData.map((d) => d.max);
@@ -193,25 +190,31 @@ const CustomBanner = ({
 
       const projectPoint = chartData.find((d) => d.id === id);
       const procelClass = projectPoint
-        ? projectPoint.y < 0.25 ? "A"
-          : projectPoint.y < 0.5 ? "B"
-            : projectPoint.y < 0.75 ? "C"
+        ? projectPoint.y < 0.25
+          ? "A"
+          : projectPoint.y < 0.5
+            ? "B"
+            : projectPoint.y < 0.75
+              ? "C"
               : "D"
         : null;
 
-      return exportChartToPng({
-        data: chartData,
-        selectedBars: id ? [id] : [],
-        showProcelScale: true,
-        procelHighlight: procelClass,
-        unit,
-        showBaseline: true,
-        showTop5Line: true,
-        top5Field: "min",
-        showMaxCurve: true,
-        showMinCurve: true,
-        showMidCurve: true,
-      }, t);
+      return exportChartToPng(
+        {
+          data: chartData,
+          selectedBars: id ? [id] : [],
+          showProcelScale: true,
+          procelHighlight: procelClass,
+          unit,
+          showBaseline: true,
+          showTop5Line: true,
+          top5Field: "min",
+          showMaxCurve: true,
+          showMinCurve: true,
+          showMidCurve: true,
+        },
+        t,
+      );
     };
 
     const [co2Image, energyImage] = await Promise.all([
@@ -219,8 +222,12 @@ const CustomBanner = ({
       buildChartImage("energy", "MJ/m²", "energy_min", "energy_max"),
     ]);
 
-    const co2File = new File([co2Image.blob], "co2_chart.png", { type: "image/png" });
-    const energyFile = new File([energyImage.blob], "energy_chart.png", { type: "image/png" });
+    const co2File = new File([co2Image.blob], "co2_chart.png", {
+      type: "image/png",
+    });
+    const energyFile = new File([energyImage.blob], "energy_chart.png", {
+      type: "image/png",
+    });
     onGenerateReport({
       projectId: id!,
       co2: co2File,
@@ -252,15 +259,25 @@ const CustomBanner = ({
               >
                 {t.phase[phase]}
               </span>
-              <SimpleTooltip content={t.projects.form.downloadReport} side="bottom">
-                <Button onClick={handleExport} variant="outline-bipc" size="icon">
+              <SimpleTooltip
+                content={t.projects.form.downloadReport}
+                side="bottom"
+              >
+                <Button
+                  onClick={handleExport}
+                  variant="outline-bipc"
+                  size="icon"
+                >
                   <Download className="w-4 h-4" />
                 </Button>
               </SimpleTooltip>
               {hasPermission("*:*") && (
                 <ModalSimple
                   componentTrigger={
-                    <SimpleTooltip content={t.projects.duplicateTitle} side="bottom">
+                    <SimpleTooltip
+                      content={t.projects.duplicateTitle}
+                      side="bottom"
+                    >
                       <Button variant="outline-bipc" size="icon">
                         <Copy className="w-4 h-4" />
                       </Button>
@@ -276,7 +293,10 @@ const CustomBanner = ({
               {hasPermission("*:*") && (
                 <DialogTransferOwnership
                   componentTrigger={
-                    <SimpleTooltip content={t.projects.projectTransfer.title} side="bottom">
+                    <SimpleTooltip
+                      content={t.projects.projectTransfer.title}
+                      side="bottom"
+                    >
                       <Button variant="outline-bipc" size="icon">
                         <UserCheck className="w-4 h-4" />
                       </Button>
@@ -290,7 +310,10 @@ const CustomBanner = ({
               {hasPermission("update:project") && (
                 <DrawerFormProject
                   componentTrigger={
-                    <SimpleTooltip content={t.projects.form.editButton} side="bottom">
+                    <SimpleTooltip
+                      content={t.projects.form.editButton}
+                      side="bottom"
+                    >
                       <Button variant="bipc" size="icon">
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -303,7 +326,10 @@ const CustomBanner = ({
               {hasPermission("*:*") && (
                 <ModalConfirmDelete
                   componentTrigger={
-                    <SimpleTooltip content={t.projects.confirmDelete.title} side="bottom">
+                    <SimpleTooltip
+                      content={t.projects.confirmDelete.title}
+                      side="bottom"
+                    >
                       <Button variant="destructive" size="icon">
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -314,7 +340,10 @@ const CustomBanner = ({
                 />
               )}
 
-              <SimpleTooltip content={isCollapsed ? t.common.expand : t.common.collapse} side="bottom">
+              <SimpleTooltip
+                content={isCollapsed ? t.common.expand : t.common.collapse}
+                side="bottom"
+              >
                 <button
                   onClick={handleCollapseToggle}
                   className="text-slate-300 hover:text-white transition-colors p-1 hover:bg-white/10 rounded"
@@ -332,10 +361,11 @@ const CustomBanner = ({
 
           {/* Conteúdo expansível */}
           <div
-            className={`grid transition-all duration-500 ease-in-out ${isCollapsed
-              ? "grid-rows-[0fr] opacity-0"
-              : "grid-rows-[1fr] opacity-100"
-              }`}
+            className={`grid transition-all duration-500 ease-in-out ${
+              isCollapsed
+                ? "grid-rows-[0fr] opacity-0"
+                : "grid-rows-[1fr] opacity-100"
+            }`}
           >
             <div className="overflow-hidden">
               {/* Segunda linha: city, state, fullAddress, unitsCount, totalArea */}
@@ -363,7 +393,9 @@ const CustomBanner = ({
                     </span>
                     <span className="text-sm font-semibold text-white">
                       {unitsCount}{" "}
-                      {unitsCount === 1 ? t.customBanner.building : t.customBanner.buildings}
+                      {unitsCount === 1
+                        ? t.customBanner.building
+                        : t.customBanner.buildings}
                     </span>
                   </div>
                 )}

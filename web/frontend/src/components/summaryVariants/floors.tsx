@@ -30,22 +30,20 @@ const FloorSummary = ({
   selectedFloors,
   someSelected,
 }: ProjectsSummaryProps) => {
-  const [type, setType] = useState<"co2" | "energy">("co2");
+  const [type, setType] = useState<"co2" | "energy" | "material">("co2");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
   const { t } = useTranslation();
   const filteredFloors = floors.filter((el) => !!el.co2_max);
-
   const fakeFloors = normalizeBenchmarkSeries(
-    data.benchmark?.[type as "co2" | "energy"],
+    data.benchmark?.[type as "co2" | "energy" | "material"],
   )
     ?.map((el) => ({
       ...el,
       label: selectedFloors.find((f) => f.id === el.id)?.group_name || "",
     }));
   const { isExpanded } = useSummary();
-
-  console.log("filteredFloors", filteredFloors);
+   
   const newItems = filteredFloors.map((el) => {
     return {
       co2: {
@@ -62,18 +60,27 @@ const FloorSummary = ({
         max: el.energy_max,
         label: el.floor_group,
       },
+      material: {
+        id: el.id,
+        y: 0,
+        min: el.material,
+        max: el.material,
+        value: el.material,
+        label: el.floor_group,
+      },
     };
   });
 
   const stackedData = useMemo(
     () =>
-      newItems.map((el) => ({
+       newItems.map((el) => ({
         id: el[type].id,
         label: el[type].label,
         co2: (el.co2.max + el.co2.min) / 2,
         energy: (el.energy.max + el.energy.min) / 2,
+        material: el.material?.value
       })),
-    [newItems],
+    [newItems, type],
   );
 
   const handleAddProject = (projectId: string) => {
@@ -148,7 +155,7 @@ const FloorSummary = ({
     0 as number,
   );
 
-  const newDataItems = [...fakeFloors, ...newItems.map((item) => item[type])];
+  const newDataItems = [...fakeFloors, ...(type !== "material" ? newItems.map((item) => item[type]) : [])];
 
   const minData = useMemo(() => newDataItems.map((d) => d.min), [newDataItems]);
   const maxData = useMemo(() => newDataItems.map((d) => d.max), [newDataItems]);
@@ -159,14 +166,16 @@ const FloorSummary = ({
     minValue,
     maxValue,
   );
-
-  console.log("newData", newItems);
+  const newNewDataItems = newDataItems.map(el => ({
+    ...el,
+    label: stackedData.find(eel => eel.id === el.id)?.label
+  }))
   return (
     <>
       <div className="w-full flex gap-2 mb-4">
         <FilterTabs
-          tabs={["co2", "energy"]}
-          onTabSelect={(tab) => setType(tab as "co2" | "energy")}
+          tabs={["co2", "energy", "material"]}
+          onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
           selectedTab={type}
           fullWidth
           onSubTabSelect={(tab) => {
@@ -258,7 +267,7 @@ const FloorSummary = ({
                   handleAddProject={handleAddProject}
                   sum={sum}
                   color={barColors}
-                  type={type}
+                  type={type === "co2" ? "co2" : type === "energy" ? "energy" : "co2"}
                   hasConsumption={true}
                 />
               ) : (
@@ -269,7 +278,7 @@ const FloorSummary = ({
                   handleAddProject={handleAddProject}
                   sum={sum}
                   color={barColors}
-                  type={type}
+                  type={type === "co2" ? "co2" : type === "energy" ? "energy" : "co2"}
                   hasConsumption={true}
                 />
               );
@@ -281,18 +290,21 @@ const FloorSummary = ({
         </div>
         {chartType == "scatter" ? (
           <D3GradientRangeChart
-            data={newData}
+            data={newNewDataItems}
             selectedBars={selectedProjects}
             totalProjects={fakeFloors.length || newData.length}
             minData={minData}
             maxData={maxData}
-            showBaseline
-            showTop5Line
+            showBaseline={type !== "material"}
+            showTop5Line={type !== "material"}
             showProcelScale
-            showMaxCurve
-            showMinCurve
-            showMidCurve
+            showMaxCurve={type !== "material"}
+            showMinCurve={type !== "material"}
+            showMidCurve={type !== "material"}
             showProjectName
+            variant={type === "material" ? "cumulative" : "range"}
+              xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
+              yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
           />
         ) : (
           <D3GradientRangeLineChart

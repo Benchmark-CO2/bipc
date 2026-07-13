@@ -14,6 +14,57 @@ type SidacMaterial struct {
 	MJ    map[float64]SidacValue `json:"MJ"`
 }
 
+var supportedMortarFakValues = []float64{4.5, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24}
+var supportedBlockFbkValues = []float64{4.5, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26}
+
+func IsSupportedMortarFak(fak float64) bool {
+	for _, supported := range supportedMortarFakValues {
+		if fak == supported {
+			return true
+		}
+	}
+
+	return false
+}
+
+func IsSupportedBlockFbk(fbk float64) bool {
+	for _, supported := range supportedBlockFbkValues {
+		if fbk == supported {
+			return true
+		}
+	}
+
+	return false
+}
+
+func NormalizeMortarFakToFirstSupportedAbove(fak float64) float64 {
+	if fak <= 0 {
+		return fak
+	}
+
+	for _, supported := range supportedMortarFakValues {
+		if fak <= supported {
+			return supported
+		}
+	}
+
+	return supportedMortarFakValues[len(supportedMortarFakValues)-1]
+}
+
+func NormalizeBlockFbkToFirstSupportedAbove(fbk float64) float64 {
+	if fbk <= 0 {
+		return fbk
+	}
+
+	for _, supported := range supportedBlockFbkValues {
+		if fbk <= supported {
+			return supported
+		}
+	}
+
+	return supportedBlockFbkValues[len(supportedBlockFbkValues)-1]
+}
+
 var sidacConcreteData = SidacMaterial{
 	KgCO2: map[float64]SidacValue{
 		20: {Min: 168.8, Max: 283.5},
@@ -21,31 +72,35 @@ var sidacConcreteData = SidacMaterial{
 		30: {Min: 228.2, Max: 339.4},
 		35: {Min: 256.6, Max: 373.6},
 		40: {Min: 283.4, Max: 395.5},
+		45: {Min: 313.1, Max: 427.0},
+		50: {Min: 341.7, Max: 456.2},
 	},
 	MJ: map[float64]SidacValue{
-		20: {Min: 1325, Max: 2244},
-		25: {Min: 1488, Max: 2408},
-		30: {Min: 1650, Max: 2629},
-		35: {Min: 1797, Max: 2849},
-		40: {Min: 1928, Max: 3002},
+		20: {Min: 1325.0, Max: 2244.0},
+		25: {Min: 1488.0, Max: 2408.0},
+		30: {Min: 1650.0, Max: 2629.0},
+		35: {Min: 1797.0, Max: 2849.0},
+		40: {Min: 1928.0, Max: 3002.0},
+		45: {Min: 2092.1, Max: 3213.5},
+		50: {Min: 2243.6, Max: 3409.2},
 	},
 }
 
 var sidacSteelData = SidacMaterial{
 	KgCO2: map[float64]SidacValue{
 		50: {Min: 0.4259, Max: 1.061},
-		60: {Min: 0.5, Max: 1.1},
+		60: {Min: 0.4259, Max: 1.061},
 	},
 	MJ: map[float64]SidacValue{
 		50: {Min: 8.025, Max: 16.05},
-		60: {Min: 8.1, Max: 16.1},
+		60: {Min: 8.025, Max: 16.05},
 	},
 }
 
 // Prestressing strands CP190 RB 12.7
 var sidacStrandData = SidacMaterial{
 	KgCO2: map[float64]SidacValue{
-		190: {Min: 2.3, Max: 2.3},
+		190: {Min: 0.4259, Max: 1.061},
 	},
 	MJ: map[float64]SidacValue{
 		190: {Min: 8.025, Max: 16.05},
@@ -54,60 +109,84 @@ var sidacStrandData = SidacMaterial{
 
 var sidacGroutData = SidacMaterial{
 	KgCO2: map[float64]SidacValue{
-		15: {Min: 157.8, Max: 332.7},
-		20: {Min: 186.3, Max: 392.8},
-		25: {Min: 228.5, Max: 481.8},
-		30: {Min: 294.8, Max: 621.6},
+		15: {Min: 239.7, Max: 310.9},
+		20: {Min: 276.7, Max: 359.3},
+		25: {Min: 318.9, Max: 414.7},
+		30: {Min: 369.5, Max: 481.1},
+		35: {Min: 387.8, Max: 486.2},
+		40: {Min: 433.2, Max: 543.5},
+		45: {Min: 484.3, Max: 608.1},
+		50: {Min: 541.6, Max: 680.6},
 	},
 	MJ: map[float64]SidacValue{
-		15: {Min: 885.8, Max: 2000.8},
-		20: {Min: 1045.8, Max: 2362.1},
-		25: {Min: 1282.9, Max: 2897.6},
-		30: {Min: 1655, Max: 3738.2},
+		15: {Min: 1516, Max: 2318},
+		20: {Min: 1723, Max: 2648},
+		25: {Min: 1948, Max: 3014},
+		30: {Min: 2226, Max: 3463},
+		35: {Min: 2226, Max: 3473},
+		40: {Min: 2456, Max: 3852},
+		45: {Min: 2713, Max: 4277},
+		50: {Min: 3001, Max: 4756},
 	},
 }
 
 var sidacMortarData = SidacMaterial{
 	KgCO2: map[float64]SidacValue{
-		4.5: {Min: 188.4, Max: 317.8},
-		8:   {Min: 196, Max: 355.1},
-		14:  {Min: 203, Max: 390.2},
+		4.5: {Min: 207.8, Max: 260.8},
+		6:   {Min: 219.8, Max: 276.1},
+		8:   {Min: 236.7, Max: 297.5},
+		10:  {Min: 254.7, Max: 320.3},
+		12:  {Min: 274.4, Max: 345.2},
+		14:  {Min: 295.8, Max: 372.5},
+		16:  {Min: 319.0, Max: 402.2},
+		18:  {Min: 341.5, Max: 431.8},
+		20:  {Min: 372.5, Max: 470.7},
+		22:  {Min: 403.2, Max: 510.3},
+		24:  {Min: 437.0, Max: 553.8},
 	},
 	MJ: map[float64]SidacValue{
-		4.5: {Min: 1079.1, Max: 1810.4},
-		8:   {Min: 1116.2, Max: 2061.9},
-		14:  {Min: 1150, Max: 2298.8},
+		4.5: {Min: 1345, Max: 1953},
+		6:   {Min: 1419, Max: 2063},
+		8:   {Min: 1519, Max: 2211},
+		10:  {Min: 1623, Max: 2365},
+		12:  {Min: 1734, Max: 2531},
+		14:  {Min: 1853, Max: 2712},
+		16:  {Min: 1981, Max: 2908},
+		18:  {Min: 2073, Max: 3075},
+		20:  {Min: 2272, Max: 3358},
+		22:  {Min: 2438, Max: 3618},
+		24:  {Min: 2619, Max: 3904},
 	},
 }
 
 var sidacBlockData = SidacMaterial{
 	KgCO2: map[float64]SidacValue{
-		4:  {Min: 0.390, Max: 1.080},
-		6:  {Min: 0.540, Max: 1.140},
-		8:  {Min: 0.680, Max: 1.350},
-		10: {Min: 0.790, Max: 1.610},
-		12: {Min: 0.700, Max: 1.970},
-		14: {Min: 0.792, Max: 1.645},
-		16: {Min: 0.967, Max: 1.860},
-		18: {Min: 0.920, Max: 2.210},
-		20: {Min: 1.188, Max: 2.404},
-		22: {Min: 1.257, Max: 2.569},
-		24: {Min: 1.530, Max: 2.565},
-		26: {Min: 1.716, Max: 2.540},
+		4.5: {Min: 0.390, Max: 1.080},
+		6:   {Min: 0.540, Max: 1.140},
+		8:   {Min: 0.680, Max: 1.350},
+		10:  {Min: 0.790, Max: 1.610},
+		12:  {Min: 0.700, Max: 1.970},
+		14:  {Min: 0.792, Max: 1.645},
+		16:  {Min: 0.967, Max: 1.860},
+		18:  {Min: 0.920, Max: 2.210},
+		20:  {Min: 1.188, Max: 2.404},
+		22:  {Min: 1.257, Max: 2.569},
+		24:  {Min: 1.530, Max: 2.565},
+		26:  {Min: 1.716, Max: 2.540},
 	},
 	MJ: map[float64]SidacValue{
-		4:  {Min: 2.877, Max: 7.870},
-		6:  {Min: 3.611, Max: 8.454},
-		8:  {Min: 4.430, Max: 10.030},
-		10: {Min: 5.020, Max: 11.200},
-		12: {Min: 4.846, Max: 13.250},
-		14: {Min: 5.254, Max: 11.280},
-		16: {Min: 6.146, Max: 12.700},
-		18: {Min: 6.002, Max: 14.420},
-		20: {Min: 7.322, Max: 15.810},
-		22: {Min: 7.736, Max: 16.730},
-		24: {Min: 8.924, Max: 17.130},
-		26: {Min: 9.880, Max: 17.590},
+		4.5: {Min: 2.877, Max: 7.870},
+		6:   {Min: 3.611, Max: 8.454},
+		8:   {Min: 4.430, Max: 10.030},
+		10:  {Min: 5.020, Max: 11.200},
+		12:  {Min: 4.846, Max: 13.250},
+		14:  {Min: 5.254, Max: 11.280},
+		16:  {Min: 6.146, Max: 12.700},
+		18:  {Min: 6.002, Max: 14.420},
+		20:  {Min: 7.322, Max: 15.810},
+		22:  {Min: 7.736, Max: 16.730},
+		24:  {Min: 8.924, Max: 17.130},
+		26:  {Min: 9.880, Max: 17.590},
 	},
 }
 
@@ -506,17 +585,27 @@ func IsValidBlockType(blockType string) bool {
 	return exists
 }
 
-func GetBlockMass(blockType string, fbk int) (float64, error) {
+func normalizeBlockMassLookupFbk(fbk float64) int {
+	if fbk == 4.5 {
+		return 4
+	}
+
+	return int(fbk)
+}
+
+func GetBlockMass(blockType string, fbk float64) (float64, error) {
 	block, exists := BlockDatabase[blockType]
 	if !exists {
 		return 0, fmt.Errorf("block type not found: %s", blockType)
 	}
 
-	mass, exists := block.Mass[fbk]
+	lookupFbk := normalizeBlockMassLookupFbk(fbk)
+
+	mass, exists := block.Mass[lookupFbk]
 	if !exists {
 		nextFbk := -1
 		for availableFbk := range block.Mass {
-			if availableFbk > fbk && (nextFbk == -1 || availableFbk < nextFbk) {
+			if availableFbk > lookupFbk && (nextFbk == -1 || availableFbk < nextFbk) {
 				nextFbk = availableFbk
 			}
 		}

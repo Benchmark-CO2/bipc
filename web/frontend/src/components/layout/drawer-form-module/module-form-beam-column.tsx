@@ -2,7 +2,7 @@ import { masks } from "@/utils/masks";
 import { parseNumber } from "@/utils/numbers";
 import { useTranslation } from "@/i18n";
 import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
-import { Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import { Button } from "../../ui/button";
@@ -18,7 +18,6 @@ import {
 } from "../../ui/select";
 import SteelMaterialList from "./steel-material-list";
 import { useSlabTypeOptions } from "./module-default-values";
-
 
 interface ModuleFormBeamColumnProps {
   form: UseFormReturn<ModuleFormInput>;
@@ -183,7 +182,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                 }
                               >
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder={t.modules.form.selectFck} />
+                                  <SelectValue
+                                    placeholder={t.modules.form.selectFck}
+                                  />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {fckOptions.map((fck) => (
@@ -193,10 +194,14 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                       disabled={isFckUsed(fck, index)}
                                     >
                                       {fck}{" "}
-                                      {isFckUsed(fck, index) ? t.modules.form.inUse : ""}
+                                      {isFckUsed(fck, index)
+                                        ? t.modules.form.inUse
+                                        : ""}
                                     </SelectItem>
                                   ))}
-                                  <SelectItem value="other">{t.modules.form.other}</SelectItem>
+                                  <SelectItem value="other">
+                                    {t.modules.form.other}
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                             </FormControl>
@@ -277,7 +282,7 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
               }
               className="w-full text-green-600 border-green-600 hover:bg-green-50"
             >
-              {t.common.add}
+              <Plus className="h-4 w-4" />
             </Button>
 
             <div className="border-t border-gray-200 my-4"></div>
@@ -300,7 +305,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
         name="slab_type"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-xs">{t.modules.form.slabTypeOptional}</FormLabel>
+            <FormLabel className="text-xs">
+              {t.modules.form.slabTypeOptional}
+            </FormLabel>
             <Select
               onValueChange={field.onChange}
               value={field.value}
@@ -329,7 +336,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
           name="column_number"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">{t.modules.form.columnCount}</FormLabel>
+              <FormLabel className="text-xs">
+                {t.modules.form.columnCount}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="text"
@@ -349,7 +358,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
           name="avg_beam_span"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">{t.modules.form.avgBeamSpan}</FormLabel>
+              <FormLabel className="text-xs">
+                {t.modules.form.avgBeamSpan}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="text"
@@ -369,7 +380,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
           name="avg_slab_span"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">{t.modules.form.avgSlabSpan}</FormLabel>
+              <FormLabel className="text-xs">
+                {t.modules.form.avgSlabSpan}
+              </FormLabel>
               <FormControl>
                 <Input
                   type="text"
@@ -386,13 +399,25 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
       </div>
 
       {/* Pilares */}
-      {renderCompleteSection("concrete_columns", t.modules.form.concreteColumn, true)}
+      {renderCompleteSection(
+        "concrete_columns",
+        t.modules.form.concreteColumn,
+        true,
+      )}
 
       {/* Vigas */}
-      {renderCompleteSection("concrete_beams", t.modules.form.concreteBeam, true)}
+      {renderCompleteSection(
+        "concrete_beams",
+        t.modules.form.concreteBeam,
+        true,
+      )}
 
       {/* Lajes */}
-      {renderCompleteSection("concrete_slabs", t.modules.form.concreteSlab, true)}
+      {renderCompleteSection(
+        "concrete_slabs",
+        t.modules.form.concreteSlab,
+        true,
+      )}
 
       {/* Formas */}
       <div className="space-y-3">
@@ -470,7 +495,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
               />
 
               <div>
-                <FormLabel className="text-xs">{t.modules.form.totalForm}</FormLabel>
+                <FormLabel className="text-xs">
+                  {t.modules.form.totalForm}
+                </FormLabel>
                 {(() => {
                   const formColumns = form.watch("form_columns") || 0;
                   const formBeams = form.watch("form_beams") || 0;

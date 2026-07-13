@@ -132,6 +132,7 @@ export interface IConsumption {
   co2_max: number;
   energy_min: number;
   energy_max: number;
+  material: number;
 }
 
 export interface ISidacValue {

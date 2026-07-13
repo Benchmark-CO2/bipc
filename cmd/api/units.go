@@ -74,6 +74,113 @@ func validateFloors(v *validator.Validator, floors []data.FloorCreate) {
 	}
 }
 
+func (app *application) prepareUnitForCreate(unit *data.Unit, input UnitCreate) ([]data.FloorCreate, error) {
+	if input.Type != "tower" {
+		return []data.FloorCreate{}, nil
+	}
+
+	towerData, err := parseTowerData(input.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	unit.HousingUnitsCount = resolveHousingUnitsCount(input.HousingUnitsCount, towerData.HousingUnitsCount)
+	return towerData.Floors, nil
+}
+
+func (app *application) prepareUnitForUpdate(unit *data.Unit, input UnitUpdate) ([]data.FloorCreate, error) {
+	if unit.Type != "tower" {
+		return []data.FloorCreate{}, nil
+	}
+
+	if input.Data == nil {
+		unit.HousingUnitsCount = resolveHousingUnitsCount(input.HousingUnitsCount, unit.HousingUnitsCount)
+		return []data.FloorCreate{}, nil
+	}
+
+	towerData, err := parseTowerData(input.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	unit.HousingUnitsCount = resolveHousingUnitsCount(input.HousingUnitsCount, towerData.HousingUnitsCount)
+	return towerData.Floors, nil
+}
+
+// insertUnit validates the unit and its floors, assigns a new UUID if needed, and persists it.
+func (app *application) insertUnit(unit *data.Unit, floors []data.FloorCreate) error {
+	v := validator.New()
+	data.ValidateUnit(v, unit)
+	if unit.Type != "tower" {
+		v.AddError("type", "invalid unit type")
+	}
+
+	if unit.Type == "tower" {
+		validateFloors(v, floors)
+		validateHousingUnitsCount(v, unit.HousingUnitsCount)
+	}
+
+	if !v.Valid() {
+		return &ValidationError{Errors: v.Errors}
+	}
+
+	if unit.ID == uuid.Nil {
+		unitID, err := uuid.NewV7()
+		if err != nil {
+			return err
+		}
+		unit.ID = unitID
+	}
+
+	err := app.models.Units.Insert(unit, floors)
+	if err != nil {
+		v := validator.New()
+		switch {
+		case errors.Is(err, data.ErrDuplicateFloorIndexes):
+			v.AddError("floors", "floor indexes must be unique")
+			return &ValidationError{Errors: v.Errors}
+		case errors.Is(err, data.ErrFloorIndexGap):
+			v.AddError("floors", "floor indexes must be continuous without gaps")
+			return &ValidationError{Errors: v.Errors}
+		default:
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (app *application) updateUnit(unit *data.Unit, floors []data.FloorCreate) error {
+	v := validator.New()
+	data.ValidateUnit(v, unit)
+
+	if unit.Type == "tower" {
+		validateFloors(v, floors)
+		validateHousingUnitsCount(v, unit.HousingUnitsCount)
+	}
+
+	if !v.Valid() {
+		return &ValidationError{Errors: v.Errors}
+	}
+
+	err := app.models.Units.Update(unit, floors)
+	if err != nil {
+		v := validator.New()
+		switch {
+		case errors.Is(err, data.ErrDuplicateFloorIndexes):
+			v.AddError("floors", "floor indexes must be unique")
+			return &ValidationError{Errors: v.Errors}
+		case errors.Is(err, data.ErrFloorIndexGap):
+			v.AddError("floors", "floor indexes must be continuous without gaps")
+			return &ValidationError{Errors: v.Errors}
+		default:
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request) {
 	projectID, err := app.readUUIDParam(r, "projectID")
 	if err != nil {
@@ -98,57 +205,25 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 	if input.RepetitionCount != nil {
 		unit.RepetitionCount = *input.RepetitionCount
 	}
-	v := validator.New()
-	data.ValidateUnit(v, unit)
 
-	var floors []data.FloorCreate
+	floors, err := app.prepareUnitForCreate(unit, input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
 
-	switch input.Type {
-	case "tower":
-		towerData, parseErr := parseTowerData(input.Data)
-		err = parseErr
-		if err != nil {
-			app.badRequestResponse(w, r, err)
+	if err := app.insertUnit(unit, floors); err != nil {
+		var ve *ValidationError
+		if errors.As(err, &ve) {
+			app.failedValidationResponse(w, r, ve.Errors)
 			return
 		}
-		unit.HousingUnitsCount = resolveHousingUnitsCount(input.HousingUnitsCount, towerData.HousingUnitsCount)
-		floors = towerData.Floors
-		validateFloors(v, floors)
-		validateHousingUnitsCount(v, unit.HousingUnitsCount)
-
-	default:
-		v.AddError("type", "invalid unit type")
-	}
-
-	if !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
-		return
-	}
-
-	unitID, err := uuid.NewV7()
-	if err != nil {
 		app.serverErrorResponse(w, r, err)
-		return
-	}
-	unit.ID = unitID
-
-	err = app.models.Units.Insert(unit, floors)
-	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrDuplicateFloorIndexes):
-			v.AddError("floors", "floor indexes must be unique")
-			app.failedValidationResponse(w, r, v.Errors)
-		case errors.Is(err, data.ErrFloorIndexGap):
-			v.AddError("floors", "floor indexes must be continuous without gaps")
-			app.failedValidationResponse(w, r, v.Errors)
-		default:
-			app.serverErrorResponse(w, r, err)
-		}
 		return
 	}
 
 	// Fetch the complete unit with floors
-	completeUnit, err := app.models.Units.GetByID(unitID)
+	completeUnit, err := app.models.Units.GetByID(unit.ID)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -280,46 +355,20 @@ func (app *application) updateUnitHandler(w http.ResponseWriter, r *http.Request
 		unit.RepetitionCount = *input.RepetitionCount
 	}
 
-	v := validator.New()
-	data.ValidateUnit(v, unit)
-
-	var floors []data.FloorCreate
-
-	if unit.Type == "tower" && input.Data != nil {
-		towerData, parseErr := parseTowerData(input.Data)
-		err = parseErr
-		if err != nil {
-			app.badRequestResponse(w, r, err)
-			return
-		}
-		unit.HousingUnitsCount = resolveHousingUnitsCount(input.HousingUnitsCount, towerData.HousingUnitsCount)
-		floors = towerData.Floors
-		validateFloors(v, floors)
-		validateHousingUnitsCount(v, unit.HousingUnitsCount)
-	}
-
-	if unit.Type == "tower" && input.Data == nil {
-		unit.HousingUnitsCount = resolveHousingUnitsCount(input.HousingUnitsCount, unit.HousingUnitsCount)
-		validateHousingUnitsCount(v, unit.HousingUnitsCount)
-	}
-
-	if !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
+	floors, err := app.prepareUnitForUpdate(unit, input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	err = app.models.Units.Update(unit, floors)
+	err = app.updateUnit(unit, floors)
 	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrDuplicateFloorIndexes):
-			v.AddError("floors", "floor indexes must be unique")
-			app.failedValidationResponse(w, r, v.Errors)
-		case errors.Is(err, data.ErrFloorIndexGap):
-			v.AddError("floors", "floor indexes must be continuous without gaps")
-			app.failedValidationResponse(w, r, v.Errors)
-		default:
-			app.serverErrorResponse(w, r, err)
+		var ve *ValidationError
+		if errors.As(err, &ve) {
+			app.failedValidationResponse(w, r, ve.Errors)
+			return
 		}
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 

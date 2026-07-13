@@ -72,6 +72,7 @@
   --phase-basic-project: hsl(48, 75%, 55%);
   --phase-executive-project: hsl(25, 80%, 55%);
   --phase-released-for-construction: hsl(130, 55%, 50%);
+  --phase-as-built: hsl(200, 50%, 40%);
 
   --table-row-even: #e3f3f6;
   --table-row-odd: #fbfefe;
@@ -84,6 +85,13 @@
   --chart-5: hsl(27 87% 67%);
 
   --color-sidebar: hsl(188, 29%, 10%);
+
+  --map-empty: #d4d4d8;
+  --map-scale-1: #b6e5ed;
+  --map-scale-2: #6ec2cf;
+  --map-scale-3: #3bbace;
+  --map-scale-4: #20a2b6;
+  --map-scale-5: #187b8b;
 
   --selection-bg: hsl(188, 71%, 42%);
   --selection-fg: hsl(0, 0%, 100%);
@@ -135,6 +143,7 @@
   --phase-basic-project: hsl(48, 75%, 55%);
   --phase-executive-project: hsl(25, 80%, 55%);
   --phase-released-for-construction: hsl(130, 55%, 50%);
+  --phase-as-built: hsl(200, 50%, 40%);
 
   --table-row-even: hsl(190, 30%, 15%);
   --table-row-odd: transparent;
@@ -146,6 +155,13 @@
   --chart-5: hsl(340 75% 55%);
 
   --color-sidebar: hsl(188, 29%, 10%);
+
+  --map-empty: #d4d4d8;
+  --map-scale-1: #b6e5ed;
+  --map-scale-2: #6ec2cf;
+  --map-scale-3: #3bbace;
+  --map-scale-4: #20a2b6;
+  --map-scale-5: #187b8b;
 }
 
 @theme inline {
@@ -217,6 +233,7 @@
   --color-phase-released-for-construction: var(
     --phase-released-for-construction
   );
+  --color-phase-as-built: var(--phase-as-built);
 
   --color-table-row-even: var(--table-row-even);
   --color-table-row-odd: var(--table-row-odd);
@@ -377,7 +394,7 @@
   font-style: italic;
   font-weight: 100 900;
   font-display: swap;
-  src: url("./assets/fonts/Roboto-Flex.woff2") format("woff2");
+  src: url("./assets/fonts/robotoflex.woff2") format("woff2");
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
     U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,

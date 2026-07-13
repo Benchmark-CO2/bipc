@@ -15,8 +15,8 @@ const Summary = () => {
       className={cn(
         "absolute bottom-0 right-0 bg-gray-50 dark:bg-sidebar w-full max-md:mx-auto max-md:left-0 transition-all z-49 border-t border-gray-200 dark:border-gray-700 shadow-lg",
         {
-          "h-[96vh] max-sm:h-[91vh]": isOpen && isExpanded,
-          "h-2/3": isOpen && !isExpanded,
+          "h-[100vh]": isOpen && isExpanded,
+          "h-4/5 min-[1710px]:h-2/3": isOpen && !isExpanded,
           "h-[50px]": !isOpen,
         },
       )}

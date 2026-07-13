@@ -8,6 +8,7 @@ import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 import { Tabs } from "@/components/ui/tabs";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 import { TProjectUnit } from "@/types/projects";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -93,7 +94,7 @@ function RouteComponent() {
       },
       onError: (error) => {
         toast.error(t.units.duplicateError, {
-          description: error.message,
+          description: parseApiError(error, t),
         });
       },
     },
@@ -183,7 +184,10 @@ function RouteComponent() {
                     mutateDuplicateUnit({ projectId, unitId: params.unitId })
                   }
                   componentTrigger={
-                    <SimpleTooltip content={t.units.duplicateTitle} side="bottom">
+                    <SimpleTooltip
+                      content={t.units.duplicateTitle}
+                      side="bottom"
+                    >
                       <Button variant="outline-bipc" size="icon-lg">
                         {isDuplicating ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -200,7 +204,10 @@ function RouteComponent() {
                   projectId={projectId}
                   unitId={params.unitId}
                   triggerComponent={
-                    <SimpleTooltip content={t.units.form.editTitle} side="bottom">
+                    <SimpleTooltip
+                      content={t.units.form.editTitle}
+                      side="bottom"
+                    >
                       <Button variant="outline-bipc" size="icon-lg">
                         <Edit />
                       </Button>
@@ -212,7 +219,10 @@ function RouteComponent() {
                 <DrawerFormUnit
                   projectId={projectId}
                   triggerComponent={
-                    <SimpleTooltip content={t.units.form.addTitle} side="bottom">
+                    <SimpleTooltip
+                      content={t.units.form.addTitle}
+                      side="bottom"
+                    >
                       <Button variant="bipc" size="icon-lg">
                         <Plus className="w-16 h-16" />
                       </Button>

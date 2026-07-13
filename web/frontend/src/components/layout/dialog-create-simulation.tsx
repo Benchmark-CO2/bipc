@@ -25,6 +25,7 @@ import { postOption } from "@/actions/options/postOption";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
+import { parseApiError } from "@/utils/parseApiError";
 
 const createSimulationSchema = z.object({
   name: z.string().min(1, "nameRequired"),
@@ -62,7 +63,10 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
       setOpen(false);
     },
     onError: (error) => {
-      console.error(t.dialogCreateSimulation.errorCreate, error);
+      toast.error(t.dialogCreateSimulation.errorCreate, {
+        description: parseApiError(error, t),
+        duration: 5000,
+      });
     },
   });
 
@@ -96,7 +100,9 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
       </DialogTrigger>
       <DialogContent className="text-center">
         <DialogHeader>
-          <DialogTitle className="text-center">{t.constructiveTechView.newSimulation}</DialogTitle>
+          <DialogTitle className="text-center">
+            {t.constructiveTechView.newSimulation}
+          </DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form
@@ -109,9 +115,14 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
               name={`name`}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm">{t.dialogCreateSimulation.simulationName} *</FormLabel>
+                  <FormLabel className="text-sm">
+                    {t.dialogCreateSimulation.simulationName} *
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder={t.dialogCreateSimulation.placeholder} {...field} />
+                    <Input
+                      placeholder={t.dialogCreateSimulation.placeholder}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -151,7 +162,9 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
             className="text-white"
             disabled={createSimulationMutation.isPending}
           >
-            {createSimulationMutation.isPending ? t.dialogCreateSimulation.creating : t.dialogCreateSimulation.create}
+            {createSimulationMutation.isPending
+              ? t.dialogCreateSimulation.creating
+              : t.dialogCreateSimulation.create}
           </Button>
         </DialogFooter>
       </DialogContent>

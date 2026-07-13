@@ -5,3 +5,7 @@
 stage.bipc.org.br {
   reverse_proxy localhost:4000
 }
+
+www.stage.bipc.org.br {
+  redir https://stage.bipc.org.br{uri} permanent
+}

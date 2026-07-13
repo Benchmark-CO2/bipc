@@ -16,6 +16,7 @@ func newConsumption() *Consumption {
 		CO2Max:    new(float64),
 		EnergyMin: new(float64),
 		EnergyMax: new(float64),
+		Material:  new(float64),
 	}
 }
 
@@ -42,6 +43,9 @@ func (c *Consumption) Add(other *Consumption) {
 	}
 	if other.EnergyMax != nil {
 		*c.EnergyMax += *other.EnergyMax
+	}
+	if other.Material != nil {
+		*c.Material += *other.Material
 	}
 }
 
@@ -183,7 +187,12 @@ func GetFullConsumption(db *sql.DB, unitID, roleID, optionID uuid.UUID) (map[str
 
 	// 1. Fetch area-weighted floor consumption by technology
 	floorQuery := `
-		WITH floor_consumption AS (
+		WITH unit_total_area AS (
+			SELECT COALESCE(SUM(area), 0) AS total_area
+			FROM floor
+			WHERE unit_id = $1
+		),
+		floor_consumption AS (
 			SELECT 
 				f.id   AS floor_id,
 				f.area,
@@ -202,13 +211,14 @@ func GetFullConsumption(db *sql.DB, unitID, roleID, optionID uuid.UUID) (map[str
 			GROUP BY f.id, f.area, m.type
 		)
 		SELECT 
-			technology,
-			SUM(floor_co2_min * area)    / NULLIF(SUM(area), 0) AS co2_min,
-			SUM(floor_co2_max * area)    / NULLIF(SUM(area), 0) AS co2_max,
-			SUM(floor_energy_min * area) / NULLIF(SUM(area), 0) AS energy_min,
-			SUM(floor_energy_max * area) / NULLIF(SUM(area), 0) AS energy_max
-		FROM floor_consumption
-		GROUP BY technology`
+			fc.technology,
+			SUM(fc.floor_co2_min * fc.area)    / NULLIF(MAX(uta.total_area), 0) AS co2_min,
+			SUM(fc.floor_co2_max * fc.area)    / NULLIF(MAX(uta.total_area), 0) AS co2_max,
+			SUM(fc.floor_energy_min * fc.area) / NULLIF(MAX(uta.total_area), 0) AS energy_min,
+			SUM(fc.floor_energy_max * fc.area) / NULLIF(MAX(uta.total_area), 0) AS energy_max
+		FROM floor_consumption fc
+		CROSS JOIN unit_total_area uta
+		GROUP BY fc.technology`
 
 	rows, err := db.QueryContext(ctx, floorQuery, unitID, roleID, optionID)
 	if err != nil {
@@ -277,7 +287,12 @@ func GetUnitConsumptionByTechnology(db *sql.DB, unitID uuid.UUID) (map[string]*C
 
 	// 2. Fetch area-weighted floor consumption (active options)
 	floorQuery := `
-		WITH floor_consumption AS (
+		WITH unit_total_area AS (
+			SELECT COALESCE(SUM(area), 0) AS total_area
+			FROM floor
+			WHERE unit_id = $1
+		),
+		floor_consumption AS (
 			SELECT 
 				f.id   AS floor_id,
 				f.area,
@@ -296,13 +311,14 @@ func GetUnitConsumptionByTechnology(db *sql.DB, unitID uuid.UUID) (map[string]*C
 			GROUP BY f.id, f.area, m.type
 		)
 		SELECT 
-			technology,
-			SUM(floor_co2_min * area)    / NULLIF(SUM(area), 0) AS co2_min,
-			SUM(floor_co2_max * area)    / NULLIF(SUM(area), 0) AS co2_max,
-			SUM(floor_energy_min * area) / NULLIF(SUM(area), 0) AS energy_min,
-			SUM(floor_energy_max * area) / NULLIF(SUM(area), 0) AS energy_max
-		FROM floor_consumption
-		GROUP BY technology`
+			fc.technology,
+			SUM(fc.floor_co2_min * fc.area)    / NULLIF(MAX(uta.total_area), 0) AS co2_min,
+			SUM(fc.floor_co2_max * fc.area)    / NULLIF(MAX(uta.total_area), 0) AS co2_max,
+			SUM(fc.floor_energy_min * fc.area) / NULLIF(MAX(uta.total_area), 0) AS energy_min,
+			SUM(fc.floor_energy_max * fc.area) / NULLIF(MAX(uta.total_area), 0) AS energy_max
+		FROM floor_consumption fc
+		CROSS JOIN unit_total_area uta
+		GROUP BY fc.technology`
 
 	rows, err := db.QueryContext(ctx, floorQuery, unitID)
 	if err != nil {

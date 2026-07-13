@@ -1,6 +1,6 @@
 import { masks } from "@/utils/masks";
 import { useTranslation } from "@/i18n";
-import { Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import { Button } from "../../ui/button";
@@ -107,7 +107,9 @@ const SteelMaterialItem = ({
             name={`${name}.${index}.material`}
             render={({ field }) => (
               <FormItem className="w-full space-y-1">
-                <FormLabel className="text-xs">{t.modules.form.material}</FormLabel>
+                <FormLabel className="text-xs">
+                  {t.modules.form.material}
+                </FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger className="h-9 w-full">
@@ -153,7 +155,9 @@ const SteelMaterialItem = ({
             name={`${name}.${index}.resistance`}
             render={({ field }) => (
               <FormItem className="w-full space-y-1">
-                <FormLabel className="text-xs">{t.modules.form.steelType}</FormLabel>
+                <FormLabel className="text-xs">
+                  {t.modules.form.steelType}
+                </FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger className="h-9 w-full">
@@ -187,7 +191,9 @@ const SteelMaterialItem = ({
             name={`${name}.${index}.mass`}
             render={({ field }) => (
               <FormItem className="w-full space-y-1">
-                <FormLabel className="text-xs">{t.modules.form.massSteelKg}</FormLabel>
+                <FormLabel className="text-xs">
+                  {t.modules.form.massSteelKg}
+                </FormLabel>
                 <FormControl>
                   <Input
                     {...field}
@@ -226,7 +232,9 @@ const SteelMaterialItem = ({
           name={`${name}.${index}.other_name`}
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">{t.modules.form.customMaterialName}</FormLabel>
+              <FormLabel className="text-xs">
+                {t.modules.form.customMaterialName}
+              </FormLabel>
               <FormControl>
                 <Input {...field} placeholder="Ex: Aço especial" />
               </FormControl>
@@ -291,12 +299,13 @@ const SteelMaterialList = ({
 
   const materialOptions = allowedMaterials.map((key) => ({
     value: key,
-    label: {
-      rebar: t.modules.form.rebar,
-      mesh: t.modules.form.mesh,
-      strand: t.modules.form.strand,
-      other: t.modules.form.other,
-    }[key] ?? key,
+    label:
+      {
+        rebar: t.modules.form.rebar,
+        mesh: t.modules.form.mesh,
+        strand: t.modules.form.strand,
+        other: t.modules.form.other,
+      }[key] ?? key,
   }));
 
   const resistanceOptions = [
@@ -328,7 +337,8 @@ const SteelMaterialList = ({
         // combinations from all OTHER rows (by index)
         const otherCombinations = (steelArray || [])
           .map((item: any, i: number) => {
-            if (i === index || !item?.material || !item?.resistance) return null;
+            if (i === index || !item?.material || !item?.resistance)
+              return null;
             return `${item.material}:${item.resistance}`;
           })
           .filter(Boolean) as string[];
@@ -366,7 +376,8 @@ const SteelMaterialList = ({
 
           // Encontrar a primeira combinação material+resistance não utilizada
           let foundMaterial = allowedMaterials[0] ?? "rebar";
-          let foundResistance = defaultResistanceByMaterial[foundMaterial] ?? "CA50";
+          let foundResistance =
+            defaultResistanceByMaterial[foundMaterial] ?? "CA50";
 
           outer: for (const mat of allowedMaterials) {
             const resistances = allowedResistancesByMaterial[mat] ?? ["CA50"];
@@ -393,7 +404,7 @@ const SteelMaterialList = ({
         }}
         className="w-full text-green-600 border-green-600 hover:bg-green-50"
       >
-        {t.common.add}
+        <Plus className="h-4 w-4" />
       </Button>
     </div>
   );
