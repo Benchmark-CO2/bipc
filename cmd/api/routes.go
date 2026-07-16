@@ -48,12 +48,13 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPut, "/v1/projects/:projectID/transfer-ownership", app.requireRolesPermission("*:*", app.transferOwnershipHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/collaborators", app.listCollaboratorsHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/user/permissions", app.requireAuthenticatedUser(app.listUserPermissionsHandler))
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate", app.requireActivatedUser(app.duplicateProjectHandler))
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate/:targetUserID", app.requireActivatedUser(app.duplicateProjectToUserHandler))
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/report", app.reportHandler)
 
 	// ----------------------------------------------------------------------------------------------------------------------------------
+
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate", app.requireActivatedUser(app.duplicateProjectHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate/:targetUserID", app.requireActivatedUser(app.duplicateProjectToUserHandler))
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects-upload", app.requireActivatedUser(app.createProjectsFromCSVHandler))
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units", app.requireRolesPermission("create:unit", app.createUnitHandler))
