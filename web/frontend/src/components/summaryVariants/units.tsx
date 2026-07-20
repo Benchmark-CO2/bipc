@@ -75,14 +75,14 @@ const UnitsSummary = ({
 
   const stackedData = useMemo(
     () =>
-       newItems.map((el) => ({
-            id: el[type].id,
-            label: el[type].label,
-            co2: (el.co2.max + el.co2.min) / 2,
-            energy: (el.energy.max + el.energy.min) / 2,
-            material: el.material?.value
-          }))
-        ,
+      newItems.map((el) => ({
+        id: el[type].id,
+        label: el[type].label,
+        co2: (el.co2.max + el.co2.min) / 2,
+        energy: (el.energy.max + el.energy.min) / 2,
+        material: el.material?.value
+      }))
+    ,
     [newItems, type],
   );
 
@@ -151,8 +151,8 @@ const UnitsSummary = ({
     );
   }, [units, project, type]);
 
-  const sum = (Object.values(avgByUnit) as Array<{ avg: number }>).reduce(
-    (acc: number, b: { avg: number }) => acc + b.avg,
+  const sum = (Object.values(avgByUnit) as Array<{ avg: number; }>).reduce(
+    (acc: number, b: { avg: number; }) => acc + b.avg,
     0 as number,
   );
 
@@ -201,7 +201,7 @@ const UnitsSummary = ({
           },
         )}
       >
-        <div className="flex flex-col items-start w-full">
+        <div className="flex flex-col items-start  w-2/3 justify-start gap-4">
           {ChartSelector}
           <div className="w-full mb-2">
             <div className="mb-2 text-lg text-gray-600">{project.name}</div>
@@ -286,35 +286,38 @@ const UnitsSummary = ({
               );
             })}
           </ul>
-          <Legend />
           {/* {!isExpanded && <Subtitle />} */}
         </div>
-        {chartType === "scatter" ? (
-          <D3GradientRangeChart
-            data={newData}
-            selectedBars={selectedProjects}
-            unit={unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""}
-            minData={minData}
-            maxData={maxData}
-            totalProjects={fakeUnits.length || newData.length}
-            showBaseline={type !== "material"}
-            showTop5Line={type !== "material"}
-            showProcelScale
-            showMaxCurve={type !== "material"}
-            showMinCurve={type !== "material"}
-            showMidCurve={type !== "material"}
-            showProjectName
-            variant={type === "material" ? "cumulative" : "range"}
-            xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
-            yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
-          />
-        ) : (
-          <D3GradientRangeLineChart
-            data={newData}
-            selectedBars={selectedProjects}
-            unit={type}
-          />
-        )}
+        <div className={cn("flex flex-col gap-6 w-full")}>
+          <Legend />
+
+          {chartType === "scatter" ? (
+            <D3GradientRangeChart
+              data={newData}
+              selectedBars={selectedProjects}
+              unit={unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""}
+              minData={minData}
+              maxData={maxData}
+              totalProjects={fakeUnits.length || newData.length}
+              showBaseline={type !== "material"}
+              showTop5Line={type !== "material"}
+              showProcelScale
+              showMaxCurve={type !== "material"}
+              showMinCurve={type !== "material"}
+              showMidCurve={type !== "material"}
+              showProjectName
+              variant={type === "material" ? "cumulative" : "range"}
+              xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
+              yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
+            />
+          ) : (
+            <D3GradientRangeLineChart
+              data={newData}
+              selectedBars={selectedProjects}
+              unit={type}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

@@ -43,7 +43,7 @@ const FloorSummary = ({
       label: selectedFloors.find((f) => f.id === el.id)?.group_name || "",
     }));
   const { isExpanded } = useSummary();
-   
+
   const newItems = filteredFloors.map((el) => {
     return {
       co2: {
@@ -73,7 +73,7 @@ const FloorSummary = ({
 
   const stackedData = useMemo(
     () =>
-       newItems.map((el) => ({
+      newItems.map((el) => ({
         id: el[type].id,
         label: el[type].label,
         co2: (el.co2.max + el.co2.min) / 2,
@@ -150,8 +150,8 @@ const FloorSummary = ({
     );
   }, [floors, unit, type]);
 
-  const sum = (Object.values(avgByUnit) as Array<{ avg: number }>).reduce(
-    (acc: number, b: { avg: number }) => acc + b.avg,
+  const sum = (Object.values(avgByUnit) as Array<{ avg: number; }>).reduce(
+    (acc: number, b: { avg: number; }) => acc + b.avg,
     0 as number,
   );
 
@@ -169,7 +169,7 @@ const FloorSummary = ({
   const newNewDataItems = newDataItems.map(el => ({
     ...el,
     label: stackedData.find(eel => eel.id === el.id)?.label
-  }))
+  }));
   return (
     <>
       <div className="w-full flex gap-2 mb-4">
@@ -200,7 +200,7 @@ const FloorSummary = ({
           },
         )}
       >
-        <div className="flex flex-col items-start w-full">
+        <div className="flex flex-col items-start w-2/3">
           {ChartSelector}
 
           <div className="w-full mb-2">
@@ -284,35 +284,38 @@ const FloorSummary = ({
               );
             })}
           </ul>
-          {<Legend />}
+
 
           {/* {!isExpanded && <Subtitle />} */}
         </div>
-        {chartType == "scatter" ? (
-          <D3GradientRangeChart
-            data={newNewDataItems}
-            selectedBars={selectedProjects}
-            totalProjects={fakeFloors.length || newData.length}
-            minData={minData}
-            maxData={maxData}
-            showBaseline={type !== "material"}
-            showTop5Line={type !== "material"}
-            showProcelScale
-            showMaxCurve={type !== "material"}
-            showMinCurve={type !== "material"}
-            showMidCurve={type !== "material"}
-            showProjectName
-            variant={type === "material" ? "cumulative" : "range"}
+        <div className={cn("flex flex-col gap-6 w-full")}>
+          <Legend />
+          {chartType == "scatter" ? (
+            <D3GradientRangeChart
+              data={newNewDataItems}
+              selectedBars={selectedProjects}
+              totalProjects={fakeFloors.length || newData.length}
+              minData={minData}
+              maxData={maxData}
+              showBaseline={type !== "material"}
+              showTop5Line={type !== "material"}
+              showProcelScale
+              showMaxCurve={type !== "material"}
+              showMinCurve={type !== "material"}
+              showMidCurve={type !== "material"}
+              showProjectName
+              variant={type === "material" ? "cumulative" : "range"}
               xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
               yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
-          />
-        ) : (
-          <D3GradientRangeLineChart
-            data={newData}
-            selectedBars={selectedProjects}
-            unit={type}
-          />
-        )}
+            />
+          ) : (
+            <D3GradientRangeLineChart
+              data={newData}
+              selectedBars={selectedProjects}
+              unit={type}
+            />
+          )}
+        </div>
       </div>
     </>
   );

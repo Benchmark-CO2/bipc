@@ -135,12 +135,13 @@ const useChartDimensions = (
   hasMoreValue: boolean,
   containerWidth: number,
   showProcelScale?: boolean,
+  containerHeight?: number,
 ) => {
   return useMemo(() => {
     const margin = {
       top: isExpanded ? 15 : 20,
       right: isMobile ? 0 : showProcelScale ? 40 : 20,
-      bottom: isMobile ? 20 : 35,
+      bottom: isMobile ? 20 : 20,
       left: isMobile ? 45 : 80,
     };
 
@@ -159,7 +160,7 @@ const useChartDimensions = (
       if (isMobile && !isExpanded) return 250;
       if (isMobile && isExpanded) return 320;
       if (isExpanded) return window.innerHeight * 0.96 - 130;
-      return Math.min(420, Math.max(300, window.innerHeight * 0.45));
+      return Math.min(window.innerHeight > 1080 ? 500 : window.innerHeight <= 768 ? 230 : 370, Math.max(300, window.innerHeight * 0.45));
     };
 
     const _width = width();
@@ -175,6 +176,7 @@ const useChartDimensions = (
     hasLessValue,
     hasMoreValue,
     containerWidth,
+    containerHeight,
     showProcelScale,
   ]);
 };
@@ -290,7 +292,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     null,
   );
   const [containerWidth, setContainerWidth] = useState(0);
-
+  const [containerHeight, setContainerHeight] = useState(0);
   // Measure container immediately before first paint so PROCEL scale renders correctly
   useLayoutEffect(() => {
     if (containerRef.current) {
@@ -308,8 +310,12 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       const timer = setTimeout(() => {
         if (containerRef.current) {
           const width = containerRef.current.getBoundingClientRect().width;
+          const height = containerRef.current.getBoundingClientRect().height;
           if (width > 0) {
             setContainerWidth(width);
+          }
+          if (height > 0) {
+            setContainerHeight(height);
           }
         }
       }, 50);
@@ -376,6 +382,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     hasMoreValue,
     containerWidth,
     showProcelScale,
+    containerHeight
   );
 
   // Scales and calculations

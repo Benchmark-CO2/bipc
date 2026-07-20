@@ -151,7 +151,7 @@ const SimulationsSummary = ({
       setSelectedProjects(filteredProjects.map((p) => p.id));
     }
   };
-  const listType: "co2" | "energy" | "material" = type ;
+  const listType: "co2" | "energy" | "material" = type;
 
   const newData = [
     ...managedData,
@@ -168,8 +168,8 @@ const SimulationsSummary = ({
   const listSum =
     type !== "material"
       ? newItems
-          .flatMap((el) => el[listType])
-          .reduce((acc, curr) => acc + curr.max, 0)
+        .flatMap((el) => el[listType])
+        .reduce((acc, curr) => acc + curr.max, 0)
       : 0;
 
   return (
@@ -195,11 +195,11 @@ const SimulationsSummary = ({
         />
       </div>
       <div
-        className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
+        className={cn("w-full flex justify-start gap-4 max-md:flex-col", {
           "flex flex-col": isExpanded,
         })}
       >
-        <div className="flex flex-col items-start w-full">
+        <div className="flex flex-col items-start w-2/3">
           {ChartSelector}
           <ul
             className={cn("flex flex-col gap-2 text-xl w-full text-black", {
@@ -262,47 +262,49 @@ const SimulationsSummary = ({
               );
             })}
           </ul>
-          <Legend />
         </div>
+        <div className="flex flex-col gap-2 w-full">
+          <Legend />
 
-        {chartType === "scatter" ? (
-          <D3GradientRangeChart
-            data={updateYs}
-            selectedBars={selectedProjects}
-            unit={unitsOfMeasure[type] || ""}
-            maxData={maxData}
-            minData={minData}
-            totalProjects={updateYs.length}
-            showBaseline={type !== "material"}
-            showTop5Line={type !== "material"}
-            showProcelScale
-            showMaxCurve={type !== "material"}
-            showMinCurve={type !== "material"}
-            showMidCurve={type !== "material"}
-            showProjectName
-            variant={type === "material" ? "cumulative" : "range"}
-            xAxisLabel={
-              t.benchmark.chartTypes[
+          {chartType === "scatter" ? (
+            <D3GradientRangeChart
+              data={updateYs}
+              selectedBars={selectedProjects}
+              unit={unitsOfMeasure[type] || ""}
+              maxData={maxData}
+              minData={minData}
+              totalProjects={updateYs.length}
+              showBaseline={type !== "material"}
+              showTop5Line={type !== "material"}
+              showProcelScale
+              showMaxCurve={type !== "material"}
+              showMinCurve={type !== "material"}
+              showMidCurve={type !== "material"}
+              showProjectName
+              variant={type === "material" ? "cumulative" : "range"}
+              xAxisLabel={
+                t.benchmark.chartTypes[
                 type === "co2" || type === "energy"
                   ? "cumulativeFraction"
                   : "material"
-              ][type === "co2" ? "xAxisLabelCarbon" : "xAxisLabelEnergy"]
-            }
-            yAxisLabel={
-              t.benchmark.chartTypes[
-                type === "co2" || type === "energy"
-                  ? "cumulativeFraction"
-                  : "material"
-              ].yAxisLabel
-            }
-          />
-        ) : (
-          <D3GradientRangeLineChart
-            data={updateYs}
-            selectedBars={selectedProjects}
-            unit={type}
-          />
-        )}
+                ][type === "co2" ? "xAxisLabelCarbon" : "xAxisLabelEnergy"]
+              }
+              yAxisLabel={
+                t.benchmark.chartTypes[
+                  type === "co2" || type === "energy"
+                    ? "cumulativeFraction"
+                    : "material"
+                ].yAxisLabel
+              }
+            />
+          ) : (
+            <D3GradientRangeLineChart
+              data={updateYs}
+              selectedBars={selectedProjects}
+              unit={type}
+            />
+          )}
+        </div>
       </div>
     </>
   );

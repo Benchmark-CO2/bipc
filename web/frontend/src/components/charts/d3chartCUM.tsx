@@ -1086,7 +1086,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     if (showProcelScale && !isMobile) {
       const barX = _width;
       const barWidth = PROCEL_SCALE_CONFIG.WIDTH;
-      const procelClasses = isCumulative ? PROCEL_CLASSES_5 : PROCEL_CLASSES;
+      const procelClasses = PROCEL_CLASSES;
       const bandSize = 1.0 / procelClasses.length;
 
       ctx.save();
@@ -1356,7 +1356,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const selectedCount = new Set([...selectedMinBarIds, ...selectedMaxBarIds]).size;
 
   return (
-    <Card className={cn("shadow-none w-min-content min-w-1/2")}>
+    <Card className={cn("shadow-none w-full h-full")}>
       <CardContent>
         <div ref={containerRef} className="w-full overflow-hidden relative">
           <span className="absolute text-xs w-full text-center text-foreground/70 block rotate-270 left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
