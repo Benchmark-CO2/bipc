@@ -74,12 +74,12 @@ const ProjectsSummary = ({
   const stackedData = useMemo(
     () =>
       newItems.map((el) => ({
-            id: el[type].id,
-            label: el[type].label,
-            co2: (el.co2.max + el.co2.min) / 2,
-            energy: (el.energy.max + el.energy.min) / 2,
-            material: el.material?.value
-          })),
+        id: el[type].id,
+        label: el[type].label,
+        co2: (el.co2.max + el.co2.min) / 2,
+        energy: (el.energy.max + el.energy.min) / 2,
+        material: el.material?.value
+      })),
     [newItems, type],
   );
 
@@ -141,7 +141,6 @@ const ProjectsSummary = ({
     minValue,
     maxValue,
   );
-
   return (
     <>
       <div className="w-full flex gap-2 mb-4">
@@ -172,7 +171,7 @@ const ProjectsSummary = ({
           },
         )}
       >
-        <div className="flex flex-col items-start w-full justify-between h-full">
+        <div className="flex flex-col items-start  w-2/3 justify-start gap-4">
           {ChartSelector}
           <ul
             className={cn(
@@ -222,37 +221,43 @@ const ProjectsSummary = ({
               );
             })}
           </ul>
-          {<Legend />}
+
           {/* {!isExpanded && <Subtitle />} */}
         </div>
+        <div className='flex flex-col gap-6 w-full'>
+          {<Legend />}
+          <div className="flex-1 min-h-0 max-h-[620px]">
 
-        {chartType === "scatter" ? (
-          <D3GradientRangeChart
-            data={newData}
-            selectedBars={selectedProjects}
-            unit={unitsOfMeasure[type] || ""}
-            totalProjects={managedData.length || newData.length}
-            minData={minData}
-            maxData={maxData}
-            showBaseline={type !== "material"}
-            showTop5Line={type !== "material"}
-            showProcelScale
-            showMaxCurve={type !== "material"}
-            showMinCurve={type !== "material"}
-            showMidCurve={type !== "material"}
-            showProjectName={showProjectName}
-            variant={type === "material" ? "cumulative" : "range"}
-            xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
-            yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
-          />
-        ) : (
-          <D3GradientRangeLineChart
-            data={newData}
-            selectedBars={selectedProjects}
-            unit={type}
-            showProjectName={showProjectName}
-          />
-        )}
+            {chartType === "scatter" ? (
+              <D3GradientRangeChart
+                data={newData}
+                selectedBars={selectedProjects}
+                unit={unitsOfMeasure[type] || ""}
+                totalProjects={managedData.length || newData.length}
+                minData={minData}
+                maxData={maxData}
+                showBaseline={type !== "material"}
+                showTop5Line={type !== "material"}
+                showProcelScale
+                showMaxCurve={type !== "material"}
+                showMinCurve={type !== "material"}
+                showMidCurve={type !== "material"}
+                showProjectName={showProjectName}
+                variant={type === "material" ? "cumulative" : "range"}
+                xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
+                yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
+              />
+            ) : (
+              <D3GradientRangeLineChart
+                data={newData}
+                selectedBars={selectedProjects}
+                unit={type}
+                showProjectName={showProjectName}
+              />
+            )}
+          </div>
+        </div>
+
       </div>
     </>
   );
