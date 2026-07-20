@@ -272,12 +272,13 @@ func (m UnitModel) GetUnitTotalArea(unitID uuid.UUID) (float64, error) {
 func (m UnitModel) getFloorsByUnitID(unitID uuid.UUID) ([]Floor, error) {
 	query := `
 		SELECT f.id, f.unit_id, f.floor_group, f.category, f.area, f.height, f.index,
-		       ftm.technology, ftm.co2_min, ftm.co2_max, ftm.energy_min, ftm.energy_max
+		       ftm.technology, ftm.co2_min, ftm.co2_max, ftm.energy_min, ftm.energy_max, ftm.material
 		FROM floor f
 		LEFT JOIN (
 			SELECT mtc.target_id as floor_id, m.type as technology, 
 			       SUM(mtc.co2_min) as co2_min, SUM(mtc.co2_max) as co2_max, 
-			       SUM(mtc.energy_min) as energy_min, SUM(mtc.energy_max) as energy_max
+			       SUM(mtc.energy_min) as energy_min, SUM(mtc.energy_max) as energy_max,
+			       SUM(mtc.material) as material
 			FROM module_target_consumption mtc
 			INNER JOIN module m ON mtc.module_id = m.id
 			INNER JOIN options opt ON mtc.option_id = opt.id AND mtc.role_id = opt.role_id
@@ -305,11 +306,11 @@ func (m UnitModel) getFloorsByUnitID(unitID uuid.UUID) ([]Floor, error) {
 		var area, height float64
 		var index int
 		var tech sql.NullString
-		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+		var co2Min, co2Max, energyMin, energyMax, material sql.NullFloat64
 
 		err := rows.Scan(
 			&floorID, &floorUnitID, &floorGroup, &category, &area, &height, &index,
-			&tech, &co2Min, &co2Max, &energyMin, &energyMax,
+			&tech, &co2Min, &co2Max, &energyMin, &energyMax, &material,
 		)
 		if err != nil {
 			return nil, err
@@ -338,6 +339,7 @@ func (m UnitModel) getFloorsByUnitID(unitID uuid.UUID) ([]Floor, error) {
 			*cons.CO2Max += co2Max.Float64
 			*cons.EnergyMin += energyMin.Float64
 			*cons.EnergyMax += energyMax.Float64
+			*cons.Material += material.Float64
 		}
 	}
 
