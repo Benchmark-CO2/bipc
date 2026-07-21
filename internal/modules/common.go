@@ -425,7 +425,7 @@ func removeKeys(moduleMap map[string]any, keys ...string) {
 }
 
 func applyV1LegacyResponse(moduleMap map[string]any) {
-	removeKeys(moduleMap, "concrete", "steel")
+	removeKeys(moduleMap, "concrete", "steel", "floor_indexes")
 	removePositionFromLegacySteelItems(moduleMap)
 }
 

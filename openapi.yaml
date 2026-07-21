@@ -14,11 +14,17 @@ tags:
   - name: Units
   - name: Options
   - name: Modules
-    description: endpoints that still on v1 and didn't change to v2
+    description: |
+      Endpoints de módulos exclusivos da v1, sem equivalente na v2.
+      Inclui exclusão e duplicação de módulos.
   - name: Modules v1
-    description: Deprecated version of endpoints. Use version 2 to create, read or update modules
+    description: |
+      Endpoints legados de criação, leitura e atualização de módulos.
+      Mantidos para compatibilidade. Prefira a versão v2.
   - name: Modules v2
-    description: Up to date endpoints to create, read and update modules
+    description: |
+      Endpoints atuais para criar, ler e atualizar módulos.
+      Suportam posicionamento explícito (concrete/steel/form), floor_index em batch e retornam floor_indexes nas leituras.
 servers:
   - url: https://app.bipc.org.br
 
@@ -1354,7 +1360,14 @@ paths:
     post:
       operationId: createModule
       summary: Create a new module for a unit option
-      description: Compatibility endpoint. v1 accepts only legacy grouped fields (concrete_* and legacy form fields). v1 does not support stair position in structural modules. Structural modules also accept optional beam_number and slab_number fields. For foundation modules, unit_id may be omitted and will be automatically inferred from the unitID path parameter. The same endpoint also accepts batch creation when payload root contains modules [] with v1 module items.
+      description: |
+        Compatibility endpoint. v1 accepts only legacy grouped fields (concrete_* and legacy form fields).
+        v1 does not support stair position in structural modules. Structural modules also accept optional
+        beam_number and slab_number fields. For foundation modules, unit_id may be omitted and will be
+        automatically inferred from the unitID path parameter. The same endpoint also accepts batch
+        creation when payload root contains modules [] with v1 module items.
+
+        Supports single creation ({module: ...}) or batch creation ({modules: [...]}).
       tags:
         - Modules v1
       parameters:
@@ -1364,18 +1377,21 @@ paths:
           schema:
             type: string
             format: uuid
+          description: The ID of the project containing the unit
         - name: unitID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the unit containing the option
         - name: optionID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the option containing the module
       requestBody:
         required: true
         content:
@@ -1462,7 +1478,8 @@ paths:
     get:
       operationId: readModule
       summary: Get a module by ID
-      description: Compatibility endpoint. All modules are returned in v1 legacy shape. Aggregated v2-only fields are omitted in v1 responses.
+      description: |
+        Compatibility endpoint. All modules are returned in v1 legacy shape. Aggregated v2-only fields are omitted in v1 responses.
       tags:
         - Modules v1
       parameters:
@@ -1472,24 +1489,28 @@ paths:
           schema:
             type: string
             format: uuid
+          description: The ID of the project containing the unit
         - name: unitID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the unit containing the option
         - name: optionID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the option containing the module
         - name: moduleID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the module
       responses:
         "200":
           description: A single module
@@ -1500,6 +1521,9 @@ paths:
     delete:
       operationId: deleteModule
       summary: Delete a module
+      description: |
+        Deletes a module and its associated target consumptions.
+        This endpoint exists only in v1 and has no v2 equivalent.
       tags:
         - Modules
       parameters:
@@ -1509,31 +1533,40 @@ paths:
           schema:
             type: string
             format: uuid
+          description: The ID of the project containing the unit
         - name: unitID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the unit containing the option
         - name: optionID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the option containing the module
         - name: moduleID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the module
       responses:
         "200":
           description: Successfully deleted
     patch:
       operationId: updateModule
       summary: Update a module
-      description: Compatibility endpoint. For beam_column, concrete_wall, and structural_masonry, v1 accepts only legacy grouped fields (concrete_* and legacy form fields). v1 does not support stair position in structural modules. Structural modules also accept optional beam_number and slab_number fields. For foundation modules, unit_id may be omitted and will be automatically inferred from the unitID path parameter.
+      description: |
+        Compatibility endpoint. For beam_column, concrete_wall, and structural_masonry, v1 accepts only
+        legacy grouped fields (concrete_* and legacy form fields). v1 does not support stair position in
+        structural modules. Structural modules also accept optional beam_number and slab_number fields.
+        For foundation modules, unit_id may be omitted and will be automatically inferred from the unitID
+        path parameter.
       tags:
         - Modules v1
       parameters:
@@ -1543,30 +1576,34 @@ paths:
           schema:
             type: string
             format: uuid
+          description: The ID of the project containing the unit
         - name: unitID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the unit containing the option
         - name: optionID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the option containing the module
         - name: moduleID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the module
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: "#/components/schemas/ModuleCreateRequestV1"
+             schema:
+               $ref: "#/components/schemas/ModuleUpdateRequestV1"
       responses:
         "200":
           description: module successfully updated      
@@ -1575,7 +1612,17 @@ paths:
     post:
       operationId: createModuleV2
       summary: Create a new module for a unit option
-      description: Preferred endpoint for module creation. Structural modules must use aggregated concrete/steel/form arrays. Legacy grouped fields and legacy root form fields are not accepted. Structural modules also accept optional beam_number and slab_number fields. Use floor_index only in batch payload items and only as an alternative to floor_ids (never send both in the same item). For foundation modules, unit_id may be omitted and will be automatically inferred from the unitID path parameter. The same endpoint also accepts batch creation when payload root contains modules [] with v2 module items.
+      description: |
+        Preferred endpoint for module creation. Structural modules must use aggregated concrete/steel/form arrays.
+        Legacy grouped fields and legacy root form fields are not accepted. Structural modules also accept optional
+        beam_number and slab_number fields. Use floor_index only in batch payload items and only as an alternative
+        to floor_ids (never send both in the same item). Read responses return floor_indexes for structural modules. For foundation modules, unit_id may be omitted and will be
+        automatically inferred from the unitID path parameter. The same endpoint also accepts batch creation
+        when payload root contains modules [] with v2 module items.
+
+        Supports single creation ({module: ...}) or batch creation ({modules: [...]}).
+        When 2 or more modules are sent, the operation uses a database transaction (30s timeout)
+        ensuring all-or-nothing persistence.
       tags:
         - Modules v2
       parameters:
@@ -1585,18 +1632,21 @@ paths:
           schema:
             type: string
             format: uuid
+          description: The ID of the project containing the unit
         - name: unitID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the unit containing the option
         - name: optionID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the option containing the module
       requestBody:
         required: true
         content:
@@ -1663,7 +1713,9 @@ paths:
     get:
       operationId: readModuleV2
       summary: Get a module by ID
-      description: Preferred endpoint for reads. Returns v2 response shape only, without v1 legacy grouped fields.
+      description: |
+        Preferred endpoint for reads. Returns v2 response shape only.
+        Note: floor_indexes is returned in v2 read responses for structural modules; floor_index (singular) is never returned.
       tags:
         - Modules v2
       parameters:
@@ -1673,24 +1725,28 @@ paths:
           schema:
             type: string
             format: uuid
+          description: The ID of the project containing the unit
         - name: unitID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the unit containing the option
         - name: optionID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the option containing the module
         - name: moduleID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the module
       responses:
         "200":
           description: A single module
@@ -1704,7 +1760,10 @@ paths:
     patch:
       operationId: updateModuleV2
       summary: Update a module
-      description: Preferred endpoint for updates. Structural modules must use aggregated concrete/steel/form arrays with explicit position per item and may include optional beam_number and slab_number fields. For foundation modules, unit_id may be omitted and will be automatically inferred from the unitID path parameter.
+      description: |
+        Preferred endpoint for updates. Structural modules must use aggregated concrete/steel/form arrays with
+        explicit position per item and may include optional beam_number and slab_number fields. For foundation
+        modules, unit_id may be omitted and will be automatically inferred from the unitID path parameter.
       tags:
         - Modules v2
       parameters:
@@ -1714,30 +1773,34 @@ paths:
           schema:
             type: string
             format: uuid
+          description: The ID of the project containing the unit
         - name: unitID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the unit containing the option
         - name: optionID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the option containing the module
         - name: moduleID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the module
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              $ref: "#/components/schemas/ModuleCreateRequestV2"
+             schema:
+               $ref: "#/components/schemas/ModuleUpdateRequestV2"
             examples:
               beam_column_v2:
                 $ref: "./openapi-modules-schemas.yaml#/components/examples/ModuleCreateBeamColumnV2"
@@ -1763,7 +1826,11 @@ paths:
     post:
       operationId: duplicateModule
       summary: Duplicate an existing module
-      description: Creates a copy of an existing module with the same data but a new ID. The duplicated module will be associated with the specified option.
+      description: |
+        Creates a copy of an existing module with the same data but a new ID.
+        The duplicated module is associated with the specified option.
+        This endpoint exists only in v1 and has no v2 equivalent.
+        Returns the duplicated module in raw data format (no version conversion).
       tags:
         - Modules
       parameters:
@@ -1773,12 +1840,14 @@ paths:
           schema:
             type: string
             format: uuid
+          description: The ID of the project containing the unit
         - name: unitID
           in: path
           required: true
           schema:
             type: string
             format: uuid
+          description: The ID of the unit containing the option
         - name: optionID
           in: path
           required: true
@@ -2328,10 +2397,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ModulePayloadV2"
-      required:
+       required:
         - modules
-    ModuleCreateRequest:
-      $ref: "./openapi-modules-schemas.yaml#/components/schemas/ModuleCreateRequest"
     BeamColumnDataV1:
       $ref: "./openapi-modules-schemas.yaml#/components/schemas/BeamColumnDataV1"
     BeamColumnDataV2:

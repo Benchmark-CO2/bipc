@@ -28,6 +28,7 @@ type Module struct {
 	RelativeEnergyMax *float64               `json:"relative_energy_max,omitempty"`
 	Outdated          bool                   `json:"outdated"`
 	FloorIDs          []uuid.UUID            `json:"floor_ids"`
+	FloorIndexes      []int                  `json:"-"`
 	UnitID            *uuid.UUID             `json:"unit_id,omitempty"`
 	CreatedAt         time.Time              `json:"created_at"`
 	UpdatedAt         time.Time              `json:"updated_at"`
@@ -354,6 +355,31 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 		floorIDs = append(floorIDs, floorID)
 	}
 	module.FloorIDs = floorIDs
+
+	if len(floorIDs) > 0 {
+		floorIndexRows, err := m.DB.QueryContext(ctx, `
+			SELECT id, "index" FROM floor WHERE id = ANY($1)`, pq.Array(floorIDs))
+		if err != nil {
+			return nil, err
+		}
+		defer floorIndexRows.Close()
+
+		floorIndices := make([]int, 0, len(floorIDs))
+		for floorIndexRows.Next() {
+			var floorID uuid.UUID
+			var floorIndex int
+			if err := floorIndexRows.Scan(&floorID, &floorIndex); err != nil {
+				return nil, err
+			}
+			floorIndices = append(floorIndices, floorIndex)
+		}
+
+		if err := floorIndexRows.Err(); err != nil {
+			return nil, err
+		}
+
+		module.FloorIndexes = floorIndices
+	}
 
 	var unitID uuid.UUID
 	err = m.DB.QueryRowContext(ctx, `

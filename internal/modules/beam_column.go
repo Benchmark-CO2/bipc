@@ -40,6 +40,7 @@ type BeamColumn struct {
 	AvgBeamSpan  *float64    `json:"avg_beam_span,omitempty"`
 	AvgSlabSpan  *float64    `json:"avg_slab_span,omitempty"`
 	FloorIDs     []uuid.UUID `json:"floor_ids"`
+	FloorIndexes []int       `json:"floor_indexes,omitempty"`
 }
 
 func (b *BeamColumn) GetType() string { return b.Type }
@@ -313,5 +314,6 @@ func (b *BeamColumn) fromDataModule(d *data.Module) Module {
 		AvgBeamSpan:     extractFloat64Pointer(d.Data, "avg_beam_span"),
 		AvgSlabSpan:     extractFloat64Pointer(d.Data, "avg_slab_span"),
 		FloorIDs:        d.FloorIDs,
+		FloorIndexes:    d.FloorIndexes,
 	}
 }

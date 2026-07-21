@@ -69,6 +69,7 @@ type StructuralMasonry struct {
 	Masonry MasonryElement `json:"masonry"`
 
 	FloorIDs []uuid.UUID `json:"floor_ids"`
+	FloorIndexes []int `json:"floor_indexes,omitempty"`
 }
 
 func (s *StructuralMasonry) GetType() string { return s.Type }
@@ -572,5 +573,6 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 		SlabNumber:      extractIntPointer(d.Data, "slab_number"),
 		Masonry:         masonry,
 		FloorIDs:        d.FloorIDs,
+		FloorIndexes:    d.FloorIndexes,
 	}
 }
