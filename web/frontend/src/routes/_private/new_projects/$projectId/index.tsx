@@ -4,6 +4,7 @@ import {
   CollaboratorsView,
   DisciplinesView,
   DrawerFormUnit,
+  DrawerIFCImport,
   ProjectView,
 } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -125,9 +126,17 @@ function RouteComponent() {
         />
         {selectedTab === t.projectView.tabProject && (
           <>
-            <Button variant="outline-bipc" size="icon-lg" disabled>
-              <Upload />
-            </Button>
+            <DrawerIFCImport
+              mode="project"
+              projectId={projectId}
+              triggerComponent={
+                <SimpleTooltip content={t.common.ifcImport} side="bottom">
+                  <Button variant="outline-bipc" size="icon-lg">
+                    <Upload />
+                  </Button>
+                </SimpleTooltip>
+              }
+            />
             {hasPermission("create:unit") && (
               <DrawerFormUnit
                 triggerComponent={
