@@ -27,6 +27,7 @@ interface SteelMaterialListProps {
   form: UseFormReturn<any>;
   name: string;
   allowedMaterials?: MaterialKey[];
+  minItems?: number;
 }
 
 interface SteelMaterialItemProps {
@@ -273,6 +274,7 @@ const SteelMaterialList = ({
   form,
   name,
   allowedMaterials = ["rebar", "other"],
+  minItems = 1,
 }: SteelMaterialListProps) => {
   const { t } = useTranslation();
   const { fields, append, remove } = useFieldArray({
@@ -353,7 +355,7 @@ const SteelMaterialList = ({
             resistanceOptions={resistanceOptions}
             otherCombinations={otherCombinations}
             onRemove={() => remove(index)}
-            canRemove={fields.length > 1}
+            canRemove={fields.length > minItems}
           />
         );
       })}
