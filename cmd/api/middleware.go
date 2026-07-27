@@ -441,7 +441,7 @@ func (app *application) requireOptionRoleAssociation(next http.HandlerFunc) http
 		if err != nil {
 			switch {
 			case errors.Is(err, data.ErrRecordNotFound):
-				app.notFoundResponse(w, r)
+				app.resourceNotFoundResponse(w, r, "option")
 			default:
 				app.serverErrorResponse(w, r, err)
 			}
