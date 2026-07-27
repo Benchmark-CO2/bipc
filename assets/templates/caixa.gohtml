@@ -1,0 +1,619 @@
+{{define "report"}}
+<html>
+<head>
+	<meta charset="utf-8">
+	<style>{{.FontFaceCSS}}</style>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/d3-regression@2.2.0/dist/d3-regression.min.js"></script>
+
+	<style>
+		* {
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: 'Roboto Flex';
+		}
+
+		h1 {
+			color: #187B8B;
+			font-feature-settings: 'calt' off;
+			font-family: "Roboto Flex";
+			font-size: 18px;
+			font-style: normal;
+			font-weight: 600;
+			line-height: 18px;
+			letter-spacing: -0.18px;
+			margin-top: 20px;
+		}
+
+		h2 {
+			color: #187B8B;
+			font-feature-settings: 'calt' off;
+			font-family: "Roboto Flex";
+			font-size: 12px;
+			font-style: normal;
+			font-weight: 600;
+			line-height: 12px;
+			letter-spacing: -0.12px;
+		}
+
+		h3 {
+			color: #121F21;
+			font-feature-settings: 'calt' off;
+			font-family: "Roboto Flex";
+			font-size: 9.5px;
+			font-style: normal;
+			font-weight: 600;
+			line-height: 12px;
+			letter-spacing: -0.09px;
+		}
+
+		.text {
+			color: #000;
+			font-feature-settings: 'calt' off;
+			font-family: "Roboto Flex";
+			font-size: 7px;
+			font-style: normal;
+			font-weight: 400;
+			line-height: 7px;
+			letter-spacing: -0.07px;
+		}
+
+		.input {
+			display: flex;
+			width: var(--input-width, 90px);
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 1px;
+		}
+
+		.label {
+			min-width: 30px;
+			align-self: stretch;
+			color: #71717A;
+			font-feature-settings: 'calt' off;
+			font-family: "Roboto Flex";
+			font-size: 7px;
+			font-style: normal;
+			font-weight: 400;
+			line-height: 7.5px; /* 125% */
+			letter-spacing: -0.06px;
+		}
+
+		.input-box {
+			display: flex;
+			min-width: 30px;
+			min-height: 18px;
+			padding: 4px;
+			align-items: center;
+			gap: 4px;
+			align-self: stretch;
+			border: 1px solid #E4E4E7;
+			background: #FFF;
+		}
+
+		.input-text {
+			color: #121F21;
+			font-feature-settings: 'calt' off;
+			font-family: "Roboto Flex";
+			font-size: 7px;
+			font-style: normal;
+			font-weight: 400;
+			letter-spacing: -0.07px;
+		}
+
+		.bigNumber {
+			color: #187B8B;
+			font-feature-settings: 'calt' off;
+			font-family: "Roboto Flex";
+			font-size: 24px;
+			font-style: normal;
+			font-weight: 700;
+			line-height: normal;
+			letter-spacing: -0.24px;
+		}
+
+		/* chart */
+
+		#chart-container {
+    		max-width: 600px;
+		}
+		.legend {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 24px;
+			margin-top: 14px;
+			padding-top: 14px;
+			border-top: 1px solid #e5e5e5;
+		}
+		.legend-item {
+			display: flex;
+			align-items: center;
+
+			gap: 6px;
+			
+			color: #121F21;
+			font-feature-settings: 'calt' off;
+			font-family: "Roboto Flex";
+			font-size: 7px;
+			font-style: normal;
+			font-weight: 700;
+			letter-spacing: -0.06px;
+		}
+		.legend-dot {
+			width: 9px;
+			height: 9px;
+			border-radius: 50%;
+			display: inline-block;
+		}
+		.segment-label {
+			fill: #ffffff;
+			font-feature-settings: 'calt' off;
+			font-family: "Roboto Flex";
+			font-size: 8px;
+			font-style: normal;
+			font-weight: 700;
+			letter-spacing: -0.08px;
+		}
+	</style>
+</head>
+<body>
+	<h1>Dados do projeto</h1>
+	<p class="text">Informações fundamentais e características de identificação do projeto, incluindo localização, dimensões principais e fase do projeto.</p>
+
+	<div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 7.5px;">
+		<div class="input" style="--input-width: 95px;">
+			<div class="label">SIOPI</div>
+			<div class="input-box">
+				<div class="input-text">{{.ReportData.Siopi}}</div>
+			</div>
+		</div>
+
+		<div class="input" style="--input-width: 105px;">
+			<div class="label">Identificador do projeto (APF)</div>
+			<div class="input-box">
+				<div class="input-text">{{.ReportData.Apf}}</div>
+			</div>
+		</div>
+	</div>
+
+	<div style="display: flex;align-items: flex-start; align-content: flex-start; gap: 7.5px 15px; align-self: stretch; flex-wrap: wrap;">
+		<div class="input" style="--input-width: 150px;">
+			<div class="label">Nome do projeto</div>
+			<div class="input-box">
+				<div class="input-text">{{.ReportData.Name}}</div>
+			</div>
+		</div>
+
+		<div class="input" style="--input-width: 50px;">
+			<div class="label">Tipo do edifício</div>
+			<div class="input-box">
+				<div class="input-text">Torre</div>
+			</div>
+		</div>
+
+		<div class="input" style="--input-width: 43px;">
+			<div class="label">Tipo do uso</div>
+			<div class="input-box">
+				<div class="input-text"></div>
+			</div>
+		</div>
+
+		<div class="input" style="--input-width: 60px;">
+			<div class="label">Fase do projeto</div>
+			<div class="input-box">
+				<div class="input-text"></div>
+			</div>
+		</div>
+
+		<div class="input" style="--input-width: 65px;">
+			<div class="label">Número de UH total</div>
+			<div class="input-box">
+				<div class="input-text"></div>
+			</div>
+		</div>
+
+		<div class="input" style="--input-width: 50px;">
+			<div class="label">Número de UC</div>
+			<div class="input-box">
+				<div class="input-text"></div>
+			</div>
+		</div>
+
+		<div class="input" style="--input-width: 65px;">
+			<div class="label">Área const. UC (m²)</div>
+			<div class="input-box">
+				<div class="input-text"></div>
+			</div>
+		</div>
+
+		<div class="input" style="--input-width: 70px;">
+			<div class="label">Área const. total (m²)</div>
+			<div class="input-box">
+				<div class="input-text"></div>
+			</div>
+		</div>
+
+		<div class="input" style="--input-width: 150px;">
+			<div class="label">Rua / Avenida</div>
+			<div class="input-box">
+				<div class="input-text"></div>
+			</div>
+		</div>
+
+		<div class="input" style="--input-width: 50px;">
+			<div class="label">CEP</div>
+			<div class="input-box">
+				<div class="input-text"></div>
+			</div>
+		</div>
+
+		<div class="input" style="--input-width: 40px;">
+			<div class="label">Número</div>
+			<div class="input-box">
+				<div class="input-text"></div>
+			</div>
+		</div>
+
+		<div class="input" style="--input-width: 150px;">
+			<div class="label">Bairro</div>
+			<div class="input-box">
+				<div class="input-text"></div>
+			</div>
+		</div>
+
+		<div class="input" style="--input-width: 150px;">
+			<div class="label">Cidade</div>
+			<div class="input-box">
+				<div class="input-text"></div>
+			</div>
+		</div>
+
+		<div class="input" style="--input-width: 30px;">
+			<div class="label">Estado</div>
+			<div class="input-box">
+				<div class="input-text"></div>
+			</div>
+		</div>
+	</div>
+
+	<h1>Percentual de rastreabilidade dos dados</h1>
+
+	<div style="display: flex; align-items: flex-start; gap: 5px; align-self: stretch;">
+		<div id="chart-container">
+			<svg id="chart"></svg>
+			<div class="legend" id="legend"></div>
+		</div>
+		<div style="display: flex; flex-direction: column; align-items: center; gap: 2px; padding-left: 15px; margin-left: 15px; border-left: 1px solid #E4E4E7;">
+			<div class="bigNumber">{{.ReportData.SourcesTotal}}%</div>
+			<div class="text" style="color: #187B8B">de rastreabilidade</div>
+		</div>
+	</div>
+
+	<h1>Resumo dos resultados do Benchmark</h1>
+	
+	
+	<script>
+		window.chartsReady = false;
+
+		const data = {{.JSONData}};
+
+		function renderChartRastreabilidade(data) {
+			const width = 600;
+			const barHeight = 12;
+			const height = barHeight;
+			
+			const svg = d3.select("#chart")
+			.attr("width", width)
+			.attr("height", height)
+			.attr("viewBox", `0 0 ${width} ${height}`);
+			
+			const total = d3.sum(data.sources, d => d.value);
+			const xScale = d3.scaleLinear()
+			.domain([0, total])
+			.range([0, width]);
+			
+			let cumulative = 0;
+			const segments = data.sources.map(d => {
+			const seg = {
+				...d,
+				x0: cumulative,
+				x1: cumulative + d.value
+			};
+			cumulative += d.value;
+			return seg;
+			});
+			
+			const gap = 3; // small gap between segments
+			
+			const groups = svg.selectAll("g.segment")
+			.data(segments)
+			.enter()
+			.append("g")
+			.attr("class", "segment");
+			
+			groups.append("rect")
+			.attr("x", d => xScale(d.x0) + (d.x0 === 0 ? 0 : gap / 2))
+			.attr("y", 0)
+			.attr("width", d => Math.max(0, xScale(d.x1) - xScale(d.x0) - (d.x0 === 0 ? gap / 2 : gap)))
+			.attr("height", barHeight)
+			.attr("rx", 3)
+			.attr("fill", d => d.color);
+			
+			groups.append("text")
+			.attr("class", "segment-label")
+			.attr("x", d => xScale(d.x0) + (xScale(d.x1) - xScale(d.x0)) / 2)
+			.attr("y", barHeight / 2)
+			.attr("text-anchor", "middle")
+			.attr("dominant-baseline", "central")
+			.text(d => `${d.value}%`);
+			
+			// Legend
+			const legend = d3.select("#legend");
+			const legendItems = legend.selectAll(".legend-item")
+			.data(data.sources)
+			.enter()
+			.append("div")
+			.attr("class", "legend-item");
+			
+			legendItems.append("span")
+			.attr("class", "legend-dot")
+			.style("background-color", d => d.color);
+			
+			legendItems.append("span")
+			.text(d => `${d.value}% ${d.label}`);
+
+		}
+		renderChartRastreabilidade(data);
+
+		window.chartsReady = true;
+	</script>
+</body>
+</html>
+{{ end }}
+
+{{define "cover"}}
+<html>
+<head>
+	<meta charset="utf-8">
+	<style>{{.FontFaceCSS}}</style>
+	<style>
+		@page :first {
+			size: A4;
+			margin: 0;
+  		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		html, body {
+			margin: 0;
+			padding: 0;
+			width: 210mm;
+			height: 297mm;
+
+			font-family: 'Roboto Flex';
+  		}
+
+		.capa {
+			width: 100%;
+			height: 100%;
+			overflow: hidden;
+		}
+
+		.capa > svg {
+			position: absolute;
+			top: 0;
+			right: 0;
+			height: 100%;
+			width: 220px;
+			z-index: 0;
+		}
+
+		.header {
+			display: flex;
+			width: 680px;
+			flex-direction: column;
+			justify-content: center;
+			align-items: flex-start;
+			margin: 30px 20px;
+		}
+
+		h1 {
+			color: #187B8B;
+			font-feature-settings: 'calt' off;
+			font-family: "Roboto Flex";
+			font-size: 18px;
+			font-style: normal;
+			font-weight: 700;
+			line-height: 18px;
+			letter-spacing: -0.18px;
+			margin: 0;
+		}
+
+		h2 {
+			color: #121F21;
+			font-feature-settings: 'calt' off;
+			font-family: "Roboto Flex";
+			font-size: 16px;
+			font-style: normal;
+			font-weight: 700;
+			line-height: 16px;
+			letter-spacing: -0.16px;
+			margin-top: 30px;
+		}
+
+		.label {
+			color: #71717A;
+			font-feature-settings: 'calt' off;
+			font-family: "Roboto Flex";
+			font-size: 8px;
+			font-style: normal;
+			font-weight: 400;
+			line-height: 8px;
+			letter-spacing: -0.08px;
+			margin-bottom: 2px;
+		}
+
+		.identifier {
+			color: #121F21;
+			font-feature-settings: 'calt' off;
+			font-family: "Roboto Flex";
+			font-size: 12px;
+			font-style: normal;
+			font-weight: 700;
+			line-height: 12px;
+			letter-spacing: -0.12px;
+		}
+
+		.validation {
+			display: flex;
+			width: 150px;
+			height: 130px;
+			padding: 5px;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			gap: 5px;
+
+			border-radius: 4px;
+			border: 1px solid #E4E4E7;
+			background: #FBFEFE;
+
+			margin-top: auto;
+		}
+
+		.validation-text {
+			color: #121F21;
+			text-align: center;
+			font-feature-settings: 'calt' off;
+			font-family: "Roboto Flex";
+			font-size: 9px;
+			font-style: normal;
+			font-weight: 400;
+			line-height: normal;
+			letter-spacing: -0.09px;
+		}
+
+		.validation-text span {
+			color: #078398;
+		}
+
+		.container {
+			width: calc(100% - 220px);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			flex-direction: column;
+			position: absolute;
+			bottom: 25px;
+		}
+
+		#date {
+			color: #187B8B;
+			font-feature-settings: 'calt' off;
+			font-family: "Roboto Flex";
+			font-size: 12px;
+			font-style: normal;
+			font-weight: 600;
+			line-height: 12px;
+			letter-spacing: -0.12px;
+			margin-top: 25px;
+		}
+	</style>
+</head>
+<body>
+	<div class="capa">
+		<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="443" height="2039" viewBox="0 0 443 2039" preserveAspectRatio="xMidYMid slice" fill="none">
+		<rect width="443" height="2039" fill="url(#pattern0_3204_7659)"/>
+		<defs>
+		<pattern id="pattern0_3204_7659" patternUnits="userSpaceOnUse" patternTransform="matrix(22.4 0 0 44.8 214.5 1012.5)" preserveAspectRatio="none" viewBox="0 0 56 112" width="1" height="1">
+		<use xlink:href="#pattern0_3204_7659_inner" transform="translate(-56 0)"/>
+		<g id="pattern0_3204_7659_inner">
+		<path d="M23.8889 19.771C23.8889 18.0003 25.3813 16.5649 27.2222 16.5649H30.5556C33.0102 16.5649 35 18.4788 35 20.8397V27.2519H28.3333C25.8787 27.2519 23.8889 25.338 23.8889 22.9771V19.771Z" fill="#63B332"/>
+		<path d="M8.33333 0H21.6667V8.01527H10.5556C9.32826 8.01527 8.33333 8.97222 8.33333 10.1527V24.8473C8.33333 26.0278 9.32826 26.9847 10.5556 26.9847H21.6667V35H8.33333C3.73096 35 0 31.4114 0 26.9847V8.01527C0 3.58856 3.73096 0 8.33333 0Z" fill="#63B332"/>
+		</g>
+		<use xlink:href="#pattern0_3204_7659_inner" transform="translate(-28 56)"/>
+		<use xlink:href="#pattern0_3204_7659_inner" transform="translate(28 56)"/>
+		</pattern></defs>
+		</svg>
+
+		<div class="header">
+			<svg width="215" height="130" viewBox="0 0 215 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+			<path d="M196.901 13.7065H214.145V0H193.575C185.112 0 178.25 6.84247 178.25 15.2823V45.3503C178.25 53.2144 184.643 59.5893 192.529 59.5893H214.145V45.9547H196.901C194.152 45.9547 191.923 43.7314 191.923 40.9901V18.6783C191.93 15.9298 194.152 13.7065 196.901 13.7065Z" fill="#53BE3B"/>
+			<path d="M91.56 14.8506V25.3626C91.56 25.4633 91.4806 25.5424 91.3796 25.5424H79.2437C76.3793 25.5424 74.0488 23.2256 74.0488 20.362V13.2605C74.0488 10.404 76.3721 8.08008 79.2437 8.08008H84.7705C88.5224 8.08008 91.56 11.1092 91.56 14.8506Z" fill="#FB522C"/>
+			<path d="M0 117.969V31.6216H30.3325C40.8377 31.6216 48.8033 33.629 54.2363 37.6438C59.6693 41.6587 62.3822 47.537 62.3822 55.2861C62.3822 59.5168 61.2927 63.2438 59.1137 66.4672C56.9347 69.6906 53.8971 72.0505 50.0154 73.5543C54.4527 74.6623 57.9521 76.8927 60.5134 80.2528C63.0676 83.6129 64.3519 87.7285 64.3519 92.5851C64.3519 100.888 61.6967 107.177 56.3864 111.443C51.076 115.71 43.5001 117.89 33.6659 117.969H0ZM17.8358 67.7983H31.0396C40.0369 67.64 44.5391 64.064 44.5391 57.0632C44.5391 53.1491 43.3991 50.3359 41.1191 48.6091C38.8391 46.8894 35.2388 46.0261 30.3253 46.0261H17.8358V67.7983ZM17.8358 80.368V103.673H33.1175C37.3167 103.673 40.5996 102.673 42.959 100.68C45.3183 98.6865 46.4944 95.9236 46.4944 92.4052C46.4944 84.4979 42.389 80.4831 34.1854 80.368H17.8358Z" fill="#3B646A"/>
+			<path d="M91.7259 31.6221H73.8828V117.97H91.7259V31.6221Z" fill="#3B646A"/>
+			<path d="M123.617 87.5418V117.962H105.774V31.6147H139.556C146.057 31.6147 151.778 32.802 156.713 35.1763C161.648 37.5507 165.444 40.9179 168.099 45.2853C170.754 49.6527 172.082 54.6245 172.082 60.2006C172.082 68.662 169.174 75.3318 163.366 80.2173C157.558 85.1027 149.52 87.5418 139.253 87.5418H123.617ZM123.617 73.1373H139.556C144.274 73.1373 147.875 72.0292 150.35 69.8132C152.824 67.5971 154.065 64.4385 154.065 60.323C154.065 56.0923 152.817 52.6746 150.321 50.0628C147.824 47.451 144.375 46.1128 139.974 46.0336H123.617V73.1373Z" fill="#3B646A"/>
+			</svg>
+
+			<h1>Relatório de Carbono Embutido de projeto</h1>
+
+			<h2>{{.ReportData.Name}}</h2>
+
+			<div class="label">SIOPI</div>
+			<div class="identifier">{{.ReportData.Siopi}}</div>
+			<div class="label" style="margin-top: 10px">Identificador do projeto</div>
+			<div class="identifier">{{.ReportData.Apf}}</div>
+		</div>
+
+		<div class="container">
+			<div class="validation">
+				<svg xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 500 500" width="60" height="60">
+					<defs>
+						<clipPath id="b">
+						<path d="M18 162h16v16H18zm0 64h16v16H18zm0 32h16v16H18zm0 32h16v16H18zm0 16h16v16H18zm16-128h16v16H34zm0 64h16v16H34zm0 16h16v16H34zm0 16h16v16H34zm16-112h16v16H50zm0 48h16v16H50zm0 16h16v16H50zm0 32h16v16H50zm0 16h16v16H50zm0 16h16v16H50zm0 16h16v16H50zm0 16h16v16H50zm16-176h16v16H66zm0 16h16v16H66zm0 32h16v16H66zm0 16h16v16H66zm0 80h16v16H66zm0 32h16v16H66zm0 16h16v16H66zm16-160h16v16H82zm0 16h16v16H82zm0 16h16v16H82zm0 16h16v16H82zm0 32h16v16H82zm0 16h16v16H82zm0 32h16v16H82zm16-160h16v16H98zm0 32h16v16H98zm0 96h16v16H98zm16-128h16v16h-16zm0 32h16v16h-16zm0 32h16v16h-16zm0 32h16v16h-16zm0 32h16v16h-16zm0 32h16v16h-16zm0 32h16v16h-16zm16-192h16v16h-16zm0 32h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 48h16v16h-16zm16-272h16v16h-16zm0 16h16v16h-16zm0 64h16v16h-16zm0 48h16v16h-16zm0 64h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 64h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm16-400h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 48h16v16h-16zm0 64h16v16h-16zm0 16h16v16h-16zm0 64h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm16-432h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 176h16v16h-16zm0 32h16v16h-16zm0 32h16v16h-16zm0 80h16v16h-16zm16-448h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 160h16v16h-16zm0 48h16v16h-16zm16-400h16v16h-16zm0 48h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 48h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 48h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm0 80h16v16h-16zm16-432h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 32h16v16h-16zm0 112h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 48h16v16h-16zm0 48h16v16h-16zm16-448h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 64h16v16h-16zm0 48h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm16-432h16v16h-16zm0 96h16v16h-16zm0 64h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 96h16v16h-16zm0 48h16v16h-16zm0 48h16v16h-16zm16-448h16v16h-16zm0 48h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 32h16v16h-16zm0 64h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm16-320h16v16h-16zm0 16h16v16h-16zm0 80h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 48h16v16h-16zm0 32h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm0 80h16v16h-16zm16-448h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 32h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 64h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 48h16v16h-16zm0 32h16v16h-16zm0 48h16v16h-16zm16-400h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 48h16v16h-16zm0 48h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm16-448h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 48h16v16h-16zm0 32h16v16h-16zm0 32h16v16h-16zm0 32h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm16-272h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 64h16v16h-16zm0 64h16v16h-16zm0 16h16v16h-16zm0 48h16v16h-16zm16-304h16v16h-16zm0 32h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 32h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm16-288h16v16h-16zm0 64h16v16h-16zm0 64h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 64h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm16-304h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm16-304h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm16-304h16v16h-16zm0 16h16v16h-16zm0 96h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 48h16v16h-16zm0 48h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm16-320h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 32h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm16-208h16v16h-16zm0 32h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 80h16v16h-16zm0 48h16v16h-16zm0 16h16v16h-16zm0 16h16v16h-16zm0 48h16v16h-16z"/>
+						</clipPath>
+						<clipPath id="c">
+						<path d="M18 18v112h112V18zm16 16h80v80H34z" clip-rule="evenodd"/>
+						</clipPath>
+						<clipPath id="d">
+						<use xlink:href="#a"/>
+						</clipPath>
+						<clipPath id="e">
+						<path d="M482 18H370v112h112zm-16 16v80h-80V34z" clip-rule="evenodd"/>
+						</clipPath>
+						<clipPath id="f">
+						<path d="M450 50v48h-48V50z"/>
+						</clipPath>
+						<clipPath id="g">
+						<path d="M18 482h112V370H18zm16-16v-80h80v80z" clip-rule="evenodd"/>
+						</clipPath>
+						<clipPath id="h">
+						<path d="M50 450v-48h48v48z"/>
+						</clipPath>
+						<path id="a" d="M50 50h48v48H50z"/>
+					</defs>
+					<path fill="#fff" d="M0 0h500v500H0z" clip-path="url('#clip-path-background-color')"/>
+					<path d="M0 0h500v500H0z" clip-path="url('#b')"/>
+					<path d="M18 18h112v112H18z" clip-path="url('#c')"/>
+					<use xlink:href="#a" clip-path="url('#d')"/>
+					<path d="M370 18h112v112H370z" clip-path="url('#e')"/>
+					<path d="M402 50h48v48h-48z" clip-path="url('#f')"/>
+					<path d="M18 370h112v112H18z" clip-path="url('#g')"/>
+					<path d="M50 402h48v48H50z" clip-path="url('#h')"/>
+				</svg>
+				<div class="validation-text">
+					Escaneie para validar a autenticidade deste relatório, ou acesse <span>app.bipc.org.br/validar</span> e envie este arquivo.
+				</div>
+			</div>
+
+			<div id="date"></div>
+		</div>
+
+	</div>
+
+	<script>
+		const formattedDate = new Intl.DateTimeFormat("pt-BR", {
+        	dateStyle: "long",
+     	 }).format(new Date());
+
+      	document.getElementById("date").textContent = formattedDate;
+	
+	</script>
+	
+</body>
+</html>
+{{ end }}

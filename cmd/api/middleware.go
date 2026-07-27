@@ -194,7 +194,6 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 
 		if token == "" {
 			r = app.contextSetUser(r, data.AnonymousUser)
-			r = app.contextSetSource(r, SourceAPI)
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -219,11 +218,14 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 
 		r = app.contextSetUser(r, user)
 
-		source := SourceAPI
 		if scope == data.ScopeAPIKey {
-			source = SourcePlugin
+			source := r.Header.Get("X-Source")
+			if source == "" || (source != SourceTQS && source != SourceAltoQi) {
+				source = SourcePlugin
+			}
+
+			r = app.contextSetSource(r, source)
 		}
-		r = app.contextSetSource(r, source)
 
 		next.ServeHTTP(w, r)
 	})

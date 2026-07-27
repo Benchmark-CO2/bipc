@@ -68,6 +68,9 @@ dev/gotooling:
 	go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 	go install honnef.co/go/tools/cmd/staticcheck@latest
 	go install golang.org/x/vuln/cmd/govulncheck@latest
+	go install github.com/pdfcpu/pdfcpu/cmd/pdfcpu@latest
+
+## pdfcpu resize -- "form:A4" assets/pdfs/1A.pdf assets/pdfs/1A_resized.pdf
 
 ## dev/docker: pull all required Docker images for development
 .PHONY: dev/docker
