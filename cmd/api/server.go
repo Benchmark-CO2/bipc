@@ -31,6 +31,8 @@ func (app *application) serve() error {
 
 		app.logger.Info("shutdown server", "signal", s.String())
 
+		app.sse.Close()
+
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 

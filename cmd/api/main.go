@@ -55,6 +55,7 @@ type application struct {
 	models data.Models
 	mailer *mailer.Mailer
 	wg     sync.WaitGroup
+	sse    *SSEHub
 }
 
 func main() {
@@ -107,6 +108,7 @@ func main() {
 		config: cfg,
 		logger: logger,
 		models: data.NewModels(db),
+		sse:    NewSSEHub(),
 	}
 
 	err = app.backfillMissingModuleConsumptions()
