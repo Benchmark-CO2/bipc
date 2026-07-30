@@ -587,8 +587,6 @@ func validatePositionedSteel(
 			v.Check(validator.PermittedValue(string(item.Position), validPositionStrings...), prefix+".position", fmt.Sprintf("must be one of: %s", strings.Join(validPositionStrings, ", ")))
 		}
 	}
-
-	v.Check(len(steel) > 0, steelField, "must have at least one item")
 }
 
 func validatePositionedForm(

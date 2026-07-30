@@ -7,7 +7,7 @@ require (
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/lib/pq v1.10.9
 	github.com/wneessen/go-mail v0.6.2
-	golang.org/x/crypto v0.49.0
+	golang.org/x/crypto v0.54.0
 	golang.org/x/time v0.11.0
 )
 
@@ -26,6 +26,7 @@ require (
 	github.com/phpdave11/gofpdf v1.4.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	golang.org/x/image v0.37.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
+	golang.org/x/net v0.57.0 // indirect
+	golang.org/x/text v0.40.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
