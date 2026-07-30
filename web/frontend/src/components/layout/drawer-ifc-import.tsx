@@ -1,8 +1,13 @@
+import { postDisciplineFileUpload } from "@/actions/disciplines/postDisciplineFileUpload";
+import { getProjectByUUID } from "@/actions/projects/getProject";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
-import { FileUp, Upload, X } from "lucide-react";
+import { parseApiError } from "@/utils/parseApiError";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { FileUp, Loader2, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "../ui/button";
 import {
   Drawer,
@@ -41,6 +46,7 @@ export interface DrawerIFCImportProps {
   mode: IFCAccessMode;
   projectId: string;
   unitId?: string;
+  roleId?: string;
   optionId?: string;
   triggerComponent: React.ReactNode;
 }
@@ -137,14 +143,17 @@ const MOCK_UNITS_BY_FILE: Record<string, { id: string; name: string }[]> = {
 function FileTypeTabs({
   value,
   onChange,
+  availableFileTypes,
 }: {
   value: FileType;
   onChange: (v: FileType) => void;
+  availableFileTypes?: FileType[];
 }) {
   const { t } = useTranslation();
+  const fileTypes = availableFileTypes ?? (["ifc", "tqs"] as FileType[]);
   return (
     <div className="flex items-center gap-1 border border-gray-200 dark:border-gray-700 rounded-lg p-1 w-fit">
-      {(["ifc", "tqs"] as FileType[]).map((ft) => (
+      {fileTypes.map((ft) => (
         <button
           key={ft}
           type="button"
@@ -264,6 +273,9 @@ function DropZone({
 
 export default function DrawerIFCImport({
   mode,
+  projectId,
+  unitId,
+  roleId,
   triggerComponent,
 }: DrawerIFCImportProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -271,6 +283,7 @@ export default function DrawerIFCImport({
   const [software, setSoftware] = useState("");
   const [version, setVersion] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [selectedRoleId, setSelectedRoleId] = useState("");
 
   // "Already imported" section state
   const [selectedFileId, setSelectedFileId] = useState("");
@@ -279,6 +292,33 @@ export default function DrawerIFCImport({
 
   const isMobile = useIsMobile();
   const { t } = useTranslation();
+
+  const tqsRoleId = roleId ?? selectedRoleId;
+
+  const { data: projectResponse } = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: () => getProjectByUUID(projectId),
+    enabled: fileType === "tqs" && !roleId,
+  });
+
+  const availableRoles = projectResponse?.data.project.roles ?? [];
+
+  const { mutate: uploadTqsFile, isPending: isUploadingTqsFile } = useMutation({
+    mutationFn: (selectedRoleId: string) =>
+      postDisciplineFileUpload(projectId, unitId!, selectedRoleId, {
+        file: uploadFile!,
+        source: "tqs",
+      }),
+    onSuccess: () => {
+      toast.success(t.drawerIFC.importSuccess);
+      handleClose();
+    },
+    onError: (error) => {
+      toast.error(t.drawerIFC.importError, {
+        description: parseApiError(error, t),
+      });
+    },
+  });
 
   // Derived data
   const softwareOptions =
@@ -303,6 +343,7 @@ export default function DrawerIFCImport({
     setSoftware("");
     setVersion("");
     setUploadFile(null);
+    setSelectedRoleId("");
     setSelectedFileId("");
     setSelectedUnitId("");
     setSelectedTechIds([]);
@@ -312,6 +353,7 @@ export default function DrawerIFCImport({
     setFileType(ft);
     setSoftware(ft === "tqs" ? "tqs" : "");
     setVersion("");
+    setSelectedRoleId("");
   };
 
   const handleSoftwareChange = (val: string) => {
@@ -345,18 +387,14 @@ export default function DrawerIFCImport({
   };
 
   const handleImport = () => {
-    // TODO: call API to upload file and trigger import
-    console.info("[DrawerIFCImport] import", { software, version, uploadFile });
+    if (fileType === "tqs") {
+      if (!uploadFile || !unitId || !tqsRoleId) return;
+      uploadTqsFile(tqsRoleId);
+      return;
+    }
   };
 
-  const handleUseSelected = () => {
-    // TODO: call API to apply selected technologies from imported file
-    console.info("[DrawerIFCImport] use selected", {
-      selectedFileId,
-      selectedTechIds,
-      selectedUnitId,
-    });
-  };
+  const handleUseSelected = () => {};
 
   const importLabel =
     fileType === "ifc"
@@ -398,7 +436,11 @@ export default function DrawerIFCImport({
           <p className="text-xs text-muted-foreground mb-2">
             {t.drawerIFC.fileTypeLabel}
           </p>
-          <FileTypeTabs value={fileType} onChange={handleFileTypeChange} />
+          <FileTypeTabs
+            value={fileType}
+            onChange={handleFileTypeChange}
+            availableFileTypes={mode === "project" ? ["ifc"] : ["ifc", "tqs"]}
+          />
         </div>
 
         <div className="flex flex-col gap-6 overflow-y-auto px-8 pb-8">
@@ -464,6 +506,32 @@ export default function DrawerIFCImport({
                 </div>
               </div>
 
+              {fileType === "tqs" && !roleId && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm text-muted-foreground">
+                    {t.drawerIFC.selectDisciplineLabel}{" "}
+                    <span className="text-destructive">*</span>
+                  </label>
+                  <Select
+                    value={selectedRoleId}
+                    onValueChange={setSelectedRoleId}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue
+                        placeholder={t.drawerIFC.selectDisciplinePlaceholder}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableRoles.map((role) => (
+                        <SelectItem key={role.id} value={role.id}>
+                          {role.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               {/* Drop zone */}
               <DropZone
                 fileType={fileType}
@@ -484,11 +552,24 @@ export default function DrawerIFCImport({
                 <Button
                   variant="bipc"
                   size="sm"
-                  disabled={!uploadFile || !software || !version}
+                  disabled={
+                    !uploadFile ||
+                    !software ||
+                    !version ||
+                    (fileType === "tqs" && (!unitId || !tqsRoleId)) ||
+                    (fileType === "tqs" && isUploadingTqsFile)
+                  }
                   onClick={handleImport}
                   className="text-white"
                 >
-                  {t.drawerIFC.importData}
+                  {fileType === "tqs" && isUploadingTqsFile ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t.drawerIFC.importData}
+                    </span>
+                  ) : (
+                    t.drawerIFC.importData
+                  )}
                 </Button>
               </div>
             </div>

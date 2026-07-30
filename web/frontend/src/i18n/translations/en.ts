@@ -1228,6 +1228,8 @@ export const en: Translations = {
     softwarePlaceholder: "Select software",
     versionLabel: "Which version",
     versionPlaceholder: "Version",
+    selectDisciplineLabel: "Discipline",
+    selectDisciplinePlaceholder: "Select the discipline",
     dropZoneLabelIFC: "Drag your IFC file here or click to select it",
     dropZoneLabelTQS: "Drag your TQS file here or click to select it",
     dropZoneAriaIFC: "IFC file upload area",

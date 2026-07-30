@@ -1240,6 +1240,8 @@ export const ptBR = {
     softwarePlaceholder: "Selecione o software",
     versionLabel: "Qual versão",
     versionPlaceholder: "Versão",
+    selectDisciplineLabel: "Disciplina",
+    selectDisciplinePlaceholder: "Selecione a disciplina",
     dropZoneLabelIFC:
       "Arraste o seu arquivo IFC aqui ou clique para selecioná-lo",
     dropZoneLabelTQS:
