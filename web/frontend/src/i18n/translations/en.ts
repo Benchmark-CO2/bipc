@@ -20,6 +20,7 @@ export const en: Translations = {
     expand: "Expand",
     collapse: "Collapse",
     ifcImport: "Import from IFC",
+    ifcImportTqs: "Import from IFC/TQS",
   },
   errors: {
     unexpectedError: "Unexpected error. Please try again later.",

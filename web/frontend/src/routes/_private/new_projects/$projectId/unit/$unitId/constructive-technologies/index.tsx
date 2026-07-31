@@ -588,7 +588,7 @@ function RouteComponent() {
           unitId={unitId}
           roleId={roleId}
           triggerComponent={
-            <Button variant="outline-bipc">{t.common.ifcImport}</Button>
+            <Button variant="outline-bipc">{t.common.ifcImportTqs}</Button>
           }
         />
       </div>

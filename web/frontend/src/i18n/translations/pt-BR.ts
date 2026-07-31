@@ -18,6 +18,7 @@ export const ptBR = {
     expand: "Expandir",
     collapse: "Recolher",
     ifcImport: "Importar do IFC",
+    ifcImportTqs: "Importar de IFC/TQS",
   },
   errors: {
     unexpectedError: "Erro inesperado. Tente novamente mais tarde.",

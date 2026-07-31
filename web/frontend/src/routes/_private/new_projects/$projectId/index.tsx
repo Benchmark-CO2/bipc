@@ -4,7 +4,6 @@ import {
   CollaboratorsView,
   DisciplinesView,
   DrawerFormUnit,
-  DrawerIFCImport,
   ProjectView,
 } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,7 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Upload } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { useTranslation } from "@/i18n";
@@ -126,17 +125,6 @@ function RouteComponent() {
         />
         {selectedTab === t.projectView.tabProject && (
           <>
-            <DrawerIFCImport
-              mode="project"
-              projectId={projectId}
-              triggerComponent={
-                <SimpleTooltip content={t.common.ifcImport} side="bottom">
-                  <Button variant="outline-bipc" size="icon-lg">
-                    <Upload />
-                  </Button>
-                </SimpleTooltip>
-              }
-            />
             {hasPermission("create:unit") && (
               <DrawerFormUnit
                 triggerComponent={
