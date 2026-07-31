@@ -4,16 +4,31 @@ import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
+import EmissionsChart from '../charts/barChart';
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
+import Divider from '../ui/divider';
 import { FilterTabs } from "../ui/filter-tabs";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import ItemCard from "./components/ItemCard";
+import { IndicatorList } from './components/indicatorsList';
 import Legend from "./components/Legend";
-import ListItem from "./components/ListItem";
 import { useChartType } from "./hooks/useChartType";
-import { barColors, normalizeBenchmarkSeries, recalculateY } from "./utils";
+import { normalizeBenchmarkSeries, recalculateY } from "./utils";
 
+export const translateCategory: Record<string, string> = {
+  concrete_wall: "Parede de Concreto",
+  foundation: "Fundação",
+  roof: "Cobertura",
+  // Adicione outras chaves que o backend pode enviar
+};
+ export const getCategoryValue = (categoryData: any, currentType: "co2" | "energy" | "material") => {
+    if (!categoryData) return 0;
+    if (currentType === "material") return categoryData.material || 0;
+
+    const min = categoryData?.[`${currentType}_min`] || 0;
+    const max = categoryData?.[`${currentType}_max`] || 0;
+
+    return (min + max) / 2; // Usando a média geométrica
+  };
 type ProjectsSummaryProps = {
   selectedUnits: (any & {
     co: number;
@@ -25,7 +40,6 @@ type ProjectsSummaryProps = {
   data: IBenchmarkResponse;
   someSelected: boolean;
 };
-
 const UnitsSummary = ({
   units,
   data,
@@ -33,19 +47,28 @@ const UnitsSummary = ({
   project,
   someSelected,
 }: ProjectsSummaryProps) => {
-  const [type, setType] = useState<"co2" | "energy" | "material">("co2");
-  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const { chartType, ChartSelector } = useChartType();
   const { t } = useTranslation();
-  const filteredUnits = units.filter((el) => !!el.consumptions);
+
+  // 1. Movemos o filtro para cima (idealmente com useMemo para evitar recálculos)
+  const filteredUnits = useMemo(
+    () => units.filter((el) => !!el.consumptions),
+    [units]
+  );
+
+  const [type, setType] = useState<"co2" | "energy" | "material">("co2");
+
+  // 2. Inicializamos o estado com todas as unidades já selecionadas
+  const [selectedProjects, setSelectedProjects] = useState<string[]>(
+    filteredUnits.map((u) => u.id)
+  );
 
   const fakeUnits = normalizeBenchmarkSeries(
     data.benchmark?.[type as "co2" | "energy" | "material"],
-  )
-    .map((el) => ({
-      ...el,
-      label: selectedUnits.find((f) => f.id === el.id)?.name || "",
-    }));
+  ).map((el) => ({
+    ...el,
+    label: selectedUnits.find((f) => f.id === el.id)?.name || "",
+  }));
 
   const newItems = filteredUnits.map((el) => {
     return {
@@ -71,7 +94,8 @@ const UnitsSummary = ({
       },
     };
   });
-  const { isExpanded } = useSummary();
+
+  const { isExpanded, isOpen } = useSummary();
 
   const stackedData = useMemo(
     () =>
@@ -81,8 +105,7 @@ const UnitsSummary = ({
         co2: (el.co2.max + el.co2.min) / 2,
         energy: (el.energy.max + el.energy.min) / 2,
         material: el.material?.value
-      }))
-    ,
+      })),
     [newItems, type],
   );
 
@@ -94,7 +117,11 @@ const UnitsSummary = ({
   }, [selectedUnits, someSelected]);
 
   useEffect(() => {
-    if (!someSelected) return;
+    if (!someSelected) {
+      // 3. Se nada foi marcado lá fora, mantemos todos selecionados por padrão aqui dentro
+      setSelectedProjects(filteredUnits.map((u) => u.id));
+      return;
+    }
     if (previousProjects.length < selectedUnits.length) {
       const diff = filteredUnits.filter(
         (p) => !previousProjects.includes(p.id),
@@ -110,8 +137,7 @@ const UnitsSummary = ({
         setSelectedProjects((prev) => prev.filter((p) => !diff.includes(p)));
       }
     }
-  }, [previousProjects, selectedUnits, someSelected]);
-
+  }, [previousProjects, selectedUnits, someSelected, filteredUnits]);
   const handleAddProject = (projectId: string) => {
     if (selectedProjects.includes(projectId)) {
       setSelectedProjects(selectedProjects.filter((id) => id !== projectId));
@@ -119,8 +145,9 @@ const UnitsSummary = ({
       setSelectedProjects([...selectedProjects, projectId]);
     }
   };
-  const [selectedSubTab, setSelectedSubTab] =
-    useState<string>(t.summary.buildings);
+
+  const [selectedSubTab, setSelectedSubTab] = useState<string>(t.summary.buildings);
+
   const selectAll = () => {
     if (selectedProjects.length === filteredUnits.length) {
       setSelectedProjects([]);
@@ -158,167 +185,336 @@ const UnitsSummary = ({
 
   const newDataItems = [...fakeUnits, ...(type !== "material" ? newItems.map((item) => item[type]) : [])];
 
-  const minData = useMemo(() => newDataItems.map((d) => d.min), [newDataItems]);
-  const maxData = useMemo(() => newDataItems.map((d) => d.max), [newDataItems]);
+  const minData = useMemo(() => newDataItems.map((d) => d.min ?? d.value ?? 0), [newDataItems]);
+  const maxData = useMemo(() => newDataItems.map((d) => d.max ?? d.value ?? 0), [newDataItems]);
   const minValue = minData.length ? Math.min(...minData) : 0;
   const maxValue = maxData.length ? Math.max(...maxData) : 0;
+
   const newData = recalculateY(
     newDataItems,
     minValue,
     maxValue,
   );
 
-  console.log('newData', newData);
+  console.log('filteredUnits', filteredUnits);
+  // ── DADOS DO GRÁFICO DE BARRAS ──────────────────────────────────────────────
+  // Substitua as propriedades 'parede', 'fundacao', 'cobertura' pelas 
+  // propriedades reais que você tem dentro de el.consumptions
+  // const chartData = filteredUnits.map((el) => ({
+  //   name: el.name,
+  //   parede: Math.floor(Math.random() * 20) + 10, // MOCK: substitua pelo valor real
+  //   fundacao: Math.floor(Math.random() * 10) + 5, // MOCK: substitua pelo valor real
+  //   cobertura: Math.floor(Math.random() * 5) + 2 // MOCK: substitua pelo valor real
+  // }));
+
+  const chartData = filteredUnits.map((el) => {
+    const dataRow: Record<string, any> = { name: el.name || "Unidade" };
+
+    // Pega o objeto de consumos da unidade
+    const cons = el.consumptions || {};
+
+    Object.entries(cons).forEach(([key, values]) => {
+      if (key !== "total") {
+        const translatedKey = translateCategory[key] || key; 
+      dataRow[translatedKey] = getCategoryValue(values, type);
+      }
+    });
+
+    return dataRow;
+  });
+
+  // ── Lógica de Cálculo de P, C, V, R ─────────────────────────────────────────
+  const pcvMetrics = useMemo(() => {
+    if (!newData || newData.length === 0) {
+      return { P: 0, C: 0, V: 0, R: 0, hasSelection: false };
+    }
+
+    const sortedMin = [...newData].map((d) => d.min ?? d.value ?? 0).sort((a, b) => a - b);
+    const sortedMax = [...newData].map((d) => d.max ?? d.value ?? 0).sort((a, b) => a - b);
+
+    const p5Index = Math.floor(sortedMin.length * 0.05);
+    const c5Value = sortedMin[Math.min(p5Index, sortedMin.length - 1)];
+    const r5Value = sortedMax[Math.min(p5Index, sortedMax.length - 1)];
+
+    const pValue = c5Value;
+
+    const activeItems = newData.filter(d => selectedProjects.includes(String(d.id)));
+
+    if (activeItems.length === 0) {
+      return { P: pValue, C: 0, V: 0, R: 0, hasSelection: false };
+    }
+
+    const cValue = activeItems.reduce((acc, curr) => acc + (curr.min ?? curr.value ?? 0), 0) / activeItems.length;
+    const rValue = activeItems.reduce((acc, curr) => acc + (curr.max ?? curr.value ?? 0), 0) / activeItems.length;
+
+    let vValue = (c5Value - cValue) + (r5Value - rValue) / 2;
+    if (vValue < 0) {
+      vValue = (cValue + rValue) / 2;
+    }
+
+    return {
+      P: pValue,
+      C: cValue,
+      V: vValue,
+      R: rValue,
+      hasSelection: true
+    };
+  }, [newData, selectedProjects]);
+
+  // ── Lógica dos Dados de Valores e Cenários ──────────────────────────────────
+  const unitTotal = type === "energy" ? "MJ" : type === "material" ? "kg" : "kg CO₂";
+  const unitBenchmark = type === "energy" ? "MJ/m²" : type === "material" ? "kg/m²" : "kg/m² CO₂";
+  const currentUnit = unitsOfMeasure[type] || "Kg/m²";
+
+  const activeStacked = selectedProjects.length > 0
+    ? stackedData.filter(d => selectedProjects.includes(String(d.id)))
+    : stackedData;
+
+  const currentDataItems = selectedProjects.length > 0
+    ? newData.filter(d => selectedProjects.includes(String(d.id)))
+    : newData;
+
+  const totalRefValue = activeStacked.reduce(
+    (acc, curr) => acc + ((curr[type as keyof typeof curr] as number) || 0), 0
+  );
+  const benchmarkRefValue = activeStacked.length > 0 ? totalRefValue / activeStacked.length : 0;
+
+  const bestScenario = currentDataItems.length > 0
+    ? Math.min(...currentDataItems.map(d => d.min ?? d.value ?? 0)) : 0;
+
+  const worstScenario = currentDataItems.length > 0
+    ? Math.max(...currentDataItems.map(d => d.max ?? d.value ?? 0)) : 0;
+
+  const formatMetric = (val: number) =>
+    val.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
-      <div className="w-full flex gap-2 mb-4">
-        <FilterTabs
-          tabs={["co2", "energy", "material"]}
-          onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
-          selectedTab={type}
-          fullWidth
-          subTabs={[
-            t.summary.buildings,
-            selectedProjects.length === units.length
-              ? t.summary.deselectAll
-              : t.summary.selectAll,
-          ]}
-          onSubTabSelect={(tab) => {
-            if (tab === t.summary.buildings) setSelectedSubTab(tab);
-            if (tab === t.summary.selectAll || tab === t.summary.deselectAll)
-              selectAll();
-          }}
-          selectedSubTab={selectedSubTab}
-        />
-      </div>
 
-      <div
-        className={cn(
-          "w-full flex justify-between gap-4 max-md:flex-col 2xl:h-[85%] max-sm:h-max",
-          {
-            "flex flex-col h-full justify-between": isExpanded,
-          },
-        )}
-      >
-        <div className="flex flex-col items-start  w-2/3 justify-start gap-4">
-          {ChartSelector}
-          <div className="w-full mb-2">
-            <div className="mb-2 text-lg text-gray-600">{project.name}</div>
-            <div className="flex w-auto">
-              {(
-                Object.values(avgByUnit) as Array<{
-                  name: string;
-                  avg: number;
-                  id: string;
-                }>
-              ).map((f, idx) => {
-                return f.avg > 0 ? (
-                  <div
-                    key={f.id}
-                    className={cn("mb-2 flex flex-col items-start", {
-                      "rounded-l-md": idx === 0,
-                      "rounded-r-md": idx === units.length - 1,
-                    })}
-                    style={{
-                      width: `${((f.avg || 0) / sum) * 100}%`,
-                    }}
-                  >
-                    <Tooltip>
-                      <TooltipTrigger
-                        style={{ backgroundColor: barColors }}
-                        className="w-full"
-                      >
-                        <div className="w-full h-[16px]"></div>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        arrowClassName="bg-white opacity-0"
-                        className={cn(
-                          "bg-white text-black border-2 border-active shadow-md",
-                          {
-                            "ml-30": idx === 0,
-                          },
-                        )}
-                      >
-                        <span className="text-black text-base p-2">
-                          {f.name}: {Math.round((f.avg || 0) * 10) / 10}{" "}
-                          {type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
-                        </span>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                ) : null;
-              })}
+      {/* ── BARRA SUPERIOR: Valores e PCVRB ── */}
+      <div className='flex justify-between gap-2 w-full'>
+        <div className='border-1 border-secondary rounded-md flex p-2 box-border gap-4 max-md:gap-1 h-full'>
+          <div className='flex flex-col'>
+            <span className='text-secondary font-semibold text-small max-md:text-xs'>
+              Valor de Ref. - Total ({unitTotal})
+            </span>
+            <span className='text-xs'>{formatMetric(totalRefValue)}</span>
+          </div>
+          <div className='flex flex-col'>
+            <span className='text-secondary font-semibold text-small max-md:text-xs'>
+              Valor de Ref. - Benchmark ({unitBenchmark})
+            </span>
+            <span className='text-xs font-bold'>{formatMetric(benchmarkRefValue)}</span>
+          </div>
+        </div>
+        <div className='flex gap-4  max-md:gap-2 max-md:text-xs'>
+          <IndicatorList indicators={[
+            {
+              color: '#9F70DB',
+              currentUnit,
+              value: formatMetric(pcvMetrics.P),
+              label: 'P'
+            },
+            {
+              color: '#6C9EE0',
+              currentUnit,
+              value: formatMetric(pcvMetrics.C),
+              label: 'C'
+            },
+            {
+              color: '#E0756C',
+              currentUnit,
+              value: formatMetric(pcvMetrics.R),
+              label: 'R'
+            },
+          ]} />
+          <div className='text-md border-1 border-[#72E06C] bg-[#E2F1C1] rounded-md p-1 flex items-center justify-center min-w-[40px] gap-1 h-full'>
+            <span className='text-black font-semibold font-xs'>B</span>
+            <div className='flex flex-col'>
+              <span className='font-semibold text-xs'>Classificação</span>
+              <span className='font-light text-neutral-900 text-xs'>N: {newData.length} proj.</span>
             </div>
           </div>
-          <ul
-            className={cn("flex flex-col gap-2 text-xl w-full text-black", {
-              "flex-row gap-2 flex-wrap my-4": isExpanded,
-              "max-h-[350px] overflow-y-auto ": !isExpanded,
-            })}
-          >
-            {stackedData.map((unit) => {
-              if (!unit) return null;
-              const displayType: "co2" | "energy" = type === "material" ? "co2" : type;
-
-              return isExpanded ? (
-                <ItemCard
-                  key={unit.id}
-                  item={unit as any}
-                  handleAddProject={handleAddProject}
-                  selectedProjects={selectedProjects}
-                  sum={sum}
-                  color={barColors}
-                  type={displayType}
-                  hasConsumption={!!unit[displayType]}
-                />
-              ) : (
-                <ListItem
-                  key={unit.id}
-                  item={unit as any}
-                  selectedProjects={selectedProjects}
-                  handleAddProject={handleAddProject}
-                  sum={sum}
-                  color={barColors}
-                  type={displayType}
-                  hasConsumption={!!unit[displayType]}
-                />
-              );
-            })}
-          </ul>
-          {/* {!isExpanded && <Subtitle />} */}
-        </div>
-        <div className={cn("flex flex-col gap-6 w-full")}>
-          <Legend />
-
-          {chartType === "scatter" ? (
-            <D3GradientRangeChart
-              data={newData}
-              selectedBars={selectedProjects}
-              unit={unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""}
-              minData={minData}
-              maxData={maxData}
-              totalProjects={fakeUnits.length || newData.length}
-              showBaseline={type !== "material"}
-              showTop5Line={type !== "material"}
-              showProcelScale
-              showMaxCurve={type !== "material"}
-              showMinCurve={type !== "material"}
-              showMidCurve={type !== "material"}
-              showProjectName
-              variant={type === "material" ? "cumulative" : "range"}
-              xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
-              yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
-            />
-          ) : (
-            <D3GradientRangeLineChart
-              data={newData}
-              selectedBars={selectedProjects}
-              unit={type}
-            />
-          )}
         </div>
       </div>
+
+      {/* ── CONTEÚDO PRINCIPAL (Exibido quando aberto) ── */}
+      {(isOpen || isExpanded) && (
+        <div className='flex gap-4'>
+          {/* COLUNA ESQUERDA (1/3) */}
+          <div className='w-1/3 flex-shrink-0 mt-3 flex flex-col'>
+            <FilterTabs
+              tabs={["co2", "energy", "material"]}
+              onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
+              selectedTab={type}
+              fullWidth
+              subTabs={[
+                t.summary.buildings,
+                selectedProjects.length === units.length
+                  ? t.summary.deselectAll
+                  : t.summary.selectAll,
+              ]}
+              onSubTabSelect={(tab) => {
+                if (tab === t.summary.buildings) setSelectedSubTab(tab);
+                if (tab === t.summary.selectAll || tab === t.summary.deselectAll)
+                  selectAll();
+              }}
+              selectedSubTab={selectedSubTab}
+            />
+            <div className='mt-2'>
+              {ChartSelector}
+            </div>
+
+            <div className='flex gap-3 my-3'>
+              <div className='border-1 border-[#6C9EE0] rounded-md w-1/2 p-3 flex flex-col box-border gap-2'>
+                <p className=' flex flex-col text-sm'>
+                  <span className='text-[#6C9EE0]'>Melhor cenário ({unitTotal})</span>
+                  <span>-</span>
+                </p>
+                <p className=' flex flex-col text-sm'>
+                  <span className='text-[#6C9EE0]'>Melhor cenário ({unitBenchmark})</span>
+                  <span className='font-bold'>{formatMetric(bestScenario)}</span>
+                </p>
+              </div>
+              <div className='border-1 border-[#E0756C] rounded-md w-1/2 p-3 flex flex-col box-border gap-2'>
+                <p className=' flex flex-col text-sm'>
+                  <span className='text-[#E0756C]'>Pior cenário ({unitTotal})</span>
+                  <span>-</span>
+                </p>
+                <p className=' flex flex-col text-sm'>
+                  <span className='text-[#E0756C]'>Pior cenário ({unitBenchmark})</span>
+                  <span className='font-bold'>{formatMetric(worstScenario)}</span>
+                </p>
+              </div>
+            </div>
+
+            <Divider className="mb-4" />
+
+            <EmissionsChart data={chartData} />
+
+            {/* Elementos originais do UnitsSummary (Progress Bar de avgByUnit) */}
+            {/* <div className="w-full mt-6 mb-2">
+              <div className="mb-2 text-lg text-gray-600">{project.name}</div>
+              <div className="flex w-auto">
+                {(
+                  Object.values(avgByUnit) as Array<{
+                    name: string;
+                    avg: number;
+                    id: string;
+                  }>
+                ).map((f, idx) => {
+                  return f.avg > 0 ? (
+                    <div
+                      key={f.id}
+                      className={cn("mb-2 flex flex-col items-start", {
+                        "rounded-l-md": idx === 0,
+                        "rounded-r-md": idx === units.length - 1,
+                      })}
+                      style={{
+                        width: `${((f.avg || 0) / sum) * 100}%`,
+                      }}
+                    >
+                      <Tooltip>
+                        <TooltipTrigger
+                          style={{ backgroundColor: barColors }}
+                          className="w-full"
+                        >
+                          <div className="w-full h-[16px]"></div>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          arrowClassName="bg-white opacity-0"
+                          className={cn(
+                            "bg-white text-black border-2 border-active shadow-md",
+                            {
+                              "ml-30": idx === 0,
+                            },
+                          )}
+                        >
+                          <span className="text-black text-base p-2">
+                            {f.name}: {Math.round((f.avg || 0) * 10) / 10}{" "}
+                            {type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
+                          </span>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  ) : null;
+                })}
+              </div>
+            </div> */}
+
+            {/* Lista das Unidades (ItemCard ou ListItem dependendo de isExpanded) */}
+            {/* <ul
+              className={cn("flex flex-col gap-2 text-xl w-full text-black mt-2", {
+                "flex-col gap-2 flex-wrap": isExpanded,
+                "max-h-[350px] overflow-y-auto": !isExpanded,
+              })}
+            >
+              {stackedData.map((unit) => {
+                if (!unit) return null;
+                const displayType: "co2" | "energy" = type === "material" ? "co2" : type;
+
+                return isExpanded ? (
+                  <ItemCard
+                    key={unit.id}
+                    item={unit as any}
+                    handleAddProject={handleAddProject}
+                    selectedProjects={selectedProjects}
+                    sum={sum}
+                    color={barColors}
+                    type={displayType}
+                    hasConsumption={!!unit[displayType]}
+                  />
+                ) : (
+                  <ListItem
+                    key={unit.id}
+                    item={unit as any}
+                    selectedProjects={selectedProjects}
+                    handleAddProject={handleAddProject}
+                    sum={sum}
+                    color={barColors}
+                    type={displayType}
+                    hasConsumption={!!unit[displayType]}
+                  />
+                );
+              })}
+            </ul> */}
+          </div>
+
+          {/* COLUNA DIREITA (flex-1) */}
+          <div className="flex-1 min-h-0 flex flex-col justify-between gap-4 pt-3">
+            <div className="flex flex-col gap-4 w-full">
+              <Legend />
+              {chartType === "scatter" ? (
+                <D3GradientRangeChart
+                  data={newData}
+                  selectedBars={selectedProjects}
+                  unit={unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""}
+                  minData={minData}
+                  maxData={maxData}
+                  totalProjects={fakeUnits.length || newData.length}
+                  showBaseline={type !== "material"}
+                  showTop5Line={type !== "material"}
+                  showProcelScale
+                  showMaxCurve={type !== "material"}
+                  showMinCurve={type !== "material"}
+                  showMidCurve={type !== "material"}
+                  showProjectName
+                  variant={type === "material" ? "cumulative" : "range"}
+                  xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
+                  yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
+                  height={350}
+                />
+              ) : (
+                <D3GradientRangeLineChart
+                  data={newData}
+                  selectedBars={selectedProjects}
+                  unit={type}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
