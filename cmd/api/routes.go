@@ -76,6 +76,8 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.updateModuleV1Handler))
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID/duplicate", app.requireOptionRoleAssociation(app.duplicateModuleHandler))
 
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/roles/:roleID/file-upload", app.requireRoleAssociation(app.fileUploadHandler))
+
 	router.HandlerFunc(http.MethodPost, "/v2/projects/:projectID/units/:unitID/options/:optionID/modules", app.requireOptionRoleAssociation(app.createModuleHandler))
 	router.HandlerFunc(http.MethodGet, "/v2/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.readModuleHandler))
 	router.HandlerFunc(http.MethodPatch, "/v2/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.updateModuleHandler))

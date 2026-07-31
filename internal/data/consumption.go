@@ -56,9 +56,9 @@ func scanConsumptionRows(rows *sql.Rows) (map[string]*Consumption, error) {
 
 	for rows.Next() {
 		var tech string
-		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+		var co2Min, co2Max, energyMin, energyMax, material sql.NullFloat64
 
-		if err := rows.Scan(&tech, &co2Min, &co2Max, &energyMin, &energyMax); err != nil {
+		if err := rows.Scan(&tech, &co2Min, &co2Max, &energyMin, &energyMax, &material); err != nil {
 			return nil, err
 		}
 
@@ -68,6 +68,7 @@ func scanConsumptionRows(rows *sql.Rows) (map[string]*Consumption, error) {
 				CO2Max:    &co2Max.Float64,
 				EnergyMin: &energyMin.Float64,
 				EnergyMax: &energyMax.Float64,
+				Material:  &material.Float64,
 			}
 		}
 	}
@@ -95,6 +96,7 @@ func getModuleConsumptionByOption(ctx context.Context, db *sql.DB, optionID uuid
 				mtc.co2_max,
 				mtc.energy_min,
 				mtc.energy_max,
+				mtc.material,
 				CASE 
 					WHEN mtc.target_type = 'floor' THEN f.area
 					WHEN mtc.target_type = 'unit'  THEN COALESCE(ua.total_area, 0)
@@ -113,7 +115,8 @@ func getModuleConsumptionByOption(ctx context.Context, db *sql.DB, optionID uuid
 			SUM(co2_min * target_area)    / NULLIF(SUM(target_area), 0) AS co2_min,
 			SUM(co2_max * target_area)    / NULLIF(SUM(target_area), 0) AS co2_max,
 			SUM(energy_min * target_area) / NULLIF(SUM(target_area), 0) AS energy_min,
-			SUM(energy_max * target_area) / NULLIF(SUM(target_area), 0) AS energy_max
+			SUM(energy_max * target_area) / NULLIF(SUM(target_area), 0) AS energy_max,
+			SUM(material * target_area)   / NULLIF(SUM(target_area), 0) AS material
 		FROM module_consumption
 		GROUP BY id, type, outdated`
 
@@ -126,7 +129,7 @@ func getModuleConsumptionByOption(ctx context.Context, db *sql.DB, optionID uuid
 	modules := []ModuleInfo{}
 	for rows.Next() {
 		var module ModuleInfo
-		var co2Min, co2Max, energyMin, energyMax sql.NullFloat64
+		var co2Min, co2Max, energyMin, energyMax, material sql.NullFloat64
 
 		err := rows.Scan(
 			&module.ID,
@@ -136,6 +139,7 @@ func getModuleConsumptionByOption(ctx context.Context, db *sql.DB, optionID uuid
 			&co2Max,
 			&energyMin,
 			&energyMax,
+			&material,
 		)
 		if err != nil {
 			return nil, err
@@ -150,6 +154,7 @@ func getModuleConsumptionByOption(ctx context.Context, db *sql.DB, optionID uuid
 			CO2Max:    &co2Max.Float64,
 			EnergyMin: &energyMin.Float64,
 			EnergyMax: &energyMax.Float64,
+			Material:  &material.Float64,
 		}
 
 		modules = append(modules, module)
@@ -200,7 +205,8 @@ func GetFullConsumption(db *sql.DB, unitID, roleID, optionID uuid.UUID) (map[str
 				SUM(mtc.co2_min)    AS floor_co2_min,
 				SUM(mtc.co2_max)    AS floor_co2_max,
 				SUM(mtc.energy_min) AS floor_energy_min,
-				SUM(mtc.energy_max) AS floor_energy_max
+				SUM(mtc.energy_max) AS floor_energy_max,
+				SUM(mtc.material)   AS floor_material
 			FROM module_target_consumption mtc
 			INNER JOIN floor f ON mtc.target_id = f.id
 			INNER JOIN module m ON mtc.module_id = m.id
@@ -215,7 +221,8 @@ func GetFullConsumption(db *sql.DB, unitID, roleID, optionID uuid.UUID) (map[str
 			SUM(fc.floor_co2_min * fc.area)    / NULLIF(MAX(uta.total_area), 0) AS co2_min,
 			SUM(fc.floor_co2_max * fc.area)    / NULLIF(MAX(uta.total_area), 0) AS co2_max,
 			SUM(fc.floor_energy_min * fc.area) / NULLIF(MAX(uta.total_area), 0) AS energy_min,
-			SUM(fc.floor_energy_max * fc.area) / NULLIF(MAX(uta.total_area), 0) AS energy_max
+			SUM(fc.floor_energy_max * fc.area) / NULLIF(MAX(uta.total_area), 0) AS energy_max,
+			SUM(fc.floor_material * fc.area)   / NULLIF(MAX(uta.total_area), 0) AS material
 		FROM floor_consumption fc
 		CROSS JOIN unit_total_area uta
 		GROUP BY fc.technology`
@@ -238,7 +245,8 @@ func GetFullConsumption(db *sql.DB, unitID, roleID, optionID uuid.UUID) (map[str
 			mtc.co2_min,
 			mtc.co2_max,
 			mtc.energy_min,
-			mtc.energy_max
+			mtc.energy_max,
+			mtc.material
 		FROM module_target_consumption mtc
 		INNER JOIN module m ON mtc.module_id = m.id
 		WHERE mtc.target_type = 'unit'
@@ -300,7 +308,8 @@ func GetUnitConsumptionByTechnology(db *sql.DB, unitID uuid.UUID) (map[string]*C
 				SUM(mtc.co2_min)    AS floor_co2_min,
 				SUM(mtc.co2_max)    AS floor_co2_max,
 				SUM(mtc.energy_min) AS floor_energy_min,
-				SUM(mtc.energy_max) AS floor_energy_max
+				SUM(mtc.energy_max) AS floor_energy_max,
+				SUM(mtc.material)   AS floor_material
 			FROM module_target_consumption mtc
 			INNER JOIN floor f ON mtc.target_id = f.id
 			INNER JOIN module m ON mtc.module_id = m.id
@@ -315,7 +324,8 @@ func GetUnitConsumptionByTechnology(db *sql.DB, unitID uuid.UUID) (map[string]*C
 			SUM(fc.floor_co2_min * fc.area)    / NULLIF(MAX(uta.total_area), 0) AS co2_min,
 			SUM(fc.floor_co2_max * fc.area)    / NULLIF(MAX(uta.total_area), 0) AS co2_max,
 			SUM(fc.floor_energy_min * fc.area) / NULLIF(MAX(uta.total_area), 0) AS energy_min,
-			SUM(fc.floor_energy_max * fc.area) / NULLIF(MAX(uta.total_area), 0) AS energy_max
+			SUM(fc.floor_energy_max * fc.area) / NULLIF(MAX(uta.total_area), 0) AS energy_max,
+			SUM(fc.floor_material * fc.area)   / NULLIF(MAX(uta.total_area), 0) AS material
 		FROM floor_consumption fc
 		CROSS JOIN unit_total_area uta
 		GROUP BY fc.technology`
@@ -338,7 +348,8 @@ func GetUnitConsumptionByTechnology(db *sql.DB, unitID uuid.UUID) (map[string]*C
 			SUM(mtc.co2_min)    AS co2_min,
 			SUM(mtc.co2_max)    AS co2_max,
 			SUM(mtc.energy_min) AS energy_min,
-			SUM(mtc.energy_max) AS energy_max
+			SUM(mtc.energy_max) AS energy_max,
+			SUM(mtc.material)   AS material
 		FROM module_target_consumption mtc
 		INNER JOIN module m ON mtc.module_id = m.id
 		INNER JOIN options opt ON mtc.option_id = opt.id AND mtc.role_id = opt.role_id
@@ -406,6 +417,7 @@ func CalculateProjectConsumptions(units []ProjectUnit) (map[string]*Consumption,
 				CO2Max:    ptrFloat(*cons.CO2Max * repetitionWeight),
 				EnergyMin: ptrFloat(*cons.EnergyMin * repetitionWeight),
 				EnergyMax: ptrFloat(*cons.EnergyMax * repetitionWeight),
+				Material:  ptrFloat(*cons.Material * repetitionWeight),
 			}
 			projectConsumptions[tech].Add(weightedCons)
 		}
@@ -420,6 +432,7 @@ func CalculateProjectConsumptions(units []ProjectUnit) (map[string]*Consumption,
 			*cons.CO2Max /= totalRepetitions
 			*cons.EnergyMin /= totalRepetitions
 			*cons.EnergyMax /= totalRepetitions
+			*cons.Material /= totalRepetitions
 		}
 	}
 

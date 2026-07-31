@@ -425,7 +425,7 @@ func removeKeys(moduleMap map[string]any, keys ...string) {
 }
 
 func applyV1LegacyResponse(moduleMap map[string]any) {
-	removeKeys(moduleMap, "concrete", "steel")
+	removeKeys(moduleMap, "concrete")
 	removePositionFromLegacySteelItems(moduleMap)
 }
 
@@ -451,6 +451,22 @@ func removePositionFromLegacySteelItems(moduleMap map[string]any) {
 		steelItems, ok := steelRaw.([]any)
 		if !ok {
 			continue
+		}
+
+		for _, item := range steelItems {
+			steelItem, ok := item.(map[string]any)
+			if !ok {
+				continue
+			}
+
+			delete(steelItem, "position")
+		}
+	}
+
+	if steelRaw, ok := moduleMap["steel"]; ok {
+		steelItems, ok := steelRaw.([]any)
+		if !ok {
+			return
 		}
 
 		for _, item := range steelItems {
@@ -571,8 +587,6 @@ func validatePositionedSteel(
 			v.Check(validator.PermittedValue(string(item.Position), validPositionStrings...), prefix+".position", fmt.Sprintf("must be one of: %s", strings.Join(validPositionStrings, ", ")))
 		}
 	}
-
-	v.Check(len(steel) > 0, steelField, "must have at least one item")
 }
 
 func validatePositionedForm(
