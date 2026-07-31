@@ -1799,7 +1799,7 @@ paths:
         required: true
         content:
           application/json:
-             schema:
+            schema:
                $ref: "#/components/schemas/ModuleUpdateRequestV2"
             examples:
               beam_column_v2:
@@ -2357,6 +2357,10 @@ components:
       $ref: "./openapi-modules-schemas.yaml#/components/schemas/ModuleCreateRequestV1"
     ModuleCreateRequestV2:
       $ref: "./openapi-modules-schemas.yaml#/components/schemas/ModuleCreateRequestV2"
+    ModuleUpdateRequestV1:
+      $ref: "./openapi-modules-schemas.yaml#/components/schemas/ModuleUpdateRequestV1"
+    ModuleUpdateRequestV2:
+      $ref: "./openapi-modules-schemas.yaml#/components/schemas/ModuleUpdateRequestV2"
     ModuleBatchCreateRequestV1:
       type: object
       properties:
@@ -2397,7 +2401,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ModulePayloadV2"
-       required:
+      required:
         - modules
     BeamColumnDataV1:
       $ref: "./openapi-modules-schemas.yaml#/components/schemas/BeamColumnDataV1"
