@@ -1217,6 +1217,7 @@ export const en: Translations = {
   },
   drawerIFC: {
     title: "IFC Data",
+    titleImport: "Import Data",
     fileTypeLabel: "File type",
     tabIFC: "IFC",
     tabTQS: "TQS File",
@@ -1228,8 +1229,12 @@ export const en: Translations = {
     softwarePlaceholder: "Select software",
     versionLabel: "Which version",
     versionPlaceholder: "Version",
-    selectDisciplineLabel: "Discipline",
-    selectDisciplinePlaceholder: "Select the discipline",
+    processingMessageIFC:
+      "Uploading IFC file. Do not close this window until the upload completes.",
+    processingMessageTQS:
+      "Uploading TQS file. Do not close this window until the upload completes.",
+    invalidFileTypeIFC: "Invalid format. Please select a .ifc file.",
+    invalidFileTypeTQS: "Invalid format. Please select a .html/.htm file.",
     dropZoneLabelIFC: "Drag your IFC file here or click to select it",
     dropZoneLabelTQS: "Drag your TQS file here or click to select it",
     dropZoneAriaIFC: "IFC file upload area",

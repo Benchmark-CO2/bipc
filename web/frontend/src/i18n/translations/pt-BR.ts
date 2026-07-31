@@ -1229,6 +1229,7 @@ export const ptBR = {
   },
   drawerIFC: {
     title: "Dados de IFC",
+    titleImport: "Dados de Importação",
     fileTypeLabel: "Tipo de arquivo",
     tabIFC: "IFC",
     tabTQS: "Arquivo TQS",
@@ -1240,8 +1241,12 @@ export const ptBR = {
     softwarePlaceholder: "Selecione o software",
     versionLabel: "Qual versão",
     versionPlaceholder: "Versão",
-    selectDisciplineLabel: "Disciplina",
-    selectDisciplinePlaceholder: "Selecione a disciplina",
+    processingMessageIFC:
+      "Carregando arquivo IFC. Não feche essa janela até o upload completar.",
+    processingMessageTQS:
+      "Carregando arquivo TQS. Não feche essa janela até o upload completar.",
+    invalidFileTypeIFC: "Formato inválido. Selecione um arquivo .ifc.",
+    invalidFileTypeTQS: "Formato inválido. Selecione um arquivo .html/.htm.",
     dropZoneLabelIFC:
       "Arraste o seu arquivo IFC aqui ou clique para selecioná-lo",
     dropZoneLabelTQS:

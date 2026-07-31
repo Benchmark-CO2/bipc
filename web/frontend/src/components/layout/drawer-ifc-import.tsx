@@ -1,11 +1,11 @@
 import { postDisciplineFileUpload } from "@/actions/disciplines/postDisciplineFileUpload";
-import { getProjectByUUID } from "@/actions/projects/getProject";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { parseApiError } from "@/utils/parseApiError";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { FileUp, Loader2, Upload, X } from "lucide-react";
+import { queryClient } from "@/utils/queryClient";
+import { useMutation } from "@tanstack/react-query";
+import { AlertTriangle, FileUp, Loader2, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
@@ -88,11 +88,7 @@ const MOCK_VERSIONS_IFC: Record<string, { value: string; label: string }[]> = {
   other: [{ value: "other", label: "Outro" }],
 };
 
-const MOCK_VERSIONS_TQS = [
-  { value: "v26", label: "V26" },
-  { value: "v27", label: "V27" },
-  { value: "v28", label: "V28" },
-];
+const MOCK_VERSIONS_TQS = [{ value: "tqsv26", label: "tqsv26" }];
 
 const MOCK_IMPORTED_FILES = [
   { id: "f1", name: "estrutural123tqs", date: "14/04/2026" },
@@ -172,27 +168,71 @@ function FileTypeTabs({
   );
 }
 
+function ProcessingView({ fileType }: { fileType: FileType }) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-8 px-8 pb-10 flex-1">
+      <FileUp className="h-20 w-20 text-primary" />
+      <div className="w-full max-w-md">
+        <div className="h-2 rounded-full bg-muted overflow-hidden">
+          <div className="h-full w-1/2 bg-primary animate-pulse" />
+        </div>
+      </div>
+      <p className="text-sm text-muted-foreground text-center max-w-md">
+        {fileType === "ifc"
+          ? t.drawerIFC.processingMessageIFC
+          : t.drawerIFC.processingMessageTQS}
+      </p>
+    </div>
+  );
+}
+
 function DropZone({
   fileType,
   file,
   onFileChange,
+  onInvalidFile,
 }: {
   fileType: FileType;
   file: File | null;
   onFileChange: (f: File | null) => void;
+  onInvalidFile?: (message: string) => void;
 }) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  const validateAndSetFile = (candidate: File) => {
+    const name = candidate.name.toLowerCase();
+    const isValid =
+      fileType === "ifc"
+        ? name.endsWith(".ifc")
+        : name.endsWith(".html") || name.endsWith(".htm");
+
+    if (!isValid) {
+      const message =
+        fileType === "ifc"
+          ? t.drawerIFC.invalidFileTypeIFC
+          : t.drawerIFC.invalidFileTypeTQS;
+
+      onInvalidFile?.(message);
+      toast.warning(message);
+      return;
+    }
+
+    onInvalidFile?.("");
+    onFileChange(candidate);
+  };
+
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
     const dropped = e.dataTransfer.files[0];
-    if (dropped) onFileChange(dropped);
+    if (dropped) validateAndSetFile(dropped);
   };
 
-  const accept = fileType === "ifc" ? ".ifc" : ".tqs,.zip";
+  const accept = fileType === "ifc" ? ".ifc" : ".htm,.html";
 
   return (
     <div
@@ -225,7 +265,12 @@ function DropZone({
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
-          onFileChange(f ?? null);
+          if (f) {
+            validateAndSetFile(f);
+          } else {
+            onInvalidFile?.("");
+            onFileChange(null);
+          }
           e.target.value = "";
         }}
       />
@@ -283,7 +328,8 @@ export default function DrawerIFCImport({
   const [software, setSoftware] = useState("");
   const [version, setVersion] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [selectedRoleId, setSelectedRoleId] = useState("");
+  const [importErrorMessage, setImportErrorMessage] = useState("");
+  const [fileWarningMessage, setFileWarningMessage] = useState("");
 
   // "Already imported" section state
   const [selectedFileId, setSelectedFileId] = useState("");
@@ -293,29 +339,27 @@ export default function DrawerIFCImport({
   const isMobile = useIsMobile();
   const { t } = useTranslation();
 
-  const tqsRoleId = roleId ?? selectedRoleId;
-
-  const { data: projectResponse } = useQuery({
-    queryKey: ["project", projectId],
-    queryFn: () => getProjectByUUID(projectId),
-    enabled: fileType === "tqs" && !roleId,
-  });
-
-  const availableRoles = projectResponse?.data.project.roles ?? [];
+  const hasFileTypeTabs = mode === "simulation";
+  const canUploadTqs = mode === "simulation" && !!unitId && !!roleId;
 
   const { mutate: uploadTqsFile, isPending: isUploadingTqsFile } = useMutation({
-    mutationFn: (selectedRoleId: string) =>
-      postDisciplineFileUpload(projectId, unitId!, selectedRoleId, {
+    mutationFn: () =>
+      postDisciplineFileUpload(projectId, unitId!, roleId!, {
         file: uploadFile!,
         source: "tqs",
       }),
     onSuccess: () => {
       toast.success(t.drawerIFC.importSuccess);
-      handleClose();
+      queryClient.invalidateQueries({
+        queryKey: ["options", projectId, unitId],
+      });
+      handleClose(true);
     },
     onError: (error) => {
+      const errorMessage = parseApiError(error, t);
+      setImportErrorMessage(errorMessage);
       toast.error(t.drawerIFC.importError, {
-        description: parseApiError(error, t),
+        description: errorMessage,
       });
     },
   });
@@ -337,13 +381,15 @@ export default function DrawerIFCImport({
     ? (MOCK_UNITS_BY_FILE[selectedFileId] ?? [])
     : [];
 
-  const handleClose = () => {
+  const handleClose = (force?: boolean) => {
+    if (!force && isUploadingTqsFile) return;
     setIsOpen(false);
     setFileType("ifc");
     setSoftware("");
     setVersion("");
     setUploadFile(null);
-    setSelectedRoleId("");
+    setImportErrorMessage("");
+    setFileWarningMessage("");
     setSelectedFileId("");
     setSelectedUnitId("");
     setSelectedTechIds([]);
@@ -351,9 +397,11 @@ export default function DrawerIFCImport({
 
   const handleFileTypeChange = (ft: FileType) => {
     setFileType(ft);
+    setImportErrorMessage("");
+    setFileWarningMessage("");
+    setUploadFile(null);
     setSoftware(ft === "tqs" ? "tqs" : "");
-    setVersion("");
-    setSelectedRoleId("");
+    setVersion(ft === "tqs" ? "tqsv26" : "");
   };
 
   const handleSoftwareChange = (val: string) => {
@@ -388,13 +436,18 @@ export default function DrawerIFCImport({
 
   const handleImport = () => {
     if (fileType === "tqs") {
-      if (!uploadFile || !unitId || !tqsRoleId) return;
-      uploadTqsFile(tqsRoleId);
+      if (!uploadFile || !canUploadTqs) return;
+      setImportErrorMessage("");
+      uploadTqsFile();
       return;
     }
   };
 
   const handleUseSelected = () => {};
+
+  const drawerTitle = hasFileTypeTabs
+    ? t.drawerIFC.titleImport
+    : t.drawerIFC.title;
 
   const importLabel =
     fileType === "ifc"
@@ -409,333 +462,363 @@ export default function DrawerIFCImport({
     <Drawer
       direction={isMobile ? "bottom" : "right"}
       open={isOpen}
-      onOpenChange={setIsOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        if (open && !hasFileTypeTabs) {
+          setFileType("ifc");
+          setSoftware("");
+          setVersion("");
+          setUploadFile(null);
+          setImportErrorMessage("");
+        }
+      }}
       onClose={handleClose}
       dismissible={false}
     >
       <DrawerTrigger asChild>{triggerComponent}</DrawerTrigger>
       <DrawerContent
-        className={cn("min-w-2/5", {
+        className={cn("min-w-3/5", {
           "w-full h-4/5": isMobile,
         })}
       >
         <DrawerHeader className="px-8 pb-2">
-          <DrawerTitle>{t.drawerIFC.title}</DrawerTitle>
+          <DrawerTitle>{drawerTitle}</DrawerTitle>
           <Button
-            onClick={handleClose}
+            onClick={() => handleClose()}
             className="absolute right-4 top-2"
             variant="ghost"
             size="icon"
+            disabled={isUploadingTqsFile}
           >
             <X className="h-4 w-4" />
           </Button>
         </DrawerHeader>
 
-        {/* File type tab */}
-        <div className="px-8 pb-4">
-          <p className="text-xs text-muted-foreground mb-2">
-            {t.drawerIFC.fileTypeLabel}
-          </p>
-          <FileTypeTabs
-            value={fileType}
-            onChange={handleFileTypeChange}
-            availableFileTypes={mode === "project" ? ["ifc"] : ["ifc", "tqs"]}
-          />
-        </div>
+        {isUploadingTqsFile ? (
+          <ProcessingView fileType={fileType} />
+        ) : (
+          <div className="flex flex-col gap-2 overflow-y-auto px-8 pb-8">
+            {hasFileTypeTabs && (
+              <div className="pb-2">
+                <p className="text-xs text-muted-foreground mb-2">
+                  {t.drawerIFC.fileTypeLabel}
+                </p>
+                <FileTypeTabs
+                  value={fileType}
+                  onChange={handleFileTypeChange}
+                />
+              </div>
+            )}
 
-        <div className="flex flex-col gap-6 overflow-y-auto px-8 pb-8">
-          {/* ────────────────────────────────────────────
+            {/* ────────────────────────────────────────────
               Section 1 — Import new file
           ──────────────────────────────────────────── */}
-          <section>
-            <h3 className="text-base font-semibold text-foreground mb-4">
-              {importLabel}
-            </h3>
+            <section>
+              <h3 className="text-base font-semibold text-foreground mb-2">
+                {importLabel}
+              </h3>
 
-            <div className="flex flex-col gap-4">
-              {/* Software + Version selects */}
-              <div className="grid grid-cols-[2fr_1fr] gap-3 items-start">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm text-muted-foreground">
-                    {t.drawerIFC.softwareLabel}{" "}
-                    <span className="text-destructive">*</span>
-                  </label>
-                  <Select
-                    value={software}
-                    onValueChange={handleSoftwareChange}
-                    disabled={fileType === "tqs"}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue
-                        placeholder={t.drawerIFC.softwarePlaceholder}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {softwareOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="flex flex-col gap-4">
+                {/* Software + Version selects */}
+                <div className="grid grid-cols-[2fr_1fr] gap-3 items-start">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm text-muted-foreground">
+                      {t.drawerIFC.softwareLabel}{" "}
+                      {fileType === "ifc" && (
+                        <span className="text-destructive">*</span>
+                      )}
+                    </label>
+                    <Select
+                      value={software}
+                      onValueChange={handleSoftwareChange}
+                      disabled={fileType === "tqs"}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue
+                          placeholder={t.drawerIFC.softwarePlaceholder}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {softwareOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm text-muted-foreground">
-                    {t.drawerIFC.versionLabel}{" "}
-                    <span className="text-destructive">*</span>
-                  </label>
-                  <Select
-                    value={version}
-                    onValueChange={setVersion}
-                    disabled={!software && fileType !== "tqs"}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue
-                        placeholder={t.drawerIFC.versionPlaceholder}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {versionOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {fileType === "tqs" && !roleId && (
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm text-muted-foreground">
-                    {t.drawerIFC.selectDisciplineLabel}{" "}
-                    <span className="text-destructive">*</span>
-                  </label>
-                  <Select
-                    value={selectedRoleId}
-                    onValueChange={setSelectedRoleId}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue
-                        placeholder={t.drawerIFC.selectDisciplinePlaceholder}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableRoles.map((role) => (
-                        <SelectItem key={role.id} value={role.id}>
-                          {role.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {/* Drop zone */}
-              <DropZone
-                fileType={fileType}
-                file={uploadFile}
-                onFileChange={setUploadFile}
-              />
-
-              {/* Action buttons */}
-              <div className="flex items-center justify-between gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled
-                  className="text-sm"
-                >
-                  {t.drawerIFC.manageFiles}
-                </Button>
-                <Button
-                  variant="bipc"
-                  size="sm"
-                  disabled={
-                    !uploadFile ||
-                    !software ||
-                    !version ||
-                    (fileType === "tqs" && (!unitId || !tqsRoleId)) ||
-                    (fileType === "tqs" && isUploadingTqsFile)
-                  }
-                  onClick={handleImport}
-                  className="text-white"
-                >
-                  {fileType === "tqs" && isUploadingTqsFile ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      {t.drawerIFC.importData}
-                    </span>
-                  ) : (
-                    t.drawerIFC.importData
-                  )}
-                </Button>
-              </div>
-            </div>
-          </section>
-
-          {/* Divider */}
-          <div className="border-t border-gray-200 dark:border-gray-700" />
-
-          {/* ────────────────────────────────────────────
-              Section 2 — Use already imported data
-          ──────────────────────────────────────────── */}
-          <section>
-            <h3 className="text-base font-semibold text-foreground mb-4">
-              {alreadyImportedLabel}
-            </h3>
-
-            <div className="flex flex-col gap-4">
-              {/* File select */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm text-muted-foreground">
-                  {t.drawerIFC.selectFileLabel}{" "}
-                  <span className="text-destructive">*</span>
-                </label>
-                <Select value={selectedFileId} onValueChange={handleFileSelect}>
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={t.drawerIFC.selectFilePlaceholder}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MOCK_IMPORTED_FILES.map((f) => (
-                      <SelectItem key={f.id} value={f.id}>
-                        {f.name} — {f.date}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Unit select — simulation mode only */}
-              {mode === "simulation" && (
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm text-muted-foreground">
-                    {t.drawerIFC.selectUnitLabel}{" "}
-                    <span className="text-destructive">*</span>
-                  </label>
-                  <Select
-                    value={selectedUnitId}
-                    onValueChange={handleUnitSelect}
-                    disabled={!selectedFileId}
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={t.drawerIFC.selectUnitPlaceholder}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {units.map((u) => (
-                        <SelectItem key={u.id} value={u.id}>
-                          {u.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {/* Technology table — unit and simulation modes */}
-              {(mode === "unit" || mode === "simulation") && selectedFileId && (
-                <div className="flex flex-col gap-2">
-                  <p className="text-sm font-medium text-foreground">
-                    {t.drawerIFC.selectTechLabel}
-                  </p>
-                  <div className="rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <Table>
-                      <TableHeader className="bg-primary text-primary-foreground">
-                        <TableRow className="hover:bg-transparent">
-                          <TableHead className="text-inherit w-10">
-                            <Checkbox
-                              className="border-2 border-white bg-white data-[state=checked]:bg-secondary data-[state=checked]:border-secondary"
-                              checked={
-                                technologies.length > 0 &&
-                                selectedTechIds.length === technologies.length
-                                  ? true
-                                  : selectedTechIds.length > 0
-                                    ? "indeterminate"
-                                    : false
-                              }
-                              onCheckedChange={toggleAllTechs}
-                              aria-label={t.commonTable.selectAll}
-                            />
-                          </TableHead>
-                          <TableHead className="text-inherit">
-                            {t.drawerIFC.colType}
-                          </TableHead>
-                          {mode === "unit" && (
-                            <TableHead className="text-inherit">
-                              {t.drawerIFC.colName}
-                            </TableHead>
-                          )}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {technologies.length === 0 ? (
-                          <TableRow>
-                            <TableCell
-                              colSpan={mode === "unit" ? 3 : 2}
-                              className="text-center text-muted-foreground text-sm py-6"
-                            >
-                              {t.drawerIFC.noTechnologies}
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          technologies.map((tech, idx) => (
-                            <TableRow
-                              key={tech.id}
-                              className={
-                                idx % 2 === 0
-                                  ? "bg-table-row-even"
-                                  : "bg-table-row-odd"
-                              }
-                            >
-                              <TableCell>
-                                <Checkbox
-                                  className="border border-gray-300 bg-white data-[state=checked]:bg-secondary data-[state=checked]:border-secondary"
-                                  checked={selectedTechIds.includes(tech.id)}
-                                  onCheckedChange={() => toggleTech(tech.id)}
-                                />
-                              </TableCell>
-                              <TableCell className="text-sm">
-                                {tech.type}
-                              </TableCell>
-                              {mode === "unit" && (
-                                <TableCell className="text-sm">
-                                  {tech.name}
-                                </TableCell>
-                              )}
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm text-muted-foreground">
+                      {t.drawerIFC.versionLabel}{" "}
+                      {fileType === "ifc" && (
+                        <span className="text-destructive">*</span>
+                      )}
+                    </label>
+                    <Select
+                      value={version}
+                      onValueChange={setVersion}
+                      disabled={fileType === "tqs" || !software}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue
+                          placeholder={t.drawerIFC.versionPlaceholder}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {versionOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-              )}
 
-              {/* Use selected button */}
-              <div className="flex justify-end">
-                <Button
-                  variant="bipc"
-                  size="sm"
-                  className="text-white"
-                  disabled={
-                    !selectedFileId ||
-                    ((mode === "unit" || mode === "simulation") &&
-                      selectedTechIds.length === 0) ||
-                    (mode === "simulation" && !selectedUnitId)
-                  }
-                  onClick={handleUseSelected}
-                >
-                  {t.drawerIFC.useSelected}
-                </Button>
+                {/* Drop zone */}
+                <DropZone
+                  fileType={fileType}
+                  file={uploadFile}
+                  onFileChange={(f) => {
+                    setUploadFile(f);
+                    setFileWarningMessage("");
+                    if (!f) {
+                      setImportErrorMessage("");
+                    }
+                  }}
+                  onInvalidFile={setFileWarningMessage}
+                />
+
+                {importErrorMessage && !isUploadingTqsFile && (
+                  <div className="p-0">
+                    <div className="bg-red-50 dark:bg-red-950/20 border-2 border-red-400 dark:border-red-600 rounded-lg p-4">
+                      <div className="flex gap-3">
+                        <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-red-800 dark:text-red-300">
+                          {importErrorMessage}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {fileWarningMessage && (
+                  <div className="bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-4">
+                    <div className="flex gap-3">
+                      <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                        {fileWarningMessage}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex items-center justify-between gap-2">
+                  {fileType === "ifc" ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled
+                      className="text-sm"
+                    >
+                      {t.drawerIFC.manageFiles}
+                    </Button>
+                  ) : (
+                    <div />
+                  )}
+                  <Button
+                    variant="bipc"
+                    size="sm"
+                    disabled={
+                      fileType === "ifc"
+                        ? !uploadFile || !software || !version
+                        : !uploadFile || !canUploadTqs
+                    }
+                    onClick={handleImport}
+                    className="text-white"
+                  >
+                    {fileType === "tqs" && isUploadingTqsFile ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {t.drawerIFC.importData}
+                      </span>
+                    ) : (
+                      t.drawerIFC.importData
+                    )}
+                  </Button>
+                </div>
               </div>
-            </div>
-          </section>
-        </div>
+            </section>
+
+            {fileType === "ifc" && (
+              <>
+                <div className="border-t border-gray-200 dark:border-gray-700 mt-4 mb-2" />
+
+                <section>
+                  <h3 className="text-base font-semibold text-foreground mb-2 mt-2">
+                    {alreadyImportedLabel}
+                  </h3>
+
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm text-muted-foreground">
+                        {t.drawerIFC.selectFileLabel}{" "}
+                        <span className="text-destructive">*</span>
+                      </label>
+                      <Select
+                        value={selectedFileId}
+                        onValueChange={handleFileSelect}
+                      >
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={t.drawerIFC.selectFilePlaceholder}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MOCK_IMPORTED_FILES.map((f) => (
+                            <SelectItem key={f.id} value={f.id}>
+                              {f.name} — {f.date}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {mode === "simulation" && (
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm text-muted-foreground">
+                          {t.drawerIFC.selectUnitLabel}{" "}
+                          <span className="text-destructive">*</span>
+                        </label>
+                        <Select
+                          value={selectedUnitId}
+                          onValueChange={handleUnitSelect}
+                          disabled={!selectedFileId}
+                        >
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={t.drawerIFC.selectUnitPlaceholder}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {units.map((u) => (
+                              <SelectItem key={u.id} value={u.id}>
+                                {u.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {(mode === "unit" || mode === "simulation") &&
+                      selectedFileId && (
+                        <div className="flex flex-col gap-2">
+                          <p className="text-sm font-medium text-foreground">
+                            {t.drawerIFC.selectTechLabel}
+                          </p>
+                          <div className="rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+                            <Table>
+                              <TableHeader className="bg-primary text-primary-foreground">
+                                <TableRow className="hover:bg-transparent">
+                                  <TableHead className="text-inherit w-10">
+                                    <Checkbox
+                                      className="border-2 border-white bg-white data-[state=checked]:bg-secondary data-[state=checked]:border-secondary"
+                                      checked={
+                                        technologies.length > 0 &&
+                                        selectedTechIds.length ===
+                                          technologies.length
+                                          ? true
+                                          : selectedTechIds.length > 0
+                                            ? "indeterminate"
+                                            : false
+                                      }
+                                      onCheckedChange={toggleAllTechs}
+                                      aria-label={t.commonTable.selectAll}
+                                    />
+                                  </TableHead>
+                                  <TableHead className="text-inherit">
+                                    {t.drawerIFC.colType}
+                                  </TableHead>
+                                  {mode === "unit" && (
+                                    <TableHead className="text-inherit">
+                                      {t.drawerIFC.colName}
+                                    </TableHead>
+                                  )}
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {technologies.length === 0 ? (
+                                  <TableRow>
+                                    <TableCell
+                                      colSpan={mode === "unit" ? 3 : 2}
+                                      className="text-center text-muted-foreground text-sm py-6"
+                                    >
+                                      {t.drawerIFC.noTechnologies}
+                                    </TableCell>
+                                  </TableRow>
+                                ) : (
+                                  technologies.map((tech, idx) => (
+                                    <TableRow
+                                      key={tech.id}
+                                      className={
+                                        idx % 2 === 0
+                                          ? "bg-table-row-even"
+                                          : "bg-table-row-odd"
+                                      }
+                                    >
+                                      <TableCell>
+                                        <Checkbox
+                                          className="border border-gray-300 bg-white data-[state=checked]:bg-secondary data-[state=checked]:border-secondary"
+                                          checked={selectedTechIds.includes(
+                                            tech.id,
+                                          )}
+                                          onCheckedChange={() =>
+                                            toggleTech(tech.id)
+                                          }
+                                        />
+                                      </TableCell>
+                                      <TableCell className="text-sm">
+                                        {tech.type}
+                                      </TableCell>
+                                      {mode === "unit" && (
+                                        <TableCell className="text-sm">
+                                          {tech.name}
+                                        </TableCell>
+                                      )}
+                                    </TableRow>
+                                  ))
+                                )}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      )}
+
+                    <div className="flex justify-end">
+                      <Button
+                        variant="bipc"
+                        size="sm"
+                        className="text-white"
+                        disabled={
+                          !selectedFileId ||
+                          ((mode === "unit" || mode === "simulation") &&
+                            selectedTechIds.length === 0) ||
+                          (mode === "simulation" && !selectedUnitId)
+                        }
+                        onClick={handleUseSelected}
+                      >
+                        {t.drawerIFC.useSelected}
+                      </Button>
+                    </div>
+                  </div>
+                </section>
+              </>
+            )}
+          </div>
+        )}
       </DrawerContent>
     </Drawer>
   );

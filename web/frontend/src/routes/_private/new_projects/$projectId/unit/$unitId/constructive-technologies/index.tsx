@@ -586,6 +586,7 @@ function RouteComponent() {
           mode="simulation"
           projectId={projectId}
           unitId={unitId}
+          roleId={roleId}
           triggerComponent={
             <Button variant="outline-bipc">{t.common.ifcImport}</Button>
           }
