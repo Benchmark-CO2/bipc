@@ -10,6 +10,7 @@ export const Route = createFileRoute("/(public)/")({
     } else {
       throw redirect({
         to: "/new_projects",
+        search: { activationRequired: true },
       });
     }
   },
