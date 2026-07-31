@@ -35,47 +35,70 @@ const EmissionsChart = ({ data }) => {
       .attr('fill', '#1a1f36')
       .text('Total de Emissões por tecnologia (kg CO₂)');
 
-    // 3. Estruturação dos Dados (Stack)
-    const keys = ['parede', 'fundacao', 'cobertura'];
+    // 3. Extração Dinâmica de Chaves e Dados Seguros
+    // Pega todas as chaves possíveis de todos os objetos, excluindo 'name'
+    const keys = Array.from(
+      new Set(data.flatMap(Object.keys))
+    ).filter(k => k !== 'name');
+
+    // Garante que todo objeto tenha todas as chaves (mesmo que com valor 0) para o d3.stack não falhar
+    const safeData = data.map(d => {
+      const row = { ...d };
+      keys.forEach(k => {
+        if (row[k] === undefined || isNaN(row[k])) row[k] = 0;
+      });
+      return row;
+    });
+
     const stack = d3.stack().keys(keys);
-    const series = stack(data);
+    const series = stack(safeData);
 
     // 4. Escalas
+    // Eixo Y (Nomes dos projetos/unidades)
     const yScale = d3.scaleBand()
-      .domain(data.map(d => d.name))
+      .domain(safeData.map(d => d.name))
       .range([0, innerHeight])
       .padding(0.4);
 
+    // Eixo X (Valores dinâmicos) - encontra o projeto com a maior soma
+    const maxTotal = d3.max(safeData, d => 
+      keys.reduce((sum, key) => sum + (d[key] || 0), 0)
+    ) || 100;
+
     const xScale = d3.scaleLinear()
-      .domain([0, 100]) // Eixo fixo até 100%
+      .domain([0, maxTotal]) // Agora vai até o valor máximo real, e não mais 100
       .range([0, innerWidth]);
 
+    // Paleta de cores estendida caso venham muitas categorias
+    const colorPalette = ['#1F818C', '#F08B46', '#9C72DF', '#6C9EE0', '#E0756C', '#45b54a', '#E2D36C'];
     const colorScale = d3.scaleOrdinal()
       .domain(keys)
-      .range(['#1F818C', '#F08B46', '#9C72DF']); // Cores: Teal, Laranja, Roxo
+      .range(colorPalette);
 
     // 5. Eixos e Linhas de Grade
-    // Eixo Y
     const yAxis = d3.axisLeft(yScale).tickSize(0).tickPadding(10);
     const yAxisGroup = g.append('g').call(yAxis);
     yAxisGroup.select('.domain').remove();
+    
+    // Encurta nomes muito grandes no eixo Y
     yAxisGroup.selectAll('.tick text')
-      .attr('font-size', '16px')
+      .attr('font-size', '14px')
       .attr('fill', '#1a1f36')
-      .attr('font-weight', d => (d === 'Residencial modelo' ? 'bold' : 'normal'));
+      .attr('font-weight', 'bold')
+      .text(d => d.length > 18 ? d.substring(0, 15) + '...' : d);
 
-    // Eixo X Base (Invisível, apenas para referência geométrica)
+    // Eixo X Base invisível
     const xAxisGroup = g.append('g')
       .attr('transform', `translate(0,${innerHeight})`)
       .call(d3.axisBottom(xScale).tickSize(5).tickValues([]));
     xAxisGroup.select('.domain').attr('stroke', '#ccc');
 
-    // 6. Linhas de Limite (Thresholds A, B, C, D)
+    // 6. Linhas de Limite (Thresholds A, B, C, D) adaptados ao Eixo X
     const thresholds = [
-      { val: 25, color: '#45b54a' }, // Linha A-B
-      { val: 50, color: '#93c83e' }, // Linha B-C
-      { val: 75, color: '#f0db3f' }, // Linha C-D
-      { val: 100, color: '#f0a232' } // Fim D
+      { val: maxTotal * 0.25, color: '#45b54a' }, // 25% do máximo
+      { val: maxTotal * 0.50, color: '#93c83e' }, // 50% do máximo
+      { val: maxTotal * 0.75, color: '#f0db3f' }, // 75% do máximo
+      { val: maxTotal, color: '#f0a232' }         // 100% do máximo
     ];
 
     thresholds.forEach(t => {
@@ -101,12 +124,12 @@ const EmissionsChart = ({ data }) => {
       .append('rect')
       .attr('y', d => yScale(d.data.name))
       .attr('x', d => xScale(d[0]))
-      .attr('width', d => xScale(d[1]) - xScale(d[0]))
+      .attr('width', d => Math.max(0, xScale(d[1]) - xScale(d[0])))
       .attr('height', yScale.bandwidth())
-      .attr('stroke', '#f4f5f7') // Cria o pequeno gap entre as barras
+      .attr('stroke', '#f4f5f7') 
       .attr('stroke-width', 2);
 
-    // Textos de Porcentagem dentro das barras
+    // Textos de Valores dentro das barras
     layer.selectAll('text')
       .data(d => d)
       .enter()
@@ -120,15 +143,16 @@ const EmissionsChart = ({ data }) => {
       .attr('font-weight', 'bold')
       .text(d => {
         const val = d[1] - d[0];
-        return val > 0 ? `${val}%` : ''; // Só mostra se for maior que 0
+        // Mostra apenas se o valor for grande o suficiente para caber na barra
+        return val > (maxTotal * 0.05) ? `${val.toFixed(1)}` : ''; 
       });
 
-    // 8. Indicadores (A, B, C, D) na parte inferior
+    // 8. Indicadores (A, B, C, D) na parte inferior (adaptados)
     const gradeZones = [
-      { mid: 12.5, label: 'A', bg: '#C6EBC3', txt: '#ffffff' },
-      { mid: 37.5, label: 'B', bg: '#A4D338', txt: '#ffffff' },
-      { mid: 62.5, label: 'C', bg: '#FDF1B8', txt: '#ffffff' },
-      { mid: 87.5, label: 'D', bg: '#FBE4C6', txt: '#ffffff' },
+      { mid: maxTotal * 0.125, label: 'A', bg: '#C6EBC3', txt: '#ffffff' },
+      { mid: maxTotal * 0.375, label: 'B', bg: '#A4D338', txt: '#ffffff' },
+      { mid: maxTotal * 0.625, label: 'C', bg: '#FDF1B8', txt: '#ffffff' },
+      { mid: maxTotal * 0.875, label: 'D', bg: '#FBE4C6', txt: '#ffffff' },
     ];
 
     const zonesG = g.append('g').attr('transform', `translate(0, ${innerHeight + 30})`);
@@ -151,32 +175,30 @@ const EmissionsChart = ({ data }) => {
         .text(zone.label);
     });
 
-    // 9. Legenda Principal
+    // 9. Legenda Dinâmica
     const legendG = svg.append('g')
       .attr('transform', `translate(20, ${height - 30})`);
 
-    const legendItems = [
-      { label: 'Parede de concreto', color: '#1F818C' },
-      { label: 'Fundação radier', color: '#F08B46' },
-      { label: 'Cobertura', color: '#9C72DF' }
-    ];
-
-    legendItems.forEach((item, i) => {
+    let currentX = 0; // Para lidar com palavras de tamanhos variados
+    keys.forEach((key, i) => {
       const itemG = legendG.append('g')
-        .attr('transform', `translate(${i * 200}, 0)`);
+        .attr('transform', `translate(${currentX}, 0)`);
 
       itemG.append('rect')
         .attr('width', 16)
         .attr('height', 16)
         .attr('rx', 2)
-        .attr('fill', item.color);
+        .attr('fill', colorScale(key));
 
       itemG.append('text')
         .attr('x', 24)
         .attr('y', 13)
-        .attr('font-size', '14px')
+        .attr('font-size', '13px')
         .attr('fill', '#1a1f36')
-        .text(item.label);
+        .text(key);
+      
+      // Estima o espaço necessário para o próximo item baseado no tamanho do texto
+      currentX += 30 + (key.length * 7.5); 
     });
 
   }, [data]);

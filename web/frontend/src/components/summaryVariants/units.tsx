@@ -9,10 +9,26 @@ import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import Divider from '../ui/divider';
 import { FilterTabs } from "../ui/filter-tabs";
+import { IndicatorList } from './components/indicatorsList';
 import Legend from "./components/Legend";
 import { useChartType } from "./hooks/useChartType";
 import { normalizeBenchmarkSeries, recalculateY } from "./utils";
 
+export const translateCategory: Record<string, string> = {
+  concrete_wall: "Parede de Concreto",
+  foundation: "Fundação",
+  roof: "Cobertura",
+  // Adicione outras chaves que o backend pode enviar
+};
+ export const getCategoryValue = (categoryData: any, currentType: "co2" | "energy" | "material") => {
+    if (!categoryData) return 0;
+    if (currentType === "material") return categoryData.material || 0;
+
+    const min = categoryData?.[`${currentType}_min`] || 0;
+    const max = categoryData?.[`${currentType}_max`] || 0;
+
+    return (min + max) / 2; // Usando a média geométrica
+  };
 type ProjectsSummaryProps = {
   selectedUnits: (any & {
     co: number;
@@ -180,15 +196,32 @@ const UnitsSummary = ({
     maxValue,
   );
 
+  console.log('filteredUnits', filteredUnits);
   // ── DADOS DO GRÁFICO DE BARRAS ──────────────────────────────────────────────
   // Substitua as propriedades 'parede', 'fundacao', 'cobertura' pelas 
   // propriedades reais que você tem dentro de el.consumptions
-  const chartData = filteredUnits.map((el) => ({
-    name: el.name,
-    parede: Math.floor(Math.random() * 20) + 10, // MOCK: substitua pelo valor real
-    fundacao: Math.floor(Math.random() * 10) + 5, // MOCK: substitua pelo valor real
-    cobertura: Math.floor(Math.random() * 5) + 2 // MOCK: substitua pelo valor real
-  }));
+  // const chartData = filteredUnits.map((el) => ({
+  //   name: el.name,
+  //   parede: Math.floor(Math.random() * 20) + 10, // MOCK: substitua pelo valor real
+  //   fundacao: Math.floor(Math.random() * 10) + 5, // MOCK: substitua pelo valor real
+  //   cobertura: Math.floor(Math.random() * 5) + 2 // MOCK: substitua pelo valor real
+  // }));
+
+  const chartData = filteredUnits.map((el) => {
+    const dataRow: Record<string, any> = { name: el.name || "Unidade" };
+
+    // Pega o objeto de consumos da unidade
+    const cons = el.consumptions || {};
+
+    Object.entries(cons).forEach(([key, values]) => {
+      if (key !== "total") {
+        const translatedKey = translateCategory[key] || key; 
+      dataRow[translatedKey] = getCategoryValue(values, type);
+      }
+    });
+
+    return dataRow;
+  });
 
   // ── Lógica de Cálculo de P, C, V, R ─────────────────────────────────────────
   const pcvMetrics = useMemo(() => {
@@ -262,44 +295,44 @@ const UnitsSummary = ({
       <div className='flex justify-between gap-2 w-full'>
         <div className='border-1 border-secondary rounded-md flex p-2 box-border gap-4 max-md:gap-1 h-full'>
           <div className='flex flex-col'>
-            <span className='text-secondary font-bold text-small max-md:text-xs'>
+            <span className='text-secondary font-semibold text-small max-md:text-xs'>
               Valor de Ref. - Total ({unitTotal})
             </span>
             <span className='text-xs'>{formatMetric(totalRefValue)}</span>
           </div>
           <div className='flex flex-col'>
-            <span className='text-secondary font-bold text-small max-md:text-xs'>
+            <span className='text-secondary font-semibold text-small max-md:text-xs'>
               Valor de Ref. - Benchmark ({unitBenchmark})
             </span>
             <span className='text-xs font-bold'>{formatMetric(benchmarkRefValue)}</span>
           </div>
         </div>
-        <div className='flex gap-4 text-[16px] max-md:gap-2 max-md:text-xs'>
-          <div className='text-md border-1 border-[#9F70DB] rounded-md p-2 flex items-center justify-center min-w-[40px] gap-1 h-full'>
-            <span className='text-[#9F70DB] font-bold'>P</span>
-            <span className='font-bold'>{formatMetric(pcvMetrics.P)}</span>
-            <span className='font-light'>{currentUnit}</span>
-          </div>
-          <div className='text-md border-1 border-[#6C9EE0] rounded-md p-2 flex items-center justify-center min-w-[40px] gap-1 h-full'>
-            <span className='text-[#6C9EE0] font-bold'>C</span>
-            <span className='font-bold'>{pcvMetrics.hasSelection ? formatMetric(pcvMetrics.C) : "-"}</span>
-            <span className='font-light'>{currentUnit}</span>
-          </div>
-          <div className='text-md border-1 border-secondary rounded-md p-2 flex items-center justify-center min-w-[40px] gap-1 h-full'>
-            <span className='text-secondary font-bold'>V</span>
-            <span className='font-bold'>{pcvMetrics.hasSelection ? formatMetric(pcvMetrics.V) : "-"}</span>
-            <span className='font-light'>{currentUnit}</span>
-          </div>
-          <div className='text-md border-1 border-[#E0756C] rounded-md p-2 flex items-center justify-center min-w-[40px] gap-1 h-full'>
-            <span className='text-[#E0756C] font-bold'>R</span>
-            <span className='font-bold'>{pcvMetrics.hasSelection ? formatMetric(pcvMetrics.R) : "-"}</span>
-            <span className='font-light'>{currentUnit}</span>
-          </div>
-          <div className='text-md border-1 border-[#72E06C] bg-[#E2F1C1] rounded-md p-2 flex items-center justify-center min-w-[40px] gap-1 h-full'>
-            <span className='text-black font-bold'>B</span>
+        <div className='flex gap-4  max-md:gap-2 max-md:text-xs'>
+          <IndicatorList indicators={[
+            {
+              color: '#9F70DB',
+              currentUnit,
+              value: formatMetric(pcvMetrics.P),
+              label: 'P'
+            },
+            {
+              color: '#6C9EE0',
+              currentUnit,
+              value: formatMetric(pcvMetrics.C),
+              label: 'C'
+            },
+            {
+              color: '#E0756C',
+              currentUnit,
+              value: formatMetric(pcvMetrics.R),
+              label: 'R'
+            },
+          ]} />
+          <div className='text-md border-1 border-[#72E06C] bg-[#E2F1C1] rounded-md p-1 flex items-center justify-center min-w-[40px] gap-1 h-full'>
+            <span className='text-black font-semibold font-xs'>B</span>
             <div className='flex flex-col'>
-              <span className='font-bold text-xs'>Classificação</span>
-              <span className='font-light text-neutral-400 text-xs'>N: {newData.length} projetos</span>
+              <span className='font-semibold text-xs'>Classificação</span>
+              <span className='font-light text-neutral-900 text-xs'>N: {newData.length} proj.</span>
             </div>
           </div>
         </div>
@@ -451,7 +484,6 @@ const UnitsSummary = ({
           <div className="flex-1 min-h-0 flex flex-col justify-between gap-4 pt-3">
             <div className="flex flex-col gap-4 w-full">
               <Legend />
-
               {chartType === "scatter" ? (
                 <D3GradientRangeChart
                   data={newData}
@@ -480,8 +512,6 @@ const UnitsSummary = ({
                 />
               )}
             </div>
-
-
           </div>
         </div>
       )}
