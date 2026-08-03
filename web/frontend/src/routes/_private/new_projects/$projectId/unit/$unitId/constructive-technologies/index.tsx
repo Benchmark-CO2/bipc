@@ -11,6 +11,7 @@ import {
   CommonTable,
   DialogCreateSimulation,
   DrawerFormModule,
+  DrawerIFCImport,
 } from "@/components/layout";
 import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
 import ModalSimple from "@/components/layout/modal-simple";
@@ -575,11 +576,22 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-col gap-4">
-      <DialogCreateSimulation
-        projectId={projectId}
-        unitId={unitId}
-        roleId={roleId}
-      />
+      <div className="flex items-center gap-2">
+        <DialogCreateSimulation
+          projectId={projectId}
+          unitId={unitId}
+          roleId={roleId}
+        />
+        <DrawerIFCImport
+          mode="simulation"
+          projectId={projectId}
+          unitId={unitId}
+          roleId={roleId}
+          triggerComponent={
+            <Button variant="outline-bipc">{t.common.ifcImportTqs}</Button>
+          }
+        />
+      </div>
       {options.map((option) => {
         const modules = option.modules.map((mod) => ({
           ...mod,

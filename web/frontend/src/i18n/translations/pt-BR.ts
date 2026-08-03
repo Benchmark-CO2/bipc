@@ -18,6 +18,7 @@ export const ptBR = {
     expand: "Expandir",
     collapse: "Recolher",
     ifcImport: "Importar do IFC",
+    ifcImportTqs: "Importar de IFC/TQS",
   },
   errors: {
     unexpectedError: "Erro inesperado. Tente novamente mais tarde.",
@@ -1226,6 +1227,49 @@ export const ptBR = {
       "Muitas requisições em pouco tempo. Aguarde um momento e tente novamente.",
     serverError:
       "Ocorreu um erro no servidor. Por favor, tente novamente mais tarde.",
+  },
+  drawerIFC: {
+    title: "Dados de IFC",
+    titleImport: "Dados de Importação",
+    fileTypeLabel: "Tipo de arquivo",
+    tabIFC: "IFC",
+    tabTQS: "Arquivo TQS",
+    sectionImportIFC: "Importar novo IFC",
+    sectionImportTQS: "Importar novo Arquivo TQS",
+    sectionAlreadyImportedIFC: "Utilizar dados de IFC já importados",
+    sectionAlreadyImportedTQS: "Utilizar dados de Arquivo TQS já importados",
+    softwareLabel: "Qual software utilizou para desenvolver?",
+    softwarePlaceholder: "Selecione o software",
+    versionLabel: "Qual versão",
+    versionPlaceholder: "Versão",
+    processingMessageIFC:
+      "Carregando arquivo IFC. Não feche essa janela até o upload completar.",
+    processingMessageTQS:
+      "Carregando arquivo TQS. Não feche essa janela até o upload completar.",
+    invalidFileTypeIFC: "Formato inválido. Selecione um arquivo .ifc.",
+    invalidFileTypeTQS: "Formato inválido. Selecione um arquivo .html/.htm.",
+    dropZoneLabelIFC:
+      "Arraste o seu arquivo IFC aqui ou clique para selecioná-lo",
+    dropZoneLabelTQS:
+      "Arraste o seu arquivo TQS aqui ou clique para selecioná-lo",
+    dropZoneAriaIFC: "Área de upload de arquivo IFC",
+    dropZoneAriaTQS: "Área de upload de arquivo TQS",
+    removeFile: "Remover arquivo",
+    manageFiles: "Gerenciar arquivos importados",
+    importData: "Importar os dados",
+    selectFileLabel: "Selecione seu arquivo",
+    selectFilePlaceholder: "Selecione um arquivo importado",
+    selectUnitLabel: "Unidade",
+    selectUnitPlaceholder: "Selecione a unidade",
+    selectTechLabel: "Selecione as tecnologias que deseja importar",
+    colType: "Tipo",
+    colName: "Nome",
+    noTechnologies: "Nenhuma tecnologia disponível neste arquivo",
+    useSelected: "Utilizar dados selecionados",
+    importSuccess: "Arquivo importado com sucesso",
+    importError: "Erro ao importar arquivo",
+    useSelectedSuccess: "Dados importados com sucesso",
+    useSelectedError: "Erro ao utilizar dados selecionados",
   },
 } as const;
 

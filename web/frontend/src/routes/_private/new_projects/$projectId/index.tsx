@@ -18,7 +18,7 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Upload } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { useTranslation } from "@/i18n";
@@ -125,9 +125,6 @@ function RouteComponent() {
         />
         {selectedTab === t.projectView.tabProject && (
           <>
-            <Button variant="outline-bipc" size="icon-lg" disabled>
-              <Upload />
-            </Button>
             {hasPermission("create:unit") && (
               <DrawerFormUnit
                 triggerComponent={
