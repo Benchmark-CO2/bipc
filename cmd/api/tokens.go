@@ -9,23 +9,7 @@ import (
 
 	"github.com/Benchmark-CO2/bipc/internal/data"
 	"github.com/Benchmark-CO2/bipc/internal/validator"
-	"github.com/google/uuid"
-
-	"github.com/golang-jwt/jwt/v5"
 )
-
-func GenerateTokenJWT(userID uuid.UUID, key string) (string, error) {
-	claims := jwt.RegisteredClaims{
-		Subject:   userID.String(),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		Issuer:    "app.bipc.org.br",
-		Audience:  jwt.ClaimStrings{"ifc-service"},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(key))
-}
 
 func (app *application) createAuthenticationTokenHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
@@ -85,13 +69,7 @@ func (app *application) createAuthenticationTokenHandler(w http.ResponseWriter, 
 		return
 	}
 
-	tokenJWT, err := GenerateTokenJWT(user.ID, app.config.jwt.secret)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
-	err = app.writeJSON(w, http.StatusCreated, envelope{"authentication_token": token, "user": user, "jwt": tokenJWT}, nil)
+	err = app.writeJSON(w, http.StatusCreated, envelope{"authentication_token": token, "user": user}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

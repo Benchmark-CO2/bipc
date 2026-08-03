@@ -49,9 +49,8 @@ type config struct {
 	cors struct {
 		trustedOrigins []string
 	}
-	jwt struct {
-		secret string
-	}
+	ifcURL    string
+	ifcSecret string
 }
 
 type application struct {
@@ -89,7 +88,9 @@ func main() {
 		return nil
 	})
 
-	flag.StringVar(&cfg.jwt.secret, "jwt-secret", "", "JWT secret")
+	flag.StringVar(&cfg.ifcURL, "ifc-url", "", "IFC Service URL")
+
+	flag.StringVar(&cfg.ifcSecret, "ifc-secret", "", "IFC secret")
 
 	displayVersion := flag.Bool("version", false, "Display version and exit")
 
