@@ -51,6 +51,10 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/report", app.reportHandler)
 
+	serviceProxy := app.newServiceProxy()
+	router.HandlerFunc(http.MethodGet, "/v1/proxy/*path", app.proxyHandler(serviceProxy))
+	router.HandlerFunc(http.MethodPost, "/v1/proxy/*path", app.proxyHandler(serviceProxy))
+
 	// ----------------------------------------------------------------------------------------------------------------------------------
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate", app.requireActivatedUser(app.duplicateProjectHandler))

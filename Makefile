@@ -119,7 +119,7 @@ run/help:
 ## run/api: run the cmd/api application
 .PHONY: run/api
 run/api:
-	go run ./cmd/api -url=$(URL) -db-dsn=$(DB_DSN) -smtp-host=$(SMTP_HOST) -smtp-port=$(SMTP_PORT) -smtp-sender=$(SMTP_SENDER) -jwt-secret=$(JWT_SECRET)
+	go run ./cmd/api -url=$(URL) -db-dsn=$(DB_DSN) -smtp-host=$(SMTP_HOST) -smtp-port=$(SMTP_PORT) -smtp-sender=$(SMTP_SENDER) -ifc-url=$(IFC_URL) -ifc-secret=$(IFC_SECRET)
 
 ## migrations/new name=$1: create a new database migration
 .PHONY: migrations/new
