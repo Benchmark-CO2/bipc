@@ -1257,8 +1257,19 @@ export const ptBR = {
     removeFile: "Remover arquivo",
     manageFiles: "Gerenciar arquivos importados",
     importData: "Importar os dados",
+    importQueuedIFC:
+      "Importação iniciada. Você pode acompanhar o status na lista de arquivos importados.",
+    calculateGeometriesLabel: "Calcular geometrias",
+    calculateGeometriesHint: "pode aumentar o tempo de processamento",
     selectFileLabel: "Selecione seu arquivo",
     selectFilePlaceholder: "Selecione um arquivo importado",
+    statusProcessing: "Em processamento",
+    statusCompleted: "Concluído",
+    statusFailed: "Falhou",
+    processingSelectHint:
+      "Este arquivo ainda está em processamento. Aguarde para utilizar os dados.",
+    failedSelectHint:
+      "O processamento deste arquivo falhou. Tente importar novamente.",
     selectUnitLabel: "Unidade",
     selectUnitPlaceholder: "Selecione a unidade",
     selectTechLabel: "Selecione as tecnologias que deseja importar",

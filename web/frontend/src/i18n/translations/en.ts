@@ -1243,8 +1243,18 @@ export const en: Translations = {
     removeFile: "Remove file",
     manageFiles: "Manage imported files",
     importData: "Import data",
+    importQueuedIFC:
+      "Import started. You can track the status in the imported files list.",
+    calculateGeometriesLabel: "Calculate geometries",
+    calculateGeometriesHint: "may increase processing time",
     selectFileLabel: "Select your file",
     selectFilePlaceholder: "Select an imported file",
+    statusProcessing: "Processing",
+    statusCompleted: "Completed",
+    statusFailed: "Failed",
+    processingSelectHint:
+      "This file is still being processed. Please wait to use the data.",
+    failedSelectHint: "Processing failed for this file. Please import again.",
     selectUnitLabel: "Unit",
     selectUnitPlaceholder: "Select the unit",
     selectTechLabel: "Select the technologies you want to import",

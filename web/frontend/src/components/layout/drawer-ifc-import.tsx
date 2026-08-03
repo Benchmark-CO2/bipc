@@ -6,7 +6,7 @@ import { parseApiError } from "@/utils/parseApiError";
 import { queryClient } from "@/utils/queryClient";
 import { useMutation } from "@tanstack/react-query";
 import { AlertTriangle, FileUp, Loader2, Upload, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import {
@@ -23,14 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../ui/table";
 import { Checkbox } from "../ui/checkbox";
 import { SimpleTooltip } from "../ui/simple-tooltip";
 
@@ -40,6 +32,8 @@ import { SimpleTooltip } from "../ui/simple-tooltip";
 
 type FileType = "ifc" | "tqs";
 export type IFCAccessMode = "project" | "unit" | "simulation";
+
+type IFCImportStatus = "processing" | "completed" | "failed";
 
 export interface DrawerIFCImportProps {
   /** Determines the context in which the drawer is opened */
@@ -54,6 +48,13 @@ export interface DrawerIFCImportProps {
 // ---------------------------------------------------------------------------
 // Mock data — replace with real API responses when backend is ready
 // ---------------------------------------------------------------------------
+
+type ImportedIFCFile = {
+  id: string;
+  name: string;
+  date: string;
+  status: IFCImportStatus;
+};
 
 const MOCK_SOFTWARE_IFC = [
   { value: "revit", label: "Autodesk Revit" },
@@ -90,47 +91,20 @@ const MOCK_VERSIONS_IFC: Record<string, { value: string; label: string }[]> = {
 
 const MOCK_VERSIONS_TQS = [{ value: "tqsv26", label: "tqsv26" }];
 
-const MOCK_IMPORTED_FILES = [
-  { id: "f1", name: "estrutural123tqs", date: "14/04/2026" },
-  { id: "f2", name: "edificio_residencial_v2", date: "10/03/2026" },
-  { id: "f3", name: "torre_araucaria_ifc", date: "22/01/2026" },
+const MOCK_IMPORTED_FILES: ImportedIFCFile[] = [
+  {
+    id: "f1",
+    name: "torre_araucaria_ifc",
+    date: "22/01/2026",
+    status: "completed",
+  },
+  {
+    id: "f2",
+    name: "edificio_residencial_v2",
+    date: "10/03/2026",
+    status: "completed",
+  },
 ];
-
-const MOCK_TECHNOLOGIES_BY_FILE: Record<
-  string,
-  { id: string; type: string; name: string }[]
-> = {
-  f1: [
-    { id: "t1", type: "Torre", name: "Ed. Flamboyant" },
-    { id: "t2", type: "Torre", name: "Ed. Araucária" },
-  ],
-  f2: [
-    { id: "t3", type: "Pórtico", name: "Bloco A" },
-    { id: "t4", type: "Parede de concreto", name: "Bloco B" },
-    { id: "t5", type: "Fundação", name: "Bloco A - Fundação" },
-  ],
-  f3: [
-    { id: "t6", type: "Pórtico", name: "Torre Principal" },
-    { id: "t7", type: "Parede de concreto", name: "Torre Secundária" },
-    { id: "t8", type: "Fundação", name: "Radier" },
-  ],
-};
-
-const MOCK_UNITS_BY_FILE: Record<string, { id: string; name: string }[]> = {
-  f1: [
-    { id: "u1", name: "Torre 1" },
-    { id: "u2", name: "Torre 2" },
-  ],
-  f2: [
-    { id: "u3", name: "Bloco A" },
-    { id: "u4", name: "Bloco B" },
-    { id: "u5", name: "Bloco C" },
-  ],
-  f3: [
-    { id: "u6", name: "Torre Principal" },
-    { id: "u7", name: "Torre Secundária" },
-  ],
-};
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -327,14 +301,16 @@ export default function DrawerIFCImport({
   const [fileType, setFileType] = useState<FileType>("ifc");
   const [software, setSoftware] = useState("");
   const [version, setVersion] = useState("");
+  const [calculateGeometries, setCalculateGeometries] = useState(true);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [importErrorMessage, setImportErrorMessage] = useState("");
   const [fileWarningMessage, setFileWarningMessage] = useState("");
 
   // "Already imported" section state
+  const [ifcImportedFiles, setIfcImportedFiles] =
+    useState<ImportedIFCFile[]>(MOCK_IMPORTED_FILES);
   const [selectedFileId, setSelectedFileId] = useState("");
-  const [selectedUnitId, setSelectedUnitId] = useState("");
-  const [selectedTechIds, setSelectedTechIds] = useState<string[]>([]);
+  const ifcProcessingTimeoutsRef = useRef<number[]>([]);
 
   const isMobile = useIsMobile();
   const { t } = useTranslation();
@@ -364,6 +340,13 @@ export default function DrawerIFCImport({
     },
   });
 
+  useEffect(() => {
+    return () => {
+      ifcProcessingTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
+      ifcProcessingTimeoutsRef.current = [];
+    };
+  }, []);
+
   // Derived data
   const softwareOptions =
     fileType === "tqs" ? MOCK_SOFTWARE_TQS : MOCK_SOFTWARE_IFC;
@@ -373,13 +356,7 @@ export default function DrawerIFCImport({
       : software
         ? (MOCK_VERSIONS_IFC[software] ?? [])
         : [];
-
-  const technologies = selectedFileId
-    ? (MOCK_TECHNOLOGIES_BY_FILE[selectedFileId] ?? [])
-    : [];
-  const units = selectedFileId
-    ? (MOCK_UNITS_BY_FILE[selectedFileId] ?? [])
-    : [];
+  const selectedIfcFile = ifcImportedFiles.find((f) => f.id === selectedFileId);
 
   const handleClose = (force?: boolean) => {
     if (!force && isUploadingTqsFile) return;
@@ -387,12 +364,11 @@ export default function DrawerIFCImport({
     setFileType("ifc");
     setSoftware("");
     setVersion("");
+    setCalculateGeometries(true);
     setUploadFile(null);
     setImportErrorMessage("");
     setFileWarningMessage("");
     setSelectedFileId("");
-    setSelectedUnitId("");
-    setSelectedTechIds([]);
   };
 
   const handleFileTypeChange = (ft: FileType) => {
@@ -402,6 +378,7 @@ export default function DrawerIFCImport({
     setUploadFile(null);
     setSoftware(ft === "tqs" ? "tqs" : "");
     setVersion(ft === "tqs" ? "tqsv26" : "");
+    setCalculateGeometries(true);
   };
 
   const handleSoftwareChange = (val: string) => {
@@ -411,27 +388,6 @@ export default function DrawerIFCImport({
 
   const handleFileSelect = (fileId: string) => {
     setSelectedFileId(fileId);
-    setSelectedUnitId("");
-    setSelectedTechIds([]);
-  };
-
-  const handleUnitSelect = (unitId: string) => {
-    setSelectedUnitId(unitId);
-    setSelectedTechIds([]);
-  };
-
-  const toggleTech = (id: string) => {
-    setSelectedTechIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-    );
-  };
-
-  const toggleAllTechs = () => {
-    if (selectedTechIds.length === technologies.length) {
-      setSelectedTechIds([]);
-    } else {
-      setSelectedTechIds(technologies.map((t) => t.id));
-    }
   };
 
   const handleImport = () => {
@@ -441,9 +397,51 @@ export default function DrawerIFCImport({
       uploadTqsFile();
       return;
     }
+
+    if (!uploadFile || !software || !version) return;
+    const id =
+      globalThis.crypto?.randomUUID?.() ?? `ifc_${Date.now().toString(16)}`;
+    const now = new Date();
+    const fileName = uploadFile.name.replace(/\.[^.]+$/, "");
+
+    const newFile: ImportedIFCFile = {
+      id,
+      name: fileName,
+      date: now.toLocaleDateString("pt-BR"),
+      status: "processing",
+    };
+
+    setIfcImportedFiles((prev) => [newFile, ...prev]);
+    setSelectedFileId(id);
+    setUploadFile(null);
+    setSoftware("");
+    setVersion("");
+    setCalculateGeometries(true);
+    toast.success(t.drawerIFC.importQueuedIFC);
+
+    const timeoutId = window.setTimeout(() => {
+      setIfcImportedFiles((prev) =>
+        prev.map((f) => (f.id === id ? { ...f, status: "completed" } : f)),
+      );
+    }, 7000);
+    ifcProcessingTimeoutsRef.current.push(timeoutId);
   };
 
-  const handleUseSelected = () => {};
+  const handleUseSelected = () => {
+    if (fileType !== "ifc") return;
+    if (!selectedIfcFile || selectedIfcFile.status !== "completed") return;
+    toast.success(t.drawerIFC.useSelectedSuccess);
+    if (mode === "simulation") {
+      queryClient.invalidateQueries({
+        queryKey: ["options", projectId, unitId],
+      });
+    } else if (mode === "unit") {
+      queryClient.invalidateQueries({
+        queryKey: ["project", projectId],
+      });
+    }
+    handleClose(true);
+  };
 
   const drawerTitle = hasFileTypeTabs
     ? t.drawerIFC.titleImport
@@ -590,6 +588,23 @@ export default function DrawerIFCImport({
                   onInvalidFile={setFileWarningMessage}
                 />
 
+                {fileType === "ifc" && (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={calculateGeometries}
+                      onCheckedChange={(v) =>
+                        setCalculateGeometries(v === true)
+                      }
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {t.drawerIFC.calculateGeometriesLabel}{" "}
+                      <span className="text-muted-foreground">
+                        ({t.drawerIFC.calculateGeometriesHint})
+                      </span>
+                    </span>
+                  </div>
+                )}
+
                 {importErrorMessage && !isUploadingTqsFile && (
                   <div className="p-0">
                     <div className="bg-red-50 dark:bg-red-950/20 border-2 border-red-400 dark:border-red-600 rounded-lg p-4">
@@ -677,125 +692,42 @@ export default function DrawerIFCImport({
                           />
                         </SelectTrigger>
                         <SelectContent>
-                          {MOCK_IMPORTED_FILES.map((f) => (
+                          {ifcImportedFiles.map((f) => (
                             <SelectItem key={f.id} value={f.id}>
-                              {f.name} — {f.date}
+                              {f.name} — {f.date} (
+                              {f.status === "processing"
+                                ? t.drawerIFC.statusProcessing
+                                : f.status === "failed"
+                                  ? t.drawerIFC.statusFailed
+                                  : t.drawerIFC.statusCompleted}
+                              )
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
 
-                    {mode === "simulation" && (
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-sm text-muted-foreground">
-                          {t.drawerIFC.selectUnitLabel}{" "}
-                          <span className="text-destructive">*</span>
-                        </label>
-                        <Select
-                          value={selectedUnitId}
-                          onValueChange={handleUnitSelect}
-                          disabled={!selectedFileId}
-                        >
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={t.drawerIFC.selectUnitPlaceholder}
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {units.map((u) => (
-                              <SelectItem key={u.id} value={u.id}>
-                                {u.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                    {selectedIfcFile?.status === "processing" && (
+                      <div className="bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-4">
+                        <div className="flex gap-3">
+                          <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
+                          <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                            {t.drawerIFC.processingSelectHint}
+                          </p>
+                        </div>
                       </div>
                     )}
 
-                    {(mode === "unit" || mode === "simulation") &&
-                      selectedFileId && (
-                        <div className="flex flex-col gap-2">
-                          <p className="text-sm font-medium text-foreground">
-                            {t.drawerIFC.selectTechLabel}
+                    {selectedIfcFile?.status === "failed" && (
+                      <div className="bg-red-50 dark:bg-red-950/20 border-2 border-red-400 dark:border-red-600 rounded-lg p-4">
+                        <div className="flex gap-3">
+                          <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5" />
+                          <p className="text-sm text-red-800 dark:text-red-300">
+                            {t.drawerIFC.failedSelectHint}
                           </p>
-                          <div className="rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
-                            <Table>
-                              <TableHeader className="bg-primary text-primary-foreground">
-                                <TableRow className="hover:bg-transparent">
-                                  <TableHead className="text-inherit w-10">
-                                    <Checkbox
-                                      className="border-2 border-white bg-white data-[state=checked]:bg-secondary data-[state=checked]:border-secondary"
-                                      checked={
-                                        technologies.length > 0 &&
-                                        selectedTechIds.length ===
-                                          technologies.length
-                                          ? true
-                                          : selectedTechIds.length > 0
-                                            ? "indeterminate"
-                                            : false
-                                      }
-                                      onCheckedChange={toggleAllTechs}
-                                      aria-label={t.commonTable.selectAll}
-                                    />
-                                  </TableHead>
-                                  <TableHead className="text-inherit">
-                                    {t.drawerIFC.colType}
-                                  </TableHead>
-                                  {mode === "unit" && (
-                                    <TableHead className="text-inherit">
-                                      {t.drawerIFC.colName}
-                                    </TableHead>
-                                  )}
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {technologies.length === 0 ? (
-                                  <TableRow>
-                                    <TableCell
-                                      colSpan={mode === "unit" ? 3 : 2}
-                                      className="text-center text-muted-foreground text-sm py-6"
-                                    >
-                                      {t.drawerIFC.noTechnologies}
-                                    </TableCell>
-                                  </TableRow>
-                                ) : (
-                                  technologies.map((tech, idx) => (
-                                    <TableRow
-                                      key={tech.id}
-                                      className={
-                                        idx % 2 === 0
-                                          ? "bg-table-row-even"
-                                          : "bg-table-row-odd"
-                                      }
-                                    >
-                                      <TableCell>
-                                        <Checkbox
-                                          className="border border-gray-300 bg-white data-[state=checked]:bg-secondary data-[state=checked]:border-secondary"
-                                          checked={selectedTechIds.includes(
-                                            tech.id,
-                                          )}
-                                          onCheckedChange={() =>
-                                            toggleTech(tech.id)
-                                          }
-                                        />
-                                      </TableCell>
-                                      <TableCell className="text-sm">
-                                        {tech.type}
-                                      </TableCell>
-                                      {mode === "unit" && (
-                                        <TableCell className="text-sm">
-                                          {tech.name}
-                                        </TableCell>
-                                      )}
-                                    </TableRow>
-                                  ))
-                                )}
-                              </TableBody>
-                            </Table>
-                          </div>
                         </div>
-                      )}
+                      </div>
+                    )}
 
                     <div className="flex justify-end">
                       <Button
@@ -804,9 +736,7 @@ export default function DrawerIFCImport({
                         className="text-white"
                         disabled={
                           !selectedFileId ||
-                          ((mode === "unit" || mode === "simulation") &&
-                            selectedTechIds.length === 0) ||
-                          (mode === "simulation" && !selectedUnitId)
+                          selectedIfcFile?.status !== "completed"
                         }
                         onClick={handleUseSelected}
                       >
