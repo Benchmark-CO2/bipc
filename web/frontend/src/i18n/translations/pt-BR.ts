@@ -1263,6 +1263,7 @@ export const ptBR = {
     calculateGeometriesHint: "pode aumentar o tempo de processamento",
     selectFileLabel: "Selecione seu arquivo",
     selectFilePlaceholder: "Selecione um arquivo importado",
+    noImportedFiles: "Nenhum arquivo importado encontrado",
     statusProcessing: "Em processamento",
     statusCompleted: "Concluído",
     statusFailed: "Falhou",

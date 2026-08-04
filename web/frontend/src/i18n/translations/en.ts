@@ -1249,6 +1249,7 @@ export const en: Translations = {
     calculateGeometriesHint: "may increase processing time",
     selectFileLabel: "Select your file",
     selectFilePlaceholder: "Select an imported file",
+    noImportedFiles: "No imported files found",
     statusProcessing: "Processing",
     statusCompleted: "Completed",
     statusFailed: "Failed",

@@ -1,12 +1,16 @@
 import { postDisciplineFileUpload } from "@/actions/disciplines/postDisciplineFileUpload";
+import { getIfcRequestResult } from "@/actions/ifc/getIfcRequestResult";
+import { getIfcRequests } from "@/actions/ifc/getIfcRequests";
+import { postIfcCreateRequest } from "@/actions/ifc/postIfcCreateRequest";
+import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
+import { TIfcProcessorRequestListItem } from "@/types/ifc";
 import { parseApiError } from "@/utils/parseApiError";
-import { queryClient } from "@/utils/queryClient";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, FileUp, Loader2, Upload, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import {
@@ -54,6 +58,7 @@ type ImportedIFCFile = {
   name: string;
   date: string;
   status: IFCImportStatus;
+  errorMessage?: string | null;
 };
 
 const MOCK_SOFTWARE_IFC = [
@@ -90,21 +95,6 @@ const MOCK_VERSIONS_IFC: Record<string, { value: string; label: string }[]> = {
 };
 
 const MOCK_VERSIONS_TQS = [{ value: "tqsv26", label: "tqsv26" }];
-
-const MOCK_IMPORTED_FILES: ImportedIFCFile[] = [
-  {
-    id: "f1",
-    name: "torre_araucaria_ifc",
-    date: "22/01/2026",
-    status: "completed",
-  },
-  {
-    id: "f2",
-    name: "edificio_residencial_v2",
-    date: "10/03/2026",
-    status: "completed",
-  },
-];
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -307,13 +297,13 @@ export default function DrawerIFCImport({
   const [fileWarningMessage, setFileWarningMessage] = useState("");
 
   // "Already imported" section state
-  const [ifcImportedFiles, setIfcImportedFiles] =
-    useState<ImportedIFCFile[]>(MOCK_IMPORTED_FILES);
   const [selectedFileId, setSelectedFileId] = useState("");
-  const ifcProcessingTimeoutsRef = useRef<number[]>([]);
 
   const isMobile = useIsMobile();
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const clientId = user?.id ?? "";
 
   const hasFileTypeTabs = mode === "simulation";
   const canUploadTqs = mode === "simulation" && !!unitId && !!roleId;
@@ -340,12 +330,22 @@ export default function DrawerIFCImport({
     },
   });
 
-  useEffect(() => {
-    return () => {
-      ifcProcessingTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
-      ifcProcessingTimeoutsRef.current = [];
-    };
-  }, []);
+  const {
+    data: ifcRequests,
+    isLoading: isLoadingIfcRequests,
+    isError: isIfcRequestsError,
+  } = useQuery({
+    queryKey: ["ifcRequests", clientId],
+    queryFn: async () => {
+      const res = await getIfcRequests(clientId);
+      return res.data.items;
+    },
+    enabled: isOpen && fileType === "ifc" && Boolean(clientId),
+    refetchInterval: (q) => {
+      const items = q.state.data ?? [];
+      return items.some((i) => i.status === "processing") ? 5000 : false;
+    },
+  });
 
   // Derived data
   const softwareOptions =
@@ -356,10 +356,113 @@ export default function DrawerIFCImport({
       : software
         ? (MOCK_VERSIONS_IFC[software] ?? [])
         : [];
+
+  const mapIfcRequestToImportedFile = (
+    req: TIfcProcessorRequestListItem,
+  ): ImportedIFCFile => ({
+    id: req.request_id,
+    name: req.file_name,
+    date: new Date(req.ts_created * 1000).toLocaleDateString("pt-BR"),
+    status: req.status,
+    errorMessage: req.error_message,
+  });
+
+  const ifcImportedFiles: ImportedIFCFile[] = (ifcRequests ?? [])
+    .slice()
+    .sort((a, b) => b.ts_created - a.ts_created)
+    .map(mapIfcRequestToImportedFile);
+
   const selectedIfcFile = ifcImportedFiles.find((f) => f.id === selectedFileId);
 
+  const bufferToBase64 = (buffer: ArrayBuffer) => {
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 1) {
+      binary += String.fromCharCode(bytes[i]!);
+    }
+    return btoa(binary);
+  };
+
+  const sha256Base64 = async (file: File) => {
+    const buf = await file.arrayBuffer();
+    const digest = await crypto.subtle.digest("SHA-256", buf);
+    return bufferToBase64(digest);
+  };
+
+  const { mutate: importIfcFile, isPending: isImportingIfcFile } = useMutation({
+    mutationFn: async () => {
+      if (!clientId) throw new Error("Missing client id");
+      if (!uploadFile) throw new Error("Missing file");
+      if (!software || !version) throw new Error("Missing metadata");
+
+      const fileHash = await sha256Base64(uploadFile);
+      const res = await postIfcCreateRequest(clientId, {
+        manufacturer: software,
+        version,
+        file_name: uploadFile.name,
+        file_hash: fileHash,
+        calculate_geometries: calculateGeometries,
+      });
+
+      const putRes = await fetch(res.data.ifc_url, {
+        method: "PUT",
+        body: uploadFile,
+      });
+
+      if (!putRes.ok) {
+        throw new Error(`Upload failed (${putRes.status})`);
+      }
+
+      return res.data.request_id;
+    },
+    onSuccess: (requestId) => {
+      toast.success(t.drawerIFC.importQueuedIFC);
+      queryClient.invalidateQueries({ queryKey: ["ifcRequests", clientId] });
+      setSelectedFileId(requestId);
+      setUploadFile(null);
+      setSoftware("");
+      setVersion("");
+      setCalculateGeometries(true);
+      setImportErrorMessage("");
+      setFileWarningMessage("");
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : t.common.unknownError;
+      setImportErrorMessage(message);
+      toast.error(t.drawerIFC.importError, {
+        description: message,
+      });
+    },
+  });
+
+  const { mutate: fetchIfcResult, isPending: isFetchingIfcResult } =
+    useMutation({
+      mutationFn: () => getIfcRequestResult(clientId, selectedFileId),
+      onSuccess: () => {
+        toast.success(t.drawerIFC.useSelectedSuccess);
+        if (mode === "simulation") {
+          queryClient.invalidateQueries({
+            queryKey: ["options", projectId, unitId],
+          });
+        } else if (mode === "unit") {
+          queryClient.invalidateQueries({
+            queryKey: ["project", projectId],
+          });
+        }
+        handleClose(true);
+      },
+      onError: (error) => {
+        const errorMessage = parseApiError(error, t);
+        setImportErrorMessage(errorMessage);
+        toast.error(t.drawerIFC.useSelectedError, {
+          description: errorMessage,
+        });
+      },
+    });
+
   const handleClose = (force?: boolean) => {
-    if (!force && isUploadingTqsFile) return;
+    if (!force && (isUploadingTqsFile || isImportingIfcFile)) return;
     setIsOpen(false);
     setFileType("ifc");
     setSoftware("");
@@ -398,49 +501,16 @@ export default function DrawerIFCImport({
       return;
     }
 
-    if (!uploadFile || !software || !version) return;
-    const id =
-      globalThis.crypto?.randomUUID?.() ?? `ifc_${Date.now().toString(16)}`;
-    const now = new Date();
-    const fileName = uploadFile.name.replace(/\.[^.]+$/, "");
-
-    const newFile: ImportedIFCFile = {
-      id,
-      name: fileName,
-      date: now.toLocaleDateString("pt-BR"),
-      status: "processing",
-    };
-
-    setIfcImportedFiles((prev) => [newFile, ...prev]);
-    setSelectedFileId(id);
-    setUploadFile(null);
-    setSoftware("");
-    setVersion("");
-    setCalculateGeometries(true);
-    toast.success(t.drawerIFC.importQueuedIFC);
-
-    const timeoutId = window.setTimeout(() => {
-      setIfcImportedFiles((prev) =>
-        prev.map((f) => (f.id === id ? { ...f, status: "completed" } : f)),
-      );
-    }, 7000);
-    ifcProcessingTimeoutsRef.current.push(timeoutId);
+    if (!uploadFile || !software || !version || !clientId) return;
+    setImportErrorMessage("");
+    importIfcFile();
   };
 
   const handleUseSelected = () => {
     if (fileType !== "ifc") return;
     if (!selectedIfcFile || selectedIfcFile.status !== "completed") return;
-    toast.success(t.drawerIFC.useSelectedSuccess);
-    if (mode === "simulation") {
-      queryClient.invalidateQueries({
-        queryKey: ["options", projectId, unitId],
-      });
-    } else if (mode === "unit") {
-      queryClient.invalidateQueries({
-        queryKey: ["project", projectId],
-      });
-    }
-    handleClose(true);
+    setImportErrorMessage("");
+    fetchIfcResult();
   };
 
   const drawerTitle = hasFileTypeTabs
@@ -486,13 +556,13 @@ export default function DrawerIFCImport({
             className="absolute right-4 top-2"
             variant="ghost"
             size="icon"
-            disabled={isUploadingTqsFile}
+            disabled={isUploadingTqsFile || isImportingIfcFile}
           >
             <X className="h-4 w-4" />
           </Button>
         </DrawerHeader>
 
-        {isUploadingTqsFile ? (
+        {isUploadingTqsFile || isImportingIfcFile ? (
           <ProcessingView fileType={fileType} />
         ) : (
           <div className="flex flex-col gap-2 overflow-y-auto px-8 pb-8">
@@ -648,7 +718,7 @@ export default function DrawerIFCImport({
                     size="sm"
                     disabled={
                       fileType === "ifc"
-                        ? !uploadFile || !software || !version
+                        ? !uploadFile || !software || !version || !clientId
                         : !uploadFile || !canUploadTqs
                     }
                     onClick={handleImport}
@@ -692,17 +762,31 @@ export default function DrawerIFCImport({
                           />
                         </SelectTrigger>
                         <SelectContent>
-                          {ifcImportedFiles.map((f) => (
-                            <SelectItem key={f.id} value={f.id}>
-                              {f.name} — {f.date} (
-                              {f.status === "processing"
-                                ? t.drawerIFC.statusProcessing
-                                : f.status === "failed"
-                                  ? t.drawerIFC.statusFailed
-                                  : t.drawerIFC.statusCompleted}
-                              )
+                          {isLoadingIfcRequests ? (
+                            <SelectItem value="__loading__" disabled>
+                              {t.common.loading}
                             </SelectItem>
-                          ))}
+                          ) : isIfcRequestsError ? (
+                            <SelectItem value="__error__" disabled>
+                              {t.common.unknownError}
+                            </SelectItem>
+                          ) : ifcImportedFiles.length === 0 ? (
+                            <SelectItem value="__empty__" disabled>
+                              {t.drawerIFC.noImportedFiles}
+                            </SelectItem>
+                          ) : (
+                            ifcImportedFiles.map((f) => (
+                              <SelectItem key={f.id} value={f.id}>
+                                {f.name} — {f.date} (
+                                {f.status === "processing"
+                                  ? t.drawerIFC.statusProcessing
+                                  : f.status === "failed"
+                                    ? t.drawerIFC.statusFailed
+                                    : t.drawerIFC.statusCompleted}
+                                )
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
@@ -723,7 +807,8 @@ export default function DrawerIFCImport({
                         <div className="flex gap-3">
                           <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5" />
                           <p className="text-sm text-red-800 dark:text-red-300">
-                            {t.drawerIFC.failedSelectHint}
+                            {selectedIfcFile.errorMessage ??
+                              t.drawerIFC.failedSelectHint}
                           </p>
                         </div>
                       </div>
@@ -736,11 +821,19 @@ export default function DrawerIFCImport({
                         className="text-white"
                         disabled={
                           !selectedFileId ||
-                          selectedIfcFile?.status !== "completed"
+                          selectedIfcFile?.status !== "completed" ||
+                          isFetchingIfcResult
                         }
                         onClick={handleUseSelected}
                       >
-                        {t.drawerIFC.useSelected}
+                        {isFetchingIfcResult ? (
+                          <span className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            {t.drawerIFC.useSelected}
+                          </span>
+                        ) : (
+                          t.drawerIFC.useSelected
+                        )}
                       </Button>
                     </div>
                   </div>
