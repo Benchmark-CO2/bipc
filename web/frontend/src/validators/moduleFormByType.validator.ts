@@ -317,16 +317,17 @@ export const moduleFormSchema = z
         steel: foundationSteelSchema.optional(),
       })
       .optional(),
+    // Optional foundation elements — volume 0 is allowed (backend ignores zero-volume items)
     tie_beams: z
       .object({
         volume: z
           .string()
           .transform(parseNumber)
-          .refine((val) => !isNaN(val) && val > 0, {
-            message: "O volume de vigas de travamento deve ser maior que 0",
+          .refine((val) => !isNaN(val) && val >= 0, {
+            message: "O volume de cintas não pode ser negativo",
           })
           .optional(),
-        steel: foundationSteelSchema.optional(),
+        steel: z.array(steelMaterialSchema).optional(),
       })
       .optional(),
     pile_caps: z
@@ -334,11 +335,11 @@ export const moduleFormSchema = z
         volume: z
           .string()
           .transform(parseNumber)
-          .refine((val) => !isNaN(val) && val > 0, {
-            message: "O volume de blocos deve ser maior que 0",
+          .refine((val) => !isNaN(val) && val >= 0, {
+            message: "O volume de blocos não pode ser negativo",
           })
           .optional(),
-        steel: foundationSteelSchema.optional(),
+        steel: z.array(steelMaterialSchema).optional(),
       })
       .optional(),
     grade_beams: z
@@ -346,11 +347,11 @@ export const moduleFormSchema = z
         volume: z
           .string()
           .transform(parseNumber)
-          .refine((val) => !isNaN(val) && val > 0, {
-            message: "O volume de vigas baldrame deve ser maior que 0",
+          .refine((val) => !isNaN(val) && val >= 0, {
+            message: "O volume de vigas baldrame não pode ser negativo",
           })
           .optional(),
-        steel: foundationSteelSchema.optional(),
+        steel: z.array(steelMaterialSchema).optional(),
       })
       .optional(),
 

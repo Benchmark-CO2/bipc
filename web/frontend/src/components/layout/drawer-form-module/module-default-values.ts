@@ -159,35 +159,30 @@ export const pilesFoundationDefaultValues = {
       },
     ],
   },
+  // Optional sections — start with empty steel so user is not forced to fill them
   pile_caps: {
     volume: "0",
-    steel: [
-      {
-        material: "rebar" as const,
-        resistance: "CA50" as const,
-        mass: "0",
-      },
-    ],
+    steel: [] as {
+      material: "rebar" | "mesh" | "strand" | "other";
+      resistance: "CA50" | "CA60" | "CP190" | "other";
+      mass: string;
+    }[],
   },
   grade_beams: {
     volume: "0",
-    steel: [
-      {
-        material: "rebar" as const,
-        resistance: "CA50" as const,
-        mass: "0",
-      },
-    ],
+    steel: [] as {
+      material: "rebar" | "mesh" | "strand" | "other";
+      resistance: "CA50" | "CA60" | "CP190" | "other";
+      mass: string;
+    }[],
   },
   tie_beams: {
     volume: "0",
-    steel: [
-      {
-        material: "rebar" as const,
-        resistance: "CA50" as const,
-        mass: "0",
-      },
-    ],
+    steel: [] as {
+      material: "rebar" | "mesh" | "strand" | "other";
+      resistance: "CA50" | "CA60" | "CP190" | "other";
+      mass: string;
+    }[],
   },
 };
 
