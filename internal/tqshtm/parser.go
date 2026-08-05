@@ -146,9 +146,11 @@ func parseBlocksTable(table *html.Node) ([]BlockItem, error) {
 			continue
 		}
 
+		fbk := modules.NormalizeBlockFbkToFirstSupportedAbove(resistance / 100)
+
 		blocks = append(blocks, BlockItem{
 			Type:     blockType,
-			Fbk:      resistance,
+			Fbk:      fbk,
 			Quantity: qty,
 		})
 	}
@@ -202,12 +204,12 @@ func parseConcreteGroutTable(table *html.Node) (*StructuralMasonryData, error) {
 			})
 		case strings.Contains(name, "argamassa"):
 			data.Masonry.Mortar = append(data.Masonry.Mortar, MortarItem{
-				Fak:    resistance / 100,
+				Fak:    modules.NormalizeMortarFakToFirstSupportedAbove(resistance / 1000),
 				Volume: volume,
 			})
 		case strings.Contains(name, "graute"):
 			data.Masonry.Grout = append(data.Masonry.Grout, GroutItem{
-				Volumes: []GroutVolumeItem{{Fgk: fck, Volume: volume}},
+				Volumes: []GroutVolumeItem{{Fgk: int(modules.NormalizeGroutFgk(resistance / 1000)), Volume: volume}},
 				Steel:   []SteelItem{},
 				Position: "vertical",
 			})
@@ -286,7 +288,6 @@ func parseSteelTable(table *html.Node) ([]SteelItem, error) {
 	}
 
 	var steelItems []modules.SteelMaterial
-	diameters := []float64{3.2, 4.2, 5.0, 6.3, 8.0, 10.0, 12.5, 16.0, 20.0, 22.0, 25.0, 32.0, 40.0}
 
 	for _, row := range rows {
 		cells := extractCells(row)
@@ -299,21 +300,13 @@ func parseSteelTable(table *html.Node) ([]SteelItem, error) {
 			continue
 		}
 
-		for i := range diameters {
-			cellIdx := i + 1
-			if cellIdx >= len(cells) {
-				break
-			}
-
-			mass := parseFloat(strings.TrimSpace(cells[cellIdx]))
-			if mass <= 0 {
-				continue
-			}
-
+		totalsIdx := len(cells) - 1
+		totalMass := parseFloat(strings.TrimSpace(cells[totalsIdx]))
+		if totalMass > 0 {
 			steelItems = append(steelItems, modules.SteelMaterial{
 				Material:   "rebar",
 				Resistance: "CA50",
-				Mass:       mass,
+				Mass:       totalMass,
 				Position:   "",
 			})
 		}

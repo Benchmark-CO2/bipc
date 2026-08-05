@@ -65,6 +65,22 @@ func NormalizeBlockFbkToFirstSupportedAbove(fbk float64) float64 {
 	return supportedBlockFbkValues[len(supportedBlockFbkValues)-1]
 }
 
+var supportedGroutFgkValues = []int{15, 20, 25, 30, 35, 40, 45, 50}
+
+func NormalizeGroutFgk(fgk float64) float64 {
+	if fgk <= 0 {
+		return fgk
+	}
+
+	for _, supported := range supportedGroutFgkValues {
+		if fgk <= float64(supported) {
+			return float64(supported)
+		}
+	}
+
+	return float64(supportedGroutFgkValues[len(supportedGroutFgkValues)-1])
+}
+
 var sidacConcreteData = SidacMaterial{
 	KgCO2: map[float64]SidacValue{
 		20: {Min: 168.8, Max: 283.5},
