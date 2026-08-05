@@ -798,6 +798,16 @@ export const ptBR = {
     weeksAgo: "semanas atrás",
     monthsAgo: "meses atrás",
   },
+  utils: {
+    date: {
+      secondsAgo: "{count, plural, one {# segundo atrás} other {# segundos atrás}}",
+      minutesAgo: "{count, plural, one {# minuto atrás} other {# minutos atrás}}",
+      hoursAgo: "{count, plural, one {# hora atrás} other {# horas atrás}}",
+      daysAgo: "{count, plural, one {# dia atrás} other {# dias atrás}}",
+      weeksAgo: "{count, plural, one {# semana atrás} other {# semanas atrás}}",
+      monthsAgo: "{count, plural, one {# mês atrás} other {# meses atrás}}",
+    },
+  },
   drawer: {
     importantNote: "Importante: Confirmação de Dados",
     importantDescription:

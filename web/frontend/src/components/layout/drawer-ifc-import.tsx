@@ -12,6 +12,7 @@ import {
   TIfcProcessorImportStatus,
   TIfcProcessorRequestListItem,
 } from "@/types/ifc";
+import { dateUtils } from "@/utils/date";
 import { parseApiError } from "@/utils/parseApiError";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, FileUp, Loader2, Upload, X } from "lucide-react";
@@ -315,6 +316,54 @@ export default function DrawerIFCImport({
     enabled: isOpen && fileType === "ifc",
   });
 
+  const ifcPendingStatuses: TIfcProcessorImportStatus[] = [
+    "waiting_for_files",
+    "processing",
+  ];
+  const ifcIsPendingStatus = (status: TIfcProcessorImportStatus) =>
+    ifcPendingStatuses.includes(status);
+  const ifcStatusLabels: Record<TIfcProcessorImportStatus, string> = {
+    waiting_for_files: t.drawerIFC.statusWaitingForFiles,
+    processing: t.drawerIFC.statusProcessing,
+    failed: t.drawerIFC.statusFailed,
+    completed: t.drawerIFC.statusCompleted,
+  };
+  const ifcStatusHintRenderers: Record<
+    Exclude<TIfcProcessorImportStatus, "completed">,
+    (file: ImportedIFCFile) => React.ReactNode
+  > = {
+    waiting_for_files: () => (
+      <div className="bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-4">
+        <div className="flex gap-3">
+          <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-yellow-800 dark:text-yellow-300">
+            {t.drawerIFC.waitingForFilesSelectHint}
+          </p>
+        </div>
+      </div>
+    ),
+    processing: () => (
+      <div className="bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-4">
+        <div className="flex gap-3">
+          <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-yellow-800 dark:text-yellow-300">
+            {t.drawerIFC.processingSelectHint}
+          </p>
+        </div>
+      </div>
+    ),
+    failed: (file) => (
+      <div className="bg-red-50 dark:bg-red-950/20 border-2 border-red-400 dark:border-red-600 rounded-lg p-4">
+        <div className="flex gap-3">
+          <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-800 dark:text-red-300">
+            {file.errorMessage ?? t.drawerIFC.failedSelectHint}
+          </p>
+        </div>
+      </div>
+    ),
+  };
+
   const {
     data: ifcRequests,
     isLoading: isLoadingIfcRequests,
@@ -328,10 +377,8 @@ export default function DrawerIFCImport({
     enabled: isOpen && fileType === "ifc" && Boolean(clientId),
     refetchInterval: (q) => {
       const items = q.state.data ?? [];
-      const hasPending = items.some(
-        (i) => i.status === "processing" || i.status === "waiting_for_files",
-      );
-      return hasPending ? 5000 : false;
+      const hasPending = items.some((i) => ifcIsPendingStatus(i.status));
+      return hasPending ? 30000 : false;
     },
   });
 
@@ -369,7 +416,7 @@ export default function DrawerIFCImport({
   ): ImportedIFCFile => ({
     id: req.request_id,
     name: req.file_name,
-    date: new Date(req.ts_created * 1000).toLocaleDateString("pt-BR"),
+    date: dateUtils.calculateRelativeTime(new Date(req.ts_created * 1000)),
     status: req.status,
     errorMessage: req.error_message,
   });
@@ -413,6 +460,10 @@ export default function DrawerIFCImport({
 
       const putRes = await fetch(res.data.ifc_url, {
         method: "PUT",
+        headers: {
+          "Content-Type": "application/x-ifc",
+          "If-None-Match": "*",
+        },
         body: uploadFile,
       });
 
@@ -805,7 +856,7 @@ export default function DrawerIFCImport({
                         value={selectedFileId}
                         onValueChange={handleFileSelect}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue
                             placeholder={t.drawerIFC.selectFilePlaceholder}
                           />
@@ -826,15 +877,14 @@ export default function DrawerIFCImport({
                           ) : (
                             ifcImportedFiles.map((f) => (
                               <SelectItem key={f.id} value={f.id}>
-                                {f.name} — {f.date} (
-                                {f.status === "waiting_for_files"
-                                  ? t.drawerIFC.statusWaitingForFiles
-                                  : f.status === "processing"
-                                    ? t.drawerIFC.statusProcessing
-                                    : f.status === "failed"
-                                      ? t.drawerIFC.statusFailed
-                                      : t.drawerIFC.statusCompleted}
-                                )
+                                <span className="flex items-center gap-2 min-w-0">
+                                  <span className="truncate min-w-0">
+                                    {f.name}
+                                  </span>
+                                  <span className="text-muted-foreground shrink-0">
+                                    — {f.date} ({ifcStatusLabels[f.status]})
+                                  </span>
+                                </span>
                               </SelectItem>
                             ))
                           )}
@@ -842,39 +892,11 @@ export default function DrawerIFCImport({
                       </Select>
                     </div>
 
-                    {selectedIfcFile?.status === "waiting_for_files" && (
-                      <div className="bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-4">
-                        <div className="flex gap-3">
-                          <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
-                          <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                            {t.drawerIFC.waitingForFilesSelectHint}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedIfcFile?.status === "processing" && (
-                      <div className="bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-4">
-                        <div className="flex gap-3">
-                          <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
-                          <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                            {t.drawerIFC.processingSelectHint}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedIfcFile?.status === "failed" && (
-                      <div className="bg-red-50 dark:bg-red-950/20 border-2 border-red-400 dark:border-red-600 rounded-lg p-4">
-                        <div className="flex gap-3">
-                          <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5" />
-                          <p className="text-sm text-red-800 dark:text-red-300">
-                            {selectedIfcFile.errorMessage ??
-                              t.drawerIFC.failedSelectHint}
-                          </p>
-                        </div>
-                      </div>
-                    )}
+                    {selectedIfcFile?.status &&
+                      selectedIfcFile.status !== "completed" &&
+                      ifcStatusHintRenderers[selectedIfcFile.status](
+                        selectedIfcFile,
+                      )}
 
                     <div className="flex justify-end">
                       <Button

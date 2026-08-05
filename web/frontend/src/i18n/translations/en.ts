@@ -795,6 +795,16 @@ export const en: Translations = {
     weeksAgo: "weeks ago",
     monthsAgo: "months ago",
   },
+  utils: {
+    date: {
+      secondsAgo: "{count, plural, one {# second ago} other {# seconds ago}}",
+      minutesAgo: "{count, plural, one {# minute ago} other {# minutes ago}}",
+      hoursAgo: "{count, plural, one {# hour ago} other {# hours ago}}",
+      daysAgo: "{count, plural, one {# day ago} other {# days ago}}",
+      weeksAgo: "{count, plural, one {# week ago} other {# weeks ago}}",
+      monthsAgo: "{count, plural, one {# month ago} other {# months ago}}",
+    },
+  },
   drawer: {
     importantNote: "Important: Data Confirmation",
     importantDescription:
