@@ -1250,9 +1250,14 @@ export const en: Translations = {
     selectFileLabel: "Select your file",
     selectFilePlaceholder: "Select an imported file",
     noImportedFiles: "No imported files found",
+    statusWaitingForFiles: "Waiting for IFC upload",
     statusProcessing: "Processing",
     statusCompleted: "Completed",
     statusFailed: "Failed",
+    loadingSoftwareVersions: "Loading options...",
+    noSoftwareVersions: "No options found",
+    waitingForFilesSelectHint:
+      "IFC upload was not completed for this import. Please wait or start a new import.",
     processingSelectHint:
       "This file is still being processed. Please wait to use the data.",
     failedSelectHint: "Processing failed for this file. Please import again.",

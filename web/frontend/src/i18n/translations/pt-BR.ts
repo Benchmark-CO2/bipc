@@ -1264,9 +1264,14 @@ export const ptBR = {
     selectFileLabel: "Selecione seu arquivo",
     selectFilePlaceholder: "Selecione um arquivo importado",
     noImportedFiles: "Nenhum arquivo importado encontrado",
+    statusWaitingForFiles: "Aguardando upload do IFC",
     statusProcessing: "Em processamento",
     statusCompleted: "Concluído",
     statusFailed: "Falhou",
+    loadingSoftwareVersions: "Carregando opções...",
+    noSoftwareVersions: "Nenhuma opção encontrada",
+    waitingForFilesSelectHint:
+      "O upload do IFC não foi concluído para esta importação. Aguarde ou inicie uma nova importação.",
     processingSelectHint:
       "Este arquivo ainda está em processamento. Aguarde para utilizar os dados.",
     failedSelectHint:

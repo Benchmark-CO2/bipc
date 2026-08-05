@@ -1,4 +1,17 @@
-export type TIfcProcessorImportStatus = "processing" | "failed" | "completed";
+export type TIfcProcessorImportStatus =
+  | "waiting_for_files"
+  | "processing"
+  | "failed"
+  | "completed";
+
+export interface TIfcProcessorFallbackVersion {
+  manufacturer: string;
+  version: string;
+}
+
+export interface TIfcProcessorFallbacksResponse {
+  version_list: TIfcProcessorFallbackVersion[];
+}
 
 export interface TIfcProcessorCreateRequestResponse {
   request_id: string;
@@ -24,4 +37,3 @@ export interface TIfcProcessorRequestListItem {
 export interface TIfcProcessorRequestsResponse {
   items: TIfcProcessorRequestListItem[];
 }
-

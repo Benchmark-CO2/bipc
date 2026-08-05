@@ -1,4 +1,5 @@
 import { postDisciplineFileUpload } from "@/actions/disciplines/postDisciplineFileUpload";
+import { getIfcFallbacks } from "@/actions/ifc/getIfcFallbacks";
 import { getIfcRequestResult } from "@/actions/ifc/getIfcRequestResult";
 import { getIfcRequests } from "@/actions/ifc/getIfcRequests";
 import { postIfcCreateRequest } from "@/actions/ifc/postIfcCreateRequest";
@@ -6,11 +7,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
-import { TIfcProcessorRequestListItem } from "@/types/ifc";
+import {
+  TIfcProcessorFallbackVersion,
+  TIfcProcessorImportStatus,
+  TIfcProcessorRequestListItem,
+} from "@/types/ifc";
 import { parseApiError } from "@/utils/parseApiError";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, FileUp, Loader2, Upload, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import {
@@ -37,8 +42,6 @@ import { SimpleTooltip } from "../ui/simple-tooltip";
 type FileType = "ifc" | "tqs";
 export type IFCAccessMode = "project" | "unit" | "simulation";
 
-type IFCImportStatus = "processing" | "completed" | "failed";
-
 export interface DrawerIFCImportProps {
   /** Determines the context in which the drawer is opened */
   mode: IFCAccessMode;
@@ -57,42 +60,11 @@ type ImportedIFCFile = {
   id: string;
   name: string;
   date: string;
-  status: IFCImportStatus;
+  status: TIfcProcessorImportStatus;
   errorMessage?: string | null;
 };
 
-const MOCK_SOFTWARE_IFC = [
-  { value: "revit", label: "Autodesk Revit" },
-  { value: "cypecad", label: "CYPECAD" },
-  { value: "etabs", label: "ETABS" },
-  { value: "robot", label: "Robot Structural Analysis" },
-  { value: "other", label: "Outro" },
-];
-
 const MOCK_SOFTWARE_TQS = [{ value: "tqs", label: "TQS" }];
-
-const MOCK_VERSIONS_IFC: Record<string, { value: string; label: string }[]> = {
-  revit: [
-    { value: "2022", label: "2022" },
-    { value: "2023", label: "2023" },
-    { value: "2024", label: "2024" },
-    { value: "2025", label: "2025" },
-  ],
-  cypecad: [
-    { value: "2023", label: "2023" },
-    { value: "2024", label: "2024" },
-  ],
-  etabs: [
-    { value: "19", label: "v19" },
-    { value: "20", label: "v20" },
-    { value: "21", label: "v21" },
-  ],
-  robot: [
-    { value: "2022", label: "2022" },
-    { value: "2023", label: "2023" },
-  ],
-  other: [{ value: "other", label: "Outro" }],
-};
 
 const MOCK_VERSIONS_TQS = [{ value: "tqsv26", label: "tqsv26" }];
 
@@ -331,6 +303,19 @@ export default function DrawerIFCImport({
   });
 
   const {
+    data: ifcFallbacksRaw,
+    isLoading: isLoadingIfcFallbacks,
+    isError: isIfcFallbacksError,
+  } = useQuery({
+    queryKey: ["ifcFallbacks"],
+    queryFn: async () => {
+      const res = await getIfcFallbacks();
+      return res.data.version_list;
+    },
+    enabled: isOpen && fileType === "ifc",
+  });
+
+  const {
     data: ifcRequests,
     isLoading: isLoadingIfcRequests,
     isError: isIfcRequestsError,
@@ -343,19 +328,41 @@ export default function DrawerIFCImport({
     enabled: isOpen && fileType === "ifc" && Boolean(clientId),
     refetchInterval: (q) => {
       const items = q.state.data ?? [];
-      return items.some((i) => i.status === "processing") ? 5000 : false;
+      const hasPending = items.some(
+        (i) => i.status === "processing" || i.status === "waiting_for_files",
+      );
+      return hasPending ? 5000 : false;
     },
   });
 
+  const ifcSoftwareOptions = useMemo(() => {
+    const manufacturers = new Map<string, string>();
+    for (const item of ifcFallbacksRaw ?? []) {
+      if (!manufacturers.has(item.manufacturer)) {
+        manufacturers.set(item.manufacturer, item.manufacturer);
+      }
+    }
+    return Array.from(manufacturers.values()).map((m) => ({
+      value: m,
+      label: m,
+    }));
+  }, [ifcFallbacksRaw]);
+
+  const ifcVersionOptions = useMemo(() => {
+    const versions: TIfcProcessorFallbackVersion[] = software
+      ? (ifcFallbacksRaw ?? []).filter((f) => f.manufacturer === software)
+      : [];
+    return versions.map((v) => ({
+      value: v.version,
+      label: v.version,
+    }));
+  }, [ifcFallbacksRaw, software]);
+
   // Derived data
   const softwareOptions =
-    fileType === "tqs" ? MOCK_SOFTWARE_TQS : MOCK_SOFTWARE_IFC;
+    fileType === "tqs" ? MOCK_SOFTWARE_TQS : ifcSoftwareOptions;
   const versionOptions =
-    fileType === "tqs"
-      ? MOCK_VERSIONS_TQS
-      : software
-        ? (MOCK_VERSIONS_IFC[software] ?? [])
-        : [];
+    fileType === "tqs" ? MOCK_VERSIONS_TQS : ifcVersionOptions;
 
   const mapIfcRequestToImportedFile = (
     req: TIfcProcessorRequestListItem,
@@ -599,19 +606,41 @@ export default function DrawerIFCImport({
                     <Select
                       value={software}
                       onValueChange={handleSoftwareChange}
-                      disabled={fileType === "tqs"}
+                      disabled={
+                        fileType === "tqs" ||
+                        (fileType === "ifc" && isLoadingIfcFallbacks)
+                      }
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue
-                          placeholder={t.drawerIFC.softwarePlaceholder}
+                          placeholder={
+                            fileType === "ifc" && isLoadingIfcFallbacks
+                              ? t.drawerIFC.loadingSoftwareVersions
+                              : t.drawerIFC.softwarePlaceholder
+                          }
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {softwareOptions.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
+                        {fileType === "ifc" && isLoadingIfcFallbacks ? (
+                          <SelectItem value="__loading__" disabled>
+                            {t.drawerIFC.loadingSoftwareVersions}
                           </SelectItem>
-                        ))}
+                        ) : fileType === "ifc" && isIfcFallbacksError ? (
+                          <SelectItem value="__error__" disabled>
+                            {t.common.unknownError}
+                          </SelectItem>
+                        ) : fileType === "ifc" &&
+                          softwareOptions.length === 0 ? (
+                          <SelectItem value="__empty__" disabled>
+                            {t.drawerIFC.noSoftwareVersions}
+                          </SelectItem>
+                        ) : (
+                          softwareOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -626,19 +655,39 @@ export default function DrawerIFCImport({
                     <Select
                       value={version}
                       onValueChange={setVersion}
-                      disabled={fileType === "tqs" || !software}
+                      disabled={
+                        fileType === "tqs" ||
+                        !software ||
+                        (fileType === "ifc" && isLoadingIfcFallbacks)
+                      }
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue
-                          placeholder={t.drawerIFC.versionPlaceholder}
+                          placeholder={
+                            fileType === "ifc" && isLoadingIfcFallbacks
+                              ? t.drawerIFC.loadingSoftwareVersions
+                              : t.drawerIFC.versionPlaceholder
+                          }
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {versionOptions.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
+                        {fileType === "ifc" && isLoadingIfcFallbacks ? (
+                          <SelectItem value="__loading__" disabled>
+                            {t.drawerIFC.loadingSoftwareVersions}
                           </SelectItem>
-                        ))}
+                        ) : fileType === "ifc" &&
+                          !software ? null : fileType === "ifc" &&
+                          versionOptions.length === 0 ? (
+                          <SelectItem value="__empty__" disabled>
+                            {t.drawerIFC.noSoftwareVersions}
+                          </SelectItem>
+                        ) : (
+                          versionOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -778,11 +827,13 @@ export default function DrawerIFCImport({
                             ifcImportedFiles.map((f) => (
                               <SelectItem key={f.id} value={f.id}>
                                 {f.name} — {f.date} (
-                                {f.status === "processing"
-                                  ? t.drawerIFC.statusProcessing
-                                  : f.status === "failed"
-                                    ? t.drawerIFC.statusFailed
-                                    : t.drawerIFC.statusCompleted}
+                                {f.status === "waiting_for_files"
+                                  ? t.drawerIFC.statusWaitingForFiles
+                                  : f.status === "processing"
+                                    ? t.drawerIFC.statusProcessing
+                                    : f.status === "failed"
+                                      ? t.drawerIFC.statusFailed
+                                      : t.drawerIFC.statusCompleted}
                                 )
                               </SelectItem>
                             ))
@@ -790,6 +841,17 @@ export default function DrawerIFCImport({
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {selectedIfcFile?.status === "waiting_for_files" && (
+                      <div className="bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-4">
+                        <div className="flex gap-3">
+                          <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
+                          <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                            {t.drawerIFC.waitingForFilesSelectHint}
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     {selectedIfcFile?.status === "processing" && (
                       <div className="bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-4">
