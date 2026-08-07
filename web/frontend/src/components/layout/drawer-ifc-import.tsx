@@ -8,6 +8,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import {
+  TIfcProcessorAggregatedResult,
   TIfcProcessorFallbackVersion,
   TIfcProcessorImportStatus,
   TIfcProcessorRequestListItem,
@@ -35,6 +36,7 @@ import {
 } from "../ui/select";
 import { Checkbox } from "../ui/checkbox";
 import { SimpleTooltip } from "../ui/simple-tooltip";
+import DrawerStepperIFC from "./drawer-stepper-ifc";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -272,6 +274,12 @@ export default function DrawerIFCImport({
   // "Already imported" section state
   const [selectedFileId, setSelectedFileId] = useState("");
 
+  // Stepper (aplicar dados IFC)
+  const [stepperOpen, setStepperOpen] = useState(false);
+  const [stepperResult, setStepperResult] =
+    useState<TIfcProcessorAggregatedResult | null>(null);
+  const [stepperMountKey, setStepperMountKey] = useState(0);
+
   const isMobile = useIsMobile();
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -497,18 +505,16 @@ export default function DrawerIFCImport({
   const { mutate: fetchIfcResult, isPending: isFetchingIfcResult } =
     useMutation({
       mutationFn: () => getIfcRequestResult(clientId, selectedFileId),
-      onSuccess: () => {
-        toast.success(t.drawerIFC.useSelectedSuccess);
-        if (mode === "simulation") {
-          queryClient.invalidateQueries({
-            queryKey: ["options", projectId, unitId],
-          });
-        } else if (mode === "unit") {
-          queryClient.invalidateQueries({
-            queryKey: ["project", projectId],
-          });
+      onSuccess: (res) => {
+        const data = res.data as unknown as TIfcProcessorAggregatedResult;
+        if (!data.units && !data.modules) {
+          toast.error("Dados do IFC vazios ou formato inválido.");
+          return;
         }
-        handleClose(true);
+        setStepperResult(data);
+        setStepperMountKey((k) => k + 1);
+        setStepperOpen(true);
+        setIsOpen(false);
       },
       onError: (error) => {
         const errorMessage = parseApiError(error, t);
@@ -530,6 +536,8 @@ export default function DrawerIFCImport({
     setImportErrorMessage("");
     setFileWarningMessage("");
     setSelectedFileId("");
+    setStepperResult(null);
+    setStepperOpen(false);
   };
 
   const handleFileTypeChange = (ft: FileType) => {
@@ -585,306 +593,115 @@ export default function DrawerIFCImport({
       : t.drawerIFC.sectionAlreadyImportedTQS;
 
   return (
-    <Drawer
-      direction={isMobile ? "bottom" : "right"}
-      open={isOpen}
-      onOpenChange={(open) => {
-        setIsOpen(open);
-        if (open && !hasFileTypeTabs) {
-          setFileType("ifc");
-          setSoftware("");
-          setVersion("");
-          setUploadFile(null);
-          setImportErrorMessage("");
-        }
-      }}
-      onClose={handleClose}
-      dismissible={false}
-    >
-      <DrawerTrigger asChild>{triggerComponent}</DrawerTrigger>
-      <DrawerContent
-        className={cn("min-w-3/5", {
-          "w-full h-4/5": isMobile,
-        })}
+    <>
+      <Drawer
+        direction={isMobile ? "bottom" : "right"}
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleClose(false);
+            return;
+          }
+          setIsOpen(open);
+          if (open && !hasFileTypeTabs) {
+            setFileType("ifc");
+            setSoftware("");
+            setVersion("");
+            setUploadFile(null);
+            setImportErrorMessage("");
+          }
+        }}
+        onClose={handleClose}
+        dismissible={false}
       >
-        <DrawerHeader className="px-8 pb-2">
-          <DrawerTitle>{drawerTitle}</DrawerTitle>
-          <Button
-            onClick={() => handleClose()}
-            className="absolute right-4 top-2"
-            variant="ghost"
-            size="icon"
-            disabled={isUploadingTqsFile || isImportingIfcFile}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </DrawerHeader>
+        <DrawerTrigger asChild>{triggerComponent}</DrawerTrigger>
+        <DrawerContent
+          className={cn("min-w-3/5", {
+            "w-full h-4/5": isMobile,
+          })}
+        >
+          <DrawerHeader className="px-8 pb-2">
+            <DrawerTitle>{drawerTitle}</DrawerTitle>
+            <Button
+              onClick={() => handleClose()}
+              className="absolute right-4 top-2"
+              variant="ghost"
+              size="icon"
+              disabled={isUploadingTqsFile || isImportingIfcFile}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </DrawerHeader>
 
-        {isUploadingTqsFile || isImportingIfcFile ? (
-          <ProcessingView fileType={fileType} />
-        ) : (
-          <div className="flex flex-col gap-2 overflow-y-auto px-8 pb-8">
-            {hasFileTypeTabs && (
-              <div className="pb-2">
-                <p className="text-xs text-muted-foreground mb-2">
-                  {t.drawerIFC.fileTypeLabel}
-                </p>
-                <FileTypeTabs
-                  value={fileType}
-                  onChange={handleFileTypeChange}
-                />
-              </div>
-            )}
+          {isUploadingTqsFile || isImportingIfcFile ? (
+            <ProcessingView fileType={fileType} />
+          ) : (
+            <div className="flex flex-col gap-2 overflow-y-auto px-8 pb-8">
+              {hasFileTypeTabs && (
+                <div className="pb-2">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    {t.drawerIFC.fileTypeLabel}
+                  </p>
+                  <FileTypeTabs
+                    value={fileType}
+                    onChange={handleFileTypeChange}
+                  />
+                </div>
+              )}
 
-            {/* ────────────────────────────────────────────
+              {/* ────────────────────────────────────────────
               Section 1 — Import new file
           ──────────────────────────────────────────── */}
-            <section>
-              <h3 className="text-base font-semibold text-foreground mb-2">
-                {importLabel}
-              </h3>
+              <section>
+                <h3 className="text-base font-semibold text-foreground mb-2">
+                  {importLabel}
+                </h3>
 
-              <div className="flex flex-col gap-4">
-                {/* Software + Version selects */}
-                <div className="grid grid-cols-[2fr_1fr] gap-3 items-start">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm text-muted-foreground">
-                      {t.drawerIFC.softwareLabel}{" "}
-                      {fileType === "ifc" && (
-                        <span className="text-destructive">*</span>
-                      )}
-                    </label>
-                    <Select
-                      value={software}
-                      onValueChange={handleSoftwareChange}
-                      disabled={
-                        fileType === "tqs" ||
-                        (fileType === "ifc" && isLoadingIfcFallbacks)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue
-                          placeholder={
-                            fileType === "ifc" && isLoadingIfcFallbacks
-                              ? t.drawerIFC.loadingSoftwareVersions
-                              : t.drawerIFC.softwarePlaceholder
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {fileType === "ifc" && isLoadingIfcFallbacks ? (
-                          <SelectItem value="__loading__" disabled>
-                            {t.drawerIFC.loadingSoftwareVersions}
-                          </SelectItem>
-                        ) : fileType === "ifc" && isIfcFallbacksError ? (
-                          <SelectItem value="__error__" disabled>
-                            {t.common.unknownError}
-                          </SelectItem>
-                        ) : fileType === "ifc" &&
-                          softwareOptions.length === 0 ? (
-                          <SelectItem value="__empty__" disabled>
-                            {t.drawerIFC.noSoftwareVersions}
-                          </SelectItem>
-                        ) : (
-                          softwareOptions.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm text-muted-foreground">
-                      {t.drawerIFC.versionLabel}{" "}
-                      {fileType === "ifc" && (
-                        <span className="text-destructive">*</span>
-                      )}
-                    </label>
-                    <Select
-                      value={version}
-                      onValueChange={setVersion}
-                      disabled={
-                        fileType === "tqs" ||
-                        !software ||
-                        (fileType === "ifc" && isLoadingIfcFallbacks)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue
-                          placeholder={
-                            fileType === "ifc" && isLoadingIfcFallbacks
-                              ? t.drawerIFC.loadingSoftwareVersions
-                              : t.drawerIFC.versionPlaceholder
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {fileType === "ifc" && isLoadingIfcFallbacks ? (
-                          <SelectItem value="__loading__" disabled>
-                            {t.drawerIFC.loadingSoftwareVersions}
-                          </SelectItem>
-                        ) : fileType === "ifc" &&
-                          !software ? null : fileType === "ifc" &&
-                          versionOptions.length === 0 ? (
-                          <SelectItem value="__empty__" disabled>
-                            {t.drawerIFC.noSoftwareVersions}
-                          </SelectItem>
-                        ) : (
-                          versionOptions.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Drop zone */}
-                <DropZone
-                  fileType={fileType}
-                  file={uploadFile}
-                  onFileChange={(f) => {
-                    setUploadFile(f);
-                    setFileWarningMessage("");
-                    if (!f) {
-                      setImportErrorMessage("");
-                    }
-                  }}
-                  onInvalidFile={setFileWarningMessage}
-                />
-
-                {fileType === "ifc" && (
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={calculateGeometries}
-                      onCheckedChange={(v) =>
-                        setCalculateGeometries(v === true)
-                      }
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      {t.drawerIFC.calculateGeometriesLabel}{" "}
-                      <span className="text-muted-foreground">
-                        ({t.drawerIFC.calculateGeometriesHint})
-                      </span>
-                    </span>
-                  </div>
-                )}
-
-                {importErrorMessage && !isUploadingTqsFile && (
-                  <div className="p-0">
-                    <div className="bg-red-50 dark:bg-red-950/20 border-2 border-red-400 dark:border-red-600 rounded-lg p-4">
-                      <div className="flex gap-3">
-                        <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5" />
-                        <p className="text-sm text-red-800 dark:text-red-300">
-                          {importErrorMessage}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {fileWarningMessage && (
-                  <div className="bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-4">
-                    <div className="flex gap-3">
-                      <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
-                      <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                        {fileWarningMessage}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Action buttons */}
-                <div className="flex items-center justify-between gap-2">
-                  {fileType === "ifc" ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled
-                      className="text-sm"
-                    >
-                      {t.drawerIFC.manageFiles}
-                    </Button>
-                  ) : (
-                    <div />
-                  )}
-                  <Button
-                    variant="bipc"
-                    size="sm"
-                    disabled={
-                      fileType === "ifc"
-                        ? !uploadFile || !software || !version || !clientId
-                        : !uploadFile || !canUploadTqs
-                    }
-                    onClick={handleImport}
-                    className="text-white"
-                  >
-                    {fileType === "tqs" && isUploadingTqsFile ? (
-                      <span className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        {t.drawerIFC.importData}
-                      </span>
-                    ) : (
-                      t.drawerIFC.importData
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </section>
-
-            {fileType === "ifc" && (
-              <>
-                <div className="border-t border-gray-200 dark:border-gray-700 mt-4 mb-2" />
-
-                <section>
-                  <h3 className="text-base font-semibold text-foreground mb-2 mt-2">
-                    {alreadyImportedLabel}
-                  </h3>
-
-                  <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-4">
+                  {/* Software + Version selects */}
+                  <div className="grid grid-cols-[2fr_1fr] gap-3 items-start">
                     <div className="flex flex-col gap-1.5">
                       <label className="text-sm text-muted-foreground">
-                        {t.drawerIFC.selectFileLabel}{" "}
-                        <span className="text-destructive">*</span>
+                        {t.drawerIFC.softwareLabel}{" "}
+                        {fileType === "ifc" && (
+                          <span className="text-destructive">*</span>
+                        )}
                       </label>
                       <Select
-                        value={selectedFileId}
-                        onValueChange={handleFileSelect}
+                        value={software}
+                        onValueChange={handleSoftwareChange}
+                        disabled={
+                          fileType === "tqs" ||
+                          (fileType === "ifc" && isLoadingIfcFallbacks)
+                        }
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue
-                            placeholder={t.drawerIFC.selectFilePlaceholder}
+                            placeholder={
+                              fileType === "ifc" && isLoadingIfcFallbacks
+                                ? t.drawerIFC.loadingSoftwareVersions
+                                : t.drawerIFC.softwarePlaceholder
+                            }
                           />
                         </SelectTrigger>
                         <SelectContent>
-                          {isLoadingIfcRequests ? (
+                          {fileType === "ifc" && isLoadingIfcFallbacks ? (
                             <SelectItem value="__loading__" disabled>
-                              {t.common.loading}
+                              {t.drawerIFC.loadingSoftwareVersions}
                             </SelectItem>
-                          ) : isIfcRequestsError ? (
+                          ) : fileType === "ifc" && isIfcFallbacksError ? (
                             <SelectItem value="__error__" disabled>
                               {t.common.unknownError}
                             </SelectItem>
-                          ) : ifcImportedFiles.length === 0 ? (
+                          ) : fileType === "ifc" &&
+                            softwareOptions.length === 0 ? (
                             <SelectItem value="__empty__" disabled>
-                              {t.drawerIFC.noImportedFiles}
+                              {t.drawerIFC.noSoftwareVersions}
                             </SelectItem>
                           ) : (
-                            ifcImportedFiles.map((f) => (
-                              <SelectItem key={f.id} value={f.id}>
-                                <span className="flex items-center gap-2 min-w-0">
-                                  <span className="truncate min-w-0">
-                                    {f.name}
-                                  </span>
-                                  <span className="text-muted-foreground shrink-0">
-                                    — {f.date} ({ifcStatusLabels[f.status]})
-                                  </span>
-                                </span>
+                            softwareOptions.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
                               </SelectItem>
                             ))
                           )}
@@ -892,41 +709,266 @@ export default function DrawerIFCImport({
                       </Select>
                     </div>
 
-                    {selectedIfcFile?.status &&
-                      selectedIfcFile.status !== "completed" &&
-                      ifcStatusHintRenderers[selectedIfcFile.status](
-                        selectedIfcFile,
-                      )}
-
-                    <div className="flex justify-end">
-                      <Button
-                        variant="bipc"
-                        size="sm"
-                        className="text-white"
-                        disabled={
-                          !selectedFileId ||
-                          selectedIfcFile?.status !== "completed" ||
-                          isFetchingIfcResult
-                        }
-                        onClick={handleUseSelected}
-                      >
-                        {isFetchingIfcResult ? (
-                          <span className="flex items-center gap-2">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            {t.drawerIFC.useSelected}
-                          </span>
-                        ) : (
-                          t.drawerIFC.useSelected
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm text-muted-foreground">
+                        {t.drawerIFC.versionLabel}{" "}
+                        {fileType === "ifc" && (
+                          <span className="text-destructive">*</span>
                         )}
-                      </Button>
+                      </label>
+                      <Select
+                        value={version}
+                        onValueChange={setVersion}
+                        disabled={
+                          fileType === "tqs" ||
+                          !software ||
+                          (fileType === "ifc" && isLoadingIfcFallbacks)
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue
+                            placeholder={
+                              fileType === "ifc" && isLoadingIfcFallbacks
+                                ? t.drawerIFC.loadingSoftwareVersions
+                                : t.drawerIFC.versionPlaceholder
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {fileType === "ifc" && isLoadingIfcFallbacks ? (
+                            <SelectItem value="__loading__" disabled>
+                              {t.drawerIFC.loadingSoftwareVersions}
+                            </SelectItem>
+                          ) : fileType === "ifc" &&
+                            !software ? null : fileType === "ifc" &&
+                            versionOptions.length === 0 ? (
+                            <SelectItem value="__empty__" disabled>
+                              {t.drawerIFC.noSoftwareVersions}
+                            </SelectItem>
+                          ) : (
+                            versionOptions.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                </section>
-              </>
-            )}
-          </div>
-        )}
-      </DrawerContent>
-    </Drawer>
+
+                  {/* Drop zone */}
+                  <DropZone
+                    fileType={fileType}
+                    file={uploadFile}
+                    onFileChange={(f) => {
+                      setUploadFile(f);
+                      setFileWarningMessage("");
+                      if (!f) {
+                        setImportErrorMessage("");
+                      }
+                    }}
+                    onInvalidFile={setFileWarningMessage}
+                  />
+
+                  {fileType === "ifc" && (
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={calculateGeometries}
+                        onCheckedChange={(v) =>
+                          setCalculateGeometries(v === true)
+                        }
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {t.drawerIFC.calculateGeometriesLabel}{" "}
+                        <span className="text-muted-foreground">
+                          ({t.drawerIFC.calculateGeometriesHint})
+                        </span>
+                      </span>
+                    </div>
+                  )}
+
+                  {importErrorMessage && !isUploadingTqsFile && (
+                    <div className="p-0">
+                      <div className="bg-red-50 dark:bg-red-950/20 border-2 border-red-400 dark:border-red-600 rounded-lg p-4">
+                        <div className="flex gap-3">
+                          <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5" />
+                          <p className="text-sm text-red-800 dark:text-red-300">
+                            {importErrorMessage}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {fileWarningMessage && (
+                    <div className="bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-4">
+                      <div className="flex gap-3">
+                        <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                          {fileWarningMessage}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div className="flex items-center justify-between gap-2">
+                    {fileType === "ifc" ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled
+                        className="text-sm"
+                      >
+                        {t.drawerIFC.manageFiles}
+                      </Button>
+                    ) : (
+                      <div />
+                    )}
+                    <Button
+                      variant="bipc"
+                      size="sm"
+                      disabled={
+                        fileType === "ifc"
+                          ? !uploadFile || !software || !version || !clientId
+                          : !uploadFile || !canUploadTqs
+                      }
+                      onClick={handleImport}
+                      className="text-white"
+                    >
+                      {fileType === "tqs" && isUploadingTqsFile ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          {t.drawerIFC.importData}
+                        </span>
+                      ) : (
+                        t.drawerIFC.importData
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </section>
+
+              {fileType === "ifc" && (
+                <>
+                  <div className="border-t border-gray-200 dark:border-gray-700 mt-4 mb-2" />
+
+                  <section>
+                    <h3 className="text-base font-semibold text-foreground mb-2 mt-2">
+                      {alreadyImportedLabel}
+                    </h3>
+
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-sm text-muted-foreground">
+                          {t.drawerIFC.selectFileLabel}{" "}
+                          <span className="text-destructive">*</span>
+                        </label>
+                        <Select
+                          value={selectedFileId}
+                          onValueChange={handleFileSelect}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue
+                              placeholder={t.drawerIFC.selectFilePlaceholder}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {isLoadingIfcRequests ? (
+                              <SelectItem value="__loading__" disabled>
+                                {t.common.loading}
+                              </SelectItem>
+                            ) : isIfcRequestsError ? (
+                              <SelectItem value="__error__" disabled>
+                                {t.common.unknownError}
+                              </SelectItem>
+                            ) : ifcImportedFiles.length === 0 ? (
+                              <SelectItem value="__empty__" disabled>
+                                {t.drawerIFC.noImportedFiles}
+                              </SelectItem>
+                            ) : (
+                              ifcImportedFiles.map((f) => (
+                                <SelectItem key={f.id} value={f.id}>
+                                  <span className="flex items-center gap-2 min-w-0">
+                                    <span className="truncate min-w-0">
+                                      {f.name}
+                                    </span>
+                                    <span className="text-muted-foreground shrink-0">
+                                      — {f.date} ({ifcStatusLabels[f.status]})
+                                    </span>
+                                  </span>
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {selectedIfcFile?.status &&
+                        selectedIfcFile.status !== "completed" &&
+                        ifcStatusHintRenderers[selectedIfcFile.status](
+                          selectedIfcFile,
+                        )}
+
+                      <div className="flex justify-end">
+                        <Button
+                          variant="bipc"
+                          size="sm"
+                          className="text-white"
+                          disabled={
+                            !selectedFileId ||
+                            selectedIfcFile?.status !== "completed" ||
+                            isFetchingIfcResult
+                          }
+                          onClick={handleUseSelected}
+                        >
+                          {isFetchingIfcResult ? (
+                            <span className="flex items-center gap-2">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              {t.drawerIFC.useSelected}
+                            </span>
+                          ) : (
+                            t.drawerIFC.useSelected
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </section>
+                </>
+              )}
+            </div>
+          )}
+        </DrawerContent>
+      </Drawer>
+
+      {stepperResult && (
+        <DrawerStepperIFC
+          key={`stepper-${stepperMountKey}`}
+          open={stepperOpen}
+          onOpenChange={(open) => {
+            setStepperOpen(open);
+            if (!open) {
+              queryClient.invalidateQueries({
+                queryKey: ["project", projectId],
+              });
+              queryClient.invalidateQueries({
+                queryKey: ["units", projectId],
+              });
+              if (mode === "simulation" && unitId) {
+                queryClient.invalidateQueries({
+                  queryKey: ["options", projectId, unitId],
+                });
+              }
+            }
+          }}
+          projectId={projectId}
+          initialResult={stepperResult!}
+          onComplete={() => {
+            setStepperResult(null);
+          }}
+        />
+      )}
+    </>
   );
 }

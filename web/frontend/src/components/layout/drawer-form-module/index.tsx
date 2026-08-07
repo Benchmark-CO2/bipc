@@ -14,7 +14,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, Plus, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
@@ -60,6 +60,19 @@ interface DrawerFormModuleProps {
   moduleId?: string;
   type: TModulesTypes;
   floors?: TTowerFloorCategory[];
+
+  stepperMode?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  initialModuleData?: Partial<ModuleFormInput>;
+  initialSelectedFloors?: string[];
+  onSubmitSuccess?: (payload: {
+    moduleId?: string;
+    params: ModuleParamsProps;
+    selectedFloors: string[];
+    schemaData: ModuleFormSchema;
+    formInput: ModuleFormInput;
+  }) => void;
 }
 
 const DrawerFormModule = ({
@@ -70,19 +83,70 @@ const DrawerFormModule = ({
   moduleId,
   type,
   floors = [],
+  stepperMode = false,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen,
+  initialModuleData,
+  initialSelectedFloors,
+  onSubmitSuccess,
 }: DrawerFormModuleProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const isOpen = isControlled ? controlledOpen : internalOpen;
+  const setIsOpen = (next: boolean | ((prev: boolean) => boolean)) => {
+    const val = typeof next === "function" ? next(isOpen) : next;
+    if (isControlled) {
+      setControlledOpen?.(val);
+    } else {
+      setInternalOpen(val);
+    }
+  };
+
   const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
+
+  const mergedDefaults = useMemo<ModuleFormInput>(() => {
+    const base = getDefaultValuesByType(type) as any;
+    if (!initialModuleData) return base;
+    const merged: any = { ...base };
+    for (const key of Object.keys(initialModuleData)) {
+      const val = (initialModuleData as any)[key];
+      if (val !== null && val !== undefined) {
+        merged[key] = val;
+      }
+    }
+    if (!merged.type) merged.type = type;
+    return merged as ModuleFormInput;
+  }, [initialModuleData, type]);
+
   const { t } = useTranslation();
 
   const queryClient = useQueryClient();
 
   const form = useForm<ModuleFormInput>({
     resolver: zodResolver(moduleFormSchema) as any,
-    defaultValues: getDefaultValuesByType(type) as any,
+    defaultValues: mergedDefaults,
   });
 
   const structureTypeWatch = form.watch("type");
+
+  useEffect(() => {
+    if (stepperMode && isOpen) {
+      if (initialModuleData) {
+        form.reset(mergedDefaults as any);
+      }
+      if (initialSelectedFloors) {
+        setSelectedFloors(initialSelectedFloors);
+      }
+      void form.trigger();
+    }
+  }, [
+    stepperMode,
+    isOpen,
+    initialModuleData,
+    initialSelectedFloors,
+    mergedDefaults,
+    form,
+  ]);
 
   const isUsingPaviments =
     structureTypeWatch === "beam_column" ||
@@ -93,60 +157,84 @@ const DrawerFormModule = ({
     mutationFn: (data: ModuleParamsProps) =>
       patchModule(data, projectId, unitId, optionId, moduleId!),
     onError: (error) => {
-      toast.error(t.modules.form.updateError, {
-        description: parseApiError(error, t),
-        duration: 5000,
-      });
+      if (!stepperMode) {
+        toast.error(t.modules.form.updateError, {
+          description: parseApiError(error, t),
+          duration: 5000,
+        });
+      }
     },
-    onSuccess: () => {
-      toast.success(t.modules.form.updateSuccess, {
-        duration: 5000,
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["project", projectId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["unit", projectId, unitId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["options", projectId, unitId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["module", projectId, unitId, moduleId!],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["module", projectId, unitId, optionId, moduleId!],
-      });
-      form.reset(getDefaultValuesByType(type) as any);
-      setSelectedFloors([]);
-      setIsOpen(false);
+    onSuccess: (_data, variables) => {
+      if (!stepperMode) {
+        toast.success(t.modules.form.updateSuccess, {
+          duration: 5000,
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["project", projectId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["unit", projectId, unitId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["options", projectId, unitId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["module", projectId, unitId, moduleId!],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["module", projectId, unitId, optionId, moduleId!],
+        });
+        form.reset(getDefaultValuesByType(type) as any);
+        setSelectedFloors([]);
+        setIsOpen(false);
+      } else {
+        onSubmitSuccess?.({
+          moduleId,
+          params: variables,
+          selectedFloors,
+          schemaData: form.getValues() as any,
+          formInput: form.getValues(),
+        });
+      }
     },
   });
   const { isPending: isCreationPending, mutate: mutateCreation } = useMutation({
     mutationFn: (data: ModuleParamsProps) =>
       postModule(data, projectId, unitId, optionId),
     onError: (error) => {
-      toast.error(t.modules.form.createError, {
-        description: parseApiError(error, t),
-        duration: 5000,
-      });
+      if (!stepperMode) {
+        toast.error(t.modules.form.createError, {
+          description: parseApiError(error, t),
+          duration: 5000,
+        });
+      }
     },
-    onSuccess: () => {
-      toast.success(t.modules.form.createSuccess, {
-        duration: 5000,
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["project", projectId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["unit", projectId, unitId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["options", projectId, unitId],
-      });
-      form.reset(getDefaultValuesByType(type) as any);
-      setSelectedFloors([]);
-      setIsOpen(false);
+    onSuccess: (data, variables) => {
+      if (!stepperMode) {
+        toast.success(t.modules.form.createSuccess, {
+          duration: 5000,
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["project", projectId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["unit", projectId, unitId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["options", projectId, unitId],
+        });
+        form.reset(getDefaultValuesByType(type) as any);
+        setSelectedFloors([]);
+        setIsOpen(false);
+      } else {
+        onSubmitSuccess?.({
+          moduleId: (data as any)?.data?.module?.id,
+          params: variables,
+          selectedFloors,
+          schemaData: form.getValues() as any,
+          formInput: form.getValues(),
+        });
+      }
     },
   });
 
@@ -494,14 +582,13 @@ const DrawerFormModule = ({
       filteredData = {
         fck: data.fck,
         piles: data.piles,
-        // Only send optional sections when they have actual volume
         ...(hasVolume(data.pile_caps) && { blocks: data.pile_caps }),
         ...(hasVolume(data.tie_beams) && { tie_beams: data.tie_beams }),
         ...(hasVolume(data.grade_beams) && { grade_beams: data.grade_beams }),
       };
     } else if (moduleType === "raft_piles_foundation") {
       filteredData = {
-        fck: data.fck, // fck único na raiz
+        fck: data.fck,
         raft: data.raft,
         piles: data.piles,
       };
@@ -522,6 +609,17 @@ const DrawerFormModule = ({
         ...conditionalFields,
       },
     };
+
+    if (stepperMode) {
+      onSubmitSuccess?.({
+        moduleId,
+        params: baseFields,
+        selectedFloors,
+        schemaData: data,
+        formInput: form.getValues(),
+      });
+      return;
+    }
 
     if (moduleId && moduleData) {
       mutateModule(baseFields);
@@ -550,10 +648,17 @@ const DrawerFormModule = ({
   };
 
   const handleClose = () => {
-    form.reset(getDefaultValuesByType(type) as any);
-    setSelectedFloors([]);
+    if (stepperMode) {
+      form.reset(mergedDefaults as any);
+      setSelectedFloors(initialSelectedFloors ?? []);
+    } else {
+      form.reset(getDefaultValuesByType(type) as any);
+      setSelectedFloors([]);
+    }
     setIsOpen(false);
   };
+
+  const shouldRenderTrigger = !stepperMode || Boolean(triggerComponent);
 
   const structureTypes = [
     { value: "beam_column", label: t.modules.structureTypes.beamColumn },
@@ -598,13 +703,15 @@ const DrawerFormModule = ({
       }}
       onClose={handleClose}
     >
-      <DrawerTrigger asChild>
-        {triggerComponent ?? (
-          <button className="cursor-pointer rounded-t-lg bg-muted px-4 py-2 hover:bg-accent">
-            <Plus />
-          </button>
-        )}
-      </DrawerTrigger>
+      {shouldRenderTrigger && (
+        <DrawerTrigger asChild>
+          {triggerComponent ?? (
+            <button className="cursor-pointer rounded-t-lg bg-muted px-4 py-2 hover:bg-accent">
+              <Plus />
+            </button>
+          )}
+        </DrawerTrigger>
+      )}
       <DrawerContent
         className={cn("min-w-4/6", {
           "w-full h-[80vh]": isMobile,
@@ -647,10 +754,12 @@ const DrawerFormModule = ({
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(handleSubmit as any, () => {
-                  toast.error(t.modules.form.validationErrors, {
-                    description: t.modules.form.validationDescription,
-                    duration: 5000,
-                  });
+                  if (!stepperMode) {
+                    toast.error(t.modules.form.validationErrors, {
+                      description: t.modules.form.validationDescription,
+                      duration: 5000,
+                    });
+                  }
                 })}
                 id="module-form"
                 className="w-full flex gap-6 h-full max-sm:flex-col"
