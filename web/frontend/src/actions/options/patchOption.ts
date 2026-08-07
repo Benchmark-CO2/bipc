@@ -7,7 +7,7 @@ export const patchOption = (
   optionId: string,
   data: { name?: string; active?: boolean }
 ) => {
-  return api.patch<{ tower_option: TOption }>(
+  return api.patch<{ option: TOption }>(
     `/v1/projects/${projectId}/units/${unitId}/options/${optionId}`,
     data
   );
