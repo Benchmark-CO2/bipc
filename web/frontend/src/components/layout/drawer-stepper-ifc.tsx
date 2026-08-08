@@ -57,13 +57,13 @@ import {
   prepareUnitForCreate,
   rerunModuleValidation,
   rerunUnitValidation,
-  resolveSimulationRoleId,
 } from "@/utils/ifcStepper";
+import { CompletenessWarningsI18n } from "@/components/layout/drawer-form-module/aggregate-helpers";
 import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
 import { ModuleFormState } from "@/validators/moduleFormByType.validator";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Edit2, Info, Loader2, Wand2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import DrawerFormModule from "./drawer-form-module";
 import DrawerFormUnit from "./drawer-form-unit";
@@ -108,6 +108,8 @@ export default function DrawerStepperIFC({
 }: DrawerStepperIFCProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const i18nCompleteness = (t as any).modules?.form
+    ?.completeness as CompletenessWarningsI18n;
 
   const { data: projectData } = useQuery({
     queryKey: ["project", projectId],
@@ -517,7 +519,7 @@ export default function DrawerStepperIFC({
           data: { ...(m.raw.data ?? {}), ...(payload.flatData as any) },
         };
         const rebuilt = { ...m, raw: rawNext, type: payload.flatData.type };
-        return rerunModuleValidation(rebuilt);
+        return rerunModuleValidation(rebuilt, i18nCompleteness);
       });
       return next;
     });
@@ -678,6 +680,7 @@ export default function DrawerStepperIFC({
               toggleUnitSelected={toggleUnitSelected}
               setUnitNameInline={setUnitNameInline}
               onEditUnit={(tempId) => setEditingUnitTempId(tempId)}
+              t={t}
             />
           )}
           {activeStep === 1 && (
@@ -689,6 +692,7 @@ export default function DrawerStepperIFC({
               toggleModuleSelected={toggleModuleSelected}
               toggleAllModulesSelected={toggleAllModulesSelected}
               moduleTypeLabels={moduleTypeLabels}
+              t={t}
             />
           )}
 
@@ -817,23 +821,27 @@ function Step1UnitsView({
   toggleUnitSelected,
   setUnitNameInline,
   onEditUnit,
+  t,
 }: {
   state: TIfcStepperState;
   toggleUnitSelected: (tempId: string) => void;
   setUnitNameInline: (tempId: string, name: string) => void;
   onEditUnit: (tempId: string) => void;
+  t: any;
 }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold">
-          Unidades encontradas ({state.units.length})
+          {t.stepper?.units?.title ?? "Unidades encontradas"} (
+          {state.units.length})
         </h3>
       </div>
 
       {state.units.length === 0 ? (
         <div className="text-sm text-muted-foreground p-8 border rounded-lg text-center">
-          Nenhuma unidade retornada pelo processamento do IFC.
+          {t.stepper?.units?.noneFound ??
+            "Nenhuma unidade retornada pelo processamento do IFC."}
         </div>
       ) : (
         <Table>
@@ -842,10 +850,16 @@ function Step1UnitsView({
               <TableHead className="w-[44px]">
                 <span className="sr-only">Selecionar</span>
               </TableHead>
-              <TableHead>Nome</TableHead>
-              <TableHead>Pavimentos</TableHead>
-              <TableHead>Status da validação</TableHead>
-              <TableHead className="w-[120px] text-right">Ação</TableHead>
+              <TableHead>{t.stepper?.units?.columnName ?? "Nome"}</TableHead>
+              <TableHead>
+                {t.stepper?.units?.columnFloors ?? "Pavimentos"}
+              </TableHead>
+              <TableHead>
+                {t.stepper?.units?.columnStatus ?? "Status da validação"}
+              </TableHead>
+              <TableHead className="w-[120px] text-right">
+                {t.stepper?.units?.columnAction ?? "Ação"}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -868,16 +882,22 @@ function Step1UnitsView({
                   />
                 </TableCell>
                 <TableCell>
-                  {u.formData.data.floors.length} andar
-                  {u.formData.data.floors.length === 1 ? "" : "es"}
+                  {u.formData.data.floors.length}{" "}
+                  {u.formData.data.floors.length === 1
+                    ? (t.stepper?.units?.floors ?? "andar")
+                    : (t.stepper?.units?.floorsPlural ?? "andares")}
                 </TableCell>
                 <TableCell>
                   {u.isValid ? (
-                    <Badge variant="success">Válido</Badge>
+                    <Badge variant="success">
+                      {t.stepper?.statusValid ?? "Válido"}
+                    </Badge>
                   ) : (
                     <Badge variant="destructive">
-                      {u.validationErrors.length} erro
-                      {u.validationErrors.length === 1 ? "" : "s"}
+                      {u.validationErrors.length}{" "}
+                      {u.validationErrors.length === 1
+                        ? (t.stepper?.units?.errors ?? "erro")
+                        : (t.stepper?.units?.errorsPlural ?? "erros")}
                     </Badge>
                   )}
                 </TableCell>
@@ -889,7 +909,7 @@ function Step1UnitsView({
                     className="gap-1"
                   >
                     <Edit2 className="h-3.5 w-3.5" />
-                    Editar
+                    {t.stepper?.btnEdit ?? "Editar"}
                   </Button>
                 </TableCell>
               </TableRow>
@@ -913,6 +933,7 @@ function Step2ModulesView({
   toggleModuleSelected,
   toggleAllModulesSelected,
   moduleTypeLabels,
+  t,
 }: {
   state: TIfcStepperState;
   applyUnitToAllModules: (unitTempId: string) => void;
@@ -921,6 +942,7 @@ function Step2ModulesView({
   toggleModuleSelected: (tempId: string) => void;
   toggleAllModulesSelected: (checked: boolean) => void;
   moduleTypeLabels: Record<string, string>;
+  t: any;
 }) {
   const allChecked =
     state.modules.length > 0 && state.modules.every((m) => m.selected);
@@ -930,10 +952,13 @@ function Step2ModulesView({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-base font-semibold mb-2">Unidades criadas</h3>
+        <h3 className="text-base font-semibold mb-2">
+          {t.stepper?.modules?.createdUnitsTitle ?? "Unidades criadas"}
+        </h3>
         {state.unitsCreated.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Nenhuma unidade criada. Volte ao passo anterior.
+            {t.stepper?.modules?.noUnitsCreated ??
+              "Nenhuma unidade criada. Volte ao passo anterior."}
           </p>
         ) : (
           <div className="flex flex-wrap items-center gap-2">
@@ -948,7 +973,7 @@ function Step2ModulesView({
                   onClick={() => applyUnitToAllModules(u.tempId)}
                   title="Aplicar esta unidade a todos os módulos"
                 >
-                  Aplicar a todos
+                  {t.stepper?.modules?.applyToAll ?? "Aplicar a todos"}
                 </Button>
               </div>
             ))}
@@ -962,18 +987,22 @@ function Step2ModulesView({
       >
         <Info className="h-4 w-4 text-blue-700 dark:text-blue-300" />
         <AlertTitle className="text-blue-800 dark:text-blue-200 text-sm">
-          Módulos selecionados
+          {t.stepper?.selectAll
+            ? `${t.stepper.selected} ${selectedCount} · ${t.stepper.unselected} ${unselectedCount}`
+            : "Módulos selecionados"}
         </AlertTitle>
         <AlertDescription className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
           <p>
-            A criação de módulos <strong>não é obrigatória</strong>. Somente os
-            módulos marcados abaixo, válidos e com vínculo de unidade serão
-            criados.
+            {t.stepper?.modules?.hint ??
+              "A criação de módulos não é obrigatória. Somente os módulos marcados abaixo, válidos e com vínculo de unidade serão criados."}
           </p>
           {state.modules.length > 0 && (
             <p>
-              Selecionados: <strong>{selectedCount}</strong> · Desmarcados:{" "}
-              <strong>{unselectedCount}</strong> · Total: {state.modules.length}
+              {t.stepper?.selected ?? "Selecionados"}:{" "}
+              <strong>{selectedCount}</strong> ·{" "}
+              {t.stepper?.unselected ?? "Desmarcados"}:{" "}
+              <strong>{unselectedCount}</strong> · {t.stepper?.total ?? "Total"}
+              : {state.modules.length}
             </p>
           )}
         </AlertDescription>
@@ -982,13 +1011,15 @@ function Step2ModulesView({
       <div>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-base font-semibold">
-            Módulos encontrados ({state.modules.length})
+            {t.stepper?.modules?.title ?? "Módulos encontrados"} (
+            {state.modules.length})
           </h3>
         </div>
 
         {state.modules.length === 0 ? (
           <div className="text-sm text-muted-foreground p-8 border rounded-lg text-center">
-            Nenhum módulo retornado pelo processamento do IFC.
+            {t.stepper?.modules?.noneFound ??
+              "Nenhum módulo retornado pelo processamento do IFC."}
           </div>
         ) : (
           <TooltipProvider delayDuration={150}>
@@ -1010,110 +1041,201 @@ function Step2ModulesView({
                         : {})}
                     />
                   </TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Resumo dos dados</TableHead>
-                  <TableHead>Unidade / Simulação</TableHead>
-                  <TableHead>Status da validação</TableHead>
-                  <TableHead className="w-[120px] text-right">Ação</TableHead>
+                  <TableHead>
+                    {t.stepper?.modules?.columnType ?? "Tipo"}
+                  </TableHead>
+                  <TableHead>
+                    {t.stepper?.modules?.columnSummary ?? "Resumo dos dados"}
+                  </TableHead>
+                  <TableHead>
+                    {t.stepper?.modules?.columnUnit ?? "Unidade / Simulação"}
+                  </TableHead>
+                  <TableHead>
+                    {t.stepper?.modules?.columnStatus ?? "Status da validação"}
+                  </TableHead>
+                  <TableHead className="w-[120px] text-right">
+                    {t.stepper?.modules?.columnAction ?? "Ação"}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {state.modules.map((m) => (
-                  <TableRow key={m.tempId}>
-                    <TableCell>
-                      <Checkbox
-                        checked={m.selected}
-                        onCheckedChange={() => toggleModuleSelected(m.tempId)}
-                        aria-label={`Selecionar módulo ${m.tempId}`}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-medium">
-                        {moduleTypeLabels[m.type] ?? String(m.type)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="max-w-md truncate text-muted-foreground">
-                      {m.summary}
-                    </TableCell>
-                    <TableCell className="min-w-[220px]">
-                      {state.unitsCreated.length === 0 ? (
-                        <span className="text-xs text-muted-foreground">
-                          Crie unidades no passo anterior
+                {state.modules.map((m) => {
+                  const hasErrors = !m.isValid && m.validationErrors.length > 0;
+                  const hasWarnings =
+                    m.isValid && m.completenessWarnings?.hasWarnings;
+                  const warningCount =
+                    m.completenessWarnings?.messages?.length ?? 0;
+                  const errorCount = m.validationErrors.length;
+
+                  let statusBadge: React.ReactNode;
+                  if (hasErrors) {
+                    statusBadge = (
+                      <Badge variant="destructive">
+                        {errorCount}{" "}
+                        {errorCount === 1
+                          ? (t.stepper?.units?.errors ?? "erro")
+                          : (t.stepper?.units?.errorsPlural ?? "erros")}
+                      </Badge>
+                    );
+                  } else if (hasWarnings) {
+                    statusBadge = (
+                      <Badge
+                        variant="secondary"
+                        className="bg-yellow-100 text-yellow-800 border border-yellow-300 dark:bg-yellow-950/20 dark:text-yellow-300 dark:border-yellow-700"
+                      >
+                        {warningCount}{" "}
+                        {warningCount === 1
+                          ? (t.stepper?.statusWarnings ?? "aviso")
+                          : `${t.stepper?.statusWarnings ?? "avisos"}`}
+                      </Badge>
+                    );
+                  } else {
+                    statusBadge = (
+                      <Badge variant="success">
+                        {t.stepper?.statusValid ?? "Válido"}
+                      </Badge>
+                    );
+                  }
+
+                  return (
+                    <TableRow key={m.tempId}>
+                      <TableCell>
+                        <Checkbox
+                          checked={m.selected}
+                          onCheckedChange={() => toggleModuleSelected(m.tempId)}
+                          aria-label={`Selecionar módulo ${m.tempId}`}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-medium">
+                          {moduleTypeLabels[m.type] ?? String(m.type)}
                         </span>
-                      ) : (
-                        <Select
-                          value={m.boundUnitTempId ?? "__none__"}
-                          onValueChange={(val) =>
-                            setModuleBoundUnit(m.tempId, val)
+                      </TableCell>
+                      <TableCell className="max-w-md truncate text-muted-foreground">
+                        {m.summary}
+                      </TableCell>
+                      <TableCell className="min-w-[220px]">
+                        {state.unitsCreated.length === 0 ? (
+                          <span className="text-xs text-muted-foreground">
+                            {t.stepper?.modules?.noUnitsCreated ??
+                              "Crie unidades no passo anterior"}
+                          </span>
+                        ) : (
+                          <Select
+                            value={m.boundUnitTempId ?? "__none__"}
+                            onValueChange={(val) =>
+                              setModuleBoundUnit(m.tempId, val)
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue
+                                placeholder={
+                                  t.stepper?.modules?.unitSelectPlaceholder ??
+                                  "Selecione uma unidade"
+                                }
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none__">
+                                <span className="text-muted-foreground">
+                                  {t.stepper?.modules?.noneBound ??
+                                    "(Não vincular — será ignorado)"}
+                                </span>
+                              </SelectItem>
+                              {state.unitsCreated.map((u) => (
+                                <SelectItem key={u.tempId} value={u.tempId}>
+                                  {u.displayName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {!hasErrors && !hasWarnings ? (
+                          statusBadge
+                        ) : (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span tabIndex={0}>{statusBadge}</span>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="left"
+                              align="start"
+                              className="max-w-sm text-xs space-y-3 p-3"
+                            >
+                              {hasErrors && (
+                                <div className="space-y-1">
+                                  <p className="font-semibold text-red-600 dark:text-red-300">
+                                    {t.stepper?.validationErrors ??
+                                      "Campos inválidos ou faltantes"}
+                                    :
+                                  </p>
+                                  <ul className="list-disc list-inside space-y-0.5">
+                                    {m.validationErrors
+                                      .slice(0, 10)
+                                      .map((e, idx) => (
+                                        <li key={idx}>{e}</li>
+                                      ))}
+                                    {m.validationErrors.length > 10 && (
+                                      <li className="text-muted-foreground">
+                                        +{m.validationErrors.length - 10}{" "}
+                                        {t.stepper?.others ?? "outros"}
+                                      </li>
+                                    )}
+                                  </ul>
+                                </div>
+                              )}
+                              {hasWarnings && (
+                                <div className="space-y-1">
+                                  <p className="font-semibold text-yellow-700 dark:text-yellow-300">
+                                    {t.stepper?.semanticWarnings ??
+                                      "Avisos semânticos (dados parciais)"}
+                                    :
+                                  </p>
+                                  <ul className="list-disc list-inside space-y-0.5">
+                                    {(m.completenessWarnings.messages ?? [])
+                                      .slice(0, 10)
+                                      .map((msg, idx) => (
+                                        <li key={idx}>{msg}</li>
+                                      ))}
+                                    {(m.completenessWarnings.messages ?? [])
+                                      .length > 10 && (
+                                      <li className="text-muted-foreground">
+                                        +
+                                        {(m.completenessWarnings.messages ?? [])
+                                          .length - 10}{" "}
+                                        {t.stepper?.others ?? "outros"}
+                                      </li>
+                                    )}
+                                  </ul>
+                                </div>
+                              )}
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEditModule(m.tempId)}
+                          disabled={!m.boundUnitTempId}
+                          className="gap-1"
+                          title={
+                            !m.boundUnitTempId
+                              ? (t.stepper?.modules?.editBtnDisabled ??
+                                "Vincule uma unidade para editar")
+                              : undefined
                           }
                         >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecione uma unidade" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__none__">
-                              <span className="text-muted-foreground">
-                                (Não vincular — será ignorado)
-                              </span>
-                            </SelectItem>
-                            {state.unitsCreated.map((u) => (
-                              <SelectItem key={u.tempId} value={u.tempId}>
-                                {u.displayName}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {m.isValid ? (
-                        <Badge variant="success">Válido</Badge>
-                      ) : (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span tabIndex={0}>
-                              <Badge variant="destructive">
-                                {m.validationErrors.length} erro
-                                {m.validationErrors.length === 1 ? "" : "s"}
-                              </Badge>
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent
-                            side="left"
-                            align="start"
-                            className="max-w-sm text-xs"
-                          >
-                            <p className="font-semibold mb-1">
-                              Problemas encontrados:
-                            </p>
-                            <ul className="list-disc list-inside space-y-0.5">
-                              {m.validationErrors.slice(0, 10).map((e, idx) => (
-                                <li key={idx}>{e}</li>
-                              ))}
-                              {m.validationErrors.length > 10 && (
-                                <li className="text-muted-foreground">
-                                  +{m.validationErrors.length - 10} outros
-                                </li>
-                              )}
-                            </ul>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEditModule(m.tempId)}
-                        disabled={!m.boundUnitTempId}
-                        className="gap-1"
-                      >
-                        <Edit2 className="h-3.5 w-3.5" />
-                        Editar
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          <Edit2 className="h-3.5 w-3.5" />
+                          {t.stepper?.btnEdit ?? "Editar"}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TooltipProvider>

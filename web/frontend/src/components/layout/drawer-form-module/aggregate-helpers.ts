@@ -1605,12 +1605,13 @@ export const getCompletenessWarnings = (
   moduleType: TModulesTypes,
   i18n: CompletenessWarningsI18n,
 ): { hasWarnings: boolean; messages: string[] } => {
-  const out: string[] = [];
+  const positionOut: string[] = [];
+  const masonryOut: string[] = [];
   if (!flatData || !moduleType || !i18n)
-    return { hasWarnings: false, messages: out };
+    return { hasWarnings: false, messages: [] };
 
   const cfg = REQUIRED_POSITIONS[moduleType];
-  if (!cfg) return { hasWarnings: false, messages: out };
+  if (!cfg) return { hasWarnings: false, messages: [] };
 
   const concreteArr = (flatData.concrete ?? []) as IV2ConcreteVolumeItem<any>[];
   const steelArr = (flatData.steel ?? []) as IV2SteelMaterialItem<any>[];
@@ -1642,13 +1643,14 @@ export const getCompletenessWarnings = (
     const label = i18n.positions[pos] ?? pos;
 
     const missing: string[] = [];
-    if (needConcrete && !hasConcreteAt(pos)) missing.push(i18n.missing.concrete);
+    if (needConcrete && !hasConcreteAt(pos))
+      missing.push(i18n.missing.concrete);
     if (needSteel && !hasSteelAt(pos)) missing.push(i18n.missing.steel);
     if (needForm && !hasFormAt(pos)) missing.push(i18n.missing.form);
 
     if (missing.length === 0) continue;
     if (missing.length === 1) {
-      out.push(
+      positionOut.push(
         formatTpl(i18n.patterns.singleMissing, {
           label,
           item: missing[0],
@@ -1656,7 +1658,7 @@ export const getCompletenessWarnings = (
       );
     } else {
       const last = missing.pop()!;
-      out.push(
+      positionOut.push(
         formatTpl(i18n.patterns.multiMissing, {
           label,
           head: missing.join(", "),
@@ -1681,7 +1683,7 @@ export const getCompletenessWarnings = (
       }
     }
     if (masonryMissing.length === 1) {
-      out.push(
+      masonryOut.push(
         formatTpl(i18n.patterns.singleMissing, {
           label: i18n.masonryLabel,
           item: masonryMissing[0],
@@ -1689,7 +1691,7 @@ export const getCompletenessWarnings = (
       );
     } else if (masonryMissing.length > 1) {
       const last = masonryMissing.pop()!;
-      out.push(
+      masonryOut.push(
         formatTpl(i18n.patterns.multiMissing, {
           label: i18n.masonryLabel,
           head: masonryMissing.join(", "),
@@ -1699,9 +1701,13 @@ export const getCompletenessWarnings = (
     }
   }
 
-  const globalConcreteMin = 1;
-  const globalSteelMin = 1;
-  if (moduleType !== "structural_masonry") {
+  const globalOut: string[] = [];
+  const hasAnyPositionOrMasonryWarnings =
+    positionOut.length + masonryOut.length > 0;
+
+  if (!hasAnyPositionOrMasonryWarnings && moduleType !== "structural_masonry") {
+    const globalConcreteMin = 1;
+    const globalSteelMin = 1;
     const anyConcrete = concreteArr.some(
       (c) => !isConcreteItemZero(c as IV2ConcreteVolumeItem<TAnyPosition>),
     );
@@ -1709,16 +1715,19 @@ export const getCompletenessWarnings = (
       (s) => !isSteelItemZero(s as IV2SteelMaterialItem<TAnyPosition>),
     );
     if (cfg.requireConcrete && cfg.requireConcrete.length > 0 && !anyConcrete) {
-      out.push(i18n.global.noValidConcrete);
+      globalOut.push(i18n.global.noValidConcrete);
     }
     if (cfg.requireSteel && cfg.requireSteel.length > 0 && !anySteel) {
-      out.push(i18n.global.noValidSteel);
+      globalOut.push(i18n.global.noValidSteel);
     }
     if (cfg.requireConcrete?.length === 0) {
-      if (concreteArr.length < globalConcreteMin) out.push(i18n.global.minConcrete);
-      if (steelArr.length < globalSteelMin) out.push(i18n.global.minSteel);
+      if (concreteArr.length < globalConcreteMin)
+        globalOut.push(i18n.global.minConcrete);
+      if (steelArr.length < globalSteelMin)
+        globalOut.push(i18n.global.minSteel);
     }
   }
 
-  return { hasWarnings: out.length > 0, messages: out };
+  const messages = [...positionOut, ...masonryOut, ...globalOut];
+  return { hasWarnings: messages.length > 0, messages };
 };

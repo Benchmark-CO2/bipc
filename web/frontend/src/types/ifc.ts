@@ -127,6 +127,10 @@ export type TIfcStepperModuleItem = {
   boundUnitId: string | null;
   boundOptionId: string | null;
   validationErrors: string[];
+  completenessWarnings: {
+    hasWarnings: boolean;
+    messages: string[];
+  };
   isValid: boolean;
 };
 
