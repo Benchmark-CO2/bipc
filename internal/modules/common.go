@@ -173,6 +173,9 @@ func deserializeSteelMaterialsFromInterface(data interface{}) []SteelMaterial {
 				if val, ok := steelItem["mass"].(float64); ok {
 					material.Mass = val
 				}
+				if position, ok := steelItem["position"].(string); ok {
+					material.Position = ElementPosition(position)
+				}
 				materials = append(materials, material)
 			}
 		}
