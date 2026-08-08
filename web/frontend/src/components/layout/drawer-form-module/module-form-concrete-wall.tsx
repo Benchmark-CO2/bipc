@@ -21,6 +21,8 @@ import {
   useSlabTypeOptions,
   REQUIRED_POSITIONS_BY_TYPE,
 } from "./module-default-values";
+import { RequiredAsterisk, RequiredLegend } from "./required-indicators";
+import { UnspecifiedCard, useUnspecifiedDataInit } from "./unspecified-card";
 
 interface ModuleFormConcreteWallProps {
   form: UseFormReturn<ModuleFormState>;
@@ -41,6 +43,8 @@ const ModuleFormConcreteWall = ({
   const { t } = useTranslation();
   const slabTypeOptions = useSlabTypeOptions();
   const fckOptions = [20, 25, 30, 35, 40, 45];
+
+  useUnspecifiedDataInit(form as any);
 
   const [customFckSelected, setCustomFckSelected] = useState<
     Record<string, boolean>
@@ -155,7 +159,10 @@ const ModuleFormConcreteWall = ({
 
     return (
       <div className="space-y-3">
-        <h3 className="text-base font-semibold text-primary">{title}</h3>
+        <h3 className="text-base font-semibold text-primary">
+          {title}
+          {isRequired ? <RequiredAsterisk /> : null}
+        </h3>
 
         <Card className={`border-2 ${borderColor}`}>
           <CardContent className="space-y-4">
@@ -201,7 +208,10 @@ const ModuleFormConcreteWall = ({
                         name={`${fieldKey}.fck` as any}
                         render={({ field: fckField }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">fck (MPa)</FormLabel>
+                            <FormLabel className="text-xs">
+                              {t.modules.form.fckLabel}
+                              <RequiredAsterisk />
+                            </FormLabel>
                             <FormControl>
                               <Select
                                 onValueChange={(value) => {
@@ -264,6 +274,7 @@ const ModuleFormConcreteWall = ({
                           <FormItem>
                             <FormLabel className="text-xs">
                               {t.modules.form.volume}
+                              <RequiredAsterisk />
                             </FormLabel>
                             <div className="flex gap-1">
                               <FormControl>
@@ -285,7 +296,9 @@ const ModuleFormConcreteWall = ({
                                 size="sm"
                                 onClick={() => removeVolume(index)}
                                 className="px-2"
-                                disabled={volumeFields.length <= 1}
+                                disabled={
+                                  isRequiredPosition && volumeFields.length <= 1
+                                }
                               >
                                 <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
@@ -303,6 +316,7 @@ const ModuleFormConcreteWall = ({
                           <FormItem>
                             <FormLabel className="text-xs">
                               {t.modules.form.otherFck}
+                              <RequiredAsterisk />
                             </FormLabel>
                             <Input
                               type="number"
@@ -456,6 +470,8 @@ const ModuleFormConcreteWall = ({
 
   return (
     <div className="space-y-6">
+      <RequiredLegend legend={t.modules.form.requiredLegend} />
+
       <FormField
         control={form.control}
         name="slab_type"
@@ -571,6 +587,21 @@ const ModuleFormConcreteWall = ({
 
       {/* Área de formas (opcional) */}
       {renderOptionalSection(t.modules.form.formAreaOptional)}
+
+      {/* Sem Posição / Geral */}
+      <UnspecifiedCard
+        form={form as any}
+        fckOptions={fckOptions}
+        customFckSelectedGlobal={customFckSelected}
+        setCustomFckSelectedGlobal={setCustomFckSelected}
+        concreteRootKey="unspecified.volumes"
+        steelRootKey="unspecified.steel"
+        formAreaKey="form_unspecified"
+        isSteelRequired={false}
+        stepperMode={stepperMode}
+        isSubmitted={isSubmitted}
+        allowedMaterials={["rebar", "strand", "other"]}
+      />
     </div>
   );
 };

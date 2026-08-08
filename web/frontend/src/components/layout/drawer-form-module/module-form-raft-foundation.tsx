@@ -16,6 +16,8 @@ import {
 } from "../../ui/select";
 import SteelMaterialList from "./steel-material-list";
 import { REQUIRED_POSITIONS_BY_TYPE } from "./module-default-values";
+import { RequiredAsterisk, RequiredLegend } from "./required-indicators";
+import { UnspecifiedCard, useUnspecifiedDataInit } from "./unspecified-card";
 
 interface ModuleFormRaftFoundationProps {
   form: UseFormReturn<ModuleFormState>;
@@ -30,11 +32,16 @@ const ModuleFormRaftFoundation = ({
 }: ModuleFormRaftFoundationProps) => {
   const { t } = useTranslation();
   const fckOptions = [20, 25, 30, 35, 40, 45];
-  const [customFck, setCustomFck] = useState(false);
+  const [customFckSelected, setCustomFckSelected] = useState<
+    Record<string, boolean>
+  >({});
+
+  useUnspecifiedDataInit(form as any);
 
   const currentFck = form.watch("fck");
   const isCustomFck =
-    customFck || (currentFck && !fckOptions.includes(currentFck));
+    customFckSelected["fck"] ||
+    (currentFck && !fckOptions.includes(currentFck));
 
   const position = "raft";
   const isRequiredPosition =
@@ -67,12 +74,14 @@ const ModuleFormRaftFoundation = ({
   // Detectar fck customizado ao carregar dados de edição (antes do render)
   useLayoutEffect(() => {
     if (currentFck && !fckOptions.includes(currentFck)) {
-      setCustomFck(true);
+      setCustomFckSelected((p) => ({ ...p, fck: true }));
     }
   }, [currentFck]);
 
   return (
     <div className="space-y-4">
+      <RequiredLegend legend={t.modules.form.requiredLegend} />
+
       <Card className={`border-2 ${cardBorder}`}>
         <CardContent className="space-y-4 pt-4">
           {/* Área e Espessura */}
@@ -84,7 +93,7 @@ const ModuleFormRaftFoundation = ({
                 <FormItem>
                   <FormLabel className="text-xs">
                     {t.modules.form.area}
-                    {isRequiredPosition ? " *" : ""}
+                    {isRequiredPosition ? <RequiredAsterisk /> : null}
                   </FormLabel>
                   <FormControl>
                     <Input
@@ -107,7 +116,7 @@ const ModuleFormRaftFoundation = ({
                 <FormItem>
                   <FormLabel className="text-xs">
                     {t.modules.form.thickness}
-                    {isRequiredPosition ? " *" : ""}
+                    {isRequiredPosition ? <RequiredAsterisk /> : null}
                   </FormLabel>
                   <FormControl>
                     <Input
@@ -135,7 +144,7 @@ const ModuleFormRaftFoundation = ({
                 <FormItem>
                   <FormLabel className="text-xs">
                     {t.modules.form.fckLabel}
-                    {isRequiredPosition ? " *" : ""}
+                    {isRequiredPosition ? <RequiredAsterisk /> : null}
                   </FormLabel>
                   <FormControl>
                     <Select
@@ -145,12 +154,12 @@ const ModuleFormRaftFoundation = ({
                         }
 
                         if (value === "other") {
-                          setCustomFck(true);
+                          setCustomFckSelected((p) => ({ ...p, fck: true }));
                           if (!currentFck || fckOptions.includes(currentFck)) {
                             field.onChange(70);
                           }
                         } else {
-                          setCustomFck(false);
+                          setCustomFckSelected((p) => ({ ...p, fck: false }));
                           field.onChange(Number(value));
                         }
                       }}
@@ -198,6 +207,7 @@ const ModuleFormRaftFoundation = ({
                   <FormItem>
                     <FormLabel className="text-xs">
                       {t.modules.form.otherFck}
+                      {isRequiredPosition ? <RequiredAsterisk /> : null}
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -220,6 +230,7 @@ const ModuleFormRaftFoundation = ({
 
           <h3 className="text-base font-semibold text-primary">
             {t.modules.form.steel}
+            {isRequiredPosition ? <RequiredAsterisk /> : null}
           </h3>
 
           <SteelMaterialList
@@ -232,6 +243,20 @@ const ModuleFormRaftFoundation = ({
           />
         </CardContent>
       </Card>
+
+      {/* Sem Posição / Geral */}
+      <UnspecifiedCard
+        form={form as any}
+        fckOptions={fckOptions}
+        customFckSelectedGlobal={customFckSelected}
+        setCustomFckSelectedGlobal={setCustomFckSelected}
+        concreteRootKey="unspecified.volumes"
+        steelRootKey="unspecified.steel"
+        isSteelRequired={false}
+        stepperMode={stepperMode}
+        isSubmitted={isSubmitted}
+        allowedMaterials={["rebar", "mesh", "strand", "other"]}
+      />
     </div>
   );
 };

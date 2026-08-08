@@ -16,6 +16,8 @@ import {
 } from "../../ui/select";
 import SteelMaterialList from "./steel-material-list";
 import { REQUIRED_POSITIONS_BY_TYPE } from "./module-default-values";
+import { RequiredAsterisk, RequiredLegend } from "./required-indicators";
+import { UnspecifiedCard, useUnspecifiedDataInit } from "./unspecified-card";
 
 interface ModuleFormPilesFoundationProps {
   form: UseFormReturn<ModuleFormState>;
@@ -40,11 +42,16 @@ const ModuleFormPilesFoundation = ({
 }: ModuleFormPilesFoundationProps) => {
   const { t } = useTranslation();
   const fckOptions = [20, 25, 30, 35, 40, 45];
-  const [customFck, setCustomFck] = useState(false);
+  const [customFckSelected, setCustomFckSelected] = useState<
+    Record<string, boolean>
+  >({});
+
+  useUnspecifiedDataInit(form as any);
 
   const currentFck = form.watch("fck");
   const isCustomFck =
-    customFck || (currentFck && !fckOptions.includes(currentFck));
+    customFckSelected["fck"] ||
+    (currentFck && !fckOptions.includes(currentFck));
 
   const pilesVolume = useWatch({ control: form.control, name: "piles.volume" });
   const pilesSteel = useWatch({ control: form.control, name: "piles.steel" });
@@ -76,7 +83,7 @@ const ModuleFormPilesFoundation = ({
   // Detectar fck customizado ao carregar dados de edição (antes do render)
   useLayoutEffect(() => {
     if (currentFck && !fckOptions.includes(currentFck)) {
-      setCustomFck(true);
+      setCustomFckSelected((p) => ({ ...p, fck: true }));
     }
   }, [currentFck]);
 
@@ -113,7 +120,10 @@ const ModuleFormPilesFoundation = ({
 
     return (
       <div className="space-y-3">
-        <h3 className="text-base font-semibold text-primary">{title}</h3>
+        <h3 className="text-base font-semibold text-primary">
+          {title}
+          {isRequiredPosition ? <RequiredAsterisk /> : null}
+        </h3>
         <Card className={`border-2 ${cardBorder}`}>
           <CardContent className="space-y-4 pt-4">
             <FormField
@@ -123,7 +133,7 @@ const ModuleFormPilesFoundation = ({
                 <FormItem>
                   <FormLabel className="text-xs">
                     {t.modules.form.concreteVolume}
-                    {isRequiredPosition ? " *" : ""}
+                    {isRequiredPosition ? <RequiredAsterisk /> : null}
                   </FormLabel>
                   <FormControl>
                     <Input
@@ -155,6 +165,8 @@ const ModuleFormPilesFoundation = ({
 
   return (
     <div className="space-y-4">
+      <RequiredLegend legend={t.modules.form.requiredLegend} />
+
       {/* fck */}
       <div
         className={`grid gap-4 ${isCustomFck ? "grid-cols-2" : "grid-cols-1"}`}
@@ -165,7 +177,8 @@ const ModuleFormPilesFoundation = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">
-                {t.modules.form.fckLabel} *
+                {t.modules.form.fckLabel}
+                <RequiredAsterisk />
               </FormLabel>
               <FormControl>
                 <Select
@@ -175,12 +188,12 @@ const ModuleFormPilesFoundation = ({
                     }
 
                     if (value === "other") {
-                      setCustomFck(true);
+                      setCustomFckSelected((p) => ({ ...p, fck: true }));
                       if (!currentFck || fckOptions.includes(currentFck)) {
                         field.onChange(70);
                       }
                     } else {
-                      setCustomFck(false);
+                      setCustomFckSelected((p) => ({ ...p, fck: false }));
                       field.onChange(Number(value));
                     }
                   }}
@@ -223,6 +236,7 @@ const ModuleFormPilesFoundation = ({
               <FormItem>
                 <FormLabel className="text-xs">
                   {t.modules.form.otherFck}
+                  <RequiredAsterisk />
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -263,6 +277,20 @@ const ModuleFormPilesFoundation = ({
         tieBeamsSteel,
         0,
       )}
+
+      {/* Sem Posição / Geral */}
+      <UnspecifiedCard
+        form={form as any}
+        fckOptions={fckOptions}
+        customFckSelectedGlobal={customFckSelected}
+        setCustomFckSelectedGlobal={setCustomFckSelected}
+        concreteRootKey="unspecified.volumes"
+        steelRootKey="unspecified.steel"
+        isSteelRequired={false}
+        stepperMode={stepperMode}
+        isSubmitted={isSubmitted}
+        allowedMaterials={["rebar", "mesh", "strand", "other"]}
+      />
     </div>
   );
 };

@@ -21,6 +21,8 @@ import {
   useSlabTypeOptions,
   REQUIRED_POSITIONS_BY_TYPE,
 } from "./module-default-values";
+import { RequiredAsterisk, RequiredLegend } from "./required-indicators";
+import { UnspecifiedCard, useUnspecifiedDataInit } from "./unspecified-card";
 
 interface ModuleFormBeamColumnProps {
   form: UseFormReturn<ModuleFormState>;
@@ -42,6 +44,8 @@ const ModuleFormBeamColumn = ({
   const { t } = useTranslation();
   const slabTypeOptions = useSlabTypeOptions();
   const fckOptions = [20, 25, 30, 35, 40, 45];
+
+  useUnspecifiedDataInit(form as any);
 
   const [customFckSelected, setCustomFckSelected] = useState<
     Record<string, boolean>
@@ -145,7 +149,10 @@ const ModuleFormBeamColumn = ({
 
     return (
       <div className="space-y-3">
-        <h3 className="text-base font-semibold text-primary">{title}</h3>
+        <h3 className="text-base font-semibold text-primary">
+          {title}
+          {isRequired ? <RequiredAsterisk /> : null}
+        </h3>
 
         <Card className={`border-2 ${borderColor}`}>
           <CardContent className="space-y-4">
@@ -191,7 +198,10 @@ const ModuleFormBeamColumn = ({
                         name={`${fieldName}.volumes.${index}.fck` as any}
                         render={({ field: fckField }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">fck (MPa)</FormLabel>
+                            <FormLabel className="text-xs">
+                              {t.modules.form.fckLabel}
+                              <RequiredAsterisk />
+                            </FormLabel>
                             <FormControl>
                               <Select
                                 onValueChange={(value) => {
@@ -254,6 +264,7 @@ const ModuleFormBeamColumn = ({
                           <FormItem>
                             <FormLabel className="text-xs">
                               {t.modules.form.volume}
+                              <RequiredAsterisk />
                             </FormLabel>
                             <div className="flex gap-1">
                               <FormControl>
@@ -295,6 +306,7 @@ const ModuleFormBeamColumn = ({
                           <FormItem>
                             <FormLabel className="text-xs">
                               {t.modules.form.otherFck}
+                              <RequiredAsterisk />
                             </FormLabel>
                             <Input
                               type="number"
@@ -343,6 +355,8 @@ const ModuleFormBeamColumn = ({
 
   return (
     <div className="space-y-6">
+      <RequiredLegend legend={t.modules.form.requiredLegend} />
+
       <FormField
         control={form.control}
         name="slab_type"
@@ -564,6 +578,21 @@ const ModuleFormBeamColumn = ({
           </CardContent>
         </Card>
       </div>
+
+      {/* Sem Posição / Geral */}
+      <UnspecifiedCard
+        form={form as any}
+        fckOptions={fckOptions}
+        customFckSelectedGlobal={customFckSelected}
+        setCustomFckSelectedGlobal={setCustomFckSelected}
+        concreteRootKey="unspecified.volumes"
+        steelRootKey="unspecified.steel"
+        formAreaKey="form_unspecified"
+        isSteelRequired={false}
+        stepperMode={stepperMode}
+        isSubmitted={isSubmitted}
+        allowedMaterials={["rebar", "strand", "other"]}
+      />
     </div>
   );
 };

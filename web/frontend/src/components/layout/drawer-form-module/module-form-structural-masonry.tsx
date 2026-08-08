@@ -27,6 +27,8 @@ import {
   useSlabTypeOptions,
   REQUIRED_POSITIONS_BY_TYPE,
 } from "./module-default-values";
+import { RequiredAsterisk, RequiredLegend } from "./required-indicators";
+import { UnspecifiedCard, useUnspecifiedDataInit } from "./unspecified-card";
 
 interface ModuleFormStructuralMasonryProps {
   form: UseFormReturn<ModuleFormState>;
@@ -63,6 +65,9 @@ const GroutItem = ({
   fgkOptions,
   customFgkSelected,
   setCustomFgkSelected,
+  stepperMode = false,
+  isSubmitted = false,
+  isRequiredPosition = false,
 }: GroutItemProps) => {
   const { t } = useTranslation();
   const volumesFieldArray = useFieldArray({
@@ -89,6 +94,7 @@ const GroutItem = ({
               <FormItem className="flex-1">
                 <FormLabel className="text-xs font-medium">
                   {t.modules.form.groutType}
+                  <RequiredAsterisk />
                 </FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
@@ -131,7 +137,8 @@ const GroutItem = ({
         <div className="space-y-3">
           <div className="flex items-center justify-between py-2 px-1">
             <FormLabel className="text-xs text-gray-700">
-              {t.modules.form.groutSection.replace(" *", "")}
+              {t.modules.form.groutSection}
+              <RequiredAsterisk />
             </FormLabel>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500">Total:</span>
@@ -160,7 +167,10 @@ const GroutItem = ({
                     name={`grout.${groutIndex}.volumes.${volumeIndex}.fgk`}
                     render={({ field }) => (
                       <FormItem className="flex-1">
-                        <FormLabel className="text-xs">Fgk (MPa)</FormLabel>
+                        <FormLabel className="text-xs">
+                          {t.modules.form.fgkLabel}
+                          <RequiredAsterisk />
+                        </FormLabel>
                         <FormControl>
                           <Select
                             onValueChange={(value) => {
@@ -210,6 +220,7 @@ const GroutItem = ({
                       <FormItem className="flex-1">
                         <FormLabel className="text-xs">
                           {t.modules.form.volume}
+                          <RequiredAsterisk />
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -245,6 +256,7 @@ const GroutItem = ({
                       <FormItem>
                         <FormLabel className="text-xs">
                           {t.modules.form.otherFgk}
+                          <RequiredAsterisk />
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -285,6 +297,9 @@ const GroutItem = ({
           form={form}
           name={`grout.${groutIndex}.steel`}
           allowedMaterials={["rebar", "mesh", "strand", "other"]}
+          stepperMode={stepperMode}
+          isSubmitted={isSubmitted}
+          isRequiredPosition={isRequiredPosition}
         />
       </CardContent>
     </Card>
@@ -308,6 +323,8 @@ const ModuleFormStructuralMasonry = ({
   const fbkOptions = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26];
   const fgkOptions = [15, 20, 25, 30];
   const fakOptions = [4.5, 8, 14];
+
+  useUnspecifiedDataInit(form as any);
 
   const blockTypes = [
     "inteiro (14x19x29)",
@@ -475,6 +492,7 @@ const ModuleFormStructuralMasonry = ({
       <div className="space-y-3">
         <h3 className="text-base font-semibold text-primary">
           {t.modules.form.blocks}
+          <RequiredAsterisk />
         </h3>
 
         <Card className="border-2 border-blue-500">
@@ -510,6 +528,7 @@ const ModuleFormStructuralMasonry = ({
                           <FormItem className="flex-1">
                             <FormLabel className="text-xs">
                               {t.modules.form.blockType}
+                              <RequiredAsterisk />
                             </FormLabel>
                             <FormControl>
                               <Select
@@ -545,6 +564,7 @@ const ModuleFormStructuralMasonry = ({
                           <FormItem className="flex-1">
                             <FormLabel className="text-xs">
                               {t.modules.form.blockFbk}
+                              <RequiredAsterisk />
                             </FormLabel>
                             <FormControl>
                               <Select
@@ -598,6 +618,7 @@ const ModuleFormStructuralMasonry = ({
                           <FormItem className="flex-1">
                             <FormLabel className="text-xs">
                               {t.modules.form.blockQuantity}
+                              <RequiredAsterisk />
                             </FormLabel>
                             <FormControl>
                               <Input
@@ -633,6 +654,7 @@ const ModuleFormStructuralMasonry = ({
                           <FormItem>
                             <FormLabel className="text-xs">
                               {t.modules.form.otherFbk}
+                              <RequiredAsterisk />
                             </FormLabel>
                             <FormControl>
                               <Input
@@ -715,6 +737,7 @@ const ModuleFormStructuralMasonry = ({
       <div className="space-y-3">
         <h3 className="text-base font-semibold text-primary">
           {t.modules.form.groutSection}
+          <RequiredAsterisk />
         </h3>
 
         <div className="space-y-3">
@@ -731,6 +754,9 @@ const ModuleFormStructuralMasonry = ({
               fgkOptions={fgkOptions}
               customFgkSelected={customFgkSelected}
               setCustomFgkSelected={setCustomFgkSelected}
+              stepperMode={stepperMode}
+              isSubmitted={isSubmitted}
+              isRequiredPosition={true}
             />
           ))}
 
@@ -784,6 +810,7 @@ const ModuleFormStructuralMasonry = ({
       <div className="space-y-3">
         <h3 className="text-base font-semibold text-primary">
           {t.modules.form.mortarSection}
+          <RequiredAsterisk />
         </h3>
 
         <Card className="border-2 border-blue-500">
@@ -818,7 +845,8 @@ const ModuleFormStructuralMasonry = ({
                         render={({ field }) => (
                           <FormItem className="flex-1">
                             <FormLabel className="text-xs">
-                              Fak (MPa) *
+                              {t.modules.form.fakLabel}
+                              <RequiredAsterisk />
                             </FormLabel>
                             <FormControl>
                               <Select
@@ -872,6 +900,7 @@ const ModuleFormStructuralMasonry = ({
                           <FormItem className="flex-1">
                             <FormLabel className="text-xs">
                               {t.modules.form.volume}
+                              <RequiredAsterisk />
                             </FormLabel>
                             <FormControl>
                               <Input
@@ -907,6 +936,7 @@ const ModuleFormStructuralMasonry = ({
                           <FormItem>
                             <FormLabel className="text-xs">
                               {t.modules.form.otherFak}
+                              <RequiredAsterisk />
                             </FormLabel>
                             <FormControl>
                               <Input
@@ -1054,7 +1084,10 @@ const ModuleFormStructuralMasonry = ({
 
     return (
       <div className="space-y-3">
-        <h3 className="text-base font-semibold text-primary">{title}</h3>
+        <h3 className="text-base font-semibold text-primary">
+          {title}
+          {isRequired ? <RequiredAsterisk /> : null}
+        </h3>
 
         {/* Warning para campos opcionais */}
         {!isRequired && sectionWarning && (
@@ -1099,7 +1132,10 @@ const ModuleFormStructuralMasonry = ({
                         name={`${fieldName}.volumes.${index}.fck`}
                         render={({ field }) => (
                           <FormItem className="flex-1">
-                            <FormLabel className="text-xs">Fck (MPa)</FormLabel>
+                            <FormLabel className="text-xs">
+                              {t.modules.form.fckLabel}
+                              <RequiredAsterisk />
+                            </FormLabel>
                             <FormControl>
                               <Select
                                 onValueChange={(value) => {
@@ -1153,6 +1189,7 @@ const ModuleFormStructuralMasonry = ({
                           <FormItem className="flex-1">
                             <FormLabel className="text-xs">
                               {t.modules.form.volume}
+                              <RequiredAsterisk />
                             </FormLabel>
                             <FormControl>
                               <Input
@@ -1188,6 +1225,7 @@ const ModuleFormStructuralMasonry = ({
                           <FormItem>
                             <FormLabel className="text-xs">
                               {t.modules.form.otherFck}
+                              <RequiredAsterisk />
                             </FormLabel>
                             <FormControl>
                               <Input
@@ -1229,6 +1267,9 @@ const ModuleFormStructuralMasonry = ({
               form={form}
               name={`${fieldName}.steel`}
               allowedMaterials={["rebar", "mesh", "strand", "other"]}
+              stepperMode={stepperMode}
+              isSubmitted={isSubmitted}
+              isRequiredPosition={isRequired}
             />
           </CardContent>
         </Card>
@@ -1339,6 +1380,8 @@ const ModuleFormStructuralMasonry = ({
 
   return (
     <div className="space-y-6">
+      <RequiredLegend legend={t.modules.form.requiredLegend} />
+
       <FormField
         control={form.control}
         name="slab_type"
@@ -1397,6 +1440,21 @@ const ModuleFormStructuralMasonry = ({
       </div>
 
       {renderFormsSection()}
+
+      {/* Sem Posição / Geral */}
+      <UnspecifiedCard
+        form={form as any}
+        fckOptions={fckOptions}
+        customFckSelectedGlobal={customFckSelected}
+        setCustomFckSelectedGlobal={setCustomFckSelected}
+        concreteRootKey="unspecified.volumes"
+        steelRootKey="unspecified.steel"
+        formAreaKey="form_unspecified"
+        isSteelRequired={false}
+        stepperMode={stepperMode}
+        isSubmitted={isSubmitted}
+        allowedMaterials={["rebar", "strand", "other"]}
+      />
     </div>
   );
 };

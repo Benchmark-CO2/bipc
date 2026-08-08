@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../ui/select";
+import { RequiredAsterisk } from "./required-indicators";
 
 type MaterialKey = "rebar" | "mesh" | "strand" | "other";
 
@@ -40,12 +41,11 @@ interface SteelMaterialItemProps {
   fieldId: string;
   materialOptions: Array<{ value: string; label: string }>;
   resistanceOptions: Array<{ value: string; label: string }>;
-  otherCombinations: string[]; // "material:resistance" pairs from OTHER rows
+  otherCombinations: string[];
   onRemove: () => void;
   canRemove: boolean;
 }
 
-// Componente separado para cada item do array - evita violação das regras dos Hooks
 const SteelMaterialItem = ({
   form,
   name,
@@ -67,7 +67,6 @@ const SteelMaterialItem = ({
     name: `${name}.${index}.resistance`,
   });
 
-  // Filtrar opções de resistência de acordo com o material selecionado
   const allowedResistancesByMaterial: Record<string, string[]> = {
     rebar: ["CA50", "CA60", "other"],
     mesh: ["CA60", "other"],
@@ -81,14 +80,11 @@ const SteelMaterialItem = ({
     allowedResistances.includes(opt.value),
   );
 
-  // Uma combinação está desabilitada se já existe em outra linha,
-  // exceto quando material === "other" E resistance === "other"
   const isCombinationUsed = (mat: string, res: string) => {
     if (mat === "other" && res === "other") return false;
     return otherCombinations.includes(`${mat}:${res}`);
   };
 
-  // Resetar resistência quando o material muda e o valor atual não é mais válido
   useEffect(() => {
     if (currentResistance && !allowedResistances.includes(currentResistance)) {
       form.setValue(
@@ -98,13 +94,15 @@ const SteelMaterialItem = ({
     }
   }, [currentMaterial]);
 
+  const isOtherMaterial = currentMaterial === "other";
+  const isOtherResistance = currentResistance === "other";
+
   return (
     <div
       key={fieldId}
       className="border border-gray-200 rounded-md p-3 space-y-3"
     >
       <div className="grid grid-cols-12 gap-2">
-        {/* Material */}
         <div className="col-span-4">
           <FormField
             control={form.control}
@@ -113,6 +111,7 @@ const SteelMaterialItem = ({
               <FormItem className="w-full space-y-1">
                 <FormLabel className="text-xs">
                   {t.modules.form.material}
+                  <RequiredAsterisk />
                 </FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
@@ -121,8 +120,6 @@ const SteelMaterialItem = ({
                     </SelectTrigger>
                     <SelectContent>
                       {materialOptions.map((opt) => {
-                        // A material option is disabled if ALL its allowed resistances
-                        // are already used in other rows (and it's not "other"+"other")
                         const matResistances =
                           allowedResistancesByMaterial[opt.value] ??
                           resistanceOptions.map((r) => r.value);
@@ -152,7 +149,6 @@ const SteelMaterialItem = ({
           />
         </div>
 
-        {/* Resistência */}
         <div className="col-span-3">
           <FormField
             control={form.control}
@@ -161,6 +157,7 @@ const SteelMaterialItem = ({
               <FormItem className="w-full space-y-1">
                 <FormLabel className="text-xs">
                   {t.modules.form.steelType}
+                  <RequiredAsterisk />
                 </FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
@@ -188,7 +185,6 @@ const SteelMaterialItem = ({
           />
         </div>
 
-        {/* Massa */}
         <div className="col-span-4">
           <FormField
             control={form.control}
@@ -197,6 +193,7 @@ const SteelMaterialItem = ({
               <FormItem className="w-full space-y-1">
                 <FormLabel className="text-xs">
                   {t.modules.form.massSteelKg}
+                  <RequiredAsterisk />
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -214,7 +211,6 @@ const SteelMaterialItem = ({
           />
         </div>
 
-        {/* Botão Remover */}
         <div className="col-span-1 flex items-end pb-[2px]">
           <Button
             type="button"
@@ -229,8 +225,7 @@ const SteelMaterialItem = ({
         </div>
       </div>
 
-      {/* Campo customizado de material */}
-      {currentMaterial === "other" && (
+      {isOtherMaterial && (
         <FormField
           control={form.control}
           name={`${name}.${index}.other_name`}
@@ -238,6 +233,7 @@ const SteelMaterialItem = ({
             <FormItem>
               <FormLabel className="text-xs">
                 {t.modules.form.customMaterialName}
+                <RequiredAsterisk />
               </FormLabel>
               <FormControl>
                 <Input {...field} placeholder="Ex: Aço especial" />
@@ -247,8 +243,7 @@ const SteelMaterialItem = ({
         />
       )}
 
-      {/* Campo customizado de resistência */}
-      {currentResistance === "other" && (
+      {isOtherResistance && (
         <FormField
           control={form.control}
           name={`${name}.${index}.other_resistance`}
@@ -256,6 +251,7 @@ const SteelMaterialItem = ({
             <FormItem>
               <FormLabel className="text-xs">
                 {t.modules.form.customResistance}
+                <RequiredAsterisk />
               </FormLabel>
               <FormControl>
                 <Input
@@ -288,16 +284,13 @@ const SteelMaterialList = ({
     name,
   });
 
-  // Observar todos os valores de mass para calcular o total
   const steelArray = useWatch({
     control: form.control,
     name,
   });
 
-  // Calcular soma total das massas
   const totalMass = (steelArray || []).reduce((sum: number, item: any) => {
     if (!item?.mass) return sum;
-    // Converter valor brasileiro (1.234,56) para número
     const numericValue =
       typeof item.mass === "string"
         ? parseFloat(item.mass.replace(/\./g, "").replace(",", "."))
@@ -345,7 +338,7 @@ const SteelMaterialList = ({
       <div className="flex items-center justify-between">
         <FormLabel className="text-xs text-gray-700">
           {t.modules.form.steelMaterials}
-          {isRequiredPosition ? " *" : ""}
+          {isRequiredPosition ? <RequiredAsterisk /> : null}
         </FormLabel>
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-500">Total:</span>
@@ -360,7 +353,6 @@ const SteelMaterialList = ({
       </div>
 
       {fields.map((field, index) => {
-        // combinations from all OTHER rows (by index)
         const otherCombinations = (steelArray || [])
           .map((item: any, i: number) => {
             if (i === index || !item?.material || !item?.resistance)
@@ -403,7 +395,6 @@ const SteelMaterialList = ({
             .filter((item: any) => item?.material && item?.resistance)
             .map((item: any) => `${item.material}:${item.resistance}`);
 
-          // Encontrar a primeira combinação material+resistance não utilizada
           let foundMaterial = allowedMaterials[0] ?? "rebar";
           let foundResistance =
             defaultResistanceByMaterial[foundMaterial] ?? "CA50";
@@ -411,7 +402,6 @@ const SteelMaterialList = ({
           outer: for (const mat of allowedMaterials) {
             const resistances = allowedResistancesByMaterial[mat] ?? ["CA50"];
             for (const res of resistances) {
-              // other+other sempre é permitido
               if (mat === "other" && res === "other") {
                 foundMaterial = mat;
                 foundResistance = res;

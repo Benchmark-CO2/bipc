@@ -26,20 +26,35 @@ import {
 } from "@/types/modules";
 import { parseNumber } from "@/utils/numbers";
 
-type WithPosition = { position: string };
+type WithPosition = { position?: string };
+
+export const UNSPECIFIED_POSITION = "unspecified" as const;
+export type TUnspecifiedPosition = typeof UNSPECIFIED_POSITION;
 
 export const groupByPosition = <T extends WithPosition>(
   flatArr: T[] | undefined,
   positions: readonly string[],
+  opts: { includeUnspecified?: boolean } = {},
 ): Record<string, T[]> => {
   const result: Record<string, T[]> = {};
   for (const p of positions) {
     result[p] = [];
   }
+  if (opts.includeUnspecified) {
+    result[UNSPECIFIED_POSITION] = [];
+  }
   if (!flatArr || flatArr.length === 0) return result;
   for (const item of flatArr) {
-    if (item.position in result) {
+    if (item.position && item.position in result) {
       result[item.position].push(item);
+    } else if (
+      opts.includeUnspecified &&
+      (!item.position || !(item.position in result))
+    ) {
+      result[UNSPECIFIED_POSITION].push({
+        ...item,
+        position: UNSPECIFIED_POSITION,
+      } as T);
     }
   }
   return result;
@@ -49,9 +64,14 @@ export const flatBackFromGrouped = <T extends WithPosition>(
   grouped: Record<string, T[]>,
 ): T[] => {
   const result: T[] = [];
-  for (const items of Object.values(grouped)) {
+  for (const [key, items] of Object.entries(grouped)) {
     for (const item of items) {
-      result.push(item);
+      if (key === UNSPECIFIED_POSITION) {
+        const { position: _pos, ...rest } = item as Record<string, unknown>;
+        result.push(rest as T);
+      } else {
+        result.push(item);
+      }
     }
   }
   return result;
@@ -168,17 +188,27 @@ export const cleanZeroItemsBeforeSubmit = <T extends TModuleDataV2>(
 export type GroupedConcreteByPosition<TPosition extends string> = Record<
   TPosition,
   (IV2ConcreteVolumeItem<TPosition> & { customFck?: boolean })[]
->;
+> & {
+  [UNSPECIFIED_POSITION]?: (IV2ConcreteVolumeItem<
+    TUnspecifiedPosition | TPosition
+  > & { customFck?: boolean })[];
+};
 
 export type GroupedSteelByPosition<TPosition extends string> = Record<
   TPosition,
   IV2SteelMaterialItem<TPosition>[]
->;
+> & {
+  [UNSPECIFIED_POSITION]?: IV2SteelMaterialItem<
+    TUnspecifiedPosition | TPosition
+  >[];
+};
 
 export type GroupedFormByPosition<TPosition extends string> = Record<
   TPosition,
   IV2FormAreaItem<TPosition>[]
->;
+> & {
+  [UNSPECIFIED_POSITION]?: IV2FormAreaItem<TUnspecifiedPosition | TPosition>[];
+};
 
 const toNumberValue = <T extends string | number>(v: T | undefined): number => {
   if (v === undefined || v === null) return 0;
@@ -218,18 +248,15 @@ export const viewFromBeamColumnV2 = (
     area: toStringValue(f.area) as unknown as number,
   }));
   return {
-    concrete: groupByPosition(
-      concreteInput,
-      positions,
-    ) as GroupedConcreteByPosition<TBeamColumnPosition>,
-    steel: groupByPosition(
-      steelInput,
-      positions,
-    ) as GroupedSteelByPosition<TBeamColumnPosition>,
-    form: groupByPosition(
-      formInput,
-      positions,
-    ) as GroupedFormByPosition<TBeamColumnPosition>,
+    concrete: groupByPosition(concreteInput, positions, {
+      includeUnspecified: true,
+    }) as GroupedConcreteByPosition<TBeamColumnPosition>,
+    steel: groupByPosition(steelInput, positions, {
+      includeUnspecified: true,
+    }) as GroupedSteelByPosition<TBeamColumnPosition>,
+    form: groupByPosition(formInput, positions, {
+      includeUnspecified: true,
+    }) as GroupedFormByPosition<TBeamColumnPosition>,
   };
 };
 
@@ -256,18 +283,15 @@ export const viewFromConcreteWallV2 = (
     area: toStringValue(f.area) as unknown as number,
   }));
   return {
-    concrete: groupByPosition(
-      concreteInput,
-      positions,
-    ) as GroupedConcreteByPosition<TConcreteWallPosition>,
-    steel: groupByPosition(
-      steelInput,
-      positions,
-    ) as GroupedSteelByPosition<TConcreteWallPosition>,
-    form: groupByPosition(
-      formInput,
-      positions,
-    ) as GroupedFormByPosition<TConcreteWallPosition>,
+    concrete: groupByPosition(concreteInput, positions, {
+      includeUnspecified: true,
+    }) as GroupedConcreteByPosition<TConcreteWallPosition>,
+    steel: groupByPosition(steelInput, positions, {
+      includeUnspecified: true,
+    }) as GroupedSteelByPosition<TConcreteWallPosition>,
+    form: groupByPosition(formInput, positions, {
+      includeUnspecified: true,
+    }) as GroupedFormByPosition<TConcreteWallPosition>,
   };
 };
 
@@ -334,18 +358,15 @@ export const viewFromStructuralMasonryV2 = (
     area: toStringValue(f.area) as unknown as number,
   }));
   return {
-    concrete: groupByPosition(
-      concreteInput,
-      positions,
-    ) as GroupedConcreteByPosition<TStructuralMasonryPosition>,
-    steel: groupByPosition(
-      steelInput,
-      positions,
-    ) as GroupedSteelByPosition<TStructuralMasonryPosition>,
-    form: groupByPosition(
-      formInput,
-      positions,
-    ) as GroupedFormByPosition<TStructuralMasonryPosition>,
+    concrete: groupByPosition(concreteInput, positions, {
+      includeUnspecified: true,
+    }) as GroupedConcreteByPosition<TStructuralMasonryPosition>,
+    steel: groupByPosition(steelInput, positions, {
+      includeUnspecified: true,
+    }) as GroupedSteelByPosition<TStructuralMasonryPosition>,
+    form: groupByPosition(formInput, positions, {
+      includeUnspecified: true,
+    }) as GroupedFormByPosition<TStructuralMasonryPosition>,
     masonry: mapMasonryToStrings(data.masonry),
   };
 };
@@ -370,14 +391,12 @@ export const viewFromRaftFoundationV2 = (
     mass: toStringValue(s.mass) as unknown as number,
   }));
   return {
-    concrete: groupByPosition(
-      concreteInput,
-      positions,
-    ) as GroupedConcreteByPosition<TRaftFoundationPosition>,
-    steel: groupByPosition(
-      steelInput,
-      positions,
-    ) as GroupedSteelByPosition<TRaftFoundationPosition>,
+    concrete: groupByPosition(concreteInput, positions, {
+      includeUnspecified: true,
+    }) as GroupedConcreteByPosition<TRaftFoundationPosition>,
+    steel: groupByPosition(steelInput, positions, {
+      includeUnspecified: true,
+    }) as GroupedSteelByPosition<TRaftFoundationPosition>,
     raft_area: toStringValue(data.raft_area),
     raft_thickness: toStringValue(data.raft_thickness),
   };
@@ -406,14 +425,12 @@ export const viewFromPilesFoundationV2 = (
     mass: toStringValue(s.mass) as unknown as number,
   }));
   return {
-    concrete: groupByPosition(
-      concreteInput,
-      positions,
-    ) as GroupedConcreteByPosition<TPilesFoundationPosition>,
-    steel: groupByPosition(
-      steelInput,
-      positions,
-    ) as GroupedSteelByPosition<TPilesFoundationPosition>,
+    concrete: groupByPosition(concreteInput, positions, {
+      includeUnspecified: true,
+    }) as GroupedConcreteByPosition<TPilesFoundationPosition>,
+    steel: groupByPosition(steelInput, positions, {
+      includeUnspecified: true,
+    }) as GroupedSteelByPosition<TPilesFoundationPosition>,
   };
 };
 
@@ -437,14 +454,12 @@ export const viewFromRaftPilesFoundationV2 = (
     mass: toStringValue(s.mass) as unknown as number,
   }));
   return {
-    concrete: groupByPosition(
-      concreteInput,
-      positions,
-    ) as GroupedConcreteByPosition<TRaftPilesFoundationPosition>,
-    steel: groupByPosition(
-      steelInput,
-      positions,
-    ) as GroupedSteelByPosition<TRaftPilesFoundationPosition>,
+    concrete: groupByPosition(concreteInput, positions, {
+      includeUnspecified: true,
+    }) as GroupedConcreteByPosition<TRaftPilesFoundationPosition>,
+    steel: groupByPosition(steelInput, positions, {
+      includeUnspecified: true,
+    }) as GroupedSteelByPosition<TRaftPilesFoundationPosition>,
     raft_area: toStringValue(data.raft_area),
     raft_thickness: toStringValue(data.raft_thickness),
   };
@@ -506,9 +521,11 @@ interface BeamColumnGroupedForm {
   concrete_columns: ConcreteSteelGroup;
   concrete_beams: ConcreteSteelGroup;
   concrete_slabs: ConcreteSteelGroup;
+  unspecified?: ConcreteSteelGroup;
   form_columns: string | number;
   form_beams: string | number;
   form_slabs: string | number;
+  form_unspecified?: string | number;
   column_number: string | number;
   avg_beam_span: string | number;
   avg_slab_span: string | number;
@@ -521,12 +538,14 @@ interface ConcreteWallGroupedForm {
   type: "concrete_wall";
   concrete_walls: ConcreteSteelGroup;
   concrete_slabs: ConcreteSteelGroup;
+  unspecified?: ConcreteSteelGroup;
   wall_thickness: string | number;
   slab_thickness: string | number;
   wall_area: string | number;
   slab_area: string | number;
   wall_form_area: string | number;
   slab_form_area: string | number;
+  form_unspecified?: string | number;
   slab_type?: string;
   floor_ids?: string[];
   unit_id?: string;
@@ -540,9 +559,11 @@ interface StructuralMasonryGroupedForm {
   concrete_slabs: ConcreteSteelGroup;
   concrete_columns?: ConcreteSteelGroup;
   concrete_beams?: ConcreteSteelGroup;
+  unspecified?: ConcreteSteelGroup;
   form_slabs: string | number;
   form_columns?: string | number;
   form_beams?: string | number;
+  form_unspecified?: string | number;
   slab_type?: string;
   floor_ids?: string[];
   unit_id?: string;
@@ -560,6 +581,7 @@ interface RaftFoundationGroupedForm {
     other_resistance?: number;
     mass: string | number;
   }>;
+  unspecified?: ConcreteSteelGroup;
   unit_id?: string;
 }
 
@@ -570,6 +592,7 @@ interface PilesFoundationGroupedForm {
   pile_caps?: ConcreteSteelGroup & { volume?: string | number };
   tie_beams?: ConcreteSteelGroup & { volume?: string | number };
   grade_beams?: ConcreteSteelGroup & { volume?: string | number };
+  unspecified?: ConcreteSteelGroup & { volume?: string | number };
   unit_id?: string;
 }
 
@@ -588,6 +611,7 @@ interface RaftPilesFoundationGroupedForm {
     }>;
   };
   piles: ConcreteSteelGroup & { volume?: string | number };
+  unspecified?: ConcreteSteelGroup & { volume?: string | number };
   unit_id?: string;
 }
 
@@ -624,9 +648,18 @@ export const flatV2ToGroupedForm = (
         volumes: view.concrete.slab.map(({ position, ...rest }) => rest),
         steel: view.steel.slab.map(({ position, ...rest }) => rest),
       },
+      unspecified: {
+        volumes: (view.concrete.unspecified ?? []).map(
+          ({ position, ...rest }) => rest,
+        ),
+        steel: (view.steel.unspecified ?? []).map(
+          ({ position, ...rest }) => rest,
+        ),
+      },
       form_columns: view.form.column[0]?.area ?? "0",
       form_beams: view.form.beam[0]?.area ?? "0",
       form_slabs: view.form.slab[0]?.area ?? "0",
+      form_unspecified: view.form.unspecified?.[0]?.area ?? "0",
       column_number: bcFlat.column_number ?? "0",
       avg_beam_span: bcFlat.avg_beam_span ?? "0",
       avg_slab_span: bcFlat.avg_slab_span ?? "0",
@@ -649,12 +682,21 @@ export const flatV2ToGroupedForm = (
         volumes: view.concrete.slab.map(({ position, ...rest }) => rest),
         steel: view.steel.slab.map(({ position, ...rest }) => rest),
       },
+      unspecified: {
+        volumes: (view.concrete.unspecified ?? []).map(
+          ({ position, ...rest }) => rest,
+        ),
+        steel: (view.steel.unspecified ?? []).map(
+          ({ position, ...rest }) => rest,
+        ),
+      },
       wall_thickness: cwFlat.wall_thickness ?? "0",
       slab_thickness: cwFlat.slab_thickness ?? "0",
       wall_area: cwFlat.wall_area ?? "0",
       slab_area: cwFlat.slab_area ?? "0",
       wall_form_area: view.form.wall[0]?.area ?? "0",
       slab_form_area: view.form.slab[0]?.area ?? "0",
+      form_unspecified: view.form.unspecified?.[0]?.area ?? "0",
       slab_type: cwFlat.slab_type,
       floor_ids: flat.floor_ids,
       unit_id: flat.unit_id,
@@ -683,9 +725,18 @@ export const flatV2ToGroupedForm = (
         volumes: view.concrete.beam.map(({ position, ...rest }) => rest),
         steel: view.steel.beam.map(({ position, ...rest }) => rest),
       },
+      unspecified: {
+        volumes: (view.concrete.unspecified ?? []).map(
+          ({ position, ...rest }) => rest,
+        ),
+        steel: (view.steel.unspecified ?? []).map(
+          ({ position, ...rest }) => rest,
+        ),
+      },
       form_slabs: view.form.slab[0]?.area ?? "0",
       form_columns: view.form.column[0]?.area ?? "0",
       form_beams: view.form.beam[0]?.area ?? "0",
+      form_unspecified: view.form.unspecified?.[0]?.area ?? "0",
       slab_type: smFlat.slab_type,
       floor_ids: flat.floor_ids,
       unit_id: flat.unit_id,
@@ -702,6 +753,14 @@ export const flatV2ToGroupedForm = (
       thickness: view.raft_thickness,
       fck: view.concrete.raft[0]?.fck ?? 25,
       steel: view.steel.raft.map(({ position, ...rest }) => rest),
+      unspecified: {
+        volumes: (view.concrete.unspecified ?? []).map(
+          ({ position, ...rest }) => rest,
+        ),
+        steel: (view.steel.unspecified ?? []).map(
+          ({ position, ...rest }) => rest,
+        ),
+      },
       unit_id: flat.unit_id,
     };
   }
@@ -729,6 +788,14 @@ export const flatV2ToGroupedForm = (
         volume: view.concrete.grade_beam[0]?.volume ?? "0",
         steel: view.steel.grade_beam.map(({ position, ...rest }) => rest),
       },
+      unspecified: {
+        volumes: (view.concrete.unspecified ?? []).map(
+          ({ position, ...rest }) => rest,
+        ),
+        steel: (view.steel.unspecified ?? []).map(
+          ({ position, ...rest }) => rest,
+        ),
+      },
       unit_id: flat.unit_id,
     };
   }
@@ -748,6 +815,14 @@ export const flatV2ToGroupedForm = (
       piles: {
         volume: view.concrete.pile[0]?.volume ?? "0",
         steel: view.steel.pile.map(({ position, ...rest }) => rest),
+      },
+      unspecified: {
+        volumes: (view.concrete.unspecified ?? []).map(
+          ({ position, ...rest }) => rest,
+        ),
+        steel: (view.steel.unspecified ?? []).map(
+          ({ position, ...rest }) => rest,
+        ),
       },
       unit_id: flat.unit_id,
     };
@@ -819,6 +894,18 @@ export const groupedFormToFlatV2 = (
         volume: toNumberValue(c.volume as string | number),
       })),
     );
+    if (g.unspecified?.volumes?.length) {
+      concrete.push(
+        ...g.unspecified.volumes.map((v) => {
+          const { customFck, ...rest } = v;
+          return {
+            ...rest,
+            fck: rest.fck as TFck,
+            volume: toNumberValue(rest.volume as string | number),
+          } as IV2ConcreteVolumeItem<TBeamColumnPosition>;
+        }),
+      );
+    }
 
     const steel: IV2SteelMaterialItem<TBeamColumnPosition>[] = [];
     steel.push(
@@ -854,6 +941,14 @@ export const groupedFormToFlatV2 = (
         mass: toNumberValue(s.mass as string | number),
       })),
     );
+    if (g.unspecified?.steel?.length) {
+      steel.push(
+        ...(g.unspecified.steel.map((s) => ({
+          ...s,
+          mass: toNumberValue(s.mass as string | number),
+        })) as IV2SteelMaterialItem<TBeamColumnPosition>[]),
+      );
+    }
 
     const form: IV2FormAreaItem<TBeamColumnPosition>[] = [];
     const fc = toNumberValue(g.form_columns);
@@ -862,6 +957,8 @@ export const groupedFormToFlatV2 = (
     if (fb > 0) form.push({ area: fb, position: "beam" });
     const fs = toNumberValue(g.form_slabs);
     if (fs > 0) form.push({ area: fs, position: "slab" });
+    const fus = toNumberValue(g.form_unspecified);
+    if (fus > 0) form.push({ area: fus });
 
     return {
       type: "beam_column",
@@ -927,12 +1024,34 @@ export const groupedFormToFlatV2 = (
         mass: toNumberValue(s.mass as string | number),
       })),
     );
+    if (g.unspecified?.volumes?.length) {
+      concrete.push(
+        ...g.unspecified.volumes.map((v) => {
+          const { customFck, ...rest } = v;
+          return {
+            ...rest,
+            fck: rest.fck as TFck,
+            volume: toNumberValue(rest.volume as string | number),
+          } as IV2ConcreteVolumeItem<TConcreteWallPosition>;
+        }),
+      );
+    }
+    if (g.unspecified?.steel?.length) {
+      steel.push(
+        ...(g.unspecified.steel.map((s) => ({
+          ...s,
+          mass: toNumberValue(s.mass as string | number),
+        })) as IV2SteelMaterialItem<TConcreteWallPosition>[]),
+      );
+    }
 
     const form: IV2FormAreaItem<TConcreteWallPosition>[] = [];
     const wf = toNumberValue(g.wall_form_area);
     if (wf > 0) form.push({ area: wf, position: "wall" });
     const sf = toNumberValue(g.slab_form_area);
     if (sf > 0) form.push({ area: sf, position: "slab" });
+    const fus = toNumberValue(g.form_unspecified);
+    if (fus > 0) form.push({ area: fus });
 
     return {
       type: "concrete_wall",
@@ -1039,6 +1158,28 @@ export const groupedFormToFlatV2 = (
     if (fsb > 0) {
       form.push({ area: fsb, position: "beam" });
     }
+    if (g.unspecified?.volumes?.length) {
+      concrete.push(
+        ...g.unspecified.volumes.map((v) => {
+          const { customFck, ...rest } = v;
+          return {
+            ...rest,
+            fck: rest.fck as TFck,
+            volume: toNumberValue(rest.volume as string | number),
+          } as IV2ConcreteVolumeItem<TStructuralMasonryPosition>;
+        }),
+      );
+    }
+    if (g.unspecified?.steel?.length) {
+      steel.push(
+        ...(g.unspecified.steel.map((s) => ({
+          ...s,
+          mass: toNumberValue(s.mass as string | number),
+        })) as IV2SteelMaterialItem<TStructuralMasonryPosition>[]),
+      );
+    }
+    const fus = toNumberValue(g.form_unspecified);
+    if (fus > 0) form.push({ area: fus });
 
     return {
       type: "structural_masonry",
@@ -1077,6 +1218,27 @@ export const groupedFormToFlatV2 = (
         "raft",
       ) as IV2SteelMaterialItem<TRaftFoundationPosition>[]
     ).map((s) => ({ ...s, mass: toNumberValue(s.mass as string | number) }));
+
+    if (g.unspecified?.volumes?.length) {
+      concrete.push(
+        ...g.unspecified.volumes.map((v) => {
+          const { customFck, ...rest } = v;
+          return {
+            ...rest,
+            fck: rest.fck as TFck,
+            volume: toNumberValue(rest.volume as string | number),
+          } as IV2ConcreteVolumeItem<TRaftFoundationPosition>;
+        }),
+      );
+    }
+    if (g.unspecified?.steel?.length) {
+      steel.push(
+        ...(g.unspecified.steel.map((s) => ({
+          ...s,
+          mass: toNumberValue(s.mass as string | number),
+        })) as IV2SteelMaterialItem<TRaftFoundationPosition>[]),
+      );
+    }
 
     const flatResult: TRaftFoundationDataV2 & {
       type: "raft_foundation";
@@ -1191,6 +1353,27 @@ export const groupedFormToFlatV2 = (
       );
     }
 
+    if (g.unspecified?.volumes?.length) {
+      concrete.push(
+        ...g.unspecified.volumes.map((v) => {
+          const { customFck, ...rest } = v;
+          return {
+            ...rest,
+            fck: rest.fck as TFck,
+            volume: toNumberValue(rest.volume as string | number),
+          } as IV2ConcreteVolumeItem<TPilesFoundationPosition>;
+        }),
+      );
+    }
+    if (g.unspecified?.steel?.length) {
+      steel.push(
+        ...(g.unspecified.steel.map((s) => ({
+          ...s,
+          mass: toNumberValue(s.mass as string | number),
+        })) as IV2SteelMaterialItem<TPilesFoundationPosition>[]),
+      );
+    }
+
     return {
       type: "piles_foundation",
       concrete,
@@ -1242,6 +1425,27 @@ export const groupedFormToFlatV2 = (
         mass: toNumberValue(s.mass as string | number),
       })),
     );
+
+    if (g.unspecified?.volumes?.length) {
+      concrete.push(
+        ...g.unspecified.volumes.map((v) => {
+          const { customFck, ...rest } = v;
+          return {
+            ...rest,
+            fck: rest.fck as TFck,
+            volume: toNumberValue(rest.volume as string | number),
+          } as IV2ConcreteVolumeItem<TRaftPilesFoundationPosition>;
+        }),
+      );
+    }
+    if (g.unspecified?.steel?.length) {
+      steel.push(
+        ...(g.unspecified.steel.map((s) => ({
+          ...s,
+          mass: toNumberValue(s.mass as string | number),
+        })) as IV2SteelMaterialItem<TRaftPilesFoundationPosition>[]),
+      );
+    }
 
     const flatResult: TRaftPilesFoundationDataV2 & {
       type: "raft_piles_foundation";

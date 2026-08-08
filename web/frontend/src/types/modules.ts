@@ -93,7 +93,7 @@ export type TRaftPilesFoundationPosition = "raft" | "pile";
 export interface IV2ConcreteVolumeItem<TPosition extends string> {
   fck: TFck;
   volume: number;
-  position: TPosition;
+  position?: TPosition;
 }
 
 export interface IV2SteelMaterialItem<TPosition extends string> {
@@ -102,12 +102,12 @@ export interface IV2SteelMaterialItem<TPosition extends string> {
   resistance: TSteelResistance;
   other_resistance?: number;
   mass: number;
-  position: TPosition;
+  position?: TPosition;
 }
 
 export interface IV2FormAreaItem<TPosition extends string> {
   area: number;
-  position: TPosition;
+  position?: TPosition;
 }
 
 export type TBlockType =
