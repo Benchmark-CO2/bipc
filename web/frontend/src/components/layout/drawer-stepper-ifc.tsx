@@ -1,6 +1,5 @@
 import { postModulesBatch } from "@/actions/modules/postModulesBatch";
 import { postOption } from "@/actions/options/postOption";
-import { patchOption } from "@/actions/options/patchOption";
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { postUnit } from "@/actions/units/postUnit";
 import { patchUnit } from "@/actions/units/patchUnit";
@@ -61,17 +60,18 @@ import {
   resolveSimulationRoleId,
 } from "@/utils/ifcStepper";
 import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
-import {
-  ModuleFormInput,
-  ModuleFormSchema,
-} from "@/validators/moduleFormByType.validator";
+import { ModuleFormState } from "@/validators/moduleFormByType.validator";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Edit2, Info, Loader2, Wand2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import DrawerFormModule from "./drawer-form-module";
 import DrawerFormUnit from "./drawer-form-unit";
-import { ModuleParamsProps } from "@/types/modules";
+import {
+  ModuleParamsProps,
+  ModuleParamsPropsV2,
+  TModuleDataV2,
+} from "@/types/modules";
 
 const FOUNDATION_MODULE_TYPES: TModulesTypes[] = [
   "raft_foundation",
@@ -499,10 +499,14 @@ export default function DrawerStepperIFC({
 
   const handleModuleDrawerSubmit = (payload: {
     moduleId?: string;
-    params: ModuleParamsProps;
+    params: ModuleParamsProps | ModuleParamsPropsV2;
     selectedFloors: string[];
-    schemaData: ModuleFormSchema;
-    formInput: ModuleFormInput;
+    formInput: ModuleFormState;
+    flatData: TModuleDataV2 & {
+      type: TModulesTypes;
+      floor_ids?: string[];
+      unit_id?: string;
+    };
   }) => {
     if (!editingModuleTempId) return;
     setState((prev) => {
@@ -511,10 +515,10 @@ export default function DrawerStepperIFC({
         if (m.tempId !== editingModuleTempId) return m;
         const rawNext = {
           ...m.raw,
-          type: payload.params.type,
-          data: { ...(m.raw.data ?? {}), ...(payload.params.data ?? {}) },
+          type: payload.flatData.type,
+          data: { ...(m.raw.data ?? {}), ...(payload.flatData as any) },
         };
-        const rebuilt = { ...m, raw: rawNext, type: payload.params.type };
+        const rebuilt = { ...m, raw: rawNext, type: payload.flatData.type };
         return rerunModuleValidation(rebuilt);
       });
       return next;

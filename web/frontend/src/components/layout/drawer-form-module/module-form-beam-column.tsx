@@ -1,7 +1,7 @@
 import { masks } from "@/utils/masks";
 import { parseNumber } from "@/utils/numbers";
 import { useTranslation } from "@/i18n";
-import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
+import { ModuleFormState } from "@/validators/moduleFormByType.validator";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
@@ -17,13 +17,28 @@ import {
   SelectValue,
 } from "../../ui/select";
 import SteelMaterialList from "./steel-material-list";
-import { useSlabTypeOptions } from "./module-default-values";
+import {
+  useSlabTypeOptions,
+  REQUIRED_POSITIONS_BY_TYPE,
+} from "./module-default-values";
 
 interface ModuleFormBeamColumnProps {
-  form: UseFormReturn<ModuleFormInput>;
+  form: UseFormReturn<ModuleFormState>;
+  stepperMode?: boolean;
+  isSubmitted?: boolean;
 }
 
-const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
+const BEAM_COLUMN_POSITION_LABEL: Record<string, string> = {
+  concrete_columns: "column",
+  concrete_beams: "beam",
+  concrete_slabs: "slab",
+};
+
+const ModuleFormBeamColumn = ({
+  form,
+  stepperMode = false,
+  isSubmitted = false,
+}: ModuleFormBeamColumnProps) => {
   const { t } = useTranslation();
   const slabTypeOptions = useSlabTypeOptions();
   const fckOptions = [20, 25, 30, 35, 40, 45];
@@ -82,7 +97,30 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
       name: `${fieldName}.volumes` as any,
     });
 
-    const borderColor = isRequired ? "border-blue-500" : "border-gray-300";
+    const position = BEAM_COLUMN_POSITION_LABEL[fieldName];
+    const isRequiredPosition =
+      REQUIRED_POSITIONS_BY_TYPE.beam_column.includes(position);
+
+    const currentVolumesForCheck =
+      form.getValues(`${fieldName}.volumes` as any) || [];
+    const currentSteelForCheck =
+      form.getValues(`${fieldName}.steel` as any) || [];
+    const totalVolNonZero = currentVolumesForCheck.reduce(
+      (sum: number, v: any) => sum + (parseNumber(v.volume || "0") > 0 ? 1 : 0),
+      0,
+    );
+    const totalSteelNonZero = currentSteelForCheck.reduce(
+      (sum: number, s: any) => sum + (parseNumber(s.mass || "0") > 0 ? 1 : 0),
+      0,
+    );
+    const isEmpty =
+      isRequiredPosition && (totalVolNonZero === 0 || totalSteelNonZero === 0);
+    const shouldMarkError = isEmpty && (stepperMode || isSubmitted);
+
+    const baseBorder = isRequired ? "border-blue-500" : "border-gray-300";
+    const borderColor = shouldMarkError
+      ? "border-red-500 ring-red-200"
+      : baseBorder;
 
     useWatch({ control: form.control, name: `${fieldName}.volumes` as any });
     const currentVolumes = form.getValues(`${fieldName}.volumes` as any) || [];
@@ -237,7 +275,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
                                 size="sm"
                                 onClick={() => removeVolume(index)}
                                 className="px-2"
-                                disabled={volumeFields.length <= 1}
+                                disabled={
+                                  isRequiredPosition && volumeFields.length <= 1
+                                }
                               >
                                 <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
@@ -291,6 +331,9 @@ const ModuleFormBeamColumn = ({ form }: ModuleFormBeamColumnProps) => {
               form={form}
               name={`${fieldName}.steel`}
               allowedMaterials={["rebar", "strand", "other"]}
+              stepperMode={stepperMode}
+              isSubmitted={isSubmitted}
+              isRequiredPosition={isRequiredPosition}
             />
           </CardContent>
         </Card>

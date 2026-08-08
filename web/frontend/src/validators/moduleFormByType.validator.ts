@@ -1,527 +1,363 @@
+import {
+  TBeamColumnPosition,
+  TBlockType,
+  TConcreteWallPosition,
+  TPilesFoundationPosition,
+  TRaftFoundationPosition,
+  TRaftPilesFoundationPosition,
+  TSteelMaterial,
+  TSteelResistance,
+  TStructuralMasonryPosition,
+} from "@/types/modules";
 import { parseNumber } from "@/utils/numbers";
 import { z } from "zod";
 
-// Schemas baseados na nova tipagem type2.ts
-const concreteVolumeItemSchema = z
-  .object({
-    fck: z.number(),
-    volume: z
-      .string()
-      .transform(parseNumber)
-      .refine((val) => !isNaN(val) && val > 0, {
-        message: "O volume de concreto deve ser maior que 0",
-      }),
+const stringToNumberGeq = (message: string) =>
+  z
+    .union([z.string(), z.number()])
+    .transform((val) => (typeof val === "string" ? parseNumber(val) : val))
+    .refine((val) => !isNaN(val) && val >= 0, { message });
+
+const fckEnumSchema = z.union([
+  z.literal(20),
+  z.literal(25),
+  z.literal(30),
+  z.literal(35),
+  z.literal(40),
+  z.literal(45),
+  z.literal(50),
+]);
+
+const blockTypeEnumSchema = z.enum([
+  "inteiro (14x19x29)",
+  "meio (14x19x14)",
+  "amarração T (14x19x44)",
+  "canaleta inteira (14x19x29)",
+  "meia canaleta (14x19x14)",
+  "inteiro (14x19x39)",
+  "meio (14x19x19)",
+  "amarração T (14x19x54)",
+  "amarração L (14x19x34)",
+  "canaleta  inteira (14x19x39)",
+  "canaleta de amarração (14x19x34)",
+  "meia canaleta (14x19x19)",
+  "compensador 1/4 (14x19x9)",
+  "compensador 1/8 (14x19x4)",
+  "inteiro (19x19x39)",
+  "meio (19x19x19)",
+  "canaleta inteira (19x19x39)",
+  "meia canaleta (19x19x19)",
+  "compensador 1/4 (19x19x9)",
+  "compensador 1/8 (19x19x4)",
+] as const satisfies readonly TBlockType[]);
+
+const steelMaterialEnumSchema = z.enum([
+  "general",
+  "rebar",
+  "mesh",
+  "strand",
+  "other",
+] as const satisfies readonly TSteelMaterial[]);
+const steelResistanceEnumSchema = z.enum([
+  "CA50",
+  "CA60",
+  "CP190",
+  "other",
+] as const satisfies readonly TSteelResistance[]);
+
+const slabTypeEnumSchema = z.enum([
+  "solid",
+  "ribbed",
+  "mushroom_solid",
+  "mushroom_ribbed",
+  "flat",
+  "band_beam",
+  "pt_solid",
+  "pt_ribbed",
+  "pt_mushroom_solid",
+  "pt_mushroom_ribbed",
+  "pt_flat",
+  "pt_band_beam",
+  "trussed",
+  "joist",
+  "filigree",
+  "hollow_core",
+  "precast_solid",
+  "precast_ribbed",
+  "pt_precast",
+]);
+
+const steelMaterialItemSchema = <TPosition extends z.ZodTypeAny>(
+  positionSchema: TPosition,
+) =>
+  z
+    .object({
+      material: steelMaterialEnumSchema,
+      other_name: z.string().optional(),
+      resistance: steelResistanceEnumSchema,
+      other_resistance: z.number().optional(),
+      mass: stringToNumberGeq("A massa de aço não pode ser negativa"),
+      position: positionSchema,
+    })
+    .refine(
+      (data) => {
+        if (data.material === "other") {
+          return (
+            data.other_name !== undefined && data.other_name.trim().length > 0
+          );
+        }
+        return true;
+      },
+      {
+        message: "Nome do material é obrigatório quando 'Outro' é selecionado",
+        path: ["other_name"],
+      },
+    )
+    .refine(
+      (data) => {
+        if (data.resistance === "other") {
+          return (
+            data.other_resistance !== undefined &&
+            data.other_resistance !== null
+          );
+        }
+        return true;
+      },
+      {
+        message:
+          "Resistência customizada é obrigatória quando 'Outro' é selecionado",
+        path: ["other_resistance"],
+      },
+    );
+
+const concreteVolumeItemSchema = <TPosition extends z.ZodTypeAny>(
+  positionSchema: TPosition,
+) =>
+  z.object({
+    fck: fckEnumSchema,
+    volume: stringToNumberGeq("O volume de concreto não pode ser negativo"),
+    position: positionSchema,
     customFck: z.boolean().optional(),
-  })
-  // .superRefine((data, ctx) => {
-  //   if (!data.customFck) {
-  //     if (data.fck < 20 || data.fck > 45) {
-  //       ctx.addIssue({
-  //         path: ["fck"],
-  //         code: "custom",
-  //         message: "Fck deve estar entre 20 e 45",
-  //       });
-  //     }
-  //   }
-  // })
-  .transform((data) => {
-    const { customFck: _customFck, ...rest } = data;
-    return rest;
   });
 
-// Steel schema for foundations and superstructure
-const steelMaterialSchema = z
-  .object({
-    material: z.enum(["general", "rebar", "mesh", "strand", "other"]),
-    other_name: z.string().optional(),
-    resistance: z.enum(["CA50", "CA60", "CP190", "other"]),
-    other_resistance: z.number().optional(),
-    mass: z
-      .string()
-      .transform(parseNumber)
-      .refine((val) => !isNaN(val) && val > 0, {
-        message: "A massa de aço deve ser maior que 0",
-      }),
-  })
-  .refine(
-    (data) => {
-      if (data.material === "other") {
-        return data.other_name && data.other_name.trim().length > 0;
-      }
-      return true;
-    },
-    {
-      message: "Nome do material é obrigatório quando 'Outro' é selecionado",
-      path: ["other_name"],
-    },
-  )
-  .refine(
-    (data) => {
-      if (data.resistance === "other") {
-        return (
-          data.other_resistance !== undefined && data.other_resistance !== null
-        );
-      }
-      return true;
-    },
-    {
-      message:
-        "Resistência customizada é obrigatória quando 'Outro' é selecionado",
-      path: ["other_resistance"],
-    },
-  );
+const formAreaItemSchema = <TPosition extends z.ZodTypeAny>(
+  positionSchema: TPosition,
+) =>
+  z.object({
+    area: stringToNumberGeq("A área de forma não pode ser negativa"),
+    position: positionSchema,
+  });
 
-const concreteElementSchema = z.object({
-  volumes: z.array(concreteVolumeItemSchema).optional().default([]),
-  steel: z.array(steelMaterialSchema).optional().default([]),
+const groutVolumeItemSchema = z.object({
+  fgk: z.number(),
+  volume: stringToNumberGeq("O volume de graute não pode ser negativo"),
+  customFgk: z.boolean().optional(),
 });
 
-const blockItemSchema = z
-  .object({
-    type: z.enum([
-      "inteiro (14x19x29)",
-      "meio (14x19x14)",
-      "amarração T (14x19x44)",
-      "canaleta inteira (14x19x29)",
-      "meia canaleta (14x19x14)",
-      "inteiro (14x19x39)",
-      "meio (14x19x19)",
-      "amarração T (14x19x54)",
-      "amarração L (14x19x34)",
-      "canaleta  inteira (14x19x39)",
-      "canaleta de amarração (14x19x34)",
-      "meia canaleta (14x19x19)",
-      "compensador 1/4 (14x19x9)",
-      "compensador 1/8 (14x19x4)",
-      "inteiro (19x19x39)",
-      "meio (19x19x19)",
-      "canaleta inteira (19x19x39)",
-      "meia canaleta (19x19x19)",
-      "compensador 1/4 (19x19x9)",
-      "compensador 1/8 (19x19x4)",
-    ]),
-    fbk: z.number(),
-    quantity: z.string().transform((val) => {
-      const parsed = parseNumber(val);
-      if (parsed <= 0) {
-        throw new Error("A quantidade deve ser positiva");
-      }
-      return Math.round(parsed);
-    }),
-    customFbk: z.boolean().optional(),
-  })
-  // .superRefine((data, ctx) => {
-  //   if (!data.customFbk) {
-  //     const validFbks = [4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26];
-  //     if (!validFbks.includes(data.fbk)) {
-  //       ctx.addIssue({
-  //         path: ["fbk"],
-  //         code: "custom",
-  //         message: "Fbk deve ser 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24 ou 26",
-  //       });
-  //     }
-  //   }
-  // })
-  .transform((data) => {
-    const { customFbk: _customFbk, ...rest } = data;
-    return rest;
-  });
-
-const groutVolumeItemSchema = z
-  .object({
-    fgk: z.number(),
-    volume: z
-      .string()
-      .transform(parseNumber)
-      .refine((val) => !isNaN(val) && val > 0, {
-        message: "O volume de graute deve ser maior que 0",
-      }),
-    customFgk: z.boolean().optional(),
-  })
-  // .superRefine((data, ctx) => {
-  //   if (!data.customFgk) {
-  //     const validFgks = [15, 20, 25, 30];
-  //     if (!validFgks.includes(data.fgk)) {
-  //       ctx.addIssue({
-  //         path: ["fgk"],
-  //         code: "custom",
-  //         message: "Fgk deve ser 15, 20, 25 ou 30",
-  //       });
-  //     }
-  //   }
-  // })
-  .transform((data) => {
-    const { customFgk: _customFgk, ...rest } = data;
-    return rest;
-  });
-
-const groutItemSchema = z.object({
+const groutInfoSchema = z.object({
   position: z.enum(["vertical", "horizontal"]),
   volumes: z
     .array(groutVolumeItemSchema)
-    .min(1, "Adicione pelo menos um volume"),
+    .min(1, "Adicione pelo menos um volume de graute"),
   steel: z
-    .array(steelMaterialSchema)
-    .min(1, "Adicione pelo menos uma armadura"),
+    .array(steelMaterialItemSchema(z.enum(["vertical", "horizontal"])))
+    .min(1, "Adicione pelo menos uma armadura de graute"),
 });
 
-const mortarItemSchema = z
-  .object({
-    fak: z.number(),
-    volume: z
-      .string()
-      .transform(parseNumber)
-      .refine((val) => !isNaN(val) && val > 0, {
-        message: "O volume de argamassa deve ser maior que 0",
-      }),
-    customFak: z.boolean().optional(),
-  })
-  // .superRefine((data, ctx) => {
-  //   if (!data.customFak) {
-  //     const validFaks = [4.5, 8, 14];
-  //     if (!validFaks.includes(data.fak)) {
-  //       ctx.addIssue({
-  //         path: ["fak"],
-  //         code: "custom",
-  //         message: "Fak deve ser 4.5, 8 ou 14",
-  //       });
-  //     }
-  //   }
-  // })
-  .transform((data) => {
-    const { customFak: _customFak, ...rest } = data;
-    return rest;
-  });
+const mortarItemSchema = z.object({
+  fak: z.number(),
+  volume: stringToNumberGeq("O volume de argamassa não pode ser negativo"),
+  customFak: z.boolean().optional(),
+});
 
-const foundationSteelSchema = z
-  .array(steelMaterialSchema)
-  .min(1, "Adicione pelo menos um material de aço");
+const blockInfoSchema = z.object({
+  type: blockTypeEnumSchema,
+  fbk: z.number(),
+  quantity: z.union([z.string(), z.number()]).transform((val) => {
+    const parsed = typeof val === "string" ? parseNumber(val) : val;
+    if (isNaN(parsed) || parsed < 0) {
+      throw new Error("A quantidade deve ser não-negativa");
+    }
+    return Math.round(parsed);
+  }),
+  customFbk: z.boolean().optional(),
+});
 
-export const moduleFormSchema = z
-  .object({
-    type: z.enum(
-      [
-        "beam_column",
-        "concrete_wall",
-        "structural_masonry",
-        "raft_foundation",
-        "piles_foundation",
-        "raft_piles_foundation",
-      ],
-      {
-        required_error: "Selecione um tipo de estrutura",
-        invalid_type_error: "Tipo de estrutura inválido",
-      },
-    ),
+const masonryElementSchema = z.object({
+  blocks: z
+    .array(blockInfoSchema)
+    .min(1, "Adicione pelo menos um tipo de bloco"),
+  grout: z
+    .array(groutInfoSchema)
+    .min(1, "Adicione pelo menos um tipo de graute"),
+  mortar: z
+    .array(mortarItemSchema)
+    .min(1, "Adicione pelo menos um tipo de argamassa"),
+});
 
-    concrete_columns: concreteElementSchema.optional(),
-    concrete_beams: concreteElementSchema.optional(),
-    concrete_slabs: concreteElementSchema.optional(),
-    form_columns: z
-      .union([z.string(), z.undefined()])
-      .transform((val) => (val ? parseNumber(val) : undefined))
-      .optional(),
-    form_beams: z
-      .union([z.string(), z.undefined()])
-      .transform((val) => (val ? parseNumber(val) : undefined))
-      .optional(),
-    form_slabs: z
-      .union([z.string(), z.undefined()])
-      .transform((val) => (val ? parseNumber(val) : undefined))
-      .optional(),
-    column_number: z
-      .string()
-      .transform((val) => {
-        const parsed = parseNumber(val);
-        return Math.round(parsed);
-      })
-      .optional(),
-    avg_beam_span: z.string().transform(parseNumber).optional(),
-    avg_slab_span: z.string().transform(parseNumber).optional(),
+const beamColumnPositionSchema = z.enum([
+  "column",
+  "beam",
+  "slab",
+  "stair",
+] as const satisfies readonly TBeamColumnPosition[]);
+const concreteWallPositionSchema = z.enum([
+  "wall",
+  "slab",
+  "stair",
+] as const satisfies readonly TConcreteWallPosition[]);
+const structuralMasonryPositionSchema = z.enum([
+  "column",
+  "beam",
+  "slab",
+  "stair",
+] as const satisfies readonly TStructuralMasonryPosition[]);
+const raftFoundationPositionSchema = z.enum([
+  "raft",
+] as const satisfies readonly TRaftFoundationPosition[]);
+const pilesFoundationPositionSchema = z.enum([
+  "pile",
+  "block",
+  "grade_beam",
+  "tie_beam",
+] as const satisfies readonly TPilesFoundationPosition[]);
+const raftPilesFoundationPositionSchema = z.enum([
+  "raft",
+  "pile",
+] as const satisfies readonly TRaftPilesFoundationPosition[]);
 
-    concrete_walls: concreteElementSchema.optional(),
-    wall_thickness: z.string().transform(parseNumber).optional(),
-    slab_thickness: z.string().transform(parseNumber).optional(),
-    wall_area: z.string().transform(parseNumber).optional(),
-    slab_area: z.number().nonnegative().optional(),
-    wall_form_area: z
-      .union([z.string(), z.undefined()])
-      .transform((val) => (val ? parseNumber(val) : undefined))
-      .optional(),
-    slab_form_area: z
-      .union([z.string(), z.undefined()])
-      .transform((val) => (val ? parseNumber(val) : undefined))
-      .optional(),
+const v2BaseSchema = z.object({
+  floor_ids: z.array(z.string()).optional(),
+  floor_index: z.number().optional(),
+  floor_indexes: z.array(z.number()).optional(),
+  unit_id: z.string().optional(),
+});
 
-    // Structural masonry fields
-    masonry_blocks: z.array(blockItemSchema).optional(),
-    grout: z
-      .array(groutItemSchema)
-      .min(1, "Adicione pelo menos um tipo de graute")
-      .optional(),
-    mortar: z.array(mortarItemSchema).optional(),
+const beamColumnSchemaV2 = v2BaseSchema.extend({
+  type: z.literal("beam_column"),
+  concrete: z
+    .array(concreteVolumeItemSchema(beamColumnPositionSchema))
+    .min(1, "Adicione pelo menos um volume de concreto"),
+  steel: z
+    .array(steelMaterialItemSchema(beamColumnPositionSchema))
+    .min(1, "Adicione pelo menos um material de aço"),
+  form: z.array(formAreaItemSchema(beamColumnPositionSchema)).optional(),
+  slab_type: slabTypeEnumSchema.optional(),
+  column_number: stringToNumberGeq(
+    "O número de colunas não pode ser negativo",
+  ).optional(),
+  beam_number: stringToNumberGeq(
+    "O número de vigas não pode ser negativo",
+  ).optional(),
+  slab_number: stringToNumberGeq(
+    "O número de lajes não pode ser negativo",
+  ).optional(),
+  avg_beam_span: stringToNumberGeq(
+    "O vão médio de vigas não pode ser negativo",
+  ).optional(),
+  avg_slab_span: stringToNumberGeq(
+    "O vão médio de lajes não pode ser negativo",
+  ).optional(),
+});
 
-    // Slab type field (beam_column, concrete_wall, structural_masonry)
-    slab_type: z
-      .enum([
-        "solid",
-        "ribbed",
-        "mushroom_solid",
-        "mushroom_ribbed",
-        "flat",
-        "band_beam",
-        "pt_solid",
-        "pt_ribbed",
-        "pt_mushroom_solid",
-        "pt_mushroom_ribbed",
-        "pt_flat",
-        "pt_band_beam",
-        "trussed",
-        "joist",
-        "filigree",
-        "hollow_core",
-        "precast_solid",
-        "precast_ribbed",
-        "pt_precast",
-      ])
-      .optional(),
+const concreteWallSchemaV2 = v2BaseSchema.extend({
+  type: z.literal("concrete_wall"),
+  concrete: z
+    .array(concreteVolumeItemSchema(concreteWallPositionSchema))
+    .min(1, "Adicione pelo menos um volume de concreto"),
+  steel: z
+    .array(steelMaterialItemSchema(concreteWallPositionSchema))
+    .min(1, "Adicione pelo menos um material de aço"),
+  form: z.array(formAreaItemSchema(concreteWallPositionSchema)).optional(),
+  slab_type: slabTypeEnumSchema.optional(),
+  wall_thickness: stringToNumberGeq(
+    "A espessura da parede não pode ser negativa",
+  ).optional(),
+  slab_thickness: stringToNumberGeq(
+    "A espessura da laje não pode ser negativa",
+  ).optional(),
+  wall_area: stringToNumberGeq(
+    "A área da parede não pode ser negativa",
+  ).optional(),
+  slab_area: stringToNumberGeq(
+    "A área da laje não pode ser negativa",
+  ).optional(),
+  beam_number: stringToNumberGeq(
+    "O número de vigas não pode ser negativo",
+  ).optional(),
+  slab_number: stringToNumberGeq(
+    "O número de lajes não pode ser negativo",
+  ).optional(),
+});
 
-    // Raft foundation fields
-    area: z
-      .string()
-      .transform(parseNumber)
-      .refine((val) => !isNaN(val) && val > 0, {
-        message: "A área deve ser maior que 0",
-      })
-      .optional(),
-    thickness: z
-      .string()
-      .transform(parseNumber)
-      .refine((val) => !isNaN(val) && val > 0, {
-        message: "A espessura deve ser maior que 0",
-      })
-      .optional(),
-    fck: z.number().optional(),
-    steel: foundationSteelSchema.optional(),
+const structuralMasonrySchemaV2 = v2BaseSchema.extend({
+  type: z.literal("structural_masonry"),
+  masonry: masonryElementSchema,
+  concrete: z
+    .array(concreteVolumeItemSchema(structuralMasonryPositionSchema))
+    .optional(),
+  steel: z
+    .array(steelMaterialItemSchema(structuralMasonryPositionSchema))
+    .optional(),
+  form: z.array(formAreaItemSchema(structuralMasonryPositionSchema)).optional(),
+  slab_type: slabTypeEnumSchema.optional(),
+  beam_number: stringToNumberGeq(
+    "O número de vigas não pode ser negativo",
+  ).optional(),
+  slab_number: stringToNumberGeq(
+    "O número de lajes não pode ser negativo",
+  ).optional(),
+});
 
-    // Piles foundation fields
-    piles: z
-      .object({
-        volume: z
-          .string()
-          .transform(parseNumber)
-          .refine((val) => !isNaN(val) && val > 0, {
-            message: "O volume de estacas deve ser maior que 0",
-          })
-          .optional(),
-        steel: foundationSteelSchema.optional(),
-      })
-      .optional(),
-    // Optional foundation elements — volume 0 is allowed (backend ignores zero-volume items)
-    tie_beams: z
-      .object({
-        volume: z
-          .string()
-          .transform(parseNumber)
-          .refine((val) => !isNaN(val) && val >= 0, {
-            message: "O volume de cintas não pode ser negativo",
-          })
-          .optional(),
-        steel: z.array(steelMaterialSchema).optional(),
-      })
-      .optional(),
-    pile_caps: z
-      .object({
-        volume: z
-          .string()
-          .transform(parseNumber)
-          .refine((val) => !isNaN(val) && val >= 0, {
-            message: "O volume de blocos não pode ser negativo",
-          })
-          .optional(),
-        steel: z.array(steelMaterialSchema).optional(),
-      })
-      .optional(),
-    grade_beams: z
-      .object({
-        volume: z
-          .string()
-          .transform(parseNumber)
-          .refine((val) => !isNaN(val) && val >= 0, {
-            message: "O volume de vigas baldrame não pode ser negativo",
-          })
-          .optional(),
-        steel: z.array(steelMaterialSchema).optional(),
-      })
-      .optional(),
+const raftFoundationSchemaV2 = v2BaseSchema.extend({
+  type: z.literal("raft_foundation"),
+  concrete: z
+    .array(concreteVolumeItemSchema(raftFoundationPositionSchema))
+    .min(1, "Adicione pelo menos um volume de concreto do radier"),
+  steel: z
+    .array(steelMaterialItemSchema(raftFoundationPositionSchema))
+    .min(1, "Adicione pelo menos um material de aço do radier"),
+  raft_area: z.number().optional(),
+  raft_thickness: z.number().optional(),
+});
 
-    // Raft piles foundation fields
-    raft: z
-      .object({
-        area: z
-          .string()
-          .transform(parseNumber)
-          .refine((val) => !isNaN(val) && val > 0, {
-            message: "A área do radier deve ser maior que 0",
-          })
-          .optional(),
-        thickness: z
-          .string()
-          .transform(parseNumber)
-          .refine((val) => !isNaN(val) && val > 0, {
-            message: "A espessura do radier deve ser maior que 0",
-          })
-          .optional(),
-        steel: foundationSteelSchema.optional(),
-      })
-      .optional(),
-  })
-  .refine(
-    (data) => {
-      if (data.type === "beam_column") {
-        return (
-          data.concrete_columns !== undefined &&
-          data.concrete_beams !== undefined &&
-          data.concrete_slabs !== undefined &&
-          data.form_columns !== undefined &&
-          data.form_beams !== undefined &&
-          data.form_slabs !== undefined &&
-          data.column_number !== undefined &&
-          data.avg_beam_span !== undefined &&
-          data.avg_slab_span !== undefined
-        );
-      }
-      return true;
-    },
-    {
-      message:
-        "Para Viga Pilar são obrigatórios: concreto (colunas, vigas, lajes), formas (colunas, vigas, lajes), número de colunas e vãos médios",
-      path: ["type"],
-    },
-  )
-  .refine(
-    (data) => {
-      if (data.type === "concrete_wall") {
-        return (
-          data.concrete_walls !== undefined &&
-          data.concrete_slabs !== undefined &&
-          data.wall_thickness !== undefined &&
-          data.slab_thickness !== undefined
-        );
-      }
-      return true;
-    },
-    {
-      message:
-        "Para Parede de Concreto são obrigatórios: concreto (paredes, lajes) e espessuras (parede, laje)",
-      path: ["type"],
-    },
-  )
-  .refine(
-    (data) => {
-      if (data.type === "structural_masonry") {
-        return (
-          data.masonry_blocks !== undefined &&
-          data.grout !== undefined &&
-          data.mortar !== undefined &&
-          data.concrete_slabs !== undefined
-        );
-      }
-      return true;
-    },
-    {
-      message:
-        "Para Alvenaria Estrutural são obrigatórios: blocos, graute, argamassa e laje de concreto",
-      path: ["type"],
-    },
-  )
-  .refine(
-    (data) => {
-      if (data.type === "raft_foundation") {
-        return (
-          data.area !== undefined &&
-          data.thickness !== undefined &&
-          data.fck !== undefined
-        );
-      }
-      return true;
-    },
-    {
-      message: "Para Radier são obrigatórios: área, espessura e fck",
-      path: ["type"],
-    },
-  )
-  .refine(
-    (data) => {
-      if (data.type === "piles_foundation") {
-        return data.fck !== undefined;
-      }
-      return true;
-    },
-    {
-      message: "Para Estacas é obrigatório: fck",
-      path: ["type"],
-    },
-  )
-  .refine(
-    (data) => {
-      if (data.type === "raft_piles_foundation") {
-        return (
-          data.raft?.area !== undefined &&
-          data.raft?.thickness !== undefined &&
-          data.fck !== undefined // fck está na raiz, não no raft
-        );
-      }
-      return true;
-    },
-    {
-      message: "Para Radier Estaqueado são obrigatórios: área, espessura e fck",
-      path: ["type"],
-    },
-  );
+const pilesFoundationSchemaV2 = v2BaseSchema.extend({
+  type: z.literal("piles_foundation"),
+  concrete: z
+    .array(concreteVolumeItemSchema(pilesFoundationPositionSchema))
+    .min(1, "Adicione pelo menos um volume de concreto"),
+  steel: z
+    .array(steelMaterialItemSchema(pilesFoundationPositionSchema))
+    .min(1, "Adicione pelo menos um material de aço"),
+});
+
+const raftPilesFoundationSchemaV2 = v2BaseSchema.extend({
+  type: z.literal("raft_piles_foundation"),
+  concrete: z
+    .array(concreteVolumeItemSchema(raftPilesFoundationPositionSchema))
+    .min(1, "Adicione pelo menos um volume de concreto"),
+  steel: z
+    .array(steelMaterialItemSchema(raftPilesFoundationPositionSchema))
+    .min(1, "Adicione pelo menos um material de aço"),
+  raft_area: z.number().optional(),
+  raft_thickness: z.number().optional(),
+});
+
+export const moduleFormSchema = z.discriminatedUnion("type", [
+  beamColumnSchemaV2,
+  concreteWallSchemaV2,
+  structuralMasonrySchemaV2,
+  raftFoundationSchemaV2,
+  pilesFoundationSchemaV2,
+  raftPilesFoundationSchemaV2,
+]);
 
 export type ModuleFormSchema = z.infer<typeof moduleFormSchema>;
 export type ModuleFormInput = z.input<typeof moduleFormSchema>;
 
-// Funções auxiliares para validação específica por tipo
-export const validateBeamColumnData = (data: Partial<ModuleFormSchema>) => {
-  return (
-    data.type === "beam_column" &&
-    data.concrete_columns?.volumes?.length &&
-    data.concrete_beams?.volumes?.length &&
-    data.concrete_slabs?.volumes?.length &&
-    data.form_columns !== undefined &&
-    data.form_beams !== undefined &&
-    data.form_slabs !== undefined &&
-    data.column_number !== undefined &&
-    data.avg_beam_span !== undefined &&
-    data.avg_slab_span !== undefined
-  );
-};
+import type { TModuleGroupedForm } from "@/components/layout/drawer-form-module/aggregate-helpers";
+export type ModuleFormState = TModuleGroupedForm;
 
-export const validateConcreteWallData = (data: Partial<ModuleFormSchema>) => {
-  return (
-    data.type === "concrete_wall" &&
-    data.concrete_walls?.volumes?.length &&
-    data.concrete_slabs?.volumes?.length &&
-    data.wall_thickness !== undefined &&
-    data.slab_thickness !== undefined
-  );
-};
-
-// Comentado: validação para structural masonry
-// export const validateStructuralMasonryData = (
-//   data: Partial<ModuleFormSchema>
-// ) => {
-//   return (
-//     data.type === "structural_masonry" &&
-//     data.vertical_grout?.volumes?.length &&
-//     data.horizontal_grout?.volumes?.length &&
-//     data.blocks?.length
-//   );
-// };
-
-// Schema para adicionar módulo (apenas nome)
 export const addModuleFormSchema = z.object({
   name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
 });

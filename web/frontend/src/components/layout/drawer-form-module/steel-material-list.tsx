@@ -28,6 +28,9 @@ interface SteelMaterialListProps {
   name: string;
   allowedMaterials?: MaterialKey[];
   minItems?: number;
+  stepperMode?: boolean;
+  isSubmitted?: boolean;
+  isRequiredPosition?: boolean;
 }
 
 interface SteelMaterialItemProps {
@@ -275,6 +278,9 @@ const SteelMaterialList = ({
   name,
   allowedMaterials = ["rebar", "other"],
   minItems = 1,
+  stepperMode = false,
+  isSubmitted = false,
+  isRequiredPosition = false,
 }: SteelMaterialListProps) => {
   const { t } = useTranslation();
   const { fields, append, remove } = useFieldArray({
@@ -317,11 +323,29 @@ const SteelMaterialList = ({
     { value: "other", label: t.modules.form.other },
   ];
 
+  const totalNonZero = (steelArray || []).reduce((count: number, item: any) => {
+    if (!item?.mass) return count;
+    const numericValue =
+      typeof item.mass === "string"
+        ? parseFloat(item.mass.replace(/\./g, "").replace(",", "."))
+        : item.mass;
+    if (isNaN(numericValue) || numericValue <= 0) return count;
+    return count + 1;
+  }, 0);
+
+  const isEmpty = isRequiredPosition && totalNonZero === 0;
+  const shouldMarkError = isEmpty && (stepperMode || isSubmitted);
+
+  const wrapperBorder = shouldMarkError
+    ? "border-red-500 ring-red-200"
+    : "border-transparent";
+
   return (
-    <div className="space-y-3">
+    <div className={`space-y-3 p-3 rounded-md border-2 ${wrapperBorder}`}>
       <div className="flex items-center justify-between">
         <FormLabel className="text-xs text-gray-700">
           {t.modules.form.steelMaterials}
+          {isRequiredPosition ? " *" : ""}
         </FormLabel>
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-500">Total:</span>
@@ -355,7 +379,10 @@ const SteelMaterialList = ({
             resistanceOptions={resistanceOptions}
             otherCombinations={otherCombinations}
             onRemove={() => remove(index)}
-            canRemove={fields.length > minItems}
+            canRemove={
+              !(isRequiredPosition && fields.length <= 1) &&
+              fields.length > minItems
+            }
           />
         );
       })}

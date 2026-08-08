@@ -1,8 +1,9 @@
 import { masks } from "@/utils/masks";
-import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
+import { parseNumber } from "@/utils/numbers";
+import { ModuleFormState } from "@/validators/moduleFormByType.validator";
 import { useTranslation } from "@/i18n";
 import { useLayoutEffect, useState } from "react";
-import { UseFormReturn } from "react-hook-form";
+import { UseFormReturn, useWatch } from "react-hook-form";
 import { Card, CardContent } from "../../ui/card";
 import { FormControl, FormField, FormItem, FormLabel } from "../../ui/form";
 import { Input } from "../../ui/input";
@@ -14,13 +15,28 @@ import {
   SelectValue,
 } from "../../ui/select";
 import SteelMaterialList from "./steel-material-list";
+import { REQUIRED_POSITIONS_BY_TYPE } from "./module-default-values";
 
 interface ModuleFormPilesFoundationProps {
-  form: UseFormReturn<ModuleFormInput>;
+  form: UseFormReturn<ModuleFormState>;
+  stepperMode?: boolean;
+  isSubmitted?: boolean;
 }
+
+const POSITION_LABEL: Record<
+  string,
+  "pile" | "block" | "grade_beam" | "tie_beam"
+> = {
+  piles: "pile",
+  pile_caps: "block",
+  grade_beams: "grade_beam",
+  tie_beams: "tie_beam",
+};
 
 const ModuleFormPilesFoundation = ({
   form,
+  stepperMode = false,
+  isSubmitted = false,
 }: ModuleFormPilesFoundationProps) => {
   const { t } = useTranslation();
   const fckOptions = [20, 25, 30, 35, 40, 45];
@@ -30,12 +46,112 @@ const ModuleFormPilesFoundation = ({
   const isCustomFck =
     customFck || (currentFck && !fckOptions.includes(currentFck));
 
+  const pilesVolume = useWatch({ control: form.control, name: "piles.volume" });
+  const pilesSteel = useWatch({ control: form.control, name: "piles.steel" });
+  const pileCapsVolume = useWatch({
+    control: form.control,
+    name: "pile_caps.volume",
+  });
+  const pileCapsSteel = useWatch({
+    control: form.control,
+    name: "pile_caps.steel",
+  });
+  const gradeBeamsVolume = useWatch({
+    control: form.control,
+    name: "grade_beams.volume",
+  });
+  const gradeBeamsSteel = useWatch({
+    control: form.control,
+    name: "grade_beams.steel",
+  });
+  const tieBeamsVolume = useWatch({
+    control: form.control,
+    name: "tie_beams.volume",
+  });
+  const tieBeamsSteel = useWatch({
+    control: form.control,
+    name: "tie_beams.steel",
+  });
+
   // Detectar fck customizado ao carregar dados de edição (antes do render)
   useLayoutEffect(() => {
     if (currentFck && !fckOptions.includes(currentFck)) {
       setCustomFck(true);
     }
   }, [currentFck]);
+
+  const countSteelNonZero = (arr: unknown[] | undefined): number => {
+    return (arr || []).reduce((count: number, s: any) => {
+      const m = parseNumber(s?.mass ?? "0");
+      return count + (m > 0 ? 1 : 0);
+    }, 0);
+  };
+
+  const renderSection = (
+    fieldGroup: "piles" | "pile_caps" | "grade_beams" | "tie_beams",
+    title: string,
+    volumeValue: unknown,
+    steelValue: unknown[] | undefined,
+    minItemsSteel: number = 1,
+  ) => {
+    const position = POSITION_LABEL[fieldGroup];
+    const isRequiredPosition =
+      REQUIRED_POSITIONS_BY_TYPE.piles_foundation.includes(position);
+
+    const volNum = parseNumber((volumeValue as string | number) ?? "0");
+    const steelNonZero = countSteelNonZero(steelValue);
+
+    const isEmpty = isRequiredPosition && (volNum <= 0 || steelNonZero === 0);
+    const shouldMarkError = isEmpty && (stepperMode || isSubmitted);
+
+    const baseBorder = isRequiredPosition
+      ? "border-blue-500"
+      : "border-gray-200";
+    const cardBorder = shouldMarkError
+      ? "border-red-500 ring-red-200"
+      : baseBorder;
+
+    return (
+      <div className="space-y-3">
+        <h3 className="text-base font-semibold text-primary">{title}</h3>
+        <Card className={`border-2 ${cardBorder}`}>
+          <CardContent className="space-y-4 pt-4">
+            <FormField
+              control={form.control}
+              name={`${fieldGroup}.volume` as any}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">
+                    {t.modules.form.concreteVolume}
+                    {isRequiredPosition ? " *" : ""}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="0,00"
+                      onChange={(e) => {
+                        const maskedValue = masks.numeric(e.target.value);
+                        field.onChange(maskedValue);
+                      }}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <SteelMaterialList
+              form={form}
+              name={`${fieldGroup}.steel` as any}
+              minItems={minItemsSteel}
+              stepperMode={stepperMode}
+              isSubmitted={isSubmitted}
+              isRequiredPosition={isRequiredPosition}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -49,19 +165,17 @@ const ModuleFormPilesFoundation = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel className="text-xs">
-                {t.modules.form.fckLabel}
+                {t.modules.form.fckLabel} *
               </FormLabel>
               <FormControl>
                 <Select
                   onValueChange={(value) => {
-                    // Ignorar valores vazios (onChange automático do Select)
                     if (!value || value === "") {
                       return;
                     }
 
                     if (value === "other") {
                       setCustomFck(true);
-                      // Manter o valor atual se já for customizado, senão usar 70
                       if (!currentFck || fckOptions.includes(currentFck)) {
                         field.onChange(70);
                       }
@@ -127,145 +241,28 @@ const ModuleFormPilesFoundation = ({
         )}
       </div>
 
-      {/* Estacas */}
-      <h3 className="text-base font-semibold text-primary">
-        {t.modules.form.piles}
-      </h3>
-      <Card className="border-2 border-gray-200">
-        <CardContent className="space-y-4 pt-4">
-          {/* Volume das Estacas */}
-          <FormField
-            control={form.control}
-            name="piles.volume"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-xs">
-                  {t.modules.form.concreteVolume}
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="0,00"
-                    onChange={(e) => {
-                      const maskedValue = masks.numeric(e.target.value);
-                      field.onChange(maskedValue);
-                    }}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          {/* Aço das Estacas */}
-          <SteelMaterialList form={form} name="piles.steel" />
-        </CardContent>
-      </Card>
-
-      {/* Blocos de Coroamento */}
-      <h3 className="text-base font-semibold text-primary">
-        {t.modules.form.pileCaps}
-      </h3>
-      <Card className="border-2 border-gray-200">
-        <CardContent className="space-y-4 pt-4">
-          {/* Volume dos Blocos */}
-          <FormField
-            control={form.control}
-            name="pile_caps.volume"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-xs">
-                  {t.modules.form.concreteVolume}
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="0,00"
-                    onChange={(e) => {
-                      const maskedValue = masks.numeric(e.target.value);
-                      field.onChange(maskedValue);
-                    }}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          {/* Aço dos Blocos */}
-          <SteelMaterialList form={form} name="pile_caps.steel" minItems={0} />
-        </CardContent>
-      </Card>
-
-      {/* Vigas Baldrame */}
-      <h3 className="text-base font-semibold text-primary">
-        {t.modules.form.gradeBeams}
-      </h3>
-      <Card className="border-2 border-gray-200">
-        <CardContent className="space-y-4 pt-4">
-          {/* Volume das Vigas Baldrame */}
-          <FormField
-            control={form.control}
-            name="grade_beams.volume"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-xs">
-                  {t.modules.form.concreteVolume}
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="0,00"
-                    onChange={(e) => {
-                      const maskedValue = masks.numeric(e.target.value);
-                      field.onChange(maskedValue);
-                    }}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          {/* Aço das Vigas Baldrame */}
-          <SteelMaterialList
-            form={form}
-            name="grade_beams.steel"
-            minItems={0}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Cintas */}
-      <h3 className="text-base font-semibold text-primary">
-        {t.modules.form.tieBeams}
-      </h3>
-      <Card className="border-2 border-gray-200">
-        <CardContent className="space-y-4 pt-4">
-          {/* Volume das Cintas */}
-          <FormField
-            control={form.control}
-            name="tie_beams.volume"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-xs">
-                  {t.modules.form.concreteVolume}
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="0,00"
-                    onChange={(e) => {
-                      const maskedValue = masks.numeric(e.target.value);
-                      field.onChange(maskedValue);
-                    }}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          {/* Aço das Cintas */}
-          <SteelMaterialList form={form} name="tie_beams.steel" minItems={0} />
-        </CardContent>
-      </Card>
+      {renderSection("piles", t.modules.form.piles, pilesVolume, pilesSteel, 1)}
+      {renderSection(
+        "pile_caps",
+        t.modules.form.pileCaps,
+        pileCapsVolume,
+        pileCapsSteel,
+        0,
+      )}
+      {renderSection(
+        "grade_beams",
+        t.modules.form.gradeBeams,
+        gradeBeamsVolume,
+        gradeBeamsSteel,
+        0,
+      )}
+      {renderSection(
+        "tie_beams",
+        t.modules.form.tieBeams,
+        tieBeamsVolume,
+        tieBeamsSteel,
+        0,
+      )}
     </div>
   );
 };

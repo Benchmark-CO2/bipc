@@ -1,15 +1,24 @@
 import api from "@/service/api";
-import { ModuleParamsProps, TModuleStructure } from "@/types/modules";
+import {
+  ModuleParamsPropsV2,
+  ModuleUpdateRequestV2,
+  TModuleDataV2,
+} from "@/types/modules";
+import { cleanZeroItemsBeforeSubmit } from "@/components/layout/drawer-form-module/aggregate-helpers";
 
 export const patchModule = (
-  moduleParams: ModuleParamsProps,
+  moduleParams: ModuleParamsPropsV2,
   projectId: string,
   unitId: string,
   optionId: string,
-  moduleId: string
+  moduleId: string,
 ) => {
-  return api.patch<{ module: TModuleStructure }>(
-    `/v1/projects/${projectId}/units/${unitId}/options/${optionId}/modules/${moduleId}`,
-    moduleParams
+  const payload: ModuleUpdateRequestV2 = {
+    type: moduleParams.type,
+    data: cleanZeroItemsBeforeSubmit(moduleParams.data as TModuleDataV2),
+  };
+  return api.patch<{ module: ModuleUpdateRequestV2 & { id?: string } }>(
+    `/v2/projects/${projectId}/units/${unitId}/options/${optionId}/modules/${moduleId}`,
+    payload,
   );
 };

@@ -1,8 +1,9 @@
 import { masks } from "@/utils/masks";
-import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
+import { parseNumber } from "@/utils/numbers";
+import { ModuleFormState } from "@/validators/moduleFormByType.validator";
 import { useTranslation } from "@/i18n";
 import { useLayoutEffect, useState } from "react";
-import { UseFormReturn } from "react-hook-form";
+import { UseFormReturn, useWatch } from "react-hook-form";
 import { Card, CardContent } from "../../ui/card";
 import { FormControl, FormField, FormItem, FormLabel } from "../../ui/form";
 import { Input } from "../../ui/input";
@@ -14,13 +15,18 @@ import {
   SelectValue,
 } from "../../ui/select";
 import SteelMaterialList from "./steel-material-list";
+import { REQUIRED_POSITIONS_BY_TYPE } from "./module-default-values";
 
 interface ModuleFormRaftPilesFoundationProps {
-  form: UseFormReturn<ModuleFormInput>;
+  form: UseFormReturn<ModuleFormState>;
+  stepperMode?: boolean;
+  isSubmitted?: boolean;
 }
 
 const ModuleFormRaftPilesFoundation = ({
   form,
+  stepperMode = false,
+  isSubmitted = false,
 }: ModuleFormRaftPilesFoundationProps) => {
   const { t } = useTranslation();
   const fckOptions = [20, 25, 30, 35, 40, 45];
@@ -30,12 +36,58 @@ const ModuleFormRaftPilesFoundation = ({
   const isCustomFck =
     customFck || (currentFck && !fckOptions.includes(currentFck));
 
+  const raftArea = useWatch({ control: form.control, name: "raft.area" });
+  const raftThickness = useWatch({
+    control: form.control,
+    name: "raft.thickness",
+  });
+  const raftSteel = useWatch({ control: form.control, name: "raft.steel" });
+  const pilesVolume = useWatch({ control: form.control, name: "piles.volume" });
+  const pilesSteel = useWatch({ control: form.control, name: "piles.steel" });
+
   // Detectar fck customizado ao carregar dados de edição (antes do render)
   useLayoutEffect(() => {
     if (currentFck && !fckOptions.includes(currentFck)) {
       setCustomFck(true);
     }
   }, [currentFck]);
+
+  const countSteelNonZero = (arr: unknown[] | undefined): number => {
+    return (arr || []).reduce((count: number, s: any) => {
+      const m = parseNumber(s?.mass ?? "0");
+      return count + (m > 0 ? 1 : 0);
+    }, 0);
+  };
+
+  const isRequiredRaft =
+    REQUIRED_POSITIONS_BY_TYPE.raft_piles_foundation.includes("raft");
+  const isRequiredPile =
+    REQUIRED_POSITIONS_BY_TYPE.raft_piles_foundation.includes("pile");
+
+  const raftAreaNum = parseNumber(raftArea ?? "0");
+  const raftThicknessNum = parseNumber(raftThickness ?? "0");
+  const raftSteelNonZero = countSteelNonZero(raftSteel);
+  const pilesVolumeNum = parseNumber((pilesVolume as string | number) ?? "0");
+  const pilesSteelNonZero = countSteelNonZero(pilesSteel);
+
+  const isRaftEmpty =
+    isRequiredRaft &&
+    (raftAreaNum <= 0 || raftThicknessNum <= 0 || raftSteelNonZero === 0);
+  const shouldMarkRaftError = isRaftEmpty && (stepperMode || isSubmitted);
+  const raftBaseBorder = isRequiredRaft ? "border-blue-500" : "border-gray-200";
+  const raftCardBorder = shouldMarkRaftError
+    ? "border-red-500 ring-red-200"
+    : raftBaseBorder;
+
+  const isPilesEmpty =
+    isRequiredPile && (pilesVolumeNum <= 0 || pilesSteelNonZero === 0);
+  const shouldMarkPilesError = isPilesEmpty && (stepperMode || isSubmitted);
+  const pilesBaseBorder = isRequiredPile
+    ? "border-blue-500"
+    : "border-gray-200";
+  const pilesCardBorder = shouldMarkPilesError
+    ? "border-red-500 ring-red-200"
+    : pilesBaseBorder;
 
   return (
     <div className="space-y-4">
@@ -48,18 +100,18 @@ const ModuleFormRaftPilesFoundation = ({
           name="fck"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">{t.modules.form.fckLabel}</FormLabel>
+              <FormLabel className="text-xs">
+                {t.modules.form.fckLabel} *
+              </FormLabel>
               <FormControl>
                 <Select
                   onValueChange={(value) => {
-                    // Ignorar valores vazios (onChange automático do Select)
                     if (!value || value === "") {
                       return;
                     }
 
                     if (value === "other") {
                       setCustomFck(true);
-                      // Manter o valor atual se já for customizado, senão usar 70
                       if (!currentFck || fckOptions.includes(currentFck)) {
                         field.onChange(70);
                       }
@@ -89,7 +141,9 @@ const ModuleFormRaftPilesFoundation = ({
                         {fck}
                       </SelectItem>
                     ))}
-                    <SelectItem value="other">{t.modules.form.other}</SelectItem>
+                    <SelectItem value="other">
+                      {t.modules.form.other}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </FormControl>
@@ -103,7 +157,9 @@ const ModuleFormRaftPilesFoundation = ({
             name="fck"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-xs">{t.modules.form.otherFck}</FormLabel>
+                <FormLabel className="text-xs">
+                  {t.modules.form.otherFck}
+                </FormLabel>
                 <FormControl>
                   <Input
                     type="text"
@@ -122,94 +178,118 @@ const ModuleFormRaftPilesFoundation = ({
       </div>
 
       {/* Radier */}
-      <h3 className="text-base font-semibold text-primary">{t.modules.form.raft}</h3>
-      <Card className="border-2 border-blue-500">
-        <CardContent className="space-y-4 pt-4">
-          {/* Área e Espessura do Radier */}
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="raft.area"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">{t.modules.form.raftArea}</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="0,00"
-                      onChange={(e) => {
-                        const maskedValue = masks.numeric(e.target.value);
-                        field.onChange(maskedValue);
-                      }}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
+      <div className="space-y-3">
+        <h3 className="text-base font-semibold text-primary">
+          {t.modules.form.raft}
+        </h3>
+        <Card className={`border-2 ${raftCardBorder}`}>
+          <CardContent className="space-y-4 pt-4">
+            {/* Área e Espessura do Radier */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="raft.area"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs">
+                      {t.modules.form.raftArea}
+                      {isRequiredRaft ? " *" : ""}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="0,00"
+                        onChange={(e) => {
+                          const maskedValue = masks.numeric(e.target.value);
+                          field.onChange(maskedValue);
+                        }}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="raft.thickness"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs">
+                      {t.modules.form.raftThickness}
+                      {isRequiredRaft ? " *" : ""}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="0,00"
+                        onChange={(e) => {
+                          const maskedValue = masks.numeric(e.target.value);
+                          field.onChange(maskedValue);
+                        }}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="border-t border-gray-200 my-4"></div>
+
+            {/* Aço do Radier */}
+            <SteelMaterialList
+              form={form}
+              name="raft.steel"
+              allowedMaterials={["rebar", "mesh", "strand", "other"]}
+              stepperMode={stepperMode}
+              isSubmitted={isSubmitted}
+              isRequiredPosition={isRequiredRaft}
             />
-
-            <FormField
-              control={form.control}
-              name="raft.thickness"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">{t.modules.form.raftThickness}</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="0,00"
-                      onChange={(e) => {
-                        const maskedValue = masks.numeric(e.target.value);
-                        field.onChange(maskedValue);
-                      }}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="border-t border-gray-200 my-4"></div>
-
-          {/* Aço do Radier */}
-          <SteelMaterialList
-            form={form}
-            name="raft.steel"
-            allowedMaterials={["rebar", "mesh", "strand", "other"]}
-          />
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Estacas */}
-      <h3 className="text-base font-semibold text-primary">{t.modules.form.piles}</h3>
-      <Card className="border-2 border-blue-500">
-        <CardContent className="space-y-4 pt-4">
-          {/* Volume das Estacas */}
-          <FormField
-            control={form.control}
-            name="piles.volume"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-xs">
-                  {t.modules.form.concreteVolume}
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="0,00"
-                    onChange={(e) => {
-                      const maskedValue = masks.numeric(e.target.value);
-                      field.onChange(maskedValue);
-                    }}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+      <div className="space-y-3">
+        <h3 className="text-base font-semibold text-primary">
+          {t.modules.form.piles}
+        </h3>
+        <Card className={`border-2 ${pilesCardBorder}`}>
+          <CardContent className="space-y-4 pt-4">
+            {/* Volume das Estacas */}
+            <FormField
+              control={form.control}
+              name="piles.volume"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs">
+                    {t.modules.form.concreteVolume}
+                    {isRequiredPile ? " *" : ""}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="0,00"
+                      onChange={(e) => {
+                        const maskedValue = masks.numeric(e.target.value);
+                        field.onChange(maskedValue);
+                      }}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-          {/* Aço das Estacas */}
-          <SteelMaterialList form={form} name="piles.steel" />
-        </CardContent>
-      </Card>
+            {/* Aço das Estacas */}
+            <SteelMaterialList
+              form={form}
+              name="piles.steel"
+              stepperMode={stepperMode}
+              isSubmitted={isSubmitted}
+              isRequiredPosition={isRequiredPile}
+            />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

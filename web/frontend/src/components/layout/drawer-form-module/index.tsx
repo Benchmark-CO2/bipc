@@ -4,14 +4,17 @@ import { postModule } from "@/actions/modules/postModule";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
-import { ModuleParamsProps, TModulesTypes } from "@/types/modules";
+import {
+  ModuleParamsProps,
+  TModulesTypes,
+  TModuleDataV2,
+  ModuleParamsPropsV2,
+} from "@/types/modules";
 import { TTowerFloorCategory } from "@/types/units";
 import {
-  ModuleFormInput,
-  ModuleFormSchema,
+  ModuleFormState,
   moduleFormSchema,
 } from "@/validators/moduleFormByType.validator";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, Plus, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -51,6 +54,12 @@ import ModuleFormStructuralMasonry from "./module-form-structural-masonry";
 import ModuleFormRaftFoundation from "./module-form-raft-foundation";
 import ModuleFormPilesFoundation from "./module-form-piles-foundation";
 import ModuleFormRaftPilesFoundation from "./module-form-raft-piles-foundation";
+import {
+  flatV2ToGroupedForm,
+  groupedFormToFlatV2,
+  cleanZeroItemsBeforeSubmit,
+  TModuleGroupedForm,
+} from "./aggregate-helpers";
 
 interface DrawerFormModuleProps {
   triggerComponent?: React.ReactNode;
@@ -64,14 +73,18 @@ interface DrawerFormModuleProps {
   stepperMode?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  initialModuleData?: Partial<ModuleFormInput>;
+  initialModuleData?: Partial<ModuleFormState> | Partial<TModuleDataV2>;
   initialSelectedFloors?: string[];
   onSubmitSuccess?: (payload: {
     moduleId?: string;
-    params: ModuleParamsProps;
+    params: ModuleParamsProps | ModuleParamsPropsV2;
     selectedFloors: string[];
-    schemaData: ModuleFormSchema;
-    formInput: ModuleFormInput;
+    formInput: ModuleFormState;
+    flatData: TModuleDataV2 & {
+      type: TModulesTypes;
+      floor_ids?: string[];
+      unit_id?: string;
+    };
   }) => void;
 }
 
@@ -104,26 +117,70 @@ const DrawerFormModule = ({
 
   const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
 
-  const mergedDefaults = useMemo<ModuleFormInput>(() => {
-    const base = getDefaultValuesByType(type) as any;
-    if (!initialModuleData) return base;
-    const merged: any = { ...base };
-    for (const key of Object.keys(initialModuleData)) {
-      const val = (initialModuleData as any)[key];
-      if (val !== null && val !== undefined) {
-        merged[key] = val;
-      }
+  const initialDataIsFlatV2 = useMemo(() => {
+    if (!initialModuleData) return false;
+    return "concrete" in initialModuleData || "masonry" in initialModuleData;
+  }, [initialModuleData]);
+
+  const mergedDefaults = useMemo<ModuleFormState>(() => {
+    let base: any;
+    if (initialDataIsFlatV2 && initialModuleData) {
+      base = flatV2ToGroupedForm(
+        (initialModuleData as any).type || type,
+        initialModuleData as any,
+      );
+    } else {
+      base = getDefaultValuesByType(type);
     }
-    if (!merged.type) merged.type = type;
-    return merged as ModuleFormInput;
-  }, [initialModuleData, type]);
+
+    if (initialModuleData && !initialDataIsFlatV2) {
+      const merged: any = { ...base };
+      for (const key of Object.keys(initialModuleData)) {
+        const val = (initialModuleData as any)[key];
+        if (val !== null && val !== undefined) {
+          merged[key] = val;
+        }
+      }
+      if (!merged.type) merged.type = type;
+      return merged as ModuleFormState;
+    }
+
+    if (!base.type) base.type = type;
+    return base as ModuleFormState;
+  }, [initialModuleData, type, initialDataIsFlatV2]);
 
   const { t } = useTranslation();
 
   const queryClient = useQueryClient();
 
-  const form = useForm<ModuleFormInput>({
-    resolver: zodResolver(moduleFormSchema) as any,
+  const customModuleResolver = async (values: ModuleFormState) => {
+    const flat = groupedFormToFlatV2(
+      values.type || type,
+      values,
+      selectedFloors,
+      unitId,
+    );
+    const cleaned = cleanZeroItemsBeforeSubmit(flat as any);
+    const result = moduleFormSchema.safeParse(cleaned);
+    if (result.success) {
+      return { values: values as any, errors: {} };
+    }
+    const fieldErrors: Record<string, any> = {};
+    const issues = result.error?.issues ?? [];
+    for (const issue of issues) {
+      const path = issue.path.join(".");
+      if (!fieldErrors[path]) {
+        fieldErrors[path] = {
+          type: "custom",
+          message: issue.message,
+        };
+      }
+    }
+    return { values: {} as any, errors: fieldErrors };
+  };
+
+  const form = useForm<ModuleFormState>({
+    resolver: customModuleResolver as any,
     defaultValues: mergedDefaults,
   });
 
@@ -131,11 +188,11 @@ const DrawerFormModule = ({
 
   useEffect(() => {
     if (stepperMode && isOpen) {
-      if (initialModuleData) {
-        form.reset(mergedDefaults as any);
-      }
+      form.reset(mergedDefaults as any);
       if (initialSelectedFloors) {
         setSelectedFloors(initialSelectedFloors);
+      } else if (initialDataIsFlatV2 && (initialModuleData as any)?.floor_ids) {
+        setSelectedFloors((initialModuleData as any).floor_ids);
       }
       void form.trigger();
     }
@@ -146,6 +203,7 @@ const DrawerFormModule = ({
     initialSelectedFloors,
     mergedDefaults,
     form,
+    initialDataIsFlatV2,
   ]);
 
   const isUsingPaviments =
@@ -154,7 +212,7 @@ const DrawerFormModule = ({
     structureTypeWatch === "structural_masonry";
 
   const { mutate: mutateModule, isPending: isUpdatePending } = useMutation({
-    mutationFn: (data: ModuleParamsProps) =>
+    mutationFn: (data: ModuleParamsPropsV2) =>
       patchModule(data, projectId, unitId, optionId, moduleId!),
     onError: (error) => {
       if (!stepperMode) {
@@ -164,7 +222,7 @@ const DrawerFormModule = ({
         });
       }
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (_data) => {
       if (!stepperMode) {
         toast.success(t.modules.form.updateSuccess, {
           duration: 5000,
@@ -187,19 +245,12 @@ const DrawerFormModule = ({
         form.reset(getDefaultValuesByType(type) as any);
         setSelectedFloors([]);
         setIsOpen(false);
-      } else {
-        onSubmitSuccess?.({
-          moduleId,
-          params: variables,
-          selectedFloors,
-          schemaData: form.getValues() as any,
-          formInput: form.getValues(),
-        });
       }
     },
   });
+
   const { isPending: isCreationPending, mutate: mutateCreation } = useMutation({
-    mutationFn: (data: ModuleParamsProps) =>
+    mutationFn: (data: ModuleParamsPropsV2) =>
       postModule(data, projectId, unitId, optionId),
     onError: (error) => {
       if (!stepperMode) {
@@ -227,13 +278,23 @@ const DrawerFormModule = ({
         setSelectedFloors([]);
         setIsOpen(false);
       } else {
-        onSubmitSuccess?.({
-          moduleId: (data as any)?.data?.module?.id,
-          params: variables,
-          selectedFloors,
-          schemaData: form.getValues() as any,
-          formInput: form.getValues(),
-        });
+        const createdId = (data as any)?.data?.module?.id;
+        if (onSubmitSuccess) {
+          const currentType = (form.getValues() as any).type || type;
+          const flat = groupedFormToFlatV2(
+            currentType,
+            form.getValues() as any,
+            selectedFloors,
+            unitId,
+          );
+          onSubmitSuccess({
+            moduleId: createdId,
+            params: variables,
+            selectedFloors,
+            formInput: form.getValues(),
+            flatData: flat,
+          });
+        }
       }
     },
   });
@@ -247,367 +308,39 @@ const DrawerFormModule = ({
       }
       return null;
     },
-    enabled: !!moduleId && isOpen,
+    enabled: !!moduleId && isOpen && !stepperMode,
   });
 
   useEffect(() => {
-    const ensureArraysInitialized = () => {
-      const currentType = form.getValues("type");
-
-      if (currentType === "beam_column") {
-        const fieldsToInit = [
-          "concrete_columns",
-          "concrete_beams",
-          "concrete_slabs",
-        ] as const;
-
-        fieldsToInit.forEach((field) => {
-          if (!form.getValues(field)) {
-            form.setValue(field, { volumes: [], steel: [] });
-          }
-        });
-      } else if (currentType === "concrete_wall") {
-        const fieldsToInit = ["concrete_walls", "concrete_slabs"] as const;
-
-        fieldsToInit.forEach((field) => {
-          if (!form.getValues(field)) {
-            form.setValue(field, { volumes: [], steel: [] });
-          }
-        });
-      } else if (currentType === "structural_masonry") {
-        if (!form.getValues("concrete_slabs")) {
-          form.setValue("concrete_slabs", { volumes: [], steel: [] });
-        }
-      }
-    };
-
-    ensureArraysInitialized();
-  }, [form]);
-
-  useEffect(() => {
     if (moduleData) {
-      const { floor_ids, ...rest } = moduleData;
+      const moduleWithType = moduleData as any;
+      const detectedType = moduleWithType.type || type;
+      const grouped = flatV2ToGroupedForm(detectedType, moduleWithType);
 
-      setSelectedFloors(floor_ids || []);
-
-      const toLocalString = (
-        value: number | string | null | undefined,
-      ): string => {
-        if (value === null || value === undefined) return "0";
-        if (value === "" || value === "0" || value === 0) return "0";
-        const numValue = typeof value === "string" ? parseFloat(value) : value;
-        if (isNaN(numValue)) return "0";
-
-        const formatted = numValue.toInternational("pt-BR", 2);
-        return typeof formatted === "number" ? String(formatted) : formatted;
-      };
-
-      // Helper para converter steel do backend (array) para formato do formulário
-      const convertSteelArray = (steelArray: any[] | undefined) => {
-        if (!steelArray || !Array.isArray(steelArray)) {
-          return [{ material: "rebar", resistance: "CA50", mass: "0" }];
-        }
-        return steelArray.map((item) => ({
-          material: item.material || "rebar",
-          other_name: item.other_name,
-          resistance: item.resistance || "CA50",
-          other_resistance: item.other_resistance,
-          mass: toLocalString(item.mass ?? 0),
-        }));
-      };
-
-      const constructiveTypes = [
-        "beam_column",
-        "concrete_wall",
-        "structural_masonry",
-        "raft_foundation",
-        "piles_foundation",
-        "raft_piles_foundation",
-      ];
-
-      if (constructiveTypes.includes(rest.type)) {
-        const restAny = rest as any;
-        const defaults = getDefaultValuesByType(rest.type);
-
-        const convertedData = {
-          ...rest,
-
-          // Concrete columns - usa default se não existir
-          concrete_columns: restAny.concrete_columns
-            ? {
-                volumes: restAny.concrete_columns.volumes.map((c: any) => ({
-                  fck: c.fck,
-                  volume: toLocalString(c.volume),
-                })),
-                steel: convertSteelArray(restAny.concrete_columns.steel),
-              }
-            : (defaults as any).concrete_columns,
-
-          // Concrete beams - usa default se não existir
-          concrete_beams: restAny.concrete_beams
-            ? {
-                volumes: restAny.concrete_beams.volumes.map((c: any) => ({
-                  fck: c.fck,
-                  volume: toLocalString(c.volume),
-                })),
-                steel: convertSteelArray(restAny.concrete_beams.steel),
-              }
-            : (defaults as any).concrete_beams,
-
-          // Concrete slabs - usa default se não existir
-          concrete_slabs: restAny.concrete_slabs
-            ? {
-                volumes: restAny.concrete_slabs.volumes.map((c: any) => ({
-                  fck: c.fck,
-                  volume: toLocalString(c.volume),
-                })),
-                steel: convertSteelArray(restAny.concrete_slabs.steel),
-              }
-            : (defaults as any).concrete_slabs,
-
-          // Concrete walls - usa default se não existir
-          concrete_walls: restAny.concrete_walls
-            ? {
-                volumes: restAny.concrete_walls.volumes.map((c: any) => ({
-                  fck: c.fck,
-                  volume: toLocalString(c.volume),
-                })),
-                steel: convertSteelArray(restAny.concrete_walls.steel),
-              }
-            : (defaults as any).concrete_walls,
-
-          // Beam column specific fields
-          ...(rest.type === "beam_column" && {
-            form_columns: toLocalString(restAny.form_columns ?? 0),
-            form_beams: toLocalString(restAny.form_beams ?? 0),
-            form_slabs: toLocalString(restAny.form_slabs ?? 0),
-            column_number: toLocalString(restAny.column_number ?? 0),
-            avg_beam_span: toLocalString(restAny.avg_beam_span ?? 0),
-            avg_slab_span: toLocalString(restAny.avg_slab_span ?? 0),
-            slab_type: restAny.slab_type,
-          }),
-
-          // Concrete wall specific fields
-          ...(rest.type === "concrete_wall" && {
-            wall_thickness: toLocalString(restAny.wall_thickness ?? 0),
-            slab_thickness: toLocalString(restAny.slab_thickness ?? 0),
-            wall_area: toLocalString(restAny.wall_area ?? 0),
-            slab_area: restAny.slab_area ?? 0,
-            wall_form_area: toLocalString(restAny.wall_form_area ?? 0),
-            slab_form_area: toLocalString(restAny.slab_form_area ?? 0),
-            slab_type: restAny.slab_type,
-          }),
-
-          // Raft foundation specific fields
-          ...(rest.type === "raft_foundation" && {
-            area: toLocalString(restAny.area ?? 0),
-            thickness: toLocalString(restAny.thickness ?? 0),
-            fck: restAny.fck ?? (defaults as any).fck,
-            steel: convertSteelArray(restAny.steel),
-          }),
-
-          // Piles foundation specific fields
-          ...(rest.type === "piles_foundation" && {
-            fck: restAny.fck ?? (defaults as any).fck,
-            piles: {
-              volume: toLocalString(restAny.piles?.volume ?? 0),
-              steel: convertSteelArray(restAny.piles?.steel),
-            },
-            // Optional sections — only populate steel if backend returned data
-            pile_caps: {
-              volume: toLocalString(restAny.blocks?.volume ?? 0),
-              steel:
-                restAny.blocks?.steel?.length > 0
-                  ? convertSteelArray(restAny.blocks.steel)
-                  : [],
-            },
-            tie_beams: {
-              volume: toLocalString(restAny.tie_beams?.volume ?? 0),
-              steel:
-                restAny.tie_beams?.steel?.length > 0
-                  ? convertSteelArray(restAny.tie_beams.steel)
-                  : [],
-            },
-            grade_beams: {
-              volume: toLocalString(restAny.grade_beams?.volume ?? 0),
-              steel:
-                restAny.grade_beams?.steel?.length > 0
-                  ? convertSteelArray(restAny.grade_beams.steel)
-                  : [],
-            },
-          }),
-
-          // Raft piles foundation specific fields
-          ...(rest.type === "raft_piles_foundation" && {
-            fck: restAny.fck ?? (defaults as any).fck,
-            raft: {
-              area: toLocalString(restAny.raft?.area ?? 0),
-              thickness: toLocalString(restAny.raft?.thickness ?? 0),
-              steel: convertSteelArray(restAny.raft?.steel),
-            },
-            piles: {
-              volume: toLocalString(restAny.piles?.volume ?? 0),
-              steel: convertSteelArray(restAny.piles?.steel),
-            },
-          }),
-
-          // Structural masonry specific fields
-          ...(rest.type === "structural_masonry" && {
-            form_slabs: toLocalString(restAny.form_slabs ?? 0),
-            form_columns: toLocalString(restAny.form_columns ?? 0),
-            form_beams: toLocalString(restAny.form_beams ?? 0),
-            slab_type: restAny.slab_type,
-            masonry_blocks: restAny.masonry?.blocks
-              ? restAny.masonry.blocks.map((block: any) => ({
-                  type: block.type,
-                  fbk: block.fbk,
-                  quantity: toLocalString(block.quantity),
-                }))
-              : (defaults as any).masonry_blocks,
-            grout: restAny.masonry?.grout
-              ? restAny.masonry.grout.map((grout: any) => ({
-                  position: grout.position,
-                  volumes:
-                    grout.volumes?.map((v: any) => ({
-                      fgk: v.fgk,
-                      volume: toLocalString(v.volume),
-                    })) || [],
-                  steel: convertSteelArray(grout.steel),
-                }))
-              : (defaults as any).grout,
-            mortar: restAny.masonry?.mortar
-              ? restAny.masonry.mortar.map((mortar: any) => ({
-                  fak: mortar.fak,
-                  volume: toLocalString(mortar.volume),
-                }))
-              : (defaults as any).mortar,
-          }),
-        };
-
-        form.reset(convertedData as any);
-
-        // Garantir que campos numéricos sejam strings após reset
-        if (rest.type === "structural_masonry") {
-          const currentFormSlabs = form.getValues("form_slabs");
-          if (typeof currentFormSlabs === "number") {
-            form.setValue("form_slabs", toLocalString(currentFormSlabs));
-          }
-          const currentFormColumns = form.getValues("form_columns");
-          if (
-            currentFormColumns !== undefined &&
-            typeof currentFormColumns === "number"
-          ) {
-            form.setValue("form_columns", toLocalString(currentFormColumns));
-          }
-          const currentFormBeams = form.getValues("form_beams");
-          if (
-            currentFormBeams !== undefined &&
-            typeof currentFormBeams === "number"
-          ) {
-            form.setValue("form_beams", toLocalString(currentFormBeams));
-          }
-        }
-      } else {
-        form.reset(getDefaultValuesByType(type) as any);
+      const floorIdsFromGrouped = (grouped as any).floor_ids;
+      if (floorIdsFromGrouped) {
+        setSelectedFloors(floorIdsFromGrouped);
       }
+
+      form.reset(grouped as any);
     }
   }, [moduleData, moduleId, type, form]);
 
-  const handleSubmit = (data: ModuleFormSchema) => {
-    const moduleType = data.type || type;
+  const handleSubmit = (_data: any) => {
+    const moduleType = (_data as any).type || type;
 
-    let filteredData = {};
+    const flatData = groupedFormToFlatV2(
+      moduleType,
+      _data as TModuleGroupedForm,
+      selectedFloors,
+      unitId,
+    );
 
-    if (moduleType === "beam_column") {
-      filteredData = {
-        concrete_columns: data.concrete_columns || { volumes: [], steel: [] },
-        concrete_beams: data.concrete_beams || { volumes: [], steel: [] },
-        concrete_slabs: data.concrete_slabs || { volumes: [], steel: [] },
-        form_columns: data.form_columns,
-        form_beams: data.form_beams,
-        form_slabs: data.form_slabs,
-        column_number: data.column_number,
-        avg_beam_span: data.avg_beam_span,
-        avg_slab_span: data.avg_slab_span,
-        slab_type: data.slab_type,
-      };
-    } else if (moduleType === "concrete_wall") {
-      filteredData = {
-        concrete_walls: data.concrete_walls || { volumes: [], steel: [] },
-        concrete_slabs: data.concrete_slabs || { volumes: [], steel: [] },
-        wall_thickness: data.wall_thickness,
-        slab_thickness: data.slab_thickness,
-        wall_area: data.wall_area,
-        slab_area: data?.slab_area || 0,
-        wall_form_area: data.wall_form_area,
-        slab_form_area: data.slab_form_area,
-        slab_type: data.slab_type,
-      };
-    } else if (moduleType === "structural_masonry") {
-      filteredData = {
-        masonry: {
-          blocks: data.masonry_blocks || [],
-          grout: data.grout || [],
-          mortar: data.mortar || [],
-        },
-        concrete_slabs: data.concrete_slabs || { volumes: [], steel: [] },
-        ...(data.concrete_columns && {
-          concrete_columns: data.concrete_columns,
-        }),
-        ...(data.concrete_beams && { concrete_beams: data.concrete_beams }),
-        ...(data.form_slabs !== undefined &&
-          data.form_slabs !== 0 && {
-            form_slabs: data.form_slabs,
-          }),
-        ...(data.form_columns !== undefined &&
-          data.form_columns !== 0 && {
-            form_columns: data.form_columns,
-          }),
-        ...(data.form_beams !== undefined &&
-          data.form_beams !== 0 && {
-            form_beams: data.form_beams,
-          }),
-        slab_type: data.slab_type,
-      };
-    } else if (moduleType === "raft_foundation") {
-      filteredData = {
-        area: data.area,
-        thickness: data.thickness,
-        fck: data.fck,
-        steel: data.steel,
-      };
-    } else if (moduleType === "piles_foundation") {
-      const hasVolume = (section: any) =>
-        section?.volume !== undefined && section.volume > 0;
-      filteredData = {
-        fck: data.fck,
-        piles: data.piles,
-        ...(hasVolume(data.pile_caps) && { blocks: data.pile_caps }),
-        ...(hasVolume(data.tie_beams) && { tie_beams: data.tie_beams }),
-        ...(hasVolume(data.grade_beams) && { grade_beams: data.grade_beams }),
-      };
-    } else if (moduleType === "raft_piles_foundation") {
-      filteredData = {
-        fck: data.fck,
-        raft: data.raft,
-        piles: data.piles,
-      };
-    }
+    const cleanedFlat = cleanZeroItemsBeforeSubmit(flatData as any);
 
-    const conditionalFields = isUsingPaviments
-      ? {
-          floor_ids: selectedFloors,
-        }
-      : {
-          unit_id: unitId,
-        };
-
-    const baseFields: ModuleParamsProps = {
-      type: moduleType ?? data.type,
-      data: {
-        ...filteredData,
-        ...conditionalFields,
-      },
+    const baseFields: ModuleParamsPropsV2 = {
+      type: moduleType,
+      data: cleanedFlat as any,
     };
 
     if (stepperMode) {
@@ -615,8 +348,8 @@ const DrawerFormModule = ({
         moduleId,
         params: baseFields,
         selectedFloors,
-        schemaData: data,
         formInput: form.getValues(),
+        flatData: flatData as any,
       });
       return;
     }
@@ -628,7 +361,6 @@ const DrawerFormModule = ({
     }
   };
 
-  // Helper para coletar mensagens de erro únicas do formulário
   const getFormErrorMessages = (errors: any): string[] => {
     const messages = new Set<string>();
     const traverse = (obj: any) => {
@@ -794,7 +526,6 @@ const DrawerFormModule = ({
                         {t.modules.form.technologyData}
                       </span>
                     </div>
-                    {/* Campos básicos */}
                     <div className="grid grid-cols-1 gap-4">
                       <FormField
                         control={form.control as any}
@@ -841,12 +572,9 @@ const DrawerFormModule = ({
                                   />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {structureTypes.map((type) => (
-                                    <SelectItem
-                                      key={type.value}
-                                      value={type.value}
-                                    >
-                                      {type.label}
+                                  {structureTypes.map((t) => (
+                                    <SelectItem key={t.value} value={t.value}>
+                                      {t.label}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -856,30 +584,55 @@ const DrawerFormModule = ({
                         )}
                       />
                     </div>
-                    {/* Campos específicos por tipo de estrutura */}
                     {(() => {
-                      // const structureType = form.watch("type");
-
                       switch (structureTypeWatch) {
                         case "beam_column":
-                          return <ModuleFormBeamColumn form={form as any} />;
+                          return (
+                            <ModuleFormBeamColumn
+                              form={form as any}
+                              stepperMode={stepperMode}
+                              isSubmitted={form.formState.isSubmitted}
+                            />
+                          );
                         case "concrete_wall":
-                          return <ModuleFormConcreteWall form={form as any} />;
+                          return (
+                            <ModuleFormConcreteWall
+                              form={form as any}
+                              stepperMode={stepperMode}
+                              isSubmitted={form.formState.isSubmitted}
+                            />
+                          );
                         case "structural_masonry":
                           return (
-                            <ModuleFormStructuralMasonry form={form as any} />
+                            <ModuleFormStructuralMasonry
+                              form={form as any}
+                              stepperMode={stepperMode}
+                              isSubmitted={form.formState.isSubmitted}
+                            />
                           );
                         case "raft_foundation":
                           return (
-                            <ModuleFormRaftFoundation form={form as any} />
+                            <ModuleFormRaftFoundation
+                              form={form as any}
+                              stepperMode={stepperMode}
+                              isSubmitted={form.formState.isSubmitted}
+                            />
                           );
                         case "piles_foundation":
                           return (
-                            <ModuleFormPilesFoundation form={form as any} />
+                            <ModuleFormPilesFoundation
+                              form={form as any}
+                              stepperMode={stepperMode}
+                              isSubmitted={form.formState.isSubmitted}
+                            />
                           );
                         case "raft_piles_foundation":
                           return (
-                            <ModuleFormRaftPilesFoundation form={form as any} />
+                            <ModuleFormRaftPilesFoundation
+                              form={form as any}
+                              stepperMode={stepperMode}
+                              isSubmitted={form.formState.isSubmitted}
+                            />
                           );
                         default:
                           return null;
@@ -892,7 +645,7 @@ const DrawerFormModule = ({
           )}
         </div>
         <DrawerFooter className="px-8">
-          {form.formState.isSubmitted &&
+          {(stepperMode || form.formState.isSubmitted) &&
             Object.keys(form.formState.errors).length > 0 && (
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />

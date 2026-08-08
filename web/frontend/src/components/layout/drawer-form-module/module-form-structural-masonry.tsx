@@ -18,21 +18,26 @@ import {
 import { masks } from "@/utils/masks";
 import { parseNumber } from "@/utils/numbers";
 import { useTranslation } from "@/i18n";
-import { ModuleFormInput } from "@/validators/moduleFormByType.validator";
+import { ModuleFormState } from "@/validators/moduleFormByType.validator";
 import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import SteelMaterialList from "./steel-material-list";
-import { useSlabTypeOptions } from "./module-default-values";
+import {
+  useSlabTypeOptions,
+  REQUIRED_POSITIONS_BY_TYPE,
+} from "./module-default-values";
 
 interface ModuleFormStructuralMasonryProps {
-  form: UseFormReturn<ModuleFormInput>;
+  form: UseFormReturn<ModuleFormState>;
+  stepperMode?: boolean;
+  isSubmitted?: boolean;
 }
 
 interface GroutItemProps {
   groutIndex: number;
   groutField: any;
-  form: UseFormReturn<ModuleFormInput>;
+  form: UseFormReturn<ModuleFormState>;
   groutTypes: Array<{ value: string; label: string }>;
   isGroutTypeUsed: (groutType: string, currentIndex: number) => boolean;
   onRemove: () => void;
@@ -42,6 +47,9 @@ interface GroutItemProps {
   setCustomFgkSelected: React.Dispatch<
     React.SetStateAction<Record<string, boolean>>
   >;
+  stepperMode?: boolean;
+  isSubmitted?: boolean;
+  isRequiredPosition?: boolean;
 }
 
 const GroutItem = ({
@@ -263,7 +271,7 @@ const GroutItem = ({
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => volumesFieldArray.append({ fgk: 20, volume: "0" })}
+            onClick={() => volumesFieldArray.append({ fgk: 20, volume: 0 })}
             className="w-full text-green-600 border-green-600 hover:bg-green-50"
           >
             <Plus className="h-4 w-4" />
@@ -283,8 +291,16 @@ const GroutItem = ({
   );
 };
 
+const STRUCTURAL_MASONRY_POSITION_LABEL: Record<string, string> = {
+  concrete_columns: "column",
+  concrete_beams: "beam",
+  concrete_slabs: "slab",
+};
+
 const ModuleFormStructuralMasonry = ({
   form,
+  stepperMode = false,
+  isSubmitted = false,
 }: ModuleFormStructuralMasonryProps) => {
   const { t } = useTranslation();
   const slabTypeOptions = useSlabTypeOptions();
@@ -338,13 +354,13 @@ const ModuleFormStructuralMasonry = ({
 
       if (!volumes || volumes.length === 0) {
         form.setValue(`${fieldName}.volumes` as any, [
-          { fck: fckOptions[0], volume: "0" },
+          { fck: fckOptions[0], volume: 0 },
         ]);
       }
 
       if (!steel || steel.length === 0) {
         form.setValue(`${fieldName}.steel` as any, [
-          { material: "rebar", resistance: "CA50", mass: "0" },
+          { material: "rebar", resistance: "CA50", mass: 0 },
         ]);
       }
     });
@@ -355,7 +371,7 @@ const ModuleFormStructuralMasonry = ({
 
     if (!blocks || blocks.length === 0) {
       form.setValue("masonry_blocks", [
-        { type: "inteiro (14x19x29)" as const, fbk: 6, quantity: "0" },
+        { type: "inteiro (14x19x29)" as const, fbk: 6, quantity: 0 },
       ]);
     }
 
@@ -363,12 +379,13 @@ const ModuleFormStructuralMasonry = ({
       form.setValue("grout", [
         {
           position: "vertical" as const,
-          volumes: [{ fgk: 20, volume: "0" }],
+          volumes: [{ fgk: 20, volume: 0 }],
           steel: [
             {
               material: "rebar" as const,
               resistance: "CA50" as const,
-              mass: "0",
+              mass: 0,
+              position: "vertical",
             },
           ],
         },
@@ -376,7 +393,7 @@ const ModuleFormStructuralMasonry = ({
     }
 
     if (!mortar || mortar.length === 0) {
-      form.setValue("mortar", [{ fak: 4.5, volume: "0" }]);
+      form.setValue("mortar", [{ fak: 4.5, volume: 0 }]);
     }
 
     const formSlabs = form.getValues("form_slabs");
@@ -647,7 +664,7 @@ const ModuleFormStructuralMasonry = ({
                 appendBlock({
                   type: getNextAvailableBlockType(),
                   fbk: 6,
-                  quantity: "0",
+                  quantity: 0,
                 })
               }
               className="w-full text-green-600 border-green-600 hover:bg-green-50"
@@ -722,19 +739,21 @@ const ModuleFormStructuralMasonry = ({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() =>
+              onClick={() => {
+                const nextPos = getNextAvailableGroutType() as any;
                 appendGrout({
-                  position: getNextAvailableGroutType() as any,
-                  volumes: [{ fgk: 20, volume: "0" }],
+                  position: nextPos,
+                  volumes: [{ fgk: 20, volume: 0 }],
                   steel: [
                     {
                       material: "rebar" as any,
                       resistance: "CA50" as any,
-                      mass: "0",
+                      mass: 0,
+                      position: nextPos,
                     },
                   ],
-                })
-              }
+                });
+              }}
               className="ml-auto text-green-600 border-green-600 hover:bg-green-50"
               disabled={groutFields.length >= 3}
             >
@@ -918,7 +937,7 @@ const ModuleFormStructuralMasonry = ({
               onClick={() =>
                 appendMortar({
                   fak: 5,
-                  volume: "0",
+                  volume: 0,
                 })
               }
               className="w-full text-green-600 border-green-600 hover:bg-green-50"
@@ -945,7 +964,30 @@ const ModuleFormStructuralMasonry = ({
       name: `${fieldName}.volumes` as any,
     });
 
-    const borderColor = isRequired ? "border-blue-500" : "border-gray-300";
+    const position = STRUCTURAL_MASONRY_POSITION_LABEL[fieldName];
+    const isRequiredPosition =
+      REQUIRED_POSITIONS_BY_TYPE.structural_masonry.includes(position);
+
+    const currentVolumesForCheck =
+      form.getValues(`${fieldName}.volumes` as any) || [];
+    const currentSteelForCheck =
+      form.getValues(`${fieldName}.steel` as any) || [];
+    const totalVolNonZero = currentVolumesForCheck.reduce(
+      (sum: number, v: any) => sum + (parseNumber(v.volume || "0") > 0 ? 1 : 0),
+      0,
+    );
+    const totalSteelNonZero = currentSteelForCheck.reduce(
+      (sum: number, s: any) => sum + (parseNumber(s.mass || "0") > 0 ? 1 : 0),
+      0,
+    );
+    const isEmpty =
+      isRequiredPosition && (totalVolNonZero === 0 || totalSteelNonZero === 0);
+    const shouldMarkError = isEmpty && (stepperMode || isSubmitted);
+
+    const baseBorder = isRequired ? "border-blue-500" : "border-gray-300";
+    const borderColor = shouldMarkError
+      ? "border-red-500 ring-red-200"
+      : baseBorder;
 
     useWatch({ control: form.control, name: `${fieldName}.volumes` as any });
     useWatch({ control: form.control, name: `${fieldName}.steel` as any });
@@ -1174,7 +1216,7 @@ const ModuleFormStructuralMasonry = ({
               variant="outline"
               size="sm"
               onClick={() =>
-                appendVolume({ fck: getNextAvailableFck(), volume: "0" })
+                appendVolume({ fck: getNextAvailableFck(), volume: 0 })
               }
               className="w-full text-green-600 border-green-600 hover:bg-green-50"
             >
