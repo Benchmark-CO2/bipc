@@ -14,6 +14,7 @@ import CommonTable from "../common-table";
 import NotFoundList from "@/components/ui/not-found-list";
 import DrawerFormUnit from "../drawer-form-unit";
 import { Button } from "@/components/ui/button";
+import DrawerIFCImport from "../drawer-ifc-import";
 
 const ProjectView = ({
   projectId,
@@ -127,12 +128,22 @@ const ProjectView = ({
             showIcon={false}
             description={t.projectView.noBuildingsDescription}
             button={
-              <DrawerFormUnit
-                triggerComponent={
-                  <Button variant="bipc">{t.projectView.addBuilding}</Button>
-                }
-                projectId={projectId}
-              />
+              <div className="flex gap-2 items-center">
+                <DrawerFormUnit
+                  triggerComponent={
+                    <Button variant="bipc">{t.projectView.addBuilding}</Button>
+                  }
+                  projectId={projectId}
+                />
+                <small>or</small>
+                <DrawerIFCImport
+                  mode="unit"
+                  projectId={projectId}
+                  triggerComponent={
+                    <Button variant="bipc">{t.common.ifcImport}</Button>
+                  }
+                />
+              </div>
             }
           />
         }

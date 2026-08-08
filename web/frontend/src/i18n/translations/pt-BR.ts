@@ -496,6 +496,43 @@ export const ptBR = {
       fixErrors: "Corrija os seguintes erros antes de enviar:",
       validationErrors: "Existem erros de validação",
       validationDescription: "Evite campos com valores zerados ou inválidos.",
+      partialDataWarning: "Atenção: Dados incompletos ou parciais",
+      partialDataDescription:
+        "Este módulo foi criado/importado sem todos os materiais obrigatórios. Para salvar, preencha os campos destacados em vermelho.",
+      partialDataHint: "Campos obrigatórios que estão zerados ou ausentes:",
+      completeness: {
+        masonryLabel: "Alvenaria",
+        positions: {
+          column: "Pilar",
+          beam: "Viga",
+          slab: "Laje",
+          stair: "Escada",
+          wall: "Parede",
+          raft: "Radier",
+          pile: "Estaca",
+          block: "Bloco de coroamento",
+          grade_beam: "Viga baldrame",
+          tie_beam: "Viga de amarração",
+        },
+        missing: {
+          concrete: "dados de concreto (fck e volume)",
+          steel: "materiais de aço",
+          form: "fôrma",
+          blocks: "blocos",
+          grout: "grautes",
+          mortar: "argamassa",
+        },
+        patterns: {
+          singleMissing: "{label}: faltando {item}",
+          multiMissing: "{label}: faltando {head} e {last}",
+        },
+        global: {
+          noValidConcrete: "Módulo sem nenhum volume de concreto válido",
+          noValidSteel: "Módulo sem nenhum material de aço válido",
+          minConcrete: "Adicione pelo menos um volume de concreto",
+          minSteel: "Adicione pelo menos um material de aço",
+        },
+      },
       selectFck: "Selecione fck",
       inUse: "(Em uso)",
       other: "Outro",
@@ -1107,6 +1144,12 @@ export const ptBR = {
     unknown: "Desconhecida",
     outdatedTech:
       "Essa tecnologia construtiva está desatualizada devido a mudanças na unidade. Atualize-a!",
+    partialTech:
+      "Essa tecnologia construtiva foi criada com dados parciais. Abra a edição para preencher os campos obrigatórios.",
+    partialLabel: "Dados parciais",
+    emptyLabel: "Sem dados",
+    emptyTech:
+      "Essa tecnologia construtiva está sem dados de materiais. Abra a edição para preencher.",
     duplicate: "Duplicar",
     selectRow: "Selecionar linha",
   },

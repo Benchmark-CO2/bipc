@@ -25,6 +25,7 @@ import {
   IV2SteelMaterialItem,
 } from "@/types/modules";
 import { parseNumber } from "@/utils/numbers";
+import { getDefaultValuesByType } from "./module-default-values";
 
 type WithPosition = { position?: string };
 
@@ -855,13 +856,59 @@ export const groupedFormToFlatV2 = (
   floor_ids?: string[];
   unit_id?: string;
 } => {
+  const safeDefaults = getDefaultValuesByType(type) as Record<string, any>;
+  const groupedAny = (grouped ?? {}) as Record<string, any>;
+  const merged: Record<string, any> = { ...safeDefaults, ...groupedAny };
+
+  const vol = (obj: any) => (Array.isArray(obj?.volumes) ? obj.volumes : []);
+  const stl = (obj: any) => (Array.isArray(obj?.steel) ? obj.steel : []);
+
+  const ensureGroup = (key: string) => {
+    const v = merged[key];
+    const def = safeDefaults[key];
+    merged[key] = {
+      volumes: Array.isArray(v?.volumes)
+        ? v.volumes
+        : Array.isArray(def?.volumes)
+          ? def.volumes
+          : [],
+      steel: Array.isArray(v?.steel)
+        ? v.steel
+        : Array.isArray(def?.steel)
+          ? def.steel
+          : [],
+    };
+  };
+
+  if (merged.unspecified) {
+    const u = merged.unspecified;
+    merged.unspecified = {
+      volumes: Array.isArray(u?.volumes) ? u.volumes : [],
+      steel: Array.isArray(u?.steel) ? u.steel : [],
+    };
+  } else if (safeDefaults.unspecified) {
+    merged.unspecified = {
+      volumes: Array.isArray(safeDefaults.unspecified.volumes)
+        ? safeDefaults.unspecified.volumes
+        : [],
+      steel: Array.isArray(safeDefaults.unspecified.steel)
+        ? safeDefaults.unspecified.steel
+        : [],
+    };
+  } else {
+    merged.unspecified = { volumes: [], steel: [] };
+  }
+
   if (type === "beam_column") {
-    const g = grouped as BeamColumnGroupedForm;
+    ["concrete_columns", "concrete_beams", "concrete_slabs"].forEach(
+      ensureGroup,
+    );
+    const g = merged as BeamColumnGroupedForm;
     const concrete: IV2ConcreteVolumeItem<TBeamColumnPosition>[] = [];
     concrete.push(
       ...(
         addConcretePositions(
-          g.concrete_columns.volumes,
+          vol(g.concrete_columns),
           "column",
         ) as IV2ConcreteVolumeItem<TBeamColumnPosition>[]
       ).map((c) => ({
@@ -873,7 +920,7 @@ export const groupedFormToFlatV2 = (
     concrete.push(
       ...(
         addConcretePositions(
-          g.concrete_beams.volumes,
+          vol(g.concrete_beams),
           "beam",
         ) as IV2ConcreteVolumeItem<TBeamColumnPosition>[]
       ).map((c) => ({
@@ -885,7 +932,7 @@ export const groupedFormToFlatV2 = (
     concrete.push(
       ...(
         addConcretePositions(
-          g.concrete_slabs.volumes,
+          vol(g.concrete_slabs),
           "slab",
         ) as IV2ConcreteVolumeItem<TBeamColumnPosition>[]
       ).map((c) => ({
@@ -907,11 +954,11 @@ export const groupedFormToFlatV2 = (
       );
     }
 
-    const steel: IV2SteelMaterialItem<TBeamColumnPosition>[] = [];
-    steel.push(
+    const steelItems: IV2SteelMaterialItem<TBeamColumnPosition>[] = [];
+    steelItems.push(
       ...(
         addSteelPositions(
-          g.concrete_columns.steel,
+          stl(g.concrete_columns),
           "column",
         ) as IV2SteelMaterialItem<TBeamColumnPosition>[]
       ).map((s) => ({
@@ -919,10 +966,10 @@ export const groupedFormToFlatV2 = (
         mass: toNumberValue(s.mass as string | number),
       })),
     );
-    steel.push(
+    steelItems.push(
       ...(
         addSteelPositions(
-          g.concrete_beams.steel,
+          stl(g.concrete_beams),
           "beam",
         ) as IV2SteelMaterialItem<TBeamColumnPosition>[]
       ).map((s) => ({
@@ -930,10 +977,10 @@ export const groupedFormToFlatV2 = (
         mass: toNumberValue(s.mass as string | number),
       })),
     );
-    steel.push(
+    steelItems.push(
       ...(
         addSteelPositions(
-          g.concrete_slabs.steel,
+          stl(g.concrete_slabs),
           "slab",
         ) as IV2SteelMaterialItem<TBeamColumnPosition>[]
       ).map((s) => ({
@@ -942,7 +989,7 @@ export const groupedFormToFlatV2 = (
       })),
     );
     if (g.unspecified?.steel?.length) {
-      steel.push(
+      steelItems.push(
         ...(g.unspecified.steel.map((s) => ({
           ...s,
           mass: toNumberValue(s.mass as string | number),
@@ -963,18 +1010,19 @@ export const groupedFormToFlatV2 = (
     return {
       type: "beam_column",
       concrete,
-      steel,
+      steel: steelItems,
       form: form.length > 0 ? form : undefined,
       column_number: toNumberValue(g.column_number),
       avg_beam_span: toNumberValue(g.avg_beam_span),
       avg_slab_span: toNumberValue(g.avg_slab_span),
-      slab_type: g.slab_type as TSlabType | undefined,
+      slab_type: (g as any).slab_type as TSlabType | undefined,
       floor_ids: selectedFloors,
     };
   }
 
   if (type === "concrete_wall") {
-    const g = grouped as ConcreteWallGroupedForm;
+    ["concrete_walls", "concrete_slabs"].forEach(ensureGroup);
+    const g = merged as ConcreteWallGroupedForm;
     const concrete: IV2ConcreteVolumeItem<TConcreteWallPosition>[] = [];
     concrete.push(
       ...(
@@ -1068,15 +1116,23 @@ export const groupedFormToFlatV2 = (
   }
 
   if (type === "structural_masonry") {
-    const g = grouped as StructuralMasonryGroupedForm;
+    [
+      "concrete_columns",
+      "concrete_beams",
+      "concrete_slabs",
+      "masonry_columns",
+      "masonry_beams",
+      "masonry_slabs",
+    ].forEach(ensureGroup);
+    const g = merged as StructuralMasonryGroupedForm;
     const concrete: IV2ConcreteVolumeItem<TStructuralMasonryPosition>[] = [];
-    const steel: IV2SteelMaterialItem<TStructuralMasonryPosition>[] = [];
+    const steelItems: IV2SteelMaterialItem<TStructuralMasonryPosition>[] = [];
     const form: IV2FormAreaItem<TStructuralMasonryPosition>[] = [];
 
     concrete.push(
       ...(
         addConcretePositions(
-          g.concrete_slabs.volumes,
+          vol(g.concrete_slabs),
           "slab",
         ) as IV2ConcreteVolumeItem<TStructuralMasonryPosition>[]
       ).map((c) => ({
@@ -1085,10 +1141,10 @@ export const groupedFormToFlatV2 = (
         volume: toNumberValue(c.volume as string | number),
       })),
     );
-    steel.push(
+    steelItems.push(
       ...(
         addSteelPositions(
-          g.concrete_slabs.steel,
+          stl(g.concrete_slabs),
           "slab",
         ) as IV2SteelMaterialItem<TStructuralMasonryPosition>[]
       ).map((s) => ({
@@ -1099,11 +1155,11 @@ export const groupedFormToFlatV2 = (
     const fss = toNumberValue(g.form_slabs);
     if (fss > 0) form.push({ area: fss, position: "slab" });
 
-    if (g.concrete_columns?.volumes?.length) {
+    if (vol(g.concrete_columns).length) {
       concrete.push(
         ...(
           addConcretePositions(
-            g.concrete_columns.volumes,
+            vol(g.concrete_columns),
             "column",
           ) as IV2ConcreteVolumeItem<TStructuralMasonryPosition>[]
         ).map((c) => ({
@@ -1112,10 +1168,10 @@ export const groupedFormToFlatV2 = (
           volume: toNumberValue(c.volume as string | number),
         })),
       );
-      steel.push(
+      steelItems.push(
         ...(
           addSteelPositions(
-            g.concrete_columns.steel,
+            stl(g.concrete_columns),
             "column",
           ) as IV2SteelMaterialItem<TStructuralMasonryPosition>[]
         ).map((s) => ({
@@ -1129,11 +1185,11 @@ export const groupedFormToFlatV2 = (
       form.push({ area: fsc, position: "column" });
     }
 
-    if (g.concrete_beams?.volumes?.length) {
+    if (vol(g.concrete_beams).length) {
       concrete.push(
         ...(
           addConcretePositions(
-            g.concrete_beams.volumes,
+            vol(g.concrete_beams),
             "beam",
           ) as IV2ConcreteVolumeItem<TStructuralMasonryPosition>[]
         ).map((c) => ({
@@ -1142,10 +1198,10 @@ export const groupedFormToFlatV2 = (
           volume: toNumberValue(c.volume as string | number),
         })),
       );
-      steel.push(
+      steelItems.push(
         ...(
           addSteelPositions(
-            g.concrete_beams.steel,
+            stl(g.concrete_beams),
             "beam",
           ) as IV2SteelMaterialItem<TStructuralMasonryPosition>[]
         ).map((s) => ({
@@ -1171,7 +1227,7 @@ export const groupedFormToFlatV2 = (
       );
     }
     if (g.unspecified?.steel?.length) {
-      steel.push(
+      steelItems.push(
         ...(g.unspecified.steel.map((s) => ({
           ...s,
           mass: toNumberValue(s.mass as string | number),
@@ -1189,7 +1245,7 @@ export const groupedFormToFlatV2 = (
         mortar: g.mortar,
       },
       concrete: concrete.length > 0 ? concrete : undefined,
-      steel: steel.length > 0 ? steel : undefined,
+      steel: steelItems.length > 0 ? steelItems : undefined,
       form: form.length > 0 ? form : undefined,
       slab_type: g.slab_type as TSlabType | undefined,
       floor_ids: selectedFloors,
@@ -1197,7 +1253,7 @@ export const groupedFormToFlatV2 = (
   }
 
   if (type === "raft_foundation") {
-    const g = grouped as RaftFoundationGroupedForm;
+    const g = merged as RaftFoundationGroupedForm & { unspecified?: any };
     const areaNum = toNumberValue(g.area);
     const thicknessNum = toNumberValue(g.thickness);
     const volumeCalculated = areaNum * thicknessNum;
@@ -1212,16 +1268,21 @@ export const groupedFormToFlatV2 = (
           ]
         : [];
 
-    const steel: IV2SteelMaterialItem<TRaftFoundationPosition>[] = (
+    const steelRaw = Array.isArray((g as any).steel)
+      ? (g as any).steel
+      : Array.isArray((g as any).raft?.steel)
+        ? (g as any).raft.steel
+        : [];
+    const steelItems: IV2SteelMaterialItem<TRaftFoundationPosition>[] = (
       addSteelPositions(
-        g.steel,
+        steelRaw,
         "raft",
       ) as IV2SteelMaterialItem<TRaftFoundationPosition>[]
     ).map((s) => ({ ...s, mass: toNumberValue(s.mass as string | number) }));
 
     if (g.unspecified?.volumes?.length) {
       concrete.push(
-        ...g.unspecified.volumes.map((v) => {
+        ...g.unspecified.volumes.map((v: any) => {
           const { customFck, ...rest } = v;
           return {
             ...rest,
@@ -1232,8 +1293,8 @@ export const groupedFormToFlatV2 = (
       );
     }
     if (g.unspecified?.steel?.length) {
-      steel.push(
-        ...(g.unspecified.steel.map((s) => ({
+      steelItems.push(
+        ...(g.unspecified.steel.map((s: any) => ({
           ...s,
           mass: toNumberValue(s.mass as string | number),
         })) as IV2SteelMaterialItem<TRaftFoundationPosition>[]),
@@ -1248,7 +1309,7 @@ export const groupedFormToFlatV2 = (
     } = {
       type: "raft_foundation",
       concrete,
-      steel,
+      steel: steelItems,
       unit_id: unitId,
     };
     flatResult.raft_area = areaNum;
@@ -1257,19 +1318,20 @@ export const groupedFormToFlatV2 = (
   }
 
   if (type === "piles_foundation") {
-    const g = grouped as PilesFoundationGroupedForm;
+    ["piles", "pile_caps", "grade_beams", "tie_beams"].forEach(ensureGroup);
+    const g = merged as PilesFoundationGroupedForm;
     const concrete: IV2ConcreteVolumeItem<TPilesFoundationPosition>[] = [];
-    const steel: IV2SteelMaterialItem<TPilesFoundationPosition>[] = [];
+    const steelItems: IV2SteelMaterialItem<TPilesFoundationPosition>[] = [];
 
     concrete.push({
       fck: g.fck as TFck,
-      volume: toNumberValue(g.piles.volume),
+      volume: toNumberValue(vol(g.piles)[0]?.volume ?? g.piles?.volume ?? 0),
       position: "pile",
     });
-    steel.push(
+    steelItems.push(
       ...(
         addSteelPositions(
-          g.piles.steel,
+          stl(g.piles),
           "pile",
         ) as IV2SteelMaterialItem<TPilesFoundationPosition>[]
       ).map((s) => ({
@@ -1278,22 +1340,19 @@ export const groupedFormToFlatV2 = (
       })),
     );
 
-    if (
-      g.pile_caps &&
-      g.pile_caps.volume !== undefined &&
-      g.pile_caps.volume !== "0" &&
-      g.pile_caps.volume !== 0 &&
-      toNumberValue(g.pile_caps.volume) > 0
-    ) {
+    const pcVol = toNumberValue(
+      vol(g.pile_caps)[0]?.volume ?? g.pile_caps?.volume ?? 0,
+    );
+    if (pcVol > 0) {
       concrete.push({
         fck: g.fck as TFck,
-        volume: toNumberValue(g.pile_caps.volume),
+        volume: pcVol,
         position: "block",
       });
-      steel.push(
+      steelItems.push(
         ...(
           addSteelPositions(
-            g.pile_caps.steel,
+            stl(g.pile_caps),
             "block",
           ) as IV2SteelMaterialItem<TPilesFoundationPosition>[]
         ).map((s) => ({
@@ -1303,22 +1362,19 @@ export const groupedFormToFlatV2 = (
       );
     }
 
-    if (
-      g.grade_beams &&
-      g.grade_beams.volume !== undefined &&
-      g.grade_beams.volume !== "0" &&
-      g.grade_beams.volume !== 0 &&
-      toNumberValue(g.grade_beams.volume) > 0
-    ) {
+    const gbVol = toNumberValue(
+      vol(g.grade_beams)[0]?.volume ?? g.grade_beams?.volume ?? 0,
+    );
+    if (gbVol > 0) {
       concrete.push({
         fck: g.fck as TFck,
-        volume: toNumberValue(g.grade_beams.volume),
+        volume: gbVol,
         position: "grade_beam",
       });
-      steel.push(
+      steelItems.push(
         ...(
           addSteelPositions(
-            g.grade_beams.steel,
+            stl(g.grade_beams),
             "grade_beam",
           ) as IV2SteelMaterialItem<TPilesFoundationPosition>[]
         ).map((s) => ({
@@ -1328,22 +1384,19 @@ export const groupedFormToFlatV2 = (
       );
     }
 
-    if (
-      g.tie_beams &&
-      g.tie_beams.volume !== undefined &&
-      g.tie_beams.volume !== "0" &&
-      g.tie_beams.volume !== 0 &&
-      toNumberValue(g.tie_beams.volume) > 0
-    ) {
+    const tbVol = toNumberValue(
+      vol(g.tie_beams)[0]?.volume ?? g.tie_beams?.volume ?? 0,
+    );
+    if (tbVol > 0) {
       concrete.push({
         fck: g.fck as TFck,
-        volume: toNumberValue(g.tie_beams.volume),
+        volume: tbVol,
         position: "tie_beam",
       });
-      steel.push(
+      steelItems.push(
         ...(
           addSteelPositions(
-            g.tie_beams.steel,
+            stl(g.tie_beams),
             "tie_beam",
           ) as IV2SteelMaterialItem<TPilesFoundationPosition>[]
         ).map((s) => ({
@@ -1366,7 +1419,7 @@ export const groupedFormToFlatV2 = (
       );
     }
     if (g.unspecified?.steel?.length) {
-      steel.push(
+      steelItems.push(
         ...(g.unspecified.steel.map((s) => ({
           ...s,
           mass: toNumberValue(s.mass as string | number),
@@ -1377,18 +1430,23 @@ export const groupedFormToFlatV2 = (
     return {
       type: "piles_foundation",
       concrete,
-      steel,
+      steel: steelItems,
       unit_id: unitId,
     };
   }
 
   if (type === "raft_piles_foundation") {
-    const g = grouped as RaftPilesFoundationGroupedForm;
+    ["raft", "piles"].forEach(ensureGroup);
+    const g = merged as RaftPilesFoundationGroupedForm;
     const concrete: IV2ConcreteVolumeItem<TRaftPilesFoundationPosition>[] = [];
-    const steel: IV2SteelMaterialItem<TRaftPilesFoundationPosition>[] = [];
+    const steelItems: IV2SteelMaterialItem<TRaftPilesFoundationPosition>[] = [];
 
-    const raftAreaNum = toNumberValue(g.raft.area);
-    const raftThickNum = toNumberValue(g.raft.thickness);
+    const raftAreaNum = toNumberValue(
+      g.raft?.area ?? (g.raft as any)?.area ?? 0,
+    );
+    const raftThickNum = toNumberValue(
+      g.raft?.thickness ?? (g.raft as any)?.thickness ?? 0,
+    );
     const raftVol = raftAreaNum * raftThickNum;
     if (raftAreaNum > 0 && raftThickNum > 0 && raftVol > 0) {
       concrete.push({
@@ -1397,10 +1455,10 @@ export const groupedFormToFlatV2 = (
         position: "raft",
       });
     }
-    steel.push(
+    steelItems.push(
       ...(
         addSteelPositions(
-          g.raft.steel,
+          stl(g.raft),
           "raft",
         ) as IV2SteelMaterialItem<TRaftPilesFoundationPosition>[]
       ).map((s) => ({
@@ -1411,13 +1469,13 @@ export const groupedFormToFlatV2 = (
 
     concrete.push({
       fck: g.fck as TFck,
-      volume: toNumberValue(g.piles.volume),
+      volume: toNumberValue(vol(g.piles)[0]?.volume ?? g.piles?.volume ?? 0),
       position: "pile",
     });
-    steel.push(
+    steelItems.push(
       ...(
         addSteelPositions(
-          g.piles.steel,
+          stl(g.piles),
           "pile",
         ) as IV2SteelMaterialItem<TRaftPilesFoundationPosition>[]
       ).map((s) => ({
@@ -1439,7 +1497,7 @@ export const groupedFormToFlatV2 = (
       );
     }
     if (g.unspecified?.steel?.length) {
-      steel.push(
+      steelItems.push(
         ...(g.unspecified.steel.map((s) => ({
           ...s,
           mass: toNumberValue(s.mass as string | number),
@@ -1455,7 +1513,7 @@ export const groupedFormToFlatV2 = (
     } = {
       type: "raft_piles_foundation",
       concrete,
-      steel,
+      steel: steelItems,
       unit_id: unitId,
     };
     flatResult.raft_area = raftAreaNum;
@@ -1464,4 +1522,203 @@ export const groupedFormToFlatV2 = (
   }
 
   return groupedFormToFlatV2("beam_column", grouped, selectedFloors, unitId);
+};
+
+export interface CompletenessWarningsI18n {
+  masonryLabel: string;
+  positions: Record<string, string>;
+  missing: {
+    concrete: string;
+    steel: string;
+    form: string;
+    blocks: string;
+    grout: string;
+    mortar: string;
+  };
+  patterns: {
+    singleMissing: string;
+    multiMissing: string;
+  };
+  global: {
+    noValidConcrete: string;
+    noValidSteel: string;
+    minConcrete: string;
+    minSteel: string;
+  };
+}
+
+type RequiredPositionsMap = Record<
+  TModulesTypes,
+  {
+    positions: readonly string[];
+    requireConcrete?: readonly string[];
+    requireSteel?: readonly string[];
+    requireForm?: readonly string[];
+    requireMasonryKeys?: (keyof IMasonryElement)[];
+  }
+>;
+
+const REQUIRED_POSITIONS: RequiredPositionsMap = {
+  beam_column: {
+    positions: ["column", "beam", "slab"] as const,
+    requireConcrete: ["column", "beam", "slab"],
+    requireSteel: ["column", "beam", "slab"],
+    requireForm: [],
+  },
+  concrete_wall: {
+    positions: ["wall", "slab"] as const,
+    requireConcrete: ["wall", "slab"],
+    requireSteel: ["wall", "slab"],
+    requireForm: [],
+  },
+  structural_masonry: {
+    positions: [] as const,
+    requireMasonryKeys: ["blocks", "grout", "mortar"],
+  },
+  raft_foundation: {
+    positions: ["raft"] as const,
+    requireConcrete: ["raft"],
+    requireSteel: ["raft"],
+  },
+  piles_foundation: {
+    positions: [] as const,
+    requireConcrete: [],
+    requireSteel: [],
+  },
+  raft_piles_foundation: {
+    positions: [] as const,
+    requireConcrete: [],
+    requireSteel: [],
+  },
+};
+
+const formatTpl = (template: string, vars: Record<string, string>): string => {
+  let out = template;
+  for (const [k, v] of Object.entries(vars)) {
+    out = out.split(`{${k}}`).join(v);
+  }
+  return out;
+};
+
+export const getCompletenessWarnings = (
+  flatData: any,
+  moduleType: TModulesTypes,
+  i18n: CompletenessWarningsI18n,
+): { hasWarnings: boolean; messages: string[] } => {
+  const out: string[] = [];
+  if (!flatData || !moduleType || !i18n)
+    return { hasWarnings: false, messages: out };
+
+  const cfg = REQUIRED_POSITIONS[moduleType];
+  if (!cfg) return { hasWarnings: false, messages: out };
+
+  const concreteArr = (flatData.concrete ?? []) as IV2ConcreteVolumeItem<any>[];
+  const steelArr = (flatData.steel ?? []) as IV2SteelMaterialItem<any>[];
+  const formArr = (flatData.form ?? []) as IV2FormAreaItem<any>[];
+
+  const hasConcreteAt = (pos: string) =>
+    concreteArr.some(
+      (c) =>
+        c.position === pos &&
+        !isConcreteItemZero(c as IV2ConcreteVolumeItem<TAnyPosition>),
+    );
+  const hasSteelAt = (pos: string) =>
+    steelArr.some(
+      (s) =>
+        s.position === pos &&
+        !isSteelItemZero(s as IV2SteelMaterialItem<TAnyPosition>),
+    );
+  const hasFormAt = (pos: string) =>
+    formArr.some(
+      (f) =>
+        f.position === pos &&
+        !isFormItemZero(f as IV2FormAreaItem<TAnyPosition>),
+    );
+
+  for (const pos of cfg.positions) {
+    const needConcrete = cfg.requireConcrete?.includes(pos);
+    const needSteel = cfg.requireSteel?.includes(pos);
+    const needForm = cfg.requireForm?.includes(pos);
+    const label = i18n.positions[pos] ?? pos;
+
+    const missing: string[] = [];
+    if (needConcrete && !hasConcreteAt(pos)) missing.push(i18n.missing.concrete);
+    if (needSteel && !hasSteelAt(pos)) missing.push(i18n.missing.steel);
+    if (needForm && !hasFormAt(pos)) missing.push(i18n.missing.form);
+
+    if (missing.length === 0) continue;
+    if (missing.length === 1) {
+      out.push(
+        formatTpl(i18n.patterns.singleMissing, {
+          label,
+          item: missing[0],
+        }),
+      );
+    } else {
+      const last = missing.pop()!;
+      out.push(
+        formatTpl(i18n.patterns.multiMissing, {
+          label,
+          head: missing.join(", "),
+          last,
+        }),
+      );
+    }
+  }
+
+  if (cfg.requireMasonryKeys?.length) {
+    const masonry = flatData.masonry as IMasonryElement | undefined;
+    const masonryLabels: Record<string, string> = {
+      blocks: i18n.missing.blocks,
+      grout: i18n.missing.grout,
+      mortar: i18n.missing.mortar,
+    };
+    const masonryMissing: string[] = [];
+    for (const k of cfg.requireMasonryKeys) {
+      const arr = (masonry as any)?.[k] as any[] | undefined;
+      if (!arr || arr.length === 0) {
+        masonryMissing.push(masonryLabels[k] ?? String(k));
+      }
+    }
+    if (masonryMissing.length === 1) {
+      out.push(
+        formatTpl(i18n.patterns.singleMissing, {
+          label: i18n.masonryLabel,
+          item: masonryMissing[0],
+        }),
+      );
+    } else if (masonryMissing.length > 1) {
+      const last = masonryMissing.pop()!;
+      out.push(
+        formatTpl(i18n.patterns.multiMissing, {
+          label: i18n.masonryLabel,
+          head: masonryMissing.join(", "),
+          last,
+        }),
+      );
+    }
+  }
+
+  const globalConcreteMin = 1;
+  const globalSteelMin = 1;
+  if (moduleType !== "structural_masonry") {
+    const anyConcrete = concreteArr.some(
+      (c) => !isConcreteItemZero(c as IV2ConcreteVolumeItem<TAnyPosition>),
+    );
+    const anySteel = steelArr.some(
+      (s) => !isSteelItemZero(s as IV2SteelMaterialItem<TAnyPosition>),
+    );
+    if (cfg.requireConcrete && cfg.requireConcrete.length > 0 && !anyConcrete) {
+      out.push(i18n.global.noValidConcrete);
+    }
+    if (cfg.requireSteel && cfg.requireSteel.length > 0 && !anySteel) {
+      out.push(i18n.global.noValidSteel);
+    }
+    if (cfg.requireConcrete?.length === 0) {
+      if (concreteArr.length < globalConcreteMin) out.push(i18n.global.minConcrete);
+      if (steelArr.length < globalSteelMin) out.push(i18n.global.minSteel);
+    }
+  }
+
+  return { hasWarnings: out.length > 0, messages: out };
 };

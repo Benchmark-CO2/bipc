@@ -59,6 +59,8 @@ import {
   groupedFormToFlatV2,
   cleanZeroItemsBeforeSubmit,
   TModuleGroupedForm,
+  getCompletenessWarnings,
+  CompletenessWarningsI18n,
 } from "./aggregate-helpers";
 
 interface DrawerFormModuleProps {
@@ -71,6 +73,7 @@ interface DrawerFormModuleProps {
   floors?: TTowerFloorCategory[];
 
   stepperMode?: boolean;
+  strictValidation?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   initialModuleData?: Partial<ModuleFormState> | Partial<TModuleDataV2>;
@@ -97,12 +100,14 @@ const DrawerFormModule = ({
   type,
   floors = [],
   stepperMode = false,
+  strictValidation: strictValidationProp,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
   initialModuleData,
   initialSelectedFloors,
   onSubmitSuccess,
 }: DrawerFormModuleProps) => {
+  const strictValidation = strictValidationProp ?? !stepperMode;
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
   const isOpen = isControlled ? controlledOpen : internalOpen;
@@ -165,6 +170,9 @@ const DrawerFormModule = ({
     if (result.success) {
       return { values: values as any, errors: {} };
     }
+    if (!strictValidation) {
+      return { values: values as any, errors: {} };
+    }
     const fieldErrors: Record<string, any> = {};
     const issues = result.error?.issues ?? [];
     for (const issue of issues) {
@@ -185,26 +193,23 @@ const DrawerFormModule = ({
   });
 
   const structureTypeWatch = form.watch("type");
+  const allFormValues = form.watch();
 
-  useEffect(() => {
-    if (stepperMode && isOpen) {
-      form.reset(mergedDefaults as any);
-      if (initialSelectedFloors) {
-        setSelectedFloors(initialSelectedFloors);
-      } else if (initialDataIsFlatV2 && (initialModuleData as any)?.floor_ids) {
-        setSelectedFloors((initialModuleData as any).floor_ids);
-      }
-      void form.trigger();
-    }
-  }, [
-    stepperMode,
-    isOpen,
-    initialModuleData,
-    initialSelectedFloors,
-    mergedDefaults,
-    form,
-    initialDataIsFlatV2,
-  ]);
+  const partialWarnings = useMemo(() => {
+    const flat = groupedFormToFlatV2(
+      (allFormValues as any)?.type || type,
+      allFormValues as any,
+      selectedFloors,
+      unitId,
+    );
+    const cleaned = cleanZeroItemsBeforeSubmit(flat as any);
+    const i18n = t.modules.form.completeness as any as CompletenessWarningsI18n;
+    return getCompletenessWarnings(
+      cleaned,
+      ((allFormValues as any)?.type || type) as TModulesTypes,
+      i18n,
+    );
+  }, [allFormValues, type, selectedFloors, unitId, t]);
 
   const isUsingPaviments =
     structureTypeWatch === "beam_column" ||
@@ -312,6 +317,34 @@ const DrawerFormModule = ({
   });
 
   useEffect(() => {
+    if (isOpen && !moduleId) {
+      form.reset(mergedDefaults as any);
+      if (stepperMode) {
+        if (initialSelectedFloors) {
+          setSelectedFloors(initialSelectedFloors);
+        } else if (
+          initialDataIsFlatV2 &&
+          (initialModuleData as any)?.floor_ids
+        ) {
+          setSelectedFloors((initialModuleData as any).floor_ids);
+        }
+      }
+      queueMicrotask(() => {
+        void form.trigger();
+      });
+    }
+  }, [
+    isOpen,
+    moduleId,
+    stepperMode,
+    initialSelectedFloors,
+    initialModuleData,
+    initialDataIsFlatV2,
+    mergedDefaults,
+    form,
+  ]);
+
+  useEffect(() => {
     if (moduleData) {
       const moduleWithType = moduleData as any;
       const detectedType = moduleWithType.type || type;
@@ -323,6 +356,9 @@ const DrawerFormModule = ({
       }
 
       form.reset(grouped as any);
+      queueMicrotask(() => {
+        void form.trigger();
+      });
     }
   }, [moduleData, moduleId, type, form]);
 
@@ -645,17 +681,43 @@ const DrawerFormModule = ({
           )}
         </div>
         <DrawerFooter className="px-8">
+          {partialWarnings.hasWarnings && (
+            <Alert className="bg-orange-50 border-orange-200 text-orange-900">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-900">
+                <p className="font-medium mb-1">
+                  {t.modules.form.partialDataWarning}
+                </p>
+                <p className="text-xs mb-2 text-orange-800">
+                  {t.modules.form.partialDataDescription}
+                </p>
+                <p className="text-xs font-medium mb-1 text-orange-900">
+                  {t.modules.form.partialDataHint}
+                </p>
+                <ul className="list-disc pl-4 text-xs space-y-0.5 text-orange-800">
+                  {partialWarnings.messages.slice(0, 10).map((msg, i) => (
+                    <li key={i}>{msg}</li>
+                  ))}
+                  {partialWarnings.messages.length > 10 && (
+                    <li>… (+{partialWarnings.messages.length - 10} mais)</li>
+                  )}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
           {(stepperMode || form.formState.isSubmitted) &&
-            Object.keys(form.formState.errors).length > 0 && (
+            strictValidation &&
+            partialWarnings.hasWarnings && (
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   <p className="font-medium mb-1">{t.modules.form.fixErrors}</p>
                   <ul className="list-disc pl-4 text-xs space-y-0.5">
-                    {getFormErrorMessages(form.formState.errors).map(
-                      (msg, i) => (
-                        <li key={i}>{msg}</li>
-                      ),
+                    {partialWarnings.messages.slice(0, 10).map((msg, i) => (
+                      <li key={i}>{msg}</li>
+                    ))}
+                    {partialWarnings.messages.length > 10 && (
+                      <li>… (+{partialWarnings.messages.length - 10} mais)</li>
                     )}
                   </ul>
                 </AlertDescription>
@@ -670,8 +732,9 @@ const DrawerFormModule = ({
               isCreationPending ||
               isUpdatePending ||
               (selectedFloors.length === 0 && isUsingPaviments) ||
-              (form.formState.isSubmitted &&
-                Object.keys(form.formState.errors).length > 0)
+              (strictValidation &&
+                form.formState.isSubmitted &&
+                partialWarnings.hasWarnings)
             }
           >
             {isCreationPending || isUpdatePending ? (

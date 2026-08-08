@@ -38,9 +38,19 @@ export type TModulesTypes =
 
 export interface IModuleItem {
   id: string;
+  name?: string | null;
   type: TModulesTypes;
   consumption: IConsumption;
   outdated?: boolean;
+  version?: string | number;
+  version_in_use?: string | number;
+  floor_repetition?: number | string | null;
+  total_concrete?: number | null;
+  total_steel?: number | null;
+  co2_min?: number | null;
+  co2_max?: number | null;
+  energy_min?: number | null;
+  energy_max?: number | null;
 }
 
 export interface IBasicModule {

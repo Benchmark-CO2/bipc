@@ -494,6 +494,43 @@ export const en: Translations = {
       fixErrors: "Fix the following errors before submitting:",
       validationErrors: "There are validation errors",
       validationDescription: "Avoid fields with zero or invalid values.",
+      partialDataWarning: "Warning: Incomplete or partial data",
+      partialDataDescription:
+        "This module was created/imported without all required materials. To save, fill in the fields highlighted in red.",
+      partialDataHint: "Required fields that are zero or missing:",
+      completeness: {
+        masonryLabel: "Masonry",
+        positions: {
+          column: "Column",
+          beam: "Beam",
+          slab: "Slab",
+          stair: "Stair",
+          wall: "Wall",
+          raft: "Raft",
+          pile: "Pile",
+          block: "Pile cap",
+          grade_beam: "Grade beam",
+          tie_beam: "Tie beam",
+        },
+        missing: {
+          concrete: "concrete data (fck and volume)",
+          steel: "steel materials",
+          form: "formwork",
+          blocks: "blocks",
+          grout: "grout sections",
+          mortar: "mortar",
+        },
+        patterns: {
+          singleMissing: "{label}: missing {item}",
+          multiMissing: "{label}: missing {head} and {last}",
+        },
+        global: {
+          noValidConcrete: "Module with no valid concrete volumes",
+          noValidSteel: "Module with no valid steel materials",
+          minConcrete: "Add at least one concrete volume",
+          minSteel: "Add at least one steel material",
+        },
+      },
       selectFck: "Select fck",
       inUse: "(In use)",
       other: "Other",
@@ -1095,6 +1132,12 @@ export const en: Translations = {
     unknown: "Unknown",
     outdatedTech:
       "This constructive technology is outdated due to changes in the unit. Please update it!",
+    partialTech:
+      "This technology was created with partial data. Open edit to fill in the required fields.",
+    partialLabel: "Partial data",
+    emptyLabel: "No data",
+    emptyTech:
+      "This technology has no material data. Open edit to fill in the information.",
     duplicate: "Duplicate",
     selectRow: "Select row",
   },
