@@ -1331,5 +1331,12 @@ export const en: Translations = {
     importError: "Error importing file",
     useSelectedSuccess: "Data imported successfully",
     useSelectedError: "Error using selected data",
+    disciplineLabel: "Discipline (for simulation creation)",
+    disciplinePlaceholder: "Select the discipline",
+    noDisciplinesHint:
+      "No simulation disciplines registered in this project. Create a discipline under the Disciplines tab before importing files.",
+    disciplinesGoTo: "Open Disciplines tab",
+    simulationRoleMissing:
+      "Simulation discipline not selected. Choose a discipline to continue.",
   },
 };

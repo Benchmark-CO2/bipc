@@ -1348,6 +1348,13 @@ export const ptBR = {
     importError: "Erro ao importar arquivo",
     useSelectedSuccess: "Dados importados com sucesso",
     useSelectedError: "Erro ao utilizar dados selecionados",
+    disciplineLabel: "Disciplina (para criação da simulação)",
+    disciplinePlaceholder: "Selecione a disciplina",
+    noDisciplinesHint:
+      "Nenhuma disciplina de simulação cadastrada neste projeto. Crie uma disciplina na aba Disciplinas antes de importar arquivos.",
+    disciplinesGoTo: "Abrir aba Disciplinas",
+    simulationRoleMissing:
+      "Disciplina de simulação não selecionada. Selecione uma disciplina para prosseguir.",
   },
 } as const;
 

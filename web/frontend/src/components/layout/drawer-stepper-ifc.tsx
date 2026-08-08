@@ -94,6 +94,7 @@ interface DrawerStepperIFCProps {
   onOpenChange: (open: boolean) => void;
   projectId: string;
   initialResult: TIfcProcessorAggregatedResult;
+  initialRoleId: string;
   onComplete?: () => void;
 }
 
@@ -102,6 +103,7 @@ export default function DrawerStepperIFC({
   onOpenChange,
   projectId,
   initialResult,
+  initialRoleId,
   onComplete,
 }: DrawerStepperIFCProps) {
   const { t } = useTranslation();
@@ -273,15 +275,11 @@ export default function DrawerStepperIFC({
       toast.error("Dados do projeto não carregados. Tente novamente.");
       return;
     }
-    const simRoleId = resolveSimulationRoleId({
-      roles: (projectObj as any).roles ?? [],
-    });
-    if (!simRoleId) {
-      toast.error(
-        "Nenhum papel de simulação encontrado no projeto. Contate o administrador.",
-      );
+    if (!initialRoleId) {
+      toast.error(t.drawerIFC.simulationRoleMissing);
       return;
     }
+    const simRoleId = initialRoleId;
 
     setIsCreatingStep1(true);
     const result: TIfcStepperCreatedUnit[] = [];

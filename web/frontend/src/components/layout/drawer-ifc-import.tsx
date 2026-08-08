@@ -3,6 +3,7 @@ import { getIfcFallbacks } from "@/actions/ifc/getIfcFallbacks";
 import { getIfcRequestResult } from "@/actions/ifc/getIfcRequestResult";
 import { getIfcRequests } from "@/actions/ifc/getIfcRequests";
 import { postIfcCreateRequest } from "@/actions/ifc/postIfcCreateRequest";
+import { getProjectByUUID } from "@/actions/projects/getProject";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslation } from "@/i18n";
@@ -13,11 +14,13 @@ import {
   TIfcProcessorImportStatus,
   TIfcProcessorRequestListItem,
 } from "@/types/ifc";
+import { TRole } from "@/types/disciplines";
 import { dateUtils } from "@/utils/date";
 import { parseApiError } from "@/utils/parseApiError";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, FileUp, Loader2, Upload, X } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import {
@@ -270,6 +273,7 @@ export default function DrawerIFCImport({
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [importErrorMessage, setImportErrorMessage] = useState("");
   const [fileWarningMessage, setFileWarningMessage] = useState("");
+  const [selectedRoleId, setSelectedRoleId] = useState("");
 
   // "Already imported" section state
   const [selectedFileId, setSelectedFileId] = useState("");
@@ -285,9 +289,43 @@ export default function DrawerIFCImport({
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const clientId = user?.id ?? "";
+  const navigate = useNavigate();
 
   const hasFileTypeTabs = mode === "simulation";
   const canUploadTqs = mode === "simulation" && !!unitId && !!roleId;
+
+  // Carregar disciplinas (roles) do projeto — filtramos apenas simulation=true
+  const { data: projectDataForRoles, isLoading: isLoadingProjectRoles } =
+    useQuery({
+      queryKey: ["project", projectId],
+      queryFn: () => getProjectByUUID(projectId),
+      enabled: isOpen,
+      staleTime: 1000 * 60 * 5,
+    });
+  const simulationRoles: TRole[] = useMemo(() => {
+    const roles =
+      (projectDataForRoles?.data?.project?.roles as TRole[] | undefined) ?? [];
+    return roles.filter((r) => r.simulation);
+  }, [projectDataForRoles]);
+
+  // Regra do usuário: só mostra select quando a prop roleId não é fornecida.
+  // Quando roleId prop existe (mode simulation), NÃO mostra o select e usa o prop.
+  const needsRolePrompt = !roleId;
+  const effectiveRoleId = roleId ?? selectedRoleId;
+
+  // Pré-selecionar a 1ª discipline simulation quando abrir e nada selecionado,
+  // OU quando o roleId selecionado não existe mais na lista (ex.: disciplina apagada).
+  useEffect(() => {
+    if (!needsRolePrompt || !isOpen) return;
+    if (simulationRoles.length === 0) {
+      if (selectedRoleId) setSelectedRoleId("");
+      return;
+    }
+    const exists = simulationRoles.some((r) => r.id === selectedRoleId);
+    if (!exists) {
+      setSelectedRoleId(simulationRoles[0]!.id);
+    }
+  }, [needsRolePrompt, isOpen, simulationRoles, selectedRoleId]);
 
   const { mutate: uploadTqsFile, isPending: isUploadingTqsFile } = useMutation({
     mutationFn: () =>
@@ -538,6 +576,7 @@ export default function DrawerIFCImport({
     setSelectedFileId("");
     setStepperResult(null);
     setStepperOpen(false);
+    setSelectedRoleId("");
   };
 
   const handleFileTypeChange = (ft: FileType) => {
@@ -567,6 +606,10 @@ export default function DrawerIFCImport({
       return;
     }
 
+    if (needsRolePrompt && !effectiveRoleId) {
+      toast.error(t.drawerIFC.simulationRoleMissing);
+      return;
+    }
     if (!uploadFile || !software || !version || !clientId) return;
     setImportErrorMessage("");
     importIfcFile();
@@ -575,6 +618,10 @@ export default function DrawerIFCImport({
   const handleUseSelected = () => {
     if (fileType !== "ifc") return;
     if (!selectedIfcFile || selectedIfcFile.status !== "completed") return;
+    if (needsRolePrompt && !effectiveRoleId) {
+      toast.error(t.drawerIFC.simulationRoleMissing);
+      return;
+    }
     setImportErrorMessage("");
     fetchIfcResult();
   };
@@ -831,7 +878,11 @@ export default function DrawerIFCImport({
                       size="sm"
                       disabled={
                         fileType === "ifc"
-                          ? !uploadFile || !software || !version || !clientId
+                          ? !uploadFile ||
+                            !software ||
+                            !version ||
+                            !clientId ||
+                            (needsRolePrompt && !effectiveRoleId)
                           : !uploadFile || !canUploadTqs
                       }
                       onClick={handleImport}
@@ -860,50 +911,139 @@ export default function DrawerIFCImport({
                     </h3>
 
                     <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-sm text-muted-foreground">
-                          {t.drawerIFC.selectFileLabel}{" "}
-                          <span className="text-destructive">*</span>
-                        </label>
-                        <Select
-                          value={selectedFileId}
-                          onValueChange={handleFileSelect}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue
-                              placeholder={t.drawerIFC.selectFilePlaceholder}
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {isLoadingIfcRequests ? (
-                              <SelectItem value="__loading__" disabled>
-                                {t.common.loading}
-                              </SelectItem>
-                            ) : isIfcRequestsError ? (
-                              <SelectItem value="__error__" disabled>
-                                {t.common.unknownError}
-                              </SelectItem>
-                            ) : ifcImportedFiles.length === 0 ? (
-                              <SelectItem value="__empty__" disabled>
-                                {t.drawerIFC.noImportedFiles}
-                              </SelectItem>
-                            ) : (
-                              ifcImportedFiles.map((f) => (
-                                <SelectItem key={f.id} value={f.id}>
-                                  <span className="flex items-center gap-2 min-w-0">
-                                    <span className="truncate min-w-0">
-                                      {f.name}
-                                    </span>
-                                    <span className="text-muted-foreground shrink-0">
-                                      — {f.date} ({ifcStatusLabels[f.status]})
-                                    </span>
-                                  </span>
+                      {/* File select + Discipline select (quando aplicável) em GRID 2 cols */}
+                      <div
+                        className={cn(
+                          "grid gap-3 items-start",
+                          needsRolePrompt ? "grid-cols-2" : "grid-cols-[1fr]",
+                        )}
+                      >
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm text-muted-foreground">
+                            {t.drawerIFC.selectFileLabel}{" "}
+                            <span className="text-destructive">*</span>
+                          </label>
+                          <Select
+                            value={selectedFileId}
+                            onValueChange={handleFileSelect}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue
+                                placeholder={t.drawerIFC.selectFilePlaceholder}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {isLoadingIfcRequests ? (
+                                <SelectItem value="__loading__" disabled>
+                                  {t.common.loading}
                                 </SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
+                              ) : isIfcRequestsError ? (
+                                <SelectItem value="__error__" disabled>
+                                  {t.common.unknownError}
+                                </SelectItem>
+                              ) : ifcImportedFiles.length === 0 ? (
+                                <SelectItem value="__empty__" disabled>
+                                  {t.drawerIFC.noImportedFiles}
+                                </SelectItem>
+                              ) : (
+                                ifcImportedFiles.map((f) => (
+                                  <SelectItem key={f.id} value={f.id}>
+                                    <span className="flex items-center gap-2 min-w-0">
+                                      <span className="truncate min-w-0">
+                                        {f.name}
+                                      </span>
+                                      <span className="text-muted-foreground shrink-0">
+                                        — {f.date} ({ifcStatusLabels[f.status]})
+                                      </span>
+                                    </span>
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Discipline select — SÓ quando roleId prop não passado */}
+                        {needsRolePrompt && (
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-sm text-muted-foreground">
+                              {t.drawerIFC.disciplineLabel}{" "}
+                              <span className="text-destructive">*</span>
+                            </label>
+                            <Select
+                              value={selectedRoleId}
+                              onValueChange={setSelectedRoleId}
+                              disabled={
+                                isLoadingProjectRoles ||
+                                simulationRoles.length === 0
+                              }
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue
+                                  placeholder={
+                                    isLoadingProjectRoles
+                                      ? t.common.loading
+                                      : simulationRoles.length === 0
+                                        ? t.drawerIFC.disciplinePlaceholder
+                                        : t.drawerIFC.disciplinePlaceholder
+                                  }
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {isLoadingProjectRoles ? (
+                                  <SelectItem value="__loading__" disabled>
+                                    {t.common.loading}
+                                  </SelectItem>
+                                ) : simulationRoles.length === 0 ? (
+                                  <SelectItem value="__empty__" disabled>
+                                    {t.drawerIFC.disciplinePlaceholder}
+                                  </SelectItem>
+                                ) : (
+                                  simulationRoles.map((r) => (
+                                    <SelectItem key={r.id} value={r.id}>
+                                      {r.name}
+                                    </SelectItem>
+                                  ))
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
                       </div>
+
+                      {/* Warning NENHUMA disciplina cadastrada — ABAIXO dos 2 selects, com CTA navigate */}
+                      {needsRolePrompt &&
+                        !isLoadingProjectRoles &&
+                        simulationRoles.length === 0 && (
+                          <div className="bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-4">
+                            <div className="flex flex-col gap-3">
+                              <div className="flex gap-3">
+                                <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
+                                <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                                  {t.drawerIFC.noDisciplinesHint}
+                                </p>
+                              </div>
+                              <div className="flex justify-end pl-8">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    navigate({
+                                      to: `/new_projects/${projectId}`,
+                                      search: {
+                                        tab: "disciplinas",
+                                      } as Record<string, string>,
+                                      replace: false,
+                                    });
+                                    setIsOpen(false);
+                                  }}
+                                >
+                                  {t.drawerIFC.disciplinesGoTo}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                       {selectedIfcFile?.status &&
                         selectedIfcFile.status !== "completed" &&
@@ -919,7 +1059,8 @@ export default function DrawerIFCImport({
                           disabled={
                             !selectedFileId ||
                             selectedIfcFile?.status !== "completed" ||
-                            isFetchingIfcResult
+                            isFetchingIfcResult ||
+                            (needsRolePrompt && !effectiveRoleId)
                           }
                           onClick={handleUseSelected}
                         >
@@ -942,7 +1083,7 @@ export default function DrawerIFCImport({
         </DrawerContent>
       </Drawer>
 
-      {stepperResult && (
+      {stepperResult && effectiveRoleId && (
         <DrawerStepperIFC
           key={`stepper-${stepperMountKey}`}
           open={stepperOpen}
@@ -964,6 +1105,7 @@ export default function DrawerIFCImport({
           }}
           projectId={projectId}
           initialResult={stepperResult!}
+          initialRoleId={effectiveRoleId}
           onComplete={() => {
             setStepperResult(null);
           }}
