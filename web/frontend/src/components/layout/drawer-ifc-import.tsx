@@ -263,6 +263,7 @@ export default function DrawerIFCImport({
   projectId,
   unitId,
   roleId,
+  optionId,
   triggerComponent,
 }: DrawerIFCImportProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -1106,6 +1107,9 @@ export default function DrawerIFCImport({
           projectId={projectId}
           initialResult={stepperResult!}
           initialRoleId={effectiveRoleId}
+          mode={mode}
+          preselectedUnitId={mode === "simulation" ? unitId : undefined}
+          preselectedOptionId={mode === "simulation" ? optionId : undefined}
           onComplete={() => {
             setStepperResult(null);
           }}

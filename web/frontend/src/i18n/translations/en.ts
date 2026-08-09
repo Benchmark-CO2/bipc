@@ -1295,6 +1295,17 @@ export const en: Translations = {
     statusInvalid: "Invalid",
     validationErrors: "Invalid or missing fields",
     semanticWarnings: "Semantic warnings (partial data)",
+    simulation: {
+      title: "Import modules from IFC",
+      description:
+        "Select an existing simulation to add the modules extracted from the IFC file.",
+      selectLabel: "Target simulation (where modules will be created)",
+      noOptions: "No simulations created yet",
+      selectPlaceholder: "Select a simulation",
+      noOptionsHint: "Create a new simulation first.",
+      createNew: "Create new simulation",
+      requiredHint: "Select or create a simulation before continuing.",
+    },
     modules: {
       hint: "Module creation is not mandatory. Only the modules checked below, valid and with a unit bound will be created.",
       title: "Found modules",

@@ -1308,6 +1308,18 @@ export const ptBR = {
     statusInvalid: "Inválido",
     validationErrors: "Campos inválidos ou faltantes",
     semanticWarnings: "Avisos semânticos (dados parciais)",
+    simulation: {
+      title: "Importar módulos do IFC",
+      description:
+        "Selecione uma simulação existente para adicionar os módulos extraídos do IFC.",
+      selectLabel: "Simulação alvo (onde os módulos serão criados)",
+      noOptions: "Nenhuma simulação cadastrada",
+      selectPlaceholder: "Selecione uma simulação",
+      noOptionsHint: "Crie uma nova simulação primeiro.",
+      createNew: "Criar nova simulação",
+      requiredHint:
+        "Selecione ou crie uma simulação antes de prosseguir.",
+    },
     modules: {
       hint: "A criação de módulos não é obrigatória. Somente os módulos marcados abaixo, válidos e com vínculo de unidade serão criados.",
       title: "Módulos encontrados",

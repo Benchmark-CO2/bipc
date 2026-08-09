@@ -1,8 +1,10 @@
 import { postModulesBatch } from "@/actions/modules/postModulesBatch";
 import { postOption } from "@/actions/options/postOption";
+import { getOptions } from "@/actions/options/getOptions";
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { postUnit } from "@/actions/units/postUnit";
 import { patchUnit } from "@/actions/units/patchUnit";
+import { DialogCreateSimulation } from "@/components/layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -40,6 +42,7 @@ import {
 import { useTranslation } from "@/i18n";
 import { IProject } from "@/types/projects";
 import { TModulesTypes } from "@/types/modules";
+import { TOption } from "@/types/options";
 import {
   TIfcProcessorAggregatedResult,
   TIfcStepperCreatedUnit,
@@ -47,6 +50,7 @@ import {
   TIfcStepperState,
   TIfcStepperUnitItem,
 } from "@/types/ifc";
+import type { IFCAccessMode } from "@/components/layout/drawer-ifc-import";
 import { parseApiError } from "@/utils/parseApiError";
 import {
   aggregateIdenticalFloors,
@@ -62,7 +66,7 @@ import { CompletenessWarningsI18n } from "@/components/layout/drawer-form-module
 import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
 import { ModuleFormState } from "@/validators/moduleFormByType.validator";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Edit2, Info, Loader2, Wand2 } from "lucide-react";
+import { AlertTriangle, Edit2, Info, Loader2, Plus, Wand2 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import DrawerFormModule from "./drawer-form-module";
@@ -95,6 +99,9 @@ interface DrawerStepperIFCProps {
   projectId: string;
   initialResult: TIfcProcessorAggregatedResult;
   initialRoleId: string;
+  mode: IFCAccessMode;
+  preselectedUnitId?: string;
+  preselectedOptionId?: string;
   onComplete?: () => void;
 }
 
@@ -104,6 +111,9 @@ export default function DrawerStepperIFC({
   projectId,
   initialResult,
   initialRoleId,
+  mode,
+  preselectedUnitId,
+  preselectedOptionId,
   onComplete,
 }: DrawerStepperIFCProps) {
   const { t } = useTranslation();
@@ -118,9 +128,53 @@ export default function DrawerStepperIFC({
   });
   const project: IProject | undefined = projectData?.data.project;
 
+  const isSimulationMode = mode === "simulation";
+
+  const { data: optionsData, refetch: refetchOptions } = useQuery({
+    queryKey: ["options", projectId, preselectedUnitId, initialRoleId],
+    queryFn: () =>
+      getOptions(projectId, preselectedUnitId || "", initialRoleId || ""),
+    enabled: open && isSimulationMode && !!preselectedUnitId && !!initialRoleId,
+    staleTime: 1000 * 30,
+  });
+  const availableOptions: TOption[] = (optionsData?.data as any)?.options ?? [];
+
+  const [selectedSimulationOptionId, setSelectedSimulationOptionId] = useState<
+    string | null
+  >(preselectedOptionId ?? null);
+
+  useEffect(() => {
+    if (!isSimulationMode) return;
+    if (selectedSimulationOptionId) return;
+    if (preselectedOptionId) {
+      setSelectedSimulationOptionId(preselectedOptionId);
+      return;
+    }
+    if (availableOptions.length === 0) return;
+    const active = availableOptions.find((o) => o.active);
+    if (active) {
+      setSelectedSimulationOptionId(active.id);
+    } else {
+      setSelectedSimulationOptionId(availableOptions[0]?.id ?? null);
+    }
+  }, [
+    isSimulationMode,
+    availableOptions,
+    preselectedOptionId,
+    selectedSimulationOptionId,
+  ]);
+
   const initialState = useMemo<TIfcStepperState>(() => {
-    return mapIfcResultToStepperState(initialResult, t as any);
-  }, [initialResult]);
+    const base = mapIfcResultToStepperState(initialResult, t as any);
+    if (isSimulationMode) {
+      return {
+        ...base,
+        currentStep: "modules",
+        units: [],
+      };
+    }
+    return base;
+  }, [initialResult, isSimulationMode]);
 
   const [state, setState] = useState<TIfcStepperState>(initialState);
   const [step1Error, setStep1Error] = useState<string>("");
@@ -136,28 +190,96 @@ export default function DrawerStepperIFC({
   );
 
   useEffect(() => {
-    setState(initialState);
+    if (isSimulationMode) {
+      setState({
+        ...initialState,
+        currentStep: "modules",
+        units: [],
+      });
+    } else {
+      setState(initialState);
+    }
     setStep1Error("");
     setStep2Error("");
     setIsCreatingStep1(false);
     setIsCreatingStep2(false);
     setEditingUnitTempId(null);
     setEditingModuleTempId(null);
-  }, [initialState]);
+  }, [initialState, isSimulationMode]);
 
-  const activeStep = state.currentStep === "units" ? 0 : 1;
-  const steps = [
-    {
-      id: "units",
-      label: "Unidades",
-      description: "Validar e criar unidades",
-    },
-    {
-      id: "modules",
-      label: "Módulos",
-      description: "Vincular e criar módulos",
-    },
-  ];
+  const simulationBoundUnitTempId = "__simulation__";
+
+  const simulationCreatedUnit: TIfcStepperCreatedUnit | null = useMemo(() => {
+    if (!isSimulationMode) return null;
+    if (!preselectedUnitId || !selectedSimulationOptionId) return null;
+    const selected = availableOptions.find(
+      (o) => o.id === selectedSimulationOptionId,
+    );
+    const display = selected?.name ?? "Simulação alvo";
+    return {
+      tempId: simulationBoundUnitTempId,
+      unitId: preselectedUnitId,
+      optionId: selectedSimulationOptionId,
+      roleId: initialRoleId,
+      name: selected?.name ?? display,
+      unitName: selected?.name ?? display,
+      displayName: display,
+      needsUpdate: false,
+    };
+  }, [
+    isSimulationMode,
+    preselectedUnitId,
+    selectedSimulationOptionId,
+    availableOptions,
+    initialRoleId,
+    simulationBoundUnitTempId,
+  ]);
+
+  useEffect(() => {
+    if (!isSimulationMode) return;
+    if (!simulationCreatedUnit) return;
+    setState((prev) => {
+      const unitsCreated: TIfcStepperCreatedUnit[] = [simulationCreatedUnit];
+      const modules = prev.modules.map((m) => ({
+        ...m,
+        boundUnitTempId: simulationCreatedUnit.tempId,
+        boundUnitId: simulationCreatedUnit.unitId,
+        boundOptionId: simulationCreatedUnit.optionId,
+      }));
+      const next: TIfcStepperState = {
+        ...prev,
+        unitsCreated,
+        modules,
+      };
+      return next;
+    });
+  }, [isSimulationMode, simulationCreatedUnit, simulationBoundUnitTempId]);
+
+  const activeStep = isSimulationMode
+    ? 0
+    : state.currentStep === "units"
+      ? 0
+      : 1;
+  const steps = isSimulationMode
+    ? [
+        {
+          id: "modules",
+          label: "Módulos",
+          description: "Vincular à simulação e criar módulos",
+        },
+      ]
+    : [
+        {
+          id: "units",
+          label: "Unidades",
+          description: "Validar e criar unidades",
+        },
+        {
+          id: "modules",
+          label: "Módulos",
+          description: "Vincular e criar módulos",
+        },
+      ];
 
   const editingUnit = state.units.find((u) => u.tempId === editingUnitTempId);
   const editingModule = state.modules.find(
@@ -663,10 +785,15 @@ export default function DrawerStepperIFC({
       <DialogContent className="sm:max-w-[95vw] w-[95vw] h-[85vh] max-h-[85vh] flex flex-col gap-0 overflow-hidden p-4">
         <DialogHeader className="px-4 pt-2 pb-3 border-b">
           <DialogTitle className="text-xl font-bold text-primary">
-            Importar dados do IFC
+            {isSimulationMode
+              ? (t.stepper?.simulation?.title ?? "Importar módulos do IFC")
+              : "Importar dados do IFC"}
           </DialogTitle>
           <DialogDescription>
-            Valide unidades e módulos extraídos do arquivo IFC antes de criar.
+            {isSimulationMode
+              ? (t.stepper?.simulation?.description ??
+                "Selecione uma simulação existente para adicionar os módulos extraídos do IFC.")
+              : "Valide unidades e módulos extraídos do arquivo IFC antes de criar."}
           </DialogDescription>
           <div className="pt-4">
             <Stepper activeStep={activeStep} steps={steps} />
@@ -674,7 +801,85 @@ export default function DrawerStepperIFC({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-4 py-3 min-h-0">
-          {activeStep === 0 && (
+          {isSimulationMode && (
+            <div className="mb-4 border-2 border-gray-200 dark:border-gray-700 bg-gray-50/40 dark:bg-gray-900/40 rounded-xl p-4">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+                <div className="flex-1 flex flex-col gap-2 min-w-0">
+                  <label className="text-sm font-medium text-foreground">
+                    {t.stepper?.simulation?.selectLabel ??
+                      "Simulação alvo (onde os módulos serão criados)"}
+                  </label>
+                  <Select
+                    value={selectedSimulationOptionId ?? ""}
+                    onValueChange={(v) => setSelectedSimulationOptionId(v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          availableOptions.length === 0
+                            ? (t.stepper?.simulation?.noOptions ??
+                              "Nenhuma simulação cadastrada")
+                            : (t.stepper?.simulation?.selectPlaceholder ??
+                              "Selecione uma simulação")
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableOptions.length === 0 && (
+                        <div className="text-sm px-2 py-3 text-muted-foreground">
+                          {t.stepper?.simulation?.noOptionsHint ??
+                            "Crie uma nova simulação primeiro."}
+                        </div>
+                      )}
+                      {availableOptions.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>
+                          {o.name}
+                          {o.active ? (
+                            <span className="ml-2 text-xs text-primary font-medium">
+                              (ativa)
+                            </span>
+                          ) : null}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {preselectedUnitId && initialRoleId ? (
+                  <DialogCreateSimulation
+                    projectId={projectId}
+                    unitId={preselectedUnitId}
+                    roleId={initialRoleId}
+                    triggerComponent={
+                      <Button variant="outline">
+                        <Plus className="h-4 w-4" />{" "}
+                        {t.stepper?.simulation?.createNew ??
+                          "Criar nova simulação"}
+                      </Button>
+                    }
+                    onCreated={() => {
+                      void refetchOptions();
+                      void queryClient.invalidateQueries({
+                        queryKey: ["options", projectId, preselectedUnitId],
+                      });
+                    }}
+                  />
+                ) : null}
+              </div>
+              {!selectedSimulationOptionId ? (
+                <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg">
+                  <div className="flex gap-3">
+                    <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                      {t.stepper?.simulation?.requiredHint ??
+                        "Selecione ou crie uma simulação antes de prosseguir."}
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {!isSimulationMode && activeStep === 0 && (
             <Step1UnitsView
               state={state}
               toggleUnitSelected={toggleUnitSelected}
@@ -683,7 +888,7 @@ export default function DrawerStepperIFC({
               t={t}
             />
           )}
-          {activeStep === 1 && (
+          {activeStep === (isSimulationMode ? 0 : 1) && (
             <Step2ModulesView
               state={state}
               applyUnitToAllModules={applyUnitToAllModules}
@@ -696,7 +901,7 @@ export default function DrawerStepperIFC({
             />
           )}
 
-          {step1Error && activeStep === 0 && (
+          {step1Error && !isSimulationMode && activeStep === 0 && (
             <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/20 border-2 border-red-400 dark:border-red-600 rounded-lg">
               <div className="flex gap-3">
                 <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5" />
@@ -706,7 +911,7 @@ export default function DrawerStepperIFC({
               </div>
             </div>
           )}
-          {step2Error && activeStep === 1 && (
+          {step2Error && activeStep === (isSimulationMode ? 0 : 1) && (
             <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/20 border-2 border-red-400 dark:border-red-600 rounded-lg">
               <div className="flex gap-3">
                 <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5" />
@@ -719,7 +924,7 @@ export default function DrawerStepperIFC({
         </div>
 
         <DialogFooter className="px-4 py-3 border-t gap-2">
-          {activeStep === 0 && (
+          {!isSimulationMode && activeStep === 0 && (
             <>
               <Button
                 variant="ghost"
@@ -748,7 +953,7 @@ export default function DrawerStepperIFC({
               </Button>
             </>
           )}
-          {activeStep === 1 && (
+          {!isSimulationMode && activeStep === 1 && (
             <>
               <Button
                 variant="ghost"
@@ -768,6 +973,32 @@ export default function DrawerStepperIFC({
                 variant="bipc"
                 onClick={handleStep2Complete}
                 disabled={isCreatingStep2}
+                className="text-white"
+              >
+                {isCreatingStep2 ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Criando módulos...
+                  </span>
+                ) : (
+                  "Concluir"
+                )}
+              </Button>
+            </>
+          )}
+          {isSimulationMode && (
+            <>
+              <Button
+                variant="ghost"
+                onClick={handleClose}
+                disabled={isCreatingStep2}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="bipc"
+                onClick={handleStep2Complete}
+                disabled={isCreatingStep2 || !selectedSimulationOptionId}
                 className="text-white"
               >
                 {isCreatingStep2 ? (
