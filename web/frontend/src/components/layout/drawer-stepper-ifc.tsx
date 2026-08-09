@@ -1059,53 +1059,137 @@ export default function DrawerStepperIFC({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[95vw] w-[95vw] h-[85vh] max-h-[85vh] flex flex-col gap-0 overflow-hidden p-4">
-        <DialogHeader className="px-4 pt-2 pb-3 border-b">
-          <DialogTitle className="text-xl font-bold text-primary">
-            {isSimulationMode
-              ? (t.stepper?.simulation?.title ?? "Importar módulos do IFC")
-              : "Importar dados do IFC"}
-          </DialogTitle>
-          <DialogDescription>
-            {isSimulationMode
-              ? (t.stepper?.simulation?.description ??
-                "Selecione uma simulação existente para adicionar os módulos extraídos do IFC.")
-              : "Valide unidades e módulos extraídos do arquivo IFC antes de criar."}
-          </DialogDescription>
-
-          {fileName ? (
-            <div className="mt-3 inline-flex items-center gap-2">
+        <DialogHeader className="px-3 pt-1 pb-2 border-b gap-1.5">
+          {/* ROW 1: Título à esquerda / Badge arquivo à direita */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-col min-w-0">
+              <DialogTitle className="text-lg font-bold text-primary leading-tight">
+                {isSimulationMode
+                  ? (t.stepper?.simulation?.title ?? "Importar módulos do IFC")
+                  : "Importar dados do IFC"}
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+                {isSimulationMode
+                  ? (t.stepper?.simulation?.description ??
+                    "Selecione uma simulação existente para adicionar os módulos extraídos do IFC.")
+                  : "Valide unidades e módulos extraídos do arquivo IFC antes de criar."}
+              </p>
+            </div>
+            {fileName ? (
               <Badge
                 variant="secondary"
-                className="text-sm px-3 py-1.5 gap-2 max-w-full overflow-hidden text-ellipsis whitespace-nowrap shadow-sm"
+                className="text-xs px-2.5 py-1 gap-1.5 max-w-[55%] overflow-hidden text-ellipsis whitespace-nowrap shrink-0 shadow-sm"
                 title={fileName}
               >
                 <FileText className="h-3.5 w-3.5 flex-shrink-0" />
-                <span className="overflow-hidden text-ellipsis whitespace-nowrap max-w-[60ch]">
+                <span className="overflow-hidden text-ellipsis whitespace-nowrap">
                   {fileName}
                 </span>
               </Badge>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
 
-          <div className="pt-4">
+          {/* ROW 2: Stepper (sem pt-4 exagerado) */}
+          <div className="pt-1.5">
             <Stepper activeStep={activeStep} steps={steps} />
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-4 py-3 min-h-0">
+        <div className="flex-1 overflow-y-auto px-4 py-2 min-h-0">
           {isSimulationMode && (
-            <div className="mb-4 border-2 border-gray-200 dark:border-gray-700 bg-gray-50/40 dark:bg-gray-900/40 rounded-xl p-4">
-              <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-                <div className="flex-1 flex flex-col gap-2 min-w-0">
-                  <label className="text-sm font-medium text-foreground">
-                    {t.stepper?.simulation?.selectLabel ??
-                      "Simulação alvo (onde os módulos serão criados)"}
-                  </label>
+            <div className="mb-2 border rounded-lg px-3 py-2 bg-gray-50/40 dark:bg-gray-900/40 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              {/* Sempre exibimos o label + conteúdo. Estado (A) ou (B) muda só o que vem à direita do label */}
+              <label className="text-xs font-semibold text-foreground whitespace-nowrap shrink-0">
+                {t.stepper?.simulation?.selectLabelShort ??
+                  t.stepper?.simulation?.selectLabel ??
+                  "Simulação alvo:"}
+              </label>
+
+              {/* ESTADO (B) — SIMULAÇÃO JÁ SELECIONADA: Unifica Select + Badge "definida" em um único bloco com o NOME da simulação + botão Trocar */}
+              {selectedSimulationOptionId ? (
+                <div className="flex flex-1 flex-wrap sm:justify-end items-center gap-2 min-w-0">
+                  <Badge
+                    variant="success"
+                    className="h-7 text-[12px] px-2.5 py-0 gap-1.5 max-w-full overflow-hidden text-ellipsis whitespace-nowrap"
+                    title={
+                      availableOptions.find(
+                        (o) => o.id === selectedSimulationOptionId,
+                      )?.name ?? selectedSimulationOptionId
+                    }
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                    <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+                      {availableOptions.find(
+                        (o) => o.id === selectedSimulationOptionId,
+                      )?.name ?? selectedSimulationOptionId}
+                    </span>
+                  </Badge>
+                  {/* Select "Trocar" inline (label fixa = "Trocar" dentro do trigger, não o valor) */}
                   <Select
-                    value={selectedSimulationOptionId ?? ""}
+                    value={selectedSimulationOptionId}
                     onValueChange={(v) => setSelectedSimulationOptionId(v)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger
+                      className="h-7 min-w-[100px] w-auto text-[11px] px-2.5 py-0"
+                      aria-label={
+                        t.stepper?.simulation?.changeLabel ?? "Trocar simulação"
+                      }
+                    >
+                      <span className="flex items-center justify-between w-full">
+                        <span>
+                          {t.stepper?.simulation?.changeLabel ?? "Trocar"}
+                        </span>
+                      </span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableOptions.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>
+                          <span className="text-sm">{o.name}</span>
+                          {o.active ? (
+                            <span className="ml-2 text-[11px] text-primary font-medium">
+                              (ativa)
+                            </span>
+                          ) : null}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {preselectedUnitId && initialRoleId ? (
+                    <DialogCreateSimulation
+                      projectId={projectId}
+                      unitId={preselectedUnitId}
+                      roleId={initialRoleId}
+                      triggerComponent={
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-[11px] px-2 py-0"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          <span>
+                            {t.stepper?.simulation?.createNewShort ??
+                              t.stepper?.simulation?.createNew ??
+                              "Nova"}
+                          </span>
+                        </Button>
+                      }
+                      onCreated={() => {
+                        void refetchOptions();
+                        void queryClient.invalidateQueries({
+                          queryKey: ["options", projectId, preselectedUnitId],
+                        });
+                      }}
+                    />
+                  ) : null}
+                </div>
+              ) : (
+                /* ESTADO (A) — NÃO SELECIONADO: Select visível (obrigatório) + Alerta amarelo inline junto, não separado */
+                <div className="flex flex-1 flex-wrap sm:justify-end items-center gap-2 min-w-0">
+                  <Select
+                    value=""
+                    onValueChange={(v) => setSelectedSimulationOptionId(v)}
+                  >
+                    <SelectTrigger className="min-w-[240px] h-9">
                       <SelectValue
                         placeholder={
                           availableOptions.length === 0
@@ -1118,16 +1202,16 @@ export default function DrawerStepperIFC({
                     </SelectTrigger>
                     <SelectContent>
                       {availableOptions.length === 0 && (
-                        <div className="text-sm px-2 py-3 text-muted-foreground">
+                        <div className="text-xs px-2 py-3 text-muted-foreground">
                           {t.stepper?.simulation?.noOptionsHint ??
                             "Crie uma nova simulação primeiro."}
                         </div>
                       )}
                       {availableOptions.map((o) => (
                         <SelectItem key={o.id} value={o.id}>
-                          {o.name}
+                          <span className="text-sm">{o.name}</span>
                           {o.active ? (
-                            <span className="ml-2 text-xs text-primary font-medium">
+                            <span className="ml-2 text-[11px] text-primary font-medium">
                               (ativa)
                             </span>
                           ) : null}
@@ -1135,39 +1219,40 @@ export default function DrawerStepperIFC({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                {preselectedUnitId && initialRoleId ? (
-                  <DialogCreateSimulation
-                    projectId={projectId}
-                    unitId={preselectedUnitId}
-                    roleId={initialRoleId}
-                    triggerComponent={
-                      <Button variant="outline">
-                        <Plus className="h-4 w-4" />{" "}
-                        {t.stepper?.simulation?.createNew ??
-                          "Criar nova simulação"}
-                      </Button>
-                    }
-                    onCreated={() => {
-                      void refetchOptions();
-                      void queryClient.invalidateQueries({
-                        queryKey: ["options", projectId, preselectedUnitId],
-                      });
-                    }}
-                  />
-                ) : null}
-              </div>
-              {!selectedSimulationOptionId ? (
-                <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg">
-                  <div className="flex gap-3">
-                    <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                      {t.stepper?.simulation?.requiredHint ??
-                        "Selecione ou crie uma simulação antes de prosseguir."}
+                  {preselectedUnitId && initialRoleId ? (
+                    <DialogCreateSimulation
+                      projectId={projectId}
+                      unitId={preselectedUnitId}
+                      roleId={initialRoleId}
+                      triggerComponent={
+                        <Button variant="outline" size="sm" className="h-9">
+                          <Plus className="h-3.5 w-3.5" />{" "}
+                          <span className="text-xs">
+                            {t.stepper?.simulation?.createNewShort ??
+                              t.stepper?.simulation?.createNew ??
+                              "Nova"}
+                          </span>
+                        </Button>
+                      }
+                      onCreated={() => {
+                        void refetchOptions();
+                        void queryClient.invalidateQueries({
+                          queryKey: ["options", projectId, preselectedUnitId],
+                        });
+                      }}
+                    />
+                  ) : null}
+                  {/* Alerta obrigatório AGORA AQUI no final (não mais separado) — inline com o restante */}
+                  <div className="flex items-start gap-1.5 px-2 py-1 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-300 dark:border-yellow-700 rounded-md">
+                    <AlertTriangle className="h-3.5 w-3.5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-[11px] leading-snug text-yellow-800 dark:text-yellow-200 whitespace-nowrap">
+                      {t.stepper?.simulation?.requiredHintShort ??
+                        t.stepper?.simulation?.requiredHint ??
+                        "Selecione ou crie uma simulação para prosseguir."}
                     </p>
                   </div>
                 </div>
-              ) : null}
+              )}
             </div>
           )}
 
@@ -1194,20 +1279,20 @@ export default function DrawerStepperIFC({
           )}
 
           {step1Error && !isSimulationMode && activeStep === 0 && (
-            <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/20 border-2 border-red-400 dark:border-red-600 rounded-lg">
-              <div className="flex gap-3">
-                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-800 dark:text-red-300">
+            <div className="mt-2 p-2.5 bg-red-50 dark:bg-red-950/20 border border-red-300 dark:border-red-700 rounded-md">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-red-800 dark:text-red-200">
                   {step1Error}
                 </p>
               </div>
             </div>
           )}
           {step2Error && activeStep === (isSimulationMode ? 0 : 1) && (
-            <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/20 border-2 border-red-400 dark:border-red-600 rounded-lg">
-              <div className="flex gap-3">
-                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-800 dark:text-red-300">
+            <div className="mt-2 p-2.5 bg-red-50 dark:bg-red-950/20 border border-red-300 dark:border-red-700 rounded-md">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-red-800 dark:text-red-200">
                   {step2Error}
                 </p>
               </div>
@@ -1215,7 +1300,7 @@ export default function DrawerStepperIFC({
           )}
         </div>
 
-        <DialogFooter className="px-4 py-3 border-t gap-2">
+        <DialogFooter className="px-4 py-2 border-t gap-2 shrink-0">
           {!isSimulationMode && activeStep === 0 && (
             <>
               <Button
@@ -1474,31 +1559,43 @@ function Step2ModulesView({
   const someChecked = state.modules.some((m) => m.selected) && !allChecked;
   const selectedCount = state.modules.filter((m) => m.selected).length;
   const unselectedCount = state.modules.length - selectedCount;
+  const totalCount = state.modules.length;
+
   return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-base font-semibold mb-2">
-          {t.stepper?.modules?.createdUnitsTitle ?? "Unidades criadas"}
+    <div className="space-y-2">
+      {/* LINHA 1: Unidades criadas + "Aplicar a todos" (linha única, counts removidos daqui) */}
+      <div className="flex flex-wrap items-center gap-2 min-w-0">
+        <h3 className="text-sm font-semibold text-foreground whitespace-nowrap">
+          {t.stepper?.modules?.createdUnitsTitleShort ??
+            t.stepper?.modules?.createdUnitsTitle ??
+            "Unidades:"}
         </h3>
         {state.unitsCreated.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {t.stepper?.modules?.noUnitsCreated ??
-              "Nenhuma unidade criada. Volte ao passo anterior."}
-          </p>
+          <span className="text-xs text-muted-foreground">
+            {t.stepper?.modules?.noUnitsCreatedShort ??
+              t.stepper?.modules?.noUnitsCreated ??
+              "Nenhuma unidade criada."}
+          </span>
         ) : (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             {state.unitsCreated.map((u) => (
-              <div key={u.tempId} className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-sm px-3 py-1">
+              <div key={u.tempId} className="flex items-center gap-1.5">
+                <Badge variant="secondary" className="text-xs px-2 py-0.5 h-6">
                   {u.displayName}
                 </Badge>
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-6 px-2 text-[11px]"
                   onClick={() => applyUnitToAllModules(u.tempId)}
-                  title="Aplicar esta unidade a todos os módulos"
+                  title={
+                    t.stepper?.modules?.applyToAll ??
+                    "Aplicar esta unidade a todos os módulos"
+                  }
                 >
-                  {t.stepper?.modules?.applyToAll ?? "Aplicar a todos"}
+                  {t.stepper?.modules?.applyToAllShort ??
+                    t.stepper?.modules?.applyToAll ??
+                    "Aplicar"}
                 </Button>
               </div>
             ))}
@@ -1506,43 +1603,59 @@ function Step2ModulesView({
         )}
       </div>
 
+      {/* LINHA 2: Alert informativo (módulos não obrigatórios) — compacto inline */}
       <Alert
         variant="default"
-        className="bg-blue-50/60 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
+        className="py-1.5 px-2.5 flex-row items-center gap-2 bg-blue-50/60 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
       >
-        <Info className="h-4 w-4 text-blue-700 dark:text-blue-300" />
-        <AlertTitle className="text-blue-800 dark:text-blue-200 text-sm">
-          {t.stepper?.selectAll
-            ? `${t.stepper.selected} ${selectedCount} · ${t.stepper.unselected} ${unselectedCount}`
-            : "Módulos selecionados"}
-        </AlertTitle>
-        <AlertDescription className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-          <p>
-            {t.stepper?.modules?.hint ??
-              "A criação de módulos não é obrigatória. Somente os módulos marcados abaixo, válidos e com vínculo de unidade serão criados."}
+        <Info className="h-3.5 w-3.5 text-blue-700 dark:text-blue-300 shrink-0 -mt-0.5" />
+        <div className="flex flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+          <p className="text-[11.5px] leading-snug text-blue-800 dark:text-blue-200">
+            {t.stepper?.modules?.hintShort ??
+              t.stepper?.modules?.hint ??
+              "Apenas módulos marcados, válidos e vinculados a uma unidade serão criados."}
           </p>
-          {state.modules.length > 0 && (
-            <p>
-              {t.stepper?.selected ?? "Selecionados"}:{" "}
-              <strong>{selectedCount}</strong> ·{" "}
-              {t.stepper?.unselected ?? "Desmarcados"}:{" "}
-              <strong>{unselectedCount}</strong> · {t.stepper?.total ?? "Total"}
-              : {state.modules.length}
-            </p>
-          )}
-        </AlertDescription>
+        </div>
       </Alert>
 
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-base font-semibold">
-            {t.stepper?.modules?.title ?? "Módulos encontrados"} (
-            {state.modules.length})
-          </h3>
-        </div>
+      {/* LINHA 3: Título "Módulos encontrados" + BADGES COUNTS (Sel/Desm/Total) AQUI (unificado) */}
+      <div className="flex items-center justify-between pt-1">
+        <h3 className="text-sm font-semibold text-foreground">
+          {t.stepper?.modules?.title ?? "Módulos encontrados"}
+          <span className="text-muted-foreground font-normal ml-1.5">
+            ({state.modules.length})
+          </span>
+        </h3>
+        {totalCount > 0 && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Badge
+              variant="secondary"
+              className="h-6 text-[11px] px-2 py-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800"
+            >
+              {t.stepper?.selectedShort ?? t.stepper?.selected ?? "Sel."}{" "}
+              <strong>{selectedCount}</strong>
+            </Badge>
+            {unselectedCount > 0 && (
+              <Badge
+                variant="secondary"
+                className="h-6 text-[11px] px-2 py-0 bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-900/60 dark:text-gray-300 dark:border-gray-700"
+              >
+                {t.stepper?.unselectedShort ?? t.stepper?.unselected ?? "Desm."}{" "}
+                <strong>{unselectedCount}</strong>
+              </Badge>
+            )}
+            <Badge variant="outline" className="h-6 text-[11px] px-2 py-0">
+              {t.stepper?.totalShort ?? t.stepper?.total ?? "Total"}{" "}
+              <strong>{totalCount}</strong>
+            </Badge>
+          </div>
+        )}
+      </div>
 
+      {/* Tabela de módulos (contém o checkbox de "selecionar todos" no header da tabela) */}
+      <div>
         {state.modules.length === 0 ? (
-          <div className="text-sm text-muted-foreground p-8 border rounded-lg text-center">
+          <div className="text-sm text-muted-foreground p-6 border rounded-lg text-center">
             {t.stepper?.modules?.noneFound ??
               "Nenhum módulo retornado pelo processamento do IFC."}
           </div>
