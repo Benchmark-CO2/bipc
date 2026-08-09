@@ -48,7 +48,10 @@ export const convertTowerFloorsToFloorSchema = (
   // Mapear cada floor individual diretamente
   const floors = towerFloors.map((floor) => ({
     id: floor.id,
-    floor_group: floor.floor_group || floor.group_name || "",
+    floor_group:
+      floor.floor_group ||
+      (floor as unknown as { group_name?: string })?.group_name ||
+      "",
     area: floor.area,
     height: floor.height,
     category: floor.category || getCategoryFromIndex(floor.index),
@@ -75,6 +78,45 @@ export const convertFloorSchemaToTowerFloors = (
   }));
 };
 
+// Converte FloorFormInput[] (state do formulário de unidade, com strings área/altura)
+// para TTowerFloorCategory[] (formato compatível com BuildingVisualizer e DrawerFormModule)
+export const convertFloorFormInputToTowerFloors = (
+  floors: FloorFormInput[],
+): TTowerFloorCategory[] => {
+  return floors.map((floor) => ({
+    id: floor.id || `temp-${floor.index}`,
+    floor_group: floor.floor_group,
+    group_id: floor.floor_group,
+    group_name: floor.floor_group,
+    area:
+      typeof floor.area === "string"
+        ? Number(String(floor.area).replace(",", ".")) || 0
+        : (floor.area as unknown as number) || 0,
+    height:
+      typeof floor.height === "string"
+        ? Number(String(floor.height).replace(",", ".")) || 0
+        : (floor.height as unknown as number) || 0,
+    index: floor.index,
+    category: floor.category,
+  }));
+};
+
+// Mapeia `floor_index: number` (singular, vindo do módulo IFC) para
+// `floor_ids: string[]` (UUIDs dos pavimentos da unidade correspondentes aquele índice)
+// Se floor_index = undefined/null, retorna []
+export const mapFloorIndexToFloorIds = (
+  floorIndex: number | string | null | undefined,
+  towerFloors: TTowerFloorCategory[],
+): string[] => {
+  if (floorIndex === null || floorIndex === undefined) return [];
+  const numericIndex =
+    typeof floorIndex === "string"
+      ? Number(floorIndex)
+      : (floorIndex as number);
+  if (Number.isNaN(numericIndex)) return [];
+  return towerFloors.filter((f) => f.index === numericIndex).map((f) => f.id);
+};
+
 // Converte IUnit para dados do formulário
 export const convertUnitToFormData = (unit: IUnit): UnitFormInput => {
   if (!unit.floors || unit.floors.length === 0) {
@@ -95,7 +137,10 @@ export const convertUnitToFormData = (unit: IUnit): UnitFormInput => {
   // Converter cada floor individual para o formato do formulário
   const floorFormInputs: FloorFormInput[] = unit.floors.map((floor) => ({
     id: floor.id,
-    floor_group: floor.floor_group || floor.group_name || "",
+    floor_group:
+      floor.floor_group ||
+      (floor as unknown as { group_name?: string })?.group_name ||
+      "",
     area: floor.area.toString().replace(".", ","), // Converter número para string com formato BR
     height: floor.height.toString().replace(".", ","),
     category: floor.category || getCategoryFromIndex(floor.index),
@@ -135,7 +180,10 @@ export const convertTowerFloorsToUnified = (
 ): UnifiedFloor[] => {
   return towerFloors.map((floor) => ({
     id: floor.id,
-    name: floor.floor_group || floor.group_name || "",
+    name:
+      floor.floor_group ||
+      (floor as unknown as { group_name?: string })?.group_name ||
+      "",
     area: floor.area,
     height: floor.height,
     category: floor.category || getCategoryFromIndex(floor.index),

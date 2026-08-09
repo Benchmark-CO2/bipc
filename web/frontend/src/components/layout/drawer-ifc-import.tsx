@@ -1110,6 +1110,7 @@ export default function DrawerIFCImport({
           mode={mode}
           preselectedUnitId={mode === "simulation" ? unitId : undefined}
           preselectedOptionId={mode === "simulation" ? optionId : undefined}
+          fileName={selectedIfcFile?.name ?? uploadFile?.name ?? null}
           onComplete={() => {
             setStepperResult(null);
           }}

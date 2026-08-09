@@ -500,6 +500,8 @@ export const ptBR = {
       partialDataDescription:
         "Este módulo foi criado/importado sem todos os materiais obrigatórios. Para salvar, preencha os campos destacados em vermelho.",
       partialDataHint: "Campos obrigatórios que estão zerados ou ausentes:",
+      selectAtLeastOneFloor:
+        "Selecione pelo menos um pavimento (Pórtico/Parede/Alvenaria não podem ser criados sem pavimento vinculado).",
       completeness: {
         masonryLabel: "Alvenaria",
         positions: {
@@ -1291,9 +1293,14 @@ export const ptBR = {
   },
   stepper: {
     title: "Importar dados do IFC",
-    subtitle: "Valide unidades e módulos extraídos do arquivo IFC antes de criar.",
+    subtitle:
+      "Valide unidades e módulos extraídos do arquivo IFC antes de criar.",
     stepUnits: "Unidades",
+    stepUnitsDescription: "Validar e criar unidades",
     stepModules: "Módulos",
+    stepModulesDescription: "Vincular e criar módulos",
+    stepSimulationModulesDescription:
+      "Vincular à simulação e criar módulos",
     btnNext: "Próximo passo",
     btnFinish: "Concluir",
     btnCancel: "Cancelar",
@@ -1317,8 +1324,7 @@ export const ptBR = {
       selectPlaceholder: "Selecione uma simulação",
       noOptionsHint: "Crie uma nova simulação primeiro.",
       createNew: "Criar nova simulação",
-      requiredHint:
-        "Selecione ou crie uma simulação antes de prosseguir.",
+      requiredHint: "Selecione ou crie uma simulação antes de prosseguir.",
     },
     modules: {
       hint: "A criação de módulos não é obrigatória. Somente os módulos marcados abaixo, válidos e com vínculo de unidade serão criados.",

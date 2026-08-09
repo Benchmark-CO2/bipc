@@ -4,6 +4,7 @@ import { getOptions } from "@/actions/options/getOptions";
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { postUnit } from "@/actions/units/postUnit";
 import { patchUnit } from "@/actions/units/patchUnit";
+import { getUnitByUUID } from "@/actions/units/getUnit";
 import { DialogCreateSimulation } from "@/components/layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ import { useTranslation } from "@/i18n";
 import { IProject } from "@/types/projects";
 import { TModulesTypes } from "@/types/modules";
 import { TOption } from "@/types/options";
+import { TTowerFloorCategory } from "@/types/units";
 import {
   TIfcProcessorAggregatedResult,
   TIfcStepperCreatedUnit,
@@ -52,6 +54,10 @@ import {
 } from "@/types/ifc";
 import type { IFCAccessMode } from "@/components/layout/drawer-ifc-import";
 import { parseApiError } from "@/utils/parseApiError";
+import {
+  convertFloorFormInputToTowerFloors,
+  mapFloorIndexToFloorIds,
+} from "@/utils/unitConversions";
 import {
   aggregateIdenticalFloors,
   buildUniqueSimulationName,
@@ -65,8 +71,16 @@ import {
 import { CompletenessWarningsI18n } from "@/components/layout/drawer-form-module/aggregate-helpers";
 import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
 import { ModuleFormState } from "@/validators/moduleFormByType.validator";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Edit2, Info, Loader2, Plus, Wand2 } from "lucide-react";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  AlertTriangle,
+  Edit2,
+  FileText,
+  Info,
+  Loader2,
+  Plus,
+  Wand2,
+} from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import DrawerFormModule from "./drawer-form-module";
@@ -102,6 +116,7 @@ interface DrawerStepperIFCProps {
   mode: IFCAccessMode;
   preselectedUnitId?: string;
   preselectedOptionId?: string;
+  fileName?: string | null;
   onComplete?: () => void;
 }
 
@@ -114,6 +129,7 @@ export default function DrawerStepperIFC({
   mode,
   preselectedUnitId,
   preselectedOptionId,
+  fileName,
   onComplete,
 }: DrawerStepperIFCProps) {
   const { t } = useTranslation();
@@ -138,6 +154,15 @@ export default function DrawerStepperIFC({
     staleTime: 1000 * 30,
   });
   const availableOptions: TOption[] = (optionsData?.data as any)?.options ?? [];
+
+  // Fetch da UNIDADE existente quando estivermos no modo simulation
+  // (para pegar os floors e poder mapear floor_index number → floor_ids UUIDs)
+  const { data: simulationUnitData } = useQuery({
+    queryKey: ["unit", projectId, preselectedUnitId],
+    queryFn: () => getUnitByUUID(projectId, preselectedUnitId || ""),
+    enabled: open && isSimulationMode && !!preselectedUnitId,
+    staleTime: 1000 * 60 * 5,
+  });
 
   const [selectedSimulationOptionId, setSelectedSimulationOptionId] = useState<
     string | null
@@ -209,6 +234,39 @@ export default function DrawerStepperIFC({
 
   const simulationBoundUnitTempId = "__simulation__";
 
+  // Todas as unitIds que temos no momento (unitsCreated.unitId)
+  // Para cada uma delas, se não conseguimos floors via state.units (modo normal)
+  // e a unitId é uma string válida (UUID), fazemos fetch para preencher.
+  // Evita que o BuildingVisualizer apareça vazio durante a edição no drawer.
+  const unitsCreatedIdsMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const uc of state.unitsCreated) {
+      if (uc.unitId && uc.tempId !== simulationBoundUnitTempId) {
+        map.set(uc.tempId, uc.unitId);
+      }
+    }
+    return map;
+  }, [state.unitsCreated, simulationBoundUnitTempId]);
+
+  // (useQueries dinâmico) fetch getUnitByUUID para cada unidade existente
+  // criada em unitsCreated (para modo normal, quando a unidade já existia previamente
+  // — ex.: reuso no step 1) — garante que o queryClient tem os floors cacheados
+  // para o normalizedUnitsFloorMap usar como fallback (D) acima.
+  useQueries({
+    queries: Array.from(unitsCreatedIdsMap.entries()).map(
+      ([tempId, unitId]) => ({
+        queryKey: ["unit", projectId, unitId, "stepper"],
+        queryFn: () => getUnitByUUID(projectId, unitId || ""),
+        enabled:
+          open &&
+          !!projectId &&
+          !!unitId &&
+          tempId !== simulationBoundUnitTempId,
+        staleTime: 1000 * 60 * 5,
+      }),
+    ),
+  });
+
   const simulationCreatedUnit: TIfcStepperCreatedUnit | null = useMemo(() => {
     if (!isSimulationMode) return null;
     if (!preselectedUnitId || !selectedSimulationOptionId) return null;
@@ -260,24 +318,25 @@ export default function DrawerStepperIFC({
     : state.currentStep === "units"
       ? 0
       : 1;
+
   const steps = isSimulationMode
     ? [
         {
           id: "modules",
-          label: "Módulos",
-          description: "Vincular à simulação e criar módulos",
+          label: t.stepper.stepModules,
+          description: t.stepper.stepSimulationModulesDescription,
         },
       ]
     : [
         {
           id: "units",
-          label: "Unidades",
-          description: "Validar e criar unidades",
+          label: t.stepper.stepUnits,
+          description: t.stepper.stepUnitsDescription,
         },
         {
           id: "modules",
-          label: "Módulos",
-          description: "Vincular e criar módulos",
+          label: t.stepper.stepModules,
+          description: t.stepper.stepModulesDescription,
         },
       ];
 
@@ -285,9 +344,213 @@ export default function DrawerStepperIFC({
   const editingModule = state.modules.find(
     (m) => m.tempId === editingModuleTempId,
   );
-  const editingModuleBoundUnit = editingModule?.boundUnitTempId
-    ? state.unitsCreated.find((u) => u.tempId === editingModule.boundUnitTempId)
-    : undefined;
+
+  // editingModuleBoundUnit pode vir de 3 fontes:
+  //  1) state.unitsCreated.find (unidade enviada p/ backend ou simulation via useEffect)
+  //  2) state.units.find (modo normal, unidade ainda não criada, apenas em edição)
+  //     (cria um TIfcStepperStateUnitsCreated placeholder para os fallbacks de floors)
+  //  3) Modo simulation: fallback direto para simulationCreatedUnit se tivermos
+  //     editingModule.boundUnitTempId mas ele não existe em unitsCreated ainda
+  //     (janela de corrida de render entre query e useEffect setUnitsCreated)
+  //
+  // IMPORTANTE: USEMEMO OBRIGATÓRIO — se retornar objeto literal novo a cada render,
+  // o useMemo editingUnitFloors calcula de novo a cada render → referência nova
+  // para DrawerFormModule → loop infinito no filho.
+  const editingModuleBoundUnit = useMemo<
+    TIfcStepperCreatedUnit | undefined
+  >(() => {
+    if (!editingModule?.boundUnitTempId) return undefined;
+    const tempId = editingModule.boundUnitTempId;
+    const inCreated = state.unitsCreated.find((u) => u.tempId === tempId);
+    if (inCreated) return inCreated;
+
+    const inStateUnits = state.units.find((u) => u.tempId === tempId);
+    if (inStateUnits) {
+      return {
+        tempId: inStateUnits.tempId,
+        unitName: inStateUnits.name ?? "",
+        optionId: null,
+        unitId: null,
+        reusedExisting: false,
+      } as unknown as TIfcStepperCreatedUnit;
+    }
+
+    if (isSimulationMode && simulationCreatedUnit) {
+      return simulationCreatedUnit;
+    }
+    return undefined;
+  }, [
+    editingModule?.boundUnitTempId,
+    state.unitsCreated,
+    state.units,
+    isSimulationMode,
+    simulationCreatedUnit,
+  ]);
+
+  // Map: tempId (da unitsCreated / simulationBoundUnitTempId) → TTowerFloorCategory[]
+  // Para cada unidade criada/criando, converte os floors do state para o formato
+  // TTowerFloorCategory que é esperado por BuildingVisualizer / DrawerFormModule.
+  // Permite mapear floor_index numérico do IFC → floor_ids UUIDs para POST / batch.
+  //
+  // Estratégia de resolução (ordem de fallback):
+  //  A. Modo simulation + tempId = simulationBoundUnitTempId → usa a query da unidade
+  //  B. Match exato em state.units[i].tempId === unitCreated.tempId (modo normal)
+  //  C. Match por unitName em state.units[i].name (fallback por nome)
+  //  D. Cache do queryClient ["unit", projectId, unitId] para unidades já existentes
+  //  E. Para TODOS state.units (se modo normal) inclui mesmo que não estejam em
+  //     unitsCreated ainda (evita vazio se usuário editar módulo antes do create step 1)
+  const normalizedUnitsFloorMap: Map<string, TTowerFloorCategory[]> =
+    useMemo(() => {
+      const map = new Map<string, TTowerFloorCategory[]>();
+      for (const unitCreated of state.unitsCreated) {
+        let floors: TTowerFloorCategory[] = [];
+        const tempId = unitCreated.tempId;
+
+        // (A) Simulation mode, usa query getUnitByUUID
+        if (isSimulationMode && tempId === simulationBoundUnitTempId) {
+          const f = simulationUnitData?.data?.unit?.floors;
+          if (f && f.length > 0) {
+            floors = f as TTowerFloorCategory[];
+          }
+        }
+
+        // (B) Direto do state.units por tempId match exato
+        if (floors.length === 0) {
+          const unitState = state.units.find((u) => u.tempId === tempId);
+          const rawFloors = unitState?.formData?.data?.floors ?? [];
+          if (rawFloors.length > 0) {
+            floors = convertFloorFormInputToTowerFloors(rawFloors as any[]);
+          }
+        }
+
+        // (C) Fallback por state.units usando unitName como referência
+        if (floors.length === 0 && unitCreated.unitName) {
+          const unitState = state.units.find(
+            (u) => u.name && u.name === unitCreated.unitName,
+          );
+          const rawFloors = unitState?.formData?.data?.floors ?? [];
+          if (rawFloors.length > 0) {
+            floors = convertFloorFormInputToTowerFloors(rawFloors as any[]);
+          }
+        }
+
+        // (D) Fallback por queryClient cache (getUnitByUUID já realizada)
+        if (floors.length === 0 && unitCreated.unitId && !isSimulationMode) {
+          try {
+            const cached = queryClient.getQueryData([
+              "unit",
+              projectId,
+              unitCreated.unitId,
+            ]) as any;
+            const cachedFloors = cached?.data?.unit?.floors;
+            if (cachedFloors && Array.isArray(cachedFloors)) {
+              floors = cachedFloors as TTowerFloorCategory[];
+            }
+          } catch (_e) {
+            /* ignore */
+          }
+        }
+
+        map.set(tempId, floors);
+      }
+
+      // (E) Garante state.units inteiro no map (modo normal)
+      if (!isSimulationMode && state.units.length > 0) {
+        for (const unitState of state.units) {
+          if (map.has(unitState.tempId)) continue;
+          const rawFloors = unitState.formData?.data?.floors ?? [];
+          if (rawFloors.length === 0) {
+            map.set(unitState.tempId, []);
+            continue;
+          }
+          const tower = convertFloorFormInputToTowerFloors(rawFloors as any[]);
+          map.set(unitState.tempId, tower);
+        }
+      }
+
+      return map;
+    }, [
+      state.unitsCreated,
+      state.units,
+      isSimulationMode,
+      simulationBoundUnitTempId,
+      simulationUnitData,
+      queryClient,
+      projectId,
+    ]);
+
+  // Floors da unidade que está ligada ao módulo atualmente em edição
+  //
+  // IMPORTANTE: DEVE ser useMemo (não IIFE). Se não for memoizado, retorna
+  // referência de array nova a cada render → propagação de novas refs para
+  // DrawerFormModule → useEffects filhos executam de novo → form.reset /
+  // form.trigger → re-render → referência nova → LOOP INFINITO.
+  const editingUnitFloors: TTowerFloorCategory[] = useMemo(() => {
+    if (!editingModuleBoundUnit) {
+      const firstWithFloors = Array.from(normalizedUnitsFloorMap.values()).find(
+        (arr) => arr.length > 0,
+      );
+      return firstWithFloors ?? [];
+    }
+    const tempId = editingModuleBoundUnit.tempId;
+    const fromMap = normalizedUnitsFloorMap.get(tempId);
+    if (fromMap && fromMap.length > 0) return fromMap;
+
+    if (editingModuleBoundUnit.unitId) {
+      if (editingModuleBoundUnit.unitName) {
+        const unitState = state.units.find(
+          (u) => u.name === editingModuleBoundUnit!.unitName,
+        );
+        const raw = unitState?.formData?.data?.floors ?? [];
+        if (raw.length > 0) {
+          return convertFloorFormInputToTowerFloors(raw as any[]);
+        }
+      }
+      try {
+        const cached = queryClient.getQueryData([
+          "unit",
+          projectId,
+          editingModuleBoundUnit.unitId,
+        ]) as any;
+        const cachedFloors = cached?.data?.unit?.floors;
+        if (
+          cachedFloors &&
+          Array.isArray(cachedFloors) &&
+          cachedFloors.length > 0
+        ) {
+          return cachedFloors as TTowerFloorCategory[];
+        }
+      } catch (_e) {
+        /* ignore */
+      }
+    }
+    return fromMap ?? [];
+  }, [
+    editingModuleBoundUnit,
+    normalizedUnitsFloorMap,
+    state.units,
+    queryClient,
+    projectId,
+  ]);
+
+  // Converte o `floor_index: number` (singular) do raw.data do módulo IFC
+  // para `floor_ids: string[]` (UUIDs dos pavimentos correspondentes).
+  const editingModuleInitialSelectedFloors: string[] = useMemo(() => {
+    if (!editingModule) return [];
+    const rawIndex = (editingModule.raw?.data as any)?.floor_index;
+    return mapFloorIndexToFloorIds(rawIndex, editingUnitFloors);
+  }, [editingModule, editingUnitFloors]);
+
+  // Dados merged do initialModuleData passados para o DrawerFormModule:
+  // inclui raw.data original E também `floor_ids` já mapeados (fallback caso
+  // initialSelectedFloors seja ignorado).
+  const editingModuleInitialMerged: any = useMemo(() => {
+    if (!editingModule?.raw?.data) return {} as any;
+    return {
+      ...(editingModule.raw.data as any),
+      floor_ids: editingModuleInitialSelectedFloors,
+    };
+  }, [editingModule, editingModuleInitialSelectedFloors]);
 
   // ---------------------------------------------------------------------------
   // Step 1 — Units helpers
@@ -696,13 +959,26 @@ export default function DrawerStepperIFC({
     try {
       for (const { unit, modules: groupModules } of groups.values()) {
         const payloadModules: ModuleParamsProps[] = [];
+        const towerFloorsForGroup =
+          normalizedUnitsFloorMap.get(unit.tempId) ?? [];
         for (const m of groupModules) {
           const isFoundation = FOUNDATION_MODULE_TYPES.includes(
             m.type as TModulesTypes,
           );
+          // Prefere floor_ids já salvos (ex.: usuário editou e mudou via BuildingVisualizer)
+          // senão mapeia a partir do floor_index numérico original vindo do IFC
+          const resolvedFloorIds =
+            (m.raw?.data as any)?.floor_ids &&
+            Array.isArray((m.raw.data as any).floor_ids) &&
+            (m.raw.data as any).floor_ids.length > 0
+              ? ((m.raw.data as any).floor_ids as string[])
+              : mapFloorIndexToFloorIds(
+                  (m.raw?.data as any)?.floor_index,
+                  towerFloorsForGroup,
+                );
           const binding = isFoundation
             ? { unit_id: unit.unitId }
-            : { floor_ids: (m as any).raw?.data?.floor_indexes ?? [] };
+            : { floor_ids: resolvedFloorIds };
           const prepared = prepareModuleForBatch(
             m,
             isFoundation,
@@ -795,6 +1071,22 @@ export default function DrawerStepperIFC({
                 "Selecione uma simulação existente para adicionar os módulos extraídos do IFC.")
               : "Valide unidades e módulos extraídos do arquivo IFC antes de criar."}
           </DialogDescription>
+
+          {fileName ? (
+            <div className="mt-3 inline-flex items-center gap-2">
+              <Badge
+                variant="secondary"
+                className="text-sm px-3 py-1.5 gap-2 max-w-full overflow-hidden text-ellipsis whitespace-nowrap shadow-sm"
+                title={fileName}
+              >
+                <FileText className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="overflow-hidden text-ellipsis whitespace-nowrap max-w-[60ch]">
+                  {fileName}
+                </span>
+              </Badge>
+            </div>
+          ) : null}
+
           <div className="pt-4">
             <Stepper activeStep={activeStep} steps={steps} />
           </div>
@@ -1032,9 +1324,11 @@ export default function DrawerStepperIFC({
             unitId={editingModuleBoundUnit.unitId}
             optionId={editingModuleBoundUnit.optionId}
             type={(editingModule.type as TModulesTypes) ?? "beam_column"}
+            floors={editingUnitFloors}
             open={!!editingModuleTempId}
             onOpenChange={(o) => !o && setEditingModuleTempId(null)}
-            initialModuleData={editingModule.raw.data as any}
+            initialModuleData={editingModuleInitialMerged as any}
+            initialSelectedFloors={editingModuleInitialSelectedFloors}
             onSubmitSuccess={handleModuleDrawerSubmit}
           />
         )}

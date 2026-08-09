@@ -17,11 +17,12 @@ import {
 } from "@/validators/moduleFormByType.validator";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, Plus, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
 import { parseApiError } from "@/utils/parseApiError";
+import { mapFloorIndexToFloorIds } from "@/utils/unitConversions";
 import { Alert, AlertDescription } from "../../ui/alert";
 import { Button } from "../../ui/button";
 import {
@@ -66,8 +67,8 @@ import {
 interface DrawerFormModuleProps {
   triggerComponent?: React.ReactNode;
   projectId: string;
-  unitId: string;
-  optionId: string;
+  unitId?: string | null;
+  optionId?: string | null;
   moduleId?: string;
   type: TModulesTypes;
   floors?: TTowerFloorCategory[];
@@ -94,8 +95,8 @@ interface DrawerFormModuleProps {
 const DrawerFormModule = ({
   triggerComponent,
   projectId,
-  unitId,
-  optionId,
+  unitId: unitIdProp,
+  optionId: optionIdProp,
   moduleId,
   type,
   floors = [],
@@ -107,6 +108,11 @@ const DrawerFormModule = ({
   initialSelectedFloors,
   onSubmitSuccess,
 }: DrawerFormModuleProps) => {
+  // Se não tivermos unitId / optionId (modo stepper, unidade não criada ainda),
+  // fallback para string vazia para não quebrar queries / mutations que esperam
+  // string. Muitos hooks são desabilitados via enabled: !!unitId anyway.
+  const unitId = unitIdProp ?? "";
+  const optionId = optionIdProp ?? "";
   const strictValidation = strictValidationProp ?? !stepperMode;
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
@@ -167,22 +173,46 @@ const DrawerFormModule = ({
     );
     const cleaned = cleanZeroItemsBeforeSubmit(flat as any);
     const result = moduleFormSchema.safeParse(cleaned);
-    if (result.success) {
+
+    const resolvedType: TModulesTypes = (values.type as TModulesTypes) || type;
+    const resolverIsUsingPaviments =
+      resolvedType === "beam_column" ||
+      resolvedType === "concrete_wall" ||
+      resolvedType === "structural_masonry";
+    const floorsMissing =
+      resolverIsUsingPaviments && selectedFloors.length === 0;
+
+    const fieldErrors: Record<string, any> = {};
+    if (result.error) {
+      const issues = result.error.issues ?? [];
+      for (const issue of issues) {
+        const path = issue.path.join(".");
+        if (!fieldErrors[path]) {
+          fieldErrors[path] = {
+            type: "custom",
+            message: issue.message,
+          };
+        }
+      }
+    }
+
+    if (floorsMissing) {
+      const msg =
+        (t?.modules?.form?.selectAtLeastOneFloor as string) ||
+        "Selecione pelo menos um pavimento.";
+      fieldErrors["selectedFloors"] = {
+        type: "custom",
+        message: msg,
+      };
+    }
+
+    const hasAnyErrors = Object.keys(fieldErrors).length > 0;
+
+    if (!hasAnyErrors) {
       return { values: values as any, errors: {} };
     }
     if (!strictValidation) {
       return { values: values as any, errors: {} };
-    }
-    const fieldErrors: Record<string, any> = {};
-    const issues = result.error?.issues ?? [];
-    for (const issue of issues) {
-      const path = issue.path.join(".");
-      if (!fieldErrors[path]) {
-        fieldErrors[path] = {
-          type: "custom",
-          message: issue.message,
-        };
-      }
     }
     return { values: {} as any, errors: fieldErrors };
   };
@@ -204,11 +234,27 @@ const DrawerFormModule = ({
     );
     const cleaned = cleanZeroItemsBeforeSubmit(flat as any);
     const i18n = t.modules.form.completeness as any as CompletenessWarningsI18n;
-    return getCompletenessWarnings(
+    const base = getCompletenessWarnings(
       cleaned,
       ((allFormValues as any)?.type || type) as TModulesTypes,
       i18n,
     );
+    const resolvedType: TModulesTypes =
+      ((allFormValues as any)?.type as TModulesTypes) || type;
+    const usingPav =
+      resolvedType === "beam_column" ||
+      resolvedType === "concrete_wall" ||
+      resolvedType === "structural_masonry";
+    if (usingPav && selectedFloors.length === 0) {
+      const msg =
+        (t?.modules?.form?.selectAtLeastOneFloor as string) ||
+        "Selecione pelo menos um pavimento.";
+      return {
+        hasWarnings: true,
+        messages: [msg, ...base.messages],
+      };
+    }
+    return base;
   }, [allFormValues, type, selectedFloors, unitId, t]);
 
   const isUsingPaviments =
@@ -316,19 +362,165 @@ const DrawerFormModule = ({
     enabled: !!moduleId && isOpen && !stepperMode,
   });
 
+  // ---------------------------------------------------------------------------
+  // 2 useEffects separados para evitar sobrescrever dados do usuário:
+  //  (A) Reset do form + initialização do selectedFloors: RODA APENAS QUANDO
+  //      `isOpen` vai de false → true (ou troca editing target, track com chave).
+  //  (B) Ajuste do selectedFloors se floors chegaram depois (async fetch da unidade)
+  //      — só altera selectedFloors se não houver escolha do usuário ainda.
+  // ---------------------------------------------------------------------------
+
+  // Chave composta para detectar mudança no "alvo da edição" no stepper mode.
+  // Se trocar initialModuleData.floor_index ou tempId da unidade, considera-se
+  // um novo target e portanto reiniciar (A).
+  const stepperEditingTargetKey = useMemo(() => {
+    const initialFloorIdx = (initialModuleData as any)?.floor_index;
+    const initialFloorIds = (initialModuleData as any)?.floor_ids;
+    const initialSelected = initialSelectedFloors;
+    const floorsIdsKey = Array.isArray(initialFloorIds)
+      ? initialFloorIds.join(",")
+      : "";
+    const selectedKey = Array.isArray(initialSelected)
+      ? initialSelected.join(",")
+      : "";
+    return `${initialFloorIdx ?? "null"}|${floorsIdsKey}|${selectedKey}|${
+      (initialModuleData as any)?.id ?? ""
+    }|${(initialModuleData as any)?.tempId ?? ""}`;
+  }, [initialModuleData, initialSelectedFloors]);
+
+  // Flag para saber se o usuário já mudou o selectedFloors manualmente.
+  // Se sim, não sobrescrevemos no (B) quando os floors chegarem async.
+  const [userTouchedSelectedFloors, setUserTouchedSelectedFloors] =
+    useState(false);
+
+  // Refs que mantêm os valores das props do "momento em que o drawer abriu".
+  // Sem isso: se as props oscilarem de referência mesmo com dados iguais,
+  // ou mergedDefaults recalcula por qualquer dep, o useEffect (A) pode
+  // rodar de novo → form.reset sobrescreve dados do usuário → causa
+  // re-render do pai → novas referências → LOOP.
+  const prevIsOpenRef = useRef(false);
+  const openMergedDefaultsRef = useRef<ModuleFormState | null>(null);
+  const openInitialSelectedFloorsRef = useRef<string[] | null>(null);
+  const openInitialModuleDataRef = useRef<unknown>(null);
+  const openInitialDataIsFlatV2Ref = useRef<boolean | null>(null);
+  const openFloorsRef = useRef<TTowerFloorCategory[] | null>(null);
+
+  // Intercepta mudança manual do usuário em selectedFloors para marcar a flag.
+  const prevSelectedFloorsRef = useRef<string[]>([]);
   useEffect(() => {
-    if (isOpen && !moduleId) {
-      form.reset(mergedDefaults as any);
+    const prev = prevSelectedFloorsRef.current;
+    const curr = selectedFloors;
+    const same =
+      prev.length === curr.length &&
+      prev.every((v) => curr.includes(v)) &&
+      curr.every((v) => prev.includes(v));
+    if (!same) {
+      setUserTouchedSelectedFloors(true);
+    }
+    prevSelectedFloorsRef.current = curr;
+  }, [selectedFloors]);
+
+  // (A) Reset do form + inicialização do selectedFloors
+  //
+  // Roda APENAS NA BORDA DE SUBIDA DE isOpen (false → true) OU
+  // QUANDO o stepperEditingTargetKey mudar (indicando que agora estamos
+  // editando um OUTRO módulo, embora o drawer já estivesse aberto).
+  //
+  // NÃO re-roda com oscilações de props (floors, mergedDefaults, etc.).
+  //
+  // Para tal, capturamos os valores no momento do trigger e os "travamos"
+  // via refs durante todo o ciclo de edição do target atual.
+  const lastStepperTargetKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    const targetChanged =
+      lastStepperTargetKeyRef.current !== stepperEditingTargetKey;
+    const openRisingEdge = isOpen && !prevIsOpenRef.current;
+
+    if ((openRisingEdge || targetChanged) && !moduleId) {
+      openMergedDefaultsRef.current = mergedDefaults;
+      openInitialSelectedFloorsRef.current = initialSelectedFloors ?? null;
+      openInitialModuleDataRef.current = initialModuleData ?? null;
+      openInitialDataIsFlatV2Ref.current = initialDataIsFlatV2;
+      openFloorsRef.current = floors ?? null;
+
+      form.reset(openMergedDefaultsRef.current as any);
+      setUserTouchedSelectedFloors(false);
+      prevSelectedFloorsRef.current = [];
+
       if (stepperMode) {
-        if (initialSelectedFloors) {
-          setSelectedFloors(initialSelectedFloors);
+        let nextSelected: string[] = [];
+        const initSel = openInitialSelectedFloorsRef.current;
+        const initData = openInitialModuleDataRef.current as any;
+        const isFlat = openInitialDataIsFlatV2Ref.current;
+        const flr = openFloorsRef.current ?? [];
+
+        if (initSel && initSel.length > 0) {
+          nextSelected = initSel;
         } else if (
-          initialDataIsFlatV2 &&
-          (initialModuleData as any)?.floor_ids
+          isFlat &&
+          initData?.floor_ids &&
+          Array.isArray(initData.floor_ids) &&
+          initData.floor_ids.length > 0
         ) {
-          setSelectedFloors((initialModuleData as any).floor_ids);
+          nextSelected = initData.floor_ids as string[];
+        } else if (
+          initData?.floor_index !== null &&
+          initData?.floor_index !== undefined &&
+          flr.length > 0
+        ) {
+          const mapped = mapFloorIndexToFloorIds(initData.floor_index, flr);
+          if (mapped.length > 0) {
+            nextSelected = mapped;
+          }
         }
+        setSelectedFloors(nextSelected);
+        prevSelectedFloorsRef.current = nextSelected;
       }
+      queueMicrotask(() => {
+        void form.trigger();
+      });
+    }
+
+    // Atualiza refs para a próxima renderização
+    prevIsOpenRef.current = isOpen;
+    lastStepperTargetKeyRef.current = stepperEditingTargetKey;
+
+    // Deps MINIMAS intencionais: só as que disparam a ação
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, moduleId, stepperMode, stepperEditingTargetKey, form]);
+
+  // (B) Ajuste TARDIO do selectedFloors — quando a prop `floors` chegar
+  // assincronamente (query da unidade) E o usuário AINDA NÃO tocou nos
+  // checkboxes e ainda não temos nenhum pavimento selecionado.
+  useEffect(() => {
+    if (!isOpen || moduleId || !stepperMode) return;
+    if (!floors || floors.length === 0) return;
+    if (userTouchedSelectedFloors) return;
+    if (selectedFloors.length > 0) return;
+
+    let newSelected: string[] = [];
+    if (initialSelectedFloors && initialSelectedFloors.length > 0) {
+      newSelected = initialSelectedFloors;
+    } else if (
+      initialDataIsFlatV2 &&
+      (initialModuleData as any)?.floor_ids &&
+      Array.isArray((initialModuleData as any).floor_ids) &&
+      (initialModuleData as any).floor_ids.length > 0
+    ) {
+      newSelected = (initialModuleData as any).floor_ids as string[];
+    } else if (
+      (initialModuleData as any)?.floor_index !== null &&
+      (initialModuleData as any)?.floor_index !== undefined
+    ) {
+      newSelected = mapFloorIndexToFloorIds(
+        (initialModuleData as any).floor_index,
+        floors,
+      );
+    }
+
+    if (newSelected.length > 0) {
+      setSelectedFloors(newSelected);
+      prevSelectedFloorsRef.current = newSelected;
       queueMicrotask(() => {
         void form.trigger();
       });
@@ -337,11 +529,12 @@ const DrawerFormModule = ({
     isOpen,
     moduleId,
     stepperMode,
+    floors,
     initialSelectedFloors,
     initialModuleData,
     initialDataIsFlatV2,
-    mergedDefaults,
-    form,
+    userTouchedSelectedFloors,
+    selectedFloors,
   ]);
 
   useEffect(() => {

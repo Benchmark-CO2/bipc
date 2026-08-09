@@ -498,6 +498,8 @@ export const en: Translations = {
       partialDataDescription:
         "This module was created/imported without all required materials. To save, fill in the fields highlighted in red.",
       partialDataHint: "Required fields that are zero or missing:",
+      selectAtLeastOneFloor:
+        "Select at least one floor (Beam/Column/Wall/Masonry modules cannot be created without a bound floor).",
       completeness: {
         masonryLabel: "Masonry",
         positions: {
@@ -1280,7 +1282,11 @@ export const en: Translations = {
     subtitle:
       "Validate units and modules extracted from the IFC file before creating.",
     stepUnits: "Units",
+    stepUnitsDescription: "Validate and create units",
     stepModules: "Modules",
+    stepModulesDescription: "Bind and create modules",
+    stepSimulationModulesDescription:
+      "Bind to the simulation and create modules",
     btnNext: "Next step",
     btnFinish: "Finish",
     btnCancel: "Cancel",

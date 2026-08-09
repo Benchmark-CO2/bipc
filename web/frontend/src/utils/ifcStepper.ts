@@ -18,6 +18,11 @@ import {
 } from "@/validators/unitForm.validator";
 import { moduleFormSchema } from "@/validators/moduleFormByType.validator";
 import { getDefaultValuesByType } from "@/components/layout/drawer-form-module/module-default-values";
+import {
+  groupedFormToFlatV2,
+  getCompletenessWarnings,
+  CompletenessWarningsI18n,
+} from "@/components/layout/drawer-form-module/aggregate-helpers";
 
 const generateTempId = () => {
   return `tmp_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
@@ -34,6 +39,74 @@ const KNOWN_MODULE_TYPES: TModulesTypes[] = [
 
 const isKnownModuleType = (t: string | TModulesTypes): t is TModulesTypes => {
   return (KNOWN_MODULE_TYPES as string[]).includes(t as string);
+};
+
+// ---------------------------------------------------------------------------
+// Filtros para ZOD validationErrors: remover (1) campos read-only / de sistema
+// que o usuário não edita no formulário e (2) mensagens genéricas de "min(1)"
+// que já são explicadas SEMANTICAMENTE pelo helper getCompletenessWarnings
+// (ex.: "Adicione pelo menos um volume de concreto" → substituído por
+// "Pilar: faltando dados de concreto (fck e volume) e materiais de aço").
+// ---------------------------------------------------------------------------
+const SYSTEM_FIELD_PATTERNS = [
+  /(^|[\.\[\]])id([\.\[\]]|$)/i,
+  /(^|[\.\[\]])floor_index(es)?([\.\[\]]|$)/i,
+  /(^|[\.\[\]])outdated([\.\[\]]|$)/i,
+  /(^|[\.\[\]])version(_in_use)?([\.\[\]]|$)/i,
+  /(^|[\.\[\]])name([\.\[\]]|$)/i,
+  /(^|[\.\[\]])unit_id([\.\[\]]|$)/i,
+  /(^|[\.\[\]])option_id([\.\[\]]|$)/i,
+  /(^|[\.\[\]])created_at([\.\[\]]|$)/i,
+  /(^|[\.\[\]])updated_at([\.\[\]]|$)/i,
+  /(^|[\.\[\]])raft_area([\.\[\]]|$)/i,
+  /(^|[\.\[\]])raft_thickness([\.\[\]]|$)/i,
+];
+
+const GENERIC_MINITEMS_MESSAGES_PATTERNS = [
+  /adicione\s+pelo\s+menos\s+(um|uma)\s+(volume|material|item)/i,
+  /m[oó]dulo\s+sem\s+nenhum\s+(volume|material)/i,
+  /array\s+must\s+contain\s+at\s+least\s+\d+\s+element/i,
+  /must\s+contain\s+at\s+least\s+\d+/i,
+  /expected\s+(array|number|string),\s*received\s+(null|undefined|string|number)/i,
+  /campos?\s+obrigat[oó]rios?\s+ausentes?/i,
+];
+
+const isSystemFieldWarning = (path: string, message: string): boolean => {
+  const p = (path || "").toLowerCase();
+  const m = (message || "").toLowerCase();
+  if (!p && !m) return false;
+  if (p) {
+    for (const re of SYSTEM_FIELD_PATTERNS) if (re.test(path)) return true;
+  }
+  return false;
+};
+
+const isGenericMinItemsMessage = (path: string, message: string): boolean => {
+  const p = (path || "").toLowerCase();
+  const m = (message || "").toLowerCase();
+  if (!p && !m) return false;
+  for (const re of GENERIC_MINITEMS_MESSAGES_PATTERNS) {
+    if (re.test(p) || re.test(m)) return true;
+  }
+  const concreteOrSteelPath = /(^|[\.\[\]])(concrete|steel)([\.\[\]]|$)/i.test(
+    p,
+  );
+  const hasMinWord = /\bmin\b|pelo\s+menos|adicion(e|ar)/i.test(m);
+  if (concreteOrSteelPath && hasMinWord) return true;
+  return false;
+};
+
+const filterZodValidationErrors = (issues: string[]): string[] => {
+  const out: string[] = [];
+  for (const raw of issues) {
+    const [maybePath, ...rest] = raw.split(": ");
+    const pathPart = rest.length > 0 ? (maybePath ?? "") : "";
+    const msgPart = rest.length > 0 ? rest.join(": ") : raw;
+    if (isSystemFieldWarning(pathPart, msgPart)) continue;
+    if (isGenericMinItemsMessage(pathPart, msgPart)) continue;
+    out.push(raw);
+  }
+  return out;
 };
 
 export const MODULE_TYPE_ALIASES: Record<string, TModulesTypes | string> = {
@@ -293,8 +366,6 @@ const validateStepperUnit = (
   }
 };
 
-const STEEL_FIELDS_TO_NORMALIZE = ["steel", "concrete", "masonry"];
-
 const deepRenameSteelCaToMaterial = (value: any): any => {
   if (Array.isArray(value)) {
     return value.map(deepRenameSteelCaToMaterial);
@@ -378,7 +449,13 @@ const deepMerge = (target: any, source: any): any => {
 
 const validateStepperModule = (
   item: TIfcProcessorResultModuleItem,
-): { isValid: boolean; errors: string[]; normalized: any } => {
+  i18nCompleteness: CompletenessWarningsI18n,
+): {
+  isValid: boolean;
+  errors: string[];
+  warnings: { hasWarnings: boolean; messages: string[] };
+  normalized: any;
+} => {
   const normalizedType = normalizeModuleType(item.type);
   if (!isKnownModuleType(normalizedType)) {
     return {
@@ -386,6 +463,7 @@ const validateStepperModule = (
       errors: [
         `Tipo de módulo não suportado: ${String(normalizedType || item.type)}`,
       ],
+      warnings: { hasWarnings: false, messages: [] },
       normalized: { type: normalizedType || item.type },
     };
   }
@@ -397,24 +475,44 @@ const validateStepperModule = (
     );
     const candidate = { type: normalizedType, ...defaultsPlusData };
     const result = moduleFormSchema.safeParse(candidate);
+    let flatData: any = null;
+    try {
+      flatData = groupedFormToFlatV2(normalizedType, candidate, [], "");
+    } catch {
+      flatData = null;
+    }
+    const warnings =
+      flatData && isKnownModuleType(normalizedType)
+        ? getCompletenessWarnings(flatData, normalizedType, i18nCompleteness)
+        : { hasWarnings: false, messages: [] as string[] };
     if (result.success) {
-      return { isValid: true, errors: [], normalized: result.data };
+      return {
+        isValid: true,
+        errors: [],
+        warnings,
+        normalized: result.data,
+      };
     }
     const issues = (result.error?.issues ?? []).map((iss: any) => {
       const path = iss.path?.length ? iss.path.join(".") : "";
       const msg = iss.message || "Campo inválido";
       return path ? `${path}: ${msg}` : msg;
     });
-    const unique = Array.from(new Set<string>(issues)).slice(0, 10);
+    const uniqueAll = Array.from(new Set<string>(issues)).slice(0, 15);
+    const filtered = filterZodValidationErrors(uniqueAll).slice(0, 10);
+    const allIssuesWereGeneric = uniqueAll.length > 0 && filtered.length === 0;
+    const isValid = allIssuesWereGeneric;
     return {
-      isValid: false,
-      errors: unique.length > 0 ? unique : ["Campos obrigatórios ausentes"],
+      isValid,
+      errors: filtered,
+      warnings,
       normalized: candidate,
     };
   } catch (err) {
     return {
       isValid: false,
       errors: ["Erro ao validar módulo"],
+      warnings: { hasWarnings: false, messages: [] },
       normalized: { type: normalizedType || item.type },
     };
   }
@@ -501,11 +599,17 @@ export const mapIfcResultToStepperState = (
     };
   });
 
+  const i18nCompleteness = (t as any).modules?.form
+    ?.completeness as CompletenessWarningsI18n;
+
   const modules: TIfcStepperModuleItem[] = (result.modules ?? []).map((m) => {
     const normalizedType = normalizeModuleType(m.type);
     const normalizedRaw = { ...m, type: normalizedType || m.type };
     const summary = buildModuleSummary(normalizedRaw as any);
-    const { isValid, errors } = validateStepperModule(normalizedRaw as any);
+    const { isValid, errors, warnings } = validateStepperModule(
+      normalizedRaw as any,
+      i18nCompleteness,
+    );
     return {
       tempId: generateTempId(),
       raw: normalizedRaw as any,
@@ -517,6 +621,7 @@ export const mapIfcResultToStepperState = (
       boundOptionId: null,
       isValid,
       validationErrors: errors,
+      completenessWarnings: warnings,
     };
   });
 
@@ -543,13 +648,18 @@ export const rerunUnitValidation = (
 
 export const rerunModuleValidation = (
   item: TIfcStepperModuleItem,
+  i18nCompleteness: CompletenessWarningsI18n,
 ): TIfcStepperModuleItem => {
-  const { isValid, errors, normalized } = validateStepperModule(item.raw);
+  const { isValid, errors, warnings } = validateStepperModule(
+    item.raw,
+    i18nCompleteness,
+  );
   return {
     ...item,
     summary: buildModuleSummary(item.raw),
     isValid,
     validationErrors: errors,
+    completenessWarnings: warnings,
   };
 };
 
