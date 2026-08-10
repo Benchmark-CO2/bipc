@@ -1,5 +1,9 @@
 import type { TModulesTypes } from "@/types/modules";
-import type { TTowerFloorCategory } from "@/types/units";
+import type { TOption } from "@/types/options";
+import type { TTowerFloorCategory, IUnit } from "@/types/units";
+import type { Translations } from "@/i18n/translations/pt-BR";
+import type { TModuleGroupedForm } from "@/components/layout/drawer-form-module/aggregate-helpers";
+import type { IFCAccessMode } from "@/components/layout/drawer-ifc-import";
 
 export type TIfcProcessorImportStatus =
   | "waiting_for_files"
@@ -142,3 +146,80 @@ export type TIfcStepperState = {
   unitsCreated: TIfcStepperCreatedUnit[];
   modules: TIfcStepperModuleItem[];
 };
+
+// ---------------------------------------------------------------------------
+// Tipos adicionais usados em DrawerStepperIFC (requests, views, props)
+// ---------------------------------------------------------------------------
+
+export type TIfcProcessorStateUnit = IUnit;
+
+export interface IRawModuleDataWithMeta {
+  floor_index?: number;
+  floor_ids?: string[];
+  unit_id?: string;
+  [k: string]: unknown;
+}
+
+export interface IOptionsResponse {
+  options: TOption[];
+}
+
+export interface IPatchUnitResponse {
+  unit?: TIfcProcessorStateUnit;
+  data?: { unit?: TIfcProcessorStateUnit };
+}
+
+export interface IPostUnitResponse {
+  unit?: TIfcProcessorStateUnit;
+  data?: { unit?: TIfcProcessorStateUnit };
+}
+
+export interface IPostOptionResponse {
+  option?: TOption;
+  tower_option?: TOption;
+  data?: {
+    option?: TOption;
+    tower_option?: TOption;
+  };
+}
+
+export interface IGetUnitByUUIDCachedResponse {
+  data?: { unit?: { floors?: TTowerFloorCategory[] } };
+}
+
+export type TEditingModuleMerged = TModuleGroupedForm & IRawModuleDataWithMeta;
+
+export interface IModuleBatchBinding {
+  unit_id?: string;
+  floor_ids?: string[];
+}
+
+export interface Step1UnitsViewProps {
+  state: TIfcStepperState;
+  toggleUnitSelected: (tempId: string) => void;
+  setUnitNameInline: (tempId: string, name: string) => void;
+  onEditUnit: (tempId: string) => void;
+}
+
+export interface Step2ModulesViewProps {
+  state: TIfcStepperState;
+  applyUnitToAllModules: (unitTempId: string) => void;
+  setModuleBoundUnit: (moduleTempId: string, unitTempId: string) => void;
+  onEditModule: (tempId: string) => void;
+  toggleModuleSelected: (tempId: string) => void;
+  toggleAllModulesSelected: (checked: boolean) => void;
+  moduleTypeLabels: Record<string, string>;
+}
+
+export interface DrawerStepperIFCProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  projectId: string;
+  initialResult: TIfcProcessorAggregatedResult;
+  initialRoleId: string;
+  mode: IFCAccessMode;
+  preselectedUnitId?: string;
+  preselectedOptionId?: string;
+  fileName?: string | null;
+  onComplete?: () => void;
+}

@@ -614,6 +614,8 @@ export const en: Translations = {
       tqsSourceLabel: "Materials (TQS)",
       aggregatedHint:
         "Batch imported materials. Fill concrete volumes and steel according to the source file.",
+      noFloorsRegisteredWarning:
+        "The selected unit has no registered floors. Create floors on the unit screen or bind the module to another unit.",
       unspecifiedPosition: "Unspecified / General",
       unspecifiedHint: "Items without declared position (module total sum)",
       beamCount: "Number of beams",
@@ -1357,6 +1359,8 @@ export const en: Translations = {
       applyToAll: "Apply to all",
       createdUnitsTitle: "Created units",
       editBtnDisabled: "Bind a unit to enable editing",
+      notBoundWarning:
+        "Bind this module to a unit in Step 2 before saving. Floors will only be selectable after binding.",
     },
     units: {
       title: "Found units",

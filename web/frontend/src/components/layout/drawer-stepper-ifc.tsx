@@ -43,16 +43,34 @@ import {
 import { useTranslation } from "@/i18n";
 import { Translations } from "@/i18n/translations/pt-BR";
 import { IProject } from "@/types/projects";
-import { TModulesTypes } from "@/types/modules";
 import { TOption } from "@/types/options";
 import { TTowerFloorCategory, IUnit } from "@/types/units";
+import {
+  FOUNDATION_MODULE_TYPES,
+  ModuleParamsProps,
+  ModuleParamsPropsV2,
+  TModulesTypes,
+  TModuleDataV2,
+} from "@/types/modules";
 import {
   TIfcProcessorAggregatedResult,
   TIfcStepperCreatedUnit,
   TIfcStepperModuleItem,
   TIfcStepperState,
   TIfcStepperUnitItem,
+  TIfcProcessorStateUnit,
+  IRawModuleDataWithMeta,
+  IOptionsResponse,
+  IPatchUnitResponse,
+  IPostUnitResponse,
+  IPostOptionResponse,
+  IGetUnitByUUIDCachedResponse,
+  TEditingModuleMerged,
+  IModuleBatchBinding,
+  DrawerStepperIFCProps,
 } from "@/types/ifc";
+import { useFloorIndexMappings } from "@/hooks/useFloorIndexMappings";
+import { structureTypes } from "@/utils/structureTypes";
 import type { IFCAccessMode } from "@/components/layout/drawer-ifc-import";
 import { parseApiError } from "@/utils/parseApiError";
 import {
@@ -90,102 +108,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import DrawerFormModule from "./drawer-form-module";
 import DrawerFormUnit from "./drawer-form-unit";
-import {
-  ModuleParamsProps,
-  ModuleParamsPropsV2,
-  TModuleDataV2,
-} from "@/types/modules";
-
-type TIfcProcessorStateUnit = IUnit;
-
-interface IRawModuleDataWithMeta {
-  floor_index?: number;
-  floor_ids?: string[];
-  unit_id?: string;
-  [k: string]: unknown;
-}
-
-interface IOptionsResponse {
-  options: TOption[];
-}
-
-interface IPatchUnitResponse {
-  unit?: TIfcProcessorStateUnit;
-  data?: { unit?: TIfcProcessorStateUnit };
-}
-
-interface IPostUnitResponse {
-  unit?: TIfcProcessorStateUnit;
-  data?: { unit?: TIfcProcessorStateUnit };
-}
-
-interface IPostOptionResponse {
-  option?: TOption;
-  tower_option?: TOption;
-  data?: {
-    option?: TOption;
-    tower_option?: TOption;
-  };
-}
-
-interface IGetUnitByUUIDCachedResponse {
-  data?: { unit?: { floors?: TTowerFloorCategory[] } };
-}
-
-type TEditingModuleMerged = TModuleGroupedForm & IRawModuleDataWithMeta;
-
-interface IModuleBatchBinding {
-  unit_id?: string;
-  floor_ids?: string[];
-}
-
-interface Step1UnitsViewProps {
-  state: TIfcStepperState;
-  toggleUnitSelected: (tempId: string) => void;
-  setUnitNameInline: (tempId: string, name: string) => void;
-  onEditUnit: (tempId: string) => void;
-  t: Translations;
-}
-
-interface Step2ModulesViewProps {
-  state: TIfcStepperState;
-  applyUnitToAllModules: (unitTempId: string) => void;
-  setModuleBoundUnit: (moduleTempId: string, unitTempId: string) => void;
-  onEditModule: (tempId: string) => void;
-  toggleModuleSelected: (tempId: string) => void;
-  toggleAllModulesSelected: (checked: boolean) => void;
-  moduleTypeLabels: Record<string, string>;
-  t: Translations;
-}
-
-const FOUNDATION_MODULE_TYPES: TModulesTypes[] = [
-  "raft_foundation",
-  "piles_foundation",
-  "raft_piles_foundation",
-];
-
-const moduleTypeLabels: Record<TModulesTypes | string, string> = {
-  beam_column: "Pórtico (Viga/Pilar)",
-  concrete_wall: "Parede de Concreto",
-  structural_masonry: "Alvenaria Estrutural",
-  raft_foundation: "Fundação: Radier",
-  piles_foundation: "Fundação: Estacas",
-  raft_piles_foundation: "Fundação: Radier + Estacas",
-  ...MODULE_TYPE_LABEL_FALLBACK,
-};
-
-interface DrawerStepperIFCProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  projectId: string;
-  initialResult: TIfcProcessorAggregatedResult;
-  initialRoleId: string;
-  mode: IFCAccessMode;
-  preselectedUnitId?: string;
-  preselectedOptionId?: string;
-  fileName?: string | null;
-  onComplete?: () => void;
-}
+import { Step1UnitsView } from "./drawer-stepper-ifc/views/Step1UnitsView";
+import { Step2ModulesView } from "./drawer-stepper-ifc/views/Step2ModulesView";
+import { StepperHeader } from "./drawer-stepper-ifc/views/StepperHeader";
+import { Step1Content } from "./drawer-stepper-ifc/views/Step1Content";
+import { Step2Content } from "./drawer-stepper-ifc/views/Step2Content";
 
 export default function DrawerStepperIFC({
   open,
@@ -415,227 +342,24 @@ export default function DrawerStepperIFC({
         },
       ];
 
-  const editingUnit = state.units.find((u) => u.tempId === editingUnitTempId);
-  const editingModule = state.modules.find(
-    (m) => m.tempId === editingModuleTempId,
-  );
-
-  // editingModuleBoundUnit pode vir de 3 fontes:
-  //  1) state.unitsCreated.find (unidade enviada p/ backend ou simulation via useEffect)
-  //  2) state.units.find (modo normal, unidade ainda não criada, apenas em edição)
-  //     (cria um TIfcStepperStateUnitsCreated placeholder para os fallbacks de floors)
-  //  3) Modo simulation: fallback direto para simulationCreatedUnit se tivermos
-  //     editingModule.boundUnitTempId mas ele não existe em unitsCreated ainda
-  //     (janela de corrida de render entre query e useEffect setUnitsCreated)
-  //
-  // IMPORTANTE: USEMEMO OBRIGATÓRIO — se retornar objeto literal novo a cada render,
-  // o useMemo editingUnitFloors calcula de novo a cada render → referência nova
-  // para DrawerFormModule → loop infinito no filho.
-  const editingModuleBoundUnit = useMemo<
-    TIfcStepperCreatedUnit | undefined
-  >(() => {
-    if (!editingModule?.boundUnitTempId) return undefined;
-    const tempId = editingModule.boundUnitTempId;
-    const inCreated = state.unitsCreated.find((u) => u.tempId === tempId);
-    if (inCreated) return inCreated;
-
-    const inStateUnits = state.units.find((u) => u.tempId === tempId);
-    if (inStateUnits) {
-      return {
-        tempId: inStateUnits.tempId,
-        unitName: inStateUnits.name ?? "",
-        optionId: null,
-        unitId: null,
-        reusedExisting: false,
-      } as unknown as TIfcStepperCreatedUnit;
-    }
-
-    if (isSimulationMode && simulationCreatedUnit) {
-      return simulationCreatedUnit;
-    }
-    return undefined;
-  }, [
-    editingModule?.boundUnitTempId,
-    state.unitsCreated,
-    state.units,
-    isSimulationMode,
-    simulationCreatedUnit,
-  ]);
-
-  // Map: tempId (da unitsCreated / simulationBoundUnitTempId) → TTowerFloorCategory[]
-  // Para cada unidade criada/criando, converte os floors do state para o formato
-  // TTowerFloorCategory que é esperado por BuildingVisualizer / DrawerFormModule.
-  // Permite mapear floor_index numérico do IFC → floor_ids UUIDs para POST / batch.
-  //
-  // Estratégia de resolução (ordem de fallback):
-  //  A. Modo simulation + tempId = simulationBoundUnitTempId → usa a query da unidade
-  //  B. Match exato em state.units[i].tempId === unitCreated.tempId (modo normal)
-  //  C. Match por unitName em state.units[i].name (fallback por nome)
-  //  D. Cache do queryClient ["unit", projectId, unitId] para unidades já existentes
-  //  E. Para TODOS state.units (se modo normal) inclui mesmo que não estejam em
-  //     unitsCreated ainda (evita vazio se usuário editar módulo antes do create step 1)
-  const normalizedUnitsFloorMap: Map<string, TTowerFloorCategory[]> =
-    useMemo(() => {
-      const map = new Map<string, TTowerFloorCategory[]>();
-      for (const unitCreated of state.unitsCreated) {
-        let floors: TTowerFloorCategory[] = [];
-        const tempId = unitCreated.tempId;
-
-        // (A) Simulation mode, usa query getUnitByUUID
-        if (isSimulationMode && tempId === simulationBoundUnitTempId) {
-          const f = simulationUnitData?.data?.unit?.floors;
-          if (f && f.length > 0) {
-            floors = f as TTowerFloorCategory[];
-          }
-        }
-
-        // (B) Direto do state.units por tempId match exato
-        if (floors.length === 0) {
-          const unitState = state.units.find((u) => u.tempId === tempId);
-          const rawFloors = unitState?.formData?.data?.floors ?? [];
-          if (rawFloors.length > 0) {
-            floors = convertFloorFormInputToTowerFloors(
-              rawFloors as unknown as UnitFormInput["data"]["floors"],
-            );
-          }
-        }
-
-        // (C) Fallback por state.units usando unitName como referência
-        if (floors.length === 0 && unitCreated.unitName) {
-          const unitState = state.units.find(
-            (u) => u.name && u.name === unitCreated.unitName,
-          );
-          const rawFloors = unitState?.formData?.data?.floors ?? [];
-          if (rawFloors.length > 0) {
-            floors = convertFloorFormInputToTowerFloors(
-              rawFloors as unknown as UnitFormInput["data"]["floors"],
-            );
-          }
-        }
-
-        // (D) Fallback por queryClient cache (getUnitByUUID já realizada)
-        if (floors.length === 0 && unitCreated.unitId && !isSimulationMode) {
-          try {
-            const cached = queryClient.getQueryData([
-              "unit",
-              projectId,
-              unitCreated.unitId,
-            ]) as IGetUnitByUUIDCachedResponse | undefined;
-            const cachedFloors = cached?.data?.unit?.floors;
-            if (cachedFloors && Array.isArray(cachedFloors)) {
-              floors = cachedFloors as TTowerFloorCategory[];
-            }
-          } catch (_e) {
-            /* ignore */
-          }
-        }
-
-        map.set(tempId, floors);
-      }
-
-      // (E) Garante state.units inteiro no map (modo normal)
-      if (!isSimulationMode && state.units.length > 0) {
-        for (const unitState of state.units) {
-          if (map.has(unitState.tempId)) continue;
-          const rawFloors = unitState.formData?.data?.floors ?? [];
-          if (rawFloors.length === 0) {
-            map.set(unitState.tempId, []);
-            continue;
-          }
-          const tower = convertFloorFormInputToTowerFloors(
-            rawFloors as unknown as UnitFormInput["data"]["floors"],
-          );
-          map.set(unitState.tempId, tower);
-        }
-      }
-
-      return map;
-    }, [
-      state.unitsCreated,
-      state.units,
-      isSimulationMode,
-      simulationBoundUnitTempId,
-      simulationUnitData,
-      queryClient,
-      projectId,
-    ]);
-
-  // Floors da unidade que está ligada ao módulo atualmente em edição
-  //
-  // IMPORTANTE: DEVE ser useMemo (não IIFE). Se não for memoizado, retorna
-  // referência de array nova a cada render → propagação de novas refs para
-  // DrawerFormModule → useEffects filhos executam de novo → form.reset /
-  // form.trigger → re-render → referência nova → LOOP INFINITO.
-  const editingUnitFloors: TTowerFloorCategory[] = useMemo(() => {
-    if (!editingModuleBoundUnit) {
-      const firstWithFloors = Array.from(normalizedUnitsFloorMap.values()).find(
-        (arr) => arr.length > 0,
-      );
-      return firstWithFloors ?? [];
-    }
-    const tempId = editingModuleBoundUnit.tempId;
-    const fromMap = normalizedUnitsFloorMap.get(tempId);
-    if (fromMap && fromMap.length > 0) return fromMap;
-
-    if (editingModuleBoundUnit.unitId) {
-      if (editingModuleBoundUnit.unitName) {
-        const unitState = state.units.find(
-          (u) => u.name === editingModuleBoundUnit!.unitName,
-        );
-        const raw = unitState?.formData?.data?.floors ?? [];
-        if (raw.length > 0) {
-          return convertFloorFormInputToTowerFloors(
-            raw as unknown as UnitFormInput["data"]["floors"],
-          );
-        }
-      }
-      try {
-        const cached = queryClient.getQueryData([
-          "unit",
-          projectId,
-          editingModuleBoundUnit.unitId,
-        ]) as IGetUnitByUUIDCachedResponse | undefined;
-        const cachedFloors = cached?.data?.unit?.floors;
-        if (
-          cachedFloors &&
-          Array.isArray(cachedFloors) &&
-          cachedFloors.length > 0
-        ) {
-          return cachedFloors as TTowerFloorCategory[];
-        }
-      } catch (_e) {
-        /* ignore */
-      }
-    }
-    return fromMap ?? [];
-  }, [
+  const {
+    editingUnit,
+    editingModule,
     editingModuleBoundUnit,
     normalizedUnitsFloorMap,
-    state.units,
-    queryClient,
+    editingUnitFloors,
+    editingModuleInitialSelectedFloors,
+    editingModuleInitialMerged,
+  } = useFloorIndexMappings({
+    state,
+    isSimulationMode,
+    simulationBoundUnitTempId,
+    simulationUnitData,
     projectId,
-  ]);
-
-  // Converte o `floor_index: number` (singular) do raw.data do módulo IFC
-  // para `floor_ids: string[]` (UUIDs dos pavimentos correspondentes).
-  const editingModuleInitialSelectedFloors: string[] = useMemo(() => {
-    if (!editingModule) return [];
-    const rawIndex = (
-      editingModule.raw?.data as unknown as IRawModuleDataWithMeta
-    )?.floor_index;
-    return mapFloorIndexToFloorIds(rawIndex, editingUnitFloors);
-  }, [editingModule, editingUnitFloors]);
-
-  // Dados merged do initialModuleData passados para o DrawerFormModule:
-  // inclui raw.data original E também `floor_ids` já mapeados (fallback caso
-  // initialSelectedFloors seja ignorado).
-  const editingModuleInitialMerged: TEditingModuleMerged = useMemo(() => {
-    if (!editingModule?.raw?.data) return {} as TEditingModuleMerged;
-    return {
-      ...(editingModule.raw.data as unknown as IRawModuleDataWithMeta),
-      floor_ids: editingModuleInitialSelectedFloors,
-    } as TEditingModuleMerged;
-  }, [editingModule, editingModuleInitialSelectedFloors]);
+    simulationCreatedUnit,
+    editingUnitTempId,
+    editingModuleTempId,
+  });
 
   // ---------------------------------------------------------------------------
   // Step 1 — Units helpers
@@ -1335,284 +1059,53 @@ export default function DrawerStepperIFC({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[95vw] w-[95vw] h-[85vh] max-h-[85vh] flex flex-col gap-0 overflow-hidden p-4">
-        <DialogHeader className="px-3 pt-1 pb-2 border-b gap-1.5">
-          {/* ROW 1: Título à esquerda / Badge arquivo à direita */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex flex-col min-w-0">
-              <DialogTitle className="text-lg font-bold text-primary leading-tight">
-                {isSimulationMode
-                  ? translations.stepper.simulation.title
-                  : translations.stepper.title}
-              </DialogTitle>
-              <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
-                {isSimulationMode
-                  ? translations.stepper.simulation.description
-                  : translations.stepper.subtitle}
-              </p>
-            </div>
-            {fileName ? (
-              <Badge
-                variant="secondary"
-                className="text-xs px-2.5 py-1 gap-1.5 max-w-[55%] overflow-hidden text-ellipsis whitespace-nowrap shrink-0 shadow-sm"
-                title={fileName}
-              >
-                <FileText className="h-3.5 w-3.5 flex-shrink-0" />
-                <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-                  {fileName}
-                </span>
-              </Badge>
-            ) : null}
-          </div>
-
-          {/* ROW 2: Stepper (sem pt-4 exagerado) */}
-          <div className="pt-1.5">
-            <Stepper activeStep={activeStep} steps={steps} />
-          </div>
-        </DialogHeader>
+        <StepperHeader
+          isSimulationMode={isSimulationMode}
+          fileName={fileName ?? null}
+          translations={translations}
+          activeStep={activeStep}
+          steps={steps}
+          selectedSimulationOptionId={selectedSimulationOptionId}
+          availableOptions={availableOptions}
+          setSelectedSimulationOptionId={setSelectedSimulationOptionId}
+          preselectedUnitId={preselectedUnitId}
+          initialRoleId={initialRoleId}
+          projectId={projectId}
+          refetchOptions={refetchOptions as () => Promise<unknown>}
+          queryClient={queryClient}
+        />
 
         <div className="flex-1 overflow-y-auto px-4 py-2 min-h-0">
-          {isSimulationMode && (
-            <div className="mb-2 border rounded-lg px-3 py-2 bg-gray-50/40 dark:bg-gray-900/40 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              {/* Sempre exibimos o label + conteúdo. Estado (A) ou (B) muda só o que vem à direita do label */}
-              <label className="text-xs font-semibold text-foreground whitespace-nowrap shrink-0">
-                {translations.stepper.simulation.selectLabel}
-              </label>
-
-              {/* ESTADO (B) — SIMULAÇÃO JÁ SELECIONADA: Unifica Select + Badge "definida" em um único bloco com o NOME da simulação + botão Trocar */}
-              {selectedSimulationOptionId ? (
-                <div className="flex flex-1 flex-wrap sm:justify-end items-center gap-2 min-w-0">
-                  <Badge
-                    variant="success"
-                    className="h-7 text-[12px] px-2.5 py-0 gap-1.5 max-w-full overflow-hidden text-ellipsis whitespace-nowrap"
-                    title={
-                      availableOptions.find(
-                        (o) => o.id === selectedSimulationOptionId,
-                      )?.name ?? selectedSimulationOptionId
-                    }
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-                    <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-                      {availableOptions.find(
-                        (o) => o.id === selectedSimulationOptionId,
-                      )?.name ?? selectedSimulationOptionId}
-                    </span>
-                  </Badge>
-                  {/* Select "Trocar" inline (label fixa = "Trocar" dentro do trigger, não o valor) */}
-                  <Select
-                    value={selectedSimulationOptionId}
-                    onValueChange={(v) => setSelectedSimulationOptionId(v)}
-                  >
-                    <SelectTrigger
-                      className="h-7 min-w-[100px] w-auto text-[11px] px-2.5 py-0"
-                      aria-label={
-                        translations.stepper.simulation.changeAriaLabel
-                      }
-                    >
-                      <span className="flex items-center justify-between w-full">
-                        <span>
-                          {translations.stepper.simulation.changeLabel}
-                        </span>
-                      </span>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableOptions.map((o) => (
-                        <SelectItem key={o.id} value={o.id}>
-                          <span className="text-sm">{o.name}</span>
-                          {o.active ? (
-                            <span className="ml-2 text-[11px] text-primary font-medium">
-                              (ativa)
-                            </span>
-                          ) : null}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {preselectedUnitId && initialRoleId ? (
-                    <DialogCreateSimulation
-                      projectId={projectId}
-                      unitId={preselectedUnitId}
-                      roleId={initialRoleId}
-                      triggerComponent={
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-[11px] px-2 py-0"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          <span>
-                            {translations.stepper.simulation.createNew}
-                          </span>
-                        </Button>
-                      }
-                      onCreated={() => {
-                        void refetchOptions();
-                        void queryClient.invalidateQueries({
-                          queryKey: ["options", projectId, preselectedUnitId],
-                        });
-                      }}
-                    />
-                  ) : null}
-                </div>
-              ) : (
-                /* ESTADO (A) — NÃO SELECIONADO: Select visível (obrigatório) + Alerta amarelo inline junto, não separado */
-                <div className="flex flex-1 flex-wrap sm:justify-end items-center gap-2 min-w-0">
-                  <Select
-                    value=""
-                    onValueChange={(v) => setSelectedSimulationOptionId(v)}
-                  >
-                    <SelectTrigger className="min-w-[240px] h-9">
-                      <SelectValue
-                        placeholder={
-                          availableOptions.length === 0
-                            ? translations.stepper.simulation.noOptions
-                            : translations.stepper.simulation.selectPlaceholder
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableOptions.length === 0 && (
-                        <div className="text-xs px-2 py-3 text-muted-foreground">
-                          {translations.stepper.simulation.noOptionsHint}
-                        </div>
-                      )}
-                      {availableOptions.map((o) => (
-                        <SelectItem key={o.id} value={o.id}>
-                          <span className="text-sm">{o.name}</span>
-                          {o.active ? (
-                            <span className="ml-2 text-[11px] text-primary font-medium">
-                              (ativa)
-                            </span>
-                          ) : null}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {preselectedUnitId && initialRoleId ? (
-                    <DialogCreateSimulation
-                      projectId={projectId}
-                      unitId={preselectedUnitId}
-                      roleId={initialRoleId}
-                      triggerComponent={
-                        <Button variant="outline" size="sm" className="h-9">
-                          <Plus className="h-3.5 w-3.5" />{" "}
-                          <span className="text-xs">
-                            {translations.stepper.simulation.createNew}
-                          </span>
-                        </Button>
-                      }
-                      onCreated={() => {
-                        void refetchOptions();
-                        void queryClient.invalidateQueries({
-                          queryKey: ["options", projectId, preselectedUnitId],
-                        });
-                      }}
-                    />
-                  ) : null}
-                  {/* Alerta obrigatório AGORA AQUI no final (não mais separado) — inline com o restante */}
-                  <div className="flex items-start gap-1.5 px-2 py-1 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-300 dark:border-yellow-700 rounded-md">
-                    <AlertTriangle className="h-3.5 w-3.5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-[11px] leading-snug text-yellow-800 dark:text-yellow-200 whitespace-nowrap">
-                      {translations.stepper.simulation.requiredHint}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {!isSimulationMode && activeStep === 0 && (
-            <Step1UnitsView
-              state={state}
-              toggleUnitSelected={toggleUnitSelected}
-              setUnitNameInline={setUnitNameInline}
-              onEditUnit={(tempId) => setEditingUnitTempId(tempId)}
-              t={translations}
-            />
-          )}
-          {activeStep === (isSimulationMode ? 0 : 1) &&
-          selectedModulesWithBlocking.length > 0 ? (
-            <Alert
-              variant="destructive"
-              className="mb-2 mt-1 py-2 px-3 flex-row items-start gap-2 border-red-300 dark:border-red-700 bg-red-50/70 dark:bg-red-950/25"
-            >
-              <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-              <div className="flex flex-1 flex-col gap-1.5 min-w-0">
-                <AlertTitle className="text-sm text-red-800 dark:text-red-200 font-semibold leading-snug">
-                  {selectedModulesWithBlocking.length} módulo
-                  {selectedModulesWithBlocking.length === 1 ? "" : "s"}{" "}
-                  selecionado
-                  {selectedModulesWithBlocking.length === 1 ? "" : "s"} com
-                  problema — concluir bloqueado
-                </AlertTitle>
-                <AlertDescription className="text-[11.5px] text-red-700 dark:text-red-300 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                  <span>
-                    Corrija os campos obrigatórios / recomendados do módulo,
-                    vincule a uma unidade ou <strong>desmarque</strong> os
-                    bloqueados abaixo para prosseguir.
-                  </span>
-                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                    {countBlockingErrors > 0 ? (
-                      <Badge
-                        variant="outline"
-                        className="border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/30 h-5 text-[10.5px] px-1.5 py-0"
-                      >
-                        {countBlockingErrors} com erros
-                      </Badge>
-                    ) : null}
-                    {countBlockingWarnings > 0 ? (
-                      <Badge
-                        variant="outline"
-                        className="border-yellow-400 dark:border-yellow-600 text-yellow-800 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-950/30 h-5 text-[10.5px] px-1.5 py-0"
-                      >
-                        {countBlockingWarnings} com avisos
-                      </Badge>
-                    ) : null}
-                    {countBlockingNoBinding > 0 ? (
-                      <Badge
-                        variant="outline"
-                        className="border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-900/40 h-5 text-[10.5px] px-1.5 py-0"
-                      >
-                        {countBlockingNoBinding} sem unidade
-                      </Badge>
-                    ) : null}
-                  </div>
-                </AlertDescription>
-              </div>
-            </Alert>
-          ) : null}
-          {activeStep === (isSimulationMode ? 0 : 1) && (
-            <Step2ModulesView
-              state={state}
-              applyUnitToAllModules={applyUnitToAllModules}
-              setModuleBoundUnit={setModuleBoundUnit}
-              onEditModule={(tempId) => setEditingModuleTempId(tempId)}
-              toggleModuleSelected={toggleModuleSelected}
-              toggleAllModulesSelected={toggleAllModulesSelected}
-              moduleTypeLabels={moduleTypeLabels}
-              t={translations}
-            />
-          )}
-
-          {step1Error && !isSimulationMode && activeStep === 0 && (
-            <div className="mt-2 p-2.5 bg-red-50 dark:bg-red-950/20 border border-red-300 dark:border-red-700 rounded-md">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-red-800 dark:text-red-200">
-                  {step1Error}
-                </p>
-              </div>
-            </div>
-          )}
-          {step2Error && activeStep === (isSimulationMode ? 0 : 1) && (
-            <div className="mt-2 p-2.5 bg-red-50 dark:bg-red-950/20 border border-red-300 dark:border-red-700 rounded-md">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-red-800 dark:text-red-200">
-                  {step2Error}
-                </p>
-              </div>
-            </div>
-          )}
+          <Step1Content
+            translations={translations}
+            state={state}
+            toggleUnitSelected={toggleUnitSelected}
+            setUnitNameInline={setUnitNameInline}
+            onEditUnit={(tempId) => setEditingUnitTempId(tempId)}
+            step1Error={step1Error}
+            isSimulationMode={isSimulationMode}
+            activeStep={activeStep}
+          />
+          <Step2Content
+            translations={translations}
+            state={state}
+            applyUnitToAllModules={applyUnitToAllModules}
+            setModuleBoundUnit={setModuleBoundUnit}
+            onEditModule={(tempId) => setEditingModuleTempId(tempId)}
+            toggleModuleSelected={toggleModuleSelected}
+            toggleAllModulesSelected={toggleAllModulesSelected}
+            moduleTypeLabels={{
+              ...MODULE_TYPE_LABEL_FALLBACK,
+              ...structureTypes(translations),
+            }}
+            step2Error={step2Error}
+            isSimulationMode={isSimulationMode}
+            activeStep={activeStep}
+            selectedModulesWithBlocking={selectedModulesWithBlocking}
+            countBlockingErrors={countBlockingErrors}
+            countBlockingWarnings={countBlockingWarnings}
+            countBlockingNoBinding={countBlockingNoBinding}
+          />
         </div>
 
         <DialogFooter className="px-4 py-2 border-t gap-2 shrink-0">
@@ -1733,12 +1226,12 @@ export default function DrawerStepperIFC({
           />
         )}
 
-        {editingModule && editingModuleBoundUnit && (
+        {editingModule && (
           <DrawerFormModule
             stepperMode
             projectId={projectId}
-            unitId={editingModuleBoundUnit.unitId}
-            optionId={editingModuleBoundUnit.optionId}
+            unitId={editingModuleBoundUnit?.unitId}
+            optionId={editingModuleBoundUnit?.optionId}
             type={(editingModule.type as TModulesTypes) ?? "beam_column"}
             floors={editingUnitFloors}
             source="ifc"
@@ -1748,418 +1241,16 @@ export default function DrawerStepperIFC({
               editingModuleInitialMerged as unknown as TEditingModuleMerged
             }
             initialSelectedFloors={editingModuleInitialSelectedFloors}
-            onSubmitSuccess={handleModuleDrawerSubmit}
+            onSubmitSuccess={(payload) => {
+              if (!editingModuleBoundUnit) {
+                toast.warning(translations.stepper.modules.notBoundWarning);
+                return;
+              }
+              handleModuleDrawerSubmit(payload);
+            }}
           />
         )}
       </DialogContent>
     </Dialog>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Step 1 — Sub-view
-// ---------------------------------------------------------------------------
-
-function Step1UnitsView({
-  state,
-  toggleUnitSelected,
-  setUnitNameInline,
-  onEditUnit,
-  t,
-}: Step1UnitsViewProps) {
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold">
-          {t.stepper.units.title} ({state.units.length})
-        </h3>
-      </div>
-
-      {state.units.length === 0 ? (
-        <div className="text-sm text-muted-foreground p-8 border rounded-lg text-center">
-          {t.stepper.units.noneFound}
-        </div>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[44px]">
-                <span className="sr-only">Selecionar</span>
-              </TableHead>
-              <TableHead>{t.stepper.units.columnName}</TableHead>
-              <TableHead>{t.stepper.units.columnFloors}</TableHead>
-              <TableHead>{t.stepper.units.columnStatus}</TableHead>
-              <TableHead className="w-[120px] text-right">
-                {t.stepper.units.columnAction}
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {state.units.map((u) => (
-              <TableRow key={u.tempId}>
-                <TableCell>
-                  <Checkbox
-                    checked={u.selected}
-                    onCheckedChange={() => toggleUnitSelected(u.tempId)}
-                  />
-                </TableCell>
-                <TableCell>
-                  <input
-                    type="text"
-                    value={u.name}
-                    onChange={(e) =>
-                      setUnitNameInline(u.tempId, e.target.value)
-                    }
-                    className="w-full max-w-xs bg-transparent border-b border-transparent hover:border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5"
-                  />
-                </TableCell>
-                <TableCell>
-                  {u.formData.data.floors.length}{" "}
-                  {u.formData.data.floors.length === 1
-                    ? t.stepper.units.floors
-                    : t.stepper.units.floorsPlural}
-                </TableCell>
-                <TableCell>
-                  {u.isValid ? (
-                    <Badge variant="success">{t.stepper.statusValid}</Badge>
-                  ) : (
-                    <Badge variant="destructive">
-                      {u.validationErrors.length}{" "}
-                      {u.validationErrors.length === 1
-                        ? t.stepper.units.errors
-                        : t.stepper.units.errorsPlural}
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onEditUnit(u.tempId)}
-                    className="gap-1"
-                  >
-                    <Edit2 className="h-3.5 w-3.5" />
-                    {t.stepper.btnEdit}
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Step 2 — Sub-view
-// ---------------------------------------------------------------------------
-
-function Step2ModulesView({
-  state,
-  applyUnitToAllModules,
-  setModuleBoundUnit,
-  onEditModule,
-  toggleModuleSelected,
-  toggleAllModulesSelected,
-  moduleTypeLabels,
-  t,
-}: Step2ModulesViewProps) {
-  const allChecked =
-    state.modules.length > 0 && state.modules.every((m) => m.selected);
-  const someChecked = state.modules.some((m) => m.selected) && !allChecked;
-  const selectedCount = state.modules.filter((m) => m.selected).length;
-  const unselectedCount = state.modules.length - selectedCount;
-  const totalCount = state.modules.length;
-
-  return (
-    <div className="space-y-2">
-      {/* LINHA 1: Unidades criadas + "Aplicar a todos" (linha única, counts removidos daqui) */}
-      <div className="flex flex-wrap items-center gap-2 min-w-0">
-        <h3 className="text-sm font-semibold text-foreground whitespace-nowrap">
-          {t.stepper.modules.createdUnitsTitle}
-        </h3>
-        {state.unitsCreated.length === 0 ? (
-          <span className="text-xs text-muted-foreground">
-            {t.stepper.modules.noUnitsCreated}
-          </span>
-        ) : (
-          <div className="flex flex-wrap items-center gap-1.5">
-            {state.unitsCreated.map((u) => (
-              <div key={u.tempId} className="flex items-center gap-1.5">
-                <Badge variant="secondary" className="text-xs px-2 py-0.5 h-6">
-                  {u.displayName}
-                </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-6 px-2 text-[11px]"
-                  onClick={() => applyUnitToAllModules(u.tempId)}
-                  title={t.stepper.modules.applyToAll}
-                >
-                  {t.stepper.modules.applyToAll}
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* LINHA 2: Alert informativo (módulos não obrigatórios) — compacto inline */}
-      <Alert
-        variant="default"
-        className="py-1.5 px-2.5 flex-row items-center gap-2 bg-blue-50/60 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
-      >
-        <Info className="h-3.5 w-3.5 text-blue-700 dark:text-blue-300 shrink-0 -mt-0.5" />
-        <div className="flex flex-1 flex-wrap items-center gap-x-3 gap-y-1">
-          <p className="text-[11.5px] leading-snug text-blue-800 dark:text-blue-200">
-            {t.stepper.modules.hint}
-          </p>
-        </div>
-      </Alert>
-
-      {/* LINHA 3: Título "Módulos encontrados" + BADGES COUNTS (Sel/Desm/Total) AQUI (unificado) */}
-      <div className="flex items-center justify-between pt-1">
-        <h3 className="text-sm font-semibold text-foreground">
-          {t.stepper.modules.title}
-          <span className="text-muted-foreground font-normal ml-1.5">
-            ({state.modules.length})
-          </span>
-        </h3>
-        {totalCount > 0 && (
-          <div className="flex items-center gap-1.5 shrink-0">
-            <Badge
-              variant="secondary"
-              className="h-6 text-[11px] px-2 py-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800"
-            >
-              {t.stepper.selected} <strong>{selectedCount}</strong>
-            </Badge>
-            {unselectedCount > 0 && (
-              <Badge
-                variant="secondary"
-                className="h-6 text-[11px] px-2 py-0 bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-900/60 dark:text-gray-300 dark:border-gray-700"
-              >
-                {t.stepper.unselected} <strong>{unselectedCount}</strong>
-              </Badge>
-            )}
-            <Badge variant="outline" className="h-6 text-[11px] px-2 py-0">
-              {t.stepper.total} <strong>{totalCount}</strong>
-            </Badge>
-          </div>
-        )}
-      </div>
-
-      {/* Tabela de módulos (contém o checkbox de "selecionar todos" no header da tabela) */}
-      <div>
-        {state.modules.length === 0 ? (
-          <div className="text-sm text-muted-foreground p-6 border rounded-lg text-center">
-            {t.stepper.modules.noneFound}
-          </div>
-        ) : (
-          <TooltipProvider delayDuration={150}>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[52px]">
-                    <Checkbox
-                      checked={allChecked}
-                      onCheckedChange={(v) =>
-                        toggleAllModulesSelected(Boolean(v))
-                      }
-                      aria-label="Selecionar todos os módulos"
-                      className={
-                        someChecked ? "data-[state=checked]:bg-white" : ""
-                      }
-                      {...(someChecked
-                        ? ({ "data-state": "indeterminate" } as Record<
-                            string,
-                            string
-                          >)
-                        : {})}
-                    />
-                  </TableHead>
-                  <TableHead>{t.stepper.modules.columnType}</TableHead>
-                  <TableHead>{t.stepper.modules.columnSummary}</TableHead>
-                  <TableHead>{t.stepper.modules.columnUnit}</TableHead>
-                  <TableHead>{t.stepper.modules.columnStatus}</TableHead>
-                  <TableHead className="w-[120px] text-right">
-                    {t.stepper.modules.columnAction}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {state.modules.map((m) => {
-                  const hasErrors = !m.isValid && m.validationErrors.length > 0;
-                  const hasWarnings =
-                    m.isValid && m.completenessWarnings?.hasWarnings;
-                  const warningCount =
-                    m.completenessWarnings?.messages?.length ?? 0;
-                  const errorCount = m.validationErrors.length;
-
-                  let statusBadge: React.ReactNode;
-                  if (hasErrors) {
-                    statusBadge = (
-                      <Badge variant="destructive">
-                        {errorCount}{" "}
-                        {errorCount === 1
-                          ? t.stepper.units.errors
-                          : t.stepper.units.errorsPlural}
-                      </Badge>
-                    );
-                  } else if (hasWarnings) {
-                    statusBadge = (
-                      <Badge
-                        variant="secondary"
-                        className="bg-yellow-100 text-yellow-800 border border-yellow-300 dark:bg-yellow-950/20 dark:text-yellow-300 dark:border-yellow-700"
-                      >
-                        {warningCount}{" "}
-                        {warningCount === 1
-                          ? t.stepper.statusWarnings
-                          : `${t.stepper.statusWarnings}`}
-                      </Badge>
-                    );
-                  } else {
-                    statusBadge = (
-                      <Badge variant="success">{t.stepper.statusValid}</Badge>
-                    );
-                  }
-
-                  return (
-                    <TableRow key={m.tempId}>
-                      <TableCell>
-                        <Checkbox
-                          checked={m.selected}
-                          onCheckedChange={() => toggleModuleSelected(m.tempId)}
-                          aria-label={`Selecionar módulo ${m.tempId}`}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-medium">
-                          {moduleTypeLabels[m.type] ?? String(m.type)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="max-w-md truncate text-muted-foreground">
-                        {m.summary}
-                      </TableCell>
-                      <TableCell className="min-w-[220px]">
-                        {state.unitsCreated.length === 0 ? (
-                          <span className="text-xs text-muted-foreground">
-                            {t.stepper.modules.noUnitsCreated}
-                          </span>
-                        ) : (
-                          <Select
-                            value={m.boundUnitTempId ?? "__none__"}
-                            onValueChange={(val) =>
-                              setModuleBoundUnit(m.tempId, val)
-                            }
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue
-                                placeholder={
-                                  t.stepper.modules.unitSelectPlaceholder
-                                }
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__none__">
-                                <span className="text-muted-foreground">
-                                  {t.stepper.modules.noneBound}
-                                </span>
-                              </SelectItem>
-                              {state.unitsCreated.map((u) => (
-                                <SelectItem key={u.tempId} value={u.tempId}>
-                                  {u.displayName}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {!hasErrors && !hasWarnings ? (
-                          statusBadge
-                        ) : (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span tabIndex={0}>{statusBadge}</span>
-                            </TooltipTrigger>
-                            <TooltipContent
-                              side="left"
-                              align="start"
-                              className="max-w-sm text-xs space-y-3 p-3"
-                            >
-                              {hasErrors && (
-                                <div className="space-y-1">
-                                  <p className="font-semibold text-red-600 dark:text-red-300">
-                                    {t.stepper.validationErrors}:
-                                  </p>
-                                  <ul className="list-disc list-inside space-y-0.5">
-                                    {m.validationErrors
-                                      .slice(0, 10)
-                                      .map((e, idx) => (
-                                        <li key={idx}>{e}</li>
-                                      ))}
-                                    {m.validationErrors.length > 10 && (
-                                      <li className="text-muted-foreground">
-                                        +{m.validationErrors.length - 10}{" "}
-                                        {t.stepper.others}
-                                      </li>
-                                    )}
-                                  </ul>
-                                </div>
-                              )}
-                              {hasWarnings && (
-                                <div className="space-y-1">
-                                  <p className="font-semibold text-yellow-700 dark:text-yellow-300">
-                                    {t.stepper.semanticWarnings}:
-                                  </p>
-                                  <ul className="list-disc list-inside space-y-0.5">
-                                    {(m.completenessWarnings.messages ?? [])
-                                      .slice(0, 10)
-                                      .map((msg, idx) => (
-                                        <li key={idx}>{msg}</li>
-                                      ))}
-                                    {(m.completenessWarnings.messages ?? [])
-                                      .length > 10 && (
-                                      <li className="text-muted-foreground">
-                                        +
-                                        {(m.completenessWarnings.messages ?? [])
-                                          .length - 10}{" "}
-                                        {t.stepper.others}
-                                      </li>
-                                    )}
-                                  </ul>
-                                </div>
-                              )}
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onEditModule(m.tempId)}
-                          disabled={!m.boundUnitTempId}
-                          className="gap-1"
-                          title={
-                            !m.boundUnitTempId
-                              ? t.stepper.modules.editBtnDisabled
-                              : undefined
-                          }
-                        >
-                          <Edit2 className="h-3.5 w-3.5" />
-                          {t.stepper.btnEdit}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TooltipProvider>
-        )}
-      </div>
-    </div>
   );
 }

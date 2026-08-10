@@ -175,7 +175,7 @@ const DrawerFormModule = ({
       selectedFloors,
       unitId,
     );
-    const cleaned = cleanZeroItemsBeforeSubmit(flat as any);
+    const cleaned = cleanZeroItemsBeforeSubmit(flat);
     const result = moduleFormSchema.safeParse(cleaned);
 
     const resolvedType: TModulesTypes = (values.type as TModulesTypes) || type;
@@ -231,13 +231,14 @@ const DrawerFormModule = ({
 
   const partialWarnings = useMemo(() => {
     const flat = groupedFormToFlatV2(
-      (allFormValues as any)?.type || type,
-      allFormValues as any,
+      (allFormValues as unknown as ModuleFormState)?.type || type,
+      allFormValues as unknown as TModuleGroupedForm,
       selectedFloors,
       unitId,
     );
-    const cleaned = cleanZeroItemsBeforeSubmit(flat as any);
-    const i18n = t.modules.form.completeness as any as CompletenessWarningsI18n;
+    const cleaned = cleanZeroItemsBeforeSubmit(flat);
+    const i18n = t.modules.form
+      .completeness as unknown as CompletenessWarningsI18n;
     const base = getCompletenessWarnings(
       cleaned,
       ((allFormValues as any)?.type || type) as TModulesTypes,
@@ -414,6 +415,7 @@ const DrawerFormModule = ({
   useEffect(() => {
     const prev = prevSelectedFloorsRef.current;
     const curr = selectedFloors;
+    if (prev.length === 0 && curr.length === 0) return;
     const same =
       prev.length === curr.length &&
       prev.every((v) => curr.includes(v)) &&
@@ -440,7 +442,7 @@ const DrawerFormModule = ({
       lastStepperTargetKeyRef.current !== stepperEditingTargetKey;
     const openRisingEdge = isOpen && !prevIsOpenRef.current;
 
-    if ((openRisingEdge || targetChanged) && !moduleId) {
+    if ((openRisingEdge || targetChanged) && !moduleData) {
       openMergedDefaultsRef.current = mergedDefaults;
       openInitialSelectedFloorsRef.current = initialSelectedFloors ?? null;
       openInitialModuleDataRef.current = initialModuleData ?? null;
@@ -491,13 +493,13 @@ const DrawerFormModule = ({
 
     // Deps MINIMAS intencionais: só as que disparam a ação
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, moduleId, stepperMode, stepperEditingTargetKey, form]);
+  }, [isOpen, moduleData, stepperMode, stepperEditingTargetKey, form]);
 
   // (B) Ajuste TARDIO do selectedFloors — quando a prop `floors` chegar
   // assincronamente (query da unidade) E o usuário AINDA NÃO tocou nos
   // checkboxes e ainda não temos nenhum pavimento selecionado.
   useEffect(() => {
-    if (!isOpen || moduleId || !stepperMode) return;
+    if (!isOpen || moduleData || !stepperMode) return;
     if (!floors || floors.length === 0) return;
     if (userTouchedSelectedFloors) return;
     if (selectedFloors.length > 0) return;
@@ -543,37 +545,44 @@ const DrawerFormModule = ({
 
   useEffect(() => {
     if (moduleData) {
-      const moduleWithType = moduleData as any;
+      const moduleWithType = moduleData as unknown as {
+        type?: TModulesTypes;
+        floor_ids?: string[];
+        [k: string]: unknown;
+      };
       const detectedType = moduleWithType.type || type;
       const grouped = flatV2ToGroupedForm(detectedType, moduleWithType);
+      const groupedWithMeta = grouped as unknown as TModuleGroupedForm & {
+        floor_ids?: string[];
+      };
 
-      const floorIdsFromGrouped = (grouped as any).floor_ids;
+      const floorIdsFromGrouped = groupedWithMeta.floor_ids;
       if (floorIdsFromGrouped) {
         setSelectedFloors(floorIdsFromGrouped);
       }
 
-      form.reset(grouped as any);
+      form.reset(grouped as unknown as ModuleFormState);
       queueMicrotask(() => {
         void form.trigger();
       });
     }
   }, [moduleData, moduleId, type, form]);
 
-  const handleSubmit = (_data: any) => {
-    const moduleType = (_data as any).type || type;
+  const handleSubmit = (_data: ModuleFormState) => {
+    const moduleType = _data.type || type;
 
     const flatData = groupedFormToFlatV2(
       moduleType,
-      _data as TModuleGroupedForm,
+      _data as unknown as TModuleGroupedForm,
       selectedFloors,
       unitId,
     );
 
-    const cleanedFlat = cleanZeroItemsBeforeSubmit(flatData as any);
+    const cleanedFlat = cleanZeroItemsBeforeSubmit(flatData);
 
     const baseFields: ModuleParamsPropsV2 = {
       type: moduleType,
-      data: cleanedFlat as any,
+      data: cleanedFlat,
     };
 
     if (stepperMode) {
@@ -581,8 +590,12 @@ const DrawerFormModule = ({
         moduleId,
         params: baseFields,
         selectedFloors,
-        formInput: form.getValues(),
-        flatData: flatData as any,
+        formInput: form.getValues() as ModuleFormState,
+        flatData: flatData as unknown as TModuleDataV2 & {
+          type: TModulesTypes;
+          floor_ids?: string[];
+          unit_id?: string;
+        },
       });
       return;
     }
@@ -594,17 +607,18 @@ const DrawerFormModule = ({
     }
   };
 
-  const getFormErrorMessages = (errors: any): string[] => {
+  const getFormErrorMessages = (errors: Record<string, unknown>): string[] => {
     const messages = new Set<string>();
-    const traverse = (obj: any) => {
+    const traverse = (obj: unknown): void => {
       if (!obj || typeof obj !== "object") return;
-      if (typeof obj.message === "string" && obj.message.length > 0) {
-        messages.add(obj.message);
+      const rec = obj as Record<string, unknown>;
+      if (typeof rec.message === "string" && rec.message.length > 0) {
+        messages.add(rec.message);
         return;
       }
-      for (const key of Object.keys(obj)) {
+      for (const key of Object.keys(rec)) {
         if (key !== "message" && key !== "type" && key !== "ref") {
-          traverse(obj[key]);
+          traverse(rec[key]);
         }
       }
     };
@@ -741,6 +755,14 @@ const DrawerFormModule = ({
                       "w-full": isMobile,
                     })}
                   >
+                    {/* {isUsingPaviments && (!floors || floors.length === 0) && ( */}
+                    <Alert className="mb-2 bg-yellow-50 border-yellow-300 w-80">
+                      <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                      <AlertDescription className="text-yellow-800">
+                        {t.modules.form.noFloorsRegisteredWarning}
+                      </AlertDescription>
+                    </Alert>
+                    {/* )} */}
                     <BuildingVisualizer
                       key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ index: f.index })))}`}
                       towerFloors={floors || []}

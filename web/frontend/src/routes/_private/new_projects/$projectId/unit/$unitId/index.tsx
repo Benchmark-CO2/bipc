@@ -218,7 +218,7 @@ function RouteComponent() {
 
   const totalConsumptions = calculateTotalConsumptions();
 
-  const handleSelectionChange = (selected: any) => {
+  const handleSelectionChange = (selected: string[]) => {
     setSelectedFloors(selected);
   };
   const { data: benchmarkData } = useQuery({

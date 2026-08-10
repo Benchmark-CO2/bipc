@@ -36,6 +36,12 @@ export type TModulesTypes =
   | "piles_foundation"
   | "raft_piles_foundation";
 
+export const FOUNDATION_MODULE_TYPES: TModulesTypes[] = [
+  "raft_foundation",
+  "piles_foundation",
+  "raft_piles_foundation",
+];
+
 export interface IModuleItem {
   id: string;
   name?: string | null;

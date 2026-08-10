@@ -1027,7 +1027,7 @@ export const groupedFormToFlatV2 = (
       column_number: toNumberValue(g.column_number),
       avg_beam_span: toNumberValue(g.avg_beam_span),
       avg_slab_span: toNumberValue(g.avg_slab_span),
-      slab_type: (g as any).slab_type as TSlabType | undefined,
+      slab_type: g.slab_type as TSlabType | undefined,
       floor_ids: selectedFloors,
     };
   }
@@ -1265,7 +1265,7 @@ export const groupedFormToFlatV2 = (
   }
 
   if (type === "raft_foundation") {
-    const g = merged as RaftFoundationGroupedForm & { unspecified?: any };
+    const g = merged as RaftFoundationGroupedForm;
     const areaNum = toNumberValue(g.area);
     const thicknessNum = toNumberValue(g.thickness);
     const volumeCalculated = areaNum * thicknessNum;
@@ -1280,11 +1280,7 @@ export const groupedFormToFlatV2 = (
           ]
         : [];
 
-    const steelRaw = Array.isArray((g as any).steel)
-      ? (g as any).steel
-      : Array.isArray((g as any).raft?.steel)
-        ? (g as any).raft.steel
-        : [];
+    const steelRaw = Array.isArray(g.steel) ? g.steel : [];
     const steelItems: IV2SteelMaterialItem<TRaftFoundationPosition>[] = (
       addSteelPositions(
         steelRaw,
@@ -1453,12 +1449,8 @@ export const groupedFormToFlatV2 = (
     const concrete: IV2ConcreteVolumeItem<TRaftPilesFoundationPosition>[] = [];
     const steelItems: IV2SteelMaterialItem<TRaftPilesFoundationPosition>[] = [];
 
-    const raftAreaNum = toNumberValue(
-      g.raft?.area ?? (g.raft as any)?.area ?? 0,
-    );
-    const raftThickNum = toNumberValue(
-      g.raft?.thickness ?? (g.raft as any)?.thickness ?? 0,
-    );
+    const raftAreaNum = toNumberValue(g.raft?.area ?? 0);
+    const raftThickNum = toNumberValue(g.raft?.thickness ?? 0);
     const raftVol = raftAreaNum * raftThickNum;
     if (raftAreaNum > 0 && raftThickNum > 0 && raftVol > 0) {
       concrete.push({
