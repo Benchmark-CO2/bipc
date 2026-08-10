@@ -8,7 +8,6 @@ import { TIfcStepperState, TIfcStepperModuleItem } from "@/types/ifc";
 export interface Step2ContentProps {
   translations: Translations;
   state: TIfcStepperState;
-  applyUnitToAllModules: (unitTempId: string) => void;
   setModuleBoundUnit: (moduleTempId: string, unitTempId: string) => void;
   onEditModule: (tempId: string) => void;
   toggleModuleSelected: (tempId: string) => void;
@@ -25,7 +24,6 @@ export interface Step2ContentProps {
 
 export function Step2Content({
   state,
-  applyUnitToAllModules,
   setModuleBoundUnit,
   onEditModule,
   toggleModuleSelected,
@@ -94,7 +92,6 @@ export function Step2Content({
       {activeStep === (isSimulationMode ? 0 : 1) && (
         <Step2ModulesView
           state={state}
-          applyUnitToAllModules={applyUnitToAllModules}
           setModuleBoundUnit={setModuleBoundUnit}
           onEditModule={onEditModule}
           toggleModuleSelected={toggleModuleSelected}

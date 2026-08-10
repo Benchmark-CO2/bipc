@@ -1073,6 +1073,8 @@ export default function DrawerStepperIFC({
           projectId={projectId}
           refetchOptions={refetchOptions as () => Promise<unknown>}
           queryClient={queryClient}
+          state={state}
+          applyUnitToAllModules={applyUnitToAllModules}
         />
 
         <div className="flex-1 overflow-y-auto px-4 py-2 min-h-0">
@@ -1089,7 +1091,6 @@ export default function DrawerStepperIFC({
           <Step2Content
             translations={translations}
             state={state}
-            applyUnitToAllModules={applyUnitToAllModules}
             setModuleBoundUnit={setModuleBoundUnit}
             onEditModule={(tempId) => setEditingModuleTempId(tempId)}
             toggleModuleSelected={toggleModuleSelected}

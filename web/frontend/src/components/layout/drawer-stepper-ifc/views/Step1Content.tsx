@@ -1,4 +1,3 @@
-import React from "react";
 import { AlertTriangle } from "lucide-react";
 import { Translations } from "@/i18n/translations/pt-BR";
 import { TIfcStepperState } from "@/types/ifc";
@@ -16,7 +15,6 @@ export interface Step1ContentProps {
 }
 
 export function Step1Content({
-  translations,
   state,
   toggleUnitSelected,
   setUnitNameInline,

@@ -30,7 +30,6 @@ import { useTranslation } from "@/i18n";
 
 export function Step2ModulesView({
   state,
-  applyUnitToAllModules,
   setModuleBoundUnit,
   onEditModule,
   toggleModuleSelected,
@@ -47,38 +46,7 @@ export function Step2ModulesView({
 
   return (
     <div className="space-y-2">
-      {/* LINHA 1: Unidades criadas + "Aplicar a todos" (linha única, counts removidos daqui) */}
-      <div className="flex flex-wrap items-center gap-2 min-w-0">
-        <h3 className="text-sm font-semibold text-foreground whitespace-nowrap">
-          {t.stepper.modules.createdUnitsTitle}
-        </h3>
-        {state.unitsCreated.length === 0 ? (
-          <span className="text-xs text-muted-foreground">
-            {t.stepper.modules.noUnitsCreated}
-          </span>
-        ) : (
-          <div className="flex flex-wrap items-center gap-1.5">
-            {state.unitsCreated.map((u) => (
-              <div key={u.tempId} className="flex items-center gap-1.5">
-                <Badge variant="secondary" className="text-xs px-2 py-0.5 h-6">
-                  {u.displayName}
-                </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-6 px-2 text-[11px]"
-                  onClick={() => applyUnitToAllModules(u.tempId)}
-                  title={t.stepper.modules.applyToAll}
-                >
-                  {t.stepper.modules.applyToAll}
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* LINHA 2: Alert informativo (módulos não obrigatórios) — compacto inline */}
+      {/* LINHA 1: Alert informativo (módulos não obrigatórios) — compacto inline */}
       <Alert
         variant="default"
         className="py-1.5 px-2.5 flex-row items-center gap-2 bg-blue-50/60 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
@@ -91,7 +59,7 @@ export function Step2ModulesView({
         </div>
       </Alert>
 
-      {/* LINHA 3: Título "Módulos encontrados" + BADGES COUNTS (Sel/Desm/Total) AQUI (unificado) */}
+      {/* LINHA 2: Título "Módulos encontrados" + BADGES COUNTS (Sel/Desm/Total) AQUI (unificado) */}
       <div className="flex items-center justify-between pt-1">
         <h3 className="text-sm font-semibold text-foreground">
           {t.stepper.modules.title}
