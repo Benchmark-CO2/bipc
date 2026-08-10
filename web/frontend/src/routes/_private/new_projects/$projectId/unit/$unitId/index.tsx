@@ -6,7 +6,10 @@ import { makeConstructiveTechnologiesColumns } from "@/components/columns/constr
 import { makeFloorsColumns } from "@/components/columns/floors";
 import { CommonTable } from "@/components/layout";
 import DrawerFormDisciplines from "@/components/layout/drawer-form-disciplines";
-import FloorSummary from "@/components/summaryVariants/floors";
+import FloorSummary, {
+  IFloorSummaryItem,
+  ISelectedFloor,
+} from "@/components/summaryVariants/floors";
 import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
 import { FilterTabs } from "@/components/ui/filter-tabs";
@@ -223,24 +226,6 @@ function RouteComponent() {
     queryFn: getFloorsBenchmark,
   });
 
-  useEffect(() => {
-    if (!benchmarkData?.data) return;
-    setSummaryContext({
-      component: (
-        <FloorSummary
-          selectedFloors={
-            selectedFloors.length ? selectedFloors : (groupedFloors as any)
-          }
-          floors={groupedFloors}
-          data={benchmarkData.data}
-          unit={unit as IUnit}
-          someSelected={selectedFloors.length > 0}
-        />
-      ),
-      title: "Floor Comparison",
-    });
-  }, [setSummaryContext, selectedFloors, benchmarkData]);
-
   const groupedFloors: TGroupedFloor[] = unit?.floors
     ? Object.values(
         unit.floors.reduce(
@@ -320,14 +305,77 @@ function RouteComponent() {
       })
     : [];
 
+  const toFloorSummaryItem = (floor: TGroupedFloor): IFloorSummaryItem => {
+    const floorIndex =
+      typeof floor.index === "number" ? floor.index : Number(floor.index) || 0;
+    const category =
+      floor.category ??
+      (getCategoryFromIndex(floorIndex) as
+        | "penthouse_floor"
+        | "standard_floor"
+        | "ground_floor"
+        | "basement_floor"
+        | undefined);
+    const groupName =
+      typeof floor.floor_group === "string" &&
+      floor.floor_group.trim().length > 0
+        ? floor.floor_group
+        : floorIndex >= 0
+          ? `Andar ${floorIndex}`
+          : "Andar";
+    return {
+      id: floor.id,
+      group_id: floor.id,
+      group_name: groupName,
+      floor_group: groupName,
+      category: category ?? "standard_floor",
+      floor_index: floorIndex,
+      co2_min: floor.co2_min ?? 0,
+      co2_max: floor.co2_max ?? 0,
+      energy_min: floor.energy_min ?? 0,
+      energy_max: floor.energy_max ?? 0,
+      material: floor.material ?? 0,
+    };
+  };
+
+  const summaryFloors: IFloorSummaryItem[] =
+    groupedFloors.map(toFloorSummaryItem);
+
+  const summarySelectedFloors: ISelectedFloor[] = (() => {
+    if (selectedFloors.length === 0) return summaryFloors as ISelectedFloor[];
+    const sel = new Set(selectedFloors.map((id) => String(id)));
+    return summaryFloors.filter((f) =>
+      sel.has(String(f.id)),
+    ) as ISelectedFloor[];
+  })();
+
+  useEffect(() => {
+    if (!benchmarkData?.data) return;
+    setSummaryContext({
+      component: (
+        <FloorSummary
+          selectedFloors={summarySelectedFloors}
+          floors={summaryFloors}
+          data={benchmarkData.data}
+          unit={unit as IUnit}
+          someSelected={selectedFloors.length > 0}
+        />
+      ),
+      title: "Floor Comparison",
+    });
+  }, [
+    setSummaryContext,
+    summarySelectedFloors,
+    summaryFloors,
+    selectedFloors.length,
+    benchmarkData,
+  ]);
+
   const calculateAverageMetrics = (floors: TGroupedFloor[]) => {
     const floorTotal = floors.reduce(
       (acc, curr) => acc + curr.repetitions * curr.area,
       0,
     );
-
-    console.log("[calculateAverageMetrics] floors:", floors);
-    console.log("[calculateAverageMetrics] floorTotal:", floorTotal);
 
     if (floorTotal === 0) {
       console.warn(

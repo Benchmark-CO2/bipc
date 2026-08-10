@@ -610,8 +610,15 @@ export const en: Translations = {
       mesh: "Mesh",
       strand: "Strand",
       requiredLegend: "Fields marked with * are required",
+      ifcSourceLabel: "Materials (IFC)",
+      tqsSourceLabel: "Materials (TQS)",
+      aggregatedHint:
+        "Batch imported materials. Fill concrete volumes and steel according to the source file.",
       unspecifiedPosition: "Unspecified / General",
       unspecifiedHint: "Items without declared position (module total sum)",
+      beamCount: "Number of beams",
+      slabCount: "Number of slabs",
+      slabArea: "Slab area (m²)",
       slabTypes: {
         solid:
           "Solid slab (reinforced concrete) with beams or structural walls",
@@ -1100,6 +1107,27 @@ export const en: Translations = {
   },
   summaryFloors: {
     floors: "Floors",
+    referenceValueTotal: "Ref. Value - Total",
+    referenceValueBenchmark: "Ref. Value - Benchmark",
+    bestScenario: "Best scenario",
+    worstScenario: "Worst scenario",
+    classificationName: "Classification",
+    nProjectsLabel: "projects",
+    defaultFloorGroupName: "Unit",
+  },
+  summaryUnits: {
+    referenceValueTotal: "Ref. Value - Total",
+    referenceValueBenchmark: "Ref. Value - Benchmark",
+    bestScenario: "Best scenario",
+    worstScenario: "Worst scenario",
+    classificationName: "Classification",
+    nProjectsLabelShort: "proj.",
+    defaultUnitName: "Unit",
+    categories: {
+      concrete_wall: "Concrete Wall",
+      foundation: "Foundation",
+      roof: "Roof",
+    },
   },
   customBanner: {
     building: "Building",
@@ -1311,6 +1339,8 @@ export const en: Translations = {
       noOptionsHint: "Create a new simulation first.",
       createNew: "Create new simulation",
       requiredHint: "Select or create a simulation before continuing.",
+      changeLabel: "Change",
+      changeAriaLabel: "Change simulation",
     },
     modules: {
       hint: "Module creation is not mandatory. Only the modules checked below, valid and with a unit bound will be created.",

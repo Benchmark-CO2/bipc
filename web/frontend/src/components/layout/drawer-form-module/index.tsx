@@ -64,6 +64,8 @@ import {
   CompletenessWarningsI18n,
 } from "./aggregate-helpers";
 
+export type ModuleFormSource = "default" | "ifc" | "tqs";
+
 interface DrawerFormModuleProps {
   triggerComponent?: React.ReactNode;
   projectId: string;
@@ -72,6 +74,7 @@ interface DrawerFormModuleProps {
   moduleId?: string;
   type: TModulesTypes;
   floors?: TTowerFloorCategory[];
+  source?: ModuleFormSource;
 
   stepperMode?: boolean;
   strictValidation?: boolean;
@@ -100,6 +103,7 @@ const DrawerFormModule = ({
   moduleId,
   type,
   floors = [],
+  source = "default",
   stepperMode = false,
   strictValidation: strictValidationProp,
   open: controlledOpen,
@@ -821,6 +825,7 @@ const DrawerFormModule = ({
                               form={form as any}
                               stepperMode={stepperMode}
                               isSubmitted={form.formState.isSubmitted}
+                              source={source}
                             />
                           );
                         case "concrete_wall":
@@ -829,6 +834,7 @@ const DrawerFormModule = ({
                               form={form as any}
                               stepperMode={stepperMode}
                               isSubmitted={form.formState.isSubmitted}
+                              source={source}
                             />
                           );
                         case "structural_masonry":
@@ -837,6 +843,7 @@ const DrawerFormModule = ({
                               form={form as any}
                               stepperMode={stepperMode}
                               isSubmitted={form.formState.isSubmitted}
+                              source={source}
                             />
                           );
                         case "raft_foundation":
@@ -845,6 +852,7 @@ const DrawerFormModule = ({
                               form={form as any}
                               stepperMode={stepperMode}
                               isSubmitted={form.formState.isSubmitted}
+                              source={source}
                             />
                           );
                         case "piles_foundation":
@@ -853,6 +861,7 @@ const DrawerFormModule = ({
                               form={form as any}
                               stepperMode={stepperMode}
                               isSubmitted={form.formState.isSubmitted}
+                              source={source}
                             />
                           );
                         case "raft_piles_foundation":
@@ -861,6 +870,7 @@ const DrawerFormModule = ({
                               form={form as any}
                               stepperMode={stepperMode}
                               isSubmitted={form.formState.isSubmitted}
+                              source={source}
                             />
                           );
                         default:

@@ -1,18 +1,19 @@
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
 import { useTranslation } from "@/i18n";
+import { Translations } from "@/i18n/translations/pt-BR";
 import { cn } from "@/lib/utils";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
-import EmissionsChart from '../charts/barChart';
+import EmissionsChart from "../charts/barChart";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
-import Divider from '../ui/divider';
+import Divider from "../ui/divider";
 import { FilterTabs } from "../ui/filter-tabs";
-import { IndicatorList } from './components/indicatorsList';
+import { IndicatorList } from "./components/indicatorsList";
 import Legend from "./components/Legend";
 import { useChartType } from "./hooks/useChartType";
-import { getCategoryValue, translateCategory } from './units';
+import { getCategoryValue, translateCategory } from "./units";
 import { normalizeBenchmarkSeries, recalculateY } from "./utils";
 
 type TModules = {
@@ -67,21 +68,22 @@ const SimulationsSummary = ({
 }: ProjectsSummaryProps) => {
   const { chartType, ChartSelector } = useChartType();
   const { t } = useTranslation();
+  const translations = t as unknown as Translations;
 
   const filteredProjects = useMemo(
     () => projects.filter((el) => !!el.consumption),
-    [projects]
+    [projects],
   );
 
   const [type, setType] = useState<"co2" | "energy" | "material">("co2");
 
   // 1. Inicializamos com todos os projetos selecionados
   const [selectedProjects, setSelectedProjects] = useState<string[]>(
-    filteredProjects.map((p) => p.id)
+    filteredProjects.map((p) => p.id),
   );
 
-  const newItems: Record<"co2" | "energy" | "material", Item>[] = filteredProjects.map(
-    (el) => {
+  const newItems: Record<"co2" | "energy" | "material", Item>[] =
+    filteredProjects.map((el) => {
       return {
         co2: {
           id: el.id,
@@ -104,8 +106,7 @@ const SimulationsSummary = ({
           label: el.name,
         },
       };
-    },
-  ) as any;
+    }) as any;
 
   const managedData = normalizeBenchmarkSeries(
     data.benchmark?.[type as "co2" | "energy" | "material"],
@@ -176,8 +177,14 @@ const SimulationsSummary = ({
       : []),
   ] as any;
 
-  const minData = useMemo(() => newData.map((d: Item) => d.min ?? (d as any).value ?? 0), [newData]);
-  const maxData = useMemo(() => newData.map((d: Item) => d.max ?? (d as any).value ?? 0), [newData]);
+  const minData = useMemo(
+    () => newData.map((d: Item) => d.min ?? (d as any).value ?? 0),
+    [newData],
+  );
+  const maxData = useMemo(
+    () => newData.map((d: Item) => d.max ?? (d as any).value ?? 0),
+    [newData],
+  );
   const minValue = minData.length ? Math.min(...minData) : 0;
   const maxValue = maxData.length ? Math.max(...maxData) : 0;
   const updateYs = recalculateY(newData, minValue, maxValue);
@@ -185,8 +192,8 @@ const SimulationsSummary = ({
   const listSum =
     type !== "material"
       ? newItems
-        .flatMap((el) => el[listType])
-        .reduce((acc, curr) => acc + curr.max, 0)
+          .flatMap((el) => el[listType])
+          .reduce((acc, curr) => acc + curr.max, 0)
       : 0;
 
   // ── DADOS DO GRÁFICO DE BARRAS (MOCK) ─────────────────────────────────────────
@@ -197,16 +204,19 @@ const SimulationsSummary = ({
   //   cobertura: Math.floor(Math.random() * 5) + 2
   // }));
 
-    const chartData = filteredProjects.map((el) => {
-    const dataRow: Record<string, any> = { name: el.name || "Unidade" };
+  const chartData = filteredProjects.map((el) => {
+    const dataRow: Record<string, any> = {
+      name: el.name || translations.summaryUnits.defaultUnitName,
+    };
 
     // Pega o objeto de consumos da unidade
     const cons = el.consumption || {};
 
     Object.entries(cons).forEach(([key, values]) => {
       if (key !== "total") {
-        const translatedKey = translateCategory[key] || key; 
-      dataRow[translatedKey] = getCategoryValue(values, type);
+        const translatedKey =
+          translateCategory(key, translations.summaryUnits.categories) || key;
+        dataRow[translatedKey] = getCategoryValue(values, type);
       }
     });
 
@@ -222,23 +232,28 @@ const SimulationsSummary = ({
         if (!acc[proj.id]) {
           acc[proj.id] = { name: proj.name, avg: 0, id: proj.id };
         }
-        if (type === 'material') {
+        if (type === "material") {
           acc[proj.id].avg = proj.consumption.total.material || 0;
         } else {
-          const min = type === "co2" ? proj.consumption.total.co2_min : proj.consumption.total.energy_min;
-          const max = type === "co2" ? proj.consumption.total.co2_max : proj.consumption.total.energy_max;
+          const min =
+            type === "co2"
+              ? proj.consumption.total.co2_min
+              : proj.consumption.total.energy_min;
+          const max =
+            type === "co2"
+              ? proj.consumption.total.co2_max
+              : proj.consumption.total.energy_max;
           acc[proj.id].avg = (min + max) / 2;
         }
         return acc;
       },
-      {} as Record<string, { name: string; avg: number; id: string; }>,
+      {} as Record<string, { name: string; avg: number; id: string }>,
     );
   }, [projects, type]);
 
-  const sumByProject = (Object.values(avgByProject) as Array<{ avg: number; }>).reduce(
-    (acc: number, b: { avg: number; }) => acc + b.avg,
-    0 as number,
-  );
+  const sumByProject = (
+    Object.values(avgByProject) as Array<{ avg: number }>
+  ).reduce((acc: number, b: { avg: number }) => acc + b.avg, 0 as number);
 
   // ── LÓGICA DE P, C, V, R ────────────────────────────────────────────────────
   const pcvMetrics = useMemo(() => {
@@ -246,24 +261,38 @@ const SimulationsSummary = ({
       return { P: 0, C: 0, V: 0, R: 0, hasSelection: false };
     }
 
-    const sortedMin = [...updateYs].map((d) => d.min ?? d.value ?? 0).sort((a, b) => a - b);
-    const sortedMax = [...updateYs].map((d) => d.max ?? d.value ?? 0).sort((a, b) => a - b);
+    const sortedMin = [...updateYs]
+      .map((d) => d.min ?? d.value ?? 0)
+      .sort((a, b) => a - b);
+    const sortedMax = [...updateYs]
+      .map((d) => d.max ?? d.value ?? 0)
+      .sort((a, b) => a - b);
 
     const p5Index = Math.floor(sortedMin.length * 0.05);
     const c5Value = sortedMin[Math.min(p5Index, sortedMin.length - 1)];
     const r5Value = sortedMax[Math.min(p5Index, sortedMax.length - 1)];
 
     const pValue = c5Value;
-    const activeItems = updateYs.filter((d: any) => selectedProjects.includes(String(d.id)));
+    const activeItems = updateYs.filter((d: any) =>
+      selectedProjects.includes(String(d.id)),
+    );
 
     if (activeItems.length === 0) {
       return { P: pValue, C: 0, V: 0, R: 0, hasSelection: false };
     }
 
-    const cValue = activeItems.reduce((acc, curr) => acc + (curr.min ?? curr.value ?? 0), 0) / activeItems.length;
-    const rValue = activeItems.reduce((acc, curr) => acc + (curr.max ?? curr.value ?? 0), 0) / activeItems.length;
+    const cValue =
+      activeItems.reduce(
+        (acc, curr) => acc + (curr.min ?? curr.value ?? 0),
+        0,
+      ) / activeItems.length;
+    const rValue =
+      activeItems.reduce(
+        (acc, curr) => acc + (curr.max ?? curr.value ?? 0),
+        0,
+      ) / activeItems.length;
 
-    let vValue = (c5Value - cValue) + (r5Value - rValue) / 2;
+    let vValue = c5Value - cValue + (r5Value - rValue) / 2;
     if (vValue < 0) {
       vValue = (cValue + rValue) / 2;
     }
@@ -273,90 +302,109 @@ const SimulationsSummary = ({
       C: cValue,
       V: vValue,
       R: rValue,
-      hasSelection: true
+      hasSelection: true,
     };
   }, [updateYs, selectedProjects]);
 
   // ── Lógica dos Dados de Valores e Cenários ──────────────────────────────────
-  const unitTotal = type === "energy" ? "MJ" : type === "material" ? "kg" : "kg CO₂";
-  const unitBenchmark = type === "energy" ? "MJ/m²" : type === "material" ? "kg/m²" : "kg/m² CO₂";
+  const unitTotal =
+    type === "energy" ? "MJ" : type === "material" ? "kg" : "kg CO₂";
+  const unitBenchmark =
+    type === "energy" ? "MJ/m²" : type === "material" ? "kg/m²" : "kg/m² CO₂";
   const currentUnit = unitsOfMeasure[type] || "Kg/m²";
 
-  const stackedData = useMemo(() => newItems.map((el) => ({
-    id: el[type].id,
-    label: el[type].label,
-    co2: ((el.co2.max || 0) + (el.co2.min || 0)) / 2,
-    energy: ((el.energy.max || 0) + (el.energy.min || 0)) / 2,
-    material: (el as any).material?.value || 0
-  })), [newItems, type]);
+  const stackedData = useMemo(
+    () =>
+      newItems.map((el) => ({
+        id: el[type].id,
+        label: el[type].label,
+        co2: ((el.co2.max || 0) + (el.co2.min || 0)) / 2,
+        energy: ((el.energy.max || 0) + (el.energy.min || 0)) / 2,
+        material: (el as any).material?.value || 0,
+      })),
+    [newItems, type],
+  );
 
-  const activeStacked = selectedProjects.length > 0
-    ? stackedData.filter(d => selectedProjects.includes(String(d.id)))
-    : stackedData;
+  const activeStacked =
+    selectedProjects.length > 0
+      ? stackedData.filter((d) => selectedProjects.includes(String(d.id)))
+      : stackedData;
 
-  const currentDataItems = selectedProjects.length > 0
-    ? updateYs.filter((d: any) => selectedProjects.includes(String(d.id)))
-    : updateYs;
+  const currentDataItems =
+    selectedProjects.length > 0
+      ? updateYs.filter((d: any) => selectedProjects.includes(String(d.id)))
+      : updateYs;
 
   const totalRefValue = activeStacked.reduce(
-    (acc, curr) => acc + ((curr[type as keyof typeof curr] as number) || 0), 0
+    (acc, curr) => acc + ((curr[type as keyof typeof curr] as number) || 0),
+    0,
   );
-  const benchmarkRefValue = activeStacked.length > 0 ? totalRefValue / activeStacked.length : 0;
+  const benchmarkRefValue =
+    activeStacked.length > 0 ? totalRefValue / activeStacked.length : 0;
 
-  const bestScenario = currentDataItems.length > 0
-    ? Math.min(...currentDataItems.map(d => d.min ?? (d as any).value ?? 0)) : 0;
+  const bestScenario =
+    currentDataItems.length > 0
+      ? Math.min(...currentDataItems.map((d) => d.min ?? (d as any).value ?? 0))
+      : 0;
 
-  const worstScenario = currentDataItems.length > 0
-    ? Math.max(...currentDataItems.map(d => d.max ?? (d as any).value ?? 0)) : 0;
+  const worstScenario =
+    currentDataItems.length > 0
+      ? Math.max(...currentDataItems.map((d) => d.max ?? (d as any).value ?? 0))
+      : 0;
 
   const formatMetric = (val: number) =>
     val.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
-
       {/* ── BARRA SUPERIOR: Valores e PCVRB ── */}
-      <div className='flex justify-between gap-2 w-full'>
-        <div className='border-1 border-secondary rounded-md flex p-2 box-border gap-4 max-md:gap-1 h-full'>
-          <div className='flex flex-col'>
-            <span className='text-secondary font-semibold text-small max-md:text-xs'>
+      <div className="flex justify-between gap-2 w-full">
+        <div className="border-1 border-secondary rounded-md flex p-2 box-border gap-4 max-md:gap-1 h-full">
+          <div className="flex flex-col">
+            <span className="text-secondary font-semibold text-small max-md:text-xs">
               Valor de Ref. - Total ({unitTotal})
             </span>
-            <span className='text-xs'>{formatMetric(totalRefValue)}</span>
+            <span className="text-xs">{formatMetric(totalRefValue)}</span>
           </div>
-          <div className='flex flex-col'>
-            <span className='text-secondary font-semibold text-small max-md:text-xs'>
+          <div className="flex flex-col">
+            <span className="text-secondary font-semibold text-small max-md:text-xs">
               Valor de Ref. - Benchmark ({unitBenchmark})
             </span>
-            <span className='text-xs font-bold'>{formatMetric(benchmarkRefValue)}</span>
+            <span className="text-xs font-bold">
+              {formatMetric(benchmarkRefValue)}
+            </span>
           </div>
         </div>
-        <div className='flex gap-4 text-[16px] max-md:gap-2 max-md:text-xs'>
-          <IndicatorList indicators={[
-          {
-            color: '#9F70DB',
-            currentUnit,
-            value: formatMetric(pcvMetrics.P),
-            label: 'P'
-          },
-          {
-            color: '#6C9EE0',
-            currentUnit,
-            value: formatMetric(pcvMetrics.C),
-            label: 'C'
-          },
-          {
-            color: '#E0756C',
-            currentUnit,
-            value: formatMetric(pcvMetrics.R),
-            label: 'R'
-          },
-        ]} />
-          <div className='text-md border-1 border-[#72E06C] bg-[#E2F1C1] rounded-md p-2 flex items-center justify-center min-w-[40px] gap-1 h-full'>
-            <span className='text-black font-bold'>B</span>
-            <div className='flex flex-col'>
-              <span className='font-bold text-xs'>Classificação</span>
-              <span className='font-light text-neutral-400 text-xs'>N: {updateYs.length} projetos</span>
+        <div className="flex gap-4 text-[16px] max-md:gap-2 max-md:text-xs">
+          <IndicatorList
+            indicators={[
+              {
+                color: "#9F70DB",
+                currentUnit,
+                value: formatMetric(pcvMetrics.P),
+                label: "P",
+              },
+              {
+                color: "#6C9EE0",
+                currentUnit,
+                value: formatMetric(pcvMetrics.C),
+                label: "C",
+              },
+              {
+                color: "#E0756C",
+                currentUnit,
+                value: formatMetric(pcvMetrics.R),
+                label: "R",
+              },
+            ]}
+          />
+          <div className="text-md border-1 border-[#72E06C] bg-[#E2F1C1] rounded-md p-2 flex items-center justify-center min-w-[40px] gap-1 h-full">
+            <span className="text-black font-bold">B</span>
+            <div className="flex flex-col">
+              <span className="font-bold text-xs">Classificação</span>
+              <span className="font-light text-neutral-400 text-xs">
+                N: {updateYs.length} projetos
+              </span>
             </div>
           </div>
         </div>
@@ -364,17 +412,22 @@ const SimulationsSummary = ({
 
       {/* ── CONTEÚDO PRINCIPAL (Exibido quando aberto) ── */}
       {(isOpen || isExpanded) && (
-        <div className='flex gap-4'>
+        <div className="flex gap-4">
           {/* COLUNA ESQUERDA (1/3) */}
           <div className="w-1/3 flex-shrink-0 mt-3 flex flex-col">
             <FilterTabs
               tabs={["co2", "energy", "material"]}
-              onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
+              onTabSelect={(tab) =>
+                setType(tab as "co2" | "energy" | "material")
+              }
               selectedTab={type}
               fullWidth
               onSubTabSelect={(tab) => {
                 if (tab === t.summaryTechnologies.projects) setSubTabs(tab);
-                if (tab === t.summary.selectAll || tab === t.summary.deselectAll)
+                if (
+                  tab === t.summary.selectAll ||
+                  tab === t.summary.deselectAll
+                )
                   selectAll();
               }}
               subTabs={[
@@ -385,30 +438,39 @@ const SimulationsSummary = ({
               ]}
               selectedSubTab={subTabs}
             />
-            <div className='mt-2'>
+            <div className="mt-2">{ChartSelector}</div>
 
-              {ChartSelector}
-            </div>
-
-            <div className='flex gap-3 my-3'>
-              <div className='border-1 border-[#6C9EE0] rounded-md w-1/2 p-3 flex flex-col box-border gap-2'>
-                <p className=' flex flex-col text-sm'>
-                  <span className='text-[#6C9EE0]'>Melhor cenário ({unitTotal})</span>
+            <div className="flex gap-3 my-3">
+              <div className="border-1 border-[#6C9EE0] rounded-md w-1/2 p-3 flex flex-col box-border gap-2">
+                <p className=" flex flex-col text-sm">
+                  <span className="text-[#6C9EE0]">
+                    Melhor cenário ({unitTotal})
+                  </span>
                   <span>-</span>
                 </p>
-                <p className=' flex flex-col text-sm'>
-                  <span className='text-[#6C9EE0]'>Melhor cenário ({unitBenchmark})</span>
-                  <span className='font-bold'>{formatMetric(bestScenario)}</span>
+                <p className=" flex flex-col text-sm">
+                  <span className="text-[#6C9EE0]">
+                    Melhor cenário ({unitBenchmark})
+                  </span>
+                  <span className="font-bold">
+                    {formatMetric(bestScenario)}
+                  </span>
                 </p>
               </div>
-              <div className='border-1 border-[#E0756C] rounded-md w-1/2 p-3 flex flex-col box-border gap-2'>
-                <p className=' flex flex-col text-sm'>
-                  <span className='text-[#E0756C]'>Pior cenário ({unitTotal})</span>
+              <div className="border-1 border-[#E0756C] rounded-md w-1/2 p-3 flex flex-col box-border gap-2">
+                <p className=" flex flex-col text-sm">
+                  <span className="text-[#E0756C]">
+                    Pior cenário ({unitTotal})
+                  </span>
                   <span>-</span>
                 </p>
-                <p className=' flex flex-col text-sm'>
-                  <span className='text-[#E0756C]'>Pior cenário ({unitBenchmark})</span>
-                  <span className='font-bold'>{formatMetric(worstScenario)}</span>
+                <p className=" flex flex-col text-sm">
+                  <span className="text-[#E0756C]">
+                    Pior cenário ({unitBenchmark})
+                  </span>
+                  <span className="font-bold">
+                    {formatMetric(worstScenario)}
+                  </span>
                 </p>
               </div>
             </div>
@@ -551,9 +613,9 @@ const SimulationsSummary = ({
                   variant={type === "material" ? "cumulative" : "range"}
                   xAxisLabel={
                     t.benchmark.chartTypes[
-                    type === "co2" || type === "energy"
-                      ? "cumulativeFraction"
-                      : "material"
+                      type === "co2" || type === "energy"
+                        ? "cumulativeFraction"
+                        : "material"
                     ][type === "co2" ? "xAxisLabelCarbon" : "xAxisLabelEnergy"]
                   }
                   yAxisLabel={
@@ -573,8 +635,6 @@ const SimulationsSummary = ({
                 />
               )}
             </div>
-
-
           </div>
         </div>
       )}

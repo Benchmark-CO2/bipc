@@ -612,8 +612,15 @@ export const ptBR = {
       mesh: "Tela",
       strand: "Cordoalha",
       requiredLegend: "Campos marcados com * são obrigatórios",
+      ifcSourceLabel: "Materiais (IFC)",
+      tqsSourceLabel: "Materiais (TQS)",
+      aggregatedHint:
+        "Materiais importados em lote. Preencha volumes de concreto e aço conforme arquivo de origem.",
       unspecifiedPosition: "Sem Posição / Geral",
       unspecifiedHint: "Itens sem posição declarada (soma geral do módulo)",
+      beamCount: "Número de vigas",
+      slabCount: "Número de lajes",
+      slabArea: "Área de laje (m²)",
       slabTypes: {
         solid: "Laje maciça (concreto armado) com vigas ou paredes estruturais",
         ribbed: "Laje nervurada (unidirecional, bidirecional / tipo waffle)",
@@ -1112,6 +1119,27 @@ export const ptBR = {
   },
   summaryFloors: {
     floors: "Pavimentos",
+    referenceValueTotal: "Valor de Ref. - Total",
+    referenceValueBenchmark: "Valor de Ref. - Benchmark",
+    bestScenario: "Melhor cenário",
+    worstScenario: "Pior cenário",
+    classificationName: "Classificação",
+    nProjectsLabel: "projetos",
+    defaultFloorGroupName: "Unidade",
+  },
+  summaryUnits: {
+    referenceValueTotal: "Valor de Ref. - Total",
+    referenceValueBenchmark: "Valor de Ref. - Benchmark",
+    bestScenario: "Melhor cenário",
+    worstScenario: "Pior cenário",
+    classificationName: "Classificação",
+    nProjectsLabelShort: "proj.",
+    defaultUnitName: "Unidade",
+    categories: {
+      concrete_wall: "Parede de Concreto",
+      foundation: "Fundação",
+      roof: "Cobertura",
+    },
   },
   customBanner: {
     building: "Edificação",
@@ -1299,8 +1327,7 @@ export const ptBR = {
     stepUnitsDescription: "Validar e criar unidades",
     stepModules: "Módulos",
     stepModulesDescription: "Vincular e criar módulos",
-    stepSimulationModulesDescription:
-      "Vincular à simulação e criar módulos",
+    stepSimulationModulesDescription: "Vincular à simulação e criar módulos",
     btnNext: "Próximo passo",
     btnFinish: "Concluir",
     btnCancel: "Cancelar",
@@ -1325,6 +1352,8 @@ export const ptBR = {
       noOptionsHint: "Crie uma nova simulação primeiro.",
       createNew: "Criar nova simulação",
       requiredHint: "Selecione ou crie uma simulação antes de prosseguir.",
+      changeLabel: "Trocar",
+      changeAriaLabel: "Trocar simulação",
     },
     modules: {
       hint: "A criação de módulos não é obrigatória. Somente os módulos marcados abaixo, válidos e com vínculo de unidade serão criados.",

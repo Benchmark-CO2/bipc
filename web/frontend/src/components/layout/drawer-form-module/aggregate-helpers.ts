@@ -517,7 +517,7 @@ interface ConcreteSteelGroup {
   total_volume?: number;
 }
 
-interface BeamColumnGroupedForm {
+export interface BeamColumnGroupedForm {
   type: "beam_column";
   concrete_columns: ConcreteSteelGroup;
   concrete_beams: ConcreteSteelGroup;
@@ -528,6 +528,8 @@ interface BeamColumnGroupedForm {
   form_slabs: string | number;
   form_unspecified?: string | number;
   column_number: string | number;
+  beam_number: string | number;
+  slab_number: string | number;
   avg_beam_span: string | number;
   avg_slab_span: string | number;
   slab_type?: string;
@@ -535,7 +537,7 @@ interface BeamColumnGroupedForm {
   unit_id?: string;
 }
 
-interface ConcreteWallGroupedForm {
+export interface ConcreteWallGroupedForm {
   type: "concrete_wall";
   concrete_walls: ConcreteSteelGroup;
   concrete_slabs: ConcreteSteelGroup;
@@ -547,12 +549,14 @@ interface ConcreteWallGroupedForm {
   wall_form_area: string | number;
   slab_form_area: string | number;
   form_unspecified?: string | number;
+  beam_number: string | number;
+  slab_number: string | number;
   slab_type?: string;
   floor_ids?: string[];
   unit_id?: string;
 }
 
-interface StructuralMasonryGroupedForm {
+export interface StructuralMasonryGroupedForm {
   type: "structural_masonry";
   masonry_blocks: IMasonryElement["blocks"];
   grout: IMasonryElement["grout"];
@@ -565,12 +569,14 @@ interface StructuralMasonryGroupedForm {
   form_columns?: string | number;
   form_beams?: string | number;
   form_unspecified?: string | number;
+  beam_number: string | number;
+  slab_number: string | number;
   slab_type?: string;
   floor_ids?: string[];
   unit_id?: string;
 }
 
-interface RaftFoundationGroupedForm {
+export interface RaftFoundationGroupedForm {
   type: "raft_foundation";
   area: string | number;
   thickness: string | number;
@@ -586,7 +592,7 @@ interface RaftFoundationGroupedForm {
   unit_id?: string;
 }
 
-interface PilesFoundationGroupedForm {
+export interface PilesFoundationGroupedForm {
   type: "piles_foundation";
   fck: number;
   piles: ConcreteSteelGroup & { volume?: string | number };
@@ -597,7 +603,7 @@ interface PilesFoundationGroupedForm {
   unit_id?: string;
 }
 
-interface RaftPilesFoundationGroupedForm {
+export interface RaftPilesFoundationGroupedForm {
   type: "raft_piles_foundation";
   fck: number;
   raft: {
@@ -662,6 +668,8 @@ export const flatV2ToGroupedForm = (
       form_slabs: view.form.slab[0]?.area ?? "0",
       form_unspecified: view.form.unspecified?.[0]?.area ?? "0",
       column_number: bcFlat.column_number ?? "0",
+      beam_number: bcFlat.beam_number ?? "0",
+      slab_number: bcFlat.slab_number ?? "0",
       avg_beam_span: bcFlat.avg_beam_span ?? "0",
       avg_slab_span: bcFlat.avg_slab_span ?? "0",
       slab_type: bcFlat.slab_type,
@@ -698,6 +706,8 @@ export const flatV2ToGroupedForm = (
       wall_form_area: view.form.wall[0]?.area ?? "0",
       slab_form_area: view.form.slab[0]?.area ?? "0",
       form_unspecified: view.form.unspecified?.[0]?.area ?? "0",
+      beam_number: cwFlat.beam_number ?? "0",
+      slab_number: cwFlat.slab_number ?? "0",
       slab_type: cwFlat.slab_type,
       floor_ids: flat.floor_ids,
       unit_id: flat.unit_id,
@@ -738,6 +748,8 @@ export const flatV2ToGroupedForm = (
       form_columns: view.form.column[0]?.area ?? "0",
       form_beams: view.form.beam[0]?.area ?? "0",
       form_unspecified: view.form.unspecified?.[0]?.area ?? "0",
+      beam_number: smFlat.beam_number ?? "0",
+      slab_number: smFlat.slab_number ?? "0",
       slab_type: smFlat.slab_type,
       floor_ids: flat.floor_ids,
       unit_id: flat.unit_id,

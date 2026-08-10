@@ -41,10 +41,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTranslation } from "@/i18n";
+import { Translations } from "@/i18n/translations/pt-BR";
 import { IProject } from "@/types/projects";
 import { TModulesTypes } from "@/types/modules";
 import { TOption } from "@/types/options";
-import { TTowerFloorCategory } from "@/types/units";
+import { TTowerFloorCategory, IUnit } from "@/types/units";
 import {
   TIfcProcessorAggregatedResult,
   TIfcStepperCreatedUnit,
@@ -68,7 +69,11 @@ import {
   rerunModuleValidation,
   rerunUnitValidation,
 } from "@/utils/ifcStepper";
-import { CompletenessWarningsI18n } from "@/components/layout/drawer-form-module/aggregate-helpers";
+import {
+  CompletenessWarningsI18n,
+  flatV2ToGroupedForm,
+  TModuleGroupedForm,
+} from "@/components/layout/drawer-form-module/aggregate-helpers";
 import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
 import { ModuleFormState } from "@/validators/moduleFormByType.validator";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -90,6 +95,68 @@ import {
   ModuleParamsPropsV2,
   TModuleDataV2,
 } from "@/types/modules";
+
+type TIfcProcessorStateUnit = IUnit;
+
+interface IRawModuleDataWithMeta {
+  floor_index?: number;
+  floor_ids?: string[];
+  unit_id?: string;
+  [k: string]: unknown;
+}
+
+interface IOptionsResponse {
+  options: TOption[];
+}
+
+interface IPatchUnitResponse {
+  unit?: TIfcProcessorStateUnit;
+  data?: { unit?: TIfcProcessorStateUnit };
+}
+
+interface IPostUnitResponse {
+  unit?: TIfcProcessorStateUnit;
+  data?: { unit?: TIfcProcessorStateUnit };
+}
+
+interface IPostOptionResponse {
+  option?: TOption;
+  tower_option?: TOption;
+  data?: {
+    option?: TOption;
+    tower_option?: TOption;
+  };
+}
+
+interface IGetUnitByUUIDCachedResponse {
+  data?: { unit?: { floors?: TTowerFloorCategory[] } };
+}
+
+type TEditingModuleMerged = TModuleGroupedForm & IRawModuleDataWithMeta;
+
+interface IModuleBatchBinding {
+  unit_id?: string;
+  floor_ids?: string[];
+}
+
+interface Step1UnitsViewProps {
+  state: TIfcStepperState;
+  toggleUnitSelected: (tempId: string) => void;
+  setUnitNameInline: (tempId: string, name: string) => void;
+  onEditUnit: (tempId: string) => void;
+  t: Translations;
+}
+
+interface Step2ModulesViewProps {
+  state: TIfcStepperState;
+  applyUnitToAllModules: (unitTempId: string) => void;
+  setModuleBoundUnit: (moduleTempId: string, unitTempId: string) => void;
+  onEditModule: (tempId: string) => void;
+  toggleModuleSelected: (tempId: string) => void;
+  toggleAllModulesSelected: (checked: boolean) => void;
+  moduleTypeLabels: Record<string, string>;
+  t: Translations;
+}
 
 const FOUNDATION_MODULE_TYPES: TModulesTypes[] = [
   "raft_foundation",
@@ -134,8 +201,12 @@ export default function DrawerStepperIFC({
 }: DrawerStepperIFCProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const i18nCompleteness = (t as any).modules?.form
-    ?.completeness as CompletenessWarningsI18n;
+  const translations = t as Translations;
+  const i18nCompleteness = (
+    translations.modules.form as unknown as {
+      completeness?: CompletenessWarningsI18n;
+    }
+  ).completeness as CompletenessWarningsI18n;
 
   const { data: projectData } = useQuery({
     queryKey: ["project", projectId],
@@ -153,7 +224,8 @@ export default function DrawerStepperIFC({
     enabled: open && isSimulationMode && !!preselectedUnitId && !!initialRoleId,
     staleTime: 1000 * 30,
   });
-  const availableOptions: TOption[] = (optionsData?.data as any)?.options ?? [];
+  const availableOptions: TOption[] =
+    (optionsData?.data as IOptionsResponse | undefined)?.options ?? [];
 
   // Fetch da UNIDADE existente quando estivermos no modo simulation
   // (para pegar os floors e poder mapear floor_index number → floor_ids UUIDs)
@@ -190,7 +262,10 @@ export default function DrawerStepperIFC({
   ]);
 
   const initialState = useMemo<TIfcStepperState>(() => {
-    const base = mapIfcResultToStepperState(initialResult, t as any);
+    const base = mapIfcResultToStepperState(
+      initialResult,
+      t as unknown as Translations,
+    );
     if (isSimulationMode) {
       return {
         ...base,
@@ -323,20 +398,20 @@ export default function DrawerStepperIFC({
     ? [
         {
           id: "modules",
-          label: t.stepper.stepModules,
-          description: t.stepper.stepSimulationModulesDescription,
+          label: translations.stepper.stepModules,
+          description: translations.stepper.stepSimulationModulesDescription,
         },
       ]
     : [
         {
           id: "units",
-          label: t.stepper.stepUnits,
-          description: t.stepper.stepUnitsDescription,
+          label: translations.stepper.stepUnits,
+          description: translations.stepper.stepUnitsDescription,
         },
         {
           id: "modules",
-          label: t.stepper.stepModules,
-          description: t.stepper.stepModulesDescription,
+          label: translations.stepper.stepModules,
+          description: translations.stepper.stepModulesDescription,
         },
       ];
 
@@ -419,7 +494,9 @@ export default function DrawerStepperIFC({
           const unitState = state.units.find((u) => u.tempId === tempId);
           const rawFloors = unitState?.formData?.data?.floors ?? [];
           if (rawFloors.length > 0) {
-            floors = convertFloorFormInputToTowerFloors(rawFloors as any[]);
+            floors = convertFloorFormInputToTowerFloors(
+              rawFloors as unknown as UnitFormInput["data"]["floors"],
+            );
           }
         }
 
@@ -430,7 +507,9 @@ export default function DrawerStepperIFC({
           );
           const rawFloors = unitState?.formData?.data?.floors ?? [];
           if (rawFloors.length > 0) {
-            floors = convertFloorFormInputToTowerFloors(rawFloors as any[]);
+            floors = convertFloorFormInputToTowerFloors(
+              rawFloors as unknown as UnitFormInput["data"]["floors"],
+            );
           }
         }
 
@@ -441,7 +520,7 @@ export default function DrawerStepperIFC({
               "unit",
               projectId,
               unitCreated.unitId,
-            ]) as any;
+            ]) as IGetUnitByUUIDCachedResponse | undefined;
             const cachedFloors = cached?.data?.unit?.floors;
             if (cachedFloors && Array.isArray(cachedFloors)) {
               floors = cachedFloors as TTowerFloorCategory[];
@@ -463,7 +542,9 @@ export default function DrawerStepperIFC({
             map.set(unitState.tempId, []);
             continue;
           }
-          const tower = convertFloorFormInputToTowerFloors(rawFloors as any[]);
+          const tower = convertFloorFormInputToTowerFloors(
+            rawFloors as unknown as UnitFormInput["data"]["floors"],
+          );
           map.set(unitState.tempId, tower);
         }
       }
@@ -503,7 +584,9 @@ export default function DrawerStepperIFC({
         );
         const raw = unitState?.formData?.data?.floors ?? [];
         if (raw.length > 0) {
-          return convertFloorFormInputToTowerFloors(raw as any[]);
+          return convertFloorFormInputToTowerFloors(
+            raw as unknown as UnitFormInput["data"]["floors"],
+          );
         }
       }
       try {
@@ -511,7 +594,7 @@ export default function DrawerStepperIFC({
           "unit",
           projectId,
           editingModuleBoundUnit.unitId,
-        ]) as any;
+        ]) as IGetUnitByUUIDCachedResponse | undefined;
         const cachedFloors = cached?.data?.unit?.floors;
         if (
           cachedFloors &&
@@ -537,19 +620,21 @@ export default function DrawerStepperIFC({
   // para `floor_ids: string[]` (UUIDs dos pavimentos correspondentes).
   const editingModuleInitialSelectedFloors: string[] = useMemo(() => {
     if (!editingModule) return [];
-    const rawIndex = (editingModule.raw?.data as any)?.floor_index;
+    const rawIndex = (
+      editingModule.raw?.data as unknown as IRawModuleDataWithMeta
+    )?.floor_index;
     return mapFloorIndexToFloorIds(rawIndex, editingUnitFloors);
   }, [editingModule, editingUnitFloors]);
 
   // Dados merged do initialModuleData passados para o DrawerFormModule:
   // inclui raw.data original E também `floor_ids` já mapeados (fallback caso
   // initialSelectedFloors seja ignorado).
-  const editingModuleInitialMerged: any = useMemo(() => {
-    if (!editingModule?.raw?.data) return {} as any;
+  const editingModuleInitialMerged: TEditingModuleMerged = useMemo(() => {
+    if (!editingModule?.raw?.data) return {} as TEditingModuleMerged;
     return {
-      ...(editingModule.raw.data as any),
+      ...(editingModule.raw.data as unknown as IRawModuleDataWithMeta),
       floor_ids: editingModuleInitialSelectedFloors,
-    };
+    } as TEditingModuleMerged;
   }, [editingModule, editingModuleInitialSelectedFloors]);
 
   // ---------------------------------------------------------------------------
@@ -575,7 +660,7 @@ export default function DrawerStepperIFC({
           name,
           formData: { ...u.formData, name },
         };
-        return rerunUnitValidation(updated, t as any);
+        return rerunUnitValidation(updated, t as unknown as Translations);
       });
       return next;
     });
@@ -585,7 +670,7 @@ export default function DrawerStepperIFC({
     unitId?: string;
     data: UnitFormSchema;
     formInput: UnitFormInput;
-    unit: any;
+    unit: TIfcProcessorStateUnit;
   }) => {
     if (!editingUnitTempId) return;
     const currentEditingTempId = editingUnitTempId;
@@ -610,7 +695,7 @@ export default function DrawerStepperIFC({
           formData: fd,
           name: fd.name,
         };
-        return rerunUnitValidation(updated, t as any);
+        return rerunUnitValidation(updated, t as unknown as Translations);
       });
       const alreadyHasCreated = prev.unitsCreated.some(
         (c) => c.tempId === currentEditingTempId,
@@ -682,15 +767,19 @@ export default function DrawerStepperIFC({
         );
         if (alreadyCreated) {
           if (alreadyCreated.needsUpdate) {
-            const updatePayload = prepareUnitForCreate(unit.formData);
+            const updatePayload: UnitFormSchema = prepareUnitForCreate(
+              unit.formData,
+            ) as unknown as UnitFormSchema;
             const patchRes = await patchUnit(
-              updatePayload as any,
+              updatePayload,
               projectId,
               alreadyCreated.unitId,
             );
-            const patchBody: any = (patchRes as any).data;
-            const updatedUnitObj: any =
-              (patchBody as any)?.unit ?? (patchBody as any)?.data?.unit;
+            const patchBody: IPatchUnitResponse = (
+              patchRes as { data: IPatchUnitResponse }
+            ).data;
+            const updatedUnitObj: TIfcProcessorStateUnit | undefined =
+              patchBody?.unit ?? patchBody?.data?.unit;
             const patchedRecord: TIfcStepperCreatedUnit = {
               ...alreadyCreated,
               unitId: updatedUnitObj?.id ?? alreadyCreated.unitId,
@@ -715,11 +804,15 @@ export default function DrawerStepperIFC({
           continue;
         }
 
-        const createPayload = prepareUnitForCreate(unit.formData);
-        const unitRes = await postUnit(createPayload as any, projectId);
-        const unitBody: any = (unitRes as any).data;
-        const unitObj: any =
-          (unitBody as any)?.unit ?? (unitBody as any)?.data?.unit;
+        const createPayload: UnitFormSchema = prepareUnitForCreate(
+          unit.formData,
+        ) as unknown as UnitFormSchema;
+        const unitRes = await postUnit(createPayload, projectId);
+        const unitBody: IPostUnitResponse = (
+          unitRes as { data: IPostUnitResponse }
+        ).data;
+        const unitObj: TIfcProcessorStateUnit | undefined =
+          unitBody?.unit ?? unitBody?.data?.unit;
         const unitId = unitObj?.id;
         if (!unitId) {
           throw new Error(
@@ -737,12 +830,14 @@ export default function DrawerStepperIFC({
           name: simName,
           active: true,
         });
-        const optionBody: any = (optionRes as any).data;
-        const optionObj: any =
-          (optionBody as any)?.option ??
-          (optionBody as any)?.data?.option ??
-          (optionBody as any)?.tower_option ??
-          (optionBody as any)?.data?.tower_option;
+        const optionBody: IPostOptionResponse = (
+          optionRes as { data: IPostOptionResponse }
+        ).data;
+        const optionObj: TOption | undefined =
+          optionBody?.option ??
+          optionBody?.data?.option ??
+          optionBody?.tower_option ??
+          optionBody?.data?.tower_option;
         const optionId = optionObj?.id;
         if (!optionId) {
           throw new Error(
@@ -894,33 +989,213 @@ export default function DrawerStepperIFC({
     };
   }) => {
     if (!editingModuleTempId) return;
+
+    // --- CONVERSÃO OBRIGATÓRIA: flatData (FLAT schema) → grouped (SCHEMA FORMATO) ---
+    // Motivo: rerunModuleValidation internamente roda moduleFormSchema.safeParse(),
+    // que espera dados NO FORMATO GROUPED (ex: concrete_columns.volumes / steel / etc),
+    // NÃO no formato flat (ex: concrete.column[]).
+    // Sem essa conversão, raw.data fica com flat, schema falha e aparece "2 erros"
+    // mesmo com tudo preenchido corretamente pelo usuário.
+    const groupedForRaw = flatV2ToGroupedForm(
+      payload.flatData.type,
+      payload.flatData as unknown as Partial<TModuleDataV2> & {
+        [k: string]: unknown;
+      },
+    );
+
     setState((prev) => {
       const next = { ...prev };
       next.modules = next.modules.map((m) => {
         if (m.tempId !== editingModuleTempId) return m;
+
+        // grouped NOVO completo, preservando metadados do módulo
+        // (floor_ids / floor_index / unit_id) que flatV2ToGroupedForm
+        // NÃO repassa — pois eles não são campos do form Raft/Pórtico/etc.
+        const preservedMeta: Record<string, unknown> = {
+          // ⬇️ OBRIGATÓRIO: DrawerFormModule lê raw.data.floor_ids
+          //     para pre-encher selectedFloors (BuildingVisualizer checkboxes)
+          floor_ids: payload.selectedFloors ?? [],
+          // ⬇️ Preserva floor_index ORIGINAL do IFC (backup caso floor_ids vazio)
+          ...((m.raw.data as unknown as IRawModuleDataWithMeta)?.floor_index !==
+          undefined
+            ? {
+                floor_index: (m.raw.data as unknown as IRawModuleDataWithMeta)
+                  .floor_index,
+              }
+            : {}),
+          ...(m.raw.floor_index !== undefined
+            ? { floor_index: m.raw.floor_index }
+            : {}),
+        };
+        // unit_id: prioriza payload.flatData.unit_id (vinculado do drawer),
+        // senão preserva o que já tinha em grouped ou raw.
+        // Valida: fundação (raft/piles/raft_piles) usa unit_id UUID; pórtico/etc
+        // pode vir com floor_ids e unit_id vazio. Fallback cascata até boundUnitId.
+        const isFoundationType = FOUNDATION_MODULE_TYPES.includes(
+          payload.flatData.type as TModulesTypes,
+        );
+        const candidateFlat =
+          typeof payload.flatData.unit_id === "string" &&
+          payload.flatData.unit_id.trim().length >= 5
+            ? payload.flatData.unit_id.trim()
+            : undefined;
+        const candidateGrouped =
+          typeof (groupedForRaw as unknown as IRawModuleDataWithMeta)
+            .unit_id === "string" &&
+          (groupedForRaw as unknown as IRawModuleDataWithMeta).unit_id!.trim()
+            .length >= 5
+            ? (
+                groupedForRaw as unknown as IRawModuleDataWithMeta
+              ).unit_id!.trim()
+            : undefined;
+        const candidateRawData =
+          typeof (m.raw.data as unknown as IRawModuleDataWithMeta)?.unit_id ===
+            "string" &&
+          (m.raw.data as unknown as IRawModuleDataWithMeta)?.unit_id!.trim()
+            .length >= 5
+            ? (m.raw.data as unknown as IRawModuleDataWithMeta)?.unit_id!.trim()
+            : undefined;
+        const candidateBound =
+          typeof m.boundUnitId === "string" && m.boundUnitId.trim().length >= 5
+            ? m.boundUnitId.trim()
+            : undefined;
+        const savedUnitId =
+          candidateFlat ??
+          candidateGrouped ??
+          candidateRawData ??
+          candidateBound ??
+          (isFoundationType ? candidateBound : undefined);
+        if (savedUnitId) preservedMeta.unit_id = savedUnitId;
+
+        const groupedComMeta = {
+          ...groupedForRaw,
+          ...preservedMeta,
+        } as TEditingModuleMerged;
+
         const rawNext = {
           ...m.raw,
           type: payload.flatData.type,
-          data: { ...(m.raw.data ?? {}), ...(payload.flatData as any) },
+          data: groupedComMeta,
+          // ⬇️ Também garante floor_index no NÍVEL raw (não só data) para
+          //     fallback normalizedUnitsFloorMap (5 camadas)
+          ...(m.raw.floor_index !== undefined
+            ? { floor_index: m.raw.floor_index }
+            : (m.raw.data as unknown as IRawModuleDataWithMeta)?.floor_index !==
+                undefined
+              ? {
+                  floor_index: (m.raw.data as unknown as IRawModuleDataWithMeta)
+                    .floor_index,
+                }
+              : {}),
         };
         const rebuilt = { ...m, raw: rawNext, type: payload.flatData.type };
-        return rerunModuleValidation(rebuilt, i18nCompleteness);
+        const reval = rerunModuleValidation(
+          rebuilt,
+          i18nCompleteness,
+          payload.flatData as unknown as TModuleDataV2 & {
+            position?: unknown;
+            [k: string]: unknown;
+          },
+        );
+        return reval;
       });
       return next;
     });
     setEditingModuleTempId(null);
   };
 
+  // ---- Helpers de validação CRITERIOSA de cada módulo para o submit ----
+  // Um módulo SÓ pode ser submetido se cumprir TODOS os requisitos abaixo:
+  //  (a) Tem schema válido (isValid)
+  //  (b) NÃO tem validationErrors (erros de form / obrigatórios ausentes)
+  //  (c) NÃO tem completenessWarnings (campos recomendados ausentes)
+  //  (d) Tem vínculo com unidade E opção (boundUnitId + boundOptionId)
+  //
+  // Qualquer módulo SELECIONADO que falhe em UM dos 4 itens BLOQUEIA o botão.
+  const isModuleStrictValid = (m: TIfcStepperModuleItem): boolean => {
+    return (
+      m.isValid === true &&
+      Array.isArray(m.validationErrors) &&
+      m.validationErrors.length === 0 &&
+      Boolean(m.completenessWarnings) &&
+      m.completenessWarnings.hasWarnings === false &&
+      Boolean(m.boundUnitId) &&
+      Boolean(m.boundOptionId)
+    );
+  };
+
+  // Contagens específicas por tipo de bloqueio (para mostrar no alert / tooltip)
+  const getBlockingReasons = (m: TIfcStepperModuleItem): string[] => {
+    const reasons: string[] = [];
+    if (!m.isValid) reasons.push("inválido");
+    if (m.validationErrors?.length > 0)
+      reasons.push(
+        `${m.validationErrors.length} ${
+          m.validationErrors.length === 1 ? "erro" : "erros"
+        }`,
+      );
+    if (m.completenessWarnings?.hasWarnings)
+      reasons.push(
+        `${m.completenessWarnings.messages?.length ?? 1} ${
+          (m.completenessWarnings.messages?.length ?? 1) === 1
+            ? "aviso"
+            : "avisos"
+        }`,
+      );
+    if (!m.boundUnitId || !m.boundOptionId)
+      reasons.push("sem unidade vinculada");
+    return reasons;
+  };
+
   const selectedModules = state.modules.filter((m) => m.selected);
-  const modulesValidWithBinding = selectedModules.filter(
-    (m) => m.isValid && m.boundUnitId && m.boundOptionId,
+  const selectedModulesWithBlocking = selectedModules.filter(
+    (m) => !isModuleStrictValid(m),
   );
+  const selectedModulesStrictValid =
+    selectedModules.filter(isModuleStrictValid);
+
+  // Contagens de bloqueio por motivo (para o alert explicativo)
+  const countBlockingErrors = selectedModulesWithBlocking.filter(
+    (m) => !m.isValid || (m.validationErrors?.length ?? 0) > 0,
+  ).length;
+  const countBlockingWarnings = selectedModulesWithBlocking.filter(
+    (m) => m.completenessWarnings?.hasWarnings === true,
+  ).length;
+  const countBlockingNoBinding = selectedModulesWithBlocking.filter(
+    (m) => !m.boundUnitId || !m.boundOptionId,
+  ).length;
+
+  // Helper antigo preservado (mantém onde for usado para counts de toast etc):
+  const modulesValidWithBinding = selectedModulesStrictValid;
   const modulesIgnoredCount =
-    selectedModules.length - modulesValidWithBinding.length;
+    selectedModules.length - selectedModulesStrictValid.length;
   const modulesUnselectedCount = state.modules.length - selectedModules.length;
+
+  // Define SE o botão de concluir deve estar desativado.
+  // Regra: botão só habilita quando TODOS os módulos SELECIONADOS são estritamente válidos.
+  // Também desativa se não houver nenhum módulo selecionado válido para criar.
+  const step2CanProceed =
+    selectedModulesWithBlocking.length === 0 &&
+    selectedModulesStrictValid.length > 0;
 
   const handleStep2Complete = async () => {
     setStep2Error("");
+
+    // --- DOUBLE CHECK: bloquear submit imediatamente se houver módulos SELECIONADOS com problema ---
+    // Evita race conditions / state desatualizado mesmo quando o botão está disabled.
+    if (!step2CanProceed) {
+      if (selectedModulesWithBlocking.length > 0) {
+        toast.warning(
+          `${selectedModulesWithBlocking.length} módulo(s) selecionado(s) com problema (erros/avisos/sem unidade). Corrija ou desmarque antes de prosseguir.`,
+        );
+      } else {
+        toast.warning(
+          "Nenhum módulo válido selecionado para criar. Marque ao menos 1 módulo válido e com vínculo de unidade.",
+        );
+      }
+      return;
+    }
+
     if (modulesUnselectedCount > 0 && modulesValidWithBinding.length === 0) {
       toast.info(
         `${modulesUnselectedCount} módulo(s) desmarcado(s) — nenhum módulo selecionado válido para criar. Stepper encerrado.`,
@@ -958,7 +1233,7 @@ export default function DrawerStepperIFC({
 
     try {
       for (const { unit, modules: groupModules } of groups.values()) {
-        const payloadModules: ModuleParamsProps[] = [];
+        const payloadModules: ModuleParamsPropsV2[] = [];
         const towerFloorsForGroup =
           normalizedUnitsFloorMap.get(unit.tempId) ?? [];
         for (const m of groupModules) {
@@ -968,24 +1243,25 @@ export default function DrawerStepperIFC({
           // Prefere floor_ids já salvos (ex.: usuário editou e mudou via BuildingVisualizer)
           // senão mapeia a partir do floor_index numérico original vindo do IFC
           const resolvedFloorIds =
-            (m.raw?.data as any)?.floor_ids &&
-            Array.isArray((m.raw.data as any).floor_ids) &&
-            (m.raw.data as any).floor_ids.length > 0
-              ? ((m.raw.data as any).floor_ids as string[])
+            (m.raw?.data as unknown as IRawModuleDataWithMeta)?.floor_ids &&
+            Array.isArray(
+              (m.raw.data as unknown as IRawModuleDataWithMeta).floor_ids,
+            ) &&
+            (m.raw.data as unknown as IRawModuleDataWithMeta).floor_ids!
+              .length > 0
+              ? ((m.raw.data as unknown as IRawModuleDataWithMeta)
+                  .floor_ids as string[])
               : mapFloorIndexToFloorIds(
-                  (m.raw?.data as any)?.floor_index,
+                  (m.raw?.data as unknown as IRawModuleDataWithMeta)
+                    ?.floor_index,
                   towerFloorsForGroup,
                 );
           const binding = isFoundation
-            ? { unit_id: unit.unitId }
-            : { floor_ids: resolvedFloorIds };
-          const prepared = prepareModuleForBatch(
-            m,
-            isFoundation,
-            binding as any,
-          );
+            ? ({ unit_id: unit.unitId } as IModuleBatchBinding)
+            : ({ floor_ids: resolvedFloorIds } as IModuleBatchBinding);
+          const prepared = prepareModuleForBatch(m, isFoundation, binding);
           if (!prepared) continue;
-          payloadModules.push(prepared as any);
+          payloadModules.push(prepared as unknown as ModuleParamsPropsV2);
         }
         if (payloadModules.length === 0) continue;
         try {
@@ -1065,14 +1341,13 @@ export default function DrawerStepperIFC({
             <div className="flex flex-col min-w-0">
               <DialogTitle className="text-lg font-bold text-primary leading-tight">
                 {isSimulationMode
-                  ? (t.stepper?.simulation?.title ?? "Importar módulos do IFC")
-                  : "Importar dados do IFC"}
+                  ? translations.stepper.simulation.title
+                  : translations.stepper.title}
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
                 {isSimulationMode
-                  ? (t.stepper?.simulation?.description ??
-                    "Selecione uma simulação existente para adicionar os módulos extraídos do IFC.")
-                  : "Valide unidades e módulos extraídos do arquivo IFC antes de criar."}
+                  ? translations.stepper.simulation.description
+                  : translations.stepper.subtitle}
               </p>
             </div>
             {fileName ? (
@@ -1100,9 +1375,7 @@ export default function DrawerStepperIFC({
             <div className="mb-2 border rounded-lg px-3 py-2 bg-gray-50/40 dark:bg-gray-900/40 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               {/* Sempre exibimos o label + conteúdo. Estado (A) ou (B) muda só o que vem à direita do label */}
               <label className="text-xs font-semibold text-foreground whitespace-nowrap shrink-0">
-                {t.stepper?.simulation?.selectLabelShort ??
-                  t.stepper?.simulation?.selectLabel ??
-                  "Simulação alvo:"}
+                {translations.stepper.simulation.selectLabel}
               </label>
 
               {/* ESTADO (B) — SIMULAÇÃO JÁ SELECIONADA: Unifica Select + Badge "definida" em um único bloco com o NOME da simulação + botão Trocar */}
@@ -1132,12 +1405,12 @@ export default function DrawerStepperIFC({
                     <SelectTrigger
                       className="h-7 min-w-[100px] w-auto text-[11px] px-2.5 py-0"
                       aria-label={
-                        t.stepper?.simulation?.changeLabel ?? "Trocar simulação"
+                        translations.stepper.simulation.changeAriaLabel
                       }
                     >
                       <span className="flex items-center justify-between w-full">
                         <span>
-                          {t.stepper?.simulation?.changeLabel ?? "Trocar"}
+                          {translations.stepper.simulation.changeLabel}
                         </span>
                       </span>
                     </SelectTrigger>
@@ -1167,9 +1440,7 @@ export default function DrawerStepperIFC({
                         >
                           <Plus className="h-3.5 w-3.5" />
                           <span>
-                            {t.stepper?.simulation?.createNewShort ??
-                              t.stepper?.simulation?.createNew ??
-                              "Nova"}
+                            {translations.stepper.simulation.createNew}
                           </span>
                         </Button>
                       }
@@ -1193,18 +1464,15 @@ export default function DrawerStepperIFC({
                       <SelectValue
                         placeholder={
                           availableOptions.length === 0
-                            ? (t.stepper?.simulation?.noOptions ??
-                              "Nenhuma simulação cadastrada")
-                            : (t.stepper?.simulation?.selectPlaceholder ??
-                              "Selecione uma simulação")
+                            ? translations.stepper.simulation.noOptions
+                            : translations.stepper.simulation.selectPlaceholder
                         }
                       />
                     </SelectTrigger>
                     <SelectContent>
                       {availableOptions.length === 0 && (
                         <div className="text-xs px-2 py-3 text-muted-foreground">
-                          {t.stepper?.simulation?.noOptionsHint ??
-                            "Crie uma nova simulação primeiro."}
+                          {translations.stepper.simulation.noOptionsHint}
                         </div>
                       )}
                       {availableOptions.map((o) => (
@@ -1228,9 +1496,7 @@ export default function DrawerStepperIFC({
                         <Button variant="outline" size="sm" className="h-9">
                           <Plus className="h-3.5 w-3.5" />{" "}
                           <span className="text-xs">
-                            {t.stepper?.simulation?.createNewShort ??
-                              t.stepper?.simulation?.createNew ??
-                              "Nova"}
+                            {translations.stepper.simulation.createNew}
                           </span>
                         </Button>
                       }
@@ -1246,9 +1512,7 @@ export default function DrawerStepperIFC({
                   <div className="flex items-start gap-1.5 px-2 py-1 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-300 dark:border-yellow-700 rounded-md">
                     <AlertTriangle className="h-3.5 w-3.5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
                     <p className="text-[11px] leading-snug text-yellow-800 dark:text-yellow-200 whitespace-nowrap">
-                      {t.stepper?.simulation?.requiredHintShort ??
-                        t.stepper?.simulation?.requiredHint ??
-                        "Selecione ou crie uma simulação para prosseguir."}
+                      {translations.stepper.simulation.requiredHint}
                     </p>
                   </div>
                 </div>
@@ -1262,9 +1526,60 @@ export default function DrawerStepperIFC({
               toggleUnitSelected={toggleUnitSelected}
               setUnitNameInline={setUnitNameInline}
               onEditUnit={(tempId) => setEditingUnitTempId(tempId)}
-              t={t}
+              t={translations}
             />
           )}
+          {activeStep === (isSimulationMode ? 0 : 1) &&
+          selectedModulesWithBlocking.length > 0 ? (
+            <Alert
+              variant="destructive"
+              className="mb-2 mt-1 py-2 px-3 flex-row items-start gap-2 border-red-300 dark:border-red-700 bg-red-50/70 dark:bg-red-950/25"
+            >
+              <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="flex flex-1 flex-col gap-1.5 min-w-0">
+                <AlertTitle className="text-sm text-red-800 dark:text-red-200 font-semibold leading-snug">
+                  {selectedModulesWithBlocking.length} módulo
+                  {selectedModulesWithBlocking.length === 1 ? "" : "s"}{" "}
+                  selecionado
+                  {selectedModulesWithBlocking.length === 1 ? "" : "s"} com
+                  problema — concluir bloqueado
+                </AlertTitle>
+                <AlertDescription className="text-[11.5px] text-red-700 dark:text-red-300 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                  <span>
+                    Corrija os campos obrigatórios / recomendados do módulo,
+                    vincule a uma unidade ou <strong>desmarque</strong> os
+                    bloqueados abaixo para prosseguir.
+                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    {countBlockingErrors > 0 ? (
+                      <Badge
+                        variant="outline"
+                        className="border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/30 h-5 text-[10.5px] px-1.5 py-0"
+                      >
+                        {countBlockingErrors} com erros
+                      </Badge>
+                    ) : null}
+                    {countBlockingWarnings > 0 ? (
+                      <Badge
+                        variant="outline"
+                        className="border-yellow-400 dark:border-yellow-600 text-yellow-800 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-950/30 h-5 text-[10.5px] px-1.5 py-0"
+                      >
+                        {countBlockingWarnings} com avisos
+                      </Badge>
+                    ) : null}
+                    {countBlockingNoBinding > 0 ? (
+                      <Badge
+                        variant="outline"
+                        className="border-gray-400 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-900/40 h-5 text-[10.5px] px-1.5 py-0"
+                      >
+                        {countBlockingNoBinding} sem unidade
+                      </Badge>
+                    ) : null}
+                  </div>
+                </AlertDescription>
+              </div>
+            </Alert>
+          ) : null}
           {activeStep === (isSimulationMode ? 0 : 1) && (
             <Step2ModulesView
               state={state}
@@ -1274,7 +1589,7 @@ export default function DrawerStepperIFC({
               toggleModuleSelected={toggleModuleSelected}
               toggleAllModulesSelected={toggleAllModulesSelected}
               moduleTypeLabels={moduleTypeLabels}
-              t={t}
+              t={translations}
             />
           )}
 
@@ -1349,8 +1664,13 @@ export default function DrawerStepperIFC({
               <Button
                 variant="bipc"
                 onClick={handleStep2Complete}
-                disabled={isCreatingStep2}
+                disabled={isCreatingStep2 || !step2CanProceed}
                 className="text-white"
+                title={
+                  !step2CanProceed && selectedModulesWithBlocking.length > 0
+                    ? `${selectedModulesWithBlocking.length} módulo(s) selecionado(s) com problema — corrija ou desmarque para prosseguir.`
+                    : undefined
+                }
               >
                 {isCreatingStep2 ? (
                   <span className="flex items-center gap-2">
@@ -1375,8 +1695,17 @@ export default function DrawerStepperIFC({
               <Button
                 variant="bipc"
                 onClick={handleStep2Complete}
-                disabled={isCreatingStep2 || !selectedSimulationOptionId}
+                disabled={
+                  isCreatingStep2 ||
+                  !selectedSimulationOptionId ||
+                  !step2CanProceed
+                }
                 className="text-white"
+                title={
+                  !step2CanProceed && selectedModulesWithBlocking.length > 0
+                    ? `${selectedModulesWithBlocking.length} módulo(s) selecionado(s) com problema — corrija ou desmarque para prosseguir.`
+                    : undefined
+                }
               >
                 {isCreatingStep2 ? (
                   <span className="flex items-center gap-2">
@@ -1397,7 +1726,9 @@ export default function DrawerStepperIFC({
             projectId={projectId}
             open={!!editingUnitTempId}
             onOpenChange={(o) => !o && setEditingUnitTempId(null)}
-            initialFormData={editingUnit.formData as any}
+            initialFormData={
+              editingUnit.formData as unknown as TIfcStepperUnitItem["formData"]
+            }
             onSubmitSuccess={handleUnitDrawerSubmit}
           />
         )}
@@ -1410,9 +1741,12 @@ export default function DrawerStepperIFC({
             optionId={editingModuleBoundUnit.optionId}
             type={(editingModule.type as TModulesTypes) ?? "beam_column"}
             floors={editingUnitFloors}
+            source="ifc"
             open={!!editingModuleTempId}
             onOpenChange={(o) => !o && setEditingModuleTempId(null)}
-            initialModuleData={editingModuleInitialMerged as any}
+            initialModuleData={
+              editingModuleInitialMerged as unknown as TEditingModuleMerged
+            }
             initialSelectedFloors={editingModuleInitialSelectedFloors}
             onSubmitSuccess={handleModuleDrawerSubmit}
           />
@@ -1432,26 +1766,18 @@ function Step1UnitsView({
   setUnitNameInline,
   onEditUnit,
   t,
-}: {
-  state: TIfcStepperState;
-  toggleUnitSelected: (tempId: string) => void;
-  setUnitNameInline: (tempId: string, name: string) => void;
-  onEditUnit: (tempId: string) => void;
-  t: any;
-}) {
+}: Step1UnitsViewProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold">
-          {t.stepper?.units?.title ?? "Unidades encontradas"} (
-          {state.units.length})
+          {t.stepper.units.title} ({state.units.length})
         </h3>
       </div>
 
       {state.units.length === 0 ? (
         <div className="text-sm text-muted-foreground p-8 border rounded-lg text-center">
-          {t.stepper?.units?.noneFound ??
-            "Nenhuma unidade retornada pelo processamento do IFC."}
+          {t.stepper.units.noneFound}
         </div>
       ) : (
         <Table>
@@ -1460,15 +1786,11 @@ function Step1UnitsView({
               <TableHead className="w-[44px]">
                 <span className="sr-only">Selecionar</span>
               </TableHead>
-              <TableHead>{t.stepper?.units?.columnName ?? "Nome"}</TableHead>
-              <TableHead>
-                {t.stepper?.units?.columnFloors ?? "Pavimentos"}
-              </TableHead>
-              <TableHead>
-                {t.stepper?.units?.columnStatus ?? "Status da validação"}
-              </TableHead>
+              <TableHead>{t.stepper.units.columnName}</TableHead>
+              <TableHead>{t.stepper.units.columnFloors}</TableHead>
+              <TableHead>{t.stepper.units.columnStatus}</TableHead>
               <TableHead className="w-[120px] text-right">
-                {t.stepper?.units?.columnAction ?? "Ação"}
+                {t.stepper.units.columnAction}
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -1494,20 +1816,18 @@ function Step1UnitsView({
                 <TableCell>
                   {u.formData.data.floors.length}{" "}
                   {u.formData.data.floors.length === 1
-                    ? (t.stepper?.units?.floors ?? "andar")
-                    : (t.stepper?.units?.floorsPlural ?? "andares")}
+                    ? t.stepper.units.floors
+                    : t.stepper.units.floorsPlural}
                 </TableCell>
                 <TableCell>
                   {u.isValid ? (
-                    <Badge variant="success">
-                      {t.stepper?.statusValid ?? "Válido"}
-                    </Badge>
+                    <Badge variant="success">{t.stepper.statusValid}</Badge>
                   ) : (
                     <Badge variant="destructive">
                       {u.validationErrors.length}{" "}
                       {u.validationErrors.length === 1
-                        ? (t.stepper?.units?.errors ?? "erro")
-                        : (t.stepper?.units?.errorsPlural ?? "erros")}
+                        ? t.stepper.units.errors
+                        : t.stepper.units.errorsPlural}
                     </Badge>
                   )}
                 </TableCell>
@@ -1519,7 +1839,7 @@ function Step1UnitsView({
                     className="gap-1"
                   >
                     <Edit2 className="h-3.5 w-3.5" />
-                    {t.stepper?.btnEdit ?? "Editar"}
+                    {t.stepper.btnEdit}
                   </Button>
                 </TableCell>
               </TableRow>
@@ -1544,16 +1864,7 @@ function Step2ModulesView({
   toggleAllModulesSelected,
   moduleTypeLabels,
   t,
-}: {
-  state: TIfcStepperState;
-  applyUnitToAllModules: (unitTempId: string) => void;
-  setModuleBoundUnit: (moduleTempId: string, unitTempId: string) => void;
-  onEditModule: (tempId: string) => void;
-  toggleModuleSelected: (tempId: string) => void;
-  toggleAllModulesSelected: (checked: boolean) => void;
-  moduleTypeLabels: Record<string, string>;
-  t: any;
-}) {
+}: Step2ModulesViewProps) {
   const allChecked =
     state.modules.length > 0 && state.modules.every((m) => m.selected);
   const someChecked = state.modules.some((m) => m.selected) && !allChecked;
@@ -1566,15 +1877,11 @@ function Step2ModulesView({
       {/* LINHA 1: Unidades criadas + "Aplicar a todos" (linha única, counts removidos daqui) */}
       <div className="flex flex-wrap items-center gap-2 min-w-0">
         <h3 className="text-sm font-semibold text-foreground whitespace-nowrap">
-          {t.stepper?.modules?.createdUnitsTitleShort ??
-            t.stepper?.modules?.createdUnitsTitle ??
-            "Unidades:"}
+          {t.stepper.modules.createdUnitsTitle}
         </h3>
         {state.unitsCreated.length === 0 ? (
           <span className="text-xs text-muted-foreground">
-            {t.stepper?.modules?.noUnitsCreatedShort ??
-              t.stepper?.modules?.noUnitsCreated ??
-              "Nenhuma unidade criada."}
+            {t.stepper.modules.noUnitsCreated}
           </span>
         ) : (
           <div className="flex flex-wrap items-center gap-1.5">
@@ -1588,14 +1895,9 @@ function Step2ModulesView({
                   size="sm"
                   className="h-6 px-2 text-[11px]"
                   onClick={() => applyUnitToAllModules(u.tempId)}
-                  title={
-                    t.stepper?.modules?.applyToAll ??
-                    "Aplicar esta unidade a todos os módulos"
-                  }
+                  title={t.stepper.modules.applyToAll}
                 >
-                  {t.stepper?.modules?.applyToAllShort ??
-                    t.stepper?.modules?.applyToAll ??
-                    "Aplicar"}
+                  {t.stepper.modules.applyToAll}
                 </Button>
               </div>
             ))}
@@ -1611,9 +1913,7 @@ function Step2ModulesView({
         <Info className="h-3.5 w-3.5 text-blue-700 dark:text-blue-300 shrink-0 -mt-0.5" />
         <div className="flex flex-1 flex-wrap items-center gap-x-3 gap-y-1">
           <p className="text-[11.5px] leading-snug text-blue-800 dark:text-blue-200">
-            {t.stepper?.modules?.hintShort ??
-              t.stepper?.modules?.hint ??
-              "Apenas módulos marcados, válidos e vinculados a uma unidade serão criados."}
+            {t.stepper.modules.hint}
           </p>
         </div>
       </Alert>
@@ -1621,7 +1921,7 @@ function Step2ModulesView({
       {/* LINHA 3: Título "Módulos encontrados" + BADGES COUNTS (Sel/Desm/Total) AQUI (unificado) */}
       <div className="flex items-center justify-between pt-1">
         <h3 className="text-sm font-semibold text-foreground">
-          {t.stepper?.modules?.title ?? "Módulos encontrados"}
+          {t.stepper.modules.title}
           <span className="text-muted-foreground font-normal ml-1.5">
             ({state.modules.length})
           </span>
@@ -1632,21 +1932,18 @@ function Step2ModulesView({
               variant="secondary"
               className="h-6 text-[11px] px-2 py-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800"
             >
-              {t.stepper?.selectedShort ?? t.stepper?.selected ?? "Sel."}{" "}
-              <strong>{selectedCount}</strong>
+              {t.stepper.selected} <strong>{selectedCount}</strong>
             </Badge>
             {unselectedCount > 0 && (
               <Badge
                 variant="secondary"
                 className="h-6 text-[11px] px-2 py-0 bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-900/60 dark:text-gray-300 dark:border-gray-700"
               >
-                {t.stepper?.unselectedShort ?? t.stepper?.unselected ?? "Desm."}{" "}
-                <strong>{unselectedCount}</strong>
+                {t.stepper.unselected} <strong>{unselectedCount}</strong>
               </Badge>
             )}
             <Badge variant="outline" className="h-6 text-[11px] px-2 py-0">
-              {t.stepper?.totalShort ?? t.stepper?.total ?? "Total"}{" "}
-              <strong>{totalCount}</strong>
+              {t.stepper.total} <strong>{totalCount}</strong>
             </Badge>
           </div>
         )}
@@ -1656,8 +1953,7 @@ function Step2ModulesView({
       <div>
         {state.modules.length === 0 ? (
           <div className="text-sm text-muted-foreground p-6 border rounded-lg text-center">
-            {t.stepper?.modules?.noneFound ??
-              "Nenhum módulo retornado pelo processamento do IFC."}
+            {t.stepper.modules.noneFound}
           </div>
         ) : (
           <TooltipProvider delayDuration={150}>
@@ -1675,24 +1971,19 @@ function Step2ModulesView({
                         someChecked ? "data-[state=checked]:bg-white" : ""
                       }
                       {...(someChecked
-                        ? { "data-state": "indeterminate" as any }
+                        ? ({ "data-state": "indeterminate" } as Record<
+                            string,
+                            string
+                          >)
                         : {})}
                     />
                   </TableHead>
-                  <TableHead>
-                    {t.stepper?.modules?.columnType ?? "Tipo"}
-                  </TableHead>
-                  <TableHead>
-                    {t.stepper?.modules?.columnSummary ?? "Resumo dos dados"}
-                  </TableHead>
-                  <TableHead>
-                    {t.stepper?.modules?.columnUnit ?? "Unidade / Simulação"}
-                  </TableHead>
-                  <TableHead>
-                    {t.stepper?.modules?.columnStatus ?? "Status da validação"}
-                  </TableHead>
+                  <TableHead>{t.stepper.modules.columnType}</TableHead>
+                  <TableHead>{t.stepper.modules.columnSummary}</TableHead>
+                  <TableHead>{t.stepper.modules.columnUnit}</TableHead>
+                  <TableHead>{t.stepper.modules.columnStatus}</TableHead>
                   <TableHead className="w-[120px] text-right">
-                    {t.stepper?.modules?.columnAction ?? "Ação"}
+                    {t.stepper.modules.columnAction}
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -1711,8 +2002,8 @@ function Step2ModulesView({
                       <Badge variant="destructive">
                         {errorCount}{" "}
                         {errorCount === 1
-                          ? (t.stepper?.units?.errors ?? "erro")
-                          : (t.stepper?.units?.errorsPlural ?? "erros")}
+                          ? t.stepper.units.errors
+                          : t.stepper.units.errorsPlural}
                       </Badge>
                     );
                   } else if (hasWarnings) {
@@ -1723,15 +2014,13 @@ function Step2ModulesView({
                       >
                         {warningCount}{" "}
                         {warningCount === 1
-                          ? (t.stepper?.statusWarnings ?? "aviso")
-                          : `${t.stepper?.statusWarnings ?? "avisos"}`}
+                          ? t.stepper.statusWarnings
+                          : `${t.stepper.statusWarnings}`}
                       </Badge>
                     );
                   } else {
                     statusBadge = (
-                      <Badge variant="success">
-                        {t.stepper?.statusValid ?? "Válido"}
-                      </Badge>
+                      <Badge variant="success">{t.stepper.statusValid}</Badge>
                     );
                   }
 
@@ -1755,8 +2044,7 @@ function Step2ModulesView({
                       <TableCell className="min-w-[220px]">
                         {state.unitsCreated.length === 0 ? (
                           <span className="text-xs text-muted-foreground">
-                            {t.stepper?.modules?.noUnitsCreated ??
-                              "Crie unidades no passo anterior"}
+                            {t.stepper.modules.noUnitsCreated}
                           </span>
                         ) : (
                           <Select
@@ -1768,16 +2056,14 @@ function Step2ModulesView({
                             <SelectTrigger className="w-full">
                               <SelectValue
                                 placeholder={
-                                  t.stepper?.modules?.unitSelectPlaceholder ??
-                                  "Selecione uma unidade"
+                                  t.stepper.modules.unitSelectPlaceholder
                                 }
                               />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="__none__">
                                 <span className="text-muted-foreground">
-                                  {t.stepper?.modules?.noneBound ??
-                                    "(Não vincular — será ignorado)"}
+                                  {t.stepper.modules.noneBound}
                                 </span>
                               </SelectItem>
                               {state.unitsCreated.map((u) => (
@@ -1805,9 +2091,7 @@ function Step2ModulesView({
                               {hasErrors && (
                                 <div className="space-y-1">
                                   <p className="font-semibold text-red-600 dark:text-red-300">
-                                    {t.stepper?.validationErrors ??
-                                      "Campos inválidos ou faltantes"}
-                                    :
+                                    {t.stepper.validationErrors}:
                                   </p>
                                   <ul className="list-disc list-inside space-y-0.5">
                                     {m.validationErrors
@@ -1818,7 +2102,7 @@ function Step2ModulesView({
                                     {m.validationErrors.length > 10 && (
                                       <li className="text-muted-foreground">
                                         +{m.validationErrors.length - 10}{" "}
-                                        {t.stepper?.others ?? "outros"}
+                                        {t.stepper.others}
                                       </li>
                                     )}
                                   </ul>
@@ -1827,9 +2111,7 @@ function Step2ModulesView({
                               {hasWarnings && (
                                 <div className="space-y-1">
                                   <p className="font-semibold text-yellow-700 dark:text-yellow-300">
-                                    {t.stepper?.semanticWarnings ??
-                                      "Avisos semânticos (dados parciais)"}
-                                    :
+                                    {t.stepper.semanticWarnings}:
                                   </p>
                                   <ul className="list-disc list-inside space-y-0.5">
                                     {(m.completenessWarnings.messages ?? [])
@@ -1843,7 +2125,7 @@ function Step2ModulesView({
                                         +
                                         {(m.completenessWarnings.messages ?? [])
                                           .length - 10}{" "}
-                                        {t.stepper?.others ?? "outros"}
+                                        {t.stepper.others}
                                       </li>
                                     )}
                                   </ul>
@@ -1862,13 +2144,12 @@ function Step2ModulesView({
                           className="gap-1"
                           title={
                             !m.boundUnitTempId
-                              ? (t.stepper?.modules?.editBtnDisabled ??
-                                "Vincule uma unidade para editar")
+                              ? t.stepper.modules.editBtnDisabled
                               : undefined
                           }
                         >
                           <Edit2 className="h-3.5 w-3.5" />
-                          {t.stepper?.btnEdit ?? "Editar"}
+                          {t.stepper.btnEdit}
                         </Button>
                       </TableCell>
                     </TableRow>

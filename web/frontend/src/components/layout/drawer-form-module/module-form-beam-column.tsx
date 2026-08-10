@@ -21,16 +21,53 @@ import {
   useSlabTypeOptions,
   REQUIRED_POSITIONS_BY_TYPE,
 } from "./module-default-values";
-import { RequiredAsterisk, RequiredLegend } from "./required-indicators";
+import {
+  RequiredAsterisk,
+  RequiredFieldBadge,
+  RequiredLegend,
+} from "./required-indicators";
 import { UnspecifiedCard, useUnspecifiedDataInit } from "./unspecified-card";
+import type { ModuleFormSource } from "./index";
+import type {
+  TBeamColumnPosition,
+  TFck,
+  TSteelMaterial,
+  TSteelResistance,
+} from "@/types/modules";
+import type { BeamColumnGroupedForm } from "./aggregate-helpers";
 
 interface ModuleFormBeamColumnProps {
   form: UseFormReturn<ModuleFormState>;
   stepperMode?: boolean;
   isSubmitted?: boolean;
+  source?: ModuleFormSource;
 }
 
-const BEAM_COLUMN_POSITION_LABEL: Record<string, string> = {
+interface ConcreteVolumeRow {
+  fck: TFck | number;
+  volume: string | number;
+  position?: TBeamColumnPosition;
+  customFck?: boolean;
+}
+
+interface SteelMaterialRow {
+  material: TSteelMaterial;
+  other_name?: string;
+  resistance: TSteelResistance;
+  other_resistance?: number;
+  mass: string | number;
+  position?: TBeamColumnPosition;
+}
+
+type BeamColumnFieldName =
+  | "concrete_columns"
+  | "concrete_beams"
+  | "concrete_slabs";
+
+const BEAM_COLUMN_POSITION_LABEL: Record<
+  BeamColumnFieldName,
+  TBeamColumnPosition
+> = {
   concrete_columns: "column",
   concrete_beams: "beam",
   concrete_slabs: "slab",
@@ -40,65 +77,86 @@ const ModuleFormBeamColumn = ({
   form,
   stepperMode = false,
   isSubmitted = false,
+  source = "default",
 }: ModuleFormBeamColumnProps) => {
   const { t } = useTranslation();
   const slabTypeOptions = useSlabTypeOptions();
   const fckOptions = [20, 25, 30, 35, 40, 45];
 
-  useUnspecifiedDataInit(form as any);
+  useUnspecifiedDataInit(form);
+  const bcForm = form as UseFormReturn<BeamColumnGroupedForm>;
+
+  const isAggregatedInputMode = source === "ifc" || source === "tqs";
+
+  const aggregatedTitle =
+    source === "ifc"
+      ? (t.modules.form.ifcSourceLabel ?? "Materiais (IFC)")
+      : source === "tqs"
+        ? (t.modules.form.tqsSourceLabel ?? "Materiais (TQS)")
+        : undefined;
 
   const [customFckSelected, setCustomFckSelected] = useState<
     Record<string, boolean>
   >({});
 
   useEffect(() => {
-    const requiredFields = [
+    const requiredFields: BeamColumnFieldName[] = [
       "concrete_columns",
       "concrete_beams",
       "concrete_slabs",
     ];
 
     requiredFields.forEach((fieldName) => {
-      const volumes = form.getValues(`${fieldName}.volumes` as any);
-      const steel = form.getValues(`${fieldName}.steel` as any);
+      const volumesPath = `${fieldName}.volumes` as const;
+      const steelPath = `${fieldName}.steel` as const;
+      const volumes = bcForm.getValues(volumesPath);
+      const steel = bcForm.getValues(steelPath);
 
-      if (!volumes || volumes.length === 0) {
-        form.setValue(`${fieldName}.volumes` as any, [
-          { fck: fckOptions[0], volume: 0 },
-        ]);
+      if (!volumes || (Array.isArray(volumes) && volumes.length === 0)) {
+        bcForm.setValue(volumesPath, [
+          { fck: fckOptions[0] as TFck, volume: 0 },
+        ] as ConcreteVolumeRow[]);
       }
 
-      if (!steel || steel.length === 0) {
-        form.setValue(`${fieldName}.steel` as any, [
-          { material: "rebar", resistance: "CA50", mass: "0" },
-        ]);
+      if (!steel || (Array.isArray(steel) && steel.length === 0)) {
+        bcForm.setValue(steelPath, [
+          {
+            material: "rebar" as TSteelMaterial,
+            resistance: "CA50" as TSteelResistance,
+            mass: "0",
+          },
+        ] as SteelMaterialRow[]);
       }
     });
   }, [form, fckOptions]);
 
   const calculateTotalVolume = (
-    volumes: Array<{ fck: number; volume: string }>,
+    volumes: Array<{ fck: number; volume: string | number }>,
   ) => {
     return (
       volumes?.reduce(
-        (total, item) => total + parseNumber(item.volume || "0"),
+        (total, item) => total + parseNumber(String(item.volume || "0")),
         0,
       ) || 0
     );
   };
 
   const renderCompleteSection = (
-    fieldName: "concrete_columns" | "concrete_beams" | "concrete_slabs",
+    fieldName: BeamColumnFieldName,
     title: string,
     isRequired: boolean = true,
   ) => {
+    const volumesPath = `${fieldName}.volumes` as const;
+    const steelPath = `${fieldName}.steel` as const;
+    const totalVolumePath = `${fieldName}.total_volume` as const;
+
     const {
       fields: volumeFields,
       append: appendVolume,
       remove: removeVolume,
     } = useFieldArray({
-      control: form.control,
-      name: `${fieldName}.volumes` as any,
+      control: bcForm.control,
+      name: volumesPath,
     });
 
     const position = BEAM_COLUMN_POSITION_LABEL[fieldName];
@@ -106,15 +164,17 @@ const ModuleFormBeamColumn = ({
       REQUIRED_POSITIONS_BY_TYPE.beam_column.includes(position);
 
     const currentVolumesForCheck =
-      form.getValues(`${fieldName}.volumes` as any) || [];
+      (bcForm.getValues(volumesPath) as ConcreteVolumeRow[] | undefined) || [];
     const currentSteelForCheck =
-      form.getValues(`${fieldName}.steel` as any) || [];
+      (bcForm.getValues(steelPath) as SteelMaterialRow[] | undefined) || [];
     const totalVolNonZero = currentVolumesForCheck.reduce(
-      (sum: number, v: any) => sum + (parseNumber(v.volume || "0") > 0 ? 1 : 0),
+      (sum: number, v: ConcreteVolumeRow) =>
+        sum + (parseNumber(String(v.volume || "0")) > 0 ? 1 : 0),
       0,
     );
     const totalSteelNonZero = currentSteelForCheck.reduce(
-      (sum: number, s: any) => sum + (parseNumber(s.mass || "0") > 0 ? 1 : 0),
+      (sum: number, s: SteelMaterialRow) =>
+        sum + (parseNumber(String(s.mass || "0")) > 0 ? 1 : 0),
       0,
     );
     const isEmpty =
@@ -126,12 +186,16 @@ const ModuleFormBeamColumn = ({
       ? "border-red-500 ring-red-200"
       : baseBorder;
 
-    useWatch({ control: form.control, name: `${fieldName}.volumes` as any });
-    const currentVolumes = form.getValues(`${fieldName}.volumes` as any) || [];
+    useWatch({
+      control: bcForm.control,
+      name: volumesPath,
+    });
+    const currentVolumes =
+      (bcForm.getValues(volumesPath) as ConcreteVolumeRow[] | undefined) || [];
 
     const isFckUsed = (fck: number, currentIndex: number) => {
       return currentVolumes.some(
-        (volume: any, index: number) =>
+        (volume: ConcreteVolumeRow, index: number) =>
           index !== currentIndex &&
           volume.fck === fck &&
           fckOptions.includes(fck),
@@ -140,9 +204,12 @@ const ModuleFormBeamColumn = ({
 
     const getNextAvailableFck = () => {
       const usedFcks = currentVolumes
-        .map((volume: any) => volume.fck)
+        .map((volume: ConcreteVolumeRow) => volume.fck)
         .filter((fck: number) => fckOptions.includes(fck));
-      return fckOptions.find((fck) => !usedFcks.includes(fck)) || fckOptions[0];
+      return (
+        (fckOptions.find((fck) => !usedFcks.includes(fck)) as TFck) ||
+        (fckOptions[0] as TFck)
+      );
     };
 
     const totalVolume = calculateTotalVolume(currentVolumes);
@@ -157,17 +224,17 @@ const ModuleFormBeamColumn = ({
         <Card className={`border-2 ${borderColor}`}>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between py-2 px-1">
-              <FormLabel className="text-xs text-gray-500">
-                {t.modules.form.totalConcreteVolume}
-              </FormLabel>
               <FormField
-                control={form.control}
-                name={`${fieldName}.total_volume` as any}
+                control={bcForm.control}
+                name={totalVolumePath}
                 render={() => {
                   return (
-                    <FormItem>
+                    <FormItem className="flex flex-row items-center justify-between w-full gap-4 space-y-0">
+                      <FormLabel className="text-xs text-gray-500 shrink-0 m-0">
+                        {t.modules.form.totalConcreteVolume}
+                      </FormLabel>
                       <FormControl>
-                        <span className="text-sm font-medium text-gray-600">
+                        <span className="text-sm font-medium text-gray-600 shrink-0">
                           {totalVolume.toInternational(undefined, 2)}
                         </span>
                       </FormControl>
@@ -179,13 +246,16 @@ const ModuleFormBeamColumn = ({
 
             <div className="space-y-3">
               {volumeFields.map((field, index) => {
-                const currentFck = form.watch(
-                  `${fieldName}.volumes.${index}.fck` as any,
-                );
+                const fckPath = `${fieldName}.volumes.${index}.fck` as const;
+                const volumePath =
+                  `${fieldName}.volumes.${index}.volume` as const;
+                const customFckPath =
+                  `${fieldName}.volumes.${index}.customFck` as const;
+                const currentFck = bcForm.watch(fckPath);
                 const fieldKey = `${fieldName}.volumes.${index}`;
                 const isCustomFck =
                   customFckSelected[fieldKey] ||
-                  (currentFck && !fckOptions.includes(currentFck));
+                  (currentFck && !fckOptions.includes(Number(currentFck)));
 
                 return (
                   <div
@@ -193,73 +263,91 @@ const ModuleFormBeamColumn = ({
                     className="border border-gray-200 rounded-md p-3 space-y-3"
                   >
                     <div className="grid grid-cols-2 gap-2 items-end">
-                      <FormField
-                        control={form.control}
-                        name={`${fieldName}.volumes.${index}.fck` as any}
-                        render={({ field: fckField }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">
-                              {t.modules.form.fckLabel}
-                              <RequiredAsterisk />
-                            </FormLabel>
-                            <FormControl>
-                              <Select
-                                onValueChange={(value) => {
-                                  if (value === "other") {
-                                    setCustomFckSelected((prev) => ({
-                                      ...prev,
-                                      [fieldKey]: true,
-                                    }));
-                                    form.setValue(
-                                      `${fieldKey}.customFck` as any,
-                                      true,
-                                    );
-                                    fckField.onChange(70);
-                                  } else {
-                                    setCustomFckSelected((prev) => ({
-                                      ...prev,
-                                      [fieldKey]: false,
-                                    }));
-                                    fckField.onChange(Number(value));
-                                  }
-                                }}
-                                value={
-                                  isCustomFck
-                                    ? "other"
-                                    : fckField.value?.toString() || ""
-                                }
-                              >
-                                <SelectTrigger className="w-full">
-                                  <SelectValue
-                                    placeholder={t.modules.form.selectFck}
-                                  />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {fckOptions.map((fck) => (
-                                    <SelectItem
-                                      key={fck}
-                                      value={fck.toString()}
-                                      disabled={isFckUsed(fck, index)}
-                                    >
-                                      {fck}{" "}
-                                      {isFckUsed(fck, index)
-                                        ? t.modules.form.inUse
-                                        : ""}
+                      {!isCustomFck ? (
+                        <FormField
+                          control={bcForm.control}
+                          name={fckPath}
+                          render={({ field: fckField }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">
+                                {t.modules.form.fckLabel}
+                                <RequiredAsterisk />
+                              </FormLabel>
+                              <FormControl>
+                                <Select
+                                  onValueChange={(value) => {
+                                    if (value === "other") {
+                                      setCustomFckSelected((prev) => ({
+                                        ...prev,
+                                        [fieldKey]: true,
+                                      }));
+                                      bcForm.setValue(customFckPath, true);
+                                      fckField.onChange(70);
+                                    } else {
+                                      setCustomFckSelected((prev) => ({
+                                        ...prev,
+                                        [fieldKey]: false,
+                                      }));
+                                      fckField.onChange(Number(value));
+                                    }
+                                  }}
+                                  value={fckField.value?.toString() || ""}
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue
+                                      placeholder={t.modules.form.selectFck}
+                                    />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {fckOptions.map((fck) => (
+                                      <SelectItem
+                                        key={fck}
+                                        value={fck.toString()}
+                                        disabled={isFckUsed(fck, index)}
+                                      >
+                                        {fck}{" "}
+                                        {isFckUsed(fck, index)
+                                          ? t.modules.form.inUse
+                                          : ""}
+                                      </SelectItem>
+                                    ))}
+                                    <SelectItem value="other">
+                                      {t.modules.form.other}
                                     </SelectItem>
-                                  ))}
-                                  <SelectItem value="other">
-                                    {t.modules.form.other}
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      ) : (
+                        <FormField
+                          control={bcForm.control}
+                          name={fckPath}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">
+                                {t.modules.form.otherFck}
+                                <RequiredAsterisk />
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  placeholder="70"
+                                  value={(field.value as number) ?? ""}
+                                  onChange={(e) =>
+                                    field.onChange(Number(e.target.value))
+                                  }
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      )}
 
                       <FormField
-                        control={form.control}
-                        name={`${fieldName}.volumes.${index}.volume` as any}
+                        control={bcForm.control}
+                        name={volumePath}
                         render={({ field: volumeField }) => (
                           <FormItem>
                             <FormLabel className="text-xs">
@@ -271,7 +359,9 @@ const ModuleFormBeamColumn = ({
                                 <Input
                                   type="text"
                                   placeholder="100"
-                                  value={volumeField.value || ""}
+                                  value={
+                                    (volumeField.value as string | number) || ""
+                                  }
                                   onChange={(e) => {
                                     const newValue = masks.numeric(
                                       e.target.value,
@@ -297,29 +387,6 @@ const ModuleFormBeamColumn = ({
                         )}
                       />
                     </div>
-
-                    {isCustomFck && (
-                      <FormField
-                        control={form.control}
-                        name={`${fieldKey}.fck` as any}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">
-                              {t.modules.form.otherFck}
-                              <RequiredAsterisk />
-                            </FormLabel>
-                            <Input
-                              type="number"
-                              placeholder="70"
-                              {...field}
-                              onChange={(e) =>
-                                field.onChange(Number(e.target.value))
-                              }
-                            />
-                          </FormItem>
-                        )}
-                      />
-                    )}
                   </div>
                 );
               })}
@@ -330,7 +397,10 @@ const ModuleFormBeamColumn = ({
               variant="outline"
               size="sm"
               onClick={() =>
-                appendVolume({ fck: getNextAvailableFck(), volume: 0 })
+                appendVolume({
+                  fck: getNextAvailableFck(),
+                  volume: 0,
+                } as ConcreteVolumeRow)
               }
               className="w-full text-green-600 border-green-600 hover:bg-green-50"
             >
@@ -341,7 +411,7 @@ const ModuleFormBeamColumn = ({
 
             <SteelMaterialList
               form={form}
-              name={`${fieldName}.steel`}
+              name={steelPath}
               allowedMaterials={["rebar", "strand", "other"]}
               stepperMode={stepperMode}
               isSubmitted={isSubmitted}
@@ -355,10 +425,18 @@ const ModuleFormBeamColumn = ({
 
   return (
     <div className="space-y-6">
-      <RequiredLegend legend={t.modules.form.requiredLegend} />
+      {!isAggregatedInputMode ? (
+        <RequiredLegend legend={t.modules.form.requiredLegend} />
+      ) : null}
+
+      {isAggregatedInputMode && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <RequiredFieldBadge variant="ifc" source={source} />
+        </div>
+      )}
 
       <FormField
-        control={form.control}
+        control={bcForm.control}
         name="slab_type"
         render={({ field }) => (
           <FormItem>
@@ -389,7 +467,7 @@ const ModuleFormBeamColumn = ({
 
       <div className="grid grid-cols-3 gap-4 items-end">
         <FormField
-          control={form.control}
+          control={bcForm.control}
           name="column_number"
           render={({ field }) => (
             <FormItem>
@@ -400,7 +478,7 @@ const ModuleFormBeamColumn = ({
                 <Input
                   type="text"
                   placeholder="10"
-                  value={field.value || ""}
+                  value={(field.value as string | number) || ""}
                   onChange={(e) =>
                     field.onChange(masks.numeric(e.target.value))
                   }
@@ -411,7 +489,7 @@ const ModuleFormBeamColumn = ({
         />
 
         <FormField
-          control={form.control}
+          control={bcForm.control}
           name="avg_beam_span"
           render={({ field }) => (
             <FormItem>
@@ -422,7 +500,7 @@ const ModuleFormBeamColumn = ({
                 <Input
                   type="text"
                   placeholder="6,00"
-                  value={field.value || ""}
+                  value={(field.value as string | number) || ""}
                   onChange={(e) =>
                     field.onChange(masks.numeric(e.target.value))
                   }
@@ -433,7 +511,7 @@ const ModuleFormBeamColumn = ({
         />
 
         <FormField
-          control={form.control}
+          control={bcForm.control}
           name="avg_slab_span"
           render={({ field }) => (
             <FormItem>
@@ -444,7 +522,7 @@ const ModuleFormBeamColumn = ({
                 <Input
                   type="text"
                   placeholder="8,00"
-                  value={field.value || ""}
+                  value={(field.value as string | number) || ""}
                   onChange={(e) =>
                     field.onChange(masks.numeric(e.target.value))
                   }
@@ -455,143 +533,195 @@ const ModuleFormBeamColumn = ({
         />
       </div>
 
-      {/* Pilares */}
-      {renderCompleteSection(
-        "concrete_columns",
-        t.modules.form.concreteColumn,
-        true,
-      )}
+      <div className="grid grid-cols-2 gap-4 items-end">
+        <FormField
+          control={bcForm.control}
+          name="beam_number"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs">
+                {t.modules.form.beamCount}
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="text"
+                  placeholder="10"
+                  value={(field.value as string | number) || ""}
+                  onChange={(e) =>
+                    field.onChange(masks.numeric(e.target.value))
+                  }
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
 
-      {/* Vigas */}
-      {renderCompleteSection(
-        "concrete_beams",
-        t.modules.form.concreteBeam,
-        true,
-      )}
-
-      {/* Lajes */}
-      {renderCompleteSection(
-        "concrete_slabs",
-        t.modules.form.concreteSlab,
-        true,
-      )}
-
-      {/* Formas */}
-      <div className="space-y-3">
-        <h3 className="text-base font-semibold text-primary dark:text-gray-300">
-          {t.modules.form.formAreaOptional}
-        </h3>
-
-        <Card className="border-2 border-gray-300">
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-4 gap-4 items-end">
-              <FormField
-                control={form.control}
-                name="form_columns"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs">
-                      {t.modules.form.formColumns}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="text"
-                        placeholder="100"
-                        value={field.value || ""}
-                        onChange={(e) =>
-                          field.onChange(masks.numeric(e.target.value))
-                        }
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="form_beams"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs">
-                      {t.modules.form.formBeams}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="text"
-                        placeholder="200"
-                        value={field.value || ""}
-                        onChange={(e) =>
-                          field.onChange(masks.numeric(e.target.value))
-                        }
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="form_slabs"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs">
-                      {t.modules.form.formSlabs}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="text"
-                        placeholder="400"
-                        value={field.value || ""}
-                        onChange={(e) =>
-                          field.onChange(masks.numeric(e.target.value))
-                        }
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <div>
-                <FormLabel className="text-xs">
-                  {t.modules.form.totalForm}
-                </FormLabel>
-                {(() => {
-                  const formColumns = form.watch("form_columns") || 0;
-                  const formBeams = form.watch("form_beams") || 0;
-                  const formSlabs = form.watch("form_slabs") || 0;
-                  const totalArea =
-                    parseNumber(formColumns as unknown as string) +
-                    parseNumber(formBeams as unknown as string) +
-                    parseNumber(formSlabs as unknown as string);
-
-                  return (
-                    <Input
-                      type="text"
-                      value={totalArea.toInternational(undefined, 2)}
-                      readOnly
-                      className="bg-gray-50 text-gray-700 font-medium"
-                    />
-                  );
-                })()}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <FormField
+          control={bcForm.control}
+          name="slab_number"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs">
+                {t.modules.form.slabCount}
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="text"
+                  placeholder="10"
+                  value={(field.value as string | number) || ""}
+                  onChange={(e) =>
+                    field.onChange(masks.numeric(e.target.value))
+                  }
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
       </div>
 
-      {/* Sem Posição / Geral */}
+      {!isAggregatedInputMode && (
+        <>
+          {renderCompleteSection(
+            "concrete_columns",
+            t.modules.form.concreteColumn,
+            true,
+          )}
+
+          {renderCompleteSection(
+            "concrete_beams",
+            t.modules.form.concreteBeam,
+            true,
+          )}
+
+          {renderCompleteSection(
+            "concrete_slabs",
+            t.modules.form.concreteSlab,
+            true,
+          )}
+
+          <div className="space-y-3">
+            <h3 className="text-base font-semibold text-primary dark:text-gray-300">
+              {t.modules.form.formAreaOptional}
+            </h3>
+
+            <Card className="border-2 border-gray-300">
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-4 gap-4 items-end">
+                  <FormField
+                    control={bcForm.control}
+                    name="form_columns"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">
+                          {t.modules.form.formColumns}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="100"
+                            value={(field.value as string | number) || ""}
+                            onChange={(e) =>
+                              field.onChange(masks.numeric(e.target.value))
+                            }
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={bcForm.control}
+                    name="form_beams"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">
+                          {t.modules.form.formBeams}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="200"
+                            value={(field.value as string | number) || ""}
+                            onChange={(e) =>
+                              field.onChange(masks.numeric(e.target.value))
+                            }
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={bcForm.control}
+                    name="form_slabs"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">
+                          {t.modules.form.formSlabs}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            placeholder="400"
+                            value={(field.value as string | number) || ""}
+                            onChange={(e) =>
+                              field.onChange(masks.numeric(e.target.value))
+                            }
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <div>
+                    <FormLabel className="text-xs">
+                      {t.modules.form.totalForm}
+                    </FormLabel>
+                    {(() => {
+                      const formColumns = bcForm.watch("form_columns") || 0;
+                      const formBeams = bcForm.watch("form_beams") || 0;
+                      const formSlabs = bcForm.watch("form_slabs") || 0;
+                      const totalArea =
+                        parseNumber(formColumns as string | number) +
+                        parseNumber(formBeams as string | number) +
+                        parseNumber(formSlabs as string | number);
+
+                      return (
+                        <Input
+                          type="text"
+                          value={totalArea.toInternational(undefined, 2)}
+                          readOnly
+                          className="bg-gray-50 text-gray-700 font-medium"
+                        />
+                      );
+                    })()}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
+
       <UnspecifiedCard
-        form={form as any}
+        form={form}
         fckOptions={fckOptions}
         customFckSelectedGlobal={customFckSelected}
         setCustomFckSelectedGlobal={setCustomFckSelected}
         concreteRootKey="unspecified.volumes"
         steelRootKey="unspecified.steel"
         formAreaKey="form_unspecified"
-        isSteelRequired={false}
+        isSteelRequired={isAggregatedInputMode}
         stepperMode={stepperMode}
         isSubmitted={isSubmitted}
         allowedMaterials={["rebar", "strand", "other"]}
+        title={aggregatedTitle}
+        hint={
+          isAggregatedInputMode
+            ? (t.modules.form.aggregatedHint ??
+              "Todos os materiais de concreto e aço lançados aqui, sem vincular a elementos estruturais.")
+            : undefined
+        }
       />
     </div>
   );

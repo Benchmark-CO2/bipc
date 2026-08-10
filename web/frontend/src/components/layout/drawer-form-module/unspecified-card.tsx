@@ -206,7 +206,7 @@ const UnspecifiedCardInner = <TForm extends object = any>(
     return mass > 0 || s.material !== "rebar" || s.resistance !== "CA50";
   });
 
-  if (!hasVolumes && !hasSteelItems) {
+  if (!isSteelRequired && !hasVolumes && !hasSteelItems) {
     return null;
   }
 

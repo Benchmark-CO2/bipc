@@ -20,10 +20,10 @@ import { moduleFormSchema } from "@/validators/moduleFormByType.validator";
 import { getDefaultValuesByType } from "@/components/layout/drawer-form-module/module-default-values";
 import {
   groupedFormToFlatV2,
+  flatV2ToGroupedForm,
   getCompletenessWarnings,
   CompletenessWarningsI18n,
 } from "@/components/layout/drawer-form-module/aggregate-helpers";
-
 const generateTempId = () => {
   return `tmp_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
 };
@@ -447,14 +447,58 @@ const deepMerge = (target: any, source: any): any => {
   return out;
 };
 
+const isDataLikelyFlatV2Format = (d: any): boolean => {
+  if (!d || typeof d !== "object") return false;
+  const flatKeys = [
+    "concrete",
+    "steel",
+    "form",
+    "column_number",
+    "masonry",
+    "raft",
+    "piles",
+  ];
+  const groupedKeys = [
+    "concrete_columns",
+    "concrete_beams",
+    "concrete_slabs",
+    "concrete_walls",
+    "masonry_blocks",
+    "raft_foundation",
+    "pile_caps",
+  ];
+  const hasAnyFlat = flatKeys.some((k) => k in d);
+  const hasAnyGrouped = groupedKeys.some((k) => k in d);
+  if (hasAnyGrouped) return false;
+  if (
+    hasAnyFlat &&
+    typeof d.concrete === "object" &&
+    d.concrete !== null &&
+    !Array.isArray(d.concrete)
+  ) {
+    return true;
+  }
+  if (hasAnyFlat && !hasAnyGrouped) return true;
+  return false;
+};
+
+/**
+ * Implementação NOVA de validateStepperModule.
+ * Mantém compatibilidade de assinatura.
+ * - DEBUG configurável (ativado temporariamente até resolvido warning falso de foundations)
+ * - Expõe `flatData` calculado (para ser substituído quando temos override mais fresco)
+ * - Faz auto-detecção flat vs grouped e corrige antes do parse.
+ */
 const validateStepperModule = (
   item: TIfcProcessorResultModuleItem,
   i18nCompleteness: CompletenessWarningsI18n,
+  DEBUG: boolean = false,
 ): {
   isValid: boolean;
   errors: string[];
   warnings: { hasWarnings: boolean; messages: string[] };
   normalized: any;
+  flatData: any;
 } => {
   const normalizedType = normalizeModuleType(item.type);
   if (!isKnownModuleType(normalizedType)) {
@@ -465,35 +509,88 @@ const validateStepperModule = (
       ],
       warnings: { hasWarnings: false, messages: [] },
       normalized: { type: normalizedType || item.type },
+      flatData: null,
     };
   }
   try {
-    const normalizedData = deepRenameSteelCaToMaterial(item.data ?? {});
+    let normalizedData = deepRenameSteelCaToMaterial(item.data ?? {});
+    if (isDataLikelyFlatV2Format(normalizedData)) {
+      if (DEBUG) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "[validateStepperModule] raw.data detectado em formato FLAT. Convertendo para GROUPED via flatV2ToGroupedForm.",
+          { type: normalizedType, data: normalizedData },
+        );
+      }
+      try {
+        normalizedData = flatV2ToGroupedForm(normalizedType, normalizedData);
+      } catch (err) {
+        if (DEBUG) {
+          // eslint-disable-next-line no-console
+          console.error(
+            "[validateStepperModule] Erro ao converter flat→grouped.",
+            err,
+          );
+        }
+      }
+    }
     const defaultsPlusData = mergeModuleDefaults(
       normalizedType,
       normalizedData,
     );
     const candidate = { type: normalizedType, ...defaultsPlusData };
-    const result = moduleFormSchema.safeParse(candidate);
+    const schemaResult = moduleFormSchema.safeParse(candidate);
     let flatData: any = null;
     try {
       flatData = groupedFormToFlatV2(normalizedType, candidate, [], "");
-    } catch {
+    } catch (e) {
       flatData = null;
+    }
+    if (DEBUG) {
+      // eslint-disable-next-line no-console
+      console.groupCollapsed(
+        `[validateStepperModule] Passo a passo (${normalizedType})`,
+      );
+      // eslint-disable-next-line no-console
+      console.log("1. normalizedData (shape de entrada):", normalizedData);
+      // eslint-disable-next-line no-console
+      console.log("2. candidate (defaults + data):", candidate);
+      // eslint-disable-next-line no-console
+      console.log(
+        "3. groupedFormToFlatV2 resultado (shape p/ warnings):",
+        flatData,
+      );
+      if (flatData) {
+        // eslint-disable-next-line no-console
+        console.log("   3a. flatData.concrete:", (flatData as any).concrete);
+        // eslint-disable-next-line no-console
+        console.log("   3b. flatData.steel:", (flatData as any).steel);
+      }
     }
     const warnings =
       flatData && isKnownModuleType(normalizedType)
         ? getCompletenessWarnings(flatData, normalizedType, i18nCompleteness)
         : { hasWarnings: false, messages: [] as string[] };
-    if (result.success) {
+    if (DEBUG) {
+      // eslint-disable-next-line no-console
+      console.log("4. warnings (base do grouped→flat):", warnings);
+    }
+    if (schemaResult.success) {
+      if (DEBUG) {
+        // eslint-disable-next-line no-console
+        console.log("5. schemaParse: SUCCESS");
+        // eslint-disable-next-line no-console
+        console.groupEnd();
+      }
       return {
         isValid: true,
         errors: [],
         warnings,
-        normalized: result.data,
+        normalized: schemaResult.data,
+        flatData,
       };
     }
-    const issues = (result.error?.issues ?? []).map((iss: any) => {
+    const issues = (schemaResult.error?.issues ?? []).map((iss: any) => {
       const path = iss.path?.length ? iss.path.join(".") : "";
       const msg = iss.message || "Campo inválido";
       return path ? `${path}: ${msg}` : msg;
@@ -502,11 +599,21 @@ const validateStepperModule = (
     const filtered = filterZodValidationErrors(uniqueAll).slice(0, 10);
     const allIssuesWereGeneric = uniqueAll.length > 0 && filtered.length === 0;
     const isValid = allIssuesWereGeneric;
+    if (DEBUG) {
+      // eslint-disable-next-line no-console
+      console.log(
+        `5. schemaParse: FAIL. issues=${uniqueAll.length}, filtered=${filtered.length}, isValid=${isValid}`,
+        { uniqueAll, filtered },
+      );
+      // eslint-disable-next-line no-console
+      console.groupEnd();
+    }
     return {
       isValid,
       errors: filtered,
       warnings,
       normalized: candidate,
+      flatData,
     };
   } catch (err) {
     return {
@@ -514,6 +621,7 @@ const validateStepperModule = (
       errors: ["Erro ao validar módulo"],
       warnings: { hasWarnings: false, messages: [] },
       normalized: { type: normalizedType || item.type },
+      flatData: null,
     };
   }
 };
@@ -649,17 +757,55 @@ export const rerunUnitValidation = (
 export const rerunModuleValidation = (
   item: TIfcStepperModuleItem,
   i18nCompleteness: CompletenessWarningsI18n,
+  /**
+   * (Opcional) Fonte da verdade MAIS FRESCA e VALIDADA pelo DrawerFormModule submit.
+   * Quando presente, usamos esse flatData PRÉ-VALIDADO para calcular os
+   * warnings de completeness (getCompletenessWarnings), ao invés de recalcular
+   * via groupedFormToFlatV2(candidate) — que no caso de foundation types
+   * (raft/piles/raft_piles) pode sofrer perda de dados ao converter
+   * flat → grouped → flat (2 conversões) e gerar warnings FALSOS
+   * ("missing concrete data") mesmo que flat original esteja 100% ok.
+   */
+  flatDataOverride?: (any & { type?: TModulesTypes }) | null,
 ): TIfcStepperModuleItem => {
-  const { isValid, errors, warnings } = validateStepperModule(
+  const validateResult = validateStepperModule(
     item.raw,
     i18nCompleteness,
+    typeof window !== "undefined", // DEBUG apenas em client (nunca em SSR)
   );
+  const {
+    isValid,
+    errors,
+    warnings,
+    flatData: flatDataFromSchema,
+  } = validateResult;
+
+  // Se temos override (vindos do DrawerFormModule.submit — fonte MAIS FRESCA e VALIDADA),
+  // usamos esse flat para warnings, não o calculado de grouped→flat.
+  const finalWarnings =
+    flatDataOverride && typeof flatDataOverride === "object" && item.raw.type
+      ? (() => {
+          try {
+            const type_ = (item.raw.type ??
+              (flatDataOverride as any).type) as TModulesTypes;
+            const w = getCompletenessWarnings(
+              flatDataOverride as any,
+              type_,
+              i18nCompleteness,
+            );
+            return w;
+          } catch (err) {
+            return warnings;
+          }
+        })()
+      : warnings;
+
   return {
     ...item,
     summary: buildModuleSummary(item.raw),
     isValid,
     validationErrors: errors,
-    completenessWarnings: warnings,
+    completenessWarnings: finalWarnings,
   };
 };
 
@@ -734,24 +880,142 @@ export const prepareUnitForCreate = (
   };
 };
 
+/**
+ * Parses recursively all numeric-like strings ("100", "12.5") inside an object/array
+ * into actual numbers. Backend Go structs use float64/int and reject string values.
+ */
+const recursivelyParseNumericStrings = (value: unknown): unknown => {
+  if (value === null || value === undefined) return value;
+  if (typeof value === "number") return value;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed === "") return value;
+    // Only parse if strictly numeric (avoids converting UUIDs, material codes like "CA50")
+    // Regex: optional leading minus, digits, optional . digits
+    if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+      return Number(trimmed);
+    }
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map((v) => recursivelyParseNumericStrings(v));
+  }
+  if (typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = recursivelyParseNumericStrings(v);
+    }
+    return out;
+  }
+  return value;
+};
+
 export const prepareModuleForBatch = (
   moduleItem: TIfcStepperModuleItem,
   isFoundation: boolean,
   unitIdOrFloorIds: { unit_id?: string; floor_ids?: string[] },
 ): { type: TModulesTypes | string; data: Record<string, unknown> } | null => {
   const rawType = moduleItem.raw.type;
+  const normalizedType = normalizeModuleType(rawType);
+  const knownType = isKnownModuleType(normalizedType) ? normalizedType : null;
+
   const d = moduleItem.raw.data ?? {};
+
+  // 1) DECIDE qual shape usar. Backend SEMPRE quer FLAT (TModuleDataV2).
+  //    - Se raw.data JÁ é flat (shape do IFC inicial) → usa ele direto.
+  //    - Se raw.data é GROUPED (shape do form, salvo após drawer submit) →
+  //      converte para flat V2 usando groupedFormToFlatV2.
+  let effectiveData: Record<string, unknown>;
+  const isFlatAlready = isDataLikelyFlatV2Format(d);
+  if (isFlatAlready || !knownType) {
+    effectiveData = { ...(d as Record<string, unknown>) };
+  } else {
+    // Converte grouped → flat
+    try {
+      effectiveData = groupedFormToFlatV2(
+        knownType,
+        d as any,
+        Array.isArray(unitIdOrFloorIds.floor_ids)
+          ? unitIdOrFloorIds.floor_ids
+          : [],
+        unitIdOrFloorIds.unit_id ?? "",
+      ) as any;
+    } catch (err) {
+      // Fallback: usa dados originais mesmo que grouped (melhor tentar do que pular)
+      effectiveData = { ...(d as Record<string, unknown>) };
+    }
+  }
+
+  // 2) Parseia TODAS strings numéricas ("100" → 100) para evitar erro do Go:
+  //    "cannot unmarshal string into Go struct field RaftFoundation.area of type float64"
+  effectiveData = recursivelyParseNumericStrings(effectiveData) as Record<
+    string,
+    unknown
+  >;
+
+  // 3) Remove campos GROUPED que o backend FLAT NÃO reconhece (evita warnings/unmarshal erros)
+  const GROUPED_ONLY_KEYS_TO_STRIP = new Set<string>([
+    // Raft grouped-only
+    "area",
+    "thickness",
+    // Pórtico/Wall/Masonry grouped-only
+    "concrete_columns",
+    "concrete_beams",
+    "concrete_slabs",
+    "concrete_walls",
+    "blocks",
+    "grout",
+    "mortar",
+    "wall_area",
+    "wall_thickness",
+    "slab_thickness",
+    "form_area",
+    "form_columns",
+    "form_beams",
+    "form_slabs",
+    "form_total",
+    "column_number",
+    "avg_beam_span",
+    "avg_slab_span",
+    // Shared grouped-only
+    "unspecified",
+    "pile_caps",
+    "piles_concrete",
+    "piles_steel",
+    "block_type",
+    "fbk",
+    "fak",
+    "mortar_volume",
+    "grout_vertical_volume",
+    "grout_horizontal_volume",
+    "grout_general_volume",
+  ]);
   const clean: Record<string, unknown> = {};
-  Object.keys(d).forEach((k) => {
-    (clean as any)[k] = (d as any)[k];
+  Object.keys(effectiveData).forEach((k) => {
+    if (GROUPED_ONLY_KEYS_TO_STRIP.has(k)) return;
+    (clean as any)[k] = (effectiveData as any)[k];
   });
+
+  // 4) Remove floor_index do data (nunca esperado pelo backend;
+  //    usamos só internamente para mapear → floor_ids).
+  delete clean.floor_index;
+  // Se tem um campo "type" duplicado no data, remova (vai no nível superior).
+  delete clean.type;
+
+  // 5) Aplica bindings:
+  //    - Fundação: SEMPRE unit_id
+  //    - Estruturais (pórtico/parede/alvenaria): SEMPRE floor_ids
   if (isFoundation) {
     if (unitIdOrFloorIds.unit_id) {
       clean.unit_id = unitIdOrFloorIds.unit_id;
     }
+    // Fundação NÃO deve ter floor_ids no data (não pertence a 1 andar)
+    delete clean.floor_ids;
   } else if (unitIdOrFloorIds.floor_ids?.length) {
     clean.floor_ids = unitIdOrFloorIds.floor_ids;
   }
+
   return { type: rawType, data: clean };
 };
 
