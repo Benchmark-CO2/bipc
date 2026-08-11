@@ -1,7 +1,8 @@
 import type { TModulesTypes } from "@/types/modules";
-import type { TOption } from "@/types/options";
-import type { TTowerFloorCategory, IUnit } from "@/types/units";
 import type { Translations } from "@/i18n/translations/pt-BR";
+import type { QueryClient } from "@tanstack/react-query";
+import type { TOption } from "@/types/options";
+import type { IUnit, TTowerFloorCategory } from "@/types/units";
 import type { TModuleGroupedForm } from "@/components/layout/drawer-form-module/aggregate-helpers";
 import type { IFCAccessMode } from "@/components/layout/drawer-ifc-import";
 
@@ -203,12 +204,29 @@ export interface Step1UnitsViewProps {
 
 export interface Step2ModulesViewProps {
   state: TIfcStepperState;
-  applyUnitToAllModules: (unitTempId: string) => void;
   setModuleBoundUnit: (moduleTempId: string, unitTempId: string) => void;
   onEditModule: (tempId: string) => void;
   toggleModuleSelected: (tempId: string) => void;
   toggleAllModulesSelected: (checked: boolean) => void;
   moduleTypeLabels: Record<string, string>;
+}
+
+export interface StepperHeaderProps {
+  isSimulationMode: boolean;
+  fileName?: string | null;
+  translations: Translations;
+  activeStep: number;
+  steps: Array<{ id: string; label: string; description: string }>;
+  selectedSimulationOptionId: string | null;
+  availableOptions: TOption[];
+  setSelectedSimulationOptionId: (id: string | null) => void;
+  preselectedUnitId?: string;
+  initialRoleId?: string;
+  projectId: string;
+  refetchOptions: () => Promise<unknown>;
+  queryClient: QueryClient;
+  state: TIfcStepperState;
+  applyUnitToAllModules: (unitTempId: string) => void;
 }
 
 export interface DrawerStepperIFCProps {
