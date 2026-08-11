@@ -19,6 +19,7 @@ export const ptBR = {
     collapse: "Recolher",
     ifcImport: "Importar do IFC",
     ifcImportTqs: "Importar de IFC/TQS",
+    orLabel: "ou",
   },
   errors: {
     unexpectedError: "Erro inesperado. Tente novamente mais tarde.",
@@ -1100,7 +1101,7 @@ export const ptBR = {
     backToProject: "Voltar ao empreendimento",
     newDiscipline: "Nova disciplina",
     manageDisciplines: "Gerenciar disciplinas",
-    createSimulations: "Gerenciar simulações",
+    createSimulations: "Simulações",
     selectDisciplineTooltip:
       "Selecione uma disciplina para gerenciar simulações",
     noDisciplines: "Sem Disciplinas para exibir",

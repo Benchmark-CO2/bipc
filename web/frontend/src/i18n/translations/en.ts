@@ -21,6 +21,7 @@ export const en: Translations = {
     collapse: "Collapse",
     ifcImport: "Import from IFC",
     ifcImportTqs: "Import from IFC/TQS",
+    orLabel: "or",
   },
   errors: {
     unexpectedError: "Unexpected error. Please try again later.",
@@ -1090,7 +1091,7 @@ export const en: Translations = {
     backToProject: "Back to project",
     newDiscipline: "New discipline",
     manageDisciplines: "Manage disciplines",
-    createSimulations: "Manage simulations",
+    createSimulations: "Simulations",
     selectDisciplineTooltip: "Select a discipline to manage simulations",
     noDisciplines: "No disciplines to display",
     noDisciplinesDescription:

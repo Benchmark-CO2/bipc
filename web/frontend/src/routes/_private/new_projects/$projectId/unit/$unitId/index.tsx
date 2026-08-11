@@ -120,6 +120,75 @@ function RouteComponent() {
   const [selectedTab, setSelectedTab] = useState<string>(
     t.unitView.tabAllDisciplines,
   );
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  useEffect(() => {
+    if (hasInitialized) return;
+    if (!roles || roles.length === 0) {
+      setHasInitialized(true);
+      return;
+    }
+
+    const availableRoles = roles.filter((el) => !el.is_protected);
+    if (availableRoles.length === 0) {
+      setHasInitialized(true);
+      return;
+    }
+
+    if (search.dcp) {
+      const roleFromSearch = availableRoles.find(
+        (role) => role.id === search.dcp,
+      );
+      if (roleFromSearch) {
+        setSelectedTab(roleFromSearch.name);
+        setHasInitialized(true);
+        return;
+      }
+    }
+
+    const roleNames = availableRoles.map(
+      (role: TRoleConsumptions) => role.name,
+    );
+
+    const structureRole = roleNames.find(
+      (name) =>
+        name.toLowerCase() === "estrutura" ||
+        name.toLowerCase() === "structure" ||
+        name.toLowerCase() === "estrutural" ||
+        name.toLowerCase() === "structural",
+    );
+
+    let defaultTab: string;
+    if (structureRole) {
+      defaultTab = structureRole;
+    } else if (roleNames.length > 0) {
+      defaultTab = roleNames[0];
+    } else {
+      defaultTab = t.unitView.tabAllDisciplines;
+    }
+
+    setSelectedTab(defaultTab);
+
+    const selectedRoleObj = availableRoles.find(
+      (role) => role.name === defaultTab,
+    );
+    const dcpId = selectedRoleObj?.id || "";
+
+    navigate({
+      search: dcpId ? { dcp: dcpId } : { dcp: undefined },
+      replace: true,
+    });
+
+    setHasInitialized(true);
+  }, [roles, t, navigate, hasInitialized, search.dcp]);
+
+  const handleTabDoubleClick = () => {
+    if (selectedTab === t.unitView.tabAllDisciplines) return;
+    navigate({
+      to: "./constructive-technologies",
+      search: search,
+    });
+  };
 
   const getFilteredConsumptions = () => {
     if (!roles || roles.length === 0) return [];
@@ -453,9 +522,11 @@ function RouteComponent() {
                 tabs={[t.unitView.tabAllDisciplines]}
                 selectedTab={selectedTab}
                 onTabSelect={(tab) => onSelectedTabChange(tab)}
+                onTabDoubleClick={handleTabDoubleClick}
                 subTabs={roleTabs}
                 selectedSubTab={selectedTab}
                 onSubTabSelect={(tab) => onSelectedTabChange(tab)}
+                onSubTabDoubleClick={handleTabDoubleClick}
                 fullWidth
                 addTabAction={
                   <div className="flex items-center gap-2">
@@ -497,9 +568,6 @@ function RouteComponent() {
                   </div>
                 }
               />
-              <Button variant="outline-bipc" size="icon-lg" disabled>
-                <Upload />
-              </Button>
               {(hasPermission("*:*") || selectedRole?.is_member) && (
                 <Tooltip>
                   <TooltipTrigger asChild>

@@ -559,16 +559,28 @@ function RouteComponent() {
         showIcon={false}
         description={t.constructiveTechView.createFirstSimulationDescription}
         button={
-          <DialogCreateSimulation
-            projectId={projectId}
-            unitId={unitId}
-            roleId={roleId}
-            triggerComponent={
-              <Button variant="bipc">
-                {t.constructiveTechView.newSimulation}
-              </Button>
-            }
-          />
+          <div className="flex items-center gap-4">
+            <DialogCreateSimulation
+              projectId={projectId}
+              unitId={unitId}
+              roleId={roleId}
+              triggerComponent={
+                <Button variant="bipc">
+                  {t.constructiveTechView.newSimulation}
+                </Button>
+              }
+            />
+            <small>{t.common.orLabel}</small>
+            <DrawerIFCImport
+              mode="simulation"
+              projectId={projectId}
+              unitId={unitId}
+              roleId={roleId}
+              triggerComponent={
+                <Button variant="bipc">{t.common.ifcImportTqs}</Button>
+              }
+            />
+          </div>
         }
       />
     );

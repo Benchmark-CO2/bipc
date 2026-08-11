@@ -140,30 +140,38 @@ function FileTypeTabs({
   value,
   onChange,
   availableFileTypes,
+  disabledFileTypes,
 }: {
   value: FileType;
   onChange: (v: FileType) => void;
   availableFileTypes?: FileType[];
+  disabledFileTypes?: FileType[];
 }) {
   const { t } = useTranslation();
   const fileTypes = availableFileTypes ?? (["ifc", "tqs"] as FileType[]);
   return (
     <div className="flex items-center gap-1 border border-gray-200 dark:border-gray-700 rounded-lg p-1 w-fit">
-      {fileTypes.map((ft) => (
-        <button
-          key={ft}
-          type="button"
-          onClick={() => onChange(ft)}
-          className={cn(
-            "px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-150",
-            value === ft
-              ? "bg-primary text-white shadow-sm"
-              : "text-muted-foreground hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-800",
-          )}
-        >
-          {ft === "ifc" ? t.drawerIFC.tabIFC : t.drawerIFC.tabTQS}
-        </button>
-      ))}
+      {fileTypes.map((ft) => {
+        const isDisabled = disabledFileTypes?.includes(ft);
+        return (
+          <button
+            key={ft}
+            type="button"
+            onClick={() => !isDisabled && onChange(ft)}
+            disabled={isDisabled}
+            className={cn(
+              "px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-150",
+              value === ft
+                ? "bg-primary text-white shadow-sm"
+                : isDisabled
+                  ? "text-muted-foreground/50 cursor-not-allowed opacity-50"
+                  : "text-muted-foreground hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-800",
+            )}
+          >
+            {ft === "ifc" ? t.drawerIFC.tabIFC : t.drawerIFC.tabTQS}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -324,7 +332,7 @@ export default function DrawerIFCImport({
   triggerComponent,
 }: DrawerIFCImportProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [fileType, setFileType] = useState<FileType>("ifc");
+  const [fileType, setFileType] = useState<FileType>("tqs");
   const [software, setSoftware] = useState("");
   const [version, setVersion] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -381,20 +389,6 @@ export default function DrawerIFCImport({
     ? (MOCK_UNITS_BY_FILE[selectedFileId] ?? [])
     : [];
 
-  const handleClose = (force?: boolean) => {
-    if (!force && isUploadingTqsFile) return;
-    setIsOpen(false);
-    setFileType("ifc");
-    setSoftware("");
-    setVersion("");
-    setUploadFile(null);
-    setImportErrorMessage("");
-    setFileWarningMessage("");
-    setSelectedFileId("");
-    setSelectedUnitId("");
-    setSelectedTechIds([]);
-  };
-
   const handleFileTypeChange = (ft: FileType) => {
     setFileType(ft);
     setImportErrorMessage("");
@@ -402,6 +396,15 @@ export default function DrawerIFCImport({
     setUploadFile(null);
     setSoftware(ft === "tqs" ? "tqs" : "");
     setVersion(ft === "tqs" ? "tqsv26" : "");
+  };
+
+  const handleClose = (force?: boolean) => {
+    if (!force && isUploadingTqsFile) return;
+    setIsOpen(false);
+    handleFileTypeChange(hasFileTypeTabs ? "tqs" : "ifc");
+    setSelectedFileId("");
+    setSelectedUnitId("");
+    setSelectedTechIds([]);
   };
 
   const handleSoftwareChange = (val: string) => {
@@ -464,12 +467,8 @@ export default function DrawerIFCImport({
       open={isOpen}
       onOpenChange={(open) => {
         setIsOpen(open);
-        if (open && !hasFileTypeTabs) {
-          setFileType("ifc");
-          setSoftware("");
-          setVersion("");
-          setUploadFile(null);
-          setImportErrorMessage("");
+        if (open) {
+          handleFileTypeChange(hasFileTypeTabs ? "tqs" : "ifc");
         }
       }}
       onClose={handleClose}
@@ -506,6 +505,7 @@ export default function DrawerIFCImport({
                 <FileTypeTabs
                   value={fileType}
                   onChange={handleFileTypeChange}
+                  disabledFileTypes={["ifc"]}
                 />
               </div>
             )}
