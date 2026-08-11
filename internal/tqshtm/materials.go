@@ -10,9 +10,9 @@ var tqsCodeToBlockType = map[string]string{
 	"P4015":   "inteiro (14x19x39)",
 	"P5515":   "amarração T (14x19x54)",
 	"PCB2015": "meia canaleta (14x19x19)",
-	"PCB4015": "canaleta inteira (14x19x39)",
+	"PCB4015": "canaleta  inteira (14x19x39)",
 	"PCN2015": "meia canaleta (14x19x19)",
-	"PCN4015": "canaleta inteira (14x19x39)",
+	"PCN4015": "canaleta  inteira (14x19x39)",
 	"PJT2015": "meia canaleta (14x19x19)",
 	"PVR15":   "meio (14x19x19)",
 }

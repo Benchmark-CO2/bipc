@@ -224,9 +224,18 @@ func buildStructuralMasonryData(data tqshtm.StructuralMasonryData) (map[string]a
 					"volume": v.Volume,
 				}
 			}
+			groutSteel := make([]map[string]any, len(data.Steel))
+			for j, s := range data.Steel {
+				groutSteel[j] = map[string]any{
+					"material":   s.Material,
+					"resistance": s.Resistance,
+					"mass":       s.Mass,
+					"position":   s.Position,
+				}
+			}
 			groutMap := map[string]any{
 				"volumes": volumes,
-				"steel":   []map[string]any{},
+				"steel":   groutSteel,
 			}
 			if g.Position != "" {
 				groutMap["position"] = g.Position
@@ -256,16 +265,6 @@ func buildStructuralMasonryData(data tqshtm.StructuralMasonryData) (map[string]a
 		}
 	}
 
-	steel := make([]map[string]any, len(data.Steel))
-	for i, s := range data.Steel {
-		steel[i] = map[string]any{
-			"material":   s.Material,
-			"resistance": s.Resistance,
-			"mass":       s.Mass,
-			"position":   s.Position,
-		}
-	}
-
 	form := make([]map[string]any, len(data.Form))
 	for i, f := range data.Form {
 		form[i] = map[string]any{
@@ -275,9 +274,8 @@ func buildStructuralMasonryData(data tqshtm.StructuralMasonryData) (map[string]a
 	}
 
 	moduleData := map[string]any{
-		"type":    "structural_masonry",
+		"type":     "structural_masonry",
 		"concrete": concrete,
-		"steel":    steel,
 		"form":     form,
 		"masonry":  masonryMap,
 	}
