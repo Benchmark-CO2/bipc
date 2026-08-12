@@ -41,7 +41,7 @@ export const Route = createRootRouteWithContext<{
     const path = useLocation();
     const handleLogout = () => {
       logout();
-      trainingModalStorage.clearMinimized(isAuthenticated);
+      trainingModalStorage.clearAuthMinimizedOnLogout();
       navigate({
         to: "/login",
         replace: true,

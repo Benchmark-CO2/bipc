@@ -43,13 +43,20 @@ const ModalTraining = ({
   useEffect(() => {
     const completed = trainingModalStorage.isCompleted(isAuthenticated);
     const minimized = trainingModalStorage.isMinimized(isAuthenticated);
+    const autoDismissed = trainingModalStorage.isAutoDismissed(isAuthenticated);
 
     setIsCompleted(completed);
-    setDismissNextTime(false);
+    setDismissNextTime(autoDismissed);
 
     if (completed) {
       setOpen(false);
       setShowMiniature(false);
+      return;
+    }
+
+    if (autoDismissed) {
+      setOpen(false);
+      setShowMiniature(isAuthenticated ? false : true);
       return;
     }
 
@@ -121,15 +128,6 @@ const ModalTraining = ({
 
   const handleDialogOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
-      if (dismissNextTime && !openedManually) {
-        trainingModalStorage.setMinimized(isAuthenticated);
-        setOpenedManually(false);
-        setDismissNextTime(false);
-        setOpen(false);
-        setShowMiniature(true);
-        shouldMinimizeOnCloseRef.current = true;
-        return;
-      }
       if (shouldMinimizeOnCloseRef.current) {
         handleMinimize();
       } else {
@@ -181,9 +179,9 @@ const ModalTraining = ({
                   const next = checked === true;
                   setDismissNextTime(next);
                   if (next) {
-                    trainingModalStorage.setMinimized(isAuthenticated);
+                    trainingModalStorage.setAutoDismissed(isAuthenticated);
                   } else {
-                    trainingModalStorage.clearMinimized(isAuthenticated);
+                    trainingModalStorage.clearAutoDismissed(isAuthenticated);
                   }
                 }}
                 className="border-2 bg-white dark:bg-dark-900 data-[state=checked]:bg-secondary data-[state=checked]:border-secondary data-[state=checked]:text-white"
