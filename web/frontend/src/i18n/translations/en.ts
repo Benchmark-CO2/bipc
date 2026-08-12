@@ -379,6 +379,11 @@ export const en: Translations = {
       editError: "Error updating project",
       unknownError: "Unknown error",
       downloadReport: "Download report",
+      autoCreateStructureLabel:
+        'Automatically create the "Structure" discipline for this project (you can edit it later)',
+      autoCreateStructureDisciplineName: "Structure",
+      autoCreateStructureDisciplineDescription:
+        "Structure discipline automatically created when the project was created. Responsible for calculations, specifications and CO₂ consumption simulations of structural elements such as columns, beams, slabs, concrete walls and foundations.",
     },
     confirmDelete: {
       title: "Delete Project",

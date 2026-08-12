@@ -380,6 +380,11 @@ export const ptBR = {
       editError: "Erro ao editar empreendimento",
       unknownError: "Erro desconhecido",
       downloadReport: "Baixar relatório",
+      autoCreateStructureLabel:
+        'Criar automaticamente a disciplina "Estrutura" neste empreendimento (você poderá editar depois)',
+      autoCreateStructureDisciplineName: "Estrutura",
+      autoCreateStructureDisciplineDescription:
+        "Disciplina de Estrutura criada automaticamente no momento da criação do empreendimento. Responsável por cálculos, especificações e simulações de consumo de CO₂ de elementos estruturais como pilares, vigas, lajes, paredes de concreto e fundações.",
     },
     confirmDelete: {
       title: "Excluir Empreendimento",
