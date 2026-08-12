@@ -779,6 +779,8 @@ export const en: Translations = {
     miniatureTitle: "Training",
     miniatureTooltip: "Click to open",
     learnMore: "Learn more...",
+    dismissCheckboxLabel:
+      "Do not automatically display this message when entering again on this browser",
   },
   phase: {
     preliminary_study: "Schematic Design",

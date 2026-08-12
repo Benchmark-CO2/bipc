@@ -1,4 +1,5 @@
 import { Button } from "../ui/button";
+import { Checkbox } from "../ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,9 @@ const ModalTraining = ({
 }: ModalTrainingProps) => {
   const [open, setOpen] = useState(false);
   const [showMiniature, setShowMiniature] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [dismissNextTime, setDismissNextTime] = useState(false);
+  const [openedManually, setOpenedManually] = useState(false);
   const shouldMinimizeOnCloseRef = useRef(true);
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -39,6 +43,9 @@ const ModalTraining = ({
   useEffect(() => {
     const completed = trainingModalStorage.isCompleted(isAuthenticated);
     const minimized = trainingModalStorage.isMinimized(isAuthenticated);
+
+    setIsCompleted(completed);
+    setDismissNextTime(false);
 
     if (completed) {
       setOpen(false);
@@ -106,6 +113,7 @@ const ModalTraining = ({
     trainingModalStorage.clearMinimized(isAuthenticated);
 
     shouldMinimizeOnCloseRef.current = true;
+    setOpenedManually(true);
 
     setShowMiniature(false);
     setOpen(true);
@@ -113,16 +121,28 @@ const ModalTraining = ({
 
   const handleDialogOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
+      if (dismissNextTime && !openedManually) {
+        trainingModalStorage.setMinimized(isAuthenticated);
+        setOpenedManually(false);
+        setDismissNextTime(false);
+        setOpen(false);
+        setShowMiniature(true);
+        shouldMinimizeOnCloseRef.current = true;
+        return;
+      }
       if (shouldMinimizeOnCloseRef.current) {
         handleMinimize();
       } else {
         setOpen(false);
         shouldMinimizeOnCloseRef.current = true;
       }
+      setOpenedManually(false);
     } else {
       setOpen(newOpen);
     }
   };
+
+  if (isCompleted) return null;
 
   return (
     <>
@@ -152,6 +172,31 @@ const ModalTraining = ({
             </DialogDescription>
           </DialogHeader>
 
+          {!openedManually && (
+            <div className="mt-6 mb-2 flex items-center justify-start gap-3 px-1">
+              <Checkbox
+                id="training-dismiss-next-time"
+                checked={dismissNextTime}
+                onCheckedChange={(checked: boolean | "indeterminate") => {
+                  const next = checked === true;
+                  setDismissNextTime(next);
+                  if (next) {
+                    trainingModalStorage.setMinimized(isAuthenticated);
+                  } else {
+                    trainingModalStorage.clearMinimized(isAuthenticated);
+                  }
+                }}
+                className="border-2 bg-white dark:bg-dark-900 data-[state=checked]:bg-secondary data-[state=checked]:border-secondary data-[state=checked]:text-white"
+              />
+              <label
+                htmlFor="training-dismiss-next-time"
+                className="text-sm font-medium leading-relaxed cursor-pointer select-none text-accent/90 hover:text-accent"
+              >
+                {t.training.dismissCheckboxLabel}
+              </label>
+            </div>
+          )}
+
           <DialogFooter className="flex flex-col sm:flex-col gap-3 mt-4">
             {isAuthenticated ? (
               <>
@@ -165,10 +210,16 @@ const ModalTraining = ({
                 </Button>
                 <Button
                   variant="default"
-                  onClick={handleAlreadyRegistered}
+                  onClick={
+                    openedManually
+                      ? () => setOpen(false)
+                      : handleAlreadyRegistered
+                  }
                   className="mx-auto border-none shadow-none"
                 >
-                  {t.training.alreadyRegistered}
+                  {openedManually
+                    ? t.training.close
+                    : t.training.alreadyRegistered}
                 </Button>
               </>
             ) : (
@@ -216,7 +267,9 @@ const ModalTraining = ({
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
               <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
             </svg>
-            <span className="font-semibold text-sm">{t.training.miniatureTitle}</span>
+            <span className="font-semibold text-sm">
+              {t.training.miniatureTitle}
+            </span>
           </div>
         </div>
       )}
@@ -224,10 +277,16 @@ const ModalTraining = ({
       {/* Item inline no sidebar - apenas para usuários logados */}
       {isAuthenticated && (
         <div
-          className={cn("bg-primary text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-primary/90 cursor-pointer border border-primary/50", {
-            "px-0 justify-center": minimizedSidebar
-          })}
-          onClick={() => setOpen(true)}
+          className={cn(
+            "bg-primary text-white p-2 px-4 rounded-lg mx-auto flex items-center w-full hover:bg-primary/90 cursor-pointer border border-primary/50",
+            {
+              "px-0 justify-center": minimizedSidebar,
+            },
+          )}
+          onClick={() => {
+            setOpenedManually(true);
+            setOpen(true);
+          }}
           title={t.training.miniatureTooltip}
         >
           <span className="flex items-center gap-2">
