@@ -9,6 +9,8 @@ interface IFilterTabsProps {
   subTabs?: string[];
   selectedSubTab?: string;
   onSubTabSelect?: (tab: string) => void;
+  onTabDoubleClick?: (tab: string) => void;
+  onSubTabDoubleClick?: (tab: string) => void;
   fullWidth?: boolean;
   tabsLabel?: { [key: string]: string };
   className?: string;
@@ -23,6 +25,8 @@ export function FilterTabs({
   subTabs,
   selectedSubTab,
   onSubTabSelect,
+  onTabDoubleClick,
+  onSubTabDoubleClick,
   fullWidth = false,
   tabsLabel,
   className,
@@ -86,6 +90,7 @@ export function FilterTabs({
           <button
             key={tab}
             onClick={() => onTabSelect(tab)}
+            onDoubleClick={() => onTabDoubleClick?.(tab)}
             className={`inline-flex items-center justify-center whitespace-nowrap rounded-full h-6 px-3 text-xs font-medium transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-active focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 w-full ${
               selectedTab === tab
                 ? "bg-active text-white"
@@ -118,6 +123,7 @@ export function FilterTabs({
               <button
                 key={subTab}
                 onClick={() => onSubTabSelect(subTab)}
+                onDoubleClick={() => onSubTabDoubleClick?.(subTab)}
                 className={`inline-flex items-center justify-center whitespace-nowrap rounded-full h-6 px-3 text-xs font-medium transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-active focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 shrink-0 max-sm:w-full ${
                   selectedSubTab === subTab
                     ? "bg-active text-white"

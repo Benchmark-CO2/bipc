@@ -11,7 +11,7 @@ const Screen = ({ children }: IScreen) => {
   return (
     <main
       className={cn("h-full w-full overflow-auto relative flex flex-col", {
-        "pb-12": path.pathname.includes("new_projects"),
+        "pb-35": path.pathname.includes("new_projects"),
       })}
     >
       {children}

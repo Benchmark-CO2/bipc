@@ -19,6 +19,7 @@ export const ptBR = {
     collapse: "Recolher",
     ifcImport: "Importar do IFC",
     ifcImportTqs: "Importar de IFC/TQS",
+    orLabel: "ou",
   },
   errors: {
     unexpectedError: "Erro inesperado. Tente novamente mais tarde.",
@@ -379,6 +380,11 @@ export const ptBR = {
       editError: "Erro ao editar empreendimento",
       unknownError: "Erro desconhecido",
       downloadReport: "Baixar relatório",
+      autoCreateStructureLabel:
+        'Criar automaticamente a disciplina "Estrutura" neste empreendimento (você poderá editar depois)',
+      autoCreateStructureDisciplineName: "Estrutura",
+      autoCreateStructureDisciplineDescription:
+        "Disciplina de Estrutura criada automaticamente no momento da criação do empreendimento. Responsável por cálculos, especificações e simulações de consumo de CO₂ de elementos estruturais como pilares, vigas, lajes, paredes de concreto e fundações.",
     },
     confirmDelete: {
       title: "Excluir Empreendimento",
@@ -776,6 +782,8 @@ export const ptBR = {
     miniatureTitle: "Capacitação",
     miniatureTooltip: "Clique para abrir",
     learnMore: "Saiba mais...",
+    dismissCheckboxLabel:
+      "Não exibir esta mensagem automaticamente ao entrar novamente neste navegador",
   },
   phase: {
     preliminary_study: "Estudo Preliminar",
@@ -1100,7 +1108,7 @@ export const ptBR = {
     backToProject: "Voltar ao empreendimento",
     newDiscipline: "Nova disciplina",
     manageDisciplines: "Gerenciar disciplinas",
-    createSimulations: "Gerenciar simulações",
+    createSimulations: "Simulações",
     selectDisciplineTooltip:
       "Selecione uma disciplina para gerenciar simulações",
     noDisciplines: "Sem Disciplinas para exibir",

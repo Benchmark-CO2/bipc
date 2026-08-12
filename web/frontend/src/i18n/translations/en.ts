@@ -21,6 +21,7 @@ export const en: Translations = {
     collapse: "Collapse",
     ifcImport: "Import from IFC",
     ifcImportTqs: "Import from IFC/TQS",
+    orLabel: "or",
   },
   errors: {
     unexpectedError: "Unexpected error. Please try again later.",
@@ -378,6 +379,11 @@ export const en: Translations = {
       editError: "Error updating project",
       unknownError: "Unknown error",
       downloadReport: "Download report",
+      autoCreateStructureLabel:
+        'Automatically create the "Structure" discipline for this project (you can edit it later)',
+      autoCreateStructureDisciplineName: "Structure",
+      autoCreateStructureDisciplineDescription:
+        "Structure discipline automatically created when the project was created. Responsible for calculations, specifications and CO₂ consumption simulations of structural elements such as columns, beams, slabs, concrete walls and foundations.",
     },
     confirmDelete: {
       title: "Delete Project",
@@ -773,6 +779,8 @@ export const en: Translations = {
     miniatureTitle: "Training",
     miniatureTooltip: "Click to open",
     learnMore: "Learn more...",
+    dismissCheckboxLabel:
+      "Do not automatically display this message when entering again on this browser",
   },
   phase: {
     preliminary_study: "Schematic Design",
@@ -1090,7 +1098,7 @@ export const en: Translations = {
     backToProject: "Back to project",
     newDiscipline: "New discipline",
     manageDisciplines: "Manage disciplines",
-    createSimulations: "Manage simulations",
+    createSimulations: "Simulations",
     selectDisciplineTooltip: "Select a discipline to manage simulations",
     noDisciplines: "No disciplines to display",
     noDisciplinesDescription:
