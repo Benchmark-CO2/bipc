@@ -832,6 +832,21 @@ export const en: Translations = {
     compare: "Compare",
     avg: "Average",
     total: "Total",
+    chartLegend: {
+      referenceValue: "Reference Value",
+      constructionMitigationPotential: "Construction Mitigation Potential (Best Case)",
+      projectMitigationPotential: "Project Mitigation Potential",
+      riskOfLowerConstructionMitigation: "Risk of Lower Construction Mitigation (Worst Case)",
+      title: "Legend",
+    }
+  },
+  floor: {
+    penthouse_floor: "Penthouse",
+    foundation_floor: "Mesostructure and foundation",
+    standard_floor: "Standard",
+    ground_floor: "Ground",
+    basement_floor: "Basement",
+    total: "Complete Building",
   },
   buildingVisualizer: {
     foundation: "Mesostructure and foundation",

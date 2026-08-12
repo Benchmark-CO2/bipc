@@ -33,8 +33,8 @@ const debounce = <T extends (...args: any[]) => any>(
 
 // Constants
 const DEFAULT_COLORS = {
-  START: "#3b82f6",
-  END: "#E36F35",
+  START: "#5B9BD5",
+  END: "#E0756C",
   GRAY_START: "#94a3b8",
   GRAY_END: "#64748b",
   GRADIENT_RANGE: [
@@ -72,7 +72,7 @@ const PROCEL_CLASSES_5 = [
   { label: "B", color: "#8DC63F" },
   { label: "C", color: "#FFF200" },
   { label: "D", color: "#F26522" },
-  { label: "E", color: "#ED1C24" },
+  // { label: "E", color: "#ED1C24" },
 ] as const;
 
 type ProcelLabel = (typeof PROCEL_CLASSES_5)[number]["label"];
@@ -1451,7 +1451,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           )}
         </div>
 
-        {/* <div className="flex max-sm:flex-col-reverse max-sm:gap-4 max-sm:mt-2">
+        <div className="flex max-sm:flex-col-reverse max-sm:gap-4 max-sm:mt-2">
           <div className="flex flex-col gap-0.5">
             <span className="text-xs">
               {t.d3chart.displaying}: {displayedCount} {t.d3chart.of} {totalCount}
@@ -1475,7 +1475,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           <span className="flex-1 text-xs text-center w-full text-foreground/70">
             {labelX}
           </span>
-        </div> */}
+        </div>
       </CardContent>
     </Card>
   );

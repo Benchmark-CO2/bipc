@@ -835,6 +835,20 @@ export const ptBR = {
     compare: "Comparar",
     avg: "Média",
     total: "Total",
+    chartLegend: {
+      referenceValue: "Valor de referência",
+      constructionMitigationPotential: "Potencial de mitigação da construção (Melhor cenário)",
+      projectMitigationPotential: "Potencial de mitigação do projeto",
+      riskOfLowerConstructionMitigation: "Risco de menor mitigação da construção (Pior cenário)",
+      title: "Legenda"
+    }
+  },
+  floor: {
+    penthouse_floor: "Cobertura",
+  foundation_floor: "Mesoestrutura e fundação",
+    standard_floor: "Tipo",
+    ground_floor: "Térreo",
+    basement_floor: "Subsolo",
   },
   buildingVisualizer: {
     foundation: "Mesoestrutura e fundação",
