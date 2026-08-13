@@ -695,8 +695,8 @@ export const ptBR = {
       cumulativeFraction: {
         name: "Benchmark",
         yAxisLabel: "Potencial de mitigação",
-        xAxisLabelCarbon: "Carbono Embutido",
-        xAxisLabelEnergy: "Energia Embutida",
+        xAxisLabelCarbon: "Carbono Embutido (kg CO₂/m²)",
+        xAxisLabelEnergy: "Energia Embutida MJ/m²",
         baseLine: "linha de base",
         ppp5Line: "PPp 5%",
       },
@@ -843,6 +843,25 @@ export const ptBR = {
     compare: "Comparar",
     avg: "Média",
     total: "Total",
+    chartLegend: {
+      referenceValue: "Valor de referência",
+      constructionMitigationPotential: "Potencial de mitigação da construção (Melhor cenário)",
+      projectMitigationPotential: "Potencial de mitigação do projeto",
+      riskOfLowerConstructionMitigation: "Risco de menor mitigação da construção (Pior cenário)",
+      title: "Legenda"
+    },
+    emissionLegend: {
+      title: 'Total de Emissões por tecnologia',
+    }
+  },
+  floor: {
+    penthouse_floor: "Cobertura",
+    foundation_floor: "Mesoestrutura e fundação",
+    standard_floor: "Tipo",
+    ground_floor: "Térreo",
+    basement_floor: "Subsolo",
+    total: "Projeto Completo",
+    piles_foundation: "Fundação em estacas",
   },
   buildingVisualizer: {
     foundation: "Mesoestrutura e fundação",

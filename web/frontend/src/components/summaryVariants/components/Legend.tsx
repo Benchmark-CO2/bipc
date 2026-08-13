@@ -1,6 +1,5 @@
-import { useSummary } from "@/context/summaryContext";
-import { cn } from "@/lib/utils";
 import { useTranslation } from "@/i18n";
+import { cn } from "@/lib/utils";
 import { MAP_COLORS, MAP_EMPTY, MAP_THRESHOLDS } from "@/utils/geoUtils";
 
 const DISPLAY_COLORS = [MAP_EMPTY, ...MAP_COLORS];
@@ -19,13 +18,11 @@ interface LegendProps {
 }
 
 const Legend = ({ variant = "default" }: LegendProps) => {
-  const { isExpanded } = useSummary();
   const { t } = useTranslation();
 
   return (
     <section
       className={cn("w-full flex justify-between", {
-        "w-2/3 my-6": isExpanded,
       })}
     >
       {variant === "map" ? (
@@ -64,7 +61,7 @@ const Legend = ({ variant = "default" }: LegendProps) => {
       ) : (
         <div className="grid grid-cols-4 w-full items-end max-sm:grid-cols-1 max-2xl:grid-cols-2 3xl:grid-cols-4 max-sm:gap-2 max-sm:my-4">
           <div className="w-full flex flex-col justify-center">
-            <h2 className="text-sm font-bold mb-2">{t.benchmark.legend}</h2>
+            {/* <h2 className="text-sm font-bold mb-2">{t.benchmark.legend}</h2> */}
             <div className="w-full flex items-center">
               <div className="w-3 h-3 border-1 border-white bg-[#6C9EE0] rounded-full"></div>
               <span className="ml-2 italic text-xs">

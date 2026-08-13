@@ -692,8 +692,8 @@ export const en: Translations = {
       cumulativeFraction: {
         name: "Benchmark",
         yAxisLabel: "Potential Mitigation",
-        xAxisLabelCarbon: "Embodied Carbon",
-        xAxisLabelEnergy: "Energy Consumption",
+        xAxisLabelCarbon: "Embodied Carbon  (kg CO₂/m²)",
+        xAxisLabelEnergy: "Energy Consumption MJ/m²",
         baseLine: "baseline",
         ppp5Line: "PPp 5%",
       },
@@ -840,6 +840,25 @@ export const en: Translations = {
     compare: "Compare",
     avg: "Average",
     total: "Total",
+    chartLegend: {
+      referenceValue: "Reference Value",
+      constructionMitigationPotential: "Construction Mitigation Potential (Best Case)",
+      projectMitigationPotential: "Project Mitigation Potential",
+      riskOfLowerConstructionMitigation: "Risk of Lower Construction Mitigation (Worst Case)",
+      title: "Legend",
+    },
+    emissionLegend: {
+      title: 'Total Emissions by Technology',
+    }
+  },
+  floor: {
+    penthouse_floor: "Penthouse",
+    foundation_floor: "Mesostructure and foundation",
+    standard_floor: "Standard",
+    ground_floor: "Ground",
+    basement_floor: "Basement",
+    total: "Complete Building",
+    piles_foundation: "Piles Foundation",
   },
   buildingVisualizer: {
     foundation: "Mesostructure and foundation",

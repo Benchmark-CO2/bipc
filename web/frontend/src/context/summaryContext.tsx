@@ -36,7 +36,7 @@ export const SummaryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const toggleSummary = () => {
     setIsOpen((prev) => !prev);
     if (isExpanded) {
-      setIsExpanded(false);
+      setIsExpanded(prev => !prev);
     }
   };
 

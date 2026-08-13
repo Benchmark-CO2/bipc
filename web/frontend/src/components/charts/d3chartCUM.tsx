@@ -72,7 +72,6 @@ const PROCEL_CLASSES_5 = [
   { label: "B", color: "#8DC63F" },
   { label: "C", color: "#FFF200" },
   { label: "D", color: "#F26522" },
-  { label: "E", color: "#ED1C24" },
 ] as const;
 
 const UNIT_LABELS = (t: Translations) => ({
