@@ -847,6 +847,7 @@ export const en: Translations = {
     ground_floor: "Ground",
     basement_floor: "Basement",
     total: "Complete Building",
+    piles_foundation: "Piles Foundation",
   },
   buildingVisualizer: {
     foundation: "Mesostructure and foundation",

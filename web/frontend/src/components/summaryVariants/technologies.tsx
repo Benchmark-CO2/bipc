@@ -4,11 +4,11 @@ import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
-import EmissionsChart from '../charts/barChart';
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
 import { ChartLegend } from './components/chartLegend';
+import { EmissionsSection } from './components/emissionSection';
 import { ScenarioCard } from './components/indicatorItem';
 import { IndicatorList } from './components/indicatorsList';
 import { useChartType } from "./hooks/useChartType";
@@ -416,7 +416,15 @@ const SimulationsSummary = ({
               </div>
 
               {/* Loop pelos blocos de Simulações */}
-              {simulationEmissionsData.map((section) => (
+              <EmissionsSection data={simulationEmissionsData} selected={selectedProjects} onChange={(id, checked) => {
+                if (checked) {
+                  setSelectedProjects(prev => [...prev, id]);
+                } else {
+                  setSelectedProjects(prev => prev.filter(pid => pid !== id));
+                }
+              }} />
+            
+              {/* {simulationEmissionsData.map((section) => (
                 <div key={section.id} className="flex flex-col gap-2 border-b border-gray-200 pb-6 last:border-b-0">
                   <div className="flex items-center gap-2 mb-2">
                     <input 
@@ -432,12 +440,12 @@ const SimulationsSummary = ({
                     <EmissionsChart data={section.chartData} />
                   </div>
                 </div>
-              ))}
+              ))} */}
             </div>
           </div>
 
           {/* COLUNA DIREITA (flex-1) */}
-          <div className="flex-1 min-h-0 flex flex-col justify-between gap-4 pt-1">
+          <div className="flex-1 min-h-0 flex flex-col justify-between gap-0 pt-0">
             <div className='flex gap-2 justify-end items-center'>
               <FilterTabs
                 tabs={["co2", "energy", "material"]}
@@ -462,7 +470,7 @@ const SimulationsSummary = ({
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 w-full">
+            <div className="flex flex-col gap-0 w-full">
               {chartType === "scatter" ? (
                 <D3GradientRangeChart
                   data={updateYs}

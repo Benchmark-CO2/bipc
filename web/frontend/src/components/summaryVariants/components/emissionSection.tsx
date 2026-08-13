@@ -1,5 +1,5 @@
 import EmissionsChart from '@/components/charts/barChart';
-import { EmissionLegend } from './emissionLegend';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Importe seu componente de checkbox aqui
 const projectEmissionsData = [
@@ -81,12 +81,13 @@ const projectEmissionsData = [
 ];
 export const EmissionsSection = ({ data, selected, onChange }: { data: typeof projectEmissionsData, selected?: string[], onChange?: (id: string, checked: boolean) => void }) => {
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="flex flex-col gap-2 w-full overflow-y-auto max-h-[70vh]">
       
       {/* 1. Legenda Global no Topo */}
-      <div className="mb-4">
-        <h2 className="text-xl font-bold mb-2">Total de Emissões por tecnologia</h2>
-        <EmissionLegend keys={data[0]?.chartData?.map(item => item.name) || []} />
+      <div className="mb-0">
+                <h2 className="text-xl font-bold mb-2">Total de Emissões por tecnologia</h2>
+
+        {/* <EmissionLegend keys={data[0]?.chartData?.map(item => item.name) || []} /> */}
       </div>
 
       {/* 2. Lista de Gráficos (Total + Edificações) */}
@@ -95,11 +96,10 @@ export const EmissionsSection = ({ data, selected, onChange }: { data: typeof pr
           
           {/* Cabeçalho da Seção com Checkbox */}
           <div className="flex items-center gap-2">
-            <input 
-              type="checkbox" 
-              checked={selected?.includes(section.id) ?? section.defaultChecked} 
-              className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
-              onChange={(e) => onChange?.(section.id, e.target.checked)}
+            <Checkbox 
+                value={section.id}
+                checked={selected?.includes(section.id) ?? section.defaultChecked} 
+                onCheckedChange={(checked) => onChange?.(section.id, checked)}
             />
             <span className="font-bold text-gray-800">{section.title}</span>
           </div>

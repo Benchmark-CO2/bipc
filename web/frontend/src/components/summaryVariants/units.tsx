@@ -6,7 +6,6 @@ import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
-import Divider from '../ui/divider';
 import { FilterTabs } from "../ui/filter-tabs";
 import { ChartLegend } from './components/chartLegend';
 import { EmissionsSection } from './components/emissionSection';
@@ -414,7 +413,7 @@ const UnitsSummary = ({
           {/* COLUNA ESQUERDA (1/3) */}
           <div className='w-1/3 flex-shrink-0 mt-0 flex flex-col'>
 
-            <Divider className="mb-4" />
+            {/* <Divider className="mb-4" /> */}
 
             {/* O Gráfico de Barras foi mantido aqui para não quebrar a estrutura existente */}
             <EmissionsSection data={projectEmissionsData} selected={selectedProjects} onChange={onChangeProjectSelection} />

@@ -5,7 +5,6 @@ import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
-import Divider from '../ui/divider';
 import { FilterTabs } from "../ui/filter-tabs";
 import { ChartLegend } from './components/chartLegend';
 import { ScenarioCard } from './components/indicatorItem';
@@ -323,9 +322,9 @@ const ProjectsSummary = ({
                 </p>
               </div>
             </div> */}
-            <Divider />
+            {/* <Divider /> */}
           </div>
-          <div className="flex-1 min-h-0 flex flex-col gap-4 pt-3">
+          <div className="flex-1 min-h-0 flex flex-col gap-0 pt-3">
             <div className='flex gap-2 justify-end items-center'>
               <FilterTabs
               tabs={["co2", "energy", "material"]}

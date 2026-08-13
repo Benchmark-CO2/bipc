@@ -72,7 +72,6 @@ const PROCEL_CLASSES_5 = [
   { label: "B", color: "#8DC63F" },
   { label: "C", color: "#FFF200" },
   { label: "D", color: "#F26522" },
-  // { label: "E", color: "#ED1C24" },
 ] as const;
 
 type ProcelLabel = (typeof PROCEL_CLASSES_5)[number]["label"];
@@ -137,12 +136,6 @@ const useChartDimensions = (
   containerHeight?: number,
 ) => {
   return useMemo(() => {
-    // const margin = {
-    //   top: isExpanded ? 15 : 20,
-    //   right: isMobile ? 0 : showProcelScale ? 40 : 20,
-    //   bottom: isMobile ? 20 : 20,
-    //   left: isMobile ? 45 : 80,
-    // };
    const margin = {
       top: isExpanded ? 15 : 20,
       right: isMobile ? 0 : showProcelScale ? 40 : 20,
@@ -288,12 +281,12 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const outLargerRef = useRef<number>(0);
   const [hasZoomed, setHasZoomed] = useState(false);
   const [zoomEnabled, setZoomEnabled] = useState(false);
-  const transformRef = useRef({ k: 1, x: 0, y: 0 });
+  
+  // Custom transform reference mantendo X e Y independentes
+  const transformRef = useRef({ kx: 1, ky: 1, x: 0, y: 0 });
   const animationFrameRef = useRef<number | null>(null);
   const initialTotalRef = useRef<number>(0);
-  const zoomRef = useRef<d3.ZoomBehavior<HTMLCanvasElement, unknown> | null>(
-    null,
-  );
+  
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
 
@@ -410,11 +403,11 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       const newXScale = d3
         .scaleLinear()
         .domain(xScale.domain())
-        .range(xScale.range().map((r) => r * transform.k + transform.x));
+        .range(xScale.range().map((r) => r * transform.kx + transform.x));
       const newYScale = d3
         .scaleLinear()
         .domain(yScale.domain())
-        .range(yScale.range().map((r) => r * transform.k + transform.y));
+        .range(yScale.range().map((r) => r * transform.ky + transform.y));
 
       for (const d of data) {
         const x1 = newXScale(d.min);
@@ -423,7 +416,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         const baseRadius = isExpanded
           ? CHART_CONFIG.CIRCLE_RADIUS.expanded
           : CHART_CONFIG.CIRCLE_RADIUS.normal;
-        const radius = baseRadius * Math.max(1, transform.k);
+        const radius = baseRadius * Math.max(1, transform.kx); // Utilizando kx como base para expansão visual da hit area
 
         const distStart = Math.sqrt(
           Math.pow(mouseX - x1, 2) + Math.pow(mouseY - y, 2),
@@ -498,7 +491,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       } else {
         setTooltip(null);
         if (canvasRef.current) {
-          canvasRef.current.style.cursor = "default";
+          canvasRef.current.style.cursor = zoomEnabled ? "grab" : "default";
         }
       }
     },
@@ -509,15 +502,16 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       selectedMaxBarIds,
       margin,
       canvasRef,
+      zoomEnabled
     ],
   );
 
   const handleCanvasMouseLeave = useCallback(() => {
     setTooltip(null);
     if (canvasRef.current) {
-      canvasRef.current.style.cursor = "default";
+      canvasRef.current.style.cursor = zoomEnabled ? "grab" : "default";
     }
-  }, []);
+  }, [zoomEnabled]);
 
   const drawChart = useCallback(() => {
     if (!canvasRef.current) return;
@@ -574,11 +568,11 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     const newXScale = d3
       .scaleLinear()
       .domain(xScale.domain())
-      .range(xScale.range().map((r) => r * transform.k + transform.x));
+      .range(xScale.range().map((r) => r * transform.kx + transform.x));
     const newYScale = d3
       .scaleLinear()
       .domain(yScale.domain())
-      .range(yScale.range().map((r) => r * transform.k + transform.y));
+      .range(yScale.range().map((r) => r * transform.ky + transform.y));
     const zoomRadiusFactor = 1;
 
     ctx.strokeStyle = DEFAULT_COLORS.GRID;
@@ -955,10 +949,8 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       }
     }
 
-    // Desativa o cliping para desenhar as anotações sem cortar fora
     ctx.restore();
 
-    // Renderização dos labels e setas (P, C, V, R)
     if (selectedAnnotations.length > 0 && !isCumulative && !hideBars) {
       selectedAnnotations.forEach(({ x1, x2, xMid, y, barHeight }) => {
         const labelR = 6;
@@ -969,7 +961,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
 
-        // "C" label at min (blue)
         ctx.fillStyle = DEFAULT_COLORS.START;
         ctx.beginPath();
         ctx.arc(x1, labelY, labelR, 0, Math.PI * 2);
@@ -977,7 +968,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         ctx.fillStyle = "#ffffff";
         ctx.fillText("C", x1, labelY);
 
-        // "V" label at mid (green)
         ctx.fillStyle = "#63B332";
         ctx.beginPath();
         ctx.arc(xMid, labelY, labelR, 0, Math.PI * 2);
@@ -985,7 +975,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         ctx.fillStyle = "#ffffff";
         ctx.fillText("V", xMid, labelY);
 
-        // "R" label at max (red)
         ctx.fillStyle = DEFAULT_COLORS.END;
         ctx.beginPath();
         ctx.arc(x2, labelY, labelR, 0, Math.PI * 2);
@@ -993,7 +982,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         ctx.fillStyle = "#ffffff";
         ctx.fillText("R", x2, labelY);
 
-        // Purple arrow from C (min) to PPp 5% line
         if (p5LineX !== null && Math.abs(p5LineX - x1) > labelR) {
           const arrowLeft = Math.min(x1, p5LineX);
           const arrowRight = Math.max(x1, p5LineX);
@@ -1221,71 +1209,114 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     };
   }, [drawChart]);
 
+  // Hook unificado para instanciar zoom manual & d3.drag para panning
   useEffect(() => {
     if (!canvasRef.current) return;
-
-    const initialDrawTimer = setTimeout(() => {
-      drawChart();
-    }, 10);
-
+    const initialDrawTimer = setTimeout(() => drawChart(), 10);
     const canvas = canvasRef.current;
 
-    const zoom = d3
-      .zoom<HTMLCanvasElement, unknown>()
-      .scaleExtent([1, 10])
-      .wheelDelta((event) => {
-        const sensitivity = event.shiftKey ? 250 : 700;
-        return -event.deltaY / sensitivity;
-      })
+    // Configurando d3.drag unicamente para Panning
+    const drag = d3.drag<HTMLCanvasElement, unknown>()
       .filter((event) => {
         if (!zoomEnabled) return false;
-        return !event.button && event.type !== "dblclick";
+        return !event.button; // Apenas clique esquerdo
       })
-      .on("zoom", (event) => {
-        const t = event.transform;
-        const tx = Math.min(0, Math.max(t.x, _width * (1 - 1.1 * t.k)));
-        const ty = Math.min(0, Math.max(t.y, _height * (1 - t.k)));
+      .on("drag", (event) => {
+        const tr = transformRef.current;
+        let tx = tr.x + event.dx;
+        let ty = tr.y + event.dy;
+        
+        // Clamping (Mesma lógica interna do D3 extentTranslate)
+        tx = Math.min(0, Math.max(tx, _width * (1 - 1.1 * tr.kx)));
+        ty = Math.min(0, Math.max(ty, _height * (1 - tr.ky)));
 
-        transformRef.current = { k: t.k, x: tx, y: ty };
+        transformRef.current = { ...tr, x: tx, y: ty };
+        setHasZoomed(tr.kx !== 1 || tr.ky !== 1 || tx !== 0 || ty !== 0);
 
-        const isZoomed = t.k !== 1 || tx !== 0 || ty !== 0;
-        setHasZoomed(isZoomed);
-
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-        }
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = requestAnimationFrame(drawChart);
       });
 
-    zoomRef.current = zoom;
+    d3.select(canvas).call(drag as any);
 
-    d3.select(canvas).call(zoom as any);
+    const handleWheel = (e: WheelEvent) => {
+      if (!zoomEnabled) return;
+      e.preventDefault();
+      e.stopPropagation(); // Previne conflitos
+
+      const sensitivity = e.shiftKey || e.ctrlKey ? 250 : 700;
+      const zoomFactor = Math.exp(-e.deltaY / sensitivity);
+      
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left - margin.left;
+      const my = e.clientY - rect.top - margin.top;
+
+      const tr = transformRef.current;
+      let { kx, ky, x: tx, y: ty } = tr;
+      const oldKx = kx, oldKy = ky;
+
+      if (e.ctrlKey && !e.shiftKey) {
+        // Zoom apenas em Y
+        ky = Math.max(1, Math.min(10, ky * zoomFactor));
+      } else if (e.shiftKey && !e.ctrlKey) {
+        // Zoom apenas em X
+        kx = Math.max(1, Math.min(10, kx * zoomFactor));
+      } else {
+        // Zoom em ambos (comportamento padrão)
+        kx = Math.max(1, Math.min(10, kx * zoomFactor));
+        ky = Math.max(1, Math.min(10, ky * zoomFactor));
+      }
+
+      // Translada para manter o mouse na mesma posição durante o Zoom
+      tx = mx - (mx - tx) * (kx / oldKx);
+      ty = my - (my - ty) * (ky / oldKy);
+
+      tx = Math.min(0, Math.max(tx, _width * (1 - 1.1 * kx)));
+      ty = Math.min(0, Math.max(ty, _height * (1 - ky)));
+
+      transformRef.current = { kx, ky, x: tx, y: ty };
+      setHasZoomed(kx !== 1 || ky !== 1 || tx !== 0 || ty !== 0);
+
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = requestAnimationFrame(drawChart);
+    };
 
     const handleDoubleClick = () => {
       d3.select(canvas)
         .transition()
         .duration(750)
-        .call(zoom.transform as any, d3.zoomIdentity);
-
-      transformRef.current = { k: 1, x: 0, y: 0 };
-      updateBrushCount(selectedBarIds.size || data.length);
-      setHasZoomed(false);
-
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      animationFrameRef.current = requestAnimationFrame(drawChart);
+        .tween("resetZoom", () => {
+          const start = { ...transformRef.current };
+          const end = { kx: 1, ky: 1, x: 0, y: 0 };
+          const iKx = d3.interpolateNumber(start.kx, end.kx);
+          const iKy = d3.interpolateNumber(start.ky, end.ky);
+          const iX = d3.interpolateNumber(start.x, end.x);
+          const iY = d3.interpolateNumber(start.y, end.y);
+          
+          return (t) => {
+            transformRef.current = { kx: iKx(t), ky: iKy(t), x: iX(t), y: iY(t) };
+            if (t === 1) {
+              updateBrushCount(selectedBarIds.size || data.length);
+              setHasZoomed(false);
+            }
+            if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = requestAnimationFrame(drawChart);
+          };
+        });
     };
 
+    canvas.addEventListener("wheel", handleWheel, { passive: false });
     canvas.addEventListener("dblclick", handleDoubleClick);
     canvas.addEventListener("mousemove", handleCanvasMouseMove as any);
     canvas.addEventListener("mouseleave", handleCanvasMouseLeave);
 
     return () => {
       clearTimeout(initialDrawTimer);
+      canvas.removeEventListener("wheel", handleWheel);
       canvas.removeEventListener("dblclick", handleDoubleClick);
       canvas.removeEventListener("mousemove", handleCanvasMouseMove as any);
       canvas.removeEventListener("mouseleave", handleCanvasMouseLeave);
+      d3.select(canvas).on(".drag", null);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
@@ -1297,23 +1328,36 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     data.length,
     updateBrushCount,
     zoomEnabled,
+    _width,
+    _height,
+    margin.left,
+    margin.top
   ]);
 
   useEffect(() => {
-    if (!zoomEnabled && canvasRef.current && zoomRef.current) {
+    if (!zoomEnabled && canvasRef.current) {
+      // Volta para o estado inicial suavemente quando desativado
       d3.select(canvasRef.current)
         .transition()
         .duration(300)
-        .call(zoomRef.current.transform as any, d3.zoomIdentity);
-
-      transformRef.current = { k: 1, x: 0, y: 0 };
-      updateBrushCount(selectedBarIds.size || data.length);
-      setHasZoomed(false);
-
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      animationFrameRef.current = requestAnimationFrame(drawChart);
+        .tween("resetZoom", () => {
+          const start = { ...transformRef.current };
+          const end = { kx: 1, ky: 1, x: 0, y: 0 };
+          const iKx = d3.interpolateNumber(start.kx, end.kx);
+          const iKy = d3.interpolateNumber(start.ky, end.ky);
+          const iX = d3.interpolateNumber(start.x, end.x);
+          const iY = d3.interpolateNumber(start.y, end.y);
+          
+          return (t) => {
+            transformRef.current = { kx: iKx(t), ky: iKy(t), x: iX(t), y: iY(t) };
+            if (t === 1) {
+              updateBrushCount(selectedBarIds.size || data.length);
+              setHasZoomed(false);
+            }
+            if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = requestAnimationFrame(drawChart);
+          };
+        });
     }
   }, [zoomEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1386,7 +1430,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             )}
             style={{
               width: "100%",
-              height: _height + margin.top + margin.bottom,
+              height: _height + margin.top + margin.bottom - 2,
             }}
           />
 

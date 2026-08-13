@@ -5,12 +5,11 @@ import { cn } from "@/lib/utils";
 import { IUnit } from "@/types/units";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
-import EmissionsChart from '../charts/barChart';
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
 import { ChartLegend } from './components/chartLegend';
-import { EmissionLegend } from './components/emissionLegend';
+import { EmissionsSection } from './components/emissionSection';
 import { ScenarioCard } from './components/indicatorItem';
 import { IndicatorList } from './components/indicatorsList';
 import { useChartType } from "./hooks/useChartType";
@@ -408,14 +407,14 @@ const FloorSummary = ({
         <div className='flex gap-4 items-start'>
           
           {/* COLUNA ESQUERDA (1/3) */}
-          <div className="w-1/3 flex-shrink-0 mt-3 flex flex-col">
+          <div className="w-1/3 flex-shrink-0 mt-0 flex flex-col">
             {/* <Divider className="mb-4" /> */}
 
-            <div className="flex flex-col gap-6 w-full">
+            <div className="flex flex-col gap-0 w-full">
               {/* Legenda Global no topo */}
-              <div className="mb-2">
-                <h3 className="text-lg font-bold mb-4">Total de Emissões por tecnologia</h3>
-                <EmissionLegend 
+              <div className="mb-0">
+                <h3 className="text-lg font-bold mb-0">Total de Emissões por tecnologia</h3>
+                {/* <EmissionLegend 
                   keys={Array.from(
                     new Set(
                       floorEmissionsData.flatMap(p => 
@@ -423,11 +422,17 @@ const FloorSummary = ({
                       )
                     )
                   ).filter(k => k !== 'name')} 
-                />
+                /> */}
               </div>
-
+              <EmissionsSection data={floorEmissionsData} selected={selectedProjects} onChange={(id, checked) => {
+                if (id === "total") {
+                  selectAll();
+                } else {
+                  handleAddProject(id);
+                }
+              }} />
               {/* Loop pelos blocos (Total + Andares) */}
-              {floorEmissionsData.map((section) => (
+              {/* {floorEmissionsData.map((section) => (
                 <div key={section.id} className="flex flex-col gap-2 border-b border-gray-200 pb-6 last:border-b-0">
                   <div className="flex items-center gap-2 mb-2">
                     <input 
@@ -449,12 +454,12 @@ const FloorSummary = ({
                     <EmissionsChart data={section.chartData} />
                   </div>
                 </div>
-              ))}
+              ))} */}
             </div>
           </div>
 
           {/* COLUNA DIREITA (flex-1) */}
-          <div className="flex-1 min-h-0 flex flex-col justify-between gap-4 pt-3">
+          <div className="flex-1 min-h-0 flex flex-col justify-between gap-0 pt-0">
             <div className='flex gap-2 justify-end items-center'>
               <FilterTabs
                 tabs={["co2", "energy", "material"]}
@@ -479,7 +484,7 @@ const FloorSummary = ({
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 w-full">
+            <div className="flex flex-col gap-0 w-full">
               {chartType === "scatter" ? (
                 <D3GradientRangeChart
                   data={newData}

@@ -845,10 +845,12 @@ export const ptBR = {
   },
   floor: {
     penthouse_floor: "Cobertura",
-  foundation_floor: "Mesoestrutura e fundação",
+    foundation_floor: "Mesoestrutura e fundação",
     standard_floor: "Tipo",
     ground_floor: "Térreo",
     basement_floor: "Subsolo",
+    total: "Projeto Completo",
+    piles_foundation: "Fundação em estacas",
   },
   buildingVisualizer: {
     foundation: "Mesoestrutura e fundação",

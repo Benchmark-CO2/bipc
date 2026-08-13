@@ -77,7 +77,7 @@ export function FilterTabs({
 
   return (
     <div
-      className={`flex items-center gap-4 h-12 rounded-sm border border-gray-shade-300 dark:border-gray-shade-500 px-4 ${fullWidth ? "w-full" : "w-fit"} max-sm:h-fit max-sm:w-full! max-sm:p-4 dark:bg-sidebar max-sm:flex-wrap max-sm:gap-2 ${className || ""}`}
+      className={`flex items-center gap-4 h-10 rounded-sm border border-gray-shade-300 dark:border-gray-shade-500 px-4 ${fullWidth ? "w-full" : "w-fit"} max-sm:h-fit max-sm:w-full! max-sm:p-4 dark:bg-sidebar max-sm:flex-wrap max-sm:gap-2 ${className || ""}`}
     >
       <div
         className={`flex items-center gap-4 max-sm:w-full ${tabsStyle || ""}`}
