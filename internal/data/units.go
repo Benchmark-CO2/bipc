@@ -218,6 +218,14 @@ func (m UnitModel) GetByID(id uuid.UUID) (*Unit, error) {
 
 	unit.HousingUnitsCount = nullableIntPtr(housingUnitsCount)
 
+	latestModuleUpdatedAt, err := m.latestModuleUpdatedAt(unit.ID)
+	if err != nil {
+		return nil, err
+	}
+	if latestModuleUpdatedAt.After(unit.UpdatedAt) {
+		unit.UpdatedAt = latestModuleUpdatedAt
+	}
+
 	if unit.Type == "tower" {
 		floors, err := m.getFloorsByUnitID(id)
 		if err != nil {
@@ -227,6 +235,27 @@ func (m UnitModel) GetByID(id uuid.UUID) (*Unit, error) {
 	}
 
 	return &unit, nil
+}
+
+func (m UnitModel) latestModuleUpdatedAt(unitID uuid.UUID) (time.Time, error) {
+	var latest sql.NullTime
+	query := `
+		SELECT MAX(m.updated_at)
+		FROM module m
+		INNER JOIN options opt ON m.option_id = opt.id
+		WHERE opt.unit_id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, unitID).Scan(&latest)
+	if err != nil {
+		return time.Time{}, err
+	}
+	if !latest.Valid {
+		return time.Time{}, nil
+	}
+	return latest.Time, nil
 }
 
 func (m UnitModel) GetFloorArea(floorID uuid.UUID) (float64, error) {
