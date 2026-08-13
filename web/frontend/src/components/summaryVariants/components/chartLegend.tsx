@@ -1,5 +1,6 @@
 import { useTranslation } from '@/i18n';
 import { cn } from '@/lib/utils';
+import Legend from './Legend';
 
 export const LegendItem = ({ icon, label, color, shape  = 'circle' }: { icon:string, label: string, color: string, shape?: 'circle' | 'square' }) => {
   return (
@@ -28,6 +29,7 @@ export const ChartLegend = () => {
         <LegendItem key={index} icon={item.icon} label={item.label} color={item.color} />
       ))}
     </ul>
+    <Legend  />
     </div>
   )
 }

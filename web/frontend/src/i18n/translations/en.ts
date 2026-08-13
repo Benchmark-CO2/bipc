@@ -686,8 +686,8 @@ export const en: Translations = {
       cumulativeFraction: {
         name: "Benchmark",
         yAxisLabel: "Potential Mitigation",
-        xAxisLabelCarbon: "Embodied Carbon",
-        xAxisLabelEnergy: "Energy Consumption",
+        xAxisLabelCarbon: "Embodied Carbon  (kg CO₂/m²)",
+        xAxisLabelEnergy: "Energy Consumption MJ/m²",
         baseLine: "baseline",
         ppp5Line: "PPp 5%",
       },
@@ -838,6 +838,9 @@ export const en: Translations = {
       projectMitigationPotential: "Project Mitigation Potential",
       riskOfLowerConstructionMitigation: "Risk of Lower Construction Mitigation (Worst Case)",
       title: "Legend",
+    },
+    emissionLegend: {
+      title: 'Total Emissions by Technology',
     }
   },
   floor: {

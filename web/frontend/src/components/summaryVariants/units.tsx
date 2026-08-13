@@ -351,8 +351,8 @@ const UnitsSummary = ({
           )}
 
           {!isOpen && (
-            <div className='text-md border-1 border-[#72E06C] bg-[#E2F1C1] rounded-md p-1 flex items-center justify-center min-w-[40px] gap-1 h-full'>
-              <span className='text-black font-semibold font-xs'>B</span>
+            <div className='text-md border-1 border-[#72E06C] bg-[#E2F1C1] rounded-md p-2 flex items-center justify-center min-w-[40px] gap-2 h-full'>
+              <span className='text-black font-semibold text-xl'>B</span>
               <div className='flex flex-col'>
                 <span className='font-semibold text-xs'>Classificação</span>
                 <span className='font-light text-neutral-900 text-xs'>N: {newData.length} proj.</span>

@@ -105,7 +105,7 @@ type D3RangeChartProps = {
   minData?: number[];
   maxData?: number[];
   hideBars?: boolean;
-  
+
   // PROCEL Scale 
   showProcelScale?: boolean;
   procelHighlight?: ProcelLabel | null;
@@ -136,12 +136,14 @@ const useChartDimensions = (
   containerHeight?: number,
 ) => {
   return useMemo(() => {
-   const margin = {
-      top: isExpanded ? 15 : 20,
-      right: isMobile ? 0 : showProcelScale ? 40 : 20,
-      bottom: isMobile ? 20 : 20,
-      left: isMobile ? 45 : 80,
+    // Margens otimizadas para ocupar o máximo de espaço
+    const margin = {
+      top: 14,
+      right: isMobile ? 5 : showProcelScale ? 35 : 15,
+      bottom: 25,
+      left: isMobile ? 35 : 45, // Reduzido de 80 para 45
     };
+
     const width = () => {
       if (props.width && overrideDimensions) {
         return Math.max(0, props.width - margin.left - margin.right);
@@ -281,12 +283,12 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const outLargerRef = useRef<number>(0);
   const [hasZoomed, setHasZoomed] = useState(false);
   const [zoomEnabled, setZoomEnabled] = useState(false);
-  
+
   // Custom transform reference mantendo X e Y independentes
   const transformRef = useRef({ kx: 1, ky: 1, x: 0, y: 0 });
   const animationFrameRef = useRef<number | null>(null);
   const initialTotalRef = useRef<number>(0);
-  
+
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
 
@@ -609,16 +611,16 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     // PPp 5% line & C/R calculations
     let p5LineX: number | null = null;
     let p5LineInView = false;
-    let c5Value: number | null = null; 
+    let c5Value: number | null = null;
     let r5Value: number | null = null;
     if (showTop5Line && data.length > 0) {
       const sortedMin = [...data].map((d) => d.min).sort((a, b) => a - b);
       const idx = Math.floor(sortedMin.length * top5Percentile);
       c5Value = sortedMin[Math.min(idx, sortedMin.length - 1)];
-      
+
       const sortedMax = [...data].map((d) => d.max).sort((a, b) => a - b);
       r5Value = sortedMax[Math.min(idx, sortedMax.length - 1)];
-      
+
       const p5Value = top5Field === "min" ? c5Value : r5Value;
       const lineX = newXScale(p5Value);
       p5LineX = lineX;
@@ -791,7 +793,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             ctx.fillStyle = DEFAULT_COLORS.END;
             ctx.fill();
           }
-          
+
           if (isPairSelected) {
             let midValue: number;
             if (c5Value !== null && r5Value !== null) {
@@ -801,7 +803,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
               midValue = (d.min + d.max) / 2;
             }
             const xMid = newXScale(midValue);
-            
+
             selectedAnnotations.push({
               x1,
               x2,
@@ -819,28 +821,28 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         const isMinSelected = selectedMinBarIds.has(String(d.minId ?? d.id));
         const isMaxSelected = selectedMaxBarIds.has(String(d.maxId ?? d.id));
         const isPairSelected = isMinSelected && isMaxSelected;
-        
+
         if (isPairSelected && d.label) {
           const x1 = newXScale(d.min);
           const x2 = newXScale(d.max);
           const y = newYScale(d.y);
-          
+
           if (x2 < 0 || x1 > _width || y < 0 || y > _height) return;
-          
+
           const textX = x2 + 10;
           const textY = y;
-          
+
           ctx.save();
           ctx.font = isExpanded ? "12px sans-serif" : "10px sans-serif";
           ctx.fillStyle = "#111827";
           ctx.textAlign = "left";
           ctx.textBaseline = "middle";
-          
+
           const textMetrics = ctx.measureText(d.label);
           const textWidth = textMetrics.width;
           const textHeight = isExpanded ? 16 : 14;
           const padding = 4;
-          
+
           ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
           ctx.fillRect(
             textX - padding,
@@ -848,7 +850,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             textWidth + padding * 2,
             textHeight
           );
-          
+
           ctx.fillStyle = "#111827";
           ctx.fillText(d.label, textX, textY);
           ctx.restore();
@@ -897,7 +899,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         rawData: [number, number][],
         steps = 80,
         clampZero = true,
-      ): { x: number; y: number }[] => {
+      ): { x: number; y: number; }[] => {
         if (rawData.length < 3) return rawData.map(([x, y]) => ({ x: newXScale(x), y: newYScale(y) }));
         const regression = regressionPoly()
           .x((d: [number, number]) => d[1])
@@ -907,7 +909,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         const predict = result.predict;
         const yMin = Math.min(...rawData.map((d) => d[1]));
         const yMax = Math.max(...rawData.map((d) => d[1]));
-        const pts: { x: number; y: number }[] = [];
+        const pts: { x: number; y: number; }[] = [];
         for (let i = 0; i <= steps; i++) {
           const yVal = yMin + (yMax - yMin) * (i / steps);
           const xVal = clampZero ? Math.max(0, predict(yVal)) : predict(yVal);
@@ -916,7 +918,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         return pts;
       };
 
-      const drawTrendCurve = (points: { x: number; y: number }[]) => {
+      const drawTrendCurve = (points: { x: number; y: number; }[]) => {
         if (points.length < 2) return;
         ctx.save();
         ctx.strokeStyle = "#000000";
@@ -1088,7 +1090,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         const domainBottom = 1.0 - (i + 1) * bandSize;
         const bandTop = Math.max(0, newYScale(domainTop));
         const bandBottom = Math.min(_height, newYScale(domainBottom));
-        if (bandBottom <= bandTop) return; 
+        if (bandBottom <= bandTop) return;
 
         const isHighlighted = procelHighlight == null || cls.label === procelHighlight;
         ctx.globalAlpha = isHighlighted ? 1 : procelFadedOpacity;
@@ -1109,7 +1111,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
 
     ctx.restore();
 
-    let _countInView = 0;
+  let _countInView = 0;
     let _countSmaller = 0;
     let _countLarger = 0;
     const hasSelection = selectedMinBarIds.size > 0 || selectedMaxBarIds.size > 0;
@@ -1119,16 +1121,33 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           selectedMaxBarIds.has(String(d.maxId ?? d.id)),
         )
       : data;
+      
     for (const d of _countSource) {
       const px1 = newXScale(d.min);
       const px2 = newXScale(d.max);
       const py  = newYScale(d.y);
-      if (px2 < 0)       { _countSmaller++; continue; }
-      if (px1 > _width)  { _countLarger++;  continue; } 
-      if (py  > _height) { _countSmaller++; continue; } 
-      if (py  < 0)       { _countLarger++;  continue; }
+      
+      // Se o final da barra está antes do ponto 0 no Eixo X (está à esquerda)
+      if (px2 < 0) { 
+        _countSmaller++; 
+        continue; 
+      }
+      
+      // Se o início da barra está depois do limite no Eixo X (está à direita)
+      if (px1 > _width) { 
+        _countLarger++;  
+        continue; 
+      } 
+      
+      // Se estiver fora do limite vertical (Eixo Y), ignoramos da view. 
+      // Não somamos nem no Smaller, nem no Larger.
+      if (py > _height || py < 0) { 
+        continue; 
+      }
+      
       _countInView++;
     }
+    
     updateBrushCount(_countInView);
     if (outSmallerRef.current !== _countSmaller) {
       outSmallerRef.current = _countSmaller;
@@ -1225,7 +1244,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         const tr = transformRef.current;
         let tx = tr.x + event.dx;
         let ty = tr.y + event.dy;
-        
+
         // Clamping (Mesma lógica interna do D3 extentTranslate)
         tx = Math.min(0, Math.max(tx, _width * (1 - 1.1 * tr.kx)));
         ty = Math.min(0, Math.max(ty, _height * (1 - tr.ky)));
@@ -1246,7 +1265,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
 
       const sensitivity = e.shiftKey || e.ctrlKey ? 250 : 700;
       const zoomFactor = Math.exp(-e.deltaY / sensitivity);
-      
+
       const rect = canvas.getBoundingClientRect();
       const mx = e.clientX - rect.left - margin.left;
       const my = e.clientY - rect.top - margin.top;
@@ -1292,7 +1311,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           const iKy = d3.interpolateNumber(start.ky, end.ky);
           const iX = d3.interpolateNumber(start.x, end.x);
           const iY = d3.interpolateNumber(start.y, end.y);
-          
+
           return (t) => {
             transformRef.current = { kx: iKx(t), ky: iKy(t), x: iX(t), y: iY(t) };
             if (t === 1) {
@@ -1347,7 +1366,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           const iKy = d3.interpolateNumber(start.ky, end.ky);
           const iX = d3.interpolateNumber(start.x, end.x);
           const iY = d3.interpolateNumber(start.y, end.y);
-          
+
           return (t) => {
             transformRef.current = { kx: iKx(t), ky: iKy(t), x: iX(t), y: iY(t) };
             if (t === 1) {
@@ -1385,10 +1404,12 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const selectedCount = new Set([...selectedMinBarIds, ...selectedMaxBarIds]).size;
 
   return (
-    <Card className={cn("shadow-none w-min-content min-w-1/2")}>
-      <CardContent>
+    <Card className={cn("shadow-none w-min-content min-w-1/2 p-1 m-0!")}>
+      {/* Reduzindo o padding padrão do CardContent */}
+      <CardContent className="m-0!">
         <div ref={containerRef} className="w-full overflow-hidden relative">
-          <span className="absolute text-xs w-full text-center text-foreground/70 block rotate-270 left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
+          {/* Ajustado o translate-x para compensar a nova margem esquerda mais fina */}
+          <span className="absolute text-xs w-full text-center text-foreground/70 block rotate-270 left-0 -translate-x-[47.5%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
             {labelY}
           </span>
 
@@ -1400,7 +1421,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             countLarger={outLargerCount}
             countSmaller={outSmallerCount}
           />
-
           <button
             type="button"
             onClick={() => setZoomEnabled((prev) => !prev)}

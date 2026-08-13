@@ -689,8 +689,8 @@ export const ptBR = {
       cumulativeFraction: {
         name: "Benchmark",
         yAxisLabel: "Potencial de mitigação",
-        xAxisLabelCarbon: "Carbono Embutido",
-        xAxisLabelEnergy: "Energia Embutida",
+        xAxisLabelCarbon: "Carbono Embutido (kg CO₂/m²)",
+        xAxisLabelEnergy: "Energia Embutida MJ/m²",
         baseLine: "linha de base",
         ppp5Line: "PPp 5%",
       },
@@ -841,6 +841,9 @@ export const ptBR = {
       projectMitigationPotential: "Potencial de mitigação do projeto",
       riskOfLowerConstructionMitigation: "Risco de menor mitigação da construção (Pior cenário)",
       title: "Legenda"
+    },
+    emissionLegend: {
+      title: 'Total de Emissões por tecnologia',
     }
   },
   floor: {
