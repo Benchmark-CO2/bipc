@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { ChevronUp } from "lucide-react";
 
 const Summary = () => {
-  const { isOpen, toggleSummary, context, isExpanded, toggleExpanded } = useSummary();
+  const { isOpen, toggleSummary, context, isExpanded } = useSummary();
 
   if (context?.hide) return null;
 
@@ -44,13 +44,15 @@ const Summary = () => {
         </div>
       )}
 
-      <div className={cn("relative flex flex-col w-full h-full overflow-hidden pt-2", {
+      <div className={cn("relative flex flex-col w-full h-full overflow-hidden pt-0", {
         'cursor-pointer': !isOpen,
       })} onClick={!isOpen ? toggleSummary : undefined}>
         {context && (
-          <div className="w-full flex-1 px-4 py-4 overflow-auto">
+          <div className={cn("w-full flex-1 px-2 py-2 overflow-auto", {
+            'p-2 pt-6': isOpen,
+          })}>
             <div className='flex justify-between text-secondary'>
-              {!isOpen && <h2 className='font-semibold text-xl text-primary mb-2.5 font-roboto-flex'>Benchmark do projeto</h2>}
+              {/* {!isOpen && <h2 className='font-semibold text-xl text-primary mb-2.5 font-roboto-flex'>Benchmark do projeto</h2>} */}
               {/* {isOpen && (
                 <div className='flex mb-2 gap-2 cursor-pointer absolute top-0 left-1/2 -translate-x-1/2 bg-secondary' onClick={toggleSummary}>
                   <div className='flex text-xs justify-center items-center gap-2 text-white px-2 p-1' >

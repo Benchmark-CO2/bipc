@@ -7,11 +7,11 @@ import { cn } from "@/lib/utils";
 import * as d3 from "d3";
 import { regressionPoly } from "d3-regression";
 import React, {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import Divider from "../ui/divider";
 
@@ -910,7 +910,7 @@ const D3GradientRangeLineChart: React.FC<D3GradientRangeChartProps> = ({
     <Card className={cn("shadow-none w-min-content min-w-1/2")}>
       <CardContent>
         <div className="w-full relative">
-          <span className="absolute text-xs w-full text-center text-black/70 block rotate-270  left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
+          <span className="absolute text-xs w-auto text-center text-black/70 block rotate-270  left-0 -translate-x-[47%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
             {labelY}
           </span>
           <svg

@@ -1409,7 +1409,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       <CardContent className="m-0!">
         <div ref={containerRef} className="w-full overflow-hidden relative">
           {/* Ajustado o translate-x para compensar a nova margem esquerda mais fina */}
-          <span className="absolute text-xs w-full text-center text-foreground/70 block rotate-270 left-0 -translate-x-[47.5%] -translate-y-1/2 top-1/2 h-8 m-0 p-0">
+          <span className="absolute text-xs w-auto text-center text-foreground/70 block rotate-270 left-0 -translate-x-[45%] -translate-y-1/2 top-1/2  m-0 p-0">
             {labelY}
           </span>
 
