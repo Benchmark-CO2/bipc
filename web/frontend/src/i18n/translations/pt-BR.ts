@@ -841,8 +841,8 @@ export const ptBR = {
       projectMitigationPotential: "Potencial de mitigação do projeto",
       riskOfLowerConstructionMitigation: "Risco de menor mitigação da construção (Pior cenário)",
       referenceValue_short: "Valor de referência",
-      constructionMitigationPotential_short: "Potencial de mitigação",
-      projectMitigationPotential_short: "Potencial de mitigação",
+      constructionMitigationPotential_short: "Potencial de mitigação da construção",
+      projectMitigationPotential_short: "Potencial de mitigação do projeto",
       riskOfLowerConstructionMitigation_short: "Pior cenário",
       title: "Legenda"
     },
