@@ -135,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         refreshUser,
         email: user?.email ?? null,
-        activated: user?.activated ?? null,
+        activated: isAuthenticated ? (user?.activated ?? null) : null,
         user,
         sidebarStatus: sidebarOpen,
         toggleSidebar: () =>
