@@ -846,6 +846,10 @@ export const en: Translations = {
       projectMitigationPotential: "Project Mitigation Potential",
       riskOfLowerConstructionMitigation: "Risk of Lower Construction Mitigation (Worst Case)",
       title: "Legend",
+      referenceValue_short: "Reference Value",
+      constructionMitigationPotential_short: "Mitigation Potential",
+      projectMitigationPotential_short: "Mitigation Potential",
+      riskOfLowerConstructionMitigation_short: "Worst Case",
     },
     emissionLegend: {
       title: 'Total Emissions by Technology',

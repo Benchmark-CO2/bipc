@@ -11,7 +11,6 @@ import { FilterTabs } from "../ui/filter-tabs";
 import { ChartLegend } from './components/chartLegend';
 import { EmissionsSection } from './components/emissionSection';
 import { ScenarioCard } from './components/indicatorItem';
-import { IndicatorList } from './components/indicatorsList';
 import { useChartType } from "./hooks/useChartType";
 import { getCategoryValue } from './units';
 import { normalizeBenchmarkSeries, recalculateY } from "./utils";
@@ -39,7 +38,8 @@ const FloorSummary = ({
   selectedFloors,
   someSelected,
 }: ProjectsSummaryProps) => {
-  const { chartType, ChartSelector } = useChartType();
+  const [type, setType] = useState<"co2" | "energy" | "material">("co2");
+  const { chartType, ChartSelector } = useChartType(type);
   const { t } = useTranslation();
   const { isExpanded, isOpen } = useSummary();
 
@@ -48,10 +48,9 @@ const FloorSummary = ({
     [floors]
   );
 
-  const [type, setType] = useState<"co2" | "energy" | "material">("co2");
-  const [selectedProjects, setSelectedProjects] = useState<string[]>(
-    filteredFloors.map((f) => f.id)
-  );
+  
+  // 1. Inicia APENAS com a Unidade (Total) selecionada
+  const [selectedProjects, setSelectedProjects] = useState<string[]>(["total"]);
 
   const newItems = useMemo(() => {
     return filteredFloors.map((el) => {
@@ -82,25 +81,13 @@ const FloorSummary = ({
     });
   }, [filteredFloors]);
 
-  const stackedData = useMemo(
-    () =>
-      newItems.map((el) => ({
-        id: el[type].id,
-        label: el[type].label,
-        co2: (el.co2.max + el.co2.min) / 2,
-        energy: (el.energy.max + el.energy.min) / 2,
-        material: el.material?.value
-      })),
-    [newItems, type],
-  );
-
   // ── Lógica Centralizada: Calcula os dados e o PCV para TODOS os tipos ──
   const processedData = useMemo(() => {
     const types = ["co2", "energy", "material"] as const;
     const result: Record<string, any> = {};
 
     types.forEach((t) => {
-      // 1. Prepara managedData (antigo fakeFloors)
+      // 1. Prepara managedData
       const managedData = normalizeBenchmarkSeries(
         data.benchmark?.[t],
       )?.map((el) => ({
@@ -108,9 +95,34 @@ const FloorSummary = ({
         label: selectedFloors.find((f) => f.id === el.id)?.group_name || "",
       })) || [];
 
-      // 2. Prepara newDataItems
+      // 2. Prepara newDataItems (incluindo o Total da Unidade)
       const typeNewItems = t !== "material" ? newItems.map((item) => item[t]) : [];
-      const newDataItems = [...managedData, ...typeNewItems];
+      
+      let unitTotalItem = null;
+      // Trata o objeto "unit" como "total" no gráfico
+      const unitConsumptions = (unit as any)?.consumptions?.total;
+      if (unitConsumptions) {
+        unitTotalItem = {
+          id: "total",
+          y: 0,
+          label: `Total (${unit.name || 'Unidade'})`,
+          ...(t === "material" 
+            ? {
+                value: unitConsumptions.material || 0,
+                min: unitConsumptions.material || 0,
+                max: unitConsumptions.material || 0,
+              }
+            : {
+                min: unitConsumptions[`${t}_min`] || 0,
+                max: unitConsumptions[`${t}_max`] || 0,
+              }
+          )
+        };
+      }
+
+      const newDataItems = unitTotalItem 
+        ? [...managedData, ...typeNewItems, unitTotalItem] 
+        : [...managedData, ...typeNewItems];
 
       // 3. Descobre min/max para recalcular o Y
       const minDataArr = newDataItems.map((d) => d.min ?? d.value ?? 0);
@@ -133,7 +145,13 @@ const FloorSummary = ({
 
         P = c5Value;
 
-        const activeItems = newData.filter(d => selectedProjects.includes(String(d.id)));
+        // Filtra os andares selecionados, ignorando o "total" para o cálculo da média
+        let activeItems = newData.filter(d => selectedProjects.includes(String(d.id)) && String(d.id) !== "total");
+
+        // Se só o "total" estiver marcado, usamos ele para os cards não ficarem zerados
+        if (activeItems.length === 0 && selectedProjects.includes("total")) {
+          activeItems = newData.filter(d => String(d.id) === "total");
+        }
 
         if (activeItems.length > 0) {
           hasSelection = true;
@@ -159,15 +177,14 @@ const FloorSummary = ({
     });
 
     return result;
-  }, [data.benchmark, selectedFloors, newItems, selectedProjects]);
+  }, [data.benchmark, selectedFloors, newItems, selectedProjects, unit]);
 
   // ── Extração dos dados da tab/tipo atual para uso nos gráficos ──
   const {
-    managedData, // antigo fakeFloors
+    managedData,
     newData,
     minData,
     maxData,
-    pcvMetrics
   } = processedData[type];
 
   const allPcvMetrics = {
@@ -176,56 +193,26 @@ const FloorSummary = ({
     material: processedData.material.pcvMetrics,
   };
 
-  const [previousProjects, setPreviousProjects] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (!someSelected) return;
-    setPreviousProjects(filteredFloors.map((el) => el.id));
-  }, [someSelected, filteredFloors]);
-
   useEffect(() => {
     if (!someSelected) {
-      setSelectedProjects(filteredFloors.map((f) => f.id));
-      return;
+      // Retorna ao estado inicial se a seleção for limpa externamente
+      setSelectedProjects(["total"]);
     }
-    if (previousProjects.length < selectedFloors.length) {
-      const diff = filteredFloors.filter((p) => !selectedFloors.includes(p.id));
-      if (diff.length > 0) {
-        setSelectedProjects((prev) => [...prev, ...diff.map((d) => d.id)]);
-      }
-    } else if (previousProjects.length > selectedFloors.length) {
-      const diff = previousProjects.filter(
-        (p) =>
-          !selectedFloors
-            .filter((el) => el.consumption)
-            .map((u) => u.id)
-            .includes(p),
-      );
-      if (diff.length > 0) {
-        setSelectedProjects((prev) => prev.filter((p) => !diff.includes(p)));
-      }
-    }
-  }, [previousProjects, selectedFloors, someSelected, filteredFloors]);
-
-  const handleAddProject = (projectId: string) => {
-    if (selectedProjects.includes(projectId)) {
-      setSelectedProjects(selectedProjects.filter((id) => id !== projectId));
-    } else {
-      setSelectedProjects([...selectedProjects, projectId]);
-    }
-  };
+  }, [someSelected]);
 
   const [subTabs, setSubTabs] = useState<string>(t.summaryFloors.floors);
+  
+  const allPossibleIds = ["total", ...filteredFloors.map((f) => f.id)];
 
   const selectAll = () => {
-    if (selectedProjects.length === filteredFloors.length) {
-      setSelectedProjects([]);
+    if (selectedProjects.length >= allPossibleIds.length) {
+      setSelectedProjects([]); // Ou ["total"] se preferir nunca zerar completamente
     } else {
-      setSelectedProjects(filteredFloors.map((f) => f.id));
+      setSelectedProjects(allPossibleIds);
     }
   };
 
-  // ── PREPARAÇÃO DOS DADOS PARA OS GRÁFICOS DE BARRAS ─────────────────────────
+  // ── PREPARAÇÃO DOS DADOS PARA A LISTA ESQUERDA (EmissionsSection) ──
   const floorEmissionsData = useMemo(() => {
     if (!unit || !filteredFloors) return [];
 
@@ -234,7 +221,7 @@ const FloorSummary = ({
       const energyRow: Record<string, any> = { name: "Energia (MJ)" };
       const materialRow: Record<string, any> = { name: `Material (${unitsOfMeasure.material || 'kg'})` };
 
-      // Se for o total da unidade e tiver 'consumptions' (mesmo padrão do UnitsSummary)
+      // Se for o total da unidade e tiver 'consumptions'
       if (isUnitTotal && (item as any)?.consumptions) {
         Object.entries((item as any).consumptions).forEach(([key, values]) => {
           if (key !== "total") {
@@ -245,7 +232,7 @@ const FloorSummary = ({
           }
         });
       } 
-      // Se for um andar específico (puxando a categoria direto se existir)
+      // Se for um andar específico
       else {
         const cat = item.category;
         if (cat) {
@@ -270,7 +257,8 @@ const FloorSummary = ({
       id: "total",
       title: `Total (${unit.name || 'Unidade'})`,
       isTotal: true,
-      isChecked: selectedProjects.length === filteredFloors.length,
+      // Agora o isChecked baseia-se puramente no array state
+      isChecked: selectedProjects.includes("total"),
       chartData: buildChartData(unit, true)
     });
 
@@ -288,84 +276,36 @@ const FloorSummary = ({
     return result;
   }, [unit, filteredFloors, selectedProjects]);
 
-  // ── Lógica dos Dados de Valores e Cenários ──────────────────────────────────
-  const unitTotal = type === "energy" ? "MJ" : type === "material" ? "kg" : "kg CO₂";
-  const unitBenchmark = type === "energy" ? "MJ/m²" : type === "material" ? "kg/m²" : "kg/m² CO₂";
-  const currentUnit = unitsOfMeasure?.[type] || "Kg/m²";
-
-  const activeStacked = selectedProjects.length > 0
-    ? stackedData.filter(d => selectedProjects.includes(String(d.id)))
-    : stackedData;
-
-  const currentDataItems = selectedProjects.length > 0
-    ? newData.filter((d: any) => selectedProjects.includes(String(d.id)))
-    : newData;
-
-  const totalRefValue = activeStacked.reduce(
-    (acc, curr) => acc + ((curr[type as keyof typeof curr] as number) || 0), 0
-  );
-  const benchmarkRefValue = activeStacked.length > 0 ? totalRefValue / activeStacked.length : 0;
-
-  const bestScenario = currentDataItems.length > 0
-    ? Math.min(...currentDataItems.map((d: any) => d.min ?? d.value ?? 0)) : 0;
-
-  const worstScenario = currentDataItems.length > 0
-    ? Math.max(...currentDataItems.map((d: any) => d.max ?? d.value ?? 0)) : 0;
+  // Função simplificada para adicionar/remover do array de selecionados
+  const onChangeProjectSelection = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedProjects((prev) => [...prev, id]);
+    } else {
+      setSelectedProjects((prev) => prev.filter((p) => p !== id));
+    }
+  };
 
   const formatMetric = (val: number) =>
     val.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+
+  // Área da unidade para cálculos de Valores Absolutos nos ScenarioCards
+  const unitArea = (unit as any)?.area || (unit as any)?.built_area || 1;
 
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
 
       {/* ── BARRA SUPERIOR: Valores e PCVRB ── */}
       <div className='flex justify-between gap-2 w-full'>
-        {!isOpen && (
-          <div className='border-1 border-secondary rounded-md flex p-2 box-border gap-4 max-md:gap-1 h-full'>
-            <div className='flex flex-col'>
-              <span className='text-secondary font-semibold text-small max-md:text-xs'>
-                Valor de Ref. - Total ({unitTotal})
-              </span>
-              <span className='text-xs'>{formatMetric(totalRefValue)}</span>
-            </div>
-            <div className='flex flex-col'>
-              <span className='text-secondary font-semibold text-small max-md:text-xs'>
-                Valor de Ref. - Benchmark ({unitBenchmark})
-              </span>
-              <span className='text-xs font-bold'>{formatMetric(benchmarkRefValue)}</span>
-            </div>
-          </div>
-        )}
-
-        <div className='flex gap-4 text-[16px] max-md:gap-2 max-md:text-xs'>
-          {!isOpen && (
-            <IndicatorList indicators={[
-              { color: '#9F70DB', currentUnit, value: formatMetric(pcvMetrics.P), label: 'P' },
-              { color: '#6C9EE0', currentUnit, value: formatMetric(pcvMetrics.C), label: 'C' },
-              { color: '#E0756C', currentUnit, value: formatMetric(pcvMetrics.R), label: 'R' },
-            ]} />
-          )}
-          {!isOpen && (
-            <div className='text-md border-1 border-[#72E06C] bg-[#E2F1C1] rounded-md p-2 flex items-center justify-center min-w-[40px] gap-1 h-full'>
-              <span className='text-black font-bold'>B</span>
-              <div className='flex flex-col'>
-                <span className='font-bold text-xs'>Classificação</span>
-                <span className='font-light text-neutral-400 text-xs'>N: {newData.length} projetos</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {isOpen && (
+        { (
           <div className="flex flex-wrap xl:flex-nowrap gap-4 w-full">
             <ScenarioCard
               letter="V"
               title={t.summary.chartLegend?.referenceValue || "Valor referência"}
               color="#62A436"
               items={[
-                { total: "211.205,95", benchmark: formatMetric(allPcvMetrics.co2.V), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
-                { total: "112.548,60", benchmark: formatMetric(allPcvMetrics.energy.V), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
-                { total: "561,06", benchmark: formatMetric(allPcvMetrics.material.V), unitTotal: "m³", unitBenchmark: "m³/m²" },
+                { total: formatMetric(allPcvMetrics.co2.V * unitArea), benchmark: formatMetric(allPcvMetrics.co2.V), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
+                { total: formatMetric(allPcvMetrics.energy.V * unitArea), benchmark: formatMetric(allPcvMetrics.energy.V), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
+                { total: formatMetric(allPcvMetrics.material.V * unitArea), benchmark: formatMetric(allPcvMetrics.material.V), unitTotal: "m³", unitBenchmark: "m³/m²" },
               ]}
             />
             <ScenarioCard
@@ -373,29 +313,29 @@ const FloorSummary = ({
               title={t.summary.chartLegend?.constructionMitigationPotential || "Melhor cenário"}
               color="#5B9BD5"
               items={[
-                { total: "162.707,40", benchmark: formatMetric(allPcvMetrics.co2.C), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
-                { total: "86.819,86", benchmark: formatMetric(allPcvMetrics.energy.C), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
-                { total: "432,02", benchmark: formatMetric(allPcvMetrics.material.C), unitTotal: "m³", unitBenchmark: "m³/m²" },
+                { total: formatMetric(allPcvMetrics.co2.C * unitArea), benchmark: formatMetric(allPcvMetrics.co2.C), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
+                { total: formatMetric(allPcvMetrics.energy.C * unitArea), benchmark: formatMetric(allPcvMetrics.energy.C), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
+                { total: formatMetric(allPcvMetrics.material.C * unitArea), benchmark: formatMetric(allPcvMetrics.material.C), unitTotal: "m³", unitBenchmark: "m³/m²" },
               ]}
             />
             <ScenarioCard
               letter="R"
-              title={t.summary.chartLegend?.projectMitigationPotential || "Pior cenário"}
+              title={t.summary.chartLegend?.riskOfLowerConstructionMitigation || "Pior cenário"}
               color="#E0756C"
               items={[
-                { total: "314.193,60", benchmark: formatMetric(allPcvMetrics.co2.R), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
-                { total: "167.476,41", benchmark: formatMetric(allPcvMetrics.energy.R), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
-                { total: "833,17", benchmark: formatMetric(allPcvMetrics.material.R), unitTotal: "m³", unitBenchmark: "m³/m²" },
+                { total: formatMetric(allPcvMetrics.co2.R * unitArea), benchmark: formatMetric(allPcvMetrics.co2.R), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
+                { total: formatMetric(allPcvMetrics.energy.R * unitArea), benchmark: formatMetric(allPcvMetrics.energy.R), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
+                { total: formatMetric(allPcvMetrics.material.R * unitArea), benchmark: formatMetric(allPcvMetrics.material.R), unitTotal: "m³", unitBenchmark: "m³/m²" },
               ]}
             />
             <ScenarioCard
               letter="P"
-              title={t.summary.chartLegend?.riskOfLowerConstructionMitigation || "Potencial de mitigação"}
+              title={t.summary.chartLegend?.projectMitigationPotential || "Potencial de mitigação"}
               color="#9F70DB"
               items={[
-                { total: "81.353,70", benchmark: formatMetric(allPcvMetrics.co2.P), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
-                { total: "43.341,90", benchmark: formatMetric(allPcvMetrics.energy.P), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
-                { total: "216,00", benchmark: formatMetric(allPcvMetrics.material.P), unitTotal: "m³", unitBenchmark: "m³/m²" },
+                { total: formatMetric(allPcvMetrics.co2.P * unitArea), benchmark: formatMetric(allPcvMetrics.co2.P), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
+                { total: formatMetric(allPcvMetrics.energy.P * unitArea), benchmark: formatMetric(allPcvMetrics.energy.P), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
+                { total: formatMetric(allPcvMetrics.material.P * unitArea), benchmark: formatMetric(allPcvMetrics.material.P), unitTotal: "m³", unitBenchmark: "m³/m²" },
               ]}
             />
           </div>
@@ -408,53 +348,15 @@ const FloorSummary = ({
           
           {/* COLUNA ESQUERDA (1/3) */}
           <div className="w-1/3 flex-shrink-0 mt-0 flex flex-col">
-            {/* <Divider className="mb-4" /> */}
-
             <div className="flex flex-col gap-0 w-full">
-              {/* Legenda Global no topo */}
               <div className="mb-0">
                 <h3 className="text-lg font-bold mb-0">Total de Emissões por tecnologia</h3>
-                {/* <EmissionLegend 
-                  keys={Array.from(
-                    new Set(
-                      floorEmissionsData.flatMap(p => 
-                        p.chartData.flatMap(Object.keys)
-                      )
-                    )
-                  ).filter(k => k !== 'name')} 
-                /> */}
               </div>
-              <EmissionsSection data={floorEmissionsData} selected={selectedProjects} onChange={(id, checked) => {
-                if (id === "total") {
-                  selectAll();
-                } else {
-                  handleAddProject(id);
-                }
-              }} />
-              {/* Loop pelos blocos (Total + Andares) */}
-              {/* {floorEmissionsData.map((section) => (
-                <div key={section.id} className="flex flex-col gap-2 border-b border-gray-200 pb-6 last:border-b-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <input 
-                      type="checkbox" 
-                      checked={section.isChecked}
-                      onChange={() => {
-                        if (section.isTotal) {
-                          selectAll();
-                        } else {
-                          handleAddProject(section.id);
-                        }
-                      }}
-                      className="w-4 h-4 text-green-600 rounded border-gray-300 focus:ring-green-500 cursor-pointer"
-                    />
-                    <span className="font-bold text-gray-800 text-sm">{section.title}</span>
-                  </div>
-
-                  <div className="w-full">
-                    <EmissionsChart data={section.chartData} />
-                  </div>
-                </div>
-              ))} */}
+              <EmissionsSection 
+                data={floorEmissionsData} 
+                selected={selectedProjects} 
+                onChange={onChangeProjectSelection} 
+              />
             </div>
           </div>
 
@@ -473,7 +375,7 @@ const FloorSummary = ({
                 }}
                 subTabs={[
                   t.summaryFloors.floors,
-                  selectedProjects.length === filteredFloors.length
+                  selectedProjects.length >= allPossibleIds.length
                     ? t.summary.deselectAll
                     : t.summary.selectAll,
                 ]}
@@ -512,7 +414,7 @@ const FloorSummary = ({
                   unit={type}
                 />
               )}
-              <ChartLegend />
+              {type !== 'material' && <ChartLegend />}
             </div>
           </div>
         </div>
