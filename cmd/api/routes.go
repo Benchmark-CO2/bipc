@@ -48,12 +48,17 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPut, "/v1/projects/:projectID/transfer-ownership", app.requireRolesPermission("*:*", app.transferOwnershipHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/collaborators", app.listCollaboratorsHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/user/permissions", app.requireAuthenticatedUser(app.listUserPermissionsHandler))
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate", app.requireActivatedUser(app.duplicateProjectHandler))
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate/:targetUserID", app.requireActivatedUser(app.duplicateProjectToUserHandler))
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/report", app.reportHandler)
 
+	serviceProxy := app.newServiceProxy()
+	router.HandlerFunc(http.MethodGet, "/v1/proxy/*path", app.proxyHandler(serviceProxy))
+	router.HandlerFunc(http.MethodPost, "/v1/proxy/*path", app.proxyHandler(serviceProxy))
+
 	// ----------------------------------------------------------------------------------------------------------------------------------
+
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate", app.requireActivatedUser(app.duplicateProjectHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate/:targetUserID", app.requireAdmin(app.duplicateProjectToUserHandler))
 
 	router.HandlerFunc(http.MethodPost, "/v1/projects-upload", app.requireActivatedUser(app.createProjectsFromCSVHandler))
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units", app.requireRolesPermission("create:unit", app.createUnitHandler))
@@ -74,6 +79,8 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.deleteModuleHandler))
 	router.HandlerFunc(http.MethodPatch, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.updateModuleV1Handler))
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID/duplicate", app.requireOptionRoleAssociation(app.duplicateModuleHandler))
+
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/roles/:roleID/file-upload", app.requireRoleAssociation(app.fileUploadHandler))
 
 	router.HandlerFunc(http.MethodPost, "/v2/projects/:projectID/units/:unitID/options/:optionID/modules", app.requireOptionRoleAssociation(app.createModuleHandler))
 	router.HandlerFunc(http.MethodGet, "/v2/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.readModuleHandler))

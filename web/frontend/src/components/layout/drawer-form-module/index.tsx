@@ -325,17 +325,27 @@ const DrawerFormModule = ({
               volume: toLocalString(restAny.piles?.volume ?? 0),
               steel: convertSteelArray(restAny.piles?.steel),
             },
+            // Optional sections — only populate steel if backend returned data
             pile_caps: {
               volume: toLocalString(restAny.blocks?.volume ?? 0),
-              steel: convertSteelArray(restAny.blocks?.steel),
+              steel:
+                restAny.blocks?.steel?.length > 0
+                  ? convertSteelArray(restAny.blocks.steel)
+                  : [],
             },
             tie_beams: {
               volume: toLocalString(restAny.tie_beams?.volume ?? 0),
-              steel: convertSteelArray(restAny.tie_beams?.steel),
+              steel:
+                restAny.tie_beams?.steel?.length > 0
+                  ? convertSteelArray(restAny.tie_beams.steel)
+                  : [],
             },
             grade_beams: {
               volume: toLocalString(restAny.grade_beams?.volume ?? 0),
-              steel: convertSteelArray(restAny.grade_beams?.steel),
+              steel:
+                restAny.grade_beams?.steel?.length > 0
+                  ? convertSteelArray(restAny.grade_beams.steel)
+                  : [],
             },
           }),
 
@@ -479,12 +489,15 @@ const DrawerFormModule = ({
         steel: data.steel,
       };
     } else if (moduleType === "piles_foundation") {
+      const hasVolume = (section: any) =>
+        section?.volume !== undefined && section.volume > 0;
       filteredData = {
         fck: data.fck,
         piles: data.piles,
-        blocks: data.pile_caps, // pile_caps → blocks para o backend
-        tie_beams: data.tie_beams,
-        grade_beams: data.grade_beams,
+        // Only send optional sections when they have actual volume
+        ...(hasVolume(data.pile_caps) && { blocks: data.pile_caps }),
+        ...(hasVolume(data.tie_beams) && { tie_beams: data.tie_beams }),
+        ...(hasVolume(data.grade_beams) && { grade_beams: data.grade_beams }),
       };
     } else if (moduleType === "raft_piles_foundation") {
       filteredData = {

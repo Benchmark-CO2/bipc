@@ -7,7 +7,7 @@ import Logo from "@/assets/logo_full.svg";
 import BrazilMapChart, {
   type MapChartStats,
 } from "@/components/charts/brazilMapChart";
-import D3RangeChart from "@/components/charts/d3chartCUM";
+import D3RangeChart from "@/components/charts/d3chart";
 import D3GradientRangeLineChart, {
   SeriesPoint,
 } from "@/components/charts/d3chartLine";

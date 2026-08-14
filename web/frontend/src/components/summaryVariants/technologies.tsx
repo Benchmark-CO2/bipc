@@ -7,12 +7,12 @@ import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
-import NotFoundList from "../ui/not-found-list";
-import ItemCard from "./components/ItemCard";
-import Legend from "./components/Legend";
-import ListItem from "./components/ListItem";
+import { ChartLegend } from './components/chartLegend';
+import { EmissionsSection } from './components/emissionSection';
+import { ScenarioCard } from './components/indicatorItem';
 import { useChartType } from "./hooks/useChartType";
-import { barColors, normalizeBenchmarkSeries, recalculateY } from "./utils";
+import { getCategoryValue, translateCategory } from './units';
+import { normalizeBenchmarkSeries, recalculateY } from "./utils";
 
 type TModules = {
   consumption: {
@@ -26,6 +26,7 @@ type TModules = {
   type: string;
   label: string;
 };
+
 type SimulationData = {
   active: boolean;
   id: string;
@@ -41,6 +42,7 @@ type SimulationData = {
       energy_min: number;
       material: number;
     };
+    [key: string]: any; // Para englobar as categorias individuais
   };
 };
 
@@ -64,14 +66,25 @@ const SimulationsSummary = ({
   someSelected,
 }: ProjectsSummaryProps) => {
   const [type, setType] = useState<"co2" | "energy" | "material">("co2");
-  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-  const { chartType, ChartSelector } = useChartType();
+  const { chartType, ChartSelector } = useChartType(type);
   const { t } = useTranslation();
-  const filteredProjects = projects.filter((el) => !!el.consumption);
+  const { isExpanded, isOpen } = useSummary();
 
-  const newItems: Record<"co2" | "energy" | "material", Item>[] = filteredProjects.map(
-    (el) => {
+  const filteredProjects = useMemo(
+    () => projects.filter((el) => !!el.consumption),
+    [projects]
+  );
+
+
+  // Inicia com todas as simulações marcadas
+  const [selectedProjects, setSelectedProjects] = useState<string[]>(() =>
+    filteredProjects.map((p) => p.id)
+  );
+
+  const newItems = useMemo(() => {
+    return filteredProjects.map((el) => {
       return {
+        id: el.id,
         co2: {
           id: el.id,
           y: 0,
@@ -89,222 +102,360 @@ const SimulationsSummary = ({
         material: {
           id: el.id,
           y: 0,
+          min: el?.consumption?.total.material || 0,
+          max: el?.consumption?.total.material || 0,
           value: el?.consumption?.total.material || 0,
           label: el.name,
         },
       };
-    },
-  ) as any;
+    });
+  }, [filteredProjects]);
 
-  const managedData = normalizeBenchmarkSeries(
-    data.benchmark?.[type as "co2" | "energy" | "material"],
-  ).map((el) => ({
-    ...el,
-    label: projects.find((f) => f.id === el.id)?.name || "",
-  }));
-  const { isExpanded } = useSummary();
+  const stackedData = useMemo(
+    () =>
+      newItems.map((el) => ({
+        id: el.id,
+        label: el[type].label,
+        co2: ((el.co2.max || 0) + (el.co2.min || 0)) / 2,
+        energy: ((el.energy.max || 0) + (el.energy.min || 0)) / 2,
+        material: el.material?.value || 0
+      })),
+    [newItems, type],
+  );
 
-  const handleAddProject = (projectId: string) => {
-    if (selectedProjects.includes(projectId)) {
-      setSelectedProjects(selectedProjects.filter((id) => id !== projectId));
-    } else {
-      setSelectedProjects([...selectedProjects, projectId]);
-    }
+  // ── Lógica Centralizada: Calcula os dados e o PCV para TODOS os tipos ──
+  const processedData = useMemo(() => {
+    const types = ["co2", "energy", "material"] as const;
+    const result: Record<string, any> = {};
+
+    types.forEach((t) => {
+      // 1. Prepara managedData
+      const managedData = normalizeBenchmarkSeries(
+        data.benchmark?.[t],
+      ).map((el) => ({
+        ...el,
+        label: projects.find((f) => f.id === el.id)?.name || "",
+      }));
+
+      // 2. Prepara newDataItems
+      const typeNewItems = t !== "material" ? newItems.map((item) => item[t]) : [];
+      const newDataItems = [...managedData, ...typeNewItems];
+
+      // 3. Descobre min/max para recalcular o Y
+      const minDataArr = newDataItems.map((d) => d.min ?? d.value ?? 0);
+      const maxDataArr = newDataItems.map((d) => d.max ?? d.value ?? 0);
+      const minValue = minDataArr.length ? Math.min(...minDataArr) : 0;
+      const maxValue = maxDataArr.length ? Math.max(...maxDataArr) : 0;
+
+      const newData = recalculateY(newDataItems, minValue, maxValue);
+
+      // 4. Calcula PCV
+      let P = 0, C = 0, V = 0, R = 0, hasSelection = false;
+
+      if (newData && newData.length > 0) {
+        const sortedMin = [...newData].map((d) => d.min ?? d.value ?? 0).sort((a, b) => a - b);
+        const sortedMax = [...newData].map((d) => d.max ?? d.value ?? 0).sort((a, b) => a - b);
+
+        const p5Index = Math.floor(sortedMin.length * 0.05);
+        const c5Value = sortedMin[Math.min(p5Index, sortedMin.length - 1)];
+        const r5Value = sortedMax[Math.min(p5Index, sortedMax.length - 1)];
+
+        P = c5Value;
+
+        let activeItems = newData.filter(d => selectedProjects.includes(String(d.id)));
+
+        // Fallback: Se não houver nenhum projeto selecionado, usamos todos para o PCV não zerar
+        if (activeItems.length === 0) {
+          activeItems = newData.filter(d => filteredProjects.some(fp => String(fp.id) === String(d.id)));
+        }
+
+        if (activeItems.length > 0) {
+          hasSelection = true;
+          C = activeItems.reduce((acc, curr) => acc + (curr.min ?? curr.value ?? 0), 0) / activeItems.length;
+          R = activeItems.reduce((acc, curr) => acc + (curr.max ?? curr.value ?? 0), 0) / activeItems.length;
+
+          V = (c5Value - C) + (r5Value - R) / 2;
+
+          if (V < 0) {
+            V = (C + R) / 2; // Fallback
+          }
+        }
+      }
+
+      // 5. Salva no dicionário de resultados
+      result[t] = {
+        managedData,
+        newData,
+        minData: minDataArr,
+        maxData: maxDataArr,
+        pcvMetrics: { P, C, V, R, hasSelection }
+      };
+    });
+
+    return result;
+  }, [data.benchmark, projects, newItems, selectedProjects, filteredProjects]);
+
+  // ── Extração dos dados da tab/tipo atual para uso nos gráficos ──
+  const {
+    managedData,
+    newData: updateYs,
+    minData,
+    maxData,
+    pcvMetrics
+  } = processedData[type];
+
+  const allPcvMetrics = {
+    co2: processedData.co2.pcvMetrics,
+    energy: processedData.energy.pcvMetrics,
+    material: processedData.material.pcvMetrics,
   };
-  const [previousProjects, setPreviousProjects] = useState<any[]>([]);
+
+  // ── Extração do Teto (MAX) do Benchmark para travar a escala do Gráfico da Esquerda ──
+  const benchmarkMax = useMemo(() => {
+    const getMax = (typeKey: 'co2' | 'energy' | 'material') => {
+      const series = normalizeBenchmarkSeries(data.benchmark?.[typeKey]) || [];
+      
+      if (series.length === 0) return 0;
+
+      if (typeKey === 'material') {
+        return Math.max(...series.map((d: any) => d.value ?? d.material ?? 0), 0);
+      }
+      return Math.max(...series.map((d: any) => d.max ?? d[`${typeKey}_max`] ?? 0), 0);
+    };
+
+    return {
+      co2: getMax('co2'),
+      energy: getMax('energy'),
+      material: getMax('material'),
+    };
+  }, [data.benchmark]);
 
   useEffect(() => {
     if (!someSelected) {
-      setSelectedProjects([]);
-      return;
+      setSelectedProjects(filteredProjects.map((p) => p.id));
     }
-    setPreviousProjects(filteredProjects.map((el) => el.id));
-  }, [projects, someSelected]);
+  }, [someSelected, filteredProjects]);
 
-  useEffect(() => {
-    if (!someSelected) return;
-
-    if (previousProjects.length < projects.length) {
-      const diff = filteredProjects.filter(
-        (p) => !previousProjects.includes(p.id),
-      );
-      if (diff.length > 0) {
-        setSelectedProjects((prev) => [...prev, ...diff.map((d) => d.id)]);
-      }
-    } else if (previousProjects.length > projects.length) {
-      const diff = previousProjects.filter(
-        (p) => !projects.map((u) => u.id).includes(p),
-      );
-      if (diff.length > 0) {
-        setSelectedProjects((prev) => prev.filter((p) => !diff.includes(p)));
-      }
+  const onChangeProjectSelection = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedProjects((prev) => [...prev, id]);
+    } else {
+      setSelectedProjects((prev) => prev.filter((pid) => pid !== id));
     }
-  }, [previousProjects, projects, someSelected]);
+  };
 
   const [subTabs, setSubTabs] = useState<string>(
     t.summaryTechnologies.projects,
   );
+
   const selectAll = () => {
-    if (selectedProjects.length === projects.length) {
+    if (selectedProjects.length >= filteredProjects.length) {
       setSelectedProjects([]);
     } else {
       setSelectedProjects(filteredProjects.map((p) => p.id));
     }
   };
-  const listType: "co2" | "energy" | "material" = type ;
 
-  const newData = [
-    ...managedData,
-    ...(type !== "material"
-      ? newItems.map((item) => item[listType]) || []
-      : []),
-  ] as any;
-  const minData = useMemo(() => newData.map((d: Item) => d.min), [newData]);
-  const maxData = useMemo(() => newData.map((d: Item) => d.max), [newData]);
-  const minValue = minData.length ? Math.min(...minData) : 0;
-  const maxValue = maxData.length ? Math.max(...maxData) : 0;
-  const updateYs = recalculateY(newData, minValue, maxValue);
+  // ── PREPARAÇÃO DOS DADOS PARA OS GRÁFICOS DE BARRAS ─────────────────────────
+  const simulationEmissionsData = useMemo(() => {
+    if (!filteredProjects) return [];
 
-  const listSum =
-    type !== "material"
-      ? newItems
-          .flatMap((el) => el[listType])
-          .reduce((acc, curr) => acc + curr.max, 0)
-      : 0;
+    const buildChartData = (consumptions: any) => {
+      const co2Row: Record<string, any> = { name: "CO₂ (kg)" };
+      const energyRow: Record<string, any> = { name: "Energia (MJ)" };
+      const materialRow: Record<string, any> = { name: `Material (${unitsOfMeasure.material || 'kg'})` };
+
+      if (consumptions) {
+        Object.entries(consumptions).forEach(([key, values]) => {
+          if (key !== "total") {
+            const techName = translateCategory[key] || key;
+            co2Row[techName] = getCategoryValue(values, "co2");
+            energyRow[techName] = getCategoryValue(values, "energy");
+            materialRow[techName] = getCategoryValue(values, "material");
+          }
+        });
+      }
+
+      return [co2Row, energyRow, materialRow];
+    };
+
+    return filteredProjects.map((proj) => ({
+      id: proj.id,
+      title: proj.name || "Simulação",
+      isChecked: selectedProjects.includes(proj.id),
+      chartData: buildChartData(proj.consumption)
+    }));
+  }, [filteredProjects, selectedProjects]);
+
+  // ── Lógica dos Dados de Valores e Cenários ──────────────────────────────────
+  const unitTotal = type === "energy" ? "MJ" : type === "material" ? "kg" : "kg CO₂";
+  const unitBenchmark = type === "energy" ? "MJ/m²" : type === "material" ? "kg/m²" : "kg/m² CO₂";
+  const currentUnit = unitsOfMeasure[type] || "Kg/m²";
+
+  const activeStacked = selectedProjects.length > 0
+    ? stackedData.filter(d => selectedProjects.includes(String(d.id)))
+    : stackedData;
+
+  // Calculo de área (soma das simulações selecionadas)
+  const activeProjectsForArea = selectedProjects.length > 0 
+    ? filteredProjects.filter(p => selectedProjects.includes(p.id))
+    : filteredProjects;
+
+  const totalArea = activeProjectsForArea.reduce((acc, curr) => 
+    acc + (Number(curr.area) || 1), 0
+  );
+
+  const totalRefValue = activeStacked.reduce(
+    (acc, curr) => acc + ((curr[type as keyof typeof curr] as number) || 0), 0
+  );
+  const benchmarkRefValue = activeStacked.length > 0 ? totalRefValue / activeStacked.length : 0;
+
+  const formatMetric = (val: number) =>
+    val.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 
   return (
-    <>
-      <div className="w-full flex gap-2 mb-4">
-        <FilterTabs
-          tabs={["co2", "energy", "material"]}
-          onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
-          selectedTab={type}
-          fullWidth
-          onSubTabSelect={(tab) => {
-            if (tab === t.summaryTechnologies.projects) setSubTabs(tab);
-            if (tab === t.summary.selectAll || tab === t.summary.deselectAll)
-              selectAll();
-          }}
-          subTabs={[
-            t.summaryTechnologies.projects,
-            selectedProjects.length === projects.length
-              ? t.summary.deselectAll
-              : t.summary.selectAll,
-          ]}
-          selectedSubTab={subTabs}
-        />
-      </div>
-      <div
-        className={cn("w-full flex justify-between gap-4 max-md:flex-col", {
-          "flex flex-col": isExpanded,
-        })}
-      >
-        <div className="flex flex-col items-start w-full">
-          {ChartSelector}
-          <ul
-            className={cn("flex flex-col gap-2 text-xl w-full text-black", {
-              "flex-row gap-2 flex-wrap": isExpanded,
-              "max-h-[600px] overflow-y-auto ": !isExpanded,
-            })}
-          >
-            {" "}
-            {(!projects || projects.length === 0) && (
-              <NotFoundList
-                message={t.summaryTechnologies.noProjectSelected}
-                description={t.summaryTechnologies.noProjectDescription}
-                className="bg-transparent border-0 shadow-none"
-              />
-            )}
-            {[
-              ...(newItems.map((el) => el[listType])),
-              ...projects.filter(
-                (el) =>
-                  !el.consumption &&
-                  !newItems.some((_el) => _el.co2.id === el.id),
-              ),
-            ].map((project, _idx) => {
-              return (
-                <div key={project.id} className="">
-                  {!isExpanded ? (
-                    <ListItem
-                      key={project.id}
-                      item={
-                        {
-                          id: project.id,
-                          label: project.min ? project.label : project.name,
-                          co2: (project.min + project.max) / 2,
-                          energy: (project.min + project.max) / 2,
-                        } as any
-                      }
-                      selectedProjects={selectedProjects}
-                      handleAddProject={handleAddProject}
-                      sum={listSum}
-                      color={barColors}
-                      type={listType}
-                      hasConsumption={!!project.min}
-                    />
-                  ) : (
-                    <ItemCard
-                      key={project.id}
-                      item={project as any}
-                      selectedProjects={selectedProjects}
-                      handleAddProject={handleAddProject}
-                      sum={listSum}
-                      color={barColors}
-                      type={listType}
-                      hasConsumption={
-                        !!projects.find((el) => el.id === project.id)
-                          ?.consumption
-                      }
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </ul>
-          <Legend />
-        </div>
+    <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
 
-        {chartType === "scatter" ? (
-          <D3GradientRangeChart
-            data={updateYs}
-            selectedBars={selectedProjects}
-            unit={unitsOfMeasure[type] || ""}
-            maxData={maxData}
-            minData={minData}
-            totalProjects={updateYs.length}
-            showBaseline={type !== "material"}
-            showTop5Line={type !== "material"}
-            showProcelScale
-            showMaxCurve={type !== "material"}
-            showMinCurve={type !== "material"}
-            showMidCurve={type !== "material"}
-            showProjectName
-            variant={type === "material" ? "cumulative" : "range"}
-            xAxisLabel={
-              t.benchmark.chartTypes[
-                type === "co2" || type === "energy"
-                  ? "cumulativeFraction"
-                  : "material"
-              ][type === "co2" ? "xAxisLabelCarbon" : "xAxisLabelEnergy"]
-            }
-            yAxisLabel={
-              t.benchmark.chartTypes[
-                type === "co2" || type === "energy"
-                  ? "cumulativeFraction"
-                  : "material"
-              ].yAxisLabel
-            }
-          />
-        ) : (
-          <D3GradientRangeLineChart
-            data={updateYs}
-            selectedBars={selectedProjects}
-            unit={type}
-          />
+      {/* ── BARRA SUPERIOR: Valores e PCVRB ── */}
+      <div className='flex justify-between gap-2 w-full'>
+        
+
+        {(
+          <div className="flex flex-wrap xl:flex-nowrap gap-4 w-full">
+            <ScenarioCard
+              letter="V"
+              title={t.summary.chartLegend?.referenceValue_short || "Valor referência"}
+              color="#62A436"
+              items={[
+                { total: formatMetric(allPcvMetrics.co2.V * totalArea), benchmark: formatMetric(allPcvMetrics.co2.V), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
+                { total: formatMetric(allPcvMetrics.energy.V * totalArea), benchmark: formatMetric(allPcvMetrics.energy.V), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
+                { total: formatMetric(allPcvMetrics.material.V * totalArea), benchmark: formatMetric(allPcvMetrics.material.V), unitTotal: "m³", unitBenchmark: "m³/m²" },
+              ]}
+            />
+            <ScenarioCard
+              letter="C"
+              title={t.summary.chartLegend?.constructionMitigationPotential_short || "Melhor cenário"}
+              color="#5B9BD5"
+              items={[
+                { total: formatMetric(allPcvMetrics.co2.C * totalArea), benchmark: formatMetric(allPcvMetrics.co2.C), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
+                { total: formatMetric(allPcvMetrics.energy.C * totalArea), benchmark: formatMetric(allPcvMetrics.energy.C), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
+                { total: formatMetric(allPcvMetrics.material.C * totalArea), benchmark: formatMetric(allPcvMetrics.material.C), unitTotal: "m³", unitBenchmark: "m³/m²" },
+              ]}
+            />
+            <ScenarioCard
+              letter="R"
+              title={t.summary.chartLegend?.riskOfLowerConstructionMitigation_short || "Pior cenário"}
+              color="#E0756C"
+              items={[
+                { total: formatMetric(allPcvMetrics.co2.R * totalArea), benchmark: formatMetric(allPcvMetrics.co2.R), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
+                { total: formatMetric(allPcvMetrics.energy.R * totalArea), benchmark: formatMetric(allPcvMetrics.energy.R), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
+                { total: formatMetric(allPcvMetrics.material.R * totalArea), benchmark: formatMetric(allPcvMetrics.material.R), unitTotal: "m³", unitBenchmark: "m³/m²" },
+              ]}
+            />
+            <ScenarioCard
+              letter="P"
+              title={t.summary.chartLegend?.constructionMitigationPotential_short || "Potencial de mitigação"}
+              color="#9F70DB"
+              items={[
+                { total: formatMetric(allPcvMetrics.co2.P * totalArea), benchmark: formatMetric(allPcvMetrics.co2.P), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
+                { total: formatMetric(allPcvMetrics.energy.P * totalArea), benchmark: formatMetric(allPcvMetrics.energy.P), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
+                { total: formatMetric(allPcvMetrics.material.P * totalArea), benchmark: formatMetric(allPcvMetrics.material.P), unitTotal: "m³", unitBenchmark: "m³/m²" },
+              ]}
+            />
+          </div>
         )}
       </div>
-    </>
+
+      {/* ── CONTEÚDO PRINCIPAL (Exibido quando aberto) ── */}
+      {(isOpen || isExpanded) && (
+        <div className='flex gap-4 items-start'>
+          {/* COLUNA ESQUERDA (1/3) */}
+          <div className="w-1/3 flex-shrink-0 mt-3 flex flex-col">
+            <div className="flex flex-col gap-6 w-full">
+              <div className="mb-0">
+                <h3 className="text-lg font-bold mb-0">Total de Emissões por tecnologia</h3>
+              </div>
+              <EmissionsSection 
+                data={simulationEmissionsData} 
+                selected={selectedProjects} 
+                onChange={onChangeProjectSelection} 
+                benchmarkMax={benchmarkMax}
+              />
+            </div>
+          </div>
+
+          {/* COLUNA DIREITA (flex-1) */}
+          <div className="flex-1 min-h-0 flex flex-col justify-between gap-0 pt-0">
+            <div className='flex gap-2 justify-end items-center'>
+              <FilterTabs
+                tabs={["co2", "energy", "material"]}
+                onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
+                selectedTab={type}
+                fullWidth
+                onSubTabSelect={(tab) => {
+                  if (tab === t.summaryTechnologies.projects) setSubTabs(tab);
+                  if (tab === t.summary.selectAll || tab === t.summary.deselectAll)
+                    selectAll();
+                }}
+                subTabs={[
+                  t.summaryTechnologies.projects,
+                  selectedProjects.length >= filteredProjects.length
+                    ? t.summary.deselectAll
+                    : t.summary.selectAll,
+                ]}
+                selectedSubTab={subTabs}
+              />
+              <div className='mt-2 w-full'>
+                {ChartSelector}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-0 w-full">
+              {chartType === "scatter" ? (
+                <D3GradientRangeChart
+                  data={updateYs}
+                  selectedBars={selectedProjects}
+                  unit={unitsOfMeasure[type] || ""}
+                  maxData={maxData}
+                  minData={minData}
+                  totalProjects={updateYs.length}
+                  showBaseline={type !== "material"}
+                  showTop5Line={type !== "material"}
+                  showProcelScale
+                  showMaxCurve={type !== "material"}
+                  showMinCurve={type !== "material"}
+                  showMidCurve={type !== "material"}
+                  showProjectName
+                  variant={type === "material" ? "cumulative" : "range"}
+                  xAxisLabel={
+                    t.benchmark.chartTypes[
+                    type === "co2" || type === "energy"
+                      ? "cumulativeFraction"
+                      : "material"
+                    ][type === "co2" ? "xAxisLabelCarbon" : "xAxisLabelEnergy"]
+                  }
+                  yAxisLabel={
+                    t.benchmark.chartTypes[
+                      type === "co2" || type === "energy"
+                        ? "cumulativeFraction"
+                        : "material"
+                    ].yAxisLabel
+                  }
+                  height={350}
+                />
+              ) : (
+                <D3GradientRangeLineChart
+                  data={updateYs}
+                  selectedBars={selectedProjects}
+                  unit={type}
+                />
+              )}
+              {type !== 'material' && <ChartLegend />}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

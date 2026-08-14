@@ -41,9 +41,10 @@ components:
 
         For positioned arrays (concrete, steel and form), each item must include explicit position.
         General/non-positioned material entries are not accepted.
-
         Structural v2 modules may receive floor_ids or floor_index inside data, but not both.
-        floor_index is used by batch creation to map the module to the corresponding floor order.
+
+        floor_index is only used as input during batch creation and is never returned in responses.
+        Read responses include floor_indexes instead.
       properties:
         type:
           type: string
@@ -90,9 +91,11 @@ components:
       required:
         - module
 
-    ModuleCreateRequest:
-      allOf:
-        - $ref: "#/components/schemas/ModuleCreateRequestV1"
+    ModuleUpdateRequestV1:
+      $ref: "#/components/schemas/ModuleCreateRequestV1"
+
+    ModuleUpdateRequestV2:
+      $ref: "#/components/schemas/ModuleCreateRequestV2"
 
     BeamColumnDataV1:
       type: object
@@ -146,7 +149,9 @@ components:
         Must use aggregated arrays. Legacy concrete_columns/concrete_beams/concrete_slabs and
         root form_* fields are not accepted.
 
-        floor_index is an alternative to floor_ids for batch creation and must not be sent together with floor_ids.
+        floor_ids or floor_index must be provided, but not both.
+        floor_index is only used as input during batch creation and is never returned in responses.
+        Read responses include floor_indexes instead.
       properties:
         floor_ids:
           type: array
@@ -154,9 +159,16 @@ components:
             type: string
             format: uuid
           minItems: 1
+          description: Array of floor UUIDs associated with this module.
         floor_index:
           type: integer
-          description: Sequential floor index used to resolve the target floor in batch creation.
+          description: Sequential floor index used to resolve the target floor during batch creation. Must not be sent together with floor_ids. Never returned in responses.
+        floor_indexes:
+          type: array
+          items:
+            type: integer
+          description: Array with the floor index of each associated floor. Returned only in read responses.
+          readOnly: true
         concrete:
           type: array
           minItems: 1
@@ -184,7 +196,6 @@ components:
         avg_slab_span:
           type: number
       required:
-        - floor_ids
         - concrete
         - steel
 
@@ -235,7 +246,9 @@ components:
         Must use aggregated arrays. Legacy concrete_walls/concrete_slabs and
         root wall_form_area/slab_form_area are not accepted.
 
-        floor_index is an alternative to floor_ids for batch creation and must not be sent together with floor_ids.
+        floor_ids or floor_index must be provided, but not both.
+        floor_index is only used as input during batch creation and is never returned in responses.
+        Read responses include floor_indexes instead.
       properties:
         floor_ids:
           type: array
@@ -243,9 +256,16 @@ components:
             type: string
             format: uuid
           minItems: 1
+          description: Array of floor UUIDs associated with this module.
         floor_index:
           type: integer
-          description: Sequential floor index used to resolve the target floor in batch creation.
+          description: Sequential floor index used to resolve the target floor during batch creation. Must not be sent together with floor_ids. Never returned in responses.
+        floor_indexes:
+          type: array
+          items:
+            type: integer
+          description: Array with the floor index of each associated floor. Returned only in read responses.
+          readOnly: true
         concrete:
           type: array
           minItems: 1
@@ -275,7 +295,6 @@ components:
         slab_number:
           type: integer
       required:
-        - floor_ids
         - concrete
         - steel
 
@@ -324,7 +343,9 @@ components:
 
         Must use aggregated arrays. Legacy concrete_* and root form_* fields are not accepted.
 
-        floor_index is an alternative to floor_ids for batch creation and must not be sent together with floor_ids.
+        floor_ids or floor_index must be provided, but not both.
+        floor_index is only used as input during batch creation and is never returned in responses.
+        Read responses include floor_indexes instead.
       properties:
         floor_ids:
           type: array
@@ -332,9 +353,16 @@ components:
             type: string
             format: uuid
           minItems: 1
+          description: Array of floor UUIDs associated with this module.
         floor_index:
           type: integer
-          description: Sequential floor index used to resolve the target floor in batch creation.
+          description: Sequential floor index used to resolve the target floor during batch creation. Must not be sent together with floor_ids. Never returned in responses.
+        floor_indexes:
+          type: array
+          items:
+            type: integer
+          description: Array with the floor index of each associated floor. Returned only in read responses.
+          readOnly: true
         concrete:
           type: array
           minItems: 1
@@ -358,7 +386,6 @@ components:
         masonry:
           $ref: "#/components/schemas/MasonryElement"
       required:
-        - floor_ids
         - masonry
 
     ConcreteVolumeItem:
@@ -371,7 +398,7 @@ components:
           type: number
           format: float
         position:
-          description: when not provided refeers to any position material
+          description: when not provided refers to non-positioned (general) material
       required:
         - fck
         - volume
@@ -402,7 +429,7 @@ components:
           type: number
           format: float
         position:
-          description: when not provided refeers to any position material
+          description: when not provided refers to non-positioned (general) material
       required:
         - material
         - resistance
@@ -1292,3 +1319,66 @@ components:
               resistance: CA50
               mass: 630
               position: pile
+
+    ModuleBatchResponseV1:
+      summary: Batch creation response (v1)
+      value:
+        modules:
+          - type: beam_column
+            data:
+              floor_ids:
+                - f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6
+              concrete_columns:
+                volumes:
+                  - fck: 30
+                    volume: 150.5
+                steel:
+                  - material: rebar
+                    resistance: CA50
+                    mass: 7500
+              concrete_beams:
+                volumes:
+                  - fck: 30
+                    volume: 200
+                steel:
+                  - material: rebar
+                    resistance: CA50
+                    mass: 10000
+              concrete_slabs:
+                volumes:
+                  - fck: 25
+                    volume: 450
+                steel:
+                  - material: rebar
+                    resistance: CA50
+                    mass: 22500
+              form_columns: 1200
+              form_beams: 2500
+              form_slabs: 9000
+
+    ModuleBatchResponseV2:
+      summary: Batch creation response (v2)
+      value:
+        modules:
+          - type: beam_column
+            data:
+              floor_ids:
+                - f1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6
+              concrete:
+                - fck: 30
+                  volume: 150.5
+                  position: column
+                - fck: 30
+                  volume: 200
+                  position: beam
+                - fck: 25
+                  volume: 450
+                  position: slab
+              steel:
+                - material: rebar
+                  resistance: CA50
+                  mass: 7500
+                  position: column
+              form:
+                - area: 1200
+                  position: column

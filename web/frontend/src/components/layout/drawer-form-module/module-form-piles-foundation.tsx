@@ -48,7 +48,9 @@ const ModuleFormPilesFoundation = ({
           name="fck"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs">{t.modules.form.fckLabel}</FormLabel>
+              <FormLabel className="text-xs">
+                {t.modules.form.fckLabel}
+              </FormLabel>
               <FormControl>
                 <Select
                   onValueChange={(value) => {
@@ -89,7 +91,9 @@ const ModuleFormPilesFoundation = ({
                         {fck}
                       </SelectItem>
                     ))}
-                    <SelectItem value="other">{t.modules.form.other}</SelectItem>
+                    <SelectItem value="other">
+                      {t.modules.form.other}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </FormControl>
@@ -103,7 +107,9 @@ const ModuleFormPilesFoundation = ({
             name="fck"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-xs">{t.modules.form.otherFck}</FormLabel>
+                <FormLabel className="text-xs">
+                  {t.modules.form.otherFck}
+                </FormLabel>
                 <FormControl>
                   <Input
                     type="text"
@@ -122,7 +128,9 @@ const ModuleFormPilesFoundation = ({
       </div>
 
       {/* Estacas */}
-      <h3 className="text-base font-semibold text-primary">{t.modules.form.piles}</h3>
+      <h3 className="text-base font-semibold text-primary">
+        {t.modules.form.piles}
+      </h3>
       <Card className="border-2 border-gray-200">
         <CardContent className="space-y-4 pt-4">
           {/* Volume das Estacas */}
@@ -154,7 +162,9 @@ const ModuleFormPilesFoundation = ({
       </Card>
 
       {/* Blocos de Coroamento */}
-      <h3 className="text-base font-semibold text-primary">{t.modules.form.pileCaps}</h3>
+      <h3 className="text-base font-semibold text-primary">
+        {t.modules.form.pileCaps}
+      </h3>
       <Card className="border-2 border-gray-200">
         <CardContent className="space-y-4 pt-4">
           {/* Volume dos Blocos */}
@@ -181,12 +191,14 @@ const ModuleFormPilesFoundation = ({
           />
 
           {/* Aço dos Blocos */}
-          <SteelMaterialList form={form} name="pile_caps.steel" />
+          <SteelMaterialList form={form} name="pile_caps.steel" minItems={0} />
         </CardContent>
       </Card>
 
       {/* Vigas Baldrame */}
-      <h3 className="text-base font-semibold text-primary">{t.modules.form.gradeBeams}</h3>
+      <h3 className="text-base font-semibold text-primary">
+        {t.modules.form.gradeBeams}
+      </h3>
       <Card className="border-2 border-gray-200">
         <CardContent className="space-y-4 pt-4">
           {/* Volume das Vigas Baldrame */}
@@ -213,12 +225,18 @@ const ModuleFormPilesFoundation = ({
           />
 
           {/* Aço das Vigas Baldrame */}
-          <SteelMaterialList form={form} name="grade_beams.steel" />
+          <SteelMaterialList
+            form={form}
+            name="grade_beams.steel"
+            minItems={0}
+          />
         </CardContent>
       </Card>
 
       {/* Cintas */}
-      <h3 className="text-base font-semibold text-primary">{t.modules.form.tieBeams}</h3>
+      <h3 className="text-base font-semibold text-primary">
+        {t.modules.form.tieBeams}
+      </h3>
       <Card className="border-2 border-gray-200">
         <CardContent className="space-y-4 pt-4">
           {/* Volume das Cintas */}
@@ -245,7 +263,7 @@ const ModuleFormPilesFoundation = ({
           />
 
           {/* Aço das Cintas */}
-          <SteelMaterialList form={form} name="tie_beams.steel" />
+          <SteelMaterialList form={form} name="tie_beams.steel" minItems={0} />
         </CardContent>
       </Card>
     </div>

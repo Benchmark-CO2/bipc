@@ -246,6 +246,7 @@ export const Route = createFileRoute("/(public)/login")({
     if (context.auth.isAuthenticated) {
       return redirect({
         to: "/new_projects",
+        search: { activationRequired: true },
       });
     }
   },

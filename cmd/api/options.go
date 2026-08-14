@@ -177,7 +177,7 @@ func (app *application) readOptionHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
+			app.resourceNotFoundResponse(w, r, "option")
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
@@ -226,7 +226,7 @@ func (app *application) updateOptionHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
+			app.resourceNotFoundResponse(w, r, "option")
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
@@ -263,7 +263,7 @@ func (app *application) updateOptionHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
+			app.resourceNotFoundResponse(w, r, "option")
 		case errors.Is(err, data.ErrOptionHasOutdatedModules):
 			app.unprocessableEntityResponse(w, r, err)
 		default:
@@ -289,7 +289,7 @@ func (app *application) deleteOptionHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
+			app.resourceNotFoundResponse(w, r, "option")
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
@@ -313,7 +313,7 @@ func (app *application) duplicateOptionHandler(w http.ResponseWriter, r *http.Re
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
+			app.resourceNotFoundResponse(w, r, "option")
 		default:
 			app.serverErrorResponse(w, r, err)
 		}

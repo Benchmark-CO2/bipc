@@ -1,6 +1,6 @@
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { postDuplicateUnit } from "@/actions/units/postDuplicateUnit";
-import { DrawerFormUnit } from "@/components/layout";
+import { DrawerFormUnit, DrawerIFCImport } from "@/components/layout";
 import ModalSimple from "@/components/layout/modal-simple";
 import { Button } from "@/components/ui/button";
 import NotFoundList from "@/components/ui/not-found-list";
@@ -172,9 +172,18 @@ function RouteComponent() {
           />
           {!location.pathname.includes("constructive-technologies") && (
             <>
-              <Button variant="outline-bipc" size="icon-lg" disabled>
-                <Upload />
-              </Button>
+              <DrawerIFCImport
+                mode="unit"
+                projectId={projectId}
+                unitId={params.unitId}
+                triggerComponent={
+                  <SimpleTooltip content={t.common.ifcImport} side="bottom">
+                    <Button variant="outline-bipc" size="icon-lg" disabled>
+                      <Upload />
+                    </Button>
+                  </SimpleTooltip>
+                }
+              />
               {params.unitId && hasPermission("create:unit") && (
                 <ModalSimple
                   title={t.units.duplicateTitle}

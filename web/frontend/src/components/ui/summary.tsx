@@ -1,63 +1,68 @@
 import { useSummary } from "@/context/summaryContext";
 import { cn } from "@/lib/utils";
-import { ArrowUp, Expand } from "lucide-react";
-import { Button } from "./button";
+import { ChevronUp } from "lucide-react";
 
 const Summary = () => {
-  const { isOpen, toggleSummary, context, isExpanded, toggleExpanded } =
-    useSummary();
+  const { isOpen, toggleSummary, context, isExpanded } = useSummary();
 
   if (context?.hide) return null;
+
   return (
     <section
       data-open={isOpen}
       data-expanded={isExpanded}
       className={cn(
-        "absolute bottom-0 right-0 bg-gray-50 dark:bg-sidebar w-full max-md:mx-auto max-md:left-0 transition-all z-49 border-t border-gray-200 dark:border-gray-700 shadow-lg",
+        "absolute bottom-0 right-0 w-full max-md:mx-auto max-md:left-0 transition-all z-49 bg-gray-50 dark:bg-sidebar shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)]",
+        "border-t-[5px] border-[#5cb82b]", // Borda verde superior baseada na imagem
         {
-          "h-[100vh]": isOpen && isExpanded,
-          "h-4/5 min-[1710px]:h-2/3": isOpen && !isExpanded,
-          "h-[50px]": !isOpen,
-        },
+          "h-[100vh]": isOpen,
+          "h-32": !isOpen, // Recolhe totalmente, deixando apenas a aba visível
+        }
       )}
     >
-      <div className="relative flex flex-col w-full h-full">
-        {/* Header */}
-        <div
-          className={`flex items-center justify-between w-full px-4 ${isOpen ? "pt-3" : "my-auto"} `}
+      {/* Botão Flutuante Superior (Aba "Clique e veja mais") */}
+      {(
+        <div className={cn("absolute flex items-end top-0 left-1/2 -translate-x-1/2 -translate-y-full z-[100]", {
+          'top-5': isOpen,
+         '': !isOpen,
+        })}>
+        <button
+          onClick={() => {
+            toggleSummary();
+          }}
+          className={cn("flex items-center justify-center gap-2 px-6 py-1 text-sm font-medium text-white transition-colors bg-[#5cb82b] hover:bg-[#4ea022] rounded-t-2xl shadow-sm cursor-pointer", {
+            'rounded-t-none rounded-b-xl': isOpen,
+          })}
         >
-          <span className="text-md font-bold text-primary dark:text-blue-400">
-            {"Benchmark"}
-          </span>
-          <div className="flex gap-0 absolute right-4 top-2">
-            {isOpen && (
-              <Button
-                variant="noStyles"
-                className="flex items-center justify-center w-8 h-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm"
-                onClick={toggleExpanded}
-              >
-                <Expand
-                  data-expanded={isExpanded}
-                  className="h-4 w-4 text-gray-600 dark:text-gray-300 data-[expanded='true']:rotate-180 transition-transform"
-                />
-              </Button>
-            )}
-            <Button
-              variant="noStyles"
-              className="flex items-center justify-center w-8 h-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm"
-              onClick={toggleSummary}
-            >
-              <ArrowUp
-                data-open={isOpen}
-                className="h-4 w-4 text-gray-600 dark:text-gray-300 data-[open='true']:rotate-180 transition-transform"
-              />
-            </Button>
-          </div>
+          <ChevronUp
+            className={cn("w-4 h-4 transition-transform", {
+              "rotate-180": isOpen,
+            })}
+          />
+          <span>{isOpen ? "Fechar" : "Benchmark"}</span>
+        </button>
         </div>
+      )}
 
-        {/* Content */}
-        {isOpen && context && (
-          <div className="w-full flex-1 px-4 py-3 overflow-auto">
+      <div className={cn("relative flex flex-col w-full h-full overflow-hidden pt-0", {
+        'cursor-pointer': !isOpen,
+      })} onClick={!isOpen ? toggleSummary : undefined}>
+        {context && (
+          <div className={cn("w-full flex-1 px-2 py-2 overflow-auto", {
+            'p-2 pt-6': isOpen,
+          })}>
+            <div className='flex justify-between text-secondary'>
+              {/* {!isOpen && <h2 className='font-semibold text-xl text-primary mb-2.5 font-roboto-flex'>Benchmark do projeto</h2>} */}
+              {/* {isOpen && (
+                <div className='flex mb-2 gap-2 cursor-pointer absolute top-0 left-1/2 -translate-x-1/2 bg-secondary' onClick={toggleSummary}>
+                  <div className='flex text-xs justify-center items-center gap-2 text-white px-2 p-1' >
+                    Recolher <ChevronDown className='w-4 h-4' />
+                  </div>
+                </div>
+              )} */}
+            </div>
+            {/* O conteúdo (incluindo o título "Benchmark do projeto" e os cards) 
+                virá diretamente do context.component, conforme solicitado */}
             {context.component || null}
           </div>
         )}

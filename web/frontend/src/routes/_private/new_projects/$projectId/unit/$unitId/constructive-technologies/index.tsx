@@ -11,6 +11,7 @@ import {
   CommonTable,
   DialogCreateSimulation,
   DrawerFormModule,
+  DrawerIFCImport,
 } from "@/components/layout";
 import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
 import ModalSimple from "@/components/layout/modal-simple";
@@ -278,6 +279,9 @@ function RouteComponent() {
   const { t } = useTranslation();
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<TOption[]>([]);
+  const [collapsedOptions, setCollapsedOptions] = useState<Set<string>>(
+    new Set(),
+  );
   const initializedRef = useRef(false);
   const { setSummaryContext } = useSummary();
 
@@ -333,12 +337,18 @@ function RouteComponent() {
 
   useEffect(() => {
     if (initializedRef.current || !optionsData?.data?.options) return;
-    const activeOption = optionsData.data.options.find(
-      (opt: TOption) => opt.active,
-    );
+    const opts = optionsData.data.options;
+    const activeOption = opts.find((opt: TOption) => opt.active);
     if (activeOption) {
       setSelectedOptions([activeOption]);
     }
+    setCollapsedOptions(
+      new Set(
+        opts
+          .filter((opt: TOption) => !opt.active)
+          .map((opt: TOption) => opt.id),
+      ),
+    );
     initializedRef.current = true;
   }, [optionsData]);
 
@@ -430,6 +440,12 @@ function RouteComponent() {
   }
 
   const options = optionsData.data.options;
+
+  const sortedOptions = [...options].sort((a, b) => {
+    if (a.active && !b.active) return -1;
+    if (!a.active && b.active) return 1;
+    return 0;
+  });
 
   const unit = unitData?.unit as IUnit;
   const unitFloors = unit?.floors || [];
@@ -558,16 +574,28 @@ function RouteComponent() {
         showIcon={false}
         description={t.constructiveTechView.createFirstSimulationDescription}
         button={
-          <DialogCreateSimulation
-            projectId={projectId}
-            unitId={unitId}
-            roleId={roleId}
-            triggerComponent={
-              <Button variant="bipc">
-                {t.constructiveTechView.newSimulation}
-              </Button>
-            }
-          />
+          <div className="flex items-center gap-4">
+            <DialogCreateSimulation
+              projectId={projectId}
+              unitId={unitId}
+              roleId={roleId}
+              triggerComponent={
+                <Button variant="bipc">
+                  {t.constructiveTechView.newSimulation}
+                </Button>
+              }
+            />
+            <small>{t.common.orLabel}</small>
+            <DrawerIFCImport
+              mode="simulation"
+              projectId={projectId}
+              unitId={unitId}
+              roleId={roleId}
+              triggerComponent={
+                <Button variant="bipc">{t.common.ifcImportTqs}</Button>
+              }
+            />
+          </div>
         }
       />
     );
@@ -575,23 +603,36 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-col gap-4">
-      <DialogCreateSimulation
-        projectId={projectId}
-        unitId={unitId}
-        roleId={roleId}
-      />
-      {options.map((option) => {
+      <div className="flex items-center gap-2">
+        <DialogCreateSimulation
+          projectId={projectId}
+          unitId={unitId}
+          roleId={roleId}
+        />
+        <DrawerIFCImport
+          mode="simulation"
+          projectId={projectId}
+          unitId={unitId}
+          roleId={roleId}
+          triggerComponent={
+            <Button variant="outline-bipc">{t.common.ifcImportTqs}</Button>
+          }
+        />
+      </div>
+      {sortedOptions.map((option) => {
         const modules = option.modules.map((mod) => ({
           ...mod,
           ...mod.consumption,
           option_id: option.id,
         }));
+        const isCollapsed = collapsedOptions.has(option.id);
+        const isOptionActive = option.active;
         return (
           <div
             key={option.id}
             className={`flex items-center gap-2 rounded-xl border-2 ${borderColumn(option)} bg-white p-4 dark:bg-dark-950 w-full`}
           >
-            <div className="flex items-center gap-2 justify-between w-full">
+            <div className="w-full">
               <CommonTable
                 tableName={
                   <OptionMenu
@@ -610,6 +651,19 @@ function RouteComponent() {
                 lastRow={{
                   type: "Total",
                   data: calculateSumMetrics(option?.consumption?.["total"]),
+                }}
+                collapsed={isOptionActive ? false : isCollapsed}
+                onCollapsedChange={(nextCollapsed) => {
+                  if (isOptionActive) return;
+                  setCollapsedOptions((prev) => {
+                    const next = new Set(prev);
+                    if (nextCollapsed) {
+                      next.add(option.id);
+                    } else {
+                      next.delete(option.id);
+                    }
+                    return next;
+                  });
                 }}
                 actions={
                   <>

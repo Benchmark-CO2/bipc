@@ -38,6 +38,7 @@ type ConcreteWall struct {
 	WallFormArea *float64    `json:"wall_form_area,omitempty"`
 	SlabFormArea *float64    `json:"slab_form_area,omitempty"`
 	FloorIDs     []uuid.UUID `json:"floor_ids"`
+	FloorIndexes []int       `json:"floor_indexes,omitempty"`
 }
 
 func (w *ConcreteWall) GetType() string { return w.Type }
@@ -285,5 +286,6 @@ func (w *ConcreteWall) fromDataModule(d *data.Module) Module {
 		WallFormArea:    extractFloat64Pointer(d.Data, "wall_form_area"),
 		SlabFormArea:    extractFloat64Pointer(d.Data, "slab_form_area"),
 		FloorIDs:        d.FloorIDs,
+		FloorIndexes:    d.FloorIndexes,
 	}
 }

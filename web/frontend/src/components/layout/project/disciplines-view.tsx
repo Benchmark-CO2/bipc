@@ -88,7 +88,7 @@ const DisciplinesView = ({ projectId }: { projectId: string }) => {
             >
               <div className="flex items-center gap-4">
                 <div
-                  className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="min-w-10 min-h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center text-sm font-medium text-gray-700 dark:text-gray-300"
                   aria-label={discipline.name}
                 >
                   {discipline.name.slice(0, 2)}
