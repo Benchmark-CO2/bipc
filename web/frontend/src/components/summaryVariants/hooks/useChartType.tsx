@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTranslation } from "@/i18n";
 import { useState } from "react";
 
-export const useChartType = () => {
+export const useChartType = (type: "co2" | "energy" | "material") => {
   const [chartType, setChartType] = useState<"line" | "scatter">("scatter");
 
   const { t } = useTranslation();
@@ -28,9 +28,11 @@ export const useChartType = () => {
           <SelectItem value="scatter">
             {t.benchmark.chartTypes.cumulativeFraction.name}
           </SelectItem>
-          <SelectItem value="line">
-            {t.benchmark.chartTypes.classification.name}
-          </SelectItem>
+          {type !== 'material' && (
+            <SelectItem value="line">
+              {t.benchmark.chartTypes.classification.name}
+            </SelectItem>
+          )}
         </SelectContent>
       </Select>
     </div>
