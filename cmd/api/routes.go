@@ -50,7 +50,8 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate", app.requireActivatedUser(app.duplicateProjectHandler))
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/duplicate/:targetUserID", app.requireActivatedUser(app.duplicateProjectToUserHandler))
 
-	router.HandlerFunc(http.MethodGet, "/v1/screenshot", app.screenshotHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/screenshot", app.screenshotHandler)
+
 	router.HandlerFunc(http.MethodGet, "/v1/events", app.notificationHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/notify/:userID", app.sendNotificationHandler)
 

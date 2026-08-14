@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"crypto"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,9 +11,12 @@ import (
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/assets"
+	"github.com/digitorus/pdf"
+	"github.com/digitorus/pdfsign/sign"
 
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"html/template"
 	"log"
 
@@ -35,6 +40,77 @@ func mergePDFsInMemory(pdfs ...[]byte) (*bytes.Buffer, error) {
 		return nil, err
 	}
 	return &out, nil
+}
+
+func loadPEMCertAndKey() (*x509.Certificate, crypto.Signer, []*x509.Certificate, error) {
+	certBlock, _ := pem.Decode(assets.CertPEM)
+	if certBlock == nil || certBlock.Type != "CERTIFICATE" {
+		return nil, nil, nil, fmt.Errorf("não foi possível decodificar PEM do certificado")
+	}
+
+	certificate, err := x509.ParseCertificate(certBlock.Bytes)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("erro ao parsear certificado: %w", err)
+	}
+
+	keyBlock, _ := pem.Decode(assets.KeyPEM)
+	if keyBlock == nil {
+		return nil, nil, nil, fmt.Errorf("não foi possível decodificar PEM da chave privada")
+	}
+
+	var privKey any
+	switch keyBlock.Type {
+	case "RSA PRIVATE KEY":
+		privKey, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
+	case "PRIVATE KEY":
+		privKey, err = x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
+	default:
+		return nil, nil, nil, fmt.Errorf("tipo de chave privada não suportado: %s", keyBlock.Type)
+	}
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("erro ao parsear chave privada: %w", err)
+	}
+
+	signer, ok := privKey.(crypto.Signer)
+	if !ok {
+		return nil, nil, nil, fmt.Errorf("a chave privada não implementa crypto.Signer")
+	}
+
+	// Certificado autoassinado: sem cadeia de CAs intermediárias.
+	return certificate, signer, nil, nil
+}
+
+// signPDFInMemory assina digitalmente um PDF (em bytes) usando digitorus/pdfsign,
+// sem escrever arquivos temporários em disco, e retorna o PDF assinado.
+func signPDFInMemory(pdfBytes []byte, certificate *x509.Certificate, certChain []*x509.Certificate, signer crypto.Signer, info sign.SignDataSignatureInfo) (*bytes.Buffer, error) {
+	inputReader := bytes.NewReader(pdfBytes)
+	size := int64(len(pdfBytes))
+
+	rdr, err := pdf.NewReader(inputReader, size)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao ler PDF para assinatura: %w", err)
+	}
+
+	var signed bytes.Buffer
+	err = sign.Sign(inputReader, &signed, rdr, size, sign.SignData{
+		Signature: sign.SignDataSignature{
+			Info:       info,
+			CertType:   sign.CertificationSignature,
+			DocMDPPerm: sign.AllowFillingExistingFormFieldsAndSignaturesPerms,
+		},
+		Signer:            signer,
+		DigestAlgorithm:   crypto.SHA256,
+		Certificate:       certificate,
+		CertificateChains: [][]*x509.Certificate{certChain},
+		TSA: sign.TSA{
+			URL: "https://freetsa.org/tsr",
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("erro ao assinar PDF: %w", err)
+	}
+
+	return &signed, nil
 }
 
 func fontFaceCSS(font []byte, fontName string) string {
@@ -91,6 +167,7 @@ type JSONData struct {
 }
 
 func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request) {
+	//projectID, _ := app.readUUIDParam(r, "projectID")
 
 	var reportData = ReportData{
 		Name:         "Residencial modelo",
@@ -207,27 +284,45 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 	}
 	defer reportPDF.Close()
 
-	coverBytes, err := io.ReadAll(coverPDF)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
+	// coverBytes, err := io.ReadAll(coverPDF)
+	// if err != nil {
+	// 	app.serverErrorResponse(w, r, err)
+	// 	return
+	// }
 
-	reportBytes, err := io.ReadAll(reportPDF)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
+	// reportBytes, err := io.ReadAll(reportPDF)
+	// if err != nil {
+	// 	app.serverErrorResponse(w, r, err)
+	// 	return
+	// }
 
-	merged, err := mergePDFsInMemory(coverBytes, assets.PDF1A, reportBytes)
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
+	// merged, err := mergePDFsInMemory(coverBytes, assets.PDF1A, reportBytes)
+	// if err != nil {
+	// 	app.serverErrorResponse(w, r, err)
+	// 	return
+	// }
+
+	// certificate, signer, chain, err := loadPEMCertAndKey()
+	// if err != nil {
+	// 	app.serverErrorResponse(w, r, err)
+	// 	return
+	// }
+
+	// signedPDF, err := signPDFInMemory(merged.Bytes(), certificate, chain, signer, sign.SignDataSignatureInfo{
+	// 	Name:        "Benchmark CO2",
+	// 	Location:    "Brasil",
+	// 	Reason:      "Emissão de relatório de carbono embutido",
+	// 	ContactInfo: "contato@bipc.org.br",
+	// 	Date:        time.Now().Local(),
+	// })
+	// if err != nil {
+	// 	app.serverErrorResponse(w, r, err)
+	// 	return
+	// }
 
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", `inline; filename="relatorio.pdf"`)
-	if _, err := io.Copy(w, merged); err != nil {
+	if _, err := io.Copy(w, reportPDF); err != nil {
 		log.Println("erro ao enviar PDF:", err)
 	}
 }
