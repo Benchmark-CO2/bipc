@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import { useEffect, useRef, useState } from 'react';
 import { EmissionLegend } from '../summaryVariants/components/emissionLegend';
 
-const EmissionsChart = ({ data }: { data: any[] }) => {
+const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: number | any }) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 150 });
@@ -46,14 +46,6 @@ const EmissionsChart = ({ data }: { data: any[] }) => {
       .append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // svg.append('text')
-    //   .attr('x', 20)
-    //   .attr('y', 40)
-    //   .attr('font-size', width < 600 ? '16px' : '24px')
-    //   .attr('font-weight', 'bold')
-    //   .attr('fill', '#1a1f36')
-    //   .text('Total de Emissões por tecnologia');
-
     const keys = Array.from(
       new Set(data.flatMap(Object.keys))
     ).filter(k => k !== 'name');
@@ -74,9 +66,23 @@ const EmissionsChart = ({ data }: { data: any[] }) => {
       .range([0, innerHeight])
       .padding(0.2); // Espaçamento entre os blocos (nomes)
 
-    const maxTotal = d3.max(safeData, d => 
+    // ── CORREÇÃO DA ÂNCORA DE ESCALA (BENCHMARK MAX) ──
+    // Calcula o limite local para garantir que as barras nunca ultrapassem a tela
+    const localMax = d3.max(safeData, d => 
       keys.reduce((sum, key) => sum + (d[key] || 0), 0)
     ) || 100;
+
+    // Extrai o valor do benchmark global (trata tanto se for enviado como número direto ou como objeto)
+    let anchorMax = 0;
+    if (typeof benchmarkMax === 'number') {
+      anchorMax = benchmarkMax;
+    } else if (benchmarkMax && typeof benchmarkMax === 'object') {
+      anchorMax = Math.max(...Object.values(benchmarkMax).map(v => Number(v) || 0));
+    }
+
+    // O limite máximo do eixo X será o benchmarkMax!
+    // Usamos Math.max apenas como segurança extra caso algum dado local estoure o benchmark.
+    const maxTotal = anchorMax > 0 ? Math.max(anchorMax, localMax) : localMax;
 
     const xScale = d3.scaleLinear()
       .domain([0, maxTotal])
@@ -100,7 +106,7 @@ const EmissionsChart = ({ data }: { data: any[] }) => {
     const xAxisGroup = g.append('g')
       .attr('transform', `translate(0,${innerHeight})`)
       .call(d3.axisBottom(xScale).tickSize(0).tickValues([]));
-    xAxisGroup.select('.domain').remove(); // Remove a linha preta sólida do eixo X
+    xAxisGroup.select('.domain').remove();
 
     // ── CONFIGURAÇÃO DE LINHAS DE LIMITE (PONTILHADAS) ──
     const thresholds = [
@@ -127,14 +133,12 @@ const EmissionsChart = ({ data }: { data: any[] }) => {
       .append('g')
       .attr('fill', d => colorScale(d.key) as string);
 
-    // ── ESPESSURA FIXA DA BARRA ──
-    const barHeight = 10; // Defina a espessura da barra aqui (em pixels)
+    const barHeight = 10; 
 
     layer.selectAll('rect')
       .data(d => d)
       .enter()
       .append('rect')
-      // Centraliza a barra fina verticalmente no espaço de banda reservado para ela
       .attr('y', d => (yScale(d.data.name) as number) + (yScale.bandwidth() / 2) - (barHeight / 2))
       .attr('x', d => xScale(d[0]))
       .attr('width', d => Math.max(0, xScale(d[1]) - xScale(d[0])))
@@ -142,15 +146,12 @@ const EmissionsChart = ({ data }: { data: any[] }) => {
       .attr('stroke', '#f4f5f7') 
       .attr('stroke-width', 1);
 
-    // ── TEXTO ACIMA DA BARRA ──
     layer.selectAll('text')
       .data(d => d)
       .enter()
       .append('text')
-      // Posiciona o Y ligeiramente acima do limite superior do retângulo
       .attr('y', d => (yScale(d.data.name) as number) + (yScale.bandwidth() / 2) - (barHeight / 2) - 6)
       .attr('x', d => xScale(d[0]) + (xScale(d[1]) - xScale(d[0])) / 2)
-      // A cor do texto pode herdar a cor do bloco, como na sua referência
       .attr('fill', function() {
         const parentData = d3.select(this.parentNode as d3.BaseType).datum() as { key: string };
         return colorScale(parentData.key) as string;
@@ -160,11 +161,9 @@ const EmissionsChart = ({ data }: { data: any[] }) => {
       .attr('font-weight', 'bold')
       .text(d => {
         const val = d[1] - d[0];
-        // Mostra o valor/porcentagem apenas se couber visualmente
         return val > (maxTotal * 0.05) ? `${val.toFixed(0)}` : ''; 
       });
 
-    // ── INDICADORES NA BASE (A, B, C, D) ──
     const gradeZones = [
       { mid: maxTotal * 0.25, label: 'A', bg: '#57C95B', txt: '#ffffff' },
       { mid: maxTotal * 0.50, label: 'B', bg: '#A1DB2A', txt: '#ffffff' },
@@ -192,7 +191,7 @@ const EmissionsChart = ({ data }: { data: any[] }) => {
         .text(zone.label);
     });
 
-  }, [data, dimensions]); 
+  }, [data, dimensions, benchmarkMax]); // Importante incluir benchmarkMax aqui!
 
   return (
     <div ref={wrapperRef} style={{ width: '100%', margin: '0 auto' }}>

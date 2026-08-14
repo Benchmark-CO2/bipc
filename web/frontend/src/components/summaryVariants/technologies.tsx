@@ -210,6 +210,26 @@ const SimulationsSummary = ({
     material: processedData.material.pcvMetrics,
   };
 
+  // ── Extração do Teto (MAX) do Benchmark para travar a escala do Gráfico da Esquerda ──
+  const benchmarkMax = useMemo(() => {
+    const getMax = (typeKey: 'co2' | 'energy' | 'material') => {
+      const series = normalizeBenchmarkSeries(data.benchmark?.[typeKey]) || [];
+      
+      if (series.length === 0) return 0;
+
+      if (typeKey === 'material') {
+        return Math.max(...series.map((d: any) => d.value ?? d.material ?? 0), 0);
+      }
+      return Math.max(...series.map((d: any) => d.max ?? d[`${typeKey}_max`] ?? 0), 0);
+    };
+
+    return {
+      co2: getMax('co2'),
+      energy: getMax('energy'),
+      material: getMax('material'),
+    };
+  }, [data.benchmark]);
+
   useEffect(() => {
     if (!someSelected) {
       setSelectedProjects(filteredProjects.map((p) => p.id));
@@ -359,6 +379,7 @@ const SimulationsSummary = ({
                 data={simulationEmissionsData} 
                 selected={selectedProjects} 
                 onChange={onChangeProjectSelection} 
+                benchmarkMax={benchmarkMax}
               />
             </div>
           </div>

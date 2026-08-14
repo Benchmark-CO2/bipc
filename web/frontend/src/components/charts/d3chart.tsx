@@ -1078,13 +1078,38 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       const barWidth = PROCEL_SCALE_CONFIG.WIDTH;
       const procelClasses = isCumulative ? PROCEL_CLASSES_5 : PROCEL_CLASSES;
       const bandSize = 1.0 / procelClasses.length;
+      const reversed = [...procelClasses].reverse();
+
+      // --- NOVA LÓGICA DE DETECÇÃO ---
+      // 1. Descobrimos quais classes do Procel abrigam os itens selecionados
+      const activeProcelLabels = new Set<string>();
+      const hasSelection = selectedMinBarIds.size > 0 || selectedMaxBarIds.size > 0;
+
+      if (hasSelection) {
+        data.forEach((d) => {
+          const isMinSelected = selectedMinBarIds.has(String(d.minId ?? d.id));
+          const isMaxSelected = selectedMaxBarIds.has(String(d.maxId ?? d.id));
+          
+          if (isMinSelected || isMaxSelected) {
+            reversed.forEach((cls, i) => {
+              const domainTop = 1.0 - i * bandSize;
+              const domainBottom = 1.0 - (i + 1) * bandSize;
+              
+              // Verifica se o Y do projeto selecionado está dentro da banda desta classe
+              // Adicionamos 0.001 de margem para evitar problemas de arredondamento de float
+              if (d.y >= domainBottom - 0.001 && d.y <= domainTop + 0.001) {
+                activeProcelLabels.add(cls.label);
+              }
+            });
+          }
+        });
+      }
 
       ctx.save();
       ctx.beginPath();
       ctx.rect(barX, 0, barWidth + 5, _height);
       ctx.clip();
 
-      const reversed = [...procelClasses].reverse();
       reversed.forEach((cls, i) => {
         const domainTop = 1.0 - i * bandSize;
         const domainBottom = 1.0 - (i + 1) * bandSize;
@@ -1092,13 +1117,23 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         const bandBottom = Math.min(_height, newYScale(domainBottom));
         if (bandBottom <= bandTop) return;
 
-        const isHighlighted = procelHighlight == null || cls.label === procelHighlight;
-        ctx.globalAlpha = isHighlighted ? 1 : procelFadedOpacity;
+        // 2. Definimos se a classe atual será destacada
+        let isHighlighted = false;
+        if (hasSelection) {
+          // Se há seleção, destaca apenas as classes que contêm projetos selecionados
+          isHighlighted = activeProcelLabels.has(cls.label);
+        } else {
+          // Comportamento padrão/fallback
+          isHighlighted = procelHighlight == null || cls.label === procelHighlight;
+        }
 
+        // Aplica opacidade na cor de fundo
+        ctx.globalAlpha = isHighlighted ? 1 : procelFadedOpacity;
         ctx.fillStyle = cls.color;
         ctx.fillRect(barX, bandTop, barWidth, Math.ceil(bandBottom - bandTop));
 
-        ctx.globalAlpha = 1;
+        // Aplica opacidade leve no texto também para acompanhar o visual "apagado"
+        ctx.globalAlpha = isHighlighted ? 1 : Math.max(0.3, procelFadedOpacity); 
         ctx.fillStyle = "#111827";
         ctx.font = "bold 10px sans-serif";
         ctx.textAlign = "center";
@@ -1108,8 +1143,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
 
       ctx.restore();
     }
-
-    ctx.restore();
 
   let _countInView = 0;
     let _countSmaller = 0;

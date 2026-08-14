@@ -58,8 +58,7 @@ const UnitsSummary = ({
     [units]
   );
 
-  
-  // 1. Inicia APENAS com o Projeto Completo selecionado
+  // Inicia APENAS com o Projeto Completo selecionado
   const [selectedProjects, setSelectedProjects] = useState<string[]>(["total"]);
 
   const newItems = useMemo(() => {
@@ -165,7 +164,7 @@ const UnitsSummary = ({
         // Tenta calcular o PCV usando as unidades selecionadas isoladamente
         let activeItems = newData.filter(d => selectedProjects.includes(String(d.id)) && String(d.id) !== "total");
 
-        // 4. Se não há unidades marcadas, mas o 'total' está, usa os dados do 'total' para não deixar os cards zerados
+        // Se não há unidades marcadas, mas o 'total' está, usa os dados do 'total' para não deixar os cards zerados
         if (activeItems.length === 0 && selectedProjects.includes("total")) {
           activeItems = newData.filter(d => String(d.id) === "total");
         }
@@ -200,7 +199,6 @@ const UnitsSummary = ({
     newData,
     minData,
     maxData,
-    pcvMetrics
   } = processedData[type];
 
   const allPcvMetrics = {
@@ -208,6 +206,27 @@ const UnitsSummary = ({
     energy: processedData.energy.pcvMetrics,
     material: processedData.material.pcvMetrics,
   };
+
+  // ── 2. Extrai o Teto (MAX) do Benchmark para travar a escala do Gráfico da Esquerda ──
+const benchmarkMax = useMemo(() => {
+    const getMax = (typeKey: 'co2' | 'energy' | 'material') => {
+      // Usa a sua função de normalização para garantir que 'series' seja sempre um Array
+      const series = normalizeBenchmarkSeries(data.benchmark?.[typeKey]) || [];
+      
+      if (series.length === 0) return 0;
+
+      if (typeKey === 'material') {
+        return Math.max(...series.map((d: any) => d.value ?? d.material ?? 0), 0);
+      }
+      return Math.max(...series.map((d: any) => d.max ?? d[`${typeKey}_max`] ?? 0), 0);
+    };
+
+    return {
+      co2: getMax('co2'),
+      energy: getMax('energy'),
+      material: getMax('material'),
+    };
+  }, [data.benchmark]);
 
   const { isExpanded, isOpen } = useSummary();
   const [previousProjects, setPreviousProjects] = useState<any[]>([]);
@@ -219,7 +238,6 @@ const UnitsSummary = ({
 
   useEffect(() => {
     if (!someSelected) {
-      // Quando limpa seleção externa, retorna para o estado inicial default
       setSelectedProjects(["total"]);
       return;
     }
@@ -238,19 +256,18 @@ const UnitsSummary = ({
 
   const [selectedSubTab, setSelectedSubTab] = useState<string>(t.summary.buildings);
 
-  // Considera tanto o "total" quanto as unidades para o Select All
   const allPossibleIds = ["total", ...filteredUnits.map((f) => f.id)];
   
   const selectAll = () => {
     if (selectedProjects.length >= allPossibleIds.length) {
-      setSelectedProjects([]); // ou ["total"] se preferir que nunca zere tudo
+      setSelectedProjects([]);
     } else {
       setSelectedProjects(allPossibleIds);
     }
   };
 
   const projectEmissionsData = useMemo(() => {
-    if (!project || !filteredUnits) return [];
+    if (!filteredUnits) return [];
 
     const buildChartData = (consumptions: any) => {
       if (!consumptions) return [];
@@ -273,16 +290,39 @@ const UnitsSummary = ({
 
     const result = [];
 
-    if (project.consumption) {
-      result.push({
-        id: "total",
-        title: "Projeto completo",
-        isTotal: true,
-        // 2. Agora o isChecked lê a presença natural no array, sem lógica forçada
-        isChecked: selectedProjects.includes("total"),
-        chartData: buildChartData(project.consumption)
+    // 3. Fallback inteligente usando MÉDIA (e não soma) se o backend não enviar o consumo do projeto inteiro
+    let projectConsumptionSource = project?.consumption;
+    if (!projectConsumptionSource) {
+      projectConsumptionSource = { total: { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0, material: 0 } };
+      let unitCount = 0;
+      
+      filteredUnits.forEach(u => {
+        if (u.consumptions?.total) {
+          projectConsumptionSource.total.co2_min += (u.consumptions.total.co2_min || 0);
+          projectConsumptionSource.total.co2_max += (u.consumptions.total.co2_max || 0);
+          projectConsumptionSource.total.energy_min += (u.consumptions.total.energy_min || 0);
+          projectConsumptionSource.total.energy_max += (u.consumptions.total.energy_max || 0);
+          projectConsumptionSource.total.material += (u.consumptions.total.material || 0);
+          unitCount++;
+        }
       });
+
+      if (unitCount > 0) {
+        projectConsumptionSource.total.co2_min /= unitCount;
+        projectConsumptionSource.total.co2_max /= unitCount;
+        projectConsumptionSource.total.energy_min /= unitCount;
+        projectConsumptionSource.total.energy_max /= unitCount;
+        projectConsumptionSource.total.material /= unitCount;
+      }
     }
+
+    result.push({
+      id: "total",
+      title: "Projeto completo",
+      isTotal: true,
+      isChecked: selectedProjects.includes("total"),
+      chartData: buildChartData(projectConsumptionSource)
+    });
 
     filteredUnits.forEach((unit) => {
       result.push({
@@ -300,7 +340,6 @@ const UnitsSummary = ({
   const formatMetric = (val: number) =>
     val.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 
-  // 3. Comportamento livre/independente para adicionar e remover no array de selecionados
   const onChangeProjectSelection = (id: string, checked: boolean) => {
     if (checked) {
       setSelectedProjects((prev) => [...prev, id]);
@@ -361,7 +400,13 @@ const UnitsSummary = ({
       {(isOpen || isExpanded) && (
         <div className='flex gap-4 items-start'>
           <div className='w-1/3 flex-shrink-0 mt-0 flex flex-col'>
-            <EmissionsSection data={projectEmissionsData} selected={selectedProjects} onChange={onChangeProjectSelection} />
+            {/* O EmissionsSection agora recebe a âncora do benchmarkMáximo para não distorcer o eixo X */}
+            <EmissionsSection 
+              data={projectEmissionsData} 
+              selected={selectedProjects} 
+              onChange={onChangeProjectSelection} 
+              benchmarkMax={benchmarkMax}
+            />
           </div>
 
           <div className="flex-1 min-h-0 flex flex-col justify-between gap-0 pt-0">

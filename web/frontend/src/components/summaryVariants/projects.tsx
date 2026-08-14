@@ -52,10 +52,8 @@ const ProjectsSummary = ({
   const [type, setType] = useState<"co2" | "energy" | "material">("co2");
   const { chartType, ChartSelector } = useChartType(type);
   
-  // Inicia com todos os projetos selecionados para refletir o portfólio completo
-  const [selectedProjects, setSelectedProjects] = useState<string[]>(() => 
-    filterProjects.map(p => p.id)
-  );
+  // 1. Inicia APENAS com o Total selecionado por padrão
+  const [selectedProjects, setSelectedProjects] = useState<string[]>(["total"]);
 
   const newItems = useMemo(() => {
     return filterProjects.map((el) => {
@@ -87,15 +85,38 @@ const ProjectsSummary = ({
     });
   }, [filterProjects]);
 
-  const stackedData = useMemo(() =>
-    newItems.map((el) => ({
-      id: el[type].id,
-      label: el[type].label,
-      co2: (el.co2.max + el.co2.min) / 2,
-      energy: (el.energy.max + el.energy.min) / 2,
-      material: el.material?.value
-    })),
-  [newItems, type]);
+  const portfolioAverage = useMemo(() => {
+    const totalConsumption: Record<string, any> = { 
+      total: { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0, material: 0 } 
+    };
+
+    const projectCount = filterProjects.length || 1;
+
+    filterProjects.forEach(proj => {
+      if (proj.consumption) {
+        Object.entries(proj.consumption).forEach(([key, values]: [string, any]) => {
+          if (!totalConsumption[key]) {
+            totalConsumption[key] = { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0, material: 0 };
+          }
+          totalConsumption[key].co2_min += (values.co2_min || 0);
+          totalConsumption[key].co2_max += (values.co2_max || 0);
+          totalConsumption[key].energy_min += (values.energy_min || 0);
+          totalConsumption[key].energy_max += (values.energy_max || 0);
+          totalConsumption[key].material += (values.material || 0);
+        });
+      }
+    });
+
+    Object.keys(totalConsumption).forEach(key => {
+      totalConsumption[key].co2_min /= projectCount;
+      totalConsumption[key].co2_max /= projectCount;
+      totalConsumption[key].energy_min /= projectCount;
+      totalConsumption[key].energy_max /= projectCount;
+      totalConsumption[key].material /= projectCount;
+    });
+
+    return totalConsumption;
+  }, [filterProjects]);
 
   // ── Lógica Centralizada: Calcula os dados e o PCV para TODOS os tipos ──
   const processedData = useMemo(() => {
@@ -103,7 +124,6 @@ const ProjectsSummary = ({
     const result: Record<string, any> = {};
 
     types.forEach((t) => {
-      // 1. Prepara managedData
       const managedData = normalizeBenchmarkSeries(
         data.benchmark?.[t],
       ).map((el) => ({
@@ -111,11 +131,32 @@ const ProjectsSummary = ({
         label: projects.find((f) => f.id === el.id)?.name || "",
       }));
 
-      // 2. Prepara newDataItems
       const typeNewItems = t !== "material" ? newItems.map((item) => item[t]) : [];
-      const newDataItems = [...managedData, ...typeNewItems];
+      
+      let projectTotalItem = null;
+      if (portfolioAverage?.total) {
+        projectTotalItem = {
+          id: "total",
+          y: 0,
+          label: "Total Geral (Média)",
+          ...(t === "material" 
+            ? {
+                value: portfolioAverage.total.material || 0,
+                min: portfolioAverage.total.material || 0,
+                max: portfolioAverage.total.material || 0,
+              }
+            : {
+                min: portfolioAverage.total[`${t}_min`] || 0,
+                max: portfolioAverage.total[`${t}_max`] || 0,
+              }
+          )
+        };
+      }
 
-      // 3. Descobre min/max para recalcular o Y
+      const newDataItems = projectTotalItem 
+        ? [...managedData, ...typeNewItems, projectTotalItem] 
+        : [...managedData, ...typeNewItems];
+
       const minDataArr = newDataItems.map((d) => d.min ?? d.value ?? 0);
       const maxDataArr = newDataItems.map((d) => d.max ?? d.value ?? 0);
       const minValue = minDataArr.length ? Math.min(...minDataArr) : 0;
@@ -123,7 +164,6 @@ const ProjectsSummary = ({
 
       const newData = recalculateY(newDataItems, minValue, maxValue);
 
-      // 4. Calcula PCV
       let P = 0, C = 0, V = 0, R = 0, hasSelection = false;
 
       if (newData && newData.length > 0) {
@@ -136,11 +176,10 @@ const ProjectsSummary = ({
 
         P = c5Value;
 
-        let activeItems = newData.filter(d => selectedProjects.includes(String(d.id)));
+        let activeItems = newData.filter(d => selectedProjects.includes(String(d.id)) && String(d.id) !== "total");
 
-        // Se nenhum projeto estiver selecionado, usamos todos para não zerar os cards
-        if (activeItems.length === 0) {
-          activeItems = newData.filter(d => filterProjects.some(fp => String(fp.id) === String(d.id)));
+        if (activeItems.length === 0 && selectedProjects.includes("total")) {
+          activeItems = newData.filter(d => String(d.id) === "total");
         }
 
         if (activeItems.length > 0) {
@@ -151,12 +190,11 @@ const ProjectsSummary = ({
           V = (c5Value - C) + (r5Value - R) / 2;
 
           if (V < 0) {
-            V = (C + R) / 2; // Fallback
+            V = (C + R) / 2; 
           }
         }
       }
 
-      // 5. Salva no dicionário de resultados
       result[t] = {
         managedData,
         newData,
@@ -167,7 +205,7 @@ const ProjectsSummary = ({
     });
 
     return result;
-  }, [data.benchmark, projects, newItems, selectedProjects, filterProjects]);
+  }, [data.benchmark, projects, newItems, selectedProjects, filterProjects, portfolioAverage]);
 
   const {
     managedData,
@@ -182,6 +220,23 @@ const ProjectsSummary = ({
     material: processedData.material.pcvMetrics,
   };
 
+  const benchmarkMax = useMemo(() => {
+    const getMax = (typeKey: "co2" | "energy" | "material") => {
+      const series = normalizeBenchmarkSeries(data?.benchmark?.[typeKey]) || [];
+      if (!series || series.length === 0) return 0;
+      if (typeKey === "material") {
+        return Math.max(...series.map((d: any) => d.value ?? d.material ?? 0), 0);
+      }
+      return Math.max(...series.map((d: any) => d.max ?? d[`${typeKey}_max`] ?? 0), 0);
+    };
+
+    return {
+      co2: getMax("co2"),
+      energy: getMax("energy"),
+      material: getMax("material"),
+    };
+  }, [data?.benchmark]);
+
   const onChangeProjectSelection = (projectId: string, checked: boolean) => {
     if (checked) {
       setSelectedProjects((prev) => [...prev, projectId]);
@@ -192,21 +247,23 @@ const ProjectsSummary = ({
 
   useEffect(() => {
     if (!someSelected) {
-      setSelectedProjects(filterProjects.map(p => p.id));
+      // 2. Garante que retorne ao default ao zerar seleções externas
+      setSelectedProjects(["total"]);
     }
-  }, [someSelected, filterProjects]);
+  }, [someSelected]);
 
   const [subTabs, setSubTabs] = useState<string>(t.summary.projects);
 
+  const allPossibleIds = ["total", ...filterProjects.map((p) => p.id)];
+
   const selectAll = () => {
-    if (selectedProjects.length >= filterProjects.length) {
-      setSelectedProjects([]);
+    if (selectedProjects.length >= allPossibleIds.length) {
+      setSelectedProjects([]); // ou ["total"] se preferir nunca zerar completamente
     } else {
-      setSelectedProjects(filterProjects.map((p) => p.id));
+      setSelectedProjects(allPossibleIds);
     }
   };
 
-  // ── Prepara os dados para o Componente EmissionsSection (Esquerda) ──
   const projectEmissionsData = useMemo(() => {
     if (!filterProjects) return [];
 
@@ -229,19 +286,36 @@ const ProjectsSummary = ({
       return [co2Row, energyRow, materialRow];
     };
 
-    return filterProjects.map((proj) => ({
-      id: proj.id,
-      title: proj.name,
-      isTotal: false,
-      isChecked: selectedProjects.includes(proj.id),
-      chartData: buildChartData(proj.consumption)
-    }));
-  }, [filterProjects, selectedProjects]);
+    const result = [];
 
-  // ── Calcula a área total dos projetos selecionados para os valores absolutos ──
-  const activeProjectsForArea = selectedProjects.length > 0 
-    ? filterProjects.filter(p => selectedProjects.includes(p.id))
-    : filterProjects; // Se nada selecionado, usa o portfólio todo no cálculo
+    result.push({
+      id: "total",
+      title: "Total Geral (Média)",
+      isTotal: true,
+      isChecked: selectedProjects.includes("total"),
+      chartData: buildChartData(portfolioAverage)
+    });
+
+    filterProjects.forEach((proj) => {
+      result.push({
+        id: proj.id,
+        title: proj.name,
+        isTotal: false,
+        isChecked: selectedProjects.includes(proj.id),
+        chartData: buildChartData(proj.consumption)
+      });
+    });
+
+    return result;
+  }, [filterProjects, selectedProjects, portfolioAverage]);
+
+  let activeProjectsForArea = filterProjects.filter(p => selectedProjects.includes(p.id));
+  
+  if (activeProjectsForArea.length === 0 && selectedProjects.includes("total")) {
+    activeProjectsForArea = filterProjects; // 3. Se só o Total tá marcado, usa todos os projetos pro calculo de área
+  } else if (activeProjectsForArea.length === 0) {
+    activeProjectsForArea = filterProjects; 
+  }
 
   const totalArea = activeProjectsForArea.reduce((acc, curr) => 
     acc + (Number(curr.area) || Number(curr.built_area) || 1), 0
@@ -301,12 +375,12 @@ const ProjectsSummary = ({
       </div>
       {isOpen && (
         <div className='flex gap-4'>
-          {/* Adicionado o componente EmissionsSection que estava faltando renderizar */}
           <div className='w-1/3 flex-shrink-0 mt-3 flex flex-col'>
             <EmissionsSection 
               data={projectEmissionsData} 
               selected={selectedProjects} 
               onChange={onChangeProjectSelection} 
+              benchmarkMax={benchmarkMax[type]}
             />
           </div>
           
@@ -323,7 +397,7 @@ const ProjectsSummary = ({
                 }}
                 subTabs={[
                   t.summary.projects,
-                  selectedProjects.length >= filterProjects.length ? t.summary.deselectAll : t.card.selectAll,
+                  selectedProjects.length >= allPossibleIds.length ? t.summary.deselectAll : t.card.selectAll,
                 ]}
                 selectedSubTab={subTabs}
               />
