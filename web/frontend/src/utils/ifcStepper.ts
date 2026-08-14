@@ -423,8 +423,16 @@ const deepRenameSteelCaToMaterial = (value: any): any => {
 };
 
 const mergeModuleDefaults = (type: TModulesTypes, overrides: any): any => {
-  const defaults = getDefaultValuesByType(type) as any;
-  return deepMerge(defaults, overrides ?? {});
+  const defaultsWrapper = getDefaultValuesByType(type) as {
+    type: TModulesTypes;
+    data?: Record<string, unknown>;
+  };
+  const defaultData = defaultsWrapper?.data ?? {};
+  const overrideData =
+    overrides && typeof overrides === "object" && "data" in overrides
+      ? (overrides as { data: Record<string, unknown> }).data
+      : (overrides ?? {});
+  return deepMerge(defaultData, overrideData);
 };
 
 const deepMerge = (target: any, source: any): any => {
@@ -538,11 +546,20 @@ const validateStepperModule = (
       normalizedType,
       normalizedData,
     );
-    const candidate = { type: normalizedType, ...defaultsPlusData };
-    const schemaResult = moduleFormSchema.safeParse(candidate);
+    const candidateWrapper = { type: normalizedType, data: defaultsPlusData };
+    const schemaResult = moduleFormSchema.safeParse(candidateWrapper);
     let flatData: any = null;
     try {
-      flatData = groupedFormToFlatV2(normalizedType, candidate, [], "");
+      const flatForHelpers = {
+        ...defaultsPlusData,
+        type: normalizedType,
+      };
+      flatData = groupedFormToFlatV2(
+        normalizedType,
+        flatForHelpers as any,
+        [],
+        "",
+      );
     } catch (e) {
       flatData = null;
     }
@@ -554,7 +571,7 @@ const validateStepperModule = (
       // eslint-disable-next-line no-console
       console.log("1. normalizedData (shape de entrada):", normalizedData);
       // eslint-disable-next-line no-console
-      console.log("2. candidate (defaults + data):", candidate);
+      console.log("2. candidateWrapper (defaults + data):", candidateWrapper);
       // eslint-disable-next-line no-console
       console.log(
         "3. groupedFormToFlatV2 resultado (shape p/ warnings):",
@@ -612,7 +629,7 @@ const validateStepperModule = (
       isValid,
       errors: filtered,
       warnings,
-      normalized: candidate,
+      normalized: candidateWrapper,
       flatData,
     };
   } catch (err) {

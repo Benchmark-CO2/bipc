@@ -369,3 +369,45 @@ export type ModuleParamsProps = {
 //   created_at: string;
 //   updated_at: string;
 // } & TModuleStructure;
+
+// ============================================================================
+// Wrapper V2 (nova estrutura canônica: { type, data }) — 1:1 com ModulePayloadV2
+// ============================================================================
+
+export interface TBeamColumnPayloadV2 {
+  type: "beam_column";
+  data: Partial<TBeamColumnDataV2>;
+}
+
+export interface TConcreteWallPayloadV2 {
+  type: "concrete_wall";
+  data: Partial<TConcreteWallDataV2>;
+}
+
+export interface TStructuralMasonryPayloadV2 {
+  type: "structural_masonry";
+  data: Partial<TStructuralMasonryDataV2>;
+}
+
+export interface TRaftFoundationPayloadV2 {
+  type: "raft_foundation";
+  data: Partial<TRaftFoundationDataV2>;
+}
+
+export interface TPilesFoundationPayloadV2 {
+  type: "piles_foundation";
+  data: Partial<TPilesFoundationDataV2>;
+}
+
+export interface TRaftPilesFoundationPayloadV2 {
+  type: "raft_piles_foundation";
+  data: Partial<TRaftPilesFoundationDataV2>;
+}
+
+export type TModulePayloadV2 =
+  | TBeamColumnPayloadV2
+  | TConcreteWallPayloadV2
+  | TStructuralMasonryPayloadV2
+  | TRaftFoundationPayloadV2
+  | TPilesFoundationPayloadV2
+  | TRaftPilesFoundationPayloadV2;

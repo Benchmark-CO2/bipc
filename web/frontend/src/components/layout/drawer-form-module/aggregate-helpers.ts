@@ -143,10 +143,12 @@ const cleanMasonry = (masonry: IMasonryElement): IMasonryElement | null => {
   return { blocks: cleanBlocks, mortar: cleanMortar, grout: cleanGrout };
 };
 
-export const cleanZeroItemsBeforeSubmit = <T extends TModuleDataV2>(
-  data: T,
-): T => {
-  const cleaned: Record<string, unknown> = { ...data };
+export const cleanZeroItemsBeforeSubmit = (data: unknown): unknown => {
+  const cleaned: Record<string, unknown> = {
+    ...(typeof data === "object" && data !== null
+      ? (data as Record<string, unknown>)
+      : {}),
+  };
 
   if ("concrete" in cleaned && Array.isArray(cleaned.concrete)) {
     cleaned.concrete = (
@@ -183,7 +185,7 @@ export const cleanZeroItemsBeforeSubmit = <T extends TModuleDataV2>(
     delete cleaned.floor_indexes;
   }
 
-  return cleaned as T;
+  return cleaned;
 };
 
 export type GroupedConcreteByPosition<TPosition extends string> = Record<

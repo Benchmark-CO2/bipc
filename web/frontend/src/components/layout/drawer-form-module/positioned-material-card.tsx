@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import SteelMaterialList from "./steel-material-list";
-import { RequiredAsterisk } from "./required-indicators";
 
 export interface IUnspecifiedConcreteVolumeRow {
   fck: TFck | number | string | "";
@@ -87,6 +86,8 @@ export interface UnspecifiedCardProps<TForm extends object = any> {
   allowedMaterials?: ("rebar" | "strand" | "mesh" | "other")[];
   title?: string;
   hint?: string;
+  allowedPositions?: readonly { value: string; label: string }[];
+  defaultPosition?: string;
 }
 
 const UnspecifiedCardInner = <TForm extends object = any>(
@@ -107,6 +108,8 @@ const UnspecifiedCardInner = <TForm extends object = any>(
     allowedMaterials = ["rebar", "strand", "other"],
     title,
     hint,
+    allowedPositions,
+    defaultPosition,
   } = props;
 
   const concreteRootKeyStr = String(concreteRootKey);
@@ -225,12 +228,65 @@ const UnspecifiedCardInner = <TForm extends object = any>(
         <div>
           <h3 className="text-sm font-semibold flex items-center gap-1.5 text-primary dark:text-gray-200">
             {title ?? t.modules.form.unspecifiedPosition}
-            {isSteelRequired ? <RequiredAsterisk /> : null}
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             {hint ?? t.modules.form.unspecifiedHint}
           </p>
         </div>
+
+        {allowedPositions && allowedPositions.length > 0 && (
+          <FormField
+            control={form.control as Control<any>}
+            name={`${concreteRootKeyStr}.0.position` as any}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs">Posição</FormLabel>
+                <FormControl>
+                  <Select
+                    value={
+                      field.value ??
+                      defaultPosition ??
+                      allowedPositions[0]?.value
+                    }
+                    onValueChange={(val) => {
+                      volumes.forEach((_, i) => {
+                        form.setValue(
+                          `${concreteRootKeyStr}.${i}.position` as any,
+                          val as any,
+                        );
+                      });
+                      const steelArr = (form.getValues(
+                        steelRootKeyStr as any,
+                      ) ?? []) as any[];
+                      steelArr.forEach((_, i) => {
+                        form.setValue(
+                          `${steelRootKeyStr}.${i}.position` as any,
+                          val as any,
+                        );
+                      });
+                      field.onChange(val);
+                    }}
+                  >
+                    <SelectTrigger className="w-full h-9 text-xs">
+                      <SelectValue placeholder="Selecione a posição" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allowedPositions.map((pos) => (
+                        <SelectItem
+                          key={pos.value}
+                          value={pos.value}
+                          className="text-xs"
+                        >
+                          {pos.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        )}
 
         <div className="space-y-2">
           <div className="flex items-center justify-between py-1 px-1">
@@ -263,7 +319,6 @@ const UnspecifiedCardInner = <TForm extends object = any>(
                         <FormItem>
                           <FormLabel className="text-xs">
                             {t.modules.form.fckLabel}
-                            <RequiredAsterisk />
                           </FormLabel>
                           <FormControl>
                             <Select
@@ -320,7 +375,6 @@ const UnspecifiedCardInner = <TForm extends object = any>(
                         <FormItem>
                           <FormLabel className="text-xs">
                             {t.modules.form.volume}
-                            <RequiredAsterisk />
                           </FormLabel>
                           <div className="flex gap-1">
                             <FormControl>
@@ -363,7 +417,6 @@ const UnspecifiedCardInner = <TForm extends object = any>(
                       <FormItem>
                         <FormLabel className="text-xs">
                           {t.modules.form.otherFck}
-                          <RequiredAsterisk />
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -460,3 +513,5 @@ const UnspecifiedCardInner = <TForm extends object = any>(
 export const UnspecifiedCard = React.memo(
   UnspecifiedCardInner,
 ) as typeof UnspecifiedCardInner;
+
+export const PositionedMaterialCard = UnspecifiedCard;

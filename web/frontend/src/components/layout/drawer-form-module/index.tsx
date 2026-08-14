@@ -3,6 +3,7 @@ import { patchModule } from "@/actions/modules/patchModule";
 import { postModule } from "@/actions/modules/postModule";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useModuleV2Form } from "@/hooks/useModuleV2Form";
 import { cn } from "@/lib/utils";
 import {
   ModuleParamsProps,
@@ -11,14 +12,10 @@ import {
   ModuleParamsPropsV2,
 } from "@/types/modules";
 import { TTowerFloorCategory } from "@/types/units";
-import {
-  ModuleFormState,
-  moduleFormSchema,
-} from "@/validators/moduleFormByType.validator";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { Control } from "react-hook-form";
 import { AlertTriangle, Loader2, Plus, X } from "lucide-react";
 import { useEffect, useMemo, useState, useRef } from "react";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
 import { parseApiError } from "@/utils/parseApiError";
@@ -49,20 +46,8 @@ import {
 } from "../../ui/select";
 import BuildingVisualizer from "../building-visualizer";
 import { getDefaultValuesByType } from "./module-default-values";
-import ModuleFormBeamColumn from "./module-form-beam-column";
-import ModuleFormConcreteWall from "./module-form-concrete-wall";
-import ModuleFormStructuralMasonry from "./module-form-structural-masonry";
-import ModuleFormRaftFoundation from "./module-form-raft-foundation";
-import ModuleFormPilesFoundation from "./module-form-piles-foundation";
-import ModuleFormRaftPilesFoundation from "./module-form-raft-piles-foundation";
-import {
-  flatV2ToGroupedForm,
-  groupedFormToFlatV2,
-  cleanZeroItemsBeforeSubmit,
-  TModuleGroupedForm,
-  getCompletenessWarnings,
-  CompletenessWarningsI18n,
-} from "./aggregate-helpers";
+import ModuleV2Form from "./module-v2-form";
+import { cleanZeroItemsBeforeSubmit } from "./aggregate-helpers";
 
 export type ModuleFormSource = "default" | "ifc" | "tqs";
 
@@ -80,13 +65,25 @@ interface DrawerFormModuleProps {
   strictValidation?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  initialModuleData?: Partial<ModuleFormState> | Partial<TModuleDataV2>;
+  initialModuleData?:
+    | (Partial<TModuleDataV2> & {
+        floor_ids?: string[];
+        unit_id?: string;
+        type?: TModulesTypes;
+      })
+    | {
+        type: TModulesTypes;
+        data?: Record<string, unknown> & {
+          floor_ids?: string[];
+          unit_id?: string;
+        };
+      };
   initialSelectedFloors?: string[];
   onSubmitSuccess?: (payload: {
     moduleId?: string;
     params: ModuleParamsProps | ModuleParamsPropsV2;
     selectedFloors: string[];
-    formInput: ModuleFormState;
+    formInput: unknown;
     flatData: TModuleDataV2 & {
       type: TModulesTypes;
       floor_ids?: string[];
@@ -94,6 +91,16 @@ interface DrawerFormModuleProps {
     };
   }) => void;
 }
+
+const isWrapperFormat = (
+  v: DrawerFormModuleProps["initialModuleData"],
+): v is {
+  type: TModulesTypes;
+  data?: Record<string, unknown> & { floor_ids?: string[]; unit_id?: string };
+} => {
+  if (!v) return false;
+  return "data" in v || typeof (v as { type?: unknown }).type === "string";
+};
 
 const DrawerFormModule = ({
   triggerComponent,
@@ -112,9 +119,6 @@ const DrawerFormModule = ({
   initialSelectedFloors,
   onSubmitSuccess,
 }: DrawerFormModuleProps) => {
-  // Se não tivermos unitId / optionId (modo stepper, unidade não criada ainda),
-  // fallback para string vazia para não quebrar queries / mutations que esperam
-  // string. Muitos hooks são desabilitados via enabled: !!unitId anyway.
   const unitId = unitIdProp ?? "";
   const optionId = optionIdProp ?? "";
   const strictValidation = strictValidationProp ?? !stepperMode;
@@ -132,135 +136,45 @@ const DrawerFormModule = ({
 
   const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
 
-  const initialDataIsFlatV2 = useMemo(() => {
-    if (!initialModuleData) return false;
-    return "concrete" in initialModuleData || "masonry" in initialModuleData;
-  }, [initialModuleData]);
-
-  const mergedDefaults = useMemo<ModuleFormState>(() => {
-    let base: any;
-    if (initialDataIsFlatV2 && initialModuleData) {
-      base = flatV2ToGroupedForm(
-        (initialModuleData as any).type || type,
-        initialModuleData as any,
-      );
-    } else {
-      base = getDefaultValuesByType(type);
+  const initialDataForHook = useMemo(() => {
+    if (!initialModuleData) return undefined;
+    if (isWrapperFormat(initialModuleData)) {
+      return initialModuleData as {
+        type: TModulesTypes;
+        data?: unknown;
+      };
     }
+    const {
+      type: tFromFlat,
+      floor_ids,
+      unit_id,
+      ...restFlat
+    } = initialModuleData;
+    return {
+      type: (tFromFlat as TModulesTypes) ?? type,
+      data: {
+        ...restFlat,
+        ...(floor_ids ? { floor_ids } : {}),
+        ...(unit_id ? { unit_id } : {}),
+      },
+    } as { type: TModulesTypes; data?: unknown };
+  }, [initialModuleData, type]);
 
-    if (initialModuleData && !initialDataIsFlatV2) {
-      const merged: any = { ...base };
-      for (const key of Object.keys(initialModuleData)) {
-        const val = (initialModuleData as any)[key];
-        if (val !== null && val !== undefined) {
-          merged[key] = val;
-        }
-      }
-      if (!merged.type) merged.type = type;
-      return merged as ModuleFormState;
-    }
+  const v2Hook = useModuleV2Form({
+    type,
+    initialModuleData: initialDataForHook,
+    stepperMode,
+    isOpen: isOpen,
+  });
 
-    if (!base.type) base.type = type;
-    return base as ModuleFormState;
-  }, [initialModuleData, type, initialDataIsFlatV2]);
+  const { form } = v2Hook;
+
+  const structureTypeWatch = form.watch("type") as TModulesTypes;
+  const allFormValues = form.watch();
 
   const { t } = useTranslation();
 
   const queryClient = useQueryClient();
-
-  const customModuleResolver = async (values: ModuleFormState) => {
-    const flat = groupedFormToFlatV2(
-      values.type || type,
-      values,
-      selectedFloors,
-      unitId,
-    );
-    const cleaned = cleanZeroItemsBeforeSubmit(flat);
-    const result = moduleFormSchema.safeParse(cleaned);
-
-    const resolvedType: TModulesTypes = (values.type as TModulesTypes) || type;
-    const resolverIsUsingPaviments =
-      resolvedType === "beam_column" ||
-      resolvedType === "concrete_wall" ||
-      resolvedType === "structural_masonry";
-    const floorsMissing =
-      resolverIsUsingPaviments && selectedFloors.length === 0;
-
-    const fieldErrors: Record<string, any> = {};
-    if (result.error) {
-      const issues = result.error.issues ?? [];
-      for (const issue of issues) {
-        const path = issue.path.join(".");
-        if (!fieldErrors[path]) {
-          fieldErrors[path] = {
-            type: "custom",
-            message: issue.message,
-          };
-        }
-      }
-    }
-
-    if (floorsMissing) {
-      const msg =
-        (t?.modules?.form?.selectAtLeastOneFloor as string) ||
-        "Selecione pelo menos um pavimento.";
-      fieldErrors["selectedFloors"] = {
-        type: "custom",
-        message: msg,
-      };
-    }
-
-    const hasAnyErrors = Object.keys(fieldErrors).length > 0;
-
-    if (!hasAnyErrors) {
-      return { values: values as any, errors: {} };
-    }
-    if (!strictValidation) {
-      return { values: values as any, errors: {} };
-    }
-    return { values: {} as any, errors: fieldErrors };
-  };
-
-  const form = useForm<ModuleFormState>({
-    resolver: customModuleResolver as any,
-    defaultValues: mergedDefaults,
-  });
-
-  const structureTypeWatch = form.watch("type");
-  const allFormValues = form.watch();
-
-  const partialWarnings = useMemo(() => {
-    const flat = groupedFormToFlatV2(
-      (allFormValues as unknown as ModuleFormState)?.type || type,
-      allFormValues as unknown as TModuleGroupedForm,
-      selectedFloors,
-      unitId,
-    );
-    const cleaned = cleanZeroItemsBeforeSubmit(flat);
-    const i18n = t.modules.form
-      .completeness as unknown as CompletenessWarningsI18n;
-    const base = getCompletenessWarnings(
-      cleaned,
-      ((allFormValues as any)?.type || type) as TModulesTypes,
-      i18n,
-    );
-    const resolvedType: TModulesTypes =
-      ((allFormValues as any)?.type as TModulesTypes) || type;
-    const usingPav =
-      resolvedType === "beam_column" ||
-      resolvedType === "concrete_wall" ||
-      resolvedType === "structural_masonry";
-    if (usingPav && selectedFloors.length === 0) {
-      const msg =
-        (t?.modules?.form?.selectAtLeastOneFloor as string) ||
-        "Selecione pelo menos um pavimento.";
-      return {
-        hasWarnings: true,
-        messages: [msg, ...base.messages],
-      };
-    }
-    return base;
-  }, [allFormValues, type, selectedFloors, unitId, t]);
 
   const isUsingPaviments =
     structureTypeWatch === "beam_column" ||
@@ -298,7 +212,7 @@ const DrawerFormModule = ({
         queryClient.invalidateQueries({
           queryKey: ["module", projectId, unitId, optionId, moduleId!],
         });
-        form.reset(getDefaultValuesByType(type) as any);
+        form.reset(getDefaultValuesByType(type) as never);
         setSelectedFloors([]);
         setIsOpen(false);
       }
@@ -330,19 +244,26 @@ const DrawerFormModule = ({
         queryClient.invalidateQueries({
           queryKey: ["options", projectId, unitId],
         });
-        form.reset(getDefaultValuesByType(type) as any);
+        form.reset(getDefaultValuesByType(type) as never);
         setSelectedFloors([]);
         setIsOpen(false);
       } else {
         const createdId = (data as any)?.data?.module?.id;
         if (onSubmitSuccess) {
-          const currentType = (form.getValues() as any).type || type;
-          const flat = groupedFormToFlatV2(
-            currentType,
-            form.getValues() as any,
-            selectedFloors,
-            unitId,
-          );
+          const payloadWrapper = v2Hook.toPayload() as unknown as {
+            type: TModulesTypes;
+            data: Record<string, unknown>;
+          };
+          const flat = {
+            ...(payloadWrapper.data ?? {}),
+            type: payloadWrapper.type ?? type,
+          } as unknown as TModuleDataV2 & {
+            type: TModulesTypes;
+            floor_ids?: string[];
+            unit_id?: string;
+          };
+          flat.floor_ids = selectedFloors;
+          if (unitId) flat.unit_id = unitId;
           onSubmitSuccess({
             moduleId: createdId,
             params: variables,
@@ -367,20 +288,10 @@ const DrawerFormModule = ({
     enabled: !!moduleId && isOpen && !stepperMode,
   });
 
-  // ---------------------------------------------------------------------------
-  // 2 useEffects separados para evitar sobrescrever dados do usuário:
-  //  (A) Reset do form + initialização do selectedFloors: RODA APENAS QUANDO
-  //      `isOpen` vai de false → true (ou troca editing target, track com chave).
-  //  (B) Ajuste do selectedFloors se floors chegaram depois (async fetch da unidade)
-  //      — só altera selectedFloors se não houver escolha do usuário ainda.
-  // ---------------------------------------------------------------------------
-
-  // Chave composta para detectar mudança no "alvo da edição" no stepper mode.
-  // Se trocar initialModuleData.floor_index ou tempId da unidade, considera-se
-  // um novo target e portanto reiniciar (A).
   const stepperEditingTargetKey = useMemo(() => {
-    const initialFloorIdx = (initialModuleData as any)?.floor_index;
-    const initialFloorIds = (initialModuleData as any)?.floor_ids;
+    const d = initialModuleData as any;
+    const initialFloorIdx = d?.floor_index ?? d?.data?.floor_index;
+    const initialFloorIds = d?.floor_ids ?? d?.data?.floor_ids;
     const initialSelected = initialSelectedFloors;
     const floorsIdsKey = Array.isArray(initialFloorIds)
       ? initialFloorIds.join(",")
@@ -389,28 +300,18 @@ const DrawerFormModule = ({
       ? initialSelected.join(",")
       : "";
     return `${initialFloorIdx ?? "null"}|${floorsIdsKey}|${selectedKey}|${
-      (initialModuleData as any)?.id ?? ""
-    }|${(initialModuleData as any)?.tempId ?? ""}`;
+      d?.id ?? ""
+    }|${d?.tempId ?? ""}`;
   }, [initialModuleData, initialSelectedFloors]);
 
-  // Flag para saber se o usuário já mudou o selectedFloors manualmente.
-  // Se sim, não sobrescrevemos no (B) quando os floors chegarem async.
   const [userTouchedSelectedFloors, setUserTouchedSelectedFloors] =
     useState(false);
 
-  // Refs que mantêm os valores das props do "momento em que o drawer abriu".
-  // Sem isso: se as props oscilarem de referência mesmo com dados iguais,
-  // ou mergedDefaults recalcula por qualquer dep, o useEffect (A) pode
-  // rodar de novo → form.reset sobrescreve dados do usuário → causa
-  // re-render do pai → novas referências → LOOP.
   const prevIsOpenRef = useRef(false);
-  const openMergedDefaultsRef = useRef<ModuleFormState | null>(null);
   const openInitialSelectedFloorsRef = useRef<string[] | null>(null);
   const openInitialModuleDataRef = useRef<unknown>(null);
-  const openInitialDataIsFlatV2Ref = useRef<boolean | null>(null);
   const openFloorsRef = useRef<TTowerFloorCategory[] | null>(null);
 
-  // Intercepta mudança manual do usuário em selectedFloors para marcar a flag.
   const prevSelectedFloorsRef = useRef<string[]>([]);
   useEffect(() => {
     const prev = prevSelectedFloorsRef.current;
@@ -426,16 +327,6 @@ const DrawerFormModule = ({
     prevSelectedFloorsRef.current = curr;
   }, [selectedFloors]);
 
-  // (A) Reset do form + inicialização do selectedFloors
-  //
-  // Roda APENAS NA BORDA DE SUBIDA DE isOpen (false → true) OU
-  // QUANDO o stepperEditingTargetKey mudar (indicando que agora estamos
-  // editando um OUTRO módulo, embora o drawer já estivesse aberto).
-  //
-  // NÃO re-roda com oscilações de props (floors, mergedDefaults, etc.).
-  //
-  // Para tal, capturamos os valores no momento do trigger e os "travamos"
-  // via refs durante todo o ciclo de edição do target atual.
   const lastStepperTargetKeyRef = useRef<string | null>(null);
   useEffect(() => {
     const targetChanged =
@@ -443,40 +334,32 @@ const DrawerFormModule = ({
     const openRisingEdge = isOpen && !prevIsOpenRef.current;
 
     if ((openRisingEdge || targetChanged) && !moduleData) {
-      openMergedDefaultsRef.current = mergedDefaults;
       openInitialSelectedFloorsRef.current = initialSelectedFloors ?? null;
       openInitialModuleDataRef.current = initialModuleData ?? null;
-      openInitialDataIsFlatV2Ref.current = initialDataIsFlatV2;
       openFloorsRef.current = floors ?? null;
 
-      form.reset(openMergedDefaultsRef.current as any);
       setUserTouchedSelectedFloors(false);
       prevSelectedFloorsRef.current = [];
 
       if (stepperMode) {
         let nextSelected: string[] = [];
         const initSel = openInitialSelectedFloorsRef.current;
-        const initData = openInitialModuleDataRef.current as any;
-        const isFlat = openInitialDataIsFlatV2Ref.current;
+        const initDataAny = openInitialModuleDataRef.current as any;
         const flr = openFloorsRef.current ?? [];
 
         if (initSel && initSel.length > 0) {
           nextSelected = initSel;
-        } else if (
-          isFlat &&
-          initData?.floor_ids &&
-          Array.isArray(initData.floor_ids) &&
-          initData.floor_ids.length > 0
-        ) {
-          nextSelected = initData.floor_ids as string[];
-        } else if (
-          initData?.floor_index !== null &&
-          initData?.floor_index !== undefined &&
-          flr.length > 0
-        ) {
-          const mapped = mapFloorIndexToFloorIds(initData.floor_index, flr);
-          if (mapped.length > 0) {
-            nextSelected = mapped;
+        } else {
+          const fIds = initDataAny?.floor_ids ?? initDataAny?.data?.floor_ids;
+          const fIdx =
+            initDataAny?.floor_index ?? initDataAny?.data?.floor_index;
+          if (Array.isArray(fIds) && fIds.length > 0) {
+            nextSelected = fIds as string[];
+          } else if (fIdx !== null && fIdx !== undefined && flr.length > 0) {
+            const mapped = mapFloorIndexToFloorIds(fIdx as number, flr);
+            if (mapped.length > 0) {
+              nextSelected = mapped;
+            }
           }
         }
         setSelectedFloors(nextSelected);
@@ -487,17 +370,19 @@ const DrawerFormModule = ({
       });
     }
 
-    // Atualiza refs para a próxima renderização
     prevIsOpenRef.current = isOpen;
     lastStepperTargetKeyRef.current = stepperEditingTargetKey;
+  }, [
+    isOpen,
+    moduleData,
+    stepperMode,
+    stepperEditingTargetKey,
+    form,
+    initialSelectedFloors,
+    initialModuleData,
+    floors,
+  ]);
 
-    // Deps MINIMAS intencionais: só as que disparam a ação
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, moduleData, stepperMode, stepperEditingTargetKey, form]);
-
-  // (B) Ajuste TARDIO do selectedFloors — quando a prop `floors` chegar
-  // assincronamente (query da unidade) E o usuário AINDA NÃO tocou nos
-  // checkboxes e ainda não temos nenhum pavimento selecionado.
   useEffect(() => {
     if (!isOpen || moduleData || !stepperMode) return;
     if (!floors || floors.length === 0) return;
@@ -505,23 +390,16 @@ const DrawerFormModule = ({
     if (selectedFloors.length > 0) return;
 
     let newSelected: string[] = [];
+    const dAny = initialModuleData as any;
+    const fIds = dAny?.floor_ids ?? dAny?.data?.floor_ids;
+    const fIdx = dAny?.floor_index ?? dAny?.data?.floor_index;
+
     if (initialSelectedFloors && initialSelectedFloors.length > 0) {
       newSelected = initialSelectedFloors;
-    } else if (
-      initialDataIsFlatV2 &&
-      (initialModuleData as any)?.floor_ids &&
-      Array.isArray((initialModuleData as any).floor_ids) &&
-      (initialModuleData as any).floor_ids.length > 0
-    ) {
-      newSelected = (initialModuleData as any).floor_ids as string[];
-    } else if (
-      (initialModuleData as any)?.floor_index !== null &&
-      (initialModuleData as any)?.floor_index !== undefined
-    ) {
-      newSelected = mapFloorIndexToFloorIds(
-        (initialModuleData as any).floor_index,
-        floors,
-      );
+    } else if (Array.isArray(fIds) && fIds.length > 0) {
+      newSelected = fIds as string[];
+    } else if (fIdx !== null && fIdx !== undefined) {
+      newSelected = mapFloorIndexToFloorIds(fIdx as number, floors);
     }
 
     if (newSelected.length > 0) {
@@ -538,72 +416,116 @@ const DrawerFormModule = ({
     floors,
     initialSelectedFloors,
     initialModuleData,
-    initialDataIsFlatV2,
     userTouchedSelectedFloors,
     selectedFloors,
   ]);
 
   useEffect(() => {
     if (moduleData) {
-      const moduleWithType = moduleData as unknown as {
-        type?: TModulesTypes;
-        floor_ids?: string[];
-        [k: string]: unknown;
-      };
-      const detectedType = moduleWithType.type || type;
-      const grouped = flatV2ToGroupedForm(detectedType, moduleWithType);
-      const groupedWithMeta = grouped as unknown as TModuleGroupedForm & {
-        floor_ids?: string[];
-      };
-
-      const floorIdsFromGrouped = groupedWithMeta.floor_ids;
-      if (floorIdsFromGrouped) {
-        setSelectedFloors(floorIdsFromGrouped);
+      const mdAny = moduleData as any;
+      const detectedType: TModulesTypes =
+        (mdAny?.type as TModulesTypes) ?? type;
+      const floorIds = mdAny?.floor_ids ?? mdAny?.data?.floor_ids;
+      if (floorIds && Array.isArray(floorIds) && floorIds.length > 0) {
+        setSelectedFloors(floorIds);
       }
 
-      form.reset(grouped as unknown as ModuleFormState);
+      let resetValues: { type: TModulesTypes; data: Record<string, unknown> };
+      if (
+        mdAny &&
+        typeof mdAny === "object" &&
+        "data" in mdAny &&
+        mdAny.data &&
+        typeof mdAny.data === "object" &&
+        Object.keys(mdAny.data).length > 0
+      ) {
+        resetValues = {
+          type: detectedType,
+          data: { ...(mdAny.data as Record<string, unknown>) },
+        };
+      } else {
+        const {
+          type: _t,
+          floor_ids: _f,
+          unit_id: _u,
+          ...rest
+        } = mdAny as Record<string, unknown>;
+        resetValues = {
+          type: detectedType,
+          data: { ...rest },
+        };
+      }
+      if (!resetValues.data.type) {
+      }
+      if (typeof resetValues.type === "string" && resetValues.type) {
+        form.reset({
+          type: resetValues.type,
+          data: resetValues.data,
+        } as never);
+      } else {
+        form.reset(getDefaultValuesByType(detectedType) as never);
+      }
       queueMicrotask(() => {
         void form.trigger();
       });
     }
   }, [moduleData, moduleId, type, form]);
 
-  const handleSubmit = (_data: ModuleFormState) => {
-    const moduleType = _data.type || type;
+  const handleSubmit = () => {
+    const moduleType = (form.getValues("type") as TModulesTypes) || type;
 
-    const flatData = groupedFormToFlatV2(
-      moduleType,
-      _data as unknown as TModuleGroupedForm,
-      selectedFloors,
-      unitId,
-    );
-
-    const cleanedFlat = cleanZeroItemsBeforeSubmit(flatData);
-
-    const baseFields: ModuleParamsPropsV2 = {
-      type: moduleType,
-      data: cleanedFlat,
+    const payloadWrapper = v2Hook.toPayload() as unknown as {
+      type: TModulesTypes;
+      data: Record<string, unknown>;
     };
 
+    const isStructure =
+      moduleType === "beam_column" ||
+      moduleType === "concrete_wall" ||
+      moduleType === "structural_masonry";
+    const isFoundation =
+      moduleType === "raft_foundation" ||
+      moduleType === "piles_foundation" ||
+      moduleType === "raft_piles_foundation";
+
+    const finalPayload: ModuleParamsPropsV2 = {
+      type: moduleType,
+      data: {
+        ...(payloadWrapper.data ?? {}),
+        ...(isStructure ? { floor_ids: selectedFloors } : {}),
+        ...(isFoundation && unitId ? { unit_id: unitId } : {}),
+      },
+    };
+
+    const cleanedWrapper = cleanZeroItemsBeforeSubmit(
+      finalPayload as unknown as Record<string, unknown>,
+    ) as unknown as ModuleParamsPropsV2;
+
     if (stepperMode) {
+      const flatCompat = {
+        ...(cleanedWrapper.data ?? {}),
+        type: cleanedWrapper.type ?? moduleType,
+        floor_ids: selectedFloors,
+        unit_id: unitId || undefined,
+      } as unknown as TModuleDataV2 & {
+        type: TModulesTypes;
+        floor_ids?: string[];
+        unit_id?: string;
+      };
       onSubmitSuccess?.({
         moduleId,
-        params: baseFields,
+        params: cleanedWrapper,
         selectedFloors,
-        formInput: form.getValues() as ModuleFormState,
-        flatData: flatData as unknown as TModuleDataV2 & {
-          type: TModulesTypes;
-          floor_ids?: string[];
-          unit_id?: string;
-        },
+        formInput: form.getValues(),
+        flatData: flatCompat,
       });
       return;
     }
 
     if (moduleId && moduleData) {
-      mutateModule(baseFields);
+      mutateModule(cleanedWrapper);
     } else {
-      mutateCreation(baseFields);
+      mutateCreation(cleanedWrapper);
     }
   };
 
@@ -628,10 +550,10 @@ const DrawerFormModule = ({
 
   const handleClose = () => {
     if (stepperMode) {
-      form.reset(mergedDefaults as any);
+      form.reset(getDefaultValuesByType(type) as never);
       setSelectedFloors(initialSelectedFloors ?? []);
     } else {
-      form.reset(getDefaultValuesByType(type) as any);
+      form.reset(getDefaultValuesByType(type) as never);
       setSelectedFloors([]);
     }
     setIsOpen(false);
@@ -732,14 +654,7 @@ const DrawerFormModule = ({
           ) : (
             <Form {...form}>
               <form
-                onSubmit={form.handleSubmit(handleSubmit as any, () => {
-                  if (!stepperMode) {
-                    toast.error(t.modules.form.validationErrors, {
-                      description: t.modules.form.validationDescription,
-                      duration: 5000,
-                    });
-                  }
-                })}
+                onSubmit={form.handleSubmit(handleSubmit)}
                 id="module-form"
                 className="w-full flex gap-6 h-full max-sm:flex-col"
               >
@@ -755,14 +670,12 @@ const DrawerFormModule = ({
                       "w-full": isMobile,
                     })}
                   >
-                    {/* {isUsingPaviments && (!floors || floors.length === 0) && ( */}
                     <Alert className="mb-2 bg-yellow-50 border-yellow-300 w-80">
                       <AlertTriangle className="h-4 w-4 text-yellow-600" />
                       <AlertDescription className="text-yellow-800">
                         {t.modules.form.noFloorsRegisteredWarning}
                       </AlertDescription>
                     </Alert>
-                    {/* )} */}
                     <BuildingVisualizer
                       key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ index: f.index })))}`}
                       towerFloors={floors || []}
@@ -783,7 +696,11 @@ const DrawerFormModule = ({
                     </div>
                     <div className="grid grid-cols-1 gap-4">
                       <FormField
-                        control={form.control as any}
+                        control={
+                          form.control as unknown as Control<{
+                            type: TModulesTypes;
+                          }>
+                        }
                         name="type"
                         disabled={Boolean(moduleId)}
                         render={({ field }) => (
@@ -795,24 +712,23 @@ const DrawerFormModule = ({
                               <Select
                                 onValueChange={(value) => {
                                   field.onChange(value);
+                                  const tVal = value as
+                                    | "beam_column"
+                                    | "concrete_wall"
+                                    | "structural_masonry"
+                                    | "raft_foundation"
+                                    | "piles_foundation"
+                                    | "raft_piles_foundation";
                                   if (
-                                    value === "beam_column" ||
-                                    value === "concrete_wall" ||
-                                    value === "structural_masonry" ||
-                                    value === "raft_foundation" ||
-                                    value === "piles_foundation" ||
-                                    value === "raft_piles_foundation"
+                                    tVal === "beam_column" ||
+                                    tVal === "concrete_wall" ||
+                                    tVal === "structural_masonry" ||
+                                    tVal === "raft_foundation" ||
+                                    tVal === "piles_foundation" ||
+                                    tVal === "raft_piles_foundation"
                                   ) {
                                     form.reset(
-                                      getDefaultValuesByType(
-                                        value as
-                                          | "beam_column"
-                                          | "concrete_wall"
-                                          | "structural_masonry"
-                                          | "raft_foundation"
-                                          | "piles_foundation"
-                                          | "raft_piles_foundation",
-                                      ) as any,
+                                      getDefaultValuesByType(tVal) as never,
                                     );
                                   }
                                 }}
@@ -839,66 +755,11 @@ const DrawerFormModule = ({
                         )}
                       />
                     </div>
-                    {(() => {
-                      switch (structureTypeWatch) {
-                        case "beam_column":
-                          return (
-                            <ModuleFormBeamColumn
-                              form={form as any}
-                              stepperMode={stepperMode}
-                              isSubmitted={form.formState.isSubmitted}
-                              source={source}
-                            />
-                          );
-                        case "concrete_wall":
-                          return (
-                            <ModuleFormConcreteWall
-                              form={form as any}
-                              stepperMode={stepperMode}
-                              isSubmitted={form.formState.isSubmitted}
-                              source={source}
-                            />
-                          );
-                        case "structural_masonry":
-                          return (
-                            <ModuleFormStructuralMasonry
-                              form={form as any}
-                              stepperMode={stepperMode}
-                              isSubmitted={form.formState.isSubmitted}
-                              source={source}
-                            />
-                          );
-                        case "raft_foundation":
-                          return (
-                            <ModuleFormRaftFoundation
-                              form={form as any}
-                              stepperMode={stepperMode}
-                              isSubmitted={form.formState.isSubmitted}
-                              source={source}
-                            />
-                          );
-                        case "piles_foundation":
-                          return (
-                            <ModuleFormPilesFoundation
-                              form={form as any}
-                              stepperMode={stepperMode}
-                              isSubmitted={form.formState.isSubmitted}
-                              source={source}
-                            />
-                          );
-                        case "raft_piles_foundation":
-                          return (
-                            <ModuleFormRaftPilesFoundation
-                              form={form as any}
-                              stepperMode={stepperMode}
-                              isSubmitted={form.formState.isSubmitted}
-                              source={source}
-                            />
-                          );
-                        default:
-                          return null;
-                      }
-                    })()}
+                    <ModuleV2Form
+                      hook={v2Hook}
+                      stepperMode={stepperMode}
+                      isSubmitted={false}
+                    />
                   </div>
                 </div>
               </form>
@@ -906,48 +767,6 @@ const DrawerFormModule = ({
           )}
         </div>
         <DrawerFooter className="px-8">
-          {partialWarnings.hasWarnings && (
-            <Alert className="bg-orange-50 border-orange-200 text-orange-900">
-              <AlertTriangle className="h-4 w-4 text-orange-600" />
-              <AlertDescription className="text-orange-900">
-                <p className="font-medium mb-1">
-                  {t.modules.form.partialDataWarning}
-                </p>
-                <p className="text-xs mb-2 text-orange-800">
-                  {t.modules.form.partialDataDescription}
-                </p>
-                <p className="text-xs font-medium mb-1 text-orange-900">
-                  {t.modules.form.partialDataHint}
-                </p>
-                <ul className="list-disc pl-4 text-xs space-y-0.5 text-orange-800">
-                  {partialWarnings.messages.slice(0, 10).map((msg, i) => (
-                    <li key={i}>{msg}</li>
-                  ))}
-                  {partialWarnings.messages.length > 10 && (
-                    <li>… (+{partialWarnings.messages.length - 10} mais)</li>
-                  )}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
-          {(stepperMode || form.formState.isSubmitted) &&
-            strictValidation &&
-            partialWarnings.hasWarnings && (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  <p className="font-medium mb-1">{t.modules.form.fixErrors}</p>
-                  <ul className="list-disc pl-4 text-xs space-y-0.5">
-                    {partialWarnings.messages.slice(0, 10).map((msg, i) => (
-                      <li key={i}>{msg}</li>
-                    ))}
-                    {partialWarnings.messages.length > 10 && (
-                      <li>… (+{partialWarnings.messages.length - 10} mais)</li>
-                    )}
-                  </ul>
-                </AlertDescription>
-              </Alert>
-            )}
           <Button
             type="submit"
             variant="bipc"
@@ -956,10 +775,7 @@ const DrawerFormModule = ({
             disabled={
               isCreationPending ||
               isUpdatePending ||
-              (selectedFloors.length === 0 && isUsingPaviments) ||
-              (strictValidation &&
-                form.formState.isSubmitted &&
-                partialWarnings.hasWarnings)
+              (selectedFloors.length === 0 && isUsingPaviments)
             }
           >
             {isCreationPending || isUpdatePending ? (

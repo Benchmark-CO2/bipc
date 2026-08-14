@@ -13,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../ui/select";
-import { RequiredAsterisk } from "./required-indicators";
 
 type MaterialKey = "rebar" | "mesh" | "strand" | "other";
 
@@ -111,7 +110,6 @@ const SteelMaterialItem = ({
               <FormItem className="w-full space-y-1">
                 <FormLabel className="text-xs">
                   {t.modules.form.material}
-                  <RequiredAsterisk />
                 </FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
@@ -157,7 +155,6 @@ const SteelMaterialItem = ({
               <FormItem className="w-full space-y-1">
                 <FormLabel className="text-xs">
                   {t.modules.form.steelType}
-                  <RequiredAsterisk />
                 </FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
@@ -193,7 +190,6 @@ const SteelMaterialItem = ({
               <FormItem className="w-full space-y-1">
                 <FormLabel className="text-xs">
                   {t.modules.form.massSteelKg}
-                  <RequiredAsterisk />
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -233,7 +229,6 @@ const SteelMaterialItem = ({
             <FormItem>
               <FormLabel className="text-xs">
                 {t.modules.form.customMaterialName}
-                <RequiredAsterisk />
               </FormLabel>
               <FormControl>
                 <Input {...field} placeholder="Ex: Aço especial" />
@@ -251,7 +246,6 @@ const SteelMaterialItem = ({
             <FormItem>
               <FormLabel className="text-xs">
                 {t.modules.form.customResistance}
-                <RequiredAsterisk />
               </FormLabel>
               <FormControl>
                 <Input
@@ -338,7 +332,6 @@ const SteelMaterialList = ({
       <div className="flex items-center justify-between">
         <FormLabel className="text-xs text-gray-700">
           {t.modules.form.steelMaterials}
-          {isRequiredPosition ? <RequiredAsterisk /> : null}
         </FormLabel>
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-500">Total:</span>
