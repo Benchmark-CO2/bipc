@@ -112,6 +112,26 @@ func GetMaroto(co2Bytes, energyBytes []byte, project *data.ProjectWithUnits, rep
 	co2Total := report.Rank.CO2.Total
 	energyClass := classificationLetter(report.Rank.Energy.Y)
 	energyTotal := report.Rank.Energy.Total
+
+	totalUC := 0
+	totalUH := 0
+	//totalUCArea := 0.0
+
+	for _, unit := range project.Units {
+		rep := unit.RepetitionCount
+		if rep <= 0 {
+			rep = 1
+		}
+
+		totalUC += rep
+
+		if unit.HousingUnitsCount != nil {
+			totalUH += rep * *unit.HousingUnitsCount
+		}
+
+		//totalUCArea += unit.Area * float64(rep)
+	}
+
 	customFonts := []*entity.CustomFont{
 		{Family: "Inter", Style: fontstyle.Normal, Bytes: assets.InterRegular},
 		{Family: "Inter", Style: fontstyle.Bold, Bytes: assets.InterBold},
@@ -175,40 +195,26 @@ func GetMaroto(co2Bytes, energyBytes []byte, project *data.ProjectWithUnits, rep
 		col.New(1),
 		text.NewCol(4, "Tipo do edifício", getLabelStyle()),
 		col.New(1),
-		text.NewCol(4, "Tipo do uso", getLabelStyle()),
-		col.New(1),
 		text.NewCol(7, "Fase do projeto", getLabelStyle()),
 		col.New(1),
 		text.NewCol(5, "Número de UH total", getLabelStyle()),
 		col.New(1),
 		text.NewCol(4, "Número de UC", getLabelStyle()),
 		col.New(1),
-		text.NewCol(5, "Área const. UC (m²)", getLabelStyle()),
+		text.NewCol(5, "Área const. total (m²)", getLabelStyle()),
 	)
 
 	m.AddAutoRow(
 		text.NewCol(10, truncate(project.Name, 36), getValueStyle()).WithStyle(getBorderStyle()),
 		col.New(1),
-		text.NewCol(4, "", getValueStyle()).WithStyle(getBorderStyle()),
-		col.New(1),
-		text.NewCol(4, "", getValueStyle()).WithStyle(getBorderStyle()),
+		text.NewCol(4, "Torre", getValueStyle()).WithStyle(getBorderStyle()),
 		col.New(1),
 		text.NewCol(7, data.PhaseMap[project.Phase], getValueStyle()).WithStyle(getBorderStyle()),
 		col.New(1),
-		text.NewCol(5, "", getValueStyle()).WithStyle(getBorderStyle()),
+		text.NewCol(5, fmt.Sprintf("%d", totalUH), getValueStyle()).WithStyle(getBorderStyle()),
 		col.New(1),
-		text.NewCol(4, "", getValueStyle()).WithStyle(getBorderStyle()),
+		text.NewCol(4, fmt.Sprintf("%d", totalUC), getValueStyle()).WithStyle(getBorderStyle()),
 		col.New(1),
-		text.NewCol(5, "", getValueStyle()).WithStyle(getBorderStyle()),
-	)
-
-	m.AddRow(2)
-
-	m.AddAutoRow(
-		text.NewCol(5, "Área const. total (m²)", getLabelStyle()),
-	)
-
-	m.AddAutoRow(
 		text.NewCol(5, fmt.Sprintf("%.2f", project.Area), getValueStyle()).WithStyle(getBorderStyle()),
 	)
 
