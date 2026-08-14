@@ -160,7 +160,7 @@ function RouteComponent() {
         <h1 className="text-h1 text-primary dark:text-accent-foreground">
           {t.projects.title}
         </h1>
-        <div className="flex justify-end gap-2 ml-auto">
+        <div className="flex justify-end gap-2 ml-auto flex-wrap">
           {viewMode === "grid" && projects && projects.length > 0 && (
             <>
               <Button
