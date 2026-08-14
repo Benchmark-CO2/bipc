@@ -79,7 +79,7 @@ const projectEmissionsData = [
     ]
   }
 ];
-export const EmissionsSection = ({ data, selected, onChange }: { data: typeof projectEmissionsData, selected?: string[], onChange?: (id: string, checked: boolean) => void; }) => {
+export const EmissionsSection = ({ data, selected, onChange, benchmarkMax }: { data: typeof projectEmissionsData, selected?: string[], onChange?: (id: string, checked: boolean) => void; benchmarkMax: number; }) => {
   return (
     <div className="flex flex-col gap-2 w-full overflow-y-auto max-h-[70vh]">
 
@@ -106,7 +106,7 @@ export const EmissionsSection = ({ data, selected, onChange }: { data: typeof pr
 
           {/* Gráfico D3 */}
           <div className="w-full">
-            <EmissionsChart data={section.chartData} />
+            <EmissionsChart data={section.chartData} benchmarkMax={benchmarkMax} barHeight={section.id === 'total' ? 10 : 5} />
           </div>
 
         </div>

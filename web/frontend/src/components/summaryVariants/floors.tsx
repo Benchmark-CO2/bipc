@@ -193,6 +193,26 @@ const FloorSummary = ({
     material: processedData.material.pcvMetrics,
   };
 
+  // ── NOVO: Extrai o Teto (MAX) do Benchmark para travar a escala do Gráfico da Esquerda ──
+  const benchmarkMax = useMemo(() => {
+    const getMax = (typeKey: 'co2' | 'energy' | 'material') => {
+      const series = normalizeBenchmarkSeries(data.benchmark?.[typeKey]) || [];
+      
+      if (series.length === 0) return 0;
+
+      if (typeKey === 'material') {
+        return Math.max(...series.map((d: any) => d.value ?? d.material ?? 0), 0);
+      }
+      return Math.max(...series.map((d: any) => d.max ?? d[`${typeKey}_max`] ?? 0), 0);
+    };
+
+    return {
+      co2: getMax('co2'),
+      energy: getMax('energy'),
+      material: getMax('material'),
+    };
+  }, [data.benchmark]);
+
   useEffect(() => {
     if (!someSelected) {
       // Retorna ao estado inicial se a seleção for limpa externamente
@@ -352,10 +372,12 @@ const FloorSummary = ({
               <div className="mb-0">
                 <h3 className="text-lg font-bold mb-0">Total de Emissões por tecnologia</h3>
               </div>
+              {/* NOVO: Passando o benchmarkMax calculado */}
               <EmissionsSection 
                 data={floorEmissionsData} 
                 selected={selectedProjects} 
                 onChange={onChangeProjectSelection} 
+                benchmarkMax={benchmarkMax}
               />
             </div>
           </div>

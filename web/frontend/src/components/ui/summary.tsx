@@ -39,7 +39,7 @@ const Summary = () => {
               "rotate-180": isOpen,
             })}
           />
-          <span>{isOpen ? "Fechar" : "Clique e veja mais"}</span>
+          <span>{isOpen ? "Fechar" : "Benchmark"}</span>
         </button>
         </div>
       )}

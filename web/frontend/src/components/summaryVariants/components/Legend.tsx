@@ -84,7 +84,10 @@ const Legend = ({ variant = "default" }: LegendProps) => {
             <span className=" text-xs">{t.benchmark.highlightedRange}:</span>
             <div className="flex items-center">
               <div className="w-4 h-4 border-2 border-white rounded-full bg-blue-500"></div>
-              <div className="w-full h-2 bg-linear-to-r from-green-600 to-yellow-400"></div>
+              <div className="flex h-2 w-full">
+                <div className="w-1/2 bg-[#5B9BD5]"></div>
+                <div className="w-1/2 bg-[#E0756C]"></div>
+              </div>
               <div className="w-4 h-4 border-2 border-white rounded-full bg-amber-700"></div>
             </div>
           </div>
