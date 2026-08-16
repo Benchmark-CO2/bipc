@@ -5,9 +5,11 @@ import {
   postProject,
   PostProjectRequest,
 } from "@/actions/projects/postProject";
+import { postDiscipline } from "@/actions/disciplines/postDiscipline";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import useCep from "@/hooks/useLocation";
 import useCities from "@/hooks/useCities";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { IProject } from "@/types/projects";
 import { masks } from "@/utils/masks";
@@ -24,6 +26,7 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
+import { Checkbox } from "../ui/checkbox";
 import {
   Drawer,
   DrawerContent,
@@ -58,6 +61,45 @@ interface IDrawerAddProject {
   projectData?: IProject;
 }
 
+interface CreateProjectWithStructure {
+  project: PostProjectRequest;
+  autoCreateStructure: boolean;
+  currentUserId: string;
+  structurePayload: {
+    name: string;
+    description: string;
+  };
+  onStructureError: (error: unknown) => void;
+  onStructureSuccess: () => void;
+}
+
+const buildStructurePermissions = (): number[] => {
+  const managementIds = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+  return managementIds;
+};
+
+const createProjectAndStructure = async (
+  payload: CreateProjectWithStructure,
+) => {
+  const projectResponse = await postProject(payload.project);
+  const projectId = projectResponse.data.project?.id;
+  if (projectId && payload.autoCreateStructure) {
+    try {
+      await postDiscipline(projectId, {
+        name: payload.structurePayload.name,
+        description: payload.structurePayload.description,
+        simulation: true,
+        permissions_ids: buildStructurePermissions(),
+        users_ids: [payload.currentUserId],
+      });
+      payload.onStructureSuccess();
+    } catch (err) {
+      payload.onStructureError(err);
+    }
+  }
+  return projectResponse;
+};
+
 export default function DrawerFormProject({
   componentTrigger,
   projectData,
@@ -65,12 +107,14 @@ export default function DrawerFormProject({
   const [openDrawer, setOpenDrawer] = useState(false);
   const [file, setFile] = useState<File | undefined>(undefined);
   const [isAgreementChecked, setIsAgreementChecked] = useState(false);
+  const [autoCreateStructure, setAutoCreateStructure] = useState(true);
   const [filledByCep, setFilledByCep] = useState(false);
   const [cepFilledFields, setCepFilledFields] = useState<Set<string>>(
     new Set(),
   );
   const [selectedState, setSelectedState] = useState("");
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   const queryClient = useQueryClient();
   const isEditMode = !!projectData;
@@ -113,7 +157,7 @@ export default function DrawerFormProject({
     mutate: mutateCreation,
     reset: resetCreation,
   } = useMutation({
-    mutationFn: postProject,
+    mutationFn: createProjectAndStructure,
     onError: (error) => {
       toast.error(t.projects.form.createError, {
         description: parseApiError(error, t),
@@ -127,12 +171,22 @@ export default function DrawerFormProject({
       queryClient.invalidateQueries({
         queryKey: ["projects"],
       });
+      const projectId = data.data.project?.id;
+      if (projectId) {
+        queryClient.invalidateQueries({
+          queryKey: ["project-collaborators", projectId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["project-permissions", projectId],
+        });
+      }
       setOpenDrawer(false);
       form.reset();
+      setAutoCreateStructure(true);
 
-      if (data.data.project?.id) {
+      if (projectId) {
         navigate({
-          to: `/new_projects/${data.data.project.id}`,
+          to: `/new_projects/${projectId}`,
           from: "/new_projects",
         })
           .then(() => null)
@@ -243,11 +297,26 @@ export default function DrawerFormProject({
     } else {
       delete copyData.image_url;
     }
-    mutateCreation(copyData as PostProjectRequest);
-  };
-
-  const handleChangeImage = async (file: File) => {
-    setFile(file);
+    mutateCreation({
+      project: copyData as PostProjectRequest,
+      autoCreateStructure: autoCreateStructure && !!user?.id,
+      currentUserId: user?.id || "",
+      structurePayload: {
+        name: t.projects.form.autoCreateStructureDisciplineName,
+        description: t.projects.form.autoCreateStructureDisciplineDescription,
+      },
+      onStructureSuccess: () => {
+        toast.success(t.disciplines.createSuccess, {
+          duration: 5000,
+        });
+      },
+      onStructureError: (err) => {
+        toast.error(t.disciplines.createError, {
+          description: parseApiError(err, t),
+          duration: 5000,
+        });
+      },
+    });
   };
 
   useEffect(() => {
@@ -255,6 +324,7 @@ export default function DrawerFormProject({
       resetCreation();
       resetUpdate();
       setIsAgreementChecked(false);
+      setAutoCreateStructure(true);
       setFilledByCep(false);
       setCepFilledFields(new Set());
       setSelectedState("");
@@ -649,6 +719,25 @@ export default function DrawerFormProject({
                   )}
                 />
               </div>
+
+              {!isEditMode && (
+                <div className="flex items-start gap-3 p-4 rounded-xl border border-gray-shade-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
+                  <Checkbox
+                    id="auto-create-structure"
+                    checked={autoCreateStructure}
+                    onCheckedChange={(checked: boolean | "indeterminate") =>
+                      setAutoCreateStructure(checked === true)
+                    }
+                    className="mt-0.5 h-4 w-4 rounded data-[state=checked]:bg-secondary data-[state=checked]:border-secondary"
+                  />
+                  <label
+                    htmlFor="auto-create-structure"
+                    className="text-sm font-medium leading-relaxed cursor-pointer select-none text-gray-700 dark:text-gray-100"
+                  >
+                    {t.projects.form.autoCreateStructureLabel}
+                  </label>
+                </div>
+              )}
 
               <div className="p-5 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border-2 border-yellow-400 dark:border-yellow-600">
                 <div className="flex items-start gap-3 mb-4">

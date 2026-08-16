@@ -19,6 +19,7 @@ export const ptBR = {
     collapse: "Recolher",
     ifcImport: "Importar do IFC",
     ifcImportTqs: "Importar de IFC/TQS",
+    orLabel: "ou",
   },
   errors: {
     unexpectedError: "Erro inesperado. Tente novamente mais tarde.",
@@ -379,6 +380,11 @@ export const ptBR = {
       editError: "Erro ao editar empreendimento",
       unknownError: "Erro desconhecido",
       downloadReport: "Baixar relatório",
+      autoCreateStructureLabel:
+        'Criar automaticamente a disciplina "Estrutura" neste empreendimento (você poderá editar depois)',
+      autoCreateStructureDisciplineName: "Estrutura",
+      autoCreateStructureDisciplineDescription:
+        "Disciplina de Estrutura criada automaticamente no momento da criação do empreendimento. Responsável por cálculos, especificações e simulações de consumo de CO₂ de elementos estruturais como pilares, vigas, lajes, paredes de concreto e fundações.",
     },
     confirmDelete: {
       title: "Excluir Empreendimento",
@@ -743,8 +749,8 @@ export const ptBR = {
       cumulativeFraction: {
         name: "Benchmark",
         yAxisLabel: "Potencial de mitigação",
-        xAxisLabelCarbon: "Carbono Embutido",
-        xAxisLabelEnergy: "Energia Embutida",
+        xAxisLabelCarbon: "Carbono Embutido (kg CO₂/m²)",
+        xAxisLabelEnergy: "Energia Embutida MJ/m²",
         baseLine: "linha de base",
         ppp5Line: "PPp 5%",
       },
@@ -830,6 +836,8 @@ export const ptBR = {
     miniatureTitle: "Capacitação",
     miniatureTooltip: "Clique para abrir",
     learnMore: "Saiba mais...",
+    dismissCheckboxLabel:
+      "Não exibir esta mensagem automaticamente ao entrar novamente neste navegador",
   },
   phase: {
     preliminary_study: "Estudo Preliminar",
@@ -901,6 +909,29 @@ export const ptBR = {
     compare: "Comparar",
     avg: "Média",
     total: "Total",
+    chartLegend: {
+      referenceValue: "Valor de referência",
+      constructionMitigationPotential: "Potencial de mitigação da construção (Melhor cenário)",
+      projectMitigationPotential: "Potencial de mitigação do projeto",
+      riskOfLowerConstructionMitigation: "Risco de menor mitigação da construção (Pior cenário)",
+      referenceValue_short: "Valor de referência",
+      constructionMitigationPotential_short: "Potencial de mitigação da construção",
+      projectMitigationPotential_short: "Potencial de mitigação do projeto",
+      riskOfLowerConstructionMitigation_short: "Pior cenário",
+      title: "Legenda"
+    },
+    emissionLegend: {
+      title: 'Total de Emissões por tecnologia',
+    }
+  },
+  floor: {
+    penthouse_floor: "Cobertura",
+    foundation_floor: "Mesoestrutura e fundação",
+    standard_floor: "Tipo",
+    ground_floor: "Térreo",
+    basement_floor: "Subsolo",
+    total: "Projeto Completo",
+    piles_foundation: "Fundação em estacas",
   },
   buildingVisualizer: {
     foundation: "Mesoestrutura e fundação",
@@ -1193,7 +1224,7 @@ export const ptBR = {
     backToProject: "Voltar ao empreendimento",
     newDiscipline: "Nova disciplina",
     manageDisciplines: "Gerenciar disciplinas",
-    createSimulations: "Gerenciar simulações",
+    createSimulations: "Simulações",
     selectDisciplineTooltip:
       "Selecione uma disciplina para gerenciar simulações",
     noDisciplines: "Sem Disciplinas para exibir",

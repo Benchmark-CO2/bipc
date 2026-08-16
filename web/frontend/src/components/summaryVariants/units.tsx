@@ -5,13 +5,12 @@ import { Translations } from "@/i18n/translations/pt-BR";
 import { cn } from "@/lib/utils";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
-import EmissionsChart from "../charts/barChart";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
-import Divider from "../ui/divider";
 import { FilterTabs } from "../ui/filter-tabs";
-import { IndicatorList } from "./components/indicatorsList";
-import Legend from "./components/Legend";
+import { ChartLegend } from "./components/chartLegend";
+import { EmissionsSection } from "./components/emissionSection";
+import { ScenarioCard } from "./components/indicatorItem";
 import { useChartType } from "./hooks/useChartType";
 import { normalizeBenchmarkSeries, recalculateY } from "./utils";
 
@@ -20,6 +19,7 @@ export const DEFAULT_CATEGORY_KEYS = [
   "foundation",
   "roof",
 ] as const;
+
 export const translateCategory = (
   key: string,
   translationsCategories?: Translations["summaryUnits"]["categories"],
@@ -32,6 +32,7 @@ export const translateCategory = (
   }
   return key;
 };
+
 export const getCategoryValue = (
   categoryData: any,
   currentType: "co2" | "energy" | "material",
@@ -42,8 +43,9 @@ export const getCategoryValue = (
   const min = categoryData?.[`${currentType}_min`] || 0;
   const max = categoryData?.[`${currentType}_max`] || 0;
 
-  return (min + max) / 2;
+  return (min + max) / 2; // Usando a média geométrica
 };
+
 type ProjectsSummaryProps = {
   selectedUnits: (any & {
     co: number;
@@ -55,6 +57,7 @@ type ProjectsSummaryProps = {
   data: IBenchmarkResponse;
   someSelected: boolean;
 };
+
 const UnitsSummary = ({
   units,
   data,
@@ -62,56 +65,48 @@ const UnitsSummary = ({
   project,
   someSelected,
 }: ProjectsSummaryProps) => {
-  const { chartType, ChartSelector } = useChartType();
+  const [type, setType] = useState<"co2" | "energy" | "material">("co2");
+  const { chartType, ChartSelector } = useChartType(type);
   const { t } = useTranslation();
   const translations = t as Translations;
 
-  // 1. Movemos o filtro para cima (idealmente com useMemo para evitar recálculos)
   const filteredUnits = useMemo(
     () => units.filter((el) => !!el.consumptions),
     [units],
   );
 
-  const [type, setType] = useState<"co2" | "energy" | "material">("co2");
+  // Inicia APENAS com o Projeto Completo selecionado
+  const [selectedProjects, setSelectedProjects] = useState<string[]>(["total"]);
 
-  // 2. Inicializamos o estado com todas as unidades já selecionadas
-  const [selectedProjects, setSelectedProjects] = useState<string[]>(
-    filteredUnits.map((u) => u.id),
-  );
-
-  const fakeUnits = normalizeBenchmarkSeries(
-    data.benchmark?.[type as "co2" | "energy" | "material"],
-  ).map((el) => ({
-    ...el,
-    label: selectedUnits.find((f) => f.id === el.id)?.name || "",
-  }));
-
-  const newItems = filteredUnits.map((el) => {
-    return {
-      co2: {
+  const newItems = useMemo(() => {
+    return filteredUnits.map((el) => {
+      return {
         id: el.id,
-        y: 0,
-        min: el.consumptions.total.co2_min,
-        max: el.consumptions.total.co2_max,
-        label: el.name,
-      },
-      energy: {
-        id: el.id,
-        y: 0,
-        min: el.consumptions.total.energy_min,
-        max: el.consumptions.total.energy_max,
-        label: el.name,
-      },
-      material: {
-        id: el.id,
-        y: 0,
-        value: el.consumptions.total.material,
-        label: el.name,
-      },
-    };
-  });
-
-  const { isExpanded, isOpen } = useSummary();
+        co2: {
+          id: el.id,
+          y: 0,
+          min: el.consumptions.total.co2_min,
+          max: el.consumptions.total.co2_max,
+          label: el.name,
+        },
+        energy: {
+          id: el.id,
+          y: 0,
+          min: el.consumptions.total.energy_min,
+          max: el.consumptions.total.energy_max,
+          label: el.name,
+        },
+        material: {
+          id: el.id,
+          y: 0,
+          value: el.consumptions.total.material,
+          min: el.consumptions.total.material,
+          max: el.consumptions.total.material,
+          label: el.name,
+        },
+      };
+    });
+  }, [filteredUnits]);
 
   const stackedData = useMemo(
     () =>
@@ -125,6 +120,152 @@ const UnitsSummary = ({
     [newItems, type],
   );
 
+  // ── Lógica Centralizada: Calcula os dados e o PCV para TODOS os tipos ──
+  const processedData = useMemo(() => {
+    const types = ["co2", "energy", "material"] as const;
+    const result: Record<string, any> = {};
+
+    types.forEach((t) => {
+      const managedData = normalizeBenchmarkSeries(data.benchmark?.[t]).map(
+        (el) => ({
+          ...el,
+          label: selectedUnits.find((f) => f.id === el.id)?.name || "",
+        }),
+      );
+
+      const typeNewItems =
+        t !== "material" ? newItems.map((item) => item[t]) : [];
+
+      let projectTotalItem = null;
+      if (project?.consumption?.total) {
+        projectTotalItem = {
+          id: "total",
+          y: 0,
+          label: "Projeto completo",
+          ...(t === "material"
+            ? {
+                value: project.consumption.total.material || 0,
+                min: project.consumption.total.material || 0,
+                max: project.consumption.total.material || 0,
+              }
+            : {
+                min: project.consumption.total[`${t}_min`] || 0,
+                max: project.consumption.total[`${t}_max`] || 0,
+              }),
+        };
+      }
+
+      const newDataItems = projectTotalItem
+        ? [...managedData, ...typeNewItems, projectTotalItem]
+        : [...managedData, ...typeNewItems];
+
+      const minDataArr = newDataItems.map((d) => d.min ?? d.value ?? 0);
+      const maxDataArr = newDataItems.map((d) => d.max ?? d.value ?? 0);
+      const minValue = minDataArr.length ? Math.min(...minDataArr) : 0;
+      const maxValue = maxDataArr.length ? Math.max(...maxDataArr) : 0;
+
+      const newData = recalculateY(newDataItems, minValue, maxValue);
+
+      let P = 0,
+        C = 0,
+        V = 0,
+        R = 0,
+        hasSelection = false;
+
+      if (newData && newData.length > 0) {
+        const sortedMin = [...newData]
+          .map((d) => d.min ?? d.value ?? 0)
+          .sort((a, b) => a - b);
+        const sortedMax = [...newData]
+          .map((d) => d.max ?? d.value ?? 0)
+          .sort((a, b) => a - b);
+
+        const p5Index = Math.floor(sortedMin.length * 0.05);
+        const c5Value = sortedMin[Math.min(p5Index, sortedMin.length - 1)];
+        const r5Value = sortedMax[Math.min(p5Index, sortedMax.length - 1)];
+
+        P = c5Value;
+
+        // Tenta calcular o PCV usando as unidades selecionadas isoladamente
+        let activeItems = newData.filter(
+          (d) =>
+            selectedProjects.includes(String(d.id)) && String(d.id) !== "total",
+        );
+
+        // Se não há unidades marcadas, mas o 'total' está, usa os dados do 'total' para não deixar os cards zerados
+        if (activeItems.length === 0 && selectedProjects.includes("total")) {
+          activeItems = newData.filter((d) => String(d.id) === "total");
+        }
+
+        if (activeItems.length > 0) {
+          hasSelection = true;
+          C =
+            activeItems.reduce(
+              (acc, curr) => acc + (curr.min ?? curr.value ?? 0),
+              0,
+            ) / activeItems.length;
+          R =
+            activeItems.reduce(
+              (acc, curr) => acc + (curr.max ?? curr.value ?? 0),
+              0,
+            ) / activeItems.length;
+
+          V = c5Value - C + (r5Value - R) / 2;
+
+          if (V < 0) {
+            V = (C + R) / 2;
+          }
+        }
+      }
+
+      result[t] = {
+        managedData,
+        newData,
+        minData: minDataArr,
+        maxData: maxDataArr,
+        pcvMetrics: { P, C, V, R, hasSelection },
+      };
+    });
+
+    return result;
+  }, [data.benchmark, selectedUnits, newItems, selectedProjects, project]);
+
+  const { managedData, newData, minData, maxData } = processedData[type];
+
+  const allPcvMetrics = {
+    co2: processedData.co2.pcvMetrics,
+    energy: processedData.energy.pcvMetrics,
+    material: processedData.material.pcvMetrics,
+  };
+
+  // ── 2. Extrai o Teto (MAX) do Benchmark para travar a escala do Gráfico da Esquerda ──
+  const benchmarkMax = useMemo(() => {
+    const getMax = (typeKey: "co2" | "energy" | "material") => {
+      // Usa a sua função de normalização para garantir que 'series' seja sempre um Array
+      const series = normalizeBenchmarkSeries(data.benchmark?.[typeKey]) || [];
+
+      if (series.length === 0) return 0;
+
+      if (typeKey === "material") {
+        return Math.max(
+          ...series.map((d: any) => d.value ?? d.material ?? 0),
+          0,
+        );
+      }
+      return Math.max(
+        ...series.map((d: any) => d.max ?? d[`${typeKey}_max`] ?? 0),
+        0,
+      );
+    };
+
+    return {
+      co2: getMax("co2"),
+      energy: getMax("energy"),
+      material: getMax("material"),
+    };
+  }, [data.benchmark]);
+
+  const { isExpanded, isOpen } = useSummary();
   const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
@@ -134,8 +275,7 @@ const UnitsSummary = ({
 
   useEffect(() => {
     if (!someSelected) {
-      // 3. Se nada foi marcado lá fora, mantemos todos selecionados por padrão aqui dentro
-      setSelectedProjects(filteredUnits.map((u) => u.id));
+      setSelectedProjects(["total"]);
       return;
     }
     if (previousProjects.length < selectedUnits.length) {
@@ -154,405 +294,279 @@ const UnitsSummary = ({
       }
     }
   }, [previousProjects, selectedUnits, someSelected, filteredUnits]);
-  const handleAddProject = (projectId: string) => {
-    if (selectedProjects.includes(projectId)) {
-      setSelectedProjects(selectedProjects.filter((id) => id !== projectId));
-    } else {
-      setSelectedProjects([...selectedProjects, projectId]);
-    }
-  };
 
   const [selectedSubTab, setSelectedSubTab] = useState<string>(
     t.summary.buildings,
   );
 
+  const allPossibleIds = ["total", ...filteredUnits.map((f) => f.id)];
+
   const selectAll = () => {
-    if (selectedProjects.length === filteredUnits.length) {
+    if (selectedProjects.length >= allPossibleIds.length) {
       setSelectedProjects([]);
     } else {
-      setSelectedProjects(filteredUnits.map((f) => f.id));
+      setSelectedProjects(allPossibleIds);
     }
   };
 
-  const avgByUnit = useMemo(() => {
-    if (!units.length || !project) return 0;
-    return units.reduce(
-      (acc, unit) => {
-        if (!acc[unit.id]) {
-          acc[unit.id] = { name: "", avg: 0, id: "" };
+  const projectEmissionsData = useMemo(() => {
+    if (!filteredUnits) return [];
+
+    const buildChartData = (consumptions: any) => {
+      if (!consumptions) return [];
+
+      const co2Row: Record<string, any> = { name: "CO₂ (kg)" };
+      const energyRow: Record<string, any> = { name: "Energia (MJ)" };
+      const materialRow: Record<string, any> = {
+        name: `Material (${unitsOfMeasure.material || "kg"})`,
+      };
+
+      Object.entries(consumptions).forEach(([key, values]) => {
+        if (key !== "total") {
+          const techName = translateCategory[key] || key;
+          co2Row[techName] = getCategoryValue(values, "co2");
+          energyRow[techName] = getCategoryValue(values, "energy");
+          materialRow[techName] = getCategoryValue(values, "material");
         }
-        acc[unit.id] = {
-          name: unit.name,
-          avg:
-            (unit[type === "co2" ? "co2_max" : "energy_max"] +
-              unit[type === "co2" ? "co2_min" : "energy_min"]) /
-            2,
-          id: unit.id,
-        };
-        if (!acc[unit.id].avg) delete acc[unit.id];
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-  }, [units, project, type]);
+      });
 
-  const sum = (Object.values(avgByUnit) as Array<{ avg: number }>).reduce(
-    (acc: number, b: { avg: number }) => acc + b.avg,
-    0 as number,
-  );
-
-  const newDataItems = [
-    ...fakeUnits,
-    ...(type !== "material" ? newItems.map((item) => item[type]) : []),
-  ];
-
-  const minData = useMemo(
-    () => newDataItems.map((d) => d.min ?? d.y ?? 0),
-    [newDataItems],
-  );
-  const maxData = useMemo(
-    () => newDataItems.map((d) => d.max ?? d.y ?? 0),
-    [newDataItems],
-  );
-  const minValue = minData.length ? Math.min(...minData) : 0;
-  const maxValue = maxData.length ? Math.max(...maxData) : 0;
-
-  const newData = recalculateY(newDataItems, minValue, maxValue);
-
-  // ── DADOS DO GRÁFICO DE BARRAS ──────────────────────────────────────────────
-  // Substitua as propriedades 'parede', 'fundacao', 'cobertura' pelas
-  // propriedades reais que você tem dentro de el.consumptions
-  // const chartData = filteredUnits.map((el) => ({
-  //   name: el.name,
-  //   parede: Math.floor(Math.random() * 20) + 10, // MOCK: substitua pelo valor real
-  //   fundacao: Math.floor(Math.random() * 10) + 5, // MOCK: substitua pelo valor real
-  //   cobertura: Math.floor(Math.random() * 5) + 2 // MOCK: substitua pelo valor real
-  // }));
-
-  const chartData = filteredUnits.map((el) => {
-    const dataRow: Record<string, any> = {
-      name: el.name || translations.summaryUnits.defaultUnitName,
+      return [co2Row, energyRow, materialRow];
     };
 
-    // Pega o objeto de consumos da unidade
-    const cons = el.consumptions || {};
+    const result = [];
 
-    Object.entries(cons).forEach(([key, values]) => {
-      if (key !== "total") {
-        const translatedKey =
-          translateCategory(key, translations.summaryUnits.categories) || key;
-        dataRow[translatedKey] = getCategoryValue(values, type);
+    // 3. Fallback inteligente usando MÉDIA (e não soma) se o backend não enviar o consumo do projeto inteiro
+    let projectConsumptionSource = project?.consumption;
+    if (!projectConsumptionSource) {
+      projectConsumptionSource = {
+        total: {
+          co2_min: 0,
+          co2_max: 0,
+          energy_min: 0,
+          energy_max: 0,
+          material: 0,
+        },
+      };
+      let unitCount = 0;
+
+      filteredUnits.forEach((u) => {
+        if (u.consumptions?.total) {
+          projectConsumptionSource.total.co2_min +=
+            u.consumptions.total.co2_min || 0;
+          projectConsumptionSource.total.co2_max +=
+            u.consumptions.total.co2_max || 0;
+          projectConsumptionSource.total.energy_min +=
+            u.consumptions.total.energy_min || 0;
+          projectConsumptionSource.total.energy_max +=
+            u.consumptions.total.energy_max || 0;
+          projectConsumptionSource.total.material +=
+            u.consumptions.total.material || 0;
+          unitCount++;
+        }
+      });
+
+      if (unitCount > 0) {
+        projectConsumptionSource.total.co2_min /= unitCount;
+        projectConsumptionSource.total.co2_max /= unitCount;
+        projectConsumptionSource.total.energy_min /= unitCount;
+        projectConsumptionSource.total.energy_max /= unitCount;
+        projectConsumptionSource.total.material /= unitCount;
       }
+    }
+
+    result.push({
+      id: "total",
+      title: "Projeto completo",
+      isTotal: true,
+      isChecked: selectedProjects.includes("total"),
+      chartData: buildChartData(projectConsumptionSource),
     });
 
-    return dataRow;
-  });
+    filteredUnits.forEach((unit) => {
+      result.push({
+        id: unit.id,
+        title: unit.name,
+        isTotal: false,
+        isChecked: selectedProjects.includes(unit.id),
+        chartData: buildChartData(unit.consumptions),
+      });
+    });
 
-  // ── Lógica de Cálculo de P, C, V, R ─────────────────────────────────────────
-  const pcvMetrics = useMemo(() => {
-    if (!newData || newData.length === 0) {
-      return { P: 0, C: 0, V: 0, R: 0, hasSelection: false };
-    }
-
-    const sortedMin = [...newData]
-      .map((d) => d.min ?? d.y ?? 0)
-      .sort((a, b) => a - b);
-    const sortedMax = [...newData]
-      .map((d) => d.max ?? d.y ?? 0)
-      .sort((a, b) => a - b);
-
-    const p5Index = Math.floor(sortedMin.length * 0.05);
-    const c5Value = sortedMin[Math.min(p5Index, sortedMin.length - 1)];
-    const r5Value = sortedMax[Math.min(p5Index, sortedMax.length - 1)];
-
-    const pValue = c5Value;
-
-    const activeItems = newData.filter((d) =>
-      selectedProjects.includes(String(d.id)),
-    );
-
-    if (activeItems.length === 0) {
-      return { P: pValue, C: 0, V: 0, R: 0, hasSelection: false };
-    }
-
-    const cValue =
-      activeItems.reduce((acc, curr) => acc + (curr.min ?? curr.y ?? 0), 0) /
-      activeItems.length;
-    const rValue =
-      activeItems.reduce((acc, curr) => acc + (curr.max ?? curr.y ?? 0), 0) /
-      activeItems.length;
-
-    let vValue = c5Value - cValue + (r5Value - rValue) / 2;
-    if (vValue < 0) {
-      vValue = (cValue + rValue) / 2;
-    }
-
-    return {
-      P: pValue,
-      C: cValue,
-      V: vValue,
-      R: rValue,
-      hasSelection: true,
-    };
-  }, [newData, selectedProjects]);
-
-  // ── Lógica dos Dados de Valores e Cenários ──────────────────────────────────
-  const unitTotal =
-    type === "energy" ? "MJ" : type === "material" ? "kg" : "kg CO₂";
-  const unitBenchmark =
-    type === "energy" ? "MJ/m²" : type === "material" ? "kg/m²" : "kg/m² CO₂";
-  const currentUnit = unitsOfMeasure[type] || "Kg/m²";
-
-  const activeStacked =
-    selectedProjects.length > 0
-      ? stackedData.filter((d) => selectedProjects.includes(String(d.id)))
-      : stackedData;
-
-  const currentDataItems =
-    selectedProjects.length > 0
-      ? newData.filter((d) => selectedProjects.includes(String(d.id)))
-      : newData;
-
-  const totalRefValue = activeStacked.reduce(
-    (acc, curr) => acc + ((curr[type as keyof typeof curr] as number) || 0),
-    0,
-  );
-  const benchmarkRefValue =
-    activeStacked.length > 0 ? totalRefValue / activeStacked.length : 0;
-
-  const bestScenario =
-    currentDataItems.length > 0
-      ? Math.min(...currentDataItems.map((d) => d.min ?? d.y ?? 0))
-      : 0;
-
-  const worstScenario =
-    currentDataItems.length > 0
-      ? Math.max(...currentDataItems.map((d) => d.max ?? d.y ?? 0))
-      : 0;
+    return result;
+  }, [project, filteredUnits, selectedProjects]);
 
   const formatMetric = (val: number) =>
     val.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 
+  const onChangeProjectSelection = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedProjects((prev) => [...prev, id]);
+    } else {
+      setSelectedProjects((prev) => prev.filter((p) => p !== id));
+    }
+  };
+
+  const projectArea = project?.area || project?.built_area || 1;
+
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
-      {/* ── BARRA SUPERIOR: Valores e PCVRB ── */}
       <div className="flex justify-between gap-2 w-full">
-        <div className="border-1 border-secondary rounded-md flex p-2 box-border gap-4 max-md:gap-1 h-full">
-          <div className="flex flex-col">
-            <span className="text-secondary font-semibold text-small max-md:text-xs">
-              {translations.summaryUnits.referenceValueTotal} ({unitTotal})
-            </span>
-            <span className="text-xs">{formatMetric(totalRefValue)}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-secondary font-semibold text-small max-md:text-xs">
-              {translations.summaryUnits.referenceValueBenchmark} (
-              {unitBenchmark})
-            </span>
-            <span className="text-xs font-bold">
-              {formatMetric(benchmarkRefValue)}
-            </span>
-          </div>
-        </div>
-        <div className="flex gap-4  max-md:gap-2 max-md:text-xs">
-          <IndicatorList
-            indicators={[
+        <div className="flex flex-wrap xl:flex-nowrap gap-4 w-full">
+          <ScenarioCard
+            letter="V"
+            title={
+              t.summary.chartLegend?.referenceValue_short || "Valor referência"
+            }
+            color="#62A436"
+            items={[
               {
-                color: "#9F70DB",
-                currentUnit,
-                value: formatMetric(pcvMetrics.P),
-                label: "P",
+                total: formatMetric(allPcvMetrics.co2.V * projectArea),
+                benchmark: formatMetric(allPcvMetrics.co2.V),
+                unitTotal: "CO₂ kg",
+                unitBenchmark: "CO₂ kg/m²",
               },
               {
-                color: "#6C9EE0",
-                currentUnit,
-                value: formatMetric(pcvMetrics.C),
-                label: "C",
+                total: formatMetric(allPcvMetrics.energy.V * projectArea),
+                benchmark: formatMetric(allPcvMetrics.energy.V),
+                unitTotal: "MJ",
+                unitBenchmark: "MJ/m²",
               },
               {
-                color: "#E0756C",
-                currentUnit,
-                value: formatMetric(pcvMetrics.R),
-                label: "R",
+                total: formatMetric(allPcvMetrics.material.V * projectArea),
+                benchmark: formatMetric(allPcvMetrics.material.V),
+                unitTotal: "m³",
+                unitBenchmark: "m³/m²",
               },
             ]}
           />
-          <div className="text-md border-1 border-[#72E06C] bg-[#E2F1C1] rounded-md p-1 flex items-center justify-center min-w-[40px] gap-1 h-full">
-            <span className="text-black font-semibold font-xs">B</span>
-            <div className="flex flex-col">
-              <span className="font-semibold text-xs">
-                {translations.summaryUnits.classificationName}
-              </span>
-              <span className="font-light text-neutral-900 text-xs">
-                N: {newData.length}{" "}
-                {translations.summaryUnits.nProjectsLabelShort}
-              </span>
-            </div>
-          </div>
+          <ScenarioCard
+            letter="C"
+            title={
+              t.summary.chartLegend?.constructionMitigationPotential_short ||
+              "Melhor cenário"
+            }
+            color="#5B9BD5"
+            items={[
+              {
+                total: formatMetric(allPcvMetrics.co2.C * projectArea),
+                benchmark: formatMetric(allPcvMetrics.co2.C),
+                unitTotal: "CO₂ kg",
+                unitBenchmark: "CO₂ kg/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.energy.C * projectArea),
+                benchmark: formatMetric(allPcvMetrics.energy.C),
+                unitTotal: "MJ",
+                unitBenchmark: "MJ/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.material.C * projectArea),
+                benchmark: formatMetric(allPcvMetrics.material.C),
+                unitTotal: "m³",
+                unitBenchmark: "m³/m²",
+              },
+            ]}
+          />
+          <ScenarioCard
+            letter="R"
+            title={
+              t.summary.chartLegend?.riskOfLowerConstructionMitigation_short ||
+              "Pior cenário"
+            }
+            color="#E0756C"
+            items={[
+              {
+                total: formatMetric(allPcvMetrics.co2.R * projectArea),
+                benchmark: formatMetric(allPcvMetrics.co2.R),
+                unitTotal: "CO₂ kg",
+                unitBenchmark: "CO₂ kg/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.energy.R * projectArea),
+                benchmark: formatMetric(allPcvMetrics.energy.R),
+                unitTotal: "MJ",
+                unitBenchmark: "MJ/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.material.R * projectArea),
+                benchmark: formatMetric(allPcvMetrics.material.R),
+                unitTotal: "m³",
+                unitBenchmark: "m³/m²",
+              },
+            ]}
+          />
+          <ScenarioCard
+            letter="P"
+            title={
+              t.summary.chartLegend?.projectMitigationPotential_short ||
+              "Potencial de mitigação"
+            }
+            color="#9F70DB"
+            items={[
+              {
+                total: formatMetric(allPcvMetrics.co2.P * projectArea),
+                benchmark: formatMetric(allPcvMetrics.co2.P),
+                unitTotal: "CO₂ kg",
+                unitBenchmark: "CO₂ kg/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.energy.P * projectArea),
+                benchmark: formatMetric(allPcvMetrics.energy.P),
+                unitTotal: "MJ",
+                unitBenchmark: "MJ/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.material.P * projectArea),
+                benchmark: formatMetric(allPcvMetrics.material.P),
+                unitTotal: "m³",
+                unitBenchmark: "m³/m²",
+              },
+            ]}
+          />
         </div>
       </div>
 
-      {/* ── CONTEÚDO PRINCIPAL (Exibido quando aberto) ── */}
       {(isOpen || isExpanded) && (
-        <div className="flex gap-4">
-          {/* COLUNA ESQUERDA (1/3) */}
-          <div className="w-1/3 flex-shrink-0 mt-3 flex flex-col">
-            <FilterTabs
-              tabs={["co2", "energy", "material"]}
-              onTabSelect={(tab) =>
-                setType(tab as "co2" | "energy" | "material")
-              }
-              selectedTab={type}
-              fullWidth
-              subTabs={[
-                t.summary.buildings,
-                selectedProjects.length === units.length
-                  ? t.summary.deselectAll
-                  : t.summary.selectAll,
-              ]}
-              onSubTabSelect={(tab) => {
-                if (tab === t.summary.buildings) setSelectedSubTab(tab);
-                if (
-                  tab === t.summary.selectAll ||
-                  tab === t.summary.deselectAll
-                )
-                  selectAll();
-              }}
-              selectedSubTab={selectedSubTab}
+        <div className="flex gap-4 items-start">
+          <div className="w-1/3 flex-shrink-0 mt-0 flex flex-col">
+            {/* O EmissionsSection agora recebe a âncora do benchmarkMáximo para não distorcer o eixo X */}
+            <EmissionsSection
+              data={projectEmissionsData}
+              selected={selectedProjects}
+              onChange={onChangeProjectSelection}
+              benchmarkMax={benchmarkMax}
             />
-            <div className="mt-2">{ChartSelector}</div>
-
-            <div className="flex gap-3 my-3">
-              <div className="border-1 border-[#6C9EE0] rounded-md w-1/2 p-3 flex flex-col box-border gap-2">
-                <p className=" flex flex-col text-sm">
-                  <span className="text-[#6C9EE0]">
-                    {translations.summaryUnits.bestScenario} ({unitTotal})
-                  </span>
-                  <span>-</span>
-                </p>
-                <p className=" flex flex-col text-sm">
-                  <span className="text-[#6C9EE0]">
-                    {translations.summaryUnits.bestScenario} ({unitBenchmark})
-                  </span>
-                  <span className="font-bold">
-                    {formatMetric(bestScenario)}
-                  </span>
-                </p>
-              </div>
-              <div className="border-1 border-[#E0756C] rounded-md w-1/2 p-3 flex flex-col box-border gap-2">
-                <p className=" flex flex-col text-sm">
-                  <span className="text-[#E0756C]">
-                    {translations.summaryUnits.worstScenario} ({unitTotal})
-                  </span>
-                  <span>-</span>
-                </p>
-                <p className=" flex flex-col text-sm">
-                  <span className="text-[#E0756C]">
-                    {translations.summaryUnits.worstScenario} ({unitBenchmark})
-                  </span>
-                  <span className="font-bold">
-                    {formatMetric(worstScenario)}
-                  </span>
-                </p>
-              </div>
-            </div>
-
-            <Divider className="mb-4" />
-
-            <EmissionsChart data={chartData} />
-
-            {/* Elementos originais do UnitsSummary (Progress Bar de avgByUnit) */}
-            {/* <div className="w-full mt-6 mb-2">
-              <div className="mb-2 text-lg text-gray-600">{project.name}</div>
-              <div className="flex w-auto">
-                {(
-                  Object.values(avgByUnit) as Array<{
-                    name: string;
-                    avg: number;
-                    id: string;
-                  }>
-                ).map((f, idx) => {
-                  return f.avg > 0 ? (
-                    <div
-                      key={f.id}
-                      className={cn("mb-2 flex flex-col items-start", {
-                        "rounded-l-md": idx === 0,
-                        "rounded-r-md": idx === units.length - 1,
-                      })}
-                      style={{
-                        width: `${((f.avg || 0) / sum) * 100}%`,
-                      }}
-                    >
-                      <Tooltip>
-                        <TooltipTrigger
-                          style={{ backgroundColor: barColors }}
-                          className="w-full"
-                        >
-                          <div className="w-full h-[16px]"></div>
-                        </TooltipTrigger>
-                        <TooltipContent
-                          arrowClassName="bg-white opacity-0"
-                          className={cn(
-                            "bg-white text-black border-2 border-active shadow-md",
-                            {
-                              "ml-30": idx === 0,
-                            },
-                          )}
-                        >
-                          <span className="text-black text-base p-2">
-                            {f.name}: {Math.round((f.avg || 0) * 10) / 10}{" "}
-                            {type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
-                          </span>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                  ) : null;
-                })}
-              </div>
-            </div> */}
-
-            {/* Lista das Unidades (ItemCard ou ListItem dependendo de isExpanded) */}
-            {/* <ul
-              className={cn("flex flex-col gap-2 text-xl w-full text-black mt-2", {
-                "flex-col gap-2 flex-wrap": isExpanded,
-                "max-h-[350px] overflow-y-auto": !isExpanded,
-              })}
-            >
-              {stackedData.map((unit) => {
-                if (!unit) return null;
-                const displayType: "co2" | "energy" = type === "material" ? "co2" : type;
-
-                return isExpanded ? (
-                  <ItemCard
-                    key={unit.id}
-                    item={unit as any}
-                    handleAddProject={handleAddProject}
-                    selectedProjects={selectedProjects}
-                    sum={sum}
-                    color={barColors}
-                    type={displayType}
-                    hasConsumption={!!unit[displayType]}
-                  />
-                ) : (
-                  <ListItem
-                    key={unit.id}
-                    item={unit as any}
-                    selectedProjects={selectedProjects}
-                    handleAddProject={handleAddProject}
-                    sum={sum}
-                    color={barColors}
-                    type={displayType}
-                    hasConsumption={!!unit[displayType]}
-                  />
-                );
-              })}
-            </ul> */}
           </div>
 
-          {/* COLUNA DIREITA (flex-1) */}
-          <div className="flex-1 min-h-0 flex flex-col justify-between gap-4 pt-3">
-            <div className="flex flex-col gap-4 w-full">
-              <Legend />
+          <div className="flex-1 min-h-0 flex flex-col justify-between gap-0 pt-0">
+            <div className="flex gap-2 justify-end items-center">
+              <FilterTabs
+                tabs={["co2", "energy", "material"]}
+                onTabSelect={(tab) =>
+                  setType(tab as "co2" | "energy" | "material")
+                }
+                selectedTab={type}
+                fullWidth
+                subTabs={[
+                  t.summary.buildings,
+                  selectedProjects.length >= allPossibleIds.length
+                    ? t.summary.deselectAll
+                    : t.summary.selectAll,
+                ]}
+                onSubTabSelect={(tab) => {
+                  if (tab === t.summary.buildings) setSelectedSubTab(tab);
+                  if (
+                    tab === t.summary.selectAll ||
+                    tab === t.summary.deselectAll
+                  )
+                    selectAll();
+                }}
+                selectedSubTab={selectedSubTab}
+              />
+              <div className="w-full">{ChartSelector}</div>
+            </div>
+
+            <div className="flex flex-col gap-2 w-full">
               {chartType === "scatter" ? (
                 <D3GradientRangeChart
                   data={newData}
@@ -562,7 +576,7 @@ const UnitsSummary = ({
                   }
                   minData={minData}
                   maxData={maxData}
-                  totalProjects={fakeUnits.length || newData.length}
+                  totalProjects={managedData.length || newData.length}
                   showBaseline={type !== "material"}
                   showTop5Line={type !== "material"}
                   showProcelScale
@@ -594,6 +608,7 @@ const UnitsSummary = ({
                   unit={type}
                 />
               )}
+              {type !== "material" && <ChartLegend />}
             </div>
           </div>
         </div>

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"sort"
 	"strings"
 	"time"
 
@@ -22,6 +23,8 @@ type ModuleInfo struct {
 	Type        string       `json:"type"`
 	Outdated    bool         `json:"outdated"`
 	Consumption *Consumption `json:"consumption,omitempty"`
+	updatedAt   time.Time
+	createdAt   time.Time
 }
 
 type Option struct {
@@ -30,6 +33,7 @@ type Option struct {
 	RoleID      uuid.UUID               `json:"role_id"`
 	Name        string                  `json:"name"`
 	Active      bool                    `json:"active"`
+	UpdatedAt   *time.Time              `json:"updated_at,omitempty"`
 	Modules     []ModuleInfo            `json:"modules"`
 	Consumption map[string]*Consumption `json:"consumption,omitempty"`
 }
@@ -143,6 +147,9 @@ func (m OptionModel) GetByID(id uuid.UUID) (*Option, error) {
 		return nil, err
 	}
 	option.Modules = modules
+	if latest := latestModuleActivity(&option); !latest.IsZero() {
+		option.UpdatedAt = &latest
+	}
 
 	consumption, err := GetFullConsumption(m.DB, option.UnitID, option.RoleID, option.ID)
 	if err != nil {
@@ -191,6 +198,9 @@ func (m OptionModel) GetAll(unitID uuid.UUID) ([]*Option, error) {
 			return nil, err
 		}
 		option.Modules = modules
+		if latest := latestModuleActivity(&option); !latest.IsZero() {
+			option.UpdatedAt = &latest
+		}
 
 		consumption, err := GetFullConsumption(m.DB, option.UnitID, option.RoleID, option.ID)
 		if err != nil {
@@ -207,7 +217,46 @@ func (m OptionModel) GetAll(unitID uuid.UUID) ([]*Option, error) {
 		return nil, err
 	}
 
+	sortOptionsByActivity(options)
+
 	return options, nil
+}
+
+// sortOptionsByActivity orders options for the listing route:
+//  1. the active option always comes first
+//  2. options without modules stay on top of the queue
+//  3. the remaining options are ordered by the most recent activity
+//     (updated_at or created_at) of the modules that compose them
+func sortOptionsByActivity(options []*Option) {
+	sort.SliceStable(options, func(i, j int) bool {
+		a, b := options[i], options[j]
+
+		if a.Active != b.Active {
+			return a.Active
+		}
+
+		aHasModules := len(a.Modules) > 0
+		bHasModules := len(b.Modules) > 0
+		if aHasModules != bHasModules {
+			return !aHasModules
+		}
+
+		return latestModuleActivity(a).After(latestModuleActivity(b))
+	})
+}
+
+func latestModuleActivity(o *Option) time.Time {
+	var latest time.Time
+	for _, m := range o.Modules {
+		ts := m.updatedAt
+		if m.createdAt.After(ts) {
+			ts = m.createdAt
+		}
+		if ts.After(latest) {
+			latest = ts
+		}
+	}
+	return latest
 }
 
 func (m OptionModel) GetAllByRole(unitID, roleID uuid.UUID) ([]*Option, error) {
@@ -246,6 +295,9 @@ func (m OptionModel) GetAllByRole(unitID, roleID uuid.UUID) ([]*Option, error) {
 			return nil, err
 		}
 		option.Modules = modules
+		if latest := latestModuleActivity(&option); !latest.IsZero() {
+			option.UpdatedAt = &latest
+		}
 
 		consumption, err := GetFullConsumption(m.DB, option.UnitID, option.RoleID, option.ID)
 		if err != nil {
@@ -261,6 +313,8 @@ func (m OptionModel) GetAllByRole(unitID, roleID uuid.UUID) ([]*Option, error) {
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
+
+	sortOptionsByActivity(options)
 
 	return options, nil
 }

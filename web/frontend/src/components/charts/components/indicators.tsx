@@ -27,12 +27,12 @@ const Indicators = ({ min, max, position, hasZoomed, countSmaller = 0, countLarg
       'self-start': position === 'start',
     })}>
       {/* Count of items outside the current view — only when zoomed */}
-      {hasZoomed && (
+      {/* {hasZoomed && (
         <div className="flex gap-1 items-center">
           <Triangle className={cn("w-3 h-3 fill-foreground/60 stroke-foreground/60 max-sm:h-4", arrowRotation)} />
           <span className='text-sm text-foreground/70'>{count}</span>
         </div>
-      )}
+      )} */}
       {/* Min arrow — blue */}
       <div className="flex gap-1 flex-row-reverse">
         <span className='text-sm text-foreground/70'>{min.toInternational()}</span>

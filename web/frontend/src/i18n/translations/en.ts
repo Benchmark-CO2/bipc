@@ -21,6 +21,7 @@ export const en: Translations = {
     collapse: "Collapse",
     ifcImport: "Import from IFC",
     ifcImportTqs: "Import from IFC/TQS",
+    orLabel: "or",
   },
   errors: {
     unexpectedError: "Unexpected error. Please try again later.",
@@ -378,6 +379,11 @@ export const en: Translations = {
       editError: "Error updating project",
       unknownError: "Unknown error",
       downloadReport: "Download report",
+      autoCreateStructureLabel:
+        'Automatically create the "Structure" discipline for this project (you can edit it later)',
+      autoCreateStructureDisciplineName: "Structure",
+      autoCreateStructureDisciplineDescription:
+        "Structure discipline automatically created when the project was created. Responsible for calculations, specifications and CO₂ consumption simulations of structural elements such as columns, beams, slabs, concrete walls and foundations.",
     },
     confirmDelete: {
       title: "Delete Project",
@@ -740,8 +746,8 @@ export const en: Translations = {
       cumulativeFraction: {
         name: "Benchmark",
         yAxisLabel: "Potential Mitigation",
-        xAxisLabelCarbon: "Embodied Carbon",
-        xAxisLabelEnergy: "Energy Consumption",
+        xAxisLabelCarbon: "Embodied Carbon  (kg CO₂/m²)",
+        xAxisLabelEnergy: "Energy Consumption MJ/m²",
         baseLine: "baseline",
         ppp5Line: "PPp 5%",
       },
@@ -827,6 +833,8 @@ export const en: Translations = {
     miniatureTitle: "Training",
     miniatureTooltip: "Click to open",
     learnMore: "Learn more...",
+    dismissCheckboxLabel:
+      "Do not automatically display this message when entering again on this browser",
   },
   phase: {
     preliminary_study: "Schematic Design",
@@ -896,6 +904,29 @@ export const en: Translations = {
     compare: "Compare",
     avg: "Average",
     total: "Total",
+    chartLegend: {
+      referenceValue: "Reference Value",
+      constructionMitigationPotential: "Construction Mitigation Potential (Best Case)",
+      projectMitigationPotential: "Project Mitigation Potential",
+      riskOfLowerConstructionMitigation: "Risk of Lower Construction Mitigation (Worst Case)",
+      title: "Legend",
+      referenceValue_short: "Reference Value",
+      constructionMitigationPotential_short: "Construction Mitigation Potential",
+      projectMitigationPotential_short: "Project Mitigation Potential",
+      riskOfLowerConstructionMitigation_short: "Worst Case",
+    },
+    emissionLegend: {
+      title: 'Total Emissions by Technology',
+    }
+  },
+  floor: {
+    penthouse_floor: "Penthouse",
+    foundation_floor: "Mesostructure and foundation",
+    standard_floor: "Standard",
+    ground_floor: "Ground",
+    basement_floor: "Basement",
+    total: "Complete Building",
+    piles_foundation: "Piles Foundation",
   },
   buildingVisualizer: {
     foundation: "Mesostructure and foundation",
@@ -1181,7 +1212,7 @@ export const en: Translations = {
     backToProject: "Back to project",
     newDiscipline: "New discipline",
     manageDisciplines: "Manage disciplines",
-    createSimulations: "Manage simulations",
+    createSimulations: "Simulations",
     selectDisciplineTooltip: "Select a discipline to manage simulations",
     noDisciplines: "No disciplines to display",
     noDisciplinesDescription:

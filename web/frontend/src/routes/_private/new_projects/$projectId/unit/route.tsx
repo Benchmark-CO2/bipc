@@ -178,7 +178,7 @@ function RouteComponent() {
                 unitId={params.unitId}
                 triggerComponent={
                   <SimpleTooltip content={t.common.ifcImport} side="bottom">
-                    <Button variant="outline-bipc" size="icon-lg">
+                    <Button variant="outline-bipc" size="icon-lg" disabled>
                       <Upload />
                     </Button>
                   </SimpleTooltip>
