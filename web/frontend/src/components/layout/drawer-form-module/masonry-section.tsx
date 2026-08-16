@@ -104,17 +104,16 @@ const isOptionUsedInArray = <T extends number>(
 const BlocksSection = ({
   form,
   hooks,
+  blockFields,
 }: {
   form: UseFormReturn<any>;
   hooks: MasonrySectionProps["hooks"];
+  blockFields: ReturnType<
+    typeof useFieldArray<any, "data.masonry.blocks", "id">
+  >;
 }) => {
   const { t } = useTranslation();
   const { addMasonryBlock, removeMasonryBlock } = hooks;
-
-  const blockFields = useFieldArray({
-    control: form.control,
-    name: "data.masonry.blocks",
-  });
 
   const blocks = useWatch({
     control: form.control,
@@ -155,15 +154,27 @@ const BlocksSection = ({
   return (
     <Card className="p-0 space-y-0 border border-gray-300 bg-gray-50/50">
       <CardContent className="p-4 space-y-4">
-        <div>
+        <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold flex items-center gap-1.5 text-primary dark:text-gray-200">
             {t.modules.form.blocks}
           </h3>
+          {items.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">
+                {t.modules.form.totalQuantity}:
+              </span>
+              <span className="text-sm font-semibold text-gray-900 tabular-nums">
+                {totalQty.toLocaleString("pt-BR")} un
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
           {items.length === 0 && (
-            <p className="text-xs text-muted-foreground italic px-1 py-1">—</p>
+            <p className="text-xs text-muted-foreground italic px-1 py-1">
+              {t.modules.form.emptyList.blocks}
+            </p>
           )}
 
           {blockFields.fields.map((_, index) => {
@@ -176,47 +187,47 @@ const BlocksSection = ({
                 key={(it as { id?: string })?.id ?? index}
                 className="space-y-3 bg-white rounded-md border p-3"
               >
-                <FormField
-                  control={form.control}
-                  name={`${fieldKey}.type`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs">
-                        {t.modules.form.blockType}
-                      </FormLabel>
-                      <FormControl>
-                        <Select
-                          value={field.value ?? BLOCK_TYPE_OPTIONS[0]}
-                          onValueChange={(v) => field.onChange(v)}
-                        >
-                          <SelectTrigger className="w-full h-9 text-xs">
-                            <SelectValue
-                              placeholder={t.modules.form.selectType}
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {BLOCK_TYPE_OPTIONS.map((opt) => (
-                              <SelectItem
-                                key={opt}
-                                value={opt}
-                                className="text-xs"
-                              >
-                                {opt}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+                  <FormField
+                    control={form.control}
+                    name={`${fieldKey}.type`}
+                    render={({ field }) => (
+                      <FormItem className="col-span-12 sm:col-span-4">
+                        <FormLabel className="text-xs">
+                          {t.modules.form.blockType}
+                        </FormLabel>
+                        <FormControl>
+                          <Select
+                            value={field.value ?? BLOCK_TYPE_OPTIONS[0]}
+                            onValueChange={(v) => field.onChange(v)}
+                          >
+                            <SelectTrigger className="w-full h-9">
+                              <SelectValue
+                                placeholder={t.modules.form.selectType}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {BLOCK_TYPE_OPTIONS.map((opt) => (
+                                <SelectItem
+                                  key={opt}
+                                  value={opt}
+                                  className="text-xs"
+                                >
+                                  {opt}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
 
-                <div className="grid grid-cols-2 gap-2 items-end">
                   <FormField
                     control={form.control}
                     name={`${fieldKey}.fbk`}
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="col-span-12 sm:col-span-4">
                         <FormLabel className="text-xs">
                           {t.modules.form.fbkLabel}
                         </FormLabel>
@@ -227,7 +238,7 @@ const BlocksSection = ({
                             }
                             onValueChange={(val) => handleSelectFbk(index, val)}
                           >
-                            <SelectTrigger className="w-full h-9 text-xs">
+                            <SelectTrigger className="w-full h-9">
                               <SelectValue placeholder="Selecione Fbk" />
                             </SelectTrigger>
                             <SelectContent>
@@ -247,7 +258,7 @@ const BlocksSection = ({
                                     disabled={disabled}
                                     className="text-xs"
                                   >
-                                    Fbk {opt}
+                                    {opt}
                                     {disabled ? ` ${t.modules.form.inUse}` : ""}
                                   </SelectItem>
                                 );
@@ -262,43 +273,41 @@ const BlocksSection = ({
                     )}
                   />
 
-                  <div>
-                    <FormField
-                      control={form.control}
-                      name={`${fieldKey}.quantity`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">
-                            {t.modules.form.blockQuantity}
-                          </FormLabel>
-                          <div className="flex gap-1">
-                            <FormControl>
-                              <Input
-                                type="text"
-                                inputMode="numeric"
-                                className="h-9 text-xs"
-                                placeholder="100"
-                                value={field.value || ""}
-                                onChange={(e) => {
-                                  const v = masks.numeric(e.target.value);
-                                  field.onChange(v);
-                                }}
-                              />
-                            </FormControl>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => removeMasonryBlock(index)}
-                              disabled={items.length <= 0}
-                              className="h-9 w-9 p-0 shrink-0"
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={form.control}
+                    name={`${fieldKey}.quantity`}
+                    render={({ field }) => (
+                      <FormItem className="col-span-12 sm:col-span-3">
+                        <FormLabel className="text-xs">
+                          {t.modules.form.blockQuantity}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            className="h-9 w-full max-w-[160px]"
+                            placeholder="100"
+                            value={field.value || ""}
+                            onChange={(e) => {
+                              const v = masks.numeric(e.target.value);
+                              field.onChange(v);
+                            }}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="col-span-12 sm:col-span-1 flex sm:items-end sm:pb-[2px]">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeMasonryBlock(index)}
+                      className="h-9 w-9 p-0 shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
                   </div>
                 </div>
 
@@ -315,7 +324,7 @@ const BlocksSection = ({
                           <Input
                             type="number"
                             inputMode="decimal"
-                            className="h-9 text-xs"
+                            className="h-9"
                             placeholder="20"
                             value={
                               typeof field.value === "number"
@@ -344,17 +353,6 @@ const BlocksSection = ({
           >
             <Plus className="h-4 w-4" />
           </Button>
-
-          {items.length > 0 && (
-            <div className="flex justify-end items-center gap-2 pt-1">
-              <span className="text-xs text-muted-foreground">
-                {t.modules.form.totalQuantity}:
-              </span>
-              <span className="text-xs font-medium tabular-nums">
-                {totalQty.toLocaleString("pt-BR")} un
-              </span>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>
@@ -364,17 +362,16 @@ const BlocksSection = ({
 const MortarSection = ({
   form,
   hooks,
+  mortarFields,
 }: {
   form: UseFormReturn<any>;
   hooks: MasonrySectionProps["hooks"];
+  mortarFields: ReturnType<
+    typeof useFieldArray<any, "data.masonry.mortar", "id">
+  >;
 }) => {
   const { t } = useTranslation();
   const { addMasonryMortar, removeMasonryMortar } = hooks;
-
-  const mortarFields = useFieldArray({
-    control: form.control,
-    name: "data.masonry.mortar",
-  });
 
   const mortar = useWatch({
     control: form.control,
@@ -415,15 +412,31 @@ const MortarSection = ({
   return (
     <Card className="p-0 space-y-0 border border-gray-300 bg-gray-50/50">
       <CardContent className="p-4 space-y-4">
-        <div>
+        <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold flex items-center gap-1.5 text-primary dark:text-gray-200">
             {t.modules.form.mortarSection}
           </h3>
+          {items.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">
+                {t.modules.form.totalConcreteVolume}:
+              </span>
+              <span className="text-sm font-semibold text-gray-900 tabular-nums">
+                {totalVol.toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
+                m³
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
           {items.length === 0 && (
-            <p className="text-xs text-muted-foreground italic px-1 py-1">—</p>
+            <p className="text-xs text-muted-foreground italic px-1 py-1">
+              {t.modules.form.emptyList.mortar}
+            </p>
           )}
 
           {mortarFields.fields.map((_, index) => {
@@ -436,12 +449,12 @@ const MortarSection = ({
                 key={(it as { id?: string })?.id ?? index}
                 className="space-y-3 bg-white rounded-md border p-3"
               >
-                <div className="grid grid-cols-2 gap-2 items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
                   <FormField
                     control={form.control}
                     name={`${fieldKey}.fak`}
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="col-span-12 sm:col-span-7">
                         <FormLabel className="text-xs">
                           {t.modules.form.fakLabel}
                         </FormLabel>
@@ -452,7 +465,7 @@ const MortarSection = ({
                             }
                             onValueChange={(val) => handleSelectFak(index, val)}
                           >
-                            <SelectTrigger className="w-full h-9 text-xs">
+                            <SelectTrigger className="w-full h-9">
                               <SelectValue placeholder="Selecione Fak" />
                             </SelectTrigger>
                             <SelectContent>
@@ -472,7 +485,7 @@ const MortarSection = ({
                                     disabled={disabled}
                                     className="text-xs"
                                   >
-                                    Fak {opt}
+                                    {opt}
                                     {disabled ? ` ${t.modules.form.inUse}` : ""}
                                   </SelectItem>
                                 );
@@ -487,43 +500,41 @@ const MortarSection = ({
                     )}
                   />
 
-                  <div>
-                    <FormField
-                      control={form.control}
-                      name={`${fieldKey}.volume`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">
-                            {t.modules.form.volume}
-                          </FormLabel>
-                          <div className="flex gap-1">
-                            <FormControl>
-                              <Input
-                                type="text"
-                                inputMode="decimal"
-                                className="h-9 text-xs"
-                                placeholder="100"
-                                value={field.value || ""}
-                                onChange={(e) => {
-                                  const v = masks.numeric(e.target.value);
-                                  field.onChange(v);
-                                }}
-                              />
-                            </FormControl>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => removeMasonryMortar(index)}
-                              disabled={items.length <= 0}
-                              className="h-9 w-9 p-0 shrink-0"
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={form.control}
+                    name={`${fieldKey}.volume`}
+                    render={({ field }) => (
+                      <FormItem className="col-span-12 sm:col-span-4">
+                        <FormLabel className="text-xs">
+                          {t.modules.form.volume}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            className="h-9 w-full max-w-[160px]"
+                            placeholder="100"
+                            value={field.value || ""}
+                            onChange={(e) => {
+                              const v = masks.numeric(e.target.value);
+                              field.onChange(v);
+                            }}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="col-span-12 sm:col-span-1 flex sm:items-end sm:pb-[2px]">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeMasonryMortar(index)}
+                      className="h-9 w-9 p-0 shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
                   </div>
                 </div>
 
@@ -540,7 +551,7 @@ const MortarSection = ({
                           <Input
                             type="number"
                             inputMode="decimal"
-                            className="h-9 text-xs"
+                            className="h-9"
                             placeholder="15"
                             value={
                               typeof field.value === "number"
@@ -569,24 +580,288 @@ const MortarSection = ({
           >
             <Plus className="h-4 w-4" />
           </Button>
-
-          {items.length > 0 && (
-            <div className="flex justify-end items-center gap-2 pt-1">
-              <span className="text-xs text-muted-foreground">
-                {t.modules.form.totalConcreteVolume}:
-              </span>
-              <span className="text-xs font-medium tabular-nums">
-                {totalVol.toLocaleString("pt-BR", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}{" "}
-                m³
-              </span>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>
+  );
+};
+
+interface GroutItemRowProps {
+  form: UseFormReturn<any>;
+  groutIndex: number;
+  groutFieldKey: string;
+  item: {
+    position?: TGroutPosition;
+    volumes?: GroutVolumeItemForm[];
+    steel?: unknown[];
+  };
+  removeMasonryGrout: (index: number) => void;
+  stepperMode?: boolean;
+  isSubmitted?: boolean;
+  customFgkSelected: Record<string, boolean>;
+  onSelectFgk: (groutIndex: number, volIndex: number, rawValue: string) => void;
+  t: ReturnType<typeof useTranslation>["t"];
+}
+
+const GroutItemRow = ({
+  form,
+  groutIndex,
+  groutFieldKey,
+  item,
+  removeMasonryGrout,
+  stepperMode,
+  isSubmitted,
+  customFgkSelected,
+  onSelectFgk,
+  t,
+}: GroutItemRowProps) => {
+  const position = item?.position ?? "vertical";
+  const volFields = useFieldArray({
+    control: form.control,
+    name: `${groutFieldKey}.volumes` as const,
+  });
+  const volItems = (item?.volumes ?? []) as GroutVolumeItemForm[];
+
+  const groutPositionLabel: Record<TGroutPosition, string> = {
+    vertical: "Vertical",
+    horizontal: "Horizontal",
+  };
+
+  return (
+    <div className="space-y-3 bg-white rounded-md border p-3">
+      <div className="flex items-center justify-between gap-2">
+        <FormField
+          control={form.control}
+          name={`${groutFieldKey}.position`}
+          render={({ field }) => (
+            <FormItem className="flex-1">
+              <FormLabel className="text-xs">
+                {t.modules.form.groutType}
+              </FormLabel>
+              <FormControl>
+                <Select
+                  value={field.value ?? GROUT_POSITIONS[0]}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger className="w-full h-9">
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GROUT_POSITIONS.map((pos) => (
+                      <SelectItem key={pos} value={pos} className="text-xs">
+                        {groutPositionLabel[pos]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => removeMasonryGrout(groutIndex)}
+          className="h-9 w-9 p-0 shrink-0 self-end"
+        >
+          <Trash2 className="h-4 w-4 text-red-500" />
+        </Button>
+      </div>
+
+      <div className="space-y-3 p-3 rounded-md border-2 border-transparent">
+        <div className="flex items-center justify-between">
+          <FormLabel className="text-xs text-gray-700">
+            Volumes de graute
+          </FormLabel>
+          {(() => {
+            const volSum = volItems.reduce(
+              (s, v) => s + parseNumber(String(v.volume || "0")),
+              0,
+            );
+            if (volSum <= 0) return null;
+            return (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Total:</span>
+                <span className="text-sm font-semibold tabular-nums text-gray-900">
+                  {volSum.toLocaleString("pt-BR", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}{" "}
+                  m³
+                </span>
+              </div>
+            );
+          })()}
+        </div>
+        {volItems.length === 0 && (
+          <p className="text-xs text-muted-foreground italic px-1 py-1">
+            {t.modules.form.emptyList.groutVolumes}
+          </p>
+        )}
+        {volFields.fields.map((_, volIndex) => {
+          const fieldKey = `${groutFieldKey}.volumes.${volIndex}`;
+          const vit = volItems[volIndex];
+          const isCustom =
+            customFgkSelected[fieldKey] ?? vit?.customFgk ?? false;
+          return (
+            <div
+              key={(vit as { id?: string })?.id ?? volIndex}
+              className="space-y-3 bg-white rounded-md border p-3"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+                <FormField
+                  control={form.control}
+                  name={`${fieldKey}.fgk`}
+                  render={({ field }) => (
+                    <FormItem className="col-span-12 sm:col-span-5">
+                      <FormLabel className="text-xs">
+                        {t.modules.form.fgkLabel}
+                      </FormLabel>
+                      <FormControl>
+                        <Select
+                          value={isCustom ? "other" : String(field.value ?? "")}
+                          onValueChange={(val) =>
+                            onSelectFgk(groutIndex, volIndex, val)
+                          }
+                        >
+                          <SelectTrigger className="w-full h-9">
+                            <SelectValue placeholder="Selecione Fgk" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {FGK_OPTIONS.map((opt) => {
+                              const disabled = isOptionUsedInArray(
+                                volItems,
+                                "fgk",
+                                FGK_OPTIONS,
+                                opt,
+                                volIndex,
+                                "customFgk",
+                              );
+                              return (
+                                <SelectItem
+                                  key={opt}
+                                  value={String(opt)}
+                                  disabled={disabled}
+                                  className="text-xs"
+                                >
+                                  {opt}
+                                  {disabled ? ` ${t.modules.form.inUse}` : ""}
+                                </SelectItem>
+                              );
+                            })}
+                            <SelectItem value="other" className="text-xs">
+                              {t.modules.form.other}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name={`${fieldKey}.volume`}
+                  render={({ field }) => (
+                    <FormItem className="col-span-12 sm:col-span-6">
+                      <FormLabel className="text-xs">
+                        {t.modules.form.volume}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          className="h-9 w-full max-w-[160px]"
+                          placeholder="100"
+                          value={field.value || ""}
+                          onChange={(e) => {
+                            const v = masks.numeric(e.target.value);
+                            field.onChange(v);
+                          }}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <div className="col-span-12 sm:col-span-1 flex sm:items-end sm:pb-[2px]">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => volFields.remove(volIndex)}
+                    className="h-9 w-9 p-0 shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
+              </div>
+
+              {isCustom && (
+                <FormField
+                  control={form.control}
+                  name={`${fieldKey}.fgk`}
+                  render={({ field }) => (
+                    <FormItem className="max-w-xs">
+                      <FormLabel className="text-xs">
+                        {t.modules.form.otherFgk}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          inputMode="decimal"
+                          className="h-9"
+                          placeholder="50"
+                          value={
+                            typeof field.value === "number"
+                              ? field.value
+                              : (field.value ?? "")
+                          }
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
+          );
+        })}
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            volFields.append({
+              fgk: FGK_OPTIONS[0] ?? 20,
+              volume: "0",
+              customFgk: false,
+            } as never)
+          }
+          className="w-full text-green-600 border-green-600 hover:bg-green-50"
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+
+      <div className="border-t border-gray-200" />
+
+      <SteelMaterialList
+        form={form}
+        name={`${groutFieldKey}.steel`}
+        allowedMaterials={["rebar", "strand", "general", "other"]}
+        stepperMode={stepperMode}
+        isSubmitted={isSubmitted}
+        isRequiredPosition={false}
+        positions={GROUT_POSITIONS}
+        firstPosition={position}
+        emptyLabel={t.modules.form.emptyList.groutSteel}
+      />
+    </div>
   );
 };
 
@@ -595,19 +870,18 @@ const GroutSection = ({
   hooks,
   stepperMode,
   isSubmitted,
+  groutFields,
 }: {
   form: UseFormReturn<any>;
   hooks: MasonrySectionProps["hooks"];
   stepperMode?: boolean;
   isSubmitted?: boolean;
+  groutFields: ReturnType<
+    typeof useFieldArray<any, "data.masonry.grout", "id">
+  >;
 }) => {
   const { t } = useTranslation();
   const { addMasonryGrout, removeMasonryGrout } = hooks;
-
-  const groutFields = useFieldArray({
-    control: form.control,
-    name: "data.masonry.grout",
-  });
 
   const grout = useWatch({
     control: form.control,
@@ -666,257 +940,50 @@ const GroutSection = ({
   return (
     <Card className="p-0 space-y-0 border border-gray-300 bg-gray-50/50">
       <CardContent className="p-4 space-y-4">
-        <div>
+        <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold flex items-center gap-1.5 text-primary dark:text-gray-200">
             {t.modules.form.groutSection}
           </h3>
+          {items.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">
+                Volume total graute:
+              </span>
+              <span className="text-sm font-semibold text-gray-900 tabular-nums">
+                {totalVol.toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
+                m³
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="space-y-3">
           {items.length === 0 && (
-            <p className="text-xs text-muted-foreground italic px-1 py-1">—</p>
+            <p className="text-xs text-muted-foreground italic px-1 py-1">
+              {t.modules.form.emptyList.groutVolumes}
+            </p>
           )}
 
           {groutFields.fields.map((_, groutIndex) => {
             const groutFieldKey = `data.masonry.grout.${groutIndex}`;
             const it = items[groutIndex];
-            const position = it?.position ?? "vertical";
-
-            const volFields = useFieldArray({
-              control: form.control,
-              name: `${groutFieldKey}.volumes` as const,
-            });
-
-            const volItems = (it?.volumes ?? []) as GroutVolumeItemForm[];
-
             return (
-              <div
+              <GroutItemRow
                 key={(it as { id?: string })?.id ?? groutIndex}
-                className="space-y-3 bg-white rounded-md border p-3"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <FormField
-                    control={form.control}
-                    name={`${groutFieldKey}.position`}
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel className="text-xs">
-                          {t.modules.form.groutType}
-                        </FormLabel>
-                        <FormControl>
-                          <Select
-                            value={field.value ?? GROUT_POSITIONS[0]}
-                            onValueChange={field.onChange}
-                          >
-                            <SelectTrigger className="w-full h-9 text-xs">
-                              <SelectValue placeholder="Selecione o tipo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {GROUT_POSITIONS.map((pos) => (
-                                <SelectItem
-                                  key={pos}
-                                  value={pos}
-                                  className="text-xs"
-                                >
-                                  {groutPositionLabel[pos]}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeMasonryGrout(groutIndex)}
-                    disabled={items.length <= 0}
-                    className="h-9 w-9 p-0 shrink-0 self-end"
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-
-                <div className="space-y-2">
-                  <FormLabel className="text-xs text-gray-500">
-                    Volumes de graute
-                  </FormLabel>
-                  {volItems.length === 0 && (
-                    <p className="text-xs text-muted-foreground italic px-1 py-1">
-                      —
-                    </p>
-                  )}
-                  {volFields.fields.map((_, volIndex) => {
-                    const fieldKey = `${groutFieldKey}.volumes.${volIndex}`;
-                    const vit = volItems[volIndex];
-                    const isCustom =
-                      customFgkSelected[fieldKey] ?? vit?.customFgk ?? false;
-                    return (
-                      <div
-                        key={(vit as { id?: string })?.id ?? volIndex}
-                        className="grid grid-cols-2 gap-2 items-end bg-gray-50 rounded border p-2"
-                      >
-                        <FormField
-                          control={form.control}
-                          name={`${fieldKey}.fgk`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-xs">
-                                {t.modules.form.fgkLabel}
-                              </FormLabel>
-                              <FormControl>
-                                <Select
-                                  value={
-                                    isCustom
-                                      ? "other"
-                                      : String(field.value ?? "")
-                                  }
-                                  onValueChange={(val) =>
-                                    handleSelectFgk(groutIndex, volIndex, val)
-                                  }
-                                >
-                                  <SelectTrigger className="w-full h-9 text-xs">
-                                    <SelectValue placeholder="Selecione Fgk" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {FGK_OPTIONS.map((opt) => {
-                                      const disabled = isOptionUsedInArray(
-                                        volItems,
-                                        "fgk",
-                                        FGK_OPTIONS,
-                                        opt,
-                                        volIndex,
-                                        "customFgk",
-                                      );
-                                      return (
-                                        <SelectItem
-                                          key={opt}
-                                          value={String(opt)}
-                                          disabled={disabled}
-                                          className="text-xs"
-                                        >
-                                          Fgk {opt}
-                                          {disabled
-                                            ? ` ${t.modules.form.inUse}`
-                                            : ""}
-                                        </SelectItem>
-                                      );
-                                    })}
-                                    <SelectItem
-                                      value="other"
-                                      className="text-xs"
-                                    >
-                                      {t.modules.form.other}
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-
-                        <div className="flex gap-1">
-                          <FormField
-                            control={form.control}
-                            name={`${fieldKey}.volume`}
-                            render={({ field }) => (
-                              <FormItem className="flex-1">
-                                <FormLabel className="text-xs">
-                                  {t.modules.form.volume}
-                                </FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="text"
-                                    inputMode="decimal"
-                                    className="h-9 text-xs"
-                                    placeholder="100"
-                                    value={field.value || ""}
-                                    onChange={(e) => {
-                                      const v = masks.numeric(e.target.value);
-                                      field.onChange(v);
-                                    }}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => volFields.remove(volIndex)}
-                            disabled={volItems.length <= 0}
-                            className="h-9 w-9 p-0 shrink-0 self-end"
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-
-                        {isCustom && (
-                          <div className="col-span-2">
-                            <FormField
-                              control={form.control}
-                              name={`${fieldKey}.fgk`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="text-xs">
-                                    {t.modules.form.otherFgk}
-                                  </FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      type="number"
-                                      inputMode="decimal"
-                                      className="h-9 text-xs"
-                                      placeholder="50"
-                                      value={
-                                        typeof field.value === "number"
-                                          ? field.value
-                                          : (field.value ?? "")
-                                      }
-                                      onChange={(e) =>
-                                        field.onChange(Number(e.target.value))
-                                      }
-                                    />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      volFields.append({
-                        fgk: FGK_OPTIONS[0] ?? 20,
-                        volume: "0",
-                        customFgk: false,
-                      } as never)
-                    }
-                    className="w-full text-green-600 border-green-600 hover:bg-green-50"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="border-t border-gray-200" />
-
-                <SteelMaterialList
-                  form={form}
-                  name={`${groutFieldKey}.steel`}
-                  allowedMaterials={["rebar", "strand", "other"]}
-                  stepperMode={stepperMode}
-                  isSubmitted={isSubmitted}
-                  isRequiredPosition={false}
-                />
-              </div>
+                form={form}
+                groutIndex={groutIndex}
+                groutFieldKey={groutFieldKey}
+                item={it}
+                removeMasonryGrout={removeMasonryGrout}
+                stepperMode={stepperMode}
+                isSubmitted={isSubmitted}
+                customFgkSelected={customFgkSelected}
+                onSelectFgk={handleSelectFgk}
+                t={t}
+              />
             );
           })}
 
@@ -929,21 +996,6 @@ const GroutSection = ({
           >
             <Plus className="h-4 w-4" /> {t.modules.form.addGrout}
           </Button>
-
-          {items.length > 0 && (
-            <div className="flex justify-end items-center gap-2 pt-1">
-              <span className="text-xs text-muted-foreground">
-                Volume total graute:
-              </span>
-              <span className="text-xs font-medium tabular-nums">
-                {totalVol.toLocaleString("pt-BR", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}{" "}
-                m³
-              </span>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>
@@ -955,7 +1007,20 @@ const MasonrySection = ({
   hooks,
   stepperMode,
   isSubmitted,
-}: MasonrySectionProps) => {
+  masonryBlocksArray,
+  masonryMortarArray,
+  masonryGroutArray,
+}: MasonrySectionProps & {
+  masonryBlocksArray: ReturnType<
+    typeof useFieldArray<any, "data.masonry.blocks", "id">
+  >;
+  masonryMortarArray: ReturnType<
+    typeof useFieldArray<any, "data.masonry.mortar", "id">
+  >;
+  masonryGroutArray: ReturnType<
+    typeof useFieldArray<any, "data.masonry.grout", "id">
+  >;
+}) => {
   const { t } = useTranslation();
   return (
     <div className="space-y-4">
@@ -964,13 +1029,22 @@ const MasonrySection = ({
           {t.modules.form.completeness.masonryLabel}
         </h3>
       </div>
-      <BlocksSection form={form} hooks={hooks} />
-      <MortarSection form={form} hooks={hooks} />
+      <BlocksSection
+        form={form}
+        hooks={hooks}
+        blockFields={masonryBlocksArray}
+      />
+      <MortarSection
+        form={form}
+        hooks={hooks}
+        mortarFields={masonryMortarArray}
+      />
       <GroutSection
         form={form}
         hooks={hooks}
         stepperMode={stepperMode}
         isSubmitted={isSubmitted}
+        groutFields={masonryGroutArray}
       />
     </div>
   );

@@ -102,6 +102,52 @@ const isWrapperFormat = (
   return "data" in v || typeof (v as { type?: unknown }).type === "string";
 };
 
+const FCK_OPTIONS = [20, 25, 30, 35, 40, 45, 50] as const;
+
+const hashString = (s: string): string => {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h.toString(36);
+};
+
+const stableStringify = (value: unknown): string => {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "undefined"
+  ) {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((v) => stableStringify(v)).join(",")}]`;
+  }
+  if (typeof value === "object") {
+    const keys = Object.keys(value as Record<string, unknown>).sort();
+    const parts = keys.map(
+      (k) =>
+        `${JSON.stringify(k)}:${stableStringify(
+          (value as Record<string, unknown>)[k],
+        )}`,
+    );
+    return `{${parts.join(",")}}`;
+  }
+  return JSON.stringify(value);
+};
+
+const checksumObjectFields = (obj: unknown, fields: string[]): string => {
+  if (!obj || typeof obj !== "object") return "ø";
+  const rec = obj as Record<string, unknown>;
+  const values = fields
+    .map((f) => (f in rec ? rec[f] : undefined))
+    .map((v) => stableStringify(v));
+  return hashString(values.join("|"));
+};
+
 const DrawerFormModule = ({
   triggerComponent,
   projectId,
@@ -366,7 +412,7 @@ const DrawerFormModule = ({
         prevSelectedFloorsRef.current = nextSelected;
       }
       queueMicrotask(() => {
-        void form.trigger();
+        form.clearErrors();
       });
     }
 
@@ -406,7 +452,7 @@ const DrawerFormModule = ({
       setSelectedFloors(newSelected);
       prevSelectedFloorsRef.current = newSelected;
       queueMicrotask(() => {
-        void form.trigger();
+        form.clearErrors();
       });
     }
   }, [
@@ -420,56 +466,161 @@ const DrawerFormModule = ({
     selectedFloors,
   ]);
 
-  useEffect(() => {
-    if (moduleData) {
-      const mdAny = moduleData as any;
-      const detectedType: TModulesTypes =
-        (mdAny?.type as TModulesTypes) ?? type;
-      const floorIds = mdAny?.floor_ids ?? mdAny?.data?.floor_ids;
-      if (floorIds && Array.isArray(floorIds) && floorIds.length > 0) {
-        setSelectedFloors(floorIds);
-      }
+  const prevResetRunKey = useRef<string | null>(null);
+  const lastClosedSentinelRef = useRef<number>(0);
+  const openCountRef = useRef<number>(0);
 
-      let resetValues: { type: TModulesTypes; data: Record<string, unknown> };
-      if (
-        mdAny &&
-        typeof mdAny === "object" &&
-        "data" in mdAny &&
-        mdAny.data &&
-        typeof mdAny.data === "object" &&
-        Object.keys(mdAny.data).length > 0
-      ) {
-        resetValues = {
-          type: detectedType,
-          data: { ...(mdAny.data as Record<string, unknown>) },
-        };
-      } else {
-        const {
-          type: _t,
-          floor_ids: _f,
-          unit_id: _u,
-          ...rest
-        } = mdAny as Record<string, unknown>;
-        resetValues = {
-          type: detectedType,
-          data: { ...rest },
-        };
+  useEffect(() => {
+    if (!isOpen) {
+      lastClosedSentinelRef.current = Date.now() + Math.random();
+      return;
+    }
+    openCountRef.current += 1;
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!moduleData) return;
+    const rawMd = moduleData as any;
+    let mdAny: any;
+    if (
+      rawMd &&
+      typeof rawMd === "object" &&
+      rawMd.module &&
+      typeof rawMd.module === "object" &&
+      ((typeof rawMd.module.type === "string" && rawMd.module.type) ||
+        ("data" in rawMd.module && rawMd.module.data))
+    ) {
+      mdAny = rawMd.module;
+    } else {
+      mdAny = rawMd;
+    }
+    const detectedType: TModulesTypes =
+      (mdAny?.type as TModulesTypes) ?? type;
+    const floorIds = mdAny?.floor_ids ?? mdAny?.data?.floor_ids;
+    if (floorIds && Array.isArray(floorIds) && floorIds.length > 0) {
+      setSelectedFloors(floorIds);
+    }
+
+    const isRecord = (v: unknown): v is Record<string, unknown> =>
+      !!v && typeof v === "object";
+
+    let resetValues: { type: TModulesTypes; data: Record<string, unknown> };
+    const hasDataShape =
+      isRecord(mdAny) &&
+      "data" in mdAny &&
+      isRecord(mdAny.data) &&
+      (Object.keys(mdAny.data).length > 0 ||
+        Array.isArray((mdAny.data as any).concrete) ||
+        Array.isArray((mdAny.data as any).steel) ||
+        Array.isArray((mdAny.data as any).form));
+    const hasFlatShape =
+      isRecord(mdAny) &&
+      (Array.isArray((mdAny as any).concrete) ||
+        Array.isArray((mdAny as any).steel) ||
+        Array.isArray((mdAny as any).form) ||
+        typeof (mdAny as any).type === "string") &&
+      !hasDataShape;
+    if (hasDataShape) {
+      resetValues = {
+        type: detectedType,
+        data: { ...(mdAny.data as Record<string, unknown>) },
+      };
+    } else if (hasFlatShape) {
+      const ignoreKeys = new Set([
+        "type",
+        "id",
+        "unit_id",
+        "floor_ids",
+        "floor_indexes",
+        "floor_index",
+        "consumption",
+        "outdated",
+      ]);
+      const data: Record<string, unknown> = {};
+      const rec = mdAny as Record<string, unknown>;
+      for (const key of Object.keys(rec)) {
+        if (ignoreKeys.has(key)) continue;
+        data[key] = rec[key];
       }
-      if (!resetValues.data.type) {
-      }
-      if (typeof resetValues.type === "string" && resetValues.type) {
-        form.reset({
-          type: resetValues.type,
-          data: resetValues.data,
-        } as never);
-      } else {
-        form.reset(getDefaultValuesByType(detectedType) as never);
-      }
-      queueMicrotask(() => {
-        void form.trigger();
+      resetValues = {
+        type: detectedType,
+        data,
+      };
+    } else {
+      resetValues = {
+        type: detectedType,
+        data: (getDefaultValuesByType(detectedType) as any)?.data ?? {},
+      };
+    }
+    const rawData = resetValues.data as Record<string, unknown>;
+    if (Array.isArray(rawData.concrete)) {
+      rawData.concrete = rawData.concrete.map((c: unknown) => {
+        if (!c || typeof c !== "object") return c;
+        const rec = c as Record<string, unknown>;
+        const v = rec.fck;
+        let n: number | null = null;
+        if (typeof v === "number" && isFinite(v)) n = v;
+        else if (
+          typeof v === "string" &&
+          v !== "" &&
+          !isNaN(Number(v)) &&
+          isFinite(Number(v))
+        ) {
+          n = Number(v);
+        }
+        if (n === null) return c;
+        const isCustom =
+          !(FCK_OPTIONS as readonly number[]).includes(n) ||
+          rec.customFck === true ||
+          rec.customFck === "true";
+        return { ...rec, customFck: isCustom } as unknown;
       });
     }
-  }, [moduleData, moduleId, type, form]);
+    const checksum = checksumObjectFields(
+      { ...mdAny, _flat: hasFlatShape, _data: hasDataShape } as any,
+      [
+        "concrete",
+        "steel",
+        "form",
+        "slab_type",
+        "column_number",
+        "avg_beam_span",
+        "avg_slab_span",
+        "floor_ids",
+        "data",
+        "wall_thickness",
+        "slab_thickness",
+        "wall_area",
+        "slab_area",
+        "beam_number",
+        "slab_number",
+        "raft_area",
+        "raft_thickness",
+      ],
+    );
+    const runKey = JSON.stringify({
+      id: (mdAny as { id?: unknown })?.id ?? moduleId ?? null,
+      type: detectedType,
+      openN: openCountRef.current,
+      closedS: lastClosedSentinelRef.current,
+      checksum,
+    });
+    if (prevResetRunKey.current === runKey) {
+      return;
+    }
+    prevResetRunKey.current = runKey;
+    if (typeof resetValues.type === "string" && resetValues.type) {
+      form.reset({
+        type: resetValues.type,
+        data: resetValues.data,
+      } as never);
+    } else {
+      form.reset(getDefaultValuesByType(detectedType) as never);
+    }
+    queueMicrotask(() => {
+      form.clearErrors();
+    });
+  }, [moduleData, moduleId, type, form, isOpen]);
 
   const handleSubmit = () => {
     const moduleType = (form.getValues("type") as TModulesTypes) || type;
@@ -730,6 +881,7 @@ const DrawerFormModule = ({
                                     form.reset(
                                       getDefaultValuesByType(tVal) as never,
                                     );
+                                    form.clearErrors();
                                   }
                                 }}
                                 value={field.value}

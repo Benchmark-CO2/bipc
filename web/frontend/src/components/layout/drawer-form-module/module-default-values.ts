@@ -81,30 +81,34 @@ export const useSlabTypeOptions = () => {
   ];
 };
 
-const makeSteel = (position: string) => ({
+const makeSteel = (position?: string) => ({
   material: "rebar" as const,
   resistance: "CA50" as const,
   mass: "0",
-  position,
+  position: position ?? "unspecified",
 });
 
-const makeConcrete = (position: string) => ({
-  fck: DEFAULT_FCK_BY_POSITION[position] ?? 25,
+const makeConcrete = (position?: string) => ({
+  fck:
+    position && DEFAULT_FCK_BY_POSITION[position]
+      ? DEFAULT_FCK_BY_POSITION[position]
+      : 25,
   volume: "0",
-  position,
+  position: position ?? "unspecified",
+  customFck: false,
 });
 
-const makeForm = (position: string) => ({
+const makeForm = (position?: string) => ({
   area: "0",
-  position,
+  position: position ?? "unspecified",
 });
 
 export const beamColumnDefaultValues = {
   type: "beam_column" as const,
   data: {
-    concrete: [makeConcrete("column")],
-    steel: [makeSteel("column")],
-    form: [makeForm("column")],
+    concrete: [makeConcrete()],
+    steel: [makeSteel()],
+    form: [makeForm()],
     column_number: "0",
     beam_number: "0",
     slab_number: "0",
@@ -117,9 +121,9 @@ export const beamColumnDefaultValues = {
 export const concreteWallDefaultValues = {
   type: "concrete_wall" as const,
   data: {
-    concrete: [makeConcrete("wall")],
-    steel: [makeSteel("wall")],
-    form: [makeForm("wall")],
+    concrete: [makeConcrete()],
+    steel: [makeSteel()],
+    form: [makeForm()],
     wall_thickness: "0",
     slab_thickness: "0",
     wall_area: "0",
@@ -144,16 +148,16 @@ export const structuralMasonryDefaultValues = {
               material: "rebar" as const,
               resistance: "CA50" as const,
               mass: "0",
-              position: "vertical",
+              position: "unspecified",
             },
           ],
         },
       ],
       mortar: [{ fak: 4.5, volume: "0" }],
     },
-    concrete: [makeConcrete("slab")],
-    steel: [makeSteel("slab")],
-    form: [makeForm("slab")],
+    concrete: [makeConcrete()],
+    steel: [makeSteel()],
+    form: [makeForm()],
     beam_number: "0",
     slab_number: "0",
     slab_type: undefined,
@@ -163,24 +167,24 @@ export const structuralMasonryDefaultValues = {
 export const raftFoundationDefaultValues = {
   type: "raft_foundation" as const,
   data: {
-    concrete: [makeConcrete("raft")],
-    steel: [makeSteel("raft")],
+    concrete: [makeConcrete()],
+    steel: [makeSteel()],
   },
 };
 
 export const pilesFoundationDefaultValues = {
   type: "piles_foundation" as const,
   data: {
-    concrete: [makeConcrete("pile")],
-    steel: [makeSteel("pile")],
+    concrete: [makeConcrete()],
+    steel: [makeSteel()],
   },
 };
 
 export const raftPilesFoundationDefaultValues = {
   type: "raft_piles_foundation" as const,
   data: {
-    concrete: [makeConcrete("raft"), makeConcrete("pile")],
-    steel: [makeSteel("raft"), makeSteel("pile")],
+    concrete: [makeConcrete(), makeConcrete()],
+    steel: [makeSteel(), makeSteel()],
   },
 };
 

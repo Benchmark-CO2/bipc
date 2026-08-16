@@ -88,7 +88,7 @@ const getPositionLabel = (
   t: ReturnType<typeof useTranslation>["t"],
   pos: string | undefined,
 ): string => {
-  if (!pos) return t.modules.form.unspecifiedPosition;
+  if (!pos || pos === "unspecified") return t.modules.form.general;
   const key = POSITION_LABEL_KEY[pos];
   if (key) return t.modules.form.completeness.positions[key] ?? pos;
   return pos;
@@ -219,6 +219,16 @@ const ConcreteListSection = ({
 
   const concreteItems = volumes ?? [];
 
+  const isFckCustom = (n: unknown): boolean => {
+    if (typeof n === "string" && !isNaN(Number(n)) && isFinite(Number(n))) {
+      return !FCK_OPTIONS.includes(Number(n));
+    }
+    if (typeof n === "number" && isFinite(n)) {
+      return !FCK_OPTIONS.includes(n);
+    }
+    return false;
+  };
+
   const totalVolume = useMemo(
     () =>
       concreteItems.reduce(
@@ -250,22 +260,40 @@ const ConcreteListSection = ({
   return (
     <Card className="p-0 space-y-0 border border-gray-300 bg-gray-50/50">
       <CardContent className="p-4 space-y-4">
-        <div>
+        <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold flex items-center gap-1.5 text-primary dark:text-gray-200">
             {t.modules.summary.concrete}
           </h3>
+          {concreteItems.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">
+                {t.modules.form.totalConcreteVolume}:
+              </span>
+              <span className="text-sm font-semibold text-gray-900 tabular-nums">
+                {totalVolume.toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
+                m³
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
           {concreteItems.length === 0 && (
-            <p className="text-xs text-muted-foreground italic px-1 py-1">—</p>
+            <p className="text-xs text-muted-foreground italic px-1 py-1">
+              {t.modules.form.emptyList.concrete}
+            </p>
           )}
 
           {concreteArray.fields.map((_, index) => {
             const fieldKey = `data.concrete.${index}`;
             const vol = concreteItems[index];
             const currentCustom =
-              customFckSelected[fieldKey] ?? vol?.customFck ?? false;
+              customFckSelected[fieldKey] ??
+              vol?.customFck ??
+              isFckCustom(vol?.fck);
 
             return (
               <div
@@ -281,10 +309,10 @@ const ConcreteListSection = ({
                         <FormLabel className="text-xs">Posição</FormLabel>
                         <FormControl>
                           <Select
-                            value={field.value ?? firstPosition}
-                            onValueChange={field.onChange}
+                            value={field.value ?? "unspecified"}
+                            onValueChange={(v) => field.onChange(v)}
                           >
-                            <SelectTrigger className="w-full h-9 text-xs">
+                            <SelectTrigger className="w-full h-9">
                               <SelectValue placeholder="Selecione a posição" />
                             </SelectTrigger>
                             <SelectContent>
@@ -297,6 +325,23 @@ const ConcreteListSection = ({
                                   {getPositionLabel(t, pos)}
                                 </SelectItem>
                               ))}
+                              {field.value &&
+                                field.value !== "unspecified" &&
+                                !positions.includes(field.value) && (
+                                  <SelectItem
+                                    value={String(field.value)}
+                                    disabled
+                                    className="text-xs"
+                                  >
+                                    {getPositionLabel(t, field.value)}
+                                  </SelectItem>
+                                )}
+                              <SelectItem
+                                value="unspecified"
+                                className="text-xs"
+                              >
+                                {t.modules.form.general}
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </FormControl>
@@ -308,7 +353,7 @@ const ConcreteListSection = ({
                     control={form.control as Control<any>}
                     name={`${fieldKey}.fck` as never}
                     render={({ field }) => (
-                      <FormItem className="col-span-12 sm:col-span-4">
+                      <FormItem className="col-span-12 sm:col-span-5">
                         <FormLabel className="text-xs">
                           {t.modules.form.fckLabel}
                         </FormLabel>
@@ -321,7 +366,7 @@ const ConcreteListSection = ({
                             }
                             onValueChange={(val) => handleSelectFck(index, val)}
                           >
-                            <SelectTrigger className="w-full h-9 text-xs">
+                            <SelectTrigger className="w-full h-9">
                               <SelectValue
                                 placeholder={t.modules.form.selectFck}
                               />
@@ -350,7 +395,7 @@ const ConcreteListSection = ({
                     control={form.control as Control<any>}
                     name={`${fieldKey}.volume` as never}
                     render={({ field }) => (
-                      <FormItem className="col-span-12 sm:col-span-4">
+                      <FormItem className="col-span-12 sm:col-span-3">
                         <FormLabel className="text-xs">
                           {t.modules.form.volume}
                         </FormLabel>
@@ -358,7 +403,7 @@ const ConcreteListSection = ({
                           <Input
                             type="text"
                             inputMode="decimal"
-                            className="h-9 text-xs"
+                            className="h-9 w-full max-w-[160px]"
                             placeholder="100"
                             value={field.value || ""}
                             onChange={(e) => {
@@ -377,7 +422,6 @@ const ConcreteListSection = ({
                       variant="outline"
                       size="sm"
                       onClick={() => removeConcreteItem(index)}
-                      disabled={concreteItems.length <= 0}
                       className="h-9 w-9 p-0 shrink-0"
                     >
                       <Trash2 className="h-4 w-4 text-red-500" />
@@ -398,7 +442,7 @@ const ConcreteListSection = ({
                           <Input
                             type="number"
                             inputMode="decimal"
-                            className="h-9 text-xs"
+                            className="h-9"
                             placeholder="70"
                             value={
                               typeof field.value === "number"
@@ -427,21 +471,6 @@ const ConcreteListSection = ({
           >
             <Plus className="h-4 w-4" />
           </Button>
-
-          {concreteItems.length > 0 && (
-            <div className="flex justify-end items-center gap-2 pt-1">
-              <span className="text-xs text-muted-foreground">
-                {t.modules.form.totalConcreteVolume}:
-              </span>
-              <span className="text-xs font-medium tabular-nums">
-                {totalVolume.toLocaleString("pt-BR", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}{" "}
-                m³
-              </span>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>
@@ -487,9 +516,10 @@ const SteelMaterialItemInline = ({
   }) ?? []) as SteelItem[];
 
   const allowedResistancesByMaterial: Record<string, string[]> = {
-    rebar: ["CA50", "CA60", "other"],
-    mesh: ["CA60", "other"],
+    rebar: ["CA50", "CA60", "CP190", "other"],
+    mesh: ["CA60", "CP190", "other"],
     strand: ["CP190", "other"],
+    general: ["CA50", "CA60", "CP190", "other"],
     other: ["CA50", "CA60", "CP190", "other"],
   };
   const allowedResistances =
@@ -525,10 +555,10 @@ const SteelMaterialItemInline = ({
               <FormLabel className="text-xs">Posição</FormLabel>
               <FormControl>
                 <Select
-                  value={field.value ?? firstPosition}
-                  onValueChange={field.onChange}
+                  value={field.value ?? "unspecified"}
+                  onValueChange={(v) => field.onChange(v)}
                 >
-                  <SelectTrigger className="w-full h-9 text-xs">
+                  <SelectTrigger className="w-full h-9">
                     <SelectValue placeholder="Selecione a posição" />
                   </SelectTrigger>
                   <SelectContent>
@@ -537,6 +567,9 @@ const SteelMaterialItemInline = ({
                         {getPositionLabel(t, pos)}
                       </SelectItem>
                     ))}
+                    <SelectItem value="unspecified" className="text-xs">
+                      {t.modules.form.general}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </FormControl>
@@ -548,13 +581,13 @@ const SteelMaterialItemInline = ({
           control={form.control}
           name={`${name}.${index}.material`}
           render={({ field }) => (
-            <FormItem className="col-span-12 sm:col-span-2">
+            <FormItem className="col-span-12 sm:col-span-3">
               <FormLabel className="text-xs">
                 {t.modules.form.material}
               </FormLabel>
               <FormControl>
                 <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger className="h-9 w-full text-xs">
+                  <SelectTrigger className="h-9 w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -588,13 +621,13 @@ const SteelMaterialItemInline = ({
           control={form.control}
           name={`${name}.${index}.resistance`}
           render={({ field }) => (
-            <FormItem className="col-span-12 sm:col-span-2">
+            <FormItem className="col-span-12 sm:col-span-3">
               <FormLabel className="text-xs">
                 {t.modules.form.steelType}
               </FormLabel>
               <FormControl>
                 <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger className="h-9 w-full text-xs">
+                  <SelectTrigger className="h-9 w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -621,14 +654,14 @@ const SteelMaterialItemInline = ({
           control={form.control}
           name={`${name}.${index}.mass`}
           render={({ field }) => (
-            <FormItem className="col-span-12 sm:col-span-5">
+            <FormItem className="col-span-12 sm:col-span-3">
               <FormLabel className="text-xs">
                 {t.modules.form.massSteelKg}
               </FormLabel>
               <FormControl>
                 <Input
                   {...field}
-                  className="h-9 w-full text-xs"
+                  className="h-9 w-full max-w-[160px] text-xs"
                   placeholder="0,00"
                   onChange={(e) => {
                     const maskedValue = masks.numeric(e.target.value);
@@ -667,7 +700,7 @@ const SteelMaterialItemInline = ({
                 <FormControl>
                   <Input
                     {...field}
-                    className="h-9 text-xs"
+                    className="h-9"
                     placeholder="Ex: Aço especial"
                   />
                 </FormControl>
@@ -688,7 +721,7 @@ const SteelMaterialItemInline = ({
                 <FormControl>
                   <Input
                     type="number"
-                    className="h-9 text-xs"
+                    className="h-9"
                     placeholder="Ex: 500"
                     value={field.value ?? ""}
                     onChange={(e) => field.onChange(Number(e.target.value))}
@@ -722,12 +755,13 @@ const SteelSection = ({
   if (positions.length === 0) return null;
   const firstPosition = positions[0] ?? FIRST_POSITION[type] ?? "column";
 
-  const allowedMaterials: readonly ("rebar" | "mesh" | "strand" | "other")[] = [
-    "rebar",
-    "strand",
-    "mesh",
-    "other",
-  ];
+  const allowedMaterials: readonly (
+    | "rebar"
+    | "mesh"
+    | "strand"
+    | "general"
+    | "other"
+  )[] = ["rebar", "strand", "mesh", "general", "other"];
 
   const steelItems = (useWatch({
     control: form.control as unknown as Control,
@@ -755,6 +789,7 @@ const SteelSection = ({
         rebar: t.modules.form.rebar,
         mesh: t.modules.form.mesh,
         strand: t.modules.form.strand,
+        general: "Geral",
         other: t.modules.form.other,
       }[key] ?? key,
   }));
@@ -789,7 +824,9 @@ const SteelSection = ({
 
         <div className="space-y-2">
           {steelItems.length === 0 && (
-            <p className="text-xs text-muted-foreground italic px-1 py-1">—</p>
+            <p className="text-xs text-muted-foreground italic px-1 py-1">
+              {t.modules.form.emptyList.steel}
+            </p>
           )}
 
           {steelArray.fields.map((field, index) => (
@@ -801,7 +838,7 @@ const SteelSection = ({
               positions={positions}
               firstPosition={firstPosition}
               onRemove={() => removeSteelItem(index)}
-              canRemove={steelItems.length > 1}
+              canRemove={true}
               allowedMaterials={allowedMaterials}
               materialOptions={materialOptions}
               resistanceOptions={resistanceOptions}
@@ -858,15 +895,31 @@ const FormAreaSection = ({
   return (
     <Card className="p-0 space-y-0 border border-gray-300 bg-gray-50/50">
       <CardContent className="p-4 space-y-4">
-        <div>
+        <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold flex items-center gap-1.5 text-primary dark:text-gray-200">
             {t.modules.form.formAreaOptional}
           </h3>
+          {items.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">
+                {t.modules.form.totalForm}:
+              </span>
+              <span className="text-sm font-semibold text-gray-900 tabular-nums">
+                {totalArea.toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
+                m²
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
           {items.length === 0 && (
-            <p className="text-xs text-muted-foreground italic px-1 py-1">—</p>
+            <p className="text-xs text-muted-foreground italic px-1 py-1">
+              {t.modules.form.emptyList.forms}
+            </p>
           )}
 
           {formArray.fields.map((_, index) => {
@@ -881,14 +934,14 @@ const FormAreaSection = ({
                     control={form.control as Control<any>}
                     name={`${fieldKey}.position` as never}
                     render={({ field }) => (
-                      <FormItem className="col-span-12 sm:col-span-5">
+                      <FormItem className="col-span-12 sm:col-span-8">
                         <FormLabel className="text-xs">Posição</FormLabel>
                         <FormControl>
                           <Select
-                            value={field.value ?? firstPosition}
-                            onValueChange={field.onChange}
+                            value={field.value ?? "unspecified"}
+                            onValueChange={(v) => field.onChange(v)}
                           >
-                            <SelectTrigger className="w-full h-9 text-xs">
+                            <SelectTrigger className="w-full h-9">
                               <SelectValue placeholder="Selecione a posição" />
                             </SelectTrigger>
                             <SelectContent>
@@ -901,6 +954,23 @@ const FormAreaSection = ({
                                   {getPositionLabel(t, pos)}
                                 </SelectItem>
                               ))}
+                              {field.value &&
+                                field.value !== "unspecified" &&
+                                !positions.includes(field.value) && (
+                                  <SelectItem
+                                    value={String(field.value)}
+                                    disabled
+                                    className="text-xs"
+                                  >
+                                    {getPositionLabel(t, field.value)}
+                                  </SelectItem>
+                                )}
+                              <SelectItem
+                                value="unspecified"
+                                className="text-xs"
+                              >
+                                {t.modules.form.general}
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </FormControl>
@@ -912,7 +982,7 @@ const FormAreaSection = ({
                     control={form.control as Control<any>}
                     name={`${fieldKey}.area` as never}
                     render={({ field }) => (
-                      <FormItem className="col-span-12 sm:col-span-6">
+                      <FormItem className="col-span-12 sm:col-span-3">
                         <FormLabel className="text-xs">
                           {t.modules.form.area}
                         </FormLabel>
@@ -920,7 +990,7 @@ const FormAreaSection = ({
                           <Input
                             type="text"
                             inputMode="decimal"
-                            className="h-9 text-xs"
+                            className="h-9 w-full max-w-[160px]"
                             placeholder="0,00"
                             value={field.value || ""}
                             onChange={(e) => {
@@ -939,7 +1009,6 @@ const FormAreaSection = ({
                       variant="outline"
                       size="sm"
                       onClick={() => removeFormItem(index)}
-                      disabled={items.length <= 0}
                       className="h-9 w-9 p-0 shrink-0"
                     >
                       <Trash2 className="h-4 w-4 text-red-500" />
@@ -959,21 +1028,6 @@ const FormAreaSection = ({
           >
             <Plus className="h-4 w-4" />
           </Button>
-
-          {items.length > 0 && (
-            <div className="flex justify-end items-center gap-2 pt-1">
-              <span className="text-xs text-muted-foreground">
-                {t.modules.form.totalForm}:
-              </span>
-              <span className="text-xs font-medium tabular-nums">
-                {totalArea.toLocaleString("pt-BR", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}{" "}
-                m²
-              </span>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>
@@ -1018,7 +1072,7 @@ const ScalarFieldsSection = ({
                       value={field.value ?? ""}
                       onValueChange={field.onChange}
                     >
-                      <SelectTrigger className="h-9 text-xs">
+                      <SelectTrigger className="h-9 w-full">
                         <SelectValue
                           placeholder={t.modules.form.selectSlabType}
                         />
@@ -1054,7 +1108,7 @@ const ScalarFieldsSection = ({
                   <Input
                     type="text"
                     inputMode="decimal"
-                    className="h-9 text-xs"
+                    className="h-9"
                     placeholder={def.placeholder ?? "0"}
                     value={field.value === 0 ? "" : (field.value ?? "")}
                     onChange={(e) => {
@@ -1089,6 +1143,9 @@ const MasonrySectionWrapper = ({
     removeMasonryMortar,
     addMasonryGrout,
     removeMasonryGrout,
+    masonryBlocksArray,
+    masonryMortarArray,
+    masonryGroutArray,
   } = hook;
 
   return (
@@ -1104,6 +1161,9 @@ const MasonrySectionWrapper = ({
       }}
       stepperMode={stepperMode}
       isSubmitted={isSubmitted}
+      masonryBlocksArray={masonryBlocksArray}
+      masonryMortarArray={masonryMortarArray}
+      masonryGroutArray={masonryGroutArray}
     />
   );
 };

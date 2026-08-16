@@ -143,6 +143,28 @@ const cleanMasonry = (masonry: IMasonryElement): IMasonryElement | null => {
   return { blocks: cleanBlocks, mortar: cleanMortar, grout: cleanGrout };
 };
 
+const shouldStripPosition = (p: unknown): boolean => {
+  if (p === undefined || p === null) return true;
+  if (typeof p !== "string") return false;
+  const s = p.trim().toLowerCase();
+  return (
+    s === "" ||
+    s === "geral" ||
+    s === "general" ||
+    s === "unspecified" ||
+    s === "__geral__"
+  );
+};
+
+const stripEmptyPosition = <T extends { position?: unknown }>(item: T): T => {
+  if (!item || typeof item !== "object") return item;
+  if ("position" in item && shouldStripPosition((item as any).position)) {
+    const { position: _p, ...rest } = item as any;
+    return rest as T;
+  }
+  return item;
+};
+
 export const cleanZeroItemsBeforeSubmit = (data: unknown): unknown => {
   const cleaned: Record<string, unknown> = {
     ...(typeof data === "object" && data !== null
@@ -152,26 +174,69 @@ export const cleanZeroItemsBeforeSubmit = (data: unknown): unknown => {
 
   if ("concrete" in cleaned && Array.isArray(cleaned.concrete)) {
     cleaned.concrete = (
-      cleaned.concrete as IV2ConcreteVolumeItem<TAnyPosition>[]
-    ).filter((item) => !isConcreteItemZero(item));
+      cleaned.concrete as (IV2ConcreteVolumeItem<TAnyPosition> & {
+        customFck?: unknown;
+      })[]
+    )
+      .filter((item) => !isConcreteItemZero(item))
+      .map((it) => {
+        const { customFck: _cf, ...rest } = it;
+        return stripEmptyPosition(rest) as IV2ConcreteVolumeItem<TAnyPosition>;
+      });
   }
 
   if ("steel" in cleaned && Array.isArray(cleaned.steel)) {
-    cleaned.steel = (
-      cleaned.steel as IV2SteelMaterialItem<TAnyPosition>[]
-    ).filter((item) => !isSteelItemZero(item));
+    cleaned.steel = (cleaned.steel as IV2SteelMaterialItem<TAnyPosition>[])
+      .filter((item) => !isSteelItemZero(item))
+      .map(stripEmptyPosition);
   }
 
   if ("form" in cleaned && Array.isArray(cleaned.form)) {
-    cleaned.form = (cleaned.form as IV2FormAreaItem<TAnyPosition>[]).filter(
-      (item) => !isFormItemZero(item),
-    );
+    cleaned.form = (cleaned.form as IV2FormAreaItem<TAnyPosition>[])
+      .filter((item) => !isFormItemZero(item))
+      .map(stripEmptyPosition);
   }
 
   if ("masonry" in cleaned && cleaned.masonry) {
-    const masonryClean = cleanMasonry(cleaned.masonry as IMasonryElement);
-    if (masonryClean) {
-      cleaned.masonry = masonryClean;
+    const masonry = cleaned.masonry as IMasonryElement;
+    const cleanGrout = (masonry.grout ?? [])
+      .map((g) => {
+        const cleanVolumes = (g.volumes ?? []).filter((v) => {
+          const vol =
+            typeof v.volume === "string" ? parseNumber(v.volume) : v.volume;
+          return vol && vol > 0;
+        });
+        if (cleanVolumes.length === 0) return null;
+        const cleanSteel = Array.isArray((g as any).steel)
+          ? ((g as any).steel as any[])
+              .filter((s) => !isSteelItemZero(s as any))
+              .map(stripEmptyPosition)
+          : undefined;
+        return {
+          ...stripEmptyPosition(g as any),
+          volumes: cleanVolumes,
+          ...(cleanSteel ? { steel: cleanSteel } : {}),
+        } as IGroutInfo;
+      })
+      .filter((g): g is IGroutInfo => g !== null);
+    const cleanBlocks = (masonry.blocks ?? [])
+      .map(cleanBlockInfo)
+      .filter((b): b is IBlockInfo => b !== null);
+    const cleanMortar = (masonry.mortar ?? [])
+      .map(cleanMortarItem)
+      .filter((m): m is IMortarItem => m !== null);
+    if (cleanBlocks.length + cleanMortar.length + cleanGrout.length > 0) {
+      cleaned.masonry = {
+        blocks: cleanBlocks,
+        mortar: cleanMortar,
+        grout: cleanGrout,
+      };
+    } else {
+      cleaned.masonry = {
+        blocks: cleanBlocks,
+        mortar: cleanMortar,
+        grout: cleanGrout,
+      };
     }
   }
 

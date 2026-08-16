@@ -625,6 +625,16 @@ export const ptBR = {
       noFloorsRegisteredWarning:
         "A unidade selecionada não tem pavimentos cadastrados. Crie os pavimentos na tela da unidade ou vincule o módulo a outra unidade.",
       unspecifiedPosition: "Sem Posição / Geral",
+      general: "Geral",
+      emptyList: {
+        concrete: "Nenhum elemento de concreto adicionado",
+        steel: "Nenhum elemento de aço adicionado",
+        forms: "Nenhum elemento de fôrma adicionado",
+        blocks: "Nenhum elemento de blocos adicionado",
+        mortar: "Nenhum elemento de argamassa adicionado",
+        groutVolumes: "Nenhum volume de graute adicionado",
+        groutSteel: "Nenhum aço de graute adicionado",
+      },
       unspecifiedHint: "Itens sem posição declarada (soma geral do módulo)",
       beamCount: "Número de vigas",
       slabCount: "Número de lajes",
@@ -911,18 +921,21 @@ export const ptBR = {
     total: "Total",
     chartLegend: {
       referenceValue: "Valor de referência",
-      constructionMitigationPotential: "Potencial de mitigação da construção (Melhor cenário)",
+      constructionMitigationPotential:
+        "Potencial de mitigação da construção (Melhor cenário)",
       projectMitigationPotential: "Potencial de mitigação do projeto",
-      riskOfLowerConstructionMitigation: "Risco de menor mitigação da construção (Pior cenário)",
+      riskOfLowerConstructionMitigation:
+        "Risco de menor mitigação da construção (Pior cenário)",
       referenceValue_short: "Valor de referência",
-      constructionMitigationPotential_short: "Potencial de mitigação da construção",
+      constructionMitigationPotential_short:
+        "Potencial de mitigação da construção",
       projectMitigationPotential_short: "Potencial de mitigação do projeto",
       riskOfLowerConstructionMitigation_short: "Pior cenário",
-      title: "Legenda"
+      title: "Legenda",
     },
     emissionLegend: {
-      title: 'Total de Emissões por tecnologia',
-    }
+      title: "Total de Emissões por tecnologia",
+    },
   },
   floor: {
     penthouse_floor: "Cobertura",

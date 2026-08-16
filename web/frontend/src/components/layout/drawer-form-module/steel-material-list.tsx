@@ -14,23 +14,51 @@ import {
   SelectValue,
 } from "../../ui/select";
 
-type MaterialKey = "rebar" | "mesh" | "strand" | "other";
+type MaterialKey = "rebar" | "mesh" | "strand" | "general" | "other";
 
 const defaultResistanceByMaterial: Record<string, string> = {
   rebar: "CA50",
   mesh: "CA60",
   strand: "CP190",
+  general: "CA50",
   other: "CA50",
+};
+
+const POSITION_LABEL_KEY: Record<string, string> = {
+  column: "Pilar",
+  beam: "Viga",
+  slab: "Laje",
+  stair: "Escada",
+  wall: "Parede",
+  raft: "Radier",
+  pile: "Estaca",
+  block: "Bloco",
+  grade_beam: "Viga de amarração",
+  tie_beam: "Viga baldrame",
+  vertical: "Vertical",
+  horizontal: "Horizontal",
+};
+
+const getPositionLabel = (
+  t: ReturnType<typeof useTranslation>["t"],
+  pos: string | undefined,
+): string => {
+  if (!pos || pos === "unspecified") return t.modules.form.general;
+  return POSITION_LABEL_KEY[pos] ?? pos;
 };
 
 interface SteelMaterialListProps {
   form: UseFormReturn<any>;
   name: string;
-  allowedMaterials?: MaterialKey[];
+  allowedMaterials?: readonly MaterialKey[];
   minItems?: number;
   stepperMode?: boolean;
   isSubmitted?: boolean;
   isRequiredPosition?: boolean;
+  positions?: readonly string[];
+  firstPosition?: string;
+  titleLabel?: string;
+  emptyLabel?: string;
 }
 
 interface SteelMaterialItemProps {
@@ -43,6 +71,8 @@ interface SteelMaterialItemProps {
   otherCombinations: string[];
   onRemove: () => void;
   canRemove: boolean;
+  positions?: readonly string[];
+  firstPosition?: string;
 }
 
 const SteelMaterialItem = ({
@@ -55,6 +85,8 @@ const SteelMaterialItem = ({
   otherCombinations,
   onRemove,
   canRemove,
+  positions,
+  firstPosition,
 }: SteelMaterialItemProps) => {
   const { t } = useTranslation();
   const currentMaterial = useWatch({
@@ -67,9 +99,10 @@ const SteelMaterialItem = ({
   });
 
   const allowedResistancesByMaterial: Record<string, string[]> = {
-    rebar: ["CA50", "CA60", "other"],
-    mesh: ["CA60", "other"],
+    rebar: ["CA50", "CA60", "CP190", "other"],
+    mesh: ["CA60", "CP190", "other"],
     strand: ["CP190", "other"],
+    general: ["CA50", "CA60", "CP190", "other"],
     other: ["CA50", "CA60", "CP190", "other"],
   };
   const allowedResistances =
@@ -96,13 +129,55 @@ const SteelMaterialItem = ({
   const isOtherMaterial = currentMaterial === "other";
   const isOtherResistance = currentResistance === "other";
 
+  const hasPositionField = Array.isArray(positions) && positions.length > 0;
+
   return (
     <div
       key={fieldId}
       className="border border-gray-200 rounded-md p-3 space-y-3"
     >
-      <div className="grid grid-cols-12 gap-2">
-        <div className="col-span-4">
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+        {hasPositionField && (
+          <div className="col-span-12 sm:col-span-2 ">
+            <FormField
+              control={form.control}
+              name={`${name}.${index}.position`}
+              render={({ field }) => (
+                <FormItem className="w-full space-y-1">
+                  <FormLabel className="text-xs">Posição</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={field.value ?? "unspecified"}
+                      onValueChange={(v) => field.onChange(v)}
+                    >
+                      <SelectTrigger className="h-9 w-full">
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {positions!.map((pos) => (
+                          <SelectItem key={pos} value={pos} className="text-xs">
+                            {getPositionLabel(t, pos)}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="unspecified" className="text-xs">
+                          {t.modules.form.general}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+        )}
+
+        <div
+          className={
+            hasPositionField
+              ? "col-span-12 sm:col-span-2"
+              : "col-span-12 sm:col-span-3"
+          }
+        >
           <FormField
             control={form.control}
             name={`${name}.${index}.material`}
@@ -147,7 +222,13 @@ const SteelMaterialItem = ({
           />
         </div>
 
-        <div className="col-span-3">
+        <div
+          className={
+            hasPositionField
+              ? "col-span-12 sm:col-span-2"
+              : "col-span-12 sm:col-span-3"
+          }
+        >
           <FormField
             control={form.control}
             name={`${name}.${index}.resistance`}
@@ -182,7 +263,7 @@ const SteelMaterialItem = ({
           />
         </div>
 
-        <div className="col-span-4">
+        <div className="col-span-12 sm:col-span-4">
           <FormField
             control={form.control}
             name={`${name}.${index}.mass`}
@@ -194,7 +275,7 @@ const SteelMaterialItem = ({
                 <FormControl>
                   <Input
                     {...field}
-                    className="h-9 w-full"
+                    className="h-9 w-full max-w-[160px]"
                     placeholder="0,00"
                     onChange={(e) => {
                       const maskedValue = masks.numeric(e.target.value);
@@ -207,14 +288,14 @@ const SteelMaterialItem = ({
           />
         </div>
 
-        <div className="col-span-1 flex items-end pb-[2px]">
+        <div className="col-span-12 sm:col-span-2 flex sm:items-end sm:pb-[2px]">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={onRemove}
             disabled={!canRemove}
-            className="w-full h-9"
+            className="w-full h-9 shrink-0"
           >
             <Trash2 className="h-4 w-4 text-red-500" />
           </Button>
@@ -266,11 +347,15 @@ const SteelMaterialItem = ({
 const SteelMaterialList = ({
   form,
   name,
-  allowedMaterials = ["rebar", "other"],
-  minItems = 1,
+  allowedMaterials = ["rebar", "general", "other"],
+  minItems = 0,
   stepperMode = false,
   isSubmitted = false,
   isRequiredPosition = false,
+  positions,
+  firstPosition,
+  titleLabel,
+  emptyLabel,
 }: SteelMaterialListProps) => {
   const { t } = useTranslation();
   const { fields, append, remove } = useFieldArray({
@@ -299,6 +384,7 @@ const SteelMaterialList = ({
         rebar: t.modules.form.rebar,
         mesh: t.modules.form.mesh,
         strand: t.modules.form.strand,
+        general: t.modules.form.general,
         other: t.modules.form.other,
       }[key] ?? key,
   }));
@@ -331,7 +417,7 @@ const SteelMaterialList = ({
     <div className={`space-y-3 p-3 rounded-md border-2 ${wrapperBorder}`}>
       <div className="flex items-center justify-between">
         <FormLabel className="text-xs text-gray-700">
-          {t.modules.form.steelMaterials}
+          {titleLabel ?? t.modules.form.steelMaterials}
         </FormLabel>
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-500">Total:</span>
@@ -344,6 +430,12 @@ const SteelMaterialList = ({
           </span>
         </div>
       </div>
+
+      {fields.length === 0 && (
+        <p className="text-xs text-muted-foreground italic px-1 py-1">
+          {emptyLabel ?? t.modules.form.emptyList.steel}
+        </p>
+      )}
 
       {fields.map((field, index) => {
         const otherCombinations = (steelArray || [])
@@ -364,10 +456,9 @@ const SteelMaterialList = ({
             resistanceOptions={resistanceOptions}
             otherCombinations={otherCombinations}
             onRemove={() => remove(index)}
-            canRemove={
-              !(isRequiredPosition && fields.length <= 1) &&
-              fields.length > minItems
-            }
+            canRemove={fields.length > minItems}
+            positions={positions}
+            firstPosition={firstPosition}
           />
         );
       })}
@@ -378,9 +469,10 @@ const SteelMaterialList = ({
         size="sm"
         onClick={() => {
           const allowedResistancesByMaterial: Record<string, string[]> = {
-            rebar: ["CA50", "CA60", "other"],
-            mesh: ["CA60", "other"],
+            rebar: ["CA50", "CA60", "CP190", "other"],
+            mesh: ["CA60", "CP190", "other"],
             strand: ["CP190", "other"],
+            general: ["CA50", "CA60", "CP190", "other"],
             other: ["CA50", "CA60", "CP190", "other"],
           };
 
@@ -412,6 +504,7 @@ const SteelMaterialList = ({
             material: foundMaterial,
             resistance: foundResistance,
             mass: "0",
+            position: "unspecified",
           });
         }}
         className="w-full text-green-600 border-green-600 hover:bg-green-50"

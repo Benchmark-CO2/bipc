@@ -4,9 +4,9 @@ import {
   createModuleV2FormSchema,
 } from "@/validators/moduleFormByType.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
-import { TModulesTypes } from "@/types/modules";
+import { TModuleDataV2, TModulesTypes } from "@/types/modules";
 import { cleanZeroItemsBeforeSubmit } from "@/components/layout/drawer-form-module/aggregate-helpers";
 import {
   DEFAULT_FCK_BY_POSITION,
@@ -26,23 +26,23 @@ type UseModuleV2FormArgs = {
   isOpen?: boolean;
 };
 
-const makeConcreteItem = (position: string) => ({
-  fck: DEFAULT_FCK_BY_POSITION[position] ?? 25,
+const makeConcreteItem = (position?: string) => ({
+  fck: position ? (DEFAULT_FCK_BY_POSITION[position] ?? 25) : 25,
   volume: "0" as unknown as number,
-  position,
+  position: position ?? "unspecified",
   customFck: false,
 });
 
-const makeSteelItem = (position: string) => ({
+const makeSteelItem = (position?: string) => ({
   material: "rebar" as const,
   resistance: "CA50" as const,
   mass: "0" as unknown as number,
-  position,
+  position: position ?? "unspecified",
 });
 
-const makeFormItem = (position: string) => ({
+const makeFormItem = (position?: string) => ({
   area: "0" as unknown as number,
-  position,
+  position: position ?? "unspecified",
 });
 
 export const useModuleV2Form = ({
@@ -57,33 +57,98 @@ export const useModuleV2Form = ({
   );
 
   const defaultValues = useMemo<ModuleV2FormInput>(() => {
-    const baseDefaults = getDefaultValuesByType(
-      type,
-    ) as unknown as ModuleV2FormInput;
-    if (
-      initialModuleData &&
-      typeof initialModuleData === "object" &&
-      initialModuleData.type === type &&
-      initialModuleData.data &&
-      typeof initialModuleData.data === "object" &&
-      Object.keys(initialModuleData.data).length > 0
-    ) {
-      return {
-        type,
-        data: {
-          ...((baseDefaults as any)?.data ?? {}),
-          ...(initialModuleData.data as any),
-        },
-      } as ModuleV2FormInput;
+    const unwrapped = (() => {
+      if (
+        initialModuleData &&
+        typeof initialModuleData === "object" &&
+        (initialModuleData as any).module &&
+        typeof (initialModuleData as any).module === "object" &&
+        ((initialModuleData as any).module.data ||
+          typeof (initialModuleData as any).module.type === "string")
+      ) {
+        return (initialModuleData as any).module as TModuleDataV2;
+      }
+      return initialModuleData;
+    })();
+
+    const isRecord = (v: unknown): v is Record<string, unknown> =>
+      !!v && typeof v === "object";
+    const hasAnyArray = (rec: Record<string, unknown>): boolean =>
+      Array.isArray(rec.concrete) ||
+      Array.isArray(rec.steel) ||
+      Array.isArray(rec.form) ||
+      Array.isArray((rec.masonry as any)?.blocks) ||
+      Array.isArray((rec.masonry as any)?.mortar) ||
+      Array.isArray((rec.masonry as any)?.grout);
+
+    if (unwrapped && isRecord(unwrapped)) {
+      const uw = unwrapped as Record<string, unknown>;
+      const unwrappedType = (uw.type as TModulesTypes) ?? type;
+      const baseDefaults = getDefaultValuesByType(
+        unwrappedType,
+      ) as unknown as ModuleV2FormInput;
+      if (
+        isRecord(uw.data) &&
+        (Object.keys(uw.data).length > 0 || hasAnyArray(uw.data))
+      ) {
+        return {
+          type: unwrappedType,
+          data: {
+            ...((baseDefaults as any)?.data ?? {}),
+            ...(uw.data as any),
+          },
+        } as ModuleV2FormInput;
+      }
+      if (
+        typeof unwrappedType === "string" &&
+        (hasAnyArray(uw) ||
+          Object.keys(uw).filter(
+            (k) =>
+              ![
+                "type",
+                "id",
+                "unit_id",
+                "floor_ids",
+                "floor_indexes",
+                "floor_index",
+                "consumption",
+                "outdated",
+              ].includes(k),
+          ).length > 0)
+      ) {
+        const {
+          type: _t,
+          id: _i,
+          unit_id: _u,
+          floor_ids: _f,
+          floor_indexes: _fi,
+          floor_index: _fidx,
+          consumption: _c,
+          outdated: _o,
+          ...rest
+        } = uw;
+        return {
+          type: unwrappedType,
+          data: {
+            ...((baseDefaults as any)?.data ?? {}),
+            ...(rest as any),
+          },
+        } as ModuleV2FormInput;
+      }
+      return baseDefaults;
     }
-    return baseDefaults;
+
+    return getDefaultValuesByType(type) as unknown as ModuleV2FormInput;
   }, [type, initialModuleData]);
 
   const form = useForm<ModuleV2FormInput, unknown, ModuleV2FormSchema>({
     resolver: schemaResolver as never,
     defaultValues,
-    mode: "onChange",
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
   });
+
+  const identityRef = useRef<string | null>(null);
 
   const reactiveType = useWatch({
     control: form.control,
@@ -98,8 +163,15 @@ export const useModuleV2Form = ({
   }, [stepperMode, isOpen, form]);
 
   useEffect(() => {
+    const initIdentity = initialModuleData
+      ? JSON.stringify({ t: type, d: initialModuleData })
+      : `empty|${type}`;
+    const identityChanged = identityRef.current !== initIdentity;
+    identityRef.current = initIdentity;
+    if (!identityChanged) return;
     form.reset(defaultValues);
-  }, [type, form, defaultValues]);
+    form.clearErrors();
+  }, [type, form, defaultValues, initialModuleData]);
 
   const concreteArray = useFieldArray({
     control: form.control,
@@ -136,10 +208,7 @@ export const useModuleV2Form = ({
   };
 
   const addConcreteItem = (position?: string) => {
-    const positions = getPositionsFor("concrete");
-    concreteArray.append(
-      makeConcreteItem(position ?? positions[0] ?? "column") as never,
-    );
+    concreteArray.append(makeConcreteItem(position) as never);
   };
 
   const removeConcreteItem = (index: number) => {
@@ -147,10 +216,7 @@ export const useModuleV2Form = ({
   };
 
   const addSteelItem = (position?: string) => {
-    const positions = getPositionsFor("steel");
-    steelArray.append(
-      makeSteelItem(position ?? positions[0] ?? "column") as never,
-    );
+    steelArray.append(makeSteelItem(position) as never);
   };
 
   const removeSteelItem = (index: number) => {
@@ -159,7 +225,10 @@ export const useModuleV2Form = ({
 
   const addFormItem = (position?: string) => {
     const positions = getPositionsFor("form");
-    if (positions.length === 0) return;
+    if (positions.length === 0) {
+      formArray.append(makeFormItem(position) as never);
+      return;
+    }
     formArray.append(makeFormItem(position ?? positions[0]) as never);
   };
 
@@ -210,7 +279,7 @@ export const useModuleV2Form = ({
           material: "rebar" as const,
           resistance: "CA50" as const,
           mass: "0" as unknown as number,
-          position: groutPosition,
+          position: "unspecified",
         },
       ],
     } as never);

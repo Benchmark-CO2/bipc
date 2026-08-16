@@ -623,6 +623,16 @@ export const en: Translations = {
       noFloorsRegisteredWarning:
         "The selected unit has no registered floors. Create floors on the unit screen or bind the module to another unit.",
       unspecifiedPosition: "Unspecified / General",
+      general: "General",
+      emptyList: {
+        concrete: "No concrete elements added",
+        steel: "No steel elements added",
+        forms: "No formwork elements added",
+        blocks: "No block elements added",
+        mortar: "No mortar elements added",
+        groutVolumes: "No grout volumes added",
+        groutSteel: "No grout steel added",
+      },
       unspecifiedHint: "Items without declared position (module total sum)",
       beamCount: "Number of beams",
       slabCount: "Number of slabs",
@@ -906,18 +916,21 @@ export const en: Translations = {
     total: "Total",
     chartLegend: {
       referenceValue: "Reference Value",
-      constructionMitigationPotential: "Construction Mitigation Potential (Best Case)",
+      constructionMitigationPotential:
+        "Construction Mitigation Potential (Best Case)",
       projectMitigationPotential: "Project Mitigation Potential",
-      riskOfLowerConstructionMitigation: "Risk of Lower Construction Mitigation (Worst Case)",
+      riskOfLowerConstructionMitigation:
+        "Risk of Lower Construction Mitigation (Worst Case)",
       title: "Legend",
       referenceValue_short: "Reference Value",
-      constructionMitigationPotential_short: "Construction Mitigation Potential",
+      constructionMitigationPotential_short:
+        "Construction Mitigation Potential",
       projectMitigationPotential_short: "Project Mitigation Potential",
       riskOfLowerConstructionMitigation_short: "Worst Case",
     },
     emissionLegend: {
-      title: 'Total Emissions by Technology',
-    }
+      title: "Total Emissions by Technology",
+    },
   },
   floor: {
     penthouse_floor: "Penthouse",
