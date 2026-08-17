@@ -4,7 +4,6 @@ import { Plus, Trash2 } from "lucide-react";
 import React, { useEffect, useMemo } from "react";
 import { Control, UseFormReturn } from "react-hook-form";
 import { TFck } from "@/types/modules";
-import { masks } from "@/utils/masks";
 import { parseNumber } from "@/utils/numbers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { NumericStringInput } from "@/components/ui/numeric-string-input";
 import SteelMaterialList from "./steel-material-list";
 
 export interface IUnspecifiedConcreteVolumeRow {
@@ -378,18 +377,12 @@ const UnspecifiedCardInner = <TForm extends object = any>(
                           </FormLabel>
                           <div className="flex gap-1">
                             <FormControl>
-                              <Input
-                                type="text"
-                                inputMode="decimal"
+                              <NumericStringInput
+                                {...field}
+                                decimalPlaces={4}
+                                allowNegative={false}
                                 className="h-9 text-xs"
-                                placeholder="100"
-                                value={field.value || ""}
-                                onChange={(e) => {
-                                  const newValue = masks.numeric(
-                                    e.target.value,
-                                  );
-                                  field.onChange(newValue);
-                                }}
+                                placeholder="100,00"
                               />
                             </FormControl>
                             <Button
@@ -419,19 +412,12 @@ const UnspecifiedCardInner = <TForm extends object = any>(
                           {t.modules.form.otherFck}
                         </FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            inputMode="decimal"
+                          <NumericStringInput
+                            {...field}
+                            decimalPlaces={0}
+                            allowNegative={false}
                             className="h-9 text-xs"
                             placeholder="70"
-                            value={
-                              typeof field.value === "number"
-                                ? field.value
-                                : (field.value ?? "")
-                            }
-                            onChange={(e) => {
-                              field.onChange(Number(e.target.value));
-                            }}
                           />
                         </FormControl>
                       </FormItem>
@@ -487,17 +473,11 @@ const UnspecifiedCardInner = <TForm extends object = any>(
                     {t.modules.form.formAreaOptional}
                   </FormLabel>
                   <FormControl>
-                    <Input
-                      type="text"
+                    <NumericStringInput
+                      {...field}
+                      decimalPlaces={2}
+                      allowNegative={false}
                       placeholder="0,00"
-                      value={
-                        (field.value as unknown as string | number) ??
-                        ("" as unknown as string)
-                      }
-                      onChange={(e) => {
-                        const masked = masks.numeric(e.target.value);
-                        field.onChange(masked as any);
-                      }}
                     />
                   </FormControl>
                 </FormItem>

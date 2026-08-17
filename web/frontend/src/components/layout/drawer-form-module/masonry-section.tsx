@@ -1,5 +1,4 @@
 import { useTranslation } from "@/i18n";
-import { masks } from "@/utils/masks";
 import { parseNumber } from "@/utils/numbers";
 import { GROUT_POSITIONS } from "@/utils/modulePositions";
 import { Plus, Trash2 } from "lucide-react";
@@ -14,6 +13,7 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { NumericStringInput } from "@/components/ui/numeric-string-input";
 import {
   Select,
   SelectContent,
@@ -282,16 +282,12 @@ const BlocksSection = ({
                           {t.modules.form.blockQuantity}
                         </FormLabel>
                         <FormControl>
-                          <Input
-                            type="text"
-                            inputMode="numeric"
+                          <NumericStringInput
+                            {...field}
+                            decimalPlaces={0}
+                            allowNegative={false}
                             className="h-9 w-full max-w-[160px]"
                             placeholder="100"
-                            value={field.value || ""}
-                            onChange={(e) => {
-                              const v = masks.numeric(e.target.value);
-                              field.onChange(v);
-                            }}
                           />
                         </FormControl>
                       </FormItem>
@@ -321,19 +317,12 @@ const BlocksSection = ({
                           {t.modules.form.otherFbk}
                         </FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            inputMode="decimal"
+                          <NumericStringInput
+                            {...field}
+                            decimalPlaces={1}
+                            allowNegative={false}
                             className="h-9"
                             placeholder="20"
-                            value={
-                              typeof field.value === "number"
-                                ? field.value
-                                : (field.value ?? "")
-                            }
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
                           />
                         </FormControl>
                       </FormItem>
@@ -509,16 +498,12 @@ const MortarSection = ({
                           {t.modules.form.volume}
                         </FormLabel>
                         <FormControl>
-                          <Input
-                            type="text"
-                            inputMode="decimal"
+                          <NumericStringInput
+                            {...field}
+                            decimalPlaces={4}
+                            allowNegative={false}
                             className="h-9 w-full max-w-[160px]"
-                            placeholder="100"
-                            value={field.value || ""}
-                            onChange={(e) => {
-                              const v = masks.numeric(e.target.value);
-                              field.onChange(v);
-                            }}
+                            placeholder="100,00"
                           />
                         </FormControl>
                       </FormItem>
@@ -548,19 +533,12 @@ const MortarSection = ({
                           {t.modules.form.otherFak}
                         </FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            inputMode="decimal"
+                          <NumericStringInput
+                            {...field}
+                            decimalPlaces={1}
+                            allowNegative={false}
                             className="h-9"
                             placeholder="15"
-                            value={
-                              typeof field.value === "number"
-                                ? field.value
-                                : (field.value ?? "")
-                            }
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
                           />
                         </FormControl>
                       </FormItem>
@@ -769,16 +747,12 @@ const GroutItemRow = ({
                         {t.modules.form.volume}
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          type="text"
-                          inputMode="decimal"
+                        <NumericStringInput
+                          {...field}
+                          decimalPlaces={4}
+                          allowNegative={false}
                           className="h-9 w-full max-w-[160px]"
-                          placeholder="100"
-                          value={field.value || ""}
-                          onChange={(e) => {
-                            const v = masks.numeric(e.target.value);
-                            field.onChange(v);
-                          }}
+                          placeholder="100,00"
                         />
                       </FormControl>
                     </FormItem>
@@ -808,19 +782,12 @@ const GroutItemRow = ({
                         {t.modules.form.otherFgk}
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          inputMode="decimal"
+                        <NumericStringInput
+                          {...field}
+                          decimalPlaces={1}
+                          allowNegative={false}
                           className="h-9"
                           placeholder="50"
-                          value={
-                            typeof field.value === "number"
-                              ? field.value
-                              : (field.value ?? "")
-                          }
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
                         />
                       </FormControl>
                     </FormItem>

@@ -1,4 +1,3 @@
-import { masks } from "@/utils/masks";
 import { useTranslation } from "@/i18n";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect } from "react";
@@ -6,6 +5,8 @@ import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import { Button } from "../../ui/button";
 import { FormControl, FormField, FormItem, FormLabel } from "../../ui/form";
 import { Input } from "../../ui/input";
+import { NumericStringInput } from "../../ui/numeric-string-input";
+import { parseNumber } from "@/utils/numbers";
 import {
   Select,
   SelectContent,
@@ -273,14 +274,12 @@ const SteelMaterialItem = ({
                   {t.modules.form.massSteelKg}
                 </FormLabel>
                 <FormControl>
-                  <Input
+                  <NumericStringInput
                     {...field}
+                    decimalPlaces={3}
+                    allowNegative={false}
                     className="h-9 w-full max-w-[160px]"
-                    placeholder="0,00"
-                    onChange={(e) => {
-                      const maskedValue = masks.numeric(e.target.value);
-                      field.onChange(maskedValue);
-                    }}
+                    placeholder="0,000"
                   />
                 </FormControl>
               </FormItem>
@@ -329,11 +328,11 @@ const SteelMaterialItem = ({
                 {t.modules.form.customResistance}
               </FormLabel>
               <FormControl>
-                <Input
-                  type="number"
+                <NumericStringInput
                   {...field}
+                  decimalPlaces={1}
+                  allowNegative={false}
                   placeholder="Ex: 500"
-                  onChange={(e) => field.onChange(Number(e.target.value))}
                 />
               </FormControl>
             </FormItem>
@@ -370,10 +369,7 @@ const SteelMaterialList = ({
 
   const totalMass = (steelArray || []).reduce((sum: number, item: any) => {
     if (!item?.mass) return sum;
-    const numericValue =
-      typeof item.mass === "string"
-        ? parseFloat(item.mass.replace(/\./g, "").replace(",", "."))
-        : item.mass;
+    const numericValue = parseNumber(item.mass);
     return sum + (isNaN(numericValue) ? 0 : numericValue);
   }, 0);
 
@@ -398,10 +394,7 @@ const SteelMaterialList = ({
 
   const totalNonZero = (steelArray || []).reduce((count: number, item: any) => {
     if (!item?.mass) return count;
-    const numericValue =
-      typeof item.mass === "string"
-        ? parseFloat(item.mass.replace(/\./g, "").replace(",", "."))
-        : item.mass;
+    const numericValue = parseNumber(item.mass);
     if (isNaN(numericValue) || numericValue <= 0) return count;
     return count + 1;
   }, 0);

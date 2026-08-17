@@ -1,6 +1,5 @@
 import { useTranslation } from "@/i18n";
 import { useModuleV2Form } from "@/hooks/useModuleV2Form";
-import { masks } from "@/utils/masks";
 import { parseNumber } from "@/utils/numbers";
 import { Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -14,6 +13,7 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { NumericStringInput } from "@/components/ui/numeric-string-input";
 import {
   Select,
   SelectContent,
@@ -28,6 +28,7 @@ import {
 } from "@/utils/modulePositions";
 import { TAnyPosition, TModulesTypes } from "@/types/modules";
 import type { UseFormReturn } from "react-hook-form";
+import { masks } from "@/utils/masks";
 
 type ConcreteItem = {
   fck: number | string | "";
@@ -400,16 +401,12 @@ const ConcreteListSection = ({
                           {t.modules.form.volume}
                         </FormLabel>
                         <FormControl>
-                          <Input
-                            type="text"
-                            inputMode="decimal"
+                          <NumericStringInput
+                            {...field}
+                            decimalPlaces={4}
+                            allowNegative={false}
                             className="h-9 w-full max-w-[160px]"
-                            placeholder="100"
-                            value={field.value || ""}
-                            onChange={(e) => {
-                              const newValue = masks.numeric(e.target.value);
-                              field.onChange(newValue);
-                            }}
+                            placeholder="100,00"
                           />
                         </FormControl>
                       </FormItem>
@@ -439,19 +436,12 @@ const ConcreteListSection = ({
                           {t.modules.form.otherFck}
                         </FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            inputMode="decimal"
+                          <NumericStringInput
+                            {...field}
+                            decimalPlaces={0}
+                            allowNegative={false}
                             className="h-9"
                             placeholder="70"
-                            value={
-                              typeof field.value === "number"
-                                ? field.value
-                                : (field.value ?? "")
-                            }
-                            onChange={(e) => {
-                              field.onChange(Number(e.target.value));
-                            }}
                           />
                         </FormControl>
                       </FormItem>
@@ -659,14 +649,12 @@ const SteelMaterialItemInline = ({
                 {t.modules.form.massSteelKg}
               </FormLabel>
               <FormControl>
-                <Input
+                <NumericStringInput
                   {...field}
+                  decimalPlaces={3}
+                  allowNegative={false}
                   className="h-9 w-full max-w-[160px] text-xs"
-                  placeholder="0,00"
-                  onChange={(e) => {
-                    const maskedValue = masks.numeric(e.target.value);
-                    field.onChange(maskedValue);
-                  }}
+                  placeholder="0,000"
                 />
               </FormControl>
             </FormItem>
@@ -719,12 +707,12 @@ const SteelMaterialItemInline = ({
                   {t.modules.form.customResistance}
                 </FormLabel>
                 <FormControl>
-                  <Input
-                    type="number"
+                  <NumericStringInput
+                    {...field}
+                    decimalPlaces={1}
+                    allowNegative={false}
                     className="h-9"
                     placeholder="Ex: 500"
-                    value={field.value ?? ""}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
                   />
                 </FormControl>
               </FormItem>
@@ -1101,24 +1089,25 @@ const ScalarFieldsSection = ({
             key={def.key}
             control={form.control as Control<any>}
             name={fieldName as never}
-            render={({ field }) => (
-              <FormItem className={fullWidth ? "sm:col-span-2" : ""}>
-                <FormLabel className="text-xs">{label}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="text"
-                    inputMode="decimal"
-                    className="h-9"
-                    placeholder={def.placeholder ?? "0"}
-                    value={field.value === 0 ? "" : (field.value ?? "")}
-                    onChange={(e) => {
-                      const newValue = masks.numeric(e.target.value);
-                      field.onChange(newValue);
-                    }}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
+            render={({ field }) => {
+              const isInteger = /_number$/.test(def.key);
+              const decimals = isInteger ? 0 : 2;
+              return (
+                <FormItem className={fullWidth ? "sm:col-span-2" : ""}>
+                  <FormLabel className="text-xs">{label}</FormLabel>
+                  <FormControl>
+                    <NumericStringInput
+                      {...field}
+                      decimalPlaces={decimals}
+                      allowNegative={false}
+                      forceDecimalPlaces={!isInteger}
+                      className="h-9"
+                      placeholder={def.placeholder ?? "0"}
+                    />
+                  </FormControl>
+                </FormItem>
+              );
+            }}
           />
         );
       })}
