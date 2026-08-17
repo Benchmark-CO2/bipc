@@ -45,9 +45,15 @@ import {
   SelectValue,
 } from "../../ui/select";
 import BuildingVisualizer from "../building-visualizer";
-import { getDefaultValuesByType } from "./module-default-values";
+import {
+  getDefaultValuesByType,
+  getEmptyValuesByType,
+} from "./module-default-values";
 import ModuleV2Form from "./module-v2-form";
-import { cleanZeroItemsBeforeSubmit } from "./aggregate-helpers";
+import {
+  cleanZeroItemsBeforeSubmit,
+  prepareModuleV2PayloadForBackend,
+} from "./aggregate-helpers";
 
 export type ModuleFormSource = "default" | "ifc" | "tqs";
 
@@ -231,6 +237,10 @@ const DrawerFormModule = ({
     mutationFn: (data: ModuleParamsPropsV2) =>
       patchModule(data, projectId, unitId, optionId, moduleId!),
     onError: (error) => {
+      console.error(
+        "[DrawerFormModule] ❌ mutateModule (patch) onError:",
+        error,
+      );
       if (!stepperMode) {
         toast.error(t.modules.form.updateError, {
           description: parseApiError(error, t),
@@ -239,6 +249,10 @@ const DrawerFormModule = ({
       }
     },
     onSuccess: (_data) => {
+      console.log(
+        "[DrawerFormModule] ✅ mutateModule (patch) onSuccess:",
+        _data,
+      );
       if (!stepperMode) {
         toast.success(t.modules.form.updateSuccess, {
           duration: 5000,
@@ -269,6 +283,10 @@ const DrawerFormModule = ({
     mutationFn: (data: ModuleParamsPropsV2) =>
       postModule(data, projectId, unitId, optionId),
     onError: (error) => {
+      console.error(
+        "[DrawerFormModule] ❌ mutateCreation (post) onError:",
+        error,
+      );
       if (!stepperMode) {
         toast.error(t.modules.form.createError, {
           description: parseApiError(error, t),
@@ -277,6 +295,10 @@ const DrawerFormModule = ({
       }
     },
     onSuccess: (data, variables) => {
+      console.log("[DrawerFormModule] ✅ mutateCreation (post) onSuccess:", {
+        data,
+        variables,
+      });
       if (!stepperMode) {
         toast.success(t.modules.form.createSuccess, {
           duration: 5000,
@@ -556,6 +578,61 @@ const DrawerFormModule = ({
         data: (getDefaultValuesByType(detectedType) as any)?.data ?? {},
       };
     }
+
+    if (hasDataShape || hasFlatShape) {
+      const baseEmpty =
+        (
+          getEmptyValuesByType(detectedType) as {
+            data?: Record<string, unknown>;
+          }
+        )?.data ?? {};
+      const baseFullDefaults =
+        (
+          getDefaultValuesByType(detectedType) as {
+            data?: Record<string, unknown>;
+          }
+        )?.data ?? {};
+      const serverData = resetValues.data ?? {};
+      const merged: Record<string, unknown> = { ...baseEmpty };
+      const isMasonryObj = (
+        v: unknown,
+      ): v is Record<string, unknown> & {
+        blocks?: unknown;
+        mortar?: unknown;
+        grout?: unknown;
+      } =>
+        !!v &&
+        typeof v === "object" &&
+        ("blocks" in (v as Record<string, unknown>) ||
+          "mortar" in (v as Record<string, unknown>) ||
+          "grout" in (v as Record<string, unknown>));
+      for (const k of Object.keys(serverData)) {
+        const v = (serverData as Record<string, unknown>)[k];
+        if (Array.isArray(v) || isMasonryObj(v)) {
+          merged[k] = v;
+        } else if (
+          v === undefined ||
+          v === null ||
+          (typeof v === "string" && v === "") ||
+          (typeof v === "number" && !Number.isFinite(v))
+        ) {
+          if (k in baseFullDefaults) {
+            merged[k] = (baseFullDefaults as Record<string, unknown>)[k];
+          }
+        } else {
+          merged[k] = v;
+        }
+      }
+      for (const k of Object.keys(baseFullDefaults)) {
+        if (!(k in merged)) {
+          merged[k] = (baseFullDefaults as Record<string, unknown>)[k];
+        }
+      }
+      resetValues = {
+        type: resetValues.type ?? detectedType,
+        data: merged,
+      };
+    }
     const rawData = resetValues.data as Record<string, unknown>;
     if (Array.isArray(rawData.concrete)) {
       rawData.concrete = rawData.concrete.map((c: unknown) => {
@@ -649,7 +726,20 @@ const DrawerFormModule = ({
   }, [moduleData, moduleId, type, form, isOpen]);
 
   const handleSubmit = () => {
+    console.log("[DrawerFormModule] ⚙️ handleSubmit interno foi chamado!");
     const moduleType = (form.getValues("type") as TModulesTypes) || type;
+    console.log(
+      "[DrawerFormModule]   moduleType:",
+      moduleType,
+      "moduleId:",
+      moduleId,
+      "unitId:",
+      unitId,
+      "optionId:",
+      optionId,
+      "selectedFloors:",
+      selectedFloors,
+    );
 
     const payloadWrapper = v2Hook.toPayload() as unknown as {
       type: TModulesTypes;
@@ -674,9 +764,28 @@ const DrawerFormModule = ({
       },
     };
 
-    const cleanedWrapper = cleanZeroItemsBeforeSubmit(
-      finalPayload as unknown as Record<string, unknown>,
-    ) as unknown as ModuleParamsPropsV2;
+    console.log(
+      "[DrawerFormModule] 📦 finalPayload (antes prepareModuleV2PayloadForBackend):",
+      finalPayload,
+    );
+
+    const prepared = prepareModuleV2PayloadForBackend({
+      type: moduleType,
+      data: finalPayload.data ?? {},
+    });
+    const cleanedWrapper: ModuleParamsPropsV2 = {
+      type: prepared.type,
+      data: prepared.data as never,
+    };
+
+    console.log(
+      "[DrawerFormModule] 🧹 cleanedWrapper (após prepareModuleV2PayloadForBackend):",
+      cleanedWrapper,
+    );
+    console.log(
+      "[DrawerFormModule] 🎯 vai executar:",
+      moduleId && moduleData ? "mutateModule (PATCH)" : "mutateCreation (POST)",
+    );
 
     if (stepperMode) {
       const flatCompat = {
@@ -831,7 +940,43 @@ const DrawerFormModule = ({
           ) : (
             <Form {...form}>
               <form
-                onSubmit={form.handleSubmit(handleSubmit)}
+                onSubmit={form.handleSubmit(
+                  (validData) => {
+                    console.log(
+                      "[DrawerFormModule] ✅ form.handleSubmit onValid:",
+                      { validData },
+                    );
+                    handleSubmit();
+                  },
+                  (errors) => {
+                    console.error(
+                      "[DrawerFormModule] ❌ form.handleSubmit onInvalid (validação falhou). Erros:",
+                      errors,
+                    );
+                    console.error(
+                      "[DrawerFormModule]   form.getValues() atual:",
+                      form.getValues(),
+                    );
+                    const msgs = getFormErrorMessages(
+                      errors as Record<string, unknown>,
+                    );
+                    if (msgs.length > 0) {
+                      console.error(
+                        "[DrawerFormModule]   mensagens de erro extraídas:",
+                        msgs,
+                      );
+                    }
+                    const ms = getFormErrorMessages(
+                      form.formState.errors as Record<string, unknown>,
+                    );
+                    console.error(
+                      "[DrawerFormModule]   form.formState.errors:",
+                      form.formState.errors,
+                      "mensagens legíveis:",
+                      ms,
+                    );
+                  },
+                )}
                 id="module-form"
                 className="w-full flex gap-6 h-full max-sm:flex-col"
               >

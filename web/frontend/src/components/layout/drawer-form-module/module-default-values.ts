@@ -206,3 +206,70 @@ export const getDefaultValuesByType = (type: TModulesTypes) => {
       return concreteWallDefaultValues;
   }
 };
+
+export const getEmptyValuesByType = (type: TModulesTypes) => {
+  const scalarTemplate = (() => {
+    switch (type) {
+      case "beam_column":
+        return {
+          column_number: "0",
+          beam_number: "0",
+          slab_number: "0",
+          avg_beam_span: "0",
+          avg_slab_span: "0",
+          slab_type: undefined,
+        };
+      case "concrete_wall":
+        return {
+          wall_thickness: "0",
+          slab_thickness: "0",
+          wall_area: "0",
+          slab_area: "0",
+          beam_number: "0",
+          slab_number: "0",
+          slab_type: undefined,
+        };
+      case "structural_masonry":
+        return {
+          masonry: {
+            blocks: [],
+            mortar: [],
+            grout: [],
+          },
+          beam_number: "0",
+          slab_number: "0",
+          slab_type: undefined,
+        };
+      case "raft_foundation":
+      case "piles_foundation":
+      case "raft_piles_foundation":
+        return {};
+      default:
+        return {};
+    }
+  })();
+  const withArrays =
+    type === "beam_column" ||
+    type === "concrete_wall" ||
+    type === "structural_masonry"
+      ? {
+          concrete: [] as unknown[],
+          steel: [] as unknown[],
+          form: [] as unknown[],
+        }
+      : type === "raft_foundation" ||
+          type === "piles_foundation" ||
+          type === "raft_piles_foundation"
+        ? {
+            concrete: [] as unknown[],
+            steel: [] as unknown[],
+          }
+        : {};
+  return {
+    type,
+    data: {
+      ...withArrays,
+      ...scalarTemplate,
+    },
+  };
+};

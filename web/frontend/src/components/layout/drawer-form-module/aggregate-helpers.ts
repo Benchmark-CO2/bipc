@@ -165,6 +165,60 @@ const stripEmptyPosition = <T extends { position?: unknown }>(item: T): T => {
   return item;
 };
 
+const toNum = (v: unknown): number | undefined => {
+  if (v === undefined || v === null || v === "") return undefined;
+  const n = typeof v === "string" ? parseNumber(v) : Number(v);
+  if (!Number.isFinite(n)) return undefined;
+  return n;
+};
+
+const toInt = (v: unknown): number | undefined => {
+  const n = toNum(v);
+  if (n === undefined) return undefined;
+  return Math.round(n);
+};
+
+const coerceConcreteItem = (item: unknown): Record<string, unknown> | null => {
+  if (!item || typeof item !== "object") return null;
+  const rec = { ...(item as Record<string, unknown>) };
+  const volumeNum = toNum(rec.volume);
+  if (volumeNum === undefined || volumeNum <= 0) return null;
+  rec.volume = volumeNum;
+  const fckNum = toInt(rec.fck);
+  if (fckNum !== undefined) rec.fck = fckNum;
+  if ("customFck" in rec) delete rec.customFck;
+  if ("position" in rec && shouldStripPosition(String(rec.position))) {
+    delete rec.position;
+  }
+  return rec;
+};
+
+const coerceSteelItem = (item: unknown): Record<string, unknown> | null => {
+  if (!item || typeof item !== "object") return null;
+  const rec = { ...(item as Record<string, unknown>) };
+  const massNum = toNum(rec.mass);
+  if (massNum === undefined || massNum <= 0) return null;
+  rec.mass = massNum;
+  const otherRes = toNum(rec.other_resistance);
+  if (otherRes !== undefined) rec.other_resistance = otherRes;
+  if ("position" in rec && shouldStripPosition(String(rec.position))) {
+    delete rec.position;
+  }
+  return rec;
+};
+
+const coerceFormItem = (item: unknown): Record<string, unknown> | null => {
+  if (!item || typeof item !== "object") return null;
+  const rec = { ...(item as Record<string, unknown>) };
+  const areaNum = toNum(rec.area);
+  if (areaNum === undefined || areaNum <= 0) return null;
+  rec.area = areaNum;
+  if ("position" in rec && shouldStripPosition(String(rec.position))) {
+    delete rec.position;
+  }
+  return rec;
+};
+
 export const cleanZeroItemsBeforeSubmit = (data: unknown): unknown => {
   const cleaned: Record<string, unknown> = {
     ...(typeof data === "object" && data !== null
@@ -173,70 +227,117 @@ export const cleanZeroItemsBeforeSubmit = (data: unknown): unknown => {
   };
 
   if ("concrete" in cleaned && Array.isArray(cleaned.concrete)) {
-    cleaned.concrete = (
-      cleaned.concrete as (IV2ConcreteVolumeItem<TAnyPosition> & {
-        customFck?: unknown;
-      })[]
-    )
-      .filter((item) => !isConcreteItemZero(item))
-      .map((it) => {
-        const { customFck: _cf, ...rest } = it;
-        return stripEmptyPosition(rest) as IV2ConcreteVolumeItem<TAnyPosition>;
-      });
+    cleaned.concrete = (cleaned.concrete as unknown[])
+      .map(coerceConcreteItem)
+      .filter((x): x is Record<string, unknown> => x !== null);
   }
 
   if ("steel" in cleaned && Array.isArray(cleaned.steel)) {
-    cleaned.steel = (cleaned.steel as IV2SteelMaterialItem<TAnyPosition>[])
-      .filter((item) => !isSteelItemZero(item))
-      .map(stripEmptyPosition);
+    cleaned.steel = (cleaned.steel as unknown[])
+      .map(coerceSteelItem)
+      .filter((x): x is Record<string, unknown> => x !== null);
   }
 
   if ("form" in cleaned && Array.isArray(cleaned.form)) {
-    cleaned.form = (cleaned.form as IV2FormAreaItem<TAnyPosition>[])
-      .filter((item) => !isFormItemZero(item))
-      .map(stripEmptyPosition);
+    cleaned.form = (cleaned.form as unknown[])
+      .map(coerceFormItem)
+      .filter((x): x is Record<string, unknown> => x !== null);
   }
 
-  if ("masonry" in cleaned && cleaned.masonry) {
-    const masonry = cleaned.masonry as IMasonryElement;
-    const cleanGrout = (masonry.grout ?? [])
-      .map((g) => {
-        const cleanVolumes = (g.volumes ?? []).filter((v) => {
-          const vol =
-            typeof v.volume === "string" ? parseNumber(v.volume) : v.volume;
-          return vol && vol > 0;
-        });
-        if (cleanVolumes.length === 0) return null;
-        const cleanSteel = Array.isArray((g as any).steel)
-          ? ((g as any).steel as any[])
-              .filter((s) => !isSteelItemZero(s as any))
-              .map(stripEmptyPosition)
-          : undefined;
-        return {
-          ...stripEmptyPosition(g as any),
-          volumes: cleanVolumes,
-          ...(cleanSteel ? { steel: cleanSteel } : {}),
-        } as IGroutInfo;
-      })
-      .filter((g): g is IGroutInfo => g !== null);
-    const cleanBlocks = (masonry.blocks ?? [])
-      .map(cleanBlockInfo)
-      .filter((b): b is IBlockInfo => b !== null);
-    const cleanMortar = (masonry.mortar ?? [])
-      .map(cleanMortarItem)
-      .filter((m): m is IMortarItem => m !== null);
-    if (cleanBlocks.length + cleanMortar.length + cleanGrout.length > 0) {
-      cleaned.masonry = {
-        blocks: cleanBlocks,
-        mortar: cleanMortar,
-        grout: cleanGrout,
-      };
-    } else {
-      cleaned.masonry = {
-        blocks: cleanBlocks,
-        mortar: cleanMortar,
-        grout: cleanGrout,
-      };
+  if (
+    "masonry" in cleaned &&
+    cleaned.masonry &&
+    typeof cleaned.masonry === "object"
+  ) {
+    const masonry = { ...(cleaned.masonry as Record<string, unknown>) };
+    if (Array.isArray(masonry.blocks)) {
+      masonry.blocks = (masonry.blocks as unknown[])
+        .map((rawB) => {
+          if (!rawB || typeof rawB !== "object") return null;
+          const b = { ...(rawB as Record<string, unknown>) };
+          const q = toInt(b.quantity);
+          if (q === undefined || q <= 0) return null;
+          b.quantity = q;
+          const fbk = toNum(b.fbk);
+          if (fbk !== undefined) b.fbk = fbk;
+          if ("customFbk" in b) delete b.customFbk;
+          return b;
+        })
+        .filter((x): x is Record<string, unknown> => x !== null);
+    }
+    if (Array.isArray(masonry.mortar)) {
+      masonry.mortar = (masonry.mortar as unknown[])
+        .map((rawM) => {
+          if (!rawM || typeof rawM !== "object") return null;
+          const m = { ...(rawM as Record<string, unknown>) };
+          const v = toNum(m.volume);
+          if (v === undefined || v <= 0) return null;
+          m.volume = v;
+          const fak = toNum(m.fak);
+          if (fak !== undefined) m.fak = fak;
+          if ("customFak" in m) delete m.customFak;
+          return m;
+        })
+        .filter((x): x is Record<string, unknown> => x !== null);
+    }
+    if (Array.isArray(masonry.grout)) {
+      masonry.grout = (masonry.grout as unknown[])
+        .map((rawG) => {
+          if (!rawG || typeof rawG !== "object") return null;
+          const g = { ...(rawG as Record<string, unknown>) };
+          if (Array.isArray(g.volumes)) {
+            g.volumes = (g.volumes as unknown[])
+              .map((rawV) => {
+                if (!rawV || typeof rawV !== "object") return null;
+                const v = { ...(rawV as Record<string, unknown>) };
+                const vol = toNum(v.volume);
+                if (vol === undefined || vol <= 0) return null;
+                v.volume = vol;
+                const fgk = toNum(v.fgk);
+                if (fgk !== undefined) v.fgk = fgk;
+                if ("customFgk" in v) delete v.customFgk;
+                return v;
+              })
+              .filter((x): x is Record<string, unknown> => x !== null);
+            if ((g.volumes as unknown[]).length === 0) return null;
+          }
+          if (Array.isArray(g.steel)) {
+            g.steel = (g.steel as unknown[])
+              .map(coerceSteelItem)
+              .filter((x): x is Record<string, unknown> => x !== null);
+          }
+          if ("position" in g && shouldStripPosition(String(g.position))) {
+            delete g.position;
+          }
+          return g;
+        })
+        .filter((x): x is Record<string, unknown> => x !== null);
+    }
+    cleaned.masonry = masonry;
+  }
+
+  const numScalarFields = [
+    "wall_thickness",
+    "slab_thickness",
+    "wall_area",
+    "slab_area",
+    "avg_beam_span",
+    "avg_slab_span",
+    "other_resistance",
+  ];
+  const intScalarFields = ["beam_number", "slab_number", "column_number"];
+  for (const k of numScalarFields) {
+    if (k in cleaned) {
+      const n = toNum(cleaned[k]);
+      if (n === undefined) delete cleaned[k];
+      else cleaned[k] = n;
+    }
+  }
+  for (const k of intScalarFields) {
+    if (k in cleaned) {
+      const n = toInt(cleaned[k]);
+      if (n === undefined) delete cleaned[k];
+      else cleaned[k] = n;
     }
   }
 
@@ -251,6 +352,101 @@ export const cleanZeroItemsBeforeSubmit = (data: unknown): unknown => {
   }
 
   return cleaned;
+};
+
+const ALLOWED_DATA_KEYS_BY_TYPE: Record<TModulesTypes, readonly string[]> = {
+  beam_column: [
+    "floor_ids",
+    "floor_index",
+    "concrete",
+    "steel",
+    "form",
+    "slab_type",
+    "column_number",
+    "beam_number",
+    "slab_number",
+    "avg_beam_span",
+    "avg_slab_span",
+  ] as const,
+  concrete_wall: [
+    "floor_ids",
+    "floor_index",
+    "concrete",
+    "steel",
+    "form",
+    "slab_type",
+    "wall_thickness",
+    "slab_thickness",
+    "wall_area",
+    "slab_area",
+    "beam_number",
+    "slab_number",
+  ] as const,
+  structural_masonry: [
+    "floor_ids",
+    "floor_index",
+    "concrete",
+    "steel",
+    "form",
+    "slab_type",
+    "beam_number",
+    "slab_number",
+    "masonry",
+  ] as const,
+  raft_foundation: ["unit_id", "concrete", "steel"] as const,
+  piles_foundation: ["unit_id", "concrete", "steel"] as const,
+  raft_piles_foundation: ["unit_id", "concrete", "steel"] as const,
+};
+
+const removeEmptyArrays = (
+  rec: Record<string, unknown>,
+): Record<string, unknown> => {
+  for (const k of Object.keys(rec)) {
+    const v = rec[k];
+    if (Array.isArray(v) && v.length === 0) {
+      delete rec[k];
+    } else if (v && typeof v === "object") {
+      if (
+        Array.isArray((v as Record<string, unknown>).blocks) ||
+        Array.isArray((v as Record<string, unknown>).mortar) ||
+        Array.isArray((v as Record<string, unknown>).grout)
+      ) {
+        const inner = removeEmptyArrays({ ...(v as Record<string, unknown>) });
+        const hasAny = Object.keys(inner).some((kk) => {
+          const vv = inner[kk];
+          if (Array.isArray(vv)) return vv.length > 0;
+          return !!vv;
+        });
+        if (hasAny) rec[k] = inner;
+        else delete rec[k];
+      }
+    }
+  }
+  return rec;
+};
+
+export const prepareModuleV2PayloadForBackend = (input: {
+  type: TModulesTypes;
+  data: unknown;
+}): { type: TModulesTypes; data: Record<string, unknown> } => {
+  const cleanedOuter = cleanZeroItemsBeforeSubmit(input) as {
+    type?: TModulesTypes;
+    data?: unknown;
+  };
+  const effectiveType = (cleanedOuter.type ?? input.type) as TModulesTypes;
+  const rawData = cleanedOuter.data ?? input.data;
+  const allowedKeys = ALLOWED_DATA_KEYS_BY_TYPE[effectiveType] ?? [];
+  const allowedSet = new Set<string>(allowedKeys as readonly string[]);
+  const picked: Record<string, unknown> = {};
+  if (rawData && typeof rawData === "object") {
+    for (const k of Object.keys(rawData as Record<string, unknown>)) {
+      if (allowedSet.has(k)) {
+        picked[k] = (rawData as Record<string, unknown>)[k];
+      }
+    }
+  }
+  const finalData = removeEmptyArrays(picked);
+  return { type: effectiveType, data: finalData };
 };
 
 export type GroupedConcreteByPosition<TPosition extends string> = Record<

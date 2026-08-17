@@ -14,7 +14,10 @@ import {
   MATERIAL_POSITIONS_BY_TYPE,
   TMaterialKind,
 } from "@/utils/modulePositions";
-import { getDefaultValuesByType } from "@/components/layout/drawer-form-module/module-default-values";
+import {
+  getDefaultValuesByType,
+  getEmptyValuesByType,
+} from "@/components/layout/drawer-form-module/module-default-values";
 
 type UseModuleV2FormArgs = {
   type: TModulesTypes;
@@ -74,12 +77,15 @@ export const useModuleV2Form = ({
     const isRecord = (v: unknown): v is Record<string, unknown> =>
       !!v && typeof v === "object";
     const hasAnyArray = (rec: Record<string, unknown>): boolean =>
-      Array.isArray(rec.concrete) ||
-      Array.isArray(rec.steel) ||
-      Array.isArray(rec.form) ||
-      Array.isArray((rec.masonry as any)?.blocks) ||
-      Array.isArray((rec.masonry as any)?.mortar) ||
-      Array.isArray((rec.masonry as any)?.grout);
+      (Array.isArray(rec.concrete) && rec.concrete.length > 0) ||
+      (Array.isArray(rec.steel) && rec.steel.length > 0) ||
+      (Array.isArray(rec.form) && rec.form.length > 0) ||
+      (Array.isArray((rec.masonry as any)?.blocks) &&
+        (rec.masonry as any).blocks.length > 0) ||
+      (Array.isArray((rec.masonry as any)?.mortar) &&
+        (rec.masonry as any).mortar.length > 0) ||
+      (Array.isArray((rec.masonry as any)?.grout) &&
+        (rec.masonry as any).grout.length > 0);
 
     if (unwrapped && isRecord(unwrapped)) {
       const uw = unwrapped as Record<string, unknown>;
@@ -87,19 +93,17 @@ export const useModuleV2Form = ({
       const baseDefaults = getDefaultValuesByType(
         unwrappedType,
       ) as unknown as ModuleV2FormInput;
+      const baseEmpty = getEmptyValuesByType(
+        unwrappedType,
+      ) as unknown as ModuleV2FormInput;
+
+      let dataFromServer: Record<string, unknown> | null = null;
       if (
         isRecord(uw.data) &&
         (Object.keys(uw.data).length > 0 || hasAnyArray(uw.data))
       ) {
-        return {
-          type: unwrappedType,
-          data: {
-            ...((baseDefaults as any)?.data ?? {}),
-            ...(uw.data as any),
-          },
-        } as ModuleV2FormInput;
-      }
-      if (
+        dataFromServer = { ...(uw.data as Record<string, unknown>) };
+      } else if (
         typeof unwrappedType === "string" &&
         (hasAnyArray(uw) ||
           Object.keys(uw).filter(
@@ -127,12 +131,48 @@ export const useModuleV2Form = ({
           outdated: _o,
           ...rest
         } = uw;
+        dataFromServer = { ...(rest as Record<string, unknown>) };
+      }
+
+      if (dataFromServer !== null) {
+        const serverRec = dataFromServer;
+        const baseRec =
+          (baseEmpty as { data?: Record<string, unknown> })?.data ?? {};
+        const defaultFullRec =
+          (baseDefaults as { data?: Record<string, unknown> })?.data ?? {};
+        const mergedData: Record<string, unknown> = { ...baseRec };
+        for (const k of Object.keys(serverRec)) {
+          const v = serverRec[k];
+          if (
+            Array.isArray(v) ||
+            (v &&
+              typeof v === "object" &&
+              (Array.isArray((v as Record<string, unknown>).blocks) ||
+                Array.isArray((v as Record<string, unknown>).mortar) ||
+                Array.isArray((v as Record<string, unknown>).grout)))
+          ) {
+            mergedData[k] = v;
+          } else if (
+            v === undefined ||
+            v === null ||
+            (typeof v === "string" && v === "") ||
+            (typeof v === "number" && !Number.isFinite(v))
+          ) {
+            if (k in defaultFullRec) {
+              mergedData[k] = (defaultFullRec as Record<string, unknown>)[k];
+            }
+          } else {
+            mergedData[k] = v;
+          }
+        }
+        for (const k of Object.keys(defaultFullRec)) {
+          if (!(k in mergedData)) {
+            mergedData[k] = (defaultFullRec as Record<string, unknown>)[k];
+          }
+        }
         return {
           type: unwrappedType,
-          data: {
-            ...((baseDefaults as any)?.data ?? {}),
-            ...(rest as any),
-          },
+          data: mergedData,
         } as ModuleV2FormInput;
       }
       return baseDefaults;
@@ -169,6 +209,31 @@ export const useModuleV2Form = ({
     const identityChanged = identityRef.current !== initIdentity;
     identityRef.current = initIdentity;
     if (!identityChanged) return;
+
+    const isInitialEmpty = !initialModuleData;
+    if (isInitialEmpty) {
+      const currValues = form.getValues();
+      const currData =
+        (currValues as { data?: Record<string, unknown> })?.data ?? {};
+      const defaultData =
+        (defaultValues as { data?: Record<string, unknown> })?.data ?? {};
+      const currArraysEmpty =
+        (Array.isArray(currData.concrete) ? currData.concrete.length : 0) <=
+          1 &&
+        (Array.isArray(currData.steel) ? currData.steel.length : 0) <= 1 &&
+        (Array.isArray(currData.form) ? currData.form.length : 0) <= 1;
+      const defaultArraysEmpty =
+        (Array.isArray(defaultData.concrete)
+          ? defaultData.concrete.length
+          : 0) <= 1 &&
+        (Array.isArray(defaultData.steel) ? defaultData.steel.length : 0) <=
+          1 &&
+        (Array.isArray(defaultData.form) ? defaultData.form.length : 0) <= 1;
+      if (!(currArraysEmpty && defaultArraysEmpty)) {
+        return;
+      }
+    }
+
     form.reset(defaultValues);
     form.clearErrors();
   }, [type, form, defaultValues, initialModuleData]);
