@@ -387,6 +387,10 @@ const DrawerFormModule = ({
       setUserTouchedSelectedFloors(false);
       prevSelectedFloorsRef.current = [];
 
+      if (openRisingEdge || targetChanged) {
+        setFormMountKey((k) => k + 1);
+      }
+
       if (stepperMode) {
         let nextSelected: string[] = [];
         const initSel = openInitialSelectedFloorsRef.current;
@@ -469,6 +473,7 @@ const DrawerFormModule = ({
   const prevResetRunKey = useRef<string | null>(null);
   const lastClosedSentinelRef = useRef<number>(0);
   const openCountRef = useRef<number>(0);
+  const [formMountKey, setFormMountKey] = useState<number>(0);
 
   useEffect(() => {
     if (!isOpen) {
@@ -494,8 +499,7 @@ const DrawerFormModule = ({
     } else {
       mdAny = rawMd;
     }
-    const detectedType: TModulesTypes =
-      (mdAny?.type as TModulesTypes) ?? type;
+    const detectedType: TModulesTypes = (mdAny?.type as TModulesTypes) ?? type;
     const floorIds = mdAny?.floor_ids ?? mdAny?.data?.floor_ids;
     if (floorIds && Array.isArray(floorIds) && floorIds.length > 0) {
       setSelectedFloors(floorIds);
@@ -576,39 +580,61 @@ const DrawerFormModule = ({
         return { ...rec, customFck: isCustom } as unknown;
       });
     }
-    const checksum = checksumObjectFields(
-      { ...mdAny, _flat: hasFlatShape, _data: hasDataShape } as any,
-      [
-        "concrete",
-        "steel",
-        "form",
-        "slab_type",
-        "column_number",
-        "avg_beam_span",
-        "avg_slab_span",
-        "floor_ids",
-        "data",
-        "wall_thickness",
-        "slab_thickness",
-        "wall_area",
-        "slab_area",
-        "beam_number",
-        "slab_number",
-        "raft_area",
-        "raft_thickness",
-      ],
-    );
+    const checksumSource = hasDataShape
+      ? ({ _shape: "data", ...rawData } as Record<string, unknown>)
+      : ({
+          _shape: "flat",
+          _flat: hasFlatShape,
+          _data: hasDataShape,
+          ...mdAny,
+        } as Record<string, unknown>);
+    const checksum = checksumObjectFields(checksumSource, [
+      "concrete",
+      "steel",
+      "form",
+      "slab_type",
+      "column_number",
+      "avg_beam_span",
+      "avg_slab_span",
+      "floor_ids",
+      "wall_thickness",
+      "slab_thickness",
+      "wall_area",
+      "slab_area",
+      "beam_number",
+      "slab_number",
+      "raft_area",
+      "raft_thickness",
+      "masonry",
+    ]);
+    const masonryRec = (rawData.masonry ?? {}) as Record<string, unknown>;
     const runKey = JSON.stringify({
       id: (mdAny as { id?: unknown })?.id ?? moduleId ?? null,
       type: detectedType,
       openN: openCountRef.current,
       closedS: lastClosedSentinelRef.current,
+      hasMd: !!moduleData,
       checksum,
+      len_concrete: Array.isArray(rawData.concrete)
+        ? rawData.concrete.length
+        : -1,
+      len_steel: Array.isArray(rawData.steel) ? rawData.steel.length : -1,
+      len_form: Array.isArray(rawData.form) ? rawData.form.length : -1,
+      len_mb: Array.isArray(masonryRec.blocks)
+        ? (masonryRec.blocks as unknown[]).length
+        : -1,
+      len_mm: Array.isArray(masonryRec.mortar)
+        ? (masonryRec.mortar as unknown[]).length
+        : -1,
+      len_mg: Array.isArray(masonryRec.grout)
+        ? (masonryRec.grout as unknown[]).length
+        : -1,
     });
     if (prevResetRunKey.current === runKey) {
       return;
     }
     prevResetRunKey.current = runKey;
+    setFormMountKey((k) => k + 1);
     if (typeof resetValues.type === "string" && resetValues.type) {
       form.reset({
         type: resetValues.type,
@@ -908,6 +934,7 @@ const DrawerFormModule = ({
                       />
                     </div>
                     <ModuleV2Form
+                      key={`mod-form-${moduleId ?? type}-${formMountKey}`}
                       hook={v2Hook}
                       stepperMode={stepperMode}
                       isSubmitted={false}
