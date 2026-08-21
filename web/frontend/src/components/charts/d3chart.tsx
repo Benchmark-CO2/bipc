@@ -213,26 +213,25 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
 
   const minData = useMemo(() => rawMinData ?? data.map((d) => d.min), [rawMinData, data]);
   const maxData = useMemo(() => rawMaxData ?? data.map((d) => d.max), [rawMaxData, data]);
-  
+
   const { isExpanded } = useSummary();
   const { t } = useTranslation();
-  
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const brushRef = useRef<SVGGElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null); // REF PRO TOOLTIP 60FPS
   const hoveredItemRef = useRef<string | null>(null); // Previne re-render do Tooltip
   const visibleCountRef = useRef<number>(0); // Previne re-render de contagem
-  
+
   const isMobile = useIsMobile();
-  
+
   const [tooltipData, setTooltipData] = useState<{ min: number; max: number; label?: string; floors?: string | number; technology?: string[]; } | null>(null);
   const [visibleCount, setVisibleCount] = useState<number>(0);
   const [outSmallerCount, setOutSmallerCount] = useState<number>(0);
   const [outLargerCount, setOutLargerCount] = useState<number>(0);
   const outSmallerRef = useRef<number>(0);
   const outLargerRef = useRef<number>(0);
-  
   const [hasZoomed, setHasZoomed] = useState(false);
   const [zoomEnabled, setZoomEnabled] = useState(false);
   const [isBrushActive, setIsBrushActive] = useState(false);
@@ -360,15 +359,27 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     const transform = transformRef.current;
     const newXScale = d3.scaleLinear().domain(xScale.domain()).range(xScale.range().map((r) => r * transform.kx + transform.x));
     const newYScale = d3.scaleLinear().domain(yScale.domain()).range(yScale.range().map((r) => r * transform.ky + transform.y));
+    const visibleXDomain = [newXScale.invert(0), newXScale.invert(_width)];
+    const visibleYDomain = [newYScale.invert(_height), newYScale.invert(0)];
     const zoomRadiusFactor = 1;
 
     ctx.strokeStyle = DEFAULT_COLORS.GRID; ctx.lineWidth = 1;
-    newXScale.ticks(isExpanded ? 30 : 10).forEach((tick) => {
+    // newXScale.ticks(isExpanded ? 30 : 10).forEach((tick) => {
+    //   const x = newXScale(tick);
+    //   if (x >= 0 && x <= _width) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, _height); ctx.stroke(); }
+    // });
+    d3.scaleLinear().domain(visibleXDomain).ticks(isExpanded ? 30 : 10).forEach((tick) => {
       const x = newXScale(tick);
       if (x >= 0 && x <= _width) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, _height); ctx.stroke(); }
     });
 
-    newYScale.ticks(8).forEach((tick) => {
+    // newYScale.ticks(8).forEach((tick) => {
+    //   const y = newYScale(tick);
+    //   if (y >= 0 && y <= _height) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(_width, y); ctx.stroke(); }
+    // });
+
+    // Antes era: newYScale.ticks(...)
+    d3.scaleLinear().domain(visibleYDomain).ticks(8).forEach((tick) => {
       const y = newYScale(tick);
       if (y >= 0 && y <= _height) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(_width, y); ctx.stroke(); }
     });
@@ -378,7 +389,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
 
     let p5LineX: number | null = null; let p5LineInView = false;
     let c5Value: number | null = null; let r5Value: number | null = null;
-    
+
     if (showTop5Line && data.length > 0) {
       const sortedMin = [...data].map((d) => d.min).sort((a, b) => a - b);
       const idx = Math.floor(sortedMin.length * top5Percentile);
@@ -548,10 +559,10 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, _height); ctx.stroke();
 
     ctx.fillStyle = DEFAULT_COLORS.TEXT; ctx.font = "12px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "top";
-    
-    const xAxisTicks = newXScale.ticks(Math.min(10, Math.floor(_width / 60)));
-    const xFractionDigits = getFractionDigits(xAxisTicks.length >= 2 ? Math.abs(xAxisTicks[1] - xAxisTicks[0]) : 1);
-    
+
+    // const xAxisTicks = newXScale.ticks(Math.min(10, Math.floor(_width / 60)));
+    const xAxisTicks = d3.scaleLinear().domain(visibleXDomain).ticks(Math.min(10, Math.floor(_width / 60))); const xFractionDigits = getFractionDigits(xAxisTicks.length >= 2 ? Math.abs(xAxisTicks[1] - xAxisTicks[0]) : 1);
+
     xAxisTicks.forEach((tick) => {
       const x = newXScale(tick);
       if (x >= 0 && x <= _width) {
@@ -594,11 +605,11 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         const bandTop = Math.max(0, newYScale(1.0 - i * bandSize));
         const bandBottom = Math.min(_height, newYScale(1.0 - (i + 1) * bandSize));
         if (bandBottom <= bandTop) return;
-        
+
         let isHighlighted = hasSelection ? activeProcelLabels.has(cls.label) : (procelHighlight == null || cls.label === procelHighlight);
         ctx.globalAlpha = isHighlighted ? 1 : procelFadedOpacity;
         ctx.fillStyle = cls.color; ctx.fillRect(_width, bandTop, PROCEL_SCALE_CONFIG.WIDTH, Math.ceil(bandBottom - bandTop));
-        ctx.globalAlpha = isHighlighted ? 1 : Math.max(0.3, procelFadedOpacity); 
+        ctx.globalAlpha = isHighlighted ? 1 : Math.max(0.3, procelFadedOpacity);
         ctx.fillStyle = "#111827"; ctx.font = "bold 10px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(cls.label, _width + PROCEL_SCALE_CONFIG.WIDTH / 2, (bandTop + bandBottom) / 2);
       });
@@ -609,15 +620,15 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     let _countInView = 0; let _countSmaller = 0; let _countLarger = 0;
     const hasSelection = selectedMinBarIds.size > 0 || selectedMaxBarIds.size > 0;
     const _countSource = hasSelection ? data.filter((d) => selectedMinBarIds.has(String(d.minId ?? d.id)) && selectedMaxBarIds.has(String(d.maxId ?? d.id))) : data;
-      
+
     for (const d of _countSource) {
       const px1 = newXScale(d.min); const px2 = newXScale(d.max); const py = newYScale(d.y);
       if (px2 < 0) { _countSmaller++; continue; }
-      if (px1 > _width) { _countLarger++;  continue; } 
+      if (px1 > _width) { _countLarger++; continue; }
       if (py > _height || py < 0) { continue; }
       _countInView++;
     }
-    
+
     if (visibleCountRef.current !== _countInView) { visibleCountRef.current = _countInView; updateBrushCount(_countInView); }
     if (outSmallerRef.current !== _countSmaller) { outSmallerRef.current = _countSmaller; setOutSmallerCount(_countSmaller); }
     if (outLargerRef.current !== _countLarger) { outLargerRef.current = _countLarger; setOutLargerCount(_countLarger); }
@@ -704,21 +715,21 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   useEffect(() => {
     if (!brushRef.current || _width <= 0 || _height <= 0) return;
     const brush = d3.brushX().extent([[0, 0], [_width, _height]]).on("end", (event) => {
-        if (!event.selection) return;
-        const [s0, s1] = event.selection; const tr = transformRef.current;
-        const u0 = (s0 - tr.x) / tr.kx; const u1 = (s1 - tr.x) / tr.kx;
-        
-        let new_kx = Math.min(50, Math.max(1, _width / (u1 - u0))); 
-        let new_x = Math.min(0, Math.max(-u0 * new_kx, _width * (1 - 1.1 * new_kx)));
-        transformRef.current = { ...tr, kx: new_kx, x: new_x };
-        
-        setHasZoomed(prev => prev === true ? true : true); // Evita render desnecessário
-        d3.select(brushRef.current as SVGGElement).call(brush.move as any, null);
-        setIsBrushActive(false); 
-        
-        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = requestAnimationFrame(drawChart);
-      });
+      if (!event.selection) return;
+      const [s0, s1] = event.selection; const tr = transformRef.current;
+      const u0 = (s0 - tr.x) / tr.kx; const u1 = (s1 - tr.x) / tr.kx;
+
+      let new_kx = Math.min(50, Math.max(1, _width / (u1 - u0)));
+      let new_x = Math.min(0, Math.max(-u0 * new_kx, _width * (1 - 1.1 * new_kx)));
+      transformRef.current = { ...tr, kx: new_kx, x: new_x };
+
+      setHasZoomed(prev => prev === true ? true : true); // Evita render desnecessário
+      d3.select(brushRef.current as SVGGElement).call(brush.move as any, null);
+      setIsBrushActive(false);
+
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = requestAnimationFrame(drawChart);
+    });
     d3.select(brushRef.current).call(brush as any);
   }, [_width, _height, drawChart]);
 
@@ -734,7 +745,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         let tx = Math.min(0, Math.max(tr.x + event.dx, _width * (1 - 1.1 * tr.kx)));
         let ty = Math.min(0, Math.max(tr.y + event.dy, _height * (1 - tr.ky)));
         transformRef.current = { ...tr, x: tx, y: ty };
-        
         // 🚀 OTIMIZAÇÃO: Não reseta o State se já está ativado. Bail-out do React.
         const isZoomed = tr.kx !== 1 || tr.ky !== 1 || tx !== 0 || ty !== 0;
         setHasZoomed(prev => prev === isZoomed ? prev : isZoomed);
@@ -786,7 +796,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
   }, [
-    drawChart, handleCanvasMouseMove, handleCanvasMouseLeave, handleResetZoom, 
+    drawChart, handleCanvasMouseMove, handleCanvasMouseLeave, handleResetZoom,
     zoomEnabled, isBrushActive, _width, _height, margin.left, margin.top
   ]);
 
@@ -810,13 +820,12 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           </span>
 
           <Indicators max={maxMaxDataValue} min={maxLessDataValue} hasZoomed={hasZoomed} position="end" countLarger={outLargerCount} countSmaller={outSmallerCount} />
-          
           <div className="absolute top-2 left-2 z-30 flex gap-2">
             <button
               type="button"
               onClick={() => {
                 setZoomEnabled((prev) => {
-                  if (!prev) setIsBrushActive(false); 
+                  if (!prev) setIsBrushActive(false);
                   return !prev;
                 });
               }}
@@ -834,7 +843,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
               type="button"
               onClick={() => {
                 setIsBrushActive((prev) => {
-                  if (!prev) setZoomEnabled(false); 
+                  if (!prev) setZoomEnabled(false);
                   return !prev;
                 });
               }}
