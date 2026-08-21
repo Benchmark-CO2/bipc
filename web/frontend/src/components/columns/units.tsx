@@ -45,64 +45,66 @@ export const unitsColumns: ColumnDef<
     ),
   },
   {
-    accessorKey: "co2_max",
+    accessorKey: "co2_range",
     header: () => {
       // eslint-disable-next-line react-hooks/rules-of-hooks
       const { t } = useTranslation();
-      return <div className="text-center">{t.columns.co2Max}</div>;
+      return (
+        <div className="text-center">
+          <div>{t.columns.co2Range}</div>
+          <div className="text-xs font-normal text-inherit">(min - max)</div>
+        </div>
+      );
     },
-    cell: ({ row }) => (
-      <div className="text-center">
-        {row.original?.co2_max?.toInternational()
-          ? `${row.original?.co2_max?.toInternational()}`
-          : "-"}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const min = row.original?.co2_min?.toInternational();
+      const max = row.original?.co2_max?.toInternational();
+      return (
+        <div className="text-center">
+          {min && max ? `${min} - ${max}` : (min ?? max ?? "-")}
+        </div>
+      );
+    },
   },
   {
-    accessorKey: "co2_min",
+    accessorKey: "energy_range",
     header: () => {
       // eslint-disable-next-line react-hooks/rules-of-hooks
       const { t } = useTranslation();
-      return <div className="text-center">{t.columns.co2Min}</div>;
+      return (
+        <div className="text-center">
+          <div>{t.columns.energyRange}</div>
+          <div className="text-xs font-normal text-inherit">(min - max)</div>
+        </div>
+      );
     },
-    cell: ({ row }) => (
-      <div className="text-center">
-        {row.original?.co2_min?.toInternational()
-          ? `${row.original?.co2_min?.toInternational()}`
-          : "-"}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const min = row.original?.energy_min?.toInternational();
+      const max = row.original?.energy_max?.toInternational();
+      return (
+        <div className="text-center">
+          {min && max ? `${min} - ${max}` : (min ?? max ?? "-")}
+        </div>
+      );
+    },
   },
   {
-    accessorKey: "energy_max",
+    accessorKey: "material",
     header: () => {
       // eslint-disable-next-line react-hooks/rules-of-hooks
       const { t } = useTranslation();
-      return <div className="text-center">{t.columns.energyMax}</div>;
+      return <div className="text-center">{t.columns.material}</div>;
     },
-    cell: ({ row }) => (
-      <div className="text-center">
-        {row.original?.energy_max?.toInternational()
-          ? `${row.original?.energy_max?.toInternational()}`
-          : "-"}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "energy_min",
-    header: () => {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const { t } = useTranslation();
-      return <div className="text-center">{t.columns.energyMin}</div>;
+    cell: ({ row }) => {
+      const material = (row.original as any).material;
+      return (
+        <div className="text-center">
+          {material !== null && material !== undefined
+            ? `${material.toInternational()}`
+            : "-"}
+        </div>
+      );
     },
-    cell: ({ row }) => (
-      <div className="text-center">
-        {row.original?.energy_min?.toInternational()
-          ? `${row.original?.energy_min?.toInternational()}`
-          : "-"}
-      </div>
-    ),
   },
   {
     id: "actions",
