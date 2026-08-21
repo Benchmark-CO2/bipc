@@ -69,12 +69,14 @@ const OptionMenu = ({
   unitId,
   onSelectOption,
   selectedOptions,
+  isCollapsed,
 }: {
   option: TOption;
   projectId: string;
   unitId: string;
   onSelectOption?: (option: TOption) => void;
   selectedOptions?: TOption[];
+  isCollapsed?: boolean;
 }) => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -215,54 +217,90 @@ const OptionMenu = ({
   };
 
   return (
-    <div className="flex items-center gap-1">
-      <Checkbox
-        className="border-2 bg-white data-[state=checked]:bg-secondary data-[state=checked]:border-secondary data-[state=checked]:text-white"
-        checked={selectedOptions?.some((opt) => opt.id === option.id) || false}
-        onCheckedChange={() => (onSelectOption ? onSelectOption(option) : null)}
-      />
-      <SimpleTooltip
-        content={t.constructiveTechView.favoriteOption}
-        side="bottom"
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          className="hover:bg-gray-100 dark:hover:bg-gray-700"
-          onClick={handleActiveChange}
-          disabled={option.modules.some((mod) => mod.outdated)}
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 w-full min-w-0">
+      <div className="flex flex-wrap items-center gap-1 gap-y-1.5 flex-1 min-w-0">
+        <Checkbox
+          className="border-2 bg-white data-[state=checked]:bg-secondary data-[state=checked]:border-secondary data-[state=checked]:text-white shrink-0"
+          checked={
+            selectedOptions?.some((opt) => opt.id === option.id) || false
+          }
+          onCheckedChange={() =>
+            onSelectOption ? onSelectOption(option) : null
+          }
+        />
+        <SimpleTooltip
+          content={t.constructiveTechView.favoriteOption}
+          side="bottom"
         >
-          <Star
-            className={`h-4 w-4 ${
-              option.active
-                ? "fill-yellow-500 text-yellow-500"
-                : "text-gray-400 hover:text-yellow-500"
-            }`}
-          />
-        </Button>
-      </SimpleTooltip>
-      <Input
-        type="text"
-        placeholder={t.constructiveTechView.placeholder}
-        value={localName}
-        onChange={handleNameChange}
-        onBlur={handleBlur}
-        className="font-medium text-accent-foreground focus:border-primary focus:ring-primary max-w-[240px]"
-      />
-      {option.modules.some((mod) => mod.outdated) && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 ml-2 rounded-full bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 cursor-help transition-all hover:shadow-sm">
-              <TriangleAlert className="h-3.5 w-3.5 text-yellow-600 dark:text-yellow-500" />
-              <span className="text-xs font-medium text-yellow-700 dark:text-yellow-400">
-                {t.constructiveTechView.outdated}
-              </span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-[200px]">
-            <span>{t.constructiveTechView.outdatedTooltip}</span>
-          </TooltipContent>
-        </Tooltip>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hover:bg-gray-100 dark:hover:bg-gray-700 shrink-0"
+            onClick={handleActiveChange}
+            disabled={option.modules.some((mod) => mod.outdated)}
+          >
+            <Star
+              className={`h-4 w-4 ${
+                option.active
+                  ? "fill-yellow-500 text-yellow-500"
+                  : "text-gray-400 hover:text-yellow-500"
+              }`}
+            />
+          </Button>
+        </SimpleTooltip>
+        <Input
+          type="text"
+          placeholder={t.constructiveTechView.placeholder}
+          value={localName}
+          onChange={handleNameChange}
+          onBlur={handleBlur}
+          className="font-medium text-accent-foreground focus:border-primary focus:ring-primary w-full sm:max-w-[240px]"
+        />
+        {option.modules.some((mod) => mod.outdated) && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 cursor-help transition-all hover:shadow-sm">
+                <TriangleAlert className="h-3.5 w-3.5 text-yellow-600 dark:text-yellow-500" />
+                <span className="text-xs font-medium text-yellow-700 dark:text-yellow-400">
+                  {t.constructiveTechView.outdated}
+                </span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[200px]">
+              <span>{t.constructiveTechView.outdatedTooltip}</span>
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+      {isCollapsed && (
+        <div className="flex flex-wrap items-center gap-2 ml-auto mr-2 shrink-0">
+          <div className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-2 py-1.5 min-w-0">
+            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 shrink-0">
+              CO₂
+            </span>
+            <span className="text-[11px] sm:text-xs font-medium text-foreground tabular-nums truncate">
+              {option?.consumption?.["total"]
+                ? `${(option.consumption["total"].co2_min || 0).toInternational()} - ${(option.consumption["total"].co2_max || 0).toInternational()}`
+                : "-"}
+            </span>
+            <span className="text-[11px] sm:text-[11px] text-muted-foreground shrink-0 hidden sm:inline">
+              kg CO₂/m²
+            </span>
+          </div>
+          <div className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-2 py-1.5 min-w-0">
+            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400 shrink-0">
+              EN
+            </span>
+            <span className="text-[11px] sm:text-xs font-medium text-foreground tabular-nums truncate">
+              {option?.consumption?.["total"]
+                ? `${(option.consumption["total"].energy_min || 0).toInternational()} - ${(option.consumption["total"].energy_max || 0).toInternational()}`
+                : "-"}
+            </span>
+            <span className="text-[11px] sm:text-[11px] text-muted-foreground shrink-0 hidden sm:inline">
+              MJ/m²
+            </span>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -277,7 +315,7 @@ function RouteComponent() {
 
   const queryClient = useQueryClient();
   const { t } = useTranslation();
-  const [selectedItems, setSelectedItems] = useState<any[]>([]);
+  const [, setSelectedItems] = useState<any[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<TOption[]>([]);
   const [collapsedOptions, setCollapsedOptions] = useState<Set<string>>(
     new Set(),
@@ -626,7 +664,6 @@ function RouteComponent() {
           option_id: option.id,
         }));
         const isCollapsed = collapsedOptions.has(option.id);
-        const isOptionActive = option.active;
         return (
           <div
             key={option.id}
@@ -641,6 +678,7 @@ function RouteComponent() {
                     unitId={unitId}
                     onSelectOption={onSelectOption}
                     selectedOptions={selectedOptions}
+                    isCollapsed={isCollapsed}
                   />
                 }
                 data={modules}
@@ -652,9 +690,8 @@ function RouteComponent() {
                   type: "Total",
                   data: calculateSumMetrics(option?.consumption?.["total"]),
                 }}
-                collapsed={isOptionActive ? false : isCollapsed}
+                collapsed={isCollapsed}
                 onCollapsedChange={(nextCollapsed) => {
-                  if (isOptionActive) return;
                   setCollapsedOptions((prev) => {
                     const next = new Set(prev);
                     if (nextCollapsed) {
