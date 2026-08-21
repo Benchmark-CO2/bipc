@@ -992,12 +992,6 @@ const DrawerFormModule = ({
                       "w-full": isMobile,
                     })}
                   >
-                    <Alert className="mb-2 bg-yellow-50 border-yellow-300 w-80">
-                      <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                      <AlertDescription className="text-yellow-800">
-                        {t.modules.form.noFloorsRegisteredWarning}
-                      </AlertDescription>
-                    </Alert>
                     <BuildingVisualizer
                       key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ index: f.index })))}`}
                       towerFloors={floors || []}

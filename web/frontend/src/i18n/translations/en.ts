@@ -620,8 +620,6 @@ export const en: Translations = {
       tqsSourceLabel: "Materials (TQS)",
       aggregatedHint:
         "Batch imported materials. Fill concrete volumes and steel according to the source file.",
-      noFloorsRegisteredWarning:
-        "The selected unit has no registered floors. Create floors on the unit screen or bind the module to another unit.",
       unspecifiedPosition: "Unspecified / General",
       general: "General",
       emptyList: {

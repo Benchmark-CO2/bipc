@@ -622,8 +622,6 @@ export const ptBR = {
       tqsSourceLabel: "Materiais (TQS)",
       aggregatedHint:
         "Materiais importados em lote. Preencha volumes de concreto e aço conforme arquivo de origem.",
-      noFloorsRegisteredWarning:
-        "A unidade selecionada não tem pavimentos cadastrados. Crie os pavimentos na tela da unidade ou vincule o módulo a outra unidade.",
       unspecifiedPosition: "Sem Posição / Geral",
       general: "Geral",
       emptyList: {
