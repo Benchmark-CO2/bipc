@@ -508,6 +508,7 @@ export const en: Translations = {
       selectAtLeastOneFloor:
         "Select at least one floor (Beam/Column/Wall/Masonry modules cannot be created without a bound floor).",
       position: "Position",
+      useSlabAreaAvg: "Use average slab area",
       completeness: {
         masonryLabel: "Masonry",
         positions: {

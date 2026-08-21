@@ -98,11 +98,6 @@ const makeConcrete = (position?: string) => ({
   customFck: false,
 });
 
-const makeForm = (position?: string) => ({
-  area: "0",
-  position: position ?? "unspecified",
-});
-
 export const beamColumnDefaultValues = {
   type: "beam_column" as const,
   data: {

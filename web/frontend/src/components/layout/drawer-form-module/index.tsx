@@ -1073,6 +1073,9 @@ const DrawerFormModule = ({
                       hook={v2Hook}
                       stepperMode={stepperMode}
                       isSubmitted={false}
+                      unitId={unitId}
+                      floors={floors}
+                      isEdit={!!moduleId}
                     />
                   </div>
                 </div>

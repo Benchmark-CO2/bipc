@@ -510,6 +510,7 @@ export const ptBR = {
       selectAtLeastOneFloor:
         "Selecione pelo menos um pavimento (Pórtico/Parede/Alvenaria não podem ser criados sem pavimento vinculado).",
       position: "Posição",
+      useSlabAreaAvg: "Usar média da área dos pavimentos",
       completeness: {
         masonryLabel: "Alvenaria",
         positions: {

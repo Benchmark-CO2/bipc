@@ -2,10 +2,11 @@ import { useTranslation } from "@/i18n";
 import { useModuleV2Form } from "@/hooks/useModuleV2Form";
 import { parseNumber } from "@/utils/numbers";
 import { Plus, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Control, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   FormControl,
   FormField,
@@ -21,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TTowerFloorCategory } from "@/types/units";
 import MasonrySection from "./masonry-section";
 import {
   SCALAR_FIELDS_BY_TYPE,
@@ -55,6 +57,9 @@ type ModuleV2FormProps = {
   hook: ReturnType<typeof useModuleV2Form>;
   stepperMode?: boolean;
   isSubmitted?: boolean;
+  unitId?: string | null;
+  floors?: TTowerFloorCategory[];
+  isEdit?: boolean;
 };
 
 const FCK_OPTIONS: readonly number[] = [20, 25, 30, 35, 40, 45, 50];
@@ -1015,8 +1020,14 @@ const FormAreaSection = ({
 
 const ScalarFieldsSection = ({
   hook,
+  unitId,
+  floors = [],
+  isEdit = false,
 }: {
   hook: ReturnType<typeof useModuleV2Form>;
+  unitId?: string | null;
+  floors?: TTowerFloorCategory[];
+  isEdit?: boolean;
 }) => {
   const { t } = useTranslation();
   const { form, type } = hook;
@@ -1028,6 +1039,56 @@ const ScalarFieldsSection = ({
   const fields = (SCALAR_FIELDS_BY_TYPE[type] ??
     []) as readonly TScalarFieldDef[];
 
+  const avgSlabAreaNumeric = useMemo(() => {
+    if (!floors || floors.length === 0) return null;
+    const total = floors.reduce(
+      (sum, f) => sum + parseNumber(String(f.area ?? 0)),
+      0,
+    );
+    return total / floors.length;
+  }, [floors]);
+
+  const canUseSlabAreaAvg = useMemo(
+    () => !isEdit && !!unitId && avgSlabAreaNumeric !== null,
+    [isEdit, unitId, avgSlabAreaNumeric],
+  );
+
+  const [useSlabAreaAvg, setUseSlabAreaAvg] = useState(false);
+  const lastAppliedAvgRef = useRef<number | null>(null);
+
+  const currentSlabAreaValue = useWatch({
+    control: form.control,
+    name: "data.slab_area" as never,
+  }) as string | number | undefined;
+
+  const setSlabAreaValue = useCallback(
+    (next: string | number) => {
+      form.setValue("data.slab_area" as never, next as never, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    },
+    [form],
+  );
+
+  useEffect(() => {
+    if (!canUseSlabAreaAvg) {
+      setUseSlabAreaAvg(false);
+      lastAppliedAvgRef.current = null;
+    }
+  }, [canUseSlabAreaAvg]);
+
+  useEffect(() => {
+    if (!useSlabAreaAvg || avgSlabAreaNumeric === null) return;
+    const currentNum = parseNumber(String(currentSlabAreaValue ?? 0));
+    const applied = lastAppliedAvgRef.current;
+    if (applied === null) return;
+    if (Math.abs(currentNum - applied) > 0.001) {
+      setUseSlabAreaAvg(false);
+      lastAppliedAvgRef.current = null;
+    }
+  }, [currentSlabAreaValue, useSlabAreaAvg, avgSlabAreaNumeric]);
+
   if (fields.length === 0) return null;
 
   return (
@@ -1036,6 +1097,9 @@ const ScalarFieldsSection = ({
         const label = getScalarLabel(t, def.key);
         const fieldName = `data.${def.key}` as const;
         const fullWidth = getScalarGridClass(type, def) === "col-span-1";
+
+        const isSlabArea = def.key === "slab_area";
+        const showSlabAreaCheckbox = isSlabArea && canUseSlabAreaAvg;
 
         if (def.kind === "select") {
           return (
@@ -1083,6 +1147,54 @@ const ScalarFieldsSection = ({
             render={({ field }) => {
               const isInteger = /_number$/.test(def.key);
               const decimals = isInteger ? 0 : 2;
+
+              if (showSlabAreaCheckbox) {
+                const handleCheckboxChange = (checked: boolean) => {
+                  setUseSlabAreaAvg(checked);
+                  if (checked && avgSlabAreaNumeric !== null) {
+                    const rounded = Number(avgSlabAreaNumeric.toFixed(2));
+                    lastAppliedAvgRef.current = rounded;
+                    setSlabAreaValue(String(rounded));
+                  } else {
+                    lastAppliedAvgRef.current = null;
+                  }
+                };
+
+                return (
+                  <FormItem className={fullWidth ? "sm:col-span-2" : ""}>
+                    <div className="flex items-center gap-2">
+                      <FormLabel className="text-xs mb-0">{label}</FormLabel>
+                      <div className="flex items-center gap-1.5 ml-auto">
+                        <Checkbox
+                          id={`avg-slab-area-${type}`}
+                          checked={useSlabAreaAvg}
+                          onCheckedChange={(v) =>
+                            handleCheckboxChange(Boolean(v))
+                          }
+                          className="h-3.5 w-3.5"
+                        />
+                        <label
+                          htmlFor={`avg-slab-area-${type}`}
+                          className="text-[11px] text-muted-foreground cursor-pointer select-none leading-none"
+                        >
+                          {t.modules.form.useSlabAreaAvg}
+                        </label>
+                      </div>
+                    </div>
+                    <FormControl>
+                      <NumericStringInput
+                        {...field}
+                        decimalPlaces={decimals}
+                        allowNegative={false}
+                        forceDecimalPlaces={!isInteger}
+                        className="h-9 mt-1"
+                        placeholder={def.placeholder ?? "0"}
+                      />
+                    </FormControl>
+                  </FormItem>
+                );
+              }
+
               return (
                 <FormItem className={fullWidth ? "sm:col-span-2" : ""}>
                   <FormLabel className="text-xs">{label}</FormLabel>
@@ -1152,6 +1264,9 @@ const ModuleV2Form = ({
   hook,
   stepperMode,
   isSubmitted,
+  unitId,
+  floors,
+  isEdit,
 }: ModuleV2FormProps) => {
   const { t } = useTranslation();
   const { type } = hook;
@@ -1167,7 +1282,14 @@ const ModuleV2Form = ({
         </h3>
       </div>
 
-      {sections.scalar && <ScalarFieldsSection hook={hook} />}
+      {sections.scalar && (
+        <ScalarFieldsSection
+          hook={hook}
+          unitId={unitId}
+          floors={floors}
+          isEdit={isEdit}
+        />
+      )}
 
       {sections.concrete && <ConcreteListSection hook={hook} />}
 
