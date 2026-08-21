@@ -96,7 +96,7 @@ const FloorSummary = ({
       })) || [];
 
       // 2. Prepara newDataItems (incluindo o Total da Unidade)
-      const typeNewItems = t !== "material" ? newItems.map((item) => item[t]) : [];
+      const typeNewItems = newItems.map((item) => item[t]);
       
       let unitTotalItem = null;
       // Trata o objeto "unit" como "total" no gráfico
