@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import { useEffect, useRef, useState } from 'react';
 import { EmissionLegend } from '../summaryVariants/components/emissionLegend';
 
-const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: number | any }) => {
+const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: Record<string, number> | number }) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 150 });
@@ -28,7 +28,8 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: num
 
     const { width, height } = dimensions;
     
-    const margin = { top: 20, right: 20, bottom: 40, left: width < 600 ? 100 : 160 }; 
+    // 1. Aumentamos a margem esquerda para dar espaço aos nomes maiores
+    const margin = { top: 20, right: 20, bottom: 40, left: width < 600 ? 130 : 220 }; 
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
 
@@ -64,29 +65,26 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: num
     const yScale = d3.scaleBand()
       .domain(safeData.map(d => d.name))
       .range([0, innerHeight])
-      .padding(0.2); // Espaçamento entre os blocos (nomes)
+      .padding(0.2); 
 
-    // ── CORREÇÃO DA ÂNCORA DE ESCALA (BENCHMARK MAX) ──
-    // Calcula o limite local para garantir que as barras nunca ultrapassem a tela
-    const localMax = d3.max(safeData, d => 
-      keys.reduce((sum, key) => sum + (d[key] || 0), 0)
-    ) || 100;
+    const rowScales: Record<string, d3.ScaleLinear<number, number>> = {};
 
-    // Extrai o valor do benchmark global (trata tanto se for enviado como número direto ou como objeto)
-    let anchorMax = 0;
-    if (typeof benchmarkMax === 'number') {
-      anchorMax = benchmarkMax;
-    } else if (benchmarkMax && typeof benchmarkMax === 'object') {
-      anchorMax = Math.max(...Object.values(benchmarkMax).map(v => Number(v) || 0));
-    }
-
-    // O limite máximo do eixo X será o benchmarkMax!
-    // Usamos Math.max apenas como segurança extra caso algum dado local estoure o benchmark.
-    const maxTotal = anchorMax > 0 ? Math.max(anchorMax, localMax) : localMax;
-
-    const xScale = d3.scaleLinear()
-      .domain([0, maxTotal])
-      .range([0, innerWidth]);
+    safeData.forEach(d => {
+      const rowLocalSum = keys.reduce((sum, key) => sum + (d[key] || 0), 0);
+      
+      let rowAnchor = 0;
+      if (typeof benchmarkMax === 'number') {
+        rowAnchor = benchmarkMax;
+      } else if (benchmarkMax && typeof benchmarkMax === 'object') {
+        rowAnchor = Number(benchmarkMax[d.name]) || 0;
+      }
+      
+      const rowMax = rowAnchor > 0 ? Math.max(rowAnchor, rowLocalSum) : (rowLocalSum || 100);
+      
+      rowScales[d.name] = d3.scaleLinear()
+        .domain([0, rowMax])
+        .range([0, innerWidth]);
+    });
 
     const colorPalette = ['#297B76', '#DF7A32', '#9775C1', '#6C9EE0', '#E0756C', '#45b54a', '#E2D36C'];
     const colorScale = d3.scaleOrdinal()
@@ -97,34 +95,35 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: num
     const yAxisGroup = g.append('g').call(yAxis);
     yAxisGroup.select('.domain').remove();
     
+    // 2. Aumentamos o limite do substring de 15 para 25 caracteres (ou você pode até remover a limitação)
     yAxisGroup.selectAll('.tick text')
       .attr('font-size', '14px')
       .attr('fill', '#1a1f36')
       .attr('font-weight', 'bold')
-      .text(d => (d as string).length > 15 ? (d as string).substring(0, 12) + '...' : (d as string));
+      .text(d => (d as string).length > 25 ? (d as string).substring(0, 22) + '...' : (d as string));
 
+    const dummyXScale = d3.scaleLinear().domain([0, 100]).range([0, innerWidth]);
     const xAxisGroup = g.append('g')
       .attr('transform', `translate(0,${innerHeight})`)
-      .call(d3.axisBottom(xScale).tickSize(0).tickValues([]));
+      .call(d3.axisBottom(dummyXScale).tickSize(0).tickValues([]));
     xAxisGroup.select('.domain').remove();
 
-    // ── CONFIGURAÇÃO DE LINHAS DE LIMITE (PONTILHADAS) ──
     const thresholds = [
-      { val: maxTotal * 0.25, color: '#57C95B' }, // Verde (A)
-      { val: maxTotal * 0.50, color: '#A1DB2A' }, // Verde Limão (B)
-      { val: maxTotal * 0.75, color: '#F1E919' }, // Amarelo (C)
-      { val: maxTotal, color: '#FAA82C' }         // Laranja (D)
+      { pct: 0.25, color: '#57C95B' },
+      { pct: 0.50, color: '#A1DB2A' },
+      { pct: 0.75, color: '#F1E919' },
+      { pct: 1.00, color: '#FAA82C' }
     ];
 
     thresholds.forEach(t => {
       g.append('line')
-        .attr('x1', xScale(t.val))
-        .attr('x2', xScale(t.val))
+        .attr('x1', innerWidth * t.pct)
+        .attr('x2', innerWidth * t.pct)
         .attr('y1', -10)
         .attr('y2', innerHeight + 10)
         .attr('stroke', t.color)
         .attr('stroke-width', 1.5)
-        .attr('stroke-dasharray', '4,4'); // Torna a linha pontilhada
+        .attr('stroke-dasharray', '4,4'); 
     });
 
     const layer = g.selectAll('.layer')
@@ -140,8 +139,8 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: num
       .enter()
       .append('rect')
       .attr('y', d => (yScale(d.data.name) as number) + (yScale.bandwidth() / 2) - (barHeight / 2))
-      .attr('x', d => xScale(d[0]))
-      .attr('width', d => Math.max(0, xScale(d[1]) - xScale(d[0])))
+      .attr('x', d => rowScales[d.data.name](d[0]))
+      .attr('width', d => Math.max(0, rowScales[d.data.name](d[1]) - rowScales[d.data.name](d[0])))
       .attr('height', barHeight)
       .attr('stroke', '#f4f5f7') 
       .attr('stroke-width', 1);
@@ -151,7 +150,7 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: num
       .enter()
       .append('text')
       .attr('y', d => (yScale(d.data.name) as number) + (yScale.bandwidth() / 2) - (barHeight / 2) - 6)
-      .attr('x', d => xScale(d[0]) + (xScale(d[1]) - xScale(d[0])) / 2)
+      .attr('x', d => rowScales[d.data.name](d[0]) + (rowScales[d.data.name](d[1]) - rowScales[d.data.name](d[0])) / 2)
       .attr('fill', function() {
         const parentData = d3.select(this.parentNode as d3.BaseType).datum() as { key: string };
         return colorScale(parentData.key) as string;
@@ -161,27 +160,28 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: num
       .attr('font-weight', 'bold')
       .text(d => {
         const val = d[1] - d[0];
-        return val > (maxTotal * 0.05) ? `${val.toFixed(0)}` : ''; 
+        const rowMax = rowScales[d.data.name].domain()[1];
+        return val > (rowMax * 0.05) ? `${val.toFixed(0)}` : ''; 
       });
 
     const gradeZones = [
-      { mid: maxTotal * 0.25, label: 'A', bg: '#57C95B', txt: '#ffffff' },
-      { mid: maxTotal * 0.50, label: 'B', bg: '#A1DB2A', txt: '#ffffff' },
-      { mid: maxTotal * 0.75, label: 'C', bg: '#F1E919', txt: '#ffffff' },
-      { mid: maxTotal * 1.00, label: 'D', bg: '#FAA82C', txt: '#ffffff' },
+      { pct: 0.25, label: 'A', bg: '#57C95B', txt: '#ffffff' },
+      { pct: 0.50, label: 'B', bg: '#A1DB2A', txt: '#ffffff' },
+      { pct: 0.75, label: 'C', bg: '#F1E919', txt: '#ffffff' },
+      { pct: 1.00, label: 'D', bg: '#FAA82C', txt: '#ffffff' },
     ];
 
     const zonesG = g.append('g').attr('transform', `translate(0, ${innerHeight + 25})`);
 
     gradeZones.forEach(zone => {
       zonesG.append('circle')
-        .attr('cx', xScale(zone.mid))
+        .attr('cx', innerWidth * zone.pct)
         .attr('cy', 0)
         .attr('r', 12)
         .attr('fill', zone.bg);
 
       zonesG.append('text')
-        .attr('x', xScale(zone.mid))
+        .attr('x', innerWidth * zone.pct)
         .attr('y', 0)
         .attr('fill', zone.txt)
         .attr('text-anchor', 'middle')
@@ -191,7 +191,7 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: num
         .text(zone.label);
     });
 
-  }, [data, dimensions, benchmarkMax]); // Importante incluir benchmarkMax aqui!
+  }, [data, dimensions, benchmarkMax]);
 
   return (
     <div ref={wrapperRef} style={{ width: '100%', margin: '0 auto' }}>

@@ -98,6 +98,7 @@ const ProjectsSummary = ({
           if (!totalConsumption[key]) {
             totalConsumption[key] = { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0, material: 0 };
           }
+
           totalConsumption[key].co2_min += (values.co2_min || 0);
           totalConsumption[key].co2_max += (values.co2_max || 0);
           totalConsumption[key].energy_min += (values.energy_min || 0);
@@ -131,7 +132,7 @@ const ProjectsSummary = ({
         label: projects.find((f) => f.id === el.id)?.name || "",
       }));
 
-      const typeNewItems = t !== "material" ? newItems.map((item) => item[t]) : [];
+      const typeNewItems = newItems.map((item) => item[t]);
       
       let projectTotalItem = null;
       if (portfolioAverage?.total) {
@@ -273,7 +274,6 @@ const ProjectsSummary = ({
       const co2Row: Record<string, any> = { name: "CO₂ (kg)" };
       const energyRow: Record<string, any> = { name: "Energia (MJ)" };
       const materialRow: Record<string, any> = { name: `Material (${unitsOfMeasure.material || 'kg'})` };
-
       Object.entries(consumption).forEach(([key, values]) => {
         if (key !== "total") {
           const techName = translateCategory[key] || key;
@@ -380,7 +380,7 @@ const ProjectsSummary = ({
               data={projectEmissionsData} 
               selected={selectedProjects} 
               onChange={onChangeProjectSelection} 
-              benchmarkMax={benchmarkMax[type]}
+              benchmarkMax={benchmarkMax}
             />
           </div>
           
