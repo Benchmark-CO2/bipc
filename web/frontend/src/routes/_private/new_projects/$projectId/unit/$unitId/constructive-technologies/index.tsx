@@ -38,6 +38,7 @@ import {
 } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
 import {
+  ChevronDown,
   Copy,
   Edit,
   Loader2,
@@ -46,7 +47,7 @@ import {
   Trash,
   TriangleAlert,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
 import { parseApiError } from "@/utils/parseApiError";
@@ -70,6 +71,8 @@ const OptionMenu = ({
   onSelectOption,
   selectedOptions,
   isCollapsed,
+  headerActions,
+  onToggleCollapse,
 }: {
   option: TOption;
   projectId: string;
@@ -77,6 +80,8 @@ const OptionMenu = ({
   onSelectOption?: (option: TOption) => void;
   selectedOptions?: TOption[];
   isCollapsed?: boolean;
+  headerActions?: ReactNode;
+  onToggleCollapse?: () => void;
 }) => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -217,8 +222,8 @@ const OptionMenu = ({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 w-full min-w-0">
-      <div className="flex flex-wrap items-center gap-1 gap-y-1.5 flex-1 min-w-0">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 w-full min-w-0">
+      <div className="flex items-center gap-1 flex-nowrap shrink-0 min-w-[260px] max-w-full">
         <Checkbox
           className="border-2 bg-white data-[state=checked]:bg-secondary data-[state=checked]:border-secondary data-[state=checked]:text-white shrink-0"
           checked={
@@ -248,14 +253,16 @@ const OptionMenu = ({
             />
           </Button>
         </SimpleTooltip>
-        <Input
-          type="text"
-          placeholder={t.constructiveTechView.placeholder}
-          value={localName}
-          onChange={handleNameChange}
-          onBlur={handleBlur}
-          className="font-medium text-accent-foreground focus:border-primary focus:ring-primary w-full sm:max-w-[240px]"
-        />
+        <div className="min-w-[180px] w-full max-w-[260px]">
+          <Input
+            type="text"
+            placeholder={t.constructiveTechView.placeholder}
+            value={localName}
+            onChange={handleNameChange}
+            onBlur={handleBlur}
+            className="font-medium text-accent-foreground focus:border-primary focus:ring-primary w-full"
+          />
+        </div>
         {option.modules.some((mod) => mod.outdated) && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -272,8 +279,31 @@ const OptionMenu = ({
           </Tooltip>
         )}
       </div>
+
+      <div className="flex items-center gap-2 shrink-0 flex-nowrap ml-auto order-2 lg:order-3">
+        {headerActions}
+        {onToggleCollapse && (
+          <SimpleTooltip
+            content={isCollapsed ? t.common.expand : t.common.collapse}
+          >
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleCollapse}
+              className="p-2 transition-transform duration-200 ease-in-out hover:scale-110"
+            >
+              <div
+                className={`transition-transform duration-300 ease-in-out ${isCollapsed ? "rotate-0" : "rotate-180"}`}
+              >
+                <ChevronDown className="h-4 w-4" />
+              </div>
+            </Button>
+          </SimpleTooltip>
+        )}
+      </div>
+
       {isCollapsed && (
-        <div className="flex flex-wrap items-center gap-2 ml-auto mr-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0 flex-nowrap order-3 lg:order-2 w-full sm:w-auto justify-start sm:justify-end lg:justify-start lg:w-auto lg:ml-0">
           <div className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-2 py-1.5 min-w-0">
             <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 shrink-0">
               CO₂
@@ -298,6 +328,19 @@ const OptionMenu = ({
             </span>
             <span className="text-[11px] sm:text-[11px] text-muted-foreground shrink-0 hidden sm:inline">
               MJ/m²
+            </span>
+          </div>
+          <div className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-2 py-1.5 min-w-0">
+            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 shrink-0">
+              MAT
+            </span>
+            <span className="text-[11px] sm:text-xs font-medium text-foreground tabular-nums truncate">
+              {option?.consumption?.["total"]
+                ? (option.consumption["total"].material || 0).toInternational()
+                : "-"}
+            </span>
+            <span className="text-[11px] sm:text-[11px] text-muted-foreground shrink-0 hidden sm:inline">
+              kg/m²
             </span>
           </div>
         </div>
@@ -531,9 +574,7 @@ function RouteComponent() {
   const newColumns: ColumnDef<
     Omit<IModuleItem, "consumption"> & TConsumption & { option_id: string }
   >[] = [
-    ...makeConstructiveTechnologiesColumns(t).filter(
-      (col) => (col as any).accessorKey !== "material" && col.id !== "material",
-    ),
+    ...makeConstructiveTechnologiesColumns(t),
     {
       id: "actions",
       header: "",
@@ -664,6 +705,87 @@ function RouteComponent() {
           option_id: option.id,
         }));
         const isCollapsed = collapsedOptions.has(option.id);
+
+        const toggleCollapse = () => {
+          setCollapsedOptions((prev) => {
+            const next = new Set(prev);
+            if (next.has(option.id)) {
+              next.delete(option.id);
+            } else {
+              next.add(option.id);
+            }
+            return next;
+          });
+        };
+
+        const headerActions = (
+          <>
+            <ModalConfirmDelete
+              componentTrigger={
+                <SimpleTooltip
+                  content={t.constructiveTechView.deleteSimulation}
+                  side="bottom"
+                >
+                  <Button
+                    variant="outline-destructive"
+                    size="icon-lg"
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash className="h-4 w-4 text-red-700" />
+                    )}
+                  </Button>
+                </SimpleTooltip>
+              }
+              title={t.constructiveTechView.deleteSimulation}
+              onConfirm={() => deleteSimulation(option.id)}
+            />
+            <ModalSimple
+              title={t.constructiveTechView.duplicateSimulation}
+              content={t.constructiveTechView.duplicateSimulationContent}
+              confirmTitle={t.columns.duplicate}
+              onConfirm={() => duplicateSimulation(option.id)}
+              componentTrigger={
+                <SimpleTooltip
+                  content={t.constructiveTechView.duplicateSimulation}
+                  side="bottom"
+                >
+                  <Button
+                    variant="outline-bipc"
+                    size="icon-lg"
+                    disabled={isDuplicating}
+                  >
+                    {isDuplicating ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </SimpleTooltip>
+              }
+            />
+            <DrawerFormModule
+              triggerComponent={
+                <SimpleTooltip
+                  content={t.constructiveTechView.createSimulations}
+                  side="bottom"
+                >
+                  <Button variant="outline-bipc" size="icon-lg">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </SimpleTooltip>
+              }
+              type="concrete_wall"
+              floors={unitFloors}
+              projectId={projectId}
+              unitId={unitId}
+              optionId={option.id}
+            />
+          </>
+        );
+
         return (
           <div
             key={option.id}
@@ -679,6 +801,8 @@ function RouteComponent() {
                     onSelectOption={onSelectOption}
                     selectedOptions={selectedOptions}
                     isCollapsed={isCollapsed}
+                    headerActions={headerActions}
+                    onToggleCollapse={toggleCollapse}
                   />
                 }
                 data={modules}
@@ -691,86 +815,7 @@ function RouteComponent() {
                   data: calculateSumMetrics(option?.consumption?.["total"]),
                 }}
                 collapsed={isCollapsed}
-                onCollapsedChange={(nextCollapsed) => {
-                  setCollapsedOptions((prev) => {
-                    const next = new Set(prev);
-                    if (nextCollapsed) {
-                      next.add(option.id);
-                    } else {
-                      next.delete(option.id);
-                    }
-                    return next;
-                  });
-                }}
-                actions={
-                  <>
-                    <ModalConfirmDelete
-                      componentTrigger={
-                        <SimpleTooltip
-                          content={t.constructiveTechView.deleteSimulation}
-                          side="bottom"
-                        >
-                          <Button
-                            variant="outline-destructive"
-                            size="icon-lg"
-                            disabled={isDeleting}
-                          >
-                            {isDeleting ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash className="h-4 w-4 text-red-700" />
-                            )}
-                          </Button>
-                        </SimpleTooltip>
-                      }
-                      title={t.constructiveTechView.deleteSimulation}
-                      onConfirm={() => deleteSimulation(option.id)}
-                    />
-                    <ModalSimple
-                      title={t.constructiveTechView.duplicateSimulation}
-                      content={
-                        t.constructiveTechView.duplicateSimulationContent
-                      }
-                      confirmTitle={t.columns.duplicate}
-                      onConfirm={() => duplicateSimulation(option.id)}
-                      componentTrigger={
-                        <SimpleTooltip
-                          content={t.constructiveTechView.duplicateSimulation}
-                          side="bottom"
-                        >
-                          <Button
-                            variant="outline-bipc"
-                            size="icon-lg"
-                            disabled={isDuplicating}
-                          >
-                            {isDuplicating ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Copy className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </SimpleTooltip>
-                      }
-                    />
-                    <DrawerFormModule
-                      triggerComponent={
-                        <SimpleTooltip
-                          content={t.constructiveTechView.createSimulations}
-                          side="bottom"
-                        >
-                          <Button variant="outline-bipc" size="icon-lg">
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </SimpleTooltip>
-                      }
-                      type="concrete_wall"
-                      floors={unitFloors}
-                      projectId={projectId}
-                      unitId={unitId}
-                      optionId={option.id}
-                    />
-                  </>
-                }
+                isExpandable={false}
                 customEmptyComponent={
                   <NotFoundList
                     message={t.constructiveTechView.noTechFound}
