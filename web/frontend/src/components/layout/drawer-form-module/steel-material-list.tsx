@@ -145,14 +145,16 @@ const SteelMaterialItem = ({
               name={`${name}.${index}.position`}
               render={({ field }) => (
                 <FormItem className="w-full space-y-1">
-                  <FormLabel className="text-xs">Posição</FormLabel>
+                  <FormLabel className="text-xs">
+                    {t.modules.form.position}
+                  </FormLabel>
                   <FormControl>
                     <Select
                       value={field.value ?? "unspecified"}
                       onValueChange={(v) => field.onChange(v)}
                     >
                       <SelectTrigger className="h-9 w-full">
-                        <SelectValue placeholder="Selecione" />
+                        <SelectValue placeholder={t.common.select} />
                       </SelectTrigger>
                       <SelectContent>
                         {positions!.map((pos) => (
@@ -377,10 +379,10 @@ const SteelMaterialList = ({
     value: key,
     label:
       {
+        general: t.modules.form.general,
         rebar: t.modules.form.rebar,
         mesh: t.modules.form.mesh,
         strand: t.modules.form.strand,
-        general: t.modules.form.general,
         other: t.modules.form.other,
       }[key] ?? key,
   }));

@@ -20,6 +20,7 @@ export const ptBR = {
     ifcImport: "Importar do IFC",
     ifcImportTqs: "Importar de IFC/TQS",
     orLabel: "ou",
+    select: "Selecione",
   },
   errors: {
     unexpectedError: "Erro inesperado. Tente novamente mais tarde.",
@@ -485,7 +486,7 @@ export const ptBR = {
     structureTypes: {
       concreteWall: "Parede de Concreto",
       beamColumn: "Viga Pilar",
-      masonry: "Alvenaria",
+      masonry: "Alvenaria Estrutural",
       raftFoundation: "Radier",
       pilesFoundation: "Estaca",
       raftPilesFoundation: "Radier Estaqueado",
@@ -508,6 +509,7 @@ export const ptBR = {
       partialDataHint: "Campos obrigatórios que estão zerados ou ausentes:",
       selectAtLeastOneFloor:
         "Selecione pelo menos um pavimento (Pórtico/Parede/Alvenaria não podem ser criados sem pavimento vinculado).",
+      position: "Posição",
       completeness: {
         masonryLabel: "Alvenaria",
         positions: {

@@ -82,7 +82,7 @@ export const useSlabTypeOptions = () => {
 };
 
 const makeSteel = (position?: string) => ({
-  material: "rebar" as const,
+  material: "general" as const,
   resistance: "CA50" as const,
   mass: "0",
   position: position ?? "unspecified",
@@ -183,8 +183,8 @@ export const pilesFoundationDefaultValues = {
 export const raftPilesFoundationDefaultValues = {
   type: "raft_piles_foundation" as const,
   data: {
-    concrete: [makeConcrete(), makeConcrete()],
-    steel: [makeSteel(), makeSteel()],
+    concrete: [makeConcrete()],
+    steel: [makeSteel()],
   },
 };
 

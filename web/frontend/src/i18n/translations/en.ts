@@ -22,6 +22,7 @@ export const en: Translations = {
     ifcImport: "Import from IFC",
     ifcImportTqs: "Import from IFC/TQS",
     orLabel: "or",
+    select: "Select",
   },
   errors: {
     unexpectedError: "Unexpected error. Please try again later.",
@@ -483,7 +484,7 @@ export const en: Translations = {
     structureTypes: {
       concreteWall: "Concrete Wall",
       beamColumn: "Beam Column",
-      masonry: "Masonry",
+      masonry: "Structural Masonry",
       raftFoundation: "Raft",
       pilesFoundation: "Piles",
       raftPilesFoundation: "Raft Piles",
@@ -506,6 +507,7 @@ export const en: Translations = {
       partialDataHint: "Required fields that are zero or missing:",
       selectAtLeastOneFloor:
         "Select at least one floor (Beam/Column/Wall/Masonry modules cannot be created without a bound floor).",
+      position: "Position",
       completeness: {
         masonryLabel: "Masonry",
         positions: {
