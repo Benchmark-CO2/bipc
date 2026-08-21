@@ -935,43 +935,27 @@ export const prepareModuleForBatch = (
 ): { type: TModulesTypes | string; data: Record<string, unknown> } | null => {
   const rawType = moduleItem.raw.type;
   const normalizedType = normalizeModuleType(rawType);
-  const knownType = isKnownModuleType(normalizedType) ? normalizedType : null;
 
   const d = moduleItem.raw.data ?? {};
 
-  // 1) DECIDE qual shape usar. Backend SEMPRE quer FLAT (TModuleDataV2).
-  //    - Se raw.data JÁ é flat (shape do IFC inicial) → usa ele direto.
-  //    - Se raw.data é GROUPED (shape do form, salvo após drawer submit) →
-  //      converte para flat V2 usando groupedFormToFlatV2.
-  let effectiveData: Record<string, unknown>;
-  const isFlatAlready = isDataLikelyFlatV2Format(d);
-  if (isFlatAlready || !knownType) {
-    effectiveData = { ...(d as Record<string, unknown>) };
-  } else {
-    // Converte grouped → flat
-    try {
-      effectiveData = groupedFormToFlatV2(
-        knownType,
-        d as any,
-        Array.isArray(unitIdOrFloorIds.floor_ids)
-          ? unitIdOrFloorIds.floor_ids
-          : [],
-        unitIdOrFloorIds.unit_id ?? "",
-      ) as any;
-    } catch (err) {
-      // Fallback: usa dados originais mesmo que grouped (melhor tentar do que pular)
-      effectiveData = { ...(d as Record<string, unknown>) };
-    }
-  }
+  // FORMA V2 (pós-refatoração 2026-08-17): raw.data SEMPRE é flat (shape V2 do
+  // payload OpenAPI). Não há mais grouped no stepper. Portanto não precisamos
+  // de groupedFormToFlatV2. Caso detectemos grouped residual (mistura antiga),
+  // usamos fallback para os dados raw como estão, melhor que pular.
+  let effectiveData: Record<string, unknown> = {
+    ...(d as Record<string, unknown>),
+  };
 
-  // 2) Parseia TODAS strings numéricas ("100" → 100) para evitar erro do Go:
+  // 1) Parseia TODAS strings numéricas ("100" → 100) para evitar erro do Go:
   //    "cannot unmarshal string into Go struct field RaftFoundation.area of type float64"
   effectiveData = recursivelyParseNumericStrings(effectiveData) as Record<
     string,
     unknown
   >;
 
-  // 3) Remove campos GROUPED que o backend FLAT NÃO reconhece (evita warnings/unmarshal erros)
+  // 2) Remove campos GROUPED que o backend FLAT NÃO reconhece (evita warnings/unmarshal erros)
+  //    Mantemos essa lista por segurança mesmo que no V2 não usemos grouped:
+  //    preserva histórico de módulos criados em sessões antigas.
   const GROUPED_ONLY_KEYS_TO_STRIP = new Set<string>([
     // Raft grouped-only
     "area",
@@ -1011,16 +995,19 @@ export const prepareModuleForBatch = (
   const clean: Record<string, unknown> = {};
   Object.keys(effectiveData).forEach((k) => {
     if (GROUPED_ONLY_KEYS_TO_STRIP.has(k)) return;
-    (clean as any)[k] = (effectiveData as any)[k];
+    (clean as Record<string, unknown>)[k] = (effectiveData as Record<
+      string,
+      unknown
+    >)[k];
   });
 
-  // 4) Remove floor_index do data (nunca esperado pelo backend;
+  // 3) Remove floor_index do data (nunca esperado pelo backend;
   //    usamos só internamente para mapear → floor_ids).
   delete clean.floor_index;
   // Se tem um campo "type" duplicado no data, remova (vai no nível superior).
   delete clean.type;
 
-  // 5) Aplica bindings:
+  // 4) Aplica bindings:
   //    - Fundação: SEMPRE unit_id
   //    - Estruturais (pórtico/parede/alvenaria): SEMPRE floor_ids
   if (isFoundation) {
@@ -1033,7 +1020,9 @@ export const prepareModuleForBatch = (
     clean.floor_ids = unitIdOrFloorIds.floor_ids;
   }
 
-  return { type: rawType, data: clean };
+  // Normaliza para tipo conhecido se possível; fallback rawType
+  const finalType = isKnownModuleType(normalizedType) ? normalizedType : rawType;
+  return { type: finalType, data: clean };
 };
 
 export const ifcStepperUtils = {

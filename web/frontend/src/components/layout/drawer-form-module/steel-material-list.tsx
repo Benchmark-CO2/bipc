@@ -87,7 +87,7 @@ const SteelMaterialItem = ({
   onRemove,
   canRemove,
   positions,
-  firstPosition,
+  firstPosition: _firstPosition,
 }: SteelMaterialItemProps) => {
   const { t } = useTranslation();
   const currentMaterial = useWatch({

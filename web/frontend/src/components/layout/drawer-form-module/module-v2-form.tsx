@@ -203,11 +203,9 @@ const ConcreteListSection = ({
     addConcreteItem,
     removeConcreteItem,
     getPositionsFor,
-    type,
   } = hook;
 
   const positions = getPositionsFor("concrete");
-  const firstPosition = positions[0] ?? FIRST_POSITION[type] ?? "column";
   const [customFckSelected, setCustomFckSelected] = useState<
     Record<string, boolean>
   >({});
@@ -472,10 +470,10 @@ const SteelMaterialItemInline = ({
   name,
   index,
   positions,
-  firstPosition,
+  firstPosition: _firstPosition,
   onRemove,
   canRemove,
-  allowedMaterials,
+  allowedMaterials: _allowedMaterials,
   materialOptions,
   resistanceOptions,
 }: {
@@ -854,18 +852,11 @@ const FormAreaSection = ({
   hook: ReturnType<typeof useModuleV2Form>;
 }) => {
   const { t } = useTranslation();
-  const {
-    form,
-    formArray,
-    addFormItem,
-    removeFormItem,
-    getPositionsFor,
-    type,
-  } = hook;
+  const { form, formArray, addFormItem, removeFormItem, getPositionsFor } =
+    hook;
 
   const positions = getPositionsFor("form");
   if (positions.length === 0) return null;
-  const firstPosition = positions[0] ?? FIRST_POSITION[type] ?? "column";
 
   const areaItems = useWatch({
     control: form.control as unknown as Control,
@@ -1166,7 +1157,7 @@ const ModuleV2Form = ({
   const { type } = hook;
 
   const sections = SECTION_BY_TYPE[type] ?? SECTION_BY_TYPE.beam_column;
-  const _ = isSubmitted;
+  void isSubmitted;
 
   return (
     <div className="space-y-5">

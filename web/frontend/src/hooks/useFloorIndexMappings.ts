@@ -206,16 +206,25 @@ export function useFloorIndexMappings({
 
   const editingModuleInitialSelectedFloors: string[] = useMemo(() => {
     if (!editingModule) return [];
-    const rawIndex = (
-      editingModule.raw?.data as unknown as IRawModuleDataWithMeta
-    )?.floor_index;
+    const rawDataMaybe = editingModule.raw
+      ?.data as unknown as IRawModuleDataWithMeta | null;
+    const candidateFloorIds = rawDataMaybe?.floor_ids;
+    if (
+      Array.isArray(candidateFloorIds) &&
+      candidateFloorIds.length > 0 &&
+      candidateFloorIds.every((s) => typeof s === "string")
+    ) {
+      return candidateFloorIds as string[];
+    }
+    const rawIndex = rawDataMaybe?.floor_index;
     return mapFloorIndexToFloorIds(rawIndex, editingUnitFloors);
   }, [editingModule, editingUnitFloors]);
 
   const editingModuleInitialMerged: TEditingModuleMerged = useMemo(() => {
     if (!editingModule?.raw?.data) return {} as TEditingModuleMerged;
+    const base = editingModule.raw.data as unknown as IRawModuleDataWithMeta;
     return {
-      ...(editingModule.raw.data as unknown as IRawModuleDataWithMeta),
+      ...(base as unknown as TEditingModuleMerged),
       floor_ids: editingModuleInitialSelectedFloors,
     } as TEditingModuleMerged;
   }, [editingModule, editingModuleInitialSelectedFloors]);

@@ -12,7 +12,6 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { NumericStringInput } from "@/components/ui/numeric-string-input";
 import {
   Select,
@@ -866,11 +865,6 @@ const GroutSection = ({
   const [customFgkSelected, setCustomFgkSelected] = useState<
     Record<string, boolean>
   >({});
-
-  const groutPositionLabel: Record<TGroutPosition, string> = {
-    vertical: "Vertical",
-    horizontal: "Horizontal",
-  };
 
   const totalVol = useMemo(
     () =>

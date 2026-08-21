@@ -2,7 +2,7 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Stepper } from "@/components/ui/stepper";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FileText, AlertTriangle, Info, Plus } from "lucide-react";
+import { FileText, AlertTriangle, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -29,7 +29,7 @@ export const StepperHeader: React.FC<StepperHeaderProps> = ({
   refetchOptions,
   queryClient,
   state,
-  applyUnitToAllModules,
+  applyUnitToAllModules: _applyUnitToAllModules,
 }) => {
   const t = translations;
   return (

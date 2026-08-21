@@ -14,13 +14,12 @@ import {
 import { TTowerFloorCategory } from "@/types/units";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Control } from "react-hook-form";
-import { AlertTriangle, Loader2, Plus, X } from "lucide-react";
+import { Loader2, Plus, X } from "lucide-react";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
 import { parseApiError } from "@/utils/parseApiError";
 import { mapFloorIndexToFloorIds } from "@/utils/unitConversions";
-import { Alert, AlertDescription } from "../../ui/alert";
 import { Button } from "../../ui/button";
 import {
   Drawer,
@@ -50,10 +49,7 @@ import {
   getEmptyValuesByType,
 } from "./module-default-values";
 import ModuleV2Form from "./module-v2-form";
-import {
-  cleanZeroItemsBeforeSubmit,
-  prepareModuleV2PayloadForBackend,
-} from "./aggregate-helpers";
+import { prepareModuleV2PayloadForBackend } from "./aggregate-helpers";
 
 export type ModuleFormSource = "default" | "ifc" | "tqs";
 
@@ -162,7 +158,7 @@ const DrawerFormModule = ({
   moduleId,
   type,
   floors = [],
-  source = "default",
+  source: _source = "default",
   stepperMode = false,
   strictValidation: strictValidationProp,
   open: controlledOpen,
@@ -173,7 +169,8 @@ const DrawerFormModule = ({
 }: DrawerFormModuleProps) => {
   const unitId = unitIdProp ?? "";
   const optionId = optionIdProp ?? "";
-  const strictValidation = strictValidationProp ?? !stepperMode;
+  const strictValidation_ = strictValidationProp ?? !stepperMode;
+  void strictValidation_;
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
   const isOpen = isControlled ? controlledOpen : internalOpen;
@@ -222,7 +219,6 @@ const DrawerFormModule = ({
   const { form } = v2Hook;
 
   const structureTypeWatch = form.watch("type") as TModulesTypes;
-  const allFormValues = form.watch();
 
   const { t } = useTranslation();
 

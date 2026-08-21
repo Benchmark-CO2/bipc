@@ -104,6 +104,7 @@ const cleanBlockInfo = (block: IBlockInfo): IBlockInfo | null => {
   if (!q || q <= 0) return null;
   return block;
 };
+void cleanBlockInfo;
 
 const cleanMortarItem = (mortar: IMortarItem): IMortarItem | null => {
   const v =
@@ -113,6 +114,7 @@ const cleanMortarItem = (mortar: IMortarItem): IMortarItem | null => {
   if (!v || v <= 0) return null;
   return mortar;
 };
+void cleanMortarItem;
 
 const cleanGroutInfo = (grout: IGroutInfo): IGroutInfo | null => {
   const cleanVolumes = grout.volumes.filter((v) => {
@@ -122,26 +124,7 @@ const cleanGroutInfo = (grout: IGroutInfo): IGroutInfo | null => {
   if (cleanVolumes.length === 0) return null;
   return { ...grout, volumes: cleanVolumes };
 };
-
-const cleanMasonry = (masonry: IMasonryElement): IMasonryElement | null => {
-  const cleanBlocks = masonry.blocks
-    .map(cleanBlockInfo)
-    .filter((b): b is IBlockInfo => b !== null);
-  const cleanMortar = masonry.mortar
-    .map(cleanMortarItem)
-    .filter((m): m is IMortarItem => m !== null);
-  const cleanGrout = masonry.grout
-    .map(cleanGroutInfo)
-    .filter((g): g is IGroutInfo => g !== null);
-  if (
-    cleanBlocks.length === 0 ||
-    cleanMortar.length === 0 ||
-    cleanGrout.length === 0
-  ) {
-    return null;
-  }
-  return { blocks: cleanBlocks, mortar: cleanMortar, grout: cleanGrout };
-};
+void cleanGroutInfo;
 
 const shouldStripPosition = (p: unknown): boolean => {
   if (p === undefined || p === null) return true;
@@ -154,15 +137,6 @@ const shouldStripPosition = (p: unknown): boolean => {
     s === "unspecified" ||
     s === "__geral__"
   );
-};
-
-const stripEmptyPosition = <T extends { position?: unknown }>(item: T): T => {
-  if (!item || typeof item !== "object") return item;
-  if ("position" in item && shouldStripPosition((item as any).position)) {
-    const { position: _p, ...rest } = item as any;
-    return rest as T;
-  }
-  return item;
 };
 
 const toNum = (v: unknown): number | undefined => {
