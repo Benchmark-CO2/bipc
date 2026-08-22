@@ -515,10 +515,10 @@ type Module interface {
 	VersionContract() moduleVersionContract
 	Validate(v *validator.Validator)
 	Calculate() (Consumption, error)
-	Insert(models data.Models, optionID uuid.UUID, result Consumption) (Module, error)
+	Insert(models data.Models, optionID uuid.UUID, result Consumption, source string) (Module, error)
 	Delete(models data.Models, moduleID uuid.UUID) error
 	Get(models data.Models, moduleID uuid.UUID) (Module, error)
-	Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error
+	Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption, source string) error
 }
 
 func validateConcreteElement(v *validator.Validator, el ConcreteElement, fieldPrefix string) {
@@ -891,14 +891,16 @@ func consumptionFromDataModule(d *data.Module) *Consumption {
 }
 
 func extractFloat64Pointer(data map[string]interface{}, key string) *float64 {
-	if val, ok := data[key].(float64); ok {
+	v := unwrapDataScalar(data[key])
+	if val, ok := v.(float64); ok {
 		return &val
 	}
 	return nil
 }
 
 func extractIntPointer(data map[string]interface{}, key string) *int {
-	if val, ok := data[key].(float64); ok {
+	v := unwrapDataScalar(data[key])
+	if val, ok := v.(float64); ok {
 		intVal := int(val)
 		return &intVal
 	}
@@ -906,7 +908,7 @@ func extractIntPointer(data map[string]interface{}, key string) *int {
 }
 
 func extractStringPointer(data map[string]interface{}, key string) *string {
-	val, ok := data[key].(string)
+	val, ok := unwrapDataScalar(data[key]).(string)
 	if !ok {
 		return nil
 	}
@@ -917,6 +919,45 @@ func extractStringPointer(data map[string]interface{}, key string) *string {
 	}
 
 	return &trimmed
+}
+
+// unwrapDataScalar returns the plain value, unwrapping the canonical
+// {value, source} box used to store simple fields.
+func unwrapDataScalar(v interface{}) interface{} {
+	if m, ok := v.(map[string]interface{}); ok {
+		if val, has := m["value"]; has {
+			return unwrapDataScalar(val)
+		}
+	}
+	return v
+}
+
+var moduleSourceDenylist = map[string]bool{
+	"type": true, "outdated": true, "floor_ids": true, "unit_id": true, "floor_index": true, "floor_indexes": true, "source": true,
+}
+
+func isModuleSourceDenylisted(key string) bool {
+	_, ok := moduleSourceDenylist[key]
+	return ok
+}
+
+// ApplySourceShape overlays the stored source tags onto a response map.
+// When include is false it leaves the response untouched (fully backward
+// compatible); when true it re-injects the canonical tagged values.
+func ApplySourceShape(moduleMap, rawData map[string]any, include bool) {
+	if !include {
+		return
+	}
+
+	for key, rawValue := range rawData {
+		if isModuleSourceDenylisted(key) {
+			continue
+		}
+		if _, present := moduleMap[key]; !present {
+			continue
+		}
+		moduleMap[key] = rawValue
+	}
 }
 
 // PrepareModuleTargetConsumptions creates target consumption records for floors and/or unit.

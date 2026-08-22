@@ -12,9 +12,6 @@ type contextKey string
 const (
 	userContextKey   = contextKey("user")
 	sourceContextKey = contextKey("source")
-
-	SourceAPI    = "api"
-	SourcePlugin = "plugin"
 )
 
 func (app *application) contextSetUser(r *http.Request, user *data.User) *http.Request {
