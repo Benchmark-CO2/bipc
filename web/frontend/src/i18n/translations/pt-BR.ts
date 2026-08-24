@@ -467,6 +467,14 @@ export const ptBR = {
     deleteTitle: "Excluir Tecnologia Construtiva",
     duplicateTitle: "Duplicar Tecnologia Construtiva",
     editTitle: "Editar Tecnologia Construtiva",
+    badges: {
+      completed: "Completo",
+      incomplete: "Incompleto",
+    },
+    alerts: {
+      missingFieldsTitle:
+        "Campos necessários para o cálculo (não bloqueiam o envio)",
+    },
     table: {
       noItems: "Nenhum item encontrado",
       addNew:
@@ -490,6 +498,66 @@ export const ptBR = {
       raftFoundation: "Radier",
       pilesFoundation: "Estaca",
       raftPilesFoundation: "Radier Estaqueado",
+    },
+    fields: {
+      floor_ids: "Pavimentos vinculados",
+      unit_id: "Unidade vinculada",
+      concrete: "Concreto (volume por FCK)",
+      steel: "Aço (massa por tipo)",
+      form: "Fôrma (área por posição)",
+      masonry: "Alvenaria (blocos / argamassa / graute)",
+      "masonry.blocks": "Blocos",
+      "masonry.mortar": "Argamassa",
+      "masonry.grout": "Graute",
+      "steel.item_invalid": "Item inválido",
+      "steel.material": "Tipo do aço",
+      "steel.resistance": "Resistência do aço",
+      "steel.position": "Posição do aço",
+      "steel.mass": "Massa do aço",
+      "steel.other_name": "Nome do outro tipo de aço",
+      "steel.other_resistance": "Resistência do outro tipo",
+      slab_type: "Tipo de laje",
+      wall_thickness: "Espessura da parede",
+      slab_thickness: "Espessura da laje",
+      wall_area: "Área da parede",
+      slab_area: "Área da laje",
+      beam_number: "Número de vigas",
+      slab_number: "Número de lajes",
+      column_number: "Número de pilares",
+      avg_beam_span: "Vão médio das vigas",
+      avg_slab_span: "Vão médio das lajes",
+      area: "Área (radier)",
+      thickness: "Espessura (radier)",
+      fck: "Resistência do concreto (FCK)",
+      volume: "Volume",
+      mass: "Massa",
+      "raft.area": "Área do radier",
+      "raft.thickness": "Espessura do radier",
+    },
+    completionReasons: {
+      floor_ids: "Necessário para o cálculo: ao menos um pavimento",
+      unit_id: "Necessário para o cálculo: unidade vinculada",
+      concrete:
+        "Necessário para o cálculo: ao menos um item de concreto com volume e FCK válidos",
+      steel:
+        "Necessário para o cálculo: ao menos um item de aço com tipo, resistência, posição e massa válidos",
+      form: "Necessário para o cálculo: ao menos um item de fôrma com posição e área válidas",
+      masonry: "Necessário para o cálculo: blocos, argamassa e graute",
+      "masonry.blocks": "Necessário para o cálculo: ao menos um bloco",
+      "masonry.mortar": "Necessário para o cálculo: ao menos uma argamassa",
+      "masonry.grout": "Necessário para o cálculo: ao menos um graute",
+      "steel.item_invalid": "Necessário para o cálculo: itens de aço inválidos",
+      "steel.material":
+        "Necessário para o cálculo: tipo de aço válido (ex: CA50, estribo, cordoalha)",
+      "steel.resistance":
+        "Necessário para o cálculo: resistência do aço válida (CA50, CA60, CP190 ou outra)",
+      "steel.position":
+        "Necessário para o cálculo: posição do aço (parede, laje, pilar, viga, escada)",
+      "steel.mass": "Necessário para o cálculo: massa do aço maior que zero",
+      "steel.other_name":
+        "Necessário para o cálculo: nome do outro tipo de aço",
+      "steel.other_resistance":
+        "Necessário para o cálculo: resistência do outro tipo maior que zero",
     },
     form: {
       structureTypeLabel: "Tecnologia Construtiva",
@@ -620,7 +688,8 @@ export const ptBR = {
       rebar: "Vergalhão",
       mesh: "Tela",
       strand: "Cordoalha",
-      requiredLegend: "Campos marcados com * são obrigatórios",
+      requiredLegend:
+        "Campos marcados com * são necessários para o cálculo (não bloqueiam o envio)",
       ifcSourceLabel: "Materiais (IFC)",
       tqsSourceLabel: "Materiais (TQS)",
       aggregatedHint:
@@ -1222,7 +1291,7 @@ export const ptBR = {
     outdatedTech:
       "Essa tecnologia construtiva está desatualizada devido a mudanças na unidade. Atualize-a!",
     partialTech:
-      "Essa tecnologia construtiva foi criada com dados parciais. Abra a edição para preencher os campos obrigatórios.",
+      "Essa tecnologia construtiva foi criada com dados parciais. Abra a edição para preencher os campos necessários para o cálculo.",
     partialLabel: "Dados parciais",
     emptyLabel: "Sem dados",
     emptyTech:

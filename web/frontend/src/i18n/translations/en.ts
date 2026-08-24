@@ -465,6 +465,14 @@ export const en: Translations = {
     deleteTitle: "Delete Construction Technology",
     duplicateTitle: "Duplicate Construction Technology",
     editTitle: "Edit Construction Technology",
+    badges: {
+      completed: "Complete",
+      incomplete: "Incomplete",
+    },
+    alerts: {
+      missingFieldsTitle:
+        "Fields needed for calculation (do not block submission)",
+    },
     table: {
       noItems: "No items found",
       addNew:
@@ -489,6 +497,66 @@ export const en: Translations = {
       pilesFoundation: "Piles",
       raftPilesFoundation: "Raft Piles",
     },
+    fields: {
+      floor_ids: "Linked Floors",
+      unit_id: "Linked Unit",
+      concrete: "Concrete (volume by FCK)",
+      steel: "Steel (mass by type)",
+      form: "Formwork (area by position)",
+      masonry: "Masonry (blocks / mortar / grout)",
+      "masonry.blocks": "Blocks",
+      "masonry.mortar": "Mortar",
+      "masonry.grout": "Grout",
+      "steel.item_invalid": "Invalid item",
+      "steel.material": "Steel type",
+      "steel.resistance": "Steel grade",
+      "steel.position": "Steel position",
+      "steel.mass": "Steel mass",
+      "steel.other_name": "Other steel type name",
+      "steel.other_resistance": "Other steel grade value",
+      slab_type: "Slab type",
+      wall_thickness: "Wall thickness",
+      slab_thickness: "Slab thickness",
+      wall_area: "Wall area",
+      slab_area: "Slab area",
+      beam_number: "Number of beams",
+      slab_number: "Number of slabs",
+      column_number: "Number of columns",
+      avg_beam_span: "Average beam span",
+      avg_slab_span: "Average slab span",
+      area: "Area (raft)",
+      thickness: "Thickness (raft)",
+      fck: "Concrete strength (FCK)",
+      volume: "Volume",
+      mass: "Mass",
+      "raft.area": "Raft area",
+      "raft.thickness": "Raft thickness",
+    },
+    completionReasons: {
+      floor_ids: "Needed for calculation: at least one floor",
+      unit_id: "Needed for calculation: unit is linked",
+      concrete:
+        "Needed for calculation: at least one concrete item with valid volume and FCK",
+      steel:
+        "Needed for calculation: at least one steel item with valid type, grade, position and mass",
+      form: "Needed for calculation: at least one formwork item with valid position and area",
+      masonry: "Needed for calculation: blocks, mortar and grout",
+      "masonry.blocks": "Needed for calculation: at least one block",
+      "masonry.mortar": "Needed for calculation: at least one mortar",
+      "masonry.grout": "Needed for calculation: at least one grout",
+      "steel.item_invalid": "Needed for calculation: invalid steel items",
+      "steel.material":
+        "Needed for calculation: valid steel type (rebar, mesh, strand, other)",
+      "steel.resistance":
+        "Needed for calculation: valid steel grade (CA50, CA60, CP190 or other)",
+      "steel.position":
+        "Needed for calculation: valid steel position (wall, slab, column, beam, stair)",
+      "steel.mass": "Needed for calculation: steel mass greater than zero",
+      "steel.other_name":
+        "Needed for calculation: name when steel type is 'other'",
+      "steel.other_resistance":
+        "Needed for calculation: custom grade value greater than zero when 'other'",
+    },
     form: {
       structureTypeLabel: "Construction Technology",
       createSuccess: "Construction Technology Module created successfully",
@@ -503,8 +571,9 @@ export const en: Translations = {
       validationDescription: "Avoid fields with zero or invalid values.",
       partialDataWarning: "Warning: Incomplete or partial data",
       partialDataDescription:
-        "This module was created/imported without all required materials. To save, fill in the fields highlighted in red.",
-      partialDataHint: "Required fields that are zero or missing:",
+        "This module was created/imported without all materials needed for accurate calculations. Submission is still allowed — fill in the highlighted fields for more precise indicators.",
+      partialDataHint:
+        "Fields needed for calculation that are zero or missing:",
       selectAtLeastOneFloor:
         "Select at least one floor (Beam/Column/Wall/Masonry modules cannot be created without a bound floor).",
       position: "Position",
@@ -618,7 +687,8 @@ export const en: Translations = {
       rebar: "Rebar",
       mesh: "Mesh",
       strand: "Strand",
-      requiredLegend: "Fields marked with * are required",
+      requiredLegend:
+        "Fields marked with * are needed for calculation (do not block submission)",
       ifcSourceLabel: "Materials (IFC)",
       tqsSourceLabel: "Materials (TQS)",
       aggregatedHint:
@@ -1210,7 +1280,7 @@ export const en: Translations = {
     outdatedTech:
       "This constructive technology is outdated due to changes in the unit. Please update it!",
     partialTech:
-      "This technology was created with partial data. Open edit to fill in the required fields.",
+      "This technology was created with partial data. Open edit to fill in fields needed for the calculation.",
     partialLabel: "Partial data",
     emptyLabel: "No data",
     emptyTech:
