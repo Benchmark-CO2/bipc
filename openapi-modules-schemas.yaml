@@ -9,6 +9,11 @@ components:
         legacy grouped fields (concrete_*), not aggregated arrays (concrete/steel/form).
 
         Structural v1 does not support stair position.
+
+        Fields marked as required in the data schemas are the expected inputs for a completed
+        module (`completed: true`). They are not enforced server-side anymore: requests that
+        omit them are still accepted and persisted with `completed: false`. Consumption is
+        zeroed only when calculation fails; otherwise the calculated values are persisted.
       properties:
         type:
           type: string
@@ -23,17 +28,27 @@ components:
           type: string
           description: |
             Optional origin of the module data. Applied to the affected data values
-            when creating or updating a module. Known values are `api`, `plugin`,
-            `manual`, `tqs` and `ifc`, though any string is accepted on the wire.
+            when creating or updating a module. This is not an enum: the string is not
+            validated server-side and can be any value; the canonical `api`, `plugin`,
+            `manual`, `tqs` and `ifc` are only the well-known ones used by this API.
             API requests without an explicit source resolve to the source tagged by
             the authentication middleware; otherwise no source tag is written for
             changed values.
-          enum:
-            - api
-            - plugin
-            - manual
-            - tqs
-            - ifc
+          example: manual
+        outdated:
+          type: boolean
+          readOnly: true
+          description: |
+            Indicates whether the module data became outdated (e.g., the linked
+            option or floor changed). Returned only in responses.
+        completed:
+          type: boolean
+          readOnly: true
+          description: |
+            Whether the module data is complete. Incomplete modules (failed
+            validation) are still persisted with `completed: false`. Consumption is
+            zeroed only when calculation fails; otherwise the calculated values are
+            persisted. Returned only in responses.
         data:
           oneOf:
             - $ref: "#/components/schemas/BeamColumnDataV1"
@@ -60,6 +75,11 @@ components:
 
         floor_index is only used as input during batch creation and is never returned in responses.
         Read responses include floor_indexes instead.
+
+        Fields marked as required in the data schemas are the expected inputs for a completed
+        module (`completed: true`). They are not enforced server-side anymore: requests that
+        omit them are still accepted and persisted with `completed: false`. Consumption is
+        zeroed only when calculation fails; otherwise the calculated values are persisted.
       properties:
         type:
           type: string
@@ -74,17 +94,27 @@ components:
           type: string
           description: |
             Optional origin of the module data. Applied to the affected data values
-            when creating or updating a module. Known values are `api`, `plugin`,
-            `manual`, `tqs` and `ifc`, though any string is accepted on the wire.
+            when creating or updating a module. This is not an enum: the string is not
+            validated server-side and can be any value; the canonical `api`, `plugin`,
+            `manual`, `tqs` and `ifc` are only the well-known ones used by this API.
             API requests without an explicit source resolve to the source tagged by
             the authentication middleware; otherwise no source tag is written for
             changed values.
-          enum:
-            - api
-            - plugin
-            - manual
-            - tqs
-            - ifc
+          example: manual
+        outdated:
+          type: boolean
+          readOnly: true
+          description: |
+            Indicates whether the module data became outdated (e.g., the linked
+            option or floor changed). Returned only in responses.
+        completed:
+          type: boolean
+          readOnly: true
+          description: |
+            Whether the module data is complete. Incomplete modules (failed
+            validation) are still persisted with `completed: false`. Consumption is
+            zeroed only when calculation fails; otherwise the calculated values are
+            persisted. Returned only in responses.
         data:
           oneOf:
             - $ref: "#/components/schemas/BeamColumnDataV2"
