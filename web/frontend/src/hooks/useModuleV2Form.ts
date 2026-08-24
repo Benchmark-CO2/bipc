@@ -6,7 +6,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useMemo, useRef } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
-import { TModuleDataV2, TModulesTypes } from "@/types/modules";
+import { TModuleDataV2, TModuleSource, TModulesTypes } from "@/types/modules";
 import { cleanZeroItemsBeforeSubmit } from "@/components/layout/drawer-form-module/aggregate-helpers";
 import {
   DEFAULT_FCK_BY_POSITION,
@@ -15,16 +15,28 @@ import {
   TMaterialKind,
 } from "@/utils/modulePositions";
 import {
+  calculateModuleCompletion,
+  type CompletionResult,
+  type ModuleCompletionI18n,
+} from "@/utils/moduleCompletion";
+import {
   getDefaultValuesByType,
   getEmptyValuesByType,
 } from "@/components/layout/drawer-form-module/module-default-values";
+import { useTranslation } from "@/i18n";
+import { Translations } from "@/i18n/translations/pt-BR";
+
+type FieldsKeys = keyof Translations["modules"]["fields"];
+type CompletionReasonsKeys = keyof Translations["modules"]["completionReasons"];
 
 type UseModuleV2FormArgs = {
   type: TModulesTypes;
   initialModuleData?: {
     type: TModulesTypes;
     data?: unknown;
+    completed?: boolean;
   };
+  source?: TModuleSource;
   stepperMode?: boolean;
   isOpen?: boolean;
 };
@@ -51,15 +63,17 @@ const makeFormItem = (position?: string) => ({
 export const useModuleV2Form = ({
   type,
   initialModuleData,
+  source,
   stepperMode = false,
   isOpen = false,
 }: UseModuleV2FormArgs) => {
+  const { t } = useTranslation();
   const schemaResolver = useMemo(
     () => zodResolver(createModuleV2FormSchema()),
     [],
   );
 
-  const defaultValues = useMemo<ModuleV2FormInput>(() => {
+  const defaultValues: ModuleV2FormInput = (() => {
     const unwrapped = (() => {
       if (
         initialModuleData &&
@@ -102,35 +116,38 @@ export const useModuleV2Form = ({
         isRecord(uw.data) &&
         (Object.keys(uw.data).length > 0 || hasAnyArray(uw.data))
       ) {
-        dataFromServer = { ...(uw.data as Record<string, unknown>) };
+        const dataCopy = { ...(uw.data as Record<string, unknown>) };
+        if (dataCopy.floor_ids === undefined && Array.isArray(uw.floor_ids)) {
+          dataCopy.floor_ids = uw.floor_ids;
+        }
+        if (
+          dataCopy.unit_id === undefined &&
+          typeof uw.unit_id === "string" &&
+          uw.unit_id.trim() !== ""
+        ) {
+          dataCopy.unit_id = uw.unit_id;
+        }
+        if (
+          dataCopy.floor_indexes === undefined &&
+          Array.isArray(uw.floor_indexes)
+        ) {
+          dataCopy.floor_indexes = uw.floor_indexes;
+        }
+        if (
+          dataCopy.floor_index === undefined &&
+          typeof uw.floor_index === "number"
+        ) {
+          dataCopy.floor_index = uw.floor_index;
+        }
+        dataFromServer = dataCopy;
       } else if (
         typeof unwrappedType === "string" &&
         (hasAnyArray(uw) ||
           Object.keys(uw).filter(
-            (k) =>
-              ![
-                "type",
-                "id",
-                "unit_id",
-                "floor_ids",
-                "floor_indexes",
-                "floor_index",
-                "consumption",
-                "outdated",
-              ].includes(k),
+            (k) => !["type", "id", "consumption", "outdated"].includes(k),
           ).length > 0)
       ) {
-        const {
-          type: _t,
-          id: _i,
-          unit_id: _u,
-          floor_ids: _f,
-          floor_indexes: _fi,
-          floor_index: _fidx,
-          consumption: _c,
-          outdated: _o,
-          ...rest
-        } = uw;
+        const { type: _t, id: _i, consumption: _c, outdated: _o, ...rest } = uw;
         dataFromServer = { ...(rest as Record<string, unknown>) };
       }
 
@@ -179,7 +196,7 @@ export const useModuleV2Form = ({
     }
 
     return getDefaultValuesByType(type) as unknown as ModuleV2FormInput;
-  }, [type, initialModuleData]);
+  })();
 
   const form = useForm<ModuleV2FormInput, unknown, ModuleV2FormSchema>({
     resolver: schemaResolver as never,
@@ -354,14 +371,63 @@ export const useModuleV2Form = ({
     masonryGroutArray.remove(index as never);
   };
 
-  const toPayload = (): ModuleV2FormSchema => {
+  const toPayload = (): ModuleV2FormSchema & { source?: TModuleSource } => {
     const values = form.getValues();
-    return cleanZeroItemsBeforeSubmit(values) as ModuleV2FormSchema;
+    const cleaned = cleanZeroItemsBeforeSubmit(values) as ModuleV2FormSchema & {
+      source?: TModuleSource;
+    };
+    if (source !== undefined && source !== "") {
+      cleaned.source = source;
+    }
+    return cleaned;
   };
+
+  const completion = useMemo<CompletionResult>(() => {
+    const rawData = form.getValues().data as unknown as TModuleDataV2;
+    const fields = t.modules.fields;
+    const reasons = t.modules.completionReasons;
+    const i18nForCompletion: ModuleCompletionI18n = {
+      getFieldLabel: (key: string) => {
+        if (key in fields) {
+          const val = (fields as unknown as Record<string, unknown>)[key];
+          if (typeof val === "string" && val.length > 0) return val;
+        }
+        const parts = key.split(".");
+        const rootKey = parts[0] as FieldsKeys;
+        if (parts.length === 2 && rootKey in fields) {
+          const rootVal = (fields as unknown as Record<string, unknown>)[
+            rootKey
+          ];
+          const subKey = parts[1] as FieldsKeys;
+          const subVal = (fields as unknown as Record<string, unknown>)[
+            `${rootKey}.${subKey}` as FieldsKeys
+          ];
+          if (
+            typeof rootVal === "string" &&
+            typeof subVal === "string" &&
+            subVal.length > 0
+          ) {
+            return `${rootVal} > ${subVal}`;
+          }
+        }
+        return key;
+      },
+      getReason: (key: string) => {
+        if (key in reasons) {
+          const val = (reasons as unknown as Record<string, unknown>)[key];
+          if (typeof val === "string" && val.length > 0) return val;
+        }
+        return key;
+      },
+    };
+    return calculateModuleCompletion(reactiveType, rawData, i18nForCompletion);
+  }, [reactiveType, form.watch(), t]);
 
   return {
     form,
     type: reactiveType,
+    source,
+    completion,
     concreteArray,
     steelArray,
     formArray,

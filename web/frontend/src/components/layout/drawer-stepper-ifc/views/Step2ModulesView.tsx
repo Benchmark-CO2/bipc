@@ -17,9 +17,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Edit2, Info } from "lucide-react";
+import { AlertCircle, CheckCircle2, Edit2, Info } from "lucide-react";
 import { Step2ModulesViewProps } from "@/types/ifc";
 import { useTranslation } from "@/i18n";
+import { cn } from "@/lib/utils";
 
 export function Step2ModulesView({
   state,
@@ -131,9 +132,32 @@ export function Step2ModulesView({
                       />
                     </TableCell>
                     <TableCell>
-                      <span className="font-medium">
-                        {moduleTypeLabels[m.type] ?? String(m.type)}
-                      </span>
+                      <div className="flex items-center w-full gap-2">
+                        <span className="font-medium">
+                          {moduleTypeLabels[m.type] ?? String(m.type)}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "gap-1 shrink-0 ml-auto",
+                            m.completed
+                              ? "text-emerald-700 border-emerald-300 bg-emerald-50 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-300"
+                              : "text-amber-700 border-amber-300 bg-amber-50 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-300",
+                          )}
+                        >
+                          {m.completed ? (
+                            <>
+                              <CheckCircle2 size={12} />
+                              {t.modules.badges.completed}
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle size={12} />
+                              {t.modules.badges.incomplete}
+                            </>
+                          )}
+                        </Badge>
+                      </div>
                     </TableCell>
                     <TableCell className="max-w-md truncate text-muted-foreground">
                       {m.summary}

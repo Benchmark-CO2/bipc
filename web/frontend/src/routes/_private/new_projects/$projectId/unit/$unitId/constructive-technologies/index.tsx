@@ -16,6 +16,7 @@ import {
 import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
 import ModalSimple from "@/components/layout/modal-simple";
 import TechnologiesSummary from "@/components/summaryVariants/technologies";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -26,18 +27,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useSummary } from "@/context/summaryContext";
+import { cn } from "@/lib/utils";
 import { IConsumption, IModuleItem } from "@/types/modules";
 import { TOption } from "@/types/options";
 import { TConsumption } from "@/types/projects";
 import { IUnit } from "@/types/units";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  createFileRoute,
-  useLocation,
-  useParams,
-} from "@tanstack/react-router";
-import { ColumnDef } from "@tanstack/react-table";
-import {
+  AlertCircle,
+  CheckCircle2,
   ChevronDown,
   Copy,
   Edit,
@@ -47,11 +45,17 @@ import {
   Trash,
   TriangleAlert,
 } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
 import { parseApiError } from "@/utils/parseApiError";
 import { SimpleTooltip } from "@/components/ui/simple-tooltip";
+import {
+  createFileRoute,
+  useLocation,
+  useParams,
+} from "@tanstack/react-router";
+import { ColumnDef } from "@tanstack/react-table";
 
 export const Route = createFileRoute(
   "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies/",
@@ -86,6 +90,12 @@ const OptionMenu = ({
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const [localName, setLocalName] = useState(option.name);
+
+  const completionStats = useMemo(() => {
+    const total = option.modules.length;
+    const completed = option.modules.filter((m) => m.completed).length;
+    return { total, completed, allDone: total > 0 && completed === total };
+  }, [option.modules]);
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -343,6 +353,24 @@ const OptionMenu = ({
               kg/m²
             </span>
           </div>
+          <Badge
+            variant="outline"
+            className={cn(
+              "gap-1 shrink-0 h-[30px] px-2.5",
+              completionStats.allDone
+                ? "text-emerald-700 border-emerald-300 bg-emerald-50 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-300"
+                : "text-amber-700 border-amber-300 bg-amber-50 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-300",
+            )}
+          >
+            {completionStats.allDone ? (
+              <CheckCircle2 size={12} />
+            ) : (
+              <AlertCircle size={12} />
+            )}
+            <span className="text-[11px] sm:text-xs font-medium tabular-nums">
+              {completionStats.completed}/{completionStats.total}
+            </span>
+          </Badge>
         </div>
       )}
     </div>
@@ -487,9 +515,9 @@ function RouteComponent() {
     },
   });
 
-  useEffect(() => {
-    if (!benchmarkData?.data || !unitData?.unit) return;
-    setSummaryContext({
+  const technologiesSummaryPayload = useMemo(() => {
+    if (!benchmarkData?.data || !unitData?.unit) return null;
+    return {
       component: (
         <TechnologiesSummary
           projects={selectedOptions as any}
@@ -497,38 +525,26 @@ function RouteComponent() {
           someSelected={selectedOptions.length > 0}
         />
       ),
-      title: ``,
+      title: "",
       hide: false,
-    });
-  }, [selectedOptions, setSummaryContext, benchmarkData, unitData]);
+    };
+  }, [benchmarkData, unitData, selectedOptions]);
 
-  if (isLoadingOptions || isLoadingUnit) {
-    return (
-      <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 w-full">
-        {t.common.loading}
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!technologiesSummaryPayload) return;
+    setSummaryContext(technologiesSummaryPayload);
+  }, [setSummaryContext, technologiesSummaryPayload]);
 
-  if (!optionsData?.data?.options) {
-    return (
-      <NotFoundList
-        message={t.constructiveTechView.noSimulationsFound}
-        showIcon={false}
-        description={t.constructiveTechView.noSimulationsDescription}
-      />
-    );
-  }
-
-  const options = optionsData.data.options;
-
+  // Variáveis derivadas (sem hooks). Declaradas ANTES dos early returns
+  // para respeitar as Rules of Hooks — podem referenciar unit/options undefined
+  // pois só são usadas APÓS os early returns no JSX.
+  const options = optionsData?.data?.options ?? [];
   const sortedOptions = [...options].sort((a, b) => {
     if (a.active && !b.active) return -1;
     if (!a.active && b.active) return 1;
     return 0;
   });
-
-  const unit = unitData?.unit as IUnit;
+  const unit = (unitData?.unit as IUnit) || ({} as IUnit);
   const unitFloors = unit?.floors || [];
 
   const calculateSumMetrics = (consumption: IConsumption) => {
@@ -544,7 +560,6 @@ function RouteComponent() {
         material: (0).toInternational(),
       };
     }
-
     return {
       co2_range: `${(consumption.co2_min || 0).toInternational()} - ${(consumption.co2_max || 0).toInternational()}`,
       energy_range: `${(consumption.energy_min || 0).toInternational()} - ${(consumption.energy_max || 0).toInternational()}`,
@@ -553,21 +568,18 @@ function RouteComponent() {
   };
 
   const onSelectOption = (option: TOption) => {
-    const isSelected = selectedOptions.some((opt) => opt.id === option.id);
-    if (isSelected) {
-      setSelectedOptions((prev) => prev.filter((opt) => opt.id !== option.id));
-    } else {
-      setSelectedOptions((prev) => [...prev, option]);
-    }
+    setSelectedOptions((prev) => {
+      const isSelected = prev.some((opt) => opt.id === option.id);
+      if (isSelected) return prev.filter((opt) => opt.id !== option.id);
+      return [...prev, option];
+    });
   };
 
   const borderColumn = (option: TOption) => {
     if (option.modules.some((mod) => mod.outdated)) {
       return "border-yellow-500 dark:border-yellow-500";
     }
-    if (option.active) {
-      return "border-primary dark:border-primary";
-    }
+    if (option.active) return "border-primary dark:border-primary";
     return "border-gray-200 dark:border-gray-700";
   };
 
@@ -606,6 +618,7 @@ function RouteComponent() {
               }
             />
             <DrawerFormModule
+              key={`edit-${row.original.option_id}-${row.original.id}`}
               triggerComponent={
                 <SimpleTooltip content={t.modules.editTitle} side="bottom">
                   <Button variant="ghost" size="icon" disabled={isDeleting}>
@@ -645,6 +658,47 @@ function RouteComponent() {
       },
     },
   ];
+
+  // Map por option → flat modules + lastRow
+  const preparedOptionData = sortedOptions.map((option) => ({
+    optionId: option.id,
+    modules: option.modules.map((mod) => ({
+      ...mod,
+      ...mod.consumption,
+      option_id: option.id,
+    })),
+    lastRow: {
+      type: "Total" as const,
+      data: calculateSumMetrics(option?.consumption?.["total"]),
+    },
+  }));
+
+  const getPreparedData = (optionId: string) =>
+    preparedOptionData.find((p) => p.optionId === optionId) ?? {
+      modules: [],
+      lastRow: { type: "Total" as const, data: {} },
+    };
+
+  // 🔴 ============================================================
+  // EARLY RETURNS ABAIXO. NÃO ADICIONAR NOVOS HOOKS APÓS ESTA LINHA.
+  // ================================================================
+  if (isLoadingOptions || isLoadingUnit) {
+    return (
+      <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 w-full">
+        {t.common.loading}
+      </div>
+    );
+  }
+
+  if (!optionsData?.data?.options) {
+    return (
+      <NotFoundList
+        message={t.constructiveTechView.noSimulationsFound}
+        showIcon={false}
+        description={t.constructiveTechView.noSimulationsDescription}
+      />
+    );
+  }
 
   if (options.length === 0) {
     return (
@@ -699,11 +753,7 @@ function RouteComponent() {
         />
       </div>
       {sortedOptions.map((option) => {
-        const modules = option.modules.map((mod) => ({
-          ...mod,
-          ...mod.consumption,
-          option_id: option.id,
-        }));
+        const prepared = getPreparedData(option.id);
         const isCollapsed = collapsedOptions.has(option.id);
 
         const toggleCollapse = () => {
@@ -805,15 +855,12 @@ function RouteComponent() {
                     onToggleCollapse={toggleCollapse}
                   />
                 }
-                data={modules}
+                data={prepared.modules}
                 columns={newColumns}
                 isSelectable={false}
                 isInteractive={true}
                 onSelectionChange={handleSelectItem}
-                lastRow={{
-                  type: "Total",
-                  data: calculateSumMetrics(option?.consumption?.["total"]),
-                }}
+                lastRow={prepared.lastRow}
                 collapsed={isCollapsed}
                 isExpandable={false}
                 customEmptyComponent={

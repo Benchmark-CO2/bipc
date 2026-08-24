@@ -7,20 +7,24 @@ import { useModuleV2Form } from "@/hooks/useModuleV2Form";
 import { cn } from "@/lib/utils";
 import {
   ModuleParamsProps,
-  TModulesTypes,
   TModuleDataV2,
+  TModuleSource,
+  TModulesTypes,
   ModuleParamsPropsV2,
 } from "@/types/modules";
 import { TTowerFloorCategory } from "@/types/units";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Control } from "react-hook-form";
-import { Loader2, Plus, X } from "lucide-react";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { AlertCircle, CheckCircle2, Loader2, Plus, X } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
 import { parseApiError } from "@/utils/parseApiError";
 import { mapFloorIndexToFloorIds } from "@/utils/unitConversions";
+import { MODULE_SOURCES } from "@/utils/modulePositions";
+import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
+import { Alert, AlertDescription, AlertTitle } from "../../ui/alert";
 import {
   Drawer,
   DrawerContent,
@@ -52,6 +56,12 @@ import ModuleV2Form from "./module-v2-form";
 import { prepareModuleV2PayloadForBackend } from "./aggregate-helpers";
 
 export type ModuleFormSource = "default" | "ifc" | "tqs";
+
+const SOURCE_MAP: Record<ModuleFormSource, TModuleSource> = {
+  default: MODULE_SOURCES.API,
+  ifc: MODULE_SOURCES.IFC,
+  tqs: MODULE_SOURCES.TQS,
+} as const;
 
 interface DrawerFormModuleProps {
   triggerComponent?: React.ReactNode;
@@ -184,13 +194,41 @@ const DrawerFormModule = ({
   };
 
   const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
+  const [serverCompleted, setServerCompleted] = useState<boolean | null>(null);
+  const lastAppliedServerCompletedRef = useRef<string>("__none__");
 
-  const initialDataForHook = useMemo(() => {
+  const effectiveSource: TModuleSource =
+    SOURCE_MAP[_source] ?? MODULE_SOURCES.API;
+
+  useEffect(() => {
+    if (!initialModuleData) return;
+    if (!isWrapperFormat(initialModuleData)) return;
+    const w = initialModuleData as {
+      type: TModulesTypes;
+      data?: unknown;
+      completed?: boolean;
+      id?: string;
+    };
+    const ident = `${w.id ?? "__no_id__"}|${typeof w.completed}`;
+    if (lastAppliedServerCompletedRef.current === ident) return;
+    lastAppliedServerCompletedRef.current = ident;
+    if (typeof w.completed === "boolean") {
+      setServerCompleted(w.completed);
+    }
+  }, [initialModuleData]);
+
+  const initialDataForHook = (() => {
     if (!initialModuleData) return undefined;
     if (isWrapperFormat(initialModuleData)) {
-      return initialModuleData as {
+      const w = initialModuleData as {
         type: TModulesTypes;
         data?: unknown;
+        completed?: boolean;
+      };
+      return w as {
+        type: TModulesTypes;
+        data?: unknown;
+        completed?: boolean;
       };
     }
     const {
@@ -207,11 +245,12 @@ const DrawerFormModule = ({
         ...(unit_id ? { unit_id } : {}),
       },
     } as { type: TModulesTypes; data?: unknown };
-  }, [initialModuleData, type]);
+  })();
 
   const v2Hook = useModuleV2Form({
     type,
     initialModuleData: initialDataForHook,
+    source: effectiveSource,
     stepperMode,
     isOpen: isOpen,
   });
@@ -249,6 +288,10 @@ const DrawerFormModule = ({
         "[DrawerFormModule] ✅ mutateModule (patch) onSuccess:",
         _data,
       );
+      const returnedCompleted = (_data as any)?.data?.module?.completed;
+      if (typeof returnedCompleted === "boolean") {
+        setServerCompleted(returnedCompleted);
+      }
       if (!stepperMode) {
         toast.success(t.modules.form.updateSuccess, {
           duration: 5000,
@@ -270,6 +313,7 @@ const DrawerFormModule = ({
         });
         form.reset(getDefaultValuesByType(type) as never);
         setSelectedFloors([]);
+        setServerCompleted(null);
         setIsOpen(false);
       }
     },
@@ -295,6 +339,10 @@ const DrawerFormModule = ({
         data,
         variables,
       });
+      const returnedCompleted = (data as any)?.data?.module?.completed;
+      if (typeof returnedCompleted === "boolean") {
+        setServerCompleted(returnedCompleted);
+      }
       if (!stepperMode) {
         toast.success(t.modules.form.createSuccess, {
           duration: 5000,
@@ -310,6 +358,7 @@ const DrawerFormModule = ({
         });
         form.reset(getDefaultValuesByType(type) as never);
         setSelectedFloors([]);
+        setServerCompleted(null);
         setIsOpen(false);
       } else {
         const createdId = (data as any)?.data?.module?.id;
@@ -352,7 +401,7 @@ const DrawerFormModule = ({
     enabled: !!moduleId && isOpen && !stepperMode,
   });
 
-  const stepperEditingTargetKey = useMemo(() => {
+  const stepperEditingTargetKey = (() => {
     const d = initialModuleData as any;
     const initialFloorIdx = d?.floor_index ?? d?.data?.floor_index;
     const initialFloorIds = d?.floor_ids ?? d?.data?.floor_ids;
@@ -366,7 +415,7 @@ const DrawerFormModule = ({
     return `${initialFloorIdx ?? "null"}|${floorsIdsKey}|${selectedKey}|${
       d?.id ?? ""
     }|${d?.tempId ?? ""}`;
-  }, [initialModuleData, initialSelectedFloors]);
+  })();
 
   const [userTouchedSelectedFloors, setUserTouchedSelectedFloors] =
     useState(false);
@@ -392,12 +441,16 @@ const DrawerFormModule = ({
   }, [selectedFloors]);
 
   const lastStepperTargetKeyRef = useRef<string | null>(null);
+  const lastModuleIdRef = useRef<string | undefined | null>(undefined);
   useEffect(() => {
     const targetChanged =
       lastStepperTargetKeyRef.current !== stepperEditingTargetKey;
+    const moduleIdChanged = lastModuleIdRef.current !== moduleId;
     const openRisingEdge = isOpen && !prevIsOpenRef.current;
 
-    if ((openRisingEdge || targetChanged) && !moduleData) {
+    // Sempre no openRisingEdge: remontar o form (limpa cache de dados de outro módulo)
+    // Também quando stepper target muda ou moduleId mudou com drawer aberto
+    if (openRisingEdge || targetChanged || (moduleIdChanged && isOpen)) {
       openInitialSelectedFloorsRef.current = initialSelectedFloors ?? null;
       openInitialModuleDataRef.current = initialModuleData ?? null;
       openFloorsRef.current = floors ?? null;
@@ -405,34 +458,29 @@ const DrawerFormModule = ({
       setUserTouchedSelectedFloors(false);
       prevSelectedFloorsRef.current = [];
 
-      if (openRisingEdge || targetChanged) {
-        setFormMountKey((k) => k + 1);
-      }
+      setFormMountKey((k) => k + 1);
 
-      if (stepperMode) {
-        let nextSelected: string[] = [];
-        const initSel = openInitialSelectedFloorsRef.current;
-        const initDataAny = openInitialModuleDataRef.current as any;
-        const flr = openFloorsRef.current ?? [];
+      // Mapear floor_ids → selectedFloors para QUALQUER modo (stepper OU non-stepper)
+      let nextSelected: string[] = [];
+      const initSel = openInitialSelectedFloorsRef.current;
+      const initDataAny = openInitialModuleDataRef.current as any;
+      const flr = openFloorsRef.current ?? [];
 
-        if (initSel && initSel.length > 0) {
-          nextSelected = initSel;
-        } else {
-          const fIds = initDataAny?.floor_ids ?? initDataAny?.data?.floor_ids;
-          const fIdx =
-            initDataAny?.floor_index ?? initDataAny?.data?.floor_index;
-          if (Array.isArray(fIds) && fIds.length > 0) {
-            nextSelected = fIds as string[];
-          } else if (fIdx !== null && fIdx !== undefined && flr.length > 0) {
-            const mapped = mapFloorIndexToFloorIds(fIdx as number, flr);
-            if (mapped.length > 0) {
-              nextSelected = mapped;
-            }
-          }
+      if (initSel && initSel.length > 0) {
+        nextSelected = initSel;
+      } else {
+        const fIds = initDataAny?.floor_ids ?? initDataAny?.data?.floor_ids;
+        const fIdx = initDataAny?.floor_index ?? initDataAny?.data?.floor_index;
+        if (Array.isArray(fIds) && fIds.length > 0) {
+          nextSelected = fIds as string[];
+        } else if (fIdx !== null && fIdx !== undefined && flr.length > 0) {
+          const mapped = mapFloorIndexToFloorIds(fIdx as number, flr);
+          if (mapped.length > 0) nextSelected = mapped;
         }
-        setSelectedFloors(nextSelected);
-        prevSelectedFloorsRef.current = nextSelected;
       }
+      setSelectedFloors(nextSelected);
+      prevSelectedFloorsRef.current = nextSelected;
+
       queueMicrotask(() => {
         form.clearErrors();
       });
@@ -440,9 +488,10 @@ const DrawerFormModule = ({
 
     prevIsOpenRef.current = isOpen;
     lastStepperTargetKeyRef.current = stepperEditingTargetKey;
+    lastModuleIdRef.current = moduleId;
   }, [
     isOpen,
-    moduleData,
+    moduleId,
     stepperMode,
     stepperEditingTargetKey,
     form,
@@ -501,6 +550,7 @@ const DrawerFormModule = ({
     openCountRef.current += 1;
   }, [isOpen]);
 
+  const lastAppliedModuleIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!moduleData) return;
     const rawMd = moduleData as any;
@@ -519,9 +569,46 @@ const DrawerFormModule = ({
     }
     const detectedType: TModulesTypes = (mdAny?.type as TModulesTypes) ?? type;
     const floorIds = mdAny?.floor_ids ?? mdAny?.data?.floor_ids;
-    if (floorIds && Array.isArray(floorIds) && floorIds.length > 0) {
-      setSelectedFloors(floorIds);
+    const currentModuleId = moduleId ?? "__no_module__";
+    if (
+      floorIds &&
+      Array.isArray(floorIds) &&
+      floorIds.length > 0 &&
+      !userTouchedSelectedFloors
+    ) {
+      const sameAsCurrent =
+        selectedFloors.length === floorIds.length &&
+        floorIds.every((v) => selectedFloors.includes(v)) &&
+        selectedFloors.every((v) => floorIds.includes(v));
+      if (!sameAsCurrent) {
+        setSelectedFloors(floorIds);
+        prevSelectedFloorsRef.current = floorIds;
+        lastAppliedModuleIdRef.current = currentModuleId;
+      }
+    } else if (
+      lastAppliedModuleIdRef.current !== currentModuleId &&
+      !userTouchedSelectedFloors
+    ) {
+      const fIdx = mdAny?.floor_index ?? mdAny?.data?.floor_index;
+      if (
+        fIdx !== null &&
+        fIdx !== undefined &&
+        Array.isArray(floors) &&
+        floors.length > 0
+      ) {
+        const mapped = mapFloorIndexToFloorIds(fIdx as number, floors);
+        const sameAsCurrent =
+          selectedFloors.length === mapped.length &&
+          mapped.every((v) => selectedFloors.includes(v)) &&
+          selectedFloors.every((v) => mapped.includes(v));
+        if (!sameAsCurrent) {
+          setSelectedFloors(mapped);
+          prevSelectedFloorsRef.current = mapped;
+          lastAppliedModuleIdRef.current = currentModuleId;
+        }
+      }
     }
+    void detectedType;
 
     const isRecord = (v: unknown): v is Record<string, unknown> =>
       !!v && typeof v === "object";
@@ -543,21 +630,38 @@ const DrawerFormModule = ({
         typeof (mdAny as any).type === "string") &&
       !hasDataShape;
     if (hasDataShape) {
+      const wrappedData = { ...(mdAny.data as Record<string, unknown>) };
+      if (
+        wrappedData.floor_ids === undefined &&
+        Array.isArray(mdAny.floor_ids)
+      ) {
+        wrappedData.floor_ids = mdAny.floor_ids;
+      }
+      if (
+        wrappedData.unit_id === undefined &&
+        typeof mdAny.unit_id === "string" &&
+        mdAny.unit_id.trim() !== ""
+      ) {
+        wrappedData.unit_id = mdAny.unit_id;
+      }
+      if (
+        wrappedData.floor_indexes === undefined &&
+        Array.isArray(mdAny.floor_indexes)
+      ) {
+        wrappedData.floor_indexes = mdAny.floor_indexes;
+      }
+      if (
+        wrappedData.floor_index === undefined &&
+        typeof mdAny.floor_index === "number"
+      ) {
+        wrappedData.floor_index = mdAny.floor_index;
+      }
       resetValues = {
         type: detectedType,
-        data: { ...(mdAny.data as Record<string, unknown>) },
+        data: wrappedData,
       };
     } else if (hasFlatShape) {
-      const ignoreKeys = new Set([
-        "type",
-        "id",
-        "unit_id",
-        "floor_ids",
-        "floor_indexes",
-        "floor_index",
-        "consumption",
-        "outdated",
-      ]);
+      const ignoreKeys = new Set(["type", "id", "consumption", "outdated"]);
       const data: Record<string, unknown> = {};
       const rec = mdAny as Record<string, unknown>;
       for (const key of Object.keys(rec)) {
@@ -719,7 +823,16 @@ const DrawerFormModule = ({
     queueMicrotask(() => {
       form.clearErrors();
     });
-  }, [moduleData, moduleId, type, form, isOpen]);
+  }, [
+    moduleData,
+    moduleId,
+    type,
+    form,
+    isOpen,
+    selectedFloors,
+    userTouchedSelectedFloors,
+    floors,
+  ]);
 
   const handleSubmit = () => {
     console.log("[DrawerFormModule] ⚙️ handleSubmit interno foi chamado!");
@@ -759,6 +872,9 @@ const DrawerFormModule = ({
         ...(isFoundation && unitId ? { unit_id: unitId } : {}),
       },
     };
+    if (effectiveSource !== undefined && effectiveSource !== "") {
+      finalPayload.source = effectiveSource;
+    }
 
     console.log(
       "[DrawerFormModule] 📦 finalPayload (antes prepareModuleV2PayloadForBackend):",
@@ -773,6 +889,9 @@ const DrawerFormModule = ({
       type: prepared.type,
       data: prepared.data as never,
     };
+    if (effectiveSource !== undefined && effectiveSource !== "") {
+      cleanedWrapper.source = effectiveSource;
+    }
 
     console.log(
       "[DrawerFormModule] 🧹 cleanedWrapper (após prepareModuleV2PayloadForBackend):",
@@ -901,9 +1020,34 @@ const DrawerFormModule = ({
         })}
       >
         <DrawerHeader className="px-8">
-          <DrawerTitle className="text-h1 text-primary">
-            {moduleId ? t.modules.form.editTitle : t.modules.table.createButton}
-          </DrawerTitle>
+          <div className="flex items-center gap-3 w-full pr-10">
+            <DrawerTitle className="text-h1 text-primary shrink-0">
+              {moduleId
+                ? t.modules.form.editTitle
+                : t.modules.table.createButton}
+            </DrawerTitle>
+            <Badge
+              variant="outline"
+              className={cn(
+                "gap-1 shrink-0 ml-auto",
+                (serverCompleted ?? v2Hook.completion.completed)
+                  ? "text-emerald-700 border-emerald-300 bg-emerald-50 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-300"
+                  : "text-amber-700 border-amber-300 bg-amber-50 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-300",
+              )}
+            >
+              {(serverCompleted ?? v2Hook.completion.completed) ? (
+                <>
+                  <CheckCircle2 size={12} />
+                  {t.modules.badges.completed}
+                </>
+              ) : (
+                <>
+                  <AlertCircle size={12} />
+                  {t.modules.badges.incomplete}
+                </>
+              )}
+            </Badge>
+          </div>
           <Button
             onClick={handleClose}
             className="absolute right-4 top-2"
@@ -989,7 +1133,7 @@ const DrawerFormModule = ({
                     })}
                   >
                     <BuildingVisualizer
-                      key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ index: f.index })))}`}
+                      key={`building-${floors?.length || 0}-${JSON.stringify(floors?.map((f) => ({ index: f.index, id: f.id })))}-${JSON.stringify(selectedFloors)}`}
                       towerFloors={floors || []}
                       isSelectable={isUsingPaviments}
                       selectedFloorIds={selectedFloors}
@@ -1084,6 +1228,27 @@ const DrawerFormModule = ({
           )}
         </div>
         <DrawerFooter className="px-8">
+          {!v2Hook.completion.completed &&
+            v2Hook.completion.missing.length > 0 && (
+              <Alert
+                variant="default"
+                className="mb-4 border-amber-300 bg-amber-50 dark:bg-amber-950 dark:border-amber-800"
+              >
+                <AlertCircle className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+                <AlertTitle className="text-amber-800 dark:text-amber-200">
+                  {t.modules.alerts.missingFieldsTitle}
+                </AlertTitle>
+                <AlertDescription>
+                  <ul className="ml-4 list-disc space-y-1 mt-2 text-amber-700 dark:text-amber-300">
+                    {v2Hook.completion.missing.map((m) => (
+                      <li key={m.key}>
+                        <strong>{m.label}</strong>: {m.reason}
+                      </li>
+                    ))}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
           <Button
             type="submit"
             variant="bipc"
