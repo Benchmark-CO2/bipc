@@ -9,6 +9,7 @@ export interface TModuleBatchCreateResponse {
   modules: Array<{
     id?: string;
     type: string;
+    completed?: boolean;
     [key: string]: unknown;
   }>;
 }
