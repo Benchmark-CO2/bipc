@@ -7,7 +7,16 @@ import {
   TRaftPilesFoundationPosition,
   TStructuralMasonryPosition,
   TGroutPosition,
+  TModuleSource,
 } from "@/types/modules";
+
+export const MODULE_SOURCES: Readonly<Record<string, TModuleSource>> = {
+  API: "",
+  PLUGIN: "plugin",
+  MANUAL: "manual",
+  TQS: "tqs",
+  IFC: "ifc",
+} as const;
 
 export type TMaterialKind = "concrete" | "steel" | "form";
 

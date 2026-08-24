@@ -1,7 +1,7 @@
 import { Translations } from "@/i18n/translations/pt-BR";
 import { IProject } from "@/types/projects";
 import { TRole } from "@/types/disciplines";
-import { TModulesTypes } from "@/types/modules";
+import { TModulesTypes, TModuleDataV2, TModuleSource } from "@/types/modules";
 import {
   TIfcProcessorAggregatedResult,
   TIfcProcessorResultUnits,
@@ -12,6 +12,8 @@ import {
   TIfcStepperModuleItem,
   TIfcFloorCategory,
 } from "@/types/ifc";
+import { MODULE_SOURCES } from "@/utils/modulePositions";
+import { calculateModuleCompletion } from "@/utils/moduleCompletion";
 import {
   createUnitFormSchema,
   UnitFormInput,
@@ -735,6 +737,11 @@ export const mapIfcResultToStepperState = (
       normalizedRaw as any,
       i18nCompleteness,
     );
+    const finalType = isKnownModuleType(normalizedType)
+      ? normalizedType
+      : (normalizedRaw.type as TModulesTypes);
+    const rawData = (normalizedRaw.data ?? {}) as unknown as TModuleDataV2;
+    const completion = calculateModuleCompletion(finalType, rawData);
     return {
       tempId: generateTempId(),
       raw: normalizedRaw as any,
@@ -747,6 +754,7 @@ export const mapIfcResultToStepperState = (
       isValid,
       validationErrors: errors,
       completenessWarnings: warnings,
+      completed: completion.completed,
     };
   });
 
@@ -817,12 +825,26 @@ export const rerunModuleValidation = (
         })()
       : warnings;
 
+  const finalFlatForCompletion =
+    flatDataOverride && typeof flatDataOverride === "object"
+      ? flatDataOverride
+      : flatDataFromSchema;
+  const completionType = (item.type ??
+    (finalFlatForCompletion as any)?.type) as TModulesTypes;
+  const dataForCompletion = (item.raw?.data ??
+    (finalFlatForCompletion as unknown as TModuleDataV2) ??
+    {}) as unknown as TModuleDataV2;
+  const completion = isKnownModuleType(completionType)
+    ? calculateModuleCompletion(completionType, dataForCompletion)
+    : { completed: false };
+
   return {
     ...item,
     summary: buildModuleSummary(item.raw),
     isValid,
     validationErrors: errors,
     completenessWarnings: finalWarnings,
+    completed: completion.completed,
   };
 };
 
@@ -932,7 +954,11 @@ export const prepareModuleForBatch = (
   moduleItem: TIfcStepperModuleItem,
   isFoundation: boolean,
   unitIdOrFloorIds: { unit_id?: string; floor_ids?: string[] },
-): { type: TModulesTypes | string; data: Record<string, unknown> } | null => {
+): {
+  type: TModulesTypes | string;
+  data: Record<string, unknown>;
+  source: TModuleSource;
+} | null => {
   const rawType = moduleItem.raw.type;
   const normalizedType = normalizeModuleType(rawType);
 
@@ -995,10 +1021,9 @@ export const prepareModuleForBatch = (
   const clean: Record<string, unknown> = {};
   Object.keys(effectiveData).forEach((k) => {
     if (GROUPED_ONLY_KEYS_TO_STRIP.has(k)) return;
-    (clean as Record<string, unknown>)[k] = (effectiveData as Record<
-      string,
-      unknown
-    >)[k];
+    (clean as Record<string, unknown>)[k] = (
+      effectiveData as Record<string, unknown>
+    )[k];
   });
 
   // 3) Remove floor_index do data (nunca esperado pelo backend;
@@ -1021,8 +1046,14 @@ export const prepareModuleForBatch = (
   }
 
   // Normaliza para tipo conhecido se possível; fallback rawType
-  const finalType = isKnownModuleType(normalizedType) ? normalizedType : rawType;
-  return { type: finalType, data: clean };
+  const finalType = isKnownModuleType(normalizedType)
+    ? normalizedType
+    : rawType;
+  return {
+    type: finalType,
+    data: clean,
+    source: MODULE_SOURCES.IFC,
+  };
 };
 
 export const ifcStepperUtils = {
