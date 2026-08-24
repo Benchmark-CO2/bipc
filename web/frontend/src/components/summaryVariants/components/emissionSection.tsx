@@ -1,30 +1,85 @@
 import EmissionsChart from "@/components/charts/barChart";
 import { Checkbox } from "@/components/ui/checkbox";
 
-export type TEmissionChartRow = Record<string, any> & { name: string };
-
-export type TEmissionSectionItem = {
-  id: string;
-  title: string;
-  isTotal?: boolean;
-  isChecked?: boolean;
-  defaultChecked?: boolean;
-  chartData: TEmissionChartRow[];
-};
-
-export type TBenchmarkMax = number | Record<string, number>;
-
-export const EmissionsSection = ({
-  data,
-  selected,
-  onChange,
-  benchmarkMax,
-}: {
-  data: readonly TEmissionSectionItem[];
-  selected?: readonly string[];
-  onChange?: (id: string, checked: boolean) => void;
-  benchmarkMax: TBenchmarkMax;
-}) => {
+// Importe seu componente de checkbox aqui
+const projectEmissionsData = [
+  {
+    id: "total",
+    title: "Projeto completo",
+    defaultChecked: true, // Para o checkbox
+    chartData: [
+      {
+        name: "CO₂ (kg)",
+        "Parede de concreto": 62,
+        "Fundação radier": 24,
+        "Cobertura": 14
+      },
+      {
+        name: "Energia (MJ)",
+        "Parede de concreto": 58,
+        "Fundação radier": 27,
+        "Cobertura": 15
+      },
+      {
+        name: "Material (m²)",
+        "Parede de concreto": 66,
+        "Fundação radier": 21,
+        "Cobertura": 13
+      }
+    ]
+  },
+  {
+    id: "torre-1",
+    title: "Torre 1",
+    defaultChecked: false,
+    chartData: [
+      {
+        name: "CO₂ (kg)",
+        "Parede de concreto": 62,
+        "Fundação radier": 24,
+        "Cobertura": 14
+      },
+      {
+        name: "Energia (MJ)",
+        "Parede de concreto": 58,
+        "Fundação radier": 27,
+        "Cobertura": 15
+      },
+      {
+        name: "Material (m²)",
+        "Parede de concreto": 66,
+        "Fundação radier": 21,
+        "Cobertura": 13
+      }
+    ]
+  },
+  {
+    id: "torre-2",
+    title: "Torre 2",
+    defaultChecked: false,
+    chartData: [
+      {
+        name: "CO₂ (kg)",
+        "Parede de concreto": 62,
+        "Fundação radier": 24,
+        "Cobertura": 14
+      },
+      {
+        name: "Energia (MJ)",
+        "Parede de concreto": 58,
+        "Fundação radier": 27,
+        "Cobertura": 15
+      },
+      {
+        name: "Material (m²)",
+        "Parede de concreto": 66,
+        "Fundação radier": 21,
+        "Cobertura": 13
+      }
+    ]
+  }
+];
+export const EmissionsSection = ({ data, selected, onChange, benchmarkMax }: { data: typeof projectEmissionsData, selected?: string[], onChange?: (id: string, checked: boolean) => void; benchmarkMax: Record<string, number>; }) => {
   return (
     <div className="flex flex-col gap-2 w-full overflow-y-auto max-h-[70vh]">
       {/* 1. Legenda Global no Topo */}

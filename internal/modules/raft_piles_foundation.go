@@ -157,7 +157,7 @@ func (rp *RaftPilesFoundation) Calculate() (Consumption, error) {
 	return result, nil
 }
 
-func (rp *RaftPilesFoundation) Insert(models data.Models, optionID uuid.UUID, result Consumption) (Module, error) {
+func (rp *RaftPilesFoundation) Insert(models data.Models, optionID uuid.UUID, result Consumption, source string, completed bool) (Module, error) {
 	moduleID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -165,7 +165,7 @@ func (rp *RaftPilesFoundation) Insert(models data.Models, optionID uuid.UUID, re
 
 	rp.normalizeToNewFormat()
 
-	moduleToInsert := rp.toDataModule(moduleID, optionID, result)
+	moduleToInsert := rp.toDataModule(moduleID, optionID, result, source, completed)
 
 	option, err := models.Options.GetByID(optionID)
 	if err != nil {
@@ -200,10 +200,10 @@ func (rp *RaftPilesFoundation) Get(models data.Models, moduleID uuid.UUID) (Modu
 	return rp.fromDataModule(dataModule), nil
 }
 
-func (rp *RaftPilesFoundation) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
+func (rp *RaftPilesFoundation) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption, source string, completed bool) error {
 	rp.normalizeToNewFormat()
 
-	module := rp.toDataModule(moduleID, optionID, result)
+	module := rp.toDataModule(moduleID, optionID, result, source, completed)
 
 	option, err := models.Options.GetByID(optionID)
 	if err != nil {
@@ -221,7 +221,7 @@ func (rp *RaftPilesFoundation) Update(models data.Models, moduleID, optionID uui
 	return models.Modules.Update(module, targets)
 }
 
-func (rp *RaftPilesFoundation) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
+func (rp *RaftPilesFoundation) toDataModule(moduleID, optionID uuid.UUID, result Consumption, source string, completed bool) *data.Module {
 	moduleData := map[string]interface{}{
 		"concrete": rp.Concrete,
 		"steel":    rp.Steel,
@@ -243,6 +243,8 @@ func (rp *RaftPilesFoundation) toDataModule(moduleID, optionID uuid.UUID, result
 		Type:           "raft_piles_foundation",
 		OptionID:       optionID,
 		Data:           moduleData,
+		Source:         source,
+		Completed:      completed,
 		TotalCO2Min:    &result.CO2Min,
 		TotalCO2Max:    &result.CO2Max,
 		TotalEnergyMin: &result.EnergyMin,
@@ -258,14 +260,14 @@ func (rp *RaftPilesFoundation) fromDataModule(d *data.Module) Module {
 
 	foundation := &RaftPilesFoundation{
 		ID:              d.ID,
-		BasicModuleData: BasicModuleData{Type: "raft_piles_foundation", Outdated: d.Outdated},
+		BasicModuleData: BasicModuleData{Type: "raft_piles_foundation", Outdated: d.Outdated, Completed: d.Completed},
 		Consumption:     consumption,
 		Concrete:        concreteVolumesFromInterface(d.Data["concrete"]),
 		Steel:           deserializeSteelMaterialsFromInterface(d.Data["steel"]),
 		UnitID:          *d.UnitID,
 	}
 
-	if val, ok := d.Data["fck"].(float64); ok {
+	if val, ok := unwrapDataScalar(d.Data["fck"]).(float64); ok {
 		foundation.Fck = int(val)
 	}
 

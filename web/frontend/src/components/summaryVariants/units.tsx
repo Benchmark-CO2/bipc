@@ -133,9 +133,8 @@ const UnitsSummary = ({
         }),
       );
 
-      const typeNewItems =
-        t !== "material" ? newItems.map((item) => item[t]) : [];
-
+      const typeNewItems = newItems.map((item) => item[t]);
+      
       let projectTotalItem = null;
       if (project?.consumption?.total) {
         projectTotalItem = {

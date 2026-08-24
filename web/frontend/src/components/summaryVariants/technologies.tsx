@@ -137,8 +137,7 @@ const SimulationsSummary = ({
       );
 
       // 2. Prepara newDataItems
-      const typeNewItems =
-        t !== "material" ? newItems.map((item) => item[t]) : [];
+      const typeNewItems = newItems.map((item) => item[t]);
       const newDataItems = [...managedData, ...typeNewItems];
 
       // 3. Descobre min/max para recalcular o Y
