@@ -4,7 +4,7 @@ import { TConsumption } from "@/types/projects";
 import { structureTypes } from "@/utils/structureTypes";
 import { ColumnDef } from "@tanstack/react-table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { TriangleAlert } from "lucide-react";
+import { CheckCircle2, AlertCircle, TriangleAlert } from "lucide-react";
 
 type TechRow = Omit<IModuleItem, "consumption"> &
   TConsumption & { option_id: string };
@@ -16,19 +16,40 @@ export const makeConstructiveTechnologiesColumns = (
     accessorKey: "type",
     header: t.columns.type,
     cell: ({ row }) => {
+      const isCompleted = row.original.completed === true;
       return (
-        <div className="text-left flex items-center gap-2">
-          {structureTypes(t)[row.original.type] || "-"}
-          {row.original.outdated && (
+        <div className="text-left flex items-center gap-2 w-full">
+          <span className="shrink-0">
+            {structureTypes(t)[row.original.type] || "-"}
+          </span>
+          <div className="ml-1 flex items-center gap-2 shrink-0">
             <Tooltip>
               <TooltipTrigger asChild>
-                <TriangleAlert className="h-4 w-4 text-yellow-500 shrink-0" />
+                {isCompleted ? (
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
+                )}
               </TooltipTrigger>
-              <TooltipContent className="max-w-[220px]">
-                <span>{t.columns.outdatedTech}</span>
+              <TooltipContent className="max-w-[280px]">
+                <span>
+                  {isCompleted
+                    ? t.modules.badges.completed
+                    : t.modules.badges.incomplete}
+                </span>
               </TooltipContent>
             </Tooltip>
-          )}
+            {row.original.outdated && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TriangleAlert className="h-4 w-4 text-yellow-500 shrink-0" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[220px]">
+                  <span>{t.columns.outdatedTech}</span>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
         </div>
       );
     },
