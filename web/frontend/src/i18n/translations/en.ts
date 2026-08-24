@@ -1554,5 +1554,13 @@ export const en: Translations = {
     disciplinesGoTo: "Open Disciplines tab",
     simulationRoleMissing:
       "Simulation discipline not selected. Choose a discipline to continue.",
+    showOnlyVisible: "Show visible only",
+    showAll: "Show all",
+    hideFile: "Hide this file",
+    showFile: "Show this file",
+    hiddenBadge: "Hidden",
+    hideSuccess: "File hidden successfully",
+    showSuccess: "File shown successfully",
+    visibilityActionError: "Error changing file visibility",
   },
 };

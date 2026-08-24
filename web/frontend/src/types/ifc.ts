@@ -42,6 +42,7 @@ export interface TIfcProcessorRequestListItem {
   fallback_id: string | null;
   calculate_geometries: boolean;
   client_id: string;
+  is_visible: boolean;
 }
 
 export interface TIfcProcessorRequestsResponse {

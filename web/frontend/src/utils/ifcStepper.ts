@@ -4,6 +4,7 @@ import { TRole } from "@/types/disciplines";
 import { TModulesTypes, TModuleDataV2, TModuleSource } from "@/types/modules";
 import {
   TIfcProcessorAggregatedResult,
+  TIfcProcessorRequestListItem,
   TIfcProcessorResultUnits,
   TIfcProcessorResultUnitFloor,
   TIfcProcessorResultModuleItem,
@@ -26,9 +27,6 @@ import {
   getCompletenessWarnings,
   CompletenessWarningsI18n,
 } from "@/components/layout/drawer-form-module/aggregate-helpers";
-const generateTempId = () => {
-  return `tmp_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
-};
 
 const KNOWN_MODULE_TYPES: TModulesTypes[] = [
   "beam_column",
@@ -39,8 +37,33 @@ const KNOWN_MODULE_TYPES: TModulesTypes[] = [
   "raft_piles_foundation",
 ];
 
+const generateTempId = () => {
+  return `tmp_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
+};
+
 const isKnownModuleType = (t: string | TModulesTypes): t is TModulesTypes => {
   return (KNOWN_MODULE_TYPES as string[]).includes(t as string);
+};
+
+type TRawIfcRequestListItem = TIfcProcessorRequestListItem & {
+  isVisible?: boolean;
+};
+
+export const normalizeIfcRequestListItem = (
+  raw: TRawIfcRequestListItem,
+): TIfcProcessorRequestListItem => {
+  let isVisible: boolean;
+  if (typeof raw.isVisible === "boolean") {
+    isVisible = raw.isVisible;
+  } else if (typeof raw.is_visible === "boolean") {
+    isVisible = raw.is_visible;
+  } else {
+    isVisible = true;
+  }
+  return {
+    ...raw,
+    is_visible: isVisible,
+  };
 };
 
 // ---------------------------------------------------------------------------

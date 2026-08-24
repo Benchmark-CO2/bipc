@@ -1,7 +1,9 @@
 import { postDisciplineFileUpload } from "@/actions/disciplines/postDisciplineFileUpload";
 import { getIfcFallbacks } from "@/actions/ifc/getIfcFallbacks";
 import { getIfcRequestResult } from "@/actions/ifc/getIfcRequestResult";
-import { getIfcRequests } from "@/actions/ifc/getIfcRequests";
+import { getIfcRequestsAll } from "@/actions/ifc/getIfcRequestsAll";
+import { patchIfcHideRequest } from "@/actions/ifc/patchIfcHideRequest";
+import { patchIfcShowRequest } from "@/actions/ifc/patchIfcShowRequest";
 import { postIfcCreateRequest } from "@/actions/ifc/postIfcCreateRequest";
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,10 +18,20 @@ import {
 } from "@/types/ifc";
 import { TRole } from "@/types/disciplines";
 import { dateUtils } from "@/utils/date";
+import { normalizeIfcRequestListItem } from "@/utils/ifcStepper";
 import { parseApiError } from "@/utils/parseApiError";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, FileUp, Loader2, Upload, X } from "lucide-react";
+import {
+  AlertTriangle,
+  FileUp,
+  Loader2,
+  Upload,
+  X,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+} from "lucide-react";
 import { useMemo, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
@@ -30,6 +42,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "../ui/drawer";
+import { Badge } from "../ui/badge";
 import {
   Select,
   SelectContent,
@@ -286,6 +299,7 @@ export default function DrawerIFCImport({
 
   // "Already imported" section state
   const [selectedFileId, setSelectedFileId] = useState("");
+  const [showAllIfcRequests, setShowAllIfcRequests] = useState(false);
 
   // Stepper (aplicar dados IFC)
   const [stepperOpen, setStepperOpen] = useState(false);
@@ -420,13 +434,13 @@ export default function DrawerIFCImport({
   };
 
   const {
-    data: ifcRequests,
-    isLoading: isLoadingIfcRequests,
-    isError: isIfcRequestsError,
+    data: ifcRequestsAllRaw,
+    isLoading: isLoadingIfcRequestsAll,
+    isError: isIfcRequestsAllError,
   } = useQuery({
-    queryKey: ["ifcRequests", clientId],
+    queryKey: ["ifcRequestsAll", clientId],
     queryFn: async () => {
-      const res = await getIfcRequests(clientId);
+      const res = await getIfcRequestsAll(clientId);
       return res.data.items;
     },
     enabled: isOpen && fileType === "ifc" && Boolean(clientId),
@@ -436,6 +450,56 @@ export default function DrawerIFCImport({
       return hasPending ? 30000 : false;
     },
   });
+
+  const normalizedIfcRequestsAll: TIfcProcessorRequestListItem[] = (
+    ifcRequestsAllRaw ?? []
+  ).map(normalizeIfcRequestListItem);
+
+  const filteredVisibleIfcRequests: TIfcProcessorRequestListItem[] =
+    normalizedIfcRequestsAll.filter((r) => r.is_visible);
+
+  const activeIfcRequests: TIfcProcessorRequestListItem[] = showAllIfcRequests
+    ? normalizedIfcRequestsAll
+    : filteredVisibleIfcRequests;
+
+  const isLoadingActiveIfcRequests = isLoadingIfcRequestsAll;
+  const isActiveIfcRequestsError = isIfcRequestsAllError;
+
+  const { mutate: mutateHideIfcRequest, isPending: isHidingIfcRequest } =
+    useMutation({
+      mutationFn: (requestId: string) =>
+        patchIfcHideRequest(clientId, requestId),
+      onSuccess: () => {
+        toast.success(t.drawerIFC.hideSuccess);
+        queryClient.invalidateQueries({
+          queryKey: ["ifcRequestsAll", clientId],
+        });
+      },
+      onError: (error) => {
+        const errorMessage = parseApiError(error, t);
+        toast.error(t.drawerIFC.visibilityActionError, {
+          description: errorMessage,
+        });
+      },
+    });
+
+  const { mutate: mutateShowIfcRequest, isPending: isShowingIfcRequest } =
+    useMutation({
+      mutationFn: (requestId: string) =>
+        patchIfcShowRequest(clientId, requestId),
+      onSuccess: () => {
+        toast.success(t.drawerIFC.showSuccess);
+        queryClient.invalidateQueries({
+          queryKey: ["ifcRequestsAll", clientId],
+        });
+      },
+      onError: (error) => {
+        const errorMessage = parseApiError(error, t);
+        toast.error(t.drawerIFC.visibilityActionError, {
+          description: errorMessage,
+        });
+      },
+    });
 
   const ifcSoftwareOptions = useMemo(() => {
     const manufacturers = new Map<string, string>();
@@ -468,18 +532,18 @@ export default function DrawerIFCImport({
 
   const mapIfcRequestToImportedFile = (
     req: TIfcProcessorRequestListItem,
-  ): ImportedIFCFile => ({
+  ): ImportedIFCFile & { is_visible: boolean } => ({
     id: req.request_id,
     name: req.file_name,
     date: dateUtils.calculateRelativeTime(new Date(req.ts_created * 1000)),
     status: req.status,
     errorMessage: req.error_message,
+    is_visible: req.is_visible,
   });
 
-  const ifcImportedFiles: ImportedIFCFile[] = (ifcRequests ?? [])
-    .slice()
-    .sort((a, b) => b.ts_created - a.ts_created)
-    .map(mapIfcRequestToImportedFile);
+  const ifcImportedFiles: (ImportedIFCFile & { is_visible: boolean })[] = (
+    activeIfcRequests ?? []
+  ).map(mapIfcRequestToImportedFile);
 
   const selectedIfcFile = ifcImportedFiles.find((f) => f.id === selectedFileId);
 
@@ -530,7 +594,7 @@ export default function DrawerIFCImport({
     },
     onSuccess: (requestId) => {
       toast.success(t.drawerIFC.importQueuedIFC);
-      queryClient.invalidateQueries({ queryKey: ["ifcRequests", clientId] });
+      queryClient.invalidateQueries({ queryKey: ["ifcRequestsAll", clientId] });
       setSelectedFileId(requestId);
       setUploadFile(null);
       setSoftware("");
@@ -586,6 +650,7 @@ export default function DrawerIFCImport({
     setStepperResult(null);
     setStepperOpen(false);
     setSelectedRoleId("");
+    setShowAllIfcRequests(false);
   };
 
   const handleFileTypeChange = (ft: FileType) => {
@@ -920,104 +985,181 @@ export default function DrawerIFCImport({
                     </h3>
 
                     <div className="flex flex-col gap-4">
-                      {/* File select + Discipline select (quando aplicável) em GRID 2 cols */}
-                      <div
-                        className={cn(
-                          "grid gap-3 items-start",
-                          needsRolePrompt ? "grid-cols-2" : "grid-cols-[1fr]",
-                        )}
-                      >
+                      {/* Discipline select — SÓ quando roleId prop não passado */}
+                      {needsRolePrompt && (
                         <div className="flex flex-col gap-1.5">
                           <label className="text-sm text-muted-foreground">
-                            {t.drawerIFC.selectFileLabel}{" "}
+                            {t.drawerIFC.disciplineLabel}{" "}
                             <span className="text-destructive">*</span>
                           </label>
                           <Select
-                            value={selectedFileId}
-                            onValueChange={handleFileSelect}
+                            value={selectedRoleId}
+                            onValueChange={setSelectedRoleId}
+                            disabled={
+                              isLoadingProjectRoles ||
+                              simulationRoles.length === 0
+                            }
                           >
                             <SelectTrigger className="w-full">
                               <SelectValue
-                                placeholder={t.drawerIFC.selectFilePlaceholder}
+                                placeholder={
+                                  isLoadingProjectRoles
+                                    ? t.common.loading
+                                    : simulationRoles.length === 0
+                                      ? t.drawerIFC.disciplinePlaceholder
+                                      : t.drawerIFC.disciplinePlaceholder
+                                }
                               />
                             </SelectTrigger>
                             <SelectContent>
-                              {isLoadingIfcRequests ? (
+                              {isLoadingProjectRoles ? (
                                 <SelectItem value="__loading__" disabled>
                                   {t.common.loading}
                                 </SelectItem>
-                              ) : isIfcRequestsError ? (
-                                <SelectItem value="__error__" disabled>
-                                  {t.common.unknownError}
-                                </SelectItem>
-                              ) : ifcImportedFiles.length === 0 ? (
+                              ) : simulationRoles.length === 0 ? (
                                 <SelectItem value="__empty__" disabled>
-                                  {t.drawerIFC.noImportedFiles}
+                                  {t.drawerIFC.disciplinePlaceholder}
                                 </SelectItem>
                               ) : (
-                                ifcImportedFiles.map((f) => (
-                                  <SelectItem key={f.id} value={f.id}>
-                                    <span className="flex items-center gap-2 min-w-0">
-                                      <span className="truncate min-w-0">
-                                        {f.name}
-                                      </span>
-                                      <span className="text-muted-foreground shrink-0">
-                                        — {f.date} ({ifcStatusLabels[f.status]})
-                                      </span>
-                                    </span>
+                                simulationRoles.map((r) => (
+                                  <SelectItem key={r.id} value={r.id}>
+                                    {r.name}
                                   </SelectItem>
                                 ))
                               )}
                             </SelectContent>
                           </Select>
                         </div>
+                      )}
 
-                        {/* Discipline select — SÓ quando roleId prop não passado */}
-                        {needsRolePrompt && (
-                          <div className="flex flex-col gap-1.5">
+                      {/* Toggle visibilidade + Discipline select (quando aplicável) em GRID 2 cols */}
+                      <div
+                        className={cn("grid gap-3 items-start grid-cols-[1fr]")}
+                      >
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center justify-between mb-1">
                             <label className="text-sm text-muted-foreground">
-                              {t.drawerIFC.disciplineLabel}{" "}
+                              {t.drawerIFC.selectFileLabel}{" "}
                               <span className="text-destructive">*</span>
                             </label>
-                            <Select
-                              value={selectedRoleId}
-                              onValueChange={setSelectedRoleId}
-                              disabled={
-                                isLoadingProjectRoles ||
-                                simulationRoles.length === 0
-                              }
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue
-                                  placeholder={
-                                    isLoadingProjectRoles
-                                      ? t.common.loading
-                                      : simulationRoles.length === 0
-                                        ? t.drawerIFC.disciplinePlaceholder
-                                        : t.drawerIFC.disciplinePlaceholder
-                                  }
-                                />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {isLoadingProjectRoles ? (
-                                  <SelectItem value="__loading__" disabled>
-                                    {t.common.loading}
-                                  </SelectItem>
-                                ) : simulationRoles.length === 0 ? (
-                                  <SelectItem value="__empty__" disabled>
-                                    {t.drawerIFC.disciplinePlaceholder}
-                                  </SelectItem>
-                                ) : (
-                                  simulationRoles.map((r) => (
-                                    <SelectItem key={r.id} value={r.id}>
-                                      {r.name}
-                                    </SelectItem>
-                                  ))
+                            <div className="flex items-center gap-1 border border-gray-200 dark:border-gray-700 rounded-md p-0.5">
+                              <button
+                                type="button"
+                                onClick={() => setShowAllIfcRequests(false)}
+                                className={cn(
+                                  "px-2 py-1 text-xs font-medium rounded-sm transition-all",
+                                  !showAllIfcRequests
+                                    ? "bg-primary text-white"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-800",
                                 )}
-                              </SelectContent>
-                            </Select>
+                              >
+                                {t.drawerIFC.showOnlyVisible}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setShowAllIfcRequests(true)}
+                                className={cn(
+                                  "px-2 py-1 text-xs font-medium rounded-sm transition-all",
+                                  showAllIfcRequests
+                                    ? "bg-primary text-white"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-800",
+                                )}
+                              >
+                                {t.drawerIFC.showAll}
+                              </button>
+                            </div>
                           </div>
-                        )}
+
+                          <div className="flex flex-col gap-1 border border-gray-200 dark:border-gray-700 rounded-lg p-1 max-h-60 overflow-y-auto">
+                            {isLoadingActiveIfcRequests ? (
+                              <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                {t.common.loading}
+                              </div>
+                            ) : isActiveIfcRequestsError ? (
+                              <div className="flex items-center justify-center py-4 text-sm text-destructive">
+                                {t.common.unknownError}
+                              </div>
+                            ) : ifcImportedFiles.length === 0 ? (
+                              <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
+                                {t.drawerIFC.noImportedFiles}
+                              </div>
+                            ) : (
+                              ifcImportedFiles.map((f) => (
+                                <div
+                                  key={f.id}
+                                  className={cn(
+                                    "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors group",
+                                    selectedFileId === f.id
+                                      ? "bg-primary/10 ring-1 ring-primary/40"
+                                      : "hover:bg-gray-50 dark:hover:bg-gray-800/60",
+                                    !f.is_visible && "opacity-80",
+                                  )}
+                                  onClick={() => handleFileSelect(f.id)}
+                                >
+                                  <div className="w-4 h-4 shrink-0 flex items-center justify-center">
+                                    {selectedFileId === f.id ? (
+                                      <CheckCircle2 className="h-4 w-4 text-primary" />
+                                    ) : (
+                                      <div className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-600" />
+                                    )}
+                                  </div>
+                                  <div className="flex flex-col min-w-0 flex-1">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <span className="truncate text-sm font-medium text-foreground min-w-0">
+                                        {f.name}
+                                      </span>
+                                      {!f.is_visible && (
+                                        <Badge
+                                          variant="secondary"
+                                          className="text-[10px] h-4 shrink-0"
+                                        >
+                                          {t.drawerIFC.hiddenBadge}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <span className="text-xs text-muted-foreground truncate">
+                                      {f.date} — {ifcStatusLabels[f.status]}
+                                    </span>
+                                  </div>
+                                  <SimpleTooltip
+                                    content={
+                                      f.is_visible
+                                        ? t.drawerIFC.hideFile
+                                        : t.drawerIFC.showFile
+                                    }
+                                  >
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (f.is_visible) {
+                                          mutateHideIfcRequest(f.id);
+                                        } else {
+                                          mutateShowIfcRequest(f.id);
+                                        }
+                                      }}
+                                      disabled={
+                                        isHidingIfcRequest ||
+                                        isShowingIfcRequest
+                                      }
+                                      className="ml-auto shrink-0 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                      {isHidingIfcRequest ||
+                                      isShowingIfcRequest ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : f.is_visible ? (
+                                        <Eye className="h-4 w-4" />
+                                      ) : (
+                                        <EyeOff className="h-4 w-4" />
+                                      )}
+                                    </button>
+                                  </SimpleTooltip>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
                       </div>
 
                       {/* Warning NENHUMA disciplina cadastrada — ABAIXO dos 2 selects, com CTA navigate */}

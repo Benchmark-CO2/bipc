@@ -1569,6 +1569,14 @@ export const ptBR = {
     disciplinesGoTo: "Abrir aba Disciplinas",
     simulationRoleMissing:
       "Disciplina de simulação não selecionada. Selecione uma disciplina para prosseguir.",
+    showOnlyVisible: "Mostrar apenas visíveis",
+    showAll: "Mostrar todos",
+    hideFile: "Ocultar este arquivo",
+    showFile: "Mostrar este arquivo",
+    hiddenBadge: "Oculto",
+    hideSuccess: "Arquivo ocultado com sucesso",
+    showSuccess: "Arquivo exibido com sucesso",
+    visibilityActionError: "Erro ao alterar visibilidade do arquivo",
   },
 } as const;
 
