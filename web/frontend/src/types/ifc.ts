@@ -137,6 +137,7 @@ export type TIfcStepperModuleItem = {
     messages: string[];
   };
   isValid: boolean;
+  completed?: boolean;
 };
 
 export type TIfcStepperStepId = "units" | "modules";

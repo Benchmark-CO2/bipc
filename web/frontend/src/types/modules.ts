@@ -42,12 +42,17 @@ export const FOUNDATION_MODULE_TYPES: TModulesTypes[] = [
   "raft_piles_foundation",
 ];
 
+export type TModuleSource = "" | "api" | "plugin" | "manual" | "tqs" | "ifc";
+
+export type TSourceDistribution = Partial<Record<TModuleSource, number>>;
+
 export interface IModuleItem {
   id: string;
   name?: string | null;
   type: TModulesTypes;
   consumption: IConsumption;
   outdated?: boolean;
+  completed?: boolean;
   version?: string | number;
   version_in_use?: string | number;
   floor_repetition?: number | string | null;
@@ -63,6 +68,7 @@ export interface IBasicModule {
   name: string;
   type: TModulesTypes;
   id?: string;
+  completed?: boolean;
   consumption?: IConsumption;
   floor_ids?: string[];
   slab_type?: string;
@@ -255,11 +261,18 @@ export type TModuleDataV2 =
 export interface ModuleCreateRequestV2 {
   type: TModulesTypes;
   data: TModuleDataV2;
+  source?: TModuleSource;
 }
 
 export interface ModuleUpdateRequestV2 {
   type: TModulesTypes;
   data: Partial<TModuleDataV2>;
+  source?: TModuleSource;
+}
+
+export interface ModuleResponseMetaV2 {
+  id?: string;
+  completed?: boolean;
 }
 
 export type ModuleParamsPropsV2 = {
@@ -268,6 +281,7 @@ export type ModuleParamsPropsV2 = {
     floor_ids?: string[];
     unit_id?: string;
   };
+  source?: TModuleSource;
 };
 
 export type TAnyPosition =
@@ -357,6 +371,7 @@ export type ModuleParamsProps = {
     floor_ids?: string[];
     unit_id?: string;
   };
+  source?: TModuleSource;
 };
 
 // export type TModuleData = {
@@ -377,31 +392,37 @@ export type ModuleParamsProps = {
 export interface TBeamColumnPayloadV2 {
   type: "beam_column";
   data: Partial<TBeamColumnDataV2>;
+  source?: TModuleSource;
 }
 
 export interface TConcreteWallPayloadV2 {
   type: "concrete_wall";
   data: Partial<TConcreteWallDataV2>;
+  source?: TModuleSource;
 }
 
 export interface TStructuralMasonryPayloadV2 {
   type: "structural_masonry";
   data: Partial<TStructuralMasonryDataV2>;
+  source?: TModuleSource;
 }
 
 export interface TRaftFoundationPayloadV2 {
   type: "raft_foundation";
   data: Partial<TRaftFoundationDataV2>;
+  source?: TModuleSource;
 }
 
 export interface TPilesFoundationPayloadV2 {
   type: "piles_foundation";
   data: Partial<TPilesFoundationDataV2>;
+  source?: TModuleSource;
 }
 
 export interface TRaftPilesFoundationPayloadV2 {
   type: "raft_piles_foundation";
   data: Partial<TRaftPilesFoundationDataV2>;
+  source?: TModuleSource;
 }
 
 export type TModulePayloadV2 =
