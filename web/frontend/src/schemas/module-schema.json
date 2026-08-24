@@ -4,9 +4,24 @@
   "purpose": "Guia de preenchimento dos módulos de benchmark. Descreve os campos obrigatórios e as validações aplicadas em cada tipo de módulo. O campo 'completed' de um módulo é true somente quando todas as validações abaixo passam.",
   "shared": {
     "slab_types": [
-      "solid", "ribbed", "mushroom_solid", "mushroom_ribbed", "flat", "band_beam",
-      "pt_solid", "pt_ribbed", "pt_mushroom_solid", "pt_mushroom_ribbed", "pt_flat", "pt_band_beam",
-      "trussed", "joist", "filigree", "hollow_core", "precast_solid", "precast_ribbed"
+      "solid",
+      "ribbed",
+      "mushroom_solid",
+      "mushroom_ribbed",
+      "flat",
+      "band_beam",
+      "pt_solid",
+      "pt_ribbed",
+      "pt_mushroom_solid",
+      "pt_mushroom_ribbed",
+      "pt_flat",
+      "pt_band_beam",
+      "trussed",
+      "joist",
+      "filigree",
+      "hollow_core",
+      "precast_solid",
+      "precast_ribbed"
     ],
     "steel_material": ["general", "rebar", "mesh", "strand", "other"],
     "steel_resistance": ["CA50", "CA60", "CP190", "other"],
@@ -54,14 +69,47 @@
       "scope_required": "floor_ids (não vazio e sem duplicatas)",
       "required": ["floor_ids", "concrete"],
       "fields": {
-        "floor_ids": { "type": "array<uuid>", "required": true, "rules": ["deve estar presente", "não pode conter duplicatas"] },
-        "slab_type": { "type": "string", "required": false, "enum": "shared.slab_types", "rules": ["se informado, deve ser um dos valores válidos"] },
-        "wall_thickness": { "type": "number", "required": false, "rules": ["não pode ser negativa"] },
-        "slab_thickness": { "type": "number", "required": false, "rules": ["não pode ser negativa"] },
-        "wall_area": { "type": "number", "required": false, "rules": ["não pode ser negativa"] },
-        "slab_area": { "type": "number", "required": false, "rules": ["não pode ser negativa"] },
-        "beam_number": { "type": "number", "required": false, "rules": ["não pode ser negativa"] },
-        "slab_number": { "type": "number", "required": false, "rules": ["não pode ser negativa"] }
+        "floor_ids": {
+          "type": "array<uuid>",
+          "required": true,
+          "rules": ["deve estar presente", "não pode conter duplicatas"]
+        },
+        "slab_type": {
+          "type": "string",
+          "required": false,
+          "enum": "shared.slab_types",
+          "rules": ["se informado, deve ser um dos valores válidos"]
+        },
+        "wall_thickness": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        },
+        "slab_thickness": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        },
+        "wall_area": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        },
+        "slab_area": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        },
+        "beam_number": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        },
+        "slab_number": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        }
       },
       "arrays": {
         "concrete": "shared.concrete_item",
@@ -69,25 +117,78 @@
         "form": "shared.form_item"
       },
       "positions": ["wall", "slab", "stair"],
-      "legacy_v1": ["concrete_walls", "concrete_slabs", "wall_form_area", "slab_form_area", "wall_thickness", "slab_thickness"],
-      "notes": ["O uso simultâneo de campos V2 (concrete/steel/form) e V1 legados é rejeitado na API."]
+      "legacy_v1": [
+        "concrete_walls",
+        "concrete_slabs",
+        "wall_form_area",
+        "slab_form_area",
+        "wall_thickness",
+        "slab_thickness"
+      ],
+      "notes": [
+        "O uso simultâneo de campos V2 (concrete/steel/form) e V1 legados é rejeitado na API."
+      ]
     },
     "beam_column": {
       "description": "Vigas e pilares (V2) ou pilar/viga/laje maciça (V1).",
       "scope_required": ["floor_ids (required)"],
       "required": ["floor_ids", "concrete"],
       "fields": {
-        "floor_ids": { "type": "array<uuid>", "required": true, "rules": ["deve estar presente", "não pode conter duplicatas"] },
-        "slab_type": { "type": "string", "required": false, "enum": "shared.slab_types" },
-        "form_columns": { "type": "number", "required": false, "rules": ["não pode ser negativa"] },
-        "form_beams": { "type": "number", "required": false, "rules": ["não pode ser negativa"] },
-        "form_slabs": { "type": "number", "required": false, "rules": ["não pode ser negativa"] },
-        "form_total": { "type": "number", "required": false, "rules": ["não pode ser negativa"] },
-        "beam_number": { "type": "number", "required": false, "rules": ["não pode ser negativa"] },
-        "slab_number": { "type": "number", "required": false, "rules": ["não pode ser negativa"] },
-        "column_number": { "type": "number", "required": false, "rules": ["não pode ser negativa"] },
-        "avg_beam_span": { "type": "number", "required": false, "rules": ["não pode ser negativa"] },
-        "avg_slab_span": { "type": "number", "required": false, "rules": ["não pode ser negativa"] }
+        "floor_ids": {
+          "type": "array<uuid>",
+          "required": true,
+          "rules": ["deve estar presente", "não pode conter duplicatas"]
+        },
+        "slab_type": {
+          "type": "string",
+          "required": false,
+          "enum": "shared.slab_types"
+        },
+        "form_columns": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        },
+        "form_beams": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        },
+        "form_slabs": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        },
+        "form_total": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        },
+        "beam_number": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        },
+        "slab_number": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        },
+        "column_number": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        },
+        "avg_beam_span": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        },
+        "avg_slab_span": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        }
       },
       "arrays": {
         "concrete": "shared.concrete_item",
@@ -95,17 +196,40 @@
         "form": "shared.form_item"
       },
       "positions": ["column", "beam", "slab", "stair"],
-      "extensions_v1": ["concrete_columns", "concrete_beams", "concrete_slabs", "form_columns", "form_beams", "form_slabs"]
+      "extensions_v1": [
+        "concrete_columns",
+        "concrete_beams",
+        "concrete_slabs",
+        "form_columns",
+        "form_beams",
+        "form_slabs"
+      ]
     },
     "structural_masonry": {
       "description": "Alvenaria estrutural com graute, argamassa, blocos, concreto e aço.",
       "scope_required": ["floor_ids (required)"],
-      "required": ["floor_ids", "concrete", "masonry"],
+      "required": ["floor_ids", "masonry"],
       "fields": {
-        "floor_ids": { "type": "array<uuid>", "required": true, "rules": ["deve estar presente", "não pode conter duplicatas"] },
-        "slab_type": { "type": "string", "required": false, "enum": "shared.slab_types" },
-        "beam_number": { "type": "number", "required": false, "rules": ["não pode ser negativa"] },
-        "slab_number": { "type": "number", "required": false, "rules": ["não pode ser negativa"] }
+        "floor_ids": {
+          "type": "array<uuid>",
+          "required": true,
+          "rules": ["deve estar presente", "não pode conter duplicatas"]
+        },
+        "slab_type": {
+          "type": "string",
+          "required": false,
+          "enum": "shared.slab_types"
+        },
+        "beam_number": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        },
+        "slab_number": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        }
       },
       "arrays": {
         "concrete": "shared.concrete_item",
@@ -117,18 +241,22 @@
         "grout": {
           "rules": [
             "position: vazio, 'vertical' ou 'horizontal'",
-            "volumes: deve ter ao menos um item; volume > 0; fgk obrigatório e de valor suportado, sem fgk duplicado", 
+            "volumes: deve ter ao menos um item; volume > 0; fgk obrigatório e de valor suportado, sem fgk duplicado",
             "steel: segue shared.steel_item"
           ]
         },
         "mortar": {
           "rules": [
-            "volume > 0", "fak obrigatório e de valor suportado", "fak não pode se repetir"
+            "volume > 0",
+            "fak obrigatório e de valor suportado",
+            "fak não pode se repetir"
           ]
         },
         "blocks": {
           "rules": [
-            "type obrigatório e válido", "fbk > 0 e de valor suportado", "quantity >= 0"
+            "type obrigatório e válido",
+            "fbk > 0 e de valor suportado",
+            "quantity >= 0"
           ]
         }
       }
@@ -138,10 +266,26 @@
       "scope_required": ["unit_id (obrigatório)"],
       "required": ["unit_id", "concrete"],
       "fields": {
-        "unit_id": { "type": "uuid", "required": true, "rules": ["deve estar presente"] },
-        "area": { "type": "number", "required": false, "rules": ["não pode ser negativa"] },
-        "thickness": { "type": "number", "required": false, "rules": ["não pode ser negativa"] },
-        "fck": { "type": "number", "required": false, "rules": ["se informado, deve ser maior que 0"] }
+        "unit_id": {
+          "type": "uuid",
+          "required": true,
+          "rules": ["deve estar presente"]
+        },
+        "area": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        },
+        "thickness": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        },
+        "fck": {
+          "type": "number",
+          "required": false,
+          "rules": ["se informado, deve ser maior que 0"]
+        }
       },
       "arrays": {
         "concrete": "shared.concrete_item",
@@ -154,8 +298,16 @@
       "scope_required": ["unit_id (obrigatório)"],
       "required": ["unit_id", "concrete"],
       "fields": {
-        "unit_id": { "type": "uuid", "required": true, "rules": ["deve estar presente"] },
-        "fck": { "type": "number", "required": false, "rules": ["se informado, deve ser maior que 0"] }
+        "unit_id": {
+          "type": "uuid",
+          "required": true,
+          "rules": ["deve estar presente"]
+        },
+        "fck": {
+          "type": "number",
+          "required": false,
+          "rules": ["se informado, deve ser maior que 0"]
+        }
       },
       "arrays": {
         "concrete": "shared.concrete_item",
@@ -168,10 +320,26 @@
       "scope_required": ["unit_id (obrigatório)"],
       "required": ["unit_id", "concrete"],
       "fields": {
-        "unit_id": { "type": "uuid", "required": true, "rules": ["deve estar presente"] },
-        "fck": { "type": "number", "required": false, "rules": ["se informado, deve ser maior que 0"] },
-        "raft.area": { "type": "number", "required": false, "rules": ["não pode ser negativa"] },
-        "raft.thickness": { "type": "number", "required": false, "rules": ["não pode ser negativa"] }
+        "unit_id": {
+          "type": "uuid",
+          "required": true,
+          "rules": ["deve estar presente"]
+        },
+        "fck": {
+          "type": "number",
+          "required": false,
+          "rules": ["se informado, deve ser maior que 0"]
+        },
+        "raft.area": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        },
+        "raft.thickness": {
+          "type": "number",
+          "required": false,
+          "rules": ["não pode ser negativa"]
+        }
       },
       "arrays": {
         "concrete": "shared.concrete_item",

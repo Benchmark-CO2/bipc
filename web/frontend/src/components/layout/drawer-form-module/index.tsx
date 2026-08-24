@@ -440,6 +440,43 @@ const DrawerFormModule = ({
     prevSelectedFloorsRef.current = curr;
   }, [selectedFloors]);
 
+  useEffect(() => {
+    const currentFormFloorIds = (form.getValues() as any)?.data?.floor_ids as
+      | string[]
+      | undefined;
+    const currLen = selectedFloors.length;
+    const formLen = Array.isArray(currentFormFloorIds)
+      ? currentFormFloorIds.length
+      : 0;
+    if (currLen === 0 && formLen === 0) return;
+    const same =
+      Array.isArray(currentFormFloorIds) &&
+      currLen === formLen &&
+      selectedFloors.every((v) => currentFormFloorIds.includes(v)) &&
+      currentFormFloorIds.every((v: string) => selectedFloors.includes(v));
+    if (!same) {
+      form.setValue(
+        "data.floor_ids" as never,
+        selectedFloors as never,
+        { shouldDirty: true, shouldValidate: false },
+      );
+    }
+  }, [selectedFloors, form]);
+
+  useEffect(() => {
+    if (!unitId) return;
+    const currFormUnitId = (form.getValues() as any)?.data?.unit_id as
+      | string
+      | undefined;
+    if (currFormUnitId !== unitId) {
+      form.setValue(
+        "data.unit_id" as never,
+        unitId as never,
+        { shouldDirty: true, shouldValidate: false },
+      );
+    }
+  }, [unitId, form]);
+
   const lastStepperTargetKeyRef = useRef<string | null>(null);
   const lastModuleIdRef = useRef<string | undefined | null>(undefined);
   useEffect(() => {

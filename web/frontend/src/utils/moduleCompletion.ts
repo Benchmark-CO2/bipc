@@ -39,6 +39,29 @@ const FOUNDATION_TYPES = new Set<TModulesTypes>([
   "raft_piles_foundation",
 ]);
 
+const EMPTY_POSITION_VALUES = new Set([
+  "",
+  "geral",
+  "general",
+  "unspecified",
+  "__geral__",
+]);
+
+function normalizePosition(pos: string | undefined): string | undefined {
+  if (pos === undefined || pos === null) return undefined;
+  const trimmed = typeof pos === "string" ? pos.trim().toLowerCase() : "";
+  return EMPTY_POSITION_VALUES.has(trimmed) ? undefined : trimmed;
+}
+
+function isValidPositionOrEmpty(
+  pos: string | undefined,
+  validPositions: Set<string>,
+): boolean {
+  const normalized = normalizePosition(pos);
+  if (!normalized) return true;
+  return validPositions.has(normalized);
+}
+
 const VALID_STEEL_MATERIALS = new Set([
   "general",
   "rebar",
@@ -86,9 +109,10 @@ function hasAnyConcreteValid(
     if (!isNonZeroNumber(el.volume)) continue;
     if (!isNonZeroNumber(el.fck)) continue;
     const pos = typeof el.position === "string" ? el.position : undefined;
-    if (pos && !validPositions.has(pos)) continue;
+    if (!isValidPositionOrEmpty(pos, validPositions)) continue;
+    const normalizedPos = normalizePosition(pos);
     const fck = Number(el.fck);
-    const key = `${pos ?? "__no_pos__"}:${fck}`;
+    const key = `${normalizedPos ?? "__no_pos__"}:${fck}`;
     if (seen.has(key)) {
       hasDuplicateFckByPosition = true;
       continue;
@@ -126,7 +150,7 @@ function validateSteelArray(
     if (!res || !VALID_STEEL_RESISTANCES.has(res)) {
       issues.push({ index: i, reasonKey: "steel.resistance" });
     }
-    if (!pos || !validPositions.has(pos)) {
+    if (!isValidPositionOrEmpty(pos, validPositions)) {
       issues.push({ index: i, reasonKey: "steel.position" });
     }
     if (typeof el.mass !== "undefined" && !isNonZeroNumber(el.mass)) {
@@ -144,8 +168,7 @@ function validateSteelArray(
       VALID_STEEL_MATERIALS.has(mat) &&
       res &&
       VALID_STEEL_RESISTANCES.has(res) &&
-      pos &&
-      validPositions.has(pos) &&
+      isValidPositionOrEmpty(pos, validPositions) &&
       (typeof el.mass === "undefined" || isNonZeroNumber(el.mass)) &&
       (mat !== "other" ||
         (typeof el.other_name === "string" &&
@@ -185,16 +208,17 @@ function validateFormArray(
   for (const item of formArr) {
     if (!item || typeof item !== "object") continue;
     const el = item as Record<string, unknown>;
-    const pos = typeof el.position === "string" ? el.position.trim() : "";
-    if (!pos || !validPositions.has(pos)) {
+    const rawPos = typeof el.position === "string" ? el.position.trim() : "";
+    if (!isValidPositionOrEmpty(rawPos, validPositions)) {
       anyPositionMissingOrInvalid = true;
       continue;
     }
-    if (seenPositions.has(pos)) {
+    const normalizedPos = normalizePosition(rawPos);
+    if (normalizedPos && seenPositions.has(normalizedPos)) {
       hasDuplicatePosition = true;
       continue;
     }
-    seenPositions.add(pos);
+    if (normalizedPos) seenPositions.add(normalizedPos);
     if (typeof el.area !== "undefined" && !isNonZeroNumber(el.area)) {
       continue;
     }
@@ -273,13 +297,6 @@ export function calculateModuleCompletion(
   )[schemaKey];
   const baseRequired = (schemaMod?.required ?? []) as string[];
   const requiredFields = [...baseRequired];
-  if (STRUCTURE_TYPES.has(type)) {
-    if (!requiredFields.includes("steel")) requiredFields.push("steel");
-    if (!requiredFields.includes("form")) requiredFields.push("form");
-  }
-  if (FOUNDATION_TYPES.has(type)) {
-    if (!requiredFields.includes("steel")) requiredFields.push("steel");
-  }
 
   const d = data as Record<string, unknown>;
 
