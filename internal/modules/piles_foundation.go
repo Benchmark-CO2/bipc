@@ -175,7 +175,7 @@ func (p *PilesFoundation) Calculate() (Consumption, error) {
 	return result, nil
 }
 
-func (p *PilesFoundation) Insert(models data.Models, optionID uuid.UUID, result Consumption) (Module, error) {
+func (p *PilesFoundation) Insert(models data.Models, optionID uuid.UUID, result Consumption, source string) (Module, error) {
 	moduleID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -183,7 +183,7 @@ func (p *PilesFoundation) Insert(models data.Models, optionID uuid.UUID, result 
 
 	p.normalizeToNewFormat()
 
-	moduleToInsert := p.toDataModule(moduleID, optionID, result)
+	moduleToInsert := p.toDataModule(moduleID, optionID, result, source)
 
 	option, err := models.Options.GetByID(optionID)
 	if err != nil {
@@ -218,10 +218,10 @@ func (p *PilesFoundation) Get(models data.Models, moduleID uuid.UUID) (Module, e
 	return p.fromDataModule(dataModule), nil
 }
 
-func (p *PilesFoundation) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
+func (p *PilesFoundation) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption, source string) error {
 	p.normalizeToNewFormat()
 
-	module := p.toDataModule(moduleID, optionID, result)
+	module := p.toDataModule(moduleID, optionID, result, source)
 
 	option, err := models.Options.GetByID(optionID)
 	if err != nil {
@@ -239,7 +239,7 @@ func (p *PilesFoundation) Update(models data.Models, moduleID, optionID uuid.UUI
 	return models.Modules.Update(module, targets)
 }
 
-func (p *PilesFoundation) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
+func (p *PilesFoundation) toDataModule(moduleID, optionID uuid.UUID, result Consumption, source string) *data.Module {
 	moduleData := map[string]interface{}{
 		"concrete": p.Concrete,
 		"steel":    p.Steel,
@@ -268,6 +268,7 @@ func (p *PilesFoundation) toDataModule(moduleID, optionID uuid.UUID, result Cons
 		Type:           "piles_foundation",
 		OptionID:       optionID,
 		Data:           moduleData,
+		Source:         source,
 		TotalCO2Min:    &result.CO2Min,
 		TotalCO2Max:    &result.CO2Max,
 		TotalEnergyMin: &result.EnergyMin,
@@ -290,7 +291,7 @@ func (p *PilesFoundation) fromDataModule(d *data.Module) Module {
 		UnitID:          *d.UnitID,
 	}
 
-	if val, ok := d.Data["fck"].(float64); ok {
+	if val, ok := unwrapDataScalar(d.Data["fck"]).(float64); ok {
 		foundation.Fck = int(val)
 	}
 

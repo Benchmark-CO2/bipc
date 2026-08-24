@@ -1511,6 +1511,16 @@ paths:
             type: string
             format: uuid
           description: The ID of the module
+        - name: include_source
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: |
+            When true, the module data is returned with its canonical tagged shape:
+            root scalar fields as `{value, source}` boxes and object/array items
+            carrying a `source` key. When false or omitted, plain values are returned
+            (fully backward compatible).
       responses:
         "200":
           description: A single module
@@ -1747,6 +1757,16 @@ paths:
             type: string
             format: uuid
           description: The ID of the module
+        - name: include_source
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: |
+            When true, the module data is returned with its canonical tagged shape:
+            root scalar fields as `{value, source}` boxes and object/array items
+            carrying a `source` key. When false or omitted, plain values are returned
+            (fully backward compatible).
       responses:
         "200":
           description: A single module

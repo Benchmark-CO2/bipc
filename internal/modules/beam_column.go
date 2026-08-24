@@ -150,14 +150,14 @@ func (b *BeamColumn) Calculate() (Consumption, error) {
 	return total, nil
 }
 
-func (b *BeamColumn) Insert(models data.Models, optionID uuid.UUID, result Consumption) (Module, error) {
+func (b *BeamColumn) Insert(models data.Models, optionID uuid.UUID, result Consumption, source string) (Module, error) {
 	moduleID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
 	}
 
 	b.normalizeToNewFormat()
-	moduleToInsert := b.toDataModule(moduleID, optionID, result)
+	moduleToInsert := b.toDataModule(moduleID, optionID, result, source)
 
 	option, err := models.Options.GetByID(optionID)
 	if err != nil {
@@ -192,9 +192,9 @@ func (b *BeamColumn) Get(models data.Models, moduleID uuid.UUID) (Module, error)
 	return b.fromDataModule(dataModule), nil
 }
 
-func (b *BeamColumn) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
+func (b *BeamColumn) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption, source string) error {
 	b.normalizeToNewFormat()
-	module := b.toDataModule(moduleID, optionID, result)
+	module := b.toDataModule(moduleID, optionID, result, source)
 
 	option, err := models.Options.GetByID(optionID)
 	if err != nil {
@@ -212,7 +212,7 @@ func (b *BeamColumn) Update(models data.Models, moduleID, optionID uuid.UUID, re
 	return models.Modules.Update(module, targets)
 }
 
-func (b *BeamColumn) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
+func (b *BeamColumn) toDataModule(moduleID, optionID uuid.UUID, result Consumption, source string) *data.Module {
 	moduleData := map[string]interface{}{
 		"concrete":      b.Concrete,
 		"steel":         b.Steel,
@@ -234,6 +234,7 @@ func (b *BeamColumn) toDataModule(moduleID, optionID uuid.UUID, result Consumpti
 		Type:           "beam_column",
 		OptionID:       optionID,
 		Data:           moduleData,
+		Source:         source,
 		TotalCO2Min:    &result.CO2Min,
 		TotalCO2Max:    &result.CO2Max,
 		TotalEnergyMin: &result.EnergyMin,

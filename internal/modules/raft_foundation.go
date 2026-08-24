@@ -117,7 +117,7 @@ func (r *RaftFoundation) Calculate() (Consumption, error) {
 	return result, nil
 }
 
-func (r *RaftFoundation) Insert(models data.Models, optionID uuid.UUID, result Consumption) (Module, error) {
+func (r *RaftFoundation) Insert(models data.Models, optionID uuid.UUID, result Consumption, source string) (Module, error) {
 	moduleID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -125,7 +125,7 @@ func (r *RaftFoundation) Insert(models data.Models, optionID uuid.UUID, result C
 
 	r.normalizeToNewFormat()
 
-	moduleToInsert := r.toDataModule(moduleID, optionID, result)
+	moduleToInsert := r.toDataModule(moduleID, optionID, result, source)
 
 	option, err := models.Options.GetByID(optionID)
 	if err != nil {
@@ -160,10 +160,10 @@ func (r *RaftFoundation) Get(models data.Models, moduleID uuid.UUID) (Module, er
 	return r.fromDataModule(dataModule), nil
 }
 
-func (r *RaftFoundation) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
+func (r *RaftFoundation) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption, source string) error {
 	r.normalizeToNewFormat()
 
-	module := r.toDataModule(moduleID, optionID, result)
+	module := r.toDataModule(moduleID, optionID, result, source)
 
 	option, err := models.Options.GetByID(optionID)
 	if err != nil {
@@ -181,7 +181,7 @@ func (r *RaftFoundation) Update(models data.Models, moduleID, optionID uuid.UUID
 	return models.Modules.Update(module, targets)
 }
 
-func (r *RaftFoundation) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
+func (r *RaftFoundation) toDataModule(moduleID, optionID uuid.UUID, result Consumption, source string) *data.Module {
 	moduleData := map[string]interface{}{
 		"concrete":  r.Concrete,
 		"steel":     r.Steel,
@@ -196,6 +196,7 @@ func (r *RaftFoundation) toDataModule(moduleID, optionID uuid.UUID, result Consu
 		Type:           "raft_foundation",
 		OptionID:       optionID,
 		Data:           moduleData,
+		Source:         source,
 		TotalCO2Min:    &result.CO2Min,
 		TotalCO2Max:    &result.CO2Max,
 		TotalEnergyMin: &result.EnergyMin,
@@ -218,13 +219,13 @@ func (r *RaftFoundation) fromDataModule(d *data.Module) Module {
 		UnitID:          *d.UnitID,
 	}
 
-	if val, ok := d.Data["area"].(float64); ok {
+	if val, ok := unwrapDataScalar(d.Data["area"]).(float64); ok {
 		raft.Area = val
 	}
-	if val, ok := d.Data["thickness"].(float64); ok {
+	if val, ok := unwrapDataScalar(d.Data["thickness"]).(float64); ok {
 		raft.Thickness = val
 	}
-	if val, ok := d.Data["fck"].(float64); ok {
+	if val, ok := unwrapDataScalar(d.Data["fck"]).(float64); ok {
 		raft.Fck = int(val)
 	}
 

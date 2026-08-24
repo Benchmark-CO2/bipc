@@ -137,14 +137,14 @@ func (w *ConcreteWall) Calculate() (Consumption, error) {
 	return total, nil
 }
 
-func (w *ConcreteWall) Insert(models data.Models, optionID uuid.UUID, result Consumption) (Module, error) {
+func (w *ConcreteWall) Insert(models data.Models, optionID uuid.UUID, result Consumption, source string) (Module, error) {
 	moduleID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
 	}
 
 	w.normalizeToNewFormat()
-	moduleToInsert := w.toDataModule(moduleID, optionID, result)
+	moduleToInsert := w.toDataModule(moduleID, optionID, result, source)
 
 	option, err := models.Options.GetByID(optionID)
 	if err != nil {
@@ -179,9 +179,9 @@ func (w *ConcreteWall) Get(models data.Models, moduleID uuid.UUID) (Module, erro
 	return w.fromDataModule(dataModule), nil
 }
 
-func (w *ConcreteWall) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
+func (w *ConcreteWall) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption, source string) error {
 	w.normalizeToNewFormat()
-	module := w.toDataModule(moduleID, optionID, result)
+	module := w.toDataModule(moduleID, optionID, result, source)
 
 	option, err := models.Options.GetByID(optionID)
 	if err != nil {
@@ -199,7 +199,7 @@ func (w *ConcreteWall) Update(models data.Models, moduleID, optionID uuid.UUID, 
 	return models.Modules.Update(module, targets)
 }
 
-func (w *ConcreteWall) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
+func (w *ConcreteWall) toDataModule(moduleID, optionID uuid.UUID, result Consumption, source string) *data.Module {
 	moduleData := map[string]interface{}{
 		"concrete":       w.Concrete,
 		"steel":          w.Steel,
@@ -220,6 +220,7 @@ func (w *ConcreteWall) toDataModule(moduleID, optionID uuid.UUID, result Consump
 		Type:           "concrete_wall",
 		OptionID:       optionID,
 		Data:           moduleData,
+		Source:         source,
 		TotalCO2Min:    &result.CO2Min,
 		TotalCO2Max:    &result.CO2Max,
 		TotalEnergyMin: &result.EnergyMin,

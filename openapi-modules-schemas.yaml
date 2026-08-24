@@ -19,6 +19,21 @@ components:
             - raft_foundation
             - piles_foundation
             - raft_piles_foundation
+        source:
+          type: string
+          description: |
+            Optional origin of the module data. Applied to the affected data values
+            when creating or updating a module. Known values are `api`, `plugin`,
+            `manual`, `tqs` and `ifc`, though any string is accepted on the wire.
+            API requests without an explicit source resolve to the source tagged by
+            the authentication middleware; otherwise no source tag is written for
+            changed values.
+          enum:
+            - api
+            - plugin
+            - manual
+            - tqs
+            - ifc
         data:
           oneOf:
             - $ref: "#/components/schemas/BeamColumnDataV1"
@@ -55,6 +70,21 @@ components:
             - raft_foundation
             - piles_foundation
             - raft_piles_foundation
+        source:
+          type: string
+          description: |
+            Optional origin of the module data. Applied to the affected data values
+            when creating or updating a module. Known values are `api`, `plugin`,
+            `manual`, `tqs` and `ifc`, though any string is accepted on the wire.
+            API requests without an explicit source resolve to the source tagged by
+            the authentication middleware; otherwise no source tag is written for
+            changed values.
+          enum:
+            - api
+            - plugin
+            - manual
+            - tqs
+            - ifc
         data:
           oneOf:
             - $ref: "#/components/schemas/BeamColumnDataV2"
