@@ -30,6 +30,7 @@ type Module struct {
 	RelativeEnergyMin *float64               `json:"relative_energy_min,omitempty"`
 	RelativeEnergyMax *float64               `json:"relative_energy_max,omitempty"`
 	Outdated          bool                   `json:"outdated"`
+	Completed         bool                   `json:"completed"`
 	FloorIDs          []uuid.UUID            `json:"floor_ids"`
 	FloorIndexes      []int                  `json:"-"`
 	UnitID            *uuid.UUID             `json:"unit_id,omitempty"`
@@ -703,15 +704,15 @@ func (m ModuleModel) insertTx(tx *sql.Tx, module *Module) (*Module, error) {
         INSERT INTO module (id, option_id, type, data,
 			total_co2_min, total_co2_max, total_energy_min, total_energy_max, total_material,
 			relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max,
-			outdated)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+			outdated, completed)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         RETURNING created_at, updated_at`
 
 	err = tx.QueryRowContext(context.Background(), query,
 		module.ID, module.OptionID, module.Type, jsonData,
 		module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax, module.TotalMaterial,
 		module.RelativeCO2Min, module.RelativeCO2Max, module.RelativeEnergyMin, module.RelativeEnergyMax,
-		module.Outdated,
+		module.Outdated, module.Completed,
 	).Scan(&module.CreatedAt, &module.UpdatedAt)
 
 	if err != nil {
@@ -809,6 +810,7 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 	query := `
 		SELECT 
 			m.id, m.option_id, m.type, m.data,
+			m.completed,
 			m.total_co2_min, m.total_co2_max, m.total_energy_min, m.total_energy_max, m.total_material,
 			m.relative_co2_min, m.relative_co2_max, m.relative_energy_min, m.relative_energy_max,
 			m.outdated, m.created_at, m.updated_at
@@ -817,6 +819,7 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 
 	err := m.DB.QueryRowContext(ctx, query, id).Scan(
 		&module.ID, &module.OptionID, &module.Type, &jsonData,
+		&module.Completed,
 		&module.TotalCO2Min, &module.TotalCO2Max, &module.TotalEnergyMin, &module.TotalEnergyMax, &module.TotalMaterial,
 		&module.RelativeCO2Min, &module.RelativeCO2Max, &module.RelativeEnergyMin, &module.RelativeEnergyMax,
 		&module.Outdated, &module.CreatedAt, &module.UpdatedAt,
@@ -943,6 +946,7 @@ func (m ModuleModel) updateTx(tx *sql.Tx, module *Module) error {
 			relative_co2_min = $7, relative_co2_max = $8,
 			relative_energy_min = $9, relative_energy_max = $10,
             outdated = FALSE,
+            completed = $12,
             updated_at = NOW()
 		WHERE id = $11`
 
@@ -953,7 +957,7 @@ func (m ModuleModel) updateTx(tx *sql.Tx, module *Module) error {
 		module.TotalMaterial,
 		module.RelativeCO2Min, module.RelativeCO2Max,
 		module.RelativeEnergyMin, module.RelativeEnergyMax,
-		module.ID)
+		module.ID, module.Completed)
 
 	return err
 }

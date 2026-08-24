@@ -92,8 +92,9 @@ func (c ConcreteElement) MarshalJSON() ([]byte, error) {
 }
 
 type BasicModuleData struct {
-	Type     string `json:"type"`
-	Outdated bool   `json:"outdated"`
+	Type      string `json:"type"`
+	Outdated  bool   `json:"outdated"`
+	Completed bool   `json:"completed"`
 }
 
 type Consumption struct {
@@ -515,10 +516,10 @@ type Module interface {
 	VersionContract() moduleVersionContract
 	Validate(v *validator.Validator)
 	Calculate() (Consumption, error)
-	Insert(models data.Models, optionID uuid.UUID, result Consumption, source string) (Module, error)
+	Insert(models data.Models, optionID uuid.UUID, result Consumption, source string, completed bool) (Module, error)
 	Delete(models data.Models, moduleID uuid.UUID) error
 	Get(models data.Models, moduleID uuid.UUID) (Module, error)
-	Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption, source string) error
+	Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption, source string, completed bool) error
 }
 
 func validateConcreteElement(v *validator.Validator, el ConcreteElement, fieldPrefix string) {
