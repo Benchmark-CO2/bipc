@@ -476,16 +476,20 @@ func (app *application) insertModule(module modules.Module, optionID uuid.UUID) 
 func (app *application) insertModuleWithModels(module modules.Module, optionID uuid.UUID, modelsSet data.Models, source string) (modules.Module, error) {
 	v := validator.New()
 	module.Validate(v)
-	if !v.Valid() {
-		return nil, &ValidationError{Errors: v.Errors}
-	}
+	completed := v.Valid()
 
 	result, err := module.Calculate()
 	if err != nil {
-		return nil, err
+		// A valid module that fails to calculate is a genuine error. An
+		// incomplete module is still persisted (completed=false) with zeroed
+		// consumption so creation is never blocked by validation.
+		if completed {
+			return nil, err
+		}
+		result = modules.Consumption{}
 	}
 
-	newModule, err := module.Insert(modelsSet, optionID, result, source)
+	newModule, err := module.Insert(modelsSet, optionID, result, source, completed)
 	if err != nil {
 		return nil, err
 	}
@@ -531,6 +535,7 @@ func (app *application) duplicateModule(
 		RelativeEnergyMin: originalModule.RelativeEnergyMin,
 		RelativeEnergyMax: originalModule.RelativeEnergyMax,
 		Outdated:          false,
+		Completed:         originalModule.Completed,
 		FloorIDs:          floorIDs,
 		UnitID:            unitID,
 	}
@@ -820,18 +825,18 @@ func (app *application) updateModuleHandler(w http.ResponseWriter, r *http.Reque
 
 	v := validator.New()
 	module.Validate(v)
-	if !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
-		return
-	}
+	completed := v.Valid()
 
 	result, err := module.Calculate()
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
+		if completed {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+		result = modules.Consumption{}
 	}
 
-	err = module.Update(app.models, moduleID, optionID, result, source)
+	err = module.Update(app.models, moduleID, optionID, result, source, completed)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -928,18 +933,18 @@ func (app *application) updateModuleV1Handler(w http.ResponseWriter, r *http.Req
 
 	v := validator.New()
 	module.Validate(v)
-	if !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
-		return
-	}
+	completed := v.Valid()
 
 	result, err := module.Calculate()
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
+		if completed {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+		result = modules.Consumption{}
 	}
 
-	err = module.Update(app.models, moduleID, optionID, result, source)
+	err = module.Update(app.models, moduleID, optionID, result, source, completed)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):

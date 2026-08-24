@@ -1368,6 +1368,9 @@ paths:
         creation when payload root contains modules [] with v1 module items.
 
         Supports single creation ({module: ...}) or batch creation ({modules: [...]}).
+        Incomplete modules (failed validation) are still persisted with `completed: false` and
+        consumption is computed only if the module can still be calculated; otherwise it is zeroed.
+        For valid modules, `completed` is reported as true.
       tags:
         - Modules v1
       parameters:
@@ -1480,6 +1483,7 @@ paths:
       summary: Get a module by ID
       description: |
         Compatibility endpoint. All modules are returned in v1 legacy shape. Aggregated v2-only fields are omitted in v1 responses.
+        The response includes the `completed` flag indicating whether the module data is complete.
       tags:
         - Modules v1
       parameters:
@@ -1577,6 +1581,9 @@ paths:
         structural modules. Structural modules also accept optional beam_number and slab_number fields.
         For foundation modules, unit_id may be omitted and will be automatically inferred from the unitID
         path parameter.
+        Updated modules are allowed to be incomplete (failed validation): they are
+        still persisted with `completed: false`. Consumption is zeroed only when the module
+        cannot be calculated; otherwise calculated values are kept.
       tags:
         - Modules v1
       parameters:
@@ -1633,6 +1640,9 @@ paths:
         Supports single creation ({module: ...}) or batch creation ({modules: [...]}).
         When 2 or more modules are sent, the operation uses a database transaction (30s timeout)
         ensuring all-or-nothing persistence.
+        Incomplete modules (failed validation) are still persisted with `completed: false`.
+        Consumption is zeroed only when the module cannot be calculated (partial values are kept otherwise).
+        For valid modules, `completed` is reported as true.
       tags:
         - Modules v2
       parameters:
@@ -1726,6 +1736,7 @@ paths:
       description: |
         Preferred endpoint for reads. Returns v2 response shape only.
         Note: floor_indexes is returned in v2 read responses for structural modules; floor_index (singular) is never returned.
+        The response includes the `completed` flag indicating whether the module data is complete.
       tags:
         - Modules v2
       parameters:
@@ -1784,6 +1795,8 @@ paths:
         Preferred endpoint for updates. Structural modules must use aggregated concrete/steel/form arrays with
         explicit position per item and may include optional beam_number and slab_number fields. For foundation
         modules, unit_id may be omitted and will be automatically inferred from the unitID path parameter.
+        Updated modules are allowed to be incomplete (failed validation): they are
+        still persisted with `completed: false` and zeroed consumption.
       tags:
         - Modules v2
       parameters:
