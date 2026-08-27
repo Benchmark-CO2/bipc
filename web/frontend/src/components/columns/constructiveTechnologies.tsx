@@ -11,6 +11,7 @@ type TechRow = Omit<IModuleItem, "consumption"> &
 
 export const makeConstructiveTechnologiesColumns = (
   t: Translations,
+  hasStatus: boolean = false,
 ): ColumnDef<TechRow>[] => [
   {
     accessorKey: "type",
@@ -23,22 +24,24 @@ export const makeConstructiveTechnologiesColumns = (
             {structureTypes(t)[row.original.type] || "-"}
           </span>
           <div className="ml-1 flex items-center gap-2 shrink-0">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                {isCompleted ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                ) : (
-                  <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
-                )}
-              </TooltipTrigger>
-              <TooltipContent className="max-w-[280px]">
-                <span>
-                  {isCompleted
-                    ? t.modules.badges.completed
-                    : t.modules.badges.incomplete}
-                </span>
-              </TooltipContent>
-            </Tooltip>
+            {hasStatus && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  {isCompleted ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
+                  )}
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[280px]">
+                  <span>
+                    {isCompleted
+                      ? t.modules.badges.completed
+                      : t.modules.badges.incomplete}
+                  </span>
+                </TooltipContent>
+              </Tooltip>
+            )}
             {row.original.outdated && (
               <Tooltip>
                 <TooltipTrigger asChild>
