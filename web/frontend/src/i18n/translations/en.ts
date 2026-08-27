@@ -1565,14 +1565,14 @@ export const en: Translations = {
     disciplinesGoTo: "Open Disciplines tab",
     simulationRoleMissing:
       "Simulation discipline not selected. Choose a discipline to continue.",
-    showOnlyVisible: "Show visible only",
-    showAll: "Show all",
+    showOnlyVisible: "Show active only",
+    showAll: "Archived files",
     hideFile: "Hide this file",
     showFile: "Show this file",
-    hiddenBadge: "Hidden",
+    hiddenBadge: "Hidden archived",
     hideSuccess: "File hidden successfully",
     showSuccess: "File shown successfully",
-    visibilityActionError: "Error changing file visibility",
+    visibilityActionError: "Error archiving file",
   },
   fallbacksPage: {
     title: "Manage Adapter Spreadsheets (Fallbacks)",

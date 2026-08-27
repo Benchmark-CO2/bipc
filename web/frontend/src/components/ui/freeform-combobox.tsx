@@ -31,6 +31,7 @@ interface FreeformComboboxProps {
   emptyOptionsLabel?: string;
   disabled?: boolean;
   className?: string;
+  endAdornment?: React.ReactNode;
 }
 
 export function FreeformCombobox({
@@ -42,6 +43,7 @@ export function FreeformCombobox({
   emptyOptionsLabel,
   disabled,
   className,
+  endAdornment,
 }: FreeformComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [searchInput, setSearchInput] = React.useState("");
@@ -53,7 +55,7 @@ export function FreeformCombobox({
     : false;
 
   const displayLabel = value
-    ? options.find((o) => o.value === value)?.label ?? value
+    ? (options.find((o) => o.value === value)?.label ?? value)
     : "";
 
   return (
@@ -66,10 +68,20 @@ export function FreeformCombobox({
           disabled={disabled}
           className={cn("w-full justify-between", className)}
         >
-          <span className={cn("truncate", !displayLabel && "text-muted-foreground")}>
+          <span
+            className={cn("truncate", !displayLabel && "text-muted-foreground")}
+          >
             {displayLabel || placeholder}
           </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <div className="ml-2 flex items-center gap-1.5 shrink-0">
+            {endAdornment}
+            <ChevronsUpDown
+              className={cn(
+                "h-4 w-4 opacity-50",
+                endAdornment ? "" : "opacity-50",
+              )}
+            />
+          </div>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
@@ -133,9 +145,11 @@ export function FreeformCombobox({
               </CommandGroup>
             )}
 
-            {options.length === 0 && hasCustomValue && customValueAlreadyInOptions && (
-              <CommandEmpty>{emptyOptionsLabel}</CommandEmpty>
-            )}
+            {options.length === 0 &&
+              hasCustomValue &&
+              customValueAlreadyInOptions && (
+                <CommandEmpty>{emptyOptionsLabel}</CommandEmpty>
+              )}
           </CommandList>
         </Command>
       </PopoverContent>

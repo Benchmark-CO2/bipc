@@ -546,6 +546,44 @@ export default function DrawerIFCImport({
         )
       : false;
 
+  const softwareFallbackAdornment =
+    fileType === "ifc" && software ? (
+      <SimpleTooltip
+        content={
+          softwareHasRegisteredVersions
+            ? t.drawerIFC.fallbackRegisteredBadge
+            : t.drawerIFC.fallbackGenericBadge
+        }
+      >
+        <span className="flex items-center justify-center">
+          {softwareHasRegisteredVersions ? (
+            <CheckCircle2 className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+          ) : (
+            <AlertTriangle className="h-4 w-4 text-amber-500 dark:text-amber-400" />
+          )}
+        </span>
+      </SimpleTooltip>
+    ) : null;
+
+  const versionFallbackAdornment =
+    fileType === "ifc" && version ? (
+      <SimpleTooltip
+        content={
+          exactFallbackRegistered
+            ? t.drawerIFC.fallbackRegisteredBadge
+            : t.drawerIFC.fallbackGenericBadge
+        }
+      >
+        <span className="flex items-center justify-center">
+          {exactFallbackRegistered ? (
+            <CheckCircle2 className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+          ) : (
+            <AlertTriangle className="h-4 w-4 text-amber-500 dark:text-amber-400" />
+          )}
+        </span>
+      </SimpleTooltip>
+    ) : null;
+
   const mapIfcRequestToImportedFile = (
     req: TIfcProcessorRequestListItem,
   ): ImportedIFCFile & { is_visible: boolean } => ({
@@ -819,21 +857,6 @@ export default function DrawerIFCImport({
                             </button>
                           </SimpleTooltip>
                         )}
-                        {fileType === "ifc" && software && (
-                          <Badge
-                            variant="secondary"
-                            className={cn(
-                              "ml-auto h-5 text-[10px] font-normal",
-                              softwareHasRegisteredVersions
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800"
-                                : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
-                            )}
-                          >
-                            {softwareHasRegisteredVersions
-                              ? t.drawerIFC.fallbackRegisteredBadge
-                              : t.drawerIFC.fallbackGenericBadge}
-                          </Badge>
-                        )}
                       </div>
                       {fileType === "tqs" ? (
                         <Select
@@ -867,6 +890,7 @@ export default function DrawerIFCImport({
                           emptyCustomLabel={t.drawerIFC.fallbackAddCustomPrefix}
                           emptyOptionsLabel={t.drawerIFC.fallbackEmptyOptions}
                           disabled={isLoadingIfcFallbacks}
+                          endAdornment={softwareFallbackAdornment}
                         />
                       )}
                     </div>
@@ -892,21 +916,6 @@ export default function DrawerIFCImport({
                               <Info className="h-3.5 w-3.5" />
                             </button>
                           </SimpleTooltip>
-                        )}
-                        {fileType === "ifc" && version && (
-                          <Badge
-                            variant="secondary"
-                            className={cn(
-                              "ml-auto h-5 text-[10px] font-normal",
-                              exactFallbackRegistered
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800"
-                                : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
-                            )}
-                          >
-                            {exactFallbackRegistered
-                              ? t.drawerIFC.fallbackRegisteredBadge
-                              : t.drawerIFC.fallbackGenericBadge}
-                          </Badge>
                         )}
                       </div>
                       {fileType === "tqs" ? (
@@ -943,6 +952,7 @@ export default function DrawerIFCImport({
                           emptyCustomLabel={t.drawerIFC.fallbackAddCustomPrefix}
                           emptyOptionsLabel={t.drawerIFC.fallbackEmptyOptions}
                           disabled={isLoadingIfcFallbacks || !software}
+                          endAdornment={versionFallbackAdornment}
                         />
                       )}
                     </div>
