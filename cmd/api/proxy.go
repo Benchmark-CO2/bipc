@@ -24,10 +24,27 @@ var ifcPasswordEndpoints = []struct {
 	prefix  string
 }{
 	{http.MethodPost, "/request/"},
+	{http.MethodPost, "/fallbacks/create"},
+}
+
+var ifcAdminEndpoints = []struct {
+	method  string
+	prefix  string
+}{
+	{http.MethodPost, "/fallbacks/create"},
 }
 
 func requiresIfcPassword(method, path string) bool {
 	for _, e := range ifcPasswordEndpoints {
+		if method == e.method && strings.HasPrefix(path, e.prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func requiresIfcAdmin(method, path string) bool {
+	for _, e := range ifcAdminEndpoints {
 		if method == e.method && strings.HasPrefix(path, e.prefix) {
 			return true
 		}
@@ -69,7 +86,19 @@ func (app *application) proxyHandler(proxy *httputil.ReverseProxy) http.HandlerF
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		ps := httprouter.ParamsFromContext(r.Context())
-		r.URL.Path = ps.ByName("path")
+		path := ps.ByName("path")
+		if !strings.HasPrefix(path, "/") {
+			path = "/" + path
+		}
+		r.URL.Path = path
+
+		if requiresIfcAdmin(r.Method, path) {
+			user := app.contextGetUser(r)
+			if user.Type != "admin" {
+				app.notPermittedResponse(w, r)
+				return
+			}
+		}
 
 		proxy.ServeHTTP(w, r)
 	}
