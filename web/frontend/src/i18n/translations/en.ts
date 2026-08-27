@@ -23,6 +23,7 @@ export const en: Translations = {
     ifcImportTqs: "Import from IFC/TQS",
     orLabel: "or",
     select: "Select",
+    required: "Required",
   },
   errors: {
     unexpectedError: "Unexpected error. Please try again later.",
@@ -1502,9 +1503,19 @@ export const en: Translations = {
     sectionAlreadyImportedIFC: "Use already imported IFC data",
     sectionAlreadyImportedTQS: "Use already imported TQS data",
     softwareLabel: "Which software did you use to develop?",
-    softwarePlaceholder: "Select software",
-    versionLabel: "Which version",
-    versionPlaceholder: "Version",
+    softwarePlaceholder: "Select or type the software",
+    softwareHelperTooltip:
+      "Select the software that generated the IFC file. Not in the list? Type the name manually.",
+    versionLabel: "Which version (choose the closest one)",
+    versionPlaceholder: "Select or type the version",
+    versionHelperTooltip:
+      "Select the exact software version. No exact match? Pick the closest minimum version available — the parser will use the matching adapter spreadsheet for richer extraction.",
+    fallbackRegisteredBadge: "Adapter registered",
+    fallbackGenericBadge: "Generic ISO base",
+    fallbackGenericWarning:
+      "No adapter spreadsheets registered for this software. Processing will use generic ISO base only (fewer fields extracted).",
+    fallbackAddCustomPrefix: "Use custom value",
+    fallbackEmptyOptions: "No registered options",
     processingMessageIFC:
       "Uploading IFC file. Do not close this window until the upload completes.",
     processingMessageTQS:
@@ -1562,5 +1573,34 @@ export const en: Translations = {
     hideSuccess: "File hidden successfully",
     showSuccess: "File shown successfully",
     visibilityActionError: "Error changing file visibility",
+  },
+  fallbacksPage: {
+    title: "Manage Adapter Spreadsheets (Fallbacks)",
+    subtitle:
+      "Register CSV adapter spreadsheets per software and version to improve IFC parser accuracy. Admin access only.",
+    adminOnlyTitle: "Restricted access",
+    adminOnlyDescription:
+      "This page is only accessible to platform administrators.",
+    createTitle: "Register new spreadsheet",
+    softwareLabel: "Software (manufacturer)",
+    softwarePlaceholder: "Ex.: TQS, Revit, Eberick, Cypecad",
+    versionLabel: "Exact version",
+    versionPlaceholder:
+      "Ex.: 26.1.69 | 2024.3.6 | 2026-05 [v. 18.311] | 2017.m",
+    fileLabel: "CSV spreadsheet file",
+    filePlaceholder: "Select a .csv file",
+    fileInvalidError: "Invalid format. Please select a .csv file.",
+    fileMaxSizeError: "File too large. Maximum allowed size: 5MB.",
+    submitButton: "Register spreadsheet",
+    submittingButton: "Registering...",
+    successToast: "Spreadsheet registered successfully!",
+    errorToast: "Error registering spreadsheet",
+    listTitle: "Registered spreadsheets",
+    refreshButton: "Refresh",
+    listEmpty: "No spreadsheets registered yet.",
+    listLoading: "Loading spreadsheets...",
+    listError: "Error loading registered spreadsheets.",
+    colSoftware: "Software",
+    colVersion: "Version",
   },
 };

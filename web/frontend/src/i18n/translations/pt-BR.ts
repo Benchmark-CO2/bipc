@@ -21,6 +21,7 @@ export const ptBR = {
     ifcImportTqs: "Importar de IFC/TQS",
     orLabel: "ou",
     select: "Selecione",
+    required: "Obrigatório",
   },
   errors: {
     unexpectedError: "Erro inesperado. Tente novamente mais tarde.",
@@ -1514,9 +1515,19 @@ export const ptBR = {
     sectionAlreadyImportedIFC: "Utilizar dados de IFC já importados",
     sectionAlreadyImportedTQS: "Utilizar dados de Arquivo TQS já importados",
     softwareLabel: "Qual software utilizou para desenvolver?",
-    softwarePlaceholder: "Selecione o software",
-    versionLabel: "Qual versão",
-    versionPlaceholder: "Versão",
+    softwarePlaceholder: "Selecione ou digite o software",
+    softwareHelperTooltip:
+      "Selecione o software que gerou o arquivo IFC. Não está na lista? Digite o nome manualmente.",
+    versionLabel: "Qual versão (escolha a mais próxima)",
+    versionPlaceholder: "Selecione ou digite a versão",
+    versionHelperTooltip:
+      "Selecione a versão exata do software. Não achou a versão exata? Escolha a versão mínima mais próxima disponível — o parser usará a planilha de adaptação correspondente para extrair mais dados.",
+    fallbackRegisteredBadge: "Planilha cadastrada",
+    fallbackGenericBadge: "Base ISO genérica",
+    fallbackGenericWarning:
+      "Sem planilhas cadastradas para este software. O processamento usará a base ISO genérica (menos informações extraídas).",
+    fallbackAddCustomPrefix: "Usar valor personalizado",
+    fallbackEmptyOptions: "Sem opções cadastradas",
     processingMessageIFC:
       "Carregando arquivo IFC. Não feche essa janela até o upload completar.",
     processingMessageTQS:
@@ -1577,6 +1588,35 @@ export const ptBR = {
     hideSuccess: "Arquivo ocultado com sucesso",
     showSuccess: "Arquivo exibido com sucesso",
     visibilityActionError: "Erro ao alterar visibilidade do arquivo",
+  },
+  fallbacksPage: {
+    title: "Gerenciar Planilhas de Adaptação (Fallbacks)",
+    subtitle:
+      "Cadastre planilhas CSV de adaptação por software e versão para melhorar a precisão do parser IFC. Acesso restrito a administradores.",
+    adminOnlyTitle: "Acesso restrito",
+    adminOnlyDescription:
+      "Esta página é acessível apenas para administradores da plataforma.",
+    createTitle: "Cadastrar nova planilha",
+    softwareLabel: "Software (fabricante)",
+    softwarePlaceholder: "Ex.: TQS, Revit, Eberick, Cypecad",
+    versionLabel: "Versão exata",
+    versionPlaceholder:
+      "Ex.: 26.1.69 | 2024.3.6 | 2026-05 [v. 18.311] | 2017.m",
+    fileLabel: "Arquivo CSV da planilha",
+    filePlaceholder: "Selecione um arquivo .csv",
+    fileInvalidError: "Formato inválido. Selecione um arquivo .csv.",
+    fileMaxSizeError: "Arquivo muito grande. Tamanho máximo permitido: 5MB.",
+    submitButton: "Cadastrar planilha",
+    submittingButton: "Cadastrando...",
+    successToast: "Planilha cadastrada com sucesso!",
+    errorToast: "Erro ao cadastrar planilha",
+    listTitle: "Planilhas cadastradas",
+    refreshButton: "Atualizar",
+    listEmpty: "Nenhuma planilha cadastrada ainda.",
+    listLoading: "Carregando planilhas...",
+    listError: "Erro ao carregar planilhas cadastradas.",
+    colSoftware: "Software",
+    colVersion: "Versão",
   },
 } as const;
 

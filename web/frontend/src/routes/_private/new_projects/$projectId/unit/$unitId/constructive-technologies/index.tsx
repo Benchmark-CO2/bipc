@@ -586,7 +586,7 @@ function RouteComponent() {
   const newColumns: ColumnDef<
     Omit<IModuleItem, "consumption"> & TConsumption & { option_id: string }
   >[] = [
-    ...makeConstructiveTechnologiesColumns(t),
+    ...makeConstructiveTechnologiesColumns(t, true),
     {
       id: "actions",
       header: "",

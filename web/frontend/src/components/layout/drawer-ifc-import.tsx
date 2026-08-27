@@ -9,6 +9,7 @@ import { getProjectByUUID } from "@/actions/projects/getProject";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslation } from "@/i18n";
+import { Translations } from "@/i18n/translations/pt-BR";
 import { cn } from "@/lib/utils";
 import {
   TIfcProcessorAggregatedResult,
@@ -31,6 +32,7 @@ import {
   Eye,
   EyeOff,
   CheckCircle2,
+  Info,
 } from "lucide-react";
 import { useMemo, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -52,6 +54,7 @@ import {
 } from "../ui/select";
 import { Checkbox } from "../ui/checkbox";
 import { SimpleTooltip } from "../ui/simple-tooltip";
+import { ComboboxOption, FreeformCombobox } from "../ui/freeform-combobox";
 import DrawerStepperIFC from "./drawer-stepper-ifc";
 
 // ---------------------------------------------------------------------------
@@ -309,6 +312,7 @@ export default function DrawerIFCImport({
 
   const isMobile = useIsMobile();
   const { t } = useTranslation();
+  const translations = t as unknown as Translations;
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const clientId = user?.id ?? "";
@@ -529,6 +533,18 @@ export default function DrawerIFCImport({
     fileType === "tqs" ? MOCK_SOFTWARE_TQS : ifcSoftwareOptions;
   const versionOptions =
     fileType === "tqs" ? MOCK_VERSIONS_TQS : ifcVersionOptions;
+
+  const softwareHasRegisteredVersions: boolean =
+    fileType === "ifc" && software !== ""
+      ? (ifcFallbacksRaw ?? []).some((f) => f.manufacturer === software)
+      : false;
+
+  const exactFallbackRegistered: boolean =
+    fileType === "ifc" && software !== "" && version !== ""
+      ? (ifcFallbacksRaw ?? []).some(
+          (f) => f.manufacturer === software && f.version === version,
+        )
+      : false;
 
   const mapIfcRequestToImportedFile = (
     req: TIfcProcessorRequestListItem,
@@ -779,104 +795,171 @@ export default function DrawerIFCImport({
                 </h3>
 
                 <div className="flex flex-col gap-4">
-                  {/* Software + Version selects */}
-                  <div className="grid grid-cols-[2fr_1fr] gap-3 items-start">
+                  {/* Software + Version comboboxes */}
+                  <div className="grid grid-cols-[1fr_1fr] gap-3 items-start">
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm text-muted-foreground">
-                        {t.drawerIFC.softwareLabel}{" "}
+                      <div className="flex items-center gap-1.5">
+                        <label className="text-sm text-muted-foreground">
+                          {t.drawerIFC.softwareLabel}{" "}
+                          {fileType === "ifc" && (
+                            <span className="text-destructive">*</span>
+                          )}
+                        </label>
                         {fileType === "ifc" && (
-                          <span className="text-destructive">*</span>
+                          <SimpleTooltip
+                            content={t.drawerIFC.softwareHelperTooltip}
+                            className="max-w-40"
+                          >
+                            <button
+                              type="button"
+                              tabIndex={-1}
+                              className="text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <Info className="h-3.5 w-3.5" />
+                            </button>
+                          </SimpleTooltip>
                         )}
-                      </label>
-                      <Select
-                        value={software}
-                        onValueChange={handleSoftwareChange}
-                        disabled={
-                          fileType === "tqs" ||
-                          (fileType === "ifc" && isLoadingIfcFallbacks)
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue
-                            placeholder={
-                              fileType === "ifc" && isLoadingIfcFallbacks
-                                ? t.drawerIFC.loadingSoftwareVersions
-                                : t.drawerIFC.softwarePlaceholder
-                            }
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {fileType === "ifc" && isLoadingIfcFallbacks ? (
-                            <SelectItem value="__loading__" disabled>
-                              {t.drawerIFC.loadingSoftwareVersions}
-                            </SelectItem>
-                          ) : fileType === "ifc" && isIfcFallbacksError ? (
-                            <SelectItem value="__error__" disabled>
-                              {t.common.unknownError}
-                            </SelectItem>
-                          ) : fileType === "ifc" &&
-                            softwareOptions.length === 0 ? (
-                            <SelectItem value="__empty__" disabled>
-                              {t.drawerIFC.noSoftwareVersions}
-                            </SelectItem>
-                          ) : (
-                            softwareOptions.map((opt) => (
+                        {fileType === "ifc" && software && (
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              "ml-auto h-5 text-[10px] font-normal",
+                              softwareHasRegisteredVersions
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800"
+                                : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
+                            )}
+                          >
+                            {softwareHasRegisteredVersions
+                              ? t.drawerIFC.fallbackRegisteredBadge
+                              : t.drawerIFC.fallbackGenericBadge}
+                          </Badge>
+                        )}
+                      </div>
+                      {fileType === "tqs" ? (
+                        <Select
+                          value={software}
+                          onValueChange={handleSoftwareChange}
+                          disabled
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {MOCK_SOFTWARE_TQS.map((opt) => (
                               <SelectItem key={opt.value} value={opt.value}>
                                 {opt.label}
                               </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <FreeformCombobox
+                          value={software}
+                          onChange={handleSoftwareChange}
+                          options={
+                            softwareOptions as unknown as ComboboxOption[]
+                          }
+                          placeholder={
+                            isLoadingIfcFallbacks
+                              ? t.drawerIFC.loadingSoftwareVersions
+                              : t.drawerIFC.softwarePlaceholder
+                          }
+                          emptyCustomLabel={t.drawerIFC.fallbackAddCustomPrefix}
+                          emptyOptionsLabel={t.drawerIFC.fallbackEmptyOptions}
+                          disabled={isLoadingIfcFallbacks}
+                        />
+                      )}
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm text-muted-foreground">
-                        {t.drawerIFC.versionLabel}{" "}
+                      <div className="flex items-center gap-1.5">
+                        <label className="text-sm text-muted-foreground">
+                          {t.drawerIFC.versionLabel}{" "}
+                          {fileType === "ifc" && (
+                            <span className="text-destructive">*</span>
+                          )}
+                        </label>
                         {fileType === "ifc" && (
-                          <span className="text-destructive">*</span>
+                          <SimpleTooltip
+                            content={t.drawerIFC.versionHelperTooltip}
+                            className="max-w-40"
+                          >
+                            <button
+                              type="button"
+                              tabIndex={-1}
+                              className="text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <Info className="h-3.5 w-3.5" />
+                            </button>
+                          </SimpleTooltip>
                         )}
-                      </label>
-                      <Select
-                        value={version}
-                        onValueChange={setVersion}
-                        disabled={
-                          fileType === "tqs" ||
-                          !software ||
-                          (fileType === "ifc" && isLoadingIfcFallbacks)
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue
-                            placeholder={
-                              fileType === "ifc" && isLoadingIfcFallbacks
-                                ? t.drawerIFC.loadingSoftwareVersions
-                                : t.drawerIFC.versionPlaceholder
-                            }
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {fileType === "ifc" && isLoadingIfcFallbacks ? (
-                            <SelectItem value="__loading__" disabled>
-                              {t.drawerIFC.loadingSoftwareVersions}
-                            </SelectItem>
-                          ) : fileType === "ifc" &&
-                            !software ? null : fileType === "ifc" &&
-                            versionOptions.length === 0 ? (
-                            <SelectItem value="__empty__" disabled>
-                              {t.drawerIFC.noSoftwareVersions}
-                            </SelectItem>
-                          ) : (
-                            versionOptions.map((opt) => (
+                        {fileType === "ifc" && version && (
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              "ml-auto h-5 text-[10px] font-normal",
+                              exactFallbackRegistered
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800"
+                                : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
+                            )}
+                          >
+                            {exactFallbackRegistered
+                              ? t.drawerIFC.fallbackRegisteredBadge
+                              : t.drawerIFC.fallbackGenericBadge}
+                          </Badge>
+                        )}
+                      </div>
+                      {fileType === "tqs" ? (
+                        <Select
+                          value={version}
+                          onValueChange={setVersion}
+                          disabled
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {MOCK_VERSIONS_TQS.map((opt) => (
                               <SelectItem key={opt.value} value={opt.value}>
                                 {opt.label}
                               </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <FreeformCombobox
+                          value={version}
+                          onChange={setVersion}
+                          options={
+                            versionOptions as unknown as ComboboxOption[]
+                          }
+                          placeholder={
+                            isLoadingIfcFallbacks
+                              ? t.drawerIFC.loadingSoftwareVersions
+                              : !software
+                                ? t.drawerIFC.softwarePlaceholder
+                                : t.drawerIFC.versionPlaceholder
+                          }
+                          emptyCustomLabel={t.drawerIFC.fallbackAddCustomPrefix}
+                          emptyOptionsLabel={t.drawerIFC.fallbackEmptyOptions}
+                          disabled={isLoadingIfcFallbacks || !software}
+                        />
+                      )}
                     </div>
                   </div>
+
+                  {fileType === "ifc" &&
+                    software &&
+                    !softwareHasRegisteredVersions && (
+                      <div className="bg-yellow-50 dark:bg-yellow-950/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-4">
+                        <div className="flex gap-3">
+                          <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0 mt-0.5" />
+                          <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                            {t.drawerIFC.fallbackGenericWarning}
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                   {/* Drop zone */}
                   <DropZone
@@ -935,18 +1018,6 @@ export default function DrawerIFCImport({
 
                   {/* Action buttons */}
                   <div className="flex items-center justify-between gap-2">
-                    {fileType === "ifc" ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled
-                        className="text-sm"
-                      >
-                        {t.drawerIFC.manageFiles}
-                      </Button>
-                    ) : (
-                      <div />
-                    )}
                     <Button
                       variant="bipc"
                       size="sm"
