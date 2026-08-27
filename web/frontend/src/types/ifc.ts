@@ -23,6 +23,10 @@ export interface TIfcProcessorFallbacksResponse {
   version_list: TIfcProcessorFallbackVersion[];
 }
 
+export interface TIfcProcessorCreateFallbackResponse {
+  fallback_url: string;
+}
+
 export interface TIfcProcessorCreateRequestResponse {
   request_id: string;
   ifc_url: string;
