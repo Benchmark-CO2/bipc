@@ -721,24 +721,35 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       });
   }, [data.length, drawChart, selectedBarIds.size, updateBrushCount]);
 
-  useEffect(() => {
+useEffect(() => {
     if (!brushRef.current || _width <= 0 || _height <= 0) return;
     const brush = d3.brushX().extent([[0, 0], [_width, _height]]).on("end", (event) => {
       if (!event.selection) return;
-      const [s0, s1] = event.selection; const tr = transformRef.current;
-      const u0 = (s0 - tr.x) / tr.kx; const u1 = (s1 - tr.x) / tr.kx;
+      
+      const [s0, s1] = event.selection; 
+      const tr = transformRef.current;
+      const u0 = (s0 - tr.x) / tr.kx; 
+      const u1 = (s1 - tr.x) / tr.kx;
 
       let new_kx = Math.min(50, Math.max(1, _width / (u1 - u0)));
-      let new_x = Math.min(0, Math.max(-u0 * new_kx, _width * (1 - 1.1 * new_kx)));
+      
+      // NOVO: Calcula o espaço restante para centralizar o zoom caso atinja o limite de 50x
+      let centerOffset = (_width - (u1 - u0) * new_kx) / 2;
+      let target_x = -u0 * new_kx + centerOffset;
+
+      // Aplica o Clamp mantendo a centralização
+      let new_x = Math.min(0, Math.max(target_x, _width * (1 - 1.1 * new_kx)));
+      
       transformRef.current = { ...tr, kx: new_kx, x: new_x };
 
-      setHasZoomed(prev => prev === true ? true : true); // Evita render desnecessário
+      setHasZoomed(true);
       d3.select(brushRef.current as SVGGElement).call(brush.move as any, null);
       setIsBrushActive(false);
 
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = requestAnimationFrame(drawChart);
     });
+    
     d3.select(brushRef.current).call(brush as any);
   }, [_width, _height, drawChart]);
 
@@ -879,7 +890,18 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             )}
           </div>
 
-          <svg className="absolute z-20" style={{ width: _width, height: _height, left: margin.left, top: margin.top, display: isBrushActive ? "block" : "none" }}>
+          <svg 
+            className="absolute z-20" 
+            width={_width}
+            height={_height}
+            viewBox={`0 0 ${_width} ${_height}`}
+            style={{ 
+              left: margin.left, 
+              top: (margin.top * 4) + 3 , 
+              visibility: isBrushActive ? "visible" : "hidden",
+              pointerEvents: isBrushActive ? "auto" : "none"
+            }}
+          >
             <g ref={brushRef} />
           </svg>
 
