@@ -117,29 +117,29 @@ const UnitsSummary = ({
       }));
 
       const typeNewItems = newItems.map((item) => item[t]);
-      
+
       let projectTotalItem = null;
       if (project?.consumption?.total) {
         projectTotalItem = {
           id: "total",
           y: 0,
           label: "Projeto completo",
-          ...(t === "material" 
+          ...(t === "material"
             ? {
-                value: project.consumption.total.material || 0,
-                min: project.consumption.total.material || 0,
-                max: project.consumption.total.material || 0,
-              }
+              value: project.consumption.total.material || 0,
+              min: project.consumption.total.material || 0,
+              max: project.consumption.total.material || 0,
+            }
             : {
-                min: project.consumption.total[`${t}_min`] || 0,
-                max: project.consumption.total[`${t}_max`] || 0,
-              }
+              min: project.consumption.total[`${t}_min`] || 0,
+              max: project.consumption.total[`${t}_max`] || 0,
+            }
           )
         };
       }
 
-      const newDataItems = projectTotalItem 
-        ? [...managedData, ...typeNewItems, projectTotalItem] 
+      const newDataItems = projectTotalItem
+        ? [...managedData, ...typeNewItems, projectTotalItem]
         : [...managedData, ...typeNewItems];
 
       const minDataArr = newDataItems.map((d) => d.min ?? d.value ?? 0);
@@ -177,7 +177,7 @@ const UnitsSummary = ({
           V = (c5Value - C) + (r5Value - R) / 2;
 
           if (V < 0) {
-            V = (C + R) / 2; 
+            V = (C + R) / 2;
           }
         }
       }
@@ -208,11 +208,11 @@ const UnitsSummary = ({
   };
 
   // ── 2. Extrai o Teto (MAX) do Benchmark para travar a escala do Gráfico da Esquerda ──
-const benchmarkMax = useMemo(() => {
+  const benchmarkMax = useMemo(() => {
     const getMax = (typeKey: 'co2' | 'energy' | 'material') => {
       // Usa a sua função de normalização para garantir que 'series' seja sempre um Array
       const series = normalizeBenchmarkSeries(data.benchmark?.[typeKey]) || [];
-      
+
       if (series.length === 0) return 0;
 
       if (typeKey === 'material') {
@@ -257,7 +257,7 @@ const benchmarkMax = useMemo(() => {
   const [selectedSubTab, setSelectedSubTab] = useState<string>(t.summary.buildings);
 
   const allPossibleIds = ["total", ...filteredUnits.map((f) => f.id)];
-  
+
   const selectAll = () => {
     if (selectedProjects.length >= allPossibleIds.length) {
       setSelectedProjects([]);
@@ -272,9 +272,9 @@ const benchmarkMax = useMemo(() => {
     const buildChartData = (consumptions: any) => {
       if (!consumptions) return [];
 
-      const co2Row: Record<string, any> = { name: "CO₂ (kg)" };
-      const energyRow: Record<string, any> = { name: "Energia (MJ)" };
-      const materialRow: Record<string, any> = { name: `Material (${unitsOfMeasure.material || 'kg'})` };
+      const co2Row: Record<string, any> = { name: t.benchmark.chartTypes.emission.co2Label, id: 'co2' };
+      const energyRow: Record<string, any> = { name: t.benchmark.chartTypes.emission.energyLabel, id: 'energy' };
+      const materialRow: Record<string, any> = { name: t.benchmark.chartTypes.emission.materialLabel, id: 'material' };
 
       Object.entries(consumptions).forEach(([key, values]) => {
         if (key !== "total") {
@@ -295,7 +295,7 @@ const benchmarkMax = useMemo(() => {
     if (!projectConsumptionSource) {
       projectConsumptionSource = { total: { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0, material: 0 } };
       let unitCount = 0;
-      
+
       filteredUnits.forEach(u => {
         if (u.consumptions?.total) {
           projectConsumptionSource.total.co2_min += (u.consumptions.total.co2_min || 0);
@@ -348,7 +348,7 @@ const benchmarkMax = useMemo(() => {
     }
   };
 
-  const projectArea = project?.area || project?.built_area || 1; 
+  const projectArea = project?.area || project?.built_area || 1;
 
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
@@ -401,10 +401,10 @@ const benchmarkMax = useMemo(() => {
         <div className='flex gap-4 items-start'>
           <div className='w-1/3 flex-shrink-0 mt-0 flex flex-col'>
             {/* O EmissionsSection agora recebe a âncora do benchmarkMáximo para não distorcer o eixo X */}
-            <EmissionsSection 
-              data={projectEmissionsData} 
-              selected={selectedProjects} 
-              onChange={onChangeProjectSelection} 
+            <EmissionsSection
+              data={projectEmissionsData}
+              selected={selectedProjects}
+              onChange={onChangeProjectSelection}
               benchmarkMax={benchmarkMax}
             />
           </div>

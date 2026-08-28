@@ -713,6 +713,11 @@ export const ptBR = {
         xAxisLabelCarbon: "Consumo Unitário de Materiais - CUM (m³/m²)",
         xAxisLabelEnergy: "Consumo Unitário de Materiais - CUM (m³/m²)",
       },
+      emission: {
+        co2Label: "CO₂ (kg)",
+        energyLabel: "Energia (MJ)",
+        materialLabel: "Material (m³/m²)",
+      }
     },
     chartPlaceholder: "Gráfico",
     loadingData: "Carregando dados...",

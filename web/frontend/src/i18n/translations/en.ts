@@ -704,6 +704,11 @@ export const en: Translations = {
         xAxisLabelCarbon: "Efficiency",
         xAxisLabelEnergy: "Energy Consumption",
       },
+      emission: {
+        co2Label: "CO₂ (kg)",
+        energyLabel: "Energy (MJ)",
+        materialLabel: "Material (m³/m²)",
+      },
       material: {
         name: "UMC",
         yAxisLabel: "Project Classification",
