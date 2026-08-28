@@ -1561,8 +1561,14 @@ export const en: Translations = {
     disciplineLabel: "Discipline (for simulation creation)",
     disciplinePlaceholder: "Select the discipline",
     noDisciplinesHint:
-      "No simulation disciplines registered in this project. Create a discipline under the Disciplines tab before importing files.",
+      "No simulation disciplines registered in this project. Create a discipline before importing files.",
     disciplinesGoTo: "Open Disciplines tab",
+    newDisciplineLink: "Register new discipline",
+    geometryIncludedLabel: "Geometry calculation included",
+    geometrySkippedLabel:
+      "Geometry calculation skipped (generic ISO extraction)",
+    geometryIncludedInline: "with geometry calculation",
+    geometrySkippedInline: "without geometry calculation",
     simulationRoleMissing:
       "Simulation discipline not selected. Choose a discipline to continue.",
     showOnlyVisible: "Show active only",

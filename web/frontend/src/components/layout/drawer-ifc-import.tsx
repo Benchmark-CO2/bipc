@@ -22,7 +22,6 @@ import { dateUtils } from "@/utils/date";
 import { normalizeIfcRequestListItem } from "@/utils/ifcStepper";
 import { parseApiError } from "@/utils/parseApiError";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
   FileUp,
@@ -33,6 +32,7 @@ import {
   EyeOff,
   CheckCircle2,
   Info,
+  Plus,
 } from "lucide-react";
 import { useMemo, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -56,6 +56,7 @@ import { Checkbox } from "../ui/checkbox";
 import { SimpleTooltip } from "../ui/simple-tooltip";
 import { ComboboxOption, FreeformCombobox } from "../ui/freeform-combobox";
 import DrawerStepperIFC from "./drawer-stepper-ifc";
+import DrawerFormDisciplines from "./drawer-form-disciplines";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -84,6 +85,7 @@ type ImportedIFCFile = {
   date: string;
   status: TIfcProcessorImportStatus;
   errorMessage?: string | null;
+  calculate_geometries: boolean;
 };
 
 const MOCK_SOFTWARE_TQS = [{ value: "tqs", label: "TQS" }];
@@ -108,7 +110,7 @@ function FileTypeTabs({
   const { t } = useTranslation();
   const fileTypes = availableFileTypes ?? (["ifc", "tqs"] as FileType[]);
   return (
-    <div className="flex items-center gap-1 border border-gray-200 dark:border-gray-700 rounded-lg p-1 w-fit">
+    <div className="flex items-center gap-1 border border-gray-200 dark:border-gray-700 rounded-lg p-1 w-full">
       {fileTypes.map((ft) => {
         const isDisabled = disabledFileTypes?.includes(ft);
         return (
@@ -118,7 +120,7 @@ function FileTypeTabs({
             onClick={() => !isDisabled && onChange(ft)}
             disabled={isDisabled}
             className={cn(
-              "px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-150",
+              "flex-1 px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-150 cursor-pointer",
               value === ft
                 ? "bg-primary text-white shadow-sm"
                 : isDisabled
@@ -245,16 +247,18 @@ function DropZone({
           <FileUp className="h-5 w-5" />
           <span className="max-w-xs truncate">{file.name}</span>
           <SimpleTooltip content={t.drawerIFC.removeFile}>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={(e) => {
                 e.stopPropagation();
                 onFileChange(null);
               }}
-              className="ml-1 text-muted-foreground hover:text-destructive"
+              className="ml-1 h-7 w-7 text-muted-foreground hover:text-destructive"
             >
               <X className="h-4 w-4" />
-            </button>
+            </Button>
           </SimpleTooltip>
         </div>
       ) : (
@@ -291,7 +295,7 @@ export default function DrawerIFCImport({
   triggerComponent,
 }: DrawerIFCImportProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [fileType, setFileType] = useState<FileType>("tqs");
+  const [fileType, setFileType] = useState<FileType>("ifc");
   const [software, setSoftware] = useState("");
   const [version, setVersion] = useState("");
   const [calculateGeometries, setCalculateGeometries] = useState(true);
@@ -316,7 +320,6 @@ export default function DrawerIFCImport({
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const clientId = user?.id ?? "";
-  const navigate = useNavigate();
 
   const hasFileTypeTabs = mode === "simulation";
   const canUploadTqs = mode === "simulation" && !!unitId && !!roleId;
@@ -339,6 +342,23 @@ export default function DrawerIFCImport({
   // Quando roleId prop existe (mode simulation), NÃO mostra o select e usa o prop.
   const needsRolePrompt = !roleId;
   const effectiveRoleId = roleId ?? selectedRoleId;
+
+  // Callback disparado logo após DrawerFormDisciplines criar disciplina com sucesso.
+  // A invalidacao da query ["project", projectId] ja acontece no proprio drawer,
+  // entao simulationRoles sera atualizado; aqui forçamos a selecao automatica
+  // da 1a discipline (que sera a recem-criada quando a lista antes era vazia).
+  const handleDisciplineCreated = () => {
+    if (!needsRolePrompt) return;
+    const currentRoles =
+      (queryClient.getQueryData<{ data?: { project?: { roles?: TRole[] } } }>([
+        "project",
+        projectId,
+      ])?.data?.project?.roles as TRole[] | undefined) ?? [];
+    const sims = currentRoles.filter((r) => r.simulation);
+    if (sims.length > 0) {
+      setSelectedRoleId(sims[0]!.id);
+    }
+  };
 
   // Pré-selecionar a 1ª discipline simulation quando abrir e nada selecionado,
   // OU quando o roleId selecionado não existe mais na lista (ex.: disciplina apagada).
@@ -593,6 +613,7 @@ export default function DrawerIFCImport({
     status: req.status,
     errorMessage: req.error_message,
     is_visible: req.is_visible,
+    calculate_geometries: req.calculate_geometries,
   });
 
   const ifcImportedFiles: (ImportedIFCFile & { is_visible: boolean })[] = (
@@ -834,48 +855,33 @@ export default function DrawerIFCImport({
 
                 <div className="flex flex-col gap-4">
                   {/* Software + Version comboboxes */}
-                  <div className="grid grid-cols-[1fr_1fr] gap-3 items-start">
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <label className="text-sm text-muted-foreground">
-                          {t.drawerIFC.softwareLabel}{" "}
+                  {fileType !== "tqs" && (
+                    <div className="grid grid-cols-[1fr_1fr] gap-3 items-start">
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-sm text-muted-foreground">
+                            {t.drawerIFC.softwareLabel}{" "}
+                            {fileType === "ifc" && (
+                              <span className="text-destructive">*</span>
+                            )}
+                          </label>
                           {fileType === "ifc" && (
-                            <span className="text-destructive">*</span>
-                          )}
-                        </label>
-                        {fileType === "ifc" && (
-                          <SimpleTooltip
-                            content={t.drawerIFC.softwareHelperTooltip}
-                            className="max-w-40"
-                          >
-                            <button
-                              type="button"
-                              tabIndex={-1}
-                              className="text-muted-foreground hover:text-foreground transition-colors"
+                            <SimpleTooltip
+                              content={t.drawerIFC.softwareHelperTooltip}
+                              className="max-w-40"
                             >
-                              <Info className="h-3.5 w-3.5" />
-                            </button>
-                          </SimpleTooltip>
-                        )}
-                      </div>
-                      {fileType === "tqs" ? (
-                        <Select
-                          value={software}
-                          onValueChange={handleSoftwareChange}
-                          disabled
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {MOCK_SOFTWARE_TQS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                tabIndex={-1}
+                                className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                              >
+                                <Info className="h-3.5 w-3.5" />
+                              </Button>
+                            </SimpleTooltip>
+                          )}
+                        </div>
                         <FreeformCombobox
                           value={software}
                           onChange={handleSoftwareChange}
@@ -892,50 +898,33 @@ export default function DrawerIFCImport({
                           disabled={isLoadingIfcFallbacks}
                           endAdornment={softwareFallbackAdornment}
                         />
-                      )}
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <label className="text-sm text-muted-foreground">
-                          {t.drawerIFC.versionLabel}{" "}
-                          {fileType === "ifc" && (
-                            <span className="text-destructive">*</span>
-                          )}
-                        </label>
-                        {fileType === "ifc" && (
-                          <SimpleTooltip
-                            content={t.drawerIFC.versionHelperTooltip}
-                            className="max-w-40"
-                          >
-                            <button
-                              type="button"
-                              tabIndex={-1}
-                              className="text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                              <Info className="h-3.5 w-3.5" />
-                            </button>
-                          </SimpleTooltip>
-                        )}
                       </div>
-                      {fileType === "tqs" ? (
-                        <Select
-                          value={version}
-                          onValueChange={setVersion}
-                          disabled
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {MOCK_VERSIONS_TQS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
+
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-sm text-muted-foreground">
+                            {t.drawerIFC.versionLabel}{" "}
+                            {fileType === "ifc" && (
+                              <span className="text-destructive">*</span>
+                            )}
+                          </label>
+                          {fileType === "ifc" && (
+                            <SimpleTooltip
+                              content={t.drawerIFC.versionHelperTooltip}
+                              className="max-w-40"
+                            >
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                tabIndex={-1}
+                                className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                              >
+                                <Info className="h-3.5 w-3.5" />
+                              </Button>
+                            </SimpleTooltip>
+                          )}
+                        </div>
                         <FreeformCombobox
                           value={version}
                           onChange={setVersion}
@@ -954,9 +943,9 @@ export default function DrawerIFCImport({
                           disabled={isLoadingIfcFallbacks || !software}
                           endAdornment={versionFallbackAdornment}
                         />
-                      )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {fileType === "ifc" &&
                     software &&
@@ -1027,7 +1016,7 @@ export default function DrawerIFCImport({
                   )}
 
                   {/* Action buttons */}
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center justify-end gap-2">
                     <Button
                       variant="bipc"
                       size="sm"
@@ -1110,6 +1099,25 @@ export default function DrawerIFCImport({
                               )}
                             </SelectContent>
                           </Select>
+                          <div className="flex items-center justify-end pt-0.5">
+                            <DrawerFormDisciplines
+                              componentTrigger={
+                                <Button
+                                  type="button"
+                                  variant="link"
+                                  size="sm"
+                                  className="gap-1 px-0 h-auto text-xs text-primary hover:text-primary/80 font-medium inline-flex items-center"
+                                >
+                                  <Plus className="h-3 w-3" />
+                                  {t.drawerIFC.newDisciplineLink}
+                                </Button>
+                              }
+                              projectId={projectId}
+                              unitId={unitId}
+                              roles={simulationRoles.map((r) => r.name)}
+                              onCreateSuccess={handleDisciplineCreated}
+                            />
+                          </div>
                         </div>
                       )}
 
@@ -1124,30 +1132,38 @@ export default function DrawerIFCImport({
                               <span className="text-destructive">*</span>
                             </label>
                             <div className="flex items-center gap-1 border border-gray-200 dark:border-gray-700 rounded-md p-0.5">
-                              <button
+                              <Button
                                 type="button"
+                                variant={
+                                  !showAllIfcRequests ? "default" : "ghost"
+                                }
+                                size="sm"
                                 onClick={() => setShowAllIfcRequests(false)}
                                 className={cn(
-                                  "px-2 py-1 text-xs font-medium rounded-sm transition-all",
+                                  "h-auto px-2 py-1 text-xs font-medium rounded-sm transition-all",
                                   !showAllIfcRequests
-                                    ? "bg-primary text-white"
+                                    ? "bg-primary text-white shadow-none hover:bg-primary hover:text-white"
                                     : "text-muted-foreground hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-800",
                                 )}
                               >
                                 {t.drawerIFC.showOnlyVisible}
-                              </button>
-                              <button
+                              </Button>
+                              <Button
                                 type="button"
+                                variant={
+                                  showAllIfcRequests ? "default" : "ghost"
+                                }
+                                size="sm"
                                 onClick={() => setShowAllIfcRequests(true)}
                                 className={cn(
-                                  "px-2 py-1 text-xs font-medium rounded-sm transition-all",
+                                  "h-auto px-2 py-1 text-xs font-medium rounded-sm transition-all",
                                   showAllIfcRequests
-                                    ? "bg-primary text-white"
+                                    ? "bg-primary text-white shadow-none hover:bg-primary hover:text-white"
                                     : "text-muted-foreground hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-800",
                                 )}
                               >
                                 {t.drawerIFC.showAll}
-                              </button>
+                              </Button>
                             </div>
                           </div>
 
@@ -1190,6 +1206,20 @@ export default function DrawerIFCImport({
                                       <span className="truncate text-sm font-medium text-foreground min-w-0">
                                         {f.name}
                                       </span>
+                                      <span
+                                        className={cn(
+                                          "text-xs shrink-0 font-medium",
+                                          f.calculate_geometries
+                                            ? "text-emerald-600 dark:text-emerald-400"
+                                            : "text-amber-600 dark:text-amber-400",
+                                        )}
+                                      >
+                                        (
+                                        {f.calculate_geometries
+                                          ? t.drawerIFC.geometryIncludedInline
+                                          : t.drawerIFC.geometrySkippedInline}
+                                        )
+                                      </span>
                                       {!f.is_visible && (
                                         <Badge
                                           variant="secondary"
@@ -1210,8 +1240,10 @@ export default function DrawerIFCImport({
                                         : t.drawerIFC.showFile
                                     }
                                   >
-                                    <button
+                                    <Button
                                       type="button"
+                                      variant="ghost"
+                                      size="icon"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         if (f.is_visible) {
@@ -1224,7 +1256,7 @@ export default function DrawerIFCImport({
                                         isHidingIfcRequest ||
                                         isShowingIfcRequest
                                       }
-                                      className="ml-auto shrink-0 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-muted-foreground hover:text-foreground transition-colors"
+                                      className="ml-auto shrink-0 h-8 w-8 p-1 text-muted-foreground hover:text-foreground"
                                     >
                                       {isHidingIfcRequest ||
                                       isShowingIfcRequest ? (
@@ -1234,7 +1266,7 @@ export default function DrawerIFCImport({
                                       ) : (
                                         <EyeOff className="h-4 w-4" />
                                       )}
-                                    </button>
+                                    </Button>
                                   </SimpleTooltip>
                                 </div>
                               ))
@@ -1243,7 +1275,7 @@ export default function DrawerIFCImport({
                         </div>
                       </div>
 
-                      {/* Warning NENHUMA disciplina cadastrada — ABAIXO dos 2 selects, com CTA navigate */}
+                      {/* Warning NENHUMA disciplina cadastrada — ABAIXO dos 2 selects, com CTA drawer */}
                       {needsRolePrompt &&
                         !isLoadingProjectRoles &&
                         simulationRoles.length === 0 && (
@@ -1256,22 +1288,18 @@ export default function DrawerIFCImport({
                                 </p>
                               </div>
                               <div className="flex justify-end pl-8">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    navigate({
-                                      to: `/new_projects/${projectId}`,
-                                      search: {
-                                        tab: "disciplinas",
-                                      } as Record<string, string>,
-                                      replace: false,
-                                    });
-                                    setIsOpen(false);
-                                  }}
-                                >
-                                  {t.drawerIFC.disciplinesGoTo}
-                                </Button>
+                                <DrawerFormDisciplines
+                                  componentTrigger={
+                                    <Button variant="outline" size="sm">
+                                      <Plus className="mr-1 h-3.5 w-3.5" />
+                                      {t.drawerIFC.disciplinesGoTo}
+                                    </Button>
+                                  }
+                                  projectId={projectId}
+                                  unitId={unitId}
+                                  roles={simulationRoles.map((r) => r.name)}
+                                  onCreateSuccess={handleDisciplineCreated}
+                                />
                               </div>
                             </div>
                           </div>
