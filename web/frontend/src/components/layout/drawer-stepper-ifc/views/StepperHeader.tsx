@@ -69,142 +69,89 @@ export const StepperHeader: React.FC<StepperHeaderProps> = ({
         </div>
       </DialogHeader>
 
-      {/* ROW 3: Apenas exibida em simulation mode — quando usuário chegou via view de tecnologias e precisa escolher/criar a simulação alvo (pulou step de unidade). Em modo normal (unidade → módulo) este bloco não faz sentido pois a simulação ainda não existe. */}
-      {isSimulationMode && (
+      {/* ROW 3:
+        - isSimulationMode (direto da view tecnologias, 1 step só módulos):
+          Exibe SEMPRE. Tudo alinhado à direita:
+          label "Simulação alvo (onde os módulos serão criados):" + Select troca + Botão criar nova.
+        - !isSimulationMode (modo ifc 2 passos):
+          Exibe SÓ no step módulo (activeStep === 1). Tudo alinhado à direita:
+          label "Simulação criada:" + nome da simulação criada no step anterior, SEM botão criar nova.
+      */}
+      {(isSimulationMode || (!isSimulationMode && activeStep === 1)) && (
         <div className="px-3 py-2 bg-gray-50/40 dark:bg-gray-900/40 flex flex-col gap-2">
-          {/* Bloco superior: Simulação alvo */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <label className="text-xs font-semibold text-foreground whitespace-nowrap shrink-0">
-              {isSimulationMode
-                ? translations.stepper.simulation.selectLabel
-                : "Simulação"}
-            </label>
-
-            {selectedSimulationOptionId ? (
-              <div className="flex flex-1 flex-wrap sm:justify-end items-center gap-2 min-w-0">
-                {state.unitsCreated.length > 0 && (
-                  <>
-                    <span className="text-[11px] text-muted-foreground shrink-0 pl-1">
-                      {t.stepper.modules.createdUnitsTitle}:
-                    </span>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {state.unitsCreated.map((u) => (
-                        <div
-                          key={u.tempId}
-                          className="flex items-center gap-1.5"
-                        >
-                          <Badge
-                            variant="success"
-                            className="h-7 text-[12px] px-2.5 py-0 gap-1.5 max-w-full overflow-hidden text-ellipsis whitespace-nowrap"
-                          >
-                            {u.displayName}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-                {isSimulationMode && (
-                  <>
-                    <Select
-                      value={selectedSimulationOptionId}
-                      onValueChange={(v) => setSelectedSimulationOptionId(v)}
+          <div className="flex flex-wrap items-center justify-end gap-2 min-w-0">
+            {isSimulationMode ? (
+              <>
+                <label className="text-xs font-semibold text-foreground whitespace-nowrap shrink-0">
+                  {translations.stepper.simulation.selectLabel}:
+                </label>
+                {selectedSimulationOptionId ? (
+                  <Select
+                    value={selectedSimulationOptionId}
+                    onValueChange={(v) => setSelectedSimulationOptionId(v)}
+                  >
+                    <SelectTrigger
+                      className="h-8 min-w-[200px] w-auto text-[12px] px-2.5 py-0"
+                      aria-label={
+                        translations.stepper.simulation.changeAriaLabel
+                      }
                     >
-                      <SelectTrigger
-                        className="h-7 min-w-[100px] w-auto text-[11px] px-2.5 py-0"
-                        aria-label={
-                          translations.stepper.simulation.changeAriaLabel
-                        }
-                      >
-                        <span className="flex items-center justify-between w-full">
-                          <span>
-                            {translations.stepper.simulation.changeLabel}
-                          </span>
-                        </span>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableOptions.map((o) => (
-                          <SelectItem key={o.id} value={o.id}>
-                            <span className="text-sm">{o.name}</span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {preselectedUnitId && initialRoleId ? (
-                      <DialogCreateSimulation
-                        projectId={projectId}
-                        unitId={preselectedUnitId}
-                        roleId={initialRoleId}
-                        triggerComponent={
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-[11px] px-2 py-0"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                            <span>
-                              {translations.stepper.simulation.createNew}
-                            </span>
-                          </Button>
-                        }
-                        onCreated={() => {
-                          void refetchOptions();
-                          void queryClient.invalidateQueries({
-                            queryKey: ["options", projectId, preselectedUnitId],
-                          });
-                        }}
-                      />
-                    ) : null}
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="flex flex-1 flex-wrap sm:justify-end items-center gap-2 min-w-0">
-                <Select
-                  value=""
-                  disabled={!isSimulationMode}
-                  onValueChange={(v) => setSelectedSimulationOptionId(v)}
-                >
-                  <SelectTrigger className="min-w-[240px] h-9">
-                    <SelectValue
-                      placeholder={
-                        !isSimulationMode
-                          ? "-"
-                          : availableOptions.length === 0
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableOptions.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>
+                          <span className="text-sm">{o.name}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Select
+                    value=""
+                    onValueChange={(v) => setSelectedSimulationOptionId(v)}
+                  >
+                    <SelectTrigger className="min-w-[240px] h-9">
+                      <SelectValue
+                        placeholder={
+                          availableOptions.length === 0
                             ? translations.stepper.simulation.noOptions
                             : translations.stepper.simulation.selectPlaceholder
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableOptions.length === 0 && isSimulationMode && (
-                      <div className="text-xs px-2 py-3 text-muted-foreground">
-                        {translations.stepper.simulation.noOptionsHint}
-                      </div>
-                    )}
-                    {availableOptions.map((o) => (
-                      <SelectItem key={o.id} value={o.id}>
-                        <span className="text-sm">{o.name}</span>
-                        {o.active ? (
-                          <span className="ml-2 text-[11px] text-primary font-medium">
-                            (ativa)
-                          </span>
-                        ) : null}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {isSimulationMode && preselectedUnitId && initialRoleId ? (
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableOptions.length === 0 && (
+                        <div className="text-xs px-2 py-3 text-muted-foreground">
+                          {translations.stepper.simulation.noOptionsHint}
+                        </div>
+                      )}
+                      {availableOptions.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>
+                          <span className="text-sm">{o.name}</span>
+                          {o.active ? (
+                            <span className="ml-2 text-[11px] text-primary font-medium">
+                              (ativa)
+                            </span>
+                          ) : null}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {preselectedUnitId && initialRoleId ? (
                   <DialogCreateSimulation
                     projectId={projectId}
                     unitId={preselectedUnitId}
                     roleId={initialRoleId}
                     triggerComponent={
-                      <Button variant="outline" size="sm" className="h-9">
-                        <Plus className="h-3.5 w-3.5" />{" "}
-                        <span className="text-xs">
-                          {translations.stepper.simulation.createNew}
-                        </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-[12px] px-2.5 py-0"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>{translations.stepper.simulation.createNew}</span>
                       </Button>
                     }
                     onCreated={() => {
@@ -215,7 +162,7 @@ export const StepperHeader: React.FC<StepperHeaderProps> = ({
                     }}
                   />
                 ) : null}
-                {isSimulationMode && (
+                {!selectedSimulationOptionId && (
                   <div className="flex items-start gap-1.5 px-2.5 py-1 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-md">
                     <AlertTriangle className="h-3.5 w-3.5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
                     <p className="text-[11px] leading-snug text-yellow-800 dark:text-yellow-200 whitespace-nowrap">
@@ -223,7 +170,31 @@ export const StepperHeader: React.FC<StepperHeaderProps> = ({
                     </p>
                   </div>
                 )}
-              </div>
+              </>
+            ) : (
+              <>
+                <label className="text-xs font-semibold text-foreground whitespace-nowrap shrink-0">
+                  {translations.stepper.simulation.createdLabel}:
+                </label>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {state.unitsCreated.length > 0 ? (
+                    state.unitsCreated.map((u) => (
+                      <Badge
+                        key={u.tempId}
+                        variant="success"
+                        className="h-7 text-[12px] px-2.5 py-0 gap-1.5 max-w-full overflow-hidden text-ellipsis whitespace-nowrap"
+                        title={u.name}
+                      >
+                        {u.name}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-xs text-muted-foreground italic">
+                      -
+                    </span>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>

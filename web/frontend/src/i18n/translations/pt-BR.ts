@@ -1465,6 +1465,7 @@ export const ptBR = {
       description:
         "Selecione uma simulação existente para adicionar os módulos extraídos do IFC.",
       selectLabel: "Simulação alvo (onde os módulos serão criados)",
+      createdLabel: "Simulação criada",
       noOptions: "Nenhuma simulação cadastrada",
       selectPlaceholder: "Selecione uma simulação",
       noOptionsHint: "Crie uma nova simulação primeiro.",

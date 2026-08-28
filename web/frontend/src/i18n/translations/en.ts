@@ -1451,8 +1451,9 @@ export const en: Translations = {
     simulation: {
       title: "Import modules from IFC",
       description:
-        "Select an existing simulation to add the modules extracted from the IFC file.",
+        "Select an existing simulation to add the modules extracted from the IFC.",
       selectLabel: "Target simulation (where modules will be created)",
+      createdLabel: "Created simulation",
       noOptions: "No simulations created yet",
       selectPlaceholder: "Select a simulation",
       noOptionsHint: "Create a new simulation first.",
