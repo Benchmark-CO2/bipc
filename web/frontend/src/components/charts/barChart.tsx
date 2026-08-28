@@ -2,24 +2,24 @@ import * as d3 from 'd3';
 import { useEffect, useRef, useState } from 'react';
 import { EmissionLegend } from '../summaryVariants/components/emissionLegend';
 
-const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: Record<string, number> | number }) => {
+const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: Record<string, number> | number; }) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 150 });
 
   useEffect(() => {
     if (!wrapperRef.current) return;
-    
+
     const resizeObserver = new ResizeObserver((entries) => {
       if (!entries || entries.length === 0) return;
       const { width } = entries[0].contentRect;
-      
+
       const calculatedHeight = Math.max(150, (data?.length || 0) * 40 + 10);
       setDimensions({ width, height: calculatedHeight });
     });
-    
+
     resizeObserver.observe(wrapperRef.current);
-    
+
     return () => resizeObserver.disconnect();
   }, [data]);
 
@@ -27,19 +27,19 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: Rec
     if (!data || data.length === 0 || dimensions.width === 0) return;
 
     const { width, height } = dimensions;
-    
+
     // 1. Aumentamos a margem esquerda para dar espaço aos nomes maiores
-    const margin = { top: 20, right: 20, bottom: 40, left: width < 600 ? 130 : 220 }; 
+    const margin = { top: 20, right: 20, bottom: 40, left: width < 600 ? 130 : 220 };
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
 
     const svg = d3.select(svgRef.current);
-    svg.selectAll('*').remove(); 
+    svg.selectAll('*').remove();
 
     svg
       .attr('viewBox', `0 0 ${width} ${height}`)
-      .attr('width', width)   
-      .attr('height', height) 
+      .attr('width', width)
+      .attr('height', height)
       .style('background-color', '#f4f5f7')
       .style('font-family', 'sans-serif');
 
@@ -49,7 +49,7 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: Rec
 
     const keys = Array.from(
       new Set(data.flatMap(Object.keys))
-    ).filter(k => k !== 'name');
+    ).filter(k => k !== 'name' && k !== 'id');
 
     const safeData = data.map(d => {
       const row = { ...d };
@@ -65,22 +65,29 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: Rec
     const yScale = d3.scaleBand()
       .domain(safeData.map(d => d.name))
       .range([0, innerHeight])
-      .padding(0.2); 
+      .padding(0.2);
 
     const rowScales: Record<string, d3.ScaleLinear<number, number>> = {};
 
     safeData.forEach(d => {
       const rowLocalSum = keys.reduce((sum, key) => sum + (d[key] || 0), 0);
-      
+
       let rowAnchor = 0;
+      const cleanName = String(d.name).trim(); // Garante que espaços acidentais não quebrem o match
+
       if (typeof benchmarkMax === 'number') {
         rowAnchor = benchmarkMax;
       } else if (benchmarkMax && typeof benchmarkMax === 'object') {
-        rowAnchor = Number(benchmarkMax[d.name]) || 0;
+        console.log(benchmarkMax, cleanName, d);
+        // Tenta buscar pela chave sem espaços extras
+        rowAnchor = Number(benchmarkMax[cleanName] ?? benchmarkMax[d.id]) || 0;
       }
-      
-      const rowMax = rowAnchor > 0 ? Math.max(rowAnchor, rowLocalSum) : (rowLocalSum || 100);
-      
+
+      // ⚠️ CORREÇÃO PRINCIPAL AQUI:
+      // Removemos o Math.max! O limite da escala deve ser OBRIGATORIAMENTE o benchmark.
+      // Se não houver benchmark, usamos a soma local como fallback.
+      const rowMax = rowAnchor > 0 ? rowAnchor : (rowLocalSum || 100);
+
       rowScales[d.name] = d3.scaleLinear()
         .domain([0, rowMax])
         .range([0, innerWidth]);
@@ -94,7 +101,7 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: Rec
     const yAxis = d3.axisLeft(yScale).tickSize(0).tickPadding(10);
     const yAxisGroup = g.append('g').call(yAxis);
     yAxisGroup.select('.domain').remove();
-    
+
     // 2. Aumentamos o limite do substring de 15 para 25 caracteres (ou você pode até remover a limitação)
     yAxisGroup.selectAll('.tick text')
       .attr('font-size', '14px')
@@ -123,7 +130,7 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: Rec
         .attr('y2', innerHeight + 10)
         .attr('stroke', t.color)
         .attr('stroke-width', 1.5)
-        .attr('stroke-dasharray', '4,4'); 
+        .attr('stroke-dasharray', '4,4');
     });
 
     const layer = g.selectAll('.layer')
@@ -132,7 +139,7 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: Rec
       .append('g')
       .attr('fill', d => colorScale(d.key) as string);
 
-    const barHeight = 10; 
+    const barHeight = 10;
 
     layer.selectAll('rect')
       .data(d => d)
@@ -142,7 +149,7 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: Rec
       .attr('x', d => rowScales[d.data.name](d[0]))
       .attr('width', d => Math.max(0, rowScales[d.data.name](d[1]) - rowScales[d.data.name](d[0])))
       .attr('height', barHeight)
-      .attr('stroke', '#f4f5f7') 
+      .attr('stroke', '#f4f5f7')
       .attr('stroke-width', 1);
 
     layer.selectAll('text')
@@ -151,17 +158,17 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: Rec
       .append('text')
       .attr('y', d => (yScale(d.data.name) as number) + (yScale.bandwidth() / 2) - (barHeight / 2) - 6)
       .attr('x', d => rowScales[d.data.name](d[0]) + (rowScales[d.data.name](d[1]) - rowScales[d.data.name](d[0])) / 2)
-      .attr('fill', function() {
-        const parentData = d3.select(this.parentNode as d3.BaseType).datum() as { key: string };
+      .attr('fill', function () {
+        const parentData = d3.select(this.parentNode as d3.BaseType).datum() as { key: string; };
         return colorScale(parentData.key) as string;
       })
       .attr('text-anchor', 'middle')
-      .attr('font-size', '12px') 
+      .attr('font-size', '12px')
       .attr('font-weight', 'bold')
       .text(d => {
         const val = d[1] - d[0];
         const rowMax = rowScales[d.data.name].domain()[1];
-        return val > (rowMax * 0.05) ? `${val.toFixed(0)}` : ''; 
+        return val > (rowMax * 0.05) ? `${val.toFixed(0)}` : '';
       });
 
     const gradeZones = [
@@ -197,7 +204,7 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: Rec
     <div ref={wrapperRef} style={{ width: '100%', margin: '0 auto' }}>
       <EmissionLegend keys={Array.from(
         new Set((data || []).flatMap(Object.keys))
-      ).filter(k => k !== 'name') as string[]}  />
+      ).filter(k => k !== 'name' && k !== 'id') as string[]} />
       <svg ref={svgRef} style={{ display: 'block' }}></svg>
     </div>
   );

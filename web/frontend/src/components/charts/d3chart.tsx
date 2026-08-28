@@ -78,6 +78,7 @@ type ProcelLabel = (typeof PROCEL_CLASSES_5)[number]["label"];
 const UNIT_LABELS = (t: Translations) => ({
   "KgCO₂/m²": `${t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon} (kg CO₂/m²)`,
   "MJ/m²": `${t.benchmark.chartTypes.cumulativeFraction.xAxisLabelEnergy} (MJ/m²)`,
+  "m³/m²": `${t.benchmark.chartTypes.cumulativeFraction.xAxisLabelMaterial} (m³/m²)`,
 }) as const;
 
 type ChartData = IBenchmarkItem & {
@@ -460,7 +461,15 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         const radius = (isExpanded ? CHART_CONFIG.CIRCLE_RADIUS.expanded : CHART_CONFIG.CIRCLE_RADIUS.normal) * zoomRadiusFactor;
 
         if (isCumulative) {
-          ctx.beginPath(); ctx.arc(x1, y, radius, 0, Math.PI * 2); ctx.fillStyle = DEFAULT_COLORS.GRAY_END; ctx.fill();
+          ctx.beginPath();
+          ctx.arc(x1, y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = DEFAULT_COLORS.START; // <-- CORRIGIDO AQUI
+          ctx.fill();
+
+          // Opcional: adicionar uma borda branca para dar mais destaque
+          ctx.strokeStyle = "white";
+          ctx.lineWidth = 1;
+          ctx.stroke();
         } else {
           if (!hideBars && isMinSelected && isMaxSelected) {
             const xMid = newXScale(midPredict ? midPredict(d.y) : (d.min + d.max) / 2);
@@ -712,24 +721,35 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       });
   }, [data.length, drawChart, selectedBarIds.size, updateBrushCount]);
 
-  useEffect(() => {
+useEffect(() => {
     if (!brushRef.current || _width <= 0 || _height <= 0) return;
     const brush = d3.brushX().extent([[0, 0], [_width, _height]]).on("end", (event) => {
       if (!event.selection) return;
-      const [s0, s1] = event.selection; const tr = transformRef.current;
-      const u0 = (s0 - tr.x) / tr.kx; const u1 = (s1 - tr.x) / tr.kx;
+      
+      const [s0, s1] = event.selection; 
+      const tr = transformRef.current;
+      const u0 = (s0 - tr.x) / tr.kx; 
+      const u1 = (s1 - tr.x) / tr.kx;
 
       let new_kx = Math.min(50, Math.max(1, _width / (u1 - u0)));
-      let new_x = Math.min(0, Math.max(-u0 * new_kx, _width * (1 - 1.1 * new_kx)));
+      
+      // NOVO: Calcula o espaço restante para centralizar o zoom caso atinja o limite de 50x
+      let centerOffset = (_width - (u1 - u0) * new_kx) / 2;
+      let target_x = -u0 * new_kx + centerOffset;
+
+      // Aplica o Clamp mantendo a centralização
+      let new_x = Math.min(0, Math.max(target_x, _width * (1 - 1.1 * new_kx)));
+      
       transformRef.current = { ...tr, kx: new_kx, x: new_x };
 
-      setHasZoomed(prev => prev === true ? true : true); // Evita render desnecessário
+      setHasZoomed(true);
       d3.select(brushRef.current as SVGGElement).call(brush.move as any, null);
       setIsBrushActive(false);
 
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = requestAnimationFrame(drawChart);
     });
+    
     d3.select(brushRef.current).call(brush as any);
   }, [_width, _height, drawChart]);
 
@@ -870,7 +890,18 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             )}
           </div>
 
-          <svg className="absolute z-20" style={{ width: _width, height: _height, left: margin.left, top: margin.top, display: isBrushActive ? "block" : "none" }}>
+          <svg 
+            className="absolute z-20" 
+            width={_width}
+            height={_height}
+            viewBox={`0 0 ${_width} ${_height}`}
+            style={{ 
+              left: margin.left, 
+              top: (margin.top * 4) + 3 , 
+              visibility: isBrushActive ? "visible" : "hidden",
+              pointerEvents: isBrushActive ? "auto" : "none"
+            }}
+          >
             <g ref={brushRef} />
           </svg>
 
@@ -898,7 +929,9 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             {tooltipData && (
               <>
                 {isCumulative ? (
-                  <span>{t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon}: <b>{tooltipData.min.toInternational()} {unit}</b></span>
+                  <span>
+                    {xAxisLabelProp?.replace('- CUM', '') ?? (unit === "MJ/m²" ? t.benchmark.chartTypes.cumulativeFraction.xAxisLabelEnergy : t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon)}: <b>{tooltipData.min.toInternational()} {unit}</b>
+                  </span>
                 ) : (
                   <>
                     <span>Min: <b>{tooltipData.min.toInternational()} {unit}</b></span>

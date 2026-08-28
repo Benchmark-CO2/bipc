@@ -214,7 +214,7 @@ const SimulationsSummary = ({
   const benchmarkMax = useMemo(() => {
     const getMax = (typeKey: 'co2' | 'energy' | 'material') => {
       const series = normalizeBenchmarkSeries(data.benchmark?.[typeKey]) || [];
-      
+
       if (series.length === 0) return 0;
 
       if (typeKey === 'material') {
@@ -261,9 +261,9 @@ const SimulationsSummary = ({
     if (!filteredProjects) return [];
 
     const buildChartData = (consumptions: any) => {
-      const co2Row: Record<string, any> = { name: "CO₂ (kg)" };
-      const energyRow: Record<string, any> = { name: "Energia (MJ)" };
-      const materialRow: Record<string, any> = { name: `Material (${unitsOfMeasure.material || 'kg'})` };
+      const co2Row: Record<string, any> = { name: t.benchmark.chartTypes.emission.co2Label, id: 'co2' };
+      const energyRow: Record<string, any> = { name: t.benchmark.chartTypes.emission.energyLabel, id: 'energy' };
+      const materialRow: Record<string, any> = { name: t.benchmark.chartTypes.emission.materialLabel, id: 'material' };
 
       if (consumptions) {
         Object.entries(consumptions).forEach(([key, values]) => {
@@ -297,11 +297,11 @@ const SimulationsSummary = ({
     : stackedData;
 
   // Calculo de área (soma das simulações selecionadas)
-  const activeProjectsForArea = selectedProjects.length > 0 
+  const activeProjectsForArea = selectedProjects.length > 0
     ? filteredProjects.filter(p => selectedProjects.includes(p.id))
     : filteredProjects;
 
-  const totalArea = activeProjectsForArea.reduce((acc, curr) => 
+  const totalArea = activeProjectsForArea.reduce((acc, curr) =>
     acc + (Number(curr.area) || 1), 0
   );
 
@@ -318,7 +318,7 @@ const SimulationsSummary = ({
 
       {/* ── BARRA SUPERIOR: Valores e PCVRB ── */}
       <div className='flex justify-between gap-2 w-full'>
-        
+
 
         {(
           <div className="flex flex-wrap xl:flex-nowrap gap-4 w-full">
@@ -375,10 +375,10 @@ const SimulationsSummary = ({
               <div className="mb-0">
                 <h3 className="text-lg font-bold mb-0">Total de Emissões por tecnologia</h3>
               </div>
-              <EmissionsSection 
-                data={simulationEmissionsData} 
-                selected={selectedProjects} 
-                onChange={onChangeProjectSelection} 
+              <EmissionsSection
+                data={simulationEmissionsData}
+                selected={selectedProjects}
+                onChange={onChangeProjectSelection}
                 benchmarkMax={benchmarkMax}
               />
             </div>
