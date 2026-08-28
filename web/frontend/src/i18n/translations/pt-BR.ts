@@ -696,6 +696,7 @@ export const ptBR = {
         name: "Benchmark",
         yAxisLabel: "Potencial de mitigação",
         xAxisLabelCarbon: "Carbono Embutido (kg CO₂/m²)",
+        xAxisLabelMaterial: "Consumo Unitário de Materiais (m³/m²)",
         xAxisLabelEnergy: "Energia Embutida MJ/m²",
         baseLine: "linha de base",
         ppp5Line: "PPp 5%",

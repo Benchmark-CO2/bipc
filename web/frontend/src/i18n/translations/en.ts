@@ -693,6 +693,7 @@ export const en: Translations = {
         name: "Benchmark",
         yAxisLabel: "Potential Mitigation",
         xAxisLabelCarbon: "Embodied Carbon  (kg CO₂/m²)",
+        xAxisLabelMaterial: "Unitary Material Consumption (m³/m²)",
         xAxisLabelEnergy: "Energy Consumption MJ/m²",
         baseLine: "baseline",
         ppp5Line: "PPp 5%",

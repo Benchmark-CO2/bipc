@@ -78,6 +78,7 @@ type ProcelLabel = (typeof PROCEL_CLASSES_5)[number]["label"];
 const UNIT_LABELS = (t: Translations) => ({
   "KgCO₂/m²": `${t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon} (kg CO₂/m²)`,
   "MJ/m²": `${t.benchmark.chartTypes.cumulativeFraction.xAxisLabelEnergy} (MJ/m²)`,
+  "m³/m²": `${t.benchmark.chartTypes.cumulativeFraction.xAxisLabelMaterial} (m³/m²)`,
 }) as const;
 
 type ChartData = IBenchmarkItem & {
@@ -459,15 +460,15 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         const barY = y - barHeight / 2;
         const radius = (isExpanded ? CHART_CONFIG.CIRCLE_RADIUS.expanded : CHART_CONFIG.CIRCLE_RADIUS.normal) * zoomRadiusFactor;
 
-       if (isCumulative) {
-          ctx.beginPath(); 
-          ctx.arc(x1, y, radius, 0, Math.PI * 2); 
+        if (isCumulative) {
+          ctx.beginPath();
+          ctx.arc(x1, y, radius, 0, Math.PI * 2);
           ctx.fillStyle = DEFAULT_COLORS.START; // <-- CORRIGIDO AQUI
           ctx.fill();
-          
+
           // Opcional: adicionar uma borda branca para dar mais destaque
-          ctx.strokeStyle = "white"; 
-          ctx.lineWidth = 1; 
+          ctx.strokeStyle = "white";
+          ctx.lineWidth = 1;
           ctx.stroke();
         } else {
           if (!hideBars && isMinSelected && isMaxSelected) {
@@ -906,7 +907,9 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             {tooltipData && (
               <>
                 {isCumulative ? (
-                  <span>{t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon}: <b>{tooltipData.min.toInternational()} {unit}</b></span>
+                  <span>
+                    {xAxisLabelProp?.replace('- CUM', '') ?? (unit === "MJ/m²" ? t.benchmark.chartTypes.cumulativeFraction.xAxisLabelEnergy : t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon)}: <b>{tooltipData.min.toInternational()} {unit}</b>
+                  </span>
                 ) : (
                   <>
                     <span>Min: <b>{tooltipData.min.toInternational()} {unit}</b></span>
