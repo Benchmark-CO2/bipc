@@ -6,8 +6,8 @@ import { Step1UnitsView } from "./Step1UnitsView";
 export interface Step1ContentProps {
   translations: Translations;
   state: TIfcStepperState;
-  toggleUnitSelected: (tempId: string) => void;
   setUnitNameInline: (tempId: string, name: string) => void;
+  setUnitSimulationNameInline: (tempId: string, simulationName: string) => void;
   onEditUnit: (tempId: string) => void;
   step1Error: string;
   isSimulationMode: boolean;
@@ -16,8 +16,8 @@ export interface Step1ContentProps {
 
 export function Step1Content({
   state,
-  toggleUnitSelected,
   setUnitNameInline,
+  setUnitSimulationNameInline,
   onEditUnit,
   step1Error,
   isSimulationMode,
@@ -28,8 +28,8 @@ export function Step1Content({
       {!isSimulationMode && activeStep === 0 && (
         <Step1UnitsView
           state={state}
-          toggleUnitSelected={toggleUnitSelected}
           setUnitNameInline={setUnitNameInline}
+          setUnitSimulationNameInline={setUnitSimulationNameInline}
           onEditUnit={onEditUnit}
         />
       )}

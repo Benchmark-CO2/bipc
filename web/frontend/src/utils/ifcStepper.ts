@@ -743,6 +743,7 @@ export const mapIfcResultToStepperState = (
       selected: true,
       raw: u,
       name: formData.name,
+      simulationName: `Sim. ${formData.name}`.trim(),
       formData,
       isValid,
       validationErrors: errors,
@@ -884,8 +885,14 @@ export const resolveSimulationRoleId = (
 export const buildUniqueSimulationName = (
   unitName: string,
   existingNames: string[],
+  /**
+   * Quando true, NÃO prefixa o nome com "Sim. " — o parâmetro unitName já é
+   * o nome completo digitado pelo usuário. Apenas garante uniqueness do
+   * sufixo "(N)" caso haja colisão.
+   */
+  useRawPrefix = false,
 ): string => {
-  const base = `Sim. ${unitName}`.trim();
+  const base = (useRawPrefix ? unitName : `Sim. ${unitName}`).trim();
   const taken = new Set<string>(
     existingNames.map((n) => (n || "").toLowerCase()),
   );

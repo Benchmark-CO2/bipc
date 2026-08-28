@@ -95,6 +95,7 @@ export type TIfcStepperUnitItem = {
   selected: boolean;
   raw: TIfcProcessorResultUnits;
   name: string;
+  simulationName: string;
   formData: {
     name: string;
     type: "tower";
@@ -203,8 +204,8 @@ export interface IModuleBatchBinding {
 
 export interface Step1UnitsViewProps {
   state: TIfcStepperState;
-  toggleUnitSelected: (tempId: string) => void;
   setUnitNameInline: (tempId: string, name: string) => void;
+  setUnitSimulationNameInline: (tempId: string, simulationName: string) => void;
   onEditUnit: (tempId: string) => void;
 }
 

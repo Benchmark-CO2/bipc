@@ -334,6 +334,18 @@ export default function DrawerStepperIFC({
     });
   };
 
+  const setUnitSimulationNameInline = (
+    tempId: string,
+    simulationName: string,
+  ) => {
+    setState((prev) => ({
+      ...prev,
+      units: prev.units.map((u) =>
+        u.tempId === tempId ? { ...u, simulationName } : u,
+      ),
+    }));
+  };
+
   const handleUnitDrawerSubmit = (payload: {
     unitId?: string;
     data: UnitFormSchema;
@@ -488,10 +500,15 @@ export default function DrawerStepperIFC({
           );
         }
 
-        const simName = buildUniqueSimulationName(
-          unit.formData.name,
-          existingNames,
-        );
+        // Usa o nome da simulação fornecido pelo usuário na UI; garante
+        // uniqueness apenas se o nome já foi ocupado em outra unidade do lote
+        // ou se o usuário deixou em branco (fallback para o padrão antigo).
+        const baseUserSimName = unit.simulationName
+          ? unit.simulationName.trim()
+          : "";
+        const simName = baseUserSimName
+          ? buildUniqueSimulationName(baseUserSimName, existingNames, true)
+          : buildUniqueSimulationName(unit.formData.name, existingNames);
         existingNames.push(simName);
 
         const optionRes = await postOption(projectId, unitId, simRoleId, {
@@ -969,8 +986,8 @@ export default function DrawerStepperIFC({
           <Step1Content
             translations={translations}
             state={state}
-            toggleUnitSelected={toggleUnitSelected}
             setUnitNameInline={setUnitNameInline}
+            setUnitSimulationNameInline={setUnitSimulationNameInline}
             onEditUnit={(tempId) => setEditingUnitTempId(tempId)}
             step1Error={step1Error}
             isSimulationMode={isSimulationMode}

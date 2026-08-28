@@ -277,6 +277,8 @@ const DrawerFormUnit = ({
     return Array.from(messages);
   };
 
+  const currentErrorMsgs = getFormErrorMessages(form.formState.errors);
+
   const handleClose = () => {
     form.reset();
     resetCreation();
@@ -369,15 +371,15 @@ const DrawerFormUnit = ({
           )}
         </>
         <DrawerFooter className="px-8 flex flex-col gap-3">
-          {Object.keys(form.formState.errors).length > 0 && (
+          {currentErrorMsgs.length > 0 && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
                 <p className="font-medium mb-1">
-                  Verifique os campos com erro abaixo:
+                  {t.units.form.validationSummary}
                 </p>
                 <ul className="list-disc pl-4 text-xs space-y-0.5">
-                  {getFormErrorMessages(form.formState.errors).map((msg, i) => (
+                  {currentErrorMsgs.map((msg, i) => (
                     <li key={i}>{msg}</li>
                   ))}
                 </ul>
