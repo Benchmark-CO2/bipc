@@ -94,6 +94,7 @@ func (w *ConcreteWall) Validate(v *validator.Validator) {
 	validatePositionedConcrete(v, w.Concrete, w.validPositions())
 	validatePositionedSteel(v, w.Steel, w.validPositions())
 	validatePositionedForm(v, w.Form, w.validPositions())
+	v.Check(len(w.Steel) > 0, "steel", "must have at least one item")
 
 	if w.WallThickness != nil {
 		v.Check(*w.WallThickness >= 0, "wall_thickness", "cannot be negative")
