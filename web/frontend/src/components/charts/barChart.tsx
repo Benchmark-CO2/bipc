@@ -80,14 +80,9 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: Rec
       if (typeof benchmarkMax === 'number') {
         rowAnchor = benchmarkMax;
       } else if (benchmarkMax && typeof benchmarkMax === 'object') {
-        console.log(benchmarkMax, cleanName, d);
-        // Tenta buscar pela chave sem espaços extras
         rowAnchor = Number(benchmarkMax[cleanName] ?? benchmarkMax[d.id]) || 0;
       }
-
-      // ⚠️ CORREÇÃO PRINCIPAL AQUI:
-      // Removemos o Math.max! O limite da escala deve ser OBRIGATORIAMENTE o benchmark.
-      // Se não houver benchmark, usamos a soma local como fallback.
+      
       const rowMax = rowAnchor > 0 ? rowAnchor : (rowLocalSum || 100);
 
       rowScales[d.name] = d3.scaleLinear()
