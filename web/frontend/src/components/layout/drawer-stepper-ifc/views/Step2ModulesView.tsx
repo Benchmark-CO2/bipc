@@ -65,20 +65,22 @@ export function Step2ModulesView({
           <div className="flex items-center gap-1.5 shrink-0">
             <Badge
               variant="secondary"
-              className="h-6 text-[11px] px-2 py-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800"
+              className="h-6 text-[12px] px-2 py-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800"
             >
-              {t.stepper.selected} <strong>{selectedCount}</strong>
+              {t.stepper.selected}{" "}
+              <strong className="ml-1">{selectedCount}</strong>
             </Badge>
             {unselectedCount > 0 && (
               <Badge
                 variant="secondary"
-                className="h-6 text-[11px] px-2 py-0 bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-900/60 dark:text-gray-300 dark:border-gray-700"
+                className="h-6 text-[12px] px-2 py-0 bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-900/60 dark:text-gray-300 dark:border-gray-700"
               >
-                {t.stepper.unselected} <strong>{unselectedCount}</strong>
+                {t.stepper.unselected}{" "}
+                <strong className="ml-1">{unselectedCount}</strong>
               </Badge>
             )}
-            <Badge variant="outline" className="h-6 text-[11px] px-2 py-0">
-              {t.stepper.total} <strong>{totalCount}</strong>
+            <Badge variant="outline" className="h-6 text-[12px] px-2 py-0">
+              {t.stepper.total} <strong className="ml-1">{totalCount}</strong>
             </Badge>
           </div>
         )}
@@ -113,8 +115,10 @@ export function Step2ModulesView({
                   />
                 </TableHead>
                 <TableHead>{t.stepper.modules.columnType}</TableHead>
+                <TableHead className="w-[160px]">
+                  {t.stepper.modules.columnStatus}
+                </TableHead>
                 <TableHead>{t.stepper.modules.columnSummary}</TableHead>
-                <TableHead>{t.stepper.modules.columnUnit}</TableHead>
                 <TableHead className="w-[120px] text-right">
                   {t.stepper.modules.columnAction}
                 </TableHead>
@@ -136,65 +140,33 @@ export function Step2ModulesView({
                         <span className="font-medium">
                           {moduleTypeLabels[m.type] ?? String(m.type)}
                         </span>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "gap-1 shrink-0 ml-auto",
-                            m.completed
-                              ? "text-emerald-700 border-emerald-300 bg-emerald-50 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-300"
-                              : "text-amber-700 border-amber-300 bg-amber-50 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-300",
-                          )}
-                        >
-                          {m.completed ? (
-                            <>
-                              <CheckCircle2 size={12} />
-                              {t.modules.badges.completed}
-                            </>
-                          ) : (
-                            <>
-                              <AlertCircle size={12} />
-                              {t.modules.badges.incomplete}
-                            </>
-                          )}
-                        </Badge>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "gap-1 inline-flex",
+                          m.completed
+                            ? "text-emerald-700 border-emerald-300 bg-emerald-50 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-300"
+                            : "text-amber-700 border-amber-300 bg-amber-50 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-300",
+                        )}
+                      >
+                        {m.completed ? (
+                          <>
+                            <CheckCircle2 size={12} />
+                            {t.modules.badges.completed}
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle size={12} />
+                            {t.modules.badges.incomplete}
+                          </>
+                        )}
+                      </Badge>
                     </TableCell>
                     <TableCell className="max-w-md truncate text-muted-foreground">
                       {m.summary}
-                    </TableCell>
-                    <TableCell className="min-w-[220px]">
-                      {state.unitsCreated.length === 0 ? (
-                        <span className="text-xs text-muted-foreground">
-                          {t.stepper.modules.noUnitsCreated}
-                        </span>
-                      ) : (
-                        <Select
-                          value={m.boundUnitTempId ?? "__none__"}
-                          onValueChange={(val: string) =>
-                            setModuleBoundUnit(m.tempId, val)
-                          }
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue
-                              placeholder={
-                                t.stepper.modules.unitSelectPlaceholder
-                              }
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__none__">
-                              <span className="text-muted-foreground">
-                                {t.stepper.modules.noneBound}
-                              </span>
-                            </SelectItem>
-                            {state.unitsCreated.map((u) => (
-                              <SelectItem key={u.tempId} value={u.tempId}>
-                                {u.displayName}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button

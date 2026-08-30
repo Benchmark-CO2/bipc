@@ -50,16 +50,12 @@ export const StepperHeader: React.FC<StepperHeaderProps> = ({
             </p>
           </div>
           {fileName ? (
-            <Badge
-              variant="secondary"
-              className="text-xs px-2.5 py-1 gap-1.5 max-w-[55%] overflow-hidden text-ellipsis whitespace-nowrap shrink-0 shadow-sm border border-gray-200/70 dark:border-gray-700/70"
-              title={fileName}
-            >
+            <span className="inline-flex items-center px-4 py-1.5 space-x-1 mr-2 rounded-full text-xs font-semibold text-white shadow-md bg-active dark:bg-active-950">
               <FileText className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="overflow-hidden text-ellipsis whitespace-nowrap">
                 {fileName}
               </span>
-            </Badge>
+            </span>
           ) : null}
         </div>
 
@@ -145,11 +141,7 @@ export const StepperHeader: React.FC<StepperHeaderProps> = ({
                     unitId={preselectedUnitId}
                     roleId={initialRoleId}
                     triggerComponent={
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 text-[12px] px-2.5 py-0"
-                      >
+                      <Button variant="outline-bipc" size="default">
                         <Plus className="h-3.5 w-3.5" />
                         <span>{translations.stepper.simulation.createNew}</span>
                       </Button>
