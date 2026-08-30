@@ -15,12 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../../ui/tooltip";
+import { SimpleTooltip } from "../../ui/simple-tooltip";
 
 type MaterialKey = "rebar" | "mesh" | "strand" | "general" | "other";
 
@@ -166,73 +161,66 @@ const SteelMaterialItem = ({
                   );
                 const invalid = !isValid;
                 const acceptedList = (positions ?? []).join(", ");
+                const tooltipContent = invalid
+                  ? t.modules.warnings.invalidPosition
+                      .replace("{{position}}", String(currentPosition ?? ""))
+                      .replace("{{accepted}}", acceptedList)
+                  : null;
                 return (
                   <FormItem className="w-full space-y-1">
                     <FormLabel className="text-xs">
-                      {t.modules.form.position}
+                      {t.modules.form.positionLabel}
                     </FormLabel>
                     <FormControl>
-                      <div className="relative w-full">
-                        <Select
-                          value={currentPosition}
-                          onValueChange={(v) => field.onChange(v)}
+                      <Select
+                        value={currentPosition}
+                        onValueChange={(v) => field.onChange(v)}
+                      >
+                        <SelectTrigger
+                          className={cn(
+                            "h-9 w-full",
+                            invalid ? "gap-1 pr-2" : "",
+                          )}
                         >
-                          <SelectTrigger
-                            className={cn("h-9 w-full", invalid ? "pr-9" : "")}
-                          >
-                            <SelectValue placeholder={t.common.select} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {positions!.map((pos) => (
-                              <SelectItem
-                                key={pos}
-                                value={pos}
-                                className="text-xs"
-                              >
-                                {getPositionLabel(t, pos)}
-                              </SelectItem>
-                            ))}
-                            <SelectItem value="unspecified" className="text-xs">
-                              {t.modules.form.general}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {invalid && (
-                          <TooltipProvider
-                            disableHoverableContent
-                            delayDuration={150}
-                          >
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span
-                                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center text-amber-600 dark:text-amber-400 pointer-events-none"
-                                  role="img"
-                                  aria-label={t.modules.warnings.invalidPositionShort
-                                    .replace(
-                                      "{{position}}",
-                                      String(currentPosition ?? ""),
-                                    )
-                                    .replace("{{accepted}}", acceptedList)}
-                                >
-                                  <AlertTriangle size={14} />
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent
-                                side="top"
-                                align="end"
-                                className="max-w-[320px] text-xs"
-                              >
-                                {t.modules.warnings.invalidPosition
+                          <SelectValue
+                            placeholder={t.modules.form.positionPlaceholder}
+                          />
+                          {invalid && tooltipContent && (
+                            <SimpleTooltip
+                              side="top"
+                              content={tooltipContent}
+                              triggerAsChild
+                            >
+                              <span
+                                className="inline-flex items-center shrink-0 mr-0.5 ml-auto !text-amber-600 dark:!text-amber-400 [&>svg]:!text-amber-600 dark:[&>svg]:!text-amber-400"
+                                role="img"
+                                aria-label={t.modules.warnings.invalidPositionShort
                                   .replace(
                                     "{{position}}",
                                     String(currentPosition ?? ""),
                                   )
                                   .replace("{{accepted}}", acceptedList)}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                      </div>
+                              >
+                                <AlertTriangle size={14} />
+                              </span>
+                            </SimpleTooltip>
+                          )}
+                        </SelectTrigger>
+                        <SelectContent>
+                          {positions!.map((pos) => (
+                            <SelectItem
+                              key={pos}
+                              value={pos}
+                              className="text-xs"
+                            >
+                              {getPositionLabel(t, pos)}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="unspecified" className="text-xs">
+                            {t.modules.form.general}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </FormControl>
                   </FormItem>
                 );

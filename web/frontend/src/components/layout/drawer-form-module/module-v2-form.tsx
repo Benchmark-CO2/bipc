@@ -1,7 +1,7 @@
 import { useTranslation } from "@/i18n";
 import { useModuleV2Form } from "@/hooks/useModuleV2Form";
 import { parseNumber } from "@/utils/numbers";
-import { Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Control, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 import { TTowerFloorCategory } from "@/types/units";
+import { cn } from "@/lib/utils";
 import MasonrySection from "./masonry-section";
 import {
   SCALAR_FIELDS_BY_TYPE,
@@ -308,49 +310,98 @@ const ConcreteListSection = ({
                   <FormField
                     control={form.control as Control<any>}
                     name={`${fieldKey}.position` as never}
-                    render={({ field }) => (
-                      <FormItem className="col-span-12 sm:col-span-3">
-                        <FormLabel className="text-xs">Posição</FormLabel>
-                        <FormControl>
-                          <Select
-                            value={field.value ?? "unspecified"}
-                            onValueChange={(v) => field.onChange(v)}
-                          >
-                            <SelectTrigger className="w-full h-9">
-                              <SelectValue placeholder="Selecione a posição" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {positions.map((pos) => (
-                                <SelectItem
-                                  key={pos}
-                                  value={pos}
-                                  className="text-xs"
-                                >
-                                  {getPositionLabel(t, pos)}
-                                </SelectItem>
-                              ))}
-                              {field.value &&
-                                field.value !== "unspecified" &&
-                                !positions.includes(field.value) && (
+                    render={({ field }) => {
+                      const currentPosition = field.value ?? "unspecified";
+                      const isEmptyOrGeneral =
+                        currentPosition === "unspecified" ||
+                        currentPosition === "" ||
+                        currentPosition === "geral" ||
+                        currentPosition === "general";
+                      const isInAllowed =
+                        typeof currentPosition === "string" &&
+                        positions.includes(currentPosition);
+                      const invalid = !isEmptyOrGeneral && !isInAllowed;
+                      const acceptedList = positions.join(", ");
+                      const tooltipContent = invalid
+                        ? t.modules.warnings.invalidPosition
+                            .replace("{{position}}", String(currentPosition))
+                            .replace("{{accepted}}", acceptedList)
+                        : null;
+                      return (
+                        <FormItem className="col-span-12 sm:col-span-3">
+                          <FormLabel className="text-xs">
+                            {t.modules.form.positionLabel}
+                          </FormLabel>
+                          <FormControl>
+                            <Select
+                              value={field.value ?? "unspecified"}
+                              onValueChange={(v) => field.onChange(v)}
+                            >
+                              <SelectTrigger
+                                className={cn(
+                                  "w-full h-9",
+                                  invalid ? "gap-1 pr-2" : "",
+                                )}
+                              >
+                                <SelectValue
+                                  placeholder={
+                                    t.modules.form.positionPlaceholder
+                                  }
+                                />
+                                {invalid && tooltipContent && (
+                                  <SimpleTooltip
+                                    side="top"
+                                    content={tooltipContent}
+                                    triggerAsChild
+                                  >
+                                    <span
+                                      className="inline-flex items-center shrink-0 mr-0.5 ml-auto !text-amber-600 dark:!text-amber-400 [&>svg]:!text-amber-600 dark:[&>svg]:!text-amber-400"
+                                      role="img"
+                                      aria-label={t.modules.warnings.invalidPositionShort
+                                        .replace(
+                                          "{{position}}",
+                                          String(currentPosition),
+                                        )
+                                        .replace("{{accepted}}", acceptedList)}
+                                    >
+                                      <AlertTriangle size={14} />
+                                    </span>
+                                  </SimpleTooltip>
+                                )}
+                              </SelectTrigger>
+                              <SelectContent>
+                                {positions.map((pos) => (
                                   <SelectItem
-                                    value={String(field.value)}
-                                    disabled
+                                    key={pos}
+                                    value={pos}
                                     className="text-xs"
                                   >
-                                    {getPositionLabel(t, field.value)}
+                                    {getPositionLabel(t, pos)}
                                   </SelectItem>
-                                )}
-                              <SelectItem
-                                value="unspecified"
-                                className="text-xs"
-                              >
-                                {t.modules.form.general}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                      </FormItem>
-                    )}
+                                ))}
+                                {field.value &&
+                                  field.value !== "unspecified" &&
+                                  !positions.includes(field.value) && (
+                                    <SelectItem
+                                      value={String(field.value)}
+                                      disabled
+                                      className="text-xs"
+                                    >
+                                      {getPositionLabel(t, field.value)}
+                                    </SelectItem>
+                                  )}
+                                <SelectItem
+                                  value="unspecified"
+                                  className="text-xs"
+                                >
+                                  {t.modules.form.general}
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                        </FormItem>
+                      );
+                    }}
                   />
 
                   <FormField
@@ -917,49 +968,98 @@ const FormAreaSection = ({
                   <FormField
                     control={form.control as Control<any>}
                     name={`${fieldKey}.position` as never}
-                    render={({ field }) => (
-                      <FormItem className="col-span-12 sm:col-span-8">
-                        <FormLabel className="text-xs">Posição</FormLabel>
-                        <FormControl>
-                          <Select
-                            value={field.value ?? "unspecified"}
-                            onValueChange={(v) => field.onChange(v)}
-                          >
-                            <SelectTrigger className="w-full h-9">
-                              <SelectValue placeholder="Selecione a posição" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {positions.map((pos) => (
-                                <SelectItem
-                                  key={pos}
-                                  value={pos}
-                                  className="text-xs"
-                                >
-                                  {getPositionLabel(t, pos)}
-                                </SelectItem>
-                              ))}
-                              {field.value &&
-                                field.value !== "unspecified" &&
-                                !positions.includes(field.value) && (
+                    render={({ field }) => {
+                      const currentPosition = field.value ?? "unspecified";
+                      const isEmptyOrGeneral =
+                        currentPosition === "unspecified" ||
+                        currentPosition === "" ||
+                        currentPosition === "geral" ||
+                        currentPosition === "general";
+                      const isInAllowed =
+                        typeof currentPosition === "string" &&
+                        positions.includes(currentPosition);
+                      const invalid = !isEmptyOrGeneral && !isInAllowed;
+                      const acceptedList = positions.join(", ");
+                      const tooltipContent = invalid
+                        ? t.modules.warnings.invalidPosition
+                            .replace("{{position}}", String(currentPosition))
+                            .replace("{{accepted}}", acceptedList)
+                        : null;
+                      return (
+                        <FormItem className="col-span-12 sm:col-span-8">
+                          <FormLabel className="text-xs">
+                            {t.modules.form.positionLabel}
+                          </FormLabel>
+                          <FormControl>
+                            <Select
+                              value={field.value ?? "unspecified"}
+                              onValueChange={(v) => field.onChange(v)}
+                            >
+                              <SelectTrigger
+                                className={cn(
+                                  "w-full h-9",
+                                  invalid ? "gap-1 pr-2" : "",
+                                )}
+                              >
+                                <SelectValue
+                                  placeholder={
+                                    t.modules.form.positionPlaceholder
+                                  }
+                                />
+                                {invalid && tooltipContent && (
+                                  <SimpleTooltip
+                                    side="top"
+                                    content={tooltipContent}
+                                    triggerAsChild
+                                  >
+                                    <span
+                                      className="inline-flex items-center shrink-0 mr-0.5 ml-auto !text-amber-600 dark:!text-amber-400 [&>svg]:!text-amber-600 dark:[&>svg]:!text-amber-400"
+                                      role="img"
+                                      aria-label={t.modules.warnings.invalidPositionShort
+                                        .replace(
+                                          "{{position}}",
+                                          String(currentPosition),
+                                        )
+                                        .replace("{{accepted}}", acceptedList)}
+                                    >
+                                      <AlertTriangle size={14} />
+                                    </span>
+                                  </SimpleTooltip>
+                                )}
+                              </SelectTrigger>
+                              <SelectContent>
+                                {positions.map((pos) => (
                                   <SelectItem
-                                    value={String(field.value)}
-                                    disabled
+                                    key={pos}
+                                    value={pos}
                                     className="text-xs"
                                   >
-                                    {getPositionLabel(t, field.value)}
+                                    {getPositionLabel(t, pos)}
                                   </SelectItem>
-                                )}
-                              <SelectItem
-                                value="unspecified"
-                                className="text-xs"
-                              >
-                                {t.modules.form.general}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                      </FormItem>
-                    )}
+                                ))}
+                                {field.value &&
+                                  field.value !== "unspecified" &&
+                                  !positions.includes(field.value) && (
+                                    <SelectItem
+                                      value={String(field.value)}
+                                      disabled
+                                      className="text-xs"
+                                    >
+                                      {getPositionLabel(t, field.value)}
+                                    </SelectItem>
+                                  )}
+                                <SelectItem
+                                  value="unspecified"
+                                  className="text-xs"
+                                >
+                                  {t.modules.form.general}
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                        </FormItem>
+                      );
+                    }}
                   />
 
                   <FormField

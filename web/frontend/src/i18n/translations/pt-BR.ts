@@ -715,6 +715,8 @@ export const ptBR = {
         "Materiais importados em lote. Preencha volumes de concreto e aço conforme arquivo de origem.",
       unspecifiedPosition: "Sem Posição / Geral",
       general: "Geral",
+      positionLabel: "Posição",
+      positionPlaceholder: "Selecione a posição",
       emptyList: {
         concrete: "Nenhum elemento de concreto adicionado",
         steel: "Nenhum elemento de aço adicionado",

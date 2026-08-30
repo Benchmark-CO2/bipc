@@ -714,6 +714,8 @@ export const en: Translations = {
         "Batch imported materials. Fill concrete volumes and steel according to the source file.",
       unspecifiedPosition: "Unspecified / General",
       general: "General",
+      positionLabel: "Position",
+      positionPlaceholder: "Select a position",
       emptyList: {
         concrete: "No concrete elements added",
         steel: "No steel elements added",
