@@ -765,7 +765,14 @@ export const mapIfcResultToStepperState = (
       ? normalizedType
       : (normalizedRaw.type as TModulesTypes);
     const rawData = (normalizedRaw.data ?? {}) as unknown as TModuleDataV2;
-    const completion = calculateModuleCompletion(finalType, rawData);
+    const completion = calculateModuleCompletion(
+      finalType,
+      rawData,
+      undefined,
+      {
+        fallbackUnitId: null,
+      },
+    );
     return {
       tempId: generateTempId(),
       raw: normalizedRaw as any,
@@ -778,6 +785,7 @@ export const mapIfcResultToStepperState = (
       isValid,
       validationErrors: errors,
       completenessWarnings: warnings,
+      positionWarnings: completion.warnings ?? [],
       completed: completion.completed,
     };
   });
@@ -806,16 +814,10 @@ export const rerunUnitValidation = (
 export const rerunModuleValidation = (
   item: TIfcStepperModuleItem,
   i18nCompleteness: CompletenessWarningsI18n,
-  /**
-   * (Opcional) Fonte da verdade MAIS FRESCA e VALIDADA pelo DrawerFormModule submit.
-   * Quando presente, usamos esse flatData PRÉ-VALIDADO para calcular os
-   * warnings de completeness (getCompletenessWarnings), ao invés de recalcular
-   * via groupedFormToFlatV2(candidate) — que no caso de foundation types
-   * (raft/piles/raft_piles) pode sofrer perda de dados ao converter
-   * flat → grouped → flat (2 conversões) e gerar warnings FALSOS
-   * ("missing concrete data") mesmo que flat original esteja 100% ok.
-   */
   flatDataOverride?: (any & { type?: TModulesTypes }) | null,
+  opts?: {
+    fallbackUnitId?: string | null | undefined;
+  },
 ): TIfcStepperModuleItem => {
   const validateResult = validateStepperModule(
     item.raw,
@@ -859,8 +861,18 @@ export const rerunModuleValidation = (
     (finalFlatForCompletion as unknown as TModuleDataV2) ??
     {}) as unknown as TModuleDataV2;
   const completion = isKnownModuleType(completionType)
-    ? calculateModuleCompletion(completionType, dataForCompletion)
-    : { completed: false };
+    ? calculateModuleCompletion(completionType, dataForCompletion, undefined, {
+        fallbackUnitId: opts?.fallbackUnitId,
+      })
+    : {
+        completed: false,
+        warnings: [] as Array<{
+          field: "concrete" | "steel" | "form";
+          index: number;
+          invalidPosition: string;
+          acceptedPositions: string[];
+        }>,
+      };
 
   return {
     ...item,
@@ -868,6 +880,7 @@ export const rerunModuleValidation = (
     isValid,
     validationErrors: errors,
     completenessWarnings: finalWarnings,
+    positionWarnings: completion.warnings ?? [],
     completed: completion.completed,
   };
 };

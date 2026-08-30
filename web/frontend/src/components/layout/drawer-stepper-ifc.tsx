@@ -244,12 +244,17 @@ export default function DrawerStepperIFC({
     if (!simulationCreatedUnit) return;
     setState((prev) => {
       const unitsCreated: TIfcStepperCreatedUnit[] = [simulationCreatedUnit];
-      const modules = prev.modules.map((m) => ({
-        ...m,
-        boundUnitTempId: simulationCreatedUnit.tempId,
-        boundUnitId: simulationCreatedUnit.unitId,
-        boundOptionId: simulationCreatedUnit.optionId,
-      }));
+      const modules = prev.modules.map((m) => {
+        const updated: TIfcStepperModuleItem = {
+          ...m,
+          boundUnitTempId: simulationCreatedUnit.tempId,
+          boundUnitId: simulationCreatedUnit.unitId,
+          boundOptionId: simulationCreatedUnit.optionId,
+        };
+        return rerunModuleValidation(updated, i18nCompleteness, null, {
+          fallbackUnitId: simulationCreatedUnit.unitId ?? null,
+        });
+      });
       const next: TIfcStepperState = {
         ...prev,
         unitsCreated,
@@ -257,7 +262,12 @@ export default function DrawerStepperIFC({
       };
       return next;
     });
-  }, [isSimulationMode, simulationCreatedUnit, simulationBoundUnitTempId]);
+  }, [
+    isSimulationMode,
+    simulationCreatedUnit,
+    simulationBoundUnitTempId,
+    i18nCompleteness,
+  ]);
 
   const activeStep = isSimulationMode
     ? 0
@@ -545,31 +555,46 @@ export default function DrawerStepperIFC({
       }
 
       setState((prev) => {
-        const withBound = { ...prev, unitsCreated: result };
+        const withBound: TIfcStepperState = {
+          ...prev,
+          unitsCreated: result,
+        };
         if (result.length > 0) {
           const firstResult = result[0];
           withBound.modules = prev.modules.map((m) => {
+            let updated: TIfcStepperModuleItem = { ...m };
             if (m.boundUnitTempId) {
               const found = result.find((c) => c.tempId === m.boundUnitTempId);
               if (found) {
-                const next: typeof m = {
-                  ...m,
+                updated = {
+                  ...updated,
                   boundUnitId: found.unitId,
                   boundOptionId: found.optionId,
                 };
-                return next;
               }
-            }
-            if (!m.boundUnitTempId && result.length === 1) {
-              return {
-                ...m,
+            } else if (result.length === 1) {
+              updated = {
+                ...updated,
                 boundUnitTempId: firstResult.tempId,
                 boundUnitId: firstResult.unitId,
                 boundOptionId: firstResult.optionId,
               };
             }
-            return m;
+            const fallbackUnitId: string | null =
+              (typeof updated.boundUnitId === "string" &&
+              updated.boundUnitId.trim() !== ""
+                ? updated.boundUnitId
+                : null) ?? null;
+            return rerunModuleValidation(updated, i18nCompleteness, null, {
+              fallbackUnitId,
+            });
           });
+        } else {
+          withBound.modules = prev.modules.map((m) =>
+            rerunModuleValidation(m, i18nCompleteness, null, {
+              fallbackUnitId: null,
+            }),
+          );
         }
         withBound.currentStep = "modules";
         return withBound;
@@ -639,25 +664,32 @@ export default function DrawerStepperIFC({
 
   const setModuleBoundUnit = (moduleTempId: string, unitTempId: string) => {
     const found = state.unitsCreated.find((u) => u.tempId === unitTempId);
+    const fallbackUnitId = found?.unitId ?? undefined;
     setState((prev) => ({
       ...prev,
       modules: prev.modules.map((m) => {
         if (m.tempId !== moduleTempId) return m;
         if (unitTempId === "__none__") {
-          return {
+          const next = {
             ...m,
             boundUnitTempId: null,
             boundUnitId: null,
             boundOptionId: null,
           };
+          return rerunModuleValidation(next, i18nCompleteness, null, {
+            fallbackUnitId: null,
+          });
         }
         if (!found) return m;
-        return {
+        const next: TIfcStepperModuleItem = {
           ...m,
           boundUnitTempId: found.tempId,
           boundUnitId: found.unitId,
           boundOptionId: found.optionId,
         };
+        return rerunModuleValidation(next, i18nCompleteness, null, {
+          fallbackUnitId: fallbackUnitId ?? null,
+        });
       }),
     }));
   };
@@ -770,6 +802,7 @@ export default function DrawerStepperIFC({
           rebuilt,
           i18nCompleteness,
           flatForRevalidate,
+          { fallbackUnitId: savedUnitId ?? m.boundUnitId ?? null },
         );
         return reval;
       });

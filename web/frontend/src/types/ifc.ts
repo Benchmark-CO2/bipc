@@ -5,6 +5,7 @@ import type { TOption } from "@/types/options";
 import type { IUnit, TTowerFloorCategory } from "@/types/units";
 import type { TModuleGroupedForm } from "@/components/layout/drawer-form-module/aggregate-helpers";
 import type { IFCAccessMode } from "@/components/layout/drawer-ifc-import";
+import type { CompletionPositionWarning } from "@/utils/moduleCompletion";
 
 export type TIfcProcessorImportStatus =
   | "waiting_for_files"
@@ -142,6 +143,7 @@ export type TIfcStepperModuleItem = {
     hasWarnings: boolean;
     messages: string[];
   };
+  positionWarnings: CompletionPositionWarning[];
   isValid: boolean;
   completed?: boolean;
 };

@@ -1,6 +1,6 @@
 import { useWatch } from "react-hook-form";
 import { useTranslation } from "@/i18n";
-import { Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import React, { useEffect, useMemo } from "react";
 import { Control, UseFormReturn } from "react-hook-form";
 import { TFck } from "@/types/modules";
@@ -20,6 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { NumericStringInput } from "@/components/ui/numeric-string-input";
 import SteelMaterialList from "./steel-material-list";
 
@@ -227,6 +233,67 @@ const UnspecifiedCardInner = <TForm extends object = any>(
         <div>
           <h3 className="text-sm font-semibold flex items-center gap-1.5 text-primary dark:text-gray-200">
             {title ?? t.modules.form.unspecifiedPosition}
+            {allowedPositions &&
+              allowedPositions.length > 0 &&
+              volumes.some((v) => {
+                const posRaw = (v as unknown as { position?: string | null })
+                  .position;
+                if (!posRaw || typeof posRaw !== "string") return false;
+                const normalized = posRaw.trim().toLowerCase();
+                if (
+                  normalized === "" ||
+                  normalized === "unspecified" ||
+                  normalized === "geral"
+                )
+                  return false;
+                return !allowedPositions.some(
+                  (ap) => ap.value.toLowerCase() === normalized,
+                );
+              }) && (
+                <TooltipProvider disableHoverableContent delayDuration={150}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex text-amber-600 dark:text-amber-400">
+                        <AlertTriangle size={14} />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="top"
+                      align="start"
+                      className="max-w-[320px] text-xs"
+                    >
+                      {t.modules.warnings.invalidPositionShort
+                        .replace(
+                          "{{position}}",
+                          String(
+                            (
+                              volumes.find((v) => {
+                                const pr = (
+                                  v as unknown as { position?: string | null }
+                                ).position;
+                                return (
+                                  pr &&
+                                  typeof pr === "string" &&
+                                  !allowedPositions.some(
+                                    (ap) =>
+                                      ap.value.toLowerCase() ===
+                                      pr.trim().toLowerCase(),
+                                  )
+                                );
+                              }) as unknown as { position?: string } | undefined
+                            )?.position ?? "",
+                          ),
+                        )
+                        .replace(
+                          "{{accepted}}",
+                          String(
+                            allowedPositions.map((a) => a.value).join(", "),
+                          ),
+                        )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             {hint ?? t.modules.form.unspecifiedHint}

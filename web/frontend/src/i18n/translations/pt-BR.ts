@@ -477,6 +477,12 @@ export const ptBR = {
       missingFieldsTitle:
         "Campos necessários para o cálculo (não bloqueiam o envio)",
     },
+    warnings: {
+      invalidPosition:
+        "Posição inválida: '{{position}}'. Válidas para este tipo: {{accepted}}. Esta entrada não será usada no cálculo de completude.",
+      invalidPositionShort:
+        "Posição inválida '{{position}}'. Esperado: {{accepted}}.",
+    },
     table: {
       noItems: "Nenhum item encontrado",
       addNew:

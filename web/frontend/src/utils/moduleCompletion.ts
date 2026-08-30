@@ -14,9 +14,21 @@ export interface MissingFieldInfo {
   reason: string;
 }
 
+export interface CompletionPositionWarning {
+  field: "concrete" | "steel" | "form";
+  index: number;
+  invalidPosition: string;
+  acceptedPositions: string[];
+}
+
+export interface CalculateModuleCompletionOpts {
+  fallbackUnitId?: string | null | undefined;
+}
+
 export interface CompletionResult {
   completed: boolean;
   missing: MissingFieldInfo[];
+  warnings: CompletionPositionWarning[];
 }
 
 const SCHEMA_KEY_MAP: Record<TModulesTypes, SchemaModuleKey> = {
@@ -28,16 +40,18 @@ const SCHEMA_KEY_MAP: Record<TModulesTypes, SchemaModuleKey> = {
   raft_piles_foundation: "raft_piles_foundation",
 };
 
-const STRUCTURE_TYPES = new Set<TModulesTypes>([
+export const STRUCTURE_TYPES: Set<TModulesTypes> = new Set([
   "beam_column",
   "concrete_wall",
   "structural_masonry",
-]);
-const FOUNDATION_TYPES = new Set<TModulesTypes>([
+]) as Set<TModulesTypes>;
+export const FOUNDATION_TYPES: Set<TModulesTypes> = new Set([
   "raft_foundation",
   "piles_foundation",
   "raft_piles_foundation",
-]);
+]) as Set<TModulesTypes>;
+// Suppress TS6133: os tipos são exportados para uso externo (ex.: ifcStepper.ts, Step2ModulesView)
+[STRUCTURE_TYPES, FOUNDATION_TYPES];
 
 const EMPTY_POSITION_VALUES = new Set([
   "",
@@ -95,32 +109,69 @@ function isNonZeroNumber(value: unknown): boolean {
   return false;
 }
 
+function isValidFloorIndex(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed === "") return false;
+    const n = Number(trimmed);
+    return Number.isFinite(n);
+  }
+  return false;
+}
+
 function hasAnyConcreteValid(
   concreteArr: unknown[],
   type: TModulesTypes,
-): { valid: boolean } {
+): {
+  valid: boolean;
+  positionWarnings: Array<{
+    index: number;
+    invalidPosition: string;
+    accepted: string[];
+  }>;
+} {
   const validPositions = VALID_POSITIONS_BY_TYPE[type];
+  const acceptedList = Array.from(validPositions);
   const seen = new Set<string>();
   let hasAtLeastOneValid = false;
   let hasDuplicateFckByPosition = false;
-  for (const item of concreteArr) {
-    if (!item || typeof item !== "object") continue;
+  const positionWarnings: Array<{
+    index: number;
+    invalidPosition: string;
+    accepted: string[];
+  }> = [];
+  (concreteArr as unknown[]).forEach((item, i) => {
+    if (!item || typeof item !== "object") return;
     const el = item as Record<string, unknown>;
-    if (!isNonZeroNumber(el.volume)) continue;
-    if (!isNonZeroNumber(el.fck)) continue;
     const pos = typeof el.position === "string" ? el.position : undefined;
-    if (!isValidPositionOrEmpty(pos, validPositions)) continue;
+    const hasVolume = isNonZeroNumber(el.volume);
+    const hasFck = isNonZeroNumber(el.fck);
+    const validPosOrEmpty = isValidPositionOrEmpty(pos, validPositions);
+    if (!validPosOrEmpty && typeof pos === "string" && pos.trim() !== "") {
+      positionWarnings.push({
+        index: i,
+        invalidPosition: pos.trim(),
+        accepted: acceptedList,
+      });
+    }
+    if (!hasVolume || !hasFck) return;
+    if (!validPosOrEmpty) return;
     const normalizedPos = normalizePosition(pos);
     const fck = Number(el.fck);
     const key = `${normalizedPos ?? "__no_pos__"}:${fck}`;
     if (seen.has(key)) {
       hasDuplicateFckByPosition = true;
-      continue;
+      return;
     }
     seen.add(key);
     hasAtLeastOneValid = true;
-  }
-  return { valid: hasAtLeastOneValid && !hasDuplicateFckByPosition };
+  });
+  return {
+    valid: hasAtLeastOneValid && !hasDuplicateFckByPosition,
+    positionWarnings,
+  };
 }
 
 export interface SteelItemIssue {
@@ -280,12 +331,14 @@ export function calculateModuleCompletion(
   type: TModulesTypes,
   data: Partial<TModuleDataV2> | undefined | null,
   i18n?: ModuleCompletionI18n,
+  opts?: CalculateModuleCompletionOpts,
 ): CompletionResult {
   const missing: MissingFieldInfo[] = [];
+  const warnings: CompletionPositionWarning[] = [];
   const label = (k: string) => i18n?.getFieldLabel(k) ?? k;
   const reason = (k: string) => i18n?.getReason(k) ?? k;
   if (!data) {
-    return { completed: false, missing };
+    return { completed: false, missing, warnings };
   }
 
   const schemaKey = SCHEMA_KEY_MAP[type];
@@ -299,11 +352,14 @@ export function calculateModuleCompletion(
   const requiredFields = [...baseRequired];
 
   const d = data as Record<string, unknown>;
+  const fallbackUnitId = opts?.fallbackUnitId;
 
   for (const field of requiredFields) {
     switch (field) {
       case "floor_ids": {
-        if (!isNonEmptyArray(d.floor_ids)) {
+        const hasFloorIds = isNonEmptyArray(d.floor_ids);
+        const hasFloorIndex = isValidFloorIndex(d.floor_index);
+        if (!hasFloorIds && !hasFloorIndex) {
           missing.push({
             key: "floor_ids",
             label: label("floor_ids"),
@@ -314,7 +370,13 @@ export function calculateModuleCompletion(
       }
       case "unit_id": {
         const val = d.unit_id;
-        if (!val || typeof val !== "string" || val.trim() === "") {
+        const hasDataUnitId =
+          !!val && typeof val === "string" && val.trim() !== "";
+        const hasFallback =
+          !!fallbackUnitId &&
+          typeof fallbackUnitId === "string" &&
+          fallbackUnitId.trim() !== "";
+        if (!hasDataUnitId && !hasFallback) {
           missing.push({
             key: "unit_id",
             label: label("unit_id"),
@@ -325,9 +387,19 @@ export function calculateModuleCompletion(
       }
       case "concrete": {
         const arr = d.concrete;
-        const concreteValid =
-          isNonEmptyArray(arr) &&
-          hasAnyConcreteValid(arr as unknown[], type).valid;
+        const concreteResult = hasAnyConcreteValid(
+          (arr as unknown[]) ?? [],
+          type,
+        );
+        const concreteValid = isNonEmptyArray(arr) && concreteResult.valid;
+        for (const w of concreteResult.positionWarnings) {
+          warnings.push({
+            field: "concrete",
+            index: w.index,
+            invalidPosition: w.invalidPosition,
+            acceptedPositions: w.accepted,
+          });
+        }
         if (!concreteValid) {
           missing.push({
             key: "concrete",
@@ -407,5 +479,6 @@ export function calculateModuleCompletion(
   return {
     completed: missing.length === 0,
     missing,
+    warnings,
   };
 }

@@ -475,6 +475,12 @@ export const en: Translations = {
       missingFieldsTitle:
         "Fields needed for calculation (do not block submission)",
     },
+    warnings: {
+      invalidPosition:
+        "Invalid position: '{{position}}'. Valid for this type: {{accepted}}. This entry will not be used for completion calculation.",
+      invalidPositionShort:
+        "Invalid position '{{position}}'. Expected: {{accepted}}.",
+    },
     table: {
       noItems: "No items found",
       addNew:
