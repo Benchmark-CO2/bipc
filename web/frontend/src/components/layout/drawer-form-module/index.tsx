@@ -15,7 +15,14 @@ import {
 import { TTowerFloorCategory } from "@/types/units";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Control } from "react-hook-form";
-import { AlertCircle, CheckCircle2, Loader2, Plus, X } from "lucide-react";
+import {
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  Plus,
+  X,
+} from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
@@ -455,11 +462,10 @@ const DrawerFormModule = ({
       selectedFloors.every((v) => currentFormFloorIds.includes(v)) &&
       currentFormFloorIds.every((v: string) => selectedFloors.includes(v));
     if (!same) {
-      form.setValue(
-        "data.floor_ids" as never,
-        selectedFloors as never,
-        { shouldDirty: true, shouldValidate: false },
-      );
+      form.setValue("data.floor_ids" as never, selectedFloors as never, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
     }
   }, [selectedFloors, form]);
 
@@ -469,11 +475,10 @@ const DrawerFormModule = ({
       | string
       | undefined;
     if (currFormUnitId !== unitId) {
-      form.setValue(
-        "data.unit_id" as never,
-        unitId as never,
-        { shouldDirty: true, shouldValidate: false },
-      );
+      form.setValue("data.unit_id" as never, unitId as never, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
     }
   }, [unitId, form]);
 
@@ -1265,8 +1270,44 @@ const DrawerFormModule = ({
           )}
         </div>
         <DrawerFooter className="px-8">
-          {!v2Hook.completion.completed &&
-            v2Hook.completion.missing.length > 0 && (
+          {(() => {
+            const missingArr = Array.isArray(v2Hook.completion.missing)
+              ? v2Hook.completion.missing
+              : [];
+            const warnArr = Array.isArray(v2Hook.completion.warnings)
+              ? v2Hook.completion.warnings
+              : [];
+            const fieldLabelMap: Record<string, string> = {
+              concrete:
+                t.modules.fields?.concrete ?? "Concreto (volume por FCK)",
+              steel: t.modules.fields?.steel ?? "Aço (massa por tipo)",
+              form: t.modules.fields?.form ?? "Fôrma (área por posição)",
+            };
+            const merged: { key: string; label: string; reason: string }[] = [
+              ...warnArr.map((w, i) => {
+                const fieldLabel = fieldLabelMap[w.field] ?? String(w.field);
+                const reason = t.modules.warnings.invalidPosition
+                  .replace("{{position}}", String(w.invalidPosition ?? ""))
+                  .replace(
+                    "{{accepted}}",
+                    Array.isArray(w.acceptedPositions)
+                      ? w.acceptedPositions.join(", ")
+                      : "",
+                  );
+                return {
+                  key: `position-warn-${i}`,
+                  label: `${fieldLabel} #${w.index + 1}`,
+                  reason,
+                };
+              }),
+              ...missingArr.map((m) => ({
+                key: `missing-${m.key}`,
+                label: m.label,
+                reason: m.reason,
+              })),
+            ];
+            if (merged.length === 0) return null;
+            return (
               <Alert
                 variant="default"
                 className="mb-4 border-amber-300 bg-amber-50 dark:bg-amber-950 dark:border-amber-800"
@@ -1277,7 +1318,7 @@ const DrawerFormModule = ({
                 </AlertTitle>
                 <AlertDescription>
                   <ul className="ml-4 list-disc space-y-1 mt-2 text-amber-700 dark:text-amber-300">
-                    {v2Hook.completion.missing.map((m) => (
+                    {merged.map((m) => (
                       <li key={m.key}>
                         <strong>{m.label}</strong>: {m.reason}
                       </li>
@@ -1285,7 +1326,8 @@ const DrawerFormModule = ({
                   </ul>
                 </AlertDescription>
               </Alert>
-            )}
+            );
+          })()}
           <Button
             type="submit"
             variant="bipc"

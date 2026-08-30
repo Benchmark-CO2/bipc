@@ -182,9 +182,24 @@ export interface SteelItemIssue {
 function validateSteelArray(
   steelArr: unknown[],
   type: TModulesTypes,
-): { valid: boolean; hasValidItem: boolean; issues: SteelItemIssue[] } {
+): {
+  valid: boolean;
+  hasValidItem: boolean;
+  issues: SteelItemIssue[];
+  positionWarnings: Array<{
+    index: number;
+    invalidPosition: string;
+    accepted: string[];
+  }>;
+} {
   const validPositions = VALID_POSITIONS_BY_TYPE[type];
+  const acceptedList = Array.from(validPositions);
   const issues: SteelItemIssue[] = [];
+  const positionWarnings: Array<{
+    index: number;
+    invalidPosition: string;
+    accepted: string[];
+  }> = [];
   let hasValidItem = false;
   steelArr.forEach((item, i) => {
     if (!item || typeof item !== "object") {
@@ -203,6 +218,13 @@ function validateSteelArray(
     }
     if (!isValidPositionOrEmpty(pos, validPositions)) {
       issues.push({ index: i, reasonKey: "steel.position" });
+      if (pos !== "") {
+        positionWarnings.push({
+          index: i,
+          invalidPosition: pos,
+          accepted: acceptedList,
+        });
+      }
     }
     if (typeof el.mass !== "undefined" && !isNonZeroNumber(el.mass)) {
       issues.push({ index: i, reasonKey: "steel.mass" });
@@ -240,6 +262,7 @@ function validateSteelArray(
     valid: isNonEmptyArray(steelArr) && hasValidItem && issues.length === 0,
     hasValidItem,
     issues: uniqueIssues,
+    positionWarnings,
   };
 }
 
@@ -250,18 +273,36 @@ function validateFormArray(
   valid: boolean;
   hasValidItem: boolean;
   anyPositionMissingOrInvalid: boolean;
+  positionWarnings: Array<{
+    index: number;
+    invalidPosition: string;
+    accepted: string[];
+  }>;
 } {
   const validPositions = VALID_POSITIONS_BY_TYPE[type];
+  const acceptedList = Array.from(validPositions);
   const seenPositions = new Set<string>();
   let hasDuplicatePosition = false;
   let hasValidItem = false;
   let anyPositionMissingOrInvalid = false;
-  for (const item of formArr) {
+  const positionWarnings: Array<{
+    index: number;
+    invalidPosition: string;
+    accepted: string[];
+  }> = [];
+  for (const [i, item] of formArr.entries()) {
     if (!item || typeof item !== "object") continue;
     const el = item as Record<string, unknown>;
     const rawPos = typeof el.position === "string" ? el.position.trim() : "";
     if (!isValidPositionOrEmpty(rawPos, validPositions)) {
       anyPositionMissingOrInvalid = true;
+      if (rawPos !== "") {
+        positionWarnings.push({
+          index: i,
+          invalidPosition: rawPos,
+          accepted: acceptedList,
+        });
+      }
       continue;
     }
     const normalizedPos = normalizePosition(rawPos);
@@ -283,6 +324,7 @@ function validateFormArray(
       !anyPositionMissingOrInvalid,
     hasValidItem,
     anyPositionMissingOrInvalid,
+    positionWarnings,
   };
 }
 
@@ -413,6 +455,14 @@ export function calculateModuleCompletion(
         const arr = d.steel;
         const steelResult = validateSteelArray((arr as unknown[]) ?? [], type);
         const hasArray = isNonEmptyArray(arr);
+        for (const w of steelResult.positionWarnings) {
+          warnings.push({
+            field: "steel",
+            index: w.index,
+            invalidPosition: w.invalidPosition,
+            acceptedPositions: w.accepted,
+          });
+        }
         if (!hasArray || !steelResult.valid) {
           if (!hasArray) {
             missing.push({
@@ -449,6 +499,14 @@ export function calculateModuleCompletion(
         const arr = d.form;
         const formResult = validateFormArray((arr as unknown[]) ?? [], type);
         const hasArray = isNonEmptyArray(arr);
+        for (const w of formResult.positionWarnings) {
+          warnings.push({
+            field: "form",
+            index: w.index,
+            invalidPosition: w.invalidPosition,
+            acceptedPositions: w.accepted,
+          });
+        }
         if (!hasArray || !formResult.valid) {
           if (!hasArray) {
             missing.push({

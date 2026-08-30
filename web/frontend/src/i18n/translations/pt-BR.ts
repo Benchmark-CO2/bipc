@@ -476,6 +476,8 @@ export const ptBR = {
     alerts: {
       missingFieldsTitle:
         "Campos necessários para o cálculo (não bloqueiam o envio)",
+      invalidPositionsTitle:
+        "Entradas com posição inválida detectadas (não bloqueiam o envio)",
     },
     warnings: {
       invalidPosition:
@@ -618,6 +620,15 @@ export const ptBR = {
           noValidSteel: "Módulo sem nenhum material de aço válido",
           minConcrete: "Adicione pelo menos um volume de concreto",
           minSteel: "Adicione pelo menos um material de aço",
+        },
+        warnings: {
+          invalidPositionShort:
+            "Posição inválida '{{position}}' em {{field}} #{{index}}. Válidas: {{accepted}}.",
+        },
+        labels: {
+          concrete: "Concreto",
+          steel: "Aço",
+          form: "Fôrma",
         },
       },
       selectFck: "Selecione fck",

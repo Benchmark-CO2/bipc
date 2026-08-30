@@ -3,12 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert } from "@/components/ui/alert";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -23,13 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  AlertCircle,
-  AlertTriangle,
-  CheckCircle2,
-  Edit2,
-  Info,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, Edit2, Info } from "lucide-react";
 import { Step2ModulesViewProps } from "@/types/ifc";
 import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
@@ -148,70 +136,6 @@ export function Step2ModulesView({
                         <span className="font-medium">
                           {moduleTypeLabels[m.type] ?? String(m.type)}
                         </span>
-                        {Array.isArray(m.positionWarnings) &&
-                          m.positionWarnings.length > 0 && (
-                            <TooltipProvider
-                              disableHoverableContent
-                              delayDuration={150}
-                            >
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span
-                                    className="inline-flex items-center text-amber-600 dark:text-amber-400"
-                                    role="img"
-                                    aria-label={t.modules.warnings.invalidPositionShort
-                                      .replace(
-                                        "{{position}}",
-                                        String(
-                                          m.positionWarnings[0].invalidPosition,
-                                        ),
-                                      )
-                                      .replace(
-                                        "{{accepted}}",
-                                        String(
-                                          m.positionWarnings[0].acceptedPositions.join(
-                                            ", ",
-                                          ),
-                                        ),
-                                      )}
-                                  >
-                                    <AlertTriangle size={14} />
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent
-                                  side="top"
-                                  align="start"
-                                  className="max-w-[320px] text-xs"
-                                >
-                                  <ul className="space-y-1 list-disc pl-4">
-                                    {m.positionWarnings
-                                      .slice(0, 5)
-                                      .map((w, i) => (
-                                        <li key={`${w.field}-${w.index}-${i}`}>
-                                          {t.modules.warnings.invalidPosition
-                                            .replace(
-                                              "{{position}}",
-                                              String(w.invalidPosition),
-                                            )
-                                            .replace(
-                                              "{{accepted}}",
-                                              String(
-                                                w.acceptedPositions.join(", "),
-                                              ),
-                                            )}
-                                        </li>
-                                      ))}
-                                    {m.positionWarnings.length > 5 && (
-                                      <li className="list-none pl-0 text-muted-foreground">
-                                        + {m.positionWarnings.length - 5}{" "}
-                                        {"outro(s)"}
-                                      </li>
-                                    )}
-                                  </ul>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
                         <Badge
                           variant="outline"
                           className={cn(

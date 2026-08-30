@@ -1,7 +1,8 @@
 import { useTranslation } from "@/i18n";
-import { Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
+import { cn } from "@/lib/utils";
 import { Button } from "../../ui/button";
 import { FormControl, FormField, FormItem, FormLabel } from "../../ui/form";
 import { Input } from "../../ui/input";
@@ -14,6 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../../ui/tooltip";
 
 type MaterialKey = "rebar" | "mesh" | "strand" | "general" | "other";
 
@@ -143,33 +150,93 @@ const SteelMaterialItem = ({
             <FormField
               control={form.control}
               name={`${name}.${index}.position`}
-              render={({ field }) => (
-                <FormItem className="w-full space-y-1">
-                  <FormLabel className="text-xs">
-                    {t.modules.form.position}
-                  </FormLabel>
-                  <FormControl>
-                    <Select
-                      value={field.value ?? "unspecified"}
-                      onValueChange={(v) => field.onChange(v)}
-                    >
-                      <SelectTrigger className="h-9 w-full">
-                        <SelectValue placeholder={t.common.select} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {positions!.map((pos) => (
-                          <SelectItem key={pos} value={pos} className="text-xs">
-                            {getPositionLabel(t, pos)}
-                          </SelectItem>
-                        ))}
-                        <SelectItem value="unspecified" className="text-xs">
-                          {t.modules.form.general}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const currentPosition = field.value ?? "unspecified";
+                const isEmptyOrGeneral =
+                  currentPosition === "unspecified" ||
+                  currentPosition === "" ||
+                  currentPosition === "geral" ||
+                  currentPosition === "general";
+                const isValid =
+                  isEmptyOrGeneral ||
+                  positions!.some(
+                    (p) =>
+                      p.toLowerCase().trim() ===
+                      String(currentPosition).toLowerCase().trim(),
+                  );
+                const invalid = !isValid;
+                const acceptedList = (positions ?? []).join(", ");
+                return (
+                  <FormItem className="w-full space-y-1">
+                    <FormLabel className="text-xs">
+                      {t.modules.form.position}
+                    </FormLabel>
+                    <FormControl>
+                      <div className="relative w-full">
+                        <Select
+                          value={currentPosition}
+                          onValueChange={(v) => field.onChange(v)}
+                        >
+                          <SelectTrigger
+                            className={cn("h-9 w-full", invalid ? "pr-9" : "")}
+                          >
+                            <SelectValue placeholder={t.common.select} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {positions!.map((pos) => (
+                              <SelectItem
+                                key={pos}
+                                value={pos}
+                                className="text-xs"
+                              >
+                                {getPositionLabel(t, pos)}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="unspecified" className="text-xs">
+                              {t.modules.form.general}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {invalid && (
+                          <TooltipProvider
+                            disableHoverableContent
+                            delayDuration={150}
+                          >
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center text-amber-600 dark:text-amber-400 pointer-events-none"
+                                  role="img"
+                                  aria-label={t.modules.warnings.invalidPositionShort
+                                    .replace(
+                                      "{{position}}",
+                                      String(currentPosition ?? ""),
+                                    )
+                                    .replace("{{accepted}}", acceptedList)}
+                                >
+                                  <AlertTriangle size={14} />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="top"
+                                align="end"
+                                className="max-w-[320px] text-xs"
+                              >
+                                {t.modules.warnings.invalidPosition
+                                  .replace(
+                                    "{{position}}",
+                                    String(currentPosition ?? ""),
+                                  )
+                                  .replace("{{accepted}}", acceptedList)}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                );
+              }}
             />
           </div>
         )}

@@ -5,6 +5,7 @@ import React, { useEffect, useMemo } from "react";
 import { Control, UseFormReturn } from "react-hook-form";
 import { TFck } from "@/types/modules";
 import { parseNumber } from "@/utils/numbers";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -227,73 +228,40 @@ const UnspecifiedCardInner = <TForm extends object = any>(
       : (fckOptions as { label: string; value: string }[])
   ) as { label: string; value: string }[];
 
+  const isInvalidPosition = (posRaw: string | null | undefined): boolean => {
+    if (!allowedPositions || allowedPositions.length === 0) return false;
+    if (!posRaw || typeof posRaw !== "string") return false;
+    const normalized = posRaw.trim().toLowerCase();
+    if (
+      normalized === "" ||
+      normalized === "unspecified" ||
+      normalized === "geral"
+    )
+      return false;
+    return !allowedPositions.some(
+      (ap) => ap.value.toLowerCase() === normalized,
+    );
+  };
+
+  const firstInvalidPosition = (): string | null => {
+    const first = volumes.find((v) =>
+      isInvalidPosition(
+        (v as unknown as { position?: string | null | undefined }).position,
+      ),
+    );
+    if (!first) return null;
+    return (
+      (first as unknown as { position?: string | null | undefined }).position ??
+      null
+    );
+  };
+
   return (
     <Card className="p-0 space-y-0 border border-gray-300 bg-gray-50/50">
       <CardContent className="p-4 space-y-4">
         <div>
           <h3 className="text-sm font-semibold flex items-center gap-1.5 text-primary dark:text-gray-200">
             {title ?? t.modules.form.unspecifiedPosition}
-            {allowedPositions &&
-              allowedPositions.length > 0 &&
-              volumes.some((v) => {
-                const posRaw = (v as unknown as { position?: string | null })
-                  .position;
-                if (!posRaw || typeof posRaw !== "string") return false;
-                const normalized = posRaw.trim().toLowerCase();
-                if (
-                  normalized === "" ||
-                  normalized === "unspecified" ||
-                  normalized === "geral"
-                )
-                  return false;
-                return !allowedPositions.some(
-                  (ap) => ap.value.toLowerCase() === normalized,
-                );
-              }) && (
-                <TooltipProvider disableHoverableContent delayDuration={150}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="inline-flex text-amber-600 dark:text-amber-400">
-                        <AlertTriangle size={14} />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="top"
-                      align="start"
-                      className="max-w-[320px] text-xs"
-                    >
-                      {t.modules.warnings.invalidPositionShort
-                        .replace(
-                          "{{position}}",
-                          String(
-                            (
-                              volumes.find((v) => {
-                                const pr = (
-                                  v as unknown as { position?: string | null }
-                                ).position;
-                                return (
-                                  pr &&
-                                  typeof pr === "string" &&
-                                  !allowedPositions.some(
-                                    (ap) =>
-                                      ap.value.toLowerCase() ===
-                                      pr.trim().toLowerCase(),
-                                  )
-                                );
-                              }) as unknown as { position?: string } | undefined
-                            )?.position ?? "",
-                          ),
-                        )
-                        .replace(
-                          "{{accepted}}",
-                          String(
-                            allowedPositions.map((a) => a.value).join(", "),
-                          ),
-                        )}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             {hint ?? t.modules.form.unspecifiedHint}
@@ -304,53 +272,102 @@ const UnspecifiedCardInner = <TForm extends object = any>(
           <FormField
             control={form.control as Control<any>}
             name={`${concreteRootKeyStr}.0.position` as any}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-xs">Posição</FormLabel>
-                <FormControl>
-                  <Select
-                    value={
-                      field.value ??
-                      defaultPosition ??
-                      allowedPositions[0]?.value
-                    }
-                    onValueChange={(val) => {
-                      volumes.forEach((_, i) => {
-                        form.setValue(
-                          `${concreteRootKeyStr}.${i}.position` as any,
-                          val as any,
-                        );
-                      });
-                      const steelArr = (form.getValues(
-                        steelRootKeyStr as any,
-                      ) ?? []) as any[];
-                      steelArr.forEach((_, i) => {
-                        form.setValue(
-                          `${steelRootKeyStr}.${i}.position` as any,
-                          val as any,
-                        );
-                      });
-                      field.onChange(val);
-                    }}
-                  >
-                    <SelectTrigger className="w-full h-9 text-xs">
-                      <SelectValue placeholder="Selecione a posição" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {allowedPositions.map((pos) => (
-                        <SelectItem
-                          key={pos.value}
-                          value={pos.value}
-                          className="text-xs"
+            render={({ field }) => {
+              const currentPosition =
+                field.value ??
+                defaultPosition ??
+                allowedPositions[0]?.value ??
+                null;
+              const invalid = isInvalidPosition(currentPosition);
+              const invalidPosValue =
+                (invalid ? currentPosition : firstInvalidPosition()) ?? "";
+              const acceptedList = allowedPositions
+                .map((a) => a.value)
+                .join(", ");
+              return (
+                <FormItem>
+                  <FormLabel className="text-xs">Posição</FormLabel>
+                  <FormControl>
+                    <div className="relative w-full">
+                      <Select
+                        value={
+                          field.value ??
+                          defaultPosition ??
+                          allowedPositions[0]?.value
+                        }
+                        onValueChange={(val) => {
+                          volumes.forEach((_, i) => {
+                            form.setValue(
+                              `${concreteRootKeyStr}.${i}.position` as any,
+                              val as any,
+                            );
+                          });
+                          const steelArr = (form.getValues(
+                            steelRootKeyStr as any,
+                          ) ?? []) as any[];
+                          steelArr.forEach((_, i) => {
+                            form.setValue(
+                              `${steelRootKeyStr}.${i}.position` as any,
+                              val as any,
+                            );
+                          });
+                          field.onChange(val);
+                        }}
+                      >
+                        <SelectTrigger
+                          className={cn(
+                            "w-full h-9 text-xs",
+                            invalid ? "pr-9" : "",
+                          )}
                         >
-                          {pos.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-              </FormItem>
-            )}
+                          <SelectValue placeholder="Selecione a posição" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {allowedPositions.map((pos) => (
+                            <SelectItem
+                              key={pos.value}
+                              value={pos.value}
+                              className="text-xs"
+                            >
+                              {pos.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {invalid && (
+                        <TooltipProvider
+                          disableHoverableContent
+                          delayDuration={150}
+                        >
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span
+                                className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center text-amber-600 dark:text-amber-400 pointer-events-none"
+                                role="img"
+                                aria-label={t.modules.warnings.invalidPositionShort
+                                  .replace("{{position}}", invalidPosValue)
+                                  .replace("{{accepted}}", acceptedList)}
+                              >
+                                <AlertTriangle size={14} />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="top"
+                              align="end"
+                              className="max-w-[320px] text-xs"
+                            >
+                              {t.modules.warnings.invalidPosition
+                                .replace("{{position}}", invalidPosValue)
+                                .replace("{{accepted}}", acceptedList)}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
+                  </FormControl>
+                </FormItem>
+              );
+            }}
           />
         )}
 

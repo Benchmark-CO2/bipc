@@ -474,6 +474,8 @@ export const en: Translations = {
     alerts: {
       missingFieldsTitle:
         "Fields needed for calculation (do not block submission)",
+      invalidPositionsTitle:
+        "Entries with invalid position detected (do not block submission)",
     },
     warnings: {
       invalidPosition:
@@ -617,6 +619,15 @@ export const en: Translations = {
           noValidSteel: "Module with no valid steel materials",
           minConcrete: "Add at least one concrete volume",
           minSteel: "Add at least one steel material",
+        },
+        warnings: {
+          invalidPositionShort:
+            "Invalid position '{{position}}' in {{field}} #{{index}}. Accepted: {{accepted}}.",
+        },
+        labels: {
+          concrete: "Concrete",
+          steel: "Steel",
+          form: "Formwork",
         },
       },
       selectFck: "Select fck",

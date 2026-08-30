@@ -1786,6 +1786,14 @@ export interface CompletenessWarningsI18n {
     minConcrete: string;
     minSteel: string;
   };
+  warnings?: {
+    invalidPositionShort?: string;
+  };
+  labels?: {
+    concrete?: string;
+    steel?: string;
+    form?: string;
+  };
 }
 
 type RequiredPositionsMap = Record<
@@ -1848,6 +1856,7 @@ export const getCompletenessWarnings = (
 ): { hasWarnings: boolean; messages: string[] } => {
   const positionOut: string[] = [];
   const masonryOut: string[] = [];
+  const invalidPositionOut: string[] = [];
   if (!flatData || !moduleType || !i18n)
     return { hasWarnings: false, messages: [] };
 
@@ -1857,6 +1866,93 @@ export const getCompletenessWarnings = (
   const concreteArr = (flatData.concrete ?? []) as IV2ConcreteVolumeItem<any>[];
   const steelArr = (flatData.steel ?? []) as IV2SteelMaterialItem<any>[];
   const formArr = (flatData.form ?? []) as IV2FormAreaItem<any>[];
+
+  const positionCfg = REQUIRED_POSITIONS[moduleType]?.positions ?? [];
+  const validPositionsAll = new Set<string>();
+  const emptyValues = new Set([
+    "",
+    "geral",
+    "general",
+    "unspecified",
+    "__geral__",
+  ]);
+  for (const p of positionCfg)
+    validPositionsAll.add(String(p).trim().toLowerCase());
+  // Também adiciona os do VALID_POSITIONS_BY_TYPE do moduleCompletion.ts caso existam
+  const MODULE_VALID_POSITIONS: Record<TModulesTypes, string[]> = {
+    beam_column: ["column", "beam", "slab", "stair"],
+    concrete_wall: ["wall", "slab", "stair"],
+    structural_masonry: ["column", "beam", "slab", "stair"],
+    raft_foundation: ["raft"],
+    piles_foundation: ["pile"],
+    raft_piles_foundation: ["raft", "pile"],
+  };
+  for (const p of MODULE_VALID_POSITIONS[moduleType] ?? []) {
+    validPositionsAll.add(String(p).trim().toLowerCase());
+  }
+
+  const formatInvalidPos = (
+    fieldLabel: string,
+    idx: number,
+    invalidPos: string,
+    accepted: string[],
+  ): string => {
+    const tpl =
+      (i18n as any).warnings?.invalidPositionShort ??
+      "Posição inválida '{{position}}' em {{field}} #{{index}}. Válidas: {{accepted}}.";
+    return String(tpl)
+      .replace("{{position}}", String(invalidPos))
+      .replace("{{field}}", fieldLabel)
+      .replace("{{index}}", String(idx + 1))
+      .replace("{{accepted}}", accepted.join(", "));
+  };
+
+  const acceptedList = Array.from(validPositionsAll);
+  for (const [i, c] of concreteArr.entries()) {
+    const pr = typeof c?.position === "string" ? c.position : "";
+    const trimmed = pr.trim().toLowerCase();
+    if (trimmed === "" || emptyValues.has(trimmed)) continue;
+    if (!validPositionsAll.has(trimmed)) {
+      invalidPositionOut.push(
+        formatInvalidPos(
+          (i18n as any).labels?.concrete ?? "Concreto",
+          i,
+          pr,
+          acceptedList,
+        ),
+      );
+    }
+  }
+  for (const [i, s] of steelArr.entries()) {
+    const pr = typeof s?.position === "string" ? s.position : "";
+    const trimmed = pr.trim().toLowerCase();
+    if (trimmed === "" || emptyValues.has(trimmed)) continue;
+    if (!validPositionsAll.has(trimmed)) {
+      invalidPositionOut.push(
+        formatInvalidPos(
+          (i18n as any).labels?.steel ?? "Aço",
+          i,
+          pr,
+          acceptedList,
+        ),
+      );
+    }
+  }
+  for (const [i, f] of formArr.entries()) {
+    const pr = typeof f?.position === "string" ? f.position : "";
+    const trimmed = pr.trim().toLowerCase();
+    if (trimmed === "" || emptyValues.has(trimmed)) continue;
+    if (!validPositionsAll.has(trimmed)) {
+      invalidPositionOut.push(
+        formatInvalidPos(
+          (i18n as any).labels?.form ?? "Fôrma",
+          i,
+          pr,
+          acceptedList,
+        ),
+      );
+    }
+  }
 
   const hasConcreteAt = (pos: string) =>
     concreteArr.some(
@@ -1969,6 +2065,11 @@ export const getCompletenessWarnings = (
     }
   }
 
-  const messages = [...positionOut, ...masonryOut, ...globalOut];
+  const messages = [
+    ...invalidPositionOut,
+    ...positionOut,
+    ...masonryOut,
+    ...globalOut,
+  ];
   return { hasWarnings: messages.length > 0, messages };
 };
