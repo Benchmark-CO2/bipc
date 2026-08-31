@@ -19,8 +19,8 @@ var QRCode string
 //go:embed "templates"
 var TemplateFS embed.FS
 
-//go:embed cert.pem
-var CertPEM []byte
+////go:embed cert.pem
+//var CertPEM []byte
 
-//go:embed key.pem
-var KeyPEM []byte
+////go:embed key.pem
+//var KeyPEM []byte

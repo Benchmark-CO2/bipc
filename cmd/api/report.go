@@ -16,7 +16,6 @@ import (
 
 	"encoding/base64"
 	"encoding/json"
-	"encoding/pem"
 	"html/template"
 	"log"
 
@@ -42,43 +41,43 @@ func mergePDFsInMemory(pdfs ...[]byte) (*bytes.Buffer, error) {
 	return &out, nil
 }
 
-func loadPEMCertAndKey() (*x509.Certificate, crypto.Signer, []*x509.Certificate, error) {
-	certBlock, _ := pem.Decode(assets.CertPEM)
-	if certBlock == nil || certBlock.Type != "CERTIFICATE" {
-		return nil, nil, nil, fmt.Errorf("não foi possível decodificar PEM do certificado")
-	}
+// func loadPEMCertAndKey() (*x509.Certificate, crypto.Signer, []*x509.Certificate, error) {
+// 	certBlock, _ := pem.Decode(assets.CertPEM)
+// 	if certBlock == nil || certBlock.Type != "CERTIFICATE" {
+// 		return nil, nil, nil, fmt.Errorf("não foi possível decodificar PEM do certificado")
+// 	}
 
-	certificate, err := x509.ParseCertificate(certBlock.Bytes)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("erro ao parsear certificado: %w", err)
-	}
+// 	certificate, err := x509.ParseCertificate(certBlock.Bytes)
+// 	if err != nil {
+// 		return nil, nil, nil, fmt.Errorf("erro ao parsear certificado: %w", err)
+// 	}
 
-	keyBlock, _ := pem.Decode(assets.KeyPEM)
-	if keyBlock == nil {
-		return nil, nil, nil, fmt.Errorf("não foi possível decodificar PEM da chave privada")
-	}
+// 	keyBlock, _ := pem.Decode(assets.KeyPEM)
+// 	if keyBlock == nil {
+// 		return nil, nil, nil, fmt.Errorf("não foi possível decodificar PEM da chave privada")
+// 	}
 
-	var privKey any
-	switch keyBlock.Type {
-	case "RSA PRIVATE KEY":
-		privKey, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
-	case "PRIVATE KEY":
-		privKey, err = x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
-	default:
-		return nil, nil, nil, fmt.Errorf("tipo de chave privada não suportado: %s", keyBlock.Type)
-	}
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("erro ao parsear chave privada: %w", err)
-	}
+// 	var privKey any
+// 	switch keyBlock.Type {
+// 	case "RSA PRIVATE KEY":
+// 		privKey, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
+// 	case "PRIVATE KEY":
+// 		privKey, err = x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
+// 	default:
+// 		return nil, nil, nil, fmt.Errorf("tipo de chave privada não suportado: %s", keyBlock.Type)
+// 	}
+// 	if err != nil {
+// 		return nil, nil, nil, fmt.Errorf("erro ao parsear chave privada: %w", err)
+// 	}
 
-	signer, ok := privKey.(crypto.Signer)
-	if !ok {
-		return nil, nil, nil, fmt.Errorf("a chave privada não implementa crypto.Signer")
-	}
+// 	signer, ok := privKey.(crypto.Signer)
+// 	if !ok {
+// 		return nil, nil, nil, fmt.Errorf("a chave privada não implementa crypto.Signer")
+// 	}
 
-	// Certificado autoassinado: sem cadeia de CAs intermediárias.
-	return certificate, signer, nil, nil
-}
+// 	// Certificado autoassinado: sem cadeia de CAs intermediárias.
+// 	return certificate, signer, nil, nil
+// }
 
 // signPDFInMemory assina digitalmente um PDF (em bytes) usando digitorus/pdfsign,
 // sem escrever arquivos temporários em disco, e retorna o PDF assinado.
