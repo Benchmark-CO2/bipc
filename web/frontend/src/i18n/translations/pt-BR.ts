@@ -851,6 +851,7 @@ export const ptBR = {
         name: "Benchmark",
         yAxisLabel: "Potencial de mitigação",
         xAxisLabelCarbon: "Carbono Embutido (kg CO₂/m²)",
+        xAxisLabelMaterial: "Consumo Unitário de Materiais (m³/m²)",
         xAxisLabelEnergy: "Energia Embutida MJ/m²",
         baseLine: "linha de base",
         ppp5Line: "PPp 5%",
@@ -867,6 +868,11 @@ export const ptBR = {
         xAxisLabelCarbon: "Consumo Unitário de Materiais - CUM (m³/m²)",
         xAxisLabelEnergy: "Consumo Unitário de Materiais - CUM (m³/m²)",
       },
+      emission: {
+        co2Label: "CO₂ (kg)",
+        energyLabel: "Energia (MJ)",
+        materialLabel: "Material (m³/m²)",
+      }
     },
     chartPlaceholder: "Gráfico",
     loadingData: "Carregando dados...",

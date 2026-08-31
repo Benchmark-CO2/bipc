@@ -104,7 +104,7 @@ const FloorSummary = ({
 
       // 2. Prepara newDataItems (incluindo o Total da Unidade)
       const typeNewItems = newItems.map((item) => item[t]);
-      
+
       let unitTotalItem = null;
       // Trata o objeto "unit" como "total" no gráfico
       const unitConsumptions = (unit as any)?.consumptions?.total;
@@ -112,17 +112,18 @@ const FloorSummary = ({
         unitTotalItem = {
           id: "total",
           y: 0,
-          label: `Total (${unit.name || "Unidade"})`,
+          label: `Total (${unit.name || 'Unidade'})`,
           ...(t === "material"
             ? {
-                value: unitConsumptions.material || 0,
-                min: unitConsumptions.material || 0,
-                max: unitConsumptions.material || 0,
-              }
+              value: unitConsumptions.material || 0,
+              min: unitConsumptions.material || 0,
+              max: unitConsumptions.material || 0,
+            }
             : {
-                min: unitConsumptions[`${t}_min`] || 0,
-                max: unitConsumptions[`${t}_max`] || 0,
-              }),
+              min: unitConsumptions[`${t}_min`] || 0,
+              max: unitConsumptions[`${t}_max`] || 0,
+            }
+          )
         };
       }
 
@@ -263,11 +264,9 @@ const FloorSummary = ({
     if (!unit || !filteredFloors) return [];
 
     const buildChartData = (item: any, isUnitTotal: boolean = false) => {
-      const co2Row: Record<string, any> = { name: "CO₂ (kg)" };
-      const energyRow: Record<string, any> = { name: "Energia (MJ)" };
-      const materialRow: Record<string, any> = {
-        name: `Material (${unitsOfMeasure.material || "kg"})`,
-      };
+      const co2Row: Record<string, any> = { name: t.benchmark.chartTypes.emission.co2Label, id: 'co2' };
+      const energyRow: Record<string, any> = { name: t.benchmark.chartTypes.emission.energyLabel, id: 'energy' };
+      const materialRow: Record<string, any> = { name: t.benchmark.chartTypes.emission.materialLabel, id: 'material' };
 
       // Se for o total da unidade e tiver 'consumptions'
       if (isUnitTotal && (item as any)?.consumptions) {
@@ -342,8 +341,7 @@ const FloorSummary = ({
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
       {/* ── BARRA SUPERIOR: Valores e PCVRB ── */}
-      <div className="flex justify-between gap-2 w-full">
-        {
+      <div className='flex justify-between gap-2 w-full'>
           <div className="flex flex-wrap xl:flex-nowrap gap-4 w-full">
             <ScenarioCard
               letter="V"
@@ -462,7 +460,8 @@ const FloorSummary = ({
 
       {/* ── CONTEÚDO PRINCIPAL (Exibido quando aberto) ── */}
       {(isOpen || isExpanded) && (
-        <div className="flex gap-4 items-start">
+        <div className='flex gap-4 items-start'>
+
           {/* COLUNA ESQUERDA (1/3) */}
           <div className="w-1/3 flex-shrink-0 mt-0 flex flex-col">
             <div className="flex flex-col gap-0 w-full">

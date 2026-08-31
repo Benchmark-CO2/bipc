@@ -134,7 +134,7 @@ const UnitsSummary = ({
       );
 
       const typeNewItems = newItems.map((item) => item[t]);
-      
+
       let projectTotalItem = null;
       if (project?.consumption?.total) {
         projectTotalItem = {
@@ -314,10 +314,17 @@ const UnitsSummary = ({
     const buildChartData = (consumptions: any) => {
       if (!consumptions) return [];
 
-      const co2Row: Record<string, any> = { name: "CO₂ (kg)" };
-      const energyRow: Record<string, any> = { name: "Energia (MJ)" };
+      const co2Row: Record<string, any> = {
+        name: t.benchmark.chartTypes.emission.co2Label,
+        id: "co2",
+      };
+      const energyRow: Record<string, any> = {
+        name: t.benchmark.chartTypes.emission.energyLabel,
+        id: "energy",
+      };
       const materialRow: Record<string, any> = {
-        name: `Material (${unitsOfMeasure.material || "kg"})`,
+        name: t.benchmark.chartTypes.emission.materialLabel,
+        id: "material",
       };
 
       Object.entries(consumptions).forEach(([key, values]) => {
