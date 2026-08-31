@@ -112,18 +112,17 @@ const FloorSummary = ({
         unitTotalItem = {
           id: "total",
           y: 0,
-          label: `Total (${unit.name || 'Unidade'})`,
+          label: `Total (${unit.name || "Unidade"})`,
           ...(t === "material"
             ? {
-              value: unitConsumptions.material || 0,
-              min: unitConsumptions.material || 0,
-              max: unitConsumptions.material || 0,
-            }
+                value: unitConsumptions.material || 0,
+                min: unitConsumptions.material || 0,
+                max: unitConsumptions.material || 0,
+              }
             : {
-              min: unitConsumptions[`${t}_min`] || 0,
-              max: unitConsumptions[`${t}_max`] || 0,
-            }
-          )
+                min: unitConsumptions[`${t}_min`] || 0,
+                max: unitConsumptions[`${t}_max`] || 0,
+              }),
         };
       }
 
@@ -264,9 +263,18 @@ const FloorSummary = ({
     if (!unit || !filteredFloors) return [];
 
     const buildChartData = (item: any, isUnitTotal: boolean = false) => {
-      const co2Row: Record<string, any> = { name: t.benchmark.chartTypes.emission.co2Label, id: 'co2' };
-      const energyRow: Record<string, any> = { name: t.benchmark.chartTypes.emission.energyLabel, id: 'energy' };
-      const materialRow: Record<string, any> = { name: t.benchmark.chartTypes.emission.materialLabel, id: 'material' };
+      const co2Row: Record<string, any> = {
+        name: t.benchmark.chartTypes.emission.co2Label,
+        id: "co2",
+      };
+      const energyRow: Record<string, any> = {
+        name: t.benchmark.chartTypes.emission.energyLabel,
+        id: "energy",
+      };
+      const materialRow: Record<string, any> = {
+        name: t.benchmark.chartTypes.emission.materialLabel,
+        id: "material",
+      };
 
       // Se for o total da unidade e tiver 'consumptions'
       if (isUnitTotal && (item as any)?.consumptions) {
@@ -341,127 +349,123 @@ const FloorSummary = ({
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
       {/* ── BARRA SUPERIOR: Valores e PCVRB ── */}
-      <div className='flex justify-between gap-2 w-full'>
-          <div className="flex flex-wrap xl:flex-nowrap gap-4 w-full">
-            <ScenarioCard
-              letter="V"
-              title={
-                t.summary.chartLegend?.referenceValue || "Valor referência"
-              }
-              color="#62A436"
-              items={[
-                {
-                  total: formatMetric(allPcvMetrics.co2.V * unitArea),
-                  benchmark: formatMetric(allPcvMetrics.co2.V),
-                  unitTotal: "CO₂ kg",
-                  unitBenchmark: "CO₂ kg/m²",
-                },
-                {
-                  total: formatMetric(allPcvMetrics.energy.V * unitArea),
-                  benchmark: formatMetric(allPcvMetrics.energy.V),
-                  unitTotal: "MJ",
-                  unitBenchmark: "MJ/m²",
-                },
-                {
-                  total: formatMetric(allPcvMetrics.material.V * unitArea),
-                  benchmark: formatMetric(allPcvMetrics.material.V),
-                  unitTotal: "m³",
-                  unitBenchmark: "m³/m²",
-                },
-              ]}
-            />
-            <ScenarioCard
-              letter="C"
-              title={
-                t.summary.chartLegend?.constructionMitigationPotential ||
-                "Melhor cenário"
-              }
-              color="#5B9BD5"
-              items={[
-                {
-                  total: formatMetric(allPcvMetrics.co2.C * unitArea),
-                  benchmark: formatMetric(allPcvMetrics.co2.C),
-                  unitTotal: "CO₂ kg",
-                  unitBenchmark: "CO₂ kg/m²",
-                },
-                {
-                  total: formatMetric(allPcvMetrics.energy.C * unitArea),
-                  benchmark: formatMetric(allPcvMetrics.energy.C),
-                  unitTotal: "MJ",
-                  unitBenchmark: "MJ/m²",
-                },
-                {
-                  total: formatMetric(allPcvMetrics.material.C * unitArea),
-                  benchmark: formatMetric(allPcvMetrics.material.C),
-                  unitTotal: "m³",
-                  unitBenchmark: "m³/m²",
-                },
-              ]}
-            />
-            <ScenarioCard
-              letter="R"
-              title={
-                t.summary.chartLegend?.riskOfLowerConstructionMitigation ||
-                "Pior cenário"
-              }
-              color="#E0756C"
-              items={[
-                {
-                  total: formatMetric(allPcvMetrics.co2.R * unitArea),
-                  benchmark: formatMetric(allPcvMetrics.co2.R),
-                  unitTotal: "CO₂ kg",
-                  unitBenchmark: "CO₂ kg/m²",
-                },
-                {
-                  total: formatMetric(allPcvMetrics.energy.R * unitArea),
-                  benchmark: formatMetric(allPcvMetrics.energy.R),
-                  unitTotal: "MJ",
-                  unitBenchmark: "MJ/m²",
-                },
-                {
-                  total: formatMetric(allPcvMetrics.material.R * unitArea),
-                  benchmark: formatMetric(allPcvMetrics.material.R),
-                  unitTotal: "m³",
-                  unitBenchmark: "m³/m²",
-                },
-              ]}
-            />
-            <ScenarioCard
-              letter="P"
-              title={
-                t.summary.chartLegend?.projectMitigationPotential ||
-                "Potencial de mitigação"
-              }
-              color="#9F70DB"
-              items={[
-                {
-                  total: formatMetric(allPcvMetrics.co2.P * unitArea),
-                  benchmark: formatMetric(allPcvMetrics.co2.P),
-                  unitTotal: "CO₂ kg",
-                  unitBenchmark: "CO₂ kg/m²",
-                },
-                {
-                  total: formatMetric(allPcvMetrics.energy.P * unitArea),
-                  benchmark: formatMetric(allPcvMetrics.energy.P),
-                  unitTotal: "MJ",
-                  unitBenchmark: "MJ/m²",
-                },
-                {
-                  total: formatMetric(allPcvMetrics.material.P * unitArea),
-                  benchmark: formatMetric(allPcvMetrics.material.P),
-                  unitTotal: "m³",
-                  unitBenchmark: "m³/m²",
-                },
-              ]}
-            />
-          </div>
-        }
+      <div className="flex justify-between gap-2 w-full">
+        <div className="flex flex-wrap xl:flex-nowrap gap-4 w-full">
+          <ScenarioCard
+            letter="V"
+            title={t.summary.chartLegend?.referenceValue || "Valor referência"}
+            color="#62A436"
+            items={[
+              {
+                total: formatMetric(allPcvMetrics.co2.V * unitArea),
+                benchmark: formatMetric(allPcvMetrics.co2.V),
+                unitTotal: "CO₂ kg",
+                unitBenchmark: "CO₂ kg/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.energy.V * unitArea),
+                benchmark: formatMetric(allPcvMetrics.energy.V),
+                unitTotal: "MJ",
+                unitBenchmark: "MJ/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.material.V * unitArea),
+                benchmark: formatMetric(allPcvMetrics.material.V),
+                unitTotal: "m³",
+                unitBenchmark: "m³/m²",
+              },
+            ]}
+          />
+          <ScenarioCard
+            letter="C"
+            title={
+              t.summary.chartLegend?.constructionMitigationPotential ||
+              "Melhor cenário"
+            }
+            color="#5B9BD5"
+            items={[
+              {
+                total: formatMetric(allPcvMetrics.co2.C * unitArea),
+                benchmark: formatMetric(allPcvMetrics.co2.C),
+                unitTotal: "CO₂ kg",
+                unitBenchmark: "CO₂ kg/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.energy.C * unitArea),
+                benchmark: formatMetric(allPcvMetrics.energy.C),
+                unitTotal: "MJ",
+                unitBenchmark: "MJ/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.material.C * unitArea),
+                benchmark: formatMetric(allPcvMetrics.material.C),
+                unitTotal: "m³",
+                unitBenchmark: "m³/m²",
+              },
+            ]}
+          />
+          <ScenarioCard
+            letter="R"
+            title={
+              t.summary.chartLegend?.riskOfLowerConstructionMitigation ||
+              "Pior cenário"
+            }
+            color="#E0756C"
+            items={[
+              {
+                total: formatMetric(allPcvMetrics.co2.R * unitArea),
+                benchmark: formatMetric(allPcvMetrics.co2.R),
+                unitTotal: "CO₂ kg",
+                unitBenchmark: "CO₂ kg/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.energy.R * unitArea),
+                benchmark: formatMetric(allPcvMetrics.energy.R),
+                unitTotal: "MJ",
+                unitBenchmark: "MJ/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.material.R * unitArea),
+                benchmark: formatMetric(allPcvMetrics.material.R),
+                unitTotal: "m³",
+                unitBenchmark: "m³/m²",
+              },
+            ]}
+          />
+          <ScenarioCard
+            letter="P"
+            title={
+              t.summary.chartLegend?.projectMitigationPotential ||
+              "Potencial de mitigação"
+            }
+            color="#9F70DB"
+            items={[
+              {
+                total: formatMetric(allPcvMetrics.co2.P * unitArea),
+                benchmark: formatMetric(allPcvMetrics.co2.P),
+                unitTotal: "CO₂ kg",
+                unitBenchmark: "CO₂ kg/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.energy.P * unitArea),
+                benchmark: formatMetric(allPcvMetrics.energy.P),
+                unitTotal: "MJ",
+                unitBenchmark: "MJ/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.material.P * unitArea),
+                benchmark: formatMetric(allPcvMetrics.material.P),
+                unitTotal: "m³",
+                unitBenchmark: "m³/m²",
+              },
+            ]}
+          />
+        </div>
       </div>
 
       {/* ── CONTEÚDO PRINCIPAL (Exibido quando aberto) ── */}
       {(isOpen || isExpanded) && (
-        <div className='flex gap-4 items-start'>
-
+        <div className="flex gap-4 items-start">
           {/* COLUNA ESQUERDA (1/3) */}
           <div className="w-1/3 flex-shrink-0 mt-0 flex flex-col">
             <div className="flex flex-col gap-0 w-full">
