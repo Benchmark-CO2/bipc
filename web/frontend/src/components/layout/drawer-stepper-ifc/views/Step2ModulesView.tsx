@@ -3,13 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert } from "@/components/ui/alert";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -24,7 +17,6 @@ import { cn } from "@/lib/utils";
 
 export function Step2ModulesView({
   state,
-  setModuleBoundUnit,
   onEditModule,
   toggleModuleSelected,
   toggleAllModulesSelected,

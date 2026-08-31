@@ -31,7 +31,6 @@ export const StepperHeader: React.FC<StepperHeaderProps> = ({
   state,
   applyUnitToAllModules: _applyUnitToAllModules,
 }) => {
-  const t = translations;
   return (
     <>
       <DialogHeader className="px-3 pt-1 pb-2 border-b gap-1.5">

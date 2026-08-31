@@ -90,9 +90,7 @@ export function useFloorIndexMappings({
     (m) => m.tempId === editingModuleTempId,
   );
 
-  const editingModuleBoundUnit = useMemo<
-    TIfcStepperCreatedUnit | undefined
-  >(() => {
+  const editingModuleBoundUnit: TIfcStepperCreatedUnit | undefined = (() => {
     if (!editingModule?.boundUnitTempId) return undefined;
     const tempId = editingModule.boundUnitTempId;
     const inCreated = state.unitsCreated.find((u) => u.tempId === tempId);
@@ -109,17 +107,15 @@ export function useFloorIndexMappings({
       } as unknown as TIfcStepperCreatedUnit;
     }
 
-    if (isSimulationMode && simulationCreatedUnit) {
+    if (
+      isSimulationMode &&
+      simulationCreatedUnit &&
+      tempId === simulationBoundUnitTempId
+    ) {
       return simulationCreatedUnit;
     }
     return undefined;
-  }, [
-    editingModule?.boundUnitTempId,
-    state.unitsCreated,
-    state.units,
-    isSimulationMode,
-    simulationCreatedUnit,
-  ]);
+  })();
 
   const normalizedUnitsFloorMap: Map<string, TTowerFloorCategory[]> =
     useMemo(() => {
@@ -214,63 +210,74 @@ export function useFloorIndexMappings({
       projectId,
     ]);
 
-  const editingUnitFloors: TTowerFloorCategory[] = useMemo(() => {
-    if (!editingModuleBoundUnit) {
-      const firstWithFloors = Array.from(normalizedUnitsFloorMap.values()).find(
-        (arr) => arr.length > 0,
-      );
-      if (firstWithFloors && firstWithFloors.length > 0) return firstWithFloors;
-      return inferTowerFloorsFromModuleFloorIndexes(state.modules);
+  const editingUnitFloors: TTowerFloorCategory[] = (() => {
+    const directTempId = editingModule?.boundUnitTempId;
+    if (directTempId) {
+      const direct = normalizedUnitsFloorMap.get(directTempId);
+      if (direct && direct.length > 0) return direct;
     }
-    const tempId = editingModuleBoundUnit.tempId;
-    const fromMap = normalizedUnitsFloorMap.get(tempId);
-    if (fromMap && fromMap.length > 0) return fromMap;
 
-    if (editingModuleBoundUnit.unitId) {
-      if (editingModuleBoundUnit.unitName) {
-        const unitState = state.units.find(
-          (u) => u.name === editingModuleBoundUnit!.unitName,
-        );
-        const raw = unitState?.formData?.data?.floors ?? [];
-        if (raw.length > 0) {
-          return convertFloorFormInputToTowerFloors(
-            raw as unknown as UnitFormInput["data"]["floors"],
+    if (editingModuleBoundUnit) {
+      const tempId = editingModuleBoundUnit.tempId;
+      const fromMap = normalizedUnitsFloorMap.get(tempId);
+      if (fromMap && fromMap.length > 0) return fromMap;
+
+      if (editingModuleBoundUnit.unitId) {
+        if (editingModuleBoundUnit.unitName) {
+          const unitState = state.units.find(
+            (u) => u.name === editingModuleBoundUnit!.unitName,
           );
+          const raw = unitState?.formData?.data?.floors ?? [];
+          if (raw.length > 0) {
+            return convertFloorFormInputToTowerFloors(
+              raw as unknown as UnitFormInput["data"]["floors"],
+            );
+          }
+        }
+        try {
+          const cached = queryClient.getQueryData([
+            "unit",
+            projectId,
+            editingModuleBoundUnit.unitId,
+          ]) as IGetUnitByUUIDCachedResponse | undefined;
+          const cachedFloors = cached?.data?.unit?.floors;
+          if (
+            cachedFloors &&
+            Array.isArray(cachedFloors) &&
+            cachedFloors.length > 0
+          ) {
+            return cachedFloors as TTowerFloorCategory[];
+          }
+        } catch (_e) {
+          /* ignore */
         }
       }
-      try {
-        const cached = queryClient.getQueryData([
-          "unit",
-          projectId,
-          editingModuleBoundUnit.unitId,
-        ]) as IGetUnitByUUIDCachedResponse | undefined;
-        const cachedFloors = cached?.data?.unit?.floors;
-        if (
-          cachedFloors &&
-          Array.isArray(cachedFloors) &&
-          cachedFloors.length > 0
-        ) {
-          return cachedFloors as TTowerFloorCategory[];
-        }
-      } catch (_e) {
-        /* ignore */
+      if (fromMap && fromMap.length > 0) return fromMap;
+      const inferredBound = inferTowerFloorsFromModuleFloorIndexes(
+        state.modules,
+        editingModuleBoundUnit.tempId,
+      );
+      if (inferredBound.length > 0) return inferredBound;
+    }
+
+    if (editingModule) {
+      const onlyCurrent: TIfcStepperState["modules"] = [editingModule];
+      const onlyCurrentInferred =
+        inferTowerFloorsFromModuleFloorIndexes(onlyCurrent);
+      if (onlyCurrentInferred.length > 0) return onlyCurrentInferred;
+
+      if (editingModule.boundUnitTempId) {
+        const sameTempId = state.modules.filter(
+          (m) => m.boundUnitTempId === editingModule.boundUnitTempId,
+        );
+        const sameTempIdInferred =
+          inferTowerFloorsFromModuleFloorIndexes(sameTempId);
+        if (sameTempIdInferred.length > 0) return sameTempIdInferred;
       }
     }
-    if (fromMap && fromMap.length > 0) return fromMap;
-    const inferredBound = inferTowerFloorsFromModuleFloorIndexes(
-      state.modules,
-      editingModuleBoundUnit.tempId,
-    );
-    if (inferredBound.length > 0) return inferredBound;
-    return inferTowerFloorsFromModuleFloorIndexes(state.modules);
-  }, [
-    editingModuleBoundUnit,
-    normalizedUnitsFloorMap,
-    state.units,
-    state.modules,
-    queryClient,
-    projectId,
-  ]);
+
+    return [];
+  })();
 
   const editingModuleInitialSelectedFloors: string[] = useMemo(() => {
     if (!editingModule) return [];

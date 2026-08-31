@@ -1459,6 +1459,9 @@ export const en: Translations = {
     stepModulesDescription: "Bind and create modules",
     stepSimulationModulesDescription:
       "Bind to the simulation and create modules",
+    import: {
+      fromFile: "From IFC file",
+    },
     btnNext: "Next step",
     btnFinish: "Finish",
     btnCancel: "Cancel",
@@ -1478,6 +1481,7 @@ export const en: Translations = {
       description:
         "Select an existing simulation to add the modules extracted from the IFC.",
       selectLabel: "Target simulation (where modules will be created)",
+      contextLabel: "Project unit",
       createdLabel: "Created simulation",
       noOptions: "No simulations created yet",
       selectPlaceholder: "Select a simulation",
@@ -1521,6 +1525,13 @@ export const en: Translations = {
       errors: "error",
       errorsPlural: "errors",
       errorsUnknown: "Validation pending or failed.",
+    },
+    compat: {
+      floorMismatchTitle: "Floor count mismatch",
+      floorMismatchBody:
+        "Cannot continue with the import. The selected file contains {importedUnitName} with {importedFloorsCount} {importedFloorsLabel}, but the project unit ({contextUnitName}) has {contextFloorsCount} {contextFloorsLabel}. Units must have compatible floor counts.",
+      floorMismatchActionHelp:
+        "Fix the project unit or import another file to continue.",
     },
     others: "more",
   },

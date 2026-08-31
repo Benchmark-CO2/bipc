@@ -1,22 +1,9 @@
 import { AlertTriangle } from "lucide-react";
 import { Step2ModulesView } from "./Step2ModulesView";
-import { Translations } from "@/i18n/translations/pt-BR";
-import { TIfcStepperState } from "@/types/ifc";
-
-export interface Step2ContentProps {
-  translations: Translations;
-  state: TIfcStepperState;
-  setModuleBoundUnit: (moduleTempId: string, unitTempId: string) => void;
-  onEditModule: (tempId: string) => void;
-  toggleModuleSelected: (tempId: string) => void;
-  toggleAllModulesSelected: (checked: boolean) => void;
-  moduleTypeLabels: Record<string, string>;
-  step2Error: string;
-  isSimulationMode: boolean;
-  activeStep: number;
-}
+import { Step2ContentProps } from "@/types/ifc";
 
 export function Step2Content({
+  translations: _translations,
   state,
   setModuleBoundUnit,
   onEditModule,

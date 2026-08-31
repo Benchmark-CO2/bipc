@@ -319,15 +319,6 @@ export default function DrawerStepperIFC({
   // Step 1 — Units helpers
   // ---------------------------------------------------------------------------
 
-  const toggleUnitSelected = (tempId: string) => {
-    setState((prev) => ({
-      ...prev,
-      units: prev.units.map((u) =>
-        u.tempId === tempId ? { ...u, selected: !u.selected } : u,
-      ),
-    }));
-  };
-
   const setUnitNameInline = (tempId: string, name: string) => {
     setState((prev) => {
       const next = { ...prev };

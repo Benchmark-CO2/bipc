@@ -6,6 +6,7 @@ import { patchIfcHideRequest } from "@/actions/ifc/patchIfcHideRequest";
 import { patchIfcShowRequest } from "@/actions/ifc/patchIfcShowRequest";
 import { postIfcCreateRequest } from "@/actions/ifc/postIfcCreateRequest";
 import { getProjectByUUID } from "@/actions/projects/getProject";
+import { getUnitByUUID } from "@/actions/units/getUnit";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslation } from "@/i18n";
@@ -16,6 +17,7 @@ import {
   TIfcProcessorFallbackVersion,
   TIfcProcessorImportStatus,
   TIfcProcessorRequestListItem,
+  TFloorMismatchError,
 } from "@/types/ifc";
 import { TRole } from "@/types/disciplines";
 import { dateUtils } from "@/utils/date";
@@ -34,9 +36,10 @@ import {
   Info,
   Plus,
 } from "lucide-react";
-import { useMemo, useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
+import { ModalMismatchFloors } from "./modal-mismatch-floors";
 import {
   Drawer,
   DrawerContent,
@@ -314,6 +317,20 @@ export default function DrawerIFCImport({
     useState<TIfcProcessorAggregatedResult | null>(null);
   const [stepperMountKey, setStepperMountKey] = useState(0);
 
+  // Modal incompatibilidade de pavimentos (validação PRÉ-STEPPER)
+  const [floorMismatchOpen, setFloorMismatchOpen] = useState(false);
+  const [floorMismatchData, setFloorMismatchData] =
+    useState<TFloorMismatchError | null>(null);
+
+  // Busca dados da unidade existente (unidade do contexto) para poder comparar
+  // número de pavimentos — roda apenas no modo simulation quando unitId existe.
+  const { data: existingUnitData } = useQuery({
+    queryKey: ["unit", projectId, unitId, "ifc-import-context"],
+    queryFn: () => getUnitByUUID(projectId, unitId || ""),
+    enabled: mode === "simulation" && isOpen && Boolean(unitId),
+    staleTime: 1000 * 60 * 5,
+  });
+
   const isMobile = useIsMobile();
   const { t } = useTranslation();
   const translations = t as unknown as Translations;
@@ -396,11 +413,7 @@ export default function DrawerIFCImport({
     },
   });
 
-  const {
-    data: ifcFallbacksRaw,
-    isLoading: isLoadingIfcFallbacks,
-    isError: isIfcFallbacksError,
-  } = useQuery({
+  const { data: ifcFallbacksRaw, isLoading: isLoadingIfcFallbacks } = useQuery({
     queryKey: ["ifcFallbacks"],
     queryFn: async () => {
       const res = await getIfcFallbacks();
@@ -697,6 +710,68 @@ export default function DrawerIFCImport({
           toast.error("Dados do IFC vazios ou formato inválido.");
           return;
         }
+
+        // --- Validação PRÉ-STEPPER: incompatibilidade de quantidade de pavimentos ---
+        // Só faz sentido quando há uma unidade de contexto (modo simulation com unitId)
+        // e nós temos os dados da unidade existente carregados.
+        if (mode === "simulation" && unitId && existingUnitData) {
+          const contextFloorsCount =
+            existingUnitData?.data?.unit?.floors?.length ?? 0;
+          const contextUnitName = existingUnitData?.data?.unit?.name ?? null;
+
+          // Conta pavimentos IMPORTADOS do arquivo:
+          // (A) Prioridade: floors[] explícitos no result.units (agregado em array).
+          // (B) Fallback: inferir via floor_index dos módulos (quando floors array vier vazio
+          //     ou a unidade foi em formato não-nested).
+          const rawUnits = Array.isArray(data.units)
+            ? data.units
+            : [data.units];
+          let importedFloorsCount = 0;
+          let importedUnitName = "-";
+          if (rawUnits.length > 0) {
+            const firstUnit = rawUnits[0];
+            importedUnitName = firstUnit?.name ?? firstUnit?.data?.name ?? "-";
+            const explicitFloors = firstUnit?.data?.floors ?? [];
+            if (explicitFloors.length > 0) {
+              importedFloorsCount = explicitFloors.length;
+            }
+          }
+
+          if (importedFloorsCount === 0) {
+            // Fallback (B): contar floor_index dos módulos (Set para unique)
+            const seen = new Set<number>();
+            for (const m of data.modules ?? []) {
+              const mData = m.data as Record<string, unknown> | undefined;
+              const idx = mData?.floor_index as number | string | undefined;
+              if (idx === undefined || idx === null) continue;
+              const n = Number(idx);
+              if (!Number.isFinite(n)) continue;
+              seen.add(n);
+            }
+            importedFloorsCount = seen.size;
+            if (importedUnitName === "-" || importedUnitName === "") {
+              importedUnitName = translations.stepper.simulation.title;
+            }
+          }
+
+          if (
+            importedFloorsCount > 0 &&
+            importedFloorsCount !== contextFloorsCount
+          ) {
+            setFloorMismatchData({
+              importedUnitName,
+              importedFloorsCount,
+              contextUnitName,
+              contextFloorsCount,
+            });
+            setFloorMismatchOpen(true);
+            // ⚠️ NÃO abre stepper, NÃO fecha o drawer-ifc-import.
+            // O usuário volta para selecionar outro arquivo / ação.
+            return;
+          }
+        }
+
+        // Fluxo padrão (OK / compatível): segue para abrir drawer-stepper
         setStepperResult(data);
         setStepperMountKey((k) => k + 1);
         setStepperOpen(true);
@@ -726,6 +801,8 @@ export default function DrawerIFCImport({
     setStepperOpen(false);
     setSelectedRoleId("");
     setShowAllIfcRequests(false);
+    setFloorMismatchOpen(false);
+    setFloorMismatchData(null);
   };
 
   const handleFileTypeChange = (ft: FileType) => {
@@ -1342,6 +1419,16 @@ export default function DrawerIFCImport({
           )}
         </DrawerContent>
       </Drawer>
+
+      {/* Modal incompatibilidade de pavimentos (validação pré-stepper) */}
+      <ModalMismatchFloors
+        open={floorMismatchOpen}
+        onOpenChange={(open) => {
+          setFloorMismatchOpen(open);
+          if (!open) setFloorMismatchData(null);
+        }}
+        data={floorMismatchData}
+      />
 
       {stepperResult && effectiveRoleId && (
         <DrawerStepperIFC

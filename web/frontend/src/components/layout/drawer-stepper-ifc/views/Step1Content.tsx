@@ -1,20 +1,9 @@
 import { AlertTriangle } from "lucide-react";
-import { Translations } from "@/i18n/translations/pt-BR";
-import { TIfcStepperState } from "@/types/ifc";
 import { Step1UnitsView } from "./Step1UnitsView";
-
-export interface Step1ContentProps {
-  translations: Translations;
-  state: TIfcStepperState;
-  setUnitNameInline: (tempId: string, name: string) => void;
-  setUnitSimulationNameInline: (tempId: string, simulationName: string) => void;
-  onEditUnit: (tempId: string) => void;
-  step1Error: string;
-  isSimulationMode: boolean;
-  activeStep: number;
-}
+import { Step1ContentProps } from "@/types/ifc";
 
 export function Step1Content({
+  translations: _translations,
   state,
   setUnitNameInline,
   setUnitSimulationNameInline,
@@ -47,5 +36,3 @@ export function Step1Content({
     </>
   );
 }
-
-export default Step1Content;

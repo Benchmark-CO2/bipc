@@ -197,6 +197,13 @@ export interface IGetUnitByUUIDCachedResponse {
   data?: { unit?: { floors?: TTowerFloorCategory[] } };
 }
 
+export interface TFloorMismatchError {
+  importedUnitName: string;
+  importedFloorsCount: number;
+  contextUnitName: string | null;
+  contextFloorsCount: number | null;
+}
+
 export type TEditingModuleMerged = TModuleGroupedForm & IRawModuleDataWithMeta;
 
 export interface IModuleBatchBinding {
@@ -211,6 +218,17 @@ export interface Step1UnitsViewProps {
   onEditUnit: (tempId: string) => void;
 }
 
+export interface Step1ContentProps {
+  translations: Translations;
+  state: TIfcStepperState;
+  setUnitNameInline: (tempId: string, name: string) => void;
+  setUnitSimulationNameInline: (tempId: string, simulationName: string) => void;
+  onEditUnit: (tempId: string) => void;
+  step1Error: string;
+  isSimulationMode: boolean;
+  activeStep: number;
+}
+
 export interface Step2ModulesViewProps {
   state: TIfcStepperState;
   setModuleBoundUnit: (moduleTempId: string, unitTempId: string) => void;
@@ -218,6 +236,19 @@ export interface Step2ModulesViewProps {
   toggleModuleSelected: (tempId: string) => void;
   toggleAllModulesSelected: (checked: boolean) => void;
   moduleTypeLabels: Record<string, string>;
+}
+
+export interface Step2ContentProps {
+  translations: Translations;
+  state: TIfcStepperState;
+  setModuleBoundUnit: (moduleTempId: string, unitTempId: string) => void;
+  onEditModule: (tempId: string) => void;
+  toggleModuleSelected: (tempId: string) => void;
+  toggleAllModulesSelected: (checked: boolean) => void;
+  moduleTypeLabels: Record<string, string>;
+  step2Error: string;
+  isSimulationMode: boolean;
+  activeStep: number;
 }
 
 export interface StepperHeaderProps {
