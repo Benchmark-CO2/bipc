@@ -82,7 +82,7 @@ export function Step1UnitsView({
                       <span className="inline-flex">
                         <Badge
                           variant="success"
-                          className="gap-1 w-auto justify-center"
+                          className="gap-1 w-auto justify-center bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800"
                         >
                           <CheckCircle2 className="h-3 w-3" />
                           {t.stepper.statusValid}

@@ -50,11 +50,7 @@ import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
 import { parseApiError } from "@/utils/parseApiError";
 import { SimpleTooltip } from "@/components/ui/simple-tooltip";
-import {
-  createFileRoute,
-  useLocation,
-  useParams,
-} from "@tanstack/react-router";
+import { createFileRoute, useParams } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
 
 export const Route = createFileRoute(
@@ -381,8 +377,7 @@ function RouteComponent() {
   const { projectId, unitId } = useParams({
     from: "/_private/new_projects/$projectId/unit/$unitId/constructive-technologies",
   });
-  const location = useLocation();
-  const { search } = location;
+  const search = Route.useSearch();
 
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -394,7 +389,35 @@ function RouteComponent() {
   const initializedRef = useRef(false);
   const { setSummaryContext } = useSummary();
 
-  const roleId = (search as { dcp?: string }).dcp || "";
+  const { data: unitData, isLoading: isLoadingUnit } = useQuery({
+    queryKey: ["unit", projectId, unitId],
+    queryFn: async () => {
+      if (projectId && unitId) {
+        const res = await getUnitByUUID(projectId, unitId);
+        return { unit: res.data.unit, roles: res.data.roles };
+      }
+      return null;
+    },
+    enabled: !!projectId && !!unitId,
+  });
+
+  const roles = unitData?.roles;
+  let roleId: string = "";
+  if (search.dcp) {
+    roleId = search.dcp;
+  } else if (roles && roles.length > 0) {
+    const availableRoles = roles.filter((el: any) => !el.is_protected);
+    if (availableRoles.length > 0) {
+      const structureRole = availableRoles.find(
+        (r: any) =>
+          r.name?.toLowerCase() === "estrutura" ||
+          r.name?.toLowerCase() === "structure" ||
+          r.name?.toLowerCase() === "estrutural" ||
+          r.name?.toLowerCase() === "structural",
+      );
+      roleId = (structureRole ?? availableRoles[0])?.id ?? "";
+    }
+  }
 
   const handleSelectItem = (item: any[]) => {
     setSelectedItems(item);
@@ -440,8 +463,8 @@ function RouteComponent() {
 
   const { data: optionsData, isLoading: isLoadingOptions } = useQuery({
     queryKey: ["options", projectId, unitId],
-    queryFn: () => getOptions(projectId, unitId, roleId!),
-    enabled: !!projectId && !!unitId,
+    queryFn: () => getOptions(projectId, unitId, roleId),
+    enabled: !!projectId && !!unitId && !!roleId,
   });
 
   useEffect(() => {
@@ -480,18 +503,6 @@ function RouteComponent() {
         description: parseApiError(error, t),
       });
     },
-  });
-
-  const { data: unitData, isLoading: isLoadingUnit } = useQuery({
-    queryKey: ["unit", projectId, unitId],
-    queryFn: async () => {
-      if (projectId && unitId) {
-        const res = await getUnitByUUID(projectId, unitId);
-        return { unit: res.data.unit, roles: res.data.roles };
-      }
-      return null;
-    },
-    enabled: !!projectId && !!unitId,
   });
 
   const { mutate: duplicateModule } = useMutation({

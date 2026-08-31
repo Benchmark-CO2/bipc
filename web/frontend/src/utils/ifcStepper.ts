@@ -41,6 +41,11 @@ const generateTempId = () => {
   return `tmp_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
 };
 
+const UUID_V4_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+export const isValidUUID = (v: unknown): v is string =>
+  typeof v === "string" && UUID_V4_REGEX.test(v);
+
 const isKnownModuleType = (t: string | TModulesTypes): t is TModulesTypes => {
   return (KNOWN_MODULE_TYPES as string[]).includes(t as string);
 };
@@ -1071,6 +1076,10 @@ export const prepareModuleForBatch = (
 
   // 3) Remove floor_index do data (nunca esperado pelo backend;
   //    usamos só internamente para mapear → floor_ids).
+  //    Porém guardamos uma cópia em originalFloorIndex, caso os floor_ids
+  //    que forem passados falhem na validação de UUID (ex: IDs temporários
+  //    tipo "temp-0"), nós reenviamos floor_index (backend resolve automatico).
+  const originalFloorIndex = clean.floor_index;
   delete clean.floor_index;
   // Se tem um campo "type" duplicado no data, remova (vai no nível superior).
   delete clean.type;
@@ -1088,13 +1097,88 @@ export const prepareModuleForBatch = (
     clean.floor_ids = unitIdOrFloorIds.floor_ids;
   }
 
+  // 5) VALIDAÇÃO FINAL (garante que NÃO enviamos UUIDs inválidos,
+  //    que provocam erro no Go: "invalid UUID length: X")
+  if (!isFoundation && Array.isArray(clean.floor_ids)) {
+    const validUUIDs = clean.floor_ids.filter((id) => isValidUUID(id));
+    if (validUUIDs.length > 0) {
+      clean.floor_ids = validUUIDs;
+    } else {
+      // Nenhum UUID válido → apaga floor_ids, mas REINJETA floor_index original
+      // (que backend.go L75 resolveWrappersFloorIndex sabe converter para
+      // os UUIDs de andares corretos da unidade)
+      delete clean.floor_ids;
+      if (originalFloorIndex !== undefined && originalFloorIndex !== null) {
+        clean.floor_index = originalFloorIndex;
+      }
+    }
+  }
+
   // Normaliza para tipo conhecido se possível; fallback rawType
   const finalType = isKnownModuleType(normalizedType)
     ? normalizedType
     : rawType;
+
+  // 6) Sanitiza positions "unspecified" → "" em concrete, steel e form_work
+  //    (evita divergência backend ValidateV2 vs frontend calculateModuleCompletion,
+  //     pois backend não considera "unspecified" como vazio)
+  const sanitizeUnspecifiedPositions = (
+    obj: Record<string, unknown>,
+  ): Record<string, unknown> => {
+    const out: Record<string, unknown> = {};
+    for (const k of Object.keys(obj)) {
+      const v = obj[k];
+      // Campo flat *position direto (ex: concrete_position, form_columns_position)
+      if (
+        typeof v === "string" &&
+        v === "unspecified" &&
+        k.endsWith("position")
+      ) {
+        out[k] = "";
+        continue;
+      }
+      // Objeto aninhado com campo position (ex: concrete: { position: "unspecified" })
+      if (v && typeof v === "object" && !Array.isArray(v)) {
+        const inner = v as Record<string, unknown>;
+        if (
+          "position" in inner &&
+          typeof inner.position === "string" &&
+          inner.position === "unspecified"
+        ) {
+          out[k] = { ...inner, position: "" };
+          continue;
+        }
+        // Objeto aninhado sem position no root, mas pode ter nested → recursão rasa
+        out[k] = sanitizeUnspecifiedPositions(inner);
+        continue;
+      }
+      // Arrays (ex: steel, form_work, piles_concrete, piles_steel, blocks)
+      if (Array.isArray(v)) {
+        out[k] = v.map((item) => {
+          if (item && typeof item === "object" && !Array.isArray(item)) {
+            const inner = item as Record<string, unknown>;
+            if (
+              "position" in inner &&
+              typeof inner.position === "string" &&
+              inner.position === "unspecified"
+            ) {
+              return { ...inner, position: "" };
+            }
+            return sanitizeUnspecifiedPositions(inner);
+          }
+          return item;
+        });
+        continue;
+      }
+      out[k] = v;
+    }
+    return out;
+  };
+  const sanitizedData = sanitizeUnspecifiedPositions(clean);
+
   return {
     type: finalType,
-    data: clean,
+    data: sanitizedData,
     source: MODULE_SOURCES.IFC,
   };
 };

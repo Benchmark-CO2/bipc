@@ -1008,7 +1008,7 @@ func PrepareModuleTargetConsumptions(
 		}
 
 		if totalArea == 0 {
-			return nil, fmt.Errorf("unit %s has zero total area, please add floors with area before adding modules", *unitID)
+			return nil, fmt.Errorf("%w: unit %s has zero total area, please add floors with area before adding modules", data.ErrZeroArea, *unitID)
 		}
 
 		targets = append(targets, data.ModuleTargetConsumption{
