@@ -872,7 +872,7 @@ export const ptBR = {
         co2Label: "CO₂ (kg)",
         energyLabel: "Energia (MJ)",
         materialLabel: "Material (m³/m²)",
-      }
+      },
     },
     chartPlaceholder: "Gráfico",
     loadingData: "Carregando dados...",
@@ -1471,6 +1471,9 @@ export const ptBR = {
     stepModules: "Módulos",
     stepModulesDescription: "Vincular e criar módulos",
     stepSimulationModulesDescription: "Vincular à simulação e criar módulos",
+    import: {
+      fromFile: "Do arquivo IFC",
+    },
     btnNext: "Próximo passo",
     btnFinish: "Concluir",
     btnCancel: "Cancelar",
@@ -1490,6 +1493,7 @@ export const ptBR = {
       description:
         "Selecione uma simulação existente para adicionar os módulos extraídos do IFC.",
       selectLabel: "Simulação alvo (onde os módulos serão criados)",
+      contextLabel: "Unidade do projeto",
       createdLabel: "Simulação criada",
       noOptions: "Nenhuma simulação cadastrada",
       selectPlaceholder: "Selecione uma simulação",
@@ -1533,6 +1537,13 @@ export const ptBR = {
       errors: "erro",
       errorsPlural: "erros",
       errorsUnknown: "Validação pendente ou falhou.",
+    },
+    compat: {
+      floorMismatchTitle: "Incompatibilidade de quantidade de pavimentos",
+      floorMismatchBody:
+        "Não é possível continuar com a importação. O arquivo selecionado contém {importedUnitName} com {importedFloorsCount} {importedFloorsLabel}, porém a unidade do projeto ({contextUnitName}) possui {contextFloorsCount} {contextFloorsLabel}. As unidades devem ser compatíveis quanto ao número de pavimentos.",
+      floorMismatchActionHelp:
+        "Corrija a unidade do projeto ou importe outro arquivo para continuar.",
     },
     others: "outros",
   },
