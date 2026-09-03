@@ -54,7 +54,9 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: Rec
     const safeData = data.map(d => {
       const row = { ...d };
       keys.forEach(k => {
-        if (row[k] === undefined || isNaN(row[k])) row[k] = 0;
+        if (row[k] === undefined || isNaN(row[k])) {
+          row[k] = 0
+        };
       });
       return row;
     });
@@ -78,14 +80,9 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: Rec
       if (typeof benchmarkMax === 'number') {
         rowAnchor = benchmarkMax;
       } else if (benchmarkMax && typeof benchmarkMax === 'object') {
-        console.log(benchmarkMax, cleanName, d);
-        // Tenta buscar pela chave sem espaços extras
         rowAnchor = Number(benchmarkMax[cleanName] ?? benchmarkMax[d.id]) || 0;
       }
-
-      // ⚠️ CORREÇÃO PRINCIPAL AQUI:
-      // Removemos o Math.max! O limite da escala deve ser OBRIGATORIAMENTE o benchmark.
-      // Se não houver benchmark, usamos a soma local como fallback.
+      
       const rowMax = rowAnchor > 0 ? rowAnchor : (rowLocalSum || 100);
 
       rowScales[d.name] = d3.scaleLinear()
@@ -168,7 +165,7 @@ const EmissionsChart = ({ data, benchmarkMax }: { data: any[], benchmarkMax: Rec
       .text(d => {
         const val = d[1] - d[0];
         const rowMax = rowScales[d.data.name].domain()[1];
-        return val > (rowMax * 0.05) ? `${val.toFixed(0)}` : '';
+        return val > (rowMax * 0.05) ? `${val.toFixed(2)}` : '';
       });
 
     const gradeZones = [
