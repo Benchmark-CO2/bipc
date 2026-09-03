@@ -186,7 +186,7 @@ export interface IMasonryElement {
 
 export interface TBeamColumnDataV2 {
   floor_ids?: string[];
-  floor_index?: number;
+  floor_index?: number | number[];
   floor_indexes?: number[];
   concrete: IV2ConcreteVolumeItem<TBeamColumnPosition>[];
   steel: IV2SteelMaterialItem<TBeamColumnPosition>[];
@@ -201,7 +201,7 @@ export interface TBeamColumnDataV2 {
 
 export interface TConcreteWallDataV2 {
   floor_ids?: string[];
-  floor_index?: number;
+  floor_index?: number | number[];
   floor_indexes?: number[];
   concrete: IV2ConcreteVolumeItem<TConcreteWallPosition>[];
   steel: IV2SteelMaterialItem<TConcreteWallPosition>[];
@@ -217,7 +217,7 @@ export interface TConcreteWallDataV2 {
 
 export interface TStructuralMasonryDataV2 {
   floor_ids?: string[];
-  floor_index?: number;
+  floor_index?: number | number[];
   floor_indexes?: number[];
   concrete?: IV2ConcreteVolumeItem<TStructuralMasonryPosition>[];
   steel?: IV2SteelMaterialItem<TStructuralMasonryPosition>[];

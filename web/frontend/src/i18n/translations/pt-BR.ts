@@ -1061,6 +1061,14 @@ export const ptBR = {
     toVisualizeTheTower: "para visualizar a torre",
     floorCount_one: "pavimento",
     floorCount_other: "pavimentos",
+    fallbackNames: {
+      ground: "Térreo",
+      penthouse: "Cobertura",
+      basementOnly: "Subsolo",
+      basementNumbered: "Subsolo {n}",
+      standardOrdinalPositive: "{n}º Andar",
+      standardNumbered: "Andar {n}",
+    },
   },
   unitForm: {
     tower: {
@@ -1507,9 +1515,10 @@ export const ptBR = {
       hint: "A criação de módulos não é obrigatória. Somente os módulos marcados abaixo, válidos e com vínculo de unidade serão criados.",
       title: "Módulos encontrados",
       columnType: "Tipo",
+      columnStatus: "Status da validação",
+      columnFloors: "Pavimentos",
       columnSummary: "Resumo dos dados",
       columnUnit: "Unidade / Simulação",
-      columnStatus: "Status da validação",
       columnAction: "Ação",
       noneBound: "(Não vincular — será ignorado)",
       unitSelectPlaceholder: "Selecione uma unidade",

@@ -61,6 +61,31 @@ const EMPTY_POSITION_VALUES = new Set([
   "__geral__",
 ]);
 
+export function normalizeFloorIndexToArray(
+  v: number | number[] | undefined | null,
+): { valid: true; values: number[] } | { valid: false; reason?: string } {
+  if (v === undefined || v === null) return { valid: false, reason: "missing" };
+  if (typeof v === "number") {
+    if (!Number.isFinite(v) || !Number.isInteger(v) || v < 0)
+      return { valid: false, reason: "invalid_single" };
+    return { valid: true, values: [v] };
+  }
+  if (Array.isArray(v)) {
+    if (v.length === 0) return { valid: false, reason: "empty_array" };
+    const seen = new Set<number>();
+    const out: number[] = [];
+    for (const n of v) {
+      if (!Number.isFinite(n) || !Number.isInteger(n) || n < 0)
+        return { valid: false, reason: "invalid_item" };
+      if (seen.has(n)) return { valid: false, reason: "duplicate" };
+      seen.add(n);
+      out.push(n);
+    }
+    return { valid: true, values: out };
+  }
+  return { valid: false, reason: "wrong_type" };
+}
+
 function normalizePosition(pos: string | undefined): string | undefined {
   if (pos === undefined || pos === null) return undefined;
   const trimmed = typeof pos === "string" ? pos.trim().toLowerCase() : "";
@@ -111,14 +136,20 @@ function isNonZeroNumber(value: unknown): boolean {
 
 function isValidFloorIndex(value: unknown): boolean {
   if (value === null || value === undefined) return false;
-  if (typeof value === "number") return Number.isFinite(value);
-  if (typeof value === "string") {
+  let normalized: number | number[] | undefined | null;
+  if (typeof value === "number" || Array.isArray(value)) {
+    normalized = value as number | number[];
+  } else if (typeof value === "string") {
     const trimmed = value.trim();
     if (trimmed === "") return false;
     const n = Number(trimmed);
-    return Number.isFinite(n);
+    if (!Number.isFinite(n)) return false;
+    normalized = n;
+  } else {
+    return false;
   }
-  return false;
+  const result = normalizeFloorIndexToArray(normalized);
+  return result.valid && result.values.length > 0;
 }
 
 function hasAnyConcreteValid(

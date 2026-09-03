@@ -135,7 +135,7 @@ export const useModuleV2Form = ({
         }
         if (
           dataCopy.floor_index === undefined &&
-          typeof uw.floor_index === "number"
+          (typeof uw.floor_index === "number" || Array.isArray(uw.floor_index))
         ) {
           dataCopy.floor_index = uw.floor_index;
         }
@@ -158,17 +158,38 @@ export const useModuleV2Form = ({
         const defaultFullRec =
           (baseDefaults as { data?: Record<string, unknown> })?.data ?? {};
         const mergedData: Record<string, unknown> = { ...baseRec };
+        const isMasonryShape = (
+          v: unknown,
+        ): v is Record<string, unknown> & {
+          blocks?: unknown;
+          mortar?: unknown;
+          grout?: unknown;
+        } =>
+          !!v &&
+          typeof v === "object" &&
+          ("blocks" in (v as Record<string, unknown>) ||
+            "mortar" in (v as Record<string, unknown>) ||
+            "grout" in (v as Record<string, unknown>));
+        const hasMeaningfulMasonry = (v: Record<string, unknown>): boolean => {
+          const chk = (val: unknown): boolean =>
+            Array.isArray(val) && val.length > 0;
+          return (
+            chk((v as { blocks?: unknown }).blocks) ||
+            chk((v as { mortar?: unknown }).mortar) ||
+            chk((v as { grout?: unknown }).grout)
+          );
+        };
         for (const k of Object.keys(serverRec)) {
           const v = serverRec[k];
-          if (
-            Array.isArray(v) ||
-            (v &&
-              typeof v === "object" &&
-              (Array.isArray((v as Record<string, unknown>).blocks) ||
-                Array.isArray((v as Record<string, unknown>).mortar) ||
-                Array.isArray((v as Record<string, unknown>).grout)))
-          ) {
+          if (Array.isArray(v)) {
             mergedData[k] = v;
+          } else if (isMasonryShape(v)) {
+            if (hasMeaningfulMasonry(v)) {
+              mergedData[k] = v;
+            } else {
+              // blocks/mortar/grout todos null/empty → não injetar container no merged
+              // deixa defaultEmpty/preencher depois só se o usuário clicar em "+"
+            }
           } else if (
             v === undefined ||
             v === null ||

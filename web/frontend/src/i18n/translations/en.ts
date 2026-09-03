@@ -1057,6 +1057,14 @@ export const en: Translations = {
     toVisualizeTheTower: "to visualize the tower",
     floorCount_one: "floor",
     floorCount_other: "floors",
+    fallbackNames: {
+      ground: "Ground floor",
+      penthouse: "Penthouse",
+      basementOnly: "Basement",
+      basementNumbered: "Basement {n}",
+      standardOrdinalPositive: "Floor {n}",
+      standardNumbered: "Floor {n}",
+    },
   },
   unitForm: {
     tower: {
@@ -1495,9 +1503,10 @@ export const en: Translations = {
       hint: "Module creation is not mandatory. Only the modules checked below, valid and with a unit bound will be created.",
       title: "Found modules",
       columnType: "Type",
+      columnStatus: "Validation status",
+      columnFloors: "Floors",
       columnSummary: "Data summary",
       columnUnit: "Unit / Simulation",
-      columnStatus: "Validation status",
       columnAction: "Action",
       noneBound: "(Do not bind — will be ignored)",
       unitSelectPlaceholder: "Select a unit",

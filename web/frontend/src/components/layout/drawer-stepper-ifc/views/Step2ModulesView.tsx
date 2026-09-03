@@ -30,6 +30,86 @@ export function Step2ModulesView({
   const unselectedCount = state.modules.length - selectedCount;
   const totalCount = state.modules.length;
 
+  const extractFloorIndexes = (
+    m: (typeof state.modules)[number],
+  ): number[] | null => {
+    const rawData = m.raw.data as
+      | {
+          floor_index?: number | number[];
+          floor_indexes?: number[];
+        }
+      | undefined;
+    if (!rawData) return null;
+
+    if (rawData.floor_index !== undefined && rawData.floor_index !== null) {
+      if (Array.isArray(rawData.floor_index)) {
+        const valid = rawData.floor_index.filter(
+          (n) =>
+            typeof n === "number" && Number.isFinite(n) && Number.isInteger(n),
+        );
+        return valid.length > 0 ? [...valid].sort((a, b) => a - b) : null;
+      }
+      if (
+        typeof rawData.floor_index === "number" &&
+        Number.isFinite(rawData.floor_index) &&
+        Number.isInteger(rawData.floor_index)
+      ) {
+        return [rawData.floor_index];
+      }
+    }
+
+    if (
+      Array.isArray(rawData.floor_indexes) &&
+      rawData.floor_indexes.length > 0
+    ) {
+      return [...rawData.floor_indexes].sort((a, b) => a - b);
+    }
+
+    return null;
+  };
+
+  const renderFloorBadges = (indexes: number[] | null) => {
+    if (!indexes || indexes.length === 0) {
+      return <span className="text-muted-foreground text-xs">—</span>;
+    }
+    if (indexes.length <= 4) {
+      return (
+        <div className="flex flex-wrap items-center gap-1">
+          {indexes.map((n) => (
+            <Badge
+              key={n}
+              variant="outline"
+              className="h-5 min-w-[28px] px-1.5 py-0 text-[11px] justify-center"
+            >
+              {n}
+            </Badge>
+          ))}
+        </div>
+      );
+    }
+    const firstThree = indexes.slice(0, 3);
+    const remaining = indexes.length - 3;
+    return (
+      <div className="flex flex-wrap items-center gap-1">
+        {firstThree.map((n) => (
+          <Badge
+            key={n}
+            variant="outline"
+            className="h-5 min-w-[28px] px-1.5 py-0 text-[11px] justify-center"
+          >
+            {n}
+          </Badge>
+        ))}
+        <Badge
+          variant="secondary"
+          className="h-5 px-1.5 py-0 text-[11px] bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 justify-center"
+        >
+          +{remaining}
+        </Badge>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-2">
       {/* LINHA 1: Alert informativo (módulos não obrigatórios) — compacto inline */}
@@ -110,6 +190,9 @@ export function Step2ModulesView({
                 <TableHead className="w-[160px]">
                   {t.stepper.modules.columnStatus}
                 </TableHead>
+                <TableHead className="w-[180px]">
+                  {t.stepper.modules.columnFloors}
+                </TableHead>
                 <TableHead>{t.stepper.modules.columnSummary}</TableHead>
                 <TableHead className="w-[120px] text-right">
                   {t.stepper.modules.columnAction}
@@ -156,6 +239,9 @@ export function Step2ModulesView({
                           </>
                         )}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {renderFloorBadges(extractFloorIndexes(m))}
                     </TableCell>
                     <TableCell className="max-w-md truncate text-muted-foreground">
                       {m.summary}

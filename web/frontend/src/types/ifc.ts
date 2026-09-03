@@ -164,7 +164,7 @@ export type TIfcStepperState = {
 export type TIfcProcessorStateUnit = IUnit;
 
 export interface IRawModuleDataWithMeta {
-  floor_index?: number;
+  floor_index?: number | number[];
   floor_ids?: string[];
   unit_id?: string;
   [k: string]: unknown;

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "@/i18n";
 import { TTowerFloorCategory } from "@/types/units";
 import {
   IGetUnitByUUIDCachedResponse,
@@ -11,13 +12,24 @@ import {
 import {
   convertFloorFormInputToTowerFloors,
   mapFloorIndexToFloorIds,
+  FloorFallbackLabels,
+  makeFloorFallbackLabels,
 } from "@/utils/unitConversions";
 import { UnitFormInput } from "@/validators/unitForm.validator";
 
 const inferTowerFloorsFromModuleFloorIndexes = (
   modules: TIfcStepperState["modules"],
   restrictToTempId?: string | null,
+  labels?: FloorFallbackLabels,
 ): TTowerFloorCategory[] => {
+  const defaultLabels: FloorFallbackLabels = labels ?? {
+    ground: "Ground",
+    penthouse: "Penthouse",
+    basementOnly: "Basement",
+    basementNumbered: (n) => `Basement ${n}`,
+    standardOrdinalPositive: (n) => `${n}º Floor`,
+    standardNumbered: (n) => `Floor ${n}`,
+  };
   const seenIndex = new Set<number>();
   const collected: Array<{
     index: number;
@@ -27,11 +39,14 @@ const inferTowerFloorsFromModuleFloorIndexes = (
     const rawData = m.raw?.data as unknown as IRawModuleDataWithMeta | null;
     const idx = rawData?.floor_index;
     if (idx === undefined || idx === null) continue;
-    const numeric = Number(idx);
-    if (!Number.isFinite(numeric)) continue;
-    if (seenIndex.has(numeric)) continue;
-    seenIndex.add(numeric);
-    collected.push({ index: numeric });
+    const indexes: number[] = Array.isArray(idx) ? idx : [idx];
+    for (const single of indexes) {
+      const numeric = Number(single);
+      if (!Number.isFinite(numeric)) continue;
+      if (seenIndex.has(numeric)) continue;
+      seenIndex.add(numeric);
+      collected.push({ index: numeric });
+    }
   }
   if (collected.length === 0) return [];
   collected.sort((a, b) => a.index - b.index);
@@ -56,19 +71,21 @@ const inferTowerFloorsFromModuleFloorIndexes = (
     const defaultHeight = 3;
     let floorGroup: string;
     if (category === "basement_floor") {
-      floorGroup = `Subsolo ${Math.abs(item.index)}`;
+      const n = Math.abs(item.index);
+      floorGroup =
+        n > 0 ? defaultLabels.basementNumbered(n) : defaultLabels.basementOnly;
     } else if (category === "ground_floor") {
-      floorGroup = "Térreo";
+      floorGroup = defaultLabels.ground;
     } else if (category === "penthouse_floor") {
-      floorGroup = "Cobertura";
+      floorGroup = defaultLabels.penthouse;
+    } else if (item.index >= 0) {
+      floorGroup = defaultLabels.standardOrdinalPositive(item.index);
     } else {
-      floorGroup = `Andar ${item.index}`;
+      floorGroup = defaultLabels.standardNumbered(item.index);
     }
     return {
       id: `inferred-floor-${item.index}`,
       floor_group: floorGroup,
-      group_id: floorGroup,
-      group_name: floorGroup,
       area: defaultArea,
       height: defaultHeight,
       index: item.index,
@@ -99,6 +116,19 @@ export function useFloorIndexMappings({
   editingModuleTempId,
 }: UseFloorIndexMappingsArgs) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  const inferLabels: FloorFallbackLabels = makeFloorFallbackLabels({
+    ground: t.buildingVisualizer.fallbackNames.ground,
+    penthouse: t.buildingVisualizer.fallbackNames.penthouse,
+    basementOnly: t.buildingVisualizer.fallbackNames.basementOnly,
+    basementNumberedTemplate:
+      t.buildingVisualizer.fallbackNames.basementNumbered,
+    standardOrdinalPositiveTemplate:
+      t.buildingVisualizer.fallbackNames.standardOrdinalPositive,
+    standardNumberedTemplate:
+      t.buildingVisualizer.fallbackNames.standardNumbered,
+  });
 
   const editingUnit = state.units.find((u) => u.tempId === editingUnitTempId);
   const editingModule = state.modules.find(
@@ -146,6 +176,26 @@ export function useFloorIndexMappings({
           }
         }
 
+        if (floors.length === 0 && unitCreated.unitId && !isSimulationMode) {
+          try {
+            const cached = queryClient.getQueryData([
+              "unit",
+              projectId,
+              unitCreated.unitId,
+            ]) as IGetUnitByUUIDCachedResponse | undefined;
+            const cachedFloors = cached?.data?.unit?.floors;
+            if (
+              cachedFloors &&
+              Array.isArray(cachedFloors) &&
+              cachedFloors.length > 0
+            ) {
+              floors = cachedFloors as TTowerFloorCategory[];
+            }
+          } catch (_e) {
+            /* ignore */
+          }
+        }
+
         if (floors.length === 0) {
           const unitState = state.units.find((u) => u.tempId === tempId);
           const rawFloors = unitState?.formData?.data?.floors ?? [];
@@ -168,26 +218,11 @@ export function useFloorIndexMappings({
           }
         }
 
-        if (floors.length === 0 && unitCreated.unitId && !isSimulationMode) {
-          try {
-            const cached = queryClient.getQueryData([
-              "unit",
-              projectId,
-              unitCreated.unitId,
-            ]) as IGetUnitByUUIDCachedResponse | undefined;
-            const cachedFloors = cached?.data?.unit?.floors;
-            if (cachedFloors && Array.isArray(cachedFloors)) {
-              floors = cachedFloors as TTowerFloorCategory[];
-            }
-          } catch (_e) {
-            /* ignore */
-          }
-        }
-
         if (floors.length === 0) {
           floors = inferTowerFloorsFromModuleFloorIndexes(
             state.modules,
             tempId,
+            inferLabels,
           );
         }
 
@@ -202,6 +237,7 @@ export function useFloorIndexMappings({
             const fallback = inferTowerFloorsFromModuleFloorIndexes(
               state.modules,
               unitState.tempId,
+              inferLabels,
             );
             map.set(unitState.tempId, fallback);
             continue;
@@ -224,6 +260,7 @@ export function useFloorIndexMappings({
             simFloors = inferTowerFloorsFromModuleFloorIndexes(
               state.modules,
               simulationBoundUnitTempId,
+              inferLabels,
             );
           }
           map.set(simulationBoundUnitTempId, simFloors);
@@ -240,6 +277,7 @@ export function useFloorIndexMappings({
       simulationUnitData,
       queryClient,
       projectId,
+      inferLabels,
     ]);
 
   const editingUnitFloors: TTowerFloorCategory[] = (() => {
@@ -251,21 +289,8 @@ export function useFloorIndexMappings({
 
     if (editingModuleBoundUnit) {
       const tempId = editingModuleBoundUnit.tempId;
-      const fromMap = normalizedUnitsFloorMap.get(tempId);
-      if (fromMap && fromMap.length > 0) return fromMap;
 
       if (editingModuleBoundUnit.unitId) {
-        if (editingModuleBoundUnit.unitName) {
-          const unitState = state.units.find(
-            (u) => u.name === editingModuleBoundUnit!.unitName,
-          );
-          const raw = unitState?.formData?.data?.floors ?? [];
-          if (raw.length > 0) {
-            return convertFloorFormInputToTowerFloors(
-              raw as unknown as UnitFormInput["data"]["floors"],
-            );
-          }
-        }
         try {
           const cached = queryClient.getQueryData([
             "unit",
@@ -284,10 +309,27 @@ export function useFloorIndexMappings({
           /* ignore */
         }
       }
+
+      const fromMap = normalizedUnitsFloorMap.get(tempId);
+      if (fromMap && fromMap.length > 0) return fromMap;
+
+      if (editingModuleBoundUnit.unitName) {
+        const unitState = state.units.find(
+          (u) => u.name === editingModuleBoundUnit!.unitName,
+        );
+        const raw = unitState?.formData?.data?.floors ?? [];
+        if (raw.length > 0) {
+          return convertFloorFormInputToTowerFloors(
+            raw as unknown as UnitFormInput["data"]["floors"],
+          );
+        }
+      }
+
       if (fromMap && fromMap.length > 0) return fromMap;
       const inferredBound = inferTowerFloorsFromModuleFloorIndexes(
         state.modules,
         editingModuleBoundUnit.tempId,
+        inferLabels,
       );
       if (inferredBound.length > 0) return inferredBound;
     }
@@ -297,14 +339,20 @@ export function useFloorIndexMappings({
         const sameTempId = state.modules.filter(
           (m) => m.boundUnitTempId === editingModule.boundUnitTempId,
         );
-        const sameTempIdInferred =
-          inferTowerFloorsFromModuleFloorIndexes(sameTempId);
+        const sameTempIdInferred = inferTowerFloorsFromModuleFloorIndexes(
+          sameTempId,
+          null,
+          inferLabels,
+        );
         if (sameTempIdInferred.length > 0) return sameTempIdInferred;
       }
 
       const onlyCurrent: TIfcStepperState["modules"] = [editingModule];
-      const onlyCurrentInferred =
-        inferTowerFloorsFromModuleFloorIndexes(onlyCurrent);
+      const onlyCurrentInferred = inferTowerFloorsFromModuleFloorIndexes(
+        onlyCurrent,
+        null,
+        inferLabels,
+      );
       if (onlyCurrentInferred.length > 0) return onlyCurrentInferred;
     }
 

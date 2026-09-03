@@ -15,13 +15,7 @@ import {
 import { TTowerFloorCategory } from "@/types/units";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Control } from "react-hook-form";
-import {
-  AlertCircle,
-  CheckCircle2,
-  Loader2,
-  Plus,
-  X,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Plus, X } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
@@ -418,7 +412,17 @@ const DrawerFormModule = ({
     const selectedKey = Array.isArray(initialSelected)
       ? initialSelected.join(",")
       : "";
-    return `${initialFloorIdx ?? "null"}|${floorsIdsKey}|${selectedKey}|${
+    let floorIndexKey = "null";
+    if (initialFloorIdx !== null && initialFloorIdx !== undefined) {
+      if (Array.isArray(initialFloorIdx)) {
+        floorIndexKey = JSON.stringify(
+          [...initialFloorIdx].sort((a, b) => (a as number) - (b as number)),
+        );
+      } else {
+        floorIndexKey = String(initialFloorIdx);
+      }
+    }
+    return `${floorIndexKey}|${floorsIdsKey}|${selectedKey}|${
       d?.id ?? ""
     }|${d?.tempId ?? ""}`;
   })();
@@ -483,15 +487,85 @@ const DrawerFormModule = ({
 
   const lastStepperTargetKeyRef = useRef<string | null>(null);
   const lastModuleIdRef = useRef<string | undefined | null>(undefined);
+  const floorsBootstrappedSentinelRef = useRef<number | null>(null);
+
+  const resolveSelectedFloorsFromContext = (
+    opts: {
+      explicitSelected?: string[] | null | undefined;
+      explicitData?: unknown;
+      serverModuleData?: unknown;
+      floorsArg?: TTowerFloorCategory[] | null | undefined;
+    } = {},
+  ): { selected: string[]; source: string } => {
+    const flr = (opts.floorsArg ?? floors ?? []) as TTowerFloorCategory[];
+    const explicitSel = opts.explicitSelected ?? initialSelectedFloors;
+    if (
+      Array.isArray(explicitSel) &&
+      explicitSel.length > 0 &&
+      explicitSel.every((v) => typeof v === "string")
+    ) {
+      return { selected: explicitSel, source: "initialSelectedFloors" };
+    }
+
+    const dataCandidates: unknown[] = [];
+    if (opts.serverModuleData !== undefined) {
+      dataCandidates.push(opts.serverModuleData);
+    }
+    if (opts.explicitData !== undefined) {
+      dataCandidates.push(opts.explicitData);
+    }
+    dataCandidates.push(initialModuleData);
+
+    for (const c of dataCandidates) {
+      if (!c || typeof c !== "object") continue;
+      const rec = c as Record<string, unknown>;
+      let inner: Record<string, unknown> | null = null;
+      if (
+        rec["module"] &&
+        typeof rec["module"] === "object" &&
+        rec["module"] !== null
+      ) {
+        inner = rec["module"] as Record<string, unknown>;
+      } else {
+        inner = rec;
+      }
+      const floorIdsAny =
+        inner["floor_ids"] ?? (inner["data"] as any)?.floor_ids;
+      if (Array.isArray(floorIdsAny) && floorIdsAny.length > 0) {
+        const arr = floorIdsAny.filter((v) => typeof v === "string");
+        if (arr.length > 0)
+          return { selected: arr as string[], source: "floor_ids" };
+      }
+      const floorIdxAny =
+        inner["floor_index"] ?? (inner["data"] as any)?.floor_index;
+      if (floorIdxAny !== null && floorIdxAny !== undefined && flr.length > 0) {
+        const mapped = mapFloorIndexToFloorIds(
+          floorIdxAny as number | number[],
+          flr,
+        );
+        if (mapped.length > 0)
+          return { selected: mapped, source: "floor_index mapped" };
+      }
+    }
+    return { selected: [], source: "empty" };
+  };
+
+  const isSameFloorSelection = (a: string[], b: string[]): boolean => {
+    if (a.length !== b.length) return false;
+    const setA = new Set(a);
+    return b.every((v) => setA.has(v));
+  };
+
   useEffect(() => {
     const targetChanged =
       lastStepperTargetKeyRef.current !== stepperEditingTargetKey;
     const moduleIdChanged = lastModuleIdRef.current !== moduleId;
     const openRisingEdge = isOpen && !prevIsOpenRef.current;
 
-    // Sempre no openRisingEdge: remontar o form (limpa cache de dados de outro módulo)
-    // Também quando stepper target muda ou moduleId mudou com drawer aberto
     if (openRisingEdge || targetChanged || (moduleIdChanged && isOpen)) {
+      const sentinel = Date.now() + Math.random();
+      floorsBootstrappedSentinelRef.current = sentinel;
+
       openInitialSelectedFloorsRef.current = initialSelectedFloors ?? null;
       openInitialModuleDataRef.current = initialModuleData ?? null;
       openFloorsRef.current = floors ?? null;
@@ -501,28 +575,18 @@ const DrawerFormModule = ({
 
       setFormMountKey((k) => k + 1);
 
-      // Mapear floor_ids → selectedFloors para QUALQUER modo (stepper OU non-stepper)
-      let nextSelected: string[] = [];
-      const initSel = openInitialSelectedFloorsRef.current;
-      const initDataAny = openInitialModuleDataRef.current as any;
-      const flr = openFloorsRef.current ?? [];
-
-      if (initSel && initSel.length > 0) {
-        nextSelected = initSel;
-      } else {
-        const fIds = initDataAny?.floor_ids ?? initDataAny?.data?.floor_ids;
-        const fIdx = initDataAny?.floor_index ?? initDataAny?.data?.floor_index;
-        if (Array.isArray(fIds) && fIds.length > 0) {
-          nextSelected = fIds as string[];
-        } else if (fIdx !== null && fIdx !== undefined && flr.length > 0) {
-          const mapped = mapFloorIndexToFloorIds(fIdx as number, flr);
-          if (mapped.length > 0) nextSelected = mapped;
-        }
+      const { selected: nextSelected } = resolveSelectedFloorsFromContext({
+        explicitSelected: openInitialSelectedFloorsRef.current,
+        explicitData: openInitialModuleDataRef.current,
+        floorsArg: openFloorsRef.current,
+      });
+      if (!isSameFloorSelection(selectedFloors, nextSelected)) {
+        setSelectedFloors(nextSelected);
+        prevSelectedFloorsRef.current = nextSelected;
       }
-      setSelectedFloors(nextSelected);
-      prevSelectedFloorsRef.current = nextSelected;
 
       queueMicrotask(() => {
+        if (floorsBootstrappedSentinelRef.current !== sentinel) return;
         form.clearErrors();
       });
     }
@@ -539,34 +603,33 @@ const DrawerFormModule = ({
     initialSelectedFloors,
     initialModuleData,
     floors,
+    selectedFloors,
   ]);
 
   useEffect(() => {
+    if (!floorsBootstrappedSentinelRef.current) return;
     if (!isOpen || moduleData || !stepperMode) return;
     if (!floors || floors.length === 0) return;
     if (userTouchedSelectedFloors) return;
     if (selectedFloors.length > 0) return;
 
-    let newSelected: string[] = [];
-    const dAny = initialModuleData as any;
-    const fIds = dAny?.floor_ids ?? dAny?.data?.floor_ids;
-    const fIdx = dAny?.floor_index ?? dAny?.data?.floor_index;
+    const sentinel = floorsBootstrappedSentinelRef.current;
 
-    if (initialSelectedFloors && initialSelectedFloors.length > 0) {
-      newSelected = initialSelectedFloors;
-    } else if (Array.isArray(fIds) && fIds.length > 0) {
-      newSelected = fIds as string[];
-    } else if (fIdx !== null && fIdx !== undefined) {
-      newSelected = mapFloorIndexToFloorIds(fIdx as number, floors);
-    }
+    const { selected: newSelected } = resolveSelectedFloorsFromContext({
+      floorsArg: floors,
+    });
+    if (newSelected.length === 0) return;
+    if (isSameFloorSelection(selectedFloors, newSelected)) return;
 
-    if (newSelected.length > 0) {
-      setSelectedFloors(newSelected);
+    queueMicrotask(() => {
+      if (floorsBootstrappedSentinelRef.current !== sentinel) return;
+      if (userTouchedSelectedFloors) return;
+      setSelectedFloors((prev) =>
+        isSameFloorSelection(prev, newSelected) ? prev : newSelected,
+      );
       prevSelectedFloorsRef.current = newSelected;
-      queueMicrotask(() => {
-        form.clearErrors();
-      });
-    }
+      form.clearErrors();
+    });
   }, [
     isOpen,
     moduleId,
@@ -576,6 +639,7 @@ const DrawerFormModule = ({
     initialModuleData,
     userTouchedSelectedFloors,
     selectedFloors,
+    form,
   ]);
 
   const prevResetRunKey = useRef<string | null>(null);
@@ -586,6 +650,7 @@ const DrawerFormModule = ({
   useEffect(() => {
     if (!isOpen) {
       lastClosedSentinelRef.current = Date.now() + Math.random();
+      floorsBootstrappedSentinelRef.current = null;
       return;
     }
     openCountRef.current += 1;
@@ -609,47 +674,28 @@ const DrawerFormModule = ({
       mdAny = rawMd;
     }
     const detectedType: TModulesTypes = (mdAny?.type as TModulesTypes) ?? type;
-    const floorIds = mdAny?.floor_ids ?? mdAny?.data?.floor_ids;
+
     const currentModuleId = moduleId ?? "__no_module__";
-    if (
-      floorIds &&
-      Array.isArray(floorIds) &&
-      floorIds.length > 0 &&
-      !userTouchedSelectedFloors
-    ) {
-      const sameAsCurrent =
-        selectedFloors.length === floorIds.length &&
-        floorIds.every((v) => selectedFloors.includes(v)) &&
-        selectedFloors.every((v) => floorIds.includes(v));
-      if (!sameAsCurrent) {
-        setSelectedFloors(floorIds);
-        prevSelectedFloorsRef.current = floorIds;
+    if (userTouchedSelectedFloors) {
+      void detectedType;
+    }
+
+    if (!userTouchedSelectedFloors) {
+      const { selected: nextSelected } = resolveSelectedFloorsFromContext({
+        serverModuleData: moduleData,
+        floorsArg: floors,
+      });
+
+      if (nextSelected.length > 0) {
+        if (!isSameFloorSelection(selectedFloors, nextSelected)) {
+          setSelectedFloors(nextSelected);
+          prevSelectedFloorsRef.current = nextSelected;
+        }
+        lastAppliedModuleIdRef.current = currentModuleId;
+      } else if (lastAppliedModuleIdRef.current !== currentModuleId) {
         lastAppliedModuleIdRef.current = currentModuleId;
       }
-    } else if (
-      lastAppliedModuleIdRef.current !== currentModuleId &&
-      !userTouchedSelectedFloors
-    ) {
-      const fIdx = mdAny?.floor_index ?? mdAny?.data?.floor_index;
-      if (
-        fIdx !== null &&
-        fIdx !== undefined &&
-        Array.isArray(floors) &&
-        floors.length > 0
-      ) {
-        const mapped = mapFloorIndexToFloorIds(fIdx as number, floors);
-        const sameAsCurrent =
-          selectedFloors.length === mapped.length &&
-          mapped.every((v) => selectedFloors.includes(v)) &&
-          selectedFloors.every((v) => mapped.includes(v));
-        if (!sameAsCurrent) {
-          setSelectedFloors(mapped);
-          prevSelectedFloorsRef.current = mapped;
-          lastAppliedModuleIdRef.current = currentModuleId;
-        }
-      }
     }
-    void detectedType;
 
     const isRecord = (v: unknown): v is Record<string, unknown> =>
       !!v && typeof v === "object";
@@ -693,7 +739,8 @@ const DrawerFormModule = ({
       }
       if (
         wrappedData.floor_index === undefined &&
-        typeof mdAny.floor_index === "number"
+        (typeof mdAny.floor_index === "number" ||
+          Array.isArray(mdAny.floor_index))
       ) {
         wrappedData.floor_index = mdAny.floor_index;
       }
@@ -747,9 +794,21 @@ const DrawerFormModule = ({
         ("blocks" in (v as Record<string, unknown>) ||
           "mortar" in (v as Record<string, unknown>) ||
           "grout" in (v as Record<string, unknown>));
+      const hasMeaningfulContent = (v: unknown): boolean => {
+        if (!v || typeof v !== "object") return false;
+        const rec = v as Record<string, unknown>;
+        const checkArr = (val: unknown): boolean =>
+          Array.isArray(val) && val.length > 0;
+        if (isMasonryObj(rec)) {
+          return (
+            checkArr(rec.blocks) || checkArr(rec.mortar) || checkArr(rec.grout)
+          );
+        }
+        return true;
+      };
       for (const k of Object.keys(serverData)) {
         const v = (serverData as Record<string, unknown>)[k];
-        if (Array.isArray(v) || isMasonryObj(v)) {
+        if (Array.isArray(v) || (isMasonryObj(v) && hasMeaningfulContent(v))) {
           merged[k] = v;
         } else if (
           v === undefined ||
@@ -760,6 +819,10 @@ const DrawerFormModule = ({
           if (k in baseFullDefaults) {
             merged[k] = (baseFullDefaults as Record<string, unknown>)[k];
           }
+        } else if (isMasonryObj(v)) {
+          // masonry com blocks/mortar/grout todos null/vazios → não injetar no merged
+          // (deixa que o default Empty determine o valor; por padrão undefined,
+          //  então o container não aparece até usuário clicar em "+")
         } else {
           merged[k] = v;
         }
