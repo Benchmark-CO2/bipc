@@ -221,8 +221,16 @@ components:
           minItems: 1
           description: Array of floor UUIDs associated with this module.
         floor_index:
-          type: integer
-          description: Sequential floor index used to resolve the target floor during batch creation. Must not be sent together with floor_ids. Never returned in responses.
+          oneOf:
+            - type: integer
+            - type: array
+              items:
+                type: integer
+              minItems: 1
+          description: |
+            Sequential floor index (or array of indexes) used to resolve target floor(s) during batch creation.
+            Accepts a single integer (single floor) or an array of integers (multiple floors).
+            Must not be sent together with floor_ids. Never returned in responses.
         floor_indexes:
           type: array
           items:
@@ -318,8 +326,16 @@ components:
           minItems: 1
           description: Array of floor UUIDs associated with this module.
         floor_index:
-          type: integer
-          description: Sequential floor index used to resolve the target floor during batch creation. Must not be sent together with floor_ids. Never returned in responses.
+          oneOf:
+            - type: integer
+            - type: array
+              items:
+                type: integer
+              minItems: 1
+          description: |
+            Sequential floor index (or array of indexes) used to resolve target floor(s) during batch creation.
+            Accepts a single integer (single floor) or an array of integers (multiple floors).
+            Must not be sent together with floor_ids. Never returned in responses.
         floor_indexes:
           type: array
           items:
@@ -415,8 +431,16 @@ components:
           minItems: 1
           description: Array of floor UUIDs associated with this module.
         floor_index:
-          type: integer
-          description: Sequential floor index used to resolve the target floor during batch creation. Must not be sent together with floor_ids. Never returned in responses.
+          oneOf:
+            - type: integer
+            - type: array
+              items:
+                type: integer
+              minItems: 1
+          description: |
+            Sequential floor index (or array of indexes) used to resolve target floor(s) during batch creation.
+            Accepts a single integer (single floor) or an array of integers (multiple floors).
+            Must not be sent together with floor_ids. Never returned in responses.
         floor_indexes:
           type: array
           items:
@@ -1158,6 +1182,46 @@ components:
         type: beam_column
         data:
           floor_index: 2
+          concrete:
+            - fck: 30
+              volume: 150.5
+              position: column
+            - fck: 30
+              volume: 200
+              position: beam
+            - fck: 25
+              volume: 450
+              position: slab
+          steel:
+            - material: rebar
+              resistance: CA50
+              mass: 7500
+              position: column
+            - material: rebar
+              resistance: CA50
+              mass: 10000
+              position: beam
+            - material: rebar
+              resistance: CA50
+              mass: 22500
+              position: slab
+          form:
+            - area: 1200
+              position: column
+            - area: 2500
+              position: beam
+            - area: 9000
+              position: slab
+          column_number: 120
+          avg_beam_span: 6
+          avg_slab_span: 5
+
+    ModuleCreateBeamColumnV2MultiFloor:
+      summary: Beam column module (v2) with multiple floors via floor_index array
+      value:
+        type: beam_column
+        data:
+          floor_index: [0, 1, 2]
           concrete:
             - fck: 30
               volume: 150.5
