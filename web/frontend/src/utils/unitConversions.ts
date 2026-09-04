@@ -83,39 +83,52 @@ export const convertFloorSchemaToTowerFloors = (
 export const convertFloorFormInputToTowerFloors = (
   floors: FloorFormInput[],
 ): TTowerFloorCategory[] => {
-  return floors.map((floor) => ({
-    id: floor.id || `temp-${floor.index}`,
-    floor_group: floor.floor_group,
-    group_id: floor.floor_group,
-    group_name: floor.floor_group,
-    area:
+  const result: TTowerFloorCategory[] = [];
+  for (const floor of floors) {
+    const repetition = Math.max(1, Number(floor.repetition ?? 1) || 1);
+    const baseArea =
       typeof floor.area === "string"
         ? Number(String(floor.area).replace(",", ".")) || 0
-        : (floor.area as unknown as number) || 0,
-    height:
+        : (floor.area as unknown as number) || 0;
+    const baseHeight =
       typeof floor.height === "string"
         ? Number(String(floor.height).replace(",", ".")) || 0
-        : (floor.height as unknown as number) || 0,
-    index: floor.index,
-    category: floor.category,
-  }));
+        : (floor.height as unknown as number) || 0;
+    const baseFloorGroup = floor.floor_group || undefined;
+    const baseCategory = floor.category || getCategoryFromIndex(floor.index);
+
+    for (let i = 0; i < repetition; i++) {
+      const realIndex = floor.index + i;
+      const realCategory =
+        repetition > 1 ? getCategoryFromIndex(realIndex) : baseCategory;
+      result.push({
+        id:
+          repetition > 1
+            ? `${floor.id || `temp-${floor.index}`}-r${i}`
+            : floor.id || `temp-${floor.index}`,
+        floor_group: baseFloorGroup,
+        area: baseArea,
+        height: baseHeight,
+        index: realIndex,
+        category: realCategory,
+      });
+    }
+  }
+  return result;
 };
 
-// Mapeia `floor_index: number` (singular, vindo do módulo IFC) para
-// `floor_ids: string[]` (UUIDs dos pavimentos da unidade correspondentes aquele índice)
-// Se floor_index = undefined/null, retorna []
-export const mapFloorIndexToFloorIds = (
-  floorIndex: number | string | null | undefined,
+export function mapFloorIndexToFloorIds(
+  floorIndex: number | number[] | undefined | null,
   towerFloors: TTowerFloorCategory[],
-): string[] => {
-  if (floorIndex === null || floorIndex === undefined) return [];
-  const numericIndex =
-    typeof floorIndex === "string"
-      ? Number(floorIndex)
-      : (floorIndex as number);
-  if (Number.isNaN(numericIndex)) return [];
-  return towerFloors.filter((f) => f.index === numericIndex).map((f) => f.id);
-};
+): string[] {
+  if (floorIndex === undefined || floorIndex === null) return [];
+  if (!towerFloors || towerFloors.length === 0) return [];
+  const indexes: number[] = Array.isArray(floorIndex)
+    ? floorIndex
+    : [floorIndex];
+  const set = new Set(indexes.filter(Number.isFinite));
+  return towerFloors.filter((f) => set.has(f.index)).map((f) => f.id);
+}
 
 // Converte IUnit para dados do formulário
 export const convertUnitToFormData = (unit: IUnit): UnitFormInput => {
@@ -174,58 +187,154 @@ export type UnifiedFloor = {
   index: number;
 };
 
+export interface FloorFallbackLabels {
+  ground: string;
+  penthouse: string;
+  basementOnly: string;
+  basementNumbered: (n: number) => string;
+  standardOrdinalPositive: (n: number) => string;
+  standardNumbered: (n: number) => string;
+}
+
+const DEFAULT_FALLBACK_LABELS_PT: FloorFallbackLabels = {
+  ground: "Térreo",
+  penthouse: "Cobertura",
+  basementOnly: "Subsolo",
+  basementNumbered: (n) => `Subsolo ${n}`,
+  standardOrdinalPositive: (n) => `${n}º Andar`,
+  standardNumbered: (n) => `Andar ${n}`,
+};
+
+export const makeFloorFallbackLabels = (opts: {
+  ground: string;
+  penthouse: string;
+  basementOnly: string;
+  basementNumberedTemplate: string;
+  standardOrdinalPositiveTemplate: string;
+  standardNumberedTemplate: string;
+}): FloorFallbackLabels => {
+  const interpolate = (template: string, n: number): string =>
+    template.split("{n}").join(String(n));
+  return {
+    ground: opts.ground,
+    penthouse: opts.penthouse,
+    basementOnly: opts.basementOnly,
+    basementNumbered: (n) => interpolate(opts.basementNumberedTemplate, n),
+    standardOrdinalPositive: (n) =>
+      interpolate(opts.standardOrdinalPositiveTemplate, n),
+    standardNumbered: (n) => interpolate(opts.standardNumberedTemplate, n),
+  };
+};
+
+const fallbackNameForFloor = (
+  category: FloorSchema["category"] | undefined,
+  index: number,
+  labels: FloorFallbackLabels = DEFAULT_FALLBACK_LABELS_PT,
+): string => {
+  switch (category) {
+    case "ground_floor":
+      return labels.ground;
+    case "penthouse_floor":
+      return labels.penthouse;
+    case "basement_floor": {
+      const n = Math.abs(index);
+      return n > 0 ? labels.basementNumbered(n) : labels.basementOnly;
+    }
+    case "standard_floor":
+    default:
+      return index >= 0
+        ? labels.standardOrdinalPositive(index)
+        : labels.standardNumbered(index);
+  }
+};
+
 // Converte TTowerFloorCategory[] para UnifiedFloor[]
 export const convertTowerFloorsToUnified = (
   towerFloors: TTowerFloorCategory[],
+  labels?: FloorFallbackLabels,
 ): UnifiedFloor[] => {
-  return towerFloors.map((floor) => ({
-    id: floor.id,
-    name:
-      floor.floor_group ||
-      (floor as unknown as { group_name?: string })?.group_name ||
-      "",
-    area: floor.area,
-    height: floor.height,
-    category: floor.category || getCategoryFromIndex(floor.index),
-    index: floor.index,
-  }));
+  const result: UnifiedFloor[] = [];
+  for (const floor of towerFloors) {
+    const repetition = Math.max(
+      1,
+      Number(
+        (floor as unknown as { repetition?: number | string })?.repetition ?? 1,
+      ) || 1,
+    );
+    const category = floor.category || getCategoryFromIndex(floor.index);
+    const baseName =
+      floor.floor_group?.trim() ||
+      (floor as unknown as { group_name?: string })?.group_name?.trim() ||
+      "";
+    for (let i = 0; i < repetition; i++) {
+      const realIndex = floor.index + i;
+      const realCategory =
+        repetition > 1 ? getCategoryFromIndex(realIndex) : category;
+      const name =
+        baseName || fallbackNameForFloor(realCategory, realIndex, labels);
+      result.push({
+        id:
+          repetition > 1
+            ? `${floor.id}-r${i}`
+            : (floor as unknown as { id?: string })?.id ||
+              `floor-${realIndex}-${i}`,
+        name,
+        area: floor.area,
+        height: floor.height,
+        category: realCategory,
+        index: realIndex,
+      });
+    }
+  }
+  return result;
 };
 
 // Converte FloorSchema[] para UnifiedFloor[]
 export const convertFloorSchemaToUnified = (
   floors: FloorSchema[],
+  labels?: FloorFallbackLabels,
 ): UnifiedFloor[] => {
-  return floors.map((floor) => ({
-    id: floor.id || `floor-${floor.index}`,
-    name: floor.floor_group,
-    area: floor.area,
-    height: floor.height,
-    category: floor.category,
-    index: floor.index,
-  }));
+  return floors.map((floor) => {
+    const category = floor.category || getCategoryFromIndex(floor.index);
+    const baseName = (floor.floor_group || "").trim();
+    return {
+      id: floor.id || `floor-${floor.index}`,
+      name: baseName || fallbackNameForFloor(category, floor.index, labels),
+      area: floor.area,
+      height: floor.height,
+      category,
+      index: floor.index,
+    };
+  });
 };
 
 // Converte FloorFormInput[] para UnifiedFloor[] (para uso no formulário)
 export const convertFloorFormInputToUnified = (
   floors: FloorFormInput[],
+  labels?: FloorFallbackLabels,
 ): UnifiedFloor[] => {
   const unifiedFloors: UnifiedFloor[] = [];
 
   floors.forEach((floor) => {
-    // Converter strings para números, tratando vírgulas como separador decimal
     const area = parseFloat(floor.area.replace(",", ".")) || 0;
     const height = parseFloat(floor.height.replace(",", ".")) || 0;
-    const repetition = floor.repetition || 1;
+    const repetition = Math.max(1, Number(floor.repetition ?? 1) || 1);
+    const baseName = (floor.floor_group || "").trim();
+    const baseCategory = floor.category || getCategoryFromIndex(floor.index);
 
-    // Expandir floors com repetition > 1 para visualização
     for (let i = 0; i < repetition; i++) {
+      const realIndex = floor.index + i;
+      const realCategory =
+        repetition > 1 ? getCategoryFromIndex(realIndex) : baseCategory;
+      const name =
+        baseName || fallbackNameForFloor(realCategory, realIndex, labels);
       unifiedFloors.push({
         id: floor.id || `floor-${floor.index}-${i}`,
-        name: floor.floor_group,
+        name,
         area,
         height,
-        category: floor.category,
-        index: floor.index + i,
+        category: realCategory,
+        index: realIndex,
       });
     }
   });
