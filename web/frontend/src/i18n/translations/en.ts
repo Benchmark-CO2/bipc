@@ -51,6 +51,8 @@ export const en: Translations = {
     minimizeSidebar: "Minimize sidebar",
     newInvite: "New invitation",
     noNotifications: "No notifications",
+    dark: "Dark theme",
+    light: "Light theme",
   },
   nav: {
     faq: "Frequently asked questions",

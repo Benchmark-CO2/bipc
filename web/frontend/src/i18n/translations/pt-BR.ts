@@ -49,6 +49,8 @@ export const ptBR = {
     minimizeSidebar: "Minimizar sidebar",
     newInvite: "Novo convite",
     noNotifications: "Nenhuma notificação",
+    dark: "Tema Escuro",
+    light: "Tema Claro",
   },
   nav: {
     faq: "Perguntas frequentes",

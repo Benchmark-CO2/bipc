@@ -9,8 +9,8 @@ import { CircleX, UserPlus, X, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { parseApiError } from "@/utils/parseApiError";
 import { Button } from "../ui/button";
-import { Combobox } from "../ui/combobox";
 import {
   Drawer,
   DrawerContent,
