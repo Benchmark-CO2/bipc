@@ -1,5 +1,59 @@
 import { useTranslation } from "@/i18n";
-import { TModulesTypes } from "@/types/modules";
+import {
+  TBeamColumnPosition,
+  TConcreteWallPosition,
+  TModulesTypes,
+  TPilesFoundationPosition,
+  TRaftFoundationPosition,
+  TRaftPilesFoundationPosition,
+  TStructuralMasonryPosition,
+} from "@/types/modules";
+
+export const POSITIONS_BY_TYPE: Record<TModulesTypes, readonly string[]> = {
+  beam_column: [
+    "column",
+    "beam",
+    "slab",
+    "stair",
+  ] as const satisfies readonly TBeamColumnPosition[],
+  concrete_wall: [
+    "wall",
+    "slab",
+    "stair",
+  ] as const satisfies readonly TConcreteWallPosition[],
+  structural_masonry: [
+    "column",
+    "beam",
+    "slab",
+    "stair",
+  ] as const satisfies readonly TStructuralMasonryPosition[],
+  raft_foundation: [
+    "raft",
+  ] as const satisfies readonly TRaftFoundationPosition[],
+  piles_foundation: [
+    "pile",
+    "block",
+    "grade_beam",
+    "tie_beam",
+  ] as const satisfies readonly TPilesFoundationPosition[],
+  raft_piles_foundation: [
+    "raft",
+    "pile",
+  ] as const satisfies readonly TRaftPilesFoundationPosition[],
+};
+
+export const DEFAULT_FCK_BY_POSITION: Record<string, number> = {
+  column: 25,
+  beam: 30,
+  slab: 30,
+  wall: 25,
+  stair: 30,
+  raft: 25,
+  pile: 30,
+  block: 25,
+  grade_beam: 25,
+  tie_beam: 25,
+};
 
 export const useSlabTypeOptions = () => {
   const { t } = useTranslation();
@@ -27,188 +81,105 @@ export const useSlabTypeOptions = () => {
   ];
 };
 
-export const concreteWallDefaultValues = {
-  type: "concrete_wall" as const,
-  concrete_walls: {
-    volumes: [{ fck: 25, volume: "0" }],
-    steel: [
-      {
-        material: "rebar" as const,
-        resistance: "CA50" as const,
-        mass: "0",
-      },
-    ],
-  },
-  concrete_slabs: {
-    volumes: [{ fck: 30, volume: "0" }],
-    steel: [
-      {
-        material: "rebar" as const,
-        resistance: "CA50" as const,
-        mass: "0",
-      },
-    ],
-  },
-  wall_thickness: "0",
-  slab_thickness: "0",
-  wall_area: "0",
-  slab_area: 0,
-  wall_form_area: "0",
-  slab_form_area: "0",
-  slab_type: undefined as string | undefined,
-};
+const makeSteel = (position?: string) => ({
+  material: "general" as const,
+  resistance: "CA50" as const,
+  mass: "0",
+  position: position ?? "unspecified",
+});
+
+const makeConcrete = (position?: string) => ({
+  fck:
+    position && DEFAULT_FCK_BY_POSITION[position]
+      ? DEFAULT_FCK_BY_POSITION[position]
+      : 25,
+  volume: "0",
+  position: position ?? "unspecified",
+  customFck: false,
+});
 
 export const beamColumnDefaultValues = {
   type: "beam_column" as const,
-  concrete_columns: {
-    volumes: [{ fck: 25, volume: "0" }],
-    steel: [
-      {
-        material: "rebar" as const,
-        resistance: "CA50" as const,
-        mass: "0",
-      },
-    ],
+  data: {
+    concrete: [makeConcrete()],
+    steel: [makeSteel()],
+    form: [],
+    column_number: "0",
+    beam_number: "0",
+    slab_number: "0",
+    avg_beam_span: "0",
+    avg_slab_span: "0",
+    slab_type: undefined,
   },
-  concrete_beams: {
-    volumes: [{ fck: 30, volume: "0" }],
-    steel: [
-      {
-        material: "rebar" as const,
-        resistance: "CA50" as const,
-        mass: "0",
-      },
-    ],
+};
+
+export const concreteWallDefaultValues = {
+  type: "concrete_wall" as const,
+  data: {
+    concrete: [makeConcrete()],
+    steel: [makeSteel()],
+    form: [],
+    wall_thickness: "0",
+    slab_thickness: "0",
+    wall_area: "0",
+    slab_area: "0",
+    beam_number: "0",
+    slab_number: "0",
+    slab_type: undefined,
   },
-  concrete_slabs: {
-    volumes: [{ fck: 30, volume: "0" }],
-    steel: [
-      {
-        material: "rebar" as const,
-        resistance: "CA50" as const,
-        mass: "0",
-      },
-    ],
-  },
-  form_columns: "0",
-  form_beams: "0",
-  form_slabs: "0",
-  column_number: "0",
-  avg_beam_span: "0",
-  avg_slab_span: "0",
-  slab_type: undefined as string | undefined,
 };
 
 export const structuralMasonryDefaultValues = {
   type: "structural_masonry" as const,
-  masonry_blocks: [
-    { type: "inteiro (14x19x29)" as const, fbk: 6, quantity: "0" },
-  ],
-  grout: [
-    {
-      position: "vertical" as const,
-      volumes: [{ fgk: 20, volume: "0" }],
-      steel: [
+  data: {
+    masonry: {
+      blocks: [{ type: "inteiro (14x19x29)" as const, fbk: 6, quantity: "0" }],
+      grout: [
         {
-          material: "rebar" as const,
-          resistance: "CA50" as const,
-          mass: "0",
+          position: "vertical" as const,
+          volumes: [{ fgk: 20, volume: "0" }],
+          steel: [
+            {
+              material: "rebar" as const,
+              resistance: "CA50" as const,
+              mass: "0",
+              position: "unspecified",
+            },
+          ],
         },
       ],
+      mortar: [{ fak: 4.5, volume: "0" }],
     },
-  ],
-  mortar: [{ fak: 4.5, volume: "0" }],
-  concrete_slabs: {
-    volumes: [{ fck: 30, volume: "0" }],
-    steel: [
-      {
-        material: "rebar" as const,
-        resistance: "CA50" as const,
-        mass: "0",
-      },
-    ],
+    concrete: [],
+    steel: [],
+    form: [],
+    beam_number: "0",
+    slab_number: "0",
+    slab_type: undefined,
   },
-  form_slabs: "0",
-  slab_type: undefined as string | undefined,
 };
 
 export const raftFoundationDefaultValues = {
   type: "raft_foundation" as const,
-  area: "0",
-  thickness: "0",
-  fck: 25,
-  steel: [
-    {
-      material: "rebar" as const,
-      resistance: "CA50" as const,
-      mass: "0",
-    },
-  ],
+  data: {
+    concrete: [makeConcrete()],
+    steel: [makeSteel()],
+  },
 };
 
 export const pilesFoundationDefaultValues = {
   type: "piles_foundation" as const,
-  fck: 30,
-  piles: {
-    volume: "0",
-    steel: [
-      {
-        material: "rebar" as const,
-        resistance: "CA50" as const,
-        mass: "0",
-      },
-    ],
-  },
-  // Optional sections — start with empty steel so user is not forced to fill them
-  pile_caps: {
-    volume: "0",
-    steel: [] as {
-      material: "rebar" | "mesh" | "strand" | "other";
-      resistance: "CA50" | "CA60" | "CP190" | "other";
-      mass: string;
-    }[],
-  },
-  grade_beams: {
-    volume: "0",
-    steel: [] as {
-      material: "rebar" | "mesh" | "strand" | "other";
-      resistance: "CA50" | "CA60" | "CP190" | "other";
-      mass: string;
-    }[],
-  },
-  tie_beams: {
-    volume: "0",
-    steel: [] as {
-      material: "rebar" | "mesh" | "strand" | "other";
-      resistance: "CA50" | "CA60" | "CP190" | "other";
-      mass: string;
-    }[],
+  data: {
+    concrete: [makeConcrete()],
+    steel: [makeSteel()],
   },
 };
 
 export const raftPilesFoundationDefaultValues = {
   type: "raft_piles_foundation" as const,
-  fck: 25,
-  raft: {
-    area: "0",
-    thickness: "0",
-    steel: [
-      {
-        material: "rebar" as const,
-        resistance: "CA50" as const,
-        mass: "0",
-      },
-    ],
-  },
-  piles: {
-    volume: "0",
-    steel: [
-      {
-        material: "rebar" as const,
-        resistance: "CA50" as const,
-        mass: "0",
-      },
-    ],
+  data: {
+    concrete: [makeConcrete()],
+    steel: [makeSteel()],
   },
 };
 
@@ -229,4 +200,71 @@ export const getDefaultValuesByType = (type: TModulesTypes) => {
     default:
       return concreteWallDefaultValues;
   }
+};
+
+export const getEmptyValuesByType = (type: TModulesTypes) => {
+  const scalarTemplate = (() => {
+    switch (type) {
+      case "beam_column":
+        return {
+          column_number: "0",
+          beam_number: "0",
+          slab_number: "0",
+          avg_beam_span: "0",
+          avg_slab_span: "0",
+          slab_type: undefined,
+        };
+      case "concrete_wall":
+        return {
+          wall_thickness: "0",
+          slab_thickness: "0",
+          wall_area: "0",
+          slab_area: "0",
+          beam_number: "0",
+          slab_number: "0",
+          slab_type: undefined,
+        };
+      case "structural_masonry":
+        return {
+          masonry: {
+            blocks: [],
+            mortar: [],
+            grout: [],
+          },
+          beam_number: "0",
+          slab_number: "0",
+          slab_type: undefined,
+        };
+      case "raft_foundation":
+      case "piles_foundation":
+      case "raft_piles_foundation":
+        return {};
+      default:
+        return {};
+    }
+  })();
+  const withArrays =
+    type === "beam_column" ||
+    type === "concrete_wall" ||
+    type === "structural_masonry"
+      ? {
+          concrete: [] as unknown[],
+          steel: [] as unknown[],
+          form: [] as unknown[],
+        }
+      : type === "raft_foundation" ||
+          type === "piles_foundation" ||
+          type === "raft_piles_foundation"
+        ? {
+            concrete: [] as unknown[],
+            steel: [] as unknown[],
+          }
+        : {};
+  return {
+    type,
+    data: {
+      ...withArrays,
+      ...scalarTemplate,
+    },
+  };
 };

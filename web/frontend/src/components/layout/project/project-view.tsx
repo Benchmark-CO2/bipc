@@ -14,6 +14,7 @@ import CommonTable from "../common-table";
 import NotFoundList from "@/components/ui/not-found-list";
 import DrawerFormUnit from "../drawer-form-unit";
 import { Button } from "@/components/ui/button";
+import DrawerIFCImport from "../drawer-ifc-import";
 
 const ProjectView = ({
   projectId,
@@ -45,6 +46,7 @@ const ProjectView = ({
       projectData?.data?.project?.units?.map((unit) => ({
         ...unit,
         ...(unit?.consumptions?.total || {}),
+        material: unit?.consumptions?.total?.material ?? undefined,
       })) || []
     );
   }, [projectData]);
@@ -57,6 +59,7 @@ const ProjectView = ({
         acc.co2_max += total.co2_max || 0;
         acc.energy_min += total.energy_min || 0;
         acc.energy_max += total.energy_max || 0;
+        acc.material += total.material || 0;
         acc.area += unit.area || 0;
       }
       return acc;
@@ -66,6 +69,7 @@ const ProjectView = ({
       co2_max: 0,
       energy_min: 0,
       energy_max: 0,
+      material: 0,
       area: 0,
     },
   );
@@ -75,14 +79,18 @@ const ProjectView = ({
     avgConsumptions.co2_max /= units.length;
     avgConsumptions.energy_min /= units.length;
     avgConsumptions.energy_max /= units.length;
+    avgConsumptions.material /= units.length;
     avgConsumptions.area /= units.length;
   }
 
   const finalAvgConsumptions = {
-    co2_min: avgConsumptions.co2_min.toInternational(),
-    co2_max: avgConsumptions.co2_max.toInternational(),
-    energy_min: avgConsumptions.energy_min.toInternational(),
-    energy_max: avgConsumptions.energy_max.toInternational(),
+    co2_min: avgConsumptions.co2_min,
+    co2_max: avgConsumptions.co2_max,
+    co2_range: `${avgConsumptions.co2_min.toInternational()} - ${avgConsumptions.co2_max.toInternational()}`,
+    energy_min: avgConsumptions.energy_min,
+    energy_max: avgConsumptions.energy_max,
+    energy_range: `${avgConsumptions.energy_min.toInternational()} - ${avgConsumptions.energy_max.toInternational()}`,
+    material: avgConsumptions.material.toInternational(),
   };
 
   const summaryComponent = useMemo(() => {
@@ -127,12 +135,22 @@ const ProjectView = ({
             showIcon={false}
             description={t.projectView.noBuildingsDescription}
             button={
-              <DrawerFormUnit
-                triggerComponent={
-                  <Button variant="bipc">{t.projectView.addBuilding}</Button>
-                }
-                projectId={projectId}
-              />
+              <div className="flex gap-2 items-center">
+                <DrawerFormUnit
+                  triggerComponent={
+                    <Button variant="bipc">{t.projectView.addBuilding}</Button>
+                  }
+                  projectId={projectId}
+                />
+                <small>or</small>
+                <DrawerIFCImport
+                  mode="unit"
+                  projectId={projectId}
+                  triggerComponent={
+                    <Button variant="bipc">{t.common.ifcImport}</Button>
+                  }
+                />
+              </div>
             }
           />
         }

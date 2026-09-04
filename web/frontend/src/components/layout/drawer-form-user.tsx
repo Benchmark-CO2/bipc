@@ -82,7 +82,7 @@ export default function DrawerFormUser({
   const isCompany = userType === "company";
 
   const form = useForm<UpdateUserFormSchema>({
-    resolver: zodResolver(createUpdateUserFormSchema(t)),
+    resolver: zodResolver(createUpdateUserFormSchema(t, userType)),
     defaultValues: {
       name: userData?.name || "",
       email: userData?.email || "",

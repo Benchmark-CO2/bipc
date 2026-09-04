@@ -7,7 +7,7 @@ import {
   useReactTable,
   RowSelectionState,
 } from "@tanstack/react-table";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Table,
   TableBody,
@@ -60,6 +60,7 @@ export default function CommonTable({
 }: ICommonTableProps) {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
+  const lastSelectedRef = useRef<any[]>([]);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -95,7 +96,18 @@ export default function CommonTable({
     const selectedRows = table
       .getFilteredSelectedRowModel()
       .rows.map((row) => row.original);
-    onSelectionChange?.(selectedRows);
+    const prev = lastSelectedRef.current;
+    // Só dispara se: (1) tamanho mudou, ou (2) algum id diferente em alguma posição
+    const changed =
+      prev.length !== selectedRows.length ||
+      prev.some(
+        (r, i) =>
+          JSON.stringify(r) !== JSON.stringify((selectedRows as any[])[i]),
+      );
+    if (changed) {
+      lastSelectedRef.current = selectedRows as any[];
+      onSelectionChange?.(selectedRows);
+    }
   }, [rowSelection, onSelectionChange, table]);
 
   return (
