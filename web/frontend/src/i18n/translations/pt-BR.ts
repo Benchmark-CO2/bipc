@@ -465,6 +465,9 @@ export const ptBR = {
       validationSummary: "Verifique os campos com erro abaixo:",
       duplicateFloor: "Duplicar Pavimento",
       removeFloor: "Remover Pavimento",
+      updateWarningTitle: "Importante: Confirmação de Atualização",
+      updateWarningBody:
+        "Ao editar esta unidade, todas as simulações associadas serão invalidadas e precisarão ser refeitas. Ao clicar em atualizar abaixo, você reconhece que entende as consequências desta ação.",
     },
   },
   modules: {
@@ -1531,6 +1534,31 @@ export const ptBR = {
       editBtnDisabled: "Vincule uma unidade para editar",
       notBoundWarning:
         "Vincule este módulo a uma unidade no Step 2 antes de salvar. Pavimentos só serão selecionáveis após o vínculo.",
+      noneSelected:
+        "Nenhum módulo selecionado para criar. Marque ao menos 1 módulo e vincule a uma unidade.",
+      noBinding:
+        "{count} módulo(s) selecionado(s) SEM vínculo de unidade/opção. Vincule as unidades ou desmarque para prosseguir.",
+      noneValid:
+        "Nenhum módulo válido selecionado para criar. Marque ao menos 1 módulo válido e com vínculo de unidade.",
+      unselected:
+        "{count} módulo(s) desmarcado(s) — nenhum módulo selecionado válido para criar. Stepper encerrado.",
+      noBindingAtAll:
+        "Nenhum módulo com vinculo de unidade para criar. Stepper encerrado.",
+      step2Error: "Falha ao criar módulos.",
+      batchResult:
+        "{created} módulo(s) criado(s). {errors} lote(s) falhou(ram).",
+      createdSuccess: "{count} módulo(s) criado(s) com sucesso.",
+      ignoredParts: "{parts} — não serão criados.",
+      partIgnored: "{count} selecionado(s) mas sem vinculo/inválidos",
+      partUnselected: "{count} desmarcado(s)",
+      creatingUnits: "Criando unidades...",
+      creatingModules: "Criando módulos...",
+      nextStep: "Próximo passo",
+      cancel: "Cancelar",
+      back: "Voltar",
+      finish: "Concluir",
+      titleBindingTooltip:
+        "{count} módulo(s) selecionado(s) sem vínculo de unidade/opção — vincule ou desmarque para prosseguir.",
     },
     units: {
       title: "Unidades encontradas",
@@ -1548,6 +1576,20 @@ export const ptBR = {
       errors: "erro",
       errorsPlural: "erros",
       errorsUnknown: "Validação pendente ou falhou.",
+      noneSelected: "Selecione pelo menos uma unidade para criar.",
+      invalidSelected:
+        "{count} unidade(s) selecionada(s) são inválidas. Corrija ou desmarque antes de prosseguir.",
+      projectMissing: "Dados do projeto não carregados. Tente novamente.",
+      createdUnits:
+        "{count} unidade(s) e simulação(ões) criada(s) com sucesso.",
+      updatedUnits: "{count} unidade(s) atualizada(s) com sucesso.",
+      reusedUnits:
+        "{count} unidade(s) já existiam — seguindo para o passo de módulos.",
+      mixedResult: "{parts}. Seguindo para módulos.",
+      partCreated: "{count} criada(s)",
+      partUpdated: "{count} atualizada(s)",
+      partReused: "{count} reutilizada(s)",
+      step1Error: "Falha ao criar/atualizar unidades/simulações.",
     },
     compat: {
       floorMismatchTitle: "Incompatibilidade de quantidade de pavimentos",

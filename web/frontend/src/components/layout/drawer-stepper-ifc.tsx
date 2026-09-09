@@ -413,19 +413,22 @@ export default function DrawerStepperIFC({
     setStep1Error("");
     const selectedUnits = state.units.filter((u) => u.selected);
     if (selectedUnits.length === 0) {
-      toast.error("Selecione pelo menos uma unidade para criar.");
+      toast.error(t.stepper.units.noneSelected);
       return;
     }
     const invalidSelected = selectedUnits.filter((u) => !u.isValid);
     if (invalidSelected.length > 0) {
       toast.error(
-        `${invalidSelected.length} unidade(s) selecionada(s) são inválidas. Corrija ou desmarque antes de prosseguir.`,
+        t.stepper.units.invalidSelected.replace(
+          "{count}",
+          `${invalidSelected.length}`,
+        ),
       );
       return;
     }
     const projectObj = project;
     if (!projectObj) {
-      toast.error("Dados do projeto não carregados. Tente novamente.");
+      toast.error(t.stepper.units.projectMissing);
       return;
     }
     if (!initialRoleId) {
@@ -593,25 +596,38 @@ export default function DrawerStepperIFC({
       const total = createdCount + patchedCount + reusedCount;
       if (total === createdCount && reusedCount === 0 && patchedCount === 0) {
         toast.success(
-          `${createdCount} unidade(s) e simulação(ões) criada(s) com sucesso.`,
+          t.stepper.units.createdUnits.replace("{count}", `${createdCount}`),
         );
       } else if (createdCount === 0 && patchedCount > 0 && reusedCount === 0) {
-        toast.success(`${patchedCount} unidade(s) atualizada(s) com sucesso.`);
+        toast.success(
+          t.stepper.units.updatedUnits.replace("{count}", `${patchedCount}`),
+        );
       } else if (createdCount === 0 && patchedCount === 0 && reusedCount > 0) {
         toast.success(
-          `${reusedCount} unidade(s) já existiam — seguindo para o passo de módulos.`,
+          t.stepper.units.reusedUnits.replace("{count}", `${reusedCount}`),
         );
       } else {
         const parts: string[] = [];
-        if (createdCount > 0) parts.push(`${createdCount} criada(s)`);
-        if (patchedCount > 0) parts.push(`${patchedCount} atualizada(s)`);
-        if (reusedCount > 0) parts.push(`${reusedCount} reutilizada(s)`);
-        toast.success(`${parts.join(", ")}. Seguindo para módulos.`);
+        if (createdCount > 0)
+          parts.push(
+            t.stepper.units.partCreated.replace("{count}", `${createdCount}`),
+          );
+        if (patchedCount > 0)
+          parts.push(
+            t.stepper.units.partUpdated.replace("{count}", `${patchedCount}`),
+          );
+        if (reusedCount > 0)
+          parts.push(
+            t.stepper.units.partReused.replace("{count}", `${reusedCount}`),
+          );
+        toast.success(
+          t.stepper.units.mixedResult.replace("{parts}", parts.join(", ")),
+        );
       }
     } catch (err) {
       const msg = parseApiError(err, t);
       setStep1Error(msg);
-      toast.error("Falha ao criar/atualizar unidades/simulações.", {
+      toast.error(t.stepper.units.step1Error, {
         description: msg,
       });
     } finally {
@@ -834,33 +850,33 @@ export default function DrawerStepperIFC({
     // Evita race conditions / state desatualizado mesmo quando o botão está disabled.
     if (!step2CanProceed) {
       if (selectedModules.length === 0) {
-        toast.warning(
-          "Nenhum módulo selecionado para criar. Marque ao menos 1 módulo e vincule a uma unidade.",
-        );
+        toast.warning(t.stepper.modules.noneSelected);
       } else if (countBlockingNoBinding > 0) {
         toast.warning(
-          `${countBlockingNoBinding} módulo(s) selecionado(s) SEM vínculo de unidade/opção. Vincule as unidades ou desmarque para prosseguir.`,
+          t.stepper.modules.noBinding.replace(
+            "{count}",
+            `${countBlockingNoBinding}`,
+          ),
         );
       } else {
-        toast.warning(
-          "Nenhum módulo válido selecionado para criar. Marque ao menos 1 módulo válido e com vínculo de unidade.",
-        );
+        toast.warning(t.stepper.modules.noneValid);
       }
       return;
     }
 
     if (modulesUnselectedCount > 0 && modulesValidWithBinding.length === 0) {
       toast.info(
-        `${modulesUnselectedCount} módulo(s) desmarcado(s) — nenhum módulo selecionado válido para criar. Stepper encerrado.`,
+        t.stepper.modules.unselected.replace(
+          "{count}",
+          `${modulesUnselectedCount}`,
+        ),
       );
       onComplete?.();
       onOpenChange(false);
       return;
     }
     if (modulesValidWithBinding.length === 0) {
-      toast.warning(
-        "Nenhum módulo com vinculo de unidade para criar. Stepper encerrado.",
-      );
+      toast.warning(t.stepper.modules.noBindingAtAll);
       onComplete?.();
       onOpenChange(false);
       return;
@@ -934,23 +950,40 @@ export default function DrawerStepperIFC({
       if (errors.length > 0) {
         setStep2Error(errors.join(" | "));
         toast.error(
-          `${createdCount} módulo(s) criado(s). ${errors.length} lote(s) falhou(ram).`,
+          t.stepper.modules.batchResult
+            .replace("{created}", `${createdCount}`)
+            .replace("{errors}", `${errors.length}`),
           {
             description: errors[0],
           },
         );
       } else {
-        toast.success(`${createdCount} módulo(s) criado(s) com sucesso.`);
+        toast.success(
+          t.stepper.modules.createdSuccess.replace(
+            "{count}",
+            `${createdCount}`,
+          ),
+        );
       }
       if (modulesIgnoredCount > 0 || modulesUnselectedCount > 0) {
         const parts: string[] = [];
         if (modulesIgnoredCount > 0)
           parts.push(
-            `${modulesIgnoredCount} selecionado(s) mas sem vinculo/inválidos`,
+            t.stepper.modules.partIgnored.replace(
+              "{count}",
+              `${modulesIgnoredCount}`,
+            ),
           );
         if (modulesUnselectedCount > 0)
-          parts.push(`${modulesUnselectedCount} desmarcado(s)`);
-        toast.info(`${parts.join(" · ")} — não serão criados.`);
+          parts.push(
+            t.stepper.modules.partUnselected.replace(
+              "{count}",
+              `${modulesUnselectedCount}`,
+            ),
+          );
+        toast.info(
+          t.stepper.modules.ignoredParts.replace("{parts}", parts.join(" · ")),
+        );
       }
 
       // Invalidate queries
@@ -974,7 +1007,7 @@ export default function DrawerStepperIFC({
     } catch (err) {
       const msg = parseApiError(err, t);
       setStep2Error(msg);
-      toast.error("Falha ao criar módulos.", { description: msg });
+      toast.error(t.stepper.modules.step2Error, { description: msg });
     } finally {
       setIsCreatingStep2(false);
     }
@@ -1042,7 +1075,7 @@ export default function DrawerStepperIFC({
                 onClick={handleClose}
                 disabled={isCreatingStep1}
               >
-                Cancelar
+                {t.stepper.modules.cancel}
               </Button>
               <Button
                 variant="bipc"
@@ -1053,11 +1086,11 @@ export default function DrawerStepperIFC({
                 {isCreatingStep1 ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Criando unidades...
+                    {t.stepper.modules.creatingUnits}
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
-                    Próximo passo
+                    {t.stepper.modules.nextStep}
                     <Wand2 className="h-4 w-4" />
                   </span>
                 )}
@@ -1071,14 +1104,14 @@ export default function DrawerStepperIFC({
                 onClick={handleClose}
                 disabled={isCreatingStep2}
               >
-                Cancelar
+                {t.stepper.modules.cancel}
               </Button>
               <Button
                 variant="outline"
                 onClick={goToStep1}
                 disabled={isCreatingStep2}
               >
-                Voltar
+                {t.stepper.modules.back}
               </Button>
               <Button
                 variant="bipc"
@@ -1087,17 +1120,20 @@ export default function DrawerStepperIFC({
                 className="text-white"
                 title={
                   !step2CanProceed && countBlockingNoBinding > 0
-                    ? `${countBlockingNoBinding} módulo(s) selecionado(s) sem vínculo de unidade/opção — vincule ou desmarque para prosseguir.`
+                    ? t.stepper.modules.titleBindingTooltip.replace(
+                        "{count}",
+                        `${countBlockingNoBinding}`,
+                      )
                     : undefined
                 }
               >
                 {isCreatingStep2 ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Criando módulos...
+                    {t.stepper.modules.creatingModules}
                   </span>
                 ) : (
-                  "Concluir"
+                  t.stepper.modules.finish
                 )}
               </Button>
             </>
@@ -1109,7 +1145,7 @@ export default function DrawerStepperIFC({
                 onClick={handleClose}
                 disabled={isCreatingStep2}
               >
-                Cancelar
+                {t.stepper.modules.cancel}
               </Button>
               <Button
                 variant="bipc"
@@ -1122,17 +1158,20 @@ export default function DrawerStepperIFC({
                 className="text-white"
                 title={
                   !step2CanProceed && countBlockingNoBinding > 0
-                    ? `${countBlockingNoBinding} módulo(s) selecionado(s) sem vínculo de unidade/opção — vincule ou desmarque para prosseguir.`
+                    ? t.stepper.modules.titleBindingTooltip.replace(
+                        "{count}",
+                        `${countBlockingNoBinding}`,
+                      )
                     : undefined
                 }
               >
                 {isCreatingStep2 ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Criando módulos...
+                    {t.stepper.modules.creatingModules}
                   </span>
                 ) : (
-                  "Concluir"
+                  t.stepper.modules.finish
                 )}
               </Button>
             </>
@@ -1143,6 +1182,7 @@ export default function DrawerStepperIFC({
           <DrawerFormUnit
             stepperMode
             projectId={projectId}
+            editMode
             open={!!editingUnitTempId}
             onOpenChange={(o) => !o && setEditingUnitTempId(null)}
             initialFormData={

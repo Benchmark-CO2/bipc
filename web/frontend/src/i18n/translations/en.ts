@@ -463,6 +463,9 @@ export const en: Translations = {
       validationSummary: "Check the fields with errors below:",
       duplicateFloor: "Duplicate Floor",
       removeFloor: "Remove Floor",
+      updateWarningTitle: "Important: Update Confirmation",
+      updateWarningBody:
+        "Editing this unit will invalidate all associated simulations and they will need to be recreated. By clicking update below, you acknowledge you understand the consequences of this action.",
     },
   },
   modules: {
@@ -1519,6 +1522,29 @@ export const en: Translations = {
       editBtnDisabled: "Bind a unit to enable editing",
       notBoundWarning:
         "Bind this module to a unit in Step 2 before saving. Floors will only be selectable after binding.",
+      noneSelected:
+        "No modules selected for creation. Select at least 1 module and bind it to a unit.",
+      noBinding:
+        "{count} selected module(s) WITHOUT a unit/option binding. Bind the units or uncheck them to proceed.",
+      noneValid:
+        "No valid modules selected for creation. Select at least 1 valid module with a unit bound.",
+      unselected:
+        "{count} unselected module(s) — no valid selected module to create. Stepper closed.",
+      noBindingAtAll: "No modules with a unit bound to create. Stepper closed.",
+      step2Error: "Failed to create modules.",
+      batchResult: "{created} module(s) created. {errors} batch(es) failed.",
+      createdSuccess: "{count} module(s) created successfully.",
+      ignoredParts: "{parts} — will not be created.",
+      partIgnored: "{count} selected but without binding/invalid",
+      partUnselected: "{count} unselected",
+      creatingUnits: "Creating units...",
+      creatingModules: "Creating modules...",
+      nextStep: "Next step",
+      cancel: "Cancel",
+      back: "Back",
+      finish: "Finish",
+      titleBindingTooltip:
+        "{count} selected module(s) without a unit/option binding — bind them or uncheck to proceed.",
     },
     units: {
       title: "Found units",
@@ -1536,6 +1562,19 @@ export const en: Translations = {
       errors: "error",
       errorsPlural: "errors",
       errorsUnknown: "Validation pending or failed.",
+      noneSelected: "Select at least one unit to create.",
+      invalidSelected:
+        "{count} selected unit(s) are invalid. Fix them or uncheck them before proceeding.",
+      projectMissing: "Project data not loaded. Please try again.",
+      createdUnits: "{count} unit(s) and simulation(s) created successfully.",
+      updatedUnits: "{count} unit(s) updated successfully.",
+      reusedUnits:
+        "{count} existing unit(s) reused — moving forward to the modules step.",
+      mixedResult: "{parts}. Moving forward to modules.",
+      partCreated: "{count} created",
+      partUpdated: "{count} updated",
+      partReused: "{count} reused",
+      step1Error: "Failed to create/update units/simulations.",
     },
     compat: {
       floorMismatchTitle: "Floor count mismatch",
