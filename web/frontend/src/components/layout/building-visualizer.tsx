@@ -4,6 +4,8 @@ import { TTowerFloorCategory } from "@/types/units";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   UnifiedFloor,
+  FloorFallbackLabels,
+  makeFloorFallbackLabels,
   convertTowerFloorsToUnified,
   convertFloorSchemaToUnified,
   convertFloorFormInputToUnified,
@@ -36,13 +38,28 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   isFoundation = false,
 }) => {
   const { t } = useTranslation();
-  
+
+  const floorLabels: FloorFallbackLabels = makeFloorFallbackLabels({
+    ground: t.buildingVisualizer.fallbackNames.ground,
+    penthouse: t.buildingVisualizer.fallbackNames.penthouse,
+    basementOnly: t.buildingVisualizer.fallbackNames.basementOnly,
+    basementNumberedTemplate:
+      t.buildingVisualizer.fallbackNames.basementNumbered,
+    standardOrdinalPositiveTemplate:
+      t.buildingVisualizer.fallbackNames.standardOrdinalPositive,
+    standardNumberedTemplate:
+      t.buildingVisualizer.fallbackNames.standardNumbered,
+  });
+
   const unifiedFloors: UnifiedFloor[] = towerFloors
-    ? convertTowerFloorsToUnified(towerFloors)
+    ? convertTowerFloorsToUnified(towerFloors, floorLabels)
     : floors
       ? isFloorFormInput(floors[0])
-        ? convertFloorFormInputToUnified(floors as FloorFormInput[])
-        : convertFloorSchemaToUnified(floors as FloorSchema[])
+        ? convertFloorFormInputToUnified(
+            floors as FloorFormInput[],
+            floorLabels,
+          )
+        : convertFloorSchemaToUnified(floors as FloorSchema[], floorLabels)
       : [];
 
   const selectedItems = isSelectable ? selectedFloorIds : [];
@@ -83,6 +100,38 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
     index: -2,
   };
 
+  const fallbackFloorName = (floor: UnifiedFloor): string => {
+    if (floor.name && floor.name.trim().length > 0) return floor.name;
+    const labels = floorLabels;
+    switch (floor.category) {
+      case "ground_floor":
+        return labels.ground;
+      case "penthouse_floor":
+        return labels.penthouse;
+      case "basement_floor": {
+        const n = Math.abs(floor.index);
+        return n > 0 ? labels.basementNumbered(n) : labels.basementOnly;
+      }
+      case "standard_floor":
+      default:
+        return floor.index >= 0
+          ? labels.standardOrdinalPositive(floor.index)
+          : labels.standardNumbered(floor.index);
+    }
+  };
+
+  const expansionSuffixRe = /-r\d+(?:-\d+)?$/;
+
+  const areSomeFloorIdMatchesSelected = (
+    floorId: string,
+    selected: readonly string[],
+  ): boolean => {
+    if (selected.includes(floorId)) return true;
+    const stripped = floorId.replace(expansionSuffixRe, "");
+    if (stripped !== floorId && selected.includes(stripped)) return true;
+    return false;
+  };
+
   const handleFloorSelection = (
     floorIdentifier: string,
     isChecked: boolean,
@@ -118,12 +167,17 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   const allFloorIds = unifiedFloors.map((floor) => floor.id);
   const areAllSelected =
     allFloorIds.length > 0 &&
-    allFloorIds.every((id) => selectedItems.includes(id));
+    allFloorIds.every((id) => areSomeFloorIdMatchesSelected(id, selectedItems));
+  const selectedCount = allFloorIds.filter((id) =>
+    areSomeFloorIdMatchesSelected(id, selectedItems),
+  ).length;
 
   const renderFloorBlock = (floor: UnifiedFloor, hasFoundation = false) => {
     const widthPercentage = (floor.area / maxArea) * 100;
     const floorIdentifier = isSelectable ? floor.id : floor.name;
-    const isFloorSelected = selectedItems.includes(floorIdentifier);
+    const isFloorSelected = isSelectable
+      ? areSomeFloorIdMatchesSelected(floorIdentifier, selectedItems)
+      : false;
 
     const categoryColors = {
       penthouse_floor: "#8B5CF6",
@@ -132,6 +186,8 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
       basement_floor: "#F59E0B",
       foundation_floor: "#db7070",
     };
+
+    const finalFloorName = fallbackFloorName(floor);
 
     const opacity = () => {
       if (!complete) return "1";
@@ -163,7 +219,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
             width: `${widthPercentage}%`,
             textShadow: "1px 1px 2px rgba(0,0,0,0.5)",
           }}
-          title={`${floor.name} - ${floor.area}m² - ${floor.height}m`}
+          title={`${finalFloorName} - ${floor.area}m² - ${floor.height}m`}
         ></div>
 
         {/* Checkbox e nome */}
@@ -183,9 +239,9 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
               }
                 ${!hasFoundation ? "truncate" : ""}
               `}
-              title={floor.name}
+              title={finalFloorName}
             >
-              {floor.name}
+              {finalFloorName}
             </span>
           </>
         )}
@@ -221,7 +277,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
             />
             <div className="flex items-center">
               <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
-                {selectedItems.length} de {allFloorIds.length}
+                {selectedCount} de {allFloorIds.length}
               </span>
             </div>
           </div>

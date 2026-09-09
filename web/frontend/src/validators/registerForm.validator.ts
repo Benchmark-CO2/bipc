@@ -5,12 +5,7 @@ export function createRegisterFormSchema(t: Translations) {
   return z
     .object({
       type: z.enum(["member", "company"]),
-      name: z
-        .string()
-        .min(1, { message: t.validators.required })
-        .regex(/^[A-Za-zÀ-ÿ]+( [A-Za-zÀ-ÿ]+)+$/, {
-          message: t.validators.fullNameRequired,
-        }),
+      name: z.string().min(1, { message: t.validators.required }),
       email: z
         .string()
         .min(1, { message: t.validators.required })
@@ -70,6 +65,16 @@ export function createRegisterFormSchema(t: Translations) {
       }),
     })
     .superRefine((data, ctx) => {
+      if (data.type === "member") {
+        const fullNameRegex = /^[A-Za-zÀ-ÿ]+( [A-Za-zÀ-ÿ]+)+$/;
+        if (!fullNameRegex.test(data.name.trim())) {
+          ctx.addIssue({
+            code: "custom",
+            message: t.validators.fullNameRequired,
+            path: ["name"],
+          });
+        }
+      }
       if (data.password !== data.confirmPassword) {
         ctx.addIssue({
           code: "custom",

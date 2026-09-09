@@ -5,11 +5,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { masks } from "@/utils/masks";
 import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
 import { Copy, GripVertical, Plus, Trash2 } from "lucide-react";
@@ -18,13 +13,7 @@ import { UseFormReturn, useFieldArray, useWatch } from "react-hook-form";
 import { useTranslation } from "@/i18n";
 import { Button } from "../../ui/button";
 import { Card } from "../../ui/card";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../../ui/form";
+import { FormControl, FormField, FormItem, FormLabel } from "../../ui/form";
 import { Input } from "../../ui/input";
 import {
   Table,
@@ -54,14 +43,14 @@ const categoryColors = {
 const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
   const isMobile = useIsMobile();
   const { t } = useTranslation();
-  
+
   const categoryLabels = {
     penthouse_floor: t.unitForm.tower.penthouse,
     standard_floor: t.unitForm.tower.standard,
     ground_floor: t.unitForm.tower.ground,
     basement_floor: t.unitForm.tower.basement,
   };
-  
+
   const { fields, remove, move } = useFieldArray({
     control: form.control as any,
     name: "data.floors",
@@ -358,7 +347,6 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
@@ -389,7 +377,6 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                     </SelectContent>
                   </Select>
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
@@ -416,7 +403,6 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                     }
                   />
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
@@ -440,7 +426,6 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                     }}
                   />
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
@@ -481,25 +466,23 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                 </SelectItem>
               </SelectContent>
             </Select>
-              <Button
-                type="button"
-                onClick={() => addFloor(selectedCategory)}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2 text-green-600 border-green-600 hover:bg-green-50"
-              >
-                <Plus className="h-4 w-4" />
-                {t.common.add}
-              </Button>
+            <Button
+              type="button"
+              onClick={() => addFloor(selectedCategory)}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 text-green-600 border-green-600 hover:bg-green-50"
+            >
+              <Plus className="h-4 w-4" />
+              {t.common.add}
+            </Button>
           </div>
         </div>
 
         {fields.length === 0 ? (
           <Card className="p-6 text-center text-muted-foreground">
             <p>{t.unitForm.tower.addFloor}</p>
-            <p className="text-sm mt-1">
-              {t.unitForm.tower.category}
-            </p>
+            <p className="text-sm mt-1">{t.unitForm.tower.category}</p>
           </Card>
         ) : (
           <div className="border rounded-md border-gray-shade-200 bg-card">
@@ -509,17 +492,27 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                   <TableHead className="w-8"></TableHead>
                   <TableHead className="w-4"></TableHead>
                   <TableHead>{t.unitForm.tower.floorName}</TableHead>
-                  <TableHead className="w-24">{t.unitForm.tower.area} (m²)</TableHead>
                   <TableHead className="w-24">
-                    {isMobile ? t.unitForm.tower.floorToFloorDistance : t.unitForm.tower.floorToFloorDistance + " (m)"}
+                    {t.unitForm.tower.area} (m²)
+                  </TableHead>
+                  <TableHead className="w-24">
+                    {isMobile
+                      ? t.unitForm.tower.floorToFloorDistance
+                      : t.unitForm.tower.floorToFloorDistance + " (m)"}
                   </TableHead>
                   {!isEditMode && (
                     <TableHead className="w-20">
-                      {isMobile ? t.unitForm.tower.quantity : t.unitForm.tower.floorRepetition}
+                      {isMobile
+                        ? t.unitForm.tower.quantity
+                        : t.unitForm.tower.floorRepetition}
                     </TableHead>
                   )}
-                  <TableHead className="w-32">{t.unitForm.tower.category}</TableHead>
-                  <TableHead className="w-24">{t.card.actions || "Ações"}</TableHead>
+                  <TableHead className="w-32">
+                    {t.unitForm.tower.category}
+                  </TableHead>
+                  <TableHead className="w-24">
+                    {t.card.actions || "Ações"}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -574,36 +567,17 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                           render={({ field, fieldState }) => (
                             <FormItem>
                               <FormControl>
-                                <Tooltip
-                                  open={
-                                    !!fieldState.error &&
-                                    focusedRowIndex !== index
-                                  }
-                                >
-                                  <TooltipTrigger asChild>
-                                    <Input
-                                      placeholder={`Ex: ${categoryLabels[watchedFloors[index]?.category as keyof typeof categoryLabels] || t.unitForm.tower.floorNamePlaceholder}`}
-                                      className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full max-sm:min-w-[100px] ${
-                                        fieldState.error
-                                          ? "border border-red-500"
-                                          : "border-0"
-                                      }`}
-                                      {...field}
-                                      onFocus={() => setFocusedRowIndex(index)}
-                                      onBlur={() => setFocusedRowIndex(null)}
-                                    />
-                                  </TooltipTrigger>
-                                  {fieldState.error && (
-                                    <TooltipContent
-                                      className="bg-red-600 border-red-700 text-white"
-                                      arrowClassName="bg-red-600 fill-red-600"
-                                    >
-                                      <p className="text-sm">
-                                        {fieldState.error.message}
-                                      </p>
-                                    </TooltipContent>
-                                  )}
-                                </Tooltip>
+                                <Input
+                                  placeholder={`Ex: ${categoryLabels[watchedFloors[index]?.category as keyof typeof categoryLabels] || t.unitForm.tower.floorNamePlaceholder}`}
+                                  className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full max-sm:min-w-[100px] ${
+                                    fieldState.error
+                                      ? "border border-red-500"
+                                      : "border-0"
+                                  }`}
+                                  {...field}
+                                  onFocus={() => setFocusedRowIndex(index)}
+                                  onBlur={() => setFocusedRowIndex(null)}
+                                />
                               </FormControl>
                             </FormItem>
                           )}
@@ -616,43 +590,24 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                           render={({ field, fieldState }) => (
                             <FormItem>
                               <FormControl>
-                                <Tooltip
-                                  open={
-                                    !!fieldState.error &&
-                                    focusedRowIndex !== index
-                                  }
-                                >
-                                  <TooltipTrigger asChild>
-                                    <Input
-                                      type="text"
-                                      placeholder="Ex: 100"
-                                      className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
-                                        fieldState.error
-                                          ? "border border-red-500"
-                                          : "border-0"
-                                      }`}
-                                      value={field.value}
-                                      onChange={(e) => {
-                                        const value = e.target.value;
-                                        field.onChange(
-                                          value ? masks.numeric(value) : "",
-                                        );
-                                      }}
-                                      onFocus={() => setFocusedRowIndex(index)}
-                                      onBlur={() => setFocusedRowIndex(null)}
-                                    />
-                                  </TooltipTrigger>
-                                  {fieldState.error && (
-                                    <TooltipContent
-                                      className="bg-red-600 border-red-700 text-white"
-                                      arrowClassName="bg-red-600 fill-red-600"
-                                    >
-                                      <p className="text-sm">
-                                        Campo obrigatório. Insira a área em m².
-                                      </p>
-                                    </TooltipContent>
-                                  )}
-                                </Tooltip>
+                                <Input
+                                  type="text"
+                                  placeholder="Ex: 100"
+                                  className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
+                                    fieldState.error
+                                      ? "border border-red-500"
+                                      : "border-0"
+                                  }`}
+                                  value={field.value}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    field.onChange(
+                                      value ? masks.numeric(value) : "",
+                                    );
+                                  }}
+                                  onFocus={() => setFocusedRowIndex(index)}
+                                  onBlur={() => setFocusedRowIndex(null)}
+                                />
                               </FormControl>
                             </FormItem>
                           )}
@@ -665,44 +620,24 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                           render={({ field, fieldState }) => (
                             <FormItem>
                               <FormControl>
-                                <Tooltip
-                                  open={
-                                    !!fieldState.error &&
-                                    focusedRowIndex !== index
-                                  }
-                                >
-                                  <TooltipTrigger asChild>
-                                    <Input
-                                      type="text"
-                                      placeholder="Ex: 3"
-                                      className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
-                                        fieldState.error
-                                          ? "border border-red-500"
-                                          : "border-0"
-                                      }`}
-                                      value={field.value}
-                                      onChange={(e) => {
-                                        const value = e.target.value;
-                                        field.onChange(
-                                          value ? masks.numeric(value) : "",
-                                        );
-                                      }}
-                                      onFocus={() => setFocusedRowIndex(index)}
-                                      onBlur={() => setFocusedRowIndex(null)}
-                                    />
-                                  </TooltipTrigger>
-                                  {fieldState.error && (
-                                    <TooltipContent
-                                      className="bg-red-600 border-red-700 text-white"
-                                      arrowClassName="bg-red-600 fill-red-600"
-                                    >
-                                      <p className="text-sm">
-                                        Campo obrigatório. Insira a altura em
-                                        metros.
-                                      </p>
-                                    </TooltipContent>
-                                  )}
-                                </Tooltip>
+                                <Input
+                                  type="text"
+                                  placeholder="Ex: 3"
+                                  className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
+                                    fieldState.error
+                                      ? "border border-red-500"
+                                      : "border-0"
+                                  }`}
+                                  value={field.value}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    field.onChange(
+                                      value ? masks.numeric(value) : "",
+                                    );
+                                  }}
+                                  onFocus={() => setFocusedRowIndex(index)}
+                                  onBlur={() => setFocusedRowIndex(null)}
+                                />
                               </FormControl>
                             </FormItem>
                           )}
@@ -716,48 +651,27 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                             render={({ field, fieldState }) => (
                               <FormItem>
                                 <FormControl>
-                                  <Tooltip
-                                    open={
-                                      !!fieldState.error &&
-                                      focusedRowIndex !== index
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    placeholder="1"
+                                    className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
+                                      fieldState.error
+                                        ? "border border-red-500"
+                                        : "border-0"
+                                    }`}
+                                    {...field}
+                                    onChange={(e) =>
+                                      field.onChange(
+                                        e.target.value
+                                          ? Number(e.target.value)
+                                          : 1,
+                                      )
                                     }
-                                  >
-                                    <TooltipTrigger asChild>
-                                      <Input
-                                        type="number"
-                                        min="1"
-                                        step="1"
-                                        placeholder="1"
-                                        className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
-                                          fieldState.error
-                                            ? "border border-red-500"
-                                            : "border-0"
-                                        }`}
-                                        {...field}
-                                        onChange={(e) =>
-                                          field.onChange(
-                                            e.target.value
-                                              ? Number(e.target.value)
-                                              : 1,
-                                          )
-                                        }
-                                        onFocus={() =>
-                                          setFocusedRowIndex(index)
-                                        }
-                                        onBlur={() => setFocusedRowIndex(null)}
-                                      />
-                                    </TooltipTrigger>
-                                    {fieldState.error && (
-                                      <TooltipContent
-                                        className="bg-red-600 border-red-700 text-white"
-                                        arrowClassName="bg-red-600 fill-red-600"
-                                      >
-                                        <p className="text-sm">
-                                          {fieldState.error.message}
-                                        </p>
-                                      </TooltipContent>
-                                    )}
-                                  </Tooltip>
+                                    onFocus={() => setFocusedRowIndex(index)}
+                                    onBlur={() => setFocusedRowIndex(null)}
+                                  />
                                 </FormControl>
                               </FormItem>
                             )}
@@ -771,57 +685,36 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                           render={({ field, fieldState }) => (
                             <FormItem>
                               <FormControl>
-                                <Tooltip
-                                  open={
-                                    !!fieldState.error &&
-                                    focusedRowIndex !== index
-                                  }
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
                                 >
-                                  <TooltipTrigger asChild>
-                                    <Select
-                                      onValueChange={field.onChange}
-                                      defaultValue={field.value}
-                                    >
-                                      <SelectTrigger
-                                        className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
-                                          fieldState.error
-                                            ? "border border-red-500"
-                                            : "border-0"
-                                        }`}
-                                        onFocus={() =>
-                                          setFocusedRowIndex(index)
-                                        }
-                                        onBlur={() => setFocusedRowIndex(null)}
-                                      >
-                                        <SelectValue placeholder="Categoria" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="penthouse_floor">
-                                          Cobertura
-                                        </SelectItem>
-                                        <SelectItem value="standard_floor">
-                                          Tipo
-                                        </SelectItem>
-                                        <SelectItem value="ground_floor">
-                                          Térreo
-                                        </SelectItem>
-                                        <SelectItem value="basement_floor">
-                                          Subsolo
-                                        </SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </TooltipTrigger>
-                                  {fieldState.error && (
-                                    <TooltipContent
-                                      className="bg-red-600 border-red-700 text-white"
-                                      arrowClassName="bg-red-600 fill-red-600"
-                                    >
-                                      <p className="text-sm">
-                                        {fieldState.error.message}
-                                      </p>
-                                    </TooltipContent>
-                                  )}
-                                </Tooltip>
+                                  <SelectTrigger
+                                    className={`h-8 bg-transparent px-2 py-1 focus-visible:ring-0 w-full ${
+                                      fieldState.error
+                                        ? "border border-red-500"
+                                        : "border-0"
+                                    }`}
+                                    onFocus={() => setFocusedRowIndex(index)}
+                                    onBlur={() => setFocusedRowIndex(null)}
+                                  >
+                                    <SelectValue placeholder="Categoria" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="penthouse_floor">
+                                      Cobertura
+                                    </SelectItem>
+                                    <SelectItem value="standard_floor">
+                                      Tipo
+                                    </SelectItem>
+                                    <SelectItem value="ground_floor">
+                                      Térreo
+                                    </SelectItem>
+                                    <SelectItem value="basement_floor">
+                                      Subsolo
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
                               </FormControl>
                             </FormItem>
                           )}
@@ -829,7 +722,10 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <SimpleTooltip content={t.unitForm.tower.duplicateFloor} side="bottom">
+                          <SimpleTooltip
+                            content={t.unitForm.tower.duplicateFloor}
+                            side="bottom"
+                          >
                             <Button
                               type="button"
                               onClick={() => duplicateFloor(index)}
@@ -841,7 +737,10 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                               <Copy className="h-4 w-4" />
                             </Button>
                           </SimpleTooltip>
-                          <SimpleTooltip content={t.unitForm.tower.removeFloor} side="bottom">
+                          <SimpleTooltip
+                            content={t.unitForm.tower.removeFloor}
+                            side="bottom"
+                          >
                             <Button
                               type="button"
                               onClick={() => removeFloor(index)}

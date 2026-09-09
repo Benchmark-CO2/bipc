@@ -11,9 +11,9 @@ services:
     volumes:
       - database-data:/var/lib/postgresql/data
       - ./pg_hba.conf:/etc/pg_hba.conf:ro
-    command: [ '-c', 'hba_file=/etc/pg_hba.conf' ]
+    command: ["-c", "hba_file=/etc/pg_hba.conf"]
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -h localhost -U bipc" ]
+      test: ["CMD-SHELL", "pg_isready -h localhost -U bipc"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -48,11 +48,26 @@ services:
       - GOMAXPROCS
       - GOGC=off
       - GOMEMLIMIT
-    command: [
-      "-port=3000", "-url=localhost:3000", "-db-dsn=postgres://bipc:pa55word@10.5.0.2:5432/bipc?sslmode=disable", "-smtp-host=10.5.0.3", "-smtp-port=1025", "-smtp-sender=BIPC <no-reply@bipc.org.br>",
-      "-cors-trusted-origins=http://localhost:5173", "-ifc-url=${IFC_URL}", "-ifc-secret=${IFC_SECRET}"]
+      - IFC_URL
+      - IFC_SECRET
+    command:
+      [
+        "-port=3000",
+        "-url=localhost:3000",
+        "-db-dsn=postgres://bipc:pa55word@10.5.0.2:5432/bipc?sslmode=disable",
+        "-smtp-host=10.5.0.3",
+        "-smtp-port=1025",
+        "-smtp-sender=BIPC <no-reply@bipc.org.br>",
+        "-cors-trusted-origins=http://localhost:5173",
+        "-ifc-url=${IFC_URL:-}",
+        "-ifc-secret=${IFC_SECRET:-}",
+      ]
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/v1/healthcheck || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:3000/v1/healthcheck || exit 1",
+        ]
       interval: 5s
       timeout: 5s
       retries: 2
@@ -63,7 +78,7 @@ services:
     depends_on:
       - database
       - mailhog
-  
+
 volumes:
   database-data: {}
   mailhog-maildir: {}

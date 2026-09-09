@@ -1,15 +1,13 @@
 import { Translations } from "@/i18n/translations/pt-BR";
 import { z } from "zod";
 
-export function createUpdateUserFormSchema(t: Translations) {
+export function createUpdateUserFormSchema(
+  t: Translations,
+  userType: "member" | "company",
+) {
   return z
     .object({
-      name: z
-        .string()
-        .min(1, { message: t.validators.required })
-        .regex(/^[A-Za-zÀ-ÿ]+( [A-Za-zÀ-ÿ]+)+$/, {
-          message: t.validators.fullNameRequired,
-        }),
+      name: z.string().min(1, { message: t.validators.required }),
       email: z.string().optional(),
       password: z.string().optional(),
       confirmPassword: z.string().optional(),
@@ -57,6 +55,16 @@ export function createUpdateUserFormSchema(t: Translations) {
       complement: z.string().optional(),
     })
     .superRefine((data, ctx) => {
+      if (userType === "member") {
+        const fullNameRegex = /^[A-Za-zÀ-ÿ]+( [A-Za-zÀ-ÿ]+)+$/;
+        if (!fullNameRegex.test(data.name.trim())) {
+          ctx.addIssue({
+            code: "custom",
+            message: t.validators.fullNameRequired,
+            path: ["name"],
+          });
+        }
+      }
       const { password, confirmPassword } = data;
       if (password && password.length > 0) {
         if (password.length < 8) {

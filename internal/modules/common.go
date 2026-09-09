@@ -174,6 +174,9 @@ func deserializeSteelMaterialsFromInterface(data interface{}) []SteelMaterial {
 				if val, ok := steelItem["mass"].(float64); ok {
 					material.Mass = val
 				}
+				if position, ok := steelItem["position"].(string); ok {
+					material.Position = ElementPosition(position)
+				}
 				materials = append(materials, material)
 			}
 		}
@@ -1005,7 +1008,7 @@ func PrepareModuleTargetConsumptions(
 		}
 
 		if totalArea == 0 {
-			return nil, fmt.Errorf("unit %s has zero total area, please add floors with area before adding modules", *unitID)
+			return nil, fmt.Errorf("%w: unit %s has zero total area, please add floors with area before adding modules", data.ErrZeroArea, *unitID)
 		}
 
 		targets = append(targets, data.ModuleTargetConsumption{

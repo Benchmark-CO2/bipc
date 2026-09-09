@@ -95,7 +95,12 @@ const CustomBanner = ({
       await queryClient.invalidateQueries({
         queryKey: ["projects"],
       });
-      navigate({ to: `/new_projects` });
+      navigate({
+        to: `/new_projects`,
+        search: {
+          activationRequired: false,
+        },
+      });
     },
     onError: (error: unknown) => {
       toast.error(t.projects.deleteError, {
@@ -109,12 +114,17 @@ const CustomBanner = ({
     mutationFn: (projectId: string) => {
       return postDuplicateProject(projectId);
     },
-    onSuccess: async (data) => {
+    onSuccess: async () => {
       toast.success(t.projects.duplicateSuccess);
       await queryClient.invalidateQueries({
         queryKey: ["projects"],
       });
-      navigate({ to: `/new_projects` });
+      navigate({
+        to: `/new_projects`,
+        search: {
+          activationRequired: false,
+        },
+      });
     },
     onError: (error: unknown) => {
       toast.error(t.projects.duplicateError, {

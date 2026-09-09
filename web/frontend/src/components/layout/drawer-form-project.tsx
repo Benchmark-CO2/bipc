@@ -105,7 +105,7 @@ export default function DrawerFormProject({
   projectData,
 }: IDrawerAddProject) {
   const [openDrawer, setOpenDrawer] = useState(false);
-  const [file, setFile] = useState<File | undefined>(undefined);
+  const [file] = useState<File | undefined>(undefined);
   const [isAgreementChecked, setIsAgreementChecked] = useState(false);
   const [autoCreateStructure, setAutoCreateStructure] = useState(true);
   const [filledByCep, setFilledByCep] = useState(false);
