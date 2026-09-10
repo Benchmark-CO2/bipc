@@ -420,7 +420,7 @@ func (m ProjectModel) Delete(projectID uuid.UUID) error {
 func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]*ProjectWithUnits, Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) OVER(), p.id, p.created_at, p.name,
-		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description, p.siop, p.apf, p.project_start_date, p.project_end_date, p.construction_start_date, p.construction_end_date
+		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description, p.siop, p.apf, p.project_start_date, p.project_end_date, p.construction_start_date, p.construction_end_date,
 		EXISTS(
 			SELECT 1
 			FROM users_roles ur
