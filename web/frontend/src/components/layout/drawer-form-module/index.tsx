@@ -22,6 +22,7 @@ import { useTranslation } from "@/i18n";
 import { parseApiError } from "@/utils/parseApiError";
 import { mapFloorIndexToFloorIds } from "@/utils/unitConversions";
 import { MODULE_SOURCES } from "@/utils/modulePositions";
+import { stripFoundationFloorIndex } from "@/utils/ifcStepper";
 import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
 import { Alert, AlertDescription, AlertTitle } from "../../ui/alert";
@@ -717,7 +718,9 @@ const DrawerFormModule = ({
         typeof (mdAny as any).type === "string") &&
       !hasDataShape;
     if (hasDataShape) {
-      const wrappedData = { ...(mdAny.data as Record<string, unknown>) };
+      const wrappedData = stripFoundationFloorIndex(detectedType, {
+        ...(mdAny.data as Record<string, unknown>),
+      });
       if (
         wrappedData.floor_ids === undefined &&
         Array.isArray(mdAny.floor_ids)
@@ -744,9 +747,10 @@ const DrawerFormModule = ({
       ) {
         wrappedData.floor_index = mdAny.floor_index;
       }
+      const finalWrapped = stripFoundationFloorIndex(detectedType, wrappedData);
       resetValues = {
         type: detectedType,
-        data: wrappedData,
+        data: finalWrapped,
       };
     } else if (hasFlatShape) {
       const ignoreKeys = new Set(["type", "id", "consumption", "outdated"]);
@@ -758,7 +762,7 @@ const DrawerFormModule = ({
       }
       resetValues = {
         type: detectedType,
-        data,
+        data: stripFoundationFloorIndex(detectedType, data),
       };
     } else {
       resetValues = {

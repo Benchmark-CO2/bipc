@@ -37,6 +37,33 @@ const KNOWN_MODULE_TYPES: TModulesTypes[] = [
   "raft_piles_foundation",
 ];
 
+export const FOUNDATION_MODULE_TYPES: TModulesTypes[] = [
+  "raft_foundation",
+  "piles_foundation",
+  "raft_piles_foundation",
+];
+
+export const isFoundationModuleType = (
+  t: string | TModulesTypes | null | undefined,
+): boolean => {
+  if (!t) return false;
+  return (FOUNDATION_MODULE_TYPES as string[]).includes(String(t));
+};
+
+export const stripFoundationFloorIndex = (
+  type: string | TModulesTypes | null | undefined,
+  data: Record<string, unknown> | null | undefined,
+): Record<string, unknown> => {
+  if (!data) return {};
+  if (!isFoundationModuleType(type)) return data as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const k of Object.keys(data)) {
+    if (k === "floor_index" || k === "floor_indexes") continue;
+    out[k] = (data as Record<string, unknown>)[k];
+  }
+  return out;
+};
+
 const generateTempId = () => {
   return `tmp_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
 };
@@ -760,7 +787,15 @@ export const mapIfcResultToStepperState = (
 
   const modules: TIfcStepperModuleItem[] = (result.modules ?? []).map((m) => {
     const normalizedType = normalizeModuleType(m.type);
-    const normalizedRaw = { ...m, type: normalizedType || m.type };
+    const strippedData = stripFoundationFloorIndex(
+      normalizedType || m.type,
+      (m?.data ?? {}) as Record<string, unknown>,
+    );
+    const normalizedRaw = {
+      ...m,
+      type: normalizedType || m.type,
+      data: strippedData,
+    };
     const summary = buildModuleSummary(normalizedRaw as any);
     const { isValid, errors, warnings } = validateStepperModule(
       normalizedRaw as any,

@@ -39,12 +39,15 @@ import { mapFloorIndexToFloorIds } from "@/utils/unitConversions";
 import {
   aggregateIdenticalFloors,
   buildUniqueSimulationName,
+  FOUNDATION_MODULE_TYPES as IFC_FOUNDATION_MODULE_TYPES,
+  isFoundationModuleType,
   mapIfcResultToStepperState,
   MODULE_TYPE_LABEL_FALLBACK,
   prepareModuleForBatch,
   prepareUnitForCreate,
   rerunModuleValidation,
   rerunUnitValidation,
+  stripFoundationFloorIndex,
 } from "@/utils/ifcStepper";
 import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -777,17 +780,24 @@ export default function DrawerStepperIFC({
           (isFoundationType ? candidateFromBound : undefined);
         if (savedUnitId) preservedMeta.unit_id = savedUnitId;
 
-        const mergedDataV2: Record<string, unknown> = {
-          ...dataPayloadFromParams,
-          ...preservedMeta,
-        };
+        const mergedDataV2: Record<string, unknown> = stripFoundationFloorIndex(
+          fallbackType,
+          {
+            ...dataPayloadFromParams,
+            ...preservedMeta,
+          },
+        );
 
         const rawNext: TIfcStepperModuleItem["raw"] = {
           ...m.raw,
           type: fallbackType,
           data: mergedDataV2 as TIfcStepperModuleItem["raw"]["data"],
         };
-        if (originalFloorIndex !== undefined && originalFloorIndex !== null) {
+        if (
+          originalFloorIndex !== undefined &&
+          originalFloorIndex !== null &&
+          !isFoundationModuleType(fallbackType)
+        ) {
           (rawNext as unknown as IRawModuleDataWithMeta).floor_index =
             originalFloorIndex;
         }

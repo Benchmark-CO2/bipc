@@ -16,6 +16,7 @@ import {
   makeFloorFallbackLabels,
 } from "@/utils/unitConversions";
 import { UnitFormInput } from "@/validators/unitForm.validator";
+import { isFoundationModuleType } from "@/utils/ifcStepper";
 
 const inferTowerFloorsFromModuleFloorIndexes = (
   modules: TIfcStepperState["modules"],
@@ -35,6 +36,7 @@ const inferTowerFloorsFromModuleFloorIndexes = (
     index: number;
   }> = [];
   for (const m of modules) {
+    if (isFoundationModuleType(m.type)) continue;
     if (restrictToTempId && m.boundUnitTempId !== restrictToTempId) continue;
     const rawData = m.raw?.data as unknown as IRawModuleDataWithMeta | null;
     const idx = rawData?.floor_index;
@@ -335,6 +337,7 @@ export function useFloorIndexMappings({
     }
 
     if (editingModule) {
+      if (isFoundationModuleType(editingModule.type)) return [];
       if (editingModule.boundUnitTempId) {
         const sameTempId = state.modules.filter(
           (m) => m.boundUnitTempId === editingModule.boundUnitTempId,
@@ -361,6 +364,7 @@ export function useFloorIndexMappings({
 
   const editingModuleInitialSelectedFloors: string[] = useMemo(() => {
     if (!editingModule) return [];
+    if (isFoundationModuleType(editingModule.type)) return [];
     const rawDataMaybe = editingModule.raw
       ?.data as unknown as IRawModuleDataWithMeta | null;
     const candidateFloorIds = rawDataMaybe?.floor_ids;
@@ -378,6 +382,22 @@ export function useFloorIndexMappings({
   const editingModuleInitialMerged: TEditingModuleMerged = useMemo(() => {
     if (!editingModule?.raw?.data) return {} as TEditingModuleMerged;
     const base = editingModule.raw.data as unknown as IRawModuleDataWithMeta;
+    if (isFoundationModuleType(editingModule.type)) {
+      const {
+        floor_index: _fi,
+        floor_indexes: _fis,
+        floor_ids: _fids,
+        ...rest
+      } = base as unknown as {
+        floor_index?: unknown;
+        floor_indexes?: unknown;
+        floor_ids?: unknown;
+      } & Record<string, unknown>;
+      return {
+        ...(rest as unknown as TEditingModuleMerged),
+        floor_ids: [] as string[],
+      } as TEditingModuleMerged;
+    }
     return {
       ...(base as unknown as TEditingModuleMerged),
       floor_ids: editingModuleInitialSelectedFloors,
