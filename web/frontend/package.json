@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "type-check": "tsc -b"
+    "type-check": "tsc -b",
+    "type-check:strict": "tsc --noEmit",
+    "verify": "pnpm lint && pnpm type-check:strict"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",

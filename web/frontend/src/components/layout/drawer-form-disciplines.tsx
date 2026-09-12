@@ -59,6 +59,11 @@ interface IDrawerFormDisciplines {
   roleData?: TRole;
   projectUsers?: TCollaborator[];
   roles?: string[];
+  defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onCreateSuccess?: () => void;
+  onUpdateSuccess?: () => void;
 }
 
 // Mock data for permissions - will be provided by backend
@@ -71,8 +76,19 @@ export default function DrawerFormDisciplines({
   roleData,
   projectUsers,
   roles,
+  defaultOpen = false,
+  open,
+  onOpenChange,
+  onCreateSuccess,
+  onUpdateSuccess,
 }: IDrawerFormDisciplines) {
-  const [openDrawer, setOpenDrawer] = useState(false);
+  const [openDrawer, setOpenDrawer] = useState(defaultOpen);
+  const isControlled = typeof open !== "undefined";
+  const openValue = isControlled ? open! : openDrawer;
+  const setOpenValue = (next: boolean) => {
+    if (!isControlled) setOpenDrawer(next);
+    onOpenChange?.(next);
+  };
   const [managementExpanded, setManagementExpanded] = useState(true);
   const [selectedCollaborators, setSelectedCollaborators] = useState<TUser[]>(
     [],
@@ -124,8 +140,12 @@ export default function DrawerFormDisciplines({
       queryClient.invalidateQueries({
         queryKey: ["project-permissions", projectId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["project", projectId],
+      });
       form.reset();
       setOpenDrawer(false);
+      onCreateSuccess?.();
     },
     onError: (error) => {
       toast.error(t.disciplines.createError, {
@@ -155,8 +175,12 @@ export default function DrawerFormDisciplines({
       queryClient.invalidateQueries({
         queryKey: ["project-permissions", projectId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["project", projectId],
+      });
       form.reset();
       setOpenDrawer(false);
+      onUpdateSuccess?.();
     },
     onError: (error) => {
       toast.error(t.disciplines.updateError, {
@@ -347,7 +371,7 @@ export default function DrawerFormDisciplines({
         setSelectedCollaborators([]);
       }
     }
-  }, [roleData, openDrawer, form, resetCreation, projectUsers]);
+  }, [roleData, openValue, form, resetCreation, projectUsers]);
 
   const mockPermissions = {
     management: [
@@ -368,14 +392,15 @@ export default function DrawerFormDisciplines({
   return (
     <Drawer
       direction={isMobile ? "bottom" : "right"}
-      open={openDrawer}
+      open={openValue}
       dismissible={false}
+      onOpenChange={setOpenValue}
     >
       <DrawerTrigger
         asChild
         onClick={(e) => {
           e.stopPropagation();
-          setOpenDrawer(true);
+          setOpenValue(true);
         }}
       >
         {componentTrigger}
@@ -389,7 +414,7 @@ export default function DrawerFormDisciplines({
           <DrawerTitle>{t.disciplines.title}</DrawerTitle>
           <DrawerDescription>{t.disciplines.description}</DrawerDescription>
           <Button
-            onClick={() => setOpenDrawer(false)}
+            onClick={() => setOpenValue(false)}
             className="absolute right-4 top-2"
             variant="ghost"
           >

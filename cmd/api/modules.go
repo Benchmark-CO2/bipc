@@ -89,15 +89,15 @@ func (app *application) resolveWrappersFloorIndex(optionID uuid.UUID, wrappers [
 
 	type floorIndexEntry struct {
 		wrapperIndex int
-		value        int
+		values       []int
 	}
 
 	entries := make([]floorIndexEntry, 0, len(wrappers))
 	for i, wrapper := range wrappers {
-		floorIndex, hasFloorIndex, err := readFloorIndexFromData(wrapper.Data)
+		floorIndexes, hasFloorIndex, err := readFloorIndexFromData(wrapper.Data)
 		if err != nil {
 			return nil, &ValidationError{Errors: map[string]string{
-				fmt.Sprintf("modules[%d].data.floor_index", i): "must be an integer",
+				fmt.Sprintf("modules[%d].data.floor_index", i): err.Error(),
 			}}
 		}
 
@@ -105,25 +105,11 @@ func (app *application) resolveWrappersFloorIndex(optionID uuid.UUID, wrappers [
 			continue
 		}
 
-		entries = append(entries, floorIndexEntry{wrapperIndex: i, value: floorIndex})
+		entries = append(entries, floorIndexEntry{wrapperIndex: i, values: floorIndexes})
 	}
 
 	if len(entries) == 0 {
 		return wrappers, nil
-	}
-
-	for i := 1; i < len(entries); i++ {
-		if len(entries) != len(unit.Floors) {
-			break
-		}
-
-		if entries[i].value == entries[i-1].value+1 {
-			continue
-		}
-
-		return nil, &ValidationError{Errors: map[string]string{
-			fmt.Sprintf("modules[%d].data.floor_index", entries[i].wrapperIndex): "must form a contiguous sequence without gaps",
-		}}
 	}
 
 	floorIDByRealIndex := make(map[int]uuid.UUID, len(unit.Floors))
@@ -132,22 +118,19 @@ func (app *application) resolveWrappersFloorIndex(optionID uuid.UUID, wrappers [
 	}
 
 	normalized := append([]modulePayloadWrapper(nil), wrappers...)
-	for i, entry := range entries {
-		resolvedFloorID := uuid.Nil
-		if len(entries) == len(unit.Floors) {
-			resolvedFloorID = unit.Floors[i].ID
-		} else {
-			floorID, ok := floorIDByRealIndex[entry.value]
+	for _, entry := range entries {
+		resolvedFloorIDs := make([]uuid.UUID, 0, len(entry.values))
+		for _, val := range entry.values {
+			floorID, ok := floorIDByRealIndex[val]
 			if !ok {
 				return nil, &ValidationError{Errors: map[string]string{
-					fmt.Sprintf("modules[%d].data.floor_index", entry.wrapperIndex): "must match an existing floor index when the amount of floor_index modules differs from floor count",
+					fmt.Sprintf("modules[%d].data.floor_index", entry.wrapperIndex): fmt.Sprintf("value %d does not match any existing floor", val),
 				}}
 			}
-
-			resolvedFloorID = floorID
+			resolvedFloorIDs = append(resolvedFloorIDs, floorID)
 		}
 
-		normalizedData, err := overrideFloorTargets(normalized[entry.wrapperIndex].Data, resolvedFloorID)
+		normalizedData, err := overrideFloorTargets(normalized[entry.wrapperIndex].Data, resolvedFloorIDs)
 		if err != nil {
 			return nil, fmt.Errorf("invalid json format for modules[%d].data: %w", entry.wrapperIndex, err)
 		}
@@ -158,7 +141,7 @@ func (app *application) resolveWrappersFloorIndex(optionID uuid.UUID, wrappers [
 	return normalized, nil
 }
 
-func overrideFloorTargets(data json.RawMessage, floorID uuid.UUID) (json.RawMessage, error) {
+func overrideFloorTargets(data json.RawMessage, floorIDs []uuid.UUID) (json.RawMessage, error) {
 	var payload map[string]any
 	if err := json.Unmarshal(data, &payload); err != nil {
 		return nil, err
@@ -166,7 +149,11 @@ func overrideFloorTargets(data json.RawMessage, floorID uuid.UUID) (json.RawMess
 
 	delete(payload, "floor_index")
 	delete(payload, "floor_id")
-	payload["floor_ids"] = []string{floorID.String()}
+	uuidStrings := make([]string, 0, len(floorIDs))
+	for _, fid := range floorIDs {
+		uuidStrings = append(uuidStrings, fid.String())
+	}
+	payload["floor_ids"] = uuidStrings
 
 	normalizedData, err := json.Marshal(payload)
 	if err != nil {
@@ -176,28 +163,45 @@ func overrideFloorTargets(data json.RawMessage, floorID uuid.UUID) (json.RawMess
 	return normalizedData, nil
 }
 
-func readFloorIndexFromData(data json.RawMessage) (int, bool, error) {
+func readFloorIndexFromData(data json.RawMessage) ([]int, bool, error) {
 	var payload map[string]any
 	if err := json.Unmarshal(data, &payload); err != nil {
-		return 0, false, err
+		return nil, false, err
 	}
 
 	rawFloorIndex, exists := payload["floor_index"]
 	if !exists {
-		return 0, false, nil
+		return nil, false, nil
 	}
 
-	floorIndexFloat, ok := rawFloorIndex.(float64)
-	if !ok {
-		return 0, true, errors.New("floor_index must be a number")
+	switch v := rawFloorIndex.(type) {
+	case float64:
+		if float64(int(v)) != v {
+			return nil, true, errors.New("must be an integer or an array of integers")
+		}
+		return []int{int(v)}, true, nil
+	case []any:
+		result := make([]int, 0, len(v))
+		seen := make(map[int]bool, len(v))
+		for _, item := range v {
+			f, ok := item.(float64)
+			if !ok {
+				return nil, true, errors.New("must be an integer or an array of integers")
+			}
+			if float64(int(f)) != f {
+				return nil, true, errors.New("must be an integer or an array of integers")
+			}
+			val := int(f)
+			if seen[val] {
+				return nil, true, errors.New("contains duplicate floor indexes")
+			}
+			seen[val] = true
+			result = append(result, val)
+		}
+		return result, true, nil
+	default:
+		return nil, true, errors.New("must be an integer or an array of integers")
 	}
-
-	floorIndex := int(floorIndexFloat)
-	if float64(floorIndex) != floorIndexFloat {
-		return 0, true, errors.New("floor_index must be an integer")
-	}
-
-	return floorIndex, true, nil
 }
 
 func moduleRequiresUnitID(moduleType string) bool {

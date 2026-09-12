@@ -7,11 +7,11 @@ import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
-import { ChartLegend } from './components/chartLegend';
-import { EmissionsSection } from './components/emissionSection';
-import { ScenarioCard } from './components/indicatorItem';
+import { ChartLegend } from "./components/chartLegend";
+import { EmissionsSection } from "./components/emissionSection";
+import { ScenarioCard } from "./components/indicatorItem";
 import { useChartType } from "./hooks/useChartType";
-import { getCategoryValue, translateCategory } from './units';
+import { getCategoryValue, translateCategory } from "./units";
 import { normalizeBenchmarkSeries, recalculateY } from "./utils";
 
 type TModules = {
@@ -72,13 +72,12 @@ const SimulationsSummary = ({
 
   const filteredProjects = useMemo(
     () => projects.filter((el) => !!el.consumption),
-    [projects]
+    [projects],
   );
-
 
   // Inicia com todas as simulações marcadas
   const [selectedProjects, setSelectedProjects] = useState<string[]>(() =>
-    filteredProjects.map((p) => p.id)
+    filteredProjects.map((p) => p.id),
   );
 
   const newItems = useMemo(() => {
@@ -118,7 +117,7 @@ const SimulationsSummary = ({
         label: el[type].label,
         co2: ((el.co2.max || 0) + (el.co2.min || 0)) / 2,
         energy: ((el.energy.max || 0) + (el.energy.min || 0)) / 2,
-        material: el.material?.value || 0
+        material: el.material?.value || 0,
       })),
     [newItems, type],
   );
@@ -130,12 +129,12 @@ const SimulationsSummary = ({
 
     types.forEach((t) => {
       // 1. Prepara managedData
-      const managedData = normalizeBenchmarkSeries(
-        data.benchmark?.[t],
-      ).map((el) => ({
-        ...el,
-        label: projects.find((f) => f.id === el.id)?.name || "",
-      }));
+      const managedData = normalizeBenchmarkSeries(data.benchmark?.[t]).map(
+        (el) => ({
+          ...el,
+          label: projects.find((f) => f.id === el.id)?.name || "",
+        }),
+      );
 
       // 2. Prepara newDataItems
       const typeNewItems = newItems.map((item) => item[t]);
@@ -150,11 +149,19 @@ const SimulationsSummary = ({
       const newData = recalculateY(newDataItems, minValue, maxValue);
 
       // 4. Calcula PCV
-      let P = 0, C = 0, V = 0, R = 0, hasSelection = false;
+      let P = 0,
+        C = 0,
+        V = 0,
+        R = 0,
+        hasSelection = false;
 
       if (newData && newData.length > 0) {
-        const sortedMin = [...newData].map((d) => d.min ?? d.value ?? 0).sort((a, b) => a - b);
-        const sortedMax = [...newData].map((d) => d.max ?? d.value ?? 0).sort((a, b) => a - b);
+        const sortedMin = [...newData]
+          .map((d) => d.min ?? d.value ?? 0)
+          .sort((a, b) => a - b);
+        const sortedMax = [...newData]
+          .map((d) => d.max ?? d.value ?? 0)
+          .sort((a, b) => a - b);
 
         const p5Index = Math.floor(sortedMin.length * 0.05);
         const c5Value = sortedMin[Math.min(p5Index, sortedMin.length - 1)];
@@ -162,19 +169,31 @@ const SimulationsSummary = ({
 
         P = c5Value;
 
-        let activeItems = newData.filter(d => selectedProjects.includes(String(d.id)));
+        let activeItems = newData.filter((d) =>
+          selectedProjects.includes(String(d.id)),
+        );
 
         // Fallback: Se não houver nenhum projeto selecionado, usamos todos para o PCV não zerar
         if (activeItems.length === 0) {
-          activeItems = newData.filter(d => filteredProjects.some(fp => String(fp.id) === String(d.id)));
+          activeItems = newData.filter((d) =>
+            filteredProjects.some((fp) => String(fp.id) === String(d.id)),
+          );
         }
 
         if (activeItems.length > 0) {
           hasSelection = true;
-          C = activeItems.reduce((acc, curr) => acc + (curr.min ?? curr.value ?? 0), 0) / activeItems.length;
-          R = activeItems.reduce((acc, curr) => acc + (curr.max ?? curr.value ?? 0), 0) / activeItems.length;
+          C =
+            activeItems.reduce(
+              (acc, curr) => acc + (curr.min ?? curr.value ?? 0),
+              0,
+            ) / activeItems.length;
+          R =
+            activeItems.reduce(
+              (acc, curr) => acc + (curr.max ?? curr.value ?? 0),
+              0,
+            ) / activeItems.length;
 
-          V = (c5Value - C) + (r5Value - R) / 2;
+          V = c5Value - C + (r5Value - R) / 2;
 
           if (V < 0) {
             V = (C + R) / 2; // Fallback
@@ -188,7 +207,7 @@ const SimulationsSummary = ({
         newData,
         minData: minDataArr,
         maxData: maxDataArr,
-        pcvMetrics: { P, C, V, R, hasSelection }
+        pcvMetrics: { P, C, V, R, hasSelection },
       };
     });
 
@@ -201,7 +220,7 @@ const SimulationsSummary = ({
     newData: updateYs,
     minData,
     maxData,
-    pcvMetrics
+    pcvMetrics,
   } = processedData[type];
 
   const allPcvMetrics = {
@@ -212,21 +231,27 @@ const SimulationsSummary = ({
 
   // ── Extração do Teto (MAX) do Benchmark para travar a escala do Gráfico da Esquerda ──
   const benchmarkMax = useMemo(() => {
-    const getMax = (typeKey: 'co2' | 'energy' | 'material') => {
+    const getMax = (typeKey: "co2" | "energy" | "material") => {
       const series = normalizeBenchmarkSeries(data.benchmark?.[typeKey]) || [];
 
       if (series.length === 0) return 0;
 
-      if (typeKey === 'material') {
-        return Math.max(...series.map((d: any) => d.value ?? d.material ?? 0), 0);
+      if (typeKey === "material") {
+        return Math.max(
+          ...series.map((d: any) => d.value ?? d.material ?? 0),
+          0,
+        );
       }
-      return Math.max(...series.map((d: any) => d.max ?? d[`${typeKey}_max`] ?? 0), 0);
+      return Math.max(
+        ...series.map((d: any) => d.max ?? d[`${typeKey}_max`] ?? 0),
+        0,
+      );
     };
 
     return {
-      co2: getMax('co2'),
-      energy: getMax('energy'),
-      material: getMax('material'),
+      co2: getMax("co2"),
+      energy: getMax("energy"),
+      material: getMax("material"),
     };
   }, [data.benchmark]);
 
@@ -261,9 +286,18 @@ const SimulationsSummary = ({
     if (!filteredProjects) return [];
 
     const buildChartData = (consumptions: any) => {
-      const co2Row: Record<string, any> = { name: t.benchmark.chartTypes.emission.co2Label, id: 'co2' };
-      const energyRow: Record<string, any> = { name: t.benchmark.chartTypes.emission.energyLabel, id: 'energy' };
-      const materialRow: Record<string, any> = { name: t.benchmark.chartTypes.emission.materialLabel, id: 'material' };
+      const co2Row: Record<string, any> = {
+        name: t.benchmark.chartTypes.emission.co2Label,
+        id: "co2",
+      };
+      const energyRow: Record<string, any> = {
+        name: t.benchmark.chartTypes.emission.energyLabel,
+        id: "energy",
+      };
+      const materialRow: Record<string, any> = {
+        name: t.benchmark.chartTypes.emission.materialLabel,
+        id: "material",
+      };
 
       if (consumptions) {
         Object.entries(consumptions).forEach(([key, values]) => {
@@ -283,97 +317,172 @@ const SimulationsSummary = ({
       id: proj.id,
       title: proj.name || "Simulação",
       isChecked: selectedProjects.includes(proj.id),
-      chartData: buildChartData(proj.consumption)
+      chartData: buildChartData(proj.consumption),
     }));
   }, [filteredProjects, selectedProjects]);
 
   // ── Lógica dos Dados de Valores e Cenários ──────────────────────────────────
-  const unitTotal = type === "energy" ? "MJ" : type === "material" ? "kg" : "kg CO₂";
-  const unitBenchmark = type === "energy" ? "MJ/m²" : type === "material" ? "kg/m²" : "kg/m² CO₂";
+  const unitTotal =
+    type === "energy" ? "MJ" : type === "material" ? "kg" : "kg CO₂";
+  const unitBenchmark =
+    type === "energy" ? "MJ/m²" : type === "material" ? "kg/m²" : "kg/m² CO₂";
   const currentUnit = unitsOfMeasure[type] || "Kg/m²";
 
-  const activeStacked = selectedProjects.length > 0
-    ? stackedData.filter(d => selectedProjects.includes(String(d.id)))
-    : stackedData;
+  const activeStacked =
+    selectedProjects.length > 0
+      ? stackedData.filter((d) => selectedProjects.includes(String(d.id)))
+      : stackedData;
 
   // Calculo de área (soma das simulações selecionadas)
-  const activeProjectsForArea = selectedProjects.length > 0
-    ? filteredProjects.filter(p => selectedProjects.includes(p.id))
-    : filteredProjects;
+  const activeProjectsForArea =
+    selectedProjects.length > 0
+      ? filteredProjects.filter((p) => selectedProjects.includes(p.id))
+      : filteredProjects;
 
-  const totalArea = activeProjectsForArea.reduce((acc, curr) =>
-    acc + (Number(curr.area) || 1), 0
+  const totalArea = activeProjectsForArea.reduce(
+    (acc, curr) => acc + (Number(curr.area) || 1),
+    0,
   );
 
   const totalRefValue = activeStacked.reduce(
-    (acc, curr) => acc + ((curr[type as keyof typeof curr] as number) || 0), 0
+    (acc, curr) => acc + ((curr[type as keyof typeof curr] as number) || 0),
+    0,
   );
-  const benchmarkRefValue = activeStacked.length > 0 ? totalRefValue / activeStacked.length : 0;
+  const benchmarkRefValue =
+    activeStacked.length > 0 ? totalRefValue / activeStacked.length : 0;
 
   const formatMetric = (val: number) =>
     val.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
-
       {/* ── BARRA SUPERIOR: Valores e PCVRB ── */}
-      <div className='flex justify-between gap-2 w-full'>
-
-
-        {(
-          <div className="flex flex-wrap xl:flex-nowrap gap-4 w-full">
-            <ScenarioCard
-              letter="V"
-              title={t.summary.chartLegend?.referenceValue_short || "Valor referência"}
-              color="#62A436"
-              items={[
-                { total: formatMetric(allPcvMetrics.co2.V * totalArea), benchmark: formatMetric(allPcvMetrics.co2.V), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
-                { total: formatMetric(allPcvMetrics.energy.V * totalArea), benchmark: formatMetric(allPcvMetrics.energy.V), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
-                { total: formatMetric(allPcvMetrics.material.V * totalArea), benchmark: formatMetric(allPcvMetrics.material.V), unitTotal: "m³", unitBenchmark: "m³/m²" },
-              ]}
-            />
-            <ScenarioCard
-              letter="C"
-              title={t.summary.chartLegend?.constructionMitigationPotential_short || "Melhor cenário"}
-              color="#5B9BD5"
-              items={[
-                { total: formatMetric(allPcvMetrics.co2.C * totalArea), benchmark: formatMetric(allPcvMetrics.co2.C), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
-                { total: formatMetric(allPcvMetrics.energy.C * totalArea), benchmark: formatMetric(allPcvMetrics.energy.C), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
-                { total: formatMetric(allPcvMetrics.material.C * totalArea), benchmark: formatMetric(allPcvMetrics.material.C), unitTotal: "m³", unitBenchmark: "m³/m²" },
-              ]}
-            />
-            <ScenarioCard
-              letter="R"
-              title={t.summary.chartLegend?.riskOfLowerConstructionMitigation_short || "Pior cenário"}
-              color="#E0756C"
-              items={[
-                { total: formatMetric(allPcvMetrics.co2.R * totalArea), benchmark: formatMetric(allPcvMetrics.co2.R), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
-                { total: formatMetric(allPcvMetrics.energy.R * totalArea), benchmark: formatMetric(allPcvMetrics.energy.R), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
-                { total: formatMetric(allPcvMetrics.material.R * totalArea), benchmark: formatMetric(allPcvMetrics.material.R), unitTotal: "m³", unitBenchmark: "m³/m²" },
-              ]}
-            />
-            <ScenarioCard
-              letter="P"
-              title={t.summary.chartLegend?.constructionMitigationPotential_short || "Potencial de mitigação"}
-              color="#9F70DB"
-              items={[
-                { total: formatMetric(allPcvMetrics.co2.P * totalArea), benchmark: formatMetric(allPcvMetrics.co2.P), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
-                { total: formatMetric(allPcvMetrics.energy.P * totalArea), benchmark: formatMetric(allPcvMetrics.energy.P), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
-                { total: formatMetric(allPcvMetrics.material.P * totalArea), benchmark: formatMetric(allPcvMetrics.material.P), unitTotal: "m³", unitBenchmark: "m³/m²" },
-              ]}
-            />
-          </div>
-        )}
+      <div className="flex justify-between gap-2 w-full">
+        <div className="flex flex-wrap xl:flex-nowrap gap-4 w-full">
+          <ScenarioCard
+            letter="V"
+            title={
+              t.summary.chartLegend?.referenceValue_short || "Valor referência"
+            }
+            color="#62A436"
+            items={[
+              {
+                total: formatMetric(allPcvMetrics.co2.V * totalArea),
+                benchmark: formatMetric(allPcvMetrics.co2.V),
+                unitTotal: "CO₂ kg",
+                unitBenchmark: "CO₂ kg/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.energy.V * totalArea),
+                benchmark: formatMetric(allPcvMetrics.energy.V),
+                unitTotal: "MJ",
+                unitBenchmark: "MJ/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.material.V * totalArea),
+                benchmark: formatMetric(allPcvMetrics.material.V),
+                unitTotal: "m³",
+                unitBenchmark: "m³/m²",
+              },
+            ]}
+          />
+          <ScenarioCard
+            letter="C"
+            title={
+              t.summary.chartLegend?.constructionMitigationPotential_short ||
+              "Melhor cenário"
+            }
+            color="#5B9BD5"
+            items={[
+              {
+                total: formatMetric(allPcvMetrics.co2.C * totalArea),
+                benchmark: formatMetric(allPcvMetrics.co2.C),
+                unitTotal: "CO₂ kg",
+                unitBenchmark: "CO₂ kg/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.energy.C * totalArea),
+                benchmark: formatMetric(allPcvMetrics.energy.C),
+                unitTotal: "MJ",
+                unitBenchmark: "MJ/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.material.C * totalArea),
+                benchmark: formatMetric(allPcvMetrics.material.C),
+                unitTotal: "m³",
+                unitBenchmark: "m³/m²",
+              },
+            ]}
+          />
+          <ScenarioCard
+            letter="R"
+            title={
+              t.summary.chartLegend?.riskOfLowerConstructionMitigation_short ||
+              "Pior cenário"
+            }
+            color="#E0756C"
+            items={[
+              {
+                total: formatMetric(allPcvMetrics.co2.R * totalArea),
+                benchmark: formatMetric(allPcvMetrics.co2.R),
+                unitTotal: "CO₂ kg",
+                unitBenchmark: "CO₂ kg/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.energy.R * totalArea),
+                benchmark: formatMetric(allPcvMetrics.energy.R),
+                unitTotal: "MJ",
+                unitBenchmark: "MJ/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.material.R * totalArea),
+                benchmark: formatMetric(allPcvMetrics.material.R),
+                unitTotal: "m³",
+                unitBenchmark: "m³/m²",
+              },
+            ]}
+          />
+          <ScenarioCard
+            letter="P"
+            title={
+              t.summary.chartLegend?.constructionMitigationPotential_short ||
+              "Potencial de mitigação"
+            }
+            color="#9F70DB"
+            items={[
+              {
+                total: formatMetric(allPcvMetrics.co2.P * totalArea),
+                benchmark: formatMetric(allPcvMetrics.co2.P),
+                unitTotal: "CO₂ kg",
+                unitBenchmark: "CO₂ kg/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.energy.P * totalArea),
+                benchmark: formatMetric(allPcvMetrics.energy.P),
+                unitTotal: "MJ",
+                unitBenchmark: "MJ/m²",
+              },
+              {
+                total: formatMetric(allPcvMetrics.material.P * totalArea),
+                benchmark: formatMetric(allPcvMetrics.material.P),
+                unitTotal: "m³",
+                unitBenchmark: "m³/m²",
+              },
+            ]}
+          />
+        </div>
       </div>
 
       {/* ── CONTEÚDO PRINCIPAL (Exibido quando aberto) ── */}
       {(isOpen || isExpanded) && (
-        <div className='flex gap-4 items-start'>
+        <div className="flex gap-4 items-start">
           {/* COLUNA ESQUERDA (1/3) */}
           <div className="w-1/3 flex-shrink-0 mt-3 flex flex-col">
             <div className="flex flex-col gap-6 w-full">
               <div className="mb-0">
-                <h3 className="text-lg font-bold mb-0">Total de Emissões por tecnologia</h3>
+                <h3 className="text-lg font-bold mb-0">
+                  Total de Emissões por tecnologia
+                </h3>
               </div>
               <EmissionsSection
                 data={simulationEmissionsData}
@@ -386,15 +495,20 @@ const SimulationsSummary = ({
 
           {/* COLUNA DIREITA (flex-1) */}
           <div className="flex-1 min-h-0 flex flex-col justify-between gap-0 pt-0">
-            <div className='flex gap-2 justify-end items-center'>
+            <div className="flex gap-2 justify-end items-center">
               <FilterTabs
                 tabs={["co2", "energy", "material"]}
-                onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
+                onTabSelect={(tab) =>
+                  setType(tab as "co2" | "energy" | "material")
+                }
                 selectedTab={type}
                 fullWidth
                 onSubTabSelect={(tab) => {
                   if (tab === t.summaryTechnologies.projects) setSubTabs(tab);
-                  if (tab === t.summary.selectAll || tab === t.summary.deselectAll)
+                  if (
+                    tab === t.summary.selectAll ||
+                    tab === t.summary.deselectAll
+                  )
                     selectAll();
                 }}
                 subTabs={[
@@ -405,9 +519,7 @@ const SimulationsSummary = ({
                 ]}
                 selectedSubTab={subTabs}
               />
-              <div className='mt-2 w-full'>
-                {ChartSelector}
-              </div>
+              <div className="mt-2 w-full">{ChartSelector}</div>
             </div>
 
             <div className="flex flex-col gap-0 w-full">
@@ -429,9 +541,9 @@ const SimulationsSummary = ({
                   variant={type === "material" ? "cumulative" : "range"}
                   xAxisLabel={
                     t.benchmark.chartTypes[
-                    type === "co2" || type === "energy"
-                      ? "cumulativeFraction"
-                      : "material"
+                      type === "co2" || type === "energy"
+                        ? "cumulativeFraction"
+                        : "material"
                     ][type === "co2" ? "xAxisLabelCarbon" : "xAxisLabelEnergy"]
                   }
                   yAxisLabel={
@@ -450,7 +562,7 @@ const SimulationsSummary = ({
                   unit={type}
                 />
               )}
-              {type !== 'material' && <ChartLegend />}
+              {type !== "material" && <ChartLegend />}
             </div>
           </div>
         </div>
