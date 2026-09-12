@@ -412,6 +412,58 @@ export default function DrawerStepperIFC({
     state.units.some((u) => u.selected) &&
     state.units.filter((u) => u.selected).every((u) => u.isValid);
 
+  // ---------------------------------------------------------------------------
+  // Build complete payload (used by callers for redirects etc.)
+  // ---------------------------------------------------------------------------
+  const buildCompletePayload =
+    (): import("@/types/ifc").DrawerStepperIFCCompletePayload => {
+      const uniqueUnits = new Map<
+        string,
+        { unitId: string; optionId: string; tempId: string }
+      >();
+      for (const u of state.unitsCreated) {
+        if (!u.unitId) continue;
+        uniqueUnits.set(`${u.unitId}|${u.optionId ?? ""}`, {
+          unitId: u.unitId,
+          optionId: u.optionId ?? "",
+          tempId: u.tempId,
+        });
+      }
+      for (const m of state.modules) {
+        if (!m.boundUnitId) continue;
+        const key = `${m.boundUnitId}|${m.boundOptionId ?? ""}`;
+        if (uniqueUnits.has(key)) continue;
+        uniqueUnits.set(key, {
+          unitId: m.boundUnitId,
+          optionId: m.boundOptionId ?? "",
+          tempId: m.boundUnitTempId ?? "",
+        });
+      }
+      return {
+        units: Array.from(uniqueUnits.values()),
+        disciplineId: initialRoleId ?? null,
+      };
+    };
+
+  const unitsCreatedWithSimulationBound = useMemo(() => {
+    const out: TIfcStepperCreatedUnit[] = [];
+    for (const uc of state.unitsCreated) {
+      if (!uc.unitId) continue;
+      out.push(uc);
+    }
+    if (isSimulationMode && simulationCreatedUnit?.unitId) {
+      if (!out.some((u) => u.tempId === simulationBoundUnitTempId)) {
+        out.push(simulationCreatedUnit);
+      }
+    }
+    return out;
+  }, [
+    state.unitsCreated,
+    isSimulationMode,
+    simulationCreatedUnit,
+    simulationBoundUnitTempId,
+  ]);
+
   const handleStep1CreateAndNext = async () => {
     setStep1Error("");
     const selectedUnits = state.units.filter((u) => u.selected);
@@ -881,13 +933,13 @@ export default function DrawerStepperIFC({
           `${modulesUnselectedCount}`,
         ),
       );
-      onComplete?.();
+      onComplete?.(buildCompletePayload());
       onOpenChange(false);
       return;
     }
     if (modulesValidWithBinding.length === 0) {
       toast.warning(t.stepper.modules.noBindingAtAll);
-      onComplete?.();
+      onComplete?.(buildCompletePayload());
       onOpenChange(false);
       return;
     }
@@ -1012,7 +1064,7 @@ export default function DrawerStepperIFC({
         });
       }
 
-      onComplete?.();
+      onComplete?.(buildCompletePayload());
       onOpenChange(false);
     } catch (err) {
       const msg = parseApiError(err, t);
