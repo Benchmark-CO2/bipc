@@ -78,6 +78,7 @@ interface DrawerFormModuleProps {
   strictValidation?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  editMode?: boolean;
   initialModuleData?:
     | (Partial<TModuleDataV2> & {
         floor_ids?: string[];
@@ -174,10 +175,12 @@ const DrawerFormModule = ({
   strictValidation: strictValidationProp,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
+  editMode: editModeProp,
   initialModuleData,
   initialSelectedFloors,
   onSubmitSuccess,
 }: DrawerFormModuleProps) => {
+  const isEditMode = Boolean(moduleId) || Boolean(editModeProp);
   const unitId = unitIdProp ?? "";
   const optionId = optionIdProp ?? "";
   const strictValidation_ = strictValidationProp ?? !stepperMode;
@@ -1130,7 +1133,7 @@ const DrawerFormModule = ({
         <DrawerHeader className="px-8">
           <div className="flex items-center gap-3 w-full pr-10">
             <DrawerTitle className="text-h1 text-primary shrink-0">
-              {moduleId
+              {isEditMode
                 ? t.modules.form.editTitle
                 : t.modules.table.createButton}
             </DrawerTitle>
@@ -1407,7 +1410,7 @@ const DrawerFormModule = ({
           >
             {isCreationPending || isUpdatePending ? (
               <Loader2 className="animate-spin h-4 w-4" />
-            ) : moduleId ? (
+            ) : isEditMode ? (
               t.common.update
             ) : (
               t.common.add

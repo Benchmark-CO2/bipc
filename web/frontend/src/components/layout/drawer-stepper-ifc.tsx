@@ -1211,6 +1211,7 @@ export default function DrawerStepperIFC({
             type={(editingModule.type as TModulesTypes) ?? "beam_column"}
             floors={editingUnitFloors}
             open={!!editingModuleTempId}
+            editMode={true}
             onOpenChange={(o) => !o && setEditingModuleTempId(null)}
             initialModuleData={{
               type: (editingModule.type as TModulesTypes) ?? "beam_column",
