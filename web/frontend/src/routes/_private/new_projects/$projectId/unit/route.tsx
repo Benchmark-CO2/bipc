@@ -173,12 +173,12 @@ function RouteComponent() {
           {!location.pathname.includes("constructive-technologies") && (
             <>
               <DrawerIFCImport
-                mode="unit"
+                mode="simulation"
                 projectId={projectId}
                 unitId={params.unitId}
                 triggerComponent={
                   <SimpleTooltip content={t.common.ifcImport} side="bottom">
-                    <Button variant="outline-bipc" size="icon-lg" disabled>
+                    <Button variant="outline-bipc" size="icon-lg">
                       <Upload />
                     </Button>
                   </SimpleTooltip>

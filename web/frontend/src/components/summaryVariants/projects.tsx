@@ -44,14 +44,14 @@ const ProjectsSummary = ({
 }: ProjectsSummaryProps) => {
   const { t } = useTranslation();
   const { isOpen } = useSummary();
-  
+
   const filterProjects = useMemo(() =>
     projects.filter((el) => !!el.consumption),
-  [projects]);
-  
+    [projects]);
+
   const [type, setType] = useState<"co2" | "energy" | "material">("co2");
   const { chartType, ChartSelector } = useChartType(type);
-  
+
   // 1. Inicia APENAS com o Total selecionado por padrão
   const [selectedProjects, setSelectedProjects] = useState<string[]>(["total"]);
 
@@ -86,8 +86,8 @@ const ProjectsSummary = ({
   }, [filterProjects]);
 
   const portfolioAverage = useMemo(() => {
-    const totalConsumption: Record<string, any> = { 
-      total: { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0, material: 0 } 
+    const totalConsumption: Record<string, any> = {
+      total: { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0, material: 0 }
     };
 
     const projectCount = filterProjects.length || 1;
@@ -98,6 +98,7 @@ const ProjectsSummary = ({
           if (!totalConsumption[key]) {
             totalConsumption[key] = { co2_min: 0, co2_max: 0, energy_min: 0, energy_max: 0, material: 0 };
           }
+
           totalConsumption[key].co2_min += (values.co2_min || 0);
           totalConsumption[key].co2_max += (values.co2_max || 0);
           totalConsumption[key].energy_min += (values.energy_min || 0);
@@ -131,30 +132,30 @@ const ProjectsSummary = ({
         label: projects.find((f) => f.id === el.id)?.name || "",
       }));
 
-      const typeNewItems = t !== "material" ? newItems.map((item) => item[t]) : [];
-      
+      const typeNewItems = newItems.map((item) => item[t]);
+
       let projectTotalItem = null;
       if (portfolioAverage?.total) {
         projectTotalItem = {
           id: "total",
           y: 0,
           label: "Total Geral (Média)",
-          ...(t === "material" 
+          ...(t === "material"
             ? {
-                value: portfolioAverage.total.material || 0,
-                min: portfolioAverage.total.material || 0,
-                max: portfolioAverage.total.material || 0,
-              }
+              value: portfolioAverage.total.material || 0,
+              min: portfolioAverage.total.material || 0,
+              max: portfolioAverage.total.material || 0,
+            }
             : {
-                min: portfolioAverage.total[`${t}_min`] || 0,
-                max: portfolioAverage.total[`${t}_max`] || 0,
-              }
+              min: portfolioAverage.total[`${t}_min`] || 0,
+              max: portfolioAverage.total[`${t}_max`] || 0,
+            }
           )
         };
       }
 
-      const newDataItems = projectTotalItem 
-        ? [...managedData, ...typeNewItems, projectTotalItem] 
+      const newDataItems = projectTotalItem
+        ? [...managedData, ...typeNewItems, projectTotalItem]
         : [...managedData, ...typeNewItems];
 
       const minDataArr = newDataItems.map((d) => d.min ?? d.value ?? 0);
@@ -190,7 +191,7 @@ const ProjectsSummary = ({
           V = (c5Value - C) + (r5Value - R) / 2;
 
           if (V < 0) {
-            V = (C + R) / 2; 
+            V = (C + R) / 2;
           }
         }
       }
@@ -270,10 +271,9 @@ const ProjectsSummary = ({
     const buildChartData = (consumption: any) => {
       if (!consumption) return [];
 
-      const co2Row: Record<string, any> = { name: "CO₂ (kg)" };
-      const energyRow: Record<string, any> = { name: "Energia (MJ)" };
-      const materialRow: Record<string, any> = { name: `Material (${unitsOfMeasure.material || 'kg'})` };
-
+      const co2Row: Record<string, any> = { name: t.benchmark.chartTypes.emission.co2Label, id: 'co2' };
+      const energyRow: Record<string, any> = { name: t.benchmark.chartTypes.emission.energyLabel, id: 'energy' };
+      const materialRow: Record<string, any> = { name: t.benchmark.chartTypes.emission.materialLabel, id: 'material' };
       Object.entries(consumption).forEach(([key, values]) => {
         if (key !== "total") {
           const techName = translateCategory[key] || key;
@@ -310,14 +310,14 @@ const ProjectsSummary = ({
   }, [filterProjects, selectedProjects, portfolioAverage]);
 
   let activeProjectsForArea = filterProjects.filter(p => selectedProjects.includes(p.id));
-  
+
   if (activeProjectsForArea.length === 0 && selectedProjects.includes("total")) {
     activeProjectsForArea = filterProjects; // 3. Se só o Total tá marcado, usa todos os projetos pro calculo de área
   } else if (activeProjectsForArea.length === 0) {
-    activeProjectsForArea = filterProjects; 
+    activeProjectsForArea = filterProjects;
   }
 
-  const totalArea = activeProjectsForArea.reduce((acc, curr) => 
+  const totalArea = activeProjectsForArea.reduce((acc, curr) =>
     acc + (Number(curr.area) || Number(curr.built_area) || 1), 0
   );
 
@@ -376,14 +376,14 @@ const ProjectsSummary = ({
       {isOpen && (
         <div className='flex gap-4'>
           <div className='w-1/3 flex-shrink-0 mt-3 flex flex-col'>
-            <EmissionsSection 
-              data={projectEmissionsData} 
-              selected={selectedProjects} 
-              onChange={onChangeProjectSelection} 
-              benchmarkMax={benchmarkMax[type]}
+            <EmissionsSection
+              data={projectEmissionsData}
+              selected={selectedProjects}
+              onChange={onChangeProjectSelection}
+              benchmarkMax={benchmarkMax}
             />
           </div>
-          
+
           <div className="flex-1 min-h-0 flex flex-col gap-0 pt-3">
             <div className='flex gap-2 justify-end items-center'>
               <FilterTabs

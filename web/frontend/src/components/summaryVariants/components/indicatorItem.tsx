@@ -33,10 +33,11 @@ type ScenarioCardProps = {
 
 export const ScenarioCard = ({ letter, title, color, items }: ScenarioCardProps) => {
   const { isOpen } = useSummary();
-  if (!isOpen) {
     return (
       <div
-        className="border-2 rounded-lg p-3 flex-1 flex flex-col gap-1 min-w-[220px] box-border relative"
+          className={cn("border-2 rounded-lg p-3 flex-1 flex flex-col gap-1 min-w-[220px] box-border relative", {
+            'mt-1': isOpen
+          })}
         style={{ borderColor: color }}
       >
         {/* Cabeçalho do Card */}
@@ -81,7 +82,7 @@ export const ScenarioCard = ({ letter, title, color, items }: ScenarioCardProps)
         </div>
       </div>
     );
-  }
+  
   return (
     <div
       className="border-2 rounded-lg p-3 flex-1 flex flex-col gap-1 min-w-[220px] box-border"

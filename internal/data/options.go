@@ -22,6 +22,7 @@ type ModuleInfo struct {
 	ID          uuid.UUID    `json:"id"`
 	Type        string       `json:"type"`
 	Outdated    bool         `json:"outdated"`
+	Completed   bool         `json:"completed"`
 	Consumption *Consumption `json:"consumption,omitempty"`
 	updatedAt   time.Time
 	createdAt   time.Time

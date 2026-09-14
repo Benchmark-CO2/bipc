@@ -54,6 +54,7 @@ func (app *application) routes() http.Handler {
 	serviceProxy := app.newServiceProxy()
 	router.HandlerFunc(http.MethodGet, "/v1/proxy/*path", app.proxyHandler(serviceProxy))
 	router.HandlerFunc(http.MethodPost, "/v1/proxy/*path", app.proxyHandler(serviceProxy))
+	router.HandlerFunc(http.MethodPatch, "/v1/proxy/*path", app.proxyHandler(serviceProxy))
 
 	// ----------------------------------------------------------------------------------------------------------------------------------
 

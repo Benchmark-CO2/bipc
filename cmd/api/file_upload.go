@@ -136,7 +136,7 @@ func (app *application) fileUploadHandler(w http.ResponseWriter, r *http.Request
 
 	payloads := make([]modulePayloadWrapper, 0, len(sortedModules))
 	for i, mod := range sortedModules {
-		payload, err := buildModulePayload(mod, assignedFloorIDs[i])
+		payload, err := buildModulePayload(mod, assignedFloorIDs[i], source)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return
@@ -149,6 +149,9 @@ func (app *application) fileUploadHandler(w http.ResponseWriter, r *http.Request
 		payloads,
 		modules.ValidateV2PayloadForModule,
 		modules.ToV2Response,
+		func(payloadSource string) string {
+			return app.resolveDataSource(r, payloadSource)
+		},
 	)
 	if err != nil {
 		app.handleCreateModuleError(w, r, err)
@@ -167,7 +170,7 @@ func (app *application) fileUploadHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
-func buildModulePayload(mod tqshtm.ParsedModule, floorID uuid.UUID) (modulePayloadWrapper, error) {
+func buildModulePayload(mod tqshtm.ParsedModule, floorID uuid.UUID, source string) (modulePayloadWrapper, error) {
 	dataMap, err := buildModuleDataMap(mod)
 	if err != nil {
 		return modulePayloadWrapper{}, err
@@ -181,8 +184,9 @@ func buildModulePayload(mod tqshtm.ParsedModule, floorID uuid.UUID) (modulePaylo
 	}
 
 	return modulePayloadWrapper{
-		Type: string(mod.Type),
-		Data: dataBytes,
+		Type:   string(mod.Type),
+		Data:   dataBytes,
+		Source: source,
 	}, nil
 }
 

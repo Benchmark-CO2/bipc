@@ -16,13 +16,15 @@ import (
 )
 
 type modulePayloadWrapper struct {
-	Type string          `json:"type"`
-	Data json.RawMessage `json:"data"`
+	Type   string          `json:"type"`
+	Data   json.RawMessage `json:"data"`
+	Source string          `json:"source,omitempty"`
 }
 
 type moduleCreateRequestPayload struct {
 	Type    string                  `json:"type"`
 	Data    json.RawMessage         `json:"data"`
+	Source  string                  `json:"source,omitempty"`
 	Modules *[]modulePayloadWrapper `json:"modules"`
 }
 
@@ -87,15 +89,15 @@ func (app *application) resolveWrappersFloorIndex(optionID uuid.UUID, wrappers [
 
 	type floorIndexEntry struct {
 		wrapperIndex int
-		value        int
+		values       []int
 	}
 
 	entries := make([]floorIndexEntry, 0, len(wrappers))
 	for i, wrapper := range wrappers {
-		floorIndex, hasFloorIndex, err := readFloorIndexFromData(wrapper.Data)
+		floorIndexes, hasFloorIndex, err := readFloorIndexFromData(wrapper.Data)
 		if err != nil {
 			return nil, &ValidationError{Errors: map[string]string{
-				fmt.Sprintf("modules[%d].data.floor_index", i): "must be an integer",
+				fmt.Sprintf("modules[%d].data.floor_index", i): err.Error(),
 			}}
 		}
 
@@ -103,25 +105,11 @@ func (app *application) resolveWrappersFloorIndex(optionID uuid.UUID, wrappers [
 			continue
 		}
 
-		entries = append(entries, floorIndexEntry{wrapperIndex: i, value: floorIndex})
+		entries = append(entries, floorIndexEntry{wrapperIndex: i, values: floorIndexes})
 	}
 
 	if len(entries) == 0 {
 		return wrappers, nil
-	}
-
-	for i := 1; i < len(entries); i++ {
-		if len(entries) != len(unit.Floors) {
-			break
-		}
-
-		if entries[i].value == entries[i-1].value+1 {
-			continue
-		}
-
-		return nil, &ValidationError{Errors: map[string]string{
-			fmt.Sprintf("modules[%d].data.floor_index", entries[i].wrapperIndex): "must form a contiguous sequence without gaps",
-		}}
 	}
 
 	floorIDByRealIndex := make(map[int]uuid.UUID, len(unit.Floors))
@@ -130,22 +118,19 @@ func (app *application) resolveWrappersFloorIndex(optionID uuid.UUID, wrappers [
 	}
 
 	normalized := append([]modulePayloadWrapper(nil), wrappers...)
-	for i, entry := range entries {
-		resolvedFloorID := uuid.Nil
-		if len(entries) == len(unit.Floors) {
-			resolvedFloorID = unit.Floors[i].ID
-		} else {
-			floorID, ok := floorIDByRealIndex[entry.value]
+	for _, entry := range entries {
+		resolvedFloorIDs := make([]uuid.UUID, 0, len(entry.values))
+		for _, val := range entry.values {
+			floorID, ok := floorIDByRealIndex[val]
 			if !ok {
 				return nil, &ValidationError{Errors: map[string]string{
-					fmt.Sprintf("modules[%d].data.floor_index", entry.wrapperIndex): "must match an existing floor index when the amount of floor_index modules differs from floor count",
+					fmt.Sprintf("modules[%d].data.floor_index", entry.wrapperIndex): fmt.Sprintf("value %d does not match any existing floor", val),
 				}}
 			}
-
-			resolvedFloorID = floorID
+			resolvedFloorIDs = append(resolvedFloorIDs, floorID)
 		}
 
-		normalizedData, err := overrideFloorTargets(normalized[entry.wrapperIndex].Data, resolvedFloorID)
+		normalizedData, err := overrideFloorTargets(normalized[entry.wrapperIndex].Data, resolvedFloorIDs)
 		if err != nil {
 			return nil, fmt.Errorf("invalid json format for modules[%d].data: %w", entry.wrapperIndex, err)
 		}
@@ -156,7 +141,7 @@ func (app *application) resolveWrappersFloorIndex(optionID uuid.UUID, wrappers [
 	return normalized, nil
 }
 
-func overrideFloorTargets(data json.RawMessage, floorID uuid.UUID) (json.RawMessage, error) {
+func overrideFloorTargets(data json.RawMessage, floorIDs []uuid.UUID) (json.RawMessage, error) {
 	var payload map[string]any
 	if err := json.Unmarshal(data, &payload); err != nil {
 		return nil, err
@@ -164,7 +149,11 @@ func overrideFloorTargets(data json.RawMessage, floorID uuid.UUID) (json.RawMess
 
 	delete(payload, "floor_index")
 	delete(payload, "floor_id")
-	payload["floor_ids"] = []string{floorID.String()}
+	uuidStrings := make([]string, 0, len(floorIDs))
+	for _, fid := range floorIDs {
+		uuidStrings = append(uuidStrings, fid.String())
+	}
+	payload["floor_ids"] = uuidStrings
 
 	normalizedData, err := json.Marshal(payload)
 	if err != nil {
@@ -174,28 +163,45 @@ func overrideFloorTargets(data json.RawMessage, floorID uuid.UUID) (json.RawMess
 	return normalizedData, nil
 }
 
-func readFloorIndexFromData(data json.RawMessage) (int, bool, error) {
+func readFloorIndexFromData(data json.RawMessage) ([]int, bool, error) {
 	var payload map[string]any
 	if err := json.Unmarshal(data, &payload); err != nil {
-		return 0, false, err
+		return nil, false, err
 	}
 
 	rawFloorIndex, exists := payload["floor_index"]
 	if !exists {
-		return 0, false, nil
+		return nil, false, nil
 	}
 
-	floorIndexFloat, ok := rawFloorIndex.(float64)
-	if !ok {
-		return 0, true, errors.New("floor_index must be a number")
+	switch v := rawFloorIndex.(type) {
+	case float64:
+		if float64(int(v)) != v {
+			return nil, true, errors.New("must be an integer or an array of integers")
+		}
+		return []int{int(v)}, true, nil
+	case []any:
+		result := make([]int, 0, len(v))
+		seen := make(map[int]bool, len(v))
+		for _, item := range v {
+			f, ok := item.(float64)
+			if !ok {
+				return nil, true, errors.New("must be an integer or an array of integers")
+			}
+			if float64(int(f)) != f {
+				return nil, true, errors.New("must be an integer or an array of integers")
+			}
+			val := int(f)
+			if seen[val] {
+				return nil, true, errors.New("contains duplicate floor indexes")
+			}
+			seen[val] = true
+			result = append(result, val)
+		}
+		return result, true, nil
+	default:
+		return nil, true, errors.New("must be an integer or an array of integers")
 	}
-
-	floorIndex := int(floorIndexFloat)
-	if float64(floorIndex) != floorIndexFloat {
-		return 0, true, errors.New("floor_index must be an integer")
-	}
-
-	return floorIndex, true, nil
 }
 
 func moduleRequiresUnitID(moduleType string) bool {
@@ -278,7 +284,7 @@ func (app *application) parseCreateModulesPayload(w http.ResponseWriter, r *http
 		return *payload.Modules, nil
 	}
 
-	singleWrapper := modulePayloadWrapper{Type: payload.Type, Data: payload.Data}
+	singleWrapper := modulePayloadWrapper{Type: payload.Type, Data: payload.Data, Source: payload.Source}
 	if err := validateModulePayloadWrapper(singleWrapper, 0, false); err != nil {
 		return nil, err
 	}
@@ -313,6 +319,7 @@ func (app *application) createModulesFromPayloads(
 	wrappers []modulePayloadWrapper,
 	payloadValidator func(modules.Module, json.RawMessage) error,
 	responseConverter func(modules.Module) (map[string]any, error),
+	sourceResolver func(string) string,
 ) ([]map[string]any, error) {
 	normalizedWrappers, err := app.normalizeWrappersWithFloorIndex(optionID, wrappers)
 	if err != nil {
@@ -320,7 +327,7 @@ func (app *application) createModulesFromPayloads(
 	}
 
 	if len(wrappers) <= 1 {
-		return app.createModulesFromPayloadsWithModels(optionID, normalizedWrappers, app.models, payloadValidator, responseConverter)
+		return app.createModulesFromPayloadsWithModels(optionID, normalizedWrappers, app.models, payloadValidator, responseConverter, sourceResolver)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -334,7 +341,7 @@ func (app *application) createModulesFromPayloads(
 	txModels := app.models
 	txModels.Modules = data.ModuleModel{DB: app.models.Modules.DB, Tx: tx}
 
-	createdModules, err := app.createModulesFromPayloadsWithModels(optionID, normalizedWrappers, txModels, payloadValidator, responseConverter)
+	createdModules, err := app.createModulesFromPayloadsWithModels(optionID, normalizedWrappers, txModels, payloadValidator, responseConverter, sourceResolver)
 	if err != nil {
 		_ = tx.Rollback()
 		return nil, err
@@ -353,6 +360,7 @@ func (app *application) createModulesFromPayloadsWithModels(
 	modelsSet data.Models,
 	payloadValidator func(modules.Module, json.RawMessage) error,
 	responseConverter func(modules.Module) (map[string]any, error),
+	sourceResolver func(string) string,
 ) ([]map[string]any, error) {
 	createdModules := make([]map[string]any, 0, len(wrappers))
 
@@ -362,11 +370,13 @@ func (app *application) createModulesFromPayloadsWithModels(
 			return nil, err
 		}
 
+		source := sourceResolver(wrapper.Source)
+
 		if err := payloadValidator(module, wrapper.Data); err != nil {
 			return nil, err
 		}
 
-		newModule, err := app.insertModuleWithModels(module, optionID, modelsSet)
+		newModule, err := app.insertModuleWithModels(module, optionID, modelsSet, source)
 		if err != nil {
 			return nil, err
 		}
@@ -464,22 +474,26 @@ func isModulePayloadBadRequest(err error) bool {
 // It keeps handlers focused on HTTP concerns while reusing the same logic
 // across API and CSV ingestion flows.
 func (app *application) insertModule(module modules.Module, optionID uuid.UUID) (modules.Module, error) {
-	return app.insertModuleWithModels(module, optionID, app.models)
+	return app.insertModuleWithModels(module, optionID, app.models, "")
 }
 
-func (app *application) insertModuleWithModels(module modules.Module, optionID uuid.UUID, modelsSet data.Models) (modules.Module, error) {
+func (app *application) insertModuleWithModels(module modules.Module, optionID uuid.UUID, modelsSet data.Models, source string) (modules.Module, error) {
 	v := validator.New()
 	module.Validate(v)
-	if !v.Valid() {
-		return nil, &ValidationError{Errors: v.Errors}
-	}
+	completed := v.Valid()
 
 	result, err := module.Calculate()
 	if err != nil {
-		return nil, err
+		// A valid module that fails to calculate is a genuine error. An
+		// incomplete module is still persisted (completed=false) with zeroed
+		// consumption so creation is never blocked by validation.
+		if completed {
+			return nil, err
+		}
+		result = modules.Consumption{}
 	}
 
-	newModule, err := module.Insert(modelsSet, optionID, result)
+	newModule, err := module.Insert(modelsSet, optionID, result, source, completed)
 	if err != nil {
 		return nil, err
 	}
@@ -525,6 +539,7 @@ func (app *application) duplicateModule(
 		RelativeEnergyMin: originalModule.RelativeEnergyMin,
 		RelativeEnergyMax: originalModule.RelativeEnergyMax,
 		Outdated:          false,
+		Completed:         originalModule.Completed,
 		FloorIDs:          floorIDs,
 		UnitID:            unitID,
 	}
@@ -590,6 +605,9 @@ func (app *application) createModuleHandler(w http.ResponseWriter, r *http.Reque
 		wrappers,
 		modules.ValidateV2PayloadForModule,
 		modules.ToV2Response,
+		func(payloadSource string) string {
+			return app.resolveDataSource(r, payloadSource)
+		},
 	)
 	if err != nil {
 		app.handleCreateModuleError(w, r, err)
@@ -624,6 +642,9 @@ func (app *application) createModuleV1Handler(w http.ResponseWriter, r *http.Req
 		wrappers,
 		modules.ValidateV1LegacyPayloadForModule,
 		modules.ToV1Response,
+		func(payloadSource string) string {
+			return app.resolveDataSource(r, payloadSource)
+		},
 	)
 	if err != nil {
 		app.handleCreateModuleError(w, r, err)
@@ -640,6 +661,8 @@ func (app *application) readModuleHandler(w http.ResponseWriter, r *http.Request
 		app.notFoundResponse(w, r)
 		return
 	}
+
+	includeSource := app.readSourceInclude(r.URL.Query())
 
 	moduleType, err := app.models.Modules.GetModuleType(moduleID)
 	if err != nil {
@@ -675,6 +698,13 @@ func (app *application) readModuleHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	rawModule, err := app.models.Modules.Get(moduleID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	modules.ApplySourceShape(v2Module, rawModule.Data, includeSource)
+
 	err = app.writeJSON(w, http.StatusOK, envelope{"module": v2Module}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -687,6 +717,8 @@ func (app *application) readModuleV1Handler(w http.ResponseWriter, r *http.Reque
 		app.notFoundResponse(w, r)
 		return
 	}
+
+	includeSource := app.readSourceInclude(r.URL.Query())
 
 	moduleType, err := app.models.Modules.GetModuleType(moduleID)
 	if err != nil {
@@ -721,6 +753,13 @@ func (app *application) readModuleV1Handler(w http.ResponseWriter, r *http.Reque
 		app.serverErrorResponse(w, r, err)
 		return
 	}
+
+	rawModule, err := app.models.Modules.Get(moduleID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	modules.ApplySourceShape(v1Module, rawModule.Data, includeSource)
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"module": v1Module}, nil)
 	if err != nil {
@@ -765,6 +804,8 @@ func (app *application) updateModuleHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	source := app.resolveDataSource(r, wrapper.Source)
+
 	if err := modules.ValidateV2PayloadForModule(module, wrapper.Data); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -788,18 +829,18 @@ func (app *application) updateModuleHandler(w http.ResponseWriter, r *http.Reque
 
 	v := validator.New()
 	module.Validate(v)
-	if !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
-		return
-	}
+	completed := v.Valid()
 
 	result, err := module.Calculate()
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
+		if completed {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+		result = modules.Consumption{}
 	}
 
-	err = module.Update(app.models, moduleID, optionID, result)
+	err = module.Update(app.models, moduleID, optionID, result, source, completed)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -871,6 +912,8 @@ func (app *application) updateModuleV1Handler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	source := app.resolveDataSource(r, wrapper.Source)
+
 	if err := modules.ValidateV1LegacyPayloadForModule(module, wrapper.Data); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -894,18 +937,18 @@ func (app *application) updateModuleV1Handler(w http.ResponseWriter, r *http.Req
 
 	v := validator.New()
 	module.Validate(v)
-	if !v.Valid() {
-		app.failedValidationResponse(w, r, v.Errors)
-		return
-	}
+	completed := v.Valid()
 
 	result, err := module.Calculate()
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
+		if completed {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+		result = modules.Consumption{}
 	}
 
-	err = module.Update(app.models, moduleID, optionID, result)
+	err = module.Update(app.models, moduleID, optionID, result, source, completed)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):

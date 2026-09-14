@@ -26,17 +26,21 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 	user := app.contextGetUser(r)
 
 	var input struct {
-		Name         string  `json:"name"`
-		CEP          *string `json:"cep"`
-		State        string  `json:"state"`
-		City         string  `json:"city"`
-		Neighborhood *string `json:"neighborhood"`
-		Street       *string `json:"street"`
-		Number       *string `json:"number"`
-		Phase        string  `json:"phase"`
-		Description  *string `json:"description"`
-		Siop         *string `json:"siop"`
-		Apf          *string `json:"apf"`
+		Name                  string     `json:"name"`
+		CEP                   *string    `json:"cep"`
+		State                 string     `json:"state"`
+		City                  string     `json:"city"`
+		Neighborhood          *string    `json:"neighborhood"`
+		Street                *string    `json:"street"`
+		Number                *string    `json:"number"`
+		Phase                 string     `json:"phase"`
+		Description           *string    `json:"description"`
+		Siop                  *string    `json:"siop"`
+		Apf                   *string    `json:"apf"`
+		ProjectStartDate      *time.Time `json:"project_start_date"`
+		ProjectEndDate        *time.Time `json:"project_end_date"`
+		ConstructionStartDate *time.Time `json:"construction_start_date"`
+		ConstructionEndDate   *time.Time `json:"construction_end_date"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -46,17 +50,21 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	project := &data.Project{
-		Name:         input.Name,
-		CEP:          input.CEP,
-		State:        input.State,
-		City:         input.City,
-		Neighborhood: input.Neighborhood,
-		Street:       input.Street,
-		Number:       input.Number,
-		Phase:        input.Phase,
-		Description:  input.Description,
-		Siop:         input.Siop,
-		Apf:          input.Apf,
+		Name:                  input.Name,
+		CEP:                   input.CEP,
+		State:                 input.State,
+		City:                  input.City,
+		Neighborhood:          input.Neighborhood,
+		Street:                input.Street,
+		Number:                input.Number,
+		ProjectStartDate:      input.ProjectStartDate,
+		ProjectEndDate:        input.ProjectEndDate,
+		ConstructionStartDate: input.ConstructionStartDate,
+		ConstructionEndDate:   input.ConstructionEndDate,
+		Phase:                 input.Phase,
+		Description:           input.Description,
+		Siop:                  input.Siop,
+		Apf:                   input.Apf,
 	}
 
 	if err := app.insertProject(project, user.ID); err != nil {
@@ -171,17 +179,21 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 	project := &projectWithUnits.Project
 
 	var input struct {
-		Name         *string `json:"name"`
-		CEP          *string `json:"cep"`
-		State        *string `json:"state"`
-		City         *string `json:"city"`
-		Neighborhood *string `json:"neighborhood"`
-		Street       *string `json:"street"`
-		Number       *string `json:"number"`
-		Phase        *string `json:"phase"`
-		Description  *string `json:"description"`
-		Siop         *string `json:"siop"`
-		Apf          *string `json:"apf"`
+		Name                  *string    `json:"name"`
+		CEP                   *string    `json:"cep"`
+		State                 *string    `json:"state"`
+		City                  *string    `json:"city"`
+		Neighborhood          *string    `json:"neighborhood"`
+		Street                *string    `json:"street"`
+		Number                *string    `json:"number"`
+		Phase                 *string    `json:"phase"`
+		Description           *string    `json:"description"`
+		Siop                  *string    `json:"siop"`
+		Apf                   *string    `json:"apf"`
+		ProjectStartDate      *time.Time `json:"project_start_date"`
+		ProjectEndDate        *time.Time `json:"project_end_date"`
+		ConstructionStartDate *time.Time `json:"construction_start_date"`
+		ConstructionEndDate   *time.Time `json:"construction_end_date"`
 	}
 
 	err = app.readJSON(w, r, &input)
@@ -232,6 +244,22 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 
 	if input.Apf != nil {
 		project.Apf = input.Apf
+	}
+
+	if input.ProjectStartDate != nil {
+		project.ProjectStartDate = input.ProjectStartDate
+	}
+
+	if input.ProjectEndDate != nil {
+		project.ProjectEndDate = input.ProjectEndDate
+	}
+
+	if input.ConstructionStartDate != nil {
+		project.ConstructionStartDate = input.ConstructionStartDate
+	}
+
+	if input.ConstructionEndDate != nil {
+		project.ConstructionEndDate = input.ConstructionEndDate
 	}
 
 	v := validator.New()

@@ -104,6 +104,7 @@ func (b *BeamColumn) Validate(v *validator.Validator) {
 	validatePositionedConcrete(v, b.Concrete, b.validPositions())
 	validatePositionedSteel(v, b.Steel, b.validPositions())
 	validatePositionedForm(v, b.Form, b.validPositions())
+	v.Check(len(b.Steel) > 0, "steel", "must have at least one item")
 
 	if b.FormColumns != nil {
 		v.Check(*b.FormColumns >= 0, "form_columns", "cannot be negative")
@@ -150,14 +151,14 @@ func (b *BeamColumn) Calculate() (Consumption, error) {
 	return total, nil
 }
 
-func (b *BeamColumn) Insert(models data.Models, optionID uuid.UUID, result Consumption) (Module, error) {
+func (b *BeamColumn) Insert(models data.Models, optionID uuid.UUID, result Consumption, source string, completed bool) (Module, error) {
 	moduleID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
 	}
 
 	b.normalizeToNewFormat()
-	moduleToInsert := b.toDataModule(moduleID, optionID, result)
+	moduleToInsert := b.toDataModule(moduleID, optionID, result, source, completed)
 
 	option, err := models.Options.GetByID(optionID)
 	if err != nil {
@@ -192,9 +193,9 @@ func (b *BeamColumn) Get(models data.Models, moduleID uuid.UUID) (Module, error)
 	return b.fromDataModule(dataModule), nil
 }
 
-func (b *BeamColumn) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
+func (b *BeamColumn) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption, source string, completed bool) error {
 	b.normalizeToNewFormat()
-	module := b.toDataModule(moduleID, optionID, result)
+	module := b.toDataModule(moduleID, optionID, result, source, completed)
 
 	option, err := models.Options.GetByID(optionID)
 	if err != nil {
@@ -212,7 +213,7 @@ func (b *BeamColumn) Update(models data.Models, moduleID, optionID uuid.UUID, re
 	return models.Modules.Update(module, targets)
 }
 
-func (b *BeamColumn) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
+func (b *BeamColumn) toDataModule(moduleID, optionID uuid.UUID, result Consumption, source string, completed bool) *data.Module {
 	moduleData := map[string]interface{}{
 		"concrete":      b.Concrete,
 		"steel":         b.Steel,
@@ -234,6 +235,8 @@ func (b *BeamColumn) toDataModule(moduleID, optionID uuid.UUID, result Consumpti
 		Type:           "beam_column",
 		OptionID:       optionID,
 		Data:           moduleData,
+		Source:         source,
+		Completed:      completed,
 		TotalCO2Min:    &result.CO2Min,
 		TotalCO2Max:    &result.CO2Max,
 		TotalEnergyMin: &result.EnergyMin,
@@ -295,7 +298,7 @@ func (b *BeamColumn) fromDataModule(d *data.Module) Module {
 
 	return &BeamColumn{
 		ID:              d.ID,
-		BasicModuleData: BasicModuleData{Type: "beam_column", Outdated: d.Outdated},
+		BasicModuleData: BasicModuleData{Type: "beam_column", Outdated: d.Outdated, Completed: d.Completed},
 		Consumption:     consumption,
 		Concrete:        concreteItems,
 		Steel:           steelItems,

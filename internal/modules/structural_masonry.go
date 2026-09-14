@@ -292,14 +292,14 @@ func (s *StructuralMasonry) Calculate() (Consumption, error) {
 	return total, nil
 }
 
-func (s *StructuralMasonry) Insert(models data.Models, optionID uuid.UUID, result Consumption) (Module, error) {
+func (s *StructuralMasonry) Insert(models data.Models, optionID uuid.UUID, result Consumption, source string, completed bool) (Module, error) {
 	moduleID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
 	}
 
 	s.normalizeToNewFormat()
-	moduleToInsert := s.toDataModule(moduleID, optionID, result)
+	moduleToInsert := s.toDataModule(moduleID, optionID, result, source, completed)
 
 	option, err := models.Options.GetByID(optionID)
 	if err != nil {
@@ -334,9 +334,9 @@ func (s *StructuralMasonry) Get(models data.Models, moduleID uuid.UUID) (Module,
 	return s.fromDataModule(dataModule), nil
 }
 
-func (s *StructuralMasonry) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption) error {
+func (s *StructuralMasonry) Update(models data.Models, moduleID, optionID uuid.UUID, result Consumption, source string, completed bool) error {
 	s.normalizeToNewFormat()
-	module := s.toDataModule(moduleID, optionID, result)
+	module := s.toDataModule(moduleID, optionID, result, source, completed)
 
 	option, err := models.Options.GetByID(optionID)
 	if err != nil {
@@ -354,7 +354,7 @@ func (s *StructuralMasonry) Update(models data.Models, moduleID, optionID uuid.U
 	return models.Modules.Update(module, targets)
 }
 
-func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Consumption) *data.Module {
+func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Consumption, source string, completed bool) *data.Module {
 	masonry := map[string]interface{}{}
 
 	if len(s.Masonry.Grout) > 0 {
@@ -434,6 +434,8 @@ func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Co
 		Type:           "structural_masonry",
 		OptionID:       optionID,
 		Data:           moduleData,
+		Source:         source,
+		Completed:      completed,
 		TotalCO2Min:    &result.CO2Min,
 		TotalCO2Max:    &result.CO2Max,
 		TotalEnergyMin: &result.EnergyMin,
@@ -556,7 +558,7 @@ func (s *StructuralMasonry) fromDataModule(d *data.Module) Module {
 
 	return &StructuralMasonry{
 		ID:              d.ID,
-		BasicModuleData: BasicModuleData{Type: "structural_masonry", Outdated: d.Outdated},
+		BasicModuleData: BasicModuleData{Type: "structural_masonry", Outdated: d.Outdated, Completed: d.Completed},
 		Consumption:     consumption,
 		Concrete:        concreteItems,
 		Steel:           steelItems,

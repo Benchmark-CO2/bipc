@@ -367,6 +367,7 @@ function RouteComponent() {
                         : "material"
                     ].yAxisLabel
                   }
+                  emptyResults={selectedFilteredIds.length === 0 && hasActiveFilter}
                 />
               )}
             </div>

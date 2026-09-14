@@ -24,7 +24,7 @@ tags:
   - name: Modules v2
     description: |
       Endpoints atuais para criar, ler e atualizar módulos.
-      Suportam posicionamento explícito (concrete/steel/form), floor_index em batch e retornam floor_indexes nas leituras.
+      Suportam posicionamento explícito (concrete/steel/form), floor_index (integer or array of integers) em batch e retornam floor_indexes nas leituras.
 servers:
   - url: https://app.bipc.org.br
 
@@ -1368,6 +1368,9 @@ paths:
         creation when payload root contains modules [] with v1 module items.
 
         Supports single creation ({module: ...}) or batch creation ({modules: [...]}).
+        Incomplete modules (failed validation) are still persisted with `completed: false` and
+        consumption is computed only if the module can still be calculated; otherwise it is zeroed.
+        For valid modules, `completed` is reported as true.
       tags:
         - Modules v1
       parameters:
@@ -1480,6 +1483,7 @@ paths:
       summary: Get a module by ID
       description: |
         Compatibility endpoint. All modules are returned in v1 legacy shape. Aggregated v2-only fields are omitted in v1 responses.
+        The response includes the `completed` flag indicating whether the module data is complete.
       tags:
         - Modules v1
       parameters:
@@ -1511,6 +1515,16 @@ paths:
             type: string
             format: uuid
           description: The ID of the module
+        - name: include_source
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: |
+            When true, the module data is returned with its canonical tagged shape:
+            root scalar fields as `{value, source}` boxes and object/array items
+            carrying a `source` key. When false or omitted, plain values are returned
+            (fully backward compatible).
       responses:
         "200":
           description: A single module
@@ -1567,6 +1581,9 @@ paths:
         structural modules. Structural modules also accept optional beam_number and slab_number fields.
         For foundation modules, unit_id may be omitted and will be automatically inferred from the unitID
         path parameter.
+        Updated modules are allowed to be incomplete (failed validation): they are
+        still persisted with `completed: false`. Consumption is zeroed only when the module
+        cannot be calculated; otherwise calculated values are kept.
       tags:
         - Modules v1
       parameters:
@@ -1602,11 +1619,11 @@ paths:
         required: true
         content:
           application/json:
-             schema:
-               $ref: "#/components/schemas/ModuleUpdateRequestV1"
+            schema:
+              $ref: "#/components/schemas/ModuleUpdateRequestV1"
       responses:
         "200":
-          description: module successfully updated      
+          description: module successfully updated
 
   /v2/projects/{projectID}/units/{unitID}/options/{optionID}/modules:
     post:
@@ -1615,14 +1632,18 @@ paths:
       description: |
         Preferred endpoint for module creation. Structural modules must use aggregated concrete/steel/form arrays.
         Legacy grouped fields and legacy root form fields are not accepted. Structural modules also accept optional
-        beam_number and slab_number fields. Use floor_index only in batch payload items and only as an alternative
-        to floor_ids (never send both in the same item). Read responses return floor_indexes for structural modules. For foundation modules, unit_id may be omitted and will be
+        beam_number and slab_number fields. Use floor_index (integer or array of integers) only in batch payload items
+        and only as an alternative to floor_ids (never send both in the same item). A single integer targets one floor;
+        an array of integers targets multiple floors. Read responses return floor_indexes for structural modules. For foundation modules, unit_id may be omitted and will be
         automatically inferred from the unitID path parameter. The same endpoint also accepts batch creation
         when payload root contains modules [] with v2 module items.
 
         Supports single creation ({module: ...}) or batch creation ({modules: [...]}).
         When 2 or more modules are sent, the operation uses a database transaction (30s timeout)
         ensuring all-or-nothing persistence.
+        Incomplete modules (failed validation) are still persisted with `completed: false`.
+        Consumption is zeroed only when the module cannot be calculated (partial values are kept otherwise).
+        For valid modules, `completed` is reported as true.
       tags:
         - Modules v2
       parameters:
@@ -1664,6 +1685,18 @@ paths:
                     - type: beam_column
                       data:
                         floor_index: 2
+                        concrete:
+                          - fck: 30
+                            volume: 120
+                            position: column
+                        steel:
+                          - material: rebar
+                            resistance: CA50
+                            mass: 6000
+                            position: column
+                    - type: beam_column
+                      data:
+                        floor_index: [0, 1, 2]
                         concrete:
                           - fck: 30
                             volume: 120
@@ -1715,7 +1748,10 @@ paths:
       summary: Get a module by ID
       description: |
         Preferred endpoint for reads. Returns v2 response shape only.
-        Note: floor_indexes is returned in v2 read responses for structural modules; floor_index (singular) is never returned.
+        Note: floor_indexes is returned in v2 read responses for structural modules; floor_index (singular) is never
+        returned. In batch creation input, floor_index accepts either a single integer (single floor) or an array
+        of integers (multiple floors).
+        The response includes the `completed` flag indicating whether the module data is complete.
       tags:
         - Modules v2
       parameters:
@@ -1747,6 +1783,16 @@ paths:
             type: string
             format: uuid
           description: The ID of the module
+        - name: include_source
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: |
+            When true, the module data is returned with its canonical tagged shape:
+            root scalar fields as `{value, source}` boxes and object/array items
+            carrying a `source` key. When false or omitted, plain values are returned
+            (fully backward compatible).
       responses:
         "200":
           description: A single module
@@ -1764,6 +1810,8 @@ paths:
         Preferred endpoint for updates. Structural modules must use aggregated concrete/steel/form arrays with
         explicit position per item and may include optional beam_number and slab_number fields. For foundation
         modules, unit_id may be omitted and will be automatically inferred from the unitID path parameter.
+        Updated modules are allowed to be incomplete (failed validation): they are
+        still persisted with `completed: false` and zeroed consumption.
       tags:
         - Modules v2
       parameters:
@@ -1800,7 +1848,7 @@ paths:
         content:
           application/json:
             schema:
-               $ref: "#/components/schemas/ModuleUpdateRequestV2"
+              $ref: "#/components/schemas/ModuleUpdateRequestV2"
             examples:
               beam_column_v2:
                 $ref: "./openapi-modules-schemas.yaml#/components/examples/ModuleCreateBeamColumnV2"

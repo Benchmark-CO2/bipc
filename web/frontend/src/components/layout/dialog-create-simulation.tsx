@@ -39,6 +39,7 @@ interface DialogCreateSimulationProps {
   unitId: string;
   roleId: string;
   triggerComponent?: React.ReactNode;
+  onCreated?: () => void;
 }
 
 const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
@@ -46,6 +47,7 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
   unitId,
   roleId,
   triggerComponent,
+  onCreated,
 }) => {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -61,6 +63,7 @@ const DialogCreateSimulation: React.FC<DialogCreateSimulationProps> = ({
       toast.success(t.dialogCreateSimulation.successCreate);
       form.reset();
       setOpen(false);
+      onCreated?.();
     },
     onError: (error) => {
       toast.error(t.dialogCreateSimulation.errorCreate, {

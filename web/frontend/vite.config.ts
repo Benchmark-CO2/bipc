@@ -20,6 +20,7 @@ export default defineConfig({
     },
   },
   server: {
+    // host: true,
     port: 5173,
     strictPort: false,
     hmr: {
@@ -27,5 +28,12 @@ export default defineConfig({
       host: "localhost",
       port: 5173,
     },
+    // proxy: {
+    //   "/v1": {
+    //     target: "stage env",
+    //     changeOrigin: true,
+    //     secure: true,
+    //   },
+    // },
   },
 });
