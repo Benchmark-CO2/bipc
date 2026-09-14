@@ -1,5 +1,6 @@
 import { IBenchmarkItem } from "@/actions/benchmarks/types";
 import { Card, CardContent } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider"; // <-- Novo Import Adicionado
 import { useSummary } from "@/context/summaryContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslation } from "@/i18n";
@@ -8,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { structureTypes } from "@/utils/structureTypes";
 import * as d3 from "d3";
 import { regressionPoly } from "d3-regression";
-import { BoxSelect, RotateCcw, Search, SearchX } from "lucide-react";
+import { RotateCcw, Triangle } from "lucide-react";
 import React, {
   useCallback,
   useEffect,
@@ -17,8 +18,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import Indicators from "./components/indicators";
-
 // Utility: Debounce function
 const debounce = <T extends (...args: any[]) => any>(
   func: T,
@@ -221,20 +220,22 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const brushRef = useRef<SVGGElement>(null);
-  const tooltipRef = useRef<HTMLDivElement>(null); // REF PRO TOOLTIP 60FPS
-  const hoveredItemRef = useRef<string | null>(null); // Previne re-render do Tooltip
-  const visibleCountRef = useRef<number>(0); // Previne re-render de contagem
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const hoveredItemRef = useRef<string | null>(null);
+  const visibleCountRef = useRef<number>(0);
 
   const isMobile = useIsMobile();
 
   const [tooltipData, setTooltipData] = useState<{ min: number; max: number; label?: string; floors?: string | number; technology?: string[]; } | null>(null);
   const [visibleCount, setVisibleCount] = useState<number>(0);
-  const [outSmallerCount, setOutSmallerCount] = useState<number>(0);
-  const [outLargerCount, setOutLargerCount] = useState<number>(0);
+  const [outAboveCount, setOutAboveCount] = useState<number>(0);
+  const [outBelowCount, setOutBelowCount] = useState<number>(0);
+  const outAboveRef = useRef<number>(0);
+  const outBelowRef = useRef<number>(0);
   const outSmallerRef = useRef<number>(0);
   const outLargerRef = useRef<number>(0);
   const [hasZoomed, setHasZoomed] = useState(false);
-  const [zoomEnabled, setZoomEnabled] = useState(false);
+  const [zoomEnabled, setZoomEnabled] = useState(true);
   const [isBrushActive, setIsBrushActive] = useState(false);
 
   const transformRef = useRef({ kx: 1, ky: 1, x: 0, y: 0 });
@@ -294,7 +295,15 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const yScale = useMemo(() => d3.scaleLinear().domain([0, 1.01]).range([_height, 0]), [_height]);
   const getTooltipPosition = useTooltipPosition();
 
-  // 🚀 OTIMIZAÇÃO: CÁLCULO DE DISTÂNCIA AO QUADRADO (Sem Math.sqrt!)
+  // Estados dos sliders
+  const [sliderX, setSliderX] = useState<[number, number]>([0, maxValue * 1.15]);
+  const [sliderY, setSliderY] = useState<[number, number]>([0, 1]);
+
+  useEffect(() => {
+    setSliderX([0, maxValue * 1.15]);
+    setSliderY([0, 1]);
+  }, [maxValue]);
+
   const getDataAtPosition = useCallback(
     (mouseX: number, mouseY: number) => {
       const transform = transformRef.current;
@@ -303,7 +312,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
 
       const baseRadius = isExpanded ? CHART_CONFIG.CIRCLE_RADIUS.expanded : CHART_CONFIG.CIRCLE_RADIUS.normal;
       const radius = baseRadius * Math.max(1, transform.kx);
-      const hitRadiusSq = Math.pow(radius + 5, 2); // Pré-calcula a margem de colisão ao quadrado
+      const hitRadiusSq = Math.pow(radius + 5, 2);
 
       for (const d of data) {
         const x1 = newXScale(d.min);
@@ -365,21 +374,11 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     const zoomRadiusFactor = 1;
 
     ctx.strokeStyle = DEFAULT_COLORS.GRID; ctx.lineWidth = 1;
-    // newXScale.ticks(isExpanded ? 30 : 10).forEach((tick) => {
-    //   const x = newXScale(tick);
-    //   if (x >= 0 && x <= _width) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, _height); ctx.stroke(); }
-    // });
     d3.scaleLinear().domain(visibleXDomain).ticks(isExpanded ? 30 : 10).forEach((tick) => {
       const x = newXScale(tick);
       if (x >= 0 && x <= _width) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, _height); ctx.stroke(); }
     });
 
-    // newYScale.ticks(8).forEach((tick) => {
-    //   const y = newYScale(tick);
-    //   if (y >= 0 && y <= _height) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(_width, y); ctx.stroke(); }
-    // });
-
-    // Antes era: newYScale.ticks(...)
     d3.scaleLinear().domain(visibleYDomain).ticks(8).forEach((tick) => {
       const y = newYScale(tick);
       if (y >= 0 && y <= _height) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(_width, y); ctx.stroke(); }
@@ -463,10 +462,9 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         if (isCumulative) {
           ctx.beginPath();
           ctx.arc(x1, y, radius, 0, Math.PI * 2);
-          ctx.fillStyle = DEFAULT_COLORS.START; // <-- CORRIGIDO AQUI
+          ctx.fillStyle = DEFAULT_COLORS.START;
           ctx.fill();
 
-          // Opcional: adicionar uma borda branca para dar mais destaque
           ctx.strokeStyle = "white";
           ctx.lineWidth = 1;
           ctx.stroke();
@@ -569,7 +567,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
 
     ctx.fillStyle = DEFAULT_COLORS.TEXT; ctx.font = "12px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "top";
 
-    // const xAxisTicks = newXScale.ticks(Math.min(10, Math.floor(_width / 60)));
     const xAxisTicks = d3.scaleLinear().domain(visibleXDomain).ticks(Math.min(10, Math.floor(_width / 60))); const xFractionDigits = getFractionDigits(xAxisTicks.length >= 2 ? Math.abs(xAxisTicks[1] - xAxisTicks[0]) : 1);
 
     xAxisTicks.forEach((tick) => {
@@ -625,29 +622,44 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       ctx.restore();
     }
 
-    // 🚀 OTIMIZAÇÃO: Evita setStates desnecessários dentro do render
-    let _countInView = 0; let _countSmaller = 0; let _countLarger = 0;
+
+   let _countInView = 0; let _countAbove = 0; let _countBelow = 0;
     const hasSelection = selectedMinBarIds.size > 0 || selectedMaxBarIds.size > 0;
     const _countSource = hasSelection ? data.filter((d) => selectedMinBarIds.has(String(d.minId ?? d.id)) && selectedMaxBarIds.has(String(d.maxId ?? d.id))) : data;
 
+    // Calcula os limites reais de Y no zoom atual
+    const currentYTop = newYScale.invert(0); 
+    const currentYBottom = newYScale.invert(_height);
+
     for (const d of _countSource) {
-      const px1 = newXScale(d.min); const px2 = newXScale(d.max); const py = newYScale(d.y);
-      if (px2 < 0) { _countSmaller++; continue; }
-      if (px1 > _width) { _countLarger++; continue; }
-      if (py > _height || py < 0) { continue; }
+      if (d.y > currentYTop) { _countAbove++; continue; }
+      if (d.y < currentYBottom) { _countBelow++; continue; }
+
+      const px1 = newXScale(d.min); const px2 = newXScale(d.max);
+      if (px2 < 0 || px1 > _width) continue; // Fora da tela no Eixo X
+      
       _countInView++;
     }
 
     if (visibleCountRef.current !== _countInView) { visibleCountRef.current = _countInView; updateBrushCount(_countInView); }
-    if (outSmallerRef.current !== _countSmaller) { outSmallerRef.current = _countSmaller; setOutSmallerCount(_countSmaller); }
-    if (outLargerRef.current !== _countLarger) { outLargerRef.current = _countLarger; setOutLargerCount(_countLarger); }
+    if (outAboveRef.current !== _countAbove) { outAboveRef.current = _countAbove; setOutAboveCount(_countAbove); }
+    if (outBelowRef.current !== _countBelow) { outBelowRef.current = _countBelow; setOutBelowCount(_countBelow); }
+
+    // Sync Slider States silently via limits to prevent infinite rendering loops
+    const currentVxMin = newXScale.invert(0);
+    const currentVxMax = newXScale.invert(_width);
+    const currentVyMin = newYScale.invert(_height);
+    const currentVyMax = newYScale.invert(0);
+
+    setSliderX(prev => Math.abs(prev[0] - currentVxMin) > 0.1 || Math.abs(prev[1] - currentVxMax) > 0.1 ? [currentVxMin, currentVxMax] : prev);
+    setSliderY(prev => Math.abs(prev[0] - currentVyMin) > 0.01 || Math.abs(prev[1] - currentVyMax) > 0.01 ? [currentVyMin, currentVyMax] : prev);
+
   }, [
     canvasRef, margin, xScale, yScale, _width, _height, data, selectedMinBarIds, selectedMaxBarIds,
     isExpanded, isMobile, isCumulative, maxValue, hideBars, showProcelScale, procelHighlight, procelFadedOpacity,
     showBaseline, showTop5Line, showMaxCurve, showMinCurve, showMidCurve, showProjectName, updateBrushCount, emptyResults
   ]);
 
-  // 🚀 OTIMIZAÇÃO DO MOUSEMOVE: GPU Transform Update e React Bail-out
   const handleCanvasMouseMove = useCallback(
     (event: MouseEvent) => {
       if (!canvasRef.current) return;
@@ -658,8 +670,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       const pos = getTooltipPosition(event, canvasRef);
 
       if (d) {
-        const itemId = String(d.minId ?? d.id) + String(d.maxId ?? d.id); // Identificador único
-        // Só chama o React setState SE trocar de barra! Isso evita 1000 renders desnecessários por segundo.
+        const itemId = String(d.minId ?? d.id) + String(d.maxId ?? d.id);
         if (hoveredItemRef.current !== itemId) {
           hoveredItemRef.current = itemId;
           setTooltipData({
@@ -678,7 +689,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         if (canvasRef.current) canvasRef.current.style.cursor = zoomEnabled ? "grab" : (isBrushActive ? "crosshair" : "default");
       }
 
-      // O Movimento é hardware accelerated atualizando direto no DOM!
       if (tooltipRef.current) {
         tooltipRef.current.style.transform = `translate(${pos.x + 10}px, ${pos.y + 10}px)`;
       }
@@ -702,7 +712,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     return () => window.removeEventListener("resize", debouncedResizeRef);
   }, [debouncedResizeRef]);
 
-  // Função centralizada e rápida de reset do Zoom
   const handleResetZoom = useCallback(() => {
     if (!canvasRef.current) return;
     d3.select(canvasRef.current)
@@ -721,25 +730,22 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       });
   }, [data.length, drawChart, selectedBarIds.size, updateBrushCount]);
 
-useEffect(() => {
+  useEffect(() => {
     if (!brushRef.current || _width <= 0 || _height <= 0) return;
     const brush = d3.brushX().extent([[0, 0], [_width, _height]]).on("end", (event) => {
       if (!event.selection) return;
-      
-      const [s0, s1] = event.selection; 
+
+      const [s0, s1] = event.selection;
       const tr = transformRef.current;
-      const u0 = (s0 - tr.x) / tr.kx; 
+      const u0 = (s0 - tr.x) / tr.kx;
       const u1 = (s1 - tr.x) / tr.kx;
 
       let new_kx = Math.min(50, Math.max(1, _width / (u1 - u0)));
-      
-      // NOVO: Calcula o espaço restante para centralizar o zoom caso atinja o limite de 50x
       let centerOffset = (_width - (u1 - u0) * new_kx) / 2;
       let target_x = -u0 * new_kx + centerOffset;
 
-      // Aplica o Clamp mantendo a centralização
       let new_x = Math.min(0, Math.max(target_x, _width * (1 - 1.1 * new_kx)));
-      
+
       transformRef.current = { ...tr, kx: new_kx, x: new_x };
 
       setHasZoomed(true);
@@ -749,7 +755,7 @@ useEffect(() => {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = requestAnimationFrame(drawChart);
     });
-    
+
     d3.select(brushRef.current).call(brush as any);
   }, [_width, _height, drawChart]);
 
@@ -765,7 +771,6 @@ useEffect(() => {
         let tx = Math.min(0, Math.max(tr.x + event.dx, _width * (1 - 1.1 * tr.kx)));
         let ty = Math.min(0, Math.max(tr.y + event.dy, _height * (1 - tr.ky)));
         transformRef.current = { ...tr, x: tx, y: ty };
-        // 🚀 OTIMIZAÇÃO: Não reseta o State se já está ativado. Bail-out do React.
         const isZoomed = tr.kx !== 1 || tr.ky !== 1 || tx !== 0 || ty !== 0;
         setHasZoomed(prev => prev === isZoomed ? prev : isZoomed);
 
@@ -775,6 +780,7 @@ useEffect(() => {
     d3.select(canvas).call(drag as any);
 
     const handleWheel = (e: WheelEvent) => {
+      return
       if (!zoomEnabled || isBrushActive) return;
       e.preventDefault(); e.stopPropagation();
 
@@ -793,7 +799,6 @@ useEffect(() => {
       ty = Math.min(0, Math.max(my - (my - ty) * (ky / tr.ky), _height * (1 - ky)));
       transformRef.current = { kx, ky, x: tx, y: ty };
 
-      // 🚀 OTIMIZAÇÃO: Evita setHasZoomed disparar no loop do frame
       const isZoomed = kx !== 1 || ky !== 1 || tx !== 0 || ty !== 0;
       setHasZoomed(prev => prev === isZoomed ? prev : isZoomed);
 
@@ -825,6 +830,36 @@ useEffect(() => {
     animationFrameRef.current = requestAnimationFrame(drawChart);
   }, [selectedBars, selectedMinBars, selectedMaxBars, drawChart]);
 
+  // Handlers diretos pros Sliders atualizarem o D3 Zoom!
+  const handleXSliderChange = useCallback((val: [number, number]) => {
+    setSliderX(val);
+    const pxMin = xScale(val[0]);
+    const pxMax = xScale(val[1]);
+    if (pxMax - pxMin === 0) return;
+    const new_kx = _width / (pxMax - pxMin);
+    const new_tx = -pxMin * new_kx;
+
+    transformRef.current = { ...transformRef.current, kx: new_kx, x: new_tx };
+    setHasZoomed(true);
+    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    animationFrameRef.current = requestAnimationFrame(drawChart);
+  }, [xScale, _width, drawChart]);
+
+  const handleYSliderChange = useCallback((val: [number, number]) => {
+    setSliderY(val);
+    // Y é invertido!
+    const pxMax = yScale(val[0]);
+    const pxMin = yScale(val[1]);
+    if (pxMax - pxMin === 0) return;
+    const new_ky = _height / (pxMax - pxMin);
+    const new_ty = -pxMin * new_ky;
+
+    transformRef.current = { ...transformRef.current, ky: new_ky, y: new_ty };
+    setHasZoomed(true);
+    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    animationFrameRef.current = requestAnimationFrame(drawChart);
+  }, [yScale, _height, drawChart]);
+
   const labelX = xAxisLabelProp ?? (UNIT_LABELS[unit as keyof typeof UNIT_LABELS] || t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon);
   const labelY = yAxisLabelProp ?? t.benchmark.chartTypes.cumulativeFraction.yAxisLabel;
   const displayedCount = hasZoomed ? visibleCount : data.length;
@@ -833,126 +868,187 @@ useEffect(() => {
 
   return (
     <Card className={cn("shadow-none w-min-content min-w-1/2 p-1 m-0!")}>
-      <CardContent className="m-0!">
-        <div ref={containerRef} className="w-full overflow-hidden relative">
-          <span className="absolute text-xs w-auto text-center text-foreground/70 block rotate-270 left-0 -translate-x-[45%] -translate-y-1/2 top-1/2  m-0 p-0">
-            {labelY}
-          </span>
+      <CardContent className="m-0! flex flex-col pt-[10px]">
+        {/* === LINHA SUPERIOR: SLIDER Y E CANVAS === */}
+        <div className="flex flex-row w-full relative">
+          
+          {/* Coluna 1: Slider do Eixo Y */}
+          <div className="w-10 flex-shrink-0 flex items-center justify-center pt-[14px] pb-[25px]">
+            <Slider
+              orientation="vertical"
+              min={0}
+              max={1}
+              step={0.01}
+              value={sliderY}
+              onValueChange={handleYSliderChange as any}
+              className="h-full"
+            />
+          </div>
 
-          <Indicators max={maxMaxDataValue} min={maxLessDataValue} hasZoomed={hasZoomed} position="end" countLarger={outLargerCount} countSmaller={outSmallerCount} />
-          <div className="absolute top-2 left-2 z-30 flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setZoomEnabled((prev) => {
-                  if (!prev) setIsBrushActive(false);
-                  return !prev;
-                });
-              }}
-              className={cn(
-                "p-1.5 rounded-md border text-xs flex items-center gap-1 transition-colors",
-                zoomEnabled ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90" : "bg-background text-muted-foreground border-border hover:bg-muted",
-              )}
-              title={zoomEnabled ? "Desabilitar zoom manual" : "Habilitar zoom (Scroll/Drag)"}
-            >
-              {zoomEnabled ? <Search className="size-3.5" /> : <SearchX className="size-3.5" />}
-              <span className="max-sm:hidden">Zoom</span>
-            </button>
+          {/* Coluna 2: Container do Canvas */}
+        <div ref={containerRef} className="flex-1 overflow-hidden relative h-[28vh]">
+            <span className="absolute text-xs w-auto text-center text-foreground/70 block -rotate-90 left-0 -translate-x-full top-1/2 m-0 p-0 z-10">
+              {labelY}
+            </span>
 
-            <button
-              type="button"
-              onClick={() => {
-                setIsBrushActive((prev) => {
-                  if (!prev) setZoomEnabled(false);
-                  return !prev;
-                });
-              }}
-              className={cn(
-                "p-1.5 rounded-md border text-xs flex items-center gap-1 transition-colors",
-                isBrushActive ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90" : "bg-background text-muted-foreground border-border hover:bg-muted",
-              )}
-              title={isBrushActive ? "Cancelar seleção de área" : "Selecionar área (Brush)"}
-            >
-              <BoxSelect className="size-3.5" />
-              <span className="max-sm:hidden">Selecionar</span>
-            </button>
+            {/* Indicadores Topo-Direita (Pontos Acima e Máximos) */}
+            <div className="absolute top-0 right-[calc(35px+0.5rem)] flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
+              <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco acima">
+                {outAboveCount} <span className="text-[10px]"><Triangle className='w-4 h-4 fill-gray-500' /></span>
+              </span>
+              <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Máximo do conjunto Azul">
+                {Math.round(maxLessDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-4 h-4 fill-[#5B9BD5]' /></span>
+              </span>
+              <span className="text-[#E0756C] flex items-center gap-0.5" title="Máximo do conjunto Vermelho">
+                {Math.round(maxMaxDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-4 h-4 fill-[#E0756C]' /></span>
+              </span>
+            </div>
 
-            {hasZoomed && (
-              <button
+            {/* Indicadores Base-Esquerda (Pontos Abaixo e Mínimos) */}
+            <div className="absolute bottom-[5px] left-2 flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
+              <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco abaixo">
+                {outBelowCount} <span className="text-[10px]"><Triangle className='rotate-180 w-4 h-4 fill-gray-500' /></span>
+              </span>
+              <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Mínimo do conjunto Azul">
+                <span className="text-[10px]"><Triangle className='rotate-270 w-4 h-4 fill-[#5B9BD5]' /></span> {Math.round(minLessDataValue)}
+              </span>
+              <span className="text-[#E0756C] flex items-center gap-0.5" title="Mínimo do conjunto Vermelho">
+                <span className="text-[10px]"><Triangle className='rotate-270 w-4 h-4 fill-[#E0756C]' /></span> {Math.round(minMaxDataValue)}
+              </span>
+            </div>
+
+            <div className="absolute top-2 left-2 z-30 flex gap-2">
+              {/* <button
                 type="button"
-                onClick={handleResetZoom}
-                className="p-1.5 rounded-md border text-xs flex items-center gap-1 transition-colors bg-background text-muted-foreground border-border hover:bg-muted"
-                title="Restaurar visualização inicial"
-              >
-                <RotateCcw className="size-3.5" />
-                <span className="max-sm:hidden">Restaurar</span>
-              </button>
-            )}
-          </div>
-
-          <svg 
-            className="absolute z-20" 
-            width={_width}
-            height={_height}
-            viewBox={`0 0 ${_width} ${_height}`}
-            style={{ 
-              left: margin.left, 
-              top: (margin.top * 4) + 3 , 
-              visibility: isBrushActive ? "visible" : "hidden",
-              pointerEvents: isBrushActive ? "auto" : "none"
-            }}
-          >
-            <g ref={brushRef} />
-          </svg>
-
-          <canvas
-            ref={canvasRef}
-            className={cn(
-              "bg-white dark:bg-zinc-900 w-full",
-              zoomEnabled ? "cursor-grab active:cursor-grabbing" : (isBrushActive ? "cursor-crosshair" : "cursor-default"),
-            )}
-            style={{ width: "100%", height: _height + margin.top + margin.bottom - 2 }}
-          />
-
-          {!isMobile && <Indicators max={minMaxDataValue} min={minLessDataValue} hasZoomed={hasZoomed} position="start" countLarger={outLargerCount} countSmaller={outSmallerCount} />}
-
-          {/* 🚀 OTIMIZAÇÃO: Tooltip movido exclusivamente pela GPU e sempre renderizado (apenas alterando opacidade) */}
-          <div
-            ref={tooltipRef}
-            className={cn(
-              "absolute top-0 left-0 bg-gray-800 text-white text-sm p-3 rounded pointer-events-none flex flex-col gap-2 z-400",
-              "transition-opacity duration-150 ease-in-out",
-              tooltipData && !isBrushActive ? "opacity-100" : "opacity-0"
-            )}
-            style={{ willChange: "transform" }}
-          >
-            {tooltipData && (
-              <>
-                {isCumulative ? (
-                  <span>
-                    {xAxisLabelProp?.replace('- CUM', '') ?? (unit === "MJ/m²" ? t.benchmark.chartTypes.cumulativeFraction.xAxisLabelEnergy : t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon)}: <b>{tooltipData.min.toInternational()} {unit}</b>
-                  </span>
-                ) : (
-                  <>
-                    <span>Min: <b>{tooltipData.min.toInternational()} {unit}</b></span>
-                    <span>Max: <b>{tooltipData.max.toInternational()} {unit}</b></span>
-                  </>
+                onClick={() => {
+                  setZoomEnabled((prev) => {
+                    if (!prev) setIsBrushActive(false);
+                    return !prev;
+                  });
+                }}
+                className={cn(
+                  "p-1.5 rounded-md border text-xs flex items-center gap-1 transition-colors",
+                  zoomEnabled ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90" : "bg-background text-muted-foreground border-border hover:bg-muted",
                 )}
-                {tooltipData.floors !== undefined && tooltipData.floors !== null && (<span>{t.d3chart.floors}: <b>{tooltipData.floors}</b></span>)}
-                {!!tooltipData.technology?.length && (<span>{t.d3chart.technology}: <b>{tooltipData.technology.map((tech) => structureTypes(t)[tech as keyof typeof structureTypes] || tech).join(", ")}</b></span>)}
-              </>
-            )}
+              >
+                {zoomEnabled ? <Search className="size-3.5" /> : <SearchX className="size-3.5" />}
+                <span className="max-sm:hidden">Zoom</span>
+              </button> */}
+
+              {/* <button
+                type="button"
+                onClick={() => {
+                  setIsBrushActive((prev) => {
+                    if (!prev) setZoomEnabled(false);
+                    return !prev;
+                  });
+                }}
+                className={cn(
+                  "p-1.5 rounded-md border text-xs flex items-center gap-1 transition-colors",
+                  isBrushActive ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90" : "bg-background text-muted-foreground border-border hover:bg-muted",
+                )}
+              >
+                <BoxSelect className="size-3.5" />
+                <span className="max-sm:hidden">Selecionar</span>
+              </button> */}
+            </div>
+
+            {/* <svg
+              className="absolute z-20"
+              width={_width}
+              height={_height}
+              viewBox={`0 0 ${_width} ${_height}`}
+              style={{
+                left: margin.left,
+                top: (margin.top * 4) + 3,
+                visibility: isBrushActive ? "visible" : "hidden",
+                pointerEvents: isBrushActive ? "auto" : "none"
+              }}
+            >
+              <g ref={brushRef} />
+            </svg> */}
+
+            <canvas
+              ref={canvasRef}
+              className={cn(
+                "bg-white dark:bg-zinc-900 w-full",
+                zoomEnabled ? "cursor-grab active:cursor-grabbing" : (isBrushActive ? "cursor-crosshair" : "cursor-default"),
+              )}
+              style={{ width: "100%", height: _height + margin.top + margin.bottom - 2 }}
+            />
+
+            <div
+              ref={tooltipRef}
+              className={cn(
+                "absolute top-0 left-0 bg-gray-800 text-white text-sm p-3 rounded pointer-events-none flex flex-col gap-2 z-400",
+                "transition-opacity duration-150 ease-in-out",
+                tooltipData && !isBrushActive ? "opacity-100" : "opacity-0"
+              )}
+              style={{ willChange: "transform" }}
+            >
+              {tooltipData && (
+                <>
+                  {isCumulative ? (
+                    <span>
+                      {xAxisLabelProp?.replace('- CUM', '') ?? (unit === "MJ/m²" ? t.benchmark.chartTypes.cumulativeFraction.xAxisLabelEnergy : t.benchmark.chartTypes.cumulativeFraction.xAxisLabelCarbon)}: <b>{tooltipData.min.toInternational()} {unit}</b>
+                    </span>
+                  ) : (
+                    <>
+                      <span>Min: <b>{tooltipData.min.toInternational()} {unit}</b></span>
+                      <span>Max: <b>{tooltipData.max.toInternational()} {unit}</b></span>
+                    </>
+                  )}
+                  {tooltipData.floors !== undefined && tooltipData.floors !== null && (<span>{t.d3chart.floors}: <b>{tooltipData.floors}</b></span>)}
+                  {!!tooltipData.technology?.length && (<span>{t.d3chart.technology}: <b>{tooltipData.technology.map((tech) => structureTypes(t)[tech as keyof typeof structureTypes] || tech).join(", ")}</b></span>)}
+                </>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="flex max-sm:flex-col-reverse max-sm:gap-4 max-sm:mt-2">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs">{t.d3chart.displaying}: {displayedCount} {t.d3chart.of} {totalCount}</span>
-            {selectedCount > 0 && (<span className="text-xs text-foreground/60">{t.d3chart.selected}: {selectedCount} {t.d3chart.of} {data.length}</span>)}
+        {/* === LINHA INFERIOR: BOTÃO RESET E SLIDER X === */}
+        <div className="flex flex-row items-start w-full -mt-2">
+          
+          {/* Botão de Reset na Intersecção dos Eixos */}
+          <div className="w-10 flex-shrink-0 flex items-center justify-center pt-2">
+            <button
+              type="button"
+              onClick={handleResetZoom}
+              className={cn(
+                "p-1.5 rounded-lg border border-teal-600 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 transition-colors",
+                !hasZoomed && "opacity-50 cursor-not-allowed border-muted-foreground text-muted-foreground"
+              )}
+              title="Restaurar visualização inicial"
+              disabled={!hasZoomed}
+            >
+              <RotateCcw className="size-4" />
+            </button>
           </div>
-          {isMobile && <Indicators max={minMaxDataValue} min={minLessDataValue} hasZoomed={hasZoomed} position="start" countLarger={outLargerCount} countSmaller={outSmallerCount} />}
-          <span className="flex-1 text-xs text-center w-full text-foreground/70">{labelX}</span>
+
+          {/* Slider do Eixo X e Label */}
+          <div className="flex-1 flex flex-col mx-[45px] max-sm:px-[35px] mt-10 relative">
+             <Slider
+                orientation="horizontal"
+                min={0}
+                max={maxValue * 1.15}
+                step={1}
+                value={sliderX}
+                onValueChange={handleXSliderChange as any}
+                className="w-full"
+             />
+             <div className="flex justify-between items-center mt-3">
+               <div className="flex flex-col gap-0.5 opacity-60">
+                 <span className="text-xs">{t.d3chart.displaying}: {displayedCount} {t.d3chart.of} {totalCount}</span>
+                 {selectedCount > 0 && (<span className="text-xs">{t.d3chart.selected}: {selectedCount} {t.d3chart.of} {data.length}</span>)}
+               </div>
+               <span className="flex-1 text-xs text-center w-full text-foreground/70 font-medium">
+                 {labelX}
+               </span>
+               <div className="w-20" /> {/* Espaçador para manter o título X centralizado */}
+             </div>
+          </div>
         </div>
+
       </CardContent>
     </Card>
   );
