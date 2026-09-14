@@ -14,7 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Plus, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FieldErrors, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useTranslation } from "@/i18n";
@@ -38,6 +38,7 @@ interface DrawerFormUnitProps {
   triggerComponent?: React.ReactNode;
   projectId: string;
   unitId?: string;
+  editMode?: boolean;
 
   stepperMode?: boolean;
   open?: boolean;
@@ -55,6 +56,7 @@ const DrawerFormUnit = ({
   triggerComponent,
   projectId,
   unitId,
+  editMode = false,
   stepperMode = false,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
@@ -93,13 +95,49 @@ const DrawerFormUnit = ({
   const form = useForm<UnitFormInput, any, UnitFormSchema>({
     resolver: zodResolver(createUnitFormSchema(t)) as any,
     defaultValues,
+    mode: "all",
+    reValidateMode: "onChange",
   });
 
   useEffect(() => {
-    if (stepperMode && isOpen) {
-      void form.trigger();
-    }
+    if (!stepperMode || !isOpen) return;
+    void form.trigger();
   }, [stepperMode, isOpen, form]);
+
+  const watchedValues = form.watch();
+
+  const collectZodMessages = (values: unknown): string[] => {
+    const parsed = createUnitFormSchema(t).safeParse(values);
+    if (parsed.success) return [];
+    const messages = new Set<string>();
+    for (const issue of parsed.error.issues) {
+      if (issue.message) messages.add(issue.message);
+    }
+    return Array.from(messages);
+  };
+
+  const currentErrorMsgs = useMemo(
+    () => collectZodMessages(watchedValues),
+    [watchedValues, t],
+  );
+
+  const lastWatchSigRef = useRef<string>("");
+  useEffect(() => {
+    if (!isOpen) return;
+    const sig = JSON.stringify(watchedValues);
+    if (sig === lastWatchSigRef.current) return;
+    lastWatchSigRef.current = sig;
+    const tId = setTimeout(() => {
+      void form.trigger([
+        "name",
+        "type",
+        "repetition_count",
+        "housing_units_count",
+        "data.floors",
+      ]);
+    }, 80);
+    return () => clearTimeout(tId);
+  }, [watchedValues, isOpen, form]);
 
   const {
     isPending: isCreationPending,
@@ -259,26 +297,6 @@ const DrawerFormUnit = ({
     console.error("Erro de validação do formulário:", errors);
   };
 
-  const getFormErrorMessages = (errors: any): string[] => {
-    const messages = new Set<string>();
-    const traverse = (obj: any) => {
-      if (!obj || typeof obj !== "object") return;
-      if (typeof obj.message === "string" && obj.message.length > 0) {
-        messages.add(obj.message);
-        return;
-      }
-      for (const key of Object.keys(obj)) {
-        if (key !== "message" && key !== "type" && key !== "ref") {
-          traverse(obj[key]);
-        }
-      }
-    };
-    traverse(errors);
-    return Array.from(messages);
-  };
-
-  const currentErrorMsgs = getFormErrorMessages(form.formState.errors);
-
   const handleClose = () => {
     form.reset();
     resetCreation();
@@ -341,7 +359,9 @@ const DrawerFormUnit = ({
       >
         <DrawerHeader className="px-8">
           <DrawerTitle className="text-2xl font-bold text-primary">
-            {unitId ? t.units.form.editTitle : t.units.form.addTitle}
+            {Boolean(unitId) || editMode
+              ? t.units.form.editTitle
+              : t.units.form.addTitle}
           </DrawerTitle>
           <Button
             onClick={handleClose}
@@ -364,7 +384,10 @@ const DrawerFormUnit = ({
                 id="unit-form"
               >
                 {form.watch("type") === "tower" && (
-                  <UnitFormTower form={form} isEditMode={Boolean(unitId)} />
+                  <UnitFormTower
+                    form={form}
+                    isEditMode={Boolean(unitId) || editMode}
+                  />
                 )}
               </form>
             </Form>
@@ -387,17 +410,8 @@ const DrawerFormUnit = ({
             </Alert>
           )}
           <div className="flex gap-2 justify-end flex-row w-full">
-            {!Boolean(unitId) && (
+            {!(Boolean(unitId) || editMode) && (
               <>
-                {!stepperMode && (
-                  <Button
-                    variant="outline-bipc"
-                    form="unit-form"
-                    disabled={true}
-                  >
-                    {t.common.ifcImport}
-                  </Button>
-                )}
                 <Button
                   type="submit"
                   variant="bipc"
@@ -412,7 +426,7 @@ const DrawerFormUnit = ({
               </>
             )}
           </div>
-          {Boolean(unitId) && (
+          {(Boolean(unitId) || editMode) && (
             <div className="flex flex-col w-full gap-4">
               {!stepperMode && (
                 <div className="p-5 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border-2 border-yellow-400 dark:border-yellow-600">
@@ -433,13 +447,10 @@ const DrawerFormUnit = ({
                     </svg>
                     <div>
                       <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
-                        Importante: Confirmação de Atualização
+                        {t.units.form.updateWarningTitle}
                       </h4>
                       <p className="text-sm text-yellow-800 dark:text-yellow-200 leading-relaxed">
-                        Ao editar esta unidade, todas as simulações associadas
-                        serão invalidadas e precisarão ser refeitas. Ao clicar
-                        em atualizar abaixo, você reconhece que entende as
-                        consequências desta ação.
+                        {t.units.form.updateWarningBody}
                       </p>
                     </div>
                   </div>

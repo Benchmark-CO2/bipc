@@ -13,6 +13,7 @@ import { useTranslation } from "@/i18n";
 import { Translations } from "@/i18n/translations/pt-BR";
 import { cn } from "@/lib/utils";
 import {
+  DrawerStepperIFCCompletePayload,
   TIfcProcessorAggregatedResult,
   TIfcProcessorFallbackVersion,
   TIfcProcessorImportStatus,
@@ -24,6 +25,7 @@ import { dateUtils } from "@/utils/date";
 import { normalizeIfcRequestListItem } from "@/utils/ifcStepper";
 import { parseApiError } from "@/utils/parseApiError";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
   FileUp,
@@ -297,6 +299,7 @@ export default function DrawerIFCImport({
   optionId,
   triggerComponent,
 }: DrawerIFCImportProps) {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [fileType, setFileType] = useState<FileType>("ifc");
   const [software, setSoftware] = useState("");
@@ -1457,8 +1460,31 @@ export default function DrawerIFCImport({
           preselectedUnitId={mode === "simulation" ? unitId : undefined}
           preselectedOptionId={mode === "simulation" ? optionId : undefined}
           fileName={selectedIfcFile?.name ?? uploadFile?.name ?? null}
-          onComplete={() => {
+          onComplete={(payload: DrawerStepperIFCCompletePayload) => {
             setStepperResult(null);
+            if (!payload || payload.units.length === 0) return;
+            const targetUnit = payload.units[0];
+            if (!targetUnit?.unitId) return;
+            const dcpId =
+              (typeof payload.disciplineId === "string" &&
+              payload.disciplineId.trim() !== ""
+                ? payload.disciplineId
+                : null) ??
+              (typeof effectiveRoleId === "string" &&
+              effectiveRoleId.trim() !== ""
+                ? effectiveRoleId
+                : null);
+            void navigate({
+              to: "/new_projects/$projectId/unit/$unitId/constructive-technologies",
+              params: {
+                projectId,
+                unitId: targetUnit.unitId,
+              },
+              search: (prev) => ({
+                ...prev,
+                dcp: dcpId ?? (prev as { dcp?: string }).dcp ?? undefined,
+              }),
+            });
           }}
         />
       )}

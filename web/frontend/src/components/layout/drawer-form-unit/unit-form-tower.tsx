@@ -605,8 +605,11 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                       value ? masks.numeric(value) : "",
                                     );
                                   }}
+                                  onBlur={(e) => {
+                                    field.onBlur();
+                                    setFocusedRowIndex(null);
+                                  }}
                                   onFocus={() => setFocusedRowIndex(index)}
-                                  onBlur={() => setFocusedRowIndex(null)}
                                 />
                               </FormControl>
                             </FormItem>
@@ -635,8 +638,11 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                                       value ? masks.numeric(value) : "",
                                     );
                                   }}
+                                  onBlur={(e) => {
+                                    field.onBlur();
+                                    setFocusedRowIndex(null);
+                                  }}
                                   onFocus={() => setFocusedRowIndex(index)}
-                                  onBlur={() => setFocusedRowIndex(null)}
                                 />
                               </FormControl>
                             </FormItem>

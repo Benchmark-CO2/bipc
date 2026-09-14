@@ -22,6 +22,7 @@ import { useTranslation } from "@/i18n";
 import { parseApiError } from "@/utils/parseApiError";
 import { mapFloorIndexToFloorIds } from "@/utils/unitConversions";
 import { MODULE_SOURCES } from "@/utils/modulePositions";
+import { stripFoundationFloorIndex } from "@/utils/ifcStepper";
 import { Badge } from "../../ui/badge";
 import { Button } from "../../ui/button";
 import { Alert, AlertDescription, AlertTitle } from "../../ui/alert";
@@ -77,6 +78,7 @@ interface DrawerFormModuleProps {
   strictValidation?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  editMode?: boolean;
   initialModuleData?:
     | (Partial<TModuleDataV2> & {
         floor_ids?: string[];
@@ -173,10 +175,12 @@ const DrawerFormModule = ({
   strictValidation: strictValidationProp,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
+  editMode: editModeProp,
   initialModuleData,
   initialSelectedFloors,
   onSubmitSuccess,
 }: DrawerFormModuleProps) => {
+  const isEditMode = Boolean(moduleId) || Boolean(editModeProp);
   const unitId = unitIdProp ?? "";
   const optionId = optionIdProp ?? "";
   const strictValidation_ = strictValidationProp ?? !stepperMode;
@@ -717,7 +721,9 @@ const DrawerFormModule = ({
         typeof (mdAny as any).type === "string") &&
       !hasDataShape;
     if (hasDataShape) {
-      const wrappedData = { ...(mdAny.data as Record<string, unknown>) };
+      const wrappedData = stripFoundationFloorIndex(detectedType, {
+        ...(mdAny.data as Record<string, unknown>),
+      });
       if (
         wrappedData.floor_ids === undefined &&
         Array.isArray(mdAny.floor_ids)
@@ -744,9 +750,10 @@ const DrawerFormModule = ({
       ) {
         wrappedData.floor_index = mdAny.floor_index;
       }
+      const finalWrapped = stripFoundationFloorIndex(detectedType, wrappedData);
       resetValues = {
         type: detectedType,
-        data: wrappedData,
+        data: finalWrapped,
       };
     } else if (hasFlatShape) {
       const ignoreKeys = new Set(["type", "id", "consumption", "outdated"]);
@@ -758,7 +765,7 @@ const DrawerFormModule = ({
       }
       resetValues = {
         type: detectedType,
-        data,
+        data: stripFoundationFloorIndex(detectedType, data),
       };
     } else {
       resetValues = {
@@ -1126,7 +1133,7 @@ const DrawerFormModule = ({
         <DrawerHeader className="px-8">
           <div className="flex items-center gap-3 w-full pr-10">
             <DrawerTitle className="text-h1 text-primary shrink-0">
-              {moduleId
+              {isEditMode
                 ? t.modules.form.editTitle
                 : t.modules.table.createButton}
             </DrawerTitle>
@@ -1403,7 +1410,7 @@ const DrawerFormModule = ({
           >
             {isCreationPending || isUpdatePending ? (
               <Loader2 className="animate-spin h-4 w-4" />
-            ) : moduleId ? (
+            ) : isEditMode ? (
               t.common.update
             ) : (
               t.common.add

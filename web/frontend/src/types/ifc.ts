@@ -269,6 +269,14 @@ export interface StepperHeaderProps {
   applyUnitToAllModules: (unitTempId: string) => void;
 }
 
+export interface DrawerStepperIFCCompletePayload {
+  /** Unidades (criadas/reutilizadas/atualizadas) que foram usadas no
+   *  processamento completo do stepper. */
+  units: { unitId: string; optionId: string; tempId: string }[];
+  /** ID da disciplina (role) usada no processamento IFC. */
+  disciplineId: string | null;
+}
+
 export interface DrawerStepperIFCProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -279,5 +287,5 @@ export interface DrawerStepperIFCProps {
   preselectedUnitId?: string;
   preselectedOptionId?: string;
   fileName?: string | null;
-  onComplete?: () => void;
+  onComplete?: (payload: DrawerStepperIFCCompletePayload) => void;
 }
