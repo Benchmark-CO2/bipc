@@ -330,6 +330,9 @@ const DrawerFormUnit = ({
 
   const isMobile = useIsMobile();
 
+  const isEditUxMode = Boolean(unitId) || editMode;
+  const isBackendSavedUnit = Boolean(unitId);
+
   const shouldRenderTrigger = !stepperMode || Boolean(triggerComponent);
 
   return (
@@ -359,9 +362,7 @@ const DrawerFormUnit = ({
       >
         <DrawerHeader className="px-8">
           <DrawerTitle className="text-2xl font-bold text-primary">
-            {Boolean(unitId) || editMode
-              ? t.units.form.editTitle
-              : t.units.form.addTitle}
+            {isEditUxMode ? t.units.form.editTitle : t.units.form.addTitle}
           </DrawerTitle>
           <Button
             onClick={handleClose}
@@ -386,7 +387,8 @@ const DrawerFormUnit = ({
                 {form.watch("type") === "tower" && (
                   <UnitFormTower
                     form={form}
-                    isEditMode={Boolean(unitId) || editMode}
+                    isEditMode={isEditUxMode}
+                    isFloorsExpanded={isBackendSavedUnit}
                   />
                 )}
               </form>
@@ -410,7 +412,7 @@ const DrawerFormUnit = ({
             </Alert>
           )}
           <div className="flex gap-2 justify-end flex-row w-full">
-            {!(Boolean(unitId) || editMode) && (
+            {!isEditUxMode && (
               <>
                 <Button
                   type="submit"
@@ -426,7 +428,7 @@ const DrawerFormUnit = ({
               </>
             )}
           </div>
-          {(Boolean(unitId) || editMode) && (
+          {isEditUxMode && (
             <div className="flex flex-col w-full gap-4">
               {!stepperMode && (
                 <div className="p-5 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border-2 border-yellow-400 dark:border-yellow-600">

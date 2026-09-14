@@ -30,6 +30,7 @@ import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 interface UnitFormTowerProps {
   form: UseFormReturn<UnitFormInput, any, UnitFormSchema>;
   isEditMode?: boolean;
+  isFloorsExpanded?: boolean;
 }
 
 // Cores pré-definidas para cada categoria
@@ -40,7 +41,11 @@ const categoryColors = {
   basement_floor: "#F59E0B", // Laranja
 };
 
-const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
+const UnitFormTower: React.FC<UnitFormTowerProps> = ({
+  form,
+  isEditMode,
+  isFloorsExpanded = false,
+}) => {
   const isMobile = useIsMobile();
   const { t } = useTranslation();
 
@@ -500,7 +505,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                       ? t.unitForm.tower.floorToFloorDistance
                       : t.unitForm.tower.floorToFloorDistance + " (m)"}
                   </TableHead>
-                  {!isEditMode && (
+                  {!isFloorsExpanded && (
                     <TableHead className="w-20">
                       {isMobile
                         ? t.unitForm.tower.quantity
@@ -649,7 +654,7 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({ form, isEditMode }) => {
                           )}
                         />
                       </TableCell>
-                      {!isEditMode && (
+                      {!isFloorsExpanded && (
                         <TableCell>
                           <FormField
                             control={form.control as any}
