@@ -104,6 +104,7 @@ func (b *BeamColumn) Validate(v *validator.Validator) {
 	validatePositionedConcrete(v, b.Concrete, b.validPositions())
 	validatePositionedSteel(v, b.Steel, b.validPositions())
 	validatePositionedForm(v, b.Form, b.validPositions())
+	v.Check(len(b.Steel) > 0, "steel", "must have at least one item")
 
 	if b.FormColumns != nil {
 		v.Check(*b.FormColumns >= 0, "form_columns", "cannot be negative")
