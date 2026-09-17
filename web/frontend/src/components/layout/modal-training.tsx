@@ -155,7 +155,7 @@ const ModalTraining = ({
     <>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
         <DialogContent
-          className="sm:max-w-[500px] bg-primary p-6 border-none max-h-[85vh] overflow-y-auto"
+          className="sm:max-w-[500px] bg-primary p-6 border-none max-h-[90vh] overflow-y-auto"
           showCloseButton={false}
         >
           <DialogHeader>
