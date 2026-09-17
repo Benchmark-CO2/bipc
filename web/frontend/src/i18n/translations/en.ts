@@ -948,6 +948,9 @@ export const en: Translations = {
     learnMore: "Learn more...",
     dismissCheckboxLabel:
       "Do not automatically display this message when entering again on this browser",
+    accessVideosOnYoutube: "Access the videos on YouTube",
+    videoTrainingDescription:
+      "You can also access the training content through explanatory videos on YouTube, at your own pace.",
   },
   phase: {
     preliminary_study: "Schematic Design",
