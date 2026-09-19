@@ -112,12 +112,61 @@ func (app *application) resolveWrappersFloorIndex(optionID uuid.UUID, wrappers [
 		return wrappers, nil
 	}
 
+	normalized := append([]modulePayloadWrapper(nil), wrappers...)
+
+	// Flatten the floor_index values across entries, keeping track of the
+	// entry each value belongs to so validation errors can reference the
+	// right module.
+	type flattenedIndex struct {
+		value    int
+		entryIdx int
+	}
+	flattened := make([]flattenedIndex, 0, len(unit.Floors))
+	for ei, entry := range entries {
+		for _, v := range entry.values {
+			flattened = append(flattened, flattenedIndex{value: v, entryIdx: ei})
+		}
+	}
+
+	// When the total number of floor_index values matches the floor count, map
+	// by order so a shifted contiguous sequence (e.g. 2,3,4 with floors
+	// -1,0,1) still resolves to the right floors, including arrays. The
+	// sequence must be contiguous without gaps.
+
+	if len(flattened) == len(unit.Floors) {
+		for i := 1; i < len(flattened); i++ {
+			if flattened[i].value == flattened[i-1].value+1 {
+				continue
+			}
+
+			return nil, &ValidationError{Errors: map[string]string{
+				fmt.Sprintf("modules[%d].data.floor_index", entries[flattened[i].entryIdx].wrapperIndex): "must form a contiguous sequence without gaps",
+			}}
+		}
+
+		resolved := make([][]uuid.UUID, len(entries))
+		for i := range flattened {
+			entryIdx := flattened[i].entryIdx
+			resolved[entryIdx] = append(resolved[entryIdx], unit.Floors[i].ID)
+		}
+
+		for ei, entry := range entries {
+			normalizedData, err := overrideFloorTargets(normalized[entry.wrapperIndex].Data, resolved[ei])
+			if err != nil {
+				return nil, fmt.Errorf("invalid json format for modules[%d].data: %w", entry.wrapperIndex, err)
+			}
+
+			normalized[entry.wrapperIndex].Data = normalizedData
+		}
+
+		return normalized, nil
+	}
+
 	floorIDByRealIndex := make(map[int]uuid.UUID, len(unit.Floors))
 	for _, floor := range unit.Floors {
 		floorIDByRealIndex[floor.Index] = floor.ID
 	}
 
-	normalized := append([]modulePayloadWrapper(nil), wrappers...)
 	for _, entry := range entries {
 		resolvedFloorIDs := make([]uuid.UUID, 0, len(entry.values))
 		for _, val := range entry.values {

@@ -151,6 +151,10 @@ func (s *StructuralMasonry) Validate(v *validator.Validator) {
 		v.Check(*s.SlabNumber >= 0, "slab_number", "cannot be negative")
 	}
 
+	v.Check(len(s.Masonry.Grout) > 0, "masonry.grout", "must have at least one item")
+	v.Check(len(s.Masonry.Mortar) > 0, "masonry.mortar", "must have at least one item")
+	v.Check(len(s.Masonry.Blocks) > 0, "masonry.blocks", "must have at least one item")
+
 	fgkSet := make(map[int]struct{})
 
 	for i, grout := range s.Masonry.Grout {
