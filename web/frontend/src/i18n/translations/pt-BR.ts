@@ -950,6 +950,9 @@ export const ptBR = {
     learnMore: "Saiba mais...",
     dismissCheckboxLabel:
       "Não exibir esta mensagem automaticamente ao entrar novamente neste navegador",
+    accessVideosOnYoutube: "Acesse os vídeos no YouTube",
+    videoTrainingDescription:
+      "Você também pode acessar o conteúdo da capacitação por meio de vídeos explicativos no YouTube, no seu próprio ritmo.",
   },
   phase: {
     preliminary_study: "Estudo Preliminar",
