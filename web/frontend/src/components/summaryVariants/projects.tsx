@@ -7,10 +7,12 @@ import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
 import { ChartLegend } from './components/chartLegend';
+import ClassificationCard from './components/classificationCard';
 import { EmissionsSection } from './components/emissionSection';
 import { ScenarioCard } from './components/indicatorItem';
 import { useChartType } from "./hooks/useChartType";
-import { normalizeBenchmarkSeries, recalculateY } from "./utils";
+import { useElementHeight } from './hooks/useElementHeight';
+import { calculateGrade, normalizeBenchmarkSeries, recalculateY } from "./utils";
 
 export const translateCategory: Record<string, string> = {
   concrete_wall: "Parede de Concreto",
@@ -324,53 +326,69 @@ const ProjectsSummary = ({
   const formatMetric = (val: number) =>
     val.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 
+  const currentGrade = calculateGrade(allPcvMetrics.co2.V, newData.map(el => (el.max + el.min) / 2));
+  const totalProjectsCount = newData.length;
+  const { ref: elementRef, height: elementHeight } = useElementHeight<HTMLDivElement>();
   return (
     <div>
       <div className='flex justify-between gap-2 w-full'>
-        <div className="flex flex-wrap xl:flex-nowrap gap-4 w-full">
-          <ScenarioCard
-            letter="V"
-            title={t.summary.chartLegend.referenceValue_short}
-            color="#62A436" // Verde
-            items={[
-              { total: formatMetric(allPcvMetrics.co2.V * totalArea), benchmark: formatMetric(allPcvMetrics.co2.V), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
-              { total: formatMetric(allPcvMetrics.energy.V * totalArea), benchmark: formatMetric(allPcvMetrics.energy.V), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
-              { total: formatMetric(allPcvMetrics.material.V * totalArea), benchmark: formatMetric(allPcvMetrics.material.V), unitTotal: "m³", unitBenchmark: "m³/m²" },
-            ]}
-          />
+        <div className="flex items-center gap-4 w-full overflow-x-auto pt-3">
+          {/* Rótulos Laterais (Benchmark / Total) */}
+          <div className="flex flex-col gap-1.5 text-sm font-bold text-right text-neutral-800 pl-2">
+            <span className="leading-5 whitespace-nowrap flex items-center justify-end mt-1">Benchmark</span>
+            <span className="leading-5 whitespace-nowrap flex items-center justify-end mb-1">Total</span>
+          </div>
 
-          <ScenarioCard
-            letter="C"
-            title={t.summary.chartLegend.constructionMitigationPotential_short}
-            color="#5B9BD5" // Azul
-            items={[
-              { total: formatMetric(allPcvMetrics.co2.C * totalArea), benchmark: formatMetric(allPcvMetrics.co2.C), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
-              { total: formatMetric(allPcvMetrics.energy.C * totalArea), benchmark: formatMetric(allPcvMetrics.energy.C), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
-              { total: formatMetric(allPcvMetrics.material.C * totalArea), benchmark: formatMetric(allPcvMetrics.material.C), unitTotal: "m³", unitBenchmark: "m³/m²" },
-            ]}
-          />
+          {/* Container dos Cards */}
+          <div className="flex flex-nowrap gap-4 w-full">
+            <ScenarioCard
+              letter="V"
+              title={t.summary.chartLegend.referenceValue_short}
+              color="#62A436" // Verde
+              items={[
+                { total: formatMetric(allPcvMetrics.co2.V * totalArea), benchmark: formatMetric(allPcvMetrics.co2.V), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
+                { total: formatMetric(allPcvMetrics.energy.V * totalArea), benchmark: formatMetric(allPcvMetrics.energy.V), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
+                { total: formatMetric(allPcvMetrics.material.V * totalArea), benchmark: formatMetric(allPcvMetrics.material.V), unitTotal: "m³", unitBenchmark: "m³/m²" },
+              ]}
+            />
 
-          <ScenarioCard
-            letter="R"
-            title={t.summary.chartLegend.riskOfLowerConstructionMitigation_short}
-            color="#E0756C" // Vermelho
-            items={[
-              { total: formatMetric(allPcvMetrics.co2.R * totalArea), benchmark: formatMetric(allPcvMetrics.co2.R), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
-              { total: formatMetric(allPcvMetrics.energy.R * totalArea), benchmark: formatMetric(allPcvMetrics.energy.R), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
-              { total: formatMetric(allPcvMetrics.material.R * totalArea), benchmark: formatMetric(allPcvMetrics.material.R), unitTotal: "m³", unitBenchmark: "m³/m²" },
-            ]}
-          />
+            <ScenarioCard
+              letter="C"
+              title={t.summary.chartLegend.constructionMitigationPotential_short}
+              color="#5B9BD5" // Azul
+              items={[
+                { total: formatMetric(allPcvMetrics.co2.C * totalArea), benchmark: formatMetric(allPcvMetrics.co2.C), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
+                { total: formatMetric(allPcvMetrics.energy.C * totalArea), benchmark: formatMetric(allPcvMetrics.energy.C), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
+                // { total: formatMetric(allPcvMetrics.material.C * totalArea), benchmark: formatMetric(allPcvMetrics.material.C), unitTotal: "m³", unitBenchmark: "m³/m²" },
+              ]}
+            />
 
-          <ScenarioCard
-            letter="P"
-            title={t.summary.chartLegend.projectMitigationPotential_short}
-            color="#9F70DB" // Roxo
-            items={[
-              { total: formatMetric(allPcvMetrics.co2.P * totalArea), benchmark: formatMetric(allPcvMetrics.co2.P), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
-              { total: formatMetric(allPcvMetrics.energy.P * totalArea), benchmark: formatMetric(allPcvMetrics.energy.P), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
-              { total: formatMetric(allPcvMetrics.material.P * totalArea), benchmark: formatMetric(allPcvMetrics.material.P), unitTotal: "m³", unitBenchmark: "m³/m²" },
-            ]}
-          />
+            <ScenarioCard
+              letter="R"
+              title={t.summary.chartLegend.riskOfLowerConstructionMitigation_short}
+              color="#E0756C" // Vermelho
+              items={[
+                { total: formatMetric(allPcvMetrics.co2.R * totalArea), benchmark: formatMetric(allPcvMetrics.co2.R), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
+                { total: formatMetric(allPcvMetrics.energy.R * totalArea), benchmark: formatMetric(allPcvMetrics.energy.R), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
+                // { total: formatMetric(allPcvMetrics.material.R * totalArea), benchmark: formatMetric(allPcvMetrics.material.R), unitTotal: "m³", unitBenchmark: "m³/m²" },
+              ]}
+            />
+
+            <ScenarioCard
+              letter="P"
+              title={t.summary.chartLegend.projectMitigationPotential_short}
+              color="#9F70DB" // Roxo
+              items={[
+                { total: formatMetric(allPcvMetrics.co2.P * totalArea), benchmark: formatMetric(allPcvMetrics.co2.P), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
+                { total: formatMetric(allPcvMetrics.energy.P * totalArea), benchmark: formatMetric(allPcvMetrics.energy.P), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
+                { total: formatMetric(allPcvMetrics.material.P * totalArea), benchmark: formatMetric(allPcvMetrics.material.P), unitTotal: "m³", unitBenchmark: "m³/m²" },
+              ]}
+            />
+            <ClassificationCard
+              grade={currentGrade}
+              totalProjects={totalProjectsCount}
+            />
+          </div>
         </div>
       </div>
       {isOpen && (
@@ -384,8 +402,8 @@ const ProjectsSummary = ({
             />
           </div>
 
-          <div className="flex-1 min-h-0 flex flex-col gap-0 pt-3">
-            <div className='flex gap-2 justify-end items-center'>
+          <div className="flex-1 min-h-0 flex flex-col gap-0 pt-2">
+            <div className='flex gap-2 justify-end items-center shrink-0'>
               <FilterTabs
                 tabs={["co2", "energy", "material"]}
                 onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
@@ -401,10 +419,13 @@ const ProjectsSummary = ({
                 ]}
                 selectedSubTab={subTabs}
               />
-              <div className='mt-2 w-full'>
+              <div className='mt-0 w-full'>
                 {ChartSelector}
               </div>
             </div>
+            <div>
+                <div  ref={elementRef} className='flex-1 shrink-0 h-full'>
+
             {chartType === "scatter" ? (
               <D3GradientRangeChart
                 data={newData}
@@ -423,7 +444,8 @@ const ProjectsSummary = ({
                 variant={type === "material" ? "cumulative" : "range"}
                 xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
                 yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
-                height={350}
+                // height={Math.min(window.innerHeight > 1800 ? window.innerHeight * 0.52 : 250, 250)}
+                height={elementHeight}
               />
             ) : (
               <D3GradientRangeLineChart
@@ -433,7 +455,12 @@ const ProjectsSummary = ({
                 showProjectName={showProjectName}
               />
             )}
+                </div>
+            </div>
+            <div>
+
             {type !== 'material' && <ChartLegend />}
+            </div>
           </div>
         </div>
       )}
@@ -442,3 +469,4 @@ const ProjectsSummary = ({
 };
 
 export default ProjectsSummary;
+

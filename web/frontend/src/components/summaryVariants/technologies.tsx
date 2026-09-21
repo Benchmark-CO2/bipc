@@ -8,11 +8,12 @@ import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
 import { ChartLegend } from "./components/chartLegend";
+import ClassificationCard from './components/classificationCard';
 import { EmissionsSection } from "./components/emissionSection";
 import { ScenarioCard } from "./components/indicatorItem";
 import { useChartType } from "./hooks/useChartType";
 import { getCategoryValue, translateCategory } from "./units";
-import { normalizeBenchmarkSeries, recalculateY } from "./utils";
+import { calculateGrade, normalizeBenchmarkSeries, recalculateY } from "./utils";
 
 type TModules = {
   consumption: {
@@ -353,12 +354,18 @@ const SimulationsSummary = ({
 
   const formatMetric = (val: number) =>
     val.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
-
+  const currentGrade = calculateGrade(allPcvMetrics.co2.V, simulationEmissionsData.map(el => (el.max + el.min) / 2));
+  const totalProjectsCount = simulationEmissionsData.length;
   return (
     <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
       {/* ── BARRA SUPERIOR: Valores e PCVRB ── */}
       <div className="flex justify-between gap-2 w-full">
-        <div className="flex flex-wrap xl:flex-nowrap gap-4 w-full">
+       <div className="flex items-center gap-4 w-full overflow-x-auto pt-3">
+          {/* Rótulos Laterais (Benchmark / Total) */}
+          <div className="flex flex-col gap-1.5 text-sm font-bold text-right text-neutral-800 pl-2">
+            <span className="leading-5 whitespace-nowrap flex items-center justify-end mt-1">Benchmark</span>
+            <span className="leading-5 whitespace-nowrap flex items-center justify-end mb-1">Total</span>
+          </div>
           <ScenarioCard
             letter="V"
             title={
@@ -470,6 +477,10 @@ const SimulationsSummary = ({
               },
             ]}
           />
+             <ClassificationCard
+              grade={currentGrade}
+              totalProjects={totalProjectsCount}
+            />
         </div>
       </div>
 

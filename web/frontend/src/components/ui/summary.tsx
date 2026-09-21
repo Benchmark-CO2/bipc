@@ -1,68 +1,97 @@
 import { useSummary } from "@/context/summaryContext";
 import { cn } from "@/lib/utils";
-import { ChevronUp } from "lucide-react";
+import { ChevronDown, Maximize, Minimize } from "lucide-react";
+import { useState } from "react";
 
 const Summary = () => {
-  const { isOpen, toggleSummary, context, isExpanded } = useSummary();
+  // Removemos o isExpanded e toggleExpanded do context
+  const { isOpen, toggleSummary, context } = useSummary();
+  
+  // Estado local apenas para controle visual da tela cheia (detalhado)
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   if (context?.hide) return null;
 
   return (
     <section
       data-open={isOpen}
-      data-expanded={isExpanded}
+      // Trocado para data-fullscreen para evitar conflito de CSS que usava data-expanded
+      data-fullscreen={isFullScreen}
       className={cn(
-        "absolute bottom-0 right-0 w-full max-md:mx-auto max-md:left-0 transition-all z-49 bg-gray-50 dark:bg-sidebar shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)]",
-        "border-t-[5px] border-[#5cb82b]", // Borda verde superior baseada na imagem
+        "absolute bottom-0 right-0 w-full max-md:mx-auto max-md:left-0 transition-all duration-300 ease-in-out z-49 bg-gray-50 dark:bg-sidebar shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)]",
+        "border-t-[4px] border-[#1a7f83]",
         {
-          "h-[100vh]": isOpen,
-          "h-32": !isOpen, // Recolhe totalmente, deixando apenas a aba visível
+          "h-0": !isOpen, // 1. Totalmente recolhido (só as abas aparecem)
+          "h-32": isOpen && !isFullScreen, // 2. Overview
+          "h-[96.6vh]": isOpen && isFullScreen, // 3. Detalhado
         }
       )}
     >
-      {/* Botão Flutuante Superior (Aba "Clique e veja mais") */}
-      {(
-        <div className={cn("absolute flex items-end top-0 left-1/2 -translate-x-1/2 -translate-y-full z-[100]", {
-          'top-5': isOpen,
-         '': !isOpen,
-        })}>
-        <button
-          onClick={() => {
-            toggleSummary();
-          }}
-          className={cn("flex items-center justify-center gap-2 px-6 py-1 text-sm font-medium text-white transition-colors bg-[#5cb82b] hover:bg-[#4ea022] rounded-t-2xl shadow-sm cursor-pointer", {
-            'rounded-t-none rounded-b-xl': isOpen,
-          })}
-        >
-          <ChevronUp
-            className={cn("w-4 h-4 transition-transform", {
-              "rotate-180": isOpen,
-            })}
-          />
-          <span>{isOpen ? "Fechar" : "Benchmark"}</span>
-        </button>
-        </div>
-      )}
+      {/* Grupo de Botões Superiores Direitos */}
+      <div className="absolute flex items-end top-0 right-4 -translate-y-full z-[100]">
+        <div className="flex items-stretch overflow-hidden rounded-t-[8px]">
+          
+          {/* Aba de Texto */}
+          <div className="flex items-center justify-center px-4 py-1.5 text-xs font-semibold text-white bg-[#1a7f83]">
+            Benchmark do projeto
+          </div>
 
-      <div className={cn("relative flex flex-col w-full h-full overflow-hidden pt-0", {
-        'cursor-pointer': !isOpen,
-      })} onClick={!isOpen ? toggleSummary : undefined}>
+          {/* Botão Laranja: Abre/Fecha o componente inteiro */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isOpen) {
+                setIsFullScreen(false); // Garante que resete o detalhado ao fechar
+              }
+              toggleSummary();
+            }}
+            className="flex items-center justify-center px-3 py-1.5 text-white transition-colors bg-[#f15a3b] hover:bg-[#d94f33] cursor-pointer border-l border-white/20"
+          >
+            <ChevronDown
+              className={cn("w-4 h-4 transition-transform duration-300", {
+                "rotate-180": !isOpen, // Seta para cima quando recolhido
+                "rotate-0": isOpen, // Seta para baixo quando aberto
+              })}
+            />
+          </button>
+
+          {/* Botão Verde: Alterna Tela Cheia (Detalhado) */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isOpen) {
+                toggleSummary(); // Se estiver totalmente fechado, abre o painel
+                setIsFullScreen(true); // E já expande para o detalhado
+              } else {
+                setIsFullScreen(!isFullScreen);
+              }
+            }}
+            className="flex items-center justify-center px-3 py-1.5 text-white transition-colors bg-[#62ba33] hover:bg-[#53a02a] cursor-pointer border-l border-white/20"
+          >
+            {isFullScreen ? (
+              <Minimize className="w-4 h-4" />
+            ) : (
+              <Maximize className="w-4 h-4" />
+            )}
+          </button>
+          
+        </div>
+      </div>
+
+      {/* Conteúdo interno encapsulado */}
+      <div 
+        className={cn("relative flex flex-col w-full h-full overflow-hidden transition-opacity duration-300", {
+          'cursor-pointer': isOpen && !isFullScreen,
+          'opacity-0 invisible': !isOpen, // Esconde conteúdo para não vazar quando h-0
+          'opacity-100 visible': isOpen,
+        })} 
+        // Clique no corpo do overview expande para o detalhado
+        onClick={(isOpen && !isFullScreen) ? () => setIsFullScreen(true) : undefined}
+      >
         {context && (
           <div className={cn("w-full flex-1 px-2 py-2 overflow-auto", {
-            'p-2 pt-6': isOpen,
+            'p-2 pt-4': isFullScreen,
           })}>
-            <div className='flex justify-between text-secondary'>
-              {/* {!isOpen && <h2 className='font-semibold text-xl text-primary mb-2.5 font-roboto-flex'>Benchmark do projeto</h2>} */}
-              {/* {isOpen && (
-                <div className='flex mb-2 gap-2 cursor-pointer absolute top-0 left-1/2 -translate-x-1/2 bg-secondary' onClick={toggleSummary}>
-                  <div className='flex text-xs justify-center items-center gap-2 text-white px-2 p-1' >
-                    Recolher <ChevronDown className='w-4 h-4' />
-                  </div>
-                </div>
-              )} */}
-            </div>
-            {/* O conteúdo (incluindo o título "Benchmark do projeto" e os cards) 
-                virá diretamente do context.component, conforme solicitado */}
             {context.component || null}
           </div>
         )}

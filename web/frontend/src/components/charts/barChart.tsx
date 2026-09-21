@@ -5,12 +5,14 @@ const EmissionsChart = ({
   data,
   benchmarkMax,
   barHeight = 6,
-  marginLeft = 200 // Recebe a margem por prop para alinhar exatamente com as linhas globais
+  marginLeft = 130,
+  marginRight = 30
 }: {
   data: any[];
   benchmarkMax: Record<string, number> | number;
   barHeight?: number;
   marginLeft?: number;
+  marginRight?: number;
 }) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -21,7 +23,7 @@ const EmissionsChart = ({
     const resizeObserver = new ResizeObserver((entries) => {
       if (!entries || entries.length === 0) return;
       const { width } = entries[0].contentRect;
-      const calculatedHeight = Math.max(100, (data?.length || 0) * 35 + 20);
+      const calculatedHeight = Math.max(100, (data?.length || 0) * 38 + 20);
       setDimensions({ width, height: calculatedHeight });
     });
     resizeObserver.observe(wrapperRef.current);
@@ -32,7 +34,7 @@ const EmissionsChart = ({
     if (!data || data.length === 0 || dimensions.width === 0) return;
 
     const { width, height } = dimensions;
-    const margin = { top: 25, right: 20, bottom: 5, left: marginLeft };
+    const margin = { top: 25, right: marginRight, bottom: 5, left: marginLeft };
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
 
@@ -43,8 +45,8 @@ const EmissionsChart = ({
       .attr('viewBox', `0 0 ${width} ${height}`)
       .attr('width', width)
       .attr('height', height)
-      .style('background', 'transparent') // Fundo transparente para o degradê do pai funcionar
-      .style('font-family', 'sans-serif');
+      .style('background', 'transparent')
+      .style('font-family', 'inherit');
 
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
@@ -82,17 +84,18 @@ const EmissionsChart = ({
       rowScales[d.name] = d3.scaleLinear().domain([0, rowMax]).range([0, innerWidth]);
     });
 
-    const colorPalette = ['#6C9EE0', '#DF7A32', '#297B76', '#45b54a', '#E2D36C', '#9775C1', '#E0756C'];
+    const colorPalette = ['#2B84F8', '#187B8B', '#F28C48', '#EB644F', '#E2D36C', '#9F70DB'];
     const colorScale = d3.scaleOrdinal().domain(keys).range(colorPalette);
 
     const yAxis = d3.axisLeft(yScale).tickSize(0).tickPadding(10);
     const yAxisGroup = g.append('g').call(yAxis);
     yAxisGroup.select('.domain').remove();
+    
+    // Sem limite de caracteres e com tamanho ajustado para caber perfeitamente
     yAxisGroup.selectAll('.tick text')
-      .attr('font-size', '14px')
+      .attr('font-size', '13px')
       .attr('fill', '#1a1f36')
-      .attr('font-weight', 'bold')
-      .text(d => (d as string).length > 25 ? (d as string).substring(0, 22) + '...' : (d as string));
+      .attr('font-weight', 'bold');
 
     const layer = g.selectAll('.layer')
       .data(series)
@@ -100,7 +103,6 @@ const EmissionsChart = ({
       .append('g')
       .attr('fill', d => colorScale(d.key) as string);
 
-    // Barras
     layer.selectAll('rect')
       .data(d => d)
       .enter()
@@ -109,9 +111,9 @@ const EmissionsChart = ({
       .attr('x', d => rowScales[d.data.name](d[0]))
       .attr('width', d => Math.max(0, rowScales[d.data.name](d[1]) - rowScales[d.data.name](d[0])))
       .attr('height', barHeight)
-      .attr('rx', 2); // Leve arredondamento na barra
+      .attr('rx', barHeight / 2)
+      .attr('opacity', 0.7)
 
-    // Textos de valores ACIMA da barra e alinhados à esquerda do segmento
     layer.selectAll('text')
       .data(d => d)
       .enter()
@@ -128,10 +130,10 @@ const EmissionsChart = ({
       .text(d => {
         const val = d[1] - d[0];
         const rowMax = rowScales[d.data.name].domain()[1];
-        return val > (rowMax * 0.05) ? `${val.toFixed(0)}` : '';
+        return val > (rowMax * 0.02) ? `${val.toFixed(2)}` : '';
       });
 
-  }, [data, dimensions, benchmarkMax, barHeight, marginLeft]);
+  }, [data, dimensions, benchmarkMax, barHeight, marginLeft, marginRight]);
 
   return (
     <div ref={wrapperRef} style={{ width: '100%', margin: '0 auto' }}>
