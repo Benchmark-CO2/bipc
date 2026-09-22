@@ -7,7 +7,7 @@ import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
 import { ChartLegend } from './components/chartLegend';
-import ClassificationCard from './components/classificationCard';
+import { ClassificationCard } from './components/classificationCard';
 import { EmissionsSection } from './components/emissionSection';
 import { ScenarioCard } from './components/indicatorItem';
 import { useChartType } from "./hooks/useChartType";
@@ -45,7 +45,7 @@ const ProjectsSummary = ({
   showProjectName = true,
 }: ProjectsSummaryProps) => {
   const { t } = useTranslation();
-  const { isOpen } = useSummary();
+  const { isOpen, isFullScreen } = useSummary();
 
   const filterProjects = useMemo(() =>
     projects.filter((el) => !!el.consumption),
@@ -329,8 +329,11 @@ const ProjectsSummary = ({
   const currentGrade = calculateGrade(allPcvMetrics.co2.V, newData.map(el => (el.max + el.min) / 2));
   const totalProjectsCount = newData.length;
   const { ref: elementRef, height: elementHeight } = useElementHeight<HTMLDivElement>();
+  const { ref: elementRef2, height: elementHeight2 } = useElementHeight<HTMLDivElement>();
+  const largeScreenResolution = elementHeight > 1000 || elementHeight2 > 800;
+
   return (
-    <div>
+    <div ref={elementRef} >
       <div className='flex justify-between gap-2 w-full'>
         <div className="flex items-center gap-4 w-full overflow-x-auto pt-3">
           {/* Rótulos Laterais (Benchmark / Total) */}
@@ -391,8 +394,8 @@ const ProjectsSummary = ({
           </div>
         </div>
       </div>
-      {isOpen && (
-        <div className='flex gap-4'>
+      {isFullScreen && (
+        <div  className='flex gap-4'>
           <div className='w-1/3 flex-shrink-0 mt-3 flex flex-col'>
             <EmissionsSection
               data={projectEmissionsData}
@@ -402,8 +405,8 @@ const ProjectsSummary = ({
             />
           </div>
 
-          <div className="flex-1 min-h-0 flex flex-col gap-0 pt-2">
-            <div className='flex gap-2 justify-end items-center shrink-0'>
+          <div  className="flex-1 min-h-0 flex flex-col gap-0 pt-2 h-full">
+            <div  className='flex gap-2 justify-end items-center shrink-0'>
               <FilterTabs
                 tabs={["co2", "energy", "material"]}
                 onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
@@ -424,42 +427,42 @@ const ProjectsSummary = ({
               </div>
             </div>
             <div>
-                <div  ref={elementRef} className='flex-1 shrink-0 h-full'>
+              <div ref={elementRef2} className='flex-1 shrink-0 min-h-full'>
 
-            {chartType === "scatter" ? (
-              <D3GradientRangeChart
-                data={newData}
-                selectedBars={selectedProjects}
-                unit={unitsOfMeasure[type] || ""}
-                totalProjects={managedData.length || newData.length}
-                minData={minData}
-                maxData={maxData}
-                showBaseline={type !== "material"}
-                showTop5Line={type !== "material"}
-                showProcelScale
-                showMaxCurve={type !== "material"}
-                showMinCurve={type !== "material"}
-                showMidCurve={type !== "material"}
-                showProjectName={showProjectName}
-                variant={type === "material" ? "cumulative" : "range"}
-                xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
-                yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
-                // height={Math.min(window.innerHeight > 1800 ? window.innerHeight * 0.52 : 250, 250)}
-                height={elementHeight}
-              />
-            ) : (
-              <D3GradientRangeLineChart
-                data={newData}
-                selectedBars={selectedProjects}
-                unit={type}
-                showProjectName={showProjectName}
-              />
-            )}
-                </div>
+                {chartType === "scatter" ? (
+                  <D3GradientRangeChart
+                    data={newData}
+                    selectedBars={selectedProjects}
+                    unit={unitsOfMeasure[type] || ""}
+                    totalProjects={managedData.length || newData.length}
+                    minData={minData}
+                    maxData={maxData}
+                    showBaseline={type !== "material"}
+                    showTop5Line={type !== "material"}
+                    showProcelScale
+                    showMaxCurve={type !== "material"}
+                    showMinCurve={type !== "material"}
+                    showMidCurve={type !== "material"}
+                    showProjectName={showProjectName}
+                    variant={type === "material" ? "cumulative" : "range"}
+                    xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
+                    yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
+                    // height={Math.min(window.innerHeight > 1800 ? window.innerHeight * 0.52 : 250, 250)}
+                    height={elementHeight - 300}
+                  />
+                ) : (
+                  <D3GradientRangeLineChart
+                    data={newData}
+                    selectedBars={selectedProjects}
+                    unit={type}
+                    showProjectName={showProjectName}
+                  />
+                )}
+              </div>
             </div>
             <div>
 
-            {type !== 'material' && <ChartLegend />}
+              {type !== 'material' && <ChartLegend />}
             </div>
           </div>
         </div>

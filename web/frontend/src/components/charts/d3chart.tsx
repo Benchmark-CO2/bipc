@@ -256,20 +256,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     }
   }, []);
 
-  // useLayoutEffect(() => {
-  //   if (!containerRef.current) return;
-
-  //   const observer = new ResizeObserver((entries) => {
-  //     const entry = entries[0];
-  //     if (entry) {
-  //       setContainerWidth(entry.contentRect.width);
-  //       setContainerHeight(entry.contentRect.height);
-  //     }
-  //   });
-
-  //   observer.observe(containerRef.current);
-  //   return () => observer.disconnect();
-  // }, []);
   useEffect(() => {
     if (containerRef.current && containerWidth === 0) {
       const timer = setTimeout(() => {
@@ -907,7 +893,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           <div
             ref={containerRef}
             className="overflow-hidden relative w-full"
-            style={{ minHeight: props.height! * 0.6 }}
+            style={{ minHeight: (props.height ?? 350) * 0.6 }}
           >
             <span className="absolute text-xs w-auto text-center text-foreground/70 block -rotate-90 left-0 -translate-x-full top-1/2 m-0 p-0 z-10">
               {labelY}
@@ -927,7 +913,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             </div>
 
             {/* Indicadores Base-Esquerda (Pontos Abaixo e Mínimos) */}
-            <div className="absolute bottom-10 right-13 flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
+            <div className="absolute bottom-10 right-20 flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
               <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco abaixo">
                 {outBelowCount} <span className="text-[10px]"><Triangle className='rotate-180 w-4 h-4 fill-gray-500' /></span>
               </span>

@@ -1,14 +1,12 @@
 import { useSummary } from "@/context/summaryContext";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Maximize, Minimize } from "lucide-react";
-import { useState } from "react";
 
 const Summary = () => {
   // Removemos o isExpanded e toggleExpanded do context
-  const { isOpen, toggleSummary, context } = useSummary();
+  const { isOpen, toggleSummary, context, isFullScreen, setIsFullScreen } = useSummary();
   
   // Estado local apenas para controle visual da tela cheia (detalhado)
-  const [isFullScreen, setIsFullScreen] = useState(false);
 
   if (context?.hide) return null;
 

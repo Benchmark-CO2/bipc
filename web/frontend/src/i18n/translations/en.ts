@@ -1031,6 +1031,10 @@ export const en: Translations = {
     emissionLegend: {
       title: "Total Emissions by Technology",
     },
+    classification: {
+      title: "Classification",
+      projectsCount: "N: {{count}} projects",
+    },
   },
   floor: {
     penthouse_floor: "Penthouse",

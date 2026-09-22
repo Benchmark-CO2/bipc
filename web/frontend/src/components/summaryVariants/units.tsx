@@ -9,10 +9,11 @@ import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
 import { ChartLegend } from "./components/chartLegend";
-import ClassificationCard from './components/classificationCard';
+import { ClassificationCard } from './components/classificationCard';
 import { EmissionsSection } from "./components/emissionSection";
 import { ScenarioCard } from "./components/indicatorItem";
 import { useChartType } from "./hooks/useChartType";
+import { useElementHeight } from './hooks/useElementHeight';
 import { calculateGrade, normalizeBenchmarkSeries, recalculateY } from "./utils";
 
 export const DEFAULT_CATEGORY_KEYS = [
@@ -265,7 +266,7 @@ const UnitsSummary = ({
     };
   }, [data.benchmark]);
 
-  const { isExpanded, isOpen } = useSummary();
+  const { isExpanded, isFullScreen  } = useSummary();
   const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
@@ -415,10 +416,16 @@ const UnitsSummary = ({
 
   const projectArea = project?.area || project?.built_area || 1;
 
-  const currentGrade = calculateGrade(allPcvMetrics.co2.V, newData.map(el => (el.max + el.min) / 2));
-  const totalProjectsCount = newData.length;
+const currentGrade = calculateGrade(
+    (allPcvMetrics.co2.C + allPcvMetrics.co2.R) / 2, 
+    processedData.co2.newData.map((el: any) => (el.max + el.min) / 2)
+  );  const totalProjectsCount = newData.length;
+
+    const { ref: elementRef, height: elementHeight } = useElementHeight<HTMLDivElement>();
+    const { ref: elementRef2, height: elementHeight2 } = useElementHeight<HTMLDivElement>();
+
   return (
-    <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
+    <div ref={elementRef}  className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
       <div className="flex justify-between gap-2 w-full">
         <div className="flex items-center gap-4 w-full overflow-x-auto pt-3">
           {/* Rótulos Laterais (Benchmark / Total) */}
@@ -536,8 +543,8 @@ const UnitsSummary = ({
         </div>
       </div>
 
-      {(isOpen || isExpanded) && (
-        <div className="flex gap-4 items-start">
+      {isFullScreen && (
+        <div  className="flex flex-1 gap-4 items-start">
           <div className="w-1/3 flex-shrink-0 mt-0 flex flex-col">
             {/* O EmissionsSection agora recebe a âncora do benchmarkMáximo para não distorcer o eixo X */}
             <EmissionsSection
@@ -548,7 +555,7 @@ const UnitsSummary = ({
             />
           </div>
 
-          <div className="flex-1 min-h-0 flex flex-col justify-between gap-0 pt-0">
+          <div className="flex-1 min-h-0 flex flex-col justify-between gap-0 pt-0 h-full">
             <div className="flex gap-2 justify-end items-center">
               <FilterTabs
                 tabs={["co2", "energy", "material"]}
@@ -576,7 +583,7 @@ const UnitsSummary = ({
               <div className="w-full">{ChartSelector}</div>
             </div>
 
-            <div className="flex flex-col gap-2 w-full">
+            <div ref={elementRef2} className="flex flex-col gap-2 w-full h-full flex-1">
               {chartType === "scatter" ? (
                 <D3GradientRangeChart
                   data={newData}
@@ -609,6 +616,7 @@ const UnitsSummary = ({
                         : "material"
                     ].yAxisLabel
                   }
+                  height={elementHeight - 300}
                 />
               ) : (
                 <D3GradientRangeLineChart

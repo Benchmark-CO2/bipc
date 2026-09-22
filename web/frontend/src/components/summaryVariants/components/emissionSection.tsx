@@ -66,7 +66,7 @@ export const EmissionsSection = ({
   const buildingItems = items.filter(item => item.id !== 'total');
 
   return (
-    <div className="flex flex-col w-full overflow-y-auto max-h-[80vh] p-4 pt-8 bg-[#f4f5f7]">
+    <div className="flex flex-col w-full p-4 pt-8 bg-[#f4f5f7]">
       
       {/* Contêiner de Layout Mestre */}
       <div className="relative w-full flex flex-col">
@@ -144,6 +144,7 @@ export const EmissionsSection = ({
               </div>
             </div>
           )}
+          <div className='overflow-y-auto max-h-[60vh] max-2xl:max-h-[35vh] max-2xl:h-[35vh] 2xl:h-[60vh] '>
 
           {/* Cards das Edificações (Secundários e Menores) */}
           {buildingItems.map((section) => {
@@ -213,6 +214,7 @@ export const EmissionsSection = ({
               </div>
             );
           })}
+          </div>
         </div>
       </div>
     </div>
