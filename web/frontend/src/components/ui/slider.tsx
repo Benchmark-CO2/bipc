@@ -1,6 +1,6 @@
-import * as React from "react"
-import { cn } from "cn"
-import { Slider as SliderPrimitive } from "radix-ui"
+import { cn } from "cn";
+import { Slider as SliderPrimitive } from "radix-ui";
+import * as React from "react";
 
 function Slider({
   className,
@@ -36,25 +36,33 @@ function Slider({
       <SliderPrimitive.Track
         data-slot="slider-track"
         className={cn(
-          "relative grow overflow-hidden rounded-full bg-muted data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5"
+          "relative grow overflow-hidden rounded-full bg-[#f0f0f0] data-[orientation=horizontal]:h-[6px] data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-[6px]"
         )}
       >
         <SliderPrimitive.Range
           data-slot="slider-range"
           className={cn(
-            "absolute bg-primary data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full"
+            "absolute bg-[#b2d8d8] data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full"
           )}
         />
       </SliderPrimitive.Track>
+      
       {Array.from({ length: _values.length }, (_, index) => (
         <SliderPrimitive.Thumb
           data-slot="slider-thumb"
           key={index}
-          className="block size-4 shrink-0 rounded-full border border-primary bg-white shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
-        />
+          className="flex items-center justify-center w-3 h-5 shrink-0 rounded-[3px] bg-[#1a7f83] shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-grab active:cursor-grabbing"
+        >
+          {/* Linhas brancas internas (Grip) */}
+          <div className="flex gap-[1px]">
+            <div className="w-[1px] h-[10px] bg-white rounded-full opacity-90" />
+            <div className="w-[1px] h-[10px] bg-white rounded-full opacity-90" />
+            <div className="w-[1px] h-[10px] bg-white rounded-full opacity-90" />
+          </div>
+        </SliderPrimitive.Thumb>
       ))}
     </SliderPrimitive.Root>
   )
 }
 
-export { Slider }
+export { Slider };

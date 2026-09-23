@@ -1041,6 +1041,10 @@ export const ptBR = {
     emissionLegend: {
       title: "Total de Emissões por tecnologia",
     },
+    classification: {
+      title: "Classificação",
+      projectsCount: "N: {{count}} projetos",
+    },
   },
   floor: {
     penthouse_floor: "Cobertura",

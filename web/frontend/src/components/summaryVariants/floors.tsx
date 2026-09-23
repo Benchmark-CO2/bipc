@@ -9,11 +9,13 @@ import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
 import { ChartLegend } from "./components/chartLegend";
+import { ClassificationCard } from './components/classificationCard';
 import { EmissionsSection } from "./components/emissionSection";
 import { ScenarioCard } from "./components/indicatorItem";
 import { useChartType } from "./hooks/useChartType";
+import { useElementHeight } from './hooks/useElementHeight';
 import { getCategoryValue, translateCategory } from "./units";
-import { normalizeBenchmarkSeries, recalculateY } from "./utils";
+import { calculateGrade, normalizeBenchmarkSeries, recalculateY } from "./utils";
 
 export interface IFloorSummaryItem {
   id: string;
@@ -29,7 +31,7 @@ export interface IFloorSummaryItem {
   material: number;
 }
 
-export interface ISelectedFloor extends IFloorSummaryItem {}
+export interface ISelectedFloor extends IFloorSummaryItem { }
 
 type ProjectsSummaryProps = {
   floors: IFloorSummaryItem[];
@@ -50,7 +52,7 @@ const FloorSummary = ({
   const [type, setType] = useState<"co2" | "energy" | "material">("co2");
   const { chartType, ChartSelector } = useChartType(type);
   const { t } = useTranslation();
-  const { isExpanded, isOpen } = useSummary();
+  const { isExpanded, isFullScreen } = useSummary();
 
   const filteredFloors = useMemo(
     () => floors.filter((el) => !!el.co2_max),
@@ -115,14 +117,14 @@ const FloorSummary = ({
           label: `Total (${unit.name || "Unidade"})`,
           ...(t === "material"
             ? {
-                value: unitConsumptions.material || 0,
-                min: unitConsumptions.material || 0,
-                max: unitConsumptions.material || 0,
-              }
+              value: unitConsumptions.material || 0,
+              min: unitConsumptions.material || 0,
+              max: unitConsumptions.material || 0,
+            }
             : {
-                min: unitConsumptions[`${t}_min`] || 0,
-                max: unitConsumptions[`${t}_max`] || 0,
-              }),
+              min: unitConsumptions[`${t}_min`] || 0,
+              max: unitConsumptions[`${t}_max`] || 0,
+            }),
         };
       }
 
@@ -346,11 +348,24 @@ const FloorSummary = ({
   // Área da unidade para cálculos de Valores Absolutos nos ScenarioCards
   const unitArea = (unit as any)?.area || (unit as any)?.built_area || 1;
 
+const currentGrade = calculateGrade(
+    (allPcvMetrics.co2.C + allPcvMetrics.co2.R) / 2, 
+    processedData.co2.newData.map((el: any) => (el.max + el.min) / 2)
+  );  const totalProjectsCount = newData.length;
+
+    const { ref: elementRef, height: elementHeight } = useElementHeight<HTMLDivElement>();
+    const { ref: elementRef2, height: elementHeight2 } = useElementHeight<HTMLDivElement>();
+    const largeScreenResolution = elementHeight > 1000 || elementHeight2 > 800;
   return (
-    <div className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
+    <div ref={elementRef}  className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
       {/* ── BARRA SUPERIOR: Valores e PCVRB ── */}
       <div className="flex justify-between gap-2 w-full">
-        <div className="flex flex-wrap xl:flex-nowrap gap-4 w-full">
+        <div className="flex items-center gap-4 w-full overflow-x-auto pt-3">
+          {/* Rótulos Laterais (Benchmark / Total) */}
+          <div className="flex flex-col gap-1.5 text-sm font-bold text-right text-neutral-800 pl-2">
+            <span className="leading-5 whitespace-nowrap flex items-center justify-end mt-1">Benchmark</span>
+            <span className="leading-5 whitespace-nowrap flex items-center justify-end mb-1">Total</span>
+          </div>
           <ScenarioCard
             letter="V"
             title={t.summary.chartLegend?.referenceValue || "Valor referência"}
@@ -396,12 +411,12 @@ const FloorSummary = ({
                 unitTotal: "MJ",
                 unitBenchmark: "MJ/m²",
               },
-              {
-                total: formatMetric(allPcvMetrics.material.C * unitArea),
-                benchmark: formatMetric(allPcvMetrics.material.C),
-                unitTotal: "m³",
-                unitBenchmark: "m³/m²",
-              },
+              // {
+              //   total: formatMetric(allPcvMetrics.material.C * unitArea),
+              //   benchmark: formatMetric(allPcvMetrics.material.C),
+              //   unitTotal: "m³",
+              //   unitBenchmark: "m³/m²",
+              // },
             ]}
           />
           <ScenarioCard
@@ -424,12 +439,12 @@ const FloorSummary = ({
                 unitTotal: "MJ",
                 unitBenchmark: "MJ/m²",
               },
-              {
-                total: formatMetric(allPcvMetrics.material.R * unitArea),
-                benchmark: formatMetric(allPcvMetrics.material.R),
-                unitTotal: "m³",
-                unitBenchmark: "m³/m²",
-              },
+              // {
+              //   total: formatMetric(allPcvMetrics.material.R * unitArea),
+              //   benchmark: formatMetric(allPcvMetrics.material.R),
+              //   unitTotal: "m³",
+              //   unitBenchmark: "m³/m²",
+              // },
             ]}
           />
           <ScenarioCard
@@ -460,18 +475,22 @@ const FloorSummary = ({
               },
             ]}
           />
+          <ClassificationCard
+            grade={currentGrade}
+            totalProjects={totalProjectsCount}
+          />
         </div>
       </div>
 
       {/* ── CONTEÚDO PRINCIPAL (Exibido quando aberto) ── */}
-      {(isOpen || isExpanded) && (
+      {isFullScreen && (
         <div className="flex gap-4 items-start">
           {/* COLUNA ESQUERDA (1/3) */}
           <div className="w-1/3 flex-shrink-0 mt-0 flex flex-col">
             <div className="flex flex-col gap-0 w-full">
               <div className="mb-0">
                 <h3 className="text-lg font-bold mb-0">
-                  Total de Emissões por tecnologia
+                  {t.summary.emissionLegend.title}
                 </h3>
               </div>
               {/* NOVO: Passando o benchmarkMax calculado */}
@@ -513,7 +532,7 @@ const FloorSummary = ({
               <div className="mt-2 w-full">{ChartSelector}</div>
             </div>
 
-            <div className="flex flex-col gap-0 w-full">
+            <div ref={elementRef2} className="flex flex-col gap-0 w-full">
               {chartType === "scatter" ? (
                 <D3GradientRangeChart
                   data={newData}
@@ -534,9 +553,9 @@ const FloorSummary = ({
                   variant={type === "material" ? "cumulative" : "range"}
                   xAxisLabel={
                     t.benchmark.chartTypes[
-                      type === "co2" || type === "energy"
-                        ? "cumulativeFraction"
-                        : "material"
+                    type === "co2" || type === "energy"
+                      ? "cumulativeFraction"
+                      : "material"
                     ][type === "co2" ? "xAxisLabelCarbon" : "xAxisLabelEnergy"]
                   }
                   yAxisLabel={
@@ -546,7 +565,7 @@ const FloorSummary = ({
                         : "material"
                     ].yAxisLabel
                   }
-                  height={350}
+                  height={elementHeight - 300}
                 />
               ) : (
                 <D3GradientRangeLineChart

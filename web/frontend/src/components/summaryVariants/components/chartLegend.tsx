@@ -22,7 +22,7 @@ export const ChartLegend = () => {
     { icon: 'R', label: t.summary.chartLegend.riskOfLowerConstructionMitigation, color: '#9F70DB' },
   ];
   return (
-    <div className='flex flex-col gap-2'>
+    <div className='flex flex-col gap-1'>
       <span className='italic text-xs'>{t.summary.chartLegend.title}:</span>
       <ul className='flex flex-wrap gap-4 justify-start items-start'>
       {legendItems.map((item, index) => (
