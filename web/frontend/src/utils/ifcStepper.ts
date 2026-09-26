@@ -78,8 +78,12 @@ const isKnownModuleType = (t: string | TModulesTypes): t is TModulesTypes => {
   return (KNOWN_MODULE_TYPES as string[]).includes(t as string);
 };
 
-type TRawIfcRequestListItem = TIfcProcessorRequestListItem & {
+type TRawIfcRequestListItem = Omit<
+  TIfcProcessorRequestListItem,
+  "geometries_calculation_mode" | "is_visible" | "calculate_geometries"
+> & {
   isVisible?: boolean;
+  is_visible?: unknown;
   geometries_calculation_mode?: unknown;
   calculate_geometries?: unknown;
 };
