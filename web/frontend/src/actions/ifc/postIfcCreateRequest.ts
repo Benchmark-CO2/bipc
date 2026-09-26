@@ -1,12 +1,15 @@
 import api from "@/service/api";
-import { TIfcProcessorCreateRequestResponse } from "@/types/ifc";
+import {
+  TGeometriesCalculationMode,
+  TIfcProcessorCreateRequestResponse,
+} from "@/types/ifc";
 
 export interface PostIfcCreateRequestParams {
   manufacturer: string;
   version: string;
   file_name: string;
   file_hash: string;
-  calculate_geometries?: boolean;
+  geometries_calculation_mode?: TGeometriesCalculationMode;
 }
 
 export const postIfcCreateRequest = (
@@ -18,8 +21,8 @@ export const postIfcCreateRequest = (
     version: params.version,
     file_name: params.file_name,
     file_hash: params.file_hash,
-    ...(params.calculate_geometries !== undefined && {
-      calculate_geometries: params.calculate_geometries.toString(),
+    ...(params.geometries_calculation_mode !== undefined && {
+      geometries_calculation_mode: params.geometries_calculation_mode.toString(),
     }),
   });
 

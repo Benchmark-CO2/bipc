@@ -13,6 +13,8 @@ export type TIfcProcessorImportStatus =
   | "failed"
   | "completed";
 
+export type TGeometriesCalculationMode = 0 | 1;
+
 export type TIfcFloorCategory = NonNullable<TTowerFloorCategory["category"]>;
 
 export interface TIfcProcessorFallbackVersion {
@@ -45,7 +47,8 @@ export interface TIfcProcessorRequestListItem {
   error_message: string | null;
   error_type: string | null;
   fallback_id: string | null;
-  calculate_geometries: boolean;
+  geometries_calculation_mode: TGeometriesCalculationMode;
+  calculate_geometries?: boolean;
   client_id: string;
   is_visible: boolean;
 }
