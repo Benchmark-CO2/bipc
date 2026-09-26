@@ -88,16 +88,15 @@ type TRawIfcRequestListItem = Omit<
   calculate_geometries?: unknown;
 };
 
+type TGeometriesCalculationModeRawInput = {
+  geometries_calculation_mode?: unknown;
+  calculate_geometries?: unknown;
+};
+
 const GEOMETRIES_MODE_VALID: ReadonlySet<unknown> = new Set<unknown>([0, 1]);
 
 export const castToGeometriesCalculationMode = (
-  raw:
-    | Pick<
-        TRawIfcRequestListItem,
-        "geometries_calculation_mode" | "calculate_geometries"
-      >
-    | null
-    | undefined,
+  raw: TGeometriesCalculationModeRawInput | null | undefined,
 ): TGeometriesCalculationMode => {
   if (!raw) return 0;
 
