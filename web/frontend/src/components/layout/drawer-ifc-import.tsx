@@ -14,6 +14,7 @@ import { Translations } from "@/i18n/translations/pt-BR";
 import { cn } from "@/lib/utils";
 import {
   DrawerStepperIFCCompletePayload,
+  GEOMETRIES_CALCULATION_MODE,
   TGeometriesCalculationMode,
   TIfcProcessorAggregatedResult,
   TIfcProcessorFallbackVersion,
@@ -306,7 +307,9 @@ export default function DrawerIFCImport({
   const [software, setSoftware] = useState("");
   const [version, setVersion] = useState("");
   const [geometriesCalculationMode, setGeometriesCalculationMode] =
-    useState<TGeometriesCalculationMode>(1);
+    useState<TGeometriesCalculationMode>(
+      GEOMETRIES_CALCULATION_MODE.ENABLED_OPTIMIZED,
+    );
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [importErrorMessage, setImportErrorMessage] = useState("");
   const [fileWarningMessage, setFileWarningMessage] = useState("");
@@ -692,7 +695,9 @@ export default function DrawerIFCImport({
       setUploadFile(null);
       setSoftware("");
       setVersion("");
-      setGeometriesCalculationMode(1);
+      setGeometriesCalculationMode(
+        GEOMETRIES_CALCULATION_MODE.ENABLED_OPTIMIZED,
+      );
       setImportErrorMessage("");
       setFileWarningMessage("");
     },
@@ -1060,9 +1065,16 @@ export default function DrawerIFCImport({
                     <div className="flex items-start gap-2">
                       <Checkbox
                         id="ifc-geometries-mode"
-                        checked={geometriesCalculationMode === 1}
+                        checked={
+                          geometriesCalculationMode ===
+                          GEOMETRIES_CALCULATION_MODE.ENABLED_OPTIMIZED
+                        }
                         onCheckedChange={(v) =>
-                          setGeometriesCalculationMode(v === true ? 1 : 0)
+                          setGeometriesCalculationMode(
+                            v === true
+                              ? GEOMETRIES_CALCULATION_MODE.ENABLED_OPTIMIZED
+                              : GEOMETRIES_CALCULATION_MODE.DISABLED,
+                          )
                         }
                         className="mt-0.5"
                       />
@@ -1296,13 +1308,15 @@ export default function DrawerIFCImport({
                                       <span
                                         className={cn(
                                           "text-xs shrink-0 font-medium",
-                                          f.geometries_calculation_mode === 1
+                                          f.geometries_calculation_mode ===
+                                            GEOMETRIES_CALCULATION_MODE.ENABLED_OPTIMIZED
                                             ? "text-emerald-600 dark:text-emerald-400"
                                             : "text-amber-600 dark:text-amber-400",
                                         )}
                                       >
                                         (
-                                        {f.geometries_calculation_mode === 1
+                                        {f.geometries_calculation_mode ===
+                                        GEOMETRIES_CALCULATION_MODE.ENABLED_OPTIMIZED
                                           ? t.drawerIFC.geometryIncludedInline
                                           : t.drawerIFC.geometrySkippedInline}
                                         )

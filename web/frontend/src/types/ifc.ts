@@ -15,6 +15,11 @@ export type TIfcProcessorImportStatus =
 
 export type TGeometriesCalculationMode = 0 | 1;
 
+export const GEOMETRIES_CALCULATION_MODE = {
+  DISABLED: 0,
+  ENABLED_OPTIMIZED: 1,
+} as const satisfies Record<string, TGeometriesCalculationMode>;
+
 export type TIfcFloorCategory = NonNullable<TTowerFloorCategory["category"]>;
 
 export interface TIfcProcessorFallbackVersion {
