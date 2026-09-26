@@ -134,13 +134,18 @@ export const normalizeIfcRequestListItem = (
     isVisible = true;
   }
   const mode = castToGeometriesCalculationMode(raw);
-  const out: TIfcProcessorRequestListItem = {
-    ...raw,
+  const {
+    isVisible: _discardIsVisible,
+    is_visible: _discardIsVisibleSnake,
+    geometries_calculation_mode: _discardMode,
+    calculate_geometries: _discardLegacy,
+    ...rest
+  } = raw;
+  return {
+    ...rest,
     geometries_calculation_mode: mode,
     is_visible: isVisible,
   };
-  delete (out as Partial<TIfcProcessorRequestListItem>).calculate_geometries;
-  return out;
 };
 
 // ---------------------------------------------------------------------------
