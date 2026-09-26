@@ -1631,8 +1631,8 @@ export const en: Translations = {
     importData: "Import data",
     importQueuedIFC:
       "Import started. You can track the status in the imported files list.",
-    calculateGeometriesLabel: "Calculate geometries",
-    calculateGeometriesHint: "may increase processing time",
+    calculateGeometriesLabel: "With optimized geometry calculation",
+    calculateGeometriesHint: "may take longer",
     selectFileLabel: "Select your file",
     selectFilePlaceholder: "Select an imported file",
     noImportedFiles: "No imported files found",
@@ -1664,10 +1664,11 @@ export const en: Translations = {
       "No simulation disciplines registered in this project. Create a discipline before importing files.",
     disciplinesGoTo: "Open Disciplines tab",
     newDisciplineLink: "Register new discipline",
-    geometryIncludedLabel: "Geometry calculation included",
+    geometryIncludedLabel:
+      "Mode 1 — Optimized calculation (only geometries needed for JSONs)",
     geometrySkippedLabel:
-      "Geometry calculation skipped (generic ISO extraction)",
-    geometryIncludedInline: "with geometry calculation",
+      "Mode 0 — No geometry calculation (generic ISO extraction)",
+    geometryIncludedInline: "with optimized calculation",
     geometrySkippedInline: "without geometry calculation",
     simulationRoleMissing:
       "Simulation discipline not selected. Choose a discipline to continue.",

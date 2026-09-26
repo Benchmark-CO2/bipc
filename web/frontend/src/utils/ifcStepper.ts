@@ -3,6 +3,7 @@ import { IProject } from "@/types/projects";
 import { TRole } from "@/types/disciplines";
 import { TModulesTypes, TModuleDataV2, TModuleSource } from "@/types/modules";
 import {
+  TGeometriesCalculationMode,
   TIfcProcessorAggregatedResult,
   TIfcProcessorRequestListItem,
   TIfcProcessorResultUnits,
@@ -77,8 +78,48 @@ const isKnownModuleType = (t: string | TModulesTypes): t is TModulesTypes => {
   return (KNOWN_MODULE_TYPES as string[]).includes(t as string);
 };
 
-type TRawIfcRequestListItem = TIfcProcessorRequestListItem & {
+type TRawIfcRequestListItem = Omit<
+  TIfcProcessorRequestListItem,
+  "geometries_calculation_mode" | "is_visible" | "calculate_geometries"
+> & {
   isVisible?: boolean;
+  is_visible?: unknown;
+  geometries_calculation_mode?: unknown;
+  calculate_geometries?: unknown;
+};
+
+type TGeometriesCalculationModeRawInput = {
+  geometries_calculation_mode?: unknown;
+  calculate_geometries?: unknown;
+};
+
+const GEOMETRIES_MODE_VALID: ReadonlySet<unknown> = new Set<unknown>([0, 1]);
+
+export const castToGeometriesCalculationMode = (
+  raw: TGeometriesCalculationModeRawInput | null | undefined,
+): TGeometriesCalculationMode => {
+  if (!raw) return 0;
+
+  if (
+    raw.geometries_calculation_mode !== undefined &&
+    raw.geometries_calculation_mode !== null
+  ) {
+    const n = Number(raw.geometries_calculation_mode);
+    if (GEOMETRIES_MODE_VALID.has(n)) return n as TGeometriesCalculationMode;
+    return 0;
+  }
+
+  if (
+    raw.calculate_geometries !== undefined &&
+    raw.calculate_geometries !== null
+  ) {
+    if (raw.calculate_geometries === true) return 1;
+    if (raw.calculate_geometries === false) return 0;
+    const n = Number(raw.calculate_geometries);
+    if (GEOMETRIES_MODE_VALID.has(n)) return n as TGeometriesCalculationMode;
+  }
+
+  return 0;
 };
 
 export const normalizeIfcRequestListItem = (
@@ -92,8 +133,17 @@ export const normalizeIfcRequestListItem = (
   } else {
     isVisible = true;
   }
+  const mode = castToGeometriesCalculationMode(raw);
+  const {
+    isVisible: _discardIsVisible,
+    is_visible: _discardIsVisibleSnake,
+    geometries_calculation_mode: _discardMode,
+    calculate_geometries: _discardLegacy,
+    ...rest
+  } = raw;
   return {
-    ...raw,
+    ...rest,
+    geometries_calculation_mode: mode,
     is_visible: isVisible,
   };
 };

@@ -1648,8 +1648,8 @@ export const ptBR = {
     importData: "Importar os dados",
     importQueuedIFC:
       "Importação iniciada. Você pode acompanhar o status na lista de arquivos importados.",
-    calculateGeometriesLabel: "Calcular geometrias",
-    calculateGeometriesHint: "pode aumentar o tempo de processamento",
+    calculateGeometriesLabel: "Com cálculo geométrico otimizado",
+    calculateGeometriesHint: "pode levar mais tempo",
     selectFileLabel: "Selecione seu arquivo",
     selectFilePlaceholder: "Selecione um arquivo importado",
     noImportedFiles: "Nenhum arquivo importado encontrado",
@@ -1682,10 +1682,11 @@ export const ptBR = {
       "Nenhuma disciplina de simulação cadastrada neste projeto. Crie uma disciplina antes de importar arquivos.",
     disciplinesGoTo: "Abrir aba Disciplinas",
     newDisciplineLink: "Cadastrar nova disciplina",
-    geometryIncludedLabel: "Cálculo de geometria incluso",
+    geometryIncludedLabel:
+      "Modo 1 — Cálculo otimizado (somente geometrias necessárias para os JSONs)",
     geometrySkippedLabel:
-      "Cálculo de geometria não incluso (extração ISO genérica)",
-    geometryIncludedInline: "com cálculo geométrico",
+      "Modo 0 — Sem cálculo de geometrias (extração ISO genérica)",
+    geometryIncludedInline: "com cálculo otimizado",
     geometrySkippedInline: "sem cálculo geométrico",
     simulationRoleMissing:
       "Disciplina de simulação não selecionada. Selecione uma disciplina para prosseguir.",
