@@ -1,4 +1,5 @@
 import api from "@/service/api";
+import { castToGeometriesCalculationMode } from "@/utils/ifcStepper";
 import {
   TGeometriesCalculationMode,
   TIfcProcessorCreateRequestResponse,
@@ -16,13 +17,19 @@ export const postIfcCreateRequest = (
   clientId: string,
   params: PostIfcCreateRequestParams,
 ) => {
+  const mode =
+    params.geometries_calculation_mode !== undefined
+      ? castToGeometriesCalculationMode({
+          geometries_calculation_mode: params.geometries_calculation_mode,
+        })
+      : undefined;
   const query = new URLSearchParams({
     manufacturer: params.manufacturer,
     version: params.version,
     file_name: params.file_name,
     file_hash: params.file_hash,
-    ...(params.geometries_calculation_mode !== undefined && {
-      geometries_calculation_mode: params.geometries_calculation_mode.toString(),
+    ...(mode !== undefined && {
+      geometries_calculation_mode: mode.toString(),
     }),
   });
 
@@ -30,4 +37,3 @@ export const postIfcCreateRequest = (
     `/v1/proxy/request/${clientId}?${query.toString()}`,
   );
 };
-
