@@ -1,11 +1,13 @@
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { useTranslation } from "@/i18n";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { ChartLegend } from './components/chartLegend';
 import { ClassificationCard } from './components/classificationCard';
 import { EmissionsSection } from './components/emissionSection';
@@ -331,7 +333,8 @@ const ProjectsSummary = ({
   const { ref: elementRef, height: elementHeight } = useElementHeight<HTMLDivElement>();
   const { ref: elementRef2, height: elementHeight2 } = useElementHeight<HTMLDivElement>();
   const largeScreenResolution = elementHeight > 1000 || elementHeight2 > 800;
-
+  const [val, setVal] = useState('stacked_bar');
+  const isMobile = useIsMobile();
   return (
     <div ref={elementRef} >
       <div className='flex justify-between gap-2 w-full'>
@@ -395,8 +398,20 @@ const ProjectsSummary = ({
         </div>
       </div>
       {isFullScreen && (
-        <div  className='flex gap-4'>
-          <div className='w-1/3 flex-shrink-0 mt-3 flex flex-col'>
+        <div  className='flex gap-4 max-sm:gap-2 max-sm:flex-col max-sm:p-2'>
+          <div className='w-1/3 flex-shrink-0 mt-3 flex flex-col max-sm:w-full!'>
+            <Select onValueChange={setVal} value={val} defaultValue='stacked_bar'>
+              <SelectTrigger className='w-full'>
+                <SelectValue placeholder={t.summary.placeholders.chartType} />
+              </SelectTrigger>
+              <SelectContent>
+                {[{id: 'stacked_bar', label: t.summary.chartType.stackedBar}].map(({id, label}) => (
+                  <SelectItem key={id} value={id}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <EmissionsSection
               data={projectEmissionsData}
               selected={selectedProjects}
@@ -405,8 +420,8 @@ const ProjectsSummary = ({
             />
           </div>
 
-          <div  className="flex-1 min-h-0 flex flex-col gap-0 pt-2 h-full">
-            <div  className='flex gap-2 justify-end items-center shrink-0'>
+          <div  className="flex-1 min-h-0 flex flex-col gap-0 pt-2 h-full max-sm:w-full">
+            <div  className='flex gap-2 justify-end items-center shrink-0 max-sm:flex-col'>
               <FilterTabs
                 tabs={["co2", "energy", "material"]}
                 onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
@@ -448,7 +463,7 @@ const ProjectsSummary = ({
                     xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
                     yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
                     // height={Math.min(window.innerHeight > 1800 ? window.innerHeight * 0.52 : 250, 250)}
-                    height={elementHeight - 300}
+                    height={!isMobile ?elementHeight - 400 : 400}
                   />
                 ) : (
                   <D3GradientRangeLineChart

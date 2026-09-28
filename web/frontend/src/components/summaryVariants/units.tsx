@@ -1,5 +1,6 @@
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { useTranslation } from "@/i18n";
 import { Translations } from "@/i18n/translations/pt-BR";
 import { cn } from "@/lib/utils";
@@ -8,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { ChartLegend } from "./components/chartLegend";
 import { ClassificationCard } from './components/classificationCard';
 import { EmissionsSection } from "./components/emissionSection";
@@ -423,6 +425,8 @@ const currentGrade = calculateGrade(
 
     const { ref: elementRef, height: elementHeight } = useElementHeight<HTMLDivElement>();
     const { ref: elementRef2, height: elementHeight2 } = useElementHeight<HTMLDivElement>();
+  const [val, setVal] = useState('stacked_bar');
+  const isMobile = useIsMobile();
 
   return (
     <div ref={elementRef}  className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
@@ -544,8 +548,20 @@ const currentGrade = calculateGrade(
       </div>
 
       {isFullScreen && (
-        <div  className="flex flex-1 gap-4 items-start">
-          <div className="w-1/3 flex-shrink-0 mt-0 flex flex-col">
+        <div  className="flex flex-1 gap-4 items-start max-sm:flex-col max-sm:gap-2 max-sm:p-2">
+          <div className="w-1/3 flex-shrink-0 mt-0 flex flex-col max-sm:w-full">
+            <Select onValueChange={setVal} value={val} defaultValue='stacked_bar'>
+              <SelectTrigger className='w-full'>
+                <SelectValue placeholder={t.summary.placeholders.chartType} />
+              </SelectTrigger>
+              <SelectContent>
+                {[{id: 'stacked_bar', label: t.summary.chartType.stackedBar}].map(({id, label}) => (
+                  <SelectItem key={id} value={id}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {/* O EmissionsSection agora recebe a âncora do benchmarkMáximo para não distorcer o eixo X */}
             <EmissionsSection
               data={projectEmissionsData}
@@ -556,14 +572,14 @@ const currentGrade = calculateGrade(
           </div>
 
           <div className="flex-1 min-h-0 flex flex-col justify-between gap-0 pt-0 h-full">
-            <div className="flex gap-2 justify-end items-center">
+            <div className="flex gap-2 justify-end items-center max-sm:flex-col max-sm:gap-2">
               <FilterTabs
                 tabs={["co2", "energy", "material"]}
                 onTabSelect={(tab) =>
                   setType(tab as "co2" | "energy" | "material")
                 }
                 selectedTab={type}
-                fullWidth
+                fullWidth={!isMobile}
                 subTabs={[
                   t.summary.buildings,
                   selectedProjects.length >= allPossibleIds.length
@@ -583,7 +599,7 @@ const currentGrade = calculateGrade(
               <div className="w-full">{ChartSelector}</div>
             </div>
 
-            <div ref={elementRef2} className="flex flex-col gap-2 w-full h-full flex-1">
+            <div ref={elementRef2} className="flex flex-col gap-2 w-full h-full flex-1 max-sm:h-auto">
               {chartType === "scatter" ? (
                 <D3GradientRangeChart
                   data={newData}
@@ -616,7 +632,8 @@ const currentGrade = calculateGrade(
                         : "material"
                     ].yAxisLabel
                   }
-                  height={elementHeight - 300}
+                  height={!isMobile ? elementHeight - 400 : 400}
+                  width={!isMobile ? undefined : 50}
                 />
               ) : (
                 <D3GradientRangeLineChart

@@ -144,7 +144,7 @@ export const EmissionsSection = ({
               </div>
             </div>
           )}
-          <div className='overflow-y-auto max-h-[60vh] max-2xl:max-h-[35vh] max-2xl:h-[35vh] 2xl:h-[60vh] '>
+          <div className='overflow-y-auto max-h-[55vh] 2xl:max-h-[55vh] 2xl:h-[65vh] '>
 
           {/* Cards das Edificações (Secundários e Menores) */}
           {buildingItems.map((section) => {

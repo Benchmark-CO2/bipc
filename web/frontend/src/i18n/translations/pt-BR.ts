@@ -1015,7 +1015,13 @@ export const ptBR = {
     removeDiscipline: "Remover Disciplina",
   },
   summary: {
-    title: "Resumo",
+    chartType: {
+      stackedBar: "Barras empilhadas",
+    },
+    placeholders: {
+      chartType: "Tipo de gráfico",
+    },
+    title: "Benchmark do Projeto",
     selectAll: "Selecionar Todos",
     deselectAll: "Desmarcar Todos",
     selectedItems: "itens selecionados",

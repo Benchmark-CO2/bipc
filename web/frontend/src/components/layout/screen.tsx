@@ -1,3 +1,5 @@
+import { useSummary } from '@/context/summaryContext';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { cn } from "@/lib/utils";
 import { useLocation } from "@tanstack/react-router";
 import React from "react";
@@ -7,11 +9,14 @@ interface IScreen {
 }
 const Screen = ({ children }: IScreen) => {
   const path = useLocation();
+  const { isOpen } = useSummary()
+  const isMobile = useIsMobile()
 
   return (
     <main
-      className={cn("h-full w-full overflow-auto relative flex flex-col", {
-        "pb-35": path.pathname.includes("new_projects"),
+      className={cn("h-full w-full overflow-auto relative flex flex-col transition-all duration-300", {
+        "pb-35": path.pathname.includes("new_projects") && isOpen,
+        "pb-33": path.pathname.includes("new_projects") && isOpen && isMobile,
       })}
     >
       {children}
