@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { ChartLegend } from './components/chartLegend';
 import { ClassificationCard } from './components/classificationCard';
 import { EmissionsSection } from './components/emissionSection';
@@ -331,7 +332,7 @@ const ProjectsSummary = ({
   const { ref: elementRef, height: elementHeight } = useElementHeight<HTMLDivElement>();
   const { ref: elementRef2, height: elementHeight2 } = useElementHeight<HTMLDivElement>();
   const largeScreenResolution = elementHeight > 1000 || elementHeight2 > 800;
-
+  const [val, setVal] = useState('stacked_bar');
   return (
     <div ref={elementRef} >
       <div className='flex justify-between gap-2 w-full'>
@@ -397,6 +398,18 @@ const ProjectsSummary = ({
       {isFullScreen && (
         <div  className='flex gap-4'>
           <div className='w-1/3 flex-shrink-0 mt-3 flex flex-col'>
+            <Select onValueChange={setVal} value={val} defaultValue='stacked_bar'>
+              <SelectTrigger className='w-full'>
+                <SelectValue placeholder={t.summary.placeholders.chartType} />
+              </SelectTrigger>
+              <SelectContent>
+                {[{id: 'stacked_bar', label: t.summary.chartType.stackedBar}].map(({id, label}) => (
+                  <SelectItem key={id} value={id}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <EmissionsSection
               data={projectEmissionsData}
               selected={selectedProjects}
@@ -448,7 +461,7 @@ const ProjectsSummary = ({
                     xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
                     yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
                     // height={Math.min(window.innerHeight > 1800 ? window.innerHeight * 0.52 : 250, 250)}
-                    height={elementHeight - 300}
+                    height={elementHeight - 400}
                   />
                 ) : (
                   <D3GradientRangeLineChart

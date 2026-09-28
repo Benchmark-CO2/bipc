@@ -1005,7 +1005,13 @@ export const en: Translations = {
     removeDiscipline: "Remove Discipline",
   },
   summary: {
-    title: "Summary",
+    chartType: {
+      stackedBar: "Stacked Bar",
+    },
+    placeholders: {
+      chartType: "Chart Type",
+    },
+    title: "Project benchmark",
     selectAll: "Select All",
     deselectAll: "Deselect All",
     selectedItems: "selected items",

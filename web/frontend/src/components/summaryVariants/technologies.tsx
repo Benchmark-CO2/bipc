@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { ChartLegend } from "./components/chartLegend";
 import { ClassificationCard } from './components/classificationCard';
 import { EmissionsSection } from "./components/emissionSection";
@@ -365,6 +366,8 @@ const SimulationsSummary = ({
     const { ref: elementRef, height: elementHeight } = useElementHeight<HTMLDivElement>();
     const { ref: elementRef2, height: elementHeight2 } = useElementHeight<HTMLDivElement>();
     const largeScreenResolution = elementHeight > 1000 || elementHeight2 > 800;
+      const [val, setVal] = useState('stacked_bar');
+
   return (
     <div ref={elementRef}  className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
       {/* ── BARRA SUPERIOR: Valores e PCVRB ── */}
@@ -504,6 +507,18 @@ const SimulationsSummary = ({
                   {t.summary.emissionLegend.title}
                 </h3>
               </div>
+            <Select onValueChange={setVal} value={val} defaultValue='stacked_bar'>
+              <SelectTrigger className='w-full'>
+                <SelectValue placeholder={t.summary.placeholders.chartType} />
+              </SelectTrigger>
+              <SelectContent>
+                {[{id: 'stacked_bar', label: t.summary.chartType.stackedBar}].map(({id, label}) => (
+                  <SelectItem key={id} value={id}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
               <EmissionsSection
                 data={simulationEmissionsData}
                 selected={selectedProjects}
@@ -573,7 +588,7 @@ const SimulationsSummary = ({
                         : "material"
                     ].yAxisLabel
                   }
-                  height={elementHeight - 300}
+                  height={elementHeight - 400}
                 />
               ) : (
                 <D3GradientRangeLineChart
