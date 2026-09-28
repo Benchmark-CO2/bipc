@@ -1,5 +1,6 @@
 import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
@@ -7,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { FilterTabs } from "../ui/filter-tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { ChartLegend } from "./components/chartLegend";
 import { ClassificationCard } from './components/classificationCard';
 import { EmissionsSection } from "./components/emissionSection";
@@ -365,6 +367,9 @@ const SimulationsSummary = ({
     const { ref: elementRef, height: elementHeight } = useElementHeight<HTMLDivElement>();
     const { ref: elementRef2, height: elementHeight2 } = useElementHeight<HTMLDivElement>();
     const largeScreenResolution = elementHeight > 1000 || elementHeight2 > 800;
+      const [val, setVal] = useState('stacked_bar');
+  const isMobile = useIsMobile();
+
   return (
     <div ref={elementRef}  className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
       {/* ── BARRA SUPERIOR: Valores e PCVRB ── */}
@@ -495,15 +500,27 @@ const SimulationsSummary = ({
 
       {/* ── CONTEÚDO PRINCIPAL (Exibido quando aberto) ── */}
       {isFullScreen && (
-        <div className="flex gap-4 items-start">
+        <div className="flex gap-4 items-start max-sm:flex-col max-sm:gap-2 max-sm:p-2">
           {/* COLUNA ESQUERDA (1/3) */}
-          <div className="w-1/3 flex-shrink-0 mt-3 flex flex-col">
+          <div className="w-1/3 flex-shrink-0 mt-3 flex flex-col max-sm:w-full">
             <div className="flex flex-col gap-6 w-full">
               <div className="mb-0">
                 <h3 className="text-lg font-bold mb-0">
                   {t.summary.emissionLegend.title}
                 </h3>
               </div>
+            <Select onValueChange={setVal} value={val} defaultValue='stacked_bar'>
+              <SelectTrigger className='w-full'>
+                <SelectValue placeholder={t.summary.placeholders.chartType} />
+              </SelectTrigger>
+              <SelectContent>
+                {[{id: 'stacked_bar', label: t.summary.chartType.stackedBar}].map(({id, label}) => (
+                  <SelectItem key={id} value={id}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
               <EmissionsSection
                 data={simulationEmissionsData}
                 selected={selectedProjects}
@@ -573,7 +590,7 @@ const SimulationsSummary = ({
                         : "material"
                     ].yAxisLabel
                   }
-                  height={elementHeight - 300}
+                  height={!isMobile ? elementHeight - 400 : 400}
                 />
               ) : (
                 <D3GradientRangeLineChart

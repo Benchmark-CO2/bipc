@@ -1,12 +1,15 @@
 import { useSummary } from "@/context/summaryContext";
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { useTranslation } from '@/i18n';
 import { cn } from "@/lib/utils";
 import { ChevronDown, Maximize, Minimize } from "lucide-react";
 
 const Summary = () => {
   // Removemos o isExpanded e toggleExpanded do context
   const { isOpen, toggleSummary, context, isFullScreen, setIsFullScreen } = useSummary();
-  
+  const { t } = useTranslation()
   // Estado local apenas para controle visual da tela cheia (detalhado)
+  const isMobile = useIsMobile()
 
   if (context?.hide) return null;
 
@@ -22,17 +25,19 @@ const Summary = () => {
           "h-0": !isOpen, // 1. Totalmente recolhido (só as abas aparecem)
           "h-32": isOpen && !isFullScreen, // 2. Overview
           "h-[96.6vh]": isOpen && isFullScreen, // 3. Detalhado
+          "h-[12vh]": isOpen && isMobile, // Ajuste para dispositivos móveis quando aberto
+          "h-[88vh]": isOpen && isMobile && isFullScreen, // Ajuste para dispositivos móveis quando em tela cheia
         }
       )}
     >
       {/* Grupo de Botões Superiores Direitos */}
-      <div className="absolute flex items-end top-0 right-4 -translate-y-full z-[100]">
-        <div className="flex items-stretch overflow-hidden rounded-t-[8px]">
+      <div className="absolute flex items-end top-0 right-4 -translate-y-full bottom-0 z-[100] min-w-[260px]!">
+        <div className="flex items-stretch overflow-hidden relative w-[260px] min-w-[260px]! h-8">
           
           {/* Aba de Texto */}
-          <div className="flex items-center justify-center px-4 py-1.5 text-xs font-semibold text-white bg-[#1a7f83]">
-            Benchmark do projeto
-          </div>
+          <button className="flex items-center justify-center px-4 py-1.5 text-xs font-semibold text-white bg-[#1a7f83] rounded-t-md min-w-[150px] w-[170px] shadow-[7px_3px_13px_1px_rgba(0,0,0,0.5)] absolute z-52">
+            {t.summary.title}
+          </button>
 
           {/* Botão Laranja: Abre/Fecha o componente inteiro */}
           <button
@@ -43,7 +48,9 @@ const Summary = () => {
               }
               toggleSummary();
             }}
-            className="flex items-center justify-center px-3 py-1.5 text-white transition-colors bg-[#f15a3b] hover:bg-[#d94f33] cursor-pointer border-l border-white/20"
+            className={cn("flex items-center justify-end px-3 py-1.5 text-white transition-colors bg-secondary cursor-pointer border-l border-white/20 rounded-t-md min-w-[60px] absolute top-0 right-12 z-51 shadow-[7px_3px_13px_1px_rgba(0,0,0,0.5)]", {
+              'bg-[#f15a3b] hover:bg-[#d94f33]': isOpen
+            })}
           >
             <ChevronDown
               className={cn("w-4 h-4 transition-transform duration-300", {
@@ -64,7 +71,7 @@ const Summary = () => {
                 setIsFullScreen(!isFullScreen);
               }
             }}
-            className="flex items-center justify-center px-3 py-1.5 text-white transition-colors bg-[#62ba33] hover:bg-[#53a02a] cursor-pointer border-l border-white/20"
+            className="flex items-center justify-end px-3 py-1.5 text-white transition-colors bg-secondary cursor-pointer border-l border-white/20 rounded-t-md min-w-[60px] absolute top-0 right-0 z-50"
           >
             {isFullScreen ? (
               <Minimize className="w-4 h-4" />
