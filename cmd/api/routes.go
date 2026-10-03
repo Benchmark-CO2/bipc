@@ -75,6 +75,9 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.requireOptionRoleAssociation(app.deleteOptionHandler))
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/duplicate", app.requireOptionRoleAssociation(app.duplicateOptionHandler))
 
+	router.HandlerFunc(http.MethodGet, "/v1/users/unknown-modules", app.requireAuthenticatedUser(app.listUserUnknownModulesHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/unknown-modules", app.requireOptionRoleAssociation(app.createUnknownModuleHandler))
+
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules", app.requireOptionRoleAssociation(app.createModuleV1Handler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.readModuleV1Handler))
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.deleteModuleHandler))

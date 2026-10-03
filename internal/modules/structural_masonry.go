@@ -68,8 +68,8 @@ type StructuralMasonry struct {
 
 	Masonry MasonryElement `json:"masonry"`
 
-	FloorIDs []uuid.UUID `json:"floor_ids"`
-	FloorIndexes []int `json:"floor_indexes,omitempty"`
+	FloorIDs     []uuid.UUID `json:"floor_ids"`
+	FloorIndexes []int       `json:"floor_indexes,omitempty"`
 }
 
 func (s *StructuralMasonry) GetType() string { return s.Type }

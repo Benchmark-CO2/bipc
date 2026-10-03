@@ -1920,6 +1920,136 @@ paths:
         "500":
           description: Internal Server Error.
 
+
+  /v1/users/unknown-modules:
+    get:
+      operationId: listUserUnknownModules
+      summary: List the unknown modules created by the authenticated user
+      description: |
+        Returns the custom module types (`unknown_module`) created by the
+        authenticated user, scoped by their own id. The payload contains only
+        the fields of the unknown_module table (no materials; quantities belong
+        to occurrences).
+      tags:
+        - Unknown modules
+      security:
+        - bearerHttpAuthentication: []
+        - apiKeyAuthentication: []
+      responses:
+        "200":
+          description: OK. The list of custom module types created by the user.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - unknown_modules
+                properties:
+                  unknown_modules:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UnknownModule"
+        "401":
+          description: Unauthorized. The user is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/projects/{projectID}/units/{unitID}/options/{optionID}/unknown-modules:
+    post:
+      operationId: createUnknownModule
+      summary: Create a custom module type and apply it to an option
+      description: |
+        Creates a custom module type (global to the authenticated user) and its
+        occurrence inside the option, storing the per-material quantities of
+        this occurrence. The occurrence is the only usage inside an option: the
+        same type cannot be applied to the option more than once. No
+        consumption calculation is generated for this module.
+      tags:
+        - Unknown modules
+      security:
+        - bearerHttpAuthentication: []
+        - apiKeyAuthentication: []
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: optionID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/CreateUnknownModule"
+                - $ref: "#/components/schemas/ApplyUnknownModule"
+      responses:
+        "201":
+          description: Created. The type and its occurrence were created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - unknown_module
+                  - occurrence
+                properties:
+                  unknown_module:
+                    $ref: "#/components/schemas/UnknownModule"
+                  occurrence:
+                    $ref: "#/components/schemas/UnknownModuleOccurrence"
+        "400":
+          description: Bad Request. The request body is invalid or malformed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized. The user is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden. The user is not associated with the option.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Unprocessable Entity. The request failed validation checks.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   securitySchemes:
     bearerHttpAuthentication:
@@ -2543,3 +2673,176 @@ components:
       $ref: "./openapi-modules-schemas.yaml#/components/schemas/PilesFoundationData"
     RaftPilesFoundationData:
       $ref: "./openapi-modules-schemas.yaml#/components/schemas/RaftPilesFoundationData"
+    CreateUnknownModuleMaterial:
+      type: object
+      required:
+        - name
+        - unit
+        - quantity
+      properties:
+        name:
+          type: string
+          description: Name of the material for this occurrence.
+        unit:
+          type: string
+          enum:
+            - kg
+            - m2
+            - m3
+            - m
+            - other
+        quantity:
+          type: number
+          format: double
+          description: Quantity of the material for this occurrence.
+
+    CreateUnknownModule:
+      type: object
+      required:
+        - category
+        - name
+        - materials
+      properties:
+        category:
+          type: string
+          enum:
+            - "fundação"
+            - "estrutura"
+            - "vedações"
+        name:
+          type: string
+          description: Name of the custom module type.
+        description:
+          type: string
+        references:
+          type: array
+          items:
+            type: string
+          description: Reference links or documents for the custom module type.
+        materials:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateUnknownModuleMaterial"
+          description: Materials applied to the option by this occurrence, with their quantities.
+
+    ApplyUnknownModule:
+      type: object
+      required:
+        - unknown_module_id
+        - materials
+      properties:
+        unknown_module_id:
+          type: string
+          format: uuid
+          description: The custom module type to apply to this option.
+        materials:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateUnknownModuleMaterial"
+          description: Materials with the quantities of this occurrence.
+
+    UnknownModule:
+      type: object
+      required:
+        - id
+        - user_id
+        - category
+        - name
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user_id:
+          type: string
+          format: uuid
+          readOnly: true
+          description: The user who created the custom module type.
+        category:
+          type: string
+          enum:
+            - "fundação"
+            - "estrutura"
+            - "vedações"
+        name:
+          type: string
+        description:
+          type: string
+        references:
+          type: array
+          items:
+            type: string
+          description: Reference links or documents for the custom module type.
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+
+    OccurrenceMaterial:
+      type: object
+      required:
+        - name
+        - unit
+        - quantity
+      properties:
+        name:
+          type: string
+        unit:
+          type: string
+          enum:
+            - kg
+            - m2
+            - m3
+            - m
+            - other
+        quantity:
+          type: number
+          format: double
+
+    UnknownModuleOccurrence:
+      type: object
+      required:
+        - id
+        - option_id
+        - unknown_module_id
+        - user_id
+        - materials
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        option_id:
+          type: string
+          format: uuid
+          readOnly: true
+        unknown_module_id:
+          type: string
+          format: uuid
+          readOnly: true
+        unknown_module:
+          $ref: "#/components/schemas/UnknownModule"
+        user_id:
+          type: string
+          format: uuid
+          readOnly: true
+        materials:
+          type: array
+          items:
+            $ref: "#/components/schemas/OccurrenceMaterial"
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true

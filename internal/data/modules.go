@@ -463,20 +463,20 @@ func mergeContainerValue(key string, oldValue, newValue interface{}, source stri
 func scalarKeyString(v interface{}) string {
 	switch val := v.(type) {
 	case string:
-		return "s:"+val
+		return "s:" + val
 	case bool:
 		if val {
 			return "b:1"
 		}
 		return "b:0"
 	case float64:
-		return "n:"+strconv.FormatFloat(val, 'f', -1, 64)
+		return "n:" + strconv.FormatFloat(val, 'f', -1, 64)
 	case float32:
-		return "n:"+strconv.FormatFloat(float64(val), 'f', -1, 32)
+		return "n:" + strconv.FormatFloat(float64(val), 'f', -1, 32)
 	case int:
-		return "n:"+strconv.Itoa(val)
+		return "n:" + strconv.Itoa(val)
 	case int64:
-		return "n:"+strconv.FormatInt(val, 10)
+		return "n:" + strconv.FormatInt(val, 10)
 	default:
 		return ""
 	}
@@ -492,13 +492,13 @@ func listItemKey(item interface{}) (string, bool) {
 
 	if pos, present := m["position"]; present {
 		if s, isStr := pos.(string); isStr {
-			return "p:"+s, true
+			return "p:" + s, true
 		}
 		return "p:", true
 	}
 
 	// Fallback for position-less arrays: deterministic encoding of scalar fields.
-	return "s:"+scalarKeyStringOfMap(m), true
+	return "s:" + scalarKeyStringOfMap(m), true
 }
 
 func scalarKeyStringOfMap(m map[string]interface{}) string {
@@ -509,7 +509,7 @@ func scalarKeyStringOfMap(m map[string]interface{}) string {
 	// insertion sort (small N), deterministic independent of map iteration order
 	for i := 1; i < len(keys); i++ {
 		x := keys[i]
-		j := i-1
+		j := i - 1
 		for j >= 0 && keys[j] > x {
 			keys[j+1] = keys[j]
 			j--
@@ -522,7 +522,7 @@ func scalarKeyStringOfMap(m map[string]interface{}) string {
 		if k == "source" {
 			continue
 		}
-		out += k+"="+scalarKeyString(m[k])+";"
+		out += k + "=" + scalarKeyString(m[k]) + ";"
 	}
 	return out
 }
@@ -1131,7 +1131,7 @@ func dataSourceOf(m map[string]interface{}) string {
 }
 
 func roundSourcePercent(value float64) float64 {
-	return math.Round(value*100)/100
+	return math.Round(value*100) / 100
 }
 
 // SourceDistribution returns the percentage composition of the data sources
@@ -1182,7 +1182,7 @@ func (m ModuleModel) SourceDistribution(projectID uuid.UUID) (map[string]float64
 
 	result := make(map[string]float64, len(counts))
 	for source, count := range counts {
-		result[source] = roundSourcePercent(float64(count)*100/float64(total))
+		result[source] = roundSourcePercent(float64(count) * 100 / float64(total))
 	}
 	return result, nil
 }
