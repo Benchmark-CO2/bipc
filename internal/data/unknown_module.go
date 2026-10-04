@@ -286,3 +286,69 @@ func (m UnknownModuleModel) ListByUser(userID uuid.UUID) ([]*UnknownModule, erro
 
 	return modules, nil
 }
+
+// getUnknownModulesByOption returns the unknown module occurrences of an
+// option with the nested module type (joined by unknown_module_id). Mirror of
+// getModuleConsumptionByOption for conventional modules: the same-level
+// sibling field of Option.Modules.
+func getUnknownModulesByOption(ctx context.Context, db *sql.DB, optionID uuid.UUID) ([]*UnknownModuleOccurrence, error) {
+	query := `
+		SELECT
+			uo.id, uo.option_id, uo.unknown_module_id, uo.user_id, uo.materials, uo.created_at, uo.updated_at,
+			um.id, um.user_id, um.category, um.name, um.description, um.references, um.created_at, um.updated_at
+		FROM unknown_module_occurrence uo
+		JOIN unknown_module um ON um.id = uo.unknown_module_id
+		WHERE uo.option_id = $1
+		ORDER BY uo.created_at, uo.id`
+
+	rows, err := db.QueryContext(ctx, query, optionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var occurrences = []*UnknownModuleOccurrence{}
+	for rows.Next() {
+		var occurrence UnknownModuleOccurrence
+		var materialsBytes []byte
+		var module UnknownModule
+		var referencesBytes []byte
+
+		err := rows.Scan(
+			&occurrence.ID,
+			&occurrence.OptionID,
+			&occurrence.UnknownModuleID,
+			&occurrence.UserID,
+			&materialsBytes,
+			&occurrence.CreatedAt,
+			&occurrence.UpdatedAt,
+			&module.ID,
+			&module.UserID,
+			&module.Category,
+			&module.Name,
+			&module.Description,
+			&referencesBytes,
+			&module.CreatedAt,
+			&module.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := json.Unmarshal(materialsBytes, &occurrence.Materials); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(referencesBytes, &module.References); err != nil {
+			return nil, err
+		}
+
+		occurrence.UnknownModule = &module
+		occurrences = append(occurrences, &occurrence)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return occurrences, nil
+}

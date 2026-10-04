@@ -1340,6 +1340,7 @@ export const en: Translations = {
       "This technology has no material data. Open edit to fill in the information.",
     duplicate: "Duplicate",
     selectRow: "Select row",
+    createdByUser: "(Created by the user)",
   },
   unitView: {
     tabAllDisciplines: "All disciplines",

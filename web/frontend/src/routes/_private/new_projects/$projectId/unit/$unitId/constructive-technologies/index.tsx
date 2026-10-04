@@ -6,7 +6,10 @@ import { getOptions } from "@/actions/options/getOptions";
 import { patchOption } from "@/actions/options/patchOption";
 import { duplicateOption } from "@/actions/options/postDuplicateOption";
 import { getUnitByUUID } from "@/actions/units/getUnit";
-import { makeConstructiveTechnologiesColumns } from "@/components/columns/constructiveTechnologies";
+import {
+  makeConstructiveTechnologiesColumns,
+  TechRow,
+} from "@/components/columns/constructiveTechnologies";
 import {
   CommonTable,
   DialogCreateSimulation,
@@ -28,9 +31,8 @@ import {
 } from "@/components/ui/tooltip";
 import { useSummary } from "@/context/summaryContext";
 import { cn } from "@/lib/utils";
-import { IConsumption, IModuleItem } from "@/types/modules";
+import { IConsumption } from "@/types/modules";
 import { TOption } from "@/types/options";
-import { TConsumption } from "@/types/projects";
 import { IUnit } from "@/types/units";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -594,14 +596,13 @@ function RouteComponent() {
     return "border-gray-200 dark:border-gray-700";
   };
 
-  const newColumns: ColumnDef<
-    Omit<IModuleItem, "consumption"> & TConsumption & { option_id: string }
-  >[] = [
+  const newColumns: ColumnDef<TechRow>[] = [
     ...makeConstructiveTechnologiesColumns(t, true),
     {
       id: "actions",
       header: "",
       cell: ({ row }) => {
+        if (row.original.custom_technology) return null;
         return (
           <div className="flex items-center justify-end gap-2">
             <ModalSimple
@@ -673,11 +674,22 @@ function RouteComponent() {
   // Map por option → flat modules + lastRow
   const preparedOptionData = sortedOptions.map((option) => ({
     optionId: option.id,
-    modules: option.modules.map((mod) => ({
-      ...mod,
-      ...mod.consumption,
-      option_id: option.id,
-    })),
+    modules: [
+      ...option.modules.map((mod) => ({
+        ...mod,
+        ...mod.consumption,
+        option_id: option.id,
+      })),
+      ...(option.unknown_modules ?? []).map((occ) => ({
+        id: occ.id,
+        option_id: option.id,
+        type: "unknown_module",
+        name: occ.unknown_module?.name,
+        custom_technology: true,
+        outdated: false,
+        completed: true,
+      })),
+    ],
     lastRow: {
       type: "Total" as const,
       data: calculateSumMetrics(option?.consumption?.["total"]),

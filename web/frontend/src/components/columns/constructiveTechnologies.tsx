@@ -6,24 +6,32 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { CheckCircle2, AlertCircle, TriangleAlert } from "lucide-react";
 
-type TechRow = Omit<IModuleItem, "consumption"> &
-  TConsumption & { option_id: string };
+export type TechRow = Omit<IModuleItem, "consumption"> &
+  Partial<TConsumption> & { option_id: string } & {
+    custom_technology?: boolean;
+  };
 
 export const makeConstructiveTechnologiesColumns = (
   t: Translations,
-  hasStatus: boolean = false,
+  hasStatus = false,
 ): ColumnDef<TechRow>[] => [
   {
     accessorKey: "type",
     header: t.columns.type,
     cell: ({ row }) => {
       const isCompleted = row.original.completed === true;
+      const label = row.original.custom_technology
+        ? row.original.name
+        : structureTypes(t)[row.original.type];
       return (
         <div className="text-left flex items-center gap-2 w-full">
-          <span className="shrink-0">
-            {structureTypes(t)[row.original.type] || "-"}
-          </span>
+          <span className="shrink-0">{label ?? "-"}</span>
           <div className="ml-1 flex items-center gap-2 shrink-0">
+            {row.original.custom_technology && (
+              <span className="text-xs text-gray-400 whitespace-nowrap">
+                {t.columns.createdByUser}
+              </span>
+            )}
             {hasStatus && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -98,7 +106,9 @@ export const makeConstructiveTechnologiesColumns = (
     header: () => <div className="text-center">{t.columns.material}</div>,
     cell: ({ row }) => (
       <div className="text-center">
-        {`${row.original.material?.toInternational()}` || "-"}
+        {row.original.material != null
+          ? `${row.original.material.toInternational()}`
+          : "-"}
       </div>
     ),
   },

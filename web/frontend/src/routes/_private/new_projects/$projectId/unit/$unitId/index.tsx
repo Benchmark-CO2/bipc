@@ -33,6 +33,7 @@ import {
   TProjectUnit,
 } from "@/types/projects";
 import { IUnit, TTowerFloorCategory } from "@/types/units";
+import { TUnknownModuleOccurrence } from "@/types/unknownModules";
 import { getCategoryFromIndex } from "@/utils/unitConversions";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -193,6 +194,27 @@ function RouteComponent() {
     });
   };
 
+  const mapUnknownModuleRow = (occ: TUnknownModuleOccurrence) => ({
+    id: occ.id,
+    option_id: occ.option_id,
+    type: "unknown_module",
+    name: occ.unknown_module?.name,
+    custom_technology: true,
+  });
+
+  const getUnknownRows = (
+    occurrences: TUnknownModuleOccurrence[],
+  ): ReturnType<typeof mapUnknownModuleRow>[] => {
+    const seenIds = new Set<string>();
+    const rows: ReturnType<typeof mapUnknownModuleRow>[] = [];
+    occurrences.forEach((occ) => {
+      if (seenIds.has(occ.unknown_module_id)) return;
+      seenIds.add(occ.unknown_module_id);
+      rows.push(mapUnknownModuleRow(occ));
+    });
+    return rows;
+  };
+
   const getFilteredConsumptions = () => {
     if (!roles || roles.length === 0) return [];
 
@@ -209,7 +231,7 @@ function RouteComponent() {
       });
 
       const moduleTypes = Array.from(allTypes);
-      return moduleTypes.map((type) => {
+      const moduleRows = moduleTypes.map((type) => {
         const summedConsumption = roles.reduce(
           (acc, role) => {
             const roleConsumptions =
@@ -242,15 +264,21 @@ function RouteComponent() {
           ...summedConsumption,
         };
       });
+
+      const unknownRows = getUnknownRows(
+        roles.flatMap((role) => role.unknown_modules ?? []),
+      );
+
+      return [...moduleRows, ...unknownRows];
     } else {
       const selectedRole = roles.find((role) => role.name === selectedTab);
       if (!selectedRole) return [];
 
       const roleConsumptions =
         (selectedRole as any).consumptions || (selectedRole as any).consumption;
-      if (!roleConsumptions) return [];
+      if (!roleConsumptions && !selectedRole.unknown_modules?.length) return [];
 
-      return Object.keys(roleConsumptions)
+      const moduleRows = Object.keys(roleConsumptions || {})
         .filter((key) => key !== "total")
         .map((type) => {
           const consumption = roleConsumptions[
@@ -265,6 +293,10 @@ function RouteComponent() {
             material: consumption?.material || 0,
           };
         });
+
+      const unknownRows = getUnknownRows(selectedRole.unknown_modules ?? []);
+
+      return [...moduleRows, ...unknownRows];
     }
   };
 
