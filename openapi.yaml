@@ -2701,7 +2701,6 @@ components:
       required:
         - category
         - name
-        - materials
       properties:
         category:
           type: string
@@ -2723,13 +2722,15 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CreateUnknownModuleMaterial"
-          description: Materials applied to the option by this occurrence, with their quantities.
+          description: >-
+            Optional materials applied to the option by this occurrence,
+            with their quantities. Informational only — no consumption is
+            calculated for custom modules.
 
     ApplyUnknownModule:
       type: object
       required:
         - unknown_module_id
-        - materials
       properties:
         unknown_module_id:
           type: string
@@ -2739,7 +2740,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CreateUnknownModuleMaterial"
-          description: Materials with the quantities of this occurrence.
+          description: >-
+            Optional materials with the quantities of this occurrence.
+            Informational only — no consumption is calculated for custom
+            modules.
 
     UnknownModule:
       type: object

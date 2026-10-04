@@ -45,6 +45,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "../../ui/select";
@@ -55,6 +56,13 @@ import {
 } from "./module-default-values";
 import ModuleV2Form from "./module-v2-form";
 import { prepareModuleV2PayloadForBackend } from "./aggregate-helpers";
+import { UnknownModuleForm, NEW_TECHNOLOGY_VALUE } from "../drawer-form-unknown-module";
+import type {
+  UnknownModuleFormHandle,
+  UnknownModuleFormState,
+} from "../drawer-form-unknown-module";
+import { getUserUnknownModules } from "@/actions/unknownModules/getUserUnknownModules";
+import type { TUnknownModule } from "@/types/unknownModules";
 
 export type ModuleFormSource = "default" | "ifc" | "tqs";
 
@@ -262,6 +270,25 @@ const DrawerFormModule = ({
   const { form } = v2Hook;
 
   const structureTypeWatch = form.watch("type") as TModulesTypes;
+
+  const [selectedUnknownId, setSelectedUnknownId] = useState<string | null>(
+    null,
+  );
+  const isUnknownModule = selectedUnknownId !== null;
+  const unknownFormRef = useRef<UnknownModuleFormHandle | null>(null);
+  const [unknownFooter, setUnknownFooter] = useState<UnknownModuleFormState>({
+    disabled: true,
+    isPending: false,
+  });
+
+  const { data: unknownModuleTypesData } = useQuery({
+    queryKey: ["unknown-modules", "user"],
+    queryFn: async () => {
+      const res = await getUserUnknownModules();
+      return res.data.unknown_modules ?? [];
+    },
+  });
+  const userUnknownModules: TUnknownModule[] = unknownModuleTypesData ?? [];
 
   const { t } = useTranslation();
 
@@ -1068,6 +1095,7 @@ const DrawerFormModule = ({
       form.reset(getDefaultValuesByType(type) as never);
       setSelectedFloors([]);
     }
+    setSelectedUnknownId(null);
     setIsOpen(false);
   };
 
@@ -1090,6 +1118,24 @@ const DrawerFormModule = ({
       label: t.modules.structureTypes.raftPilesFoundation,
     },
   ];
+
+  const handleUnknownTechnologyChange = (value: string) => {
+    if (
+      value === NEW_TECHNOLOGY_VALUE ||
+      userUnknownModules.some((m) => m.id === value)
+    ) {
+      setSelectedUnknownId(value);
+      return;
+    }
+    setSelectedUnknownId(null);
+    const knownTypes: string[] = structureTypes.map((st) => st.value);
+    if (knownTypes.includes(value)) {
+      const tVal = value as TModulesTypes;
+      form.setValue("type", tVal);
+      form.reset(getDefaultValuesByType(tVal) as never);
+      form.clearErrors();
+    }
+  };
 
   const isMobile = useIsMobile();
 
@@ -1137,27 +1183,29 @@ const DrawerFormModule = ({
                 ? t.modules.form.editTitle
                 : t.modules.table.createButton}
             </DrawerTitle>
-            <Badge
-              variant="outline"
-              className={cn(
-                "gap-1 shrink-0 ml-auto",
-                (serverCompleted ?? v2Hook.completion.completed)
-                  ? "text-emerald-700 border-emerald-300 bg-emerald-50 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-300"
-                  : "text-amber-700 border-amber-300 bg-amber-50 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-300",
-              )}
-            >
-              {(serverCompleted ?? v2Hook.completion.completed) ? (
-                <>
-                  <CheckCircle2 size={12} />
-                  {t.modules.badges.completed}
-                </>
-              ) : (
-                <>
-                  <AlertCircle size={12} />
-                  {t.modules.badges.incomplete}
-                </>
-              )}
-            </Badge>
+            {!isUnknownModule && (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "gap-1 shrink-0 ml-auto",
+                  (serverCompleted ?? v2Hook.completion.completed)
+                    ? "text-emerald-700 border-emerald-300 bg-emerald-50 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-300"
+                    : "text-amber-700 border-amber-300 bg-amber-50 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-300",
+                )}
+              >
+                {(serverCompleted ?? v2Hook.completion.completed) ? (
+                  <>
+                    <CheckCircle2 size={12} />
+                    {t.modules.badges.completed}
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle size={12} />
+                    {t.modules.badges.incomplete}
+                  </>
+                )}
+              </Badge>
+            )}
           </div>
           <Button
             onClick={handleClose}
@@ -1168,7 +1216,20 @@ const DrawerFormModule = ({
           </Button>
         </DrawerHeader>
         <div className="mx-auto w-full p-6 pr-0 pt-0 flex overflow-auto max-sm:flex-col max-sm:flex-1 max-sm:min-h-0">
-          {isLoadingModule ? (
+          {isUnknownModule ? (
+            <UnknownModuleForm
+              ref={unknownFormRef}
+              projectId={projectId}
+              unitId={unitId}
+              optionId={optionId}
+              floors={floors}
+              technologyId={selectedUnknownId ?? NEW_TECHNOLOGY_VALUE}
+              onTechnologyIdChange={handleUnknownTechnologyChange}
+              projectTypes={structureTypes}
+              onSuccess={handleClose}
+              footerState={setUnknownFooter}
+            />
+          ) : isLoadingModule ? (
             <div className="grid w-full grid-cols-3 gap-4">
               <div className="flex flex-col w-full h-auto space-y-2">
                 <Skeleton className="h-4 w-full" />
@@ -1278,6 +1339,19 @@ const DrawerFormModule = ({
                             <FormControl>
                               <Select
                                 onValueChange={(value) => {
+                                  if (value === NEW_TECHNOLOGY_VALUE) {
+                                    setSelectedUnknownId(value);
+                                    return;
+                                  }
+                                  if (
+                                    userUnknownModules.some(
+                                      (m) => m.id === value,
+                                    )
+                                  ) {
+                                    setSelectedUnknownId(value);
+                                    return;
+                                  }
+                                  setSelectedUnknownId(null);
                                   field.onChange(value);
                                   const tVal = value as
                                     | "beam_column"
@@ -1300,7 +1374,11 @@ const DrawerFormModule = ({
                                     form.clearErrors();
                                   }
                                 }}
-                                value={field.value}
+                                value={
+                                  isUnknownModule
+                                    ? (selectedUnknownId ?? NEW_TECHNOLOGY_VALUE)
+                                    : field.value
+                                }
                                 disabled={Boolean(moduleId)}
                               >
                                 <SelectTrigger className="w-full">
@@ -1316,6 +1394,22 @@ const DrawerFormModule = ({
                                       {t.label}
                                     </SelectItem>
                                   ))}
+                                  {userUnknownModules.length > 0 && (
+                                    <SelectSeparator />
+                                  )}
+                                  {userUnknownModules.map((unknownModule) => (
+                                    <SelectItem
+                                      key={unknownModule.id}
+                                      value={unknownModule.id}
+                                    >
+                                      {unknownModule.name} (Criado pelo
+                                      usuário)
+                                    </SelectItem>
+                                  ))}
+                                  <SelectSeparator />
+                                  <SelectItem value={NEW_TECHNOLOGY_VALUE}>
+                                    Nova tecnologia
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                             </FormControl>
@@ -1339,7 +1433,22 @@ const DrawerFormModule = ({
           )}
         </div>
         <DrawerFooter className="px-8">
-          {(() => {
+          {isUnknownModule ? (
+            <Button
+              variant="bipc"
+              className="w-full"
+              onClick={() => unknownFormRef.current?.submit()}
+              disabled={unknownFooter.disabled || unknownFooter.isPending}
+            >
+              {unknownFooter.isPending ? (
+                <Loader2 className="animate-spin h-4 w-4" />
+              ) : (
+                "Adicionar tecnologia"
+              )}
+            </Button>
+          ) : (
+            <>
+              {(() => {
             const missingArr = Array.isArray(v2Hook.completion.missing)
               ? v2Hook.completion.missing
               : [];
@@ -1416,6 +1525,8 @@ const DrawerFormModule = ({
               t.common.add
             )}
           </Button>
+            </>
+          )}
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

@@ -88,7 +88,6 @@ func materialNameSet(materials []OccurrenceMaterial) bool {
 // materials of the occurrence (name, unit and per-occurrence quantity).
 func ValidateUnknownModuleOccurrence(v *validator.Validator, occurrence *UnknownModuleOccurrence) {
 	v.Check(occurrence.UnknownModuleID != uuid.Nil, "unknown_module_id", "must be provided")
-	v.Check(len(occurrence.Materials) > 0, "materials", "must have at least one item")
 	v.Check(materialNameSet(occurrence.Materials), "materials", "must not contain duplicate names")
 
 	for i, material := range occurrence.Materials {
