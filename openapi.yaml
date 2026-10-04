@@ -2050,6 +2050,76 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/projects/{projectID}/units/{unitID}/options/{optionID}/unknown-modules/{occurrenceID}:
+    delete:
+      operationId: deleteUnknownModuleOccurrence
+      summary: Delete an unknown module occurrence from an option
+      description: |
+        Removes the occurrence of a custom module type applied to the option.
+        The deletion is scoped to the option: occurrences of other options are
+        never removed. The module type definition itself is kept.
+      tags:
+        - Unknown modules
+      security:
+        - bearerHttpAuthentication: []
+        - apiKeyAuthentication: []
+      parameters:
+        - name: projectID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: unitID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: optionID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: occurrenceID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Occurrence successfully deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DefaultOkResponse"
+        "401":
+          description: Unauthorized. The user is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden. The user is not associated with the option.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not Found. The occurrence does not exist in this option.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   securitySchemes:
     bearerHttpAuthentication:

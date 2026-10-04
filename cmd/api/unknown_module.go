@@ -16,11 +16,11 @@ type unknownModuleMaterialPayload struct {
 }
 
 type unknownModuleCreatePayload struct {
-	Category        string                        `json:"category"`
-	Name            string                        `json:"name"`
-	Description     string                        `json:"description,omitempty"`
-	References      []string                      `json:"references,omitempty"`
-	UnknownModuleID uuid.UUID                     `json:"unknown_module_id,omitzero"`
+	Category        string                         `json:"category"`
+	Name            string                         `json:"name"`
+	Description     string                         `json:"description,omitempty"`
+	References      []string                       `json:"references,omitempty"`
+	UnknownModuleID uuid.UUID                      `json:"unknown_module_id,omitzero"`
 	Materials       []unknownModuleMaterialPayload `json:"materials"`
 }
 
@@ -174,6 +174,38 @@ func (app *application) listUserUnknownModulesHandler(w http.ResponseWriter, r *
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"unknown_modules": modules}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+// deleteUnknownModuleOccurrenceHandler deletes the occurrence of an unknown
+// module applied to an option, scoped to the option.
+func (app *application) deleteUnknownModuleOccurrenceHandler(w http.ResponseWriter, r *http.Request) {
+	optionID, err := app.readUUIDParam(r, "optionID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	occurrenceID, err := app.readUUIDParam(r, "occurrenceID")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	err = app.models.UnknownModules.DeleteOccurrence(occurrenceID, optionID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.resourceNotFoundResponse(w, r, "unknown module occurrence")
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "occurrence successfully deleted"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

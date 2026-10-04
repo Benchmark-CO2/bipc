@@ -1,6 +1,7 @@
 import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
 import { deleteModule } from "@/actions/modules/deleteModule";
 import { postDuplicateModule } from "@/actions/modules/postDuplicateModule";
+import { deleteUnknownModule } from "@/actions/unknownModules/deleteUnknownModule";
 import { deleteOption } from "@/actions/options/deleteOption";
 import { getOptions } from "@/actions/options/getOptions";
 import { patchOption } from "@/actions/options/patchOption";
@@ -528,6 +529,34 @@ function RouteComponent() {
     },
   });
 
+  const { mutate: mutateDeleteUnknown, isPending: isDeletingUnknownTec } =
+    useMutation({
+      mutationFn: ({
+        optionId,
+        occurrenceId,
+      }: {
+        optionId: string;
+        occurrenceId: string;
+      }) => deleteUnknownModule(projectId, unitId, optionId, occurrenceId),
+      onSuccess: () => {
+        toast.success(t.constructiveTechView.successDeleteTech);
+        void queryClient.invalidateQueries({
+          queryKey: ["options", projectId, unitId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["unit", projectId, unitId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["project", projectId],
+        });
+      },
+      onError: (error) => {
+        toast.error(t.constructiveTechView.errorDeleteTech, {
+          description: parseApiError(error, t),
+        });
+      },
+    });
+
   const technologiesSummaryPayload = useMemo(() => {
     if (!benchmarkData?.data || !unitData?.unit) return null;
     return {
@@ -602,7 +631,41 @@ function RouteComponent() {
       id: "actions",
       header: "",
       cell: ({ row }) => {
-        if (row.original.custom_technology) return null;
+        if (row.original.custom_technology) {
+          const occurrenceId = row.original.id;
+          if (!occurrenceId) return null;
+          return (
+            <div className="flex items-center justify-end gap-2">
+              <ModalConfirmDelete
+                title={t.constructiveTechView.deleteTech}
+                onConfirm={() =>
+                  mutateDeleteUnknown({
+                    optionId: row.original.option_id,
+                    occurrenceId,
+                  })
+                }
+                componentTrigger={
+                  <SimpleTooltip
+                    content={t.modules.deleteTitle}
+                    side="bottom"
+                  >
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={isDeletingUnknownTec}
+                    >
+                      {isDeletingUnknownTec ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash className="h-4 w-4 text-red-700" />
+                      )}
+                    </Button>
+                  </SimpleTooltip>
+                }
+              />
+            </div>
+          );
+        }
         return (
           <div className="flex items-center justify-end gap-2">
             <ModalSimple

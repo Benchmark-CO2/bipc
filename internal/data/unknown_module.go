@@ -194,6 +194,30 @@ func (m UnknownModuleModel) InsertOccurrence(occurrence *UnknownModuleOccurrence
 	return occurrence, nil
 }
 
+// DeleteOccurrence removes an occurrence from an option. The deletion is
+// scoped to the option so a caller cannot remove occurrences of other options.
+func (m UnknownModuleModel) DeleteOccurrence(id, optionID uuid.UUID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, `
+		DELETE FROM unknown_module_occurrence
+		WHERE id = $1 AND option_id = $2`, id, optionID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
+
 func scanUnknownModuleRow(rows *sql.Rows) (*UnknownModule, error) {
 	var module UnknownModule
 	var referencesBytes []byte
