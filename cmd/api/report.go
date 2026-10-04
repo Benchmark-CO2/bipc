@@ -11,6 +11,7 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
 	"github.com/johnfercher/maroto/v2/pkg/components/image"
 	"github.com/johnfercher/maroto/v2/pkg/components/line"
+	"github.com/johnfercher/maroto/v2/pkg/components/page"
 	"github.com/johnfercher/maroto/v2/pkg/components/row"
 	"github.com/johnfercher/maroto/v2/pkg/components/text"
 	marotocfg "github.com/johnfercher/maroto/v2/pkg/config"
@@ -935,6 +936,8 @@ func GetMaroto(co2Bytes, energyBytes []byte, project *data.ProjectWithUnits, rep
 		line.NewCol(23, getDividerStyle(orientation.Horizontal)),
 	)
 
+	addUnknownModulesSection(m, project)
+
 	return m, nil
 }
 
@@ -1148,6 +1151,152 @@ func truncate(s string, maxRunes int) string {
 		return s
 	}
 	return string(r[:maxRunes-3]) + "..."
+}
+
+// addUnknownModulesSection renders the user-registered constructive
+// technologies applied to the project's active options. Each occurrence shows
+// all fields of the custom module type (name, category, description,
+// references) plus the occurrence-level materials as a table (name, quantity,
+// unit). The layout follows the "Dados do projeto" pattern: the label sits
+// above its field in the same column, with the bordered value below. The
+// section always starts on a fresh page. Values are never truncated — text
+// wraps and grows the box as needed, and references are listed one per line.
+func addUnknownModulesSection(m core.Maroto, project *data.ProjectWithUnits) {
+	if len(project.UnknownModules) == 0 {
+		return
+	}
+
+	// The section always starts on a fresh page, so the identification and the
+	// field boxes rendered below cannot be split from the title by a page break.
+	m.AddPages(page.New())
+
+	m.AddRow(5)
+
+	m.AddAutoRow(
+		col.New(48).Add(
+			text.New("Tecnologias construtivas personalizadas", getTitleStyle()),
+			text.New("Módulos cadastrados pelo usuário e aplicados às opções ativas do projeto.", props.Text{
+				Top:  6.5,
+				Size: 6,
+			}),
+		),
+	)
+
+	m.AddRow(2.5)
+
+	for i, occurrence := range project.UnknownModules {
+		if i > 0 {
+			m.AddRow(3)
+		}
+
+		module := occurrence.UnknownModule
+
+		moduleName := "-"
+		category := "-"
+
+		if module != nil {
+			moduleName = module.Name
+			category = module.Category
+		}
+
+		m.AddAutoRow(
+			text.NewCol(48, fmt.Sprintf("%d — %s", i+1, moduleName), props.Text{
+				Style: fontstyle.Bold,
+				Size:  7,
+				Color: getTitleColor(),
+			}),
+		)
+
+		m.AddRow(2)
+
+		m.AddAutoRow(
+			text.NewCol(12, "Nome", getLabelStyle()),
+			col.New(1),
+			text.NewCol(12, "Categoria", getLabelStyle()),
+			col.New(23),
+		)
+
+		m.AddAutoRow(
+			text.NewCol(12, moduleName, getValueStyle()).WithStyle(getBorderStyle()),
+			col.New(1),
+			text.NewCol(12, category, getValueStyle()).WithStyle(getBorderStyle()),
+			col.New(23),
+		)
+
+		if module != nil && module.Description != "" {
+			m.AddRow(2)
+
+			m.AddAutoRow(
+				text.NewCol(48, "Descrição", getLabelStyle()),
+			)
+
+			m.AddAutoRow(
+				text.NewCol(48, module.Description, getValueStyle()).WithStyle(getBorderStyle()),
+			)
+		}
+
+		if module != nil && len(module.References) > 0 {
+			m.AddRow(2)
+
+			m.AddAutoRow(
+				text.NewCol(48, "Referências", getLabelStyle()),
+			)
+
+			for _, reference := range module.References {
+				m.AddAutoRow(
+					text.NewCol(48, reference, getValueStyle()).WithStyle(getBorderStyle()),
+				)
+			}
+		}
+
+		if len(occurrence.Materials) > 0 {
+			m.AddRow(2)
+
+			m.AddAutoRow(
+				text.NewCol(48, "Materiais", getLabelStyle()),
+			)
+
+			m.AddAutoRow(
+				text.NewCol(32, "Nome", getLabelStyle()),
+				col.New(1),
+				text.NewCol(8, "Quantidade", getLabelStyle()),
+				col.New(1),
+				text.NewCol(6, "Unidade", getLabelStyle()),
+			)
+
+			for _, material := range occurrence.Materials {
+				unit := unitLabel(material.Unit)
+				if unit == "" {
+					unit = "-"
+				}
+				m.AddAutoRow(
+					text.NewCol(32, material.Name, getValueStyle()).WithStyle(getBorderStyle()),
+					col.New(1),
+					text.NewCol(8, formatNumber(material.Quantity), getValueStyle()).WithStyle(getBorderStyle()),
+					col.New(1),
+					text.NewCol(6, unit, getValueStyle()).WithStyle(getBorderStyle()),
+				)
+			}
+		}
+	}
+}
+
+// unitLabel converts the occurrence material unit into its display form.
+func unitLabel(unit string) string {
+	switch unit {
+	case "kg":
+		return "kg"
+	case "m2":
+		return "m²"
+	case "m3":
+		return "m³"
+	case "m":
+		return "m"
+	case "other":
+		return "Outro"
+	default:
+		return ""
+	}
 }
 
 func safe(s *string) string {
