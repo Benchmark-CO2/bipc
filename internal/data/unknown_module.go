@@ -307,6 +307,38 @@ func getUnknownModulesByOption(ctx context.Context, db *sql.DB, optionID uuid.UU
 	}
 	defer rows.Close()
 
+	return scanUnknownModuleOccurrences(rows)
+}
+
+// getUnknownModulesByProject returns the unknown module occurrences applied to
+// the active options of the project's units, mirroring how consumptions are
+// aggregated from the active options only. The same module type applied in
+// more than one unit appears more than once, each entry tied to its occurrence.
+func getUnknownModulesByProject(ctx context.Context, db *sql.DB, projectID uuid.UUID) ([]*UnknownModuleOccurrence, error) {
+	query := `
+		SELECT
+			uo.id, uo.option_id, uo.unknown_module_id, uo.user_id, uo.materials, uo.created_at, uo.updated_at,
+			um.id, um.user_id, um.category, um.name, um.description, um.references, um.created_at, um.updated_at
+		FROM unknown_module_occurrence uo
+		JOIN unknown_module um ON um.id = uo.unknown_module_id
+		JOIN options opt ON opt.id = uo.option_id
+		JOIN units u ON u.id = opt.unit_id
+		WHERE u.project_id = $1 AND opt.active = TRUE
+		ORDER BY uo.created_at, uo.id`
+
+	rows, err := db.QueryContext(ctx, query, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return scanUnknownModuleOccurrences(rows)
+}
+
+// scanUnknownModuleOccurrences scans result rows of the joined SELECT used by
+// getUnknownModulesByOption/getUnknownModulesByProject into occurrences with
+// their nested module type.
+func scanUnknownModuleOccurrences(rows *sql.Rows) ([]*UnknownModuleOccurrence, error) {
 	var occurrences = []*UnknownModuleOccurrence{}
 	for rows.Next() {
 		var occurrence UnknownModuleOccurrence
