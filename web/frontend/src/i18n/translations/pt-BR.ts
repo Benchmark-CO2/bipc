@@ -1351,6 +1351,7 @@ export const ptBR = {
       "Essa tecnologia construtiva está sem dados de materiais. Abra a edição para preencher.",
     duplicate: "Duplicar",
     selectRow: "Selecionar linha",
+    createdByUser: "(Criado pelo usuário)",
   },
   unitView: {
     tabAllDisciplines: "Todas as disciplinas",

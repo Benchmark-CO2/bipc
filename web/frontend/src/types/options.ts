@@ -1,5 +1,6 @@
 import { IModuleItem } from "./modules";
 import { TConsumptionPerModule } from "./projects";
+import { TUnknownModuleOccurrence } from "./unknownModules";
 
 export type TOption = {
   id: string;
@@ -8,5 +9,6 @@ export type TOption = {
   name: string;
   active: boolean;
   modules: IModuleItem[];
+  unknown_modules: TUnknownModuleOccurrence[];
   consumption: TConsumptionPerModule;
 };

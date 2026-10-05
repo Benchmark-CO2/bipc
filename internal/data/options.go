@@ -29,14 +29,15 @@ type ModuleInfo struct {
 }
 
 type Option struct {
-	ID          uuid.UUID               `json:"id"`
-	UnitID      uuid.UUID               `json:"unit_id"`
-	RoleID      uuid.UUID               `json:"role_id"`
-	Name        string                  `json:"name"`
-	Active      bool                    `json:"active"`
-	UpdatedAt   *time.Time              `json:"updated_at,omitempty"`
-	Modules     []ModuleInfo            `json:"modules"`
-	Consumption map[string]*Consumption `json:"consumption,omitempty"`
+	ID             uuid.UUID                  `json:"id"`
+	UnitID         uuid.UUID                  `json:"unit_id"`
+	RoleID         uuid.UUID                  `json:"role_id"`
+	Name           string                     `json:"name"`
+	Active         bool                       `json:"active"`
+	UpdatedAt      *time.Time                 `json:"updated_at,omitempty"`
+	Modules        []ModuleInfo               `json:"modules"`
+	UnknownModules []*UnknownModuleOccurrence `json:"unknown_modules"`
+	Consumption    map[string]*Consumption    `json:"consumption,omitempty"`
 }
 
 func ValidateOption(v *validator.Validator, option *Option) {
@@ -148,6 +149,11 @@ func (m OptionModel) GetByID(id uuid.UUID) (*Option, error) {
 		return nil, err
 	}
 	option.Modules = modules
+	unknownModules, err := getUnknownModulesByOption(ctx, m.DB, option.ID)
+	if err != nil {
+		return nil, err
+	}
+	option.UnknownModules = unknownModules
 	if latest := latestModuleActivity(&option); !latest.IsZero() {
 		option.UpdatedAt = &latest
 	}
@@ -199,6 +205,11 @@ func (m OptionModel) GetAll(unitID uuid.UUID) ([]*Option, error) {
 			return nil, err
 		}
 		option.Modules = modules
+		unknownModules, err := getUnknownModulesByOption(ctx, m.DB, option.ID)
+		if err != nil {
+			return nil, err
+		}
+		option.UnknownModules = unknownModules
 		if latest := latestModuleActivity(&option); !latest.IsZero() {
 			option.UpdatedAt = &latest
 		}
@@ -236,8 +247,8 @@ func sortOptionsByActivity(options []*Option) {
 			return a.Active
 		}
 
-		aHasModules := len(a.Modules) > 0
-		bHasModules := len(b.Modules) > 0
+		aHasModules := len(a.Modules)+len(a.UnknownModules) > 0
+		bHasModules := len(b.Modules)+len(b.UnknownModules) > 0
 		if aHasModules != bHasModules {
 			return !aHasModules
 		}
@@ -252,6 +263,15 @@ func latestModuleActivity(o *Option) time.Time {
 		ts := m.updatedAt
 		if m.createdAt.After(ts) {
 			ts = m.createdAt
+		}
+		if ts.After(latest) {
+			latest = ts
+		}
+	}
+	for _, um := range o.UnknownModules {
+		ts := um.UpdatedAt
+		if um.CreatedAt.After(ts) {
+			ts = um.CreatedAt
 		}
 		if ts.After(latest) {
 			latest = ts
@@ -296,6 +316,11 @@ func (m OptionModel) GetAllByRole(unitID, roleID uuid.UUID) ([]*Option, error) {
 			return nil, err
 		}
 		option.Modules = modules
+		unknownModules, err := getUnknownModulesByOption(ctx, m.DB, option.ID)
+		if err != nil {
+			return nil, err
+		}
+		option.UnknownModules = unknownModules
 		if latest := latestModuleActivity(&option); !latest.IsZero() {
 			option.UpdatedAt = &latest
 		}
