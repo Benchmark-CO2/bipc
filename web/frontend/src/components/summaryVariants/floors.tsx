@@ -362,7 +362,7 @@ const currentGrade = calculateGrade(
   const isMobile = useIsMobile();
   
   return (
-    <div ref={elementRef}  className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
+    <div ref={elementRef} className={cn({ "flex flex-col gap-4": true, "h-[80vh]": !isExpanded, "h-full": isExpanded })}>
       {/* ── BARRA SUPERIOR: Valores e PCVRB ── */}
       <div className="flex justify-between gap-2 w-full">
         <div className="flex items-center gap-4 w-full overflow-x-auto pt-3">
@@ -489,7 +489,7 @@ const currentGrade = calculateGrade(
 
       {/* ── CONTEÚDO PRINCIPAL (Exibido quando aberto) ── */}
       {isFullScreen && (
-        <div className="flex gap-4 items-start max-sm:flex-col max-sm:gap-2 max-sm:p-2">
+        <div className="flex gap-4 items-start max-sm:flex-col max-sm:gap-2 max-sm:p-2 h-full">
           {/* COLUNA ESQUERDA (1/3) */}
           <div className="w-1/3 flex-shrink-0 mt-0 flex flex-col max-sm:w-full">
             <div className="flex flex-col gap-0 w-full">
@@ -521,7 +521,7 @@ const currentGrade = calculateGrade(
           </div>
 
           {/* COLUNA DIREITA (flex-1) */}
-          <div className="flex-1 min-h-0 flex flex-col justify-between gap-0 pt-0">
+          <div className="flex-1 min-h-0 flex flex-col justify-between gap-0 pt-0 h-full">
             <div className="flex gap-2 justify-end items-center">
               <FilterTabs
                 tabs={["co2", "energy", "material"]}
@@ -548,8 +548,9 @@ const currentGrade = calculateGrade(
               />
               <div className="mt-2 w-full">{ChartSelector}</div>
             </div>
+            <div className="flex-1 h-full">
 
-            <div ref={elementRef2} className="flex flex-col gap-0 w-full">
+            <div ref={elementRef2} className="flex flex-col gap-0 w-full h-4/5">
               {chartType === "scatter" ? (
                 <D3GradientRangeChart
                   data={newData}
@@ -582,7 +583,7 @@ const currentGrade = calculateGrade(
                         : "material"
                     ].yAxisLabel
                   }
-                  height={!isMobile ? elementHeight - 400 : 400}
+                  height={elementHeight2 * 0.7}
                 />
               ) : (
                 <D3GradientRangeLineChart
@@ -591,6 +592,7 @@ const currentGrade = calculateGrade(
                   unit={type}
                 />
               )}
+            </div>
               {type !== "material" && <ChartLegend />}
             </div>
           </div>

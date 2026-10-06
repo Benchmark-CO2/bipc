@@ -336,7 +336,7 @@ const ProjectsSummary = ({
   const [val, setVal] = useState('stacked_bar');
   const isMobile = useIsMobile();
   return (
-    <div ref={elementRef} >
+    <div ref={elementRef} className='h-[80vh]'>
       <div className='flex justify-between gap-2 w-full'>
         <div className="flex items-center gap-4 w-full overflow-x-auto pt-3">
           {/* Rótulos Laterais (Benchmark / Total) */}
@@ -420,7 +420,7 @@ const ProjectsSummary = ({
             />
           </div>
 
-          <div  className="flex-1 min-h-0 flex flex-col gap-0 pt-2 h-full max-sm:w-full">
+          <div  className="flex-1 min-h-0 flex flex-col gap-0 pt-2 max-sm:w-full">
             <div  className='flex gap-2 justify-end items-center shrink-0 max-sm:flex-col'>
               <FilterTabs
                 tabs={["co2", "energy", "material"]}
@@ -441,8 +441,8 @@ const ProjectsSummary = ({
                 {ChartSelector}
               </div>
             </div>
-            <div>
-              <div ref={elementRef2} className='flex-1 shrink-0 min-h-full'>
+            <div className='h-full'>
+              <div ref={elementRef2} className='h-4/5'>
 
                 {chartType === "scatter" ? (
                   <D3GradientRangeChart
@@ -463,7 +463,7 @@ const ProjectsSummary = ({
                     xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
                     yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
                     // height={Math.min(window.innerHeight > 1800 ? window.innerHeight * 0.52 : 250, 250)}
-                    height={!isMobile ?elementHeight - 400 : 400}
+                    height={elementHeight2 * 0.70}
                   />
                 ) : (
                   <D3GradientRangeLineChart
@@ -474,10 +474,9 @@ const ProjectsSummary = ({
                   />
                 )}
               </div>
-            </div>
-            <div>
-
+            <div className='h-fit mt-6'>
               {type !== 'material' && <ChartLegend />}
+            </div>
             </div>
           </div>
         </div>

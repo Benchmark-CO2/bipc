@@ -22,7 +22,7 @@ export const ScenarioCard = ({ letter, title, color, items }: ScenarioCardProps)
   return (
     <div
       className={cn(
-        "relative flex items-center bg-white rounded-lg py-2 shadow-sm box-border flex-shrink-0 text-xs!",
+        "relative flex items-center bg-white rounded-lg py-2 shadow-sm box-border flex-shrink-0 text-xs",
         // A imagem mostra a borda verde (V) mais espessa, e as demais mais finas e cinzas.
         letter === 'V' ? "border-[3px]" : "border border-gray-300"
       )}
@@ -63,7 +63,7 @@ export const ScenarioCard = ({ letter, title, color, items }: ScenarioCardProps)
             
             {/* Total (Fundo, Normal) */}
             <div className="text-sm text-neutral-600 whitespace-nowrap leading-5">
-              {item.total} <span className="text-xs">{item.unitTotal}</span>
+              {item.total} <span className="text-xs text-neutral-500">{item.unitTotal}</span>
             </div>
           </div>
         ))}

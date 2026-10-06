@@ -268,7 +268,7 @@ const UnitsSummary = ({
     };
   }, [data.benchmark]);
 
-  const { isExpanded, isFullScreen  } = useSummary();
+  const { isExpanded, isFullScreen } = useSummary();
   const [previousProjects, setPreviousProjects] = useState<any[]>([]);
 
   useEffect(() => {
@@ -418,18 +418,18 @@ const UnitsSummary = ({
 
   const projectArea = project?.area || project?.built_area || 1;
 
-const currentGrade = calculateGrade(
-    (allPcvMetrics.co2.C + allPcvMetrics.co2.R) / 2, 
+  const currentGrade = calculateGrade(
+    (allPcvMetrics.co2.C + allPcvMetrics.co2.R) / 2,
     processedData.co2.newData.map((el: any) => (el.max + el.min) / 2)
-  );  const totalProjectsCount = newData.length;
+  ); const totalProjectsCount = newData.length;
 
-    const { ref: elementRef, height: elementHeight } = useElementHeight<HTMLDivElement>();
-    const { ref: elementRef2, height: elementHeight2 } = useElementHeight<HTMLDivElement>();
+  const { ref: elementRef, height: elementHeight } = useElementHeight<HTMLDivElement>();
+  const { ref: elementRef2, height: elementHeight2 } = useElementHeight<HTMLDivElement>();
   const [val, setVal] = useState('stacked_bar');
   const isMobile = useIsMobile();
 
   return (
-    <div ref={elementRef}  className={cn({ "flex flex-col gap-4": true, "h-full": isExpanded })}>
+    <div ref={elementRef} className={cn({ "flex flex-col gap-4": true, "h-[80vh]": !isExpanded, "h-full": isExpanded })}>
       <div className="flex justify-between gap-2 w-full">
         <div className="flex items-center gap-4 w-full overflow-x-auto pt-3">
           {/* Rótulos Laterais (Benchmark / Total) */}
@@ -548,14 +548,14 @@ const currentGrade = calculateGrade(
       </div>
 
       {isFullScreen && (
-        <div  className="flex flex-1 gap-4 items-start max-sm:flex-col max-sm:gap-2 max-sm:p-2">
-          <div className="w-1/3 flex-shrink-0 mt-0 flex flex-col max-sm:w-full">
+        <div className="flex flex-1 gap-4 items-start max-sm:flex-col max-sm:gap-2 max-sm:p-2 h-full">
+          <div className="w-1/3 flex-shrink-0 mt-0 flex flex-col max-sm:w-full h-full">
             <Select onValueChange={setVal} value={val} defaultValue='stacked_bar'>
               <SelectTrigger className='w-full'>
                 <SelectValue placeholder={t.summary.placeholders.chartType} />
               </SelectTrigger>
               <SelectContent>
-                {[{id: 'stacked_bar', label: t.summary.chartType.stackedBar}].map(({id, label}) => (
+                {[{ id: 'stacked_bar', label: t.summary.chartType.stackedBar }].map(({ id, label }) => (
                   <SelectItem key={id} value={id}>
                     {label}
                   </SelectItem>
@@ -598,50 +598,52 @@ const currentGrade = calculateGrade(
               />
               <div className="w-full">{ChartSelector}</div>
             </div>
+            <div className='h-full'>
 
-            <div ref={elementRef2} className="flex flex-col gap-2 w-full h-full flex-1 max-sm:h-auto">
-              {chartType === "scatter" ? (
-                <D3GradientRangeChart
-                  data={newData}
-                  selectedBars={selectedProjects}
-                  unit={
-                    unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""
-                  }
-                  minData={minData}
-                  maxData={maxData}
-                  totalProjects={managedData.length || newData.length}
-                  showBaseline={type !== "material"}
-                  showTop5Line={type !== "material"}
-                  showProcelScale
-                  showMaxCurve={type !== "material"}
-                  showMinCurve={type !== "material"}
-                  showMidCurve={type !== "material"}
-                  showProjectName
-                  variant={type === "material" ? "cumulative" : "range"}
-                  xAxisLabel={
-                    t.benchmark.chartTypes[
-                    type === "co2" || type === "energy"
-                      ? "cumulativeFraction"
-                      : "material"
-                    ][type === "co2" ? "xAxisLabelCarbon" : "xAxisLabelEnergy"]
-                  }
-                  yAxisLabel={
-                    t.benchmark.chartTypes[
+              <div ref={elementRef2} className="flex flex-col gap-2 w-full h-4/5 flex-1 max-sm:h-auto">
+                {chartType === "scatter" ? (
+                  <D3GradientRangeChart
+                    data={newData}
+                    selectedBars={selectedProjects}
+                    unit={
+                      unitsOfMeasure[type as keyof typeof unitsOfMeasure] || ""
+                    }
+                    minData={minData}
+                    maxData={maxData}
+                    totalProjects={managedData.length || newData.length}
+                    showBaseline={type !== "material"}
+                    showTop5Line={type !== "material"}
+                    showProcelScale
+                    showMaxCurve={type !== "material"}
+                    showMinCurve={type !== "material"}
+                    showMidCurve={type !== "material"}
+                    showProjectName
+                    variant={type === "material" ? "cumulative" : "range"}
+                    xAxisLabel={
+                      t.benchmark.chartTypes[
                       type === "co2" || type === "energy"
                         ? "cumulativeFraction"
                         : "material"
-                    ].yAxisLabel
-                  }
-                  height={!isMobile ? elementHeight - 400 : 400}
-                  width={!isMobile ? undefined : 50}
-                />
-              ) : (
-                <D3GradientRangeLineChart
-                  data={newData}
-                  selectedBars={selectedProjects}
-                  unit={type}
-                />
-              )}
+                      ][type === "co2" ? "xAxisLabelCarbon" : "xAxisLabelEnergy"]
+                    }
+                    yAxisLabel={
+                      t.benchmark.chartTypes[
+                        type === "co2" || type === "energy"
+                          ? "cumulativeFraction"
+                          : "material"
+                      ].yAxisLabel
+                    }
+                    height={!isMobile ? elementHeight - 400 : 400}
+                    width={!isMobile ? undefined : 50}
+                  />
+                ) : (
+                  <D3GradientRangeLineChart
+                    data={newData}
+                    selectedBars={selectedProjects}
+                    unit={type}
+                  />
+                )}
+              </div>
               {type !== "material" && <ChartLegend />}
             </div>
           </div>
