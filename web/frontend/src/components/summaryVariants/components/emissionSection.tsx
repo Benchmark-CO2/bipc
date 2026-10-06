@@ -66,7 +66,7 @@ export const EmissionsSection = ({
   const buildingItems = items.filter(item => item.id !== 'total');
 
   return (
-    <div className="flex flex-col w-full p-4 pt-8 bg-[#f4f5f7]">
+    <div className="flex flex-col w-full p-4 pt-8 bg-[#f4f5f7] ">
       
       {/* Contêiner de Layout Mestre */}
       <div className="relative w-full flex flex-col">
@@ -128,7 +128,7 @@ export const EmissionsSection = ({
                       checked={selected?.includes(totalItem.id) ?? totalItem.defaultChecked}
                       onCheckedChange={(checked) => onChange?.(totalItem.id, !!checked)}
                     />
-                    <span className="font-bold text-[16px] text-gray-900">{totalItem.title}</span>
+                    <span className="font-bold text-sm text-gray-900">{totalItem.title}</span>
                   </div>
                 </div>
                 
@@ -144,7 +144,7 @@ export const EmissionsSection = ({
               </div>
             </div>
           )}
-          <div className='overflow-y-auto max-h-[55vh] 2xl:max-h-[55vh] 2xl:h-[65vh] '>
+          <div className='overflow-y-auto max-h-[40vh] 2xl:max-h-[55vh] 2xl:h-[60%] '>
 
           {/* Cards das Edificações (Secundários e Menores) */}
           {buildingItems.map((section) => {
@@ -184,7 +184,7 @@ export const EmissionsSection = ({
                       <div onClick={(e) => e.stopPropagation()}>
                         <Checkbox value={section.id} checked={isChecked} onCheckedChange={(checked) => onChange?.(section.id, !!checked)} />
                       </div>
-                      <span className="font-bold text-[15px] text-gray-900">{section.title}</span>
+                      <span className="font-semibold text-sm text-gray-900">{section.title}</span>
                     </div>
 
                     {/* Chevron */}

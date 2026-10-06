@@ -35,7 +35,7 @@ const Summary = () => {
         <div className="flex items-stretch overflow-hidden relative w-[260px] min-w-[260px]! h-8">
           
           {/* Aba de Texto */}
-          <button className="flex items-center justify-center px-4 py-1.5 text-xs font-semibold text-white bg-[#1a7f83] rounded-t-md min-w-[150px] w-[170px] shadow-[7px_3px_13px_1px_rgba(0,0,0,0.5)] absolute z-52">
+          <button className="flex items-center justify-center px-4 py-1.5 text-xs font-semibold text-white bg-primary rounded-t-md min-w-[150px] w-[170px] shadow-[7px_3px_13px_1px_rgba(0,0,0,0.5)] absolute z-52">
             {t.summary.title}
           </button>
 
@@ -48,8 +48,8 @@ const Summary = () => {
               }
               toggleSummary();
             }}
-            className={cn("flex items-center justify-end px-3 py-1.5 text-white transition-colors bg-secondary cursor-pointer border-l border-white/20 rounded-t-md min-w-[60px] absolute top-0 right-12 z-51 shadow-[7px_3px_13px_1px_rgba(0,0,0,0.5)]", {
-              'bg-[#f15a3b] hover:bg-[#d94f33]': isOpen
+            className={cn("flex items-center justify-end px-3 py-1.5 text-white transition-colors bg-primary cursor-pointer border-l border-white/20 rounded-t-md min-w-[60px] absolute top-0 right-12 z-51 shadow-[7px_3px_13px_1px_rgba(0,0,0,0.5)]", {
+              // 'bg-[#f15a3b] hover:bg-[#d94f33]': isOpen
             })}
           >
             <ChevronDown
@@ -71,7 +71,7 @@ const Summary = () => {
                 setIsFullScreen(!isFullScreen);
               }
             }}
-            className="flex items-center justify-end px-3 py-1.5 text-white transition-colors bg-secondary cursor-pointer border-l border-white/20 rounded-t-md min-w-[60px] absolute top-0 right-0 z-50"
+            className="flex items-center justify-end px-3 py-1.5 text-white transition-colors bg-primary cursor-pointer border-l border-white/20 rounded-t-md min-w-[60px] absolute top-0 right-0 z-50"
           >
             {isFullScreen ? (
               <Minimize className="w-4 h-4" />

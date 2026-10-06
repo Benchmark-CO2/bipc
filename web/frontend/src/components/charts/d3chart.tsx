@@ -117,6 +117,7 @@ type D3RangeChartProps = {
   xAxisLabel?: string;
   yAxisLabel?: string;
   emptyResults?: boolean;
+  showIndicators?: boolean;
 };
 
 const useChartDimensions = (
@@ -145,7 +146,7 @@ const useChartDimensions = (
     };
 
     const height = () => {
-      if (props.height) return props.height * 0.65;
+      if (props.height) return props.height;
       if (containerHeight && containerHeight > 0) return containerHeight - 40; // <-- Adicionado: Usa a altura lida do ResizeObserver
 
       if (isMobile && !isExpanded) return 250;
@@ -206,6 +207,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   xAxisLabel: xAxisLabelProp,
   yAxisLabel: yAxisLabelProp,
   emptyResults = false,
+  showIndicators = true,
   ...props
 }) => {
   const isCumulative = variant === "cumulative";
@@ -904,12 +906,18 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
               <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco acima">
                 {outAboveCount} <span className="text-[10px]"><Triangle className='w-4 h-4 fill-gray-500' /></span>
               </span>
-              <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Máximo do conjunto Azul">
-                {Math.round(maxLessDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-4 h-4 fill-[#5B9BD5]' /></span>
-              </span>
-              <span className="text-[#E0756C] flex items-center gap-0.5" title="Máximo do conjunto Vermelho">
-                {Math.round(maxMaxDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-4 h-4 fill-[#E0756C]' /></span>
-              </span>
+              {
+                showIndicators && (
+                  <>
+                    <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Máximo do conjunto Azul">
+                      {Math.round(maxLessDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-4 h-4 fill-[#5B9BD5]' /></span>
+                    </span>
+                    <span className="text-[#E0756C] flex items-center gap-0.5" title="Máximo do conjunto Vermelho">
+                      {Math.round(maxMaxDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-4 h-4 fill-[#E0756C]' /></span>
+                    </span>
+                  </>
+                )
+              }
             </div>
 
             {/* Indicadores Base-Esquerda (Pontos Abaixo e Mínimos) */}
@@ -917,12 +925,18 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
               <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco abaixo">
                 {outBelowCount} <span className="text-[10px]"><Triangle className='rotate-180 w-4 h-4 fill-gray-500' /></span>
               </span>
-              <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Mínimo do conjunto Azul">
-                <span className="text-[10px]"><Triangle className='rotate-270 w-4 h-4 fill-[#5B9BD5]' /></span> {Math.round(minLessDataValue)}
-              </span>
-              <span className="text-[#E0756C] flex items-center gap-0.5" title="Mínimo do conjunto Vermelho">
-                <span className="text-[10px]"><Triangle className='rotate-270 w-4 h-4 fill-[#E0756C]' /></span> {Math.round(minMaxDataValue)}
-              </span>
+              {
+                showIndicators && (
+                  <>
+                    <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Mínimo do conjunto Azul">
+                      <span className="text-[10px]"><Triangle className='rotate-270 w-4 h-4 fill-[#5B9BD5]' /></span> {Math.round(minLessDataValue)}
+                    </span>
+                    <span className="text-[#E0756C] flex items-center gap-0.5" title="Mínimo do conjunto Vermelho">
+                      <span className="text-[10px]"><Triangle className='rotate-270 w-4 h-4 fill-[#E0756C]' /></span> {Math.round(minMaxDataValue)}
+                    </span>
+                  </>
+                )
+              }
             </div>
 
             <div className="absolute top-2 left-2 z-30 flex gap-2">
