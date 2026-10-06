@@ -327,9 +327,13 @@ const SimulationsSummary = ({
 
   // ── Lógica dos Dados de Valores e Cenários ──────────────────────────────────
   const unitTotal =
-    type === "energy" ? "MJ" : type === "material" ? "kg" : "kg CO₂";
+    type === "energy" ? "MJ" : type === "material" ? "m³" : "kg CO₂";
   const unitBenchmark =
-    type === "energy" ? "MJ/m²" : type === "material" ? "kg/m²" : "kg/m² CO₂";
+    type === "energy"
+      ? "MJ/m²"
+      : type === "material"
+        ? "m³/m²"
+        : "kg/m² CO₂";
   const currentUnit = unitsOfMeasure[type] || "Kg/m²";
 
   const activeStacked =

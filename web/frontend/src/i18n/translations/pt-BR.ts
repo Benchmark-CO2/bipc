@@ -1338,7 +1338,7 @@ export const ptBR = {
     energyMin: "Energia Min. (MJ/m²)",
     energyMax: "Energia Max. (MJ/m²)",
     energyRange: "Energia (MJ/m²)",
-    material: "Material (kg/m²)",
+    material: "Material (m³/m²)",
     quantity: "Quantidade",
     unknown: "Desconhecida",
     outdatedTech:

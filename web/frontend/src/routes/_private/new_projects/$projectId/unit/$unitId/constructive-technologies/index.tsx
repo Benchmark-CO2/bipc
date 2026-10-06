@@ -345,11 +345,14 @@ const OptionMenu = ({
             </span>
             <span className="text-[11px] sm:text-xs font-medium text-foreground tabular-nums truncate">
               {option?.consumption?.["total"]
-                ? (option.consumption["total"].material || 0).toInternational()
+                ? (option.consumption["total"].material || 0).toInternational(
+                    "pt-BR",
+                    4,
+                  )
                 : "-"}
             </span>
             <span className="text-[11px] sm:text-[11px] text-muted-foreground shrink-0 hidden sm:inline">
-              kg/m²
+              m³/m²
             </span>
           </div>
           <Badge
@@ -599,13 +602,13 @@ function RouteComponent() {
       return {
         co2_range: "0 - 0",
         energy_range: "0 - 0",
-        material: (0).toInternational(),
+        material: (0).toInternational("pt-BR", 4),
       };
     }
     return {
       co2_range: `${(consumption.co2_min || 0).toInternational()} - ${(consumption.co2_max || 0).toInternational()}`,
       energy_range: `${(consumption.energy_min || 0).toInternational()} - ${(consumption.energy_max || 0).toInternational()}`,
-      material: `${(consumption.material || 0).toInternational()}`,
+      material: `${(consumption.material || 0).toInternational("pt-BR", 4)}`,
     };
   };
 
