@@ -1327,7 +1327,7 @@ export const en: Translations = {
     energyMin: "Energy Min. (MJ/m²)",
     energyMax: "Energy Max. (MJ/m²)",
     energyRange: "Energy (MJ/m²)",
-    material: "Material (kg/m²)",
+    material: "Material (m³/m²)",
     quantity: "Quantity",
     unknown: "Unknown",
     outdatedTech:

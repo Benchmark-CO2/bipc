@@ -107,7 +107,7 @@ export const makeConstructiveTechnologiesColumns = (
     cell: ({ row }) => (
       <div className="text-center">
         {row.original.material != null
-          ? `${row.original.material.toInternational()}`
+          ? `${row.original.material.toInternational("pt-BR", 4)}`
           : "-"}
       </div>
     ),

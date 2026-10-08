@@ -636,6 +636,29 @@ func (m ModuleModel) UpsertModuleTargetConsumptions(moduleID uuid.UUID, targets 
 	return tx.Commit()
 }
 
+// UpdateComputedConsumption refreshes the stored total consumption columns of
+// a module row (totals are normally written on create/update; this covers
+// backfills for legacy modules whose totals are NULL or stale).
+func (m ModuleModel) UpdateComputedConsumption(moduleID uuid.UUID, co2Min, co2Max, energyMin, energyMax, material float64, completed bool) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	query := `
+		UPDATE module
+		SET total_co2_min    = $2,
+			total_co2_max    = $3,
+			total_energy_min = $4,
+			total_energy_max = $5,
+			total_material   = $6,
+			outdated         = FALSE,
+			completed        = $7,
+			updated_at       = NOW()
+		WHERE id = $1`
+
+	_, err := m.DB.ExecContext(ctx, query, moduleID, co2Min, co2Max, energyMin, energyMax, material, completed)
+	return err
+}
+
 func (m ModuleModel) ListModuleIDsMissingConsumption() ([]uuid.UUID, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

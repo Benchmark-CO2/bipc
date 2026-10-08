@@ -573,22 +573,48 @@ func (app *application) duplicateModule(
 		unitID = customUnitID
 	}
 
+	// Recompute the consumption from the module data instead of copying the
+	// original stored totals. This guarantees the duplicated module carries
+	// fresh values (also when the original totals are NULL, e.g. legacy
+	// modules) and never propagates stale/outdated numbers.
+	moduleAPI, err := modules.ParseModuleType(originalModule.Type)
+	if err != nil {
+		return nil, err
+	}
+
+	typedModule, err := moduleAPI.Get(app.models, originalModule.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	v := validator.New()
+	typedModule.Validate(v)
+	completed := v.Valid()
+
+	result, err := typedModule.Calculate()
+	if err != nil {
+		if completed {
+			return nil, err
+		}
+		result = modules.Consumption{}
+	}
+
 	duplicatedModule := &data.Module{
 		ID:                newModuleID,
 		Type:              originalModule.Type,
 		OptionID:          newOptionID,
 		Data:              originalModule.Data,
-		TotalCO2Min:       originalModule.TotalCO2Min,
-		TotalCO2Max:       originalModule.TotalCO2Max,
-		TotalEnergyMin:    originalModule.TotalEnergyMin,
-		TotalEnergyMax:    originalModule.TotalEnergyMax,
-		TotalMaterial:     originalModule.TotalMaterial,
+		TotalCO2Min:       &result.CO2Min,
+		TotalCO2Max:       &result.CO2Max,
+		TotalEnergyMin:    &result.EnergyMin,
+		TotalEnergyMax:    &result.EnergyMax,
+		TotalMaterial:     &result.Material,
 		RelativeCO2Min:    originalModule.RelativeCO2Min,
 		RelativeCO2Max:    originalModule.RelativeCO2Max,
 		RelativeEnergyMin: originalModule.RelativeEnergyMin,
 		RelativeEnergyMax: originalModule.RelativeEnergyMax,
 		Outdated:          false,
-		Completed:         originalModule.Completed,
+		Completed:         completed,
 		FloorIDs:          floorIDs,
 		UnitID:            unitID,
 	}
@@ -596,20 +622,6 @@ func (app *application) duplicateModule(
 	option, err := app.models.Options.GetByID(newOptionID)
 	if err != nil {
 		return nil, err
-	}
-
-	// Convert module totals to Consumption type
-	var material float64
-	if originalModule.TotalMaterial != nil {
-		material = *originalModule.TotalMaterial
-	}
-
-	result := modules.Consumption{
-		CO2Min:    *originalModule.TotalCO2Min,
-		CO2Max:    *originalModule.TotalCO2Max,
-		EnergyMin: *originalModule.TotalEnergyMin,
-		EnergyMax: *originalModule.TotalEnergyMax,
-		Material:  material,
 	}
 
 	// Use centralized function to prepare targets with area calculations

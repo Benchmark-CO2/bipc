@@ -72,7 +72,7 @@ export const makeFloorsColumns = (t: Translations): ColumnDef<FloorRow>[] => [
     cell: ({ row }) => (
       <div className="text-center">
         {row.original.material
-          ? `${row.original.material.toInternational()}`
+          ? `${row.original.material.toInternational("pt-BR", 4)}`
           : "-"}
       </div>
     ),
