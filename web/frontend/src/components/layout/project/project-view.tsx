@@ -21,7 +21,10 @@ const ProjectView = ({
   projectConsumptions,
 }: {
   projectId: string;
-  projectConsumptions: TConsumption[];
+  projectConsumptions: (
+    | TConsumption
+    | { type: string; name?: string; custom_technology?: boolean }
+  )[];
 }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();

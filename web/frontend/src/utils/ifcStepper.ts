@@ -3,6 +3,7 @@ import { IProject } from "@/types/projects";
 import { TRole } from "@/types/disciplines";
 import { TModulesTypes, TModuleDataV2, TModuleSource } from "@/types/modules";
 import {
+  TGeometriesCalculationMode,
   TIfcProcessorAggregatedResult,
   TIfcProcessorRequestListItem,
   TIfcProcessorResultUnits,
@@ -37,6 +38,33 @@ const KNOWN_MODULE_TYPES: TModulesTypes[] = [
   "raft_piles_foundation",
 ];
 
+export const FOUNDATION_MODULE_TYPES: TModulesTypes[] = [
+  "raft_foundation",
+  "piles_foundation",
+  "raft_piles_foundation",
+];
+
+export const isFoundationModuleType = (
+  t: string | TModulesTypes | null | undefined,
+): boolean => {
+  if (!t) return false;
+  return (FOUNDATION_MODULE_TYPES as string[]).includes(String(t));
+};
+
+export const stripFoundationFloorIndex = (
+  type: string | TModulesTypes | null | undefined,
+  data: Record<string, unknown> | null | undefined,
+): Record<string, unknown> => {
+  if (!data) return {};
+  if (!isFoundationModuleType(type)) return data as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const k of Object.keys(data)) {
+    if (k === "floor_index" || k === "floor_indexes") continue;
+    out[k] = (data as Record<string, unknown>)[k];
+  }
+  return out;
+};
+
 const generateTempId = () => {
   return `tmp_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
 };
@@ -50,8 +78,48 @@ const isKnownModuleType = (t: string | TModulesTypes): t is TModulesTypes => {
   return (KNOWN_MODULE_TYPES as string[]).includes(t as string);
 };
 
-type TRawIfcRequestListItem = TIfcProcessorRequestListItem & {
+type TRawIfcRequestListItem = Omit<
+  TIfcProcessorRequestListItem,
+  "geometries_calculation_mode" | "is_visible" | "calculate_geometries"
+> & {
   isVisible?: boolean;
+  is_visible?: unknown;
+  geometries_calculation_mode?: unknown;
+  calculate_geometries?: unknown;
+};
+
+type TGeometriesCalculationModeRawInput = {
+  geometries_calculation_mode?: unknown;
+  calculate_geometries?: unknown;
+};
+
+const GEOMETRIES_MODE_VALID: ReadonlySet<unknown> = new Set<unknown>([0, 1]);
+
+export const castToGeometriesCalculationMode = (
+  raw: TGeometriesCalculationModeRawInput | null | undefined,
+): TGeometriesCalculationMode => {
+  if (!raw) return 0;
+
+  if (
+    raw.geometries_calculation_mode !== undefined &&
+    raw.geometries_calculation_mode !== null
+  ) {
+    const n = Number(raw.geometries_calculation_mode);
+    if (GEOMETRIES_MODE_VALID.has(n)) return n as TGeometriesCalculationMode;
+    return 0;
+  }
+
+  if (
+    raw.calculate_geometries !== undefined &&
+    raw.calculate_geometries !== null
+  ) {
+    if (raw.calculate_geometries === true) return 1;
+    if (raw.calculate_geometries === false) return 0;
+    const n = Number(raw.calculate_geometries);
+    if (GEOMETRIES_MODE_VALID.has(n)) return n as TGeometriesCalculationMode;
+  }
+
+  return 0;
 };
 
 export const normalizeIfcRequestListItem = (
@@ -65,8 +133,17 @@ export const normalizeIfcRequestListItem = (
   } else {
     isVisible = true;
   }
+  const mode = castToGeometriesCalculationMode(raw);
+  const {
+    isVisible: _discardIsVisible,
+    is_visible: _discardIsVisibleSnake,
+    geometries_calculation_mode: _discardMode,
+    calculate_geometries: _discardLegacy,
+    ...rest
+  } = raw;
   return {
-    ...raw,
+    ...rest,
+    geometries_calculation_mode: mode,
     is_visible: isVisible,
   };
 };
@@ -760,7 +837,15 @@ export const mapIfcResultToStepperState = (
 
   const modules: TIfcStepperModuleItem[] = (result.modules ?? []).map((m) => {
     const normalizedType = normalizeModuleType(m.type);
-    const normalizedRaw = { ...m, type: normalizedType || m.type };
+    const strippedData = stripFoundationFloorIndex(
+      normalizedType || m.type,
+      (m?.data ?? {}) as Record<string, unknown>,
+    );
+    const normalizedRaw = {
+      ...m,
+      type: normalizedType || m.type,
+      data: strippedData,
+    };
     const summary = buildModuleSummary(normalizedRaw as any);
     const { isValid, errors, warnings } = validateStepperModule(
       normalizedRaw as any,

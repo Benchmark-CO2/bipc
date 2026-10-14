@@ -158,6 +158,7 @@ func (p *PilesFoundation) Validate(v *validator.Validator) {
 
 	validatePositionedConcrete(v, p.Concrete, p.validPositions())
 	validatePositionedSteel(v, p.Steel, p.validPositions())
+	v.Check(len(p.Steel) > 0, "steel", "must have at least one item")
 }
 
 func (p *PilesFoundation) Calculate() (Consumption, error) {

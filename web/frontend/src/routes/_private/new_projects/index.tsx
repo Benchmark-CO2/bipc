@@ -52,10 +52,12 @@ function RouteComponent() {
 
   useEffect(() => {
     if (activationRequired) {
-      setIsActivationModalOpen(true);
+      if (activated === false) {
+        setIsActivationModalOpen(true);
+      }
       void navigate({ search: {}, replace: true });
     }
-  }, [activationRequired, navigate]);
+  }, [activationRequired, activated, navigate]);
 
   const handleAddProjectClick = () => {
     if (activated === false) {

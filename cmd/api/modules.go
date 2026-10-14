@@ -112,12 +112,61 @@ func (app *application) resolveWrappersFloorIndex(optionID uuid.UUID, wrappers [
 		return wrappers, nil
 	}
 
+	normalized := append([]modulePayloadWrapper(nil), wrappers...)
+
+	// Flatten the floor_index values across entries, keeping track of the
+	// entry each value belongs to so validation errors can reference the
+	// right module.
+	type flattenedIndex struct {
+		value    int
+		entryIdx int
+	}
+	flattened := make([]flattenedIndex, 0, len(unit.Floors))
+	for ei, entry := range entries {
+		for _, v := range entry.values {
+			flattened = append(flattened, flattenedIndex{value: v, entryIdx: ei})
+		}
+	}
+
+	// When the total number of floor_index values matches the floor count, map
+	// by order so a shifted contiguous sequence (e.g. 2,3,4 with floors
+	// -1,0,1) still resolves to the right floors, including arrays. The
+	// sequence must be contiguous without gaps.
+
+	if len(flattened) == len(unit.Floors) {
+		for i := 1; i < len(flattened); i++ {
+			if flattened[i].value == flattened[i-1].value+1 {
+				continue
+			}
+
+			return nil, &ValidationError{Errors: map[string]string{
+				fmt.Sprintf("modules[%d].data.floor_index", entries[flattened[i].entryIdx].wrapperIndex): "must form a contiguous sequence without gaps",
+			}}
+		}
+
+		resolved := make([][]uuid.UUID, len(entries))
+		for i := range flattened {
+			entryIdx := flattened[i].entryIdx
+			resolved[entryIdx] = append(resolved[entryIdx], unit.Floors[i].ID)
+		}
+
+		for ei, entry := range entries {
+			normalizedData, err := overrideFloorTargets(normalized[entry.wrapperIndex].Data, resolved[ei])
+			if err != nil {
+				return nil, fmt.Errorf("invalid json format for modules[%d].data: %w", entry.wrapperIndex, err)
+			}
+
+			normalized[entry.wrapperIndex].Data = normalizedData
+		}
+
+		return normalized, nil
+	}
+
 	floorIDByRealIndex := make(map[int]uuid.UUID, len(unit.Floors))
 	for _, floor := range unit.Floors {
 		floorIDByRealIndex[floor.Index] = floor.ID
 	}
 
-	normalized := append([]modulePayloadWrapper(nil), wrappers...)
 	for _, entry := range entries {
 		resolvedFloorIDs := make([]uuid.UUID, 0, len(entry.values))
 		for _, val := range entry.values {
@@ -524,22 +573,48 @@ func (app *application) duplicateModule(
 		unitID = customUnitID
 	}
 
+	// Recompute the consumption from the module data instead of copying the
+	// original stored totals. This guarantees the duplicated module carries
+	// fresh values (also when the original totals are NULL, e.g. legacy
+	// modules) and never propagates stale/outdated numbers.
+	moduleAPI, err := modules.ParseModuleType(originalModule.Type)
+	if err != nil {
+		return nil, err
+	}
+
+	typedModule, err := moduleAPI.Get(app.models, originalModule.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	v := validator.New()
+	typedModule.Validate(v)
+	completed := v.Valid()
+
+	result, err := typedModule.Calculate()
+	if err != nil {
+		if completed {
+			return nil, err
+		}
+		result = modules.Consumption{}
+	}
+
 	duplicatedModule := &data.Module{
 		ID:                newModuleID,
 		Type:              originalModule.Type,
 		OptionID:          newOptionID,
 		Data:              originalModule.Data,
-		TotalCO2Min:       originalModule.TotalCO2Min,
-		TotalCO2Max:       originalModule.TotalCO2Max,
-		TotalEnergyMin:    originalModule.TotalEnergyMin,
-		TotalEnergyMax:    originalModule.TotalEnergyMax,
-		TotalMaterial:     originalModule.TotalMaterial,
+		TotalCO2Min:       &result.CO2Min,
+		TotalCO2Max:       &result.CO2Max,
+		TotalEnergyMin:    &result.EnergyMin,
+		TotalEnergyMax:    &result.EnergyMax,
+		TotalMaterial:     &result.Material,
 		RelativeCO2Min:    originalModule.RelativeCO2Min,
 		RelativeCO2Max:    originalModule.RelativeCO2Max,
 		RelativeEnergyMin: originalModule.RelativeEnergyMin,
 		RelativeEnergyMax: originalModule.RelativeEnergyMax,
 		Outdated:          false,
-		Completed:         originalModule.Completed,
+		Completed:         completed,
 		FloorIDs:          floorIDs,
 		UnitID:            unitID,
 	}
@@ -547,20 +622,6 @@ func (app *application) duplicateModule(
 	option, err := app.models.Options.GetByID(newOptionID)
 	if err != nil {
 		return nil, err
-	}
-
-	// Convert module totals to Consumption type
-	var material float64
-	if originalModule.TotalMaterial != nil {
-		material = *originalModule.TotalMaterial
-	}
-
-	result := modules.Consumption{
-		CO2Min:    *originalModule.TotalCO2Min,
-		CO2Max:    *originalModule.TotalCO2Max,
-		EnergyMin: *originalModule.TotalEnergyMin,
-		EnergyMax: *originalModule.TotalEnergyMax,
-		Material:  material,
 	}
 
 	// Use centralized function to prepare targets with area calculations

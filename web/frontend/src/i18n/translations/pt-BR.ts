@@ -465,6 +465,9 @@ export const ptBR = {
       validationSummary: "Verifique os campos com erro abaixo:",
       duplicateFloor: "Duplicar Pavimento",
       removeFloor: "Remover Pavimento",
+      updateWarningTitle: "Importante: Confirmação de Atualização",
+      updateWarningBody:
+        "Ao editar esta unidade, todas as simulações associadas serão invalidadas e precisarão ser refeitas. Ao clicar em atualizar abaixo, você reconhece que entende as consequências desta ação.",
     },
   },
   modules: {
@@ -947,6 +950,9 @@ export const ptBR = {
     learnMore: "Saiba mais...",
     dismissCheckboxLabel:
       "Não exibir esta mensagem automaticamente ao entrar novamente neste navegador",
+    accessVideosOnYoutube: "Acesse os vídeos no YouTube",
+    videoTrainingDescription:
+      "Você também pode acessar o conteúdo da capacitação por meio de vídeos explicativos no YouTube, no seu próprio ritmo.",
   },
   phase: {
     preliminary_study: "Estudo Preliminar",
@@ -1332,7 +1338,7 @@ export const ptBR = {
     energyMin: "Energia Min. (MJ/m²)",
     energyMax: "Energia Max. (MJ/m²)",
     energyRange: "Energia (MJ/m²)",
-    material: "Material (kg/m²)",
+    material: "Material (m³/m²)",
     quantity: "Quantidade",
     unknown: "Desconhecida",
     outdatedTech:
@@ -1345,6 +1351,7 @@ export const ptBR = {
       "Essa tecnologia construtiva está sem dados de materiais. Abra a edição para preencher.",
     duplicate: "Duplicar",
     selectRow: "Selecionar linha",
+    createdByUser: "(Criado pelo usuário)",
   },
   unitView: {
     tabAllDisciplines: "Todas as disciplinas",
@@ -1541,6 +1548,31 @@ export const ptBR = {
       editBtnDisabled: "Vincule uma unidade para editar",
       notBoundWarning:
         "Vincule este módulo a uma unidade no Step 2 antes de salvar. Pavimentos só serão selecionáveis após o vínculo.",
+      noneSelected:
+        "Nenhum módulo selecionado para criar. Marque ao menos 1 módulo e vincule a uma unidade.",
+      noBinding:
+        "{count} módulo(s) selecionado(s) SEM vínculo de unidade/opção. Vincule as unidades ou desmarque para prosseguir.",
+      noneValid:
+        "Nenhum módulo válido selecionado para criar. Marque ao menos 1 módulo válido e com vínculo de unidade.",
+      unselected:
+        "{count} módulo(s) desmarcado(s) — nenhum módulo selecionado válido para criar. Stepper encerrado.",
+      noBindingAtAll:
+        "Nenhum módulo com vinculo de unidade para criar. Stepper encerrado.",
+      step2Error: "Falha ao criar módulos.",
+      batchResult:
+        "{created} módulo(s) criado(s). {errors} lote(s) falhou(ram).",
+      createdSuccess: "{count} módulo(s) criado(s) com sucesso.",
+      ignoredParts: "{parts} — não serão criados.",
+      partIgnored: "{count} selecionado(s) mas sem vinculo/inválidos",
+      partUnselected: "{count} desmarcado(s)",
+      creatingUnits: "Criando unidades...",
+      creatingModules: "Criando módulos...",
+      nextStep: "Próximo passo",
+      cancel: "Cancelar",
+      back: "Voltar",
+      finish: "Concluir",
+      titleBindingTooltip:
+        "{count} módulo(s) selecionado(s) sem vínculo de unidade/opção — vincule ou desmarque para prosseguir.",
     },
     units: {
       title: "Unidades encontradas",
@@ -1558,6 +1590,20 @@ export const ptBR = {
       errors: "erro",
       errorsPlural: "erros",
       errorsUnknown: "Validação pendente ou falhou.",
+      noneSelected: "Selecione pelo menos uma unidade para criar.",
+      invalidSelected:
+        "{count} unidade(s) selecionada(s) são inválidas. Corrija ou desmarque antes de prosseguir.",
+      projectMissing: "Dados do projeto não carregados. Tente novamente.",
+      createdUnits:
+        "{count} unidade(s) e simulação(ões) criada(s) com sucesso.",
+      updatedUnits: "{count} unidade(s) atualizada(s) com sucesso.",
+      reusedUnits:
+        "{count} unidade(s) já existiam — seguindo para o passo de módulos.",
+      mixedResult: "{parts}. Seguindo para módulos.",
+      partCreated: "{count} criada(s)",
+      partUpdated: "{count} atualizada(s)",
+      partReused: "{count} reutilizada(s)",
+      step1Error: "Falha ao criar/atualizar unidades/simulações.",
     },
     compat: {
       floorMismatchTitle: "Incompatibilidade de quantidade de pavimentos",
@@ -1609,8 +1655,8 @@ export const ptBR = {
     importData: "Importar os dados",
     importQueuedIFC:
       "Importação iniciada. Você pode acompanhar o status na lista de arquivos importados.",
-    calculateGeometriesLabel: "Calcular geometrias",
-    calculateGeometriesHint: "pode aumentar o tempo de processamento",
+    calculateGeometriesLabel: "Com cálculo geométrico otimizado",
+    calculateGeometriesHint: "pode levar mais tempo",
     selectFileLabel: "Selecione seu arquivo",
     selectFilePlaceholder: "Selecione um arquivo importado",
     noImportedFiles: "Nenhum arquivo importado encontrado",
@@ -1643,10 +1689,11 @@ export const ptBR = {
       "Nenhuma disciplina de simulação cadastrada neste projeto. Crie uma disciplina antes de importar arquivos.",
     disciplinesGoTo: "Abrir aba Disciplinas",
     newDisciplineLink: "Cadastrar nova disciplina",
-    geometryIncludedLabel: "Cálculo de geometria incluso",
+    geometryIncludedLabel:
+      "Modo 1 — Cálculo otimizado (somente geometrias necessárias para os JSONs)",
     geometrySkippedLabel:
-      "Cálculo de geometria não incluso (extração ISO genérica)",
-    geometryIncludedInline: "com cálculo geométrico",
+      "Modo 0 — Sem cálculo de geometrias (extração ISO genérica)",
+    geometryIncludedInline: "com cálculo otimizado",
     geometrySkippedInline: "sem cálculo geométrico",
     simulationRoleMissing:
       "Disciplina de simulação não selecionada. Selecione uma disciplina para prosseguir.",

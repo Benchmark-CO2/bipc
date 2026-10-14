@@ -463,6 +463,9 @@ export const en: Translations = {
       validationSummary: "Check the fields with errors below:",
       duplicateFloor: "Duplicate Floor",
       removeFloor: "Remove Floor",
+      updateWarningTitle: "Important: Update Confirmation",
+      updateWarningBody:
+        "Editing this unit will invalidate all associated simulations and they will need to be recreated. By clicking update below, you acknowledge you understand the consequences of this action.",
     },
   },
   modules: {
@@ -945,6 +948,9 @@ export const en: Translations = {
     learnMore: "Learn more...",
     dismissCheckboxLabel:
       "Do not automatically display this message when entering again on this browser",
+    accessVideosOnYoutube: "Access the videos on YouTube",
+    videoTrainingDescription:
+      "You can also access the training content through explanatory videos on YouTube, at your own pace.",
   },
   phase: {
     preliminary_study: "Schematic Design",
@@ -1321,7 +1327,7 @@ export const en: Translations = {
     energyMin: "Energy Min. (MJ/m²)",
     energyMax: "Energy Max. (MJ/m²)",
     energyRange: "Energy (MJ/m²)",
-    material: "Material (kg/m²)",
+    material: "Material (m³/m²)",
     quantity: "Quantity",
     unknown: "Unknown",
     outdatedTech:
@@ -1334,6 +1340,7 @@ export const en: Translations = {
       "This technology has no material data. Open edit to fill in the information.",
     duplicate: "Duplicate",
     selectRow: "Select row",
+    createdByUser: "(Created by the user)",
   },
   unitView: {
     tabAllDisciplines: "All disciplines",
@@ -1529,6 +1536,29 @@ export const en: Translations = {
       editBtnDisabled: "Bind a unit to enable editing",
       notBoundWarning:
         "Bind this module to a unit in Step 2 before saving. Floors will only be selectable after binding.",
+      noneSelected:
+        "No modules selected for creation. Select at least 1 module and bind it to a unit.",
+      noBinding:
+        "{count} selected module(s) WITHOUT a unit/option binding. Bind the units or uncheck them to proceed.",
+      noneValid:
+        "No valid modules selected for creation. Select at least 1 valid module with a unit bound.",
+      unselected:
+        "{count} unselected module(s) — no valid selected module to create. Stepper closed.",
+      noBindingAtAll: "No modules with a unit bound to create. Stepper closed.",
+      step2Error: "Failed to create modules.",
+      batchResult: "{created} module(s) created. {errors} batch(es) failed.",
+      createdSuccess: "{count} module(s) created successfully.",
+      ignoredParts: "{parts} — will not be created.",
+      partIgnored: "{count} selected but without binding/invalid",
+      partUnselected: "{count} unselected",
+      creatingUnits: "Creating units...",
+      creatingModules: "Creating modules...",
+      nextStep: "Next step",
+      cancel: "Cancel",
+      back: "Back",
+      finish: "Finish",
+      titleBindingTooltip:
+        "{count} selected module(s) without a unit/option binding — bind them or uncheck to proceed.",
     },
     units: {
       title: "Found units",
@@ -1546,6 +1576,19 @@ export const en: Translations = {
       errors: "error",
       errorsPlural: "errors",
       errorsUnknown: "Validation pending or failed.",
+      noneSelected: "Select at least one unit to create.",
+      invalidSelected:
+        "{count} selected unit(s) are invalid. Fix them or uncheck them before proceeding.",
+      projectMissing: "Project data not loaded. Please try again.",
+      createdUnits: "{count} unit(s) and simulation(s) created successfully.",
+      updatedUnits: "{count} unit(s) updated successfully.",
+      reusedUnits:
+        "{count} existing unit(s) reused — moving forward to the modules step.",
+      mixedResult: "{parts}. Moving forward to modules.",
+      partCreated: "{count} created",
+      partUpdated: "{count} updated",
+      partReused: "{count} reused",
+      step1Error: "Failed to create/update units/simulations.",
     },
     compat: {
       floorMismatchTitle: "Floor count mismatch",
@@ -1595,8 +1638,8 @@ export const en: Translations = {
     importData: "Import data",
     importQueuedIFC:
       "Import started. You can track the status in the imported files list.",
-    calculateGeometriesLabel: "Calculate geometries",
-    calculateGeometriesHint: "may increase processing time",
+    calculateGeometriesLabel: "With optimized geometry calculation",
+    calculateGeometriesHint: "may take longer",
     selectFileLabel: "Select your file",
     selectFilePlaceholder: "Select an imported file",
     noImportedFiles: "No imported files found",
@@ -1628,10 +1671,11 @@ export const en: Translations = {
       "No simulation disciplines registered in this project. Create a discipline before importing files.",
     disciplinesGoTo: "Open Disciplines tab",
     newDisciplineLink: "Register new discipline",
-    geometryIncludedLabel: "Geometry calculation included",
+    geometryIncludedLabel:
+      "Mode 1 — Optimized calculation (only geometries needed for JSONs)",
     geometrySkippedLabel:
-      "Geometry calculation skipped (generic ISO extraction)",
-    geometryIncludedInline: "with geometry calculation",
+      "Mode 0 — No geometry calculation (generic ISO extraction)",
+    geometryIncludedInline: "with optimized calculation",
     geometrySkippedInline: "without geometry calculation",
     simulationRoleMissing:
       "Simulation discipline not selected. Choose a discipline to continue.",

@@ -13,6 +13,9 @@ import { useTranslation } from "@/i18n";
 import { Translations } from "@/i18n/translations/pt-BR";
 import { cn } from "@/lib/utils";
 import {
+  DrawerStepperIFCCompletePayload,
+  GEOMETRIES_CALCULATION_MODE,
+  TGeometriesCalculationMode,
   TIfcProcessorAggregatedResult,
   TIfcProcessorFallbackVersion,
   TIfcProcessorImportStatus,
@@ -24,6 +27,7 @@ import { dateUtils } from "@/utils/date";
 import { normalizeIfcRequestListItem } from "@/utils/ifcStepper";
 import { parseApiError } from "@/utils/parseApiError";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
   FileUp,
@@ -88,7 +92,7 @@ type ImportedIFCFile = {
   date: string;
   status: TIfcProcessorImportStatus;
   errorMessage?: string | null;
-  calculate_geometries: boolean;
+  geometries_calculation_mode: TGeometriesCalculationMode;
 };
 
 const MOCK_SOFTWARE_TQS = [{ value: "tqs", label: "TQS" }];
@@ -297,11 +301,15 @@ export default function DrawerIFCImport({
   optionId,
   triggerComponent,
 }: DrawerIFCImportProps) {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [fileType, setFileType] = useState<FileType>("ifc");
   const [software, setSoftware] = useState("");
   const [version, setVersion] = useState("");
-  const [calculateGeometries, setCalculateGeometries] = useState(true);
+  const [geometriesCalculationMode, setGeometriesCalculationMode] =
+    useState<TGeometriesCalculationMode>(
+      GEOMETRIES_CALCULATION_MODE.ENABLED_OPTIMIZED,
+    );
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [importErrorMessage, setImportErrorMessage] = useState("");
   const [fileWarningMessage, setFileWarningMessage] = useState("");
@@ -626,7 +634,7 @@ export default function DrawerIFCImport({
     status: req.status,
     errorMessage: req.error_message,
     is_visible: req.is_visible,
-    calculate_geometries: req.calculate_geometries,
+    geometries_calculation_mode: req.geometries_calculation_mode,
   });
 
   const ifcImportedFiles: (ImportedIFCFile & { is_visible: boolean })[] = (
@@ -662,7 +670,7 @@ export default function DrawerIFCImport({
         version,
         file_name: uploadFile.name,
         file_hash: fileHash,
-        calculate_geometries: calculateGeometries,
+        geometries_calculation_mode: geometriesCalculationMode,
       });
 
       const putRes = await fetch(res.data.ifc_url, {
@@ -687,7 +695,9 @@ export default function DrawerIFCImport({
       setUploadFile(null);
       setSoftware("");
       setVersion("");
-      setCalculateGeometries(true);
+      setGeometriesCalculationMode(
+        GEOMETRIES_CALCULATION_MODE.ENABLED_OPTIMIZED,
+      );
       setImportErrorMessage("");
       setFileWarningMessage("");
     },
@@ -792,7 +802,7 @@ export default function DrawerIFCImport({
     setFileType("ifc");
     setSoftware("");
     setVersion("");
-    setCalculateGeometries(true);
+    setGeometriesCalculationMode(1);
     setUploadFile(null);
     setImportErrorMessage("");
     setFileWarningMessage("");
@@ -812,7 +822,7 @@ export default function DrawerIFCImport({
     setUploadFile(null);
     setSoftware(ft === "tqs" ? "tqs" : "");
     setVersion(ft === "tqs" ? "tqsv26" : "");
-    setCalculateGeometries(true);
+    setGeometriesCalculationMode(1);
   };
 
   const handleSoftwareChange = (val: string) => {
@@ -1052,19 +1062,31 @@ export default function DrawerIFCImport({
                   />
 
                   {fileType === "ifc" && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-start gap-2">
                       <Checkbox
-                        checked={calculateGeometries}
-                        onCheckedChange={(v) =>
-                          setCalculateGeometries(v === true)
+                        id="ifc-geometries-mode"
+                        checked={
+                          geometriesCalculationMode ===
+                          GEOMETRIES_CALCULATION_MODE.ENABLED_OPTIMIZED
                         }
+                        onCheckedChange={(v) =>
+                          setGeometriesCalculationMode(
+                            v === true
+                              ? GEOMETRIES_CALCULATION_MODE.ENABLED_OPTIMIZED
+                              : GEOMETRIES_CALCULATION_MODE.DISABLED,
+                          )
+                        }
+                        className="mt-0.5"
                       />
-                      <span className="text-sm text-muted-foreground">
+                      <label
+                        htmlFor="ifc-geometries-mode"
+                        className="text-sm text-muted-foreground cursor-pointer"
+                      >
                         {t.drawerIFC.calculateGeometriesLabel}{" "}
                         <span className="text-muted-foreground">
                           ({t.drawerIFC.calculateGeometriesHint})
                         </span>
-                      </span>
+                      </label>
                     </div>
                   )}
 
@@ -1286,13 +1308,15 @@ export default function DrawerIFCImport({
                                       <span
                                         className={cn(
                                           "text-xs shrink-0 font-medium",
-                                          f.calculate_geometries
+                                          f.geometries_calculation_mode ===
+                                            GEOMETRIES_CALCULATION_MODE.ENABLED_OPTIMIZED
                                             ? "text-emerald-600 dark:text-emerald-400"
                                             : "text-amber-600 dark:text-amber-400",
                                         )}
                                       >
                                         (
-                                        {f.calculate_geometries
+                                        {f.geometries_calculation_mode ===
+                                        GEOMETRIES_CALCULATION_MODE.ENABLED_OPTIMIZED
                                           ? t.drawerIFC.geometryIncludedInline
                                           : t.drawerIFC.geometrySkippedInline}
                                         )
@@ -1457,8 +1481,31 @@ export default function DrawerIFCImport({
           preselectedUnitId={mode === "simulation" ? unitId : undefined}
           preselectedOptionId={mode === "simulation" ? optionId : undefined}
           fileName={selectedIfcFile?.name ?? uploadFile?.name ?? null}
-          onComplete={() => {
+          onComplete={(payload: DrawerStepperIFCCompletePayload) => {
             setStepperResult(null);
+            if (!payload || payload.units.length === 0) return;
+            const targetUnit = payload.units[0];
+            if (!targetUnit?.unitId) return;
+            const dcpId =
+              (typeof payload.disciplineId === "string" &&
+              payload.disciplineId.trim() !== ""
+                ? payload.disciplineId
+                : null) ??
+              (typeof effectiveRoleId === "string" &&
+              effectiveRoleId.trim() !== ""
+                ? effectiveRoleId
+                : null);
+            void navigate({
+              to: "/new_projects/$projectId/unit/$unitId/constructive-technologies",
+              params: {
+                projectId,
+                unitId: targetUnit.unitId,
+              },
+              search: (prev) => ({
+                ...prev,
+                dcp: dcpId ?? (prev as { dcp?: string }).dcp ?? undefined,
+              }),
+            });
           }}
         />
       )}

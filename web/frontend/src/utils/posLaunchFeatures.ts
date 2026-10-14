@@ -7,6 +7,7 @@ export const posLaunchFeatures = {
     enabled: true,
     endDate: "2126-11-17T23:59:59",
     formUrl: "https://classroom.google.com/c/ODQyNjMyNjg3Mjkz?cjc=rxuxkvbl", // Substituir pelo link real do formulário
+    youtubeUrl: "https://youtu.be/Xr2Auu6sf3Y",
     description: "Modal de capacitação para novos usuários da plataforma.",
   },
   formExerciseRights: {

@@ -69,9 +69,10 @@ type ProjectWithUnits struct {
 	IsAdministrator bool   `json:"is_administrator,omitzero"`
 	Roles           []Role `json:"roles,omitempty"`
 
-	Units        []ProjectUnit           `json:"units,omitempty"`
-	Consumptions map[string]*Consumption `json:"consumption,omitempty"`
-	Area         float64                 `json:"area,omitzero"`
+	Units          []ProjectUnit              `json:"units,omitempty"`
+	Consumptions   map[string]*Consumption    `json:"consumption,omitempty"`
+	UnknownModules []*UnknownModuleOccurrence `json:"unknown_modules,omitempty"`
+	Area           float64                    `json:"area,omitzero"`
 }
 
 func ValidateProject(v *validator.Validator, project *Project) {
@@ -343,6 +344,11 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectWithUnits, error) {
 	project.Units = units
 	project.Consumptions, project.Area = CalculateProjectConsumptions(units)
 
+	project.UnknownModules, err = getUnknownModulesByProject(ctx, m.DB, project.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	return &project, nil
 }
 
@@ -535,6 +541,12 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 			if p, ok := projectsMap[projectID]; ok {
 				p.Units = units
 				p.Consumptions, p.Area = CalculateProjectConsumptions(units)
+
+				unknownModules, err := getUnknownModulesByProject(ctx, m.DB, projectID)
+				if err != nil {
+					return nil, Metadata{}, err
+				}
+				p.UnknownModules = unknownModules
 			}
 		}
 	}

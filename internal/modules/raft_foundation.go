@@ -100,6 +100,7 @@ func (r *RaftFoundation) Validate(v *validator.Validator) {
 
 	validatePositionedConcrete(v, r.Concrete, r.validPositions())
 	validatePositionedSteel(v, r.Steel, r.validPositions())
+	v.Check(len(r.Steel) > 0, "steel", "must have at least one item")
 }
 
 func (r *RaftFoundation) Calculate() (Consumption, error) {

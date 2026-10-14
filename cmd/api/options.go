@@ -95,6 +95,25 @@ func (app *application) duplicateOption(
 		}
 	}
 
+	for _, occurrence := range originalOption.UnknownModules {
+		newOccurrenceID, err := uuid.NewV7()
+		if err != nil {
+			return nil, err
+		}
+
+		newOccurrence := &data.UnknownModuleOccurrence{
+			ID:              newOccurrenceID,
+			OptionID:        newOptionID,
+			UnknownModuleID: occurrence.UnknownModuleID,
+			UserID:          occurrence.UserID,
+			Materials:       occurrence.Materials,
+		}
+
+		if _, err := app.models.UnknownModules.InsertOccurrence(newOccurrence); err != nil {
+			return nil, err
+		}
+	}
+
 	return app.models.Options.GetByID(newOptionID)
 }
 

@@ -68,8 +68,8 @@ type StructuralMasonry struct {
 
 	Masonry MasonryElement `json:"masonry"`
 
-	FloorIDs []uuid.UUID `json:"floor_ids"`
-	FloorIndexes []int `json:"floor_indexes,omitempty"`
+	FloorIDs     []uuid.UUID `json:"floor_ids"`
+	FloorIndexes []int       `json:"floor_indexes,omitempty"`
 }
 
 func (s *StructuralMasonry) GetType() string { return s.Type }
@@ -150,6 +150,10 @@ func (s *StructuralMasonry) Validate(v *validator.Validator) {
 	if s.SlabNumber != nil {
 		v.Check(*s.SlabNumber >= 0, "slab_number", "cannot be negative")
 	}
+
+	v.Check(len(s.Masonry.Grout) > 0, "masonry.grout", "must have at least one item")
+	v.Check(len(s.Masonry.Mortar) > 0, "masonry.mortar", "must have at least one item")
+	v.Check(len(s.Masonry.Blocks) > 0, "masonry.blocks", "must have at least one item")
 
 	fgkSet := make(map[int]struct{})
 

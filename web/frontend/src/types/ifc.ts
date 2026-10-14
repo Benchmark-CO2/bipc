@@ -13,6 +13,13 @@ export type TIfcProcessorImportStatus =
   | "failed"
   | "completed";
 
+export type TGeometriesCalculationMode = 0 | 1;
+
+export const GEOMETRIES_CALCULATION_MODE = {
+  DISABLED: 0,
+  ENABLED_OPTIMIZED: 1,
+} as const satisfies Record<string, TGeometriesCalculationMode>;
+
 export type TIfcFloorCategory = NonNullable<TTowerFloorCategory["category"]>;
 
 export interface TIfcProcessorFallbackVersion {
@@ -45,7 +52,8 @@ export interface TIfcProcessorRequestListItem {
   error_message: string | null;
   error_type: string | null;
   fallback_id: string | null;
-  calculate_geometries: boolean;
+  geometries_calculation_mode: TGeometriesCalculationMode;
+  calculate_geometries?: boolean;
   client_id: string;
   is_visible: boolean;
 }
@@ -269,6 +277,14 @@ export interface StepperHeaderProps {
   applyUnitToAllModules: (unitTempId: string) => void;
 }
 
+export interface DrawerStepperIFCCompletePayload {
+  /** Unidades (criadas/reutilizadas/atualizadas) que foram usadas no
+   *  processamento completo do stepper. */
+  units: { unitId: string; optionId: string; tempId: string }[];
+  /** ID da disciplina (role) usada no processamento IFC. */
+  disciplineId: string | null;
+}
+
 export interface DrawerStepperIFCProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -279,5 +295,5 @@ export interface DrawerStepperIFCProps {
   preselectedUnitId?: string;
   preselectedOptionId?: string;
   fileName?: string | null;
-  onComplete?: () => void;
+  onComplete?: (payload: DrawerStepperIFCCompletePayload) => void;
 }

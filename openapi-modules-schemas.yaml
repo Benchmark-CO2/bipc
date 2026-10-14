@@ -10,8 +10,8 @@ components:
 
         Structural v1 does not support stair position.
 
-        Fields marked as required in the data schemas are the expected inputs for a completed
-        module (`completed: true`). They are not enforced server-side anymore: requests that
+        Fields marked as required in the data schemas are the expected inputs for a module to be
+        considered `completed: true`. They are not enforced as request rejections: requests that
         omit them are still accepted and persisted with `completed: false`. Consumption is
         zeroed only when calculation fails; otherwise the calculated values are persisted.
       properties:
@@ -76,8 +76,8 @@ components:
         floor_index is only used as input during batch creation and is never returned in responses.
         Read responses include floor_indexes instead.
 
-        Fields marked as required in the data schemas are the expected inputs for a completed
-        module (`completed: true`). They are not enforced server-side anymore: requests that
+        Fields marked as required in the data schemas are the expected inputs for a module to be
+        considered `completed: true`. They are not enforced as request rejections: requests that
         omit them are still accepted and persisted with `completed: false`. Consumption is
         zeroed only when calculation fails; otherwise the calculated values are persisted.
       properties:
@@ -379,6 +379,10 @@ components:
       description: |
         v1 structural_masonry payload using legacy grouped structures only.
         v1 structural modules do not support stair position.
+
+        A structural_masonry module is only marked `completed: true` when each of the masonry
+        lists (`grout`, `mortar`, `blocks`) contains at least one item. Requests missing any of
+        these lists are still accepted and persisted with `completed: false`.
       properties:
         floor_ids:
           type: array
@@ -422,6 +426,10 @@ components:
         floor_ids or floor_index must be provided, but not both.
         floor_index is only used as input during batch creation and is never returned in responses.
         Read responses include floor_indexes instead.
+
+        A structural_masonry module is only marked `completed: true` when each of the masonry
+        lists (`grout`, `mortar`, `blocks`) contains at least one item. Requests missing any of
+        these lists are still accepted and persisted with `completed: false`.
       properties:
         floor_ids:
           type: array

@@ -14,6 +14,12 @@ import { AlertCircle, CheckCircle2, Edit2, Info } from "lucide-react";
 import { Step2ModulesViewProps } from "@/types/ifc";
 import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
+import {
+  FOUNDATION_MODULE_TYPES,
+  isFoundationModuleType,
+} from "@/utils/ifcStepper";
+
+void FOUNDATION_MODULE_TYPES;
 
 export function Step2ModulesView({
   state,
@@ -33,6 +39,7 @@ export function Step2ModulesView({
   const extractFloorIndexes = (
     m: (typeof state.modules)[number],
   ): number[] | null => {
+    if (isFoundationModuleType(m.type)) return null;
     const rawData = m.raw.data as
       | {
           floor_index?: number | number[];

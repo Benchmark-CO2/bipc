@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { useEffect, useState, useRef } from "react";
-import { X } from "lucide-react";
+import { X, SquarePlay, Play } from "lucide-react";
 import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
 import { trainingModalStorage } from "@/utils/trainingModalStorage";
 import { useNavigate } from "@tanstack/react-router";
@@ -39,6 +39,9 @@ const ModalTraining = ({
   const { t } = useTranslation();
 
   const formUrl = posLaunchFeatures.trainingModal.formUrl;
+  const youtubeUrl = posLaunchFeatures.trainingModal.youtubeUrl;
+  const youtubeVideoId = youtubeUrl.split("youtu.be/")[1]?.split("?")[0] ?? "";
+  const youtubeThumbnailUrl = `https://img.youtube.com/vi/${youtubeVideoId}/hqdefault.jpg`;
 
   useEffect(() => {
     const completed = trainingModalStorage.isCompleted(isAuthenticated);
@@ -110,8 +113,14 @@ const ModalTraining = ({
     window.open(formUrl, "_blank", "noopener,noreferrer");
   };
 
+  const handleOpenYoutube = () => {
+    window.open(youtubeUrl, "_blank", "noopener,noreferrer");
+  };
+
   const handleMinimize = () => {
-    trainingModalStorage.setMinimized(isAuthenticated);
+    if (!isAuthenticated) {
+      trainingModalStorage.setMinimized(isAuthenticated);
+    }
     setOpen(false);
     setShowMiniature(true);
   };
@@ -146,17 +155,9 @@ const ModalTraining = ({
     <>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
         <DialogContent
-          className="sm:max-w-[500px] bg-primary p-10 border-none"
+          className="sm:max-w-[500px] bg-primary p-6 border-none max-h-[90vh] overflow-y-auto"
           showCloseButton={false}
         >
-          <button
-            onClick={handleMinimize}
-            className="absolute text-accent right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </button>
-
           <DialogHeader>
             <DialogTitle className="text-2xl text-center text-accent">
               {t.training.title}
@@ -169,6 +170,37 @@ const ModalTraining = ({
               )}
             </DialogDescription>
           </DialogHeader>
+
+          <p className="mt-4 text-center text-sm text-accent/100 leading-relaxed px-2">
+            {t.training.videoTrainingDescription}
+          </p>
+
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleOpenYoutube}
+            className="mt-6 group w-full h-auto p-0 flex flex-col items-center gap-2 hover:bg-transparent"
+          >
+            <div className="relative w-full max-w-[400px] aspect-video rounded-lg overflow-hidden shadow-md ring-2 ring-accent/30 group-hover:ring-accent/60 transition-all">
+              <img
+                src={youtubeThumbnailUrl}
+                alt={t.training.accessVideosOnYoutube}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/50 transition-colors">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-red-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  <Play className="text-white size-7 ml-1" fill="white" />
+                </div>
+              </div>
+            </div>
+            <span className="text-accent hover:text-accent/80 transition-colors underline underline-offset-2 font-medium flex items-center gap-2">
+              <SquarePlay className="size-5" />
+              {t.training.accessVideosOnYoutube}
+            </span>
+          </Button>
 
           {!openedManually && (
             <div className="mt-6 mb-2 flex items-center justify-start gap-3 px-1">

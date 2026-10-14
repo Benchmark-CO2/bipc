@@ -12,13 +12,13 @@ import (
 var summaryFloorRe = regexp.MustCompile(`(?i)^Piso\s+(\d+)\s*:\s*(.*)$`)
 
 var elementPositionMap = map[string]string{
-	"pilares":    "column",
-	"vigas":      "beam",
-	"lajes":      "slab",
-	"fundacoes":  "",
-	"fundações":  "",
-	"outros":     "",
-	"paredes":    "wall",
+	"pilares":   "column",
+	"vigas":     "beam",
+	"lajes":     "slab",
+	"fundacoes": "",
+	"fundações": "",
+	"outros":    "",
+	"paredes":   "wall",
 }
 
 func getFileTitle(doc *html.Node) string {

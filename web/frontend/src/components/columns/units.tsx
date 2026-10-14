@@ -100,7 +100,7 @@ export const unitsColumns: ColumnDef<
       return (
         <div className="text-center">
           {material !== null && material !== undefined
-            ? `${material.toInternational()}`
+            ? `${material.toInternational("pt-BR", 4)}`
             : "-"}
         </div>
       );

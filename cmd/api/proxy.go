@@ -20,16 +20,16 @@ var corsHeaderKeys = []string{
 }
 
 var ifcPasswordEndpoints = []struct {
-	method  string
-	prefix  string
+	method string
+	prefix string
 }{
 	{http.MethodPost, "/request/"},
 	{http.MethodPost, "/fallbacks/create"},
 }
 
 var ifcAdminEndpoints = []struct {
-	method  string
-	prefix  string
+	method string
+	prefix string
 }{
 	{http.MethodPost, "/fallbacks/create"},
 }
