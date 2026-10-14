@@ -56,7 +56,6 @@ const ProjectsSummary = ({
   const [type, setType] = useState<"co2" | "energy" | "material">("co2");
   const { chartType, ChartSelector } = useChartType(type);
 
-  // 1. Inicia APENAS com o Total selecionado por padrão
   const [selectedProjects, setSelectedProjects] = useState<string[]>(["total"]);
 
   const newItems = useMemo(() => {
@@ -123,7 +122,6 @@ const ProjectsSummary = ({
     return totalConsumption;
   }, [filterProjects]);
 
-  // ── Lógica Centralizada: Calcula os dados e o PCV para TODOS os tipos ──
   const processedData = useMemo(() => {
     const types = ["co2", "energy", "material"] as const;
     const result: Record<string, any> = {};
@@ -252,18 +250,16 @@ const ProjectsSummary = ({
 
   useEffect(() => {
     if (!someSelected) {
-      // 2. Garante que retorne ao default ao zerar seleções externas
       setSelectedProjects(["total"]);
     }
   }, [someSelected]);
 
   const [subTabs, setSubTabs] = useState<string>(t.summary.projects);
-
   const allPossibleIds = ["total", ...filterProjects.map((p) => p.id)];
 
   const selectAll = () => {
     if (selectedProjects.length >= allPossibleIds.length) {
-      setSelectedProjects([]); // ou ["total"] se preferir nunca zerar completamente
+      setSelectedProjects([]); 
     } else {
       setSelectedProjects(allPossibleIds);
     }
@@ -316,7 +312,7 @@ const ProjectsSummary = ({
   let activeProjectsForArea = filterProjects.filter(p => selectedProjects.includes(p.id));
 
   if (activeProjectsForArea.length === 0 && selectedProjects.includes("total")) {
-    activeProjectsForArea = filterProjects; // 3. Se só o Total tá marcado, usa todos os projetos pro calculo de área
+    activeProjectsForArea = filterProjects;
   } else if (activeProjectsForArea.length === 0) {
     activeProjectsForArea = filterProjects;
   }
@@ -330,22 +326,25 @@ const ProjectsSummary = ({
 
   const currentGrade = calculateGrade(allPcvMetrics.co2.V, newData.map(el => (el.max + el.min) / 2));
   const totalProjectsCount = newData.length;
-  const { ref: elementRef, height: elementHeight } = useElementHeight<HTMLDivElement>();
+  
+  const { ref: elementRef } = useElementHeight<HTMLDivElement>();
   const { ref: elementRef2, height: elementHeight2 } = useElementHeight<HTMLDivElement>();
-  const largeScreenResolution = elementHeight > 1000 || elementHeight2 > 800;
+  
   const [val, setVal] = useState('stacked_bar');
   const isMobile = useIsMobile();
+
   return (
-    <div ref={elementRef} className='h-[80vh]'>
-      <div className='flex justify-between gap-2 w-full'>
-        <div className="flex items-center gap-4 w-full overflow-x-auto pt-3">
-          {/* Rótulos Laterais (Benchmark / Total) */}
-          <div className="flex flex-col gap-1.5 text-sm font-bold text-right text-neutral-800 pl-2">
+    // CONTÊINER PRINCIPAL: Trava em 80vh, organiza em coluna e previne qualquer scroll global da área.
+    <div ref={elementRef} className='h-[80vh] flex flex-col overflow-hidden pb-4'>
+      
+      {/* CABEÇALHO (Cards): shrink-0 garante que ele nunca diminua seu próprio tamanho para ceder espaço */}
+      <div className='shrink-0 flex justify-between gap-2 w-full'>
+        <div className="flex items-center gap-4 w-full overflow-x-auto pt-3 pb-2">
+          <div className="flex flex-col gap-1.5 text-sm font-bold text-right text-neutral-800 pl-2 shrink-0">
             <span className="leading-5 whitespace-nowrap flex items-center justify-end mt-1">Benchmark</span>
             <span className="leading-5 whitespace-nowrap flex items-center justify-end mb-1">Total</span>
           </div>
 
-          {/* Container dos Cards */}
           <div className="flex flex-nowrap gap-4 w-full">
             <ScenarioCard
               letter="V"
@@ -397,11 +396,15 @@ const ProjectsSummary = ({
           </div>
         </div>
       </div>
+
       {isFullScreen && (
-        <div  className='flex gap-4 max-sm:gap-2 max-sm:flex-col max-sm:p-2'>
-          <div className='w-1/3 flex-shrink-0 mt-3 flex flex-col max-sm:w-full!'>
+        // CONTÊINER DE CORPO (Full Screen): flex-1 min-h-0 garante que absorva todo espaço que sobrou e não passe dele
+        <div className='flex-1 min-h-0 flex gap-4 max-sm:gap-2 max-sm:flex-col max-sm:p-2 overflow-hidden mt-2'>
+          
+          {/* COLUNA ESQUERDA (Emissões): Caso o conteúdo seja muito longo, um pequeno overflow-y-auto apenas nele permite não quebrar o layout geral */}
+          <div className='w-1/3 shrink-0 flex flex-col min-h-0 max-sm:w-full overflow-y-auto pr-2'>
             <Select onValueChange={setVal} value={val} defaultValue='stacked_bar'>
-              <SelectTrigger className='w-full'>
+              <SelectTrigger className='w-full shrink-0'>
                 <SelectValue placeholder={t.summary.placeholders.chartType} />
               </SelectTrigger>
               <SelectContent>
@@ -412,16 +415,21 @@ const ProjectsSummary = ({
                 ))}
               </SelectContent>
             </Select>
-            <EmissionsSection
-              data={projectEmissionsData}
-              selected={selectedProjects}
-              onChange={onChangeProjectSelection}
-              benchmarkMax={benchmarkMax}
-            />
+            <div className="mt-2 flex-1 min-h-0">
+              <EmissionsSection
+                data={projectEmissionsData}
+                selected={selectedProjects}
+                onChange={onChangeProjectSelection}
+                benchmarkMax={benchmarkMax}
+              />
+            </div>
           </div>
 
-          <div  className="flex-1 min-h-0 flex flex-col gap-0 pt-2 max-sm:w-full">
-            <div  className='flex gap-2 justify-end items-center shrink-0 max-sm:flex-col'>
+          {/* COLUNA DIREITA (Gráficos) */}
+          <div className="flex-1 min-h-0 flex flex-col gap-2 max-sm:w-full overflow-hidden">
+            
+            {/* Filtros no topo do gráfico */}
+            <div className='shrink-0 flex gap-2 justify-end items-center max-sm:flex-col'>
               <FilterTabs
                 tabs={["co2", "energy", "material"]}
                 onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
@@ -437,46 +445,47 @@ const ProjectsSummary = ({
                 ]}
                 selectedSubTab={subTabs}
               />
-              <div className='mt-0 w-full'>
+              <div className='w-full'>
                 {ChartSelector}
               </div>
             </div>
-            <div className='h-full'>
-              <div ref={elementRef2} className='h-4/5'>
-
-                {chartType === "scatter" ? (
-                  <D3GradientRangeChart
-                    data={newData}
-                    selectedBars={selectedProjects}
-                    unit={unitsOfMeasure[type] || ""}
-                    totalProjects={managedData.length || newData.length}
-                    minData={minData}
-                    maxData={maxData}
-                    showBaseline={type !== "material"}
-                    showTop5Line={type !== "material"}
-                    showProcelScale
-                    showMaxCurve={type !== "material"}
-                    showMinCurve={type !== "material"}
-                    showMidCurve={type !== "material"}
-                    showProjectName={showProjectName}
-                    variant={type === "material" ? "cumulative" : "range"}
-                    xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
-                    yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
-                    // height={Math.min(window.innerHeight > 1800 ? window.innerHeight * 0.52 : 250, 250)}
-                    height={elementHeight2 * 0.70}
-                  />
-                ) : (
-                  <D3GradientRangeLineChart
-                    data={newData}
-                    selectedBars={selectedProjects}
-                    unit={type}
-                    showProjectName={showProjectName}
-                  />
-                )}
-              </div>
-            <div className='h-fit mt-6'>
-              {type !== 'material' && <ChartLegend />}
+            
+            {/* Render do Gráfico (Ocupa o resto do espaço: flex-1) */}
+            <div ref={elementRef2} className='flex-1 min-h-0 w-full'>
+              {chartType === "scatter" ? (
+                <D3GradientRangeChart
+                  data={newData}
+                  selectedBars={selectedProjects}
+                  unit={unitsOfMeasure[type] || ""}
+                  totalProjects={managedData.length || newData.length}
+                  minData={minData}
+                  maxData={maxData}
+                  showBaseline={type !== "material"}
+                  showTop5Line={type !== "material"}
+                  showProcelScale
+                  showMaxCurve={type !== "material"}
+                  showMinCurve={type !== "material"}
+                  showMidCurve={type !== "material"}
+                  showProjectName={showProjectName}
+                  variant={type === "material" ? "cumulative" : "range"}
+                  xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
+                  yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
+                  // Força a altura dinâmica baseada no Flexbox (subtraímos ~10px por segurança)
+                  height={Math.max(elementHeight2 - 10, 200)}
+                />
+              ) : (
+                <D3GradientRangeLineChart
+                  data={newData}
+                  selectedBars={selectedProjects}
+                  unit={type}
+                  showProjectName={showProjectName}
+                />
+              )}
             </div>
+            
+            {/* Legenda embaixo do gráfico */}
+            <div className='shrink-0'>
+              {type !== 'material' && <ChartLegend />}
             </div>
           </div>
         </div>
@@ -486,4 +495,3 @@ const ProjectsSummary = ({
 };
 
 export default ProjectsSummary;
-

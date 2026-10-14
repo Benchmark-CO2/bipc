@@ -1,6 +1,6 @@
 import { IBenchmarkItem } from "@/actions/benchmarks/types";
 import { Card, CardContent } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider"; // <-- Novo Import Adicionado
+import { Slider } from "@/components/ui/slider";
 import { useSummary } from "@/context/summaryContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslation } from "@/i18n";
@@ -18,6 +18,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+
 // Utility: Debounce function
 const debounce = <T extends (...args: any[]) => any>(
   func: T,
@@ -128,8 +129,8 @@ const useChartDimensions = (
   hasLessValue: boolean,
   hasMoreValue: boolean,
   containerWidth: number,
+  containerHeight: number,
   showProcelScale?: boolean,
-  containerHeight?: number,
 ) => {
   return useMemo(() => {
     const margin = {
@@ -140,19 +141,21 @@ const useChartDimensions = (
     };
 
     const width = () => {
+      if (containerWidth > 0) return containerWidth - margin.left - margin.right;
       if (props.width && overrideDimensions) return Math.max(0, props.width - margin.left - margin.right);
-      if (containerWidth > 0) return containerWidth - margin.left - margin.right - 30;
       return 0;
     };
 
     const height = () => {
-      if (props.height) return props.height;
-      if (containerHeight && containerHeight > 0) return containerHeight - 40; // <-- Adicionado: Usa a altura lida do ResizeObserver
-
+      // Usa a altura real medida do contêiner flexível
+      if (containerHeight > 0) return Math.max(100, containerHeight - margin.top - margin.bottom);
+      
+      // Fallbacks
+      if (props.height) return Math.max(100, props.height - margin.top - margin.bottom);
       if (isMobile && !isExpanded) return 250;
       if (isMobile && isExpanded) return 320;
       if (isExpanded) return window.innerHeight * 0.96;
-      return 350; // Fallback seguro antes do observer montar
+      return 250; 
     };
 
     return { width: width(), height: height(), margin };
@@ -238,8 +241,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const [outBelowCount, setOutBelowCount] = useState<number>(0);
   const outAboveRef = useRef<number>(0);
   const outBelowRef = useRef<number>(0);
-  const outSmallerRef = useRef<number>(0);
-  const outLargerRef = useRef<number>(0);
   const [hasZoomed, setHasZoomed] = useState(false);
   const [zoomEnabled, setZoomEnabled] = useState(true);
   const [isBrushActive, setIsBrushActive] = useState(false);
@@ -251,24 +252,22 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
 
+  // ResizeObserver substitui o código frágil de setTimeouts
   useLayoutEffect(() => {
-    if (containerRef.current) {
-      const width = containerRef.current.getBoundingClientRect().width;
-      if (width > 0) setContainerWidth(width);
-    }
+    const el = containerRef.current;
+    if (!el) return;
+    
+    const observer = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      if (width > 0 && height > 0) {
+        setContainerWidth(width);
+        setContainerHeight(height);
+      }
+    });
+    
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
-
-  useEffect(() => {
-    if (containerRef.current && containerWidth === 0) {
-      const timer = setTimeout(() => {
-        if (containerRef.current) {
-          setContainerWidth(containerRef.current.getBoundingClientRect().width);
-          setContainerHeight(containerRef.current.getBoundingClientRect().height);
-        }
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [containerWidth]);
 
   const selectedBarIds = useMemo(() => new Set((selectedBars || []).map((id) => String(id))), [selectedBars]);
   const selectedMinBarIds = useMemo(() => new Set((selectedMinBars ?? selectedBars ?? []).map((id) => String(id))), [selectedMinBars, selectedBars]);
@@ -292,7 +291,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const hasMoreValue = totalProjects > 0 ? parseFloat((maxData[maxData.length - 1] || 0).toFixed(2)) > maxMaxDataValue : false;
 
   const { width: _width, height: _height, margin } = useChartDimensions(
-    props, overrideDimensions, isMobile, isExpanded, hasLessValue, hasMoreValue, containerWidth, showProcelScale, containerHeight
+    props, overrideDimensions, isMobile, isExpanded, hasLessValue, hasMoreValue, containerWidth, containerHeight, showProcelScale
   );
 
   const maxValue = useMemo(() => (data?.map((d) => d.max).reduce((a, b) => Math.max(a, b), 0) || 170) * 1.1, [data]);
@@ -301,7 +300,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const yScale = useMemo(() => d3.scaleLinear().domain([0, 1.01]).range([_height, 0]), [_height]);
   const getTooltipPosition = useTooltipPosition();
 
-  // Estados dos sliders
   const [sliderX, setSliderX] = useState<[number, number]>([0, maxValue * 1.15]);
   const [sliderY, setSliderY] = useState<[number, number]>([0, 1]);
 
@@ -363,9 +361,13 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     }
 
     const dpr = window.devicePixelRatio || 1;
+    // Pega as medidas exatas do canvas via classe CSS
     const rect = canvas.getBoundingClientRect();
 
-    canvas.width = rect.width * dpr; canvas.height = rect.height * dpr; ctx.scale(dpr, dpr);
+    canvas.width = rect.width * dpr; 
+    canvas.height = rect.height * dpr; 
+    ctx.scale(dpr, dpr);
+    
     ctx.fillStyle = document.documentElement.classList.contains("dark") ? "#18181b" : "#ffffff";
     ctx.fillRect(0, 0, rect.width, rect.height);
 
@@ -565,6 +567,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       });
     }
 
+    // DESENHO DOS EIXOS E TEXTOS INFERIORES
     ctx.restore(); ctx.save(); ctx.translate(margin.left, margin.top);
 
     ctx.strokeStyle = DEFAULT_COLORS.TEXT; ctx.lineWidth = 1;
@@ -628,12 +631,10 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       ctx.restore();
     }
 
-
     let _countInView = 0; let _countAbove = 0; let _countBelow = 0;
     const hasSelection = selectedMinBarIds.size > 0 || selectedMaxBarIds.size > 0;
     const _countSource = hasSelection ? data.filter((d) => selectedMinBarIds.has(String(d.minId ?? d.id)) && selectedMaxBarIds.has(String(d.maxId ?? d.id))) : data;
 
-    // Calcula os limites reais de Y no zoom atual
     const currentYTop = newYScale.invert(0);
     const currentYBottom = newYScale.invert(_height);
 
@@ -642,7 +643,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       if (d.y < currentYBottom) { _countBelow++; continue; }
 
       const px1 = newXScale(d.min); const px2 = newXScale(d.max);
-      if (px2 < 0 || px1 > _width) continue; // Fora da tela no Eixo X
+      if (px2 < 0 || px1 > _width) continue; 
 
       _countInView++;
     }
@@ -651,7 +652,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     if (outAboveRef.current !== _countAbove) { outAboveRef.current = _countAbove; setOutAboveCount(_countAbove); }
     if (outBelowRef.current !== _countBelow) { outBelowRef.current = _countBelow; setOutBelowCount(_countBelow); }
 
-    // Sync Slider States silently via limits to prevent infinite rendering loops
     const currentVxMin = newXScale.invert(0);
     const currentVxMax = newXScale.invert(_width);
     const currentVyMin = newYScale.invert(_height);
@@ -786,30 +786,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     d3.select(canvas).call(drag as any);
 
     const handleWheel = (e: WheelEvent) => {
-      return;
-      if (!zoomEnabled || isBrushActive) return;
-      e.preventDefault(); e.stopPropagation();
-
-      const zoomFactor = Math.exp(-e.deltaY / (e.shiftKey || e.ctrlKey ? 250 : 700));
-      const rect = canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left - margin.left;
-      const my = e.clientY - rect.top - margin.top;
-      const tr = transformRef.current;
-      let { kx, ky, x: tx, y: ty } = tr;
-
-      if (e.ctrlKey && !e.shiftKey) ky = Math.max(1, Math.min(10, ky * zoomFactor));
-      else if (e.shiftKey && !e.ctrlKey) kx = Math.max(1, Math.min(10, kx * zoomFactor));
-      else { kx = Math.max(1, Math.min(10, kx * zoomFactor)); ky = Math.max(1, Math.min(10, ky * zoomFactor)); }
-
-      tx = Math.min(0, Math.max(mx - (mx - tx) * (kx / tr.kx), _width * (1 - 1.1 * kx)));
-      ty = Math.min(0, Math.max(my - (my - ty) * (ky / tr.ky), _height * (1 - ky)));
-      transformRef.current = { kx, ky, x: tx, y: ty };
-
-      const isZoomed = kx !== 1 || ky !== 1 || tx !== 0 || ty !== 0;
-      setHasZoomed(prev => prev === isZoomed ? prev : isZoomed);
-
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = requestAnimationFrame(drawChart);
+      return; 
     };
 
     canvas.addEventListener("wheel", handleWheel, { passive: false });
@@ -836,7 +813,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     animationFrameRef.current = requestAnimationFrame(drawChart);
   }, [selectedBars, selectedMinBars, selectedMaxBars, drawChart]);
 
-  // Handlers diretos pros Sliders atualizarem o D3 Zoom!
   const handleXSliderChange = useCallback((val: [number, number]) => {
     setSliderX(val);
     const pxMin = xScale(val[0]);
@@ -853,7 +829,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
 
   const handleYSliderChange = useCallback((val: [number, number]) => {
     setSliderY(val);
-    // Y é invertido!
     const pxMax = yScale(val[0]);
     const pxMin = yScale(val[1]);
     if (pxMax - pxMin === 0) return;
@@ -873,13 +848,16 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const selectedCount = new Set([...selectedMinBarIds, ...selectedMaxBarIds]).size;
 
   return (
-    <Card className={cn("shadow-none w-full flex-1 p-1 m-0! border-transparent bg-transparent h-full")}>
-      <CardContent className="m-0! flex flex-col flex-1 h-full">
+    <Card className={cn("shadow-none w-full flex-1 p-0 m-0! border-transparent bg-transparent h-full flex flex-col min-h-0 overflow-hidden")}>
+      <CardContent className="p-0! m-0! flex flex-col flex-1 h-full min-h-0 gap-1">
+        
         {/* === LINHA SUPERIOR: SLIDER Y E CANVAS === */}
-        <div className="flex flex-row w-full relative flex-1">
-
-          {/* Coluna 1: Slider do Eixo Y */}
-          <div className="w-10 flex-shrink-0 flex items-center justify-center pt-[14px] pb-[25px]">
+        <div className="flex flex-row w-full relative flex-1 min-h-0">
+          
+          <div 
+            className="w-10 flex-shrink-0 flex items-center justify-center"
+            style={{ paddingTop: margin.top, paddingBottom: margin.bottom }}
+          >
             <Slider
               orientation="vertical"
               min={0}
@@ -891,17 +869,14 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             />
           </div>
 
-          {/* Coluna 2: Container do Canvas */}
           <div
             ref={containerRef}
-            className="overflow-hidden relative w-full"
-            style={{ minHeight: (props.height ?? 350) * 0.6 }}
+            className="overflow-hidden relative w-full h-full flex-1 min-h-0"
           >
             <span className="absolute text-xs w-auto text-center text-foreground/70 block -rotate-90 left-0 -translate-x-full top-1/2 m-0 p-0 z-10">
               {labelY}
             </span>
 
-            {/* Indicadores Topo-Direita (Pontos Acima e Máximos) */}
             <div className="absolute top-4 left-[calc(40px+0.5rem)] flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
               <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco acima">
                 {outAboveCount} <span className="text-[10px]"><Triangle className='w-4 h-4 fill-gray-500' /></span>
@@ -920,7 +895,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
               }
             </div>
 
-            {/* Indicadores Base-Esquerda (Pontos Abaixo e Mínimos) */}
             <div className="absolute bottom-10 right-20 flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
               <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco abaixo">
                 {outBelowCount} <span className="text-[10px]"><Triangle className='rotate-180 w-4 h-4 fill-gray-500' /></span>
@@ -939,64 +913,13 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
               }
             </div>
 
-            <div className="absolute top-2 left-2 z-30 flex gap-2">
-              {/* <button
-                type="button"
-                onClick={() => {
-                  setZoomEnabled((prev) => {
-                    if (!prev) setIsBrushActive(false);
-                    return !prev;
-                  });
-                }}
-                className={cn(
-                  "p-1.5 rounded-md border text-xs flex items-center gap-1 transition-colors",
-                  zoomEnabled ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90" : "bg-background text-muted-foreground border-border hover:bg-muted",
-                )}
-              >
-                {zoomEnabled ? <Search className="size-3.5" /> : <SearchX className="size-3.5" />}
-                <span className="max-sm:hidden">Zoom</span>
-              </button> */}
-
-              {/* <button
-                type="button"
-                onClick={() => {
-                  setIsBrushActive((prev) => {
-                    if (!prev) setZoomEnabled(false);
-                    return !prev;
-                  });
-                }}
-                className={cn(
-                  "p-1.5 rounded-md border text-xs flex items-center gap-1 transition-colors",
-                  isBrushActive ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90" : "bg-background text-muted-foreground border-border hover:bg-muted",
-                )}
-              >
-                <BoxSelect className="size-3.5" />
-                <span className="max-sm:hidden">Selecionar</span>
-              </button> */}
-            </div>
-
-            {/* <svg
-              className="absolute z-20"
-              width={_width}
-              height={_height}
-              viewBox={`0 0 ${_width} ${_height}`}
-              style={{
-                left: margin.left,
-                top: (margin.top * 4) + 3,
-                visibility: isBrushActive ? "visible" : "hidden",
-                pointerEvents: isBrushActive ? "auto" : "none"
-              }}
-            >
-              <g ref={brushRef} />
-            </svg> */}
-
+            {/* O SEGREDO DO CANVAS REVELADO: Posicionamento absoluto resolvendo qualquer vazamento */}
             <canvas
               ref={canvasRef}
               className={cn(
-                "bg-white dark:bg-zinc-900 w-full flex-1",
+                "absolute inset-0 w-full h-full bg-white dark:bg-zinc-900",
                 zoomEnabled ? "cursor-grab active:cursor-grabbing" : (isBrushActive ? "cursor-crosshair" : "cursor-default"),
               )}
-              style={{ width: "100%", height: `${_height + margin.top + margin.bottom - 2}px` }}
             />
 
             <div
@@ -1029,9 +952,8 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         </div>
 
         {/* === LINHA INFERIOR: BOTÃO RESET E SLIDER X === */}
-        <div className="flex flex-row items-start w-full -mt-2">
+        <div className="flex flex-row items-start w-full shrink-0 pb-2 relative z-10">
 
-          {/* Botão de Reset na Intersecção dos Eixos */}
           <div className="w-10 flex-shrink-0 flex items-center justify-center pt-2">
             <button
               type="button"
@@ -1047,8 +969,10 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             </button>
           </div>
 
-          {/* Slider do Eixo X e Label */}
-          <div className="flex-1 flex flex-col mx-[45px] max-sm:px-[35px] mt-10 relative">
+          <div 
+            className="flex-1 flex flex-col relative pt-2"
+            style={{ marginLeft: margin.left, marginRight: margin.right }}
+          >
             <Slider
               orientation="horizontal"
               min={0}
@@ -1066,7 +990,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
               <span className="flex-1 text-xs text-center w-full text-foreground/70 font-medium">
                 {labelX}
               </span>
-              <div className="w-20" /> {/* Espaçador para manter o título X centralizado */}
+              <div className="w-20" /> 
             </div>
           </div>
         </div>
