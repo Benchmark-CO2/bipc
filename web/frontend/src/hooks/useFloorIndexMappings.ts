@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "@/i18n";
 import { TTowerFloorCategory } from "@/types/units";
 import {
@@ -11,12 +10,12 @@ import {
 } from "@/types/ifc";
 import {
   convertFloorFormInputToTowerFloors,
-  mapFloorIndexToFloorIds,
+  mapIfcFloorIndexToFloorIds,
   FloorFallbackLabels,
   makeFloorFallbackLabels,
 } from "@/utils/unitConversions";
 import { UnitFormInput } from "@/validators/unitForm.validator";
-import { isFoundationModuleType } from "@/utils/ifcStepper";
+import { isFoundationModuleType, isValidUUID } from "@/utils/ifcStepper";
 
 const inferTowerFloorsFromModuleFloorIndexes = (
   modules: TIfcStepperState["modules"],
@@ -101,7 +100,10 @@ interface UseFloorIndexMappingsArgs {
   isSimulationMode: boolean;
   simulationBoundUnitTempId: string;
   simulationUnitData: IGetUnitByUUIDCachedResponse | undefined;
-  projectId: string;
+  // Floors reais (UUIDs) das unidades criadas no step 1, por unitId.
+  createdUnitsFloorsById: Record<string, TTowerFloorCategory[]>;
+  // Índices de pavimento do IFC (ver getIfcFloorIndexes).
+  ifcFloorIndexes: number[];
   simulationCreatedUnit: TIfcStepperCreatedUnit | null;
   editingUnitTempId: string | null;
   editingModuleTempId: string | null;
@@ -112,12 +114,12 @@ export function useFloorIndexMappings({
   isSimulationMode,
   simulationBoundUnitTempId,
   simulationUnitData,
-  projectId,
+  createdUnitsFloorsById,
+  ifcFloorIndexes,
   simulationCreatedUnit,
   editingUnitTempId,
   editingModuleTempId,
 }: UseFloorIndexMappingsArgs) {
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
 
   const inferLabels: FloorFallbackLabels = makeFloorFallbackLabels({
@@ -172,29 +174,16 @@ export function useFloorIndexMappings({
         const tempId = unitCreated.tempId;
 
         if (isSimulationMode && tempId === simulationBoundUnitTempId) {
-          const f = simulationUnitData?.data?.unit?.floors;
+          const f = simulationUnitData?.unit?.floors;
           if (f && f.length > 0) {
             floors = f as TTowerFloorCategory[];
           }
         }
 
         if (floors.length === 0 && unitCreated.unitId && !isSimulationMode) {
-          try {
-            const cached = queryClient.getQueryData([
-              "unit",
-              projectId,
-              unitCreated.unitId,
-            ]) as IGetUnitByUUIDCachedResponse | undefined;
-            const cachedFloors = cached?.data?.unit?.floors;
-            if (
-              cachedFloors &&
-              Array.isArray(cachedFloors) &&
-              cachedFloors.length > 0
-            ) {
-              floors = cachedFloors as TTowerFloorCategory[];
-            }
-          } catch (_e) {
-            /* ignore */
+          const createdFloors = createdUnitsFloorsById[unitCreated.unitId];
+          if (createdFloors && createdFloors.length > 0) {
+            floors = createdFloors;
           }
         }
 
@@ -254,7 +243,7 @@ export function useFloorIndexMappings({
       if (isSimulationMode && simulationBoundUnitTempId) {
         if (!map.has(simulationBoundUnitTempId)) {
           let simFloors: TTowerFloorCategory[] = [];
-          const f = simulationUnitData?.data?.unit?.floors;
+          const f = simulationUnitData?.unit?.floors;
           if (f && f.length > 0) {
             simFloors = f as TTowerFloorCategory[];
           }
@@ -277,8 +266,7 @@ export function useFloorIndexMappings({
       isSimulationMode,
       simulationBoundUnitTempId,
       simulationUnitData,
-      queryClient,
-      projectId,
+      createdUnitsFloorsById,
       inferLabels,
     ]);
 
@@ -291,26 +279,6 @@ export function useFloorIndexMappings({
 
     if (editingModuleBoundUnit) {
       const tempId = editingModuleBoundUnit.tempId;
-
-      if (editingModuleBoundUnit.unitId) {
-        try {
-          const cached = queryClient.getQueryData([
-            "unit",
-            projectId,
-            editingModuleBoundUnit.unitId,
-          ]) as IGetUnitByUUIDCachedResponse | undefined;
-          const cachedFloors = cached?.data?.unit?.floors;
-          if (
-            cachedFloors &&
-            Array.isArray(cachedFloors) &&
-            cachedFloors.length > 0
-          ) {
-            return cachedFloors as TTowerFloorCategory[];
-          }
-        } catch (_e) {
-          /* ignore */
-        }
-      }
 
       const fromMap = normalizedUnitsFloorMap.get(tempId);
       if (fromMap && fromMap.length > 0) return fromMap;
@@ -368,16 +336,33 @@ export function useFloorIndexMappings({
     const rawDataMaybe = editingModule.raw
       ?.data as unknown as IRawModuleDataWithMeta | null;
     const candidateFloorIds = rawDataMaybe?.floor_ids;
+    // Reaproveita a seleção salva só se ela ainda casa com os pavimentos da
+    // unidade. IDs temporários/inferidos, ou UUIDs de pavimentos que não
+    // existem mais (unidade alterada no step 1), voltam ao mapeamento pelo
+    // floor_index; senão o drawer reabriria com a mesma seleção que o lote
+    // recusa.
+    const floorsAreReal =
+      editingUnitFloors.length > 0 &&
+      editingUnitFloors.every((f) => isValidUUID(f.id));
+    const knownFloorIds = new Set(editingUnitFloors.map((f) => f.id));
     if (
       Array.isArray(candidateFloorIds) &&
       candidateFloorIds.length > 0 &&
-      candidateFloorIds.every((s) => typeof s === "string")
+      candidateFloorIds.every((s) => typeof s === "string") &&
+      (!floorsAreReal ||
+        candidateFloorIds.every(
+          (s) => isValidUUID(s) && knownFloorIds.has(s),
+        ))
     ) {
       return candidateFloorIds as string[];
     }
     const rawIndex = rawDataMaybe?.floor_index;
-    return mapFloorIndexToFloorIds(rawIndex, editingUnitFloors);
-  }, [editingModule, editingUnitFloors]);
+    return mapIfcFloorIndexToFloorIds(
+      rawIndex,
+      ifcFloorIndexes,
+      editingUnitFloors,
+    );
+  }, [editingModule, editingUnitFloors, ifcFloorIndexes]);
 
   const editingModuleInitialMerged: TEditingModuleMerged = useMemo(() => {
     if (!editingModule?.raw?.data) return {} as TEditingModuleMerged;

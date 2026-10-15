@@ -3,7 +3,7 @@ import { useSummary } from "@/context/summaryContext";
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useTranslation } from "@/i18n";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
 import { Button } from "../ui/button";
@@ -217,6 +217,26 @@ const SimulationsSummary = ({
       setSelectedProjects(filteredProjects.map((p) => p.id));
     }
   }, [someSelected, filteredProjects]);
+
+  // Simulações que passam a ter consumo (ou são marcadas na página) depois da
+  // montagem entram já selecionadas; antes ficavam fora dos gráficos até
+  // remontar o resumo. Desmarcações feitas aqui são preservadas: o conjunto
+  // só cresce, para uma simulação que some e volta (ex.: consumo nulo durante
+  // um recálculo) não ser remarcada.
+  const knownProjectIdsRef = useRef<Set<string>>(
+    new Set(filteredProjects.map((p) => p.id)),
+  );
+  useEffect(() => {
+    const added = filteredProjects
+      .map((p) => p.id)
+      .filter((id) => !knownProjectIdsRef.current.has(id));
+    if (added.length === 0) return;
+    added.forEach((id) => knownProjectIdsRef.current.add(id));
+    setSelectedProjects((prev) => [
+      ...prev,
+      ...added.filter((id) => !prev.includes(id)),
+    ]);
+  }, [filteredProjects]);
 
   const onChangeProjectSelection = (id: string, checked: boolean) => {
     if (checked) {

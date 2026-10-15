@@ -522,6 +522,9 @@ export const en: Translations = {
       "masonry.blocks": "Blocks",
       "masonry.mortar": "Mortar",
       "masonry.grout": "Grout",
+      "masonry.blocks.quantity": "Block quantity",
+      "masonry.mortar.volume": "Mortar volume",
+      "masonry.grout.volume": "Grout volume",
       "steel.item_invalid": "Invalid item",
       "steel.material": "Steel type",
       "steel.resistance": "Steel grade",
@@ -559,6 +562,12 @@ export const en: Translations = {
       "masonry.blocks": "Needed for calculation: at least one block",
       "masonry.mortar": "Needed for calculation: at least one mortar",
       "masonry.grout": "Needed for calculation: at least one grout",
+      "masonry.blocks.quantity":
+        "Needed for calculation: block quantity greater than zero",
+      "masonry.mortar.volume":
+        "Needed for calculation: mortar volume greater than zero",
+      "masonry.grout.volume":
+        "Needed for calculation: grout volume greater than zero",
       "steel.item_invalid": "Needed for calculation: invalid steel items",
       "steel.material":
         "Needed for calculation: valid steel type (rebar, mesh, strand, other)",
@@ -1551,6 +1560,8 @@ export const en: Translations = {
       noBindingAtAll: "No modules with a unit bound to create. Stepper closed.",
       step2Error: "Failed to create modules.",
       batchResult: "{created} module(s) created. {errors} batch(es) failed.",
+      floorBindingUnresolved:
+        "Could not bind the selected floors of {module}. Reopen the module, check the floors and try again.",
       createdSuccess: "{count} module(s) created successfully.",
       ignoredParts: "{parts} — will not be created.",
       partIgnored: "{count} selected but without binding/invalid",

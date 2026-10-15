@@ -524,6 +524,9 @@ export const ptBR = {
       "masonry.blocks": "Blocos",
       "masonry.mortar": "Argamassa",
       "masonry.grout": "Graute",
+      "masonry.blocks.quantity": "Quantidade de blocos",
+      "masonry.mortar.volume": "Volume da argamassa",
+      "masonry.grout.volume": "Volume do graute",
       "steel.item_invalid": "Item inválido",
       "steel.material": "Tipo do aço",
       "steel.resistance": "Resistência do aço",
@@ -561,6 +564,12 @@ export const ptBR = {
       "masonry.blocks": "Necessário para o cálculo: ao menos um bloco",
       "masonry.mortar": "Necessário para o cálculo: ao menos uma argamassa",
       "masonry.grout": "Necessário para o cálculo: ao menos um graute",
+      "masonry.blocks.quantity":
+        "Necessário para o cálculo: quantidade de blocos maior que zero",
+      "masonry.mortar.volume":
+        "Necessário para o cálculo: volume da argamassa maior que zero",
+      "masonry.grout.volume":
+        "Necessário para o cálculo: volume do graute maior que zero",
       "steel.item_invalid": "Necessário para o cálculo: itens de aço inválidos",
       "steel.material":
         "Necessário para o cálculo: tipo de aço válido (ex: CA50, estribo, cordoalha)",
@@ -1565,6 +1574,8 @@ export const ptBR = {
       step2Error: "Falha ao criar módulos.",
       batchResult:
         "{created} módulo(s) criado(s). {errors} lote(s) falhou(ram).",
+      floorBindingUnresolved:
+        "Não foi possível vincular os pavimentos selecionados em {module}. Reabra o módulo, confira os pavimentos e tente novamente.",
       createdSuccess: "{count} módulo(s) criado(s) com sucesso.",
       ignoredParts: "{parts} — não serão criados.",
       partIgnored: "{count} selecionado(s) mas sem vinculo/inválidos",
