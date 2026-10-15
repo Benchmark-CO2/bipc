@@ -7,6 +7,7 @@ import React, { useEffect, useRef, useState } from 'react';
 const CHART_MARGIN_LEFT = 130;
 const CHART_MARGIN_RIGHT = 30;
 const CARD_INDENT = 12; // O quanto os cards secundários são menores nas laterais
+const CARD_BORDER_LEFT = 6; // Borda verde à esquerda dos cards de projeto (border-l-[6px])
 
 export const EmissionsSection = ({ 
   data, 
@@ -28,6 +29,20 @@ export const EmissionsSection = ({
   useEffect(() => {
     setItems(data);
   }, [data]);
+
+  // Largura reservada pela barra de rolagem da lista (0 com barra sobreposta, ~15px com barra clássica).
+  // Linhas tracejadas, bolinhas A/B/C/D e card Total descontam a mesma largura para continuarem alinhados às barras.
+  const listRef = useRef<HTMLDivElement>(null);
+  const [scrollbarGutter, setScrollbarGutter] = useState(0);
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const update = () => setScrollbarGutter(list.offsetWidth - list.clientWidth);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, []);
 
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
@@ -75,7 +90,7 @@ export const EmissionsSection = ({
         {/* 1. Linhas Globais Procel */}
         <div 
           className="absolute top-8 bottom-0 pointer-events-none z-0" 
-          style={{ left: CHART_MARGIN_LEFT, right: CHART_MARGIN_RIGHT }}
+          style={{ left: CHART_MARGIN_LEFT, right: CHART_MARGIN_RIGHT + scrollbarGutter }}
         >
           {procelIndicators.map((t) => (
             <div
@@ -89,7 +104,7 @@ export const EmissionsSection = ({
         {/* 2. Cabeçalho das Bolinhas A, B, C, D */}
         <div 
           className="relative z-10 flex h-8 items-center mb-2 shrink-0"
-          style={{ marginLeft: CHART_MARGIN_LEFT, marginRight: CHART_MARGIN_RIGHT }}
+          style={{ marginLeft: CHART_MARGIN_LEFT, marginRight: CHART_MARGIN_RIGHT + scrollbarGutter }}
         >
           {procelIndicators.map((zone) => (
             <div
@@ -112,7 +127,7 @@ export const EmissionsSection = ({
           
           {/* Card TOTAL */}
           {totalItem && (
-            <div className="w-full shrink-0">
+            <div className="w-full shrink-0" style={{ paddingRight: scrollbarGutter }}>
               <div 
                 className={`
                   flex flex-col shadow-[0_2px_4px_0_rgba(0,0,0,0.08),0_3px_10px_0_rgba(0,0,0,0.10)] rounded-r-[0.3125rem] overflow-hidden
@@ -146,7 +161,7 @@ export const EmissionsSection = ({
               </div>
             </div>
           )}
-          <div className='flex flex-col gap-2 overflow-y-auto flex-1 min-h-0 max-sm:flex-none max-sm:max-h-[40vh]'>
+          <div ref={listRef} className='flex flex-col gap-2 overflow-y-auto [scrollbar-gutter:stable] flex-1 min-h-0 max-sm:flex-none max-sm:max-h-[40vh]'>
 
           {/* Cards das Edificações (Secundários e Menores) */}
           {buildingItems.map((section) => {
@@ -165,7 +180,8 @@ export const EmissionsSection = ({
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => e.preventDefault()}
                   className={cn("flex flex-col shadow-[0_2px_4px_0_rgba(0,0,0,0.08),0_3px_10px_0_rgba(0,0,0,0.10)] rounded-r-[0.3125rem] border-l-[6px]", isChecked ? "border-l-secondary" : "border-l-gray-300")}
-                  style={{ background: 'linear-gradient(0deg, #FFF 0%, rgba(255, 255, 255, 0.60) 39.09%, #FFF 84.92%)' }}
+                  // Aberto: degradê do Figma (tracejados aparecem atrás do gráfico). Fechado: branco sólido.
+                  style={{ background: isOpen ? 'linear-gradient(0deg, #FFF 0%, rgba(255, 255, 255, 0.60) 39.09%, #FFF 84.92%)' : '#FFFFFF' }}
                 >
                   <div 
                     className="h-[56px] px-4 flex items-center justify-between cursor-pointer"
@@ -203,7 +219,7 @@ export const EmissionsSection = ({
                         data={section.chartData} 
                         benchmarkMax={benchmarkMax} 
                         barHeight={4} 
-                        marginLeft={CHART_MARGIN_LEFT - CARD_INDENT} 
+                        marginLeft={CHART_MARGIN_LEFT - CARD_INDENT - CARD_BORDER_LEFT} 
                         marginRight={CHART_MARGIN_RIGHT - CARD_INDENT}
                       />
                     </div>
