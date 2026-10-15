@@ -1021,7 +1021,7 @@ export const ptBR = {
     placeholders: {
       chartType: "Tipo de gráfico",
     },
-    title: "Benchmark do Projeto",
+    title: "Benchmark",
     selectAll: "Selecionar Todos",
     deselectAll: "Desmarcar Todos",
     selectedItems: "itens selecionados",

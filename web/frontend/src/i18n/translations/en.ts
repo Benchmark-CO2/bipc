@@ -1017,7 +1017,7 @@ export const en: Translations = {
     placeholders: {
       chartType: "Chart Type",
     },
-    title: "Project benchmark",
+    title: "Benchmark",
     selectAll: "Select All",
     deselectAll: "Deselect All",
     selectedItems: "selected items",
