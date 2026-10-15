@@ -41,6 +41,20 @@ const categoryColors = {
   basement_floor: "#F59E0B", // Laranja
 };
 
+// Seleciona o conteúdo ao focar campos numéricos (ex.: "0,00" importado do
+// IFC), para digitar o valor sem apagar antes. O rAF evita que o clique
+// reposicione o cursor por cima da seleção (mesmo padrão do NumericStringInput).
+const selectContentOnFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+  const input = e.currentTarget;
+  requestAnimationFrame(() => {
+    try {
+      input.select();
+    } catch {
+      /* no-op */
+    }
+  });
+};
+
 const UnitFormTower: React.FC<UnitFormTowerProps> = ({
   form,
   isEditMode,
@@ -614,7 +628,10 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({
                                     field.onBlur();
                                     setFocusedRowIndex(null);
                                   }}
-                                  onFocus={() => setFocusedRowIndex(index)}
+                                  onFocus={(e) => {
+                                    setFocusedRowIndex(index);
+                                    selectContentOnFocus(e);
+                                  }}
                                 />
                               </FormControl>
                             </FormItem>
@@ -647,7 +664,10 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({
                                     field.onBlur();
                                     setFocusedRowIndex(null);
                                   }}
-                                  onFocus={() => setFocusedRowIndex(index)}
+                                  onFocus={(e) => {
+                                    setFocusedRowIndex(index);
+                                    selectContentOnFocus(e);
+                                  }}
                                 />
                               </FormControl>
                             </FormItem>
@@ -680,7 +700,10 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({
                                           : 1,
                                       )
                                     }
-                                    onFocus={() => setFocusedRowIndex(index)}
+                                    onFocus={(e) => {
+                                      setFocusedRowIndex(index);
+                                      selectContentOnFocus(e);
+                                    }}
                                     onBlur={() => setFocusedRowIndex(null)}
                                   />
                                 </FormControl>
