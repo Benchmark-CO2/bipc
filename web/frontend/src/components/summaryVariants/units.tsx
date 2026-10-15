@@ -343,15 +343,15 @@ const UnitsSummary = ({
 
   return (
     <div ref={elementRef} className={cn("flex flex-col overflow-hidden pb-4", isExpanded ? "h-full" : "h-[80vh]")}>
-      <div className="shrink-0 flex justify-between gap-2 w-full">
-        <div className="flex items-center gap-4 w-full overflow-x-auto pt-3 pb-2">
+      <div className="@container/cards shrink-0 flex justify-between gap-2 w-full">
+        <div className="flex items-start gap-4 @max-[110rem]/cards:gap-3 w-full min-w-0 pt-3 pb-2 max-sm:overflow-x-auto">
           <div className="flex flex-col gap-1.5 text-sm font-bold text-right text-neutral-800 pl-2 shrink-0">
-            <span className="leading-5 whitespace-nowrap flex items-center justify-end mt-1">Benchmark</span>
+            <span className="leading-5 whitespace-nowrap flex items-center justify-end mt-2.75">Benchmark</span>
             <span className="leading-5 whitespace-nowrap flex items-center justify-end mb-1">Total</span>
           </div>
 
-          <div className="flex flex-nowrap gap-4 w-full justify-between px-2">
-            <ScenarioCard letter="V" title={t.summary.chartLegend?.referenceValue_short || "Valor referência"} color={MARKER_COLORS.V} items={[{ total: formatMetric(allPcvMetrics.co2.V * projectArea), benchmark: formatMetric(allPcvMetrics.co2.V), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" }, { total: formatMetric(allPcvMetrics.energy.V * projectArea), benchmark: formatMetric(allPcvMetrics.energy.V), unitTotal: "MJ", unitBenchmark: "MJ/m²" }, { total: formatMetric(allPcvMetrics.material.V * projectArea), benchmark: formatMetric(allPcvMetrics.material.V), unitTotal: "m³", unitBenchmark: "m³/m²" }]} />
+          <div className="flex flex-wrap max-sm:flex-nowrap gap-4 @max-[110rem]/cards:gap-3 w-full min-w-0 flex-1 px-2">
+            <ScenarioCard letter="V" showUnits title={t.summary.chartLegend?.referenceValue_short || "Valor referência"} color={MARKER_COLORS.V} items={[{ total: formatMetric(allPcvMetrics.co2.V * projectArea), benchmark: formatMetric(allPcvMetrics.co2.V), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" }, { total: formatMetric(allPcvMetrics.energy.V * projectArea), benchmark: formatMetric(allPcvMetrics.energy.V), unitTotal: "MJ", unitBenchmark: "MJ/m²" }, { total: formatMetric(allPcvMetrics.material.V * projectArea), benchmark: formatMetric(allPcvMetrics.material.V), unitTotal: "m³", unitBenchmark: "m³/m²" }]} />
             <ScenarioCard letter="C" title={t.summary.chartLegend?.constructionMitigationPotential_short || "Melhor cenário"} color={MARKER_COLORS.C} items={[{ total: formatMetric(allPcvMetrics.co2.C * projectArea), benchmark: formatMetric(allPcvMetrics.co2.C), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" }, { total: formatMetric(allPcvMetrics.energy.C * projectArea), benchmark: formatMetric(allPcvMetrics.energy.C), unitTotal: "MJ", unitBenchmark: "MJ/m²" }]} />
             <ScenarioCard letter="R" title={t.summary.chartLegend?.riskOfLowerConstructionMitigation_short || "Pior cenário"} color={MARKER_COLORS.R} items={[{ total: formatMetric(allPcvMetrics.co2.R * projectArea), benchmark: formatMetric(allPcvMetrics.co2.R), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" }, { total: formatMetric(allPcvMetrics.energy.R * projectArea), benchmark: formatMetric(allPcvMetrics.energy.R), unitTotal: "MJ", unitBenchmark: "MJ/m²" }]} />
             <ScenarioCard letter="P" title={t.summary.chartLegend?.projectMitigationPotential_short || "Potencial de mitigação"} color={MARKER_COLORS.P} items={[{ total: formatMetric(allPcvMetrics.co2.P * projectArea), benchmark: formatMetric(allPcvMetrics.co2.P), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" }, { total: formatMetric(allPcvMetrics.energy.P * projectArea), benchmark: formatMetric(allPcvMetrics.energy.P), unitTotal: "MJ", unitBenchmark: "MJ/m²" }, { total: formatMetric(allPcvMetrics.material.P * projectArea), benchmark: formatMetric(allPcvMetrics.material.P), unitTotal: "m³", unitBenchmark: "m³/m²" }]} />

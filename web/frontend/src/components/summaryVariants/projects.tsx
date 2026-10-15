@@ -341,16 +341,16 @@ const ProjectsSummary = ({
     <div ref={elementRef} className='h-[80vh] flex flex-col overflow-hidden pb-4'>
       
       {/* CABEÇALHO (Cards): shrink-0 garante que ele nunca diminua seu próprio tamanho para ceder espaço */}
-      <div className='shrink-0 flex justify-between gap-2 w-full'>
-        <div className="flex items-center gap-4 w-full overflow-x-auto pt-3 pb-2">
+      <div className="@container/cards shrink-0 flex justify-between gap-2 w-full">
+        <div className="flex items-start gap-4 @max-[110rem]/cards:gap-3 w-full min-w-0 pt-3 pb-2 max-sm:overflow-x-auto">
           <div className="flex flex-col gap-1.5 text-sm font-bold text-right text-neutral-800 pl-2 shrink-0">
-            <span className="leading-5 whitespace-nowrap flex items-center justify-end mt-1">Benchmark</span>
+            <span className="leading-5 whitespace-nowrap flex items-center justify-end mt-2.75">Benchmark</span>
             <span className="leading-5 whitespace-nowrap flex items-center justify-end mb-1">Total</span>
           </div>
 
-          <div className="flex flex-nowrap gap-4 w-full">
+          <div className="flex flex-wrap max-sm:flex-nowrap gap-4 @max-[110rem]/cards:gap-3 w-full min-w-0 flex-1">
             <ScenarioCard
-              letter="V"
+              letter="V" showUnits
               title={t.summary.chartLegend.referenceValue_short}
               color={MARKER_COLORS.V} // Verde
               items={[

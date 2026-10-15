@@ -1051,6 +1051,7 @@ export const ptBR = {
     classification: {
       title: "Classificação",
       projectsCount: "N: {{count}} projetos",
+      projectsCountShort: "N: {{count}}",
     },
   },
   floor: {

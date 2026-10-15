@@ -1047,6 +1047,7 @@ export const en: Translations = {
     classification: {
       title: "Classification",
       projectsCount: "N: {{count}} projects",
+      projectsCountShort: "N: {{count}}",
     },
   },
   floor: {
