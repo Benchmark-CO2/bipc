@@ -1053,8 +1053,9 @@ export const prepareUnitForCreate = (
 };
 
 /**
- * Parses recursively all numeric-like strings ("100", "12.5") inside an object/array
- * into actual numbers. Backend Go structs use float64/int and reject string values.
+ * Parses recursively all numeric-like strings ("100", "12.5", "10,00") inside an
+ * object/array into actual numbers. Backend Go structs use float64/int and reject
+ * string values.
  */
 const recursivelyParseNumericStrings = (value: unknown): unknown => {
   if (value === null || value === undefined) return value;
@@ -1067,6 +1068,11 @@ const recursivelyParseNumericStrings = (value: unknown): unknown => {
     // Regex: optional leading minus, digits, optional . digits
     if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
       return Number(trimmed);
+    }
+    // Decimal pt-BR vindo dos inputs do formulário ("10,00", "27,9").
+    // Sem separador de milhar: o NumericStringInput não o emite no onChange.
+    if (/^-?\d+,\d+$/.test(trimmed)) {
+      return Number(trimmed.replace(",", "."));
     }
     return value;
   }
