@@ -164,6 +164,33 @@
   --map-scale-5: #187b8b;
 }
 
+/* Tokens de cor das tecnologias construtivas (Figma, Default.tokens.json) */
+:root {
+  --estrutura-viga-pilar-portico: #3171D8;
+  --estrutura-parede-de-concreto: #78A1E3;
+  --estrutura-alvenaria-estrutural: #BCD0F0;
+  --estrutura-generica: #1F52A3;
+  --fundacao-radier: #329BAE;
+  --fundacao-radier-estaqueado: #73C5D4;
+  --fundacao-estacas: #C1E5EB;
+  --fundacao-generica: #226A77;
+  --vedos-alvenaria-de-vedacao: #E3943B;
+  --vedos-drywall: #E8AB65;
+  --vedos-light-steel-frame-lsf: #EDC290;
+  --vedos-painel-pre-fabricado: #F3D8B9;
+  --vedos-generica: #BB701B;
+  --cobertura-telhado-ceramico: #D45749;
+  --cobertura-telha-metalica: #DC7B71;
+  --cobertura-laje-impermeabilizada: #E5A098;
+  --cobertura-telhado-verde: #EEC3BE;
+  --cobertura-generica: #AE3629;
+  --revestimento-reboco-e-pintura: #7C47AE;
+  --revestimento-acm-painel-metalico: #B99BD4;
+  --revestimento-revestimento-cimenticio: #D7C6E6;
+  --revestimento-ceramica-porcelanato: #9A6FC3;
+  --revestimento-generica: #58327B;
+}
+
 @theme inline {
   /* Custom Breakpoints */
   --breakpoint-xs: 475px;

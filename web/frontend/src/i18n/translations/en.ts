@@ -1026,7 +1026,9 @@ export const en: Translations = {
     placeholders: {
       chartType: "Chart Type",
     },
-    title: "Project benchmark",
+    title: "Benchmark",
+    visualization: "View",
+    filters: "Filters",
     selectAll: "Select All",
     deselectAll: "Deselect All",
     selectedItems: "selected items",
@@ -1055,6 +1057,7 @@ export const en: Translations = {
     classification: {
       title: "Classification",
       projectsCount: "N: {{count}} projects",
+      projectsCountShort: "N: {{count}}",
     },
   },
   floor: {
@@ -1139,6 +1142,7 @@ export const en: Translations = {
     displaying: "Displaying",
     selected: "Selected",
     of: "of",
+    selectedVisible: "Showing {{visible}} of {{total}} selected",
     numberOfProjects: "Number of projects",
     enableZoom: "Enable zoom",
     disableZoom: "Disable zoom",

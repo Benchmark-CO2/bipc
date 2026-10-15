@@ -1030,7 +1030,9 @@ export const ptBR = {
     placeholders: {
       chartType: "Tipo de gráfico",
     },
-    title: "Benchmark do Projeto",
+    title: "Benchmark",
+    visualization: "Visualização",
+    filters: "Filtros",
     selectAll: "Selecionar Todos",
     deselectAll: "Desmarcar Todos",
     selectedItems: "itens selecionados",
@@ -1059,6 +1061,7 @@ export const ptBR = {
     classification: {
       title: "Classificação",
       projectsCount: "N: {{count}} projetos",
+      projectsCountShort: "N: {{count}}",
     },
   },
   floor: {
@@ -1143,6 +1146,7 @@ export const ptBR = {
     displaying: "Exibindo",
     selected: "Selecionados",
     of: "de",
+    selectedVisible: "Exibindo {{visible}} de {{total}} selecionados",
     numberOfProjects: "Nº de empreendimentos",
     enableZoom: "Habilitar zoom",
     disableZoom: "Desabilitar zoom",
