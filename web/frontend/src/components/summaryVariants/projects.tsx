@@ -16,6 +16,7 @@ import { ClassificationCard } from './components/classificationCard';
 import { EmissionsSection } from './components/emissionSection';
 import { ScenarioCard } from './components/indicatorItem';
 import { useChartType } from "./hooks/useChartType";
+import { useSummaryBenchmark } from "./hooks/useSummaryBenchmark";
 import { useElementHeight } from './hooks/useElementHeight';
 import { calculateGrade, MARKER_COLORS, normalizeBenchmarkSeries, recalculateY } from "./utils";
 
@@ -38,11 +39,13 @@ type ProjectsSummaryProps = {
 
 const ProjectsSummary = ({
   projects,
-  data,
+  data: baseData,
   someSelected,
   showProjectName = true,
 }: ProjectsSummaryProps) => {
   const { t } = useTranslation();
+  // Com filtros ativos, o benchmark de entrada é o filtrado (fórmulas e classificação não mudam)
+  const { data, FiltersButton } = useSummaryBenchmark(baseData);
   const { isOpen, isFullScreen } = useSummary();
 
   const filterProjects = useMemo(() =>
@@ -442,6 +445,7 @@ const ProjectsSummary = ({
             {/* Filtros no topo do gráfico */}
             <div className="shrink-0 flex gap-2 items-end max-sm:flex-col max-sm:items-stretch">
               {ChartSelector}
+              {FiltersButton}
               <FilterTabs
                 tabs={["co2", "energy", "material"]}
                 onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}

@@ -1023,6 +1023,7 @@ export const ptBR = {
     },
     title: "Benchmark",
     visualization: "Visualização",
+    filters: "Filtros",
     selectAll: "Selecionar Todos",
     deselectAll: "Desmarcar Todos",
     selectedItems: "itens selecionados",

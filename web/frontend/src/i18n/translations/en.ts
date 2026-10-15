@@ -1019,6 +1019,7 @@ export const en: Translations = {
     },
     title: "Benchmark",
     visualization: "View",
+    filters: "Filters",
     selectAll: "Select All",
     deselectAll: "Deselect All",
     selectedItems: "selected items",
