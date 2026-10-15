@@ -42,12 +42,12 @@ const Summary = () => {
     >
       {/* Grupo de Botões Superiores Direitos */}
       <div className="absolute flex items-end top-0 right-4 -translate-y-full bottom-0 z-[100] min-w-[260px]!">
-        <div className="flex items-stretch overflow-hidden relative w-[260px] min-w-[260px]! h-8">
+        <div className="flex items-stretch relative w-[260px] min-w-[260px]! h-8">
           
           {/* Aba de Texto */}
           <button
             onClick={handleToggle}
-            className="flex items-center justify-center px-4 py-1.5 text-xs font-semibold text-white transition-colors bg-primary cursor-pointer rounded-t-md min-w-[150px] w-[170px] shadow-[7px_3px_13px_1px_rgba(0,0,0,0.5)] absolute z-52"
+            className="flex items-center justify-center px-4 py-1.5 text-xs font-semibold text-white transition-colors bg-primary hover:bg-[linear-gradient(rgba(0,0,0,0.1),rgba(0,0,0,0.1))] cursor-pointer rounded-t-md min-w-[150px] w-[170px] shadow-[4px_0px_4px_0px_rgba(0,0,0,0.25)] absolute z-52"
           >
             {t.summary.title}
           </button>
@@ -55,9 +55,7 @@ const Summary = () => {
           {/* Botão Laranja: Abre/Fecha o componente inteiro */}
           <button
             onClick={handleToggle}
-            className={cn("flex items-center justify-end px-3 py-1.5 text-white transition-colors bg-primary cursor-pointer border-l border-white/20 rounded-t-md min-w-[60px] absolute top-0 right-12 z-51 shadow-[7px_3px_13px_1px_rgba(0,0,0,0.5)]", {
-              // 'bg-[#f15a3b] hover:bg-[#d94f33]': isOpen
-            })}
+            className="flex items-center justify-end px-3 py-1.5 text-white transition-colors bg-primary hover:bg-[linear-gradient(rgba(0,0,0,0.1),rgba(0,0,0,0.1))] cursor-pointer border-l border-white/20 rounded-t-md min-w-[60px] absolute top-0 right-12 z-51 shadow-[4px_0px_4px_0px_rgba(0,0,0,0.25)]"
           >
             <ChevronDown
               className={cn("w-4 h-4 transition-transform duration-300", {
@@ -78,7 +76,7 @@ const Summary = () => {
                 setIsFullScreen(!isFullScreen);
               }
             }}
-            className="flex items-center justify-end px-3 py-1.5 text-white transition-colors bg-primary cursor-pointer border-l border-white/20 rounded-t-md min-w-[60px] absolute top-0 right-0 z-50"
+            className="flex items-center justify-end px-3 py-1.5 text-white transition-colors bg-primary hover:bg-[linear-gradient(rgba(0,0,0,0.1),rgba(0,0,0,0.1))] cursor-pointer border-l border-white/20 rounded-t-md min-w-[60px] absolute top-0 right-0 z-50 shadow-[4px_0px_4px_0px_rgba(0,0,0,0.25)]"
           >
             {isFullScreen ? (
               <Minimize className="w-4 h-4" />
