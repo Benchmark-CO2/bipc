@@ -1,5 +1,6 @@
 import { useTranslation } from '@/i18n';
 import { cn } from '@/lib/utils';
+import { MARKER_COLORS } from '../utils';
 import Legend from './Legend';
 
 export const LegendItem = ({ icon, label, color, shape  = 'circle' }: { icon:string, label: string, color: string, shape?: 'circle' | 'square' }) => {
@@ -16,10 +17,10 @@ export const LegendItem = ({ icon, label, color, shape  = 'circle' }: { icon:str
 export const ChartLegend = () => {
   const { t } = useTranslation();
   const legendItems = [
-    { icon: 'V', label: t.summary.chartLegend.referenceValue, color: '#62A436' },
-    { icon: 'C', label: t.summary.chartLegend.constructionMitigationPotential, color: '#5B9BD5' },
-    { icon: 'P', label: t.summary.chartLegend.projectMitigationPotential, color: '#E0756C' },
-    { icon: 'R', label: t.summary.chartLegend.riskOfLowerConstructionMitigation, color: '#9F70DB' },
+    { icon: 'V', label: t.summary.chartLegend.referenceValue, color: MARKER_COLORS.V },
+    { icon: 'C', label: t.summary.chartLegend.constructionMitigationPotential, color: MARKER_COLORS.C },
+    { icon: 'P', label: t.summary.chartLegend.projectMitigationPotential, color: MARKER_COLORS.P },
+    { icon: 'R', label: t.summary.chartLegend.riskOfLowerConstructionMitigation, color: MARKER_COLORS.R },
   ];
   return (
     <div className='flex flex-col gap-1 flex-shrink-0'>

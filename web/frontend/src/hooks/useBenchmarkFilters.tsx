@@ -139,5 +139,7 @@ export const useBenchmarkFilters = () => {
     </section>
   );
 
-  return { FilterSection, activeBuildFilter, type, setType };
+  const clearFilters = () => setActiveBuildFilter({ floors: new FilterFloors(), technology: [] });
+
+  return { FilterSection, activeBuildFilter, type, setType, clearFilters };
 };

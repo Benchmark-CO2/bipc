@@ -60,17 +60,17 @@ const PROCEL_SCALE_CONFIG = {
 } as const;
 
 const PROCEL_CLASSES = [
-  { label: "A", color: "#00A650" },
-  { label: "B", color: "#8DC63F" },
-  { label: "C", color: "#FFF200" },
-  { label: "D", color: "#F26522" },
+  { label: "A", color: "#64C85A" },
+  { label: "B", color: "#9ECF31" },
+  { label: "C", color: "#EAE61F" },
+  { label: "D", color: "#F8A12B" },
 ] as const;
 
 const PROCEL_CLASSES_5 = [
-  { label: "A", color: "#00A650" },
-  { label: "B", color: "#8DC63F" },
-  { label: "C", color: "#FFF200" },
-  { label: "D", color: "#F26522" },
+  { label: "A", color: "#64C85A" },
+  { label: "B", color: "#9ECF31" },
+  { label: "C", color: "#EAE61F" },
+  { label: "D", color: "#F8A12B" },
 ] as const;
 
 type ProcelLabel = (typeof PROCEL_CLASSES_5)[number]["label"];
@@ -198,7 +198,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   hideBars = false,
   showProcelScale = true,
   procelHighlight = null,
-  procelFadedOpacity = 0.25,
+  procelFadedOpacity = 0.2, // classes fora da classificação do projeto ficam a 20%
   showBaseline = false,
   showTop5Line = false,
   top5Field = "min",
@@ -232,11 +232,13 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const tooltipRef = useRef<HTMLDivElement>(null);
   const hoveredItemRef = useRef<string | null>(null);
   const visibleCountRef = useRef<number>(0);
+  const selectedVisibleCountRef = useRef<number>(0);
 
   const isMobile = useIsMobile();
 
   const [tooltipData, setTooltipData] = useState<{ min: number; max: number; label?: string; floors?: string | number; technology?: string[]; } | null>(null);
   const [visibleCount, setVisibleCount] = useState<number>(0);
+  const [selectedVisibleCount, setSelectedVisibleCount] = useState<number>(0); // selecionados dentro da área visível
   const [outAboveCount, setOutAboveCount] = useState<number>(0);
   const [outBelowCount, setOutBelowCount] = useState<number>(0);
   const outAboveRef = useRef<number>(0);
@@ -278,7 +280,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   }, [data.length]);
 
   useEffect(() => {
-    setVisibleCount(selectedBarIds.size || data.length);
+    setVisibleCount(data.length);
   }, [data.length, selectedBarIds]);
 
   const updateBrushCount = useCallback((count: number) => setVisibleCount(count), []);
@@ -411,13 +413,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       p5LineX = lineX; p5LineInView = lineX >= 0 && lineX <= _width;
     }
 
-    let midPredict: ((yVal: number) => number) | null = null;
-    if (showMidCurve && data.length >= 3) {
-      const raw: [number, number][] = [...data].sort((a, b) => a.y - b.y).map((d) => [(d.min + d.max) / 2, d.y]);
-      const result = regressionPoly().x((d: [number, number]) => d[1]).y((d: [number, number]) => d[0]).order(Math.min(4, raw.length - 1))(raw);
-      midPredict = (yVal: number) => Math.max(0, result.predict(yVal));
-    }
-
     const hasActiveFilter = selectedMinBarIds.size > 0 || selectedMaxBarIds.size > 0;
 
     data.forEach((d) => {
@@ -438,7 +433,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           ctx.globalAlpha = 1;
         } else {
           const useGray = (hideBars && hasActiveFilter) || emptyResults;
-          ctx.globalAlpha = hasActiveFilter ? 0.4 : 1;
+          ctx.globalAlpha = hasActiveFilter ? 0.2 : 1; // não selecionados bem transparentes; os selecionados ficam com 1
 
           if (!isMinSelected) {
             ctx.beginPath(); ctx.arc(x1, y, radius, 0, Math.PI * 2); ctx.fillStyle = useGray ? DEFAULT_COLORS.GRAY_START : DEFAULT_COLORS.START; ctx.fill();
@@ -477,8 +472,11 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           ctx.lineWidth = 1;
           ctx.stroke();
         } else {
+          // Valor V (mesma fórmula do marcador V): define também a troca de cor azul/vermelho da barra
+          const midValue = c5Value !== null && r5Value !== null ? Math.max((c5Value - d.min) + (r5Value - d.max) / 2, (d.min + d.max) / 2) : (d.min + d.max) / 2;
+
           if (!hideBars && isMinSelected && isMaxSelected) {
-            const xMid = newXScale(midPredict ? midPredict(d.y) : (d.min + d.max) / 2);
+            const xMid = Math.min(x2, Math.max(x1, newXScale(midValue))); // troca de cor dentro da barra
             const rr = isExpanded ? barHeight / 2 : 2;
 
             ctx.fillStyle = DEFAULT_COLORS.START; ctx.beginPath(); (ctx as any).roundRect(x1, barY, Math.max(1, xMid - x1), barHeight, { upperLeft: rr, lowerLeft: rr, upperRight: 0, lowerRight: 0 }); ctx.fill();
@@ -489,7 +487,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           if (isMaxSelected) { ctx.beginPath(); ctx.arc(x2, y, radius, 0, Math.PI * 2); ctx.fillStyle = DEFAULT_COLORS.END; ctx.fill(); }
 
           if (isMinSelected && isMaxSelected) {
-            let midValue = c5Value !== null && r5Value !== null ? Math.max((c5Value - d.min) + (r5Value - d.max) / 2, (d.min + d.max) / 2) : (d.min + d.max) / 2;
             selectedAnnotations.push({ x1, x2, xMid: newXScale(midValue), y, barHeight });
           }
         }
@@ -556,12 +553,12 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         ctx.fillStyle = DEFAULT_COLORS.END; ctx.beginPath(); ctx.arc(x2, labelY, 6, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#ffffff"; ctx.fillText("R", x2, labelY);
 
         if (p5LineX !== null && Math.abs(p5LineX - x1) > 6) {
-          const arrowLeft = Math.min(x1, p5LineX); const arrowRight = Math.max(x1, p5LineX);
+          // P fica sobre a linha de 5% (p5LineX); a seta sai do início da barra (x1) e aponta para ele
+          const dir = Math.sign(p5LineX - x1); const tipX = p5LineX - dir * 6; // ponta encosta na borda do círculo (raio 6)
           ctx.strokeStyle = "#7B2D8E"; ctx.fillStyle = "#7B2D8E"; ctx.lineWidth = 1;
-          ctx.beginPath(); ctx.moveTo(arrowLeft, y); ctx.lineTo(arrowRight, y); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(arrowLeft, y); ctx.lineTo(arrowLeft + 4, y - 2); ctx.lineTo(arrowLeft + 4, y + 2); ctx.fill();
-          ctx.beginPath(); ctx.moveTo(arrowRight, y); ctx.lineTo(arrowRight - 4, y - 2); ctx.lineTo(arrowRight - 4, y + 2); ctx.fill();
-          ctx.beginPath(); ctx.arc((arrowLeft + arrowRight) / 2, y, 6, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#ffffff"; ctx.fillText("P", (arrowLeft + arrowRight) / 2, y);
+          ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(tipX, y); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(tipX, y); ctx.lineTo(tipX - dir * 4, y - 2); ctx.lineTo(tipX - dir * 4, y + 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(p5LineX, y, 6, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#ffffff"; ctx.fillText("P", p5LineX, y);
         }
         ctx.restore();
       });
@@ -624,8 +621,8 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         let isHighlighted = hasSelection ? activeProcelLabels.has(cls.label) : (procelHighlight == null || cls.label === procelHighlight);
         ctx.globalAlpha = isHighlighted ? 1 : procelFadedOpacity;
         ctx.fillStyle = cls.color; ctx.fillRect(_width, bandTop, PROCEL_SCALE_CONFIG.WIDTH, Math.ceil(bandBottom - bandTop));
-        ctx.globalAlpha = isHighlighted ? 1 : Math.max(0.3, procelFadedOpacity);
-        ctx.fillStyle = "#111827"; ctx.font = "bold 10px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        // Letra branca, em negrito e 10% maior; acompanha a opacidade da faixa
+        ctx.fillStyle = "#FFFFFF"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(cls.label, _width + PROCEL_SCALE_CONFIG.WIDTH / 2, (bandTop + bandBottom) / 2);
       });
       ctx.restore();
@@ -641,14 +638,24 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     for (const d of _countSource) {
       if (d.y > currentYTop) { _countAbove++; continue; }
       if (d.y < currentYBottom) { _countBelow++; continue; }
-
-      const px1 = newXScale(d.min); const px2 = newXScale(d.max);
-      if (px2 < 0 || px1 > _width) continue; 
-
-      _countInView++;
     }
 
+    // "Exibindo X de N": todas as amostras na área visível; "Exibindo Y de Z selecionados": só os marcados
+    // Selecionados contados por id único (o mesmo id pode aparecer em mais de um ponto, como mínimo ou máximo)
+    const selectedIdsInView = new Set<string>();
+    for (const d of data) {
+      if (d.y > currentYTop || d.y < currentYBottom) continue;
+      const px1 = newXScale(d.min); const px2 = newXScale(d.max);
+      if (px2 < 0 || px1 > _width) continue;
+      _countInView++;
+      const minId = String(d.minId ?? d.id); const maxId = String(d.maxId ?? d.id);
+      if (selectedMinBarIds.has(minId)) selectedIdsInView.add(minId);
+      if (selectedMaxBarIds.has(maxId)) selectedIdsInView.add(maxId);
+    }
+    const _selectedInView = selectedIdsInView.size;
+
     if (visibleCountRef.current !== _countInView) { visibleCountRef.current = _countInView; updateBrushCount(_countInView); }
+    if (selectedVisibleCountRef.current !== _selectedInView) { selectedVisibleCountRef.current = _selectedInView; setSelectedVisibleCount(_selectedInView); }
     if (outAboveRef.current !== _countAbove) { outAboveRef.current = _countAbove; setOutAboveCount(_countAbove); }
     if (outBelowRef.current !== _countBelow) { outBelowRef.current = _countBelow; setOutBelowCount(_countBelow); }
 
@@ -729,12 +736,12 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         const iY = d3.interpolateNumber(start.y, 0);
         return (t) => {
           transformRef.current = { kx: iKx(t), ky: iKy(t), x: iX(t), y: iY(t) };
-          if (t === 1) { updateBrushCount(selectedBarIds.size || data.length); setHasZoomed(false); }
+          if (t === 1) { updateBrushCount(data.length); setHasZoomed(false); }
           if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
           animationFrameRef.current = requestAnimationFrame(drawChart);
         };
       });
-  }, [data.length, drawChart, selectedBarIds.size, updateBrushCount]);
+  }, [data.length, drawChart, updateBrushCount]);
 
   useEffect(() => {
     if (!brushRef.current || _width <= 0 || _height <= 0) return;
@@ -845,7 +852,8 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const labelY = yAxisLabelProp ?? t.benchmark.chartTypes.cumulativeFraction.yAxisLabel;
   const displayedCount = hasZoomed ? visibleCount : data.length;
   const totalCount = Math.max(totalProjects || 0, initialTotalRef.current || 0, data.length);
-  const selectedCount = new Set([...selectedMinBarIds, ...selectedMaxBarIds]).size;
+  // Itens marcados no painel esquerdo, contados uma vez (mínimo e máximo do mesmo item não duplicam)
+  const selectedCount = new Set(data.flatMap((d) => [String(d.minId ?? d.id), String(d.maxId ?? d.id)]).filter((id) => selectedMinBarIds.has(id) || selectedMaxBarIds.has(id))).size;
 
   return (
     <Card className={cn("shadow-none w-full flex-1 p-0 m-0! border-transparent bg-transparent h-full flex flex-col min-h-0 overflow-hidden")}>
@@ -877,41 +885,46 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
               {labelY}
             </span>
 
-            <div className="absolute top-4 left-[calc(40px+0.5rem)] flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
-              <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco acima">
-                {outAboveCount} <span className="text-[10px]"><Triangle className='w-4 h-4 fill-gray-500' /></span>
-              </span>
-              {
-                showIndicators && (
-                  <>
-                    <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Máximo do conjunto Azul">
-                      {Math.round(maxLessDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-4 h-4 fill-[#5B9BD5]' /></span>
-                    </span>
-                    <span className="text-[#E0756C] flex items-center gap-0.5" title="Máximo do conjunto Vermelho">
-                      {Math.round(maxMaxDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-4 h-4 fill-[#E0756C]' /></span>
-                    </span>
-                  </>
-                )
-              }
-            </div>
+            {/* Indicadores de dados fora do intervalo: só com zoom/sliders aplicados */}
+            {hasZoomed && (
+              <>
+              <div className="absolute top-4 left-[calc(40px+0.5rem)] flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
+                <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco acima">
+                  {outAboveCount} <span className="text-[10px]"><Triangle className='w-3 h-3 fill-gray-500' strokeWidth={0} /></span>
+                </span>
+                {
+                  showIndicators && (
+                    <>
+                      <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Máximo do conjunto Azul">
+                        {Math.round(maxLessDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-3 h-3 fill-[#5B9BD5]' strokeWidth={0} /></span>
+                      </span>
+                      <span className="text-[#E0756C] flex items-center gap-0.5" title="Máximo do conjunto Vermelho">
+                        {Math.round(maxMaxDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-3 h-3 fill-[#E0756C]' strokeWidth={0} /></span>
+                      </span>
+                    </>
+                  )
+                }
+              </div>
 
-            <div className="absolute bottom-10 right-20 flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
-              <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco abaixo">
-                {outBelowCount} <span className="text-[10px]"><Triangle className='rotate-180 w-4 h-4 fill-gray-500' /></span>
-              </span>
-              {
-                showIndicators && (
-                  <>
-                    <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Mínimo do conjunto Azul">
-                      <span className="text-[10px]"><Triangle className='rotate-270 w-4 h-4 fill-[#5B9BD5]' /></span> {Math.round(minLessDataValue)}
-                    </span>
-                    <span className="text-[#E0756C] flex items-center gap-0.5" title="Mínimo do conjunto Vermelho">
-                      <span className="text-[10px]"><Triangle className='rotate-270 w-4 h-4 fill-[#E0756C]' /></span> {Math.round(minMaxDataValue)}
-                    </span>
-                  </>
-                )
-              }
-            </div>
+              <div className="absolute bottom-10 right-20 flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
+                <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco abaixo">
+                  {outBelowCount} <span className="text-[10px]"><Triangle className='rotate-180 w-3 h-3 fill-gray-500' strokeWidth={0} /></span>
+                </span>
+                {
+                  showIndicators && (
+                    <>
+                      <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Mínimo do conjunto Azul">
+                        <span className="text-[10px]"><Triangle className='rotate-270 w-3 h-3 fill-[#5B9BD5]' strokeWidth={0} /></span> {Math.round(minLessDataValue)}
+                      </span>
+                      <span className="text-[#E0756C] flex items-center gap-0.5" title="Mínimo do conjunto Vermelho">
+                        <span className="text-[10px]"><Triangle className='rotate-270 w-3 h-3 fill-[#E0756C]' strokeWidth={0} /></span> {Math.round(minMaxDataValue)}
+                      </span>
+                    </>
+                  )
+                }
+              </div>
+              </>
+            )}
 
             {/* O SEGREDO DO CANVAS REVELADO: Posicionamento absoluto resolvendo qualquer vazamento */}
             <canvas
@@ -985,7 +998,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             <div className="flex justify-between items-center mt-3">
               <div className="flex flex-col gap-0.5 opacity-60">
                 <span className="text-xs">{t.d3chart.displaying}: {displayedCount} {t.d3chart.of} {totalCount}</span>
-                {selectedCount > 0 && (<span className="text-xs">{t.d3chart.selected}: {selectedCount} {t.d3chart.of} {data.length}</span>)}
+                {selectedCount > 0 && (<span className="text-xs">{t.d3chart.selectedVisible.replace('{{visible}}', String(selectedVisibleCount)).replace('{{total}}', String(selectedCount))}</span>)}
               </div>
               <span className="flex-1 text-xs text-center w-full text-foreground/70 font-medium">
                 {labelX}

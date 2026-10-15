@@ -1,3 +1,4 @@
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from '@/i18n';
 import { cn } from "@/lib/utils";
 
@@ -18,21 +19,27 @@ export const ClassificationCard = ({ grade, totalProjects }: ClassificationCardP
   const { t } = useTranslation();
 
   return (
-    <div
-      className={cn(
-        "flex items-center gap-4 border rounded-lg px-5 py-3 shadow-sm flex-shrink-0",
-        gradeStyles[grade]
-      )}
-    >
-      <span className="text-2xl font-extrabold text-neutral-900">{grade}</span>
-      <div className="flex flex-col">
-        <span className="text-sm font-bold text-neutral-900 leading-tight">
-          {t.summary.classification.title}
-        </span>
-        <span className="text-xs text-neutral-600 leading-tight mt-0.5">
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div
+          className={cn(
+            "flex flex-col items-center justify-center self-stretch border rounded-lg px-4 py-2 shadow-sm flex-shrink-0 cursor-help",
+            gradeStyles[grade]
+          )}
+        >
+          <span className="text-2xl font-extrabold leading-none text-neutral-900">{grade}</span>
+          <span className="text-xs text-neutral-600 leading-tight mt-1 whitespace-nowrap">
+            {t.summary.classification.projectsCountShort.replace('{{count}}', String(totalProjects))}
+          </span>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent className='bg-white ring ring-primary' arrowClassName='bg-white fill-white'>
+        <span className="text-xs text-neutral-900">
+          <span className="font-bold">{t.summary.classification.title}</span>
+          {' · '}
           {t.summary.classification.projectsCount.replace('{{count}}', String(totalProjects))}
         </span>
-      </div>
-    </div>
+      </TooltipContent>
+    </Tooltip>
   );
 };

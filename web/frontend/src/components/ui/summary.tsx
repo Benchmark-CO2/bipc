@@ -3,6 +3,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { useTranslation } from '@/i18n';
 import { cn } from "@/lib/utils";
 import { ChevronDown, Maximize, Minimize } from "lucide-react";
+import type { MouseEvent } from "react";
 
 const Summary = () => {
   // Removemos o isExpanded e toggleExpanded do context
@@ -10,6 +11,15 @@ const Summary = () => {
   const { t } = useTranslation()
   // Estado local apenas para controle visual da tela cheia (detalhado)
   const isMobile = useIsMobile()
+
+  // Abre/fecha a gaveta (usado pela seta e pelo título da aba)
+  const handleToggle = (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (isOpen) {
+      setIsFullScreen(false); // Garante que resete o detalhado ao fechar
+    }
+    toggleSummary();
+  };
 
   if (context?.hide) return null;
 
@@ -31,26 +41,21 @@ const Summary = () => {
       )}
     >
       {/* Grupo de Botões Superiores Direitos */}
-      <div className="absolute flex items-end top-0 right-4 -translate-y-full bottom-0 z-[100] min-w-[260px]!">
-        <div className="flex items-stretch overflow-hidden relative w-[260px] min-w-[260px]! h-8">
+      <div className="absolute flex items-end top-0 right-6 -translate-y-full bottom-0 z-[100]">
+        <div className="flex items-stretch relative h-10 pr-24">
           
           {/* Aba de Texto */}
-          <button className="flex items-center justify-center px-4 py-1.5 text-xs font-semibold text-white bg-primary rounded-t-md min-w-[150px] w-[170px] shadow-[7px_3px_13px_1px_rgba(0,0,0,0.5)] absolute z-52">
+          <button
+            onClick={handleToggle}
+            className="flex items-center justify-center px-9 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors bg-primary hover:bg-[linear-gradient(rgba(0,0,0,0.1),rgba(0,0,0,0.1))] cursor-pointer rounded-t-md shadow-[4px_0px_4px_0px_rgba(0,0,0,0.25)] relative z-52"
+          >
             {t.summary.title}
           </button>
 
           {/* Botão Laranja: Abre/Fecha o componente inteiro */}
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (isOpen) {
-                setIsFullScreen(false); // Garante que resete o detalhado ao fechar
-              }
-              toggleSummary();
-            }}
-            className={cn("flex items-center justify-end px-3 py-1.5 text-white transition-colors bg-primary cursor-pointer border-l border-white/20 rounded-t-md min-w-[60px] absolute top-0 right-12 z-51 shadow-[7px_3px_13px_1px_rgba(0,0,0,0.5)]", {
-              // 'bg-[#f15a3b] hover:bg-[#d94f33]': isOpen
-            })}
+            onClick={handleToggle}
+            className="flex items-center justify-end px-4 py-1.5 text-white transition-colors bg-primary hover:bg-[linear-gradient(rgba(0,0,0,0.1),rgba(0,0,0,0.1))] cursor-pointer border-l border-white/20 rounded-t-md w-16 absolute top-0 bottom-0 right-12 z-51 shadow-[4px_0px_4px_0px_rgba(0,0,0,0.25)]"
           >
             <ChevronDown
               className={cn("w-4 h-4 transition-transform duration-300", {
@@ -71,7 +76,7 @@ const Summary = () => {
                 setIsFullScreen(!isFullScreen);
               }
             }}
-            className="flex items-center justify-end px-3 py-1.5 text-white transition-colors bg-primary cursor-pointer border-l border-white/20 rounded-t-md min-w-[60px] absolute top-0 right-0 z-50"
+            className="flex items-center justify-end px-4 py-1.5 text-white transition-colors bg-primary hover:bg-[linear-gradient(rgba(0,0,0,0.1),rgba(0,0,0,0.1))] cursor-pointer border-l border-white/20 rounded-t-md w-16 absolute top-0 bottom-0 right-0 z-50 shadow-[4px_0px_4px_0px_rgba(0,0,0,0.25)]"
           >
             {isFullScreen ? (
               <Minimize className="w-4 h-4" />
@@ -95,7 +100,8 @@ const Summary = () => {
       >
         {context && (
           <div className={cn("w-full flex-1 px-2 py-2 overflow-auto", {
-            'p-2 pt-4': isFullScreen,
+            // Tela cheia (desktop): não rola como um todo; a altura passa para o conteúdo (só a lista de projetos rola)
+            'p-2 pt-4 overflow-hidden flex flex-col min-h-0 max-sm:overflow-auto': isFullScreen,
           })}>
             {context.component || null}
           </div>
