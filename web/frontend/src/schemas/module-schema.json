@@ -67,7 +67,7 @@
     "concrete_wall": {
       "description": "Parede de concreto (V2) / parede e laje maciça (V1).",
       "scope_required": "floor_ids (não vazio e sem duplicatas)",
-      "required": ["floor_ids", "concrete"],
+      "required": ["floor_ids", "concrete", "steel"],
       "fields": {
         "floor_ids": {
           "type": "array<uuid>",
@@ -132,7 +132,7 @@
     "beam_column": {
       "description": "Vigas e pilares (V2) ou pilar/viga/laje maciça (V1).",
       "scope_required": ["floor_ids (required)"],
-      "required": ["floor_ids", "concrete"],
+      "required": ["floor_ids", "concrete", "steel"],
       "fields": {
         "floor_ids": {
           "type": "array<uuid>",
@@ -264,7 +264,7 @@
     "raft_foundation": {
       "description": "Radier de fundação.",
       "scope_required": ["unit_id (obrigatório)"],
-      "required": ["unit_id", "concrete"],
+      "required": ["unit_id", "concrete", "steel"],
       "fields": {
         "unit_id": {
           "type": "uuid",
@@ -296,7 +296,7 @@
     "piles_foundation": {
       "description": "Estacas de fundação.",
       "scope_required": ["unit_id (obrigatório)"],
-      "required": ["unit_id", "concrete"],
+      "required": ["unit_id", "concrete", "steel"],
       "fields": {
         "unit_id": {
           "type": "uuid",
@@ -318,7 +318,7 @@
     "raft_piles_foundation": {
       "description": "Radier sobre estacas.",
       "scope_required": ["unit_id (obrigatório)"],
-      "required": ["unit_id", "concrete"],
+      "required": ["unit_id", "concrete", "steel"],
       "fields": {
         "unit_id": {
           "type": "uuid",

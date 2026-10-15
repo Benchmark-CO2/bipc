@@ -376,26 +376,38 @@ function hasMasonryValid(
     return missing;
   }
   const m = masonry as Record<string, unknown>;
-  if (!isNonEmptyArray(m.blocks)) {
+  const pushMissing = (key: string) =>
     missing.push({
-      key: "masonry.blocks",
-      label: `${masonryLabel} > ${label("masonry.blocks")}`,
-      reason: reason("masonry.blocks"),
+      key,
+      label: `${masonryLabel} > ${label(key)}`,
+      reason: reason(key),
     });
+  // Itens com valor zero são descartados no envio (cleanZeroItemsBeforeSubmit)
+  // e o backend exige volume > 0 em graute e argamassa
+  // (internal/modules/structural_masonry.go). Concreto e aço da alvenaria
+  // são opcionais no backend e não entram aqui.
+  const items = (arr: unknown) =>
+    (Array.isArray(arr) ? arr : []).filter(
+      (x): x is Record<string, unknown> => !!x && typeof x === "object",
+    );
+  if (!isNonEmptyArray(m.blocks)) {
+    pushMissing("masonry.blocks");
+  } else if (!items(m.blocks).some((b) => isNonZeroNumber(b.quantity))) {
+    pushMissing("masonry.blocks.quantity");
   }
   if (!isNonEmptyArray(m.mortar)) {
-    missing.push({
-      key: "masonry.mortar",
-      label: `${masonryLabel} > ${label("masonry.mortar")}`,
-      reason: reason("masonry.mortar"),
-    });
+    pushMissing("masonry.mortar");
+  } else if (!items(m.mortar).some((mo) => isNonZeroNumber(mo.volume))) {
+    pushMissing("masonry.mortar.volume");
   }
   if (!isNonEmptyArray(m.grout)) {
-    missing.push({
-      key: "masonry.grout",
-      label: `${masonryLabel} > ${label("masonry.grout")}`,
-      reason: reason("masonry.grout"),
-    });
+    pushMissing("masonry.grout");
+  } else if (
+    !items(m.grout).some((g) =>
+      items(g.volumes).some((v) => isNonZeroNumber(v.volume)),
+    )
+  ) {
+    pushMissing("masonry.grout.volume");
   }
   return missing;
 }
