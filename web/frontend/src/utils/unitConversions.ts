@@ -130,6 +130,31 @@ export function mapFloorIndexToFloorIds(
   return towerFloors.filter((f) => set.has(f.index)).map((f) => f.id);
 }
 
+// Mapeia o floor_index do IFC para os pavimentos da unidade pela POSIÇÃO
+// (k-ésimo pavimento do IFC → k-ésimo pavimento da unidade, ambos em ordem
+// crescente). O índice do IFC começa no pavimento mais baixo, enquanto a
+// unidade usa índices negativos para subsolos; casar por valor desloca tudo
+// em um andar e descarta o último. Só vale quando as quantidades batem; senão
+// cai no mapeamento por valor.
+export function mapIfcFloorIndexToFloorIds(
+  floorIndex: number | number[] | undefined | null,
+  ifcFloorIndexes: number[],
+  towerFloors: TTowerFloorCategory[],
+): string[] {
+  if (floorIndex === undefined || floorIndex === null) return [];
+  if (!towerFloors || towerFloors.length === 0) return [];
+  const sortedTower = [...towerFloors].sort((a, b) => a.index - b.index);
+  if (ifcFloorIndexes.length !== sortedTower.length) {
+    return mapFloorIndexToFloorIds(floorIndex, towerFloors);
+  }
+  const positionByIfcIndex = new Map(ifcFloorIndexes.map((v, i) => [v, i]));
+  const indexes = Array.isArray(floorIndex) ? floorIndex : [floorIndex];
+  if (!indexes.every((v) => positionByIfcIndex.has(v))) {
+    return mapFloorIndexToFloorIds(floorIndex, towerFloors);
+  }
+  return indexes.map((v) => sortedTower[positionByIfcIndex.get(v)!].id);
+}
+
 // Converte IUnit para dados do formulário
 export const convertUnitToFormData = (unit: IUnit): UnitFormInput => {
   if (!unit.floors || unit.floors.length === 0) {

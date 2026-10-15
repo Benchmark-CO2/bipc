@@ -13,6 +13,7 @@ import {
   TIfcStepperUnitItem,
   TIfcStepperModuleItem,
   TIfcFloorCategory,
+  IRawModuleDataWithMeta,
 } from "@/types/ifc";
 import { MODULE_SOURCES } from "@/utils/modulePositions";
 import { calculateModuleCompletion } from "@/utils/moduleCompletion";
@@ -337,6 +338,40 @@ const mapIfcUnitsRawToItemArray = (
 ): TIfcProcessorResultUnits[] => {
   if (Array.isArray(raw)) return raw;
   return [raw];
+};
+
+/**
+ * Índices de pavimento do IFC (espaço do `floor_index` dos módulos), em ordem
+ * crescente. Usa os floors da unidade do parser com a mesma regra de
+ * `mapIfcUnitToStepperUnitFormData`; sem unidade única com floors, usa a união
+ * dos `floor_index` dos módulos estruturais.
+ */
+export const getIfcFloorIndexes = (
+  result: TIfcProcessorAggregatedResult | null | undefined,
+): number[] => {
+  const rawUnits = result?.units ? mapIfcUnitsRawToItemArray(result.units) : [];
+  const rawFloors =
+    rawUnits.length === 1 ? (rawUnits[0]?.data?.floors ?? []) : [];
+  const indexes = new Set<number>();
+  if (rawFloors.length > 0) {
+    let lastIndex = 0;
+    rawFloors.forEach((floor, i) => {
+      const index = normalizeFloorIndex(floor.index, i === 0 ? 0 : lastIndex);
+      lastIndex = Math.max(lastIndex, index + 1);
+      indexes.add(index);
+    });
+  } else {
+    for (const m of result?.modules ?? []) {
+      if (isFoundationModuleType(normalizeModuleType(m.type))) continue;
+      const idx = (m.data as IRawModuleDataWithMeta | undefined)?.floor_index;
+      if (idx === undefined || idx === null) continue;
+      for (const v of Array.isArray(idx) ? idx : [idx]) {
+        const n = Number(v);
+        if (Number.isFinite(n)) indexes.add(n);
+      }
+    }
+  }
+  return Array.from(indexes).sort((a, b) => a - b);
 };
 
 const mapIfcUnitToStepperUnitFormData = (

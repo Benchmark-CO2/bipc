@@ -1547,6 +1547,8 @@ export const en: Translations = {
       noBindingAtAll: "No modules with a unit bound to create. Stepper closed.",
       step2Error: "Failed to create modules.",
       batchResult: "{created} module(s) created. {errors} batch(es) failed.",
+      floorBindingUnresolved:
+        "Could not bind the selected floors of {module}. Reopen the module, check the floors and try again.",
       createdSuccess: "{count} module(s) created successfully.",
       ignoredParts: "{parts} — will not be created.",
       partIgnored: "{count} selected but without binding/invalid",

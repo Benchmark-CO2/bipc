@@ -11,6 +11,7 @@ import { useTranslation } from "@/i18n";
 import { Translations } from "@/i18n/translations/pt-BR";
 import { IProject } from "@/types/projects";
 import { TOption } from "@/types/options";
+import { IUnit, TTowerFloorCategory } from "@/types/units";
 import {
   FOUNDATION_MODULE_TYPES,
   ModuleParamsProps,
@@ -35,12 +36,14 @@ import {
 import { useFloorIndexMappings } from "@/hooks/useFloorIndexMappings";
 import { structureTypes } from "@/utils/structureTypes";
 import { parseApiError } from "@/utils/parseApiError";
-import { mapFloorIndexToFloorIds } from "@/utils/unitConversions";
+import { mapIfcFloorIndexToFloorIds } from "@/utils/unitConversions";
 import {
   aggregateIdenticalFloors,
   buildUniqueSimulationName,
   FOUNDATION_MODULE_TYPES as IFC_FOUNDATION_MODULE_TYPES,
+  getIfcFloorIndexes,
   isFoundationModuleType,
+  isValidUUID,
   mapIfcResultToStepperState,
   MODULE_TYPE_LABEL_FALLBACK,
   prepareModuleForBatch,
@@ -50,7 +53,12 @@ import {
   stripFoundationFloorIndex,
 } from "@/utils/ifcStepper";
 import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
-import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useQueries,
+  useQuery,
+  useQueryClient,
+  UseQueryResult,
+} from "@tanstack/react-query";
 import { Loader2, Wand2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -60,6 +68,21 @@ import { StepperHeader } from "./drawer-stepper-ifc/views/StepperHeader";
 import { Step1Content } from "./drawer-stepper-ifc/views/Step1Content";
 import { Step2Content } from "./drawer-stepper-ifc/views/Step2Content";
 import { CompletenessWarningsI18n } from "@/components/layout/drawer-form-module/aggregate-helpers";
+
+// Fora do componente para ser estável: o React Query só memoiza o `combine`
+// quando a referência não muda entre renders.
+const combineUnitFloorsById = (
+  results: UseQueryResult<{ unit: IUnit }>[],
+): Record<string, TTowerFloorCategory[]> => {
+  const byId: Record<string, TTowerFloorCategory[]> = {};
+  for (const r of results) {
+    const unit = r.data?.unit;
+    if (unit?.id && Array.isArray(unit.floors) && unit.floors.length > 0) {
+      byId[unit.id] = unit.floors;
+    }
+  }
+  return byId;
+};
 
 export default function DrawerStepperIFC({
   open,
@@ -81,6 +104,10 @@ export default function DrawerStepperIFC({
       completeness?: CompletenessWarningsI18n;
     }
   ).completeness as CompletenessWarningsI18n;
+  const moduleTypeLabels: Record<string, string> = {
+    ...MODULE_TYPE_LABEL_FALLBACK,
+    ...structureTypes(translations),
+  };
 
   const { data: projectData } = useQuery({
     queryKey: ["project", projectId],
@@ -102,10 +129,16 @@ export default function DrawerStepperIFC({
     (optionsData?.data as IOptionsResponse | undefined)?.options ?? [];
 
   // Fetch da UNIDADE existente quando estivermos no modo simulation
-  // (para pegar os floors e poder mapear floor_index number → floor_ids UUIDs)
+  // (para pegar os floors e poder mapear floor_index number → floor_ids UUIDs).
+  // Mesmo formato ({ unit, roles }) das telas que compartilham esta queryKey:
+  // com o AxiosResponse cru, o cache vindo da tela da unidade não tinha
+  // `.data.unit` e os pavimentos caíam no fallback inferido (IDs não-UUID).
   const { data: simulationUnitData } = useQuery({
     queryKey: ["unit", projectId, preselectedUnitId],
-    queryFn: () => getUnitByUUID(projectId, preselectedUnitId || ""),
+    queryFn: async () => {
+      const res = await getUnitByUUID(projectId, preselectedUnitId || "");
+      return { unit: res.data.unit, roles: res.data.roles };
+    },
     enabled: open && isSimulationMode && !!preselectedUnitId,
     staleTime: 1000 * 60 * 5,
   });
@@ -151,6 +184,10 @@ export default function DrawerStepperIFC({
   }, [initialResult, isSimulationMode]);
 
   const [state, setState] = useState<TIfcStepperState>(initialState);
+  const ifcFloorIndexes = useMemo(
+    () => getIfcFloorIndexes(initialResult),
+    [initialResult],
+  );
   const [step1Error, setStep1Error] = useState<string>("");
   const [step2Error, setStep2Error] = useState<string>("");
   const [isCreatingStep1, setIsCreatingStep1] = useState(false);
@@ -197,15 +234,18 @@ export default function DrawerStepperIFC({
     return map;
   }, [state.unitsCreated, simulationBoundUnitTempId]);
 
-  // (useQueries dinâmico) fetch getUnitByUUID para cada unidade existente
-  // criada em unitsCreated (para modo normal, quando a unidade já existia previamente
-  // — ex.: reuso no step 1) — garante que o queryClient tem os floors cacheados
-  // para o normalizedUnitsFloorMap usar como fallback (D) acima.
-  useQueries({
+  // (useQueries dinâmico) fetch getUnitByUUID para cada unidade criada no
+  // step 1 (modo normal). Os floors reais (UUIDs) alimentam o
+  // normalizedUnitsFloorMap; sem eles a seleção de pavimentos no drawer usa
+  // IDs temporários, que o lote não consegue enviar.
+  const createdUnitsFloorsById = useQueries({
     queries: Array.from(unitsCreatedIdsMap.entries()).map(
       ([tempId, unitId]) => ({
-        queryKey: ["unit", projectId, unitId, "stepper"],
-        queryFn: () => getUnitByUUID(projectId, unitId || ""),
+        queryKey: ["unit", projectId, unitId],
+        queryFn: async () => {
+          const res = await getUnitByUUID(projectId, unitId || "");
+          return { unit: res.data.unit, roles: res.data.roles };
+        },
         enabled:
           open &&
           !!projectId &&
@@ -214,6 +254,7 @@ export default function DrawerStepperIFC({
         staleTime: 1000 * 60 * 5,
       }),
     ),
+    combine: combineUnitFloorsById,
   });
 
   const simulationCreatedUnit: TIfcStepperCreatedUnit | null = useMemo(() => {
@@ -312,7 +353,8 @@ export default function DrawerStepperIFC({
     isSimulationMode,
     simulationBoundUnitTempId,
     simulationUnitData,
-    projectId,
+    createdUnitsFloorsById,
+    ifcFloorIndexes,
     simulationCreatedUnit,
     editingUnitTempId,
     editingModuleTempId,
@@ -519,6 +561,11 @@ export default function DrawerStepperIFC({
             ).data;
             const updatedUnitObj: TIfcProcessorStateUnit | undefined =
               patchBody?.unit ?? patchBody?.data?.unit;
+            // Os floors (e seus UUIDs) podem ter mudado: recarrega para o
+            // mapeamento de pavimentos do step 2.
+            await queryClient.invalidateQueries({
+              queryKey: ["unit", projectId, alreadyCreated.unitId],
+            });
             const patchedRecord: TIfcStepperCreatedUnit = {
               ...alreadyCreated,
               unitId: updatedUnitObj?.id ?? alreadyCreated.unitId,
@@ -967,32 +1014,52 @@ export default function DrawerStepperIFC({
         const payloadModules: ModuleParamsPropsV2[] = [];
         const towerFloorsForGroup =
           normalizedUnitsFloorMap.get(unit.tempId) ?? [];
+        let unresolvedModuleLabel: string | null = null;
         for (const m of groupModules) {
           const isFoundation = FOUNDATION_MODULE_TYPES.includes(
             m.type as TModulesTypes,
           );
           // Prefere floor_ids já salvos (ex.: usuário editou e mudou via BuildingVisualizer)
           // senão mapeia a partir do floor_index numérico original vindo do IFC
-          const resolvedFloorIds =
-            (m.raw?.data as unknown as IRawModuleDataWithMeta)?.floor_ids &&
-            Array.isArray(
-              (m.raw.data as unknown as IRawModuleDataWithMeta).floor_ids,
-            ) &&
-            (m.raw.data as unknown as IRawModuleDataWithMeta).floor_ids!
-              .length > 0
-              ? ((m.raw.data as unknown as IRawModuleDataWithMeta)
-                  .floor_ids as string[])
-              : mapFloorIndexToFloorIds(
-                  (m.raw?.data as unknown as IRawModuleDataWithMeta)
-                    ?.floor_index,
-                  towerFloorsForGroup,
-                );
+          const editedFloorIds = (
+            m.raw?.data as unknown as IRawModuleDataWithMeta
+          )?.floor_ids;
+          const hasEditedFloorIds =
+            Array.isArray(editedFloorIds) && editedFloorIds.length > 0;
+          // Seleção feita com IDs temporários (pavimentos ainda não carregados):
+          // o lote reenviaria o floor_index original, aplicando o módulo a
+          // TODOS os pavimentos. Melhor falhar o lote com aviso.
+          if (
+            !isFoundation &&
+            hasEditedFloorIds &&
+            !editedFloorIds.every((id) => isValidUUID(id))
+          ) {
+            unresolvedModuleLabel = moduleTypeLabels[m.type] ?? m.type;
+            break;
+          }
+          const resolvedFloorIds = hasEditedFloorIds
+            ? editedFloorIds
+            : mapIfcFloorIndexToFloorIds(
+                (m.raw?.data as unknown as IRawModuleDataWithMeta)
+                  ?.floor_index,
+                ifcFloorIndexes,
+                towerFloorsForGroup,
+              );
           const binding = isFoundation
             ? ({ unit_id: unit.unitId } as IModuleBatchBinding)
             : ({ floor_ids: resolvedFloorIds } as IModuleBatchBinding);
           const prepared = prepareModuleForBatch(m, isFoundation, binding);
           if (!prepared) continue;
           payloadModules.push(prepared as unknown as ModuleParamsPropsV2);
+        }
+        if (unresolvedModuleLabel) {
+          errors.push(
+            `${unit.displayName}: ${t.stepper.modules.floorBindingUnresolved.replace(
+              "{module}",
+              unresolvedModuleLabel,
+            )}`,
+          );
+          continue;
         }
         if (payloadModules.length === 0) continue;
         try {
@@ -1119,10 +1186,7 @@ export default function DrawerStepperIFC({
             onEditModule={(tempId) => setEditingModuleTempId(tempId)}
             toggleModuleSelected={toggleModuleSelected}
             toggleAllModulesSelected={toggleAllModulesSelected}
-            moduleTypeLabels={{
-              ...MODULE_TYPE_LABEL_FALLBACK,
-              ...structureTypes(translations),
-            }}
+            moduleTypeLabels={moduleTypeLabels}
             step2Error={step2Error}
             isSimulationMode={isSimulationMode}
             activeStep={activeStep}

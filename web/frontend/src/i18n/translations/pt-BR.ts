@@ -1561,6 +1561,8 @@ export const ptBR = {
       step2Error: "Falha ao criar módulos.",
       batchResult:
         "{created} módulo(s) criado(s). {errors} lote(s) falhou(ram).",
+      floorBindingUnresolved:
+        "Não foi possível vincular os pavimentos selecionados em {module}. Reabra o módulo, confira os pavimentos e tente novamente.",
       createdSuccess: "{count} módulo(s) criado(s) com sucesso.",
       ignoredParts: "{parts} — não serão criados.",
       partIgnored: "{count} selecionado(s) mas sem vinculo/inválidos",
