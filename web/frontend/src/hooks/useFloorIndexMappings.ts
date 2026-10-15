@@ -15,7 +15,7 @@ import {
   makeFloorFallbackLabels,
 } from "@/utils/unitConversions";
 import { UnitFormInput } from "@/validators/unitForm.validator";
-import { isFoundationModuleType } from "@/utils/ifcStepper";
+import { isFoundationModuleType, isValidUUID } from "@/utils/ifcStepper";
 
 const inferTowerFloorsFromModuleFloorIndexes = (
   modules: TIfcStepperState["modules"],
@@ -280,12 +280,6 @@ export function useFloorIndexMappings({
     if (editingModuleBoundUnit) {
       const tempId = editingModuleBoundUnit.tempId;
 
-      if (editingModuleBoundUnit.unitId) {
-        const createdFloors =
-          createdUnitsFloorsById[editingModuleBoundUnit.unitId];
-        if (createdFloors && createdFloors.length > 0) return createdFloors;
-      }
-
       const fromMap = normalizedUnitsFloorMap.get(tempId);
       if (fromMap && fromMap.length > 0) return fromMap;
 
@@ -342,10 +336,23 @@ export function useFloorIndexMappings({
     const rawDataMaybe = editingModule.raw
       ?.data as unknown as IRawModuleDataWithMeta | null;
     const candidateFloorIds = rawDataMaybe?.floor_ids;
+    // Reaproveita a seleção salva só se ela ainda casa com os pavimentos da
+    // unidade. IDs temporários/inferidos, ou UUIDs de pavimentos que não
+    // existem mais (unidade alterada no step 1), voltam ao mapeamento pelo
+    // floor_index; senão o drawer reabriria com a mesma seleção que o lote
+    // recusa.
+    const floorsAreReal =
+      editingUnitFloors.length > 0 &&
+      editingUnitFloors.every((f) => isValidUUID(f.id));
+    const knownFloorIds = new Set(editingUnitFloors.map((f) => f.id));
     if (
       Array.isArray(candidateFloorIds) &&
       candidateFloorIds.length > 0 &&
-      candidateFloorIds.every((s) => typeof s === "string")
+      candidateFloorIds.every((s) => typeof s === "string") &&
+      (!floorsAreReal ||
+        candidateFloorIds.every(
+          (s) => isValidUUID(s) && knownFloorIds.has(s),
+        ))
     ) {
       return candidateFloorIds as string[];
     }

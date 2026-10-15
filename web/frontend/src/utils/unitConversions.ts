@@ -148,7 +148,10 @@ export function mapIfcFloorIndexToFloorIds(
     return mapFloorIndexToFloorIds(floorIndex, towerFloors);
   }
   const positionByIfcIndex = new Map(ifcFloorIndexes.map((v, i) => [v, i]));
-  const indexes = Array.isArray(floorIndex) ? floorIndex : [floorIndex];
+  // Sem repetidos: o backend rejeita floor_ids duplicados.
+  const indexes = Array.from(
+    new Set(Array.isArray(floorIndex) ? floorIndex : [floorIndex]),
+  );
   if (!indexes.every((v) => positionByIfcIndex.has(v))) {
     return mapFloorIndexToFloorIds(floorIndex, towerFloors);
   }

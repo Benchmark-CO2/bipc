@@ -192,6 +192,8 @@ export default function DrawerStepperIFC({
   const [step2Error, setStep2Error] = useState<string>("");
   const [isCreatingStep1, setIsCreatingStep1] = useState(false);
   const [isCreatingStep2, setIsCreatingStep2] = useState(false);
+  // Algum lote já criou módulos, mas outro falhou e o stepper ficou aberto.
+  const [hasCreatedModules, setHasCreatedModules] = useState(false);
 
   const [editingUnitTempId, setEditingUnitTempId] = useState<string | null>(
     null,
@@ -214,6 +216,7 @@ export default function DrawerStepperIFC({
     setStep2Error("");
     setIsCreatingStep1(false);
     setIsCreatingStep2(false);
+    setHasCreatedModules(false);
     setEditingUnitTempId(null);
     setEditingModuleTempId(null);
   }, [initialState, isSimulationMode]);
@@ -1018,6 +1021,13 @@ export default function DrawerStepperIFC({
         const payloadModuleTempIds: string[] = [];
         const towerFloorsForGroup =
           normalizedUnitsFloorMap.get(unit.tempId) ?? [];
+        // Com os pavimentos reais carregados, uma seleção com UUID que não
+        // pertence mais à unidade (ex.: unidade alterada no step 1, que gera
+        // novos IDs de pavimento) também não pode ser enviada.
+        const groupFloorIds = new Set(towerFloorsForGroup.map((f) => f.id));
+        const groupFloorsAreReal =
+          towerFloorsForGroup.length > 0 &&
+          towerFloorsForGroup.every((f) => isValidUUID(f.id));
         let unresolvedModuleLabel: string | null = null;
         for (const m of groupModules) {
           const isFoundation = FOUNDATION_MODULE_TYPES.includes(
@@ -1036,7 +1046,11 @@ export default function DrawerStepperIFC({
           if (
             !isFoundation &&
             hasEditedFloorIds &&
-            !editedFloorIds.every((id) => isValidUUID(id))
+            !editedFloorIds.every(
+              (id) =>
+                isValidUUID(id) &&
+                (!groupFloorsAreReal || groupFloorIds.has(id)),
+            )
           ) {
             unresolvedModuleLabel = moduleTypeLabels[m.type] ?? m.type;
             break;
@@ -1141,6 +1155,7 @@ export default function DrawerStepperIFC({
       // novo (o erro já aparece em step2Error e no toast).
       if (errors.length > 0) {
         if (createdModuleTempIds.size > 0) {
+          setHasCreatedModules(true);
           setState((prev) => ({
             ...prev,
             modules: prev.modules.filter(
@@ -1164,6 +1179,9 @@ export default function DrawerStepperIFC({
 
   const handleClose = () => {
     if (isCreatingStep1 || isCreatingStep2) return;
+    // Fechar depois de uma falha parcial mantém o fluxo de conclusão (ir para
+    // a unidade com os módulos que já foram criados).
+    if (hasCreatedModules) onComplete?.(buildCompletePayload());
     onOpenChange(false);
   };
 
