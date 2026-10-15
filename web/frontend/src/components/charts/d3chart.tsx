@@ -60,17 +60,17 @@ const PROCEL_SCALE_CONFIG = {
 } as const;
 
 const PROCEL_CLASSES = [
-  { label: "A", color: "#00A650" },
-  { label: "B", color: "#8DC63F" },
-  { label: "C", color: "#FFF200" },
-  { label: "D", color: "#F26522" },
+  { label: "A", color: "#64C85A" },
+  { label: "B", color: "#9ECF31" },
+  { label: "C", color: "#EAE61F" },
+  { label: "D", color: "#F8A12B" },
 ] as const;
 
 const PROCEL_CLASSES_5 = [
-  { label: "A", color: "#00A650" },
-  { label: "B", color: "#8DC63F" },
-  { label: "C", color: "#FFF200" },
-  { label: "D", color: "#F26522" },
+  { label: "A", color: "#64C85A" },
+  { label: "B", color: "#9ECF31" },
+  { label: "C", color: "#EAE61F" },
+  { label: "D", color: "#F8A12B" },
 ] as const;
 
 type ProcelLabel = (typeof PROCEL_CLASSES_5)[number]["label"];
@@ -198,7 +198,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   hideBars = false,
   showProcelScale = true,
   procelHighlight = null,
-  procelFadedOpacity = 0.25,
+  procelFadedOpacity = 0.2, // classes fora da classificação do projeto ficam a 20%
   showBaseline = false,
   showTop5Line = false,
   top5Field = "min",
@@ -624,8 +624,8 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         let isHighlighted = hasSelection ? activeProcelLabels.has(cls.label) : (procelHighlight == null || cls.label === procelHighlight);
         ctx.globalAlpha = isHighlighted ? 1 : procelFadedOpacity;
         ctx.fillStyle = cls.color; ctx.fillRect(_width, bandTop, PROCEL_SCALE_CONFIG.WIDTH, Math.ceil(bandBottom - bandTop));
-        ctx.globalAlpha = isHighlighted ? 1 : Math.max(0.3, procelFadedOpacity);
-        ctx.fillStyle = "#111827"; ctx.font = "bold 10px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        // Letra branca, em negrito e 10% maior; acompanha a opacidade da faixa
+        ctx.fillStyle = "#FFFFFF"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(cls.label, _width + PROCEL_SCALE_CONFIG.WIDTH / 2, (bandTop + bandBottom) / 2);
       });
       ctx.restore();
