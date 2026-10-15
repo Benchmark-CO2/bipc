@@ -258,7 +258,6 @@ const ProjectsSummary = ({
     }
   }, [someSelected]);
 
-  const [subTabs, setSubTabs] = useState<string>(t.summary.projects);
   const allPossibleIds = ["total", ...filterProjects.map((p) => p.id)];
 
   const selectAll = () => {
@@ -452,11 +451,6 @@ const ProjectsSummary = ({
                 onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
                 selectedTab={type}
                 className="h-9!"
-                onSubTabSelect={(tab) => {
-                  if (tab === t.summary.projects) setSubTabs(tab);
-                }}
-                subTabs={[t.summary.projects]}
-                selectedSubTab={subTabs}
               />
             </div>
             

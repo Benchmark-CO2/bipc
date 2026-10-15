@@ -223,7 +223,6 @@ const SimulationsSummary = ({
     }
   };
 
-  const [subTabs, setSubTabs] = useState<string>(t.summaryTechnologies.projects);
 
   const selectAll = () => {
     if (selectedProjects.length >= filteredProjects.length) {
@@ -345,11 +344,6 @@ const SimulationsSummary = ({
                 onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
                 selectedTab={type}
                 className="h-9!"
-                onSubTabSelect={(tab) => {
-                  if (tab === t.summaryTechnologies.projects) setSubTabs(tab);
-                }}
-                subTabs={[t.summaryTechnologies.projects]}
-                selectedSubTab={subTabs}
               />
             </div>
             

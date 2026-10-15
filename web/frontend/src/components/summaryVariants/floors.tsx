@@ -199,7 +199,6 @@ const FloorSummary = ({
     if (!someSelected) setSelectedProjects(["total"]);
   }, [someSelected]);
 
-  const [subTabs, setSubTabs] = useState<string>(t.summaryFloors.floors);
   const allPossibleIds = ["total", ...filteredFloors.map((f) => f.id)];
 
   const selectAll = () => {
@@ -350,11 +349,6 @@ const FloorSummary = ({
                 onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
                 selectedTab={type}
                 className="h-9!"
-                onSubTabSelect={(tab) => {
-                  if (tab === t.summaryFloors.floors) setSubTabs(tab);
-                }}
-                subTabs={[t.summaryFloors.floors]}
-                selectedSubTab={subTabs}
               />
             </div>
             
