@@ -3,6 +3,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { useTranslation } from '@/i18n';
 import { cn } from "@/lib/utils";
 import { ChevronDown, Maximize, Minimize } from "lucide-react";
+import type { MouseEvent } from "react";
 
 const Summary = () => {
   // Removemos o isExpanded e toggleExpanded do context
@@ -10,6 +11,15 @@ const Summary = () => {
   const { t } = useTranslation()
   // Estado local apenas para controle visual da tela cheia (detalhado)
   const isMobile = useIsMobile()
+
+  // Abre/fecha a gaveta (usado pela seta e pelo título da aba)
+  const handleToggle = (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (isOpen) {
+      setIsFullScreen(false); // Garante que resete o detalhado ao fechar
+    }
+    toggleSummary();
+  };
 
   if (context?.hide) return null;
 
@@ -35,19 +45,16 @@ const Summary = () => {
         <div className="flex items-stretch overflow-hidden relative w-[260px] min-w-[260px]! h-8">
           
           {/* Aba de Texto */}
-          <button className="flex items-center justify-center px-4 py-1.5 text-xs font-semibold text-white bg-primary rounded-t-md min-w-[150px] w-[170px] shadow-[7px_3px_13px_1px_rgba(0,0,0,0.5)] absolute z-52">
+          <button
+            onClick={handleToggle}
+            className="flex items-center justify-center px-4 py-1.5 text-xs font-semibold text-white transition-colors bg-primary cursor-pointer rounded-t-md min-w-[150px] w-[170px] shadow-[7px_3px_13px_1px_rgba(0,0,0,0.5)] absolute z-52"
+          >
             {t.summary.title}
           </button>
 
           {/* Botão Laranja: Abre/Fecha o componente inteiro */}
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (isOpen) {
-                setIsFullScreen(false); // Garante que resete o detalhado ao fechar
-              }
-              toggleSummary();
-            }}
+            onClick={handleToggle}
             className={cn("flex items-center justify-end px-3 py-1.5 text-white transition-colors bg-primary cursor-pointer border-l border-white/20 rounded-t-md min-w-[60px] absolute top-0 right-12 z-51 shadow-[7px_3px_13px_1px_rgba(0,0,0,0.5)]", {
               // 'bg-[#f15a3b] hover:bg-[#d94f33]': isOpen
             })}
