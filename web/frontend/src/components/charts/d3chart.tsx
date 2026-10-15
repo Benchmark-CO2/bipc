@@ -877,41 +877,46 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
               {labelY}
             </span>
 
-            <div className="absolute top-4 left-[calc(40px+0.5rem)] flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
-              <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco acima">
-                {outAboveCount} <span className="text-[10px]"><Triangle className='w-4 h-4 fill-gray-500' /></span>
-              </span>
-              {
-                showIndicators && (
-                  <>
-                    <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Máximo do conjunto Azul">
-                      {Math.round(maxLessDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-4 h-4 fill-[#5B9BD5]' /></span>
-                    </span>
-                    <span className="text-[#E0756C] flex items-center gap-0.5" title="Máximo do conjunto Vermelho">
-                      {Math.round(maxMaxDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-4 h-4 fill-[#E0756C]' /></span>
-                    </span>
-                  </>
-                )
-              }
-            </div>
+            {/* Indicadores de dados fora do intervalo: só com zoom/sliders aplicados */}
+            {hasZoomed && (
+              <>
+              <div className="absolute top-4 left-[calc(40px+0.5rem)] flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
+                <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco acima">
+                  {outAboveCount} <span className="text-[10px]"><Triangle className='w-3 h-3 fill-gray-500' strokeWidth={0} /></span>
+                </span>
+                {
+                  showIndicators && (
+                    <>
+                      <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Máximo do conjunto Azul">
+                        {Math.round(maxLessDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-3 h-3 fill-[#5B9BD5]' strokeWidth={0} /></span>
+                      </span>
+                      <span className="text-[#E0756C] flex items-center gap-0.5" title="Máximo do conjunto Vermelho">
+                        {Math.round(maxMaxDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-3 h-3 fill-[#E0756C]' strokeWidth={0} /></span>
+                      </span>
+                    </>
+                  )
+                }
+              </div>
 
-            <div className="absolute bottom-10 right-20 flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
-              <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco abaixo">
-                {outBelowCount} <span className="text-[10px]"><Triangle className='rotate-180 w-4 h-4 fill-gray-500' /></span>
-              </span>
-              {
-                showIndicators && (
-                  <>
-                    <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Mínimo do conjunto Azul">
-                      <span className="text-[10px]"><Triangle className='rotate-270 w-4 h-4 fill-[#5B9BD5]' /></span> {Math.round(minLessDataValue)}
-                    </span>
-                    <span className="text-[#E0756C] flex items-center gap-0.5" title="Mínimo do conjunto Vermelho">
-                      <span className="text-[10px]"><Triangle className='rotate-270 w-4 h-4 fill-[#E0756C]' /></span> {Math.round(minMaxDataValue)}
-                    </span>
-                  </>
-                )
-              }
-            </div>
+              <div className="absolute bottom-10 right-20 flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
+                <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco abaixo">
+                  {outBelowCount} <span className="text-[10px]"><Triangle className='rotate-180 w-3 h-3 fill-gray-500' strokeWidth={0} /></span>
+                </span>
+                {
+                  showIndicators && (
+                    <>
+                      <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Mínimo do conjunto Azul">
+                        <span className="text-[10px]"><Triangle className='rotate-270 w-3 h-3 fill-[#5B9BD5]' strokeWidth={0} /></span> {Math.round(minLessDataValue)}
+                      </span>
+                      <span className="text-[#E0756C] flex items-center gap-0.5" title="Mínimo do conjunto Vermelho">
+                        <span className="text-[10px]"><Triangle className='rotate-270 w-3 h-3 fill-[#E0756C]' strokeWidth={0} /></span> {Math.round(minMaxDataValue)}
+                      </span>
+                    </>
+                  )
+                }
+              </div>
+              </>
+            )}
 
             {/* O SEGREDO DO CANVAS REVELADO: Posicionamento absoluto resolvendo qualquer vazamento */}
             <canvas
