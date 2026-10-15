@@ -11,13 +11,14 @@ import { Button } from "../ui/button";
 import { FilterTabs } from "../ui/filter-tabs";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { BarsLegend } from './components/BarsLegend';
 import { ChartLegend } from "./components/chartLegend";
 import { ClassificationCard } from './components/classificationCard';
 import { EmissionsSection } from "./components/emissionSection";
 import { ScenarioCard } from "./components/indicatorItem";
 import { useChartType } from "./hooks/useChartType";
 import { useElementHeight } from './hooks/useElementHeight';
-import { getCategoryValue, translateCategory } from "./units";
+import { getCategoryValue } from "./units";
 import { calculateGrade, MARKER_COLORS, normalizeBenchmarkSeries, recalculateY } from "./utils";
 
 type TModules = {
@@ -243,7 +244,7 @@ const SimulationsSummary = ({
       if (consumptions) {
         Object.entries(consumptions).forEach(([key, values]) => {
           if (key !== "total") {
-            const techName = translateCategory[key] || key;
+            const techName = key; // chave do backend; o nome é traduzido na exibição (getTechLabel)
             co2Row[techName] = getCategoryValue(values, "co2");
             energyRow[techName] = getCategoryValue(values, "energy");
             materialRow[techName] = getCategoryValue(values, "material");
@@ -328,13 +329,16 @@ const SimulationsSummary = ({
                 {selectedProjects.length >= filteredProjects.length ? t.summary.deselectAll : t.summary.selectAll}
               </Button>
             </div>
-            <div className="mt-2 flex-1 min-h-0">
+            <div className="mt-2 flex-1">
               <EmissionsSection
                 data={simulationEmissionsData}
                 selected={selectedProjects}
                 onChange={onChangeProjectSelection}
                 benchmarkMax={benchmarkMax}
               />
+            </div>
+            <div className="shrink-0 mt-2">
+              <BarsLegend data={simulationEmissionsData} />
             </div>
           </div>
 

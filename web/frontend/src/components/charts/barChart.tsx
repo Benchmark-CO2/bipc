@@ -1,4 +1,4 @@
-import { getTechColor, getTechKey } from '@/components/summaryVariants/utils';
+import { getTechColor, getTechLabel } from '@/components/summaryVariants/utils';
 import { useTranslation } from '@/i18n';
 import * as d3 from 'd3';
 import { useEffect, useRef, useState } from 'react';
@@ -89,16 +89,6 @@ const EmissionsChart = ({
       rowScales[d.name] = d3.scaleLinear().domain([0, rowMax]).range([0, innerWidth]);
     });
 
-    // Nome da tecnologia para o tooltip (Viga Pilar, Radier Estaqueado...)
-    const techNames: Record<string, string> = {
-      beam_column: t.modules.structureTypes.beamColumn,
-      concrete_wall: t.modules.structureTypes.concreteWall,
-      structural_masonry: t.modules.structureTypes.masonry,
-      raft_foundation: t.modules.structureTypes.raftFoundation,
-      piles_foundation: t.modules.structureTypes.pilesFoundation,
-      raft_piles_foundation: t.modules.structureTypes.raftPilesFoundation,
-    };
-    const techName = (category: string) => techNames[getTechKey(category)] ?? category;
 
     // Valores com 2 casas decimais no formato do idioma (vírgula em pt-BR, ponto em en)
     const formatValue = (val: number) =>
@@ -142,7 +132,7 @@ const EmissionsChart = ({
         const swatch = document.createElement('span');
         swatch.className = 'inline-block size-2.5 rounded-xs';
         swatch.style.background = color;
-        title.append(swatch, techName(key));
+        title.append(swatch, getTechLabel(key, t));
         const value = document.createElement('div');
         value.className = 'text-neutral-600';
         value.textContent = `${String(d.data.name)}: ${formatValue(d[1] - d[0])}`;

@@ -10,6 +10,7 @@ import { Button } from "../ui/button";
 import { FilterTabs } from "../ui/filter-tabs";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { BarsLegend } from './components/BarsLegend';
 import { ChartLegend } from './components/chartLegend';
 import { ClassificationCard } from './components/classificationCard';
 import { EmissionsSection } from './components/emissionSection';
@@ -17,13 +18,6 @@ import { ScenarioCard } from './components/indicatorItem';
 import { useChartType } from "./hooks/useChartType";
 import { useElementHeight } from './hooks/useElementHeight';
 import { calculateGrade, MARKER_COLORS, normalizeBenchmarkSeries, recalculateY } from "./utils";
-
-export const translateCategory: Record<string, string> = {
-  concrete_wall: "Parede de Concreto",
-  foundation: "Fundação",
-  roof: "Cobertura",
-  // Adicione outras chaves que o backend pode enviar
-};
 
 export const getCategoryValue = (categoryData: any, currentType: "co2" | "energy" | "material") => {
   if (!categoryData) return 0;
@@ -279,7 +273,7 @@ const ProjectsSummary = ({
       const materialRow: Record<string, any> = { name: t.benchmark.chartTypes.emission.materialLabel, id: 'material' };
       Object.entries(consumption).forEach(([key, values]) => {
         if (key !== "total") {
-          const techName = translateCategory[key] || key;
+          const techName = key; // chave do backend; o nome é traduzido na exibição (getTechLabel)
           co2Row[techName] = getCategoryValue(values, "co2");
           energyRow[techName] = getCategoryValue(values, "energy");
           materialRow[techName] = getCategoryValue(values, "material");
@@ -430,13 +424,16 @@ const ProjectsSummary = ({
                 {selectedProjects.length >= allPossibleIds.length ? t.summary.deselectAll : t.card.selectAll}
               </Button>
             </div>
-            <div className="mt-2 flex-1 min-h-0">
+            <div className="mt-2 flex-1">
               <EmissionsSection
                 data={projectEmissionsData}
                 selected={selectedProjects}
                 onChange={onChangeProjectSelection}
                 benchmarkMax={benchmarkMax}
               />
+            </div>
+            <div className="shrink-0 mt-2">
+              <BarsLegend data={projectEmissionsData} />
             </div>
           </div>
 

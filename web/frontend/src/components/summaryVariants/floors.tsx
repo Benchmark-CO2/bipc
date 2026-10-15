@@ -12,13 +12,14 @@ import { Button } from "../ui/button";
 import { FilterTabs } from "../ui/filter-tabs";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { BarsLegend } from './components/BarsLegend';
 import { ChartLegend } from "./components/chartLegend";
 import { ClassificationCard } from './components/classificationCard';
 import { EmissionsSection } from "./components/emissionSection";
 import { ScenarioCard } from "./components/indicatorItem";
 import { useChartType } from "./hooks/useChartType";
 import { useElementHeight } from './hooks/useElementHeight';
-import { getCategoryValue, translateCategory } from "./units";
+import { getCategoryValue } from "./units";
 import { calculateGrade, MARKER_COLORS, normalizeBenchmarkSeries, recalculateY } from "./utils";
 
 export interface IFloorSummaryItem {
@@ -220,7 +221,7 @@ const FloorSummary = ({
       if (isUnitTotal && (item as any)?.consumptions) {
         Object.entries((item as any).consumptions).forEach(([key, values]) => {
           if (key !== "total") {
-            const techName = translateCategory(key) || key;
+            const techName = key; // chave do backend; o nome é traduzido na exibição (getTechLabel)
             co2Row[techName] = getCategoryValue(values, "co2");
             energyRow[techName] = getCategoryValue(values, "energy");
             materialRow[techName] = getCategoryValue(values, "material");
@@ -229,7 +230,7 @@ const FloorSummary = ({
       } else {
         const cat = item.category;
         if (cat) {
-          const techName = translateCategory(cat) || cat;
+          const techName = cat; // chave do backend; o nome é traduzido na exibição (getTechLabel)
           co2Row[techName] = getCategoryValue(item, "co2");
           energyRow[techName] = getCategoryValue(item, "energy");
           materialRow[techName] = getCategoryValue(item, "material");
@@ -333,13 +334,16 @@ const FloorSummary = ({
                 {selectedProjects.length >= allPossibleIds.length ? t.summary.deselectAll : t.summary.selectAll}
               </Button>
             </div>
-            <div className="mt-2 flex-1 min-h-0">
+            <div className="mt-2 flex-1">
               <EmissionsSection
                 data={floorEmissionsData}
                 selected={selectedProjects}
                 onChange={onChangeProjectSelection}
                 benchmarkMax={benchmarkMax}
               />
+            </div>
+            <div className="shrink-0 mt-2">
+              <BarsLegend data={floorEmissionsData} />
             </div>
           </div>
 

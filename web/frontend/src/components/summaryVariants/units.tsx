@@ -2,7 +2,6 @@ import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useTranslation } from "@/i18n";
-import { Translations } from "@/i18n/translations/pt-BR";
 import { cn } from "@/lib/utils";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
@@ -12,6 +11,7 @@ import { Button } from "../ui/button";
 import { FilterTabs } from "../ui/filter-tabs";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { BarsLegend } from './components/BarsLegend';
 import { ChartLegend } from "./components/chartLegend";
 import { ClassificationCard } from './components/classificationCard';
 import { EmissionsSection } from "./components/emissionSection";
@@ -25,19 +25,6 @@ export const DEFAULT_CATEGORY_KEYS = [
   "foundation",
   "roof",
 ] as const;
-
-export const translateCategory = (
-  key: string,
-  translationsCategories?: Translations["summaryUnits"]["categories"],
-) => {
-  if (
-    translationsCategories &&
-    key in (translationsCategories as Record<string, string>)
-  ) {
-    return (translationsCategories as Record<string, string>)[key];
-  }
-  return key;
-};
 
 export const getCategoryValue = (
   categoryData: any,
@@ -261,7 +248,7 @@ const UnitsSummary = ({
 
       Object.entries(consumptions).forEach(([key, values]) => {
         if (key !== "total") {
-          const techName = translateCategory(key) || key;
+          const techName = key; // chave do backend; o nome é traduzido na exibição (getTechLabel)
           co2Row[techName] = getCategoryValue(values, "co2");
           energyRow[techName] = getCategoryValue(values, "energy");
           materialRow[techName] = getCategoryValue(values, "material");
@@ -387,13 +374,16 @@ const UnitsSummary = ({
                 {selectedProjects.length >= allPossibleIds.length ? t.summary.deselectAll : t.summary.selectAll}
               </Button>
             </div>
-            <div className="mt-2 flex-1 min-h-0">
+            <div className="mt-2 flex-1">
               <EmissionsSection
                 data={projectEmissionsData}
                 selected={selectedProjects}
                 onChange={onChangeProjectSelection}
                 benchmarkMax={benchmarkMax}
               />
+            </div>
+            <div className="shrink-0 mt-2">
+              <BarsLegend data={projectEmissionsData} />
             </div>
           </div>
 
