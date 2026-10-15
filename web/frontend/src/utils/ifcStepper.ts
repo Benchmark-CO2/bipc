@@ -70,10 +70,13 @@ const generateTempId = () => {
   return `tmp_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
 };
 
-const UUID_V4_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+// Qualquer versão RFC 9562 (1–8): o backend gera IDs de pavimento com
+// uuid.NewV7() (internal/data/units.go). Aceitar só v4 descartava os IDs
+// reais e fazia o lote reenviar o floor_index original (todos os pavimentos).
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const isValidUUID = (v: unknown): v is string =>
-  typeof v === "string" && UUID_V4_REGEX.test(v);
+  typeof v === "string" && UUID_REGEX.test(v);
 
 const isKnownModuleType = (t: string | TModulesTypes): t is TModulesTypes => {
   return (KNOWN_MODULE_TYPES as string[]).includes(t as string);
