@@ -2,7 +2,6 @@ import { IBenchmarkResponse } from "@/actions/benchmarks/types";
 import { useSummary } from "@/context/summaryContext";
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useTranslation } from "@/i18n";
-import { cn } from "@/lib/utils";
 import { IUnit } from "@/types/units";
 import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
@@ -57,7 +56,7 @@ const FloorSummary = ({
   const [type, setType] = useState<"co2" | "energy" | "material">("co2");
   const { chartType, ChartSelector } = useChartType(type);
   const { t } = useTranslation();
-  const { isExpanded, isFullScreen } = useSummary();
+  const { isFullScreen } = useSummary();
 
   const filteredFloors = useMemo(
     () => floors.filter((el) => !!el.co2_max),
@@ -285,12 +284,11 @@ const FloorSummary = ({
   const totalProjectsCount = newData.length;
 
   const { ref: elementRef } = useElementHeight<HTMLDivElement>();
-  const { ref: elementRef2, height: elementHeight2 } = useElementHeight<HTMLDivElement>();
   const [val, setVal] = useState('stacked_bar');
   const isMobile = useIsMobile();
   
   return (
-    <div ref={elementRef} className={cn("flex flex-col overflow-hidden pb-4", isExpanded ? "h-full" : "h-[80vh]")}>
+    <div ref={elementRef} className="h-full min-h-0 max-sm:h-[80vh] flex flex-col overflow-hidden pb-4">
       <div className="@container/cards shrink-0 flex justify-between gap-2 w-full">
         <div className="flex items-start gap-4 @max-[110rem]/cards:gap-3 w-full min-w-0 pt-3 pb-2 max-sm:overflow-x-auto">
           <div className="flex flex-col gap-1.5 text-sm font-bold text-right text-neutral-800 pl-2 shrink-0">
@@ -309,7 +307,7 @@ const FloorSummary = ({
 
       {isFullScreen && (
         <div className="flex-1 min-h-0 flex gap-4 max-sm:gap-2 max-sm:flex-col max-sm:p-2 overflow-hidden mt-5 max-sm:mt-2">
-          <div className="w-1/3 shrink-0 flex flex-col min-h-0 max-sm:w-full overflow-y-auto pr-2">
+          <div className="w-1/3 shrink-0 flex flex-col min-h-0 max-sm:w-full overflow-hidden max-sm:overflow-y-auto pr-2">
             <div className="shrink-0 flex flex-wrap justify-end gap-2 items-end">
               <div className="flex flex-col gap-1 min-w-44 flex-1">
                 <Label className="text-sm font-normal text-muted-foreground">{t.summary.visualization}</Label>
@@ -334,7 +332,7 @@ const FloorSummary = ({
                 {selectedProjects.length >= allPossibleIds.length ? t.summary.deselectAll : t.summary.selectAll}
               </Button>
             </div>
-            <div className="mt-2 flex-1">
+            <div className="mt-2 flex-1 min-h-0 flex flex-col max-sm:flex-none">
               <EmissionsSection
                 data={floorEmissionsData}
                 selected={selectedProjects}
@@ -358,7 +356,7 @@ const FloorSummary = ({
               />
             </div>
             
-            <div ref={elementRef2} className="flex-1 min-h-0 w-full">
+            <div className="flex-1 min-h-0 w-full">
               {chartType === "scatter" ? (
                 <D3GradientRangeChart
                   data={newData}
@@ -377,7 +375,6 @@ const FloorSummary = ({
                   variant={type === "material" ? "cumulative" : "range"}
                   xAxisLabel={t.benchmark.chartTypes[type === "co2" || type === "energy" ? "cumulativeFraction" : "material"][type === "co2" ? "xAxisLabelCarbon" : "xAxisLabelEnergy"]}
                   yAxisLabel={t.benchmark.chartTypes[type === "co2" || type === "energy" ? "cumulativeFraction" : "material"].yAxisLabel}
-                  height={Math.max(elementHeight2 - 10, 200)}
                 />
               ) : (
                 <D3GradientRangeLineChart

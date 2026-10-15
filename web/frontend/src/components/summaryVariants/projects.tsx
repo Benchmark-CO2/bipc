@@ -325,14 +325,13 @@ const ProjectsSummary = ({
   const totalProjectsCount = newData.length;
   
   const { ref: elementRef } = useElementHeight<HTMLDivElement>();
-  const { ref: elementRef2, height: elementHeight2 } = useElementHeight<HTMLDivElement>();
   
   const [val, setVal] = useState('stacked_bar');
   const isMobile = useIsMobile();
 
   return (
     // CONTÊINER PRINCIPAL: Trava em 80vh, organiza em coluna e previne qualquer scroll global da área.
-    <div ref={elementRef} className='h-[80vh] flex flex-col overflow-hidden pb-4'>
+    <div ref={elementRef} className="h-full min-h-0 max-sm:h-[80vh] flex flex-col overflow-hidden pb-4">
       
       {/* CABEÇALHO (Cards): shrink-0 garante que ele nunca diminua seu próprio tamanho para ceder espaço */}
       <div className="@container/cards shrink-0 flex justify-between gap-2 w-full">
@@ -399,7 +398,7 @@ const ProjectsSummary = ({
         <div className='flex-1 min-h-0 flex gap-4 max-sm:gap-2 max-sm:flex-col max-sm:p-2 overflow-hidden mt-5 max-sm:mt-2'>
           
           {/* COLUNA ESQUERDA (Emissões): Caso o conteúdo seja muito longo, um pequeno overflow-y-auto apenas nele permite não quebrar o layout geral */}
-          <div className='w-1/3 shrink-0 flex flex-col min-h-0 max-sm:w-full overflow-y-auto pr-2'>
+          <div className='w-1/3 shrink-0 flex flex-col min-h-0 max-sm:w-full overflow-hidden max-sm:overflow-y-auto pr-2'>
             <div className="shrink-0 flex flex-wrap justify-end gap-2 items-end">
               <div className="flex flex-col gap-1 min-w-44 flex-1">
                 <Label className="text-sm font-normal text-muted-foreground">{t.summary.visualization}</Label>
@@ -424,7 +423,7 @@ const ProjectsSummary = ({
                 {selectedProjects.length >= allPossibleIds.length ? t.summary.deselectAll : t.card.selectAll}
               </Button>
             </div>
-            <div className="mt-2 flex-1">
+            <div className="mt-2 flex-1 min-h-0 flex flex-col max-sm:flex-none">
               <EmissionsSection
                 data={projectEmissionsData}
                 selected={selectedProjects}
@@ -452,7 +451,7 @@ const ProjectsSummary = ({
             </div>
             
             {/* Render do Gráfico (Ocupa o resto do espaço: flex-1) */}
-            <div ref={elementRef2} className='flex-1 min-h-0 w-full'>
+            <div className='flex-1 min-h-0 w-full'>
               {chartType === "scatter" ? (
                 <D3GradientRangeChart
                   data={newData}
@@ -471,8 +470,6 @@ const ProjectsSummary = ({
                   variant={type === "material" ? "cumulative" : "range"}
                   xAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'][type === 'co2' ? 'xAxisLabelCarbon' : 'xAxisLabelEnergy']}
                   yAxisLabel={t.benchmark.chartTypes[type === 'co2' || type === 'energy' ? 'cumulativeFraction' : 'material'].yAxisLabel}
-                  // Força a altura dinâmica baseada no Flexbox (subtraímos ~10px por segurança)
-                  height={Math.max(elementHeight2 - 10, 200)}
                 />
               ) : (
                 <D3GradientRangeLineChart

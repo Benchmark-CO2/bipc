@@ -100,7 +100,8 @@ const Summary = () => {
       >
         {context && (
           <div className={cn("w-full flex-1 px-2 py-2 overflow-auto", {
-            'p-2 pt-4': isFullScreen,
+            // Tela cheia (desktop): não rola como um todo; a altura passa para o conteúdo (só a lista de projetos rola)
+            'p-2 pt-4 overflow-hidden flex flex-col min-h-0 max-sm:overflow-auto': isFullScreen,
           })}>
             {context.component || null}
           </div>

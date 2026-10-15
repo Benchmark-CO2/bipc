@@ -67,10 +67,10 @@ export const EmissionsSection = ({
   const buildingItems = items.filter(item => item.id !== 'total');
 
   return (
-    <div className="flex flex-col w-full p-4 pt-8 bg-[#f4f5f7] ">
+    <div className="flex-1 min-h-0 flex flex-col w-full p-4 pt-8 bg-[#f4f5f7] max-sm:flex-none">
       
       {/* Contêiner de Layout Mestre */}
-      <div className="relative w-full flex flex-col">
+      <div className="relative w-full flex-1 min-h-0 flex flex-col">
 
         {/* 1. Linhas Globais Procel */}
         <div 
@@ -88,7 +88,7 @@ export const EmissionsSection = ({
 
         {/* 2. Cabeçalho das Bolinhas A, B, C, D */}
         <div 
-          className="relative z-10 flex h-8 items-center mb-2"
+          className="relative z-10 flex h-8 items-center mb-2 shrink-0"
           style={{ marginLeft: CHART_MARGIN_LEFT, marginRight: CHART_MARGIN_RIGHT }}
         >
           {procelIndicators.map((zone) => (
@@ -108,11 +108,11 @@ export const EmissionsSection = ({
         </div>
 
         {/* 3. Lista de Gráficos */}
-        <div className="relative z-10 flex flex-col gap-2">
+        <div className="relative z-10 flex-1 min-h-0 flex flex-col gap-2">
           
           {/* Card TOTAL */}
           {totalItem && (
-            <div className="w-full">
+            <div className="w-full shrink-0">
               <div 
                 className={`
                   flex flex-col shadow-[0_2px_4px_0_rgba(0,0,0,0.08),0_3px_10px_0_rgba(0,0,0,0.10)] rounded-r-[0.3125rem] overflow-hidden
@@ -146,7 +146,7 @@ export const EmissionsSection = ({
               </div>
             </div>
           )}
-          <div className='flex flex-col gap-2 overflow-y-auto max-h-[40vh] 2xl:max-h-[55vh] 2xl:h-[60%] '>
+          <div className='flex flex-col gap-2 overflow-y-auto flex-1 min-h-0 max-sm:flex-none max-sm:max-h-[40vh]'>
 
           {/* Cards das Edificações (Secundários e Menores) */}
           {buildingItems.map((section) => {
