@@ -267,17 +267,18 @@ const SimulationsSummary = ({
 
   // Simulações que passam a ter consumo (ou são marcadas na página) depois da
   // montagem entram já selecionadas; antes ficavam fora dos gráficos até
-  // remontar o resumo. Desmarcações feitas aqui são preservadas.
+  // remontar o resumo. Desmarcações feitas aqui são preservadas: o conjunto
+  // só cresce, para uma simulação que some e volta (ex.: consumo nulo durante
+  // um recálculo) não ser remarcada.
   const knownProjectIdsRef = useRef<Set<string>>(
     new Set(filteredProjects.map((p) => p.id)),
   );
   useEffect(() => {
-    const currentIds = filteredProjects.map((p) => p.id);
-    const added = currentIds.filter(
-      (id) => !knownProjectIdsRef.current.has(id),
-    );
-    knownProjectIdsRef.current = new Set(currentIds);
+    const added = filteredProjects
+      .map((p) => p.id)
+      .filter((id) => !knownProjectIdsRef.current.has(id));
     if (added.length === 0) return;
+    added.forEach((id) => knownProjectIdsRef.current.add(id));
     setSelectedProjects((prev) => [
       ...prev,
       ...added.filter((id) => !prev.includes(id)),
