@@ -361,7 +361,7 @@ const UnitsSummary = ({
       </div>
 
       {isFullScreen && (
-        <div className="flex-1 min-h-0 flex gap-4 max-sm:gap-2 max-sm:flex-col max-sm:p-2 overflow-hidden mt-2">
+        <div className="flex-1 min-h-0 flex gap-4 max-sm:gap-2 max-sm:flex-col max-sm:p-2 overflow-hidden mt-5 max-sm:mt-2">
           <div className="w-1/3 shrink-0 flex flex-col min-h-0 max-sm:w-full overflow-y-auto pr-2">
             <div className="shrink-0 flex flex-wrap justify-end gap-2 items-end">
               <div className="flex flex-col gap-1 min-w-44 flex-1">

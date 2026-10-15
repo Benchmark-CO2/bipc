@@ -402,7 +402,7 @@ const ProjectsSummary = ({
 
       {isFullScreen && (
         // CONTÊINER DE CORPO (Full Screen): flex-1 min-h-0 garante que absorva todo espaço que sobrou e não passe dele
-        <div className='flex-1 min-h-0 flex gap-4 max-sm:gap-2 max-sm:flex-col max-sm:p-2 overflow-hidden mt-2'>
+        <div className='flex-1 min-h-0 flex gap-4 max-sm:gap-2 max-sm:flex-col max-sm:p-2 overflow-hidden mt-5 max-sm:mt-2'>
           
           {/* COLUNA ESQUERDA (Emissões): Caso o conteúdo seja muito longo, um pequeno overflow-y-auto apenas nele permite não quebrar o layout geral */}
           <div className='w-1/3 shrink-0 flex flex-col min-h-0 max-sm:w-full overflow-y-auto pr-2'>
