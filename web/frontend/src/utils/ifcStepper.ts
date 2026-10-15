@@ -1133,17 +1133,11 @@ export const prepareModuleForBatch = (
     "blocks",
     "grout",
     "mortar",
-    "wall_area",
-    "wall_thickness",
-    "slab_thickness",
     "form_area",
     "form_columns",
     "form_beams",
     "form_slabs",
     "form_total",
-    "column_number",
-    "avg_beam_span",
-    "avg_slab_span",
     // Shared grouped-only
     "unspecified",
     "pile_caps",
@@ -1157,12 +1151,29 @@ export const prepareModuleForBatch = (
     "grout_horizontal_volume",
     "grout_general_volume",
   ]);
+  // Escalares numéricos do payload flat V2 (OpenAPI e structs Go). Antes da V2
+  // eles eram removidos junto com os campos grouped, o que descartava
+  // "Número de pilares", vãos médios, espessuras e área de parede no lote.
+  // Só seguem no tipo que os aceita e quando já são números.
+  const FLAT_V2_NUMERIC_KEYS_BY_TYPE: Record<string, readonly string[]> = {
+    beam_column: ["column_number", "avg_beam_span", "avg_slab_span"],
+    concrete_wall: ["wall_thickness", "slab_thickness", "wall_area"],
+  };
+  const flatV2NumericKeys = new Set<string>(
+    Object.values(FLAT_V2_NUMERIC_KEYS_BY_TYPE).flat(),
+  );
+  const allowedFlatV2NumericKeys = new Set<string>(
+    FLAT_V2_NUMERIC_KEYS_BY_TYPE[normalizedType] ?? [],
+  );
   const clean: Record<string, unknown> = {};
   Object.keys(effectiveData).forEach((k) => {
     if (GROUPED_ONLY_KEYS_TO_STRIP.has(k)) return;
-    (clean as Record<string, unknown>)[k] = (
-      effectiveData as Record<string, unknown>
-    )[k];
+    const v = (effectiveData as Record<string, unknown>)[k];
+    if (flatV2NumericKeys.has(k)) {
+      if (!allowedFlatV2NumericKeys.has(k)) return;
+      if (typeof v !== "number" || !Number.isFinite(v)) return;
+    }
+    (clean as Record<string, unknown>)[k] = v;
   });
 
   // 3) Remove floor_index do data (nunca esperado pelo backend;
