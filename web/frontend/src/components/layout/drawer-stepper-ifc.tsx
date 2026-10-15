@@ -1008,10 +1008,14 @@ export default function DrawerStepperIFC({
 
     const errors: string[] = [];
     let createdCount = 0;
+    // Módulos de lotes que deram certo: saem da lista se outro lote falhar,
+    // para um novo "Concluir" não criá-los em dobro.
+    const createdModuleTempIds = new Set<string>();
 
     try {
       for (const { unit, modules: groupModules } of groups.values()) {
         const payloadModules: ModuleParamsPropsV2[] = [];
+        const payloadModuleTempIds: string[] = [];
         const towerFloorsForGroup =
           normalizedUnitsFloorMap.get(unit.tempId) ?? [];
         let unresolvedModuleLabel: string | null = null;
@@ -1051,6 +1055,7 @@ export default function DrawerStepperIFC({
           const prepared = prepareModuleForBatch(m, isFoundation, binding);
           if (!prepared) continue;
           payloadModules.push(prepared as unknown as ModuleParamsPropsV2);
+          payloadModuleTempIds.push(m.tempId);
         }
         if (unresolvedModuleLabel) {
           errors.push(
@@ -1070,6 +1075,7 @@ export default function DrawerStepperIFC({
             unit.optionId,
           );
           createdCount += (res.data.modules ?? []).length;
+          payloadModuleTempIds.forEach((id) => createdModuleTempIds.add(id));
         } catch (err) {
           const msg = parseApiError(err, t);
           errors.push(`${unit.displayName}: ${msg}`);
@@ -1129,6 +1135,20 @@ export default function DrawerStepperIFC({
         await queryClient.invalidateQueries({
           queryKey: ["options", projectId, u.unitId],
         });
+      }
+
+      // Com erro, o stepper fica aberto para o usuário corrigir e tentar de
+      // novo (o erro já aparece em step2Error e no toast).
+      if (errors.length > 0) {
+        if (createdModuleTempIds.size > 0) {
+          setState((prev) => ({
+            ...prev,
+            modules: prev.modules.filter(
+              (m) => !createdModuleTempIds.has(m.tempId),
+            ),
+          }));
+        }
+        return;
       }
 
       onComplete?.(buildCompletePayload());
