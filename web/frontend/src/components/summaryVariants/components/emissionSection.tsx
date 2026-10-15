@@ -1,5 +1,6 @@
 import EmissionsChart from '@/components/charts/barChart';
 import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 import React, { useEffect, useRef, useState } from 'react';
 
 // Constantes fundamentais para o alinhamento matemático perfeito dos gráficos
@@ -126,8 +127,10 @@ export const EmissionsSection = ({
                       value={totalItem.id}
                       checked={selected?.includes(totalItem.id) ?? totalItem.defaultChecked}
                       onCheckedChange={(checked) => onChange?.(totalItem.id, !!checked)}
+                      className="data-[state=checked]:bg-secondary data-[state=checked]:border-secondary dark:data-[state=checked]:bg-secondary"
                     />
-                    <span className="font-bold text-sm text-gray-900">{totalItem.title}</span>
+                    {/* Título do Total conforme Figma: Body, 1rem / 700, -0.01rem, cor 800 */}
+                    <span className="text-base font-bold tracking-[-0.01rem] text-[var(--800,#121F21)] [font-feature-settings:'calt'_off]">{totalItem.title}</span>
                   </div>
                 </div>
                 
@@ -161,7 +164,7 @@ export const EmissionsSection = ({
                   onDragEnter={(e) => handleDragEnter(e, realIndex)}
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => e.preventDefault()}
-                  className="flex flex-col shadow-[0_2px_4px_0_rgba(0,0,0,0.08),0_3px_10px_0_rgba(0,0,0,0.10)] rounded-r-[0.3125rem] border-l-[6px] border-l-secondary"
+                  className={cn("flex flex-col shadow-[0_2px_4px_0_rgba(0,0,0,0.08),0_3px_10px_0_rgba(0,0,0,0.10)] rounded-r-[0.3125rem] border-l-[6px]", isChecked ? "border-l-secondary" : "border-l-gray-300")}
                   style={{ background: 'linear-gradient(0deg, #FFF 0%, rgba(255, 255, 255, 0.60) 39.09%, #FFF 84.92%)' }}
                 >
                   <div 
@@ -177,7 +180,7 @@ export const EmissionsSection = ({
                       </div>
                       
                       <div onClick={(e) => e.stopPropagation()}>
-                        <Checkbox value={section.id} checked={isChecked} onCheckedChange={(checked) => onChange?.(section.id, !!checked)} />
+                        <Checkbox value={section.id} checked={isChecked} onCheckedChange={(checked) => onChange?.(section.id, !!checked)} className="data-[state=checked]:bg-secondary data-[state=checked]:border-secondary dark:data-[state=checked]:bg-secondary" />
                       </div>
                       <span className="font-semibold text-sm text-gray-900">{section.title}</span>
                     </div>
