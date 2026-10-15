@@ -63,7 +63,7 @@ const Legend = ({ variant = "default" }: LegendProps) => {
           <div className="w-full flex flex-col justify-center">
             {/* <h2 className="text-sm font-bold mb-2">{t.benchmark.legend}</h2> */}
             <div className="w-full flex items-center">
-              <div className="w-3 h-3 border-1 border-white bg-[#6C9EE0] rounded-full"></div>
+              <div className="w-3 h-3 border-1 border-white bg-[#5B9BD5] rounded-full"></div>
               <span className="ml-2 italic text-xs">
                 {t.benchmark.bestSupplier}
               </span>
@@ -82,13 +82,14 @@ const Legend = ({ variant = "default" }: LegendProps) => {
           </div> */}
           <div className="w-full flex flex-col justify-center self-center">
             <span className=" text-xs">{t.benchmark.highlightedRange}:</span>
-            <div className="flex items-center">
-              <div className="w-4 h-4 border-2 border-white rounded-full bg-blue-500"></div>
-              <div className="flex h-2 w-full">
+            {/* Miniatura da barra do gráfico: 5px de altura, bolinhas de 7px nas pontas (mesmas cores) */}
+            <div className="relative flex items-center h-2.5 mx-1">
+              <div className="flex h-1.25 w-full">
                 <div className="w-1/2 bg-[#5B9BD5]"></div>
                 <div className="w-1/2 bg-[#E0756C]"></div>
               </div>
-              <div className="w-4 h-4 border-2 border-white rounded-full bg-amber-700"></div>
+              <div className="absolute left-0 size-1.75 -translate-x-1/2 rounded-full bg-[#5B9BD5]"></div>
+              <div className="absolute right-0 size-1.75 translate-x-1/2 rounded-full bg-[#E0756C]"></div>
             </div>
           </div>
         </div>

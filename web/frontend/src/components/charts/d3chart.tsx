@@ -431,7 +431,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           ctx.globalAlpha = 1;
         } else {
           const useGray = (hideBars && hasActiveFilter) || emptyResults;
-          ctx.globalAlpha = hasActiveFilter ? 0.4 : 1;
+          ctx.globalAlpha = hasActiveFilter ? 0.2 : 1; // não selecionados bem transparentes; os selecionados ficam com 1
 
           if (!isMinSelected) {
             ctx.beginPath(); ctx.arc(x1, y, radius, 0, Math.PI * 2); ctx.fillStyle = useGray ? DEFAULT_COLORS.GRAY_START : DEFAULT_COLORS.START; ctx.fill();
