@@ -556,12 +556,12 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         ctx.fillStyle = DEFAULT_COLORS.END; ctx.beginPath(); ctx.arc(x2, labelY, 6, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#ffffff"; ctx.fillText("R", x2, labelY);
 
         if (p5LineX !== null && Math.abs(p5LineX - x1) > 6) {
-          const arrowLeft = Math.min(x1, p5LineX); const arrowRight = Math.max(x1, p5LineX);
+          // P fica sobre a linha de 5% (p5LineX); a seta sai do início da barra (x1) e aponta para ele
+          const dir = Math.sign(p5LineX - x1); const tipX = p5LineX - dir * 6; // ponta encosta na borda do círculo (raio 6)
           ctx.strokeStyle = "#7B2D8E"; ctx.fillStyle = "#7B2D8E"; ctx.lineWidth = 1;
-          ctx.beginPath(); ctx.moveTo(arrowLeft, y); ctx.lineTo(arrowRight, y); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(arrowLeft, y); ctx.lineTo(arrowLeft + 4, y - 2); ctx.lineTo(arrowLeft + 4, y + 2); ctx.fill();
-          ctx.beginPath(); ctx.moveTo(arrowRight, y); ctx.lineTo(arrowRight - 4, y - 2); ctx.lineTo(arrowRight - 4, y + 2); ctx.fill();
-          ctx.beginPath(); ctx.arc((arrowLeft + arrowRight) / 2, y, 6, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#ffffff"; ctx.fillText("P", (arrowLeft + arrowRight) / 2, y);
+          ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(tipX, y); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(tipX, y); ctx.lineTo(tipX - dir * 4, y - 2); ctx.lineTo(tipX - dir * 4, y + 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(p5LineX, y, 6, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#ffffff"; ctx.fillText("P", p5LineX, y);
         }
         ctx.restore();
       });
