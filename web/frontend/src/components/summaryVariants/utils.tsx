@@ -71,6 +71,9 @@ export const stackData = <T extends IProject>(item: T[], data: IBenchmarkRespons
 
 export const barColors = "#FFE8A3";
 
+// Cores dos marcadores V / C / R / P (cards, legenda e gráfico)
+export const MARKER_COLORS = { V: '#62A436', C: '#5B9BD5', R: '#E0756C', P: '#9F70DB' } as const;
+
 export function recalculateY(
   // Atualizei a tipagem para aceitar 'value' também, já que material usa isso
   points: { min?: number; max?: number; value?: number; id: string }[], 

@@ -14,7 +14,7 @@ import { EmissionsSection } from './components/emissionSection';
 import { ScenarioCard } from './components/indicatorItem';
 import { useChartType } from "./hooks/useChartType";
 import { useElementHeight } from './hooks/useElementHeight';
-import { calculateGrade, normalizeBenchmarkSeries, recalculateY } from "./utils";
+import { calculateGrade, MARKER_COLORS, normalizeBenchmarkSeries, recalculateY } from "./utils";
 
 export const translateCategory: Record<string, string> = {
   concrete_wall: "Parede de Concreto",
@@ -351,7 +351,7 @@ const ProjectsSummary = ({
             <ScenarioCard
               letter="V"
               title={t.summary.chartLegend.referenceValue_short}
-              color="#62A436" // Verde
+              color={MARKER_COLORS.V} // Verde
               items={[
                 { total: formatMetric(allPcvMetrics.co2.V * totalArea), benchmark: formatMetric(allPcvMetrics.co2.V), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
                 { total: formatMetric(allPcvMetrics.energy.V * totalArea), benchmark: formatMetric(allPcvMetrics.energy.V), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
@@ -362,7 +362,7 @@ const ProjectsSummary = ({
             <ScenarioCard
               letter="C"
               title={t.summary.chartLegend.constructionMitigationPotential_short}
-              color="#5B9BD5" // Azul
+              color={MARKER_COLORS.C} // Azul
               items={[
                 { total: formatMetric(allPcvMetrics.co2.C * totalArea), benchmark: formatMetric(allPcvMetrics.co2.C), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
                 { total: formatMetric(allPcvMetrics.energy.C * totalArea), benchmark: formatMetric(allPcvMetrics.energy.C), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
@@ -373,7 +373,7 @@ const ProjectsSummary = ({
             <ScenarioCard
               letter="R"
               title={t.summary.chartLegend.riskOfLowerConstructionMitigation_short}
-              color="#E0756C" // Vermelho
+              color={MARKER_COLORS.R} // Vermelho
               items={[
                 { total: formatMetric(allPcvMetrics.co2.R * totalArea), benchmark: formatMetric(allPcvMetrics.co2.R), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
                 { total: formatMetric(allPcvMetrics.energy.R * totalArea), benchmark: formatMetric(allPcvMetrics.energy.R), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
@@ -384,7 +384,7 @@ const ProjectsSummary = ({
             <ScenarioCard
               letter="P"
               title={t.summary.chartLegend.projectMitigationPotential_short}
-              color="#9F70DB" // Roxo
+              color={MARKER_COLORS.P} // Roxo
               items={[
                 { total: formatMetric(allPcvMetrics.co2.P * totalArea), benchmark: formatMetric(allPcvMetrics.co2.P), unitTotal: "CO₂ kg", unitBenchmark: "CO₂ kg/m²" },
                 { total: formatMetric(allPcvMetrics.energy.P * totalArea), benchmark: formatMetric(allPcvMetrics.energy.P), unitTotal: "MJ", unitBenchmark: "MJ/m²" },
