@@ -125,6 +125,8 @@ const ProjectsSummary = ({
   const processedData = useMemo(() => {
     const types = ["co2", "energy", "material"] as const;
     const result: Record<string, any> = {};
+    // Lido antes do forEach, cujo parâmetro `t` esconde o `t` das traduções
+    const totalLabel = t.summary.total;
 
     types.forEach((t) => {
       const managedData = normalizeBenchmarkSeries(
@@ -141,7 +143,7 @@ const ProjectsSummary = ({
         projectTotalItem = {
           id: "total",
           y: 0,
-          label: "Total Geral (Média)",
+          label: totalLabel,
           ...(t === "material"
             ? {
               value: portfolioAverage.total.material || 0,
@@ -208,7 +210,7 @@ const ProjectsSummary = ({
     });
 
     return result;
-  }, [data.benchmark, projects, newItems, selectedProjects, filterProjects, portfolioAverage]);
+  }, [data.benchmark, projects, newItems, selectedProjects, filterProjects, portfolioAverage, t]);
 
   const {
     managedData,
@@ -290,7 +292,7 @@ const ProjectsSummary = ({
 
     result.push({
       id: "total",
-      title: "Total Geral (Média)",
+      title: t.summary.total,
       isTotal: true,
       isChecked: selectedProjects.includes("total"),
       chartData: buildChartData(portfolioAverage)
@@ -307,7 +309,7 @@ const ProjectsSummary = ({
     });
 
     return result;
-  }, [filterProjects, selectedProjects, portfolioAverage]);
+  }, [filterProjects, selectedProjects, portfolioAverage, t]);
 
   let activeProjectsForArea = filterProjects.filter(p => selectedProjects.includes(p.id));
 
