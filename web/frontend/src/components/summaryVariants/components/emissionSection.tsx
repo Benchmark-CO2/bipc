@@ -114,12 +114,11 @@ export const EmissionsSection = ({
             <div className="w-full">
               <div 
                 className={`
-                  flex flex-col shadow-sm overflow-hidden
+                  flex flex-col shadow-[0_2px_4px_0_rgba(0,0,0,0.08),0_3px_10px_0_rgba(0,0,0,0.10)] rounded-r-[0.3125rem] overflow-hidden
                   border-b-[6px] border-b-[#297B76] border-gray-200
                 `}
-                style={{
-                  background: 'linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 56px, rgba(255,255,255,0.7) 56px, rgba(255,255,255,0.7) 100%)'
-                }}
+                // Degradê do Figma: opaco no título e no fim, transparente no meio (tracejados A/B/C/D aparecem atrás do gráfico)
+                style={{ background: 'linear-gradient(0deg, #FFF 0%, rgba(255, 255, 255, 0.60) 39.09%, #FFF 84.92%)' }}
               >
                 <div className="h-[56px] px-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -144,7 +143,7 @@ export const EmissionsSection = ({
               </div>
             </div>
           )}
-          <div className='overflow-y-auto max-h-[40vh] 2xl:max-h-[55vh] 2xl:h-[60%] '>
+          <div className='flex flex-col gap-2 overflow-y-auto max-h-[40vh] 2xl:max-h-[55vh] 2xl:h-[60%] '>
 
           {/* Cards das Edificações (Secundários e Menores) */}
           {buildingItems.map((section) => {
@@ -162,12 +161,8 @@ export const EmissionsSection = ({
                   onDragEnter={(e) => handleDragEnter(e, realIndex)}
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => e.preventDefault()}
-                  className="flex flex-col shadow-sm border-l-[6px] border-l-secondary"
-                  style={{
-                    background: isOpen 
-                      ? 'linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 56px, rgba(255,255,255,0.7) 56px, rgba(255,255,255,0.7) 100%)'
-                      : '#ffffff'
-                  }}
+                  className="flex flex-col shadow-[0_2px_4px_0_rgba(0,0,0,0.08),0_3px_10px_0_rgba(0,0,0,0.10)] rounded-r-[0.3125rem] border-l-[6px] border-l-secondary"
+                  style={{ background: 'linear-gradient(0deg, #FFF 0%, rgba(255, 255, 255, 0.60) 39.09%, #FFF 84.92%)' }}
                 >
                   <div 
                     className="h-[56px] px-4 flex items-center justify-between cursor-pointer"
