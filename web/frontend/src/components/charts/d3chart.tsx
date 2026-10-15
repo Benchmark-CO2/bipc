@@ -232,11 +232,13 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const tooltipRef = useRef<HTMLDivElement>(null);
   const hoveredItemRef = useRef<string | null>(null);
   const visibleCountRef = useRef<number>(0);
+  const selectedVisibleCountRef = useRef<number>(0);
 
   const isMobile = useIsMobile();
 
   const [tooltipData, setTooltipData] = useState<{ min: number; max: number; label?: string; floors?: string | number; technology?: string[]; } | null>(null);
   const [visibleCount, setVisibleCount] = useState<number>(0);
+  const [selectedVisibleCount, setSelectedVisibleCount] = useState<number>(0); // selecionados dentro da área visível
   const [outAboveCount, setOutAboveCount] = useState<number>(0);
   const [outBelowCount, setOutBelowCount] = useState<number>(0);
   const outAboveRef = useRef<number>(0);
@@ -278,7 +280,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   }, [data.length]);
 
   useEffect(() => {
-    setVisibleCount(selectedBarIds.size || data.length);
+    setVisibleCount(data.length);
   }, [data.length, selectedBarIds]);
 
   const updateBrushCount = useCallback((count: number) => setVisibleCount(count), []);
@@ -636,14 +638,24 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     for (const d of _countSource) {
       if (d.y > currentYTop) { _countAbove++; continue; }
       if (d.y < currentYBottom) { _countBelow++; continue; }
-
-      const px1 = newXScale(d.min); const px2 = newXScale(d.max);
-      if (px2 < 0 || px1 > _width) continue; 
-
-      _countInView++;
     }
 
+    // "Exibindo X de N": todas as amostras na área visível; "Exibindo Y de Z selecionados": só os marcados
+    // Selecionados contados por id único (o mesmo id pode aparecer em mais de um ponto, como mínimo ou máximo)
+    const selectedIdsInView = new Set<string>();
+    for (const d of data) {
+      if (d.y > currentYTop || d.y < currentYBottom) continue;
+      const px1 = newXScale(d.min); const px2 = newXScale(d.max);
+      if (px2 < 0 || px1 > _width) continue;
+      _countInView++;
+      const minId = String(d.minId ?? d.id); const maxId = String(d.maxId ?? d.id);
+      if (selectedMinBarIds.has(minId)) selectedIdsInView.add(minId);
+      if (selectedMaxBarIds.has(maxId)) selectedIdsInView.add(maxId);
+    }
+    const _selectedInView = selectedIdsInView.size;
+
     if (visibleCountRef.current !== _countInView) { visibleCountRef.current = _countInView; updateBrushCount(_countInView); }
+    if (selectedVisibleCountRef.current !== _selectedInView) { selectedVisibleCountRef.current = _selectedInView; setSelectedVisibleCount(_selectedInView); }
     if (outAboveRef.current !== _countAbove) { outAboveRef.current = _countAbove; setOutAboveCount(_countAbove); }
     if (outBelowRef.current !== _countBelow) { outBelowRef.current = _countBelow; setOutBelowCount(_countBelow); }
 
@@ -724,12 +736,12 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         const iY = d3.interpolateNumber(start.y, 0);
         return (t) => {
           transformRef.current = { kx: iKx(t), ky: iKy(t), x: iX(t), y: iY(t) };
-          if (t === 1) { updateBrushCount(selectedBarIds.size || data.length); setHasZoomed(false); }
+          if (t === 1) { updateBrushCount(data.length); setHasZoomed(false); }
           if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
           animationFrameRef.current = requestAnimationFrame(drawChart);
         };
       });
-  }, [data.length, drawChart, selectedBarIds.size, updateBrushCount]);
+  }, [data.length, drawChart, updateBrushCount]);
 
   useEffect(() => {
     if (!brushRef.current || _width <= 0 || _height <= 0) return;
@@ -840,7 +852,8 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const labelY = yAxisLabelProp ?? t.benchmark.chartTypes.cumulativeFraction.yAxisLabel;
   const displayedCount = hasZoomed ? visibleCount : data.length;
   const totalCount = Math.max(totalProjects || 0, initialTotalRef.current || 0, data.length);
-  const selectedCount = new Set([...selectedMinBarIds, ...selectedMaxBarIds]).size;
+  // Itens marcados no painel esquerdo, contados uma vez (mínimo e máximo do mesmo item não duplicam)
+  const selectedCount = new Set(data.flatMap((d) => [String(d.minId ?? d.id), String(d.maxId ?? d.id)]).filter((id) => selectedMinBarIds.has(id) || selectedMaxBarIds.has(id))).size;
 
   return (
     <Card className={cn("shadow-none w-full flex-1 p-0 m-0! border-transparent bg-transparent h-full flex flex-col min-h-0 overflow-hidden")}>
@@ -985,7 +998,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             <div className="flex justify-between items-center mt-3">
               <div className="flex flex-col gap-0.5 opacity-60">
                 <span className="text-xs">{t.d3chart.displaying}: {displayedCount} {t.d3chart.of} {totalCount}</span>
-                {selectedCount > 0 && (<span className="text-xs">{t.d3chart.selected}: {selectedCount} {t.d3chart.of} {data.length}</span>)}
+                {selectedCount > 0 && (<span className="text-xs">{t.d3chart.selectedVisible.replace('{{visible}}', String(selectedVisibleCount)).replace('{{total}}', String(selectedCount))}</span>)}
               </div>
               <span className="flex-1 text-xs text-center w-full text-foreground/70 font-medium">
                 {labelX}

@@ -1136,6 +1136,7 @@ export const ptBR = {
     displaying: "Exibindo",
     selected: "Selecionados",
     of: "de",
+    selectedVisible: "Exibindo {{visible}} de {{total}} selecionados",
     numberOfProjects: "Nº de empreendimentos",
     enableZoom: "Habilitar zoom",
     disableZoom: "Desabilitar zoom",

@@ -1132,6 +1132,7 @@ export const en: Translations = {
     displaying: "Displaying",
     selected: "Selected",
     of: "of",
+    selectedVisible: "Showing {{visible}} of {{total}} selected",
     numberOfProjects: "Number of projects",
     enableZoom: "Enable zoom",
     disableZoom: "Disable zoom",
