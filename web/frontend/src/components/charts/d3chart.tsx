@@ -411,13 +411,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       p5LineX = lineX; p5LineInView = lineX >= 0 && lineX <= _width;
     }
 
-    let midPredict: ((yVal: number) => number) | null = null;
-    if (showMidCurve && data.length >= 3) {
-      const raw: [number, number][] = [...data].sort((a, b) => a.y - b.y).map((d) => [(d.min + d.max) / 2, d.y]);
-      const result = regressionPoly().x((d: [number, number]) => d[1]).y((d: [number, number]) => d[0]).order(Math.min(4, raw.length - 1))(raw);
-      midPredict = (yVal: number) => Math.max(0, result.predict(yVal));
-    }
-
     const hasActiveFilter = selectedMinBarIds.size > 0 || selectedMaxBarIds.size > 0;
 
     data.forEach((d) => {
@@ -477,8 +470,11 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           ctx.lineWidth = 1;
           ctx.stroke();
         } else {
+          // Valor V (mesma fórmula do marcador V): define também a troca de cor azul/vermelho da barra
+          const midValue = c5Value !== null && r5Value !== null ? Math.max((c5Value - d.min) + (r5Value - d.max) / 2, (d.min + d.max) / 2) : (d.min + d.max) / 2;
+
           if (!hideBars && isMinSelected && isMaxSelected) {
-            const xMid = newXScale(midPredict ? midPredict(d.y) : (d.min + d.max) / 2);
+            const xMid = Math.min(x2, Math.max(x1, newXScale(midValue))); // troca de cor dentro da barra
             const rr = isExpanded ? barHeight / 2 : 2;
 
             ctx.fillStyle = DEFAULT_COLORS.START; ctx.beginPath(); (ctx as any).roundRect(x1, barY, Math.max(1, xMid - x1), barHeight, { upperLeft: rr, lowerLeft: rr, upperRight: 0, lowerRight: 0 }); ctx.fill();
@@ -489,7 +485,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           if (isMaxSelected) { ctx.beginPath(); ctx.arc(x2, y, radius, 0, Math.PI * 2); ctx.fillStyle = DEFAULT_COLORS.END; ctx.fill(); }
 
           if (isMinSelected && isMaxSelected) {
-            let midValue = c5Value !== null && r5Value !== null ? Math.max((c5Value - d.min) + (r5Value - d.max) / 2, (d.min + d.max) / 2) : (d.min + d.max) / 2;
             selectedAnnotations.push({ x1, x2, xMid: newXScale(midValue), y, barHeight });
           }
         }
