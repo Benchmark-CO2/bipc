@@ -1022,6 +1022,7 @@ export const ptBR = {
       chartType: "Tipo de gráfico",
     },
     title: "Benchmark",
+    visualization: "Visualização",
     selectAll: "Selecionar Todos",
     deselectAll: "Desmarcar Todos",
     selectedItems: "itens selecionados",

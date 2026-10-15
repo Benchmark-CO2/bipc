@@ -1018,6 +1018,7 @@ export const en: Translations = {
       chartType: "Chart Type",
     },
     title: "Benchmark",
+    visualization: "View",
     selectAll: "Select All",
     deselectAll: "Deselect All",
     selectedItems: "selected items",

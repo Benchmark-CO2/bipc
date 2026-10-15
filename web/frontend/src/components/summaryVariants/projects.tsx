@@ -6,7 +6,9 @@ import { unitsOfMeasure } from "@/utils/unitsOfMeasure";
 import { useEffect, useMemo, useState } from "react";
 import D3GradientRangeChart from "../charts/d3chart";
 import D3GradientRangeLineChart from "../charts/d3chartLine";
+import { Button } from "../ui/button";
 import { FilterTabs } from "../ui/filter-tabs";
+import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { ChartLegend } from './components/chartLegend';
 import { ClassificationCard } from './components/classificationCard';
@@ -405,18 +407,30 @@ const ProjectsSummary = ({
           
           {/* COLUNA ESQUERDA (Emissões): Caso o conteúdo seja muito longo, um pequeno overflow-y-auto apenas nele permite não quebrar o layout geral */}
           <div className='w-1/3 shrink-0 flex flex-col min-h-0 max-sm:w-full overflow-y-auto pr-2'>
-            <Select onValueChange={setVal} value={val} defaultValue='stacked_bar'>
-              <SelectTrigger className='w-full shrink-0'>
-                <SelectValue placeholder={t.summary.placeholders.chartType} />
-              </SelectTrigger>
-              <SelectContent>
-                {[{id: 'stacked_bar', label: t.summary.chartType.stackedBar}].map(({id, label}) => (
-                  <SelectItem key={id} value={id}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="shrink-0 flex flex-wrap justify-end gap-2 items-end">
+              <div className="flex flex-col gap-1 min-w-44 flex-1">
+                <Label className="text-sm font-normal text-muted-foreground">{t.summary.visualization}</Label>
+                <Select onValueChange={setVal} value={val} defaultValue='stacked_bar'>
+                  <SelectTrigger className='w-full'>
+                    <SelectValue placeholder={t.summary.placeholders.chartType} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[{id: 'stacked_bar', label: t.summary.chartType.stackedBar}].map(({id, label}) => (
+                      <SelectItem key={id} value={id}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                variant="outline"
+                onClick={selectAll}
+                className="h-9 shrink-0 rounded-full border-primary text-primary hover:text-primary"
+              >
+                {selectedProjects.length >= allPossibleIds.length ? t.summary.deselectAll : t.card.selectAll}
+              </Button>
+            </div>
             <div className="mt-2 flex-1 min-h-0">
               <EmissionsSection
                 data={projectEmissionsData}
@@ -431,25 +445,19 @@ const ProjectsSummary = ({
           <div className="flex-1 min-h-0 flex flex-col gap-2 max-sm:w-full overflow-hidden">
             
             {/* Filtros no topo do gráfico */}
-            <div className='shrink-0 flex gap-2 justify-end items-center max-sm:flex-col'>
+            <div className="shrink-0 flex gap-2 items-end max-sm:flex-col max-sm:items-stretch">
+              {ChartSelector}
               <FilterTabs
                 tabs={["co2", "energy", "material"]}
                 onTabSelect={(tab) => setType(tab as "co2" | "energy" | "material")}
                 selectedTab={type}
-                fullWidth
+                className="h-9!"
                 onSubTabSelect={(tab) => {
                   if (tab === t.summary.projects) setSubTabs(tab);
-                  if (tab === t.card.selectAll || tab === t.summary.deselectAll) selectAll();
                 }}
-                subTabs={[
-                  t.summary.projects,
-                  selectedProjects.length >= allPossibleIds.length ? t.summary.deselectAll : t.card.selectAll,
-                ]}
+                subTabs={[t.summary.projects]}
                 selectedSubTab={subTabs}
               />
-              <div className='w-full'>
-                {ChartSelector}
-              </div>
             </div>
             
             {/* Render do Gráfico (Ocupa o resto do espaço: flex-1) */}
