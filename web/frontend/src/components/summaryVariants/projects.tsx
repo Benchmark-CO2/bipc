@@ -346,7 +346,7 @@ const ProjectsSummary = ({
 
           <div className="flex flex-wrap max-sm:flex-nowrap gap-4 @max-[110rem]/cards:gap-3 w-full min-w-0 flex-1">
             <ScenarioCard
-              letter="V" showUnits
+              letter="V"
               title={t.summary.chartLegend.referenceValue_short}
               color={MARKER_COLORS.V} // Verde
               items={[
