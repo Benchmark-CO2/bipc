@@ -15,11 +15,9 @@ type ScenarioCardProps = {
   title: string;
   color: string;
   items: ScenarioItem[];
-  // Só o card V mostra as unidades; nos demais elas ficam no tooltip do valor
-  showUnits?: boolean;
 };
 
-export const ScenarioCard = ({ letter, title, color, items, showUnits = false }: ScenarioCardProps) => {
+export const ScenarioCard = ({ letter, title, color, items }: ScenarioCardProps) => {
   const { isOpen } = useSummary();
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -82,19 +80,13 @@ export const ScenarioCard = ({ letter, title, color, items, showUnits = false }:
             {idx > 0 && <div className="w-px shrink-0 bg-gray-200" />} {/* Divisória vertical */}
             <div className="flex flex-col gap-1.5 min-w-0 px-4 @max-[115rem]/cards:px-2 @max-[110rem]/cards:px-1.5">
               {/* Benchmark (Topo, Negrito) */}
-              <div
-                className="text-sm @max-[115rem]/cards:text-[0.7rem] font-bold text-neutral-900 whitespace-nowrap leading-5"
-                title={showUnits ? undefined : `${item.benchmark} ${item.unitBenchmark}`}
-              >
-                {item.benchmark}{showUnits && <> <span className="text-xs @max-[115rem]/cards:text-[0.6rem] font-normal text-neutral-700">{item.unitBenchmark}</span></>}
+              <div className="text-sm @max-[115rem]/cards:text-[0.7rem] font-bold text-neutral-900 whitespace-nowrap leading-5">
+                {item.benchmark} <span className="text-xs @max-[115rem]/cards:text-[0.6rem] font-normal text-neutral-700">{item.unitBenchmark}</span>
               </div>
 
               {/* Total (Fundo, Normal) */}
-              <div
-                className="text-sm @max-[115rem]/cards:text-[0.7rem] text-neutral-600 whitespace-nowrap leading-5"
-                title={showUnits ? undefined : `${item.total} ${item.unitTotal}`}
-              >
-                {item.total}{showUnits && <> <span className="text-xs @max-[115rem]/cards:text-[0.6rem] text-neutral-500">{item.unitTotal}</span></>}
+              <div className="text-sm @max-[115rem]/cards:text-[0.7rem] text-neutral-600 whitespace-nowrap leading-5">
+                {item.total} <span className="text-xs @max-[115rem]/cards:text-[0.6rem] text-neutral-500">{item.unitTotal}</span>
               </div>
             </div>
           </Fragment>
