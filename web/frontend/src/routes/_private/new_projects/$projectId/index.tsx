@@ -2,7 +2,9 @@ import { getProjectByUUID } from "@/actions/projects/getProject";
 import { getAllProjectsByUser } from "@/actions/projects/getProjects";
 import {
   CollaboratorsView,
+  DisciplinesView,
   DrawerFormUnit,
+  DrawerIFCImport,
   ProjectView,
 } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -10,6 +12,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { useSummary } from "@/context/summaryContext";
 import { TModulesTypes } from "@/types/modules";
 import { TConsumption, TConsumptionPerModule } from "@/types/projects";
+import { TUnknownModuleOccurrence } from "@/types/unknownModules";
 import {
   createFileRoute,
   useNavigate,
@@ -24,14 +27,14 @@ import { useTranslation } from "@/i18n";
 import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 
 type ProjectSearch = {
-  tab?: "projeto" | "colaboradores";
+  tab?: "projeto" | "colaboradores" | "disciplinas";
 };
 
 export const Route = createFileRoute("/_private/new_projects/$projectId/")({
   component: RouteComponent,
   validateSearch: (search: Record<string, unknown>): ProjectSearch => {
     return {
-      tab: search.tab as "projeto" | "colaboradores",
+      tab: search.tab as "projeto" | "colaboradores" | "disciplinas",
     };
   },
 });
@@ -50,7 +53,11 @@ function RouteComponent() {
 
   const [selectedTab, setSelectedTab] = useState(t.projectView.tabProject);
   const { setSummaryContext } = useSummary();
-  const tabs = [t.projectView.tabProject, t.projectView.tabCollaborators];
+  const tabs = [
+    t.projectView.tabProject,
+    t.projectView.tabCollaborators,
+    t.projectView.tabDisciplines,
+  ];
 
   const { data: projectData } = useQuery({
     queryKey: ["projects"],
@@ -63,32 +70,67 @@ function RouteComponent() {
     enabled: !!projectId,
   });
 
-  const projectConsumptions: TConsumption[] = Object.keys(
-    projectData?.consumption || {},
-  )
-    .filter((key) => key !== "total")
-    .map((key) => {
-      const consumption =
-        projectData?.consumption?.[key as keyof TConsumptionPerModule];
-      return {
-        type: key as TModulesTypes,
-        co2_max: consumption?.co2_max ?? 0,
-        co2_min: consumption?.co2_min ?? 0,
-        energy_max: consumption?.energy_max ?? 0,
-        energy_min: consumption?.energy_min ?? 0,
-      };
+  const mapUnknownProjectRows = (
+    occurrences: TUnknownModuleOccurrence[] | undefined,
+  ): { type: string; name?: string; custom_technology?: boolean }[] => {
+    const seenIds = new Set<string>();
+    const rows: {
+      type: string;
+      name?: string;
+      custom_technology?: boolean;
+    }[] = [];
+    (occurrences ?? []).forEach((occ) => {
+      if (seenIds.has(occ.unknown_module_id)) return;
+      seenIds.add(occ.unknown_module_id);
+      rows.push({
+        type: "unknown_module",
+        name: occ.unknown_module?.name,
+        custom_technology: true,
+      });
     });
+    return rows;
+  };
+
+  const projectConsumptions: (
+    | TConsumption
+    | { type: string; name?: string; custom_technology?: boolean }
+  )[] = [
+    ...Object.keys(projectData?.consumption || {})
+      .filter((key) => key !== "total")
+      .map((key) => {
+        const consumption =
+          projectData?.consumption?.[key as keyof TConsumptionPerModule];
+        return {
+          type: key as TModulesTypes,
+          co2_max: consumption?.co2_max ?? 0,
+          co2_min: consumption?.co2_min ?? 0,
+          energy_max: consumption?.energy_max ?? 0,
+          energy_min: consumption?.energy_min ?? 0,
+          material: consumption?.material ?? 0,
+        };
+      }),
+    ...mapUnknownProjectRows(projectData?.unknown_modules),
+  ];
 
   useEffect(() => {
     if (searchParams.tab === "colaboradores") {
       setSelectedTab(t.projectView.tabCollaborators);
+    } else if (searchParams.tab === "disciplinas") {
+      setSelectedTab(t.projectView.tabDisciplines);
     } else {
       setSelectedTab(t.projectView.tabProject);
     }
   }, [searchParams.tab, t]);
 
   const handleTabClick = (tab: string) => {
-    const tabParam = tab === t.projectView.tabCollaborators ? "colaboradores" : "projeto";
+    let tabParam: "projeto" | "colaboradores" | "disciplinas";
+    if (tab === t.projectView.tabCollaborators) {
+      tabParam = "colaboradores";
+    } else if (tab === t.projectView.tabDisciplines) {
+      tabParam = "disciplinas";
+    } else {
+      tabParam = "projeto";
+    }
 
     navigate({
       to: ".",
@@ -110,9 +152,17 @@ function RouteComponent() {
         />
         {selectedTab === t.projectView.tabProject && (
           <>
-            <Button variant="outline-bipc" size="icon-lg" disabled>
-              <Upload />
-            </Button>
+            <DrawerIFCImport
+              mode="unit"
+              projectId={projectId}
+              triggerComponent={
+                <SimpleTooltip content={t.common.ifcImport} side="bottom">
+                  <Button variant="outline-bipc" size="icon-lg">
+                    <Upload />
+                  </Button>
+                </SimpleTooltip>
+              }
+            />
             {hasPermission("create:unit") && (
               <DrawerFormUnit
                 triggerComponent={
@@ -140,6 +190,9 @@ function RouteComponent() {
           projectId={projectId}
           projectName={projectData?.name}
         />
+      )}
+      {selectedTab === t.projectView.tabDisciplines && (
+        <DisciplinesView projectId={projectId} />
       )}
     </div>
   );

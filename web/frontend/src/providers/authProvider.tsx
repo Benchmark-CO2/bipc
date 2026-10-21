@@ -18,10 +18,19 @@ function getStoredToken() {
       "token" in parsedUser &&
       "expiry" in parsedUser
     ) {
+      const expiryDate = new Date(parsedUser.expiry);
+      const isExpired =
+        !Number.isNaN(expiryDate.getTime()) && expiryDate.getTime() <= Date.now();
+      if (isExpired) {
+        localStorage.removeItem(storageTokenKey);
+        localStorage.removeItem(storageUserKey);
+        return null;
+      }
       return parsedUser;
     }
   } catch (error) {
     localStorage.removeItem(storageTokenKey);
+    localStorage.removeItem(storageUserKey);
     return null;
   }
 }
@@ -135,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         refreshUser,
         email: user?.email ?? null,
-        activated: user?.activated ?? null,
+        activated: isAuthenticated ? (user?.activated ?? null) : null,
         user,
         sidebarStatus: sidebarOpen,
         toggleSidebar: () =>

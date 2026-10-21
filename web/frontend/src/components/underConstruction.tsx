@@ -32,7 +32,7 @@ export const MaintenanceBanner = () => {
         <div
           className="mt-20 mx-auto"
         >
-          <span>{t.underConstruction.predictDate.replace(/{date}/, '30/05/2026')}</span>
+          <span>{t.underConstruction.predictDate.replace(/{date}/, '30/06/2026')}</span>
         </div>
       </div>
   )

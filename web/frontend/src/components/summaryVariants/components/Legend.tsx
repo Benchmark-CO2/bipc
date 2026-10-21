@@ -1,23 +1,28 @@
-import { useSummary } from "@/context/summaryContext";
-import { cn } from "@/lib/utils";
 import { useTranslation } from "@/i18n";
-import { MAP_COLORS, MAP_EMPTY } from "@/utils/geoUtils";
+import { cn } from "@/lib/utils";
+import { MAP_COLORS, MAP_EMPTY, MAP_THRESHOLDS } from "@/utils/geoUtils";
 
 const DISPLAY_COLORS = [MAP_EMPTY, ...MAP_COLORS];
+
+/** Fixed range labels derived from MAP_THRESHOLDS, e.g. ["1-5", "6-10", "11-20", "21-40", ">41"] */
+const MAP_RANGE_LABELS = MAP_COLORS.map((_, i) => {
+  const lo = i === 0 ? 1 : MAP_THRESHOLDS[i - 1] + 1;
+  if (i === MAP_COLORS.length - 1)
+    return `>${MAP_THRESHOLDS[MAP_THRESHOLDS.length - 1]}`;
+  return `${lo}-${MAP_THRESHOLDS[i]}`;
+});
 
 interface LegendProps {
   variant?: "default" | "map";
   maxCount?: number;
 }
 
-const Legend = ({ variant = "default", maxCount }: LegendProps) => {
-  const { isExpanded } = useSummary();
+const Legend = ({ variant = "default" }: LegendProps) => {
   const { t } = useTranslation();
 
   return (
     <section
       className={cn("w-full flex justify-between", {
-        "w-2/3 my-6": isExpanded,
       })}
     >
       {variant === "map" ? (
@@ -44,37 +49,19 @@ const Legend = ({ variant = "default", maxCount }: LegendProps) => {
             <div className="flex text-[9px] text-muted-foreground leading-tight">
               {/* Empty cell: always "0" */}
               <div className="w-10 text-center">0</div>
-              {/* Active color cells: compute the count range for each */}
-              {MAP_COLORS.map((_, k) => {
-                const lo =
-                  k === 0
-                    ? 1
-                    : Math.ceil((k * (maxCount ?? 0)) / MAP_COLORS.length);
-                const hi =
-                  k === MAP_COLORS.length - 1
-                    ? (maxCount ?? 0)
-                    : Math.ceil(
-                        ((k + 1) * (maxCount ?? 0)) / MAP_COLORS.length,
-                      ) - 1;
-                const label =
-                  !maxCount || maxCount === 0 || lo > hi
-                    ? "–"
-                    : lo === hi
-                      ? String(lo)
-                      : `${lo}-${hi}`;
-                return (
-                  <div key={k} className="w-10 text-center">
-                    {label}
-                  </div>
-                );
-              })}
+              {/* Fixed range labels — independent of maxCount */}
+              {MAP_RANGE_LABELS.map((label, k) => (
+                <div key={k} className="w-10 text-center">
+                  {label}
+                </div>
+              ))}
             </div>
           </div>
         </div>
       ) : (
         <div className="grid grid-cols-4 w-full items-end max-sm:grid-cols-1 max-2xl:grid-cols-2 3xl:grid-cols-4 max-sm:gap-2 max-sm:my-4">
           <div className="w-full flex flex-col justify-center">
-            <h2 className="text-sm font-bold mb-2">{t.benchmark.legend}</h2>
+            {/* <h2 className="text-sm font-bold mb-2">{t.benchmark.legend}</h2> */}
             <div className="w-full flex items-center">
               <div className="w-3 h-3 border-1 border-white bg-[#6C9EE0] rounded-full"></div>
               <span className="ml-2 italic text-xs">
@@ -97,7 +84,10 @@ const Legend = ({ variant = "default", maxCount }: LegendProps) => {
             <span className=" text-xs">{t.benchmark.highlightedRange}:</span>
             <div className="flex items-center">
               <div className="w-4 h-4 border-2 border-white rounded-full bg-blue-500"></div>
-              <div className="w-full h-2 bg-linear-to-r from-green-600 to-yellow-400"></div>
+              <div className="flex h-2 w-full">
+                <div className="w-1/2 bg-[#5B9BD5]"></div>
+                <div className="w-1/2 bg-[#E0756C]"></div>
+              </div>
               <div className="w-4 h-4 border-2 border-white rounded-full bg-amber-700"></div>
             </div>
           </div>

@@ -32,9 +32,7 @@ const ListItem = ({
       key={item.id}
       className={cn(
         "flex flex-col items-start gap-2 mb-2 max-sm:items-center max-sm:self-start max-sm:w-full",
-        {
-          "text-sm": isExpanded,
-        },
+        "text-sm"
       )}
       style={{
         width: `${(Number(item[type]) / Number(sum)) * 100}%`,
@@ -66,7 +64,7 @@ const ListItem = ({
               !item[type] && !isExpanded,
           })}
         ></div>
-        <span className="text-sm whitespace-nowrap text-foreground/70">
+        <span className="text-xs whitespace-nowrap text-foreground/70">
           {(item[type] || 0).toFixed(1)}{" "}
           {type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
         </span>

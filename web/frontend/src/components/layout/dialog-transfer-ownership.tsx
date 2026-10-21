@@ -85,7 +85,10 @@ export default function DialogTransferOwnership({
 
       // Aguardar um pouco antes de navegar para garantir que as queries foram atualizadas
       setTimeout(() => {
-        navigate({ to: "/new_projects" });
+        navigate({
+          to: "/new_projects",
+          search: { activationRequired: true },
+        });
       }, 100);
     },
     onError: (error: unknown) => {

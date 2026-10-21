@@ -1,9 +1,9 @@
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useState } from "react";
 import { useTranslation } from "@/i18n";
+import { useState } from "react";
 
-export const useChartType = () => {
+export const useChartType = (type: "co2" | "energy" | "material") => {
   const [chartType, setChartType] = useState<"line" | "scatter">("scatter");
 
   const { t } = useTranslation();
@@ -14,7 +14,7 @@ export const useChartType = () => {
 
   const ChartSelector = (
     <div className='w-11/12 max-sm:w-full'>
-      <Label className="mb-2">{t.benchmark.chartType}:</Label>
+      <Label className="mb-0">{t.benchmark.chartType}:</Label>
       <Select
         value={chartType}
         onValueChange={changeChartType}
@@ -28,9 +28,11 @@ export const useChartType = () => {
           <SelectItem value="scatter">
             {t.benchmark.chartTypes.cumulativeFraction.name}
           </SelectItem>
-          <SelectItem value="line">
-            {t.benchmark.chartTypes.classification.name}
-          </SelectItem>
+          {type !== 'material' && (
+            <SelectItem value="line">
+              {t.benchmark.chartTypes.classification.name}
+            </SelectItem>
+          )}
         </SelectContent>
       </Select>
     </div>

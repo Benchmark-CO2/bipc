@@ -37,7 +37,7 @@ func normalizeSlabType(slabType *string) *string {
 	}
 
 	normalized := strings.ToLower(strings.TrimSpace(*slabType))
-	if normalized == "" {
+	if normalized == "" || normalized == "0" {
 		return nil
 	}
 

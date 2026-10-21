@@ -46,6 +46,7 @@ export const useInvites = (props: {
       if (props?.navigate) {
         props.navigate({
           to: "/new_projects",
+          search: { activationRequired: true },
         });
       }
       queryClient.invalidateQueries({ queryKey: ["notifications"] });

@@ -285,9 +285,14 @@ export default function BrazilMapChart({
 
           {/* ── Hint ── */}
           {view.type === "country" && (
-            <p className="text-xs text-muted-foreground italic">
-              {t.brazilMap.clickStateHint}
-            </p>
+            <div className="flex flex-col gap-1">
+              <p className="text-xs text-muted-foreground italic">
+                {t.brazilMap.clickStateHint}
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                {t.brazilMap.colorScaleDescription}
+              </p>
+            </div>
           )}
 
           {/* ── Map canvas ── */}

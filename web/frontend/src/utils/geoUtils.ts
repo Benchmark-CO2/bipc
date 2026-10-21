@@ -1,9 +1,32 @@
 // ─── IBGE state codes (sigla → numeric code) ─────────────────────────────────
 export const STATE_CODES: Record<string, string> = {
-  RO: "11", AC: "12", AM: "13", RR: "14", PA: "15", AP: "16", TO: "17",
-  MA: "21", PI: "22", CE: "23", RN: "24", PB: "25", PE: "26", AL: "27",
-  SE: "28", BA: "29", MG: "31", ES: "32", RJ: "33", SP: "35", PR: "41",
-  SC: "42", RS: "43", MS: "50", MT: "51", GO: "52", DF: "53",
+  RO: "11",
+  AC: "12",
+  AM: "13",
+  RR: "14",
+  PA: "15",
+  AP: "16",
+  TO: "17",
+  MA: "21",
+  PI: "22",
+  CE: "23",
+  RN: "24",
+  PB: "25",
+  PE: "26",
+  AL: "27",
+  SE: "28",
+  BA: "29",
+  MG: "31",
+  ES: "32",
+  RJ: "33",
+  SP: "35",
+  PR: "41",
+  SC: "42",
+  RS: "43",
+  MS: "50",
+  MT: "51",
+  GO: "52",
+  DF: "53",
 };
 
 // ─── GeoJSON ring winding correction ─────────────────────────────────────────
@@ -41,26 +64,44 @@ export function rewindRing(coords: number[][], clockwise: boolean): number[][] {
 
 // ─── City name normalization (for matching against IBGE names) ────────────────
 export function normalizeCity(s: string): string {
-  return s
-    // Remove state suffix: "Indaiatuba (SP)" → "Indaiatuba"
-    .replace(/\s*\([A-Z]{2}\)\s*$/, "")
-    // Remove slash-state: "São Paulo/São Paulo" → "São Paulo"
-    .replace(/\/.*$/, "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
+  return (
+    s
+      // Remove state suffix: "Indaiatuba (SP)" → "Indaiatuba"
+      .replace(/\s*\([A-Z]{2}\)\s*$/, "")
+      // Remove slash-state: "São Paulo/São Paulo" → "São Paulo"
+      .replace(/\/.*$/, "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+  );
 }
 
 // ─── Choropleth color scale ───────────────────────────────────────────────────
-export const MAP_COLORS = ["#B6E5ED", "#6EC2CF", "#3BBACE", "#20A2B6", "#187B8B"];
+// Fixed thresholds matching the designer spec:
+//   0 → gray, 1-5 → blue, 6-10 → green, 11-20 → yellow, 21-40 → orange, >41 → red
+export const MAP_COLORS = [
+  "#6C9EE0",
+  "#72E06C",
+  "#F2CC5A",
+  "#F28C48",
+  "#E0756C",
+];
 export const MAP_EMPTY = "#D4D4D8";
 
-export function countToColor(count: number, maxCount: number): string {
-  if (!count || maxCount === 0) return MAP_EMPTY;
-  const idx = Math.min(
-    Math.floor((count / maxCount) * MAP_COLORS.length),
-    MAP_COLORS.length - 1,
-  );
-  return MAP_COLORS[idx];
+/** Fixed-break thresholds (upper bound, inclusive). Last band is open-ended (> last value). */
+export const MAP_THRESHOLDS = [5, 10, 20, 40] as const;
+
+/**
+ * Maps a project count to a choropleth color using fixed thresholds.
+ * The `maxCount` parameter is kept for API compatibility but ignored —
+ * fixed breaks prevent outliers (e.g. SP) from collapsing all other states
+ * into a single low-intensity color.
+ */
+export function countToColor(count: number, _maxCount: number): string {
+  if (!count) return MAP_EMPTY;
+  for (let i = 0; i < MAP_THRESHOLDS.length; i++) {
+    if (count <= MAP_THRESHOLDS[i]) return MAP_COLORS[i];
+  }
+  return MAP_COLORS[MAP_COLORS.length - 1];
 }

@@ -7,7 +7,7 @@ import {
   useReactTable,
   RowSelectionState,
 } from "@tanstack/react-table";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Table,
   TableBody,
@@ -38,6 +38,7 @@ interface ICommonTableProps {
     data: Record<string, string | number>;
   };
   collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
   onClickRow?: (rowData: any) => void;
   customEmptyComponent?: React.ReactNode;
 }
@@ -52,13 +53,25 @@ export default function CommonTable({
   actions,
   lastRow,
   collapsed = false,
+  onCollapsedChange,
   onClickRow,
   customEmptyComponent,
   isExpandable = true,
 }: ICommonTableProps) {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
+  const lastSelectedRef = useRef<any[]>([]);
   const { t } = useTranslation();
+
+  useEffect(() => {
+    setIsCollapsed(collapsed);
+  }, [collapsed]);
+
+  const handleToggleCollapse = () => {
+    const next = !isCollapsed;
+    setIsCollapsed(next);
+    onCollapsedChange?.(next);
+  };
 
   // Reset selection when isSelectable changes
   useEffect(() => {
@@ -83,11 +96,22 @@ export default function CommonTable({
     const selectedRows = table
       .getFilteredSelectedRowModel()
       .rows.map((row) => row.original);
-    onSelectionChange?.(selectedRows);
+    const prev = lastSelectedRef.current;
+    // Só dispara se: (1) tamanho mudou, ou (2) algum id diferente em alguma posição
+    const changed =
+      prev.length !== selectedRows.length ||
+      prev.some(
+        (r, i) =>
+          JSON.stringify(r) !== JSON.stringify((selectedRows as any[])[i]),
+      );
+    if (changed) {
+      lastSelectedRef.current = selectedRows as any[];
+      onSelectionChange?.(selectedRows);
+    }
   }, [rowSelection, onSelectionChange, table]);
 
   return (
-    <div className="space-y-4 w-full">
+    <div className={cn("w-full", { "space-y-4": !isCollapsed })}>
       <div className="flex items-baseline justify-between">
         <div className="flex items-center gap-2 w-full">
           <h2 className="text-h2 text-primary dark:text-gray-100 w-full">
@@ -96,12 +120,14 @@ export default function CommonTable({
         </div>
         <div className="flex items-center gap-2">
           {actions}
-          {data.length > 0 && isExpandable && (
-            <SimpleTooltip content={isCollapsed ? t.common.expand : t.common.collapse}>
+          {isExpandable && (
+            <SimpleTooltip
+              content={isCollapsed ? t.common.expand : t.common.collapse}
+            >
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsCollapsed(!isCollapsed)}
+                onClick={handleToggleCollapse}
                 className="p-2 transition-transform duration-200 ease-in-out hover:scale-110"
               >
                 <div

@@ -6,11 +6,15 @@ import { makeConstructiveTechnologiesColumns } from "@/components/columns/constr
 import { makeFloorsColumns } from "@/components/columns/floors";
 import { CommonTable } from "@/components/layout";
 import DrawerFormDisciplines from "@/components/layout/drawer-form-disciplines";
-import FloorSummary from "@/components/summaryVariants/floors";
+import FloorSummary, {
+  IFloorSummaryItem,
+  ISelectedFloor,
+} from "@/components/summaryVariants/floors";
 import { Button } from "@/components/ui/button";
 import Divider from "@/components/ui/divider";
 import { FilterTabs } from "@/components/ui/filter-tabs";
 import NotFoundList from "@/components/ui/not-found-list";
+import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
@@ -29,6 +33,7 @@ import {
   TProjectUnit,
 } from "@/types/projects";
 import { IUnit, TTowerFloorCategory } from "@/types/units";
+import { TUnknownModuleOccurrence } from "@/types/unknownModules";
 import { getCategoryFromIndex } from "@/utils/unitConversions";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -37,8 +42,8 @@ import {
   useParams,
   useSearch,
 } from "@tanstack/react-router";
-import { Plus, SquareArrowOutUpRight, Upload } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Plus, Settings, Upload } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 type TGroupedFloor = IConsumption &
   Omit<TTowerFloorCategory, "consumptions"> & {
@@ -119,12 +124,101 @@ function RouteComponent() {
   const [selectedTab, setSelectedTab] = useState<string>(
     t.unitView.tabAllDisciplines,
   );
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  useEffect(() => {
+    if (hasInitialized) return;
+    if (!roles || roles.length === 0) {
+      setHasInitialized(true);
+      return;
+    }
+
+    const availableRoles = roles.filter((el) => !el.is_protected);
+    if (availableRoles.length === 0) {
+      setHasInitialized(true);
+      return;
+    }
+
+    if (search.dcp) {
+      const roleFromSearch = availableRoles.find(
+        (role) => role.id === search.dcp,
+      );
+      if (roleFromSearch) {
+        setSelectedTab(roleFromSearch.name);
+        setHasInitialized(true);
+        return;
+      }
+    }
+
+    const roleNames = availableRoles.map(
+      (role: TRoleConsumptions) => role.name,
+    );
+
+    const structureRole = roleNames.find(
+      (name) =>
+        name.toLowerCase() === "estrutura" ||
+        name.toLowerCase() === "structure" ||
+        name.toLowerCase() === "estrutural" ||
+        name.toLowerCase() === "structural",
+    );
+
+    let defaultTab: string;
+    if (structureRole) {
+      defaultTab = structureRole;
+    } else if (roleNames.length > 0) {
+      defaultTab = roleNames[0];
+    } else {
+      defaultTab = t.unitView.tabAllDisciplines;
+    }
+
+    setSelectedTab(defaultTab);
+
+    const selectedRoleObj = availableRoles.find(
+      (role) => role.name === defaultTab,
+    );
+    const dcpId = selectedRoleObj?.id || "";
+
+    navigate({
+      search: dcpId ? { dcp: dcpId } : { dcp: undefined },
+      replace: true,
+    });
+
+    setHasInitialized(true);
+  }, [roles, t, navigate, hasInitialized, search.dcp]);
+
+  const handleTabDoubleClick = () => {
+    if (selectedTab === t.unitView.tabAllDisciplines) return;
+    navigate({
+      to: "./constructive-technologies",
+      search: search,
+    });
+  };
+
+  const mapUnknownModuleRow = (occ: TUnknownModuleOccurrence) => ({
+    id: occ.id,
+    option_id: occ.option_id,
+    type: "unknown_module",
+    name: occ.unknown_module?.name,
+    custom_technology: true,
+  });
+
+  const getUnknownRows = (
+    occurrences: TUnknownModuleOccurrence[],
+  ): ReturnType<typeof mapUnknownModuleRow>[] => {
+    const seenIds = new Set<string>();
+    const rows: ReturnType<typeof mapUnknownModuleRow>[] = [];
+    occurrences.forEach((occ) => {
+      if (seenIds.has(occ.unknown_module_id)) return;
+      seenIds.add(occ.unknown_module_id);
+      rows.push(mapUnknownModuleRow(occ));
+    });
+    return rows;
+  };
 
   const getFilteredConsumptions = () => {
     if (!roles || roles.length === 0) return [];
 
     if (selectedTab === t.unitView.tabAllDisciplines) {
-      // Coletar todos os tipos únicos de todos os roles
       const allTypes = new Set<string>();
       roles.forEach((role) => {
         const roleConsumptions =
@@ -137,8 +231,7 @@ function RouteComponent() {
       });
 
       const moduleTypes = Array.from(allTypes);
-
-      return moduleTypes.map((type) => {
+      const moduleRows = moduleTypes.map((type) => {
         const summedConsumption = roles.reduce(
           (acc, role) => {
             const roleConsumptions =
@@ -171,15 +264,21 @@ function RouteComponent() {
           ...summedConsumption,
         };
       });
+
+      const unknownRows = getUnknownRows(
+        roles.flatMap((role) => role.unknown_modules ?? []),
+      );
+
+      return [...moduleRows, ...unknownRows];
     } else {
       const selectedRole = roles.find((role) => role.name === selectedTab);
       if (!selectedRole) return [];
 
       const roleConsumptions =
         (selectedRole as any).consumptions || (selectedRole as any).consumption;
-      if (!roleConsumptions) return [];
+      if (!roleConsumptions && !selectedRole.unknown_modules?.length) return [];
 
-      return Object.keys(roleConsumptions)
+      const moduleRows = Object.keys(roleConsumptions || {})
         .filter((key) => key !== "total")
         .map((type) => {
           const consumption = roleConsumptions[
@@ -194,6 +293,10 @@ function RouteComponent() {
             material: consumption?.material || 0,
           };
         });
+
+      const unknownRows = getUnknownRows(selectedRole.unknown_modules ?? []);
+
+      return [...moduleRows, ...unknownRows];
     }
   };
 
@@ -214,7 +317,7 @@ function RouteComponent() {
 
   const totalConsumptions = calculateTotalConsumptions();
 
-  const handleSelectionChange = (selected: any) => {
+  const handleSelectionChange = (selected: string[]) => {
     setSelectedFloors(selected);
   };
   const { data: benchmarkData } = useQuery({
@@ -222,111 +325,168 @@ function RouteComponent() {
     queryFn: getFloorsBenchmark,
   });
 
-  useEffect(() => {
-    if (!benchmarkData?.data) return;
-    setSummaryContext({
+  const groupedFloors: TGroupedFloor[] = useMemo(
+    () =>
+      unit?.floors
+        ? Object.values(
+            unit.floors.reduce(
+              (acc, floor) => {
+                const groupKey = `${floor.floor_group || ""}_${floor.area}_${floor.height}`;
+                const { consumptions, ...restFloor } = floor;
+
+                const safeConsumption = consumptions?.total || {
+                  co2_min: 0,
+                  co2_max: 0,
+                  energy_min: 0,
+                  energy_max: 0,
+                  material: 0,
+                };
+
+                if (!acc[groupKey]) {
+                  acc[groupKey] = {
+                    ...restFloor,
+                    ...safeConsumption,
+                    area: restFloor.area,
+                    repetitions: 1,
+                  };
+                } else {
+                  acc[groupKey].repetitions += 1;
+                  acc[groupKey].co2_min =
+                    (acc[groupKey].co2_min * (acc[groupKey].repetitions - 1) +
+                      (safeConsumption.co2_min || 0)) /
+                    acc[groupKey].repetitions;
+                  acc[groupKey].co2_max =
+                    (acc[groupKey].co2_max * (acc[groupKey].repetitions - 1) +
+                      (safeConsumption.co2_max || 0)) /
+                    acc[groupKey].repetitions;
+                  acc[groupKey].energy_min =
+                    (acc[groupKey].energy_min *
+                      (acc[groupKey].repetitions - 1) +
+                      (safeConsumption.energy_min || 0)) /
+                    acc[groupKey].repetitions;
+                  acc[groupKey].energy_max =
+                    (acc[groupKey].energy_max *
+                      (acc[groupKey].repetitions - 1) +
+                      (safeConsumption.energy_max || 0)) /
+                    acc[groupKey].repetitions;
+                  acc[groupKey].material =
+                    (acc[groupKey].material * (acc[groupKey].repetitions - 1) +
+                      (safeConsumption.material || 0)) /
+                    acc[groupKey].repetitions;
+                }
+
+                return acc;
+              },
+              {} as Record<string, any>,
+            ),
+          ).sort((a, b) => {
+            const categoryOrder = {
+              penthouse_floor: 0,
+              standard_floor: 1,
+              ground_floor: 2,
+              basement_floor: 3,
+            };
+
+            const aCategory = a.category || getCategoryFromIndex(a.index || 0);
+            const bCategory = b.category || getCategoryFromIndex(b.index || 0);
+
+            const aCategoryOrder =
+              categoryOrder[aCategory as keyof typeof categoryOrder];
+            const bCategoryOrder =
+              categoryOrder[bCategory as keyof typeof categoryOrder];
+
+            if (aCategoryOrder !== bCategoryOrder) {
+              return aCategoryOrder - bCategoryOrder;
+            }
+
+            if (a.index !== undefined && b.index !== undefined) {
+              return b.index - a.index;
+            }
+
+            return (a.floor_group || "").localeCompare(b.floor_group || "");
+          })
+        : [],
+    [unit?.floors],
+  );
+
+  const toFloorSummaryItem = (floor: TGroupedFloor): IFloorSummaryItem => {
+    const floorIndex =
+      typeof floor.index === "number" ? floor.index : Number(floor.index) || 0;
+    const category =
+      floor.category ??
+      (getCategoryFromIndex(floorIndex) as
+        | "penthouse_floor"
+        | "standard_floor"
+        | "ground_floor"
+        | "basement_floor"
+        | undefined);
+    const groupName =
+      typeof floor.floor_group === "string" &&
+      floor.floor_group.trim().length > 0
+        ? floor.floor_group
+        : floorIndex >= 0
+          ? `Andar ${floorIndex}`
+          : "Andar";
+    return {
+      id: floor.id,
+      group_id: floor.id,
+      group_name: groupName,
+      floor_group: groupName,
+      category: category ?? "standard_floor",
+      floor_index: floorIndex,
+      co2_min: floor.co2_min ?? 0,
+      co2_max: floor.co2_max ?? 0,
+      energy_min: floor.energy_min ?? 0,
+      energy_max: floor.energy_max ?? 0,
+      material: floor.material ?? 0,
+    };
+  };
+
+  const summaryFloors: IFloorSummaryItem[] = useMemo(
+    () => groupedFloors.map(toFloorSummaryItem),
+    [groupedFloors],
+  );
+
+  const summarySelectedFloors: ISelectedFloor[] = useMemo(() => {
+    if (selectedFloors.length === 0) return summaryFloors as ISelectedFloor[];
+    const sel = new Set(selectedFloors.map((id) => String(id)));
+    return summaryFloors.filter((f) =>
+      sel.has(String(f.id)),
+    ) as ISelectedFloor[];
+  }, [selectedFloors, summaryFloors]);
+
+  const summaryPayload = useMemo(() => {
+    if (!benchmarkData?.data || !unit) return null;
+    return {
       component: (
         <FloorSummary
-          selectedFloors={
-            selectedFloors.length ? selectedFloors : (groupedFloors as any)
-          }
-          floors={groupedFloors}
+          selectedFloors={summarySelectedFloors}
+          floors={summaryFloors}
           data={benchmarkData.data}
           unit={unit as IUnit}
           someSelected={selectedFloors.length > 0}
         />
       ),
       title: "Floor Comparison",
-    });
-  }, [setSummaryContext, selectedFloors, benchmarkData]);
+    };
+  }, [
+    benchmarkData,
+    summarySelectedFloors,
+    summaryFloors,
+    unit,
+    selectedFloors.length,
+  ]);
 
-  const groupedFloors: TGroupedFloor[] = unit?.floors
-    ? Object.values(
-        unit.floors.reduce(
-          (acc, floor) => {
-            // Agrupar por floor_group, area e height
-            const groupKey = `${floor.floor_group || ""}_${floor.area}_${floor.height}`;
-            const { consumptions, ...restFloor } = floor;
-
-            const safeConsumption = consumptions?.total || {
-              co2_min: 0,
-              co2_max: 0,
-              energy_min: 0,
-              energy_max: 0,
-              material: 0,
-            };
-
-            if (!acc[groupKey]) {
-              acc[groupKey] = {
-                ...restFloor,
-                ...safeConsumption,
-                area: restFloor.area,
-                repetitions: 1,
-              };
-            } else {
-              acc[groupKey].repetitions += 1;
-              acc[groupKey].co2_min =
-                (acc[groupKey].co2_min * (acc[groupKey].repetitions - 1) +
-                  (safeConsumption.co2_min || 0)) /
-                acc[groupKey].repetitions;
-              acc[groupKey].co2_max =
-                (acc[groupKey].co2_max * (acc[groupKey].repetitions - 1) +
-                  (safeConsumption.co2_max || 0)) /
-                acc[groupKey].repetitions;
-              acc[groupKey].energy_min =
-                (acc[groupKey].energy_min * (acc[groupKey].repetitions - 1) +
-                  (safeConsumption.energy_min || 0)) /
-                acc[groupKey].repetitions;
-              acc[groupKey].energy_max =
-                (acc[groupKey].energy_max * (acc[groupKey].repetitions - 1) +
-                  (safeConsumption.energy_max || 0)) /
-                acc[groupKey].repetitions;
-              acc[groupKey].material =
-                (acc[groupKey].material * (acc[groupKey].repetitions - 1) +
-                  (safeConsumption.material || 0)) /
-                acc[groupKey].repetitions;
-            }
-
-            return acc;
-          },
-          {} as Record<string, any>,
-        ),
-      ).sort((a, b) => {
-        const categoryOrder = {
-          penthouse_floor: 0,
-          standard_floor: 1,
-          ground_floor: 2,
-          basement_floor: 3,
-        };
-
-        const aCategory = a.category || getCategoryFromIndex(a.index || 0);
-        const bCategory = b.category || getCategoryFromIndex(b.index || 0);
-
-        const aCategoryOrder =
-          categoryOrder[aCategory as keyof typeof categoryOrder];
-        const bCategoryOrder =
-          categoryOrder[bCategory as keyof typeof categoryOrder];
-
-        if (aCategoryOrder !== bCategoryOrder) {
-          return aCategoryOrder - bCategoryOrder;
-        }
-
-        if (a.index !== undefined && b.index !== undefined) {
-          return b.index - a.index;
-        }
-
-        return (a.floor_group || "").localeCompare(b.floor_group || "");
-      })
-    : [];
+  useEffect(() => {
+    if (!summaryPayload) return;
+    setSummaryContext(summaryPayload);
+  }, [setSummaryContext, summaryPayload]);
 
   const calculateAverageMetrics = (floors: TGroupedFloor[]) => {
     const floorTotal = floors.reduce(
       (acc, curr) => acc + curr.repetitions * curr.area,
       0,
     );
-
-    console.log("[calculateAverageMetrics] floors:", floors);
-    console.log("[calculateAverageMetrics] floorTotal:", floorTotal);
 
     if (floorTotal === 0) {
       console.warn(
@@ -383,6 +543,30 @@ function RouteComponent() {
     });
   };
 
+  const averageMetrics = calculateAverageMetrics(groupedFloors);
+  const roleTabs: string[] =
+    roles
+      ?.filter((el) => !el.is_protected)
+      .map((role: TRoleConsumptions) => role.name) || [];
+  const floorsColumns = makeFloorsColumns(t);
+  const techColumns = makeConstructiveTechnologiesColumns(t);
+  const totalRowData = {
+    type: "Total" as const,
+    data: {
+      co2_range: `${totalConsumptions.co2_min.toInternational()} - ${totalConsumptions.co2_max.toInternational()}`,
+      energy_range: `${totalConsumptions.energy_min.toInternational()} - ${totalConsumptions.energy_max.toInternational()}`,
+      material: `${totalConsumptions.material.toInternational()}`,
+    },
+  };
+  const avgRowData = { type: "Média" as const, data: averageMetrics };
+  const selectedRoleForToolbar = roles?.find((role) => role.id === search.dcp);
+  const handleClickConstructiveTechnologies = () => {
+    navigate({ to: "./constructive-technologies", search });
+  };
+
+  // 🔴 ============================================================
+  // EARLY RETURNS ABAIXO. NÃO ADICIONAR NOVOS HOOKS APÓS ESTA LINHA.
+  // ================================================================
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
@@ -416,109 +600,106 @@ function RouteComponent() {
     );
   }
 
-  const handleClickConstructiveTechnologies = async () => {
-    navigate({
-      to: "./constructive-technologies",
-      search: search,
-    });
-  };
-
-  const averageMetrics = calculateAverageMetrics(groupedFloors);
-  const roleTabs: string[] =
-    roles
-      ?.filter((el) => !el.is_protected)
-      .map((role: TRoleConsumptions) => role.name) || [];
-
-  const selectedRole = roles?.find((role) => role.id === search.dcp);
+  const simulationsTableName = (
+    <div>
+      {t.unitView.simulations}
+      <div className="flex items-center gap-2 mt-4">
+        <FilterTabs
+          tabs={[t.unitView.tabAllDisciplines]}
+          selectedTab={selectedTab}
+          onTabSelect={onSelectedTabChange}
+          onTabDoubleClick={handleTabDoubleClick}
+          subTabs={roleTabs}
+          selectedSubTab={selectedTab}
+          onSubTabSelect={onSelectedTabChange}
+          onSubTabDoubleClick={handleTabDoubleClick}
+          fullWidth
+          addTabAction={
+            <div className="flex items-center gap-2">
+              <SimpleTooltip
+                content={t.unitView.manageDisciplines}
+                side="bottom"
+              >
+                <Button
+                  variant="outline-bipc"
+                  size="icon"
+                  onClick={() =>
+                    navigate({
+                      to: "/new_projects/$projectId",
+                      params: { projectId },
+                      search: { tab: "disciplinas" },
+                    })
+                  }
+                >
+                  <Settings />
+                </Button>
+              </SimpleTooltip>
+              {hasPermission("create:role") && (
+                <DrawerFormDisciplines
+                  componentTrigger={
+                    <SimpleTooltip
+                      content={t.unitView.newDiscipline}
+                      side="bottom"
+                    >
+                      <Button variant="outline-bipc" size="icon">
+                        <Plus />
+                      </Button>
+                    </SimpleTooltip>
+                  }
+                  projectId={projectId}
+                  unitId={unitId}
+                  roles={roleTabs}
+                />
+              )}
+            </div>
+          }
+        />
+        {(hasPermission("*:*") || selectedRoleForToolbar?.is_member) && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button
+                  variant="bipc"
+                  size="lg"
+                  onClick={handleClickConstructiveTechnologies}
+                  disabled={selectedTab === t.unitView.tabAllDisciplines}
+                >
+                  <GraphIcon />
+                  {t.unitView.createSimulations}
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {selectedTab === t.unitView.tabAllDisciplines && (
+              <TooltipContent>
+                {t.unitView.selectDisciplineTooltip}
+              </TooltipContent>
+            )}
+          </Tooltip>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-4">
       <CommonTable
         tableName={t.unitView.floors}
-        columns={makeFloorsColumns(t)}
+        columns={floorsColumns}
         data={groupedFloors}
         isSelectable={true}
         isInteractive={true}
         onSelectionChange={handleSelectionChange}
-        lastRow={{ type: "Média", data: averageMetrics }}
+        lastRow={avgRowData}
       />
       <Divider />
       <CommonTable
-        tableName={
-          <div>
-            {t.unitView.simulations}
-            <div className="flex items-center gap-2 mt-4">
-              <FilterTabs
-                tabs={[t.unitView.tabAllDisciplines]}
-                selectedTab={selectedTab}
-                onTabSelect={(tab) => onSelectedTabChange(tab)}
-                subTabs={roleTabs}
-                selectedSubTab={selectedTab}
-                onSubTabSelect={(tab) => onSelectedTabChange(tab)}
-                fullWidth
-                addTabAction={
-                  hasPermission("create:role") ? (
-                    <DrawerFormDisciplines
-                      componentTrigger={
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="outline-bipc" size="icon">
-                              <Plus />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {t.unitView.newDiscipline}
-                          </TooltipContent>
-                        </Tooltip>
-                      }
-                      projectId={projectId}
-                      unitId={unitId}
-                      roles={roleTabs}
-                    />
-                  ) : undefined
-                }
-              />
-              <Button variant="outline-bipc" size="icon-lg" disabled>
-                <Upload />
-              </Button>
-              {(hasPermission("*:*") || selectedRole?.is_member) && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <Button
-                        variant="bipc"
-                        size="lg"
-                        onClick={handleClickConstructiveTechnologies}
-                        disabled={selectedTab === t.unitView.tabAllDisciplines}
-                      >
-                        <GraphIcon />
-                        {t.unitView.createSimulations}
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  {selectedTab === t.unitView.tabAllDisciplines && (
-                    <TooltipContent>
-                      {t.unitView.selectDisciplineTooltip}
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              )}
-            </div>
-          </div>
-        }
+        tableName={simulationsTableName}
         data={filteredConsumptions}
-        columns={makeConstructiveTechnologiesColumns(t)}
+        columns={techColumns}
         isSelectable={false}
         isInteractive={false}
         isExpandable={false}
-        lastRow={{
-          data: {
-            co2_range: `${totalConsumptions.co2_min.toInternational()} - ${totalConsumptions.co2_max.toInternational()}`,
-            energy_range: `${totalConsumptions.energy_min.toInternational()} - ${totalConsumptions.energy_max.toInternational()}`,
-            material: `${totalConsumptions.material.toInternational()}`,
-          },
-          type: "Total",
-        }}
+        lastRow={totalRowData}
         customEmptyComponent={
           roleTabs.length === 0 ? (
             <NotFoundList

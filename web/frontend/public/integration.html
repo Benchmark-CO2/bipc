@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Integracao BIPC</title>
+    <style>
+      :root {
+        --bg: #f4f7f8;
+        --card: #ffffff;
+        --text: #1f2933;
+        --muted: #52606d;
+        --border: #d9e2ec;
+        --accent: #0b6e4f;
+        --code-bg: #0f172a;
+        --code-text: #e2e8f0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top left, #dff7e8 0%, var(--bg) 35%);
+        color: var(--text);
+        font-family: "Segoe UI", "Noto Sans", "Liberation Sans", sans-serif;
+        line-height: 1.6;
+      }
+
+      .page {
+        max-width: 960px;
+        margin: 32px auto;
+        padding: 0 16px;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 10px 35px rgba(15, 23, 42, 0.08);
+        overflow: hidden;
+      }
+
+      .header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(135deg, #f3fff8 0%, #ffffff 100%);
+      }
+
+      .header h1 {
+        margin: 0;
+        font-size: 1.35rem;
+      }
+
+      .header p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .content {
+        padding: 26px 24px 28px;
+      }
+
+      .content h1,
+      .content h2,
+      .content h3,
+      .content h4 {
+        line-height: 1.3;
+        margin: 1.6em 0 0.65em;
+      }
+
+      .content h1 {
+        font-size: 1.9rem;
+        margin-top: 0;
+      }
+
+      .content h2 {
+        font-size: 1.45rem;
+        border-left: 4px solid var(--accent);
+        padding-left: 10px;
+      }
+
+      .content h3 {
+        font-size: 1.2rem;
+      }
+
+      .content p {
+        margin: 0.8em 0;
+      }
+
+      .content ul,
+      .content ol {
+        margin: 0.7em 0 1em;
+        padding-left: 1.4em;
+      }
+
+      .content li {
+        margin: 0.28em 0;
+      }
+
+      .content hr {
+        border: 0;
+        border-top: 1px solid var(--border);
+        margin: 1.3em 0;
+      }
+
+      .content a {
+        color: #0f766e;
+        text-decoration: none;
+      }
+
+      .content a:hover {
+        text-decoration: underline;
+      }
+
+      .content code {
+        background: #eef2ff;
+        padding: 0.1em 0.35em;
+        border-radius: 6px;
+        font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+        font-size: 0.9em;
+      }
+
+      .content pre {
+        background: var(--code-bg);
+        color: var(--code-text);
+        border-radius: 10px;
+        padding: 14px;
+        overflow-x: auto;
+        margin: 1em 0;
+      }
+
+      .content pre code {
+        background: transparent;
+        color: inherit;
+        padding: 0;
+        border-radius: 0;
+        font-size: 0.88rem;
+      }
+
+      .content blockquote {
+        margin: 1em 0;
+        padding: 0.2em 0 0.2em 0.9em;
+        border-left: 4px solid #a7f3d0;
+        color: #334155;
+        background: #f8fffc;
+      }
+
+      .error {
+        padding: 12px;
+        border: 1px solid #fecaca;
+        background: #fef2f2;
+        color: #7f1d1d;
+        border-radius: 8px;
+      }
+
+      @media (max-width: 640px) {
+        .page {
+          margin: 16px auto;
+        }
+
+        .header,
+        .content {
+          padding: 16px;
+        }
+
+        .content h1 {
+          font-size: 1.55rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="card">
+        <header class="header">
+          <h1>Guia de Integracao BIPC</h1>
+          <p>Conteudo carregado automaticamente a partir de <code>/integration.md</code>.</p>
+        </header>
+        <article id="doc" class="content">
+          <p>Carregando documentacao...</p>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      const escapeHtml = (str) =>
+        str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+
+      const parseInline = (text) => {
+        let html = escapeHtml(text);
+        html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+        html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+        html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+        return html;
+      };
+
+      const toHtml = (markdown) => {
+        const lines = markdown.replace(/\r\n?/g, "\n").split("\n");
+        let out = "";
+        let inCode = false;
+        let inUl = false;
+        let inOl = false;
+        let inBlockquote = false;
+
+        const closeLists = () => {
+          if (inUl) {
+            out += "</ul>";
+            inUl = false;
+          }
+          if (inOl) {
+            out += "</ol>";
+            inOl = false;
+          }
+        };
+
+        const closeBlockquote = () => {
+          if (inBlockquote) {
+            out += "</blockquote>";
+            inBlockquote = false;
+          }
+        };
+
+        for (const line of lines) {
+          if (line.trim().startsWith("```")) {
+            closeLists();
+            closeBlockquote();
+            if (!inCode) {
+              inCode = true;
+              out += "<pre><code>";
+            } else {
+              inCode = false;
+              out += "</code></pre>";
+            }
+            continue;
+          }
+
+          if (inCode) {
+            out += escapeHtml(line) + "\n";
+            continue;
+          }
+
+          const heading = line.match(/^(#{1,6})\s+(.*)$/);
+          if (heading) {
+            closeLists();
+            closeBlockquote();
+            const level = heading[1].length;
+            out += `<h${level}>${parseInline(heading[2])}</h${level}>`;
+            continue;
+          }
+
+          if (/^\s*---+\s*$/.test(line)) {
+            closeLists();
+            closeBlockquote();
+            out += "<hr />";
+            continue;
+          }
+
+          const ul = line.match(/^\s*[-*]\s+(.*)$/);
+          if (ul) {
+            closeBlockquote();
+            if (!inUl) {
+              closeLists();
+              inUl = true;
+              out += "<ul>";
+            }
+            out += `<li>${parseInline(ul[1])}</li>`;
+            continue;
+          }
+
+          const ol = line.match(/^\s*\d+\.\s+(.*)$/);
+          if (ol) {
+            closeBlockquote();
+            if (!inOl) {
+              closeLists();
+              inOl = true;
+              out += "<ol>";
+            }
+            out += `<li>${parseInline(ol[1])}</li>`;
+            continue;
+          }
+
+          const blockquote = line.match(/^\s*>\s?(.*)$/);
+          if (blockquote) {
+            closeLists();
+            if (!inBlockquote) {
+              inBlockquote = true;
+              out += "<blockquote>";
+            }
+            out += `<p>${parseInline(blockquote[1])}</p>`;
+            continue;
+          }
+
+          if (line.trim() === "") {
+            closeLists();
+            closeBlockquote();
+            continue;
+          }
+
+          closeLists();
+          closeBlockquote();
+          out += `<p>${parseInline(line)}</p>`;
+        }
+
+        closeLists();
+        closeBlockquote();
+        if (inCode) {
+          out += "</code></pre>";
+        }
+        return out;
+      };
+
+      const root = document.getElementById("doc");
+
+      fetch("/integration.md", { cache: "no-store" })
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error(`Falha ao carregar markdown (HTTP ${res.status})`);
+          }
+          return res.text();
+        })
+        .then((markdown) => {
+          root.innerHTML = toHtml(markdown);
+        })
+        .catch((err) => {
+          root.innerHTML = `<div class="error">Nao foi possivel carregar <code>/integration.md</code>: ${escapeHtml(err.message)}</div>`;
+        });
+    </script>
+  </body>
+</html>

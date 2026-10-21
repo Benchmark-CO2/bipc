@@ -34,29 +34,34 @@ var (
 )
 
 type ProjectUnit struct {
-	ID              uuid.UUID               `json:"id"`
-	Name            string                  `json:"name"`
-	Type            string                  `json:"type"`
-	RepetitionCount int                     `json:"repetition_count"`
-	Consumptions    map[string]*Consumption `json:"consumptions,omitempty"`
-	Area            float64                 `json:"area"`
+	ID                uuid.UUID               `json:"id"`
+	Name              string                  `json:"name"`
+	Type              string                  `json:"type"`
+	RepetitionCount   int                     `json:"repetition_count"`
+	HousingUnitsCount *int                    `json:"housing_units_count"`
+	Consumptions      map[string]*Consumption `json:"consumptions,omitempty"`
+	Area              float64                 `json:"area"`
 }
 
 type Project struct {
-	ID           uuid.UUID `json:"id"`
-	CreatedAt    time.Time `json:"created_at"`
-	Name         string    `json:"name"`
-	CEP          *string   `json:"cep,omitzero"`
-	State        string    `json:"state"`
-	City         string    `json:"city"`
-	Neighborhood *string   `json:"neighborhood,omitzero"`
-	Street       *string   `json:"street,omitzero"`
-	Number       *string   `json:"number,omitzero"`
-	Phase        string    `json:"phase"`
-	Description  *string   `json:"description,omitzero"`
-	Benchmark    bool      `json:"benchmark"`
-	Siop         *string   `json:"siop,omitzero"`
-	Apf          *string   `json:"apf,omitzero"`
+	ID                    uuid.UUID  `json:"id"`
+	CreatedAt             time.Time  `json:"created_at"`
+	Name                  string     `json:"name"`
+	CEP                   *string    `json:"cep,omitzero"`
+	State                 string     `json:"state"`
+	City                  string     `json:"city"`
+	Neighborhood          *string    `json:"neighborhood,omitzero"`
+	Street                *string    `json:"street,omitzero"`
+	Number                *string    `json:"number,omitzero"`
+	Phase                 string     `json:"phase"`
+	Description           *string    `json:"description,omitzero"`
+	Benchmark             bool       `json:"benchmark"`
+	Siop                  *string    `json:"siop,omitzero"`
+	Apf                   *string    `json:"apf,omitzero"`
+	ProjectStartDate      *time.Time `json:"project_start_date,omitzero"`
+	ProjectEndDate        *time.Time `json:"project_end_date,omitzero"`
+	ConstructionStartDate *time.Time `json:"construction_start_date,omitzero"`
+	ConstructionEndDate   *time.Time `json:"construction_end_date,omitzero"`
 }
 
 type ProjectWithUnits struct {
@@ -64,9 +69,10 @@ type ProjectWithUnits struct {
 	IsAdministrator bool   `json:"is_administrator,omitzero"`
 	Roles           []Role `json:"roles,omitempty"`
 
-	Units        []ProjectUnit           `json:"units,omitempty"`
-	Consumptions map[string]*Consumption `json:"consumption,omitempty"`
-	Area         float64                 `json:"area,omitzero"`
+	Units          []ProjectUnit              `json:"units,omitempty"`
+	Consumptions   map[string]*Consumption    `json:"consumption,omitempty"`
+	UnknownModules []*UnknownModuleOccurrence `json:"unknown_modules,omitempty"`
+	Area           float64                    `json:"area,omitzero"`
 }
 
 func ValidateProject(v *validator.Validator, project *Project) {
@@ -142,12 +148,13 @@ func (m ProjectModel) Insert(project *Project, userID uuid.UUID) error {
 	defer tx.Rollback()
 
 	query1 := `
-		INSERT INTO projects (id, name, cep, state, city, neighborhood, street, number, phase, description, benchmark, siop, apf)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		INSERT INTO projects (id, name, cep, state, city, neighborhood, street, number, phase, description, benchmark, siop, apf, project_start_date, project_end_date, construction_start_date, construction_end_date)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 		RETURNING created_at`
 
 	args := []any{project.ID, project.Name, project.CEP, project.State, project.City, project.Neighborhood,
-		project.Street, project.Number, project.Phase, project.Description, project.Benchmark, project.Siop, project.Apf}
+		project.Street, project.Number, project.Phase, project.Description, project.Benchmark, project.Siop, project.Apf,
+		project.ProjectStartDate, project.ProjectEndDate, project.ConstructionStartDate, project.ConstructionEndDate}
 
 	err = tx.QueryRow(query1, args...).Scan(&project.CreatedAt)
 	if err != nil {
@@ -233,7 +240,7 @@ func (m ProjectModel) Insert(project *Project, userID uuid.UUID) error {
 
 func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectWithUnits, error) {
 	query := `
-		SELECT id, created_at, name, cep, state, city, neighborhood, street, number, phase, description, benchmark, siop, apf
+		SELECT id, created_at, name, cep, state, city, neighborhood, street, number, phase, description, benchmark, siop, apf, project_start_date, project_end_date, construction_start_date, construction_end_date
 		FROM projects
 		WHERE id = $1`
 
@@ -257,6 +264,10 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectWithUnits, error) {
 		&project.Benchmark,
 		&project.Siop,
 		&project.Apf,
+		&project.ProjectStartDate,
+		&project.ProjectEndDate,
+		&project.ConstructionStartDate,
+		&project.ConstructionEndDate,
 	)
 	if err != nil {
 		switch {
@@ -296,7 +307,7 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectWithUnits, error) {
 	project.Roles = roles
 
 	unitsQuery := `
-		SELECT id, name, type, repetition_count
+		SELECT id, name, type, repetition_count, housing_units_count
 		FROM units
 		WHERE project_id = $1
 		ORDER BY id`
@@ -310,7 +321,7 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectWithUnits, error) {
 	var units []ProjectUnit
 	for rows.Next() {
 		var unit ProjectUnit
-		if err := rows.Scan(&unit.ID, &unit.Name, &unit.Type, &unit.RepetitionCount); err != nil {
+		if err := rows.Scan(&unit.ID, &unit.Name, &unit.Type, &unit.RepetitionCount, &unit.HousingUnitsCount); err != nil {
 			return nil, err
 		}
 
@@ -333,13 +344,18 @@ func (m ProjectModel) GetByID(id uuid.UUID) (*ProjectWithUnits, error) {
 	project.Units = units
 	project.Consumptions, project.Area = CalculateProjectConsumptions(units)
 
+	project.UnknownModules, err = getUnknownModulesByProject(ctx, m.DB, project.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	return &project, nil
 }
 
 func (m ProjectModel) Update(project *Project) error {
 	query := `
 		UPDATE projects
-		SET name = $1, cep = $2, state = $3, city = $4, neighborhood = $5, street = $6, number = $7, phase = $8, description = $9, siop = $10, apf = $11
+		SET name = $1, cep = $2, state = $3, city = $4, neighborhood = $5, street = $6, number = $7, phase = $8, description = $9, siop = $10, apf = $11, project_start_date = $13, project_end_date = $14, construction_start_date = $15, construction_end_date = $16
 		WHERE id = $12`
 
 	args := []any{
@@ -355,6 +371,10 @@ func (m ProjectModel) Update(project *Project) error {
 		project.Siop,
 		project.Apf,
 		project.ID,
+		project.ProjectStartDate,
+		project.ProjectEndDate,
+		project.ConstructionStartDate,
+		project.ConstructionEndDate,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -406,7 +426,7 @@ func (m ProjectModel) Delete(projectID uuid.UUID) error {
 func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]*ProjectWithUnits, Metadata, error) {
 	query := fmt.Sprintf(`
 		SELECT COUNT(*) OVER(), p.id, p.created_at, p.name,
-		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description, p.siop, p.apf,
+		p.cep, p.state, p.city, p.neighborhood, p.street, p.number, p.phase, p.description, p.siop, p.apf, p.project_start_date, p.project_end_date, p.construction_start_date, p.construction_end_date,
 		EXISTS(
 			SELECT 1
 			FROM users_roles ur
@@ -459,6 +479,10 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 			&project.Description,
 			&project.Siop,
 			&project.Apf,
+			&project.ProjectStartDate,
+			&project.ProjectEndDate,
+			&project.ConstructionStartDate,
+			&project.ConstructionEndDate,
 			&project.IsAdministrator,
 		)
 		if err != nil {
@@ -517,6 +541,12 @@ func (m ProjectModel) GetAll(name string, filters Filters, userID uuid.UUID) ([]
 			if p, ok := projectsMap[projectID]; ok {
 				p.Units = units
 				p.Consumptions, p.Area = CalculateProjectConsumptions(units)
+
+				unknownModules, err := getUnknownModulesByProject(ctx, m.DB, projectID)
+				if err != nil {
+					return nil, Metadata{}, err
+				}
+				p.UnknownModules = unknownModules
 			}
 		}
 	}
