@@ -23,7 +23,6 @@ import (
 	"github.com/pdfcpu/pdfcpu/pkg/log"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/create"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/fault"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
 	"github.com/pkg/errors"
@@ -43,9 +42,7 @@ func CreatePDFFile(xRefTable *model.XRefTable, outFile string, conf *model.Confi
 // Create renders the PDF structure represented by rs into w.
 // If rs is present, new PDF content will be appended including any empty pages needed.
 // rd is a JSON representation of PDF page content which may include form data.
-func Create(rs io.ReadSeeker, rd io.Reader, w io.Writer, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
-
+func Create(rs io.ReadSeeker, rd io.Reader, w io.Writer, conf *model.Configuration) error {
 	if rd == nil {
 		return errors.New("pdfcpu: Create: missing rd")
 	}
@@ -55,7 +52,10 @@ func Create(rs io.ReadSeeker, rd io.Reader, w io.Writer, conf *model.Configurati
 	}
 	conf.Cmd = model.CREATE
 
-	var ctx *model.Context
+	var (
+		ctx *model.Context
+		err error
+	)
 
 	if rs != nil {
 		ctx, err = ReadValidateAndOptimize(rs, conf)
@@ -93,7 +93,6 @@ func handleOutFilePDF(inFilePDF, outFilePDF string, tmpFile *string) {
 // inFileJSON represents PDF page content which may include form data.
 func CreateFile(inFilePDF, inFileJSON, outFilePDF string, conf *model.Configuration) (err error) {
 	var f0, f1, f2 *os.File
-	ok := false
 
 	if f0, err = os.Open(inFileJSON); err != nil {
 		return err
@@ -113,21 +112,17 @@ func CreateFile(inFilePDF, inFileJSON, outFilePDF string, conf *model.Configurat
 	handleOutFilePDF(inFilePDF, outFilePDF, &tmpFile)
 
 	if f2, err = os.Create(tmpFile); err != nil {
-		if f1 != nil {
-			_ = f1.Close()
-		}
-		_ = f0.Close()
 		return err
 	}
 
 	defer func() {
-		if !ok {
-			_ = f2.Close()
+		if err != nil {
+			f2.Close()
 			if f1 != nil {
-				_ = f1.Close()
+				f1.Close()
 			}
-			_ = f0.Close()
-			_ = os.Remove(tmpFile)
+			f0.Close()
+			os.Remove(tmpFile)
 			return
 		}
 		if err = f2.Close(); err != nil {
@@ -146,11 +141,5 @@ func CreateFile(inFilePDF, inFileJSON, outFilePDF string, conf *model.Configurat
 		}
 	}()
 
-	if err = Create(rs, f0, f2, conf); err != nil {
-		return err
-	}
-
-	ok = true
-
-	return nil
+	return Create(rs, f0, f2, conf)
 }

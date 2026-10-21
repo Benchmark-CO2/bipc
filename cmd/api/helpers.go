@@ -18,9 +18,9 @@ import (
 
 const (
 	SourceAPI    = "api"
-	SourcePlugin = "plugin"
+	// SourcePlugin = "plugin"
 	SourceManual = "manual"
-	SourceTQS    = "tqs"
+	// SourceTQS    = "tqs"
 	SourceIFC    = "ifc"
 )
 

@@ -22,7 +22,6 @@ import (
 
 	"github.com/pdfcpu/pdfcpu/pkg/log"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/fault"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
 )
@@ -92,9 +91,7 @@ func NUpFromImage(conf *model.Configuration, imageFileNames []string, nup *model
 
 // NUp rearranges PDF pages or images into page grids and writes the result to w.
 // Either rs or imgFiles will be used.
-func NUp(rs io.ReadSeeker, w io.Writer, imgFiles, selectedPages []string, nup *model.NUp, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
-
+func NUp(rs io.ReadSeeker, w io.Writer, imgFiles, selectedPages []string, nup *model.NUp, conf *model.Configuration) error {
 	if conf == nil {
 		conf = model.NewDefaultConfiguration()
 	}
@@ -104,7 +101,10 @@ func NUp(rs io.ReadSeeker, w io.Writer, imgFiles, selectedPages []string, nup *m
 		log.Info.Printf("%s", nup)
 	}
 
-	var ctx *model.Context
+	var (
+		ctx *model.Context
+		err error
+	)
 
 	if nup.ImgInputFile {
 
@@ -137,7 +137,6 @@ func NUp(rs io.ReadSeeker, w io.Writer, imgFiles, selectedPages []string, nup *m
 // NUpFile rearranges PDF pages or images into page grids and writes the result to outFile.
 func NUpFile(inFiles []string, outFile string, selectedPages []string, nup *model.NUp, conf *model.Configuration) (err error) {
 	var f1, f2 *os.File
-	ok := false
 
 	if !nup.ImgInputFile {
 		// Nup from a PDF page.
@@ -148,17 +147,17 @@ func NUpFile(inFiles []string, outFile string, selectedPages []string, nup *mode
 
 	if f2, err = os.Create(outFile); err != nil {
 		if f1 != nil {
-			_ = f1.Close()
+			f1.Close()
 		}
 		return err
 	}
 	logWritingTo(outFile)
 
 	defer func() {
-		if !ok {
-			_ = f2.Close()
+		if err != nil {
+			f2.Close()
 			if f1 != nil {
-				_ = f1.Close()
+				f1.Close()
 			}
 			os.Remove(outFile)
 			return
@@ -171,11 +170,5 @@ func NUpFile(inFiles []string, outFile string, selectedPages []string, nup *mode
 		}
 	}()
 
-	if err = NUp(f1, f2, inFiles, selectedPages, nup, conf); err != nil {
-		return err
-	}
-
-	ok = true
-
-	return nil
+	return NUp(f1, f2, inFiles, selectedPages, nup, conf)
 }

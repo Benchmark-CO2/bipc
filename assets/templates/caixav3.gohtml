@@ -1,0 +1,1111 @@
+{{define "cover"}}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    {{.FontFaceCSS}}
+    body { margin: 0; font-family: 'Roboto Flex', sans-serif; }
+  </style>
+</head>
+<body>
+  <div style="width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; background: #187B8B; color: white;">
+    <h1>{{.ReportData.Name}}</h1>
+  </div>
+</body>
+</html>
+{{end}}
+
+{{define "report"}}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório de Carbono Embutido</title>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-regression@2.2.0/dist/d3-regression.min.js"></script>
+  
+  <style>
+    {{.FontFaceCSS}}
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { font-family: 'Roboto Flex', sans-serif; color: #121F21; background: #ffffff; padding: 0 18px; font-size: 9px; }
+
+    h2.section-title { color: #187B8B; font-size: 13px; font-weight: 700; margin-top: 10px; margin-bottom: 2px; }
+    p.section-subtitle { color: #52525B; font-size: 7.5px; margin-bottom: 6px; }
+
+    .form-row { display: flex; gap: 6px; margin-bottom: 5px; width: 100%; }
+    .field-group { display: flex; flex-direction: column; gap: 2px; }
+    .field-label { font-size: 6.5px; color: #71717A; }
+    .field-box { border: 1px solid #E4E4E7; border-radius: 2px; padding: 3px 6px; font-size: 8px; color: #18181B; background: #FAFAFA; min-height: 19px; display: flex; align-items: center; }
+
+    .trace-container { display: flex; align-items: center; gap: 14px; margin-top: 4px; margin-bottom: 8px; }
+    .trace-left { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .trace-bar { display: flex; width: 100%; height: 11px; gap: 1.5px; }
+    .trace-legends { display: flex; gap: 14px; align-items: center; }
+    .legend-item { display: flex; align-items: center; gap: 4px; font-size: 7px; font-weight: 600; color: #27272A; }
+    .legend-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .trace-right { text-align: right; min-width: 75px; }
+    .trace-pct { font-size: 22px; font-weight: 800; color: #187B8B; line-height: 1; }
+    .trace-pct-label { font-size: 7px; color: #187B8B; }
+
+    .benchmark-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; position: relative; margin-top: 4px; }
+    .benchmark-grid::after { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: #E4E4E7; }
+    .col-header { color: #187B8B; font-size: 10.5px; font-weight: 700; margin-bottom: 4px; }
+    .sub-block-title { font-size: 8.5px; font-weight: 700; color: #18181B; margin-bottom: 4px; margin-top: 4px; }
+
+    .cards-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 5px; }
+    .stat-card { border: 1px solid #E4E4E7; padding: 4px 6px; display: flex; flex-direction: column; gap: 3px; }
+    .stat-card.blue { border-color: #93C5FD; }
+    .stat-card.red { border-color: #FCA5A5; }
+    .stat-card.green { border-color: #6EE7B7; border-width: 1.5px; }
+    .stat-label { font-size: 6px; font-weight: 500; display:block; min-height:13px; }
+    .stat-label.blue { color: #3B82F6; }
+    .stat-label.red { color: #EF4444; }
+    .stat-label.green { color: #16A34A; }
+    .stat-val { font-size: 8.5px; font-weight: 600; color: #18181B; }
+
+    .chart-wrapper { width: 100%; margin-top: 4px; }
+    .chart-caption { font-size: 6px; color: #52525B; text-align: center; margin-top: 2px; margin-bottom: 4px; }
+
+    .pcvr-bar { display: flex; align-items: center; gap: 4px; justify-content: space-between; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #E4E4E7; }
+    .pcvr-pill { display: flex; align-items: center; gap: 3px; border: 1px solid #E4E4E7; padding: 2px 4px; font-size: 7px; flex: 1; justify-content: center; }
+    .pcvr-letter { font-weight: 800; font-size: 8px; }
+    .pcvr-num { font-weight: 700; font-size: 8.5px; color: #18181B; }
+    .pcvr-unit { font-size: 5.5px; color: #71717A; }
+
+    .grade-badge { display: flex; align-items: center; gap: 5px; background: #D9F99D; border: 1px solid #84CC16; padding: 2px 6px; border-radius: 2px; }
+    .grade-badge.yellow { background: #FEF08A; border-color: #EAB308; }
+    .grade-letter { font-size: 11px; font-weight: 800; color: #18181B; }
+    .grade-info { display: flex; flex-direction: column; font-size: 5.5px; line-height: 1.1; }
+
+    .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 4px; }
+    .tech-item { margin-bottom: 7px; }
+    .tech-title { font-size: 8px; font-weight: 600; margin-bottom: 2px; color: #27272A; }
+    .tech-bar { display: flex; height: 8px; width: 100%; gap: 1px; margin-bottom: 3px; }
+    .tech-bar-seg { height: 100%; display: flex; align-items: center; padding-left: 2px; color: white; font-size: 5px; font-weight: 700; overflow: hidden; }
+    .tech-legends { display: flex; gap: 10px; flex-wrap: wrap; }
+    .tech-leg-item { display: flex; align-items: center; gap: 3px; font-size: 6.5px; color: #3F3F46; }
+    .tech-leg-box { width: 5px; height: 5px; }
+
+    /* Quebra de página */
+    .page-break { page-break-before: always; padding-top: 20px; }
+
+    /* Tabela de Detalhamento */
+    .detail-table { width: 100%; border-collapse: collapse; font-size: 6.5px; margin-bottom: 8px; }
+    .detail-table th { background-color: #187B8B; color: #ffffff; text-align: left; padding: 4px 6px; font-weight: 600; }
+    .detail-table td { padding: 3px 6px; border-bottom: 1px solid #E4E4E7; color: #3F3F46; }
+    .detail-table tr.bold-row td { font-weight: 700; color: #18181B; background-color: #F4F4F5; }
+    .table-footer-note { font-size: 5.5px; color: #71717A; margin-bottom: 15px; line-height: 1.2; }
+
+    /* Gráficos Horizontais */
+    .hbar-container { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .hbar-label { width: 45px; font-size: 6.5px; text-align: right; }
+    .hbar-track { flex: 1; height: 8px; background: #F4F4F5; display: flex; position: relative; }
+    .hbar-segment { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 4.5px; color: white; font-weight: bold; overflow: hidden; }
+    /* Estilos das Tabelas da Página 4 */
+    .data-table-wrapper { border: 1px solid #E4E4E7; border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 6.5px; }
+    .data-table th { background-color: #187B8B; color: #ffffff; text-align: left; padding: 5px 8px; font-weight: 600; }
+    .data-table td { padding: 4px 8px; border-bottom: 1px solid #E4E4E7; color: #3F3F46; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr.group-row td { font-weight: 700; color: #18181B; background-color: #F4F4F5; }
+    
+    /* Badges de Origem de Dados */
+    .origin-badge { display: inline-flex; align-items: center; gap: 3px; padding: 1.5px 6px; border-radius: 10px; font-size: 5px; font-weight: 600; border: 1px solid transparent; }
+    .origin-badge .dot { width: 4px; height: 4px; border-radius: 50%; }
+    .origin-software { border-color: #86EFAC; color: #22C55E; background: #F0FDF4; }
+    .origin-software .dot { background: #22C55E; }
+    .origin-arquivo { border-color: #93C5FD; color: #3B82F6; background: #EFF6FF; }
+    .origin-arquivo .dot { background: #3B82F6; }
+    .origin-manual { border-color: #FCA5A5; color: #EF4444; background: #FEF2F2; }
+    .origin-manual .dot { background: #EF4444; }
+
+    /* Caixa de Observações */
+    .obs-box { width: 100%; height: 200px; background-color: #F4F4F5; border-radius: 4px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+  <!-- ================= PÁGINA 1 ================= -->
+  <h2 class="section-title">Dados do projeto</h2>
+  <p class="section-subtitle">Informações fundamentais e características de identificação do projeto, incluindo localização, dimensões principais e fase do projeto.</p>
+
+  <div class="form-row">
+    <div class="field-group" style="width: 18%;">
+      <span class="field-label">SIOPI</span>
+      <div class="field-box">{{.ReportData.Siopi}}</div>
+    </div>
+    <div class="field-group" style="width: 22%;">
+      <span class="field-label">Identificador do projeto (APF)</span>
+      <div class="field-box">{{.ReportData.Apf}}</div>
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="field-group" style="flex: 2.2;">
+      <span class="field-label">Nome do projeto</span>
+      <div class="field-box">{{.ReportData.Name}}</div>
+    </div>
+    <div class="field-group" style="flex: 0.8;">
+      <span class="field-label">Tipo de edifício</span>
+      <div class="field-box">{{.ReportData.BuildingType}}</div>
+    </div>
+    <div class="field-group" style="flex: 1;">
+      <span class="field-label">Tipo de uso</span>
+      <div class="field-box">{{.ReportData.UseType}}</div>
+    </div>
+    <div class="field-group" style="flex: 1.8;">
+      <span class="field-label">Fase do projeto</span>
+      <div class="field-box">{{.ReportData.Phase}}</div>
+    </div>
+    <div class="field-group" style="flex: 0.9;">
+      <span class="field-label">Número de UH total</span>
+      <div class="field-box">{{.ReportData.TotalUH}}</div>
+    </div>
+    <div class="field-group" style="flex: 0.8;">
+      <span class="field-label">Número de UC</span>
+      <div class="field-box">{{.ReportData.TotalUC}}</div>
+    </div>
+    <div class="field-group" style="flex: 0.9;">
+      <span class="field-label">Área const. UC (m²)</span>
+      <div class="field-box">{{.ReportData.AreaUC}}</div>
+    </div>
+    <div class="field-group" style="flex: 1;">
+      <span class="field-label">Área const. total (m²)</span>
+      <div class="field-box">{{.ReportData.AreaTotal}}</div>
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="field-group" style="flex: 2.2;">
+      <span class="field-label">Rua / Avenida</span>
+      <div class="field-box">{{.ReportData.Street}}</div>
+    </div>
+    <div class="field-group" style="flex: 0.8;">
+      <span class="field-label">CEP</span>
+      <div class="field-box">{{.ReportData.ZipCode}}</div>
+    </div>
+    <div class="field-group" style="flex: 0.6;">
+      <span class="field-label">Número</span>
+      <div class="field-box">{{.ReportData.Number}}</div>
+    </div>
+    <div class="field-group" style="flex: 2.2;">
+      <span class="field-label">Bairro</span>
+      <div class="field-box">{{.ReportData.Neighborhood}}</div>
+    </div>
+    <div class="field-group" style="flex: 2.2;">
+      <span class="field-label">Cidade</span>
+      <div class="field-box">{{.ReportData.City}}</div>
+    </div>
+    <div class="field-group" style="flex: 0.5;">
+      <span class="field-label">Estado</span>
+      <div class="field-box">{{.ReportData.State}}</div>
+    </div>
+  </div>
+
+  <h2 class="section-title">Percentual de rastreabilidade dos dados</h2>
+  <div class="trace-container">
+    <div class="trace-left">
+      <div class="trace-bar" id="trace-bar"></div>
+      <div class="trace-legends" id="trace-legends"></div>
+    </div>
+    <div class="trace-right">
+      <div class="trace-pct">{{.ReportData.TraceabilityPct}}%</div>
+      <div class="trace-pct-label">de rastreabilidade</div>
+    </div>
+  </div>
+
+  <h2 class="section-title">Resumo dos resultados do Benchmark</h2>
+
+  <div class="benchmark-grid">
+    <!-- COLUNA CO2 -->
+    <div>
+      <div class="col-header">Emissões de CO₂</div>
+      <div class="sub-block-title">Total de Emissões de Carbono do edifício (Kg CO₂)</div>
+      <div class="cards-3">
+        <div class="stat-card blue">
+          <span class="stat-label blue">Melhor cenário (Kg CO₂)</span>
+          <span class="stat-val">{{.ReportData.CO2Metrics.BestTotal}}</span>
+          <span class="stat-label blue">Melhor cenário (Kg/m² CO₂)</span>
+          <span class="stat-val">{{.ReportData.CO2Metrics.BestBench}}</span>
+        </div>
+        <div class="stat-card red">
+          <span class="stat-label red">Pior cenário (Kg CO₂)</span>
+          <span class="stat-val">{{.ReportData.CO2Metrics.WorstTotal}}</span>
+          <span class="stat-label red">Pior cenário (Kg/m² CO₂)</span>
+          <span class="stat-val">{{.ReportData.CO2Metrics.WorstBench}}</span>
+        </div>
+        <div class="stat-card green">
+          <span class="stat-label green">Valor de Ref. - Total (Kg CO₂)</span>
+          <span class="stat-val">{{.ReportData.CO2Metrics.RefTotal}}</span>
+          <span class="stat-label green">Valor de Ref. - Benchmark (Kg/m² CO₂)</span>
+          <span class="stat-val">{{.ReportData.CO2Metrics.RefBench}}</span>
+        </div>
+      </div>
+      <div style="height: 1px; background: #E4E4E7; align-self: stretch; margin: 7.5px 0;"></div>
+
+      <div class="sub-block-title">Redução das Emissões de Carbono do edifício em relação à Linha de Base</div>
+      <div class="cards-3">
+        <div class="stat-card blue">
+          <span class="stat-label blue">Melhor cenário (Kg CO₂)</span>
+          <span class="stat-val">{{.ReportData.CO2Metrics.BestTotal}}</span>
+          <span class="stat-label blue">Melhor cenário (Kg/m² CO₂)</span>
+          <span class="stat-val">{{.ReportData.CO2Metrics.BestBench}}</span>
+        </div>
+        <div class="stat-card red">
+          <span class="stat-label red">Pior cenário (Kg CO₂)</span>
+          <span class="stat-val">{{.ReportData.CO2Metrics.WorstTotal}}</span>
+          <span class="stat-label red">Pior cenário (Kg/m² CO₂)</span>
+          <span class="stat-val">{{.ReportData.CO2Metrics.WorstBench}}</span>
+        </div>
+        <div class="stat-card green">
+          <span class="stat-label green">Redução total de CO₂ (Kg)</span>
+          <span class="stat-val">{{.ReportData.CO2Metrics.RedTotal}}</span>
+          <span class="stat-label green">Redução relativa (Kg/m²)</span>
+          <span class="stat-val">{{.ReportData.CO2Metrics.RedRel}}</span>
+        </div>
+      </div>
+
+      <div class="chart-wrapper">
+        <canvas id="chart-co2" style="display: block; width: 100%; height: 215px;"></canvas>
+        <div class="chart-caption">Linha de base (50% melhores projetos): {{.ReportData.CO2Metrics.BaselineString}}</div>
+      </div>
+
+      <div class="pcvr-bar">
+        <div class="pcvr-pill" style="border-color: #D8B4FE;">
+          <span class="pcvr-letter" style="color: #7E22CE;">P</span>
+          <span class="pcvr-num">{{.ReportData.CO2Metrics.P}}</span>
+          <span class="pcvr-unit">Kg/m²</span>
+        </div>
+        <div class="pcvr-pill" style="border-color: #93C5FD;">
+          <span class="pcvr-letter" style="color: #2563EB;">C</span>
+          <span class="pcvr-num">{{.ReportData.CO2Metrics.C}}</span>
+          <span class="pcvr-unit">Kg/m²</span>
+        </div>
+        <div class="pcvr-pill" style="border-color: #86EFAC;">
+          <span class="pcvr-letter" style="color: #16A34A;">V</span>
+          <span class="pcvr-num">{{.ReportData.CO2Metrics.V}}</span>
+          <span class="pcvr-unit">Kg/m²</span>
+        </div>
+        <div class="pcvr-pill" style="border-color: #FCA5A5;">
+          <span class="pcvr-letter" style="color: #DC2626;">R</span>
+          <span class="pcvr-num">{{.ReportData.CO2Metrics.R}}</span>
+          <span class="pcvr-unit">Kg/m²</span>
+        </div>
+        <div class="grade-badge">
+          <span class="grade-letter">{{.ReportData.CO2Metrics.Grade}}</span>
+          <div class="grade-info">
+            <strong>Classificação</strong>
+            <span>N: {{.ReportData.CO2Metrics.TotalProjects}} projetos</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUNA ENERGIA -->
+    <div>
+      <div class="col-header">Consumo de energia</div>
+      <div class="sub-block-title">Consumo total de energia do edifício (MJ)</div>
+      <div class="cards-3">
+        <div class="stat-card blue">
+          <span class="stat-label blue">Melhor cenário (MJ)</span>
+          <span class="stat-val">{{.ReportData.EnergyMetrics.BestTotal}}</span>
+          <span class="stat-label blue">Melhor cenário (MJ/m²)</span>
+          <span class="stat-val">{{.ReportData.EnergyMetrics.BestBench}}</span>
+        </div>
+        <div class="stat-card red">
+          <span class="stat-label red">Pior cenário (MJ)</span>
+          <span class="stat-val">{{.ReportData.EnergyMetrics.WorstTotal}}</span>
+          <span class="stat-label red">Pior cenário (MJ/m²)</span>
+          <span class="stat-val">{{.ReportData.EnergyMetrics.WorstBench}}</span>
+        </div>
+        <div class="stat-card green">
+          <span class="stat-label green">Valor de Ref. - Total (MJ)</span>
+          <span class="stat-val">{{.ReportData.EnergyMetrics.RefTotal}}</span>
+          <span class="stat-label green">Valor de Ref. - Benchmark (MJ/m²)</span>
+          <span class="stat-val">{{.ReportData.EnergyMetrics.RefBench}}</span>
+        </div>
+      </div>
+      <div style="height: 1px; background: #E4E4E7; align-self: stretch; margin: 7.5px 0;"></div>
+
+      <div class="sub-block-title">Redução do consumo de energia do edifício em relação à Linha de Base</div>
+      <div class="cards-3">
+        <div class="stat-card blue">
+          <span class="stat-label blue">Melhor cenário (MJ)</span>
+          <span class="stat-val">{{.ReportData.EnergyMetrics.BestTotal}}</span>
+          <span class="stat-label blue">Melhor cenário (MJ/m²)</span>
+          <span class="stat-val">{{.ReportData.EnergyMetrics.BestBench}}</span>
+        </div>
+        <div class="stat-card red">
+          <span class="stat-label red">Pior cenário (MJ)</span>
+          <span class="stat-val">{{.ReportData.EnergyMetrics.WorstTotal}}</span>
+          <span class="stat-label red">Pior cenário (MJ/m²)</span>
+          <span class="stat-val">{{.ReportData.EnergyMetrics.WorstBench}}</span>
+        </div>
+        <div class="stat-card green">
+          <span class="stat-label green">Redução total de energia (MJ)</span>
+          <span class="stat-val">{{.ReportData.EnergyMetrics.RedTotal}}</span>
+          <span class="stat-label green">Redução relativa (MJ/m²)</span>
+          <span class="stat-val">{{.ReportData.EnergyMetrics.RedRel}}</span>
+        </div>
+      </div>
+
+      <div class="chart-wrapper">
+        <canvas id="chart-energy" style="display: block; width: 100%; height: 215px;"></canvas>
+        <div class="chart-caption">Linha de base (50% melhores projetos): {{.ReportData.EnergyMetrics.BaselineString}}</div>
+      </div>
+
+      <div class="pcvr-bar">
+        <div class="pcvr-pill" style="border-color: #D8B4FE;">
+          <span class="pcvr-letter" style="color: #7E22CE;">P</span>
+          <span class="pcvr-num">{{.ReportData.EnergyMetrics.P}}</span>
+          <span class="pcvr-unit">MJ/m²</span>
+        </div>
+        <div class="pcvr-pill" style="border-color: #93C5FD;">
+          <span class="pcvr-letter" style="color: #2563EB;">C</span>
+          <span class="pcvr-num">{{.ReportData.EnergyMetrics.C}}</span>
+          <span class="pcvr-unit">MJ/m²</span>
+        </div>
+        <div class="pcvr-pill" style="border-color: #86EFAC;">
+          <span class="pcvr-letter" style="color: #16A34A;">V</span>
+          <span class="pcvr-num">{{.ReportData.EnergyMetrics.V}}</span>
+          <span class="pcvr-unit">MJ/m²</span>
+        </div>
+        <div class="pcvr-pill" style="border-color: #FCA5A5;">
+          <span class="pcvr-letter" style="color: #DC2626;">R</span>
+          <span class="pcvr-num">{{.ReportData.EnergyMetrics.R}}</span>
+          <span class="pcvr-unit">MJ/m²</span>
+        </div>
+        <div class="grade-badge">
+          <span class="grade-letter">{{.ReportData.EnergyMetrics.Grade}}</span>
+          <div class="grade-info">
+            <strong>Classificação</strong>
+            <span>N: {{.ReportData.EnergyMetrics.TotalProjects}} projetos</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+    <div style="width:100%;display:flex;justify-content:space-between;align-items:center">
+    <!-- Matriz de Bolhas (Lado Esquerdo) -->
+    <div>
+      <div class="col-header" style="margin-bottom: 2px;">Total de emissões por tecnologia e material (% / kg CO₂)</div>
+      <p style="font-size: 5.5px; color: #71717A; margin-bottom: 12px;">tamanho = CO₂ - espessura do anel = energia</p>
+      
+      <table style="width: 100%; border-collapse: collapse; text-align: center;">
+        <thead>
+          <tr>
+            <th style="width: 45px;"></th>
+            {{range .ReportData.BubbleGrid.TechHeaders}}
+            <th style="vertical-align: bottom; height: 50px; padding-bottom: 4px;">
+              <div style="transform: rotate(-45deg); transform-origin: left bottom; font-size: 6.5px; font-weight: 500; color: #3F3F46; text-align: left; width: 10px;">
+                {{.}}
+              </div>
+            </th>
+            {{end}}
+          </tr>
+        </thead>
+        <tbody>
+          {{range .ReportData.BubbleGrid.Rows}}
+          <tr>
+            <!-- Coluna dos Materiais (Eixo Y) -->
+            <td style="text-align: left; vertical-align: middle; padding: 6px 0;">
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <div style="width: 5px; height: 5px; background-color: {{.Color}};"></div>
+                <span style="font-size: 7px; font-weight: 700; color: #18181B;">{{.Material}}</span>
+              </div>
+            </td>
+            
+            <!-- Células das Bolhas -->
+            {{$color := .Color}}
+            {{range .Bubbles}}
+            <td style="vertical-align: bottom; padding: 2px;">
+              <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 45px;">
+                <!-- O círculo com opacidade no fundo e borda sólida -->
+                <div style="
+                  width: {{.SizePx}}px; 
+                  height: {{.SizePx}}px; 
+                  border-radius: 50%; 
+                  border: {{.BorderPx}}px solid {{$color}}; 
+                  background-color: color-mix(in srgb, {{$color}} 25%, transparent);
+                  margin-bottom: 5px;
+                "></div>
+                <!-- Rótulos de CO2 e Energia -->
+                <div style="font-size: 5.5px; line-height: 1.2;">
+                  <div style="color: #18181B; font-weight: 700;">{{.LabelTop}}</div>
+                  <div style="color: #71717A;">{{.LabelBot}}</div>
+                </div>
+              </div>
+            </td>
+            {{end}}
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <div class="col-header" style="margin-bottom: 0;">Impacto de CUM por tecnologia (m³/m²)</div>
+        <div class="grade-badge yellow">
+          <span class="grade-letter">{{.ReportData.CUMGrade}}</span>
+          <div class="grade-info">
+            <strong>Classificação</strong>
+            <span>N: {{.ReportData.CUMProjects}} projetos</span>
+          </div>
+        </div>
+      </div>
+      <canvas id="chart-cum" style="display: block; width: 100%; height: 195px;"></canvas>
+    </div>
+    </div>
+  </div>
+
+  <!-- ================= PÁGINA 2 ================= -->
+  <div class="page-break"></div>
+
+  <h2 class="section-title">Detalhamento do Carbono Embutido e da Energia por Tecnologia Construtiva e Material</h2>
+  
+  <table class="detail-table">
+    <thead>
+      <tr>
+        <th>Tecnologia/material</th>
+        <th>CO₂ (kg/m²) mín.</th>
+        <th>CO₂ (kg/m²) prov.*</th>
+        <th>CO₂ (kg/m²) máx.</th>
+        <th>Energia (mj/m²) mín.</th>
+        <th>Energia (mj/m²) prov.</th>
+        <th>Energia (mj/m²) máx.</th>
+        <th>CUM ** (m³/m²)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .ReportData.DetailTable}}
+      <tr class="{{if .IsHeader}}bold-row{{end}}">
+        <td>{{.TechMaterial}}</td>
+        <td>{{.CO2Min}}</td>
+        <td>{{.CO2Prov}}</td>
+        <td>{{.CO2Max}}</td>
+        <td>{{.EnergyMin}}</td>
+        <td>{{.EnergyProv}}</td>
+        <td>{{.EnergyMax}}</td>
+        <td>{{.CUM}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  <div class="table-footer-note">
+    * Indica o desempenho mais provável, calculado com o dado de maior recorrência (moda) no SIDAC. Define o indicador de CO₂ e de energia do resumo de emissões.<br>
+    ** Consumo Unitário de Material: indicador de desempenho que mede a quantidade de material consumida por unidade de medida da AC.
+  </div>
+
+  <div class="benchmark-grid" style="margin-bottom: 15px;">
+    <div>
+      <div class="col-header">Consumo total de energia por tecnologia (mj)</div>
+      {{range .ReportData.TowerImpacts}}
+      <div class="hbar-container">
+        <div class="hbar-label">{{.Name}}</div>
+        <div class="hbar-track">
+          {{range .EnergyParts}}
+            <div class="hbar-segment" style="width: {{.Percent}}%; background: {{.Color}};">{{.Percent}}%</div>
+          {{end}}
+        </div>
+      </div>
+      {{end}}
+    </div>
+    <div>
+      <div class="col-header">Total de Emissões por tecnologia (kg CO₂)</div>
+      {{range .ReportData.TowerImpacts}}
+      <div class="hbar-container">
+        <div class="hbar-label">{{.Name}}</div>
+        <div class="hbar-track">
+          {{range .CO2Parts}}
+            <div class="hbar-segment" style="width: {{.Percent}}%; background: {{.Color}};">{{.Percent}}%</div>
+          {{end}}
+        </div>
+      </div>
+      {{end}}
+    </div>
+  </div>
+
+  <h2 class="section-title">Composição e impacto de cada tecnologia por material</h2>
+  
+  {{range .ReportData.TowerImpacts}}
+  <div style="margin-bottom: 10px;">
+    <h3 style="font-size: 10px; color: #18181B; margin-bottom: 6px;">{{.Name}}</h3>
+    
+    {{range .Techs}}
+    <div style="margin-bottom: 8px;">
+      <div style="font-size: 8px; font-weight: 600; margin-bottom: 2px;">{{.Name}} ({{.Percent}})</div>
+      <div class="hbar-track" style="height: 10px; margin-bottom: 2px;">
+        {{range .Parts}}
+          <div class="hbar-segment" style="width: {{.Percent}}%; background: {{.Color}};"></div>
+        {{end}}
+      </div>
+      <div style="display: flex; gap: 10px; font-size: 6px; color: #52525B;">
+        {{range .Parts}}
+        <div style="display: flex; align-items: center; gap: 3px;">
+          <span style="display: inline-block; width: 4px; height: 4px; background: {{.Color}};"></span>
+          {{.Label}} ({{.Percent}}%)
+        </div>
+        {{end}}
+        <div style="margin-left: auto; color: #A1A1AA;">kg CO₂ / m²</div>
+      </div>
+    </div>
+    {{end}}
+  </div>
+  {{end}}
+
+  <!-- ================= PÁGINA 3 (E SEGUINTES) ================= -->
+  {{range .ReportData.UnitDetails}}
+  <div class="page-break"></div>
+
+  <h2 class="section-title">Detalhamento da unidade: {{.Name}}</h2>
+  
+  <!-- Tabela de Fundação -->
+  <div class="col-header" style="margin-top: 8px; font-size: 10px;">{{.Foundation.Title}}</div>
+  <table class="detail-table" style="margin-bottom: 12px;">
+    <thead>
+      <tr>
+        <th>Tecnologia/material</th>
+        <th>CO₂ mín. (kg/m²)</th>
+        <th>CO₂ prov. (kg/m²)</th>
+        <th>CO₂ máx. (kg/m²)</th>
+        <th>Energia mín. (mj/m²)</th>
+        <th>Energia prov. (mj/m²)</th>
+        <th>Energia máx. (mj/m²)</th>
+        <th>CUM ** (m³/m²)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Foundation.Rows}}
+      <tr class="{{if .IsHeader}}bold-row{{end}}">
+        <td>{{.TechMaterial}}</td>
+        <td>{{.CO2Min}}</td>
+        <td>{{.CO2Prov}}</td>
+        <td>{{.CO2Max}}</td>
+        <td>{{.EnergyMin}}</td>
+        <td>{{.EnergyProv}}</td>
+        <td>{{.EnergyMax}}</td>
+        <td>{{.CUM}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+
+  <!-- Secção de Pavimentos -->
+  {{if gt .TotalPavements 0}}
+  <div class="col-header" style="margin-top: 14px; font-size: 11px;">Pavimentos (total: {{.TotalPavements}})</div>
+  
+  {{range .Pavements}}
+  <div class="col-header" style="margin-top: 6px; font-size: 9px;">{{.Title}}</div>
+  <table class="detail-table" style="margin-bottom: 10px;">
+    <thead>
+      <tr>
+        <th>Tecnologia/material</th>
+        <th>CO₂ mín. (kg/m²)</th>
+        <th>CO₂ prov. (kg/m²)*</th>
+        <th>CO₂ máx. (kg/m²)</th>
+        <th>Energia mín. (mj/m²)</th>
+        <th>Energia prov. (mj/m²)*</th>
+        <th>Energia máx. (mj/m²)</th>
+        <th>CUM ** (m³/m²)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Rows}}
+      <tr class="{{if .IsHeader}}bold-row{{end}}">
+        <td>{{.TechMaterial}}</td>
+        <td>{{.CO2Min}}</td>
+        <td>{{.CO2Prov}}</td>
+        <td>{{.CO2Max}}</td>
+        <td>{{.EnergyMin}}</td>
+        <td>{{.EnergyProv}}</td>
+        <td>{{.EnergyMax}}</td>
+        <td>{{.CUM}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{end}}
+  {{end}}
+
+  <div class="table-footer-note">
+    * Indica o desempenho mais provável, calculado com o dado de maior recorrência (moda) no SIDAC. Define o indicador de CO₂ e de energia do resumo de emissões.<br>
+    ** Consumo Unitário de Material: indicador de desempenho que mede a quantidade de material consumida por unidade de medida da AC.
+  </div>
+  {{end}}
+<!-- ================= PÁGINA 4 ================= -->
+  <div class="page-break"></div>
+
+  <h2 class="section-title">Índice de referencia do SIDAC</h2>
+  <div class="data-table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Materiais</th>
+          <th style="text-align: right;">Data de referencia</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .ReportData.SidacRefs}}
+        <tr>
+          <td>{{.Material}}</td>
+          <td style="text-align: right;">{{.Date}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section-title">Equipe</h2>
+  <div class="data-table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Área</th>
+          <th>Registro CAU / CREA</th>
+          <th>E-mail</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .ReportData.Team}}
+        <tr>
+          <td>{{.Name}}</td>
+          <td>{{.Area}}</td>
+          <td>{{.Registry}}</td>
+          <td>{{.Email}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section-title">Origem dos dados</h2>
+  <div class="data-table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Origem</th>
+          <th>Nome do arquivo</th>
+          <th style="text-align: center;">Qtd. itens alterados</th>
+          <th>Área responsável</th>
+          <th>Data de inclusão</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .ReportData.DataSources}}
+        <tr class="group-row">
+          <td colspan="2" style="padding-left: 20px;">{{.GroupName}}</td>
+          <td style="text-align: center;">{{.TotalQty}}</td>
+          <td></td>
+          <td></td>
+        </tr>
+        {{range .Items}}
+        <tr>
+          <td>
+            <div class="origin-badge origin-{{.Type}}">
+              <span class="dot"></span>
+              <span style="text-transform: capitalize;">{{.Type}}</span>
+            </div>
+          </td>
+          <td>{{.FileName}}</td>
+          <td style="text-align: center;">{{.Qty}}</td>
+          <td>{{.Area}}</td>
+          <td>{{.Date}}</td>
+        </tr>
+        {{end}}
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section-title">Observações</h2>
+  <div class="obs-box">
+    {{if ne .ReportData.Observations ""}}
+      <p style="padding: 10px; font-size: 7px; color: #3F3F46;">{{.ReportData.Observations}}</p>
+    {{end}}
+  </div>
+  <!-- SCRIPT D3 PORTADO DO REACT PARA VANILLA JS -->
+  <script>
+    const payload = {{.JSONData}};
+
+    const traceBar = document.getElementById('trace-bar');
+    const traceLegends = document.getElementById('trace-legends');
+    if (payload.sources) {
+      payload.sources.forEach(s => {
+        const seg = document.createElement('div');
+        seg.style.width = s.percent + '%';
+        seg.style.backgroundColor = s.color;
+        seg.style.height = '100%';
+        traceBar.appendChild(seg);
+
+        const leg = document.createElement('div');
+        leg.className = 'legend-item';
+        leg.innerHTML = `<span class="legend-dot" style="background:${s.color}"></span><span>${s.percent}% ${s.label}</span>`;
+        traceLegends.appendChild(leg);
+      });
+    }
+
+    const DEFAULT_COLORS = {
+      START: "#5B9BD5",
+      END: "#E0756C",
+      CUM_DOT: "#7E42B3",
+      GRID: "#e2e8f0",
+      TEXT: "#64748b",
+    };
+
+    const PROCEL_CLASSES = [
+      { label: "A", color: "#00A650" },
+      { label: "B", color: "#8DC63F" },
+      { label: "C", color: "#FFF200" },
+      { label: "D", color: "#F26522" },
+    ];
+
+    function drawBenchmarkChart(canvasId, options) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+
+      const dpr = 2;
+      const rect = canvas.getBoundingClientRect();
+      const clientWidth = rect.width > 0 ? rect.width : (canvas.parentElement ? canvas.parentElement.clientWidth : 700);
+      const clientHeight = rect.height > 0 ? rect.height : 215;
+
+      canvas.width = clientWidth * dpr;
+      canvas.height = clientHeight * dpr;
+      ctx.scale(dpr, dpr);
+
+      const margin = { top: 10, right: 32, bottom: 28, left: 38 };
+      const _width = clientWidth - margin.left - margin.right;
+      const _height = clientHeight - margin.top - margin.bottom;
+      const data = options.data || [];
+      const isCumulative = options.variant === "cumulative";
+      const selectedIds = new Set(options.selectedIds || ["total"]);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, rect.width, rect.height);
+
+      const maxDomainX = options.maxX || 168;
+      const xScale = d3.scaleLinear().domain([0, maxDomainX]).range([0, _width]);
+      const yScale = d3.scaleLinear().domain([0, 1.0]).range([_height, 0]);
+
+      ctx.save();
+      ctx.translate(margin.left, margin.top);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, _width, _height);
+      ctx.clip();
+
+      ctx.strokeStyle = DEFAULT_COLORS.GRID;
+      ctx.lineWidth = 0.75;
+      const xTicks = isCumulative ? d3.range(0, 1.1, 0.1) : d3.range(0, 170, 10);
+      xTicks.forEach(t => {
+        const x = xScale(t);
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, _height); ctx.stroke();
+      });
+      d3.range(0, 1.1, 0.1).forEach(t => {
+        const y = yScale(t);
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(_width, y); ctx.stroke();
+      });
+
+      let c5Value = null, r5Value = null, p5LineX = null;
+      if (options.showTop5Line && data.length > 0) {
+        const sortedMin = [...data].map(d => d.min).sort((a, b) => a - b);
+        const sortedMax = [...data].map(d => d.max).sort((a, b) => a - b);
+        const idx = Math.floor(sortedMin.length * 0.05);
+        c5Value = sortedMin[Math.min(idx, sortedMin.length - 1)];
+        r5Value = sortedMax[Math.min(idx, sortedMax.length - 1)];
+        p5LineX = xScale(c5Value);
+      }
+
+      if (!isCumulative && data.length >= 3 && d3.regressionPoly) {
+        const sorted = [...data].sort((a, b) => a.y - b.y);
+        const drawPoly = (pts, color, dash = []) => {
+          const reg = d3.regressionPoly().x(d => d[1]).y(d => d[0]).order(3)(pts);
+          ctx.save();
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1;
+          ctx.setLineDash(dash);
+          ctx.beginPath();
+          for (let i = 0; i <= 60; i++) {
+            const yVal = i / 60;
+            const xVal = Math.max(0, reg.predict(yVal));
+            const px = xScale(xVal), py = yScale(yVal);
+            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+          ctx.restore();
+        };
+        drawPoly(sorted.map(d => [d.min, d.y]), "#5B9BD5", [2, 2]);
+        drawPoly(sorted.map(d => [(d.min + d.max) / 2, d.y]), "#52525B", []);
+        drawPoly(sorted.map(d => [d.max, d.y]), "#E0756C", [2, 2]);
+      }
+
+      data.forEach(d => {
+        const isSelected = selectedIds.has(String(d.id));
+        if (isSelected) return;
+        const x1 = xScale(d.min), x2 = xScale(d.max), y = yScale(d.y);
+
+        if (isCumulative) {
+          ctx.beginPath(); 
+          ctx.arc(x1, y, 2.5, 0, Math.PI * 2); 
+          ctx.fillStyle = "#A855F7"; // Roxo principal
+          ctx.fill();
+          ctx.strokeStyle = "#581C87"; // Contorno roxo escuro
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        } else {
+          ctx.globalAlpha = 0.55;
+          ctx.beginPath(); ctx.arc(x1, y, 1.5, 0, Math.PI * 2); ctx.fillStyle = DEFAULT_COLORS.START; ctx.fill();
+          ctx.beginPath(); ctx.arc(x2, y, 1.5, 0, Math.PI * 2); ctx.fillStyle = DEFAULT_COLORS.END; ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      });
+
+      if (options.showBaseline) {
+        const by = yScale(0.5);
+        ctx.save();
+        ctx.strokeStyle = "#18181B";
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, by); ctx.lineTo(_width, by); ctx.stroke();
+        ctx.font = "bold 6.5px 'Roboto Flex', sans-serif";
+        ctx.fillStyle = "#18181B";
+        ctx.textAlign = "right";
+        ctx.fillText("Linha de base", _width - 6, by - 4);
+        ctx.restore();
+      }
+
+      if (p5LineX !== null) {
+        ctx.save();
+        ctx.strokeStyle = "#A855F7";
+        ctx.lineWidth = 0.8;
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath(); ctx.moveTo(p5LineX, 0); ctx.lineTo(p5LineX, _height); ctx.stroke();
+
+        const y05 = yScale(0.05);
+        ctx.strokeStyle = "#F97316";
+        ctx.beginPath(); ctx.moveTo(0, y05); ctx.lineTo(_width, y05); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.font = "bold 6.5px 'Roboto Flex', sans-serif";
+        ctx.fillStyle = "#F97316";
+        ctx.fillText("5%", 4, y05 - 3);
+        ctx.restore();
+      }
+
+      data.forEach(d => {
+        if (!selectedIds.has(String(d.id))) return;
+        const x1 = xScale(d.min), x2 = xScale(d.max), y = yScale(d.y);
+
+        if (isCumulative) {
+          // Linhas tracejadas de projeção até aos eixos X e Y
+          ctx.save();
+          ctx.strokeStyle = "#22C55E"; // Verde
+          ctx.lineWidth = 1;
+          ctx.setLineDash([3, 2]);
+          
+          // Projeção para baixo (Eixo X)
+          ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x1, _height); ctx.stroke();
+          // Projeção para a esquerda (Eixo Y)
+          ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(0, y); ctx.stroke();
+          
+          ctx.restore();
+
+          // Desenha o Ponto Selecionado (Verde)
+          ctx.beginPath(); 
+          ctx.arc(x1, y, 4.5, 0, Math.PI * 2); 
+          ctx.fillStyle = "#22C55E"; 
+          ctx.fill();
+          ctx.strokeStyle = "#14532D"; // Contorno verde escuro
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+
+        } else {
+          const xMid = xScale((d.min + d.max) / 2);
+          const barH = 3.5;
+
+          ctx.fillStyle = DEFAULT_COLORS.START;
+          ctx.fillRect(x1, y - barH / 2, Math.max(1, xMid - x1), barH);
+          ctx.fillStyle = DEFAULT_COLORS.END;
+          ctx.fillRect(xMid, y - barH / 2, Math.max(1, x2 - xMid), barH);
+
+          if (p5LineX !== null) {
+            ctx.save();
+            ctx.strokeStyle = "#9333EA";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 2]);
+            ctx.beginPath(); ctx.moveTo(p5LineX, y); ctx.lineTo(x1, y); ctx.stroke();
+            ctx.restore();
+          }
+
+          const drawBadge = (bx, by, letter, color) => {
+            ctx.save();
+            ctx.fillStyle = color;
+            ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 6.5px 'Roboto Flex', sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(letter, bx, by + 0.5);
+            ctx.restore();
+          };
+
+          if (p5LineX !== null) drawBadge(p5LineX, y, "P", "#9333EA");
+          drawBadge(x1, y - 5, "C", DEFAULT_COLORS.START);
+          drawBadge(xMid, y, "V", "#65A30D");
+          drawBadge(x2, y + 5, "R", DEFAULT_COLORS.END);
+        }
+      });
+
+      ctx.restore();
+
+      ctx.strokeStyle = "#D4D4D8";
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, _height); ctx.lineTo(_width, _height); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, _height); ctx.stroke();
+
+      ctx.fillStyle = DEFAULT_COLORS.TEXT;
+      ctx.font = "6.5px 'Roboto Flex', sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+
+      xTicks.forEach(t => {
+        const x = xScale(t);
+        if (x >= 0 && x <= _width) {
+          const label = isCumulative ? t.toFixed(1).replace('.', ',') : String(Math.round(t));
+          ctx.fillText(label, x, _height + 4);
+        }
+      });
+      if (!isCumulative) {
+        ctx.fillText("168", xScale(168), _height + 4);
+      }
+
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      d3.range(0, 1.1, 0.1).forEach(t => {
+        const y = yScale(t);
+        const label = t.toFixed(1).replace('.', ',');
+        ctx.fillText(label, -5, y);
+      });
+
+      if (!isCumulative) {
+        ctx.textAlign = "right";
+        ctx.fillText("Pior", -18, 2);
+        ctx.fillText("Melhor", -18, _height);
+      }
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#52525B";
+      ctx.font = "6.5px 'Roboto Flex', sans-serif";
+      ctx.fillText(options.xAxisLabel, _width / 2, _height + 16);
+
+      ctx.save();
+      ctx.translate(-26, _height / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = "center";
+      ctx.fillText(options.yAxisLabel, 0, 0);
+      ctx.restore();
+
+      const reversed = [...PROCEL_CLASSES].reverse();
+      const bandSize = 1.0 / reversed.length;
+      reversed.forEach((cls, i) => {
+        const topY = yScale(1.0 - i * bandSize);
+        const botY = yScale(1.0 - (i + 1) * bandSize);
+        const isHighlighted = cls.label === options.highlightClass;
+
+        ctx.save();
+        ctx.globalAlpha = isHighlighted ? 1 : 0.25;
+        ctx.fillStyle = cls.color;
+        ctx.fillRect(_width + 4, topY, 14, botY - topY);
+
+        ctx.globalAlpha = isHighlighted ? 1 : 0.5;
+        ctx.fillStyle = "#18181B";
+        ctx.font = "bold 6.5px 'Roboto Flex', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(cls.label, _width + 11, (topY + botY) / 2);
+        ctx.restore();
+      });
+
+      ctx.restore();
+    }
+
+    function initCharts(attempts = 0) {
+      console.log("Tentativa de renderizar gráficos: " + attempts);
+
+      if (typeof d3 === 'undefined') {
+          if (attempts > 40) {
+              console.error("ERRO FATAL: D3.js não carregou (Problema de Rede/WSL).");
+              window.chartsError = "D3 não carregou";
+              return;
+          }
+          setTimeout(() => initCharts(attempts + 1), 50);
+          return;
+      }
+
+      if (typeof d3.regressionPoly === 'undefined') {
+          console.warn("AVISO: d3-regression não encontrado.");
+      }
+
+      try {
+        if (!payload || !payload.co2Chart) {
+           throw new Error("Payload JSON vazio ou mal formatado");
+        }
+
+        requestAnimationFrame(() => {
+            drawBenchmarkChart("chart-co2", {
+              variant: "range",
+              data: payload.co2Chart,
+              selectedIds: payload.selectedIds,
+              maxX: 168,
+              showBaseline: true,
+              showTop5Line: true,
+              highlightClass: "B",
+              xAxisLabel: "Carbono Embutido (Kg/m²)",
+              yAxisLabel: "Potencial de mitigação"
+            });
+
+            drawBenchmarkChart("chart-energy", {
+              variant: "range",
+              data: payload.energyChart,
+              selectedIds: payload.selectedIds,
+              maxX: 168,
+              showBaseline: true,
+              showTop5Line: true,
+              highlightClass: "B",
+              xAxisLabel: "Consumo Embutido (MJ/m²)",
+              yAxisLabel: "Potencial de mitigação"
+            });
+
+            drawBenchmarkChart("chart-cum", {
+              variant: "cumulative",
+              data: payload.cumChart,
+              selectedIds: payload.selectedIds,
+              maxX: 1.0,
+              showBaseline: false,
+              showTop5Line: false,
+              highlightClass: "C",
+              xAxisLabel: "Concreto (m³/m²)",
+              yAxisLabel: "Fração de projetos melhores"
+            });
+
+            window.chartsReady = true;
+            console.log("SUCESSO: Gráficos renderizados!");
+        });
+
+      } catch (e) {
+        console.error("ERRO FATAL JS: " + e.message + "\n" + e.stack);
+        window.chartsError = e.message; 
+      }
+    }
+
+    initCharts();
+  </script>
+</body>
+</html>
+{{end}}

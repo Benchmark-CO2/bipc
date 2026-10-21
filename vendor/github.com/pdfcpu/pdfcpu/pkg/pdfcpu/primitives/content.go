@@ -928,7 +928,6 @@ func (c *Content) BorderRect() *types.Rectangle {
 	return c.borderRect
 }
 
-// Box retunrs a rectangle for c.
 func (c *Content) Box() *types.Rectangle {
 
 	if c.box == nil {

@@ -18,8 +18,6 @@ limitations under the License.
 package log
 
 import (
-	"fmt"
-	"io"
 	"log"
 	"os"
 )
@@ -42,10 +40,6 @@ type Logger interface {
 
 type logger struct {
 	log Logger
-}
-
-type writerLogger interface {
-	Writer() io.Writer
 }
 
 // pdfcpu's loggers.
@@ -264,21 +258,6 @@ func (l *logger) Println(args ...interface{}) {
 	l.log.Println(args...)
 }
 
-// Print writes a message to the log without appending a newline.
-func (l *logger) Print(args ...interface{}) {
-
-	if l.log == nil {
-		return
-	}
-
-	if wl, ok := l.log.(writerLogger); ok {
-		fmt.Fprint(wl.Writer(), args...)
-		return
-	}
-
-	l.log.Printf("%s", fmt.Sprint(args...))
-}
-
 // Fatalf is equivalent to Printf() followed by a program abort.
 func (l *logger) Fatalf(format string, args ...interface{}) {
 
@@ -289,7 +268,7 @@ func (l *logger) Fatalf(format string, args ...interface{}) {
 	l.log.Fatalf(format, args...)
 }
 
-// Fatalln is equivalent to Println() followed by a program abort.
+// Fatalf is equivalent to Println() followed by a program abort.
 func (l *logger) Fatalln(args ...interface{}) {
 
 	if l.log == nil {

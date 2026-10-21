@@ -17,23 +17,18 @@
 package api
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/pdfcpu/pdfcpu/pkg/log"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/fault"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/sanitize"
 	"github.com/pkg/errors"
 )
 
 // Attachments returns rs's attachments.
-func Attachments(rs io.ReadSeeker, conf *model.Configuration) (aa []model.Attachment, err error) {
-	defer fault.Catch(&err)
-
+func Attachments(rs io.ReadSeeker, conf *model.Configuration) ([]model.Attachment, error) {
 	if rs == nil {
 		return nil, errors.New("pdfcpu: Attachments: missing rs")
 	}
@@ -53,18 +48,13 @@ func Attachments(rs io.ReadSeeker, conf *model.Configuration) (aa []model.Attach
 
 // AddAttachments embeds files into a PDF context read from rs and writes the result to w.
 // file is either a file name or a file name and a description separated by a comma.
-func AddAttachments(rs io.ReadSeeker, w io.Writer, files []string, coll bool, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
-
+func AddAttachments(rs io.ReadSeeker, w io.Writer, files []string, coll bool, conf *model.Configuration) error {
 	if rs == nil {
 		return errors.New("pdfcpu: AddAttachments: missing rs")
 	}
 
 	if w == nil {
 		return errors.New("pdfcpu: AddAttachments: missing w")
-	}
-	if err := validateAttachmentFileNames(files); err != nil {
-		return err
 	}
 
 	if conf == nil {
@@ -123,11 +113,6 @@ func AddAttachments(rs io.ReadSeeker, w io.Writer, files []string, coll bool, co
 // AddAttachmentsFile embeds files into a PDF context read from inFile and writes the result to outFile.
 func AddAttachmentsFile(inFile, outFile string, files []string, coll bool, conf *model.Configuration) (err error) {
 	var f1, f2 *os.File
-	ok := false
-
-	if err := validateAttachmentFileNames(files); err != nil {
-		return err
-	}
 
 	if f1, err = os.Open(inFile); err != nil {
 		return err
@@ -138,15 +123,15 @@ func AddAttachmentsFile(inFile, outFile string, files []string, coll bool, conf 
 		tmpFile = outFile
 	}
 	if f2, err = os.Create(tmpFile); err != nil {
-		_ = f1.Close()
+		f1.Close()
 		return err
 	}
 
 	defer func() {
-		if !ok {
-			_ = f2.Close()
-			_ = f1.Close()
-			_ = os.Remove(tmpFile)
+		if err != nil {
+			f2.Close()
+			f1.Close()
+			os.Remove(tmpFile)
 			return
 		}
 		if err = f2.Close(); err != nil {
@@ -160,27 +145,17 @@ func AddAttachmentsFile(inFile, outFile string, files []string, coll bool, conf 
 		}
 	}()
 
-	if err = AddAttachments(f1, f2, files, coll, conf); err != nil {
-		return err
-	}
-
-	ok = true
-
-	return nil
+	return AddAttachments(f1, f2, files, coll, conf)
 }
 
 // RemoveAttachments deletes embedded files from a PDF context read from rs and writes the result to w.
-func RemoveAttachments(rs io.ReadSeeker, w io.Writer, files []string, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
+func RemoveAttachments(rs io.ReadSeeker, w io.Writer, files []string, conf *model.Configuration) error {
 	if rs == nil {
 		return errors.New("pdfcpu: RemoveAttachments: missing rs")
 	}
 
 	if w == nil {
 		return errors.New("pdfcpu: RemoveAttachments: missing w")
-	}
-	if err := validateNoEmptyStrings(files, "attachment filename"); err != nil {
-		return err
 	}
 
 	if conf == nil {
@@ -207,11 +182,6 @@ func RemoveAttachments(rs io.ReadSeeker, w io.Writer, files []string, conf *mode
 // RemoveAttachmentsFile deletes embedded files from a PDF context read from inFile and writes the result to outFile.
 func RemoveAttachmentsFile(inFile, outFile string, files []string, conf *model.Configuration) (err error) {
 	var f1, f2 *os.File
-	ok := false
-
-	if err := validateNoEmptyStrings(files, "attachment filename"); err != nil {
-		return err
-	}
 
 	if f1, err = os.Open(inFile); err != nil {
 		return err
@@ -222,15 +192,15 @@ func RemoveAttachmentsFile(inFile, outFile string, files []string, conf *model.C
 		tmpFile = outFile
 	}
 	if f2, err = os.Create(tmpFile); err != nil {
-		_ = f1.Close()
+		f1.Close()
 		return err
 	}
 
 	defer func() {
-		if !ok {
-			_ = f2.Close()
-			_ = f1.Close()
-			_ = os.Remove(tmpFile)
+		if err != nil {
+			f2.Close()
+			f1.Close()
+			os.Remove(tmpFile)
 			return
 		}
 		if err = f2.Close(); err != nil {
@@ -244,24 +214,13 @@ func RemoveAttachmentsFile(inFile, outFile string, files []string, conf *model.C
 		}
 	}()
 
-	if err = RemoveAttachments(f1, f2, files, conf); err != nil {
-		return err
-	}
-
-	ok = true
-
-	return nil
+	return RemoveAttachments(f1, f2, files, conf)
 }
 
 // ExtractAttachmentsRaw extracts embedded files from a PDF context read from rs.
-func ExtractAttachmentsRaw(rs io.ReadSeeker, outDir string, fileNames []string, conf *model.Configuration) (aa []model.Attachment, err error) {
-	defer fault.Catch(&err)
-
+func ExtractAttachmentsRaw(rs io.ReadSeeker, outDir string, fileNames []string, conf *model.Configuration) ([]model.Attachment, error) {
 	if rs == nil {
 		return nil, errors.New("pdfcpu: ExtractAttachmentsRaw: missing rs")
-	}
-	if err := validateNoEmptyStrings(fileNames, "attachment filename"); err != nil {
-		return nil, err
 	}
 
 	if conf == nil {
@@ -277,26 +236,55 @@ func ExtractAttachmentsRaw(rs io.ReadSeeker, outDir string, fileNames []string, 
 	return ctx.ExtractAttachments(fileNames)
 }
 
-// ExtractAttachments extracts embedded files from a PDF context read from rs into outDir.
-func ExtractAttachments(rs io.ReadSeeker, outDir string, fileNames []string, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
+func SanitizePath(path string) string {
 
+	// Do not process "'" and "..".
+
+	if path == "" || path == "." || path == ".." {
+		return "attachment"
+	}
+
+	path = strings.TrimPrefix(path, string(filepath.Separator))
+
+	parts := strings.Split(path, string(filepath.Separator))
+
+	cleanParts := []string{}
+	for i := 0; i < len(parts); i++ {
+		if parts[i] != "" && parts[i] != "." && parts[i] != ".." {
+			cleanParts = append(cleanParts, parts[i])
+			continue
+		}
+		if i == len(parts)-1 {
+			cleanParts = append(cleanParts, "attachment")
+		}
+	}
+
+	if len(cleanParts) == 0 {
+		return "attachment"
+	}
+
+	return filepath.Join(cleanParts...)
+}
+
+// ExtractAttachments extracts embedded files from a PDF context read from rs into outDir.
+func ExtractAttachments(rs io.ReadSeeker, outDir string, fileNames []string, conf *model.Configuration) error {
 	aa, err := ExtractAttachmentsRaw(rs, outDir, fileNames, conf)
 	if err != nil {
 		return err
 	}
 
-	for i, a := range aa {
+	for _, a := range aa {
 
-		fn, err := sanitize.Path(a.FileName)
-		if err != nil {
-			fn = fmt.Sprintf("attachment_%d", i+1)
-		}
+		fn := SanitizePath(a.FileName)
 		fileName := filepath.Join(outDir, fn)
 
 		f, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 		if err != nil {
-			return err
+			fileName = filepath.Base(a.FileName)
+			f, err = os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+			if err != nil {
+				return err
+			}
 		}
 		logWritingTo(fileName)
 		if _, err = io.Copy(f, a); err != nil {
@@ -312,10 +300,6 @@ func ExtractAttachments(rs io.ReadSeeker, outDir string, fileNames []string, con
 
 // ExtractAttachmentsFile extracts embedded files from a PDF context read from inFile into outDir.
 func ExtractAttachmentsFile(inFile, outDir string, files []string, conf *model.Configuration) error {
-	if err := validateNoEmptyStrings(files, "attachment filename"); err != nil {
-		return err
-	}
-
 	f, err := os.Open(inFile)
 	if err != nil {
 		return err

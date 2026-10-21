@@ -50,9 +50,6 @@ func AddProperties(rs io.ReadSeeker, w io.Writer, properties map[string]string, 
 	if rs == nil {
 		return errors.New("pdfcpu: AddProperties: missing rs")
 	}
-	if err := validateProperties(properties); err != nil {
-		return err
-	}
 
 	if conf == nil {
 		conf = model.NewDefaultConfiguration()
@@ -76,11 +73,6 @@ func AddProperties(rs io.ReadSeeker, w io.Writer, properties map[string]string, 
 // AddPropertiesFile adds properties to inFile's infodict and writes the result to outFile.
 func AddPropertiesFile(inFile, outFile string, properties map[string]string, conf *model.Configuration) (err error) {
 	var f1, f2 *os.File
-	ok := false
-
-	if err := validateProperties(properties); err != nil {
-		return err
-	}
 
 	if f1, err = os.Open(inFile); err != nil {
 		return err
@@ -91,14 +83,14 @@ func AddPropertiesFile(inFile, outFile string, properties map[string]string, con
 		tmpFile = outFile
 	}
 	if f2, err = os.Create(tmpFile); err != nil {
-		_ = f1.Close()
+		f1.Close()
 		return err
 	}
 
 	defer func() {
-		if !ok {
-			_ = f2.Close()
-			_ = f1.Close()
+		if err != nil {
+			f2.Close()
+			f1.Close()
 			os.Remove(tmpFile)
 			return
 		}
@@ -113,22 +105,13 @@ func AddPropertiesFile(inFile, outFile string, properties map[string]string, con
 		}
 	}()
 
-	if err = AddProperties(f1, f2, properties, conf); err != nil {
-		return err
-	}
-
-	ok = true
-
-	return nil
+	return AddProperties(f1, f2, properties, conf)
 }
 
 // RemoveProperties deletes properties from rs's infodict and writes the result to w.
 func RemoveProperties(rs io.ReadSeeker, w io.Writer, properties []string, conf *model.Configuration) error {
 	if rs == nil {
 		return errors.New("pdfcpu: RemoveProperties: missing rs")
-	}
-	if err := validateNoEmptyStrings(properties, "property name"); err != nil {
-		return err
 	}
 
 	if conf == nil {
@@ -157,11 +140,6 @@ func RemoveProperties(rs io.ReadSeeker, w io.Writer, properties []string, conf *
 // RemovePropertiesFile deletes properties from inFile's infodict and writes the result to outFile.
 func RemovePropertiesFile(inFile, outFile string, properties []string, conf *model.Configuration) (err error) {
 	var f1, f2 *os.File
-	ok := false
-
-	if err := validateNoEmptyStrings(properties, "property name"); err != nil {
-		return err
-	}
 
 	if f1, err = os.Open(inFile); err != nil {
 		return err
@@ -172,14 +150,14 @@ func RemovePropertiesFile(inFile, outFile string, properties []string, conf *mod
 		tmpFile = outFile
 	}
 	if f2, err = os.Create(tmpFile); err != nil {
-		_ = f1.Close()
+		f1.Close()
 		return err
 	}
 
 	defer func() {
-		if !ok {
-			_ = f2.Close()
-			_ = f1.Close()
+		if err != nil {
+			f2.Close()
+			f1.Close()
 			os.Remove(tmpFile)
 			return
 		}
@@ -194,11 +172,5 @@ func RemovePropertiesFile(inFile, outFile string, properties []string, conf *mod
 		}
 	}()
 
-	if err = RemoveProperties(f1, f2, properties, conf); err != nil {
-		return err
-	}
-
-	ok = true
-
-	return nil
+	return RemoveProperties(f1, f2, properties, conf)
 }

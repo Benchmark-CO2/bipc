@@ -23,7 +23,6 @@ import (
 
 	"github.com/pdfcpu/pdfcpu/pkg/log"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/fault"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
 )
@@ -35,9 +34,7 @@ func Import(s string, u types.DisplayUnit) (*pdfcpu.Import, error) {
 
 // ImportImages appends PDF pages containing images to rs and writes the result to w.
 // If rs == nil a new PDF file will be written to w.
-func ImportImages(rs io.ReadSeeker, w io.Writer, imgs []io.Reader, imp *pdfcpu.Import, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
-
+func ImportImages(rs io.ReadSeeker, w io.Writer, imgs []io.Reader, imp *pdfcpu.Import, conf *model.Configuration) error {
 	if conf == nil {
 		conf = model.NewDefaultConfiguration()
 	}
@@ -47,7 +44,10 @@ func ImportImages(rs io.ReadSeeker, w io.Writer, imgs []io.Reader, imp *pdfcpu.I
 		imp = pdfcpu.DefaultImportConfig()
 	}
 
-	var ctx *model.Context
+	var (
+		ctx *model.Context
+		err error
+	)
 
 	if rs != nil {
 		ctx, err = ReadAndValidate(rs, conf)
@@ -126,68 +126,22 @@ func logImportImages(s, outFile string) {
 	}
 }
 
-func importImagesInputFile(outFile string) (io.ReadSeeker, *os.File, string, error) {
-	rs := io.ReadSeeker(nil)
-	tmpFile := outFile
-
-	if fileExists(outFile) {
-		f, err := os.Open(outFile)
-		if err != nil {
-			return nil, nil, "", err
-		}
-		rs = f
-		tmpFile += ".tmp"
-		logImportImages("appending", outFile)
-		return rs, f, tmpFile, nil
-	}
-
-	logImportImages("writing", outFile)
-	return rs, nil, tmpFile, nil
-}
-
-func closeImportImageFiles(rc []io.ReadCloser) error {
-	for _, f := range rc {
-		if err := f.Close(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func finishImportImagesFile(ok bool, f1, f2 *os.File, rc []io.ReadCloser, tmpFile, outFile string) error {
-	if !ok {
-		_ = f2.Close()
-		if f1 != nil {
-			_ = f1.Close()
-			os.Remove(tmpFile)
-		}
-		for _, f := range rc {
-			_ = f.Close()
-		}
-		return nil
-	}
-
-	if err := f2.Close(); err != nil {
-		return err
-	}
-	if f1 != nil {
-		if err := f1.Close(); err != nil {
-			return err
-		}
-		if err := os.Rename(tmpFile, outFile); err != nil {
-			return err
-		}
-	}
-	return closeImportImageFiles(rc)
-}
-
 // ImportImagesFile appends PDF pages containing images to outFile which will be created if necessary.
 func ImportImagesFile(imgFiles []string, outFile string, imp *pdfcpu.Import, conf *model.Configuration) (err error) {
-	ok := false
+	var f1, f2 *os.File
 
-	rs, f1, tmpFile, err := importImagesInputFile(outFile)
-	if err != nil {
-		return err
+	rs := io.ReadSeeker(nil)
+	f1 = nil
+	tmpFile := outFile
+	if fileExists(outFile) {
+		if f1, err = os.Open(outFile); err != nil {
+			return err
+		}
+		rs = f1
+		tmpFile += ".tmp"
+		logImportImages("appending", outFile)
+	} else {
+		logImportImages("writing", outFile)
 	}
 
 	rc, rr, err := prepImgFiles(imgFiles, f1)
@@ -195,8 +149,7 @@ func ImportImagesFile(imgFiles []string, outFile string, imp *pdfcpu.Import, con
 		return err
 	}
 
-	f2, err := os.Create(tmpFile)
-	if err != nil {
+	if f2, err = os.Create(tmpFile); err != nil {
 		if f1 != nil {
 			f1.Close()
 		}
@@ -204,16 +157,34 @@ func ImportImagesFile(imgFiles []string, outFile string, imp *pdfcpu.Import, con
 	}
 
 	defer func() {
-		if e := finishImportImagesFile(ok, f1, f2, rc, tmpFile, outFile); e != nil {
-			err = e
+		if err != nil {
+			f2.Close()
+			if f1 != nil {
+				f1.Close()
+				os.Remove(tmpFile)
+			}
+			for _, f := range rc {
+				f.Close()
+			}
+			return
+		}
+		if err = f2.Close(); err != nil {
+			return
+		}
+		if f1 != nil {
+			if err = f1.Close(); err != nil {
+				return
+			}
+			if err = os.Rename(tmpFile, outFile); err != nil {
+				return
+			}
+		}
+		for _, f := range rc {
+			if err := f.Close(); err != nil {
+				return
+			}
 		}
 	}()
 
-	if err = ImportImages(rs, f2, rr, imp, conf); err != nil {
-		return err
-	}
-
-	ok = true
-
-	return nil
+	return ImportImages(rs, f2, rr, imp, conf)
 }

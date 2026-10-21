@@ -23,16 +23,13 @@ import (
 
 	"github.com/pdfcpu/pdfcpu/pkg/log"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/fault"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pkg/errors"
 )
 
 // Trim generates a trimmed version of rs
 // containing all selected pages and writes the result to w.
-func Trim(rs io.ReadSeeker, w io.Writer, selectedPages []string, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
-
+func Trim(rs io.ReadSeeker, w io.Writer, selectedPages []string, conf *model.Configuration) error {
 	if rs == nil {
 		return errors.New("pdfcpu: Trim: missing rs")
 	}
@@ -85,7 +82,6 @@ func Trim(rs io.ReadSeeker, w io.Writer, selectedPages []string, conf *model.Con
 // containing all selected pages and writes the result to outFile.
 func TrimFile(inFile, outFile string, selectedPages []string, conf *model.Configuration) (err error) {
 	var f1, f2 *os.File
-	ok := false
 
 	if f1, err = os.Open(inFile); err != nil {
 		return err
@@ -99,14 +95,14 @@ func TrimFile(inFile, outFile string, selectedPages []string, conf *model.Config
 		logWritingTo(inFile)
 	}
 	if f2, err = os.Create(tmpFile); err != nil {
-		_ = f1.Close()
+		f1.Close()
 		return err
 	}
 
 	defer func() {
-		if !ok {
-			_ = f2.Close()
-			_ = f1.Close()
+		if err != nil {
+			f2.Close()
+			f1.Close()
 			os.Remove(tmpFile)
 			return
 		}
@@ -121,11 +117,5 @@ func TrimFile(inFile, outFile string, selectedPages []string, conf *model.Config
 		}
 	}()
 
-	if err = Trim(f1, f2, selectedPages, conf); err != nil {
-		return err
-	}
-
-	ok = true
-
-	return nil
+	return Trim(f1, f2, selectedPages, conf)
 }

@@ -58,17 +58,15 @@ var cjkParms = map[string]cjk{
 	//"KORE": {"UniKS-UTF16-H", "KR", 9},
 }
 
-// SupportedScript returns true if s is a supported script.
 func SupportedScript(s string) bool {
 	return types.MemberOf(s, []string{"HANS", "HANT", "HIRA", "KANA", "JPAN", "HANG", "KORE"})
 }
 
-// CJKEncoding returns true for supported encodings.
+// CJKEncodings returns true for supported encodings.
 func CJKEncoding(s string) bool {
 	return types.MemberOf(s, []string{"UniGB-UTF16-H", "UniCNS-UTF16-H", "UniJIS-UTF16-H", "UniKS-UTF16-H"})
 }
 
-// ScriptForEncoding returns the script for encoding.
 func ScriptForEncoding(enc string) string {
 	for k, v := range cjkParms {
 		if v.encoding == enc {
@@ -88,14 +86,14 @@ func fontDescriptorIndRefs(fd types.Dict, lang string, font *model.FontResource)
 	}
 
 	font.CIDSet = fd.IndirectRefEntry("CIDSet")
-	// if font.CIDSet == nil {
-	// 	return ErrCorruptFontDict
-	// }
+	if font.CIDSet == nil {
+		return ErrCorruptFontDict
+	}
 
 	font.FontFile = fd.IndirectRefEntry("FontFile2")
-	// if font.FontFile == nil {
-	// 	return ErrCorruptFontDict
-	// }
+	if font.FontFile == nil {
+		return ErrCorruptFontDict
+	}
 
 	return nil
 }
@@ -133,9 +131,9 @@ func IndRefsForUserfontUpdate(xRefTable *model.XRefTable, d types.Dict, lang str
 	}
 
 	font.W = df.IndirectRefEntry("W")
-	// if font.W == nil {
-	// 	return ErrCorruptFontDict
-	// }
+	if font.W == nil {
+		return ErrCorruptFontDict
+	}
 
 	o, found = df.Find("FontDescriptor")
 	if !found {
@@ -186,7 +184,6 @@ func ttfSubFontFile(xRefTable *model.XRefTable, fontName string, indRef *types.I
 	return indRef, nil
 }
 
-// PDFDocEncoding returns an indirect reference to a new PDF doc encoding dict.
 func PDFDocEncoding(xRefTable *model.XRefTable) (*types.IndirectRef, error) {
 	arr := types.Array{
 		types.Integer(24),
@@ -237,8 +234,7 @@ func PDFDocEncoding(xRefTable *model.XRefTable) (*types.IndirectRef, error) {
 	return xRefTable.IndRefForNewObject(d)
 }
 
-// CoreFontDict returns an indirect reference to a Type 1 font.
-func CoreFontDict(xRefTable *model.XRefTable, coreFontName string) (*types.IndirectRef, error) {
+func coreFontDict(xRefTable *model.XRefTable, coreFontName string) (*types.IndirectRef, error) {
 	d := types.NewDict()
 	d.InsertName("Type", "Font")
 	d.InsertName("Subtype", "Type1")
@@ -364,7 +360,7 @@ func CIDFontDescriptor(xRefTable *model.XRefTable, ttf font.TTFLight, fontName, 
 	return xRefTable.IndRefForNewObject(d)
 }
 
-// NewFontDescriptor returns a TrueType font descriptor describing font’s default metrics other than its glyph widths.
+// FontDescriptor returns a TrueType font descriptor describing font’s default metrics other than its glyph widths.
 func NewFontDescriptor(xRefTable *model.XRefTable, ttf font.TTFLight, fontName, fontLang string) (*types.IndirectRef, error) {
 	fontFile, err := ttfFontFile(xRefTable, fontName)
 	if err != nil {
@@ -402,7 +398,7 @@ func wArr(ttf font.TTFLight, from, thru int) types.Array {
 	return a
 }
 
-func prepGids(xRefTable *model.XRefTable, ttf font.TTFLight, fontName string, used bool) ([]int, bool) {
+func prepGids(xRefTable *model.XRefTable, ttf font.TTFLight, fontName string, used bool) []int {
 	gids := ttf.GlyphWidths
 	if used {
 		usedGIDs, ok := xRefTable.UsedGIDs[fontName]
@@ -412,10 +408,9 @@ func prepGids(xRefTable *model.XRefTable, ttf font.TTFLight, fontName string, us
 				gids = append(gids, int(gid))
 			}
 			sort.Ints(gids)
-			return gids, true
 		}
 	}
-	return gids, false
+	return gids
 }
 
 func handleEqualWidths(w, w0, wl, g, g0, gl *int, a *types.Array, skip, equalWidths *bool) {
@@ -451,13 +446,13 @@ func finalizeWidths(ttf font.TTFLight, w0, g0, gl int, skip, equalWidths bool, a
 }
 
 func calcWidthArray(xRefTable *model.XRefTable, ttf font.TTFLight, fontName string, used bool) types.Array {
-	gids, ok := prepGids(xRefTable, ttf, fontName, used)
+	gids := prepGids(xRefTable, ttf, fontName, used)
 	a := types.Array{}
 	var g0, w0, gl, wl int
 	start, equalWidths, skip := true, false, false
 
 	for g, w := range gids {
-		if ok {
+		if used {
 			g = w
 			w = ttf.GlyphWidths[g]
 		}
@@ -512,7 +507,10 @@ func calcWidthArray(xRefTable *model.XRefTable, ttf font.TTFLight, fontName stri
 			if g-g0 > 1 {
 				// switch from non equalW to equalW
 				a = append(a, types.Integer(g0)) // write non-contiguous width block
-				tru := max(gl-1, g0)
+				tru := gl - 1
+				if tru < g0 {
+					tru = g0
+				}
 				a1 := wArr(ttf, g0, tru)
 				a = append(a, a1)
 				g0, w0 = gl, wl
@@ -737,6 +735,7 @@ func UpdateUserfont(xRefTable *model.XRefTable, fontName string, f model.FontRes
 	font.UserFontMetricsLock.RLock()
 	ttf, ok := font.UserFontMetrics[fontName]
 	font.UserFontMetricsLock.RUnlock()
+
 	if !ok {
 		return errors.Errorf("pdfcpu: userfont %s not available", fontName)
 	}
@@ -759,32 +758,6 @@ func UpdateUserfont(xRefTable *model.XRefTable, fontName string, f model.FontRes
 
 	if _, err := CIDSet(xRefTable, ttf, fontName, f.CIDSet); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-// UpdateUserfonts updates referenced fonts.
-func UpdateUserfonts(xRefTable *model.XRefTable, fonts map[string]types.IndirectRef) error {
-	for fName, indRef := range fonts {
-
-		if len(xRefTable.UsedGIDs[fName]) == 0 {
-			continue
-		}
-
-		fDict, err := xRefTable.DereferenceDict(indRef)
-		if err != nil {
-			return err
-		}
-
-		fr := model.FontResource{}
-		if err := IndRefsForUserfontUpdate(xRefTable, fDict, "", &fr); err != nil {
-			return ErrCorruptFontDict
-		}
-
-		if err := UpdateUserfont(xRefTable, fName, fr); err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -888,7 +861,7 @@ func CIDFontDict(xRefTable *model.XRefTable, ttf font.TTFLight, fontName, baseFo
 	}
 
 	if parms == nil {
-		wIndRef, err := CIDWidths(xRefTable, ttf, fontName, true, nil)
+		wIndRef, err := CIDWidths(xRefTable, ttf, fontName, parms == nil, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -910,6 +883,7 @@ func type0FontDict(xRefTable *model.XRefTable, fontName, lang, script string, in
 
 	subFont := script == ""
 
+	// For consecutive pages or if no AP present using this font.
 	if indRef != nil && subFont && !xRefTable.HasUsedGIDs(fontName) {
 		if obj, _ := xRefTable.Dereference(*indRef); obj != nil {
 			return indRef, nil
@@ -1016,12 +990,11 @@ func RTL(lang string) bool {
 
 // EnsureFontDict ensures a font dict for fontName, lang, script.
 func EnsureFontDict(xRefTable *model.XRefTable, fontName, lang, script string, field bool, indRef *types.IndirectRef) (*types.IndirectRef, error) {
-	// TODO Reuse fontDict
 	if font.IsCoreFont(fontName) {
 		if indRef != nil {
 			return indRef, nil
 		}
-		return CoreFontDict(xRefTable, fontName)
+		return coreFontDict(xRefTable, fontName)
 	}
 	if field && (script == "" || !CJK(script, lang)) {
 		return trueTypeFontDict(xRefTable, fontName, lang)
@@ -1233,7 +1206,6 @@ func FontDescriptor(xRefTable *model.XRefTable, fontDict types.Dict, objNr int) 
 	return d, nil
 }
 
-// Embedded returns true if the font represented by fontDict is embedded.
 func Embedded(xRefTable *model.XRefTable, fontDict types.Dict, objNr int) (bool, error) {
 	fd, err := FontDescriptor(xRefTable, fontDict, objNr)
 	if err != nil {

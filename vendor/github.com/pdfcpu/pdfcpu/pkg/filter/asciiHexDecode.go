@@ -20,8 +20,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"io"
-
-	"github.com/pkg/errors"
 )
 
 type asciiHexDecode struct {
@@ -38,10 +36,6 @@ func (f asciiHexDecode) Encode(r io.Reader) (io.Reader, error) {
 		return nil, err
 	}
 
-	if len(bb) > maxInt/2 {
-		return nil, errors.New("pdfcpu: filter ASCIIHexDecode: encoded length overflow")
-	}
-
 	dst := make([]byte, hex.EncodedLen(len(bb)))
 	hex.Encode(dst, bb)
 
@@ -56,7 +50,6 @@ func (f asciiHexDecode) Decode(r io.Reader) (io.Reader, error) {
 	return f.DecodeLength(r, -1)
 }
 
-// DecodeLength implements decoding for an ASCIIHexDecode filter with a maximum output length.
 func (f asciiHexDecode) DecodeLength(r io.Reader, maxLen int64) (io.Reader, error) {
 	bb, err := getReaderBytes(r)
 	if err != nil {
@@ -66,7 +59,7 @@ func (f asciiHexDecode) DecodeLength(r io.Reader, maxLen int64) (io.Reader, erro
 	var p []byte
 
 	// Remove any white space and cut off on eod
-	for i := range bb {
+	for i := 0; i < len(bb); i++ {
 		if bb[i] == eodHexDecode {
 			break
 		}
@@ -80,18 +73,8 @@ func (f asciiHexDecode) DecodeLength(r io.Reader, maxLen int64) (io.Reader, erro
 		p = append(p, '0')
 	}
 
-	decodedLen := int64(hex.DecodedLen(len(p)))
 	if maxLen < 0 {
-		maxLen = decodedLen
-		if limit := f.decodeLimit(-1); limit >= 0 && maxLen > limit {
-			return nil, ErrDecodeLimitExceeded
-		}
-	} else if maxLen > decodedLen {
-		return nil, io.ErrUnexpectedEOF
-	}
-
-	if maxLen > int64(maxInt) || maxLen > maxInt64/2 {
-		return nil, errors.New("pdfcpu: filter ASCIIHexDecode: decode length overflow")
+		maxLen = int64(hex.DecodedLen(len(p)))
 	}
 	dst := make([]byte, maxLen)
 

@@ -22,7 +22,6 @@ import (
 
 	"github.com/pdfcpu/pdfcpu/pkg/log"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/fault"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
 	"github.com/pkg/errors"
@@ -57,9 +56,7 @@ func BookletFromImages(conf *model.Configuration, imageFileNames []string, nup *
 }
 
 // Booklet arranges PDF pages on larger sheets of paper and writes the result to w.
-func Booklet(rs io.ReadSeeker, w io.Writer, imgFiles, selectedPages []string, nup *model.NUp, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
-
+func Booklet(rs io.ReadSeeker, w io.Writer, imgFiles, selectedPages []string, nup *model.NUp, conf *model.Configuration) error {
 	if rs == nil {
 		return errors.New("pdfcpu: Booklet: missing rs")
 	}
@@ -73,7 +70,10 @@ func Booklet(rs io.ReadSeeker, w io.Writer, imgFiles, selectedPages []string, nu
 		log.Info.Printf("%s", nup)
 	}
 
-	var ctx *model.Context
+	var (
+		ctx *model.Context
+		err error
+	)
 
 	if nup.ImgInputFile {
 
@@ -103,7 +103,6 @@ func Booklet(rs io.ReadSeeker, w io.Writer, imgFiles, selectedPages []string, nu
 // BookletFile rearranges PDF pages or images into a booklet layout and writes the result to outFile.
 func BookletFile(inFiles []string, outFile string, selectedPages []string, nup *model.NUp, conf *model.Configuration) (err error) {
 	var f1, f2 *os.File
-	ok := false
 
 	// booklet from a PDF
 	if f1, err = os.Open(inFiles[0]); err != nil {
@@ -111,30 +110,22 @@ func BookletFile(inFiles []string, outFile string, selectedPages []string, nup *
 	}
 
 	if f2, err = os.Create(outFile); err != nil {
-		_ = f1.Close()
+		f1.Close()
 		return err
 	}
 	logWritingTo(outFile)
 
 	defer func() {
-		if !ok {
-			_ = f2.Close()
-			_ = f1.Close()
+		if err != nil {
+			f2.Close()
+			f1.Close()
 			return
 		}
 		if err = f2.Close(); err != nil {
 			return
 		}
-		if err = f1.Close(); err != nil {
-			return
-		}
+		err = f1.Close()
 	}()
 
-	if err = Booklet(f1, f2, inFiles, selectedPages, nup, conf); err != nil {
-		return err
-	}
-
-	ok = true
-
-	return nil
+	return Booklet(f1, f2, inFiles, selectedPages, nup, conf)
 }

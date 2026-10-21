@@ -22,16 +22,12 @@ import (
 
 	"github.com/pdfcpu/pdfcpu/pkg/log"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/fault"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pkg/errors"
 )
 
 // Optimize reads a PDF stream from rs and writes the optimized PDF stream to w.
-// noEncryption ensures w writes without encryption.
-func Optimize(rs io.ReadSeeker, w io.Writer, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
-
+func Optimize(rs io.ReadSeeker, w io.Writer, conf *model.Configuration) error {
 	if rs == nil {
 		return errors.New("pdfcpu: Optimize: missing rs")
 	}
@@ -67,10 +63,8 @@ func Optimize(rs io.ReadSeeker, w io.Writer, conf *model.Configuration) (err err
 // OptimizeFile reads inFile and writes the optimized PDF to outFile.
 // If outFile is not provided then inFile gets overwritten
 // which leads to the same result as when inFile equals outFile.
-// noEncryption ensures outFile is not encrypted.
 func OptimizeFile(inFile, outFile string, conf *model.Configuration) (err error) {
 	var f1, f2 *os.File
-	ok := false
 
 	if f1, err = os.Open(inFile); err != nil {
 		return err
@@ -85,14 +79,13 @@ func OptimizeFile(inFile, outFile string, conf *model.Configuration) (err error)
 	}
 
 	if f2, err = os.Create(tmpFile); err != nil {
-		_ = f1.Close()
 		return err
 	}
 
 	defer func() {
-		if !ok {
-			_ = f2.Close()
-			_ = f1.Close()
+		if err != nil {
+			f2.Close()
+			f1.Close()
 			os.Remove(tmpFile)
 			return
 		}
@@ -112,11 +105,5 @@ func OptimizeFile(inFile, outFile string, conf *model.Configuration) (err error)
 	}
 	conf.Cmd = model.OPTIMIZE
 
-	if err = Optimize(f1, f2, conf); err != nil {
-		return err
-	}
-
-	ok = true
-
-	return nil
+	return Optimize(f1, f2, conf)
 }

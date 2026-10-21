@@ -43,7 +43,6 @@ const (
 	GB
 )
 
-// String returns the string value of b.
 func (b ByteSize) String() string {
 
 	switch {
@@ -79,7 +78,6 @@ func (boolean Boolean) Clone() Object {
 	return boolean
 }
 
-// String returns the string value of boolean.
 func (boolean Boolean) String() string {
 	return fmt.Sprintf("%v", bool(boolean))
 }
@@ -104,7 +102,6 @@ func (f Float) Clone() Object {
 	return f
 }
 
-// String returns the string value of f.
 func (f Float) String() string {
 	// Use a precision of 2 for logging readability.
 	return fmt.Sprintf("%.2f", float64(f))
@@ -131,7 +128,6 @@ func (i Integer) Clone() Object {
 	return i
 }
 
-// String returns the string value of i.
 func (i Integer) String() string {
 	return strconv.Itoa(int(i))
 }
@@ -154,7 +150,6 @@ type Point struct {
 	Y float64 `json:"y"`
 }
 
-// NewPoint returns a new point.
 func NewPoint(x, y float64) Point {
 	return Point{X: x, Y: y}
 }
@@ -165,7 +160,6 @@ func (p *Point) Translate(dx, dy float64) {
 	p.Y += dy
 }
 
-// String returns the string value of p.
 func (p Point) String() string {
 	return fmt.Sprintf("(%.2f,%.2f)\n", p.X, p.Y)
 }
@@ -192,7 +186,6 @@ func decodeFloat(number Object) float64 {
 	return f
 }
 
-// RectForArray rect for array.
 func RectForArray(arr Array) *Rectangle {
 	if len(arr) != 4 {
 		return nil
@@ -232,7 +225,6 @@ func (r Rectangle) Height() float64 {
 	return r.UR.Y - r.LL.Y
 }
 
-// Equals equals.
 func (r Rectangle) Equals(r2 Rectangle) bool {
 	return r.LL == r2.LL && r.UR == r2.UR
 }
@@ -242,7 +234,6 @@ func (r Rectangle) FitsWithin(r2 *Rectangle) bool {
 	return r.Width() <= r2.Width() && r.Height() <= r2.Height()
 }
 
-// Visible visible.
 func (r Rectangle) Visible() bool {
 	return r.Width() != 0 && r.Height() != 0
 }
@@ -293,7 +284,6 @@ func (r Rectangle) Center() Point {
 	return Point{(r.UR.X - r.Width()/2), (r.UR.Y - r.Height()/2)}
 }
 
-// String returns the string value of r.
 func (r Rectangle) String() string {
 	return fmt.Sprintf("(%3.2f, %3.2f, %3.2f, %3.2f) w=%.2f h=%.2f ar=%.2f", r.LL.X, r.LL.Y, r.UR.X, r.UR.Y, r.Width(), r.Height(), r.AspectRatio())
 }
@@ -400,7 +390,6 @@ type QuadLiteral struct {
 	P1, P2, P3, P4 Point
 }
 
-// NewQuadLiteralForRect returns a new quad literal for rect.
 func NewQuadLiteralForRect(r *Rectangle) *QuadLiteral {
 	// p1 := Point{X: r.LL.X, Y: r.LL.Y}
 	// p2 := Point{X: r.UR.X, Y: r.LL.Y}
@@ -466,7 +455,6 @@ func (nameObject Name) Clone() Object {
 	return nameObject
 }
 
-// String returns the string value of nameObject.
 func (nameObject Name) String() string {
 	return string(nameObject)
 }
@@ -495,7 +483,6 @@ func (stringliteral StringLiteral) Clone() Object {
 	return stringliteral
 }
 
-// String returns the string value of stringliteral.
 func (stringliteral StringLiteral) String() string {
 	return fmt.Sprintf("(%s)", string(stringliteral))
 }
@@ -524,8 +511,6 @@ func NewHexLiteral(b []byte) HexLiteral {
 func (hexliteral HexLiteral) Clone() Object {
 	return hexliteral
 }
-
-// String returns the string value of hexliteral.
 func (hexliteral HexLiteral) String() string {
 	return fmt.Sprintf("<%s>", string(hexliteral))
 }
@@ -566,7 +551,6 @@ func (ir IndirectRef) Clone() Object {
 	return ir2
 }
 
-// String returns the string value of ir.
 func (ir IndirectRef) String() string {
 	return fmt.Sprintf("(%s)", ir.PDFString())
 }
@@ -599,7 +583,6 @@ const (
 	mmToUserSpace   = 1 / userSpaceToMm
 )
 
-// ToUserSpace to user space.
 func ToUserSpace(f float64, unit DisplayUnit) float64 {
 	switch unit {
 	case INCHES:
@@ -664,7 +647,6 @@ func (d Dim) Portrait() bool {
 	return d.AspectRatio() < 1
 }
 
-// String returns the string value of d.
 func (d Dim) String() string {
 	return fmt.Sprintf("%fx%f", d.Width, d.Height)
 }

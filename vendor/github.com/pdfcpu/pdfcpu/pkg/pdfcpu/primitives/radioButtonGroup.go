@@ -59,7 +59,6 @@ type RadioButtonGroup struct {
 	Hide            bool
 }
 
-// Rtl returns true if rbg is right-to-left.
 func (rbg *RadioButtonGroup) Rtl() bool {
 	if rbg.Buttons == nil {
 		return false

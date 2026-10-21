@@ -22,98 +22,22 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/pdfcpu/pdfcpu/pkg/log"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/fault"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/sanitize"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
 	"github.com/pkg/errors"
 )
 
-func sanitizeFilenamePart(s, fallback string) string {
-	return sanitize.PathOr(s, fallback)
-}
-
-// WriteImageToDisk returns a closure for writing an image to disk.
-func WriteImageToDisk(outDir, fileName string) func(model.Image, bool, int) error {
-	fileName = sanitizeFilenamePart(fileName, "file")
-
-	return func(img model.Image, singleImgPerPage bool, maxPageDigits int) error {
-		if img.Reader == nil {
-			return nil
-		}
-		s := "%s_%" + fmt.Sprintf("0%dd", maxPageDigits)
-		qual := img.Name
-		if img.Thumb {
-			qual = "thumb"
-		}
-		qual = sanitizeFilenamePart(qual, "image")
-		fileType := sanitizeFilenamePart(img.FileType, "img")
-		f := fmt.Sprintf(s+"_%s.%s", fileName, img.PageNr, qual, fileType)
-		outFile := filepath.Join(outDir, f)
-		logWritingTo(outFile)
-		return pdfcpu.WriteReader(outFile, img)
-	}
-}
-
-// WriteFontToDisk returns a closure for writing a font file to disk.
-func WriteFontToDisk(outDir, fnBase string) func(pdfcpu.Font) error {
-	fnBase = sanitizeFilenamePart(fnBase, "file")
-
-	return func(font pdfcpu.Font) error {
-		fontName := sanitizeFilenamePart(font.Name, "fontName")
-		fontType := sanitizeFilenamePart(font.Type, "fontType")
-		outFile := filepath.Join(outDir, fmt.Sprintf("%s_%s.%s", fnBase, fontName, fontType))
-		logWritingTo(outFile)
-		return pdfcpu.WriteReader(outFile, font)
-	}
-}
-
-// WritePageToDisk returns a closure for writing a single page PDF to disk.
-func WritePageToDisk(outDir, fnBase string) func(io.Reader, int) error {
-	fnBase = sanitizeFilenamePart(fnBase, "file")
-
-	return func(rd io.Reader, pageNr int) error {
-		outFile := filepath.Join(outDir, fmt.Sprintf("%s_page_%d.pdf", fnBase, pageNr))
-		logWritingTo(outFile)
-		return pdfcpu.WriteReader(outFile, rd)
-	}
-}
-
-// WriteContentToDisk returns a closure for writing content to disk.
-func WriteContentToDisk(outDir, fnBase string) func(io.Reader, int) error {
-	fnBase = sanitizeFilenamePart(fnBase, "file")
-
-	return func(rd io.Reader, pageNr int) error {
-		outFile := filepath.Join(outDir, fmt.Sprintf("%s_Content_page_%d.txt", fnBase, pageNr))
-		logWritingTo(outFile)
-		return pdfcpu.WriteReader(outFile, rd)
-	}
-}
-
-// WriteMetadataToDisk returns a closure for writing metadata to disk.
-func WriteMetadataToDisk(outDir, fnBase string) func(pdfcpu.Metadata) error {
-	fnBase = sanitizeFilenamePart(fnBase, "file")
-
-	return func(md pdfcpu.Metadata) error {
-		parentType := sanitizeFilenamePart(md.ParentType, "metadata")
-		outFile := filepath.Join(outDir, fmt.Sprintf("%s_Metadata_%s_%d_%d.txt", fnBase, parentType, md.ParentObjNr, md.ObjNr))
-		logWritingTo(outFile)
-		return pdfcpu.WriteReader(outFile, md)
-	}
-}
-
 // ExtractImagesRaw returns []pdfcpu.Image containing io.Readers for images contained in selectedPages.
-// Note: may be memory intensive.
-func ExtractImagesRaw(rs io.ReadSeeker, selectedPages []string, conf *model.Configuration) (images []map[int]model.Image, err error) {
-	defer fault.Catch(&err)
-
+// Beware of memory intensive returned slice.
+func ExtractImagesRaw(rs io.ReadSeeker, selectedPages []string, conf *model.Configuration) ([]map[int]model.Image, error) {
 	if rs == nil {
-		return nil, errors.New("pdfcpu: ExtractImagesRaw: missing rs")
+		return nil, errors.New("pdfcpu: ExtractImages: missing rs")
 	}
 
 	if conf == nil {
@@ -131,6 +55,7 @@ func ExtractImagesRaw(rs io.ReadSeeker, selectedPages []string, conf *model.Conf
 		return nil, err
 	}
 
+	var images []map[int]model.Image
 	for i, v := range pages {
 		if !v {
 			continue
@@ -146,9 +71,7 @@ func ExtractImagesRaw(rs io.ReadSeeker, selectedPages []string, conf *model.Conf
 }
 
 // ExtractImages extracts and digests embedded image resources from rs for selected pages.
-func ExtractImages(rs io.ReadSeeker, selectedPages []string, digestImage func(model.Image, bool, int) error, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
-
+func ExtractImages(rs io.ReadSeeker, selectedPages []string, digestImage func(model.Image, bool, int) error, conf *model.Configuration) error {
 	if rs == nil {
 		return errors.New("pdfcpu: ExtractImages: missing rs")
 	}
@@ -168,11 +91,19 @@ func ExtractImages(rs io.ReadSeeker, selectedPages []string, digestImage func(mo
 		return err
 	}
 
-	sp := sortedPages(pages)
-	maxPageDigits := len(strconv.Itoa(sp[len(sp)-1]))
+	pageNrs := []int{}
+	for k, v := range pages {
+		if !v {
+			continue
+		}
+		pageNrs = append(pageNrs, k)
+	}
 
-	for i := range sp {
-		mm, err := pdfcpu.ExtractPageImages(ctx, sp[i], false)
+	sort.Ints(pageNrs)
+	maxPageDigits := len(strconv.Itoa(pageNrs[len(pageNrs)-1]))
+
+	for _, i := range pageNrs {
+		mm, err := pdfcpu.ExtractPageImages(ctx, i, false)
 		if err != nil {
 			return err
 		}
@@ -200,22 +131,30 @@ func ExtractImagesFile(inFile, outDir string, selectedPages []string, conf *mode
 	}
 	fileName := strings.TrimSuffix(filepath.Base(inFile), ".pdf")
 
-	return ExtractImages(f, selectedPages, WriteImageToDisk(outDir, fileName), conf)
+	return ExtractImages(f, selectedPages, pdfcpu.WriteImageToDisk(outDir, fileName), conf)
 }
 
-func writeFonts(ff []pdfcpu.Font, digestFont func(pdfcpu.Font) error) error {
+func writeFonts(ff []pdfcpu.Font, outDir, fileName string) error {
 	for _, f := range ff {
-		if err := digestFont(f); err != nil {
+		outFile := filepath.Join(outDir, fmt.Sprintf("%s_%s.%s", fileName, f.Name, f.Type))
+		logWritingTo(outFile)
+		w, err := os.Create(outFile)
+		if err != nil {
+			return err
+		}
+		if _, err = io.Copy(w, f); err != nil {
+			return err
+		}
+		if err := w.Close(); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
-// ExtractFonts retrieves and digests embedded fontfiles from rs for selected pages.
-func ExtractFonts(rs io.ReadSeeker, selectedPages []string, digestFont func(pdfcpu.Font) error, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
-
+// ExtractFonts dumps embedded fontfiles from rs into outDir for selected pages.
+func ExtractFonts(rs io.ReadSeeker, outDir, fileName string, selectedPages []string, conf *model.Configuration) error {
 	if rs == nil {
 		return errors.New("pdfcpu: ExtractFonts: missing rs")
 	}
@@ -235,19 +174,19 @@ func ExtractFonts(rs io.ReadSeeker, selectedPages []string, digestFont func(pdfc
 		return err
 	}
 
+	fileName = strings.TrimSuffix(filepath.Base(fileName), ".pdf")
+
 	objNrs, skipped := types.IntSet{}, types.IntSet{}
 
 	for i, v := range pages {
 		if !v {
 			continue
 		}
-
 		ff, err := pdfcpu.ExtractPageFonts(ctx, i, objNrs, skipped)
 		if err != nil {
 			return err
 		}
-
-		if err := writeFonts(ff, digestFont); err != nil {
+		if err := writeFonts(ff, outDir, fileName); err != nil {
 			return err
 		}
 	}
@@ -257,10 +196,10 @@ func ExtractFonts(rs io.ReadSeeker, selectedPages []string, digestFont func(pdfc
 		return err
 	}
 
-	return writeFonts(ff, digestFont)
+	return writeFonts(ff, outDir, fileName)
 }
 
-// ExtractFontsFile writes embedded fontfiles from inFile into outDir for selected pages.
+// ExtractFontsFile dumps embedded fontfiles from inFile into outDir for selected pages.
 func ExtractFontsFile(inFile, outDir string, selectedPages []string, conf *model.Configuration) error {
 	f, err := os.Open(inFile)
 	if err != nil {
@@ -272,8 +211,21 @@ func ExtractFontsFile(inFile, outDir string, selectedPages []string, conf *model
 		log.CLI.Printf("extracting fonts from %s into %s/ ...\n", inFile, outDir)
 	}
 
-	fnBase := strings.TrimSuffix(filepath.Base(inFile), ".pdf")
-	return ExtractFonts(f, selectedPages, WriteFontToDisk(outDir, fnBase), conf)
+	return ExtractFonts(f, outDir, filepath.Base(inFile), selectedPages, conf)
+}
+
+// WritePage consumes an io.Reader containing some PDF bytes and writes to outDir/fileName.
+func WritePage(r io.Reader, outDir, fileName string, pageNr int) error {
+	outFile := filepath.Join(outDir, fmt.Sprintf("%s_page_%d.pdf", fileName, pageNr))
+	logWritingTo(outFile)
+	w, err := os.Create(outFile)
+	if err != nil {
+		return err
+	}
+	if _, err = io.Copy(w, r); err != nil {
+		return err
+	}
+	return w.Close()
 }
 
 // ExtractPage extracts the page with pageNr out of ctx into an io.Reader.
@@ -291,10 +243,8 @@ func ExtractPage(ctx *model.Context, pageNr int) (io.Reader, error) {
 	return &b, nil
 }
 
-// ExtractPages retrieves and digests single page PDF files from rs for selected pages.
-func ExtractPages(rs io.ReadSeeker, selectedPages []string, digestPage func(io.Reader, int) error, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
-
+// ExtractPages generates single page PDF files from rs in outDir for selected pages.
+func ExtractPages(rs io.ReadSeeker, outDir, fileName string, selectedPages []string, conf *model.Configuration) error {
 	if rs == nil {
 		return errors.New("pdfcpu: ExtractPages: missing rs")
 	}
@@ -321,19 +271,14 @@ func ExtractPages(rs io.ReadSeeker, selectedPages []string, digestPage func(io.R
 		return nil
 	}
 
-	sp := sortedPages(pages)
+	fileName = strings.TrimSuffix(filepath.Base(fileName), ".pdf")
 
-	for i := range sp {
-		pageNr := sp[i]
-		rd, err := ExtractPage(ctx, pageNr)
+	for _, i := range sortedPages(pages) {
+		r, err := ExtractPage(ctx, i)
 		if err != nil {
 			return err
 		}
-		if rd == nil {
-			continue
-		}
-
-		if err := digestPage(rd, pageNr); err != nil {
+		if err := WritePage(r, outDir, fileName, i); err != nil {
 			return err
 		}
 	}
@@ -353,14 +298,11 @@ func ExtractPagesFile(inFile, outDir string, selectedPages []string, conf *model
 		log.CLI.Printf("extracting pages from %s into %s/ ...\n", inFile, outDir)
 	}
 
-	fnBase := strings.TrimSuffix(filepath.Base(inFile), ".pdf")
-	return ExtractPages(f, selectedPages, WritePageToDisk(outDir, fnBase), conf)
+	return ExtractPages(f, outDir, filepath.Base(inFile), selectedPages, conf)
 }
 
-// ExtractContent retrieves and digests "PDF sources from rs for selected pages.
-func ExtractContent(rs io.ReadSeeker, selectedPages []string, digestContent func(io.Reader, int) error, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
-
+// ExtractContent dumps "PDF source" files from rs into outDir for selected pages.
+func ExtractContent(rs io.ReadSeeker, outDir, fileName string, selectedPages []string, conf *model.Configuration) error {
 	if rs == nil {
 		return errors.New("pdfcpu: ExtractContent: missing rs")
 	}
@@ -380,20 +322,33 @@ func ExtractContent(rs io.ReadSeeker, selectedPages []string, digestContent func
 		return err
 	}
 
+	fileName = strings.TrimSuffix(filepath.Base(fileName), ".pdf")
+
 	for p, v := range pages {
 		if !v {
 			continue
 		}
 
-		rd, err := pdfcpu.ExtractPageContent(ctx, p)
+		r, err := pdfcpu.ExtractPageContent(ctx, p)
 		if err != nil {
 			return err
 		}
-		if rd == nil {
+		if r == nil {
 			continue
 		}
 
-		if err := digestContent(rd, p); err != nil {
+		outFile := filepath.Join(outDir, fmt.Sprintf("%s_Content_page_%d.txt", fileName, p))
+		logWritingTo(outFile)
+		f, err := os.Create(outFile)
+		if err != nil {
+			return err
+		}
+
+		if _, err = io.Copy(f, r); err != nil {
+			return err
+		}
+
+		if err := f.Close(); err != nil {
 			return err
 		}
 	}
@@ -413,14 +368,11 @@ func ExtractContentFile(inFile, outDir string, selectedPages []string, conf *mod
 		log.CLI.Printf("extracting content from %s into %s/ ...\n", inFile, outDir)
 	}
 
-	fnBase := strings.TrimSuffix(filepath.Base(inFile), ".pdf")
-	return ExtractContent(f, selectedPages, WriteContentToDisk(outDir, fnBase), conf)
+	return ExtractContent(f, outDir, inFile, selectedPages, conf)
 }
 
-// ExtractMetadata retrieves and digests all metadata dict entries for rs.
-func ExtractMetadata(rs io.ReadSeeker, digestMetadata func(pdfcpu.Metadata) error, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
-
+// ExtractMetadata dumps all metadata dict entries for rs into outDir.
+func ExtractMetadata(rs io.ReadSeeker, outDir, fileName string, conf *model.Configuration) error {
 	if rs == nil {
 		return errors.New("pdfcpu: ExtractMetadata: missing rs")
 	}
@@ -435,14 +387,26 @@ func ExtractMetadata(rs io.ReadSeeker, digestMetadata func(pdfcpu.Metadata) erro
 		return err
 	}
 
-	mdmd, err := pdfcpu.ExtractMetadata(ctx)
+	mm, err := pdfcpu.ExtractMetadata(ctx)
 	if err != nil {
 		return err
 	}
 
-	for _, md := range mdmd {
-		if err := digestMetadata(md); err != nil {
-			return err
+	if len(mm) > 0 {
+		fileName = strings.TrimSuffix(filepath.Base(fileName), ".pdf")
+		for _, m := range mm {
+			outFile := filepath.Join(outDir, fmt.Sprintf("%s_Metadata_%s_%d_%d.txt", fileName, m.ParentType, m.ParentObjNr, m.ObjNr))
+			logWritingTo(outFile)
+			f, err := os.Create(outFile)
+			if err != nil {
+				return err
+			}
+			if _, err = io.Copy(f, m); err != nil {
+				return err
+			}
+			if err := f.Close(); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -461,6 +425,5 @@ func ExtractMetadataFile(inFile, outDir string, conf *model.Configuration) error
 		log.CLI.Printf("extracting metadata from %s into %s/ ...\n", inFile, outDir)
 	}
 
-	fileNameBase := strings.TrimSuffix(filepath.Base(inFile), ".pdf")
-	return ExtractMetadata(f, WriteMetadataToDisk(outDir, fileNameBase), conf)
+	return ExtractMetadata(f, outDir, filepath.Base(inFile), conf)
 }

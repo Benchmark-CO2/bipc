@@ -204,7 +204,6 @@ const (
 	LESlash
 )
 
-// LineEndingStyleName line ending style name.
 func LineEndingStyleName(les LineEndingStyle) string {
 	var s string
 	switch les {
@@ -236,11 +235,9 @@ func LineEndingStyleName(les LineEndingStyle) string {
 type AnnotationRenderer interface {
 	RenderDict(xRefTable *XRefTable, pageIndRef *types.IndirectRef) (types.Dict, error)
 	Type() AnnotationType
-	Rectangle() types.Rectangle
 	RectString() string
 	APObjNrInt() int
 	ID() string
-	Content() string
 	ContentString() string
 	CustomTypeString() string
 }
@@ -329,12 +326,7 @@ func (ann Annotation) ContentString() string {
 	return ann.Contents
 }
 
-// Content returns ann's contents.
-func (ann Annotation) Content() string {
-	return ann.Contents
-}
-
-// CustomTypeString returns a string representation of ann's contents.
+// ContentString returns a string representation of ann's contents.
 func (ann Annotation) CustomTypeString() string {
 	return ann.CustomSubType
 }
@@ -344,12 +336,6 @@ func (ann Annotation) RectString() string {
 	return ann.Rect.ShortString()
 }
 
-// Rectangle returns ann's positioning rectangle.
-func (ann Annotation) Rectangle() types.Rectangle {
-	return ann.Rect
-}
-
-// APObjNrInt returns APObjnr.
 func (ann Annotation) APObjNrInt() int {
 	return ann.APObjNr
 }
@@ -369,7 +355,6 @@ func (ann Annotation) HashString() uint32 {
 	return ann.Hash
 }
 
-// RenderDict renders ann as dict.
 func (ann Annotation) RenderDict(xRefTable *XRefTable, pageIndRef *types.IndirectRef) (types.Dict, error) {
 	d := types.Dict(map[string]types.Object{
 		"Type":    types.Name("Annot"),
@@ -458,7 +443,6 @@ func (ann PopupAnnotation) ContentString() string {
 	return s
 }
 
-// RenderDict renders ann as dict.
 func (ann PopupAnnotation) RenderDict(xRefTable *XRefTable, pageIndRef *types.IndirectRef) (types.Dict, error) {
 	d, err := ann.Annotation.RenderDict(xRefTable, pageIndRef)
 	if err != nil {
@@ -628,7 +612,6 @@ func (ann MarkupAnnotation) ContentString() string {
 	return s
 }
 
-// RenderDict renders ann as dict.
 func (ann MarkupAnnotation) RenderDict(xRefTable *XRefTable, pageIndRef *types.IndirectRef) (types.Dict, error) {
 	d, err := ann.Annotation.RenderDict(xRefTable, pageIndRef)
 	if err != nil {
@@ -732,7 +715,6 @@ const (
 	IntentFreeTextTypeWriter
 )
 
-// FreeTextIntentName returns the string representation for ft.
 func FreeTextIntentName(fti FreeTextIntent) string {
 	var s string
 	switch fti {
@@ -916,7 +898,6 @@ const (
 	IntentLineDimension
 )
 
-// LineIntentName returns the string representation for li.
 func LineIntentName(li LineIntent) string {
 	var s string
 	switch li {
@@ -1251,7 +1232,6 @@ const (
 	IntentPolygonDimension
 )
 
-// PolygonIntentName returns the string representation for pi.
 func PolygonIntentName(pi PolygonIntent) string {
 	var s string
 	switch pi {
@@ -1377,7 +1357,6 @@ const (
 	IntentPolyLineDimension
 )
 
-// PolyLineIntentName returns the string representation for pi.
 func PolyLineIntentName(pi PolyLineIntent) string {
 	var s string
 	switch pi {
@@ -1498,7 +1477,6 @@ type TextMarkupAnnotation struct {
 	Quad types.QuadPoints
 }
 
-// NewTextMarkupAnnotation returns a new text markup annotation.
 func NewTextMarkupAnnotation(
 	subType AnnotationType,
 	rect types.Rectangle,
@@ -1525,7 +1503,6 @@ func NewTextMarkupAnnotation(
 	}
 }
 
-// RenderDict renders ann as dict.
 func (ann TextMarkupAnnotation) RenderDict(xRefTable *XRefTable, pageIndRef *types.IndirectRef) (types.Dict, error) {
 	d, err := ann.MarkupAnnotation.RenderDict(xRefTable, pageIndRef)
 	if err != nil {
@@ -1543,7 +1520,6 @@ type HighlightAnnotation struct {
 	TextMarkupAnnotation
 }
 
-// NewHighlightAnnotation returns a new highlight annotation.
 func NewHighlightAnnotation(
 	rect types.Rectangle,
 	apObjNr int,
@@ -1570,7 +1546,6 @@ type UnderlineAnnotation struct {
 	TextMarkupAnnotation
 }
 
-// NewUnderlineAnnotation returns a new underline annotation.
 func NewUnderlineAnnotation(
 	rect types.Rectangle,
 	apObjNr int,
@@ -1597,7 +1572,6 @@ type SquigglyAnnotation struct {
 	TextMarkupAnnotation
 }
 
-// NewSquigglyAnnotation returns a new squiggly annotation.
 func NewSquigglyAnnotation(
 	rect types.Rectangle,
 	apObjNr int,
@@ -1624,7 +1598,6 @@ type StrikeOutAnnotation struct {
 	TextMarkupAnnotation
 }
 
-// NewStrikeOutAnnotation returns a new strike out annotation.
 func NewStrikeOutAnnotation(
 	rect types.Rectangle,
 	apObjNr int,
@@ -1653,7 +1626,6 @@ type CaretAnnotation struct {
 	Paragraph bool             // A new paragraph symbol (¶) shall be associated with the caret.
 }
 
-// NewCaretAnnotation returns a new caret annotation.
 func NewCaretAnnotation(
 	rect types.Rectangle,
 	apObjNr int,
@@ -1681,7 +1653,6 @@ func NewCaretAnnotation(
 	}
 }
 
-// RenderDict renders ann as dict.
 func (ann CaretAnnotation) RenderDict(xRefTable *XRefTable, pageIndRef *types.IndirectRef) (types.Dict, error) {
 	d, err := ann.MarkupAnnotation.RenderDict(xRefTable, pageIndRef)
 	if err != nil {
@@ -1709,7 +1680,6 @@ type InkAnnotation struct {
 	BorderStyle BorderStyle
 }
 
-// NewInkAnnotation returns a new ink annotation.
 func NewInkAnnotation(
 	rect types.Rectangle,
 	apObjNr int,
@@ -1736,7 +1706,6 @@ func NewInkAnnotation(
 	}
 }
 
-// RenderDict renders ann as dict.
 func (ann InkAnnotation) RenderDict(xRefTable *XRefTable, pageIndRef *types.IndirectRef) (types.Dict, error) {
 	d, err := ann.MarkupAnnotation.RenderDict(xRefTable, pageIndRef)
 	if err != nil {

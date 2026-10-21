@@ -15,10 +15,10 @@ import (
 )
 
 type fileUploadResult struct {
-	ProjectName string            `json:"project_name"`
-	OptionID    string            `json:"option_id"`
+	ProjectName string                   `json:"project_name"`
+	OptionID    string                   `json:"option_id"`
 	Modules     []fileUploadModuleResult `json:"modules"`
-	Errors      map[string]string `json:"errors,omitempty"`
+	Errors      map[string]string        `json:"errors,omitempty"`
 }
 
 type fileUploadModuleResult struct {

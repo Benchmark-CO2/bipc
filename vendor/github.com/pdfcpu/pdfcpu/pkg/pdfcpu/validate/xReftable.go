@@ -43,15 +43,6 @@ func XRefTable(ctx *model.Context) error {
 
 	xRefTable := ctx.XRefTable
 
-	rootDict, err := xRefTable.Catalog()
-	if err != nil {
-		return err
-	}
-
-	if err := validateRootVersion(xRefTable, rootDict, OPTIONAL, model.V14); err != nil {
-		return err
-	}
-
 	metaDataAuthoritative, err := metaDataModifiedAfterInfoDict(xRefTable)
 	if err != nil {
 		return err
@@ -67,7 +58,7 @@ func XRefTable(ctx *model.Context) error {
 	}
 
 	// Validate root object(aka the document catalog) and page tree.
-	err = validateRootObject(ctx, rootDict)
+	err = validateRootObject(ctx)
 	if err != nil {
 		return err
 	}
@@ -101,7 +92,7 @@ func XRefTable(ctx *model.Context) error {
 
 func fixInfoDict(xRefTable *model.XRefTable, rootDict types.Dict) error {
 	indRef := rootDict.IndirectRefEntry("Metadata")
-	ok, err := model.EqualObjects(*indRef, *xRefTable.Info, xRefTable, nil)
+	ok, err := model.EqualObjects(*indRef, *xRefTable.Info, xRefTable)
 	if err != nil {
 		return err
 	}
@@ -166,7 +157,7 @@ func metaDataModifiedAfterInfoDict(xRefTable *model.XRefTable) (bool, error) {
 
 	//fmt.Printf("infoDict: %s metaData: %s\n", modTimestampInfoDict, modTimestampMetaData)
 
-	if (*modTimestampInfoDict).Equal(modTimestampMetaData) {
+	if *modTimestampInfoDict == modTimestampMetaData {
 		return false, nil
 	}
 
@@ -175,67 +166,9 @@ func metaDataModifiedAfterInfoDict(xRefTable *model.XRefTable) (bool, error) {
 	return infoDictOlderThanMetaDict, nil
 }
 
-func setRootVersion(xRefTable *model.XRefTable, s string) error {
-
-	rootVersion, err := model.PDFVersion(s)
-	if err != nil {
-		if xRefTable.ValidationMode == model.ValidationStrict {
-			return errors.Wrapf(err, "identifyRootVersion: unknown PDF Root version: %s\n", s)
-		}
-		rootVersion, err = model.PDFVersionRelaxed(s)
-		if err != nil {
-			return errors.Wrapf(err, "identifyRootVersion: unknown PDF Root version: %s\n", s)
-		}
-	}
-
-	xRefTable.RootVersion = &rootVersion
-
-	// since V1.4 the header version may be overridden by a Version entry in the catalog.
-	if *xRefTable.HeaderVersion < model.V14 {
-		if log.InfoEnabled() {
-			log.Info.Printf("identifyRootVersion: PDF version is %s - will ignore root version: %s\n", xRefTable.HeaderVersion, s)
-		}
-	}
-
-	return nil
-}
-
 func validateRootVersion(xRefTable *model.XRefTable, rootDict types.Dict, required bool, sinceVersion model.Version) error {
-	// Locate a possible Version entry (since V1.4) in the catalog
-	// and record this as rootVersion (as opposed to headerVersion).
-
-	if xRefTable.ValidationMode == model.ValidationRelaxed {
-		sinceVersion = model.V10
-	}
-	n, err := validateNameEntry(xRefTable, rootDict, "rootDict", "Version", required, sinceVersion, nil)
-	if err == nil {
-		if n != nil {
-			// Validate version and save corresponding constant to xRefTable.
-			rootVersionStr := n.Value()
-			if err := setRootVersion(xRefTable, rootVersionStr); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-
-	if xRefTable.ValidationMode == model.ValidationStrict {
-		return err
-	}
-
-	f, err := validateNumberEntryToFloat(xRefTable, rootDict, "rootDict", "Version", OPTIONAL, sinceVersion, nil)
-	if err != nil || f == 0 {
-		return errors.New("invalid catalog version")
-	}
-
-	rootVersionStr := strconv.FormatFloat(f, 'f', 1, 64)
-	if err := setRootVersion(xRefTable, rootVersionStr); err != nil {
-		return err
-	}
-
-	model.ShowDigestedSpecViolation("catalog version with unexpected number type")
-
-	return nil
+	_, err := validateNameEntry(xRefTable, rootDict, "rootDict", "Version", OPTIONAL, sinceVersion, nil)
+	return err
 }
 
 func validateExtensions(xRefTable *model.XRefTable, rootDict types.Dict, required bool, sinceVersion model.Version) error {
@@ -275,7 +208,7 @@ func validatePageLabels(xRefTable *model.XRefTable, rootDict types.Dict, require
 		return err
 	}
 
-	_, _, err = validateNumberTree(xRefTable, "PageLabel", d, true, false)
+	_, _, err = validateNumberTree(xRefTable, "PageLabel", d, true)
 
 	return err
 }
@@ -1031,7 +964,7 @@ func checkLinks(xRefTable *model.XRefTable, client http.Client, pages []int) boo
 	for _, page := range pages {
 		for uri := range xRefTable.URIs[page] {
 			if log.CLIEnabled() {
-				log.CLI.Print(".")
+				fmt.Printf(".")
 			}
 			_, err := url.ParseRequestURI(uri)
 			if err != nil {
@@ -1102,7 +1035,7 @@ func checkForBrokenLinks(ctx *model.Context) error {
 	return nil
 }
 
-func validateRootObject(ctx *model.Context, rootDict types.Dict) error {
+func validateRootObject(ctx *model.Context) error {
 	if log.ValidateEnabled() {
 		log.Validate.Println("*** validateRootObject begin ***")
 	}
@@ -1147,18 +1080,23 @@ func validateRootObject(ctx *model.Context, rootDict types.Dict) error {
 
 	xRefTable := ctx.XRefTable
 
+	d, err := xRefTable.Catalog()
+	if err != nil {
+		return err
+	}
+
 	// Type
 	required := true
 	if ctx.XRefTable.ValidationMode == model.ValidationRelaxed {
 		required = false
 	}
-	_, err := validateNameEntry(xRefTable, rootDict, "rootDict", "Type", required, model.V10, func(s string) bool { return s == "Catalog" })
+	_, err = validateNameEntry(xRefTable, d, "rootDict", "Type", required, model.V10, func(s string) bool { return s == "Catalog" })
 	if err != nil {
 		return err
 	}
 
 	// Pages
-	rootPageNodeDict, err := validatePages(xRefTable, rootDict)
+	rootPageNodeDict, err := validatePages(xRefTable, d)
 	if err != nil {
 		return err
 	}
@@ -1168,7 +1106,7 @@ func validateRootObject(ctx *model.Context, rootDict types.Dict) error {
 		required     bool
 		sinceVersion model.Version
 	}{
-		//{validateRootVersion, OPTIONAL, model.V14}, Note: moved up
+		{validateRootVersion, OPTIONAL, model.V14},
 		{validateExtensions, OPTIONAL, model.V10},
 		{validatePageLabels, OPTIONAL, model.V13},
 		{validateNames, OPTIONAL, model.V11}, //model.V12},
@@ -1204,7 +1142,7 @@ func validateRootObject(ctx *model.Context, rootDict types.Dict) error {
 			// This is really a workaround for explicitly extending relaxed validation.
 			continue
 		}
-		err = f.validate(xRefTable, rootDict, f.required, f.sinceVersion)
+		err = f.validate(xRefTable, d, f.required, f.sinceVersion)
 		if err != nil {
 			return err
 		}

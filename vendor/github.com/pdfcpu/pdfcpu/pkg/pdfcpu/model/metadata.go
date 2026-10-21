@@ -28,7 +28,6 @@ const userDateFormatNoTimeZone = "2006-01-02T15:04:05Z"
 const userDateFormatNegTimeZone = "2006-01-02T15:04:05-07:00"
 const userDateFormatPosTimeZone = "2006-01-02T15:04:05+07:00"
 
-// UnmarshalXML unmarshals XML data.
 func (ud *UserDate) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	dateString := ""
 	err := d.DecodeElement(&dateString, &start)
@@ -132,7 +131,6 @@ func removeTag(s, kw string) string {
 	return s1
 }
 
-// RemoveKeywords removes keywords.
 func RemoveKeywords(metadata *[]byte) error {
 
 	// Opt for simple byte removal instead of xml de/encoding.

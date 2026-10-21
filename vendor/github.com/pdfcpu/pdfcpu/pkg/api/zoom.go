@@ -22,15 +22,12 @@ import (
 
 	"github.com/pdfcpu/pdfcpu/pkg/log"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/fault"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pkg/errors"
 )
 
 // Zoom applies resizeConf for selected pages of rs and writes result to w.
-func Zoom(rs io.ReadSeeker, w io.Writer, selectedPages []string, zoom *model.Zoom, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
-
+func Zoom(rs io.ReadSeeker, w io.Writer, selectedPages []string, zoom *model.Zoom, conf *model.Configuration) error {
 	if rs == nil {
 		return errors.New("pdfcpu: Zoom: missing rs")
 	}
@@ -63,13 +60,6 @@ func ZoomFile(inFile, outFile string, selectedPages []string, zoom *model.Zoom, 
 		log.CLI.Printf("zooming %s\n", inFile)
 	}
 
-	var f1, f2 *os.File
-	ok := false
-
-	if f1, err = os.Open(inFile); err != nil {
-		return err
-	}
-
 	tmpFile := inFile + ".tmp"
 	if outFile != "" && inFile != outFile {
 		tmpFile = outFile
@@ -78,15 +68,23 @@ func ZoomFile(inFile, outFile string, selectedPages []string, zoom *model.Zoom, 
 		logWritingTo(inFile)
 	}
 
+	var (
+		f1, f2 *os.File
+	)
+
+	if f1, err = os.Open(inFile); err != nil {
+		return err
+	}
+
 	if f2, err = os.Create(tmpFile); err != nil {
-		_ = f1.Close()
+		f1.Close()
 		return err
 	}
 
 	defer func() {
-		if !ok {
-			_ = f2.Close()
-			_ = f1.Close()
+		if err != nil {
+			f2.Close()
+			f1.Close()
 			os.Remove(tmpFile)
 			return
 		}
@@ -106,11 +104,5 @@ func ZoomFile(inFile, outFile string, selectedPages []string, zoom *model.Zoom, 
 	}
 	conf.Cmd = model.ZOOM
 
-	if err = Zoom(f1, f2, selectedPages, zoom, conf); err != nil {
-		return err
-	}
-
-	ok = true
-
-	return nil
+	return Zoom(f1, f2, selectedPages, zoom, conf)
 }

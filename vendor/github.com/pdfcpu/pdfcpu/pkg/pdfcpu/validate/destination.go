@@ -23,30 +23,26 @@ import (
 )
 
 func validateDestinationArrayFirstElement(xRefTable *model.XRefTable, a types.Array) (types.Object, error) {
+
 	o, err := xRefTable.Dereference(a[0])
 	if err != nil || o == nil {
 		return nil, err
 	}
 
-	s := "destination array: first element is not a page dict: " + a.String()
-
 	switch o := o.(type) {
+
+	case types.Integer, types.Name: // no further processing
 
 	case types.Dict:
 		if o.Type() == nil || (o.Type() != nil && (*o.Type() != "Page" && *o.Type() != "Pages")) {
-			if xRefTable.ValidationMode == model.ValidationRelaxed {
-				model.ShowDigestedSpecViolation(s)
-				return nil, nil
-			}
-			err = errors.Errorf("%s", s)
+			err = errors.Errorf("pdfcpu: validateDestinationArrayFirstElement: must be a pageDict indRef or an integer: %v (%T)", o, o)
 		}
 
 	default:
+		err = errors.Errorf("pdfcpu: validateDestinationArrayFirstElement: must be a pageDict indRef or an integer: %v (%T)", o, o)
 		if xRefTable.ValidationMode == model.ValidationRelaxed {
-			model.ShowDigestedSpecViolation(s)
-			return nil, nil
+			err = nil
 		}
-		err = errors.Errorf("%s", s)
 	}
 
 	return o, err
@@ -87,10 +83,7 @@ func validateDestType(a types.Array, destType types.Name) error {
 
 func validateDestinationArray(xRefTable *model.XRefTable, a types.Array) error {
 	if !validateDestinationArrayLength(a) {
-		if xRefTable.ValidationMode == model.ValidationStrict {
-			return errors.Errorf("pdfcpu: validateDestinationArray: invalid length: %d", len(a))
-		}
-		return nil
+		return errors.Errorf("pdfcpu: validateDestinationArray: invalid length: %d", len(a))
 	}
 
 	// Validate first element: indRef of page dict or pageNumber(int) of remote doc for remote Go-to Action or nil.

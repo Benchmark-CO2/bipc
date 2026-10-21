@@ -63,7 +63,7 @@ func validatePageLabelDict(xRefTable *model.XRefTable, o types.Object) error {
 	return err
 }
 
-func validateNumberTreeDictNumsEntry(xRefTable *model.XRefTable, d types.Dict, name string, useIDs bool) (firstKey, lastKey int, err error) {
+func validateNumberTreeDictNumsEntry(xRefTable *model.XRefTable, d types.Dict, name string) (firstKey, lastKey int, err error) {
 
 	// Nums: array of the form [key1 value1 key2 value2 ... key n value n]
 	o, found := d.Find("Nums")
@@ -126,7 +126,7 @@ func validateNumberTreeDictNumsEntry(xRefTable *model.XRefTable, d types.Dict, n
 			}
 
 		case "StructTree":
-			err = validateStructTreeRootDictEntryK(xRefTable, o, useIDs)
+			err = validateStructTreeRootDictEntryK(xRefTable, o)
 			if err != nil {
 				return 0, 0, err
 			}
@@ -165,14 +165,7 @@ func validateNumberTreeDictLimitsEntry(xRefTable *model.XRefTable, d types.Dict,
 	return nil
 }
 
-func validateNumberTree(xRefTable *model.XRefTable, name string, d types.Dict, root, useIDs bool) (firstKey, lastKey int, err error) {
-	return validateNumberTreeDepth(xRefTable, name, d, root, useIDs, 0)
-}
-
-func validateNumberTreeDepth(xRefTable *model.XRefTable, name string, d types.Dict, root, useIDs bool, depth int) (firstKey, lastKey int, err error) {
-	if err := xRefTable.CheckRecursionDepth("number tree", depth); err != nil {
-		return 0, 0, err
-	}
+func validateNumberTree(xRefTable *model.XRefTable, name string, d types.Dict, root bool) (firstKey, lastKey int, err error) {
 
 	// A node has "Kids" or "Nums" entry.
 
@@ -196,7 +189,7 @@ func validateNumberTreeDepth(xRefTable *model.XRefTable, name string, d types.Di
 			}
 
 			var fk int
-			fk, lastKey, err = validateNumberTreeDepth(xRefTable, name, d1, false, useIDs, depth+1)
+			fk, lastKey, err = validateNumberTree(xRefTable, name, d1, false)
 			if err != nil {
 				return 0, 0, err
 			}
@@ -208,7 +201,7 @@ func validateNumberTreeDepth(xRefTable *model.XRefTable, name string, d types.Di
 	} else {
 
 		// Leaf node
-		firstKey, lastKey, err = validateNumberTreeDictNumsEntry(xRefTable, d, name, useIDs)
+		firstKey, lastKey, err = validateNumberTreeDictNumsEntry(xRefTable, d, name)
 		if err != nil {
 			return 0, 0, err
 		}

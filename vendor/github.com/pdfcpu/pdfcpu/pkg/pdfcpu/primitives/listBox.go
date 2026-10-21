@@ -64,7 +64,6 @@ type ListBox struct {
 	Hide            bool
 }
 
-// SetFontID sets font ID.
 func (lb *ListBox) SetFontID(s string) {
 	lb.fontID = s
 }
@@ -892,7 +891,6 @@ func NewListBox(
 	return lb, fontIndRef, nil
 }
 
-// NewForm returns a new form.
 func NewForm(
 	xRefTable *model.XRefTable,
 	bb []byte,
@@ -983,7 +981,6 @@ func refreshListBoxAP(ctx *model.Context, d types.Dict, opts []string, ind types
 	return updateForm(ctx.XRefTable, bb, irN)
 }
 
-// EnsureListBoxAP ensures list box ap.
 func EnsureListBoxAP(ctx *model.Context, d types.Dict, opts []string, ind types.Array, da *string, fonts map[string]types.IndirectRef) error {
 
 	apd := d.DictEntry("AP")

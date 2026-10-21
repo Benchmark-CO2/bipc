@@ -36,7 +36,6 @@ const (
 	PageModeUseAttachments
 )
 
-// PageModeFor returns a page mode for s.
 func PageModeFor(s string) *PageMode {
 	if s == "" {
 		return nil
@@ -61,7 +60,6 @@ func PageModeFor(s string) *PageMode {
 	return &pm
 }
 
-// String returns the string value of pm.
 func (pm *PageMode) String() string {
 	if pm == nil {
 		return ""
@@ -94,7 +92,6 @@ const (
 	PageLayoutTwoPageRight
 )
 
-// PageLayoutFor returns the page layout for s.
 func PageLayoutFor(s string) *PageLayout {
 	if s == "" {
 		return nil
@@ -117,7 +114,6 @@ func PageLayoutFor(s string) *PageLayout {
 	return &pl
 }
 
-// String returns the string value of pl.
 func (pl *PageLayout) String() string {
 	if pl == nil {
 		return ""
@@ -157,7 +153,6 @@ const (
 	ArtBox
 )
 
-// PageBoundaryFor returns a page boundary for s.
 func PageBoundaryFor(s string) *PageBoundary {
 	if s == "" {
 		return nil
@@ -180,7 +175,6 @@ func PageBoundaryFor(s string) *PageBoundary {
 	return &pb
 }
 
-// String returns the string value of pb.
 func (pb *PageBoundary) String() string {
 	if pb == nil {
 		return ""
@@ -208,7 +202,6 @@ const (
 	PrintScalingAppDefault
 )
 
-// PrintScalingFor returns print scaling for s.
 func PrintScalingFor(s string) *PrintScaling {
 	if s == "" {
 		return nil
@@ -225,7 +218,6 @@ func PrintScalingFor(s string) *PrintScaling {
 	return &ps
 }
 
-// String returns the string value of ps.
 func (ps *PrintScaling) String() string {
 	if ps == nil {
 		return ""
@@ -247,7 +239,6 @@ const (
 	R2L
 )
 
-// DirectionFor returns the direction for s.
 func DirectionFor(s string) *Direction {
 	if s == "" {
 		return nil
@@ -264,7 +255,6 @@ func DirectionFor(s string) *Direction {
 	return &d
 }
 
-// String returns the string value of d.
 func (d *Direction) String() string {
 	if d == nil {
 		return ""
@@ -287,7 +277,6 @@ const (
 	DuplexFlipLongEdge
 )
 
-// PaperHandlingFor returns paper handling for s.
 func PaperHandlingFor(s string) *PaperHandling {
 	if s == "" {
 		return nil
@@ -306,7 +295,6 @@ func PaperHandlingFor(s string) *PaperHandling {
 	return &ph
 }
 
-// String returns the string value of ph.
 func (ph *PaperHandling) String() string {
 	if ph == nil {
 		return ""
@@ -368,7 +356,6 @@ func (vp *ViewerPreferences) validatePrinterPreferences(version Version) error {
 	return nil
 }
 
-// Validate validates vp for version.
 func (vp *ViewerPreferences) Validate(version Version) error {
 	if vp.Direction != nil && version < V13 {
 		return errors.Errorf("pdfcpu: invalid viewer preference \"Direction\" - since PDF 1.3, got: %v\n", version)
@@ -389,42 +376,34 @@ func (vp *ViewerPreferences) Validate(version Version) error {
 	return vp.validatePrinterPreferences(version)
 }
 
-// SetHideToolBar sets hide tool bar.
 func (vp *ViewerPreferences) SetHideToolBar(val bool) {
 	vp.HideToolbar = &val
 }
 
-// SetHideMenuBar sets hide menu bar.
 func (vp *ViewerPreferences) SetHideMenuBar(val bool) {
 	vp.HideMenubar = &val
 }
 
-// SetHideWindowUI sets hide window ui.
 func (vp *ViewerPreferences) SetHideWindowUI(val bool) {
 	vp.HideWindowUI = &val
 }
 
-// SetFitWindow sets fit window.
 func (vp *ViewerPreferences) SetFitWindow(val bool) {
 	vp.FitWindow = &val
 }
 
-// SetCenterWindow sets center window.
 func (vp *ViewerPreferences) SetCenterWindow(val bool) {
 	vp.CenterWindow = &val
 }
 
-// SetDisplayDocTitle sets display doc title.
 func (vp *ViewerPreferences) SetDisplayDocTitle(val bool) {
 	vp.DisplayDocTitle = &val
 }
 
-// SetPickTrayByPDFSize sets pick tray by PDF size.
 func (vp *ViewerPreferences) SetPickTrayByPDFSize(val bool) {
 	vp.PickTrayByPDFSize = &val
 }
 
-// SetNumCopies sets num copies.
 func (vp *ViewerPreferences) SetNumCopies(i int) {
 	vp.NumCopies = (*types.Integer)(&i)
 }
@@ -456,7 +435,6 @@ func (vp *ViewerPreferences) populatePrinterPreferences(vp1 *ViewerPreferences) 
 	}
 }
 
-// Populate populates vp with vp1.
 func (vp *ViewerPreferences) Populate(vp1 *ViewerPreferences) {
 	if vp1.HideToolbar != nil {
 		vp.HideToolbar = vp1.HideToolbar
@@ -492,7 +470,6 @@ func (vp *ViewerPreferences) Populate(vp1 *ViewerPreferences) {
 	vp.populatePrinterPreferences(vp1)
 }
 
-// DefaultViewerPreferences returns the default viewer preferences.
 func DefaultViewerPreferences(version Version) *ViewerPreferences {
 	vp := ViewerPreferences{}
 	vp.SetHideToolBar(false)
@@ -523,7 +500,6 @@ func DefaultViewerPreferences(version Version) *ViewerPreferences {
 	return &vp
 }
 
-// ViewerPreferencesWithDefaults returns viewer preferences with defaults.
 func ViewerPreferencesWithDefaults(vp *ViewerPreferences, version Version) (*ViewerPreferences, error) {
 	vp1 := DefaultViewerPreferences(version)
 
@@ -557,7 +533,6 @@ type ViewerPrefJSON struct {
 	Enforce               []string `json:"enforce,omitempty"`
 }
 
-// MarshalJSON marshals JSON data.
 func (vp *ViewerPreferences) MarshalJSON() ([]byte, error) {
 	vpJSON := ViewerPrefJSON{
 		HideToolbar:           vp.HideToolbar,
@@ -654,7 +629,6 @@ func (vp *ViewerPreferences) unmarshalPrinterPreferences(vpJSON ViewerPrefJSON) 
 	return nil
 }
 
-// UnmarshalJSON unmarshals JSON data.
 func (vp *ViewerPreferences) UnmarshalJSON(data []byte) error {
 
 	vpJSON := ViewerPrefJSON{}
@@ -848,7 +822,7 @@ func (vp ViewerPreferences) List() []string {
 	return ss
 }
 
-// String returns the string value of vp.
+// String generates output for the info command.
 func (vp ViewerPreferences) String() string {
 	var ss []string
 

@@ -35,10 +35,6 @@ func whitespaceOrEOL(c rune) bool {
 	return unicode.IsSpace(c) || c == 0x0A || c == 0x0D || c == 0x00
 }
 
-func whitespaceOrEOLOrClosingBracket(c rune) bool {
-	return unicode.IsSpace(c) || c == 0x0A || c == 0x0D || c == 0x00 || c == 0x5D
-}
-
 func skipDict(l *string) error {
 	s := *l
 	if !strings.HasPrefix(s, "<<") {
@@ -180,7 +176,7 @@ func skipBI(l *string, prn PageResourceNames) error {
 	s := *l
 	//fmt.Printf("skipBI <%s>\n", s)
 	for {
-		s = strings.TrimLeftFunc(s, whitespaceOrEOLOrClosingBracket)
+		s = strings.TrimLeftFunc(s, whitespaceOrEOL)
 		if strings.HasPrefix(s, "ID") && whitespaceOrEOL(rune(s[2])) {
 			i, err := lookupEI(&s)
 			if err != nil {
@@ -215,7 +211,7 @@ func skipBI(l *string, prn PageResourceNames) error {
 			s = s[i:]
 			continue
 		}
-		i, _ := positionToNextWhitespaceOrChar(s, "/]")
+		i, _ := positionToNextWhitespaceOrChar(s, "/")
 		if i < 0 {
 			return errBIExpressionCorrupt
 		}

@@ -387,7 +387,6 @@ func nupPerfectBound(positionNumber int, inputPageCount int, pageNumbers []int, 
 	return getPageNumber(pageNumbers, p-1), rotate // p is one-indexed and we want zero-indexed
 }
 
-// GetBookletOrdering returns the booklet page ordering.
 func GetBookletOrdering(pages types.IntSet, nup *model.NUp) []model.BookletPage {
 	pageNumbers := sortSelectedPages(pages)
 	pageCount := len(pageNumbers)
@@ -445,7 +444,7 @@ func getBookletPageOrdering(nup *model.NUp, pageNumbers []int, pageCount int) []
 		pageNumberFn = nupPerfectBound
 	}
 
-	for i := range pageCount {
+	for i := 0; i < pageCount; i++ {
 		pageNr, rotate := pageNumberFn(i, pageCount, pageNumbers, nup)
 		bookletPages[i].Number = pageNr
 		bookletPages[i].Rotate = rotate
@@ -458,21 +457,19 @@ func bookletPages(
 	selectedPages types.IntSet,
 	nup *model.NUp,
 	pagesDict types.Dict,
-	pagesIndRef *types.IndirectRef) (int, error) {
+	pagesIndRef *types.IndirectRef) error {
 
 	var buf bytes.Buffer
 	formsResDict := types.NewDict()
 	rr := nup.RectsForGrid()
-	j := 0
 
 	for i, bp := range GetBookletOrdering(selectedPages, nup) {
 
 		if i > 0 && i%len(rr) == 0 {
 			// Wrap complete page.
 			if err := wrapUpPage(ctx, nup, formsResDict, buf, pagesDict, pagesIndRef); err != nil {
-				return 0, err
+				return err
 			}
-			j++
 			buf.Reset()
 			formsResDict = types.NewDict()
 		}
@@ -488,18 +485,12 @@ func bookletPages(
 		}
 
 		if err := ctx.NUpTilePDFBytesForPDF(bp.Number, formsResDict, &buf, rDest, nup, bp.Rotate); err != nil {
-			return 0, err
+			return err
 		}
 	}
 
 	// Wrap incomplete booklet page.
-	if err := wrapUpPage(ctx, nup, formsResDict, buf, pagesDict, pagesIndRef); err != nil {
-		return 0, err
-	}
-
-	j++
-
-	return j, nil
+	return wrapUpPage(ctx, nup, formsResDict, buf, pagesDict, pagesIndRef)
 }
 
 // BookletFromImages creates a booklet version of the image sequence represented by fileNames.
@@ -603,8 +594,7 @@ func BookletFromPDF(ctx *model.Context, selectedPages types.IntSet, nup *model.N
 
 	nup.PageDim = &types.Dim{Width: mb.Width(), Height: mb.Height()}
 
-	pageCount, err := bookletPages(ctx, selectedPages, nup, pagesDict, pagesIndRef)
-	if err != nil {
+	if err = bookletPages(ctx, selectedPages, nup, pagesDict, pagesIndRef); err != nil {
 		return err
 	}
 
@@ -615,8 +605,5 @@ func BookletFromPDF(ctx *model.Context, selectedPages types.IntSet, nup *model.N
 	}
 
 	rootDict.Update("Pages", *pagesIndRef)
-
-	ctx.PageCount = pageCount
-
 	return nil
 }

@@ -251,28 +251,6 @@ func validateFormFieldDA(xRefTable *model.XRefTable, d types.Dict, dictName stri
 	return false, nil
 }
 
-func detectRectArray(xRefTable *model.XRefTable, d types.Dict, dictName string) (types.Array, error) {
-	obj, ok := d.Find("Kids")
-	if !ok {
-		// terminal field
-		return validateRectangleEntry(xRefTable, d, dictName, "Rect", REQUIRED, model.V10, nil)
-	}
-
-	// non terminal field
-	kids, err := xRefTable.DereferenceArray(obj)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO Validation of len(kids) necessary?
-	d1, err := xRefTable.DereferenceDict(kids[0])
-	if err != nil {
-		return nil, err
-	}
-
-	return validateRectangleEntry(xRefTable, d1, dictName, "Rect", REQUIRED, model.V10, nil)
-}
-
 func cacheSig(xRefTable *model.XRefTable, d types.Dict, dictName string, form bool, objNr, incr int) error {
 	fieldType := d.NameEntry("FT")
 	if fieldType == nil || *fieldType != "Sig" {
@@ -299,9 +277,31 @@ func cacheSig(xRefTable *model.XRefTable, d types.Dict, dictName string, form bo
 		}
 	}
 
-	arr, err := detectRectArray(xRefTable, d, dictName)
-	if err != nil {
-		return err
+	var arr types.Array
+	var err error
+
+	o, ok := d.Find("Kids")
+	if !ok {
+		// terminal field
+		arr, err = validateRectangleEntry(xRefTable, d, dictName, "Rect", REQUIRED, model.V10, nil)
+		if err != nil {
+			return err
+		}
+	} else {
+		// non terminal field
+		kids, err := xRefTable.DereferenceArray(o)
+		if err != nil {
+			return err
+		}
+		// TODO Validation of len(kids) necessary?
+		d1, err := xRefTable.DereferenceDict(kids[0])
+		if err != nil {
+			return err
+		}
+		arr, err = validateRectangleEntry(xRefTable, d1, dictName, "Rect", REQUIRED, model.V10, nil)
+		if err != nil {
+			return err
+		}
 	}
 
 	r := types.RectForArray(arr)
@@ -438,15 +438,10 @@ func validateFormFieldParts(xRefTable *model.XRefTable, objNr, incr int, d types
 	return err
 }
 
-func isWidget(d types.Dict) bool {
-	return d.Subtype() != nil && *d.Subtype() == "Widget"
-}
-
-func validateFormFieldKids(xRefTable *model.XRefTable, objNr, incr int, d types.Dict, o types.Object, inFieldType *types.Name, requiresDA bool, depth int, visit *model.FormFieldVisit) error {
+func validateFormFieldKids(xRefTable *model.XRefTable, objNr, incr int, d types.Dict, o types.Object, inFieldType *types.Name, requiresDA bool) error {
 	var err error
-
 	// dict represents a non terminal field.
-	if isWidget(d) {
+	if d.Subtype() != nil && *d.Subtype() == "Widget" {
 		if xRefTable.ValidationMode == model.ValidationStrict {
 			return errors.New("pdfcpu: validateFormFieldKids: non terminal field can not be widget annotation")
 		}
@@ -477,9 +472,6 @@ func validateFormFieldKids(xRefTable *model.XRefTable, objNr, incr int, d types.
 		if !ok {
 			return errors.New("pdfcpu: validateFormFieldKids: corrupt kids array: entries must be indirect reference")
 		}
-		if err := visit.Check(ir.ObjectNumber.Value()); err != nil {
-			return err
-		}
 		valid, err := xRefTable.IsValid(ir)
 		if err != nil {
 			if xRefTable.ValidationMode == model.ValidationStrict {
@@ -490,7 +482,7 @@ func validateFormFieldKids(xRefTable *model.XRefTable, objNr, incr int, d types.
 		}
 
 		if !valid {
-			if err = validateFormFieldDictDepth(xRefTable, ir, xInFieldType, requiresDA, depth+1, visit); err != nil {
+			if err = validateFormFieldDict(xRefTable, ir, xInFieldType, requiresDA); err != nil {
 				return err
 			}
 		}
@@ -500,19 +492,6 @@ func validateFormFieldKids(xRefTable *model.XRefTable, objNr, incr int, d types.
 }
 
 func validateFormFieldDict(xRefTable *model.XRefTable, ir types.IndirectRef, inFieldType *types.Name, requiresDA bool) error {
-	return validateFormFieldDictDepth(xRefTable, ir, inFieldType, requiresDA, 0, model.NewFormFieldVisit())
-}
-
-func validateFormFieldDictDepth(xRefTable *model.XRefTable, ir types.IndirectRef, inFieldType *types.Name, requiresDA bool, depth int, visit *model.FormFieldVisit) error {
-	if err := xRefTable.CheckRecursionDepth("form field tree", depth); err != nil {
-		return err
-	}
-	objNr := ir.ObjectNumber.Value()
-	if err := visit.Enter(objNr); err != nil {
-		return err
-	}
-	defer visit.Leave(objNr)
-
 	d, incr, err := xRefTable.DereferenceDictWithIncr(ir)
 	if err != nil || d == nil {
 		return err
@@ -528,8 +507,10 @@ func validateFormFieldDictDepth(xRefTable *model.XRefTable, ir types.IndirectRef
 		return err
 	}
 
+	objNr := ir.ObjectNumber.Value()
+
 	if o, ok := d.Find("Kids"); ok {
-		return validateFormFieldKids(xRefTable, objNr, incr, d, o, inFieldType, requiresDA, depth, visit)
+		return validateFormFieldKids(xRefTable, objNr, incr, d, o, inFieldType, requiresDA)
 	}
 
 	return validateFormFieldParts(xRefTable, objNr, incr, d, inFieldType, requiresDA)
@@ -846,6 +827,7 @@ func pageAnnotIndRefForAcroField(xRefTable *model.XRefTable, indRef types.Indire
 	}
 
 	return &indRef, nil
+	//return nil, errors.Errorf("pdfcpu: can't repair form field: %d\n", indRef.ObjectNumber.Value())
 }
 
 func fixFormFieldsArray(xRefTable *model.XRefTable, arr types.Array) (types.Array, error) {

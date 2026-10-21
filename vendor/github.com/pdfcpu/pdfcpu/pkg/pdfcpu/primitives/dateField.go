@@ -61,7 +61,6 @@ type DateField struct {
 	Hide            bool
 }
 
-// SetFontID sets font ID.
 func (df *DateField) SetFontID(s string) {
 	df.fontID = s
 }
@@ -918,7 +917,6 @@ func refreshDateFieldAP(ctx *model.Context, d types.Dict, v string, da *string, 
 	return updateForm(ctx.XRefTable, bb, irN)
 }
 
-// EnsureDateFieldAP ensures date field ap.
 func EnsureDateFieldAP(ctx *model.Context, d types.Dict, v string, da *string, fonts map[string]types.IndirectRef) error {
 	apd := d.DictEntry("AP")
 	if apd == nil {

@@ -61,7 +61,6 @@ func (pb *PageBoundaries) SelectAll() {
 	pb.Media, pb.Crop, pb.Trim, pb.Bleed, pb.Art = b, b, b, b, b
 }
 
-// String returns the string value of pb.
 func (pb PageBoundaries) String() string {
 	ss := []string{}
 	if pb.Media != nil {
@@ -1037,7 +1036,6 @@ func ensureCropBoxWithinMediaBox(xmin, xmax, ymin, ymax float64, d types.Dict, p
 	}
 }
 
-// ApplyBox applies b to d.
 func ApplyBox(boxName string, b *Box, d types.Dict, parent *types.Rectangle) *types.Rectangle {
 	if b.Rect != nil {
 		if d != nil {

@@ -19,7 +19,6 @@ package pdfcpu
 import (
 	"bytes"
 	"fmt"
-	"slices"
 	"sort"
 	"strings"
 
@@ -271,7 +270,7 @@ func handleDuplicateFontObject(ctx *model.Context, fontDict types.Dict, fName, r
 		}
 
 		// Check if the input fontDict matches the fontDict of this fontObject.
-		ok, err := model.EqualObjects(fontObject.FontDict, fontDict, ctx.XRefTable, nil)
+		ok, err := model.EqualFontDicts(fontObject.FontDict, fontDict, ctx.XRefTable)
 		if err != nil {
 			return nil, err
 		}
@@ -483,7 +482,7 @@ func handleDuplicateImageObject(ctx *model.Context, imageDict *types.StreamDict,
 		}
 
 		// Check if the input imageDict matches the imageDict of this imageObject.
-		ok, err := model.EqualObjects(*imageObject.ImageDict, *imageDict, ctx.XRefTable, nil)
+		ok, err := model.EqualStreamDicts(imageObject.ImageDict, imageDict, ctx.XRefTable)
 		if err != nil {
 			return nil, false, err
 		}
@@ -578,7 +577,7 @@ func optimizeXObjectForm(ctx *model.Context, sd *types.StreamDict, objNr int) (*
 
 	for _, objNr1 := range cachedObjNrs {
 		sd1 := f[objNr1]
-		ok, err := model.EqualObjects(*sd, *sd1, ctx.XRefTable, nil)
+		ok, err := model.EqualStreamDicts(sd, sd1, ctx.XRefTable)
 		if err != nil {
 			return nil, err
 		}
@@ -608,7 +607,12 @@ func optimizeFormResources(ctx *model.Context, o types.Object, pageNr, pageObjNu
 }
 
 func visited(o types.Object, visited []types.Object) bool {
-	return slices.Contains(visited, o)
+	for _, obj := range visited {
+		if obj == o {
+			return true
+		}
+	}
+	return false
 }
 
 func optimizeForm(ctx *model.Context, osd *types.StreamDict, rNamePrefix, rName string, rDict types.Dict, objNr, pageNr, pageObjNumber int, vis []types.Object) error {
@@ -965,12 +969,12 @@ func parsePagesDict(ctx *model.Context, pagesDict types.Dict, pageNr int) (int, 
 
 	for _, v := range kids {
 
-		if v == nil {
-			continue
-		}
-
 		// Dereference next page node dict.
 		ir, _ := v.(types.IndirectRef)
+
+		if log.OptimizeEnabled() {
+			log.Optimize.Printf("parsePagesDict PageNode: %s\n", ir)
+		}
 
 		d, err := ctx.DereferencePageNodeDict(ir)
 		if err != nil {
@@ -1011,6 +1015,10 @@ func parsePagesDict(ctx *model.Context, pagesDict types.Dict, pageNr int) (int, 
 		}
 
 		pageNr++
+	}
+
+	if log.OptimizeEnabled() {
+		log.Optimize.Printf("parsePagesDict end: %s\n", pagesDict)
 	}
 
 	return pageNr, nil
@@ -1527,7 +1535,6 @@ func fixReferencesToFreeObjects(ctx *model.Context) error {
 	return fixDirectObject(ctx, ctx.RootDict)
 }
 
-// CacheFormFonts caches form fonts referenced by ctx.
 func CacheFormFonts(ctx *model.Context) error {
 
 	d, err := primitives.FormFontResDict(ctx.XRefTable)

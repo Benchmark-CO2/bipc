@@ -21,7 +21,6 @@ import (
 	"os"
 
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/fault"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pkg/errors"
 )
@@ -32,9 +31,7 @@ var (
 )
 
 // Bookmarks returns rs's bookmark hierarchy.
-func Bookmarks(rs io.ReadSeeker, conf *model.Configuration) (bms []pdfcpu.Bookmark, err error) {
-	defer fault.Catch(&err)
-
+func Bookmarks(rs io.ReadSeeker, conf *model.Configuration) ([]pdfcpu.Bookmark, error) {
 	if rs == nil {
 		return nil, errors.New("pdfcpu: Bookmarks: missing rs")
 	}
@@ -54,9 +51,7 @@ func Bookmarks(rs io.ReadSeeker, conf *model.Configuration) (bms []pdfcpu.Bookma
 }
 
 // ExportBookmarksJSON extracts outline data from rs (originating from source) and writes the result to w.
-func ExportBookmarksJSON(rs io.ReadSeeker, w io.Writer, source string, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
-
+func ExportBookmarksJSON(rs io.ReadSeeker, w io.Writer, source string, conf *model.Configuration) error {
 	if rs == nil {
 		return errors.New("pdfcpu: ExportBookmarksJSON: missing rs")
 	}
@@ -89,22 +84,21 @@ func ExportBookmarksJSON(rs io.ReadSeeker, w io.Writer, source string, conf *mod
 // ExportBookmarksFile extracts outline data from inFilePDF and writes the result to outFileJSON.
 func ExportBookmarksFile(inFilePDF, outFileJSON string, conf *model.Configuration) (err error) {
 	var f1, f2 *os.File
-	ok := false
 
 	if f1, err = os.Open(inFilePDF); err != nil {
 		return err
 	}
 
 	if f2, err = os.Create(outFileJSON); err != nil {
-		_ = f1.Close()
+		f1.Close()
 		return err
 	}
 	logWritingTo(outFileJSON)
 
 	defer func() {
-		if !ok {
-			_ = f2.Close()
-			_ = f1.Close()
+		if err != nil {
+			f2.Close()
+			f1.Close()
 			return
 		}
 		if err = f2.Close(); err != nil {
@@ -115,19 +109,11 @@ func ExportBookmarksFile(inFilePDF, outFileJSON string, conf *model.Configuratio
 		}
 	}()
 
-	if err = ExportBookmarksJSON(f1, f2, inFilePDF, conf); err != nil {
-		return err
-	}
-
-	ok = true
-
-	return nil
+	return ExportBookmarksJSON(f1, f2, inFilePDF, conf)
 }
 
 // ImportBookmarks creates/replaces outlines in rs and writes the result to w.
-func ImportBookmarks(rs io.ReadSeeker, rd io.Reader, w io.Writer, replace bool, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
-
+func ImportBookmarks(rs io.ReadSeeker, rd io.Reader, w io.Writer, replace bool, conf *model.Configuration) error {
 	if rs == nil {
 		return errors.New("pdfcpu: ImportBookmarks: missing rs")
 	}
@@ -159,10 +145,9 @@ func ImportBookmarks(rs io.ReadSeeker, rd io.Reader, w io.Writer, replace bool, 
 	return WriteContext(ctx, w)
 }
 
-// ImportBookmarksFile creates/replaces outlines in inFilePDF and writes the result to outFilePDF.
+// ImportBookmarks creates/replaces outlines in inFilePDF and writes the result to outFilePDF.
 func ImportBookmarksFile(inFilePDF, inFileJSON, outFilePDF string, replace bool, conf *model.Configuration) (err error) {
 	var f0, f1, f2 *os.File
-	ok := false
 
 	if f0, err = os.Open(inFilePDF); err != nil {
 		return err
@@ -177,14 +162,14 @@ func ImportBookmarksFile(inFilePDF, inFileJSON, outFilePDF string, replace bool,
 		tmpFile = outFilePDF
 	}
 	if f2, err = os.Create(tmpFile); err != nil {
-		_ = f1.Close()
+		f1.Close()
 		return err
 	}
 
 	defer func() {
-		if !ok {
-			_ = f2.Close()
-			_ = f1.Close()
+		if err != nil {
+			f2.Close()
+			f1.Close()
 			os.Remove(tmpFile)
 			return
 		}
@@ -199,19 +184,11 @@ func ImportBookmarksFile(inFilePDF, inFileJSON, outFilePDF string, replace bool,
 		}
 	}()
 
-	if err = ImportBookmarks(f0, f1, f2, replace, conf); err != nil {
-		return err
-	}
-
-	ok = true
-
-	return nil
+	return ImportBookmarks(f0, f1, f2, replace, conf)
 }
 
 // AddBookmarks adds a single bookmark outline layer to the PDF context read from rs and writes the result to w.
-func AddBookmarks(rs io.ReadSeeker, w io.Writer, bms []pdfcpu.Bookmark, replace bool, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
-
+func AddBookmarks(rs io.ReadSeeker, w io.Writer, bms []pdfcpu.Bookmark, replace bool, conf *model.Configuration) error {
 	if rs == nil {
 		return errors.New("pdfcpu: AddBookmarks: missing rs")
 	}
@@ -242,7 +219,6 @@ func AddBookmarks(rs io.ReadSeeker, w io.Writer, bms []pdfcpu.Bookmark, replace 
 // AddBookmarksFile adds outlines to the PDF context read from inFile and writes the result to outFile.
 func AddBookmarksFile(inFile, outFile string, bms []pdfcpu.Bookmark, replace bool, conf *model.Configuration) (err error) {
 	var f1, f2 *os.File
-	ok := false
 
 	if f1, err = os.Open(inFile); err != nil {
 		return err
@@ -253,14 +229,14 @@ func AddBookmarksFile(inFile, outFile string, bms []pdfcpu.Bookmark, replace boo
 		tmpFile = outFile
 	}
 	if f2, err = os.Create(tmpFile); err != nil {
-		_ = f1.Close()
+		f1.Close()
 		return err
 	}
 
 	defer func() {
-		if !ok {
-			_ = f2.Close()
-			_ = f1.Close()
+		if err != nil {
+			f2.Close()
+			f1.Close()
 			os.Remove(tmpFile)
 			return
 		}
@@ -275,19 +251,11 @@ func AddBookmarksFile(inFile, outFile string, bms []pdfcpu.Bookmark, replace boo
 		}
 	}()
 
-	if err = AddBookmarks(f1, f2, bms, replace, conf); err != nil {
-		return err
-	}
-
-	ok = true
-
-	return nil
+	return AddBookmarks(f1, f2, bms, replace, conf)
 }
 
 // RemoveBookmarks deletes outlines from rs and writes the result to w.
-func RemoveBookmarks(rs io.ReadSeeker, w io.Writer, conf *model.Configuration) (err error) {
-	defer fault.Catch(&err)
-
+func RemoveBookmarks(rs io.ReadSeeker, w io.Writer, conf *model.Configuration) error {
 	if rs == nil {
 		return errors.New("pdfcpu: AddBookmarks: missing rs")
 	}
@@ -318,7 +286,6 @@ func RemoveBookmarks(rs io.ReadSeeker, w io.Writer, conf *model.Configuration) (
 // RemoveBookmarksFile deletes outlines from inFile and writes the result to outFile.
 func RemoveBookmarksFile(inFile, outFile string, conf *model.Configuration) (err error) {
 	var f1, f2 *os.File
-	ok := false
 
 	if f1, err = os.Open(inFile); err != nil {
 		return err
@@ -329,15 +296,15 @@ func RemoveBookmarksFile(inFile, outFile string, conf *model.Configuration) (err
 		tmpFile = outFile
 	}
 	if f2, err = os.Create(tmpFile); err != nil {
-		_ = f1.Close()
+		f1.Close()
 		return err
 	}
 
 	defer func() {
-		if !ok {
-			_ = f2.Close()
-			_ = f1.Close()
-			_ = os.Remove(tmpFile)
+		if err != nil {
+			f2.Close()
+			f1.Close()
+			os.Remove(tmpFile)
 			return
 		}
 		if err = f2.Close(); err != nil {
@@ -351,11 +318,5 @@ func RemoveBookmarksFile(inFile, outFile string, conf *model.Configuration) (err
 		}
 	}()
 
-	if err = RemoveBookmarks(f1, f2, conf); err != nil {
-		return err
-	}
-
-	ok = true
-
-	return nil
+	return RemoveBookmarks(f1, f2, conf)
 }

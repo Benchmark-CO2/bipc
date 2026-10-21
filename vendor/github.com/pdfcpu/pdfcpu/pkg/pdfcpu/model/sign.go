@@ -55,7 +55,6 @@ type RevocationDetails struct {
 	Reason string
 }
 
-// String returns the string value of rd.
 func (rd RevocationDetails) String() string {
 	ss := []string{}
 	ss = append(ss, fmt.Sprintf(" Status: %s", validString(rd.Status)))
@@ -76,7 +75,6 @@ type TrustDetails struct {
 	AllowExecutePrivilegedSystemOperation bool
 }
 
-// String returns the string value of td.
 func (td TrustDetails) String() string {
 	ss := []string{}
 	ss = append(ss, fmt.Sprintf("      Status: %s", validString(td.Status)))
@@ -114,7 +112,6 @@ type CertificateDetails struct {
 	IssuerCertificate *CertificateDetails
 }
 
-// String returns the string value of cd.
 func (cd CertificateDetails) String() string {
 	ss := []string{}
 	ss = append(ss, fmt.Sprintf("                             Subject:    %s", cd.Subject))
@@ -160,7 +157,6 @@ type Signature struct {
 	PageNr        int
 }
 
-// String returns a string representation.
 func (sig Signature) String(status SignatureStatus) string {
 	s := ""
 	if sig.Type == SigTypeForm {
@@ -232,7 +228,6 @@ type SignatureStats struct {
 	Total int
 }
 
-// Counter returns counters for detected signatures.
 func (sigStats SignatureStats) Counter(svr *SignatureValidationResult) (*int, *int, *int, *int) {
 	switch svr.Type {
 	case SigTypeForm:
@@ -263,7 +258,6 @@ var SignatureStatusStrings = map[SignatureStatus]string{
 	SignatureStatusInvalid: "signature is invalid",
 }
 
-// String returns the string value of st.
 func (st SignatureStatus) String() string {
 	return SignatureStatusStrings[st]
 }
@@ -293,14 +287,13 @@ var SignatureReasonStrings = map[SignatureReason]string{
 	SignatureReasonSignatureForged:       "signer's signature is not authentic",
 	SignatureReasonTimestampTokenInvalid: "timestamp token is invalid",
 	SignatureReasonCertInvalid:           "signer's certificate is invalid",
-	SignatureReasonCertNotTrusted:        "signer's certificate chain is not in the configured local trusted certificate store",
+	SignatureReasonCertNotTrusted:        "signer's certificate chain is not in the trusted list of Root CAs",
 	SignatureReasonCertExpired:           "signer's certificate or one of its parent certificates has expired",
 	SignatureReasonCertRevoked:           "signer's certificate or one of its parent certificates has been revoked",
 	SignatureReasonInternal:              "internal error",
 	SignatureReasonSelfSignedCertErr:     "signer's self signed certificate is not trusted",
 }
 
-// String returns the string value of sr.
 func (sr SignatureReason) String() string {
 	return SignatureReasonStrings[sr]
 }
@@ -310,15 +303,14 @@ type Signer struct {
 	CertificatePathStatus int
 	HasTimestamp          bool
 	Timestamp             time.Time // signature timestamp attribute (which contains a timestamp token)
-	LTVEnabled            bool      // timestamp and revocation evidence detected
-	PAdES                 string    // reported baseline evidence level: B-B, B-T, B-LT, B-LTA
+	LTVEnabled            bool      // needs timestamp token & revocation info
+	PAdES                 string    // baseline level: B-B, B-T, B-LT, B-LTA
 	Certified             bool      // indicated by DocMDP entry
 	Authoritative         bool      // true if certified or first (youngest) signature
 	Permissions           int       // see table 257
 	Problems              []string
 }
 
-// AddProblem adds problem to signer.
 func (signer *Signer) AddProblem(s string) {
 	signer.Problems = append(signer.Problems, s)
 }
@@ -335,7 +327,6 @@ func permString(i int) string {
 	return ""
 }
 
-// String returns a string representation.
 func (signer Signer) String(dts bool) string {
 	ss := []string{}
 	s := "false"
@@ -391,22 +382,18 @@ type SignatureDetails struct {
 	Signers        []*Signer
 }
 
-// AddSigner adds signer.
 func (sd *SignatureDetails) AddSigner(s *Signer) {
 	sd.Signers = append(sd.Signers, s)
 }
 
-// IsETSI_CAdES_detached reports whether ETSI c ad es detached.
 func (sd *SignatureDetails) IsETSI_CAdES_detached() bool {
 	return sd.SubFilter == "ETSI.CAdES.detached"
 }
 
-// IsETSI_RFC3161 reports whether ETSI rfc3161.
 func (sd *SignatureDetails) IsETSI_RFC3161() bool {
 	return sd.SubFilter == "ETSI.RFC3161"
 }
 
-// Permissions returns permissions of sd.
 func (sd *SignatureDetails) Permissions() int {
 	for _, signer := range sd.Signers {
 		if signer.Certified {
@@ -416,7 +403,6 @@ func (sd *SignatureDetails) Permissions() int {
 	return CertifiedSigPermNone
 }
 
-// String returns the string value of sd.
 func (sd SignatureDetails) String() string {
 	ss := []string{}
 	ss = append(ss, fmt.Sprintf("             SubFilter:      %s", sd.SubFilter))
@@ -452,22 +438,18 @@ type SignatureValidationResult struct {
 	Problems    []string
 }
 
-// AddProblem adds problem.
 func (svr *SignatureValidationResult) AddProblem(s string) {
 	svr.Problems = append(svr.Problems, s)
 }
 
-// Certified certified.
 func (svr *SignatureValidationResult) Certified() bool {
 	return svr.Signature.Certified
 }
 
-// Permissions permissions.
 func (svr *SignatureValidationResult) Permissions() int {
 	return svr.Details.Permissions()
 }
 
-// SigningTime signing time.
 func (svr *SignatureValidationResult) SigningTime() string {
 	if !svr.Details.SigningTime.IsZero() {
 		return svr.Details.SigningTime.Format(SignTSFormat)
@@ -475,7 +457,6 @@ func (svr *SignatureValidationResult) SigningTime() string {
 	return "not available"
 }
 
-// String returns the string value of svr.
 func (svr SignatureValidationResult) String() string {
 	ss := []string{}
 

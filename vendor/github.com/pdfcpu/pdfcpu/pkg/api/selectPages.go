@@ -391,7 +391,6 @@ func PagesForPageSelection(pageCount int, pageSelection []string, ensureAllforNo
 	return m, nil
 }
 
-// RemainingPagesForPageRemoval remaining pages for page removal.
 func RemainingPagesForPageRemoval(pageCount int, pageSelection []string, log bool) (types.IntSet, error) {
 	pagesToRemove, err := selectedPages(pageCount, pageSelection, log)
 	if err != nil {

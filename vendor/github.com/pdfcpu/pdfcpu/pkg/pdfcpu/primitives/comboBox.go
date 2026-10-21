@@ -59,7 +59,6 @@ type ComboBox struct {
 	Hide            bool
 }
 
-// SetFontID sets font ID.
 func (cb *ComboBox) SetFontID(s string) {
 	cb.fontID = s
 }
@@ -778,7 +777,6 @@ func refreshComboBoxAP(ctx *model.Context, d types.Dict, v string, da *string, f
 	return updateForm(ctx.XRefTable, bb, irN)
 }
 
-// EnsureComboBoxAP ensures combo box ap.
 func EnsureComboBoxAP(ctx *model.Context, d types.Dict, v string, da *string, fonts map[string]types.IndirectRef) error {
 
 	apd := d.DictEntry("AP")
