@@ -174,10 +174,18 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({
     });
   }, [form]);
 
-  // Recalcular índices sempre que os floors mudarem
+  // Recalcular índices quando muda o número de linhas ou a repetição/categoria
+  // de alguma delas: os índices reservam uma faixa por repetição, e sem isso
+  // as faixas se sobrepõem (grupos intercalados no desenho e no envio).
+  const floorsLayoutSignature = (watchedFloors || [])
+    .map(
+      (f: { category?: string; repetition?: number }) =>
+        `${f?.category}:${f?.repetition ?? 1}`,
+    )
+    .join("|");
   React.useEffect(() => {
     recalculateIndices();
-  }, [watchedFloors.length, recalculateIndices]);
+  }, [watchedFloors.length, floorsLayoutSignature, recalculateIndices]);
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
