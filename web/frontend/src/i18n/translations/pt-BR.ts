@@ -1511,6 +1511,13 @@ export const ptBR = {
     stepModules: "Módulos",
     stepModulesDescription: "Vincular e criar módulos",
     stepSimulationModulesDescription: "Vincular à simulação e criar módulos",
+    discardConfirm: {
+      title: "Descartar a importação?",
+      description:
+        "As unidades e os módulos que ainda não foram criados, com tudo o que você preencheu neles, serão perdidos.",
+      keepEditing: "Continuar editando",
+      discard: "Descartar e fechar",
+    },
     import: {
       fromFile: "Do arquivo IFC",
     },

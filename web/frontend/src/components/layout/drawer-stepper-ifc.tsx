@@ -6,7 +6,14 @@ import { postUnit } from "@/actions/units/postUnit";
 import { patchUnit } from "@/actions/units/patchUnit";
 import { getUnitByUUID } from "@/actions/units/getUnit";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useTranslation } from "@/i18n";
 import { Translations } from "@/i18n/translations/pt-BR";
 import { IProject } from "@/types/projects";
@@ -194,6 +201,7 @@ export default function DrawerStepperIFC({
   const [isCreatingStep2, setIsCreatingStep2] = useState(false);
   // Algum lote já criou módulos, mas outro falhou e o stepper ficou aberto.
   const [hasCreatedModules, setHasCreatedModules] = useState(false);
+  const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
 
   const [editingUnitTempId, setEditingUnitTempId] = useState<string | null>(
     null,
@@ -217,6 +225,7 @@ export default function DrawerStepperIFC({
     setIsCreatingStep1(false);
     setIsCreatingStep2(false);
     setHasCreatedModules(false);
+    setIsDiscardConfirmOpen(false);
     setEditingUnitTempId(null);
     setEditingModuleTempId(null);
   }, [initialState, isSimulationMode]);
@@ -1179,15 +1188,36 @@ export default function DrawerStepperIFC({
 
   const handleClose = () => {
     if (isCreatingStep1 || isCreatingStep2) return;
+    setIsDiscardConfirmOpen(false);
     // Fechar depois de uma falha parcial mantém o fluxo de conclusão (ir para
     // a unidade com os módulos que já foram criados).
     if (hasCreatedModules) onComplete?.(buildCompletePayload());
     onOpenChange(false);
   };
 
+  // Unidades ainda não criadas (etapa 1) ou módulos selecionados ainda não
+  // criados se perdem ao fechar; nesse caso X, Esc e "Cancelar" pedem
+  // confirmação.
+  const hasPendingWork =
+    (!isSimulationMode && activeStep === 0 && state.units.length > 0) ||
+    state.modules.some((m) => m.selected);
+
+  const requestClose = () => {
+    if (isCreatingStep1 || isCreatingStep2) return;
+    if (hasPendingWork) {
+      setIsDiscardConfirmOpen(true);
+      return;
+    }
+    handleClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[78vw] w-[78vw] h-[85vh] max-h-[85vh] flex flex-col gap-0 overflow-hidden p-4">
+    <Dialog open={open} onOpenChange={(o) => !o && requestClose()}>
+      <DialogContent
+        className="sm:max-w-[78vw] w-[78vw] h-[85vh] max-h-[85vh] flex flex-col gap-0 overflow-hidden p-4"
+        // Clique fora (fundo, toast) não fecha: descartaria todo o preenchimento.
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <StepperHeader
           isSimulationMode={isSimulationMode}
           fileName={fileName ?? null}
@@ -1236,7 +1266,7 @@ export default function DrawerStepperIFC({
             <>
               <Button
                 variant="ghost"
-                onClick={handleClose}
+                onClick={requestClose}
                 disabled={isCreatingStep1}
               >
                 {t.stepper.modules.cancel}
@@ -1265,7 +1295,7 @@ export default function DrawerStepperIFC({
             <>
               <Button
                 variant="ghost"
-                onClick={handleClose}
+                onClick={requestClose}
                 disabled={isCreatingStep2}
               >
                 {t.stepper.modules.cancel}
@@ -1306,7 +1336,7 @@ export default function DrawerStepperIFC({
             <>
               <Button
                 variant="ghost"
-                onClick={handleClose}
+                onClick={requestClose}
                 disabled={isCreatingStep2}
               >
                 {t.stepper.modules.cancel}
@@ -1386,6 +1416,31 @@ export default function DrawerStepperIFC({
             }}
           />
         )}
+
+        <Dialog
+          open={isDiscardConfirmOpen}
+          onOpenChange={setIsDiscardConfirmOpen}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t.stepper.discardConfirm.title}</DialogTitle>
+              <DialogDescription>
+                {t.stepper.discardConfirm.description}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsDiscardConfirmOpen(false)}
+              >
+                {t.stepper.discardConfirm.keepEditing}
+              </Button>
+              <Button variant="destructive" onClick={handleClose}>
+                {t.stepper.discardConfirm.discard}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );

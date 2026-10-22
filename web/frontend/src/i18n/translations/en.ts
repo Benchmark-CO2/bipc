@@ -1499,6 +1499,13 @@ export const en: Translations = {
     stepModulesDescription: "Bind and create modules",
     stepSimulationModulesDescription:
       "Bind to the simulation and create modules",
+    discardConfirm: {
+      title: "Discard the import?",
+      description:
+        "Units and modules that have not been created yet, and everything you filled in them, will be lost.",
+      keepEditing: "Keep editing",
+      discard: "Discard and close",
+    },
     import: {
       fromFile: "From IFC file",
     },
