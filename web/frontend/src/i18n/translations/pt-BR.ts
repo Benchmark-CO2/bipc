@@ -1117,6 +1117,8 @@ export const ptBR = {
       floorArea: "Área do Pavimento (m²)",
       floorHeight: "Altura do Pavimento (m)",
       floorRepetition: "Repetição",
+      floorRepetitionTooltip:
+        "Número total de pavimentos iguais. 1 = só este pavimento; 2 = dois pavimentos no total, e não duas cópias além dele.",
       index: "Índice",
       floorsTab: "Pavimentos",
       floorNamePlaceholder: "Pavimento Tipo",
@@ -1680,6 +1682,8 @@ export const ptBR = {
       "Importação iniciada. Você pode acompanhar o status na lista de arquivos importados.",
     calculateGeometriesLabel: "Com cálculo geométrico otimizado",
     calculateGeometriesHint: "pode levar mais tempo",
+    calculateGeometriesTooltip:
+      "Calcula a geometria dos elementos do modelo. Além do tempo de processamento, a opção muda os resultados: volumes, vãos médios e o agrupamento dos pavimentos podem ser diferentes de uma importação sem cálculo.",
     selectFileLabel: "Selecione seu arquivo",
     selectFilePlaceholder: "Selecione um arquivo importado",
     noImportedFiles: "Nenhum arquivo importado encontrado",

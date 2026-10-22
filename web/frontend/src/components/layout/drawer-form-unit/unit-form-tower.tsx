@@ -8,7 +8,7 @@ import {
 import { masks } from "@/utils/masks";
 import { selectContentOnFocus } from "@/utils/selectOnFocus";
 import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
-import { Copy, GripVertical, Plus, Trash2 } from "lucide-react";
+import { Copy, GripVertical, Info, Plus, Trash2 } from "lucide-react";
 import React from "react";
 import { UseFormReturn, useFieldArray, useWatch } from "react-hook-form";
 import { useTranslation } from "@/i18n";
@@ -516,9 +516,25 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({
                   </TableHead>
                   {!isFloorsExpanded && (
                     <TableHead className="w-20">
-                      {isMobile
-                        ? t.unitForm.tower.quantity
-                        : t.unitForm.tower.floorRepetition}
+                      <div className="flex items-center gap-1">
+                        {isMobile
+                          ? t.unitForm.tower.quantity
+                          : t.unitForm.tower.floorRepetition}
+                        <SimpleTooltip
+                          content={t.unitForm.tower.floorRepetitionTooltip}
+                          className="max-w-60"
+                        >
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            tabIndex={-1}
+                            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                          >
+                            <Info className="h-3.5 w-3.5" />
+                          </Button>
+                        </SimpleTooltip>
+                      </div>
                     </TableHead>
                   )}
                   <TableHead className="w-32">

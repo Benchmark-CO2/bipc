@@ -1113,6 +1113,8 @@ export const en: Translations = {
       floorArea: "Floor Area (m²)",
       floorHeight: "Floor Height (m)",
       floorRepetition: "Repetition",
+      floorRepetitionTooltip:
+        "Total number of identical floors. 1 = this floor only; 2 = two floors in total, not two copies in addition to it.",
       index: "Index",
       floorsTab: "Floors",
       floorNamePlaceholder: "Standard Floor",
@@ -1663,6 +1665,8 @@ export const en: Translations = {
       "Import started. You can track the status in the imported files list.",
     calculateGeometriesLabel: "With optimized geometry calculation",
     calculateGeometriesHint: "may take longer",
+    calculateGeometriesTooltip:
+      "Computes the geometry of the model elements. Besides processing time, this option changes the results: volumes, average spans and floor grouping may differ from an import without it.",
     selectFileLabel: "Select your file",
     selectFilePlaceholder: "Select an imported file",
     noImportedFiles: "No imported files found",
