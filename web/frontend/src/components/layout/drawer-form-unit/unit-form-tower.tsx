@@ -6,7 +6,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { masks } from "@/utils/masks";
-import { selectContentOnFocus } from "@/utils/selectOnFocus";
+import { selectAllOnDoubleClick } from "@/utils/inputSelection";
 import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
 import { Copy, GripVertical, Info, Plus, Trash2 } from "lucide-react";
 import React from "react";
@@ -639,10 +639,8 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({
                                     field.onBlur();
                                     setFocusedRowIndex(null);
                                   }}
-                                  onFocus={(e) => {
-                                    setFocusedRowIndex(index);
-                                    selectContentOnFocus(e);
-                                  }}
+                                  onFocus={() => setFocusedRowIndex(index)}
+                                  onDoubleClick={selectAllOnDoubleClick}
                                 />
                               </FormControl>
                             </FormItem>
@@ -675,10 +673,8 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({
                                     field.onBlur();
                                     setFocusedRowIndex(null);
                                   }}
-                                  onFocus={(e) => {
-                                    setFocusedRowIndex(index);
-                                    selectContentOnFocus(e);
-                                  }}
+                                  onFocus={() => setFocusedRowIndex(index)}
+                                  onDoubleClick={selectAllOnDoubleClick}
                                 />
                               </FormControl>
                             </FormItem>
@@ -711,10 +707,8 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({
                                           : 1,
                                       )
                                     }
-                                    onFocus={(e) => {
-                                      setFocusedRowIndex(index);
-                                      selectContentOnFocus(e);
-                                    }}
+                                    onFocus={() => setFocusedRowIndex(index)}
+                                    onDoubleClick={selectAllOnDoubleClick}
                                     onBlur={() => setFocusedRowIndex(null)}
                                   />
                                 </FormControl>
