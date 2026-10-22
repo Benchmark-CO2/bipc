@@ -6,6 +6,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { masks } from "@/utils/masks";
+import { selectContentOnFocus } from "@/utils/selectOnFocus";
 import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
 import { Copy, GripVertical, Plus, Trash2 } from "lucide-react";
 import React from "react";
@@ -39,20 +40,6 @@ const categoryColors = {
   standard_floor: "#3B82F6", // Azul
   ground_floor: "#10B981", // Verde
   basement_floor: "#F59E0B", // Laranja
-};
-
-// Seleciona o conteúdo ao focar campos numéricos (ex.: "0,00" importado do
-// IFC), para digitar o valor sem apagar antes. O rAF evita que o clique
-// reposicione o cursor por cima da seleção (mesmo padrão do NumericStringInput).
-const selectContentOnFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-  const input = e.currentTarget;
-  requestAnimationFrame(() => {
-    try {
-      input.select();
-    } catch {
-      /* no-op */
-    }
-  });
 };
 
 const UnitFormTower: React.FC<UnitFormTowerProps> = ({

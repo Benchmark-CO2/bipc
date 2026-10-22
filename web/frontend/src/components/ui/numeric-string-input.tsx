@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { forwardRef, useEffect, useState } from "react";
 import { formatNumericString, normalizeNumericString } from "@/utils/numbers";
+import { selectContentOnFocus } from "@/utils/selectOnFocus";
 import { Input } from "./input";
 
 export type NumericStringInputProps = Omit<
@@ -101,13 +102,7 @@ const NumericStringInput = forwardRef<
           );
           setDisplay(raw);
           onFocus?.(e);
-          requestAnimationFrame(() => {
-            try {
-              (e.target as HTMLInputElement).select();
-            } catch {
-              /* no-op */
-            }
-          });
+          selectContentOnFocus(e);
         }}
         onBlur={(e) => {
           setFocused(false);
