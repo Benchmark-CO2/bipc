@@ -1228,6 +1228,7 @@ export const ptBR = {
     privacyRequired:
       "Você deve aceitar a Política de Privacidade para se registrar",
     nameMinLength: "O nome deve ter pelo menos 3 caracteres",
+    unitNameTaken: "Já existe uma unidade com este nome no empreendimento",
     selectPhase: "Selecione uma fase do empreendimento",
     selectUnitType: "Selecione um tipo de unidade",
     invalidUnitType: "Tipo de unidade inválido",

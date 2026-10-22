@@ -376,19 +376,63 @@ export default function DrawerStepperIFC({
   // Step 1 — Units helpers
   // ---------------------------------------------------------------------------
 
+  // Nomes que uma unidade do stepper não pode usar: as unidades do
+  // empreendimento (menos ela mesma, se já foi criada na etapa 1) e as outras
+  // unidades selecionadas do mesmo arquivo.
+  const getTakenUnitNames = (
+    tempId: string,
+    units: TIfcStepperUnitItem[],
+    unitsCreated: TIfcStepperCreatedUnit[],
+  ): string[] => {
+    const ownUnitId = unitsCreated.find((c) => c.tempId === tempId)?.unitId;
+    return [
+      ...(project?.units ?? [])
+        .filter((pu) => pu.id !== ownUnitId)
+        .map((pu) => pu.name),
+      ...units
+        .filter((o) => o.tempId !== tempId && o.selected)
+        .map((o) => o.name),
+    ];
+  };
+
+  // Um nome alterado afeta a validade das outras unidades, então revalida todas.
+  const revalidateUnits = (
+    units: TIfcStepperUnitItem[],
+    unitsCreated: TIfcStepperCreatedUnit[],
+  ): TIfcStepperUnitItem[] =>
+    units.map((u) =>
+      rerunUnitValidation(
+        u,
+        t as unknown as Translations,
+        getTakenUnitNames(u.tempId, units, unitsCreated),
+      ),
+    );
+
+  // Lista estável para o DrawerFormUnit (evita revalidar o nome a cada render).
+  const editingUnitTakenNames = useMemo(
+    () =>
+      editingUnitTempId
+        ? getTakenUnitNames(editingUnitTempId, state.units, state.unitsCreated)
+        : undefined,
+    [editingUnitTempId, state.units, state.unitsCreated, project?.units],
+  );
+
+  useEffect(() => {
+    if (!project?.units) return;
+    setState((prev) => ({
+      ...prev,
+      units: revalidateUnits(prev.units, prev.unitsCreated),
+    }));
+  }, [project?.units, initialState]);
+
   const setUnitNameInline = (tempId: string, name: string) => {
     setState((prev) => {
-      const next = { ...prev };
-      next.units = next.units.map((u) => {
-        if (u.tempId !== tempId) return u;
-        const updated: TIfcStepperUnitItem = {
-          ...u,
-          name,
-          formData: { ...u.formData, name },
-        };
-        return rerunUnitValidation(updated, t as unknown as Translations);
-      });
-      return next;
+      const units = prev.units.map((u) =>
+        u.tempId === tempId
+          ? { ...u, name, formData: { ...u.formData, name } }
+          : u,
+      );
+      return { ...prev, units: revalidateUnits(units, prev.unitsCreated) };
     });
   };
 
@@ -433,8 +477,9 @@ export default function DrawerStepperIFC({
           formData: fd,
           name: fd.name,
         };
-        return rerunUnitValidation(updated, t as unknown as Translations);
+        return updated;
       });
+      next.units = revalidateUnits(next.units, prev.unitsCreated);
       const alreadyHasCreated = prev.unitsCreated.some(
         (c) => c.tempId === currentEditingTempId,
       );
@@ -1382,6 +1427,7 @@ export default function DrawerStepperIFC({
             initialFormData={
               editingUnit.formData as unknown as TIfcStepperUnitItem["formData"]
             }
+            takenUnitNames={editingUnitTakenNames}
             onSubmitSuccess={handleUnitDrawerSubmit}
           />
         )}

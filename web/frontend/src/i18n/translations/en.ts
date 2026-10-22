@@ -1222,6 +1222,7 @@ export const en: Translations = {
     termsRequired: "You must accept the Terms of Use to register",
     privacyRequired: "You must accept the Privacy Policy to register",
     nameMinLength: "Name must be at least 3 characters",
+    unitNameTaken: "A unit with this name already exists in the project",
     selectPhase: "Select a project phase",
     selectUnitType: "Select a unit type",
     invalidUnitType: "Invalid unit type",

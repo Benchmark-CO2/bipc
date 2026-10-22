@@ -487,9 +487,10 @@ export const aggregateIdenticalFloors = <T extends TStepperFloorFormShape>(
 const validateStepperUnit = (
   formData: TIfcStepperUnitItem["formData"],
   t: Translations,
+  takenNames: string[] = [],
 ): { isValid: boolean; errors: string[] } => {
   try {
-    const schema = createUnitFormSchema(t as any);
+    const schema = createUnitFormSchema(t as any, takenNames);
     const input = formData as unknown as UnitFormInput;
     const result = schema.safeParse(input);
     if (result.success) {
@@ -929,8 +930,9 @@ export const mapIfcResultToStepperState = (
 export const rerunUnitValidation = (
   item: TIfcStepperUnitItem,
   t: Translations,
+  takenNames: string[] = [],
 ): TIfcStepperUnitItem => {
-  const { isValid, errors } = validateStepperUnit(item.formData, t);
+  const { isValid, errors } = validateStepperUnit(item.formData, t, takenNames);
   return {
     ...item,
     name: item.formData.name,
