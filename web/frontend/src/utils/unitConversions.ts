@@ -213,6 +213,9 @@ export type UnifiedFloor = {
   height: number;
   category: FloorSchema["category"];
   index: number;
+  // Mesma chave para as cópias geradas por `repetition` > 1 (grupo de
+  // repetição); ausente em pavimentos sem repetição.
+  groupKey?: string;
 };
 
 export interface FloorFallbackLabels {
@@ -300,10 +303,11 @@ export const convertTowerFloorsToUnified = (
         repetition > 1 ? getCategoryFromIndex(realIndex) : category;
       const name =
         baseName || fallbackNameForFloor(realCategory, realIndex, labels);
+      const groupKey = floor.id || `floor-${floor.index}`;
       result.push({
         id:
           repetition > 1
-            ? `${floor.id}-r${i}`
+            ? `${groupKey}-r${i}`
             : (floor as unknown as { id?: string })?.id ||
               `floor-${realIndex}-${i}`,
         name,
@@ -311,6 +315,7 @@ export const convertTowerFloorsToUnified = (
         height: floor.height,
         category: realCategory,
         index: realIndex,
+        groupKey: repetition > 1 ? groupKey : undefined,
       });
     }
   }
@@ -357,12 +362,19 @@ export const convertFloorFormInputToUnified = (
       const name =
         baseName || fallbackNameForFloor(realCategory, realIndex, labels);
       unifiedFloors.push({
-        id: floor.id || `floor-${floor.index}-${i}`,
+        // Cópias da repetição precisam de ids distintos (chave do React e
+        // seleção); o sufixo `-r<i>` é o mesmo de convertTowerFloorsToUnified.
+        id:
+          floor.id && repetition > 1
+            ? `${floor.id}-r${i}`
+            : floor.id || `floor-${floor.index}-${i}`,
         name,
         area,
         height,
         category: realCategory,
         index: realIndex,
+        groupKey:
+          repetition > 1 ? floor.id || `floor-${floor.index}` : undefined,
       });
     }
   });

@@ -1117,6 +1117,8 @@ export const ptBR = {
       floorArea: "Área do Pavimento (m²)",
       floorHeight: "Altura do Pavimento (m)",
       floorRepetition: "Repetição",
+      floorRepetitionTooltip:
+        "Número total de pavimentos iguais. 1 = só este pavimento; 2 = dois pavimentos no total, e não duas cópias além dele.",
       index: "Índice",
       floorsTab: "Pavimentos",
       floorNamePlaceholder: "Pavimento Tipo",
@@ -1228,6 +1230,7 @@ export const ptBR = {
     privacyRequired:
       "Você deve aceitar a Política de Privacidade para se registrar",
     nameMinLength: "O nome deve ter pelo menos 3 caracteres",
+    unitNameTaken: "Já existe uma unidade com este nome no empreendimento",
     selectPhase: "Selecione uma fase do empreendimento",
     selectUnitType: "Selecione um tipo de unidade",
     invalidUnitType: "Tipo de unidade inválido",
@@ -1511,6 +1514,13 @@ export const ptBR = {
     stepModules: "Módulos",
     stepModulesDescription: "Vincular e criar módulos",
     stepSimulationModulesDescription: "Vincular à simulação e criar módulos",
+    discardConfirm: {
+      title: "Descartar a importação?",
+      description:
+        "As unidades e os módulos que ainda não foram criados, com tudo o que você preencheu neles, serão perdidos.",
+      keepEditing: "Continuar editando",
+      discard: "Descartar e fechar",
+    },
     import: {
       fromFile: "Do arquivo IFC",
     },
@@ -1672,6 +1682,8 @@ export const ptBR = {
       "Importação iniciada. Você pode acompanhar o status na lista de arquivos importados.",
     calculateGeometriesLabel: "Com cálculo geométrico otimizado",
     calculateGeometriesHint: "pode levar mais tempo",
+    calculateGeometriesTooltip:
+      "Calcula a geometria dos elementos do modelo. Além do tempo de processamento, a opção muda os resultados: volumes, vãos médios e o agrupamento dos pavimentos podem ser diferentes de uma importação sem cálculo.",
     selectFileLabel: "Selecione seu arquivo",
     selectFilePlaceholder: "Selecione um arquivo importado",
     noImportedFiles: "Nenhum arquivo importado encontrado",

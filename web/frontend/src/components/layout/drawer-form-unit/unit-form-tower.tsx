@@ -6,8 +6,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { masks } from "@/utils/masks";
+import { selectContentOnFocus } from "@/utils/selectOnFocus";
 import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
-import { Copy, GripVertical, Plus, Trash2 } from "lucide-react";
+import { Copy, GripVertical, Info, Plus, Trash2 } from "lucide-react";
 import React from "react";
 import { UseFormReturn, useFieldArray, useWatch } from "react-hook-form";
 import { useTranslation } from "@/i18n";
@@ -39,20 +40,6 @@ const categoryColors = {
   standard_floor: "#3B82F6", // Azul
   ground_floor: "#10B981", // Verde
   basement_floor: "#F59E0B", // Laranja
-};
-
-// Seleciona o conteúdo ao focar campos numéricos (ex.: "0,00" importado do
-// IFC), para digitar o valor sem apagar antes. O rAF evita que o clique
-// reposicione o cursor por cima da seleção (mesmo padrão do NumericStringInput).
-const selectContentOnFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-  const input = e.currentTarget;
-  requestAnimationFrame(() => {
-    try {
-      input.select();
-    } catch {
-      /* no-op */
-    }
-  });
 };
 
 const UnitFormTower: React.FC<UnitFormTowerProps> = ({
@@ -187,10 +174,18 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({
     });
   }, [form]);
 
-  // Recalcular índices sempre que os floors mudarem
+  // Recalcular índices quando muda o número de linhas ou a repetição/categoria
+  // de alguma delas: os índices reservam uma faixa por repetição, e sem isso
+  // as faixas se sobrepõem (grupos intercalados no desenho e no envio).
+  const floorsLayoutSignature = (watchedFloors || [])
+    .map(
+      (f: { category?: string; repetition?: number }) =>
+        `${f?.category}:${f?.repetition ?? 1}`,
+    )
+    .join("|");
   React.useEffect(() => {
     recalculateIndices();
-  }, [watchedFloors.length, recalculateIndices]);
+  }, [watchedFloors.length, floorsLayoutSignature, recalculateIndices]);
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
@@ -521,9 +516,25 @@ const UnitFormTower: React.FC<UnitFormTowerProps> = ({
                   </TableHead>
                   {!isFloorsExpanded && (
                     <TableHead className="w-20">
-                      {isMobile
-                        ? t.unitForm.tower.quantity
-                        : t.unitForm.tower.floorRepetition}
+                      <div className="flex items-center gap-1">
+                        {isMobile
+                          ? t.unitForm.tower.quantity
+                          : t.unitForm.tower.floorRepetition}
+                        <SimpleTooltip
+                          content={t.unitForm.tower.floorRepetitionTooltip}
+                          className="max-w-60"
+                        >
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            tabIndex={-1}
+                            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                          >
+                            <Info className="h-3.5 w-3.5" />
+                          </Button>
+                        </SimpleTooltip>
+                      </div>
                     </TableHead>
                   )}
                   <TableHead className="w-32">

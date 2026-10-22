@@ -1,3 +1,4 @@
+import { getProjectByUUID } from "@/actions/projects/getProject";
 import { getUnitByUUID } from "@/actions/units/getUnit";
 import { patchUnit } from "@/actions/units/patchUnit";
 import { postUnit } from "@/actions/units/postUnit";
@@ -8,6 +9,7 @@ import {
   UnitFormInput,
   UnitFormSchema,
   createUnitFormSchema,
+  normalizeUnitName,
   FloorFormInput,
 } from "@/validators/unitForm.validator";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,6 +46,10 @@ interface DrawerFormUnitProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   initialFormData?: UnitFormInput;
+  // Nomes já ocupados; quando informado, substitui as unidades do
+  // empreendimento (o stepper do IFC calcula a lista com as outras unidades
+  // do mesmo arquivo).
+  takenUnitNames?: string[];
   onSubmitSuccess?: (payload: {
     unitId?: string;
     data: UnitFormSchema;
@@ -61,6 +67,7 @@ const DrawerFormUnit = ({
   open: controlledOpen,
   onOpenChange: setControlledOpen,
   initialFormData,
+  takenUnitNames,
   onSubmitSuccess,
 }: DrawerFormUnitProps) => {
   const [internalOpen, setInternalOpen] = useState(false);
@@ -92,8 +99,31 @@ const DrawerFormUnit = ({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  const { data: projectData } = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: () => getProjectByUUID(projectId),
+    enabled: isOpen && !!projectId && !takenUnitNames,
+    staleTime: 1000 * 60 * 5,
+  });
+  // Nomes já usados no empreendimento, sem a própria unidade na edição. Quem
+  // mantém o nome salvo não é barrado, mesmo que outra unidade já o use
+  // (empreendimentos anteriores à regra podem ter nomes repetidos).
+  const takenNames = useMemo<string[]>(() => {
+    if (takenUnitNames) return takenUnitNames;
+    const units = projectData?.data.project.units ?? [];
+    const ownName = units.find((u) => u.id === unitId)?.name;
+    return units
+      .filter((u) => u.id !== unitId)
+      .map((u) => u.name)
+      .filter(
+        (name) =>
+          ownName === undefined ||
+          normalizeUnitName(name) !== normalizeUnitName(ownName),
+      );
+  }, [projectData, unitId, takenUnitNames]);
+
   const form = useForm<UnitFormInput, any, UnitFormSchema>({
-    resolver: zodResolver(createUnitFormSchema(t)) as any,
+    resolver: zodResolver(createUnitFormSchema(t, takenNames)) as any,
     defaultValues,
     mode: "all",
     reValidateMode: "onChange",
@@ -107,7 +137,7 @@ const DrawerFormUnit = ({
   const watchedValues = form.watch();
 
   const collectZodMessages = (values: unknown): string[] => {
-    const parsed = createUnitFormSchema(t).safeParse(values);
+    const parsed = createUnitFormSchema(t, takenNames).safeParse(values);
     if (parsed.success) return [];
     const messages = new Set<string>();
     for (const issue of parsed.error.issues) {
@@ -118,8 +148,15 @@ const DrawerFormUnit = ({
 
   const currentErrorMsgs = useMemo(
     () => collectZodMessages(watchedValues),
-    [watchedValues, t],
+    [watchedValues, t, takenNames],
   );
+
+  // As unidades do empreendimento podem chegar depois de o nome já estar
+  // preenchido (ex.: nome vindo do IFC); revalida para acusar repetição.
+  useEffect(() => {
+    if (!isOpen || !form.getValues("name")) return;
+    void form.trigger("name");
+  }, [takenNames, isOpen, form]);
 
   const lastWatchSigRef = useRef<string>("");
   useEffect(() => {

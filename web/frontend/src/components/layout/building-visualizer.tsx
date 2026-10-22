@@ -249,6 +249,76 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
     );
   };
 
+  // Colchete à esquerda das barras de um grupo de repetição (2+ pavimentos),
+  // com a quantidade no meio. Fica numa camada absoluta que repete o layout da
+  // linha (centralizado ou grid com checkbox e nome) para encostar na barra.
+  const renderGroupBracket = (group: UnifiedFloor[]) => {
+    const widthPercentage = (group[0].area / maxArea) * 100;
+    const bracket = (
+      <div className="absolute right-full top-0 bottom-2 mr-1.5 w-1.5 rounded-l-sm border-y-2 border-l-2 border-primary">
+        <span
+          className="pointer-events-auto absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-default rounded-full bg-primary px-1 py-px text-[10px] font-semibold leading-none text-primary-foreground tabular-nums shadow-sm"
+          title={`${fallbackFloorName(group[0])} × ${group.length}`}
+        >
+          ×{group.length}
+        </span>
+      </div>
+    );
+
+    return complete ? (
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 grid grid-cols-[2fr_auto_minmax(0,100px)] gap-2"
+      >
+        <div
+          className="relative ml-auto h-full"
+          style={{ width: `${widthPercentage}%` }}
+        >
+          {bracket}
+        </div>
+        <div className="size-4" />
+        <div />
+      </div>
+    ) : (
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 flex justify-center"
+      >
+        <div
+          className="relative h-full"
+          style={{ width: `${widthPercentage}%` }}
+        >
+          {bracket}
+        </div>
+      </div>
+    );
+  };
+
+  const renderFloorSection = (floors: UnifiedFloor[]) => {
+    const groups: UnifiedFloor[][] = [];
+    for (const floor of floors) {
+      const last = groups[groups.length - 1];
+      if (floor.groupKey && last?.[0]?.groupKey === floor.groupKey) {
+        last.push(floor);
+      } else {
+        groups.push([floor]);
+      }
+    }
+
+    return groups.map((group) => {
+      if (group.length < 2) return renderFloorBlock(group[0]);
+      return (
+        <div
+          key={`group-${group[0].groupKey}-${group[0].id}`}
+          className="relative"
+        >
+          {group.map((floor) => renderFloorBlock(floor))}
+          {renderGroupBracket(group)}
+        </div>
+      );
+    });
+  };
+
   return (
     <div className="flex flex-col items-center p-4 min-h-96 w-80">
       <div className="w-full mb-4 space-y-3">
@@ -289,21 +359,21 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
           <div
             className={`w-full max-w-64 ${complete ? "ml-auto" : "mx-auto"} `}
           >
-            {sortedRoofFloors.map((floor) => renderFloorBlock(floor))}
+            {renderFloorSection(sortedRoofFloors)}
           </div>
 
           {/* Tipo */}
           <div
             className={`w-full max-w-64 ${complete ? "ml-auto" : "mx-auto"}`}
           >
-            {sortedTypicalFloors.map((floor) => renderFloorBlock(floor))}
+            {renderFloorSection(sortedTypicalFloors)}
           </div>
 
           {/* Térreo */}
           <div
             className={`w-full max-w-64 ${complete ? "ml-auto" : "mx-auto"}`}
           >
-            {sortedGroundFloors.map((floor) => renderFloorBlock(floor))}
+            {renderFloorSection(sortedGroundFloors)}
           </div>
         </div>
 
@@ -322,7 +392,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
           <div
             className={`w-full max-w-64 ${complete ? "ml-auto" : "mx-auto"}`}
           >
-            {sortedBasementFloors.map((floor) => renderFloorBlock(floor))}
+            {renderFloorSection(sortedBasementFloors)}
           </div>
         </div>
 

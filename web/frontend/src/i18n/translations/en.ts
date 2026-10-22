@@ -1113,6 +1113,8 @@ export const en: Translations = {
       floorArea: "Floor Area (m²)",
       floorHeight: "Floor Height (m)",
       floorRepetition: "Repetition",
+      floorRepetitionTooltip:
+        "Total number of identical floors. 1 = this floor only; 2 = two floors in total, not two copies in addition to it.",
       index: "Index",
       floorsTab: "Floors",
       floorNamePlaceholder: "Standard Floor",
@@ -1222,6 +1224,7 @@ export const en: Translations = {
     termsRequired: "You must accept the Terms of Use to register",
     privacyRequired: "You must accept the Privacy Policy to register",
     nameMinLength: "Name must be at least 3 characters",
+    unitNameTaken: "A unit with this name already exists in the project",
     selectPhase: "Select a project phase",
     selectUnitType: "Select a unit type",
     invalidUnitType: "Invalid unit type",
@@ -1499,6 +1502,13 @@ export const en: Translations = {
     stepModulesDescription: "Bind and create modules",
     stepSimulationModulesDescription:
       "Bind to the simulation and create modules",
+    discardConfirm: {
+      title: "Discard the import?",
+      description:
+        "Units and modules that have not been created yet, and everything you filled in them, will be lost.",
+      keepEditing: "Keep editing",
+      discard: "Discard and close",
+    },
     import: {
       fromFile: "From IFC file",
     },
@@ -1655,6 +1665,8 @@ export const en: Translations = {
       "Import started. You can track the status in the imported files list.",
     calculateGeometriesLabel: "With optimized geometry calculation",
     calculateGeometriesHint: "may take longer",
+    calculateGeometriesTooltip:
+      "Computes the geometry of the model elements. Besides processing time, this option changes the results: volumes, average spans and floor grouping may differ from an import without it.",
     selectFileLabel: "Select your file",
     selectFilePlaceholder: "Select an imported file",
     noImportedFiles: "No imported files found",

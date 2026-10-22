@@ -2,9 +2,22 @@ import { Translations } from "@/i18n/translations/pt-BR";
 import { parseNumber } from "@/utils/numbers";
 import { z } from "zod";
 
-const baseUnitSchema = (t: Translations) =>
+// Comparação de nomes de unidade: ignora maiúsculas e espaços nas pontas.
+export const normalizeUnitName = (name: string): string =>
+  name.trim().toLocaleLowerCase("pt-BR");
+
+const baseUnitSchema = (t: Translations, takenNames: string[] = []) =>
   z.object({
-    name: z.string().min(3, t.validators.nameMinLength),
+    name: z
+      .string()
+      .min(3, t.validators.nameMinLength)
+      .refine(
+        (name) =>
+          !takenNames.some(
+            (taken) => normalizeUnitName(taken) === normalizeUnitName(name),
+          ),
+        t.validators.unitNameTaken,
+      ),
     type: z.enum(["tower"], {
       required_error: t.validators.selectUnitType,
       invalid_type_error: t.validators.invalidUnitType,
@@ -109,8 +122,15 @@ const towerFieldsSchema = (t: Translations) =>
     }),
   });
 
-export function createUnitFormSchema(t: Translations) {
-  return baseUnitSchema(t).merge(towerFieldsSchema(t));
+/**
+ * `takenNames`: nomes já usados por outras unidades do empreendimento (sem a
+ * própria unidade, na edição). Um nome repetido não passa na validação.
+ */
+export function createUnitFormSchema(
+  t: Translations,
+  takenNames: string[] = [],
+) {
+  return baseUnitSchema(t, takenNames).merge(towerFieldsSchema(t));
 }
 
 export type UnitFormInput = {
