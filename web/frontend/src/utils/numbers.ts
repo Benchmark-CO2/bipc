@@ -47,17 +47,14 @@ export const normalizeNumericString = (
       commaIdx = dotIdx;
     }
   } else if (commaIdx !== -1 && dotIdx !== -1) {
-    if (commaIdx < dotIdx) {
-      s =
-        s.slice(0, commaIdx).replace(/\./g, "") +
-        "," +
-        s.slice(commaIdx + 1).replace(/\./g, "");
-    } else {
-      s =
-        s.slice(0, dotIdx).replace(/,/g, "") +
-        "," +
-        s.slice(dotIdx + 1).replace(/,/g, "");
-    }
+    // Com os dois separadores, o último é o decimal e o outro é de milhar:
+    // "1.234,56" (pt-BR) e "1,234.56" (en) viram "1234,56".
+    const decimalIdx = Math.max(s.lastIndexOf(","), s.lastIndexOf("."));
+    s =
+      s.slice(0, decimalIdx).replace(/[.,]/g, "") +
+      "," +
+      s.slice(decimalIdx + 1).replace(/[.,]/g, "");
+    commaIdx = s.indexOf(",");
   } else {
     s = s.replace(/\./g, "");
     commaIdx = s.indexOf(",");
