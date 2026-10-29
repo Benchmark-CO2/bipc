@@ -16,14 +16,9 @@ require (
 
 require (
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
-	github.com/digitorus/pdf v0.1.2 // indirect
-	github.com/digitorus/pdfsign v0.9.0 // indirect
-	github.com/digitorus/pkcs7 v0.0.0-20230818184609-3a137a874352 // indirect
-	github.com/digitorus/timestamp v0.0.0-20231217203849-220c5c2851b7 // indirect
 	github.com/hhrutter/lzw v1.0.0 // indirect
 	github.com/hhrutter/pkcs7 v0.2.2 // indirect
 	github.com/hhrutter/tiff v1.0.3 // indirect
-	github.com/mattetti/filebuffer v1.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.24 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/ysmood/fetchup v0.3.0 // indirect

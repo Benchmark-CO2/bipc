@@ -114,7 +114,7 @@
 			letter-spacing: -0.24px;
 		}
 
-		/* chart */
+		/* chart  sources */
 
 		#chart-container {
     		max-width: 600px;
@@ -156,10 +156,52 @@
 			font-weight: 700;
 			letter-spacing: -0.08px;
 		}
+
+		/* classification */
+		.A {
+			border: 1px solid #64C85A;
+			background: #D1EFCE;
+		}
+
+		.B {
+			border: 1px solid #9ECF31;
+			background: #E2F1C1;
+		}
+
+		.C {
+			border: 1px solid #EAE61F;
+			background: #F9F8BC;
+		}
+
+		.D {
+			border: 1px solid #F8A12B;
+			background: #FDE3C0;
+		}
+
+		/* Total de Emissões por tecnologia e material */
+		.gm-grafico { font-family: inherit; color: inherit; max-width: 360px; }
+		.gm-grafico .gm-grupo { margin-bottom: 14px; }
+		.gm-grafico .gm-titulo { font-size: 8px; font-weight: 400; margin: 0 0 4px; }
+		.gm-grafico .gm-legenda { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 8px; font-size: 12px; }
+		.gm-grafico .gm-item { display: inline-flex; align-items: center; gap: 6px; font-size: 6px; }
+		.gm-grafico .gm-cor { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+		.gm-grafico .gm-rotulo { fill: #fff; font-size: 6px; font-weight: 700; }
+
+		/* Impacto de CUM por tecnologia (m³/m²) */
+		.gc-chart {
+		--gc-text: #888; --gc-grid: #e3eef0; --gc-axis: #bbb;
+		--gc-dot: #9b6fd6; --gc-dot-stroke: #4b2a85; --gc-hl: #4fc85a; --gc-guide: #6fd27a;
+		--gc-a: #5fcf5f; --gc-b: #a3d62a; --gc-c: #e8e51c; --gc-d: #f5a025; --gc-band-text: #222;
+		width: 100%; max-width: 360px;
+		}
+		.gc-chart svg { display: block; width: 100%; height: auto; font-size: 12px; }
+		.gc-chart .gc-tick text { fill: var(--gc-text); }
+		.gc-chart .gc-axis-label { fill: var(--gc-text); font-size: 12px; }
+		.gc-chart .gc-axis-label.gc-x { font-weight: 700; }
 	</style>
 </head>
 <body>
-	<h1>Dados do projeto</h1>
+	<h1 style="margin-top: 10px;">Dados do projeto</h1>
 	<p class="text">Informações fundamentais e características de identificação do projeto, incluindo localização, dimensões principais e fase do projeto.</p>
 
 	<div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 7.5px;">
@@ -278,12 +320,12 @@
 		</div>
 	</div>
 
-	<!--
+	
 	<h1>Percentual de rastreabilidade dos dados</h1>
 
 	<div style="display: flex; align-items: flex-start; gap: 5px; align-self: stretch;">
 		<div id="chart-container">
-			<svg id="chart"></svg>
+			<svg id="SOURCES"></svg>
 			<div class="legend" id="legend"></div>
 		</div>
 		<div style="display: flex; flex-direction: column; align-items: center; gap: 2px; padding-left: 15px; margin-left: 15px; border-left: 1px solid #E4E4E7;">
@@ -291,7 +333,6 @@
 			<div class="text" style="color: #187B8B">de rastreabilidade</div>
 		</div>
 	</div>
-	-->
 
 	<h1>Resumo dos resultados do Benchmark</h1>
 
@@ -426,6 +467,40 @@
 				
 			</div>
 
+			<div style="display: flex; justify-content: space-evenly; align-items: center; align-self: stretch;">
+				<div style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch; border: 1px solid #9F70DB; background: #FBFEFE;">
+					<span style="color: #9F70DB; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">P</span>
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">25</span>
+					<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 5.5px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">Kg/m²</span>
+				</div>
+
+				<div style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch; border: 1px solid #6C9EE0; background: #FBFEFE;">
+					<span style="color: #6C9EE0; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">P</span>
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">25</span>
+					<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 5.5px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">Kg/m²</span>
+				</div>
+
+				<div style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch; border: 1px solid #63B332; background: #FBFEFE;">
+					<span style="color: #63B332; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">P</span>
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">25</span>
+					<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 5.5px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">Kg/m²</span>
+				</div>
+
+				<div style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch; border: 1px solid #E0756C; background: #FBFEFE;">
+					<span style="color: #E0756C; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">P</span>
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">25</span>
+					<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 5.5px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">Kg/m²</span>
+				</div>
+
+				<div class="A" style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch;">
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">B</span>
+					<div style="display: flex; flex-direction: column; align-items: center;">
+						<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.7px;">Classificação</span>
+						<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 6px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">N: 300 projetos</span>
+					</div>
+				</div>		
+			</div>
+
 		</div>
 
 		<div style="width: 1px; background: #E4E4E7; margin: 0 16px"></div>
@@ -495,7 +570,7 @@
 
 			<div style="height: 1px; background: #E4E4E7; align-self: stretch; margin: 7.5px 0;"></div>
 
-			<h3 style="align-self: start; margin: 0px;">Consumo total de energia do edifício (MJ)</h3>
+			<h3 style="align-self: start; margin: 0px;">Redução do consumo de energia do edifício em relação à Linha de Base</h3>
 
 			<div style="display: flex;height: 52px; align-items: flex-start; gap: 7.5px; align-self: stretch;">
 				<div style="display: flex; padding: 5px; flex-direction: column; align-items: flex-start; gap: 5px; flex: 1 0 0; border: 1px solid #6C9EE0;">
@@ -539,7 +614,7 @@
 				<div style="display: flex; padding: 5px; flex-direction: column; align-items: flex-start; gap: 5px; flex: 1 0 0; border: 1px solid #63B332;">
 					<div style="display: flex; height: 18.5px; flex-direction: column; align-items: flex-start; gap: 2px;">
 						<div style="color: #63B332; font-feature-settings: 'calt' off; font-size: 6px; font-style: normal; font-weight: 400; line-height: 7.5px; letter-spacing: -0.6px;">
-							Valor de Ref. - Total (MJ)
+							Redução total de energia (MJ)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
 							211.205,95
@@ -547,7 +622,7 @@
 					</div>
 					<div style="display: flex; height: 18.5px; flex-direction: column; align-items: flex-start; gap: 2px;">
 						<div style="color: #63B332; font-feature-settings: 'calt' off; font-size: 6px; font-style: normal; font-weight: 400; line-height: 7.5px; letter-spacing: -0.6px;">
-							Valor de Ref. - Benchmark (MJ/m²)
+							Redução relativa (MJ/m²)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
 							75,28
@@ -556,8 +631,63 @@
 				</div>
 			</div>
 
+			<div style="display: flex; width: 225px; flex-direction: column; gap: 5px;">
+				
+			</div>
+
+			<div style="display: flex; justify-content: space-evenly; align-items: center; align-self: stretch;">
+				<div style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch; border: 1px solid #9F70DB; background: #FBFEFE;">
+					<span style="color: #9F70DB; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">P</span>
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">25</span>
+					<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 5.5px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">Kg/m²</span>
+				</div>
+
+				<div style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch; border: 1px solid #6C9EE0; background: #FBFEFE;">
+					<span style="color: #6C9EE0; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">P</span>
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">25</span>
+					<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 5.5px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">Kg/m²</span>
+				</div>
+
+				<div style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch; border: 1px solid #63B332; background: #FBFEFE;">
+					<span style="color: #63B332; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">P</span>
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">25</span>
+					<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 5.5px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">Kg/m²</span>
+				</div>
+
+				<div style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch; border: 1px solid #E0756C; background: #FBFEFE;">
+					<span style="color: #E0756C; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">P</span>
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">25</span>
+					<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 5.5px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">Kg/m²</span>
+				</div>
+
+				<div class="A" style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch;">
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">B</span>
+					<div style="display: flex; flex-direction: column; align-items: center;">
+						<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.7px;">Classificação</span>
+						<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 6px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">N: 300 projetos</span>
+					</div>
+				</div>		
+			</div>
+
 		</div>
 	</div>
+
+
+	<div style="display: flex; justify-content: space-between; break-before: page;">
+		<div style="display: flex; width: 325px; flex-direction: column; gap: 7.5px; flex: 1">
+			<h2 style="align-self: start; margin-bottom: 0px;">Total de Emissões por tecnologia e material (% / Kg CO₂)</h2>
+			<div id="GM" class="gm-grafico"></div>
+		</div>
+			
+		<div style="width: 1px; background: #E4E4E7; margin: 0 16px"></div>
+
+		<div style="display: flex; width: 325px; flex-direction: column; gap: 7.5px; flex: 1">
+			<h2 style="align-self: start; margin-bottom: 0px;">Impacto de CUM por tecnologia (m³/m²)</h2>
+			<div id="GC" class="gc-chart"></div>
+		</div>
+	</div>
+	
+
 	
 	
 	<script>
@@ -565,23 +695,23 @@
 
 		const data = {{.JSONData}};
 
-		function renderChartRastreabilidade(data) {
+		function renderChartRastreabilidade(data, seletor = "#SOURCES") {
 			const width = 600;
 			const barHeight = 12;
 			const height = barHeight;
 			
-			const svg = d3.select("#chart")
+			const svg = d3.select(seletor)
 			.attr("width", width)
 			.attr("height", height)
 			.attr("viewBox", `0 0 ${width} ${height}`);
 			
-			const total = d3.sum(data.sources, d => d.value);
+			const total = d3.sum(data, d => d.value);
 			const xScale = d3.scaleLinear()
 			.domain([0, total])
 			.range([0, width]);
 			
 			let cumulative = 0;
-			const segments = data.sources.map(d => {
+			const segments = data.map(d => {
 			const seg = {
 				...d,
 				x0: cumulative,
@@ -618,7 +748,7 @@
 			// Legend
 			const legend = d3.select("#legend");
 			const legendItems = legend.selectAll(".legend-item")
-			.data(data.sources)
+			.data(data)
 			.enter()
 			.append("div")
 			.attr("class", "legend-item");
@@ -631,7 +761,118 @@
 			.text(d => `${d.value}% ${d.label}`);
 
 		}
-		renderChartRastreabilidade(data);
+		renderChartRastreabilidade(data.sources);
+	
+		function renderChartGM(data, seletor = "#GM") {
+			const paleta = ["#1f7a85", "#f28e4b", "#a46fdc", "#e5c339", "#d9534f", "#5cb85c", "#8c6d62", "#3f8fd2"];
+			const fmtPct = d3.format(".2f");
+			const pt = v => fmtPct(v).replace(".", ",") + "%";
+			const largura = 360, altura = 12;
+			const raiz = d3.select(seletor).classed("gm-grafico", true).html("");
+		
+			// uma cor estável por material, definida a partir de todos os materiais presentes nos dados
+			const nomes = [...new Set(data.flatMap(d => d.itens.map(i => i.material)))];
+			const cor = d3.scaleOrdinal().domain(nomes).range(paleta); // repete a paleta se houver mais materiais que cores
+			
+			data.forEach(d => {
+				const total = d3.sum(d.itens, i => i.kg);
+				let acc = 0;
+				const partes = d.itens.map(i => {
+				const p = { ...i, pct: total ? i.kg / total * 100 : 0, x0: acc };
+				acc += p.pct;
+				return p;
+				});
+			
+				const grupo = raiz.append("div").attr("class", "gm-grupo");
+				grupo.append("div").attr("class", "gm-titulo").attr("role", "heading").attr("aria-level", 3).text(d.nome);
+			
+				const x = d3.scaleLinear().domain([0, 100]).range([0, largura]);
+				const svg = grupo.append("svg").attr("viewBox", `0 0 ${largura} ${altura}`).attr("width", "100%");
+				const g = svg.selectAll("g").data(partes).join("g");
+			
+				g.append("rect")
+				.attr("x", p => x(p.x0))
+				.attr("width", p => x(p.pct))
+				.attr("height", altura)
+				.attr("fill", p => cor(p.material))
+				.append("title").text(p => `${p.material}: ${pt(p.pct)} / ${p.kg}Kg`);
+			
+				// rótulo só quando a fatia tem espaço
+				g.filter(p => x(p.pct) > 20).append("text")
+				.attr("class", "gm-rotulo")
+				.attr("x", p => x(p.x0) + 4)
+				.attr("y", altura / 2)
+				.attr("dominant-baseline", "middle")
+				.text(p => pt(p.pct));
+			
+				grupo.append("div").attr("class", "gm-legenda")
+				.selectAll(".gm-item").data(partes).join("span").attr("class", "gm-item")
+				.html(p => `<i class="gm-cor" style="background:${cor(p.material)}"></i>${p.material} (${pt(p.pct)} / ${p.kg}Kg)`);
+			});
+		}
+		renderChartGM(data.gm);
+
+		function renderChartGC(data, seletor = "#GC") {
+			// Ponto em destaque: o que vier com destaque: true (pode não haver nenhum)
+			const gcDestaque = data.find(d => d.destaque);
+			const gcFaixas = [
+				{ nome: "A", de: 0,    ate: 0.25, cor: "var(--gc-a)" },
+				{ nome: "B", de: 0.25, ate: 0.5,  cor: "var(--gc-b)" },
+				{ nome: "C", de: 0.5,  ate: 0.75, cor: "var(--gc-c)" },
+				{ nome: "D", de: 0.75, ate: 1,    cor: "var(--gc-d)" }
+			];
+			const gcFmt = d3.formatLocale({ decimal: ",", thousands: ".", grouping: [3], currency: ["R$", ""] }).format(".1f");
+			
+			const W = 360, H = 210, m = { top: 5, right: 0, bottom: 15, left: 25 };
+			const iw = W - m.left - m.right, ih = H - m.top - m.bottom;
+			const bandaW = 16, gap = 4, plotW = iw - bandaW - gap, bx = iw - bandaW;
+			const x = d3.scaleLinear().domain([0, 1]).range([0, plotW]);
+			const y = d3.scaleLinear().domain([0, 1]).range([ih, 0]);
+			
+			const svg = d3.select(seletor).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img")
+				.attr("aria-label", "Dispersão da fração de projetos melhores em função do concreto em m² por m²");
+			const g = svg.append("g").attr("transform", `translate(${m.left},${m.top})`);
+			
+			g.append("g").call(d3.axisLeft(y).ticks(10).tickSize(-plotW).tickFormat(""))
+				.call(s => s.select(".domain").remove()).call(s => s.selectAll("line").attr("stroke", "var(--gc-grid)"));
+			g.append("g").attr("transform", `translate(0,${ih})`).call(d3.axisBottom(x).ticks(10).tickSize(-ih).tickFormat(""))
+				.call(s => s.select(".domain").remove()).call(s => s.selectAll("line").attr("stroke", "var(--gc-grid)"));
+			
+			g.append("g").attr("class", "gc-tick").attr("transform", `translate(0,${ih})`)
+				.call(d3.axisBottom(x).ticks(10).tickSize(0).tickPadding(8).tickFormat(gcFmt))
+				.call(s => s.select(".domain").attr("stroke", "var(--gc-axis)"));
+			g.append("g").attr("class", "gc-tick").call(d3.axisLeft(y).ticks(10).tickSize(0).tickPadding(8).tickFormat(gcFmt))
+				.call(s => s.select(".domain").attr("stroke", "var(--gc-axis)"));
+			
+			g.append("text").attr("class", "gc-axis-label gc-x").attr("x", plotW / 2).attr("y", ih + 44)
+				.attr("text-anchor", "middle").text("Concreto (m²/m²)");
+			g.append("text").attr("class", "gc-axis-label").attr("transform", "rotate(-90)").attr("x", -ih / 2).attr("y", -42)
+				.attr("text-anchor", "middle").text("Fração de projetos melhores");
+			
+			const fx = g.append("g").attr("transform", `translate(${bx},0)`);
+			fx.selectAll("rect").data(gcFaixas).join("rect").attr("width", bandaW)
+				.attr("y", d => y(d.ate)).attr("height", d => y(d.de) - y(d.ate)).attr("fill", d => d.cor);
+			fx.selectAll("text").data(gcFaixas).join("text").attr("x", bandaW / 2)
+				.attr("y", d => y((d.de + d.ate) / 2)).attr("dy", "0.35em").attr("text-anchor", "middle")
+				.attr("font-size", 9).attr("fill", "var(--gc-band-text)").text(d => d.nome);
+			
+			const gcGuia = (x1, y1, x2, y2) => g.append("line").attr("x1", x1).attr("y1", y1).attr("x2", x2).attr("y2", y2)
+				.attr("stroke", "var(--gc-guide)").attr("stroke-width", 1.2).attr("stroke-dasharray", "5,4");
+			if (gcDestaque) {
+				gcGuia(x(gcDestaque.x), y(gcDestaque.y), x(gcDestaque.x), ih); // vertical até o eixo X
+				gcGuia(x(gcDestaque.x), y(gcDestaque.y), bx, y(gcDestaque.y)); // horizontal até as faixas A–D
+			}
+			
+			g.selectAll("circle.gc-ponto").data(data).join("circle").attr("class", "gc-ponto")
+				.attr("cx", d => x(d.x)).attr("cy", d => y(d.y)).attr("r", 4.5).attr("fill", "var(--gc-dot)")
+				.attr("fill-opacity", 0.85).attr("stroke", "var(--gc-dot-stroke)").attr("stroke-width", 0.8);
+			
+			if (gcDestaque) {
+				g.append("circle").attr("cx", x(gcDestaque.x)).attr("cy", y(gcDestaque.y)).attr("r", 7)
+				.attr("fill", "var(--gc-hl)").attr("stroke", "var(--gc-dot-stroke)").attr("stroke-width", 0.8);
+			}
+			}
+		renderChartGC(data.gc, "#GC");
 
 		window.chartsReady = true;
 	</script>

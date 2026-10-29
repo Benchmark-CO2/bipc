@@ -2,8 +2,6 @@ package main
 
 import (
 	"bytes"
-	"crypto"
-	"crypto/x509"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,8 +9,6 @@ import (
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/assets"
-	"github.com/digitorus/pdf"
-	"github.com/digitorus/pdfsign/sign"
 
 	"encoding/base64"
 	"encoding/json"
@@ -39,77 +35,6 @@ func mergePDFsInMemory(pdfs ...[]byte) (*bytes.Buffer, error) {
 		return nil, err
 	}
 	return &out, nil
-}
-
-// func loadPEMCertAndKey() (*x509.Certificate, crypto.Signer, []*x509.Certificate, error) {
-// 	certBlock, _ := pem.Decode(assets.CertPEM)
-// 	if certBlock == nil || certBlock.Type != "CERTIFICATE" {
-// 		return nil, nil, nil, fmt.Errorf("não foi possível decodificar PEM do certificado")
-// 	}
-
-// 	certificate, err := x509.ParseCertificate(certBlock.Bytes)
-// 	if err != nil {
-// 		return nil, nil, nil, fmt.Errorf("erro ao parsear certificado: %w", err)
-// 	}
-
-// 	keyBlock, _ := pem.Decode(assets.KeyPEM)
-// 	if keyBlock == nil {
-// 		return nil, nil, nil, fmt.Errorf("não foi possível decodificar PEM da chave privada")
-// 	}
-
-// 	var privKey any
-// 	switch keyBlock.Type {
-// 	case "RSA PRIVATE KEY":
-// 		privKey, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
-// 	case "PRIVATE KEY":
-// 		privKey, err = x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
-// 	default:
-// 		return nil, nil, nil, fmt.Errorf("tipo de chave privada não suportado: %s", keyBlock.Type)
-// 	}
-// 	if err != nil {
-// 		return nil, nil, nil, fmt.Errorf("erro ao parsear chave privada: %w", err)
-// 	}
-
-// 	signer, ok := privKey.(crypto.Signer)
-// 	if !ok {
-// 		return nil, nil, nil, fmt.Errorf("a chave privada não implementa crypto.Signer")
-// 	}
-
-// 	// Certificado autoassinado: sem cadeia de CAs intermediárias.
-// 	return certificate, signer, nil, nil
-// }
-
-// signPDFInMemory assina digitalmente um PDF (em bytes) usando digitorus/pdfsign,
-// sem escrever arquivos temporários em disco, e retorna o PDF assinado.
-func signPDFInMemory(pdfBytes []byte, certificate *x509.Certificate, certChain []*x509.Certificate, signer crypto.Signer, info sign.SignDataSignatureInfo) (*bytes.Buffer, error) {
-	inputReader := bytes.NewReader(pdfBytes)
-	size := int64(len(pdfBytes))
-
-	rdr, err := pdf.NewReader(inputReader, size)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao ler PDF para assinatura: %w", err)
-	}
-
-	var signed bytes.Buffer
-	err = sign.Sign(inputReader, &signed, rdr, size, sign.SignData{
-		Signature: sign.SignDataSignature{
-			Info:       info,
-			CertType:   sign.CertificationSignature,
-			DocMDPPerm: sign.AllowFillingExistingFormFieldsAndSignaturesPerms,
-		},
-		Signer:            signer,
-		DigestAlgorithm:   crypto.SHA256,
-		Certificate:       certificate,
-		CertificateChains: [][]*x509.Certificate{certChain},
-		TSA: sign.TSA{
-			URL: "https://freetsa.org/tsr",
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("erro ao assinar PDF: %w", err)
-	}
-
-	return &signed, nil
 }
 
 func fontFaceCSS(font []byte, fontName string) string {
@@ -161,8 +86,26 @@ type SourceData struct {
 	Color string `json:"color"` // hexadecimal color code, e.g., "#FF5733"
 }
 
+type GMItem struct {
+	Material string  `json:"material"`
+	Kg       float64 `json:"kg"`
+}
+
+type GMCategoria struct {
+	Nome  string   `json:"nome"`
+	Itens []GMItem `json:"itens"`
+}
+
+type GCPonto struct {
+	X        float64 `json:"x"`
+	Y        float64 `json:"y"`
+	Destaque bool    `json:"destaque,omitempty"`
+}
+
 type JSONData struct {
-	Sources []SourceData `json:"sources"`
+	Sources []SourceData  `json:"sources"`
+	GM      []GMCategoria `json:"gm"` // Total de Emissões por tecnologia e material (% / Kg CO₂)
+	GC      []GCPonto     `json:"gc"` // Impacto de CUM por tecnologia (m³/m²)
 }
 
 func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request) {
@@ -181,6 +124,44 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 			{Label: "Arquivos IFC (via upload)", Value: 46, Color: "#1b7a72"},
 			{Label: "Arquivos CSV", Value: 12, Color: "#e8a24a"},
 			{Label: "Inseridos manualmente", Value: 5, Color: "#d4736b"},
+		},
+		GM: []GMCategoria{
+			{Nome: "Parede de concreto", Itens: []GMItem{
+				{Material: "Concreto", Kg: 2100},
+				{Material: "Aço", Kg: 400},
+				{Material: "Argamassa", Kg: 1100},
+			}},
+			{Nome: "Alvenaria", Itens: []GMItem{
+				{Material: "Concreto", Kg: 3015},
+				{Material: "Aço", Kg: 1450},
+				{Material: "Argamassa", Kg: 520},
+			}},
+			{Nome: "Fundação", Itens: []GMItem{
+				{Material: "Concreto", Kg: 4560},
+				{Material: "Aço", Kg: 350},
+				{Material: "Argamassa", Kg: 70},
+			}},
+			{Nome: "Cobertura", Itens: []GMItem{
+				{Material: "Concreto", Kg: 2220},
+				{Material: "Aço", Kg: 1050},
+				{Material: "Argamassa", Kg: 1750},
+			}},
+		},
+		GC: []GCPonto{
+			{X: 0.15, Y: 0.0179}, {X: 0.18, Y: 0.0357}, {X: 0.20, Y: 0.0536}, {X: 0.205, Y: 0.0714},
+			{X: 0.21, Y: 0.0893}, {X: 0.22, Y: 0.1071}, {X: 0.23, Y: 0.1250}, {X: 0.26, Y: 0.1429},
+			{X: 0.30, Y: 0.1607}, {X: 0.31, Y: 0.1786}, {X: 0.33, Y: 0.1964}, {X: 0.335, Y: 0.2143},
+			{X: 0.36, Y: 0.2321}, {X: 0.37, Y: 0.2500}, {X: 0.375, Y: 0.2679}, {X: 0.39, Y: 0.2857},
+			{X: 0.395, Y: 0.3036}, {X: 0.40, Y: 0.3214}, {X: 0.42, Y: 0.3393}, {X: 0.43, Y: 0.3571},
+			{X: 0.44, Y: 0.3750}, {X: 0.45, Y: 0.3929}, {X: 0.47, Y: 0.4107}, {X: 0.48, Y: 0.4286},
+			{X: 0.485, Y: 0.4464}, {X: 0.49, Y: 0.4643}, {X: 0.50, Y: 0.4821}, {X: 0.51, Y: 0.5000},
+			{X: 0.52, Y: 0.5179}, {X: 0.525, Y: 0.5357}, {X: 0.53, Y: 0.5536}, {X: 0.535, Y: 0.5714},
+			{X: 0.54, Y: 0.5893}, {X: 0.55, Y: 0.6071, Destaque: true}, {X: 0.555, Y: 0.6250},
+			{X: 0.56, Y: 0.6429}, {X: 0.565, Y: 0.6607}, {X: 0.57, Y: 0.6786}, {X: 0.575, Y: 0.6964},
+			{X: 0.58, Y: 0.7143}, {X: 0.62, Y: 0.7321}, {X: 0.63, Y: 0.7500}, {X: 0.64, Y: 0.7679},
+			{X: 0.645, Y: 0.7857}, {X: 0.655, Y: 0.8036}, {X: 0.665, Y: 0.8214}, {X: 0.68, Y: 0.8393},
+			{X: 0.69, Y: 0.8571}, {X: 0.70, Y: 0.8750}, {X: 0.72, Y: 0.8929}, {X: 0.73, Y: 0.9107},
+			{X: 0.74, Y: 0.9286}, {X: 0.755, Y: 0.9464}, {X: 0.76, Y: 0.9643}, {X: 0.90, Y: 0.9821},
 		},
 	}
 
@@ -272,7 +253,7 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 					</div>
 				</div>
 			</div>`,
-		MarginTop:    gson.Num(0.75),
+		MarginTop:    gson.Num(0.90),
 		MarginBottom: gson.Num(0.15),
 		MarginLeft:   gson.Num(0.15),
 		MarginRight:  gson.Num(0.15),
@@ -283,45 +264,27 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 	}
 	defer reportPDF.Close()
 
-	// coverBytes, err := io.ReadAll(coverPDF)
-	// if err != nil {
-	// 	app.serverErrorResponse(w, r, err)
-	// 	return
-	// }
+	coverBytes, err := io.ReadAll(coverPDF)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 
-	// reportBytes, err := io.ReadAll(reportPDF)
-	// if err != nil {
-	// 	app.serverErrorResponse(w, r, err)
-	// 	return
-	// }
+	reportBytes, err := io.ReadAll(reportPDF)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 
-	// merged, err := mergePDFsInMemory(coverBytes, assets.PDF1A, reportBytes)
-	// if err != nil {
-	// 	app.serverErrorResponse(w, r, err)
-	// 	return
-	// }
-
-	// certificate, signer, chain, err := loadPEMCertAndKey()
-	// if err != nil {
-	// 	app.serverErrorResponse(w, r, err)
-	// 	return
-	// }
-
-	// signedPDF, err := signPDFInMemory(merged.Bytes(), certificate, chain, signer, sign.SignDataSignatureInfo{
-	// 	Name:        "Benchmark CO2",
-	// 	Location:    "Brasil",
-	// 	Reason:      "Emissão de relatório de carbono embutido",
-	// 	ContactInfo: "contato@bipc.org.br",
-	// 	Date:        time.Now().Local(),
-	// })
-	// if err != nil {
-	// 	app.serverErrorResponse(w, r, err)
-	// 	return
-	// }
+	merged, err := mergePDFsInMemory(coverBytes, assets.PDF1A, reportBytes)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", `inline; filename="relatorio.pdf"`)
-	if _, err := io.Copy(w, reportPDF); err != nil {
+	if _, err := io.Copy(w, merged); err != nil {
 		log.Println("erro ao enviar PDF:", err)
 	}
 }
