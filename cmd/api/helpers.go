@@ -16,14 +16,6 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-const (
-	SourceAPI    = "api"
-	SourcePlugin = "plugin"
-	SourceManual = "manual"
-	SourceTQS    = "tqs"
-	SourceIFC    = "ifc"
-)
-
 // resolveDataSource resolves the effective source for a module payload.
 // Precedence: explicit source from the payload wins; otherwise the context
 // source set by the authenticate middleware is used. API requests without an
