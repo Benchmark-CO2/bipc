@@ -3,12 +3,10 @@ package main
 import (
 	"context"
 	"database/sql"
-	"expvar"
 	"flag"
 	"fmt"
 	"log/slog"
 	"os"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -59,6 +57,7 @@ type application struct {
 	models data.Models
 	mailer *mailer.Mailer
 	wg     sync.WaitGroup
+	sse    *SSEHub
 }
 
 func main() {
@@ -115,6 +114,7 @@ func main() {
 		config: cfg,
 		logger: logger,
 		models: data.NewModels(db),
+		sse:    NewSSEHub(),
 	}
 
 	err = app.backfillMissingModuleConsumptions()
@@ -129,20 +129,6 @@ func main() {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
-
-	expvar.NewString("version").Set(version)
-
-	expvar.Publish("goroutines", expvar.Func(func() any {
-		return runtime.NumGoroutine()
-	}))
-
-	expvar.Publish("database", expvar.Func(func() any {
-		return db.Stats()
-	}))
-
-	expvar.Publish("timestamp", expvar.Func(func() any {
-		return time.Now().Unix()
-	}))
 
 	app.mailer = mailer
 

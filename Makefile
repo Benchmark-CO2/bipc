@@ -68,6 +68,9 @@ dev/gotooling:
 	go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 	go install honnef.co/go/tools/cmd/staticcheck@latest
 	go install golang.org/x/vuln/cmd/govulncheck@latest
+	go install github.com/pdfcpu/pdfcpu/cmd/pdfcpu@latest
+
+## pdfcpu resize -- "form:A4" assets/pdfs/1A.pdf assets/pdfs/1A_resized.pdf
 
 ## dev/docker: pull all required Docker images for development
 .PHONY: dev/docker
@@ -119,7 +122,7 @@ run/help:
 ## run/api: run the cmd/api application
 .PHONY: run/api
 run/api:
-	go run ./cmd/api -url=$(URL) -db-dsn=$(DB_DSN) -smtp-host=$(SMTP_HOST) -smtp-port=$(SMTP_PORT) -smtp-sender=$(SMTP_SENDER) -ifc-url=$(IFC_URL) -ifc-secret=$(IFC_SECRET)
+	go run ./cmd/api -url=$(URL) -db-dsn=$(DB_DSN) -smtp-host=$(SMTP_HOST) -smtp-port=$(SMTP_PORT) -smtp-sender=$(SMTP_SENDER) -cors-trusted-origins=http://localhost:5500 -ifc-url=$(IFC_URL) -ifc-secret=$(IFC_SECRET)
 
 ## migrations/new name=$1: create a new database migration
 .PHONY: migrations/new

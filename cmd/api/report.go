@@ -1,102 +1,282 @@
 package main
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
-
-	"github.com/johnfercher/maroto/v2/pkg/components/code"
-	"github.com/johnfercher/maroto/v2/pkg/components/col"
-	"github.com/johnfercher/maroto/v2/pkg/components/image"
-	"github.com/johnfercher/maroto/v2/pkg/components/line"
-	"github.com/johnfercher/maroto/v2/pkg/components/page"
-	"github.com/johnfercher/maroto/v2/pkg/components/row"
-	"github.com/johnfercher/maroto/v2/pkg/components/text"
-	marotocfg "github.com/johnfercher/maroto/v2/pkg/config"
-	"github.com/johnfercher/maroto/v2/pkg/consts/align"
-	"github.com/johnfercher/maroto/v2/pkg/consts/border"
-	"github.com/johnfercher/maroto/v2/pkg/consts/extension"
-	"github.com/johnfercher/maroto/v2/pkg/consts/fontstyle"
-	"github.com/johnfercher/maroto/v2/pkg/consts/orientation"
-	"github.com/johnfercher/maroto/v2/pkg/core/entity"
-	"github.com/johnfercher/maroto/v2/pkg/props"
-
-	"github.com/johnfercher/maroto/v2/pkg/core"
-
-	"github.com/johnfercher/maroto/v2"
 
 	"github.com/Benchmark-CO2/bipc/assets"
 
-	"github.com/Benchmark-CO2/bipc/internal/data"
+	"encoding/base64"
+	"encoding/json"
+	"html/template"
+	"log"
+
+	"github.com/go-rod/rod"
+	"github.com/go-rod/rod/lib/launcher"
+	"github.com/go-rod/rod/lib/proto"
+	"github.com/ysmood/gson"
+
+	"github.com/pdfcpu/pdfcpu/pkg/api"
 )
 
-func (app *application) reportHandler(w http.ResponseWriter, r *http.Request) {
-	projectID, err := app.readUUIDParam(r, "projectID")
-	if err != nil {
-		app.badRequestResponse(w, r, err)
-		return
+func mergePDFsInMemory(pdfs ...[]byte) (*bytes.Buffer, error) {
+	readers := make([]io.ReadSeeker, len(pdfs))
+	for i, p := range pdfs {
+		readers[i] = bytes.NewReader(p)
 	}
 
-	project, err := app.models.Projects.GetByID(projectID)
+	var out bytes.Buffer
+
+	if err := api.MergeRaw(readers, &out, false, nil); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func fontFaceCSS(font []byte, fontName string) string {
+	encoded := base64.StdEncoding.EncodeToString(font)
+
+	return `
+	@font-face {
+		font-family: '` + fontName + `';
+		src: url(data:font/ttf;base64,` + encoded + `) format('truetype-variations');
+	}
+	`
+}
+
+func generateDocumentContent(templateFile string, templateName string, reportData ReportData, jsonData any, fontFaceCSS string) (string, error) {
+	jsonBytes, err := json.Marshal(jsonData)
 	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
-		default:
-			app.serverErrorResponse(w, r, err)
-		}
-		return
+		return "", err
 	}
 
-	report, err := app.buildProjectBenchmarkReport(projectID)
+	t := template.Must(template.New("").ParseFS(assets.TemplateFS, "templates/"+templateFile))
+
+	var buf bytes.Buffer
+	err = t.ExecuteTemplate(&buf, templateName, struct {
+		ReportData  ReportData
+		JSONData    template.JS
+		FontFaceCSS template.CSS
+	}{
+		ReportData:  reportData,
+		JSONData:    template.JS(jsonBytes),
+		FontFaceCSS: template.CSS(fontFaceCSS),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
+type ReportData struct {
+	Name         string
+	Siopi        string
+	Apf          string
+	SourcesTotal float32
+}
+
+type SourceData struct {
+	Label string `json:"label"`
+	Value int    `json:"value"`
+	Color string `json:"color"` // hexadecimal color code, e.g., "#FF5733"
+}
+
+type GMItem struct {
+	Material string  `json:"material"`
+	Kg       float64 `json:"kg"`
+}
+
+type GMCategoria struct {
+	Nome  string   `json:"nome"`
+	Itens []GMItem `json:"itens"`
+}
+
+type GCPonto struct {
+	X        float64 `json:"x"`
+	Y        float64 `json:"y"`
+	Destaque bool    `json:"destaque,omitempty"`
+}
+
+type JSONData struct {
+	Sources []SourceData  `json:"sources"`
+	GM      []GMCategoria `json:"gm"` // Total de Emissões por tecnologia e material (% / Kg CO₂)
+	GC      []GCPonto     `json:"gc"` // Impacto de CUM por tecnologia (m³/m²)
+}
+
+func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request) {
+	//projectID, _ := app.readUUIDParam(r, "projectID")
+
+	var reportData = ReportData{
+		Name:         "Residencial modelo",
+		Siopi:        "08.1234.567.890-12",
+		Apf:          "0123.4567.8901-23",
+		SourcesTotal: 71,
+	}
+
+	var jsonData = JSONData{
+		Sources: []SourceData{
+			{Label: "Softwares (TQS via plugin)", Value: 8, Color: "#8ab4e8"},
+			{Label: "Arquivos IFC (via upload)", Value: 46, Color: "#1b7a72"},
+			{Label: "Arquivos CSV", Value: 12, Color: "#e8a24a"},
+			{Label: "Inseridos manualmente", Value: 5, Color: "#d4736b"},
+		},
+		GM: []GMCategoria{
+			{Nome: "Parede de concreto", Itens: []GMItem{
+				{Material: "Concreto", Kg: 2100},
+				{Material: "Aço", Kg: 400},
+				{Material: "Argamassa", Kg: 1100},
+			}},
+			{Nome: "Alvenaria", Itens: []GMItem{
+				{Material: "Concreto", Kg: 3015},
+				{Material: "Aço", Kg: 1450},
+				{Material: "Argamassa", Kg: 520},
+			}},
+			{Nome: "Fundação", Itens: []GMItem{
+				{Material: "Concreto", Kg: 4560},
+				{Material: "Aço", Kg: 350},
+				{Material: "Argamassa", Kg: 70},
+			}},
+			{Nome: "Cobertura", Itens: []GMItem{
+				{Material: "Concreto", Kg: 2220},
+				{Material: "Aço", Kg: 1050},
+				{Material: "Argamassa", Kg: 1750},
+			}},
+		},
+		GC: []GCPonto{
+			{X: 0.15, Y: 0.0179}, {X: 0.18, Y: 0.0357}, {X: 0.20, Y: 0.0536}, {X: 0.205, Y: 0.0714},
+			{X: 0.21, Y: 0.0893}, {X: 0.22, Y: 0.1071}, {X: 0.23, Y: 0.1250}, {X: 0.26, Y: 0.1429},
+			{X: 0.30, Y: 0.1607}, {X: 0.31, Y: 0.1786}, {X: 0.33, Y: 0.1964}, {X: 0.335, Y: 0.2143},
+			{X: 0.36, Y: 0.2321}, {X: 0.37, Y: 0.2500}, {X: 0.375, Y: 0.2679}, {X: 0.39, Y: 0.2857},
+			{X: 0.395, Y: 0.3036}, {X: 0.40, Y: 0.3214}, {X: 0.42, Y: 0.3393}, {X: 0.43, Y: 0.3571},
+			{X: 0.44, Y: 0.3750}, {X: 0.45, Y: 0.3929}, {X: 0.47, Y: 0.4107}, {X: 0.48, Y: 0.4286},
+			{X: 0.485, Y: 0.4464}, {X: 0.49, Y: 0.4643}, {X: 0.50, Y: 0.4821}, {X: 0.51, Y: 0.5000},
+			{X: 0.52, Y: 0.5179}, {X: 0.525, Y: 0.5357}, {X: 0.53, Y: 0.5536}, {X: 0.535, Y: 0.5714},
+			{X: 0.54, Y: 0.5893}, {X: 0.55, Y: 0.6071, Destaque: true}, {X: 0.555, Y: 0.6250},
+			{X: 0.56, Y: 0.6429}, {X: 0.565, Y: 0.6607}, {X: 0.57, Y: 0.6786}, {X: 0.575, Y: 0.6964},
+			{X: 0.58, Y: 0.7143}, {X: 0.62, Y: 0.7321}, {X: 0.63, Y: 0.7500}, {X: 0.64, Y: 0.7679},
+			{X: 0.645, Y: 0.7857}, {X: 0.655, Y: 0.8036}, {X: 0.665, Y: 0.8214}, {X: 0.68, Y: 0.8393},
+			{X: 0.69, Y: 0.8571}, {X: 0.70, Y: 0.8750}, {X: 0.72, Y: 0.8929}, {X: 0.73, Y: 0.9107},
+			{X: 0.74, Y: 0.9286}, {X: 0.755, Y: 0.9464}, {X: 0.76, Y: 0.9643}, {X: 0.90, Y: 0.9821},
+		},
+	}
+
+	reportContent, err := generateDocumentContent("caixa.gohtml", "report", reportData, jsonData, fontFaceCSS(assets.RobotoFlex, "Roboto Flex"))
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-
-	err = r.ParseMultipartForm(256 << 10)
-	if err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
-	co2, _, err := r.FormFile("co2")
-	if err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-	defer co2.Close()
-
-	energy, _, err := r.FormFile("energy")
-	if err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-	defer energy.Close()
-
-	co2Bytes, err := io.ReadAll(co2)
+	coverContent, err := generateDocumentContent("caixa.gohtml", "cover", reportData, nil, fontFaceCSS(assets.RobotoFlex, "Roboto Flex"))
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	energyBytes, err := io.ReadAll(energy)
+	if err := os.WriteFile("reportContent.html", []byte(reportContent), 0644); err != nil {
+		log.Fatal(err)
+	}
+	if err := os.WriteFile("coverContent.html", []byte(coverContent), 0644); err != nil {
+		log.Fatal(err)
+	}
+
+	url := launcher.New().NoSandbox(true).Headless(true).MustLaunch()
+
+	browser := rod.New().ControlURL(url).MustConnect()
+	defer browser.MustClose()
+
+	page := browser.MustPage()
+	defer page.MustClose()
+
+	page.MustSetDocumentContent(coverContent).MustWaitLoad()
+
+	coverPDF, err := page.PDF(&proto.PagePrintToPDF{
+		PrintBackground:   true,
+		MarginTop:         gson.Num(0),
+		MarginBottom:      gson.Num(0),
+		MarginLeft:        gson.Num(0),
+		MarginRight:       gson.Num(0),
+		PaperWidth:        gson.Num(8.27), // A4 em polegadas
+		PaperHeight:       gson.Num(11.69),
+		PreferCSSPageSize: true,
+	})
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	defer coverPDF.Close()
+
+	page.MustSetDocumentContent(reportContent).MustWait(`() => window.chartsReady === true`)
+
+	now := time.Now()
+	formatted := now.Format("02/01/2006 às 15:04")
+
+	reportPDF, err := page.PDF(&proto.PagePrintToPDF{
+		PrintBackground:     true,
+		PaperWidth:          gson.Num(8.27),
+		PaperHeight:         gson.Num(11.69),
+		DisplayHeaderFooter: true,
+		HeaderTemplate: fmt.Sprintf(`
+		<style>
+			%s
+		</style>
+		<div style="display: flex; width: 100%%; justify-content: space-between; align-items: center; padding: 0 20px;">
+    		<div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
+        		<div style="align-self: stretch; color: #187B8B; font-feature-settings: 'calt' off; font-family: 'Roboto Flex'; font-size: 18px; font-style: normal; font-weight: 600; line-height: 17.5px; letter-spacing: -0.16px;">Relatório de Carbono Embutido de projeto </div>
+       			<div style="align-self: stretch; color: #121F21; font-feature-settings: 'calt' off; font-size: 9px; font-style: normal; font-weight: 400; line-height: 13px; letter-spacing: -0.8px;"> <b>Modelo:</b> CAIXA - Emitido digitalmente em %s </div>
+    		</div>
+			<div style="display: flex; align-items: center; gap: 5px;">
+				<div style=" display: flex; width: 160px; padding: 2px; align-items: center; gap: 5px; border: 1px solid #E4E4E7;">
+					<div style="width: 50px; height: 50px; flex-shrink: 0;">
+						%s
+					</div>
+					<div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1 0 0;">
+						<div style="color: #121F21; font-feature-settings: 'calt' off; font-family: 'Roboto Flex'; font-size: 7px; font-style: normal; font-weight: 400; line-height: 7.5px; letter-spacing: -0.06px;">
+							Escaneie para validar a autenticidade deste relatório, ou acesse <span style="color: #078398">app.bipc.org.br/validar</span> e envie este arquivo.
+						</div>
+					</div>
+				</div>
+				<div style="width: 150px; height: 40px;">
+					%s
+				</div>
+			</div>
+		</div>`, fontFaceCSS(assets.RobotoFlex, "Roboto Flex"), formatted, assets.QRCode, assets.LogoColorFull),
+		FooterTemplate: `
+			<div style="width: 100%; display: flex; justify-content: center;">
+				<div style="display: flex; padding: 1.5px 7.5px; align-items: center; border-bottom: 1.5px solid #187B8B">
+					<div style="color: #187B8B; font-feature-settings: 'calt' off; font-family: 'Roboto Flex'; font-size: 7px; font-style: normal; font-weight: 700; line-height: 7.5px; letter-spacing: -0.06px;">
+						Página <span class="pageNumber"></span> de <span class="totalPages"></span>
+					</div>
+				</div>
+			</div>`,
+		MarginTop:    gson.Num(0.90),
+		MarginBottom: gson.Num(0.15),
+		MarginLeft:   gson.Num(0.15),
+		MarginRight:  gson.Num(0.15),
+	})
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	defer reportPDF.Close()
+
+	coverBytes, err := io.ReadAll(coverPDF)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	m, err := GetMaroto(co2Bytes, energyBytes, project, report)
+	reportBytes, err := io.ReadAll(reportPDF)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	document, err := m.Generate()
+	merged, err := mergePDFsInMemory(coverBytes, assets.PDF1A, reportBytes)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -104,1260 +284,7 @@ func (app *application) reportHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", `inline; filename="relatorio.pdf"`)
-	w.Write(document.GetBytes())
-}
-
-func GetMaroto(co2Bytes, energyBytes []byte, project *data.ProjectWithUnits, report *ProjectBenchmarkReport) (core.Maroto, error) {
-	// Calcula classificação e total uma vez só para cada métrica
-	co2Class := classificationLetter(report.Rank.CO2.Y)
-	co2Total := report.Rank.CO2.Total
-	energyClass := classificationLetter(report.Rank.Energy.Y)
-	energyTotal := report.Rank.Energy.Total
-
-	totalUC := 0
-	totalUH := 0
-	//totalUCArea := 0.0
-
-	for _, unit := range project.Units {
-		rep := unit.RepetitionCount
-		if rep <= 0 {
-			rep = 1
-		}
-
-		totalUC += rep
-
-		if unit.HousingUnitsCount != nil {
-			totalUH += rep * *unit.HousingUnitsCount
-		}
-
-		//totalUCArea += unit.Area * float64(rep)
+	if _, err := io.Copy(w, merged); err != nil {
+		log.Println("erro ao enviar PDF:", err)
 	}
-
-	customFonts := []*entity.CustomFont{
-		{Family: "Inter", Style: fontstyle.Normal, Bytes: assets.InterRegular},
-		{Family: "Inter", Style: fontstyle.Bold, Bytes: assets.InterBold},
-		{Family: "Inter", Style: fontstyle.Italic, Bytes: assets.InterItalic},
-		{Family: "Inter", Style: fontstyle.BoldItalic, Bytes: assets.InterBoldItalic},
-	}
-
-	pageNumber := props.PageNumber{
-		Pattern: "Página {current} de {total}",
-		Place:   props.Bottom,
-		Style:   fontstyle.Bold,
-		Size:    6,
-		Color:   getTitleColor(),
-	}
-
-	cfg := marotocfg.NewBuilder().
-		// WithDebug(true).
-		WithCustomFonts(customFonts).
-		WithDefaultFont(&props.Font{Family: "Inter", Style: fontstyle.Normal, Size: 12, Color: getBlackColor()}).
-		WithPageNumber(pageNumber).
-		WithMaxGridSize(48).
-		Build()
-
-	m := maroto.New(cfg)
-
-	err := m.RegisterHeader(getPageHeader())
-	if err != nil {
-		return nil, err
-	}
-
-	m.AddRow(5)
-
-	m.AddAutoRow(
-		col.New(48).Add(
-			text.New("Dados do projeto", getTitleStyle()),
-			text.New("Informações fundamentais e características de identificação do projeto, incluindo localização, dimensões principais e fase do projeto. ", props.Text{
-				Top:  6.5,
-				Size: 6,
-			}),
-		),
-	)
-
-	m.AddRow(2.5)
-
-	m.AddAutoRow(
-		text.NewCol(7, "SIOPI", getLabelStyle()),
-		col.New(1),
-		text.NewCol(7, "Identificador do projeto (APF)", getLabelStyle()),
-	)
-
-	m.AddAutoRow(
-		text.NewCol(7, safe(project.Siop), getValueStyle()).WithStyle(getBorderStyle()),
-		col.New(1),
-		text.NewCol(7, safe(project.Apf), getValueStyle()).WithStyle(getBorderStyle()),
-	)
-
-	m.AddRow(2)
-
-	m.AddAutoRow(
-		text.NewCol(10, "Nome do projeto", getLabelStyle()),
-		col.New(1),
-		text.NewCol(4, "Tipo do edifício", getLabelStyle()),
-		col.New(1),
-		text.NewCol(7, "Fase do projeto", getLabelStyle()),
-		col.New(1),
-		text.NewCol(5, "Número de UH total", getLabelStyle()),
-		col.New(1),
-		text.NewCol(4, "Número de UC", getLabelStyle()),
-		col.New(1),
-		text.NewCol(5, "Área const. total (m²)", getLabelStyle()),
-	)
-
-	m.AddAutoRow(
-		text.NewCol(10, truncate(project.Name, 36), getValueStyle()).WithStyle(getBorderStyle()),
-		col.New(1),
-		text.NewCol(4, "Torre", getValueStyle()).WithStyle(getBorderStyle()),
-		col.New(1),
-		text.NewCol(7, data.PhaseMap[project.Phase], getValueStyle()).WithStyle(getBorderStyle()),
-		col.New(1),
-		text.NewCol(5, fmt.Sprintf("%d", totalUH), getValueStyle()).WithStyle(getBorderStyle()),
-		col.New(1),
-		text.NewCol(4, fmt.Sprintf("%d", totalUC), getValueStyle()).WithStyle(getBorderStyle()),
-		col.New(1),
-		text.NewCol(5, fmt.Sprintf("%.2f", project.Area), getValueStyle()).WithStyle(getBorderStyle()),
-	)
-
-	m.AddRow(2)
-
-	m.AddAutoRow(
-		text.NewCol(12, "Rua / Avenida", getLabelStyle()),
-		col.New(1),
-		text.NewCol(4, "CEP", getLabelStyle()),
-		col.New(1),
-		text.NewCol(2, "Número", getLabelStyle()),
-		col.New(1),
-		text.NewCol(12, "Bairro", getLabelStyle()),
-		col.New(1),
-		text.NewCol(11, "Cidade", getLabelStyle()),
-		col.New(1),
-		text.NewCol(2, "Estado", getLabelStyle()),
-	)
-
-	m.AddAutoRow(
-		text.NewCol(12, truncate(safe(project.Street), 45), getValueStyle()).WithStyle(getBorderStyle()),
-		col.New(1),
-		text.NewCol(4, safe(project.CEP), getValueStyle()).WithStyle(getBorderStyle()),
-		col.New(1),
-		text.NewCol(2, safe(project.Number), getValueStyle()).WithStyle(getBorderStyle()),
-		col.New(1),
-		text.NewCol(12, truncate(safe(project.Neighborhood), 45), getValueStyle()).WithStyle(getBorderStyle()),
-		col.New(1),
-		text.NewCol(11, truncate(project.City, 39), getValueStyle()).WithStyle(getBorderStyle()),
-		col.New(1),
-		text.NewCol(2, project.State, getValueStyle()).WithStyle(getBorderStyle()),
-	)
-
-	m.AddRow(5)
-
-	m.AddAutoRow(
-		col.New(48).Add(
-			text.New("Resumo dos resultados do Benchmark", getTitleStyle()),
-			text.New("O Benchmark compara valores relativos (por m²) dos projetos e os classifica, do melhor ao pior (fração acumulada), atribuindo uma classe a cada quartis, com “A” para os 25% melhores. Destaca os 50% melhores como linha de base e os 5% melhores, utilizados para calcular o potencial de mitigação do projeto (P). O potencial de mitigação da construção (C) é o melhor cenário, corresponde à mitigação do projeto calculado com o índice do melhor fornecedor. O risco de menor mitigação (R) é o pior cenário, corresponde ao cálculo feito com o indice do pior fornecedor. O valor de referencia  (V) corresponde à média da diferença entre o C e o R do 5% e do projeto analisado.", props.Text{
-				Size: 6,
-				Top:  6.5,
-			}),
-			text.New("Vn = (C5% - Cn) + (R5% - Rn) / 2", props.Text{
-				Size:  6,
-				Top:   12.75,
-				Left:  118.5,
-				Style: fontstyle.BoldItalic,
-			}),
-		),
-	)
-
-	m.AddRow(2.5)
-
-	m.AddAutoRow(
-		col.New(23).Add(
-			text.New("Emissões de CO₂", getTitleStyle()),
-		),
-		line.NewCol(2, getDividerStyle()),
-		col.New(23).Add(
-			text.New("Consumo de energia", getTitleStyle()),
-		),
-	)
-
-	m.AddRow(2,
-		col.New(23),
-		line.NewCol(2, getDividerStyle()),
-		col.New(23),
-	)
-
-	m.AddAutoRow(
-		col.New(23).Add(
-			text.New("Total de Emissões de Carbono do edifício (kg CO2)", getSubtitleStyle()),
-		),
-		line.NewCol(2, getDividerStyle()),
-		col.New(23).Add(
-			text.New("Consumo total de energia do edifício (mj)", getSubtitleStyle()),
-		),
-	)
-
-	m.AddRow(3,
-		col.New(23),
-		line.NewCol(2, getDividerStyle()),
-		col.New(23),
-	)
-
-	m.AddAutoRow(
-		col.New(7).Add(
-			text.New("Melhor cenário (kg CO₂)", props.Text{
-				Size:  5.5,
-				Color: getBlueColor(),
-				Top:   1,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Project.CO2.Min.Total), props.Text{
-				Size: 5.5,
-				Top:  4,
-				Left: 1,
-			}),
-			text.New("Melhor cenário (kg/m² CO₂)", props.Text{
-				Size:  5.5,
-				Color: getBlueColor(),
-				Top:   8,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Project.CO2.Min.Value), props.Text{
-				Size:   5.5,
-				Top:    11,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getBlueColor())),
-		col.New(1),
-		col.New(7).Add(
-			text.New("Pior cenário(kg CO₂)", props.Text{
-				Size:  5.5,
-				Color: getRedColor(),
-				Top:   1,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Project.CO2.Max.Total), props.Text{
-				Size: 5.5,
-				Top:  4,
-				Left: 1,
-			}),
-			text.New("Pior cenário (kg/m² CO₂)", props.Text{
-				Size:  5.5,
-				Color: getRedColor(),
-				Top:   8,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Project.CO2.Max.Value), props.Text{
-				Size:   5.5,
-				Top:    11,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getRedColor())),
-		col.New(1),
-		col.New(7).Add(
-			text.New("Valor de Ref. (kg CO₂)", props.Text{
-				Size:  5.5,
-				Color: getGreenColor(),
-				Top:   1,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Project.CO2.Reference.Total), props.Text{
-				Size: 5.5,
-				Top:  4,
-				Left: 1,
-			}),
-			text.New("Valor de Ref. (kg/m² CO₂)", props.Text{
-				Size:  5.5,
-				Color: getGreenColor(),
-				Top:   8,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Project.CO2.Reference.Value), props.Text{
-				Size:   5.5,
-				Top:    11,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getGreenColor())),
-		line.NewCol(2, getDividerStyle()),
-		col.New(7).Add(
-			text.New("Melhor cenário (mj)", props.Text{
-				Size:  5.5,
-				Color: getBlueColor(),
-				Top:   1,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Project.Energy.Min.Total), props.Text{
-				Size: 5.5,
-				Top:  4,
-				Left: 1,
-			}),
-			text.New("Melhor cenário (mj/m²)", props.Text{
-				Size:  5.5,
-				Color: getBlueColor(),
-				Top:   8,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Project.Energy.Min.Value), props.Text{
-				Size:   5.5,
-				Top:    11,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getBlueColor())),
-		col.New(1),
-		col.New(7).Add(
-			text.New("Pior cenário (mj)", props.Text{
-				Size:  5.5,
-				Color: getRedColor(),
-				Top:   1,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Project.Energy.Max.Total), props.Text{
-				Size: 5.5,
-				Top:  4,
-				Left: 1,
-			}),
-			text.New("Pior cenário (mj/m²)", props.Text{
-				Size:  5.5,
-				Color: getRedColor(),
-				Top:   8,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Project.Energy.Max.Value), props.Text{
-				Size:   5.5,
-				Top:    11,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getRedColor())),
-		col.New(1),
-		col.New(7).Add(
-			text.New("Valor de Ref. (mj)", props.Text{
-				Size:  5.5,
-				Color: getGreenColor(),
-				Top:   1,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Project.Energy.Reference.Total), props.Text{
-				Size: 5.5,
-				Top:  4,
-				Left: 1,
-			}),
-			text.New("Valor de Ref. (mj/m²)", props.Text{
-				Size:  5.5,
-				Color: getGreenColor(),
-				Top:   8,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Project.Energy.Reference.Value), props.Text{
-				Size:   5.5,
-				Top:    11,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getGreenColor())),
-	)
-
-	m.AddRow(6,
-		line.NewCol(23, getDividerStyle(orientation.Horizontal)),
-		line.NewCol(2, getDividerStyle()),
-		line.NewCol(23, getDividerStyle(orientation.Horizontal)),
-	)
-
-	m.AddAutoRow(
-		col.New(23).Add(
-			text.New("Redução das Emissões de Carbono do edifício em relação à Linha de Base", props.Text{
-				Style: fontstyle.Bold,
-				Size:  7,
-			}),
-		),
-		line.NewCol(2, getDividerStyle()),
-		col.New(23).Add(
-			text.New("Redução do consumo de energia do edifício em relação à Linha de Base", props.Text{
-				Style: fontstyle.Bold,
-				Size:  7,
-			}),
-		),
-	)
-
-	m.AddRow(3,
-		col.New(23),
-		line.NewCol(2, getDividerStyle()),
-		col.New(23),
-	)
-
-	m.AddAutoRow(
-		col.New(7).Add(
-			text.New("Melhor cenário (kg CO₂)", props.Text{
-				Size:  5.5,
-				Color: getBlueColor(),
-				Top:   1,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Reductions.CO2.Min.Total), props.Text{
-				Size: 5.5,
-				Top:  4,
-				Left: 1,
-			}),
-			text.New("Melhor cenário (kg/m² CO₂)", props.Text{
-				Size:  5.5,
-				Color: getBlueColor(),
-				Top:   8,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Reductions.CO2.Min.Value), props.Text{
-				Size:   5.5,
-				Top:    11,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getBlueColor())),
-		col.New(1),
-		col.New(7).Add(
-			text.New("Pior cenário(kg CO₂)", props.Text{
-				Size:  5.5,
-				Color: getRedColor(),
-				Top:   1,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Reductions.CO2.Max.Total), props.Text{
-				Size: 5.5,
-				Top:  4,
-				Left: 1,
-			}),
-			text.New("Pior cenário (kg/m² CO₂)", props.Text{
-				Size:  5.5,
-				Color: getRedColor(),
-				Top:   8,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Reductions.CO2.Max.Value), props.Text{
-				Size:   5.5,
-				Top:    11,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getRedColor())),
-		col.New(1),
-		col.New(7).Add(
-			text.New("Redução total de CO₂ (kg)", props.Text{
-				Size:  5.5,
-				Color: getGreenColor(),
-				Top:   1,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Reductions.CO2.Reference.Total), props.Text{
-				Size: 5.5,
-				Top:  4,
-				Left: 1,
-			}),
-			text.New("Redução relativa (kg/m²)", props.Text{
-				Size:  5.5,
-				Color: getGreenColor(),
-				Top:   8,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Reductions.CO2.Reference.Value), props.Text{
-				Size:   5.5,
-				Top:    11,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getGreenColor())),
-		line.NewCol(2, getDividerStyle()),
-		col.New(7).Add(
-			text.New("Melhor cenário (mj)", props.Text{
-				Size:  5.5,
-				Color: getBlueColor(),
-				Top:   1,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Reductions.Energy.Min.Total), props.Text{
-				Size: 5.5,
-				Top:  4,
-				Left: 1,
-			}),
-			text.New("Melhor cenário (mj/m²)", props.Text{
-				Size:  5.5,
-				Color: getBlueColor(),
-				Top:   8,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Reductions.Energy.Min.Value), props.Text{
-				Size:   5.5,
-				Top:    11,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getBlueColor())),
-		col.New(1),
-		col.New(7).Add(
-			text.New("Pior cenário (mj)", props.Text{
-				Size:  5.5,
-				Color: getRedColor(),
-				Top:   1,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Reductions.Energy.Max.Total), props.Text{
-				Size: 5.5,
-				Top:  4,
-				Left: 1,
-			}),
-			text.New("Pior cenário (mj/m²)", props.Text{
-				Size:  5.5,
-				Color: getRedColor(),
-				Top:   8,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Reductions.Energy.Max.Value), props.Text{
-				Size:   5.5,
-				Top:    11,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getRedColor())),
-		col.New(1),
-		col.New(7).Add(
-			text.New("Redução de energia (mj)", props.Text{
-				Size:  5.5,
-				Color: getGreenColor(),
-				Top:   1,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Reductions.Energy.Reference.Total), props.Text{
-				Size: 5.5,
-				Top:  4,
-				Left: 1,
-			}),
-			text.New("Redução relativa (mj/m²)", props.Text{
-				Size:  5.5,
-				Color: getGreenColor(),
-				Top:   8,
-				Left:  1,
-			}),
-			text.New(formatNumber(report.Reductions.Energy.Reference.Value), props.Text{
-				Size:   5.5,
-				Top:    11,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getGreenColor())),
-	)
-
-	m.AddRow(3,
-		col.New(23),
-		line.NewCol(2, getDividerStyle()),
-		col.New(23),
-	)
-
-	m.AddRow(65,
-		image.NewFromBytesCol(23, co2Bytes, extension.Png),
-		line.NewCol(2, getDividerStyle()),
-		image.NewFromBytesCol(23, energyBytes, extension.Png),
-	)
-
-	m.AddRow(2,
-		col.New(23),
-		line.NewCol(2, getDividerStyle()),
-		col.New(23),
-	)
-
-	m.AddAutoRow(
-		text.NewCol(23, fmt.Sprintf(
-			"Linha de base (50%% melhores projetos): C%s, R%s, V%s; 5%% melhores projetos: C%s, R%s, V%s",
-			formatNumber(report.Baseline.CO2.Min, 0),
-			formatNumber(report.Baseline.CO2.Max, 0),
-			formatNumber(*report.Baseline.CO2.Reference, 0),
-			formatNumber(report.BestProjects.CO2.Min, 0),
-			formatNumber(report.BestProjects.CO2.Max, 0),
-			formatNumber(*report.BestProjects.CO2.Reference, 0),
-		), props.Text{
-			Size:  5,
-			Color: getGrayColor(),
-			Align: align.Right,
-		}),
-		line.NewCol(2, getDividerStyle()),
-		text.NewCol(23, fmt.Sprintf(
-			"Linha de base (50%% melhores projetos): C%s, R%s, V%s; 5%% melhores projetos: C%s, R%s, V%s",
-			formatNumber(report.Baseline.Energy.Min, 0),
-			formatNumber(report.Baseline.Energy.Max, 0),
-			formatNumber(*report.Baseline.Energy.Reference, 0),
-			formatNumber(report.BestProjects.Energy.Min, 0),
-			formatNumber(report.BestProjects.Energy.Max, 0),
-			formatNumber(*report.BestProjects.Energy.Reference, 0),
-		), props.Text{
-			Size:  5,
-			Color: getGrayColor(),
-			Align: align.Right,
-		}),
-	)
-
-	m.AddRow(2,
-		col.New(23),
-		line.NewCol(2, getDividerStyle()),
-		col.New(23),
-	)
-
-	m.AddAutoRow(
-		col.New(1),
-		col.New(3).Add(
-			text.New("P", props.Text{
-				Size:   6,
-				Style:  fontstyle.Bold,
-				Color:  getPurpleColor(),
-				Top:    1,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-			text.New(formatNumber(report.BestProjects.CO2.Min), props.Text{
-				Size:   5.5,
-				Top:    1.25,
-				Left:   3,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getPurpleColor())),
-		col.New(1),
-		col.New(3).Add(
-			text.New("C", props.Text{
-				Size:   6,
-				Style:  fontstyle.Bold,
-				Color:  getBlueColor(),
-				Top:    1,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-			text.New(formatNumber(report.Project.CO2.Min.Value), props.Text{
-				Size:   5.5,
-				Top:    1.25,
-				Left:   3,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getBlueColor())),
-		col.New(1),
-		col.New(3).Add(
-			text.New("V", props.Text{
-				Size:   6,
-				Style:  fontstyle.Bold,
-				Color:  getGreenColor(),
-				Top:    1,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-			text.New(formatNumber(report.Project.CO2.Reference.Value), props.Text{
-				Size:   5.5,
-				Top:    1.25,
-				Left:   3,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getGreenColor())),
-		col.New(1),
-		col.New(3).Add(
-			text.New("R", props.Text{
-				Size:   6,
-				Style:  fontstyle.Bold,
-				Color:  getRedColor(),
-				Top:    1,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-			text.New(formatNumber(report.Project.CO2.Max.Value), props.Text{
-				Size:   5.5,
-				Top:    1.25,
-				Left:   3,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getRedColor())),
-		col.New(1),
-		col.New(5).Add(
-			text.New(co2Class, props.Text{
-				Size:   6,
-				Style:  fontstyle.Bold,
-				Top:    1,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-			text.New("Classificação", props.Text{
-				Size:  5.5,
-				Top:   0.25,
-				Left:  4,
-				Style: fontstyle.Bold,
-			}),
-			text.New(fmt.Sprintf("N: %d projetos", co2Total), props.Text{
-				Size:  5,
-				Top:   2.25,
-				Left:  4,
-				Color: getGrayColor(),
-			}),
-		).WithStyle(&props.Cell{
-			BackgroundColor: getClassificationColor(co2Class),
-		}),
-		line.NewCol(4, getDividerStyle()),
-		col.New(3).Add(
-			text.New("P", props.Text{
-				Size:   6,
-				Style:  fontstyle.Bold,
-				Color:  getPurpleColor(),
-				Top:    1,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-			text.New(formatNumber(report.BestProjects.Energy.Min), props.Text{
-				Size:   5.5,
-				Top:    1.25,
-				Left:   3,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getPurpleColor())),
-		col.New(1),
-		col.New(3).Add(
-			text.New("C", props.Text{
-				Size:   6,
-				Style:  fontstyle.Bold,
-				Color:  getBlueColor(),
-				Top:    1,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-			text.New(formatNumber(report.Project.Energy.Min.Value), props.Text{
-				Size:   5.5,
-				Top:    1.25,
-				Left:   3,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getBlueColor())),
-		col.New(1),
-		col.New(3).Add(
-			text.New("V", props.Text{
-				Size:   6,
-				Style:  fontstyle.Bold,
-				Color:  getGreenColor(),
-				Top:    1,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-			text.New(formatNumber(report.Project.Energy.Reference.Value), props.Text{
-				Size:   5.5,
-				Top:    1.25,
-				Left:   3,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getGreenColor())),
-		col.New(1),
-		col.New(3).Add(
-			text.New("R", props.Text{
-				Size:   6,
-				Style:  fontstyle.Bold,
-				Color:  getRedColor(),
-				Top:    1,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-			text.New(formatNumber(report.Project.Energy.Max.Value), props.Text{
-				Size:   5.5,
-				Top:    1.25,
-				Left:   3,
-				Bottom: 1.5,
-			}),
-		).WithStyle(getBorderStyle(getRedColor())),
-		col.New(1),
-		col.New(5).Add(
-			text.New(energyClass, props.Text{
-				Size:   6,
-				Style:  fontstyle.Bold,
-				Top:    1,
-				Left:   1,
-				Bottom: 1.5,
-			}),
-			text.New("Classificação", props.Text{
-				Size:  5.5,
-				Top:   0.25,
-				Left:  4,
-				Style: fontstyle.Bold,
-			}),
-			text.New(fmt.Sprintf("N: %d projetos", energyTotal), props.Text{
-				Size:  5,
-				Top:   2.25,
-				Left:  4,
-				Color: getGrayColor(),
-			}),
-		).WithStyle(&props.Cell{
-			BackgroundColor: getClassificationColor(energyClass),
-		}),
-	)
-
-	m.AddAutoRow(
-		col.New(1),
-		text.NewCol(3, "Kg/m2", props.Text{
-			Size:  4,
-			Align: align.Center,
-		}),
-		col.New(1),
-		text.NewCol(3, "Kg/m2", props.Text{
-			Size:  4,
-			Align: align.Center,
-		}),
-		col.New(1),
-		text.NewCol(3, "Kg/m2", props.Text{
-			Size:  4,
-			Align: align.Center,
-		}),
-		col.New(1),
-		text.NewCol(3, "Kg/m2", props.Text{
-			Size:  4,
-			Align: align.Center,
-		}),
-		col.New(6),
-		line.NewCol(4, getDividerStyle()),
-		text.NewCol(3, "mj/m²", props.Text{
-			Size:  4,
-			Align: align.Center,
-		}),
-		col.New(1),
-		text.NewCol(3, "mj/m²", props.Text{
-			Size:  4,
-			Align: align.Center,
-		}),
-		col.New(1),
-		text.NewCol(3, "mj/m²", props.Text{
-			Size:  4,
-			Align: align.Center,
-		}),
-		col.New(1),
-		text.NewCol(3, "mj/m²", props.Text{
-			Size:  4,
-			Align: align.Center,
-		}),
-	)
-
-	m.AddRow(6,
-		line.NewCol(23, getDividerStyle(orientation.Horizontal)),
-		line.NewCol(2, getDividerStyle()),
-		line.NewCol(23, getDividerStyle(orientation.Horizontal)),
-	)
-
-	addUnknownModulesSection(m, project)
-
-	return m, nil
-}
-
-func getPageHeader() core.Row {
-	return row.New(15).Add(
-		col.New(22).Add(
-			text.New("Relatório de Carbono Embutido de projeto", props.Text{
-				Style: fontstyle.Bold,
-				Size:  12,
-				Color: getTitleColor(),
-				Top:   3,
-			}),
-			text.New("Modelo:", props.Text{
-				Top:   9,
-				Style: fontstyle.Bold,
-				Size:  6,
-			}),
-			text.New("CAIXA - Emitido digitalmente em "+time.Now().Format("02/01/2006 às 15:04"), props.Text{
-				Top:  9,
-				Left: 9,
-				Size: 6,
-			}),
-		),
-		col.New(4),
-		col.New(12).Add(
-			code.NewQr("https://app.bipc.org.br/validar", props.Rect{Percent: 90, Left: 1, Top: 1}),
-			text.New("Escaneie para validar a autenticidade deste relatório, ou acesse", props.Text{
-				Left:            16,
-				Top:             2.5,
-				VerticalPadding: 0.5,
-				Size:            5.5,
-			}),
-			text.New("app.bipc.org.br/validar", props.Text{
-				Left:  23.25,
-				Top:   7.25,
-				Size:  5.5,
-				Color: getTitleColor(),
-			}),
-			text.New("e envie este arquivo.", props.Text{
-				Left: 16,
-				Top:  9.75,
-				Size: 5.5,
-			}),
-		).WithStyle(getBorderStyle()),
-		col.New(10).Add(
-			image.NewFromBytes(assets.Logo, extension.Png, props.Rect{Left: 1, Top: 2.5}),
-		),
-	)
-}
-
-func getTitleColor() *props.Color {
-	return &props.Color{
-		Red:   24,
-		Green: 123,
-		Blue:  139,
-	}
-}
-
-func getBlackColor() *props.Color {
-	return &props.Color{
-		Red:   18,
-		Green: 31,
-		Blue:  33,
-	}
-}
-
-func getGrayColor() *props.Color {
-	return &props.Color{
-		Red:   113,
-		Green: 113,
-		Blue:  122,
-	}
-}
-
-func getLightGrayColor() *props.Color {
-	return &props.Color{
-		Red:   228,
-		Green: 228,
-		Blue:  231,
-	}
-}
-
-func getBlueColor() *props.Color {
-	return &props.Color{
-		Red:   108,
-		Green: 158,
-		Blue:  224,
-	}
-}
-
-func getRedColor() *props.Color {
-	return &props.Color{
-		Red:   224,
-		Green: 117,
-		Blue:  108,
-	}
-}
-
-func getGreenColor() *props.Color {
-	return &props.Color{
-		Red:   99,
-		Green: 179,
-		Blue:  50,
-	}
-}
-
-func getPurpleColor() *props.Color {
-	return &props.Color{
-		Red:   159,
-		Green: 112,
-		Blue:  219,
-	}
-}
-
-func getClassificationColor(letter string) *props.Color {
-	switch letter {
-	case "A":
-		return &props.Color{
-			Red:   209,
-			Green: 239,
-			Blue:  206,
-		}
-	case "B":
-		return &props.Color{
-			Red:   226,
-			Green: 241,
-			Blue:  193,
-		}
-	case "C":
-		return &props.Color{
-			Red:   249,
-			Green: 248,
-			Blue:  188,
-		}
-	case "D":
-		return &props.Color{
-			Red:   253,
-			Green: 227,
-			Blue:  192,
-		}
-	default:
-		return getLightGrayColor()
-	}
-}
-
-func getBorderStyle(color ...*props.Color) *props.Cell {
-	colorProp := getLightGrayColor()
-
-	if len(color) > 0 {
-		colorProp = color[0]
-	}
-
-	return &props.Cell{
-		BorderType:      border.Full,
-		BorderThickness: 0.1,
-		BorderColor:     colorProp,
-	}
-}
-
-func getLabelStyle() props.Text {
-	return props.Text{
-		Size:   5.5,
-		Color:  getGrayColor(),
-		Bottom: 1,
-	}
-}
-
-func getValueStyle() props.Text {
-	return props.Text{
-		Size:   6,
-		Top:    1,
-		Left:   1,
-		Bottom: 1.5,
-	}
-}
-
-func getTitleStyle() props.Text {
-	return props.Text{
-		Style: fontstyle.Bold,
-		Size:  12,
-		Color: getTitleColor(),
-	}
-}
-
-func getSubtitleStyle() props.Text {
-	return props.Text{
-		Style: fontstyle.Bold,
-		Size:  9,
-	}
-}
-
-func getDividerStyle(o ...orientation.Type) props.Line {
-	orientationProp := orientation.Vertical
-
-	if len(o) > 0 {
-		orientationProp = o[0]
-	}
-
-	return props.Line{
-		Thickness:     0.1,
-		Orientation:   orientationProp,
-		Color:         getLightGrayColor(),
-		OffsetPercent: 50,
-		SizePercent:   100,
-	}
-}
-
-func truncate(s string, maxRunes int) string {
-	r := []rune(s)
-	if len(r) <= maxRunes {
-		return s
-	}
-	return string(r[:maxRunes-3]) + "..."
-}
-
-// addUnknownModulesSection renders the user-registered constructive
-// technologies applied to the project's active options. Each occurrence shows
-// all fields of the custom module type (name, category, description,
-// references) plus the occurrence-level materials as a table (name, quantity,
-// unit). The layout follows the "Dados do projeto" pattern: the label sits
-// above its field in the same column, with the bordered value below. The
-// section always starts on a fresh page. Values are never truncated — text
-// wraps and grows the box as needed, and references are listed one per line.
-func addUnknownModulesSection(m core.Maroto, project *data.ProjectWithUnits) {
-	if len(project.UnknownModules) == 0 {
-		return
-	}
-
-	// The section always starts on a fresh page, so the identification and the
-	// field boxes rendered below cannot be split from the title by a page break.
-	m.AddPages(page.New())
-
-	m.AddRow(5)
-
-	m.AddAutoRow(
-		col.New(48).Add(
-			text.New("Tecnologias construtivas personalizadas", getTitleStyle()),
-			text.New("Módulos cadastrados pelo usuário e aplicados às opções ativas do projeto.", props.Text{
-				Top:  6.5,
-				Size: 6,
-			}),
-		),
-	)
-
-	m.AddRow(2.5)
-
-	for i, occurrence := range project.UnknownModules {
-		if i > 0 {
-			m.AddRow(3)
-		}
-
-		module := occurrence.UnknownModule
-
-		moduleName := "-"
-		category := "-"
-
-		if module != nil {
-			moduleName = module.Name
-			category = module.Category
-		}
-
-		m.AddAutoRow(
-			text.NewCol(48, fmt.Sprintf("%d — %s", i+1, moduleName), props.Text{
-				Style: fontstyle.Bold,
-				Size:  7,
-				Color: getTitleColor(),
-			}),
-		)
-
-		m.AddRow(2)
-
-		m.AddAutoRow(
-			text.NewCol(12, "Nome", getLabelStyle()),
-			col.New(1),
-			text.NewCol(12, "Categoria", getLabelStyle()),
-			col.New(23),
-		)
-
-		m.AddAutoRow(
-			text.NewCol(12, moduleName, getValueStyle()).WithStyle(getBorderStyle()),
-			col.New(1),
-			text.NewCol(12, category, getValueStyle()).WithStyle(getBorderStyle()),
-			col.New(23),
-		)
-
-		if module != nil && module.Description != "" {
-			m.AddRow(2)
-
-			m.AddAutoRow(
-				text.NewCol(48, "Descrição", getLabelStyle()),
-			)
-
-			m.AddAutoRow(
-				text.NewCol(48, module.Description, getValueStyle()).WithStyle(getBorderStyle()),
-			)
-		}
-
-		if module != nil && len(module.References) > 0 {
-			m.AddRow(2)
-
-			m.AddAutoRow(
-				text.NewCol(48, "Referências", getLabelStyle()),
-			)
-
-			for _, reference := range module.References {
-				m.AddAutoRow(
-					text.NewCol(48, reference, getValueStyle()).WithStyle(getBorderStyle()),
-				)
-			}
-		}
-
-		if len(occurrence.Materials) > 0 {
-			m.AddRow(2)
-
-			m.AddAutoRow(
-				text.NewCol(48, "Materiais", getLabelStyle()),
-			)
-
-			m.AddAutoRow(
-				text.NewCol(32, "Nome", getLabelStyle()),
-				col.New(1),
-				text.NewCol(8, "Quantidade", getLabelStyle()),
-				col.New(1),
-				text.NewCol(6, "Unidade", getLabelStyle()),
-			)
-
-			for _, material := range occurrence.Materials {
-				unit := unitLabel(material.Unit)
-				if unit == "" {
-					unit = "-"
-				}
-				m.AddAutoRow(
-					text.NewCol(32, material.Name, getValueStyle()).WithStyle(getBorderStyle()),
-					col.New(1),
-					text.NewCol(8, formatNumber(material.Quantity), getValueStyle()).WithStyle(getBorderStyle()),
-					col.New(1),
-					text.NewCol(6, unit, getValueStyle()).WithStyle(getBorderStyle()),
-				)
-			}
-		}
-	}
-}
-
-// unitLabel converts the occurrence material unit into its display form.
-func unitLabel(unit string) string {
-	switch unit {
-	case "kg":
-		return "kg"
-	case "m2":
-		return "m²"
-	case "m3":
-		return "m³"
-	case "m":
-		return "m"
-	case "other":
-		return "Outro"
-	default:
-		return ""
-	}
-}
-
-func safe(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
-
-func classificationLetter(y float64) string {
-	if y <= 0.25 {
-		return "A"
-	}
-	if y <= 0.50 {
-		return "B"
-	}
-	if y <= 0.75 {
-		return "C"
-	}
-	return "D"
-}
-
-func formatNumber(v float64, decimals ...int) string {
-	precision := 2
-	if len(decimals) > 0 {
-		precision = decimals[0]
-	}
-
-	s := fmt.Sprintf("%.*f", precision, v)
-	dotIdx := len(s) - (precision + 1)
-	intPart := s
-	decPart := ""
-	if precision > 0 {
-		intPart = s[:dotIdx]
-		decPart = s[dotIdx+1:]
-	}
-
-	negative := len(intPart) > 0 && intPart[0] == '-'
-	digits := intPart
-	if negative {
-		digits = intPart[1:]
-	}
-
-	var result []byte
-	offset := len(digits) % 3
-	if offset == 0 {
-		offset = 3
-	}
-	result = append(result, digits[:offset]...)
-	for i := offset; i < len(digits); i += 3 {
-		result = append(result, '.')
-		result = append(result, digits[i:i+3]...)
-	}
-
-	formatted := string(result)
-	if precision > 0 {
-		formatted += "," + decPart
-	}
-	if negative {
-		return "-" + formatted
-	}
-
-	return formatted
 }
