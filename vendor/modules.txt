@@ -70,7 +70,6 @@ github.com/wneessen/go-mail
 github.com/wneessen/go-mail/internal/pkcs7
 github.com/wneessen/go-mail/log
 github.com/wneessen/go-mail/smtp
-# golang.org/x/crypto v0.54.0
 # github.com/ysmood/fetchup v0.3.0
 ## explicit; go 1.21
 github.com/ysmood/fetchup
@@ -88,7 +87,7 @@ github.com/ysmood/gson
 github.com/ysmood/leakless
 github.com/ysmood/leakless/pkg/shared
 github.com/ysmood/leakless/pkg/utils
-# golang.org/x/crypto v0.53.0
+# golang.org/x/crypto v0.54.0
 ## explicit; go 1.25.0
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/blowfish
@@ -106,7 +105,6 @@ golang.org/x/image/webp
 golang.org/x/net/html
 golang.org/x/net/html/atom
 # golang.org/x/text v0.40.0
-# golang.org/x/text v0.38.0
 ## explicit; go 1.25.0
 golang.org/x/text/cases
 golang.org/x/text/internal

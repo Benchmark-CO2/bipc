@@ -13,10 +13,11 @@ const (
 	userContextKey   = contextKey("user")
 	sourceContextKey = contextKey("source")
 
-	SourceBipc   = "bipc"
+	SourceManual = "manual"
 	SourceTQS    = "tqs"
 	SourceAltoQi = "altoqi"
-	SourcePlugin = "plugin" // unknown plugin source
+	SourceIFC    = "ifc"
+	SourcePlugin = "plugin" // unknown
 )
 
 func (app *application) contextSetUser(r *http.Request, user *data.User) *http.Request {
@@ -41,7 +42,7 @@ func (app *application) contextSetSource(r *http.Request, source string) *http.R
 func (app *application) contextGetSource(r *http.Request) string {
 	source, ok := r.Context().Value(sourceContextKey).(string)
 	if !ok {
-		return SourceBipc
+		return SourceManual
 	}
 	return source
 }
