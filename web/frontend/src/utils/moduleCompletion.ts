@@ -299,13 +299,16 @@ function validateSteelArray(
   };
 }
 
-function validateFormArray(
+// Form is optional, but the backend still validates every item it receives
+// (validatePositionedForm in internal/modules/common.go): a filled position
+// must be valid for the type, and a position (including "no position") can
+// appear only once. Items with area <= 0 are dropped by
+// cleanZeroItemsBeforeSubmit, so they are ignored here.
+function validateFormItems(
   formArr: unknown[],
   type: TModulesTypes,
 ): {
-  valid: boolean;
-  hasValidItem: boolean;
-  anyPositionMissingOrInvalid: boolean;
+  issues: string[];
   positionWarnings: Array<{
     index: number;
     invalidPosition: string;
@@ -315,9 +318,7 @@ function validateFormArray(
   const validPositions = VALID_POSITIONS_BY_TYPE[type];
   const acceptedList = Array.from(validPositions);
   const seenPositions = new Set<string>();
-  let hasDuplicatePosition = false;
-  let hasValidItem = false;
-  let anyPositionMissingOrInvalid = false;
+  const issues = new Set<string>();
   const positionWarnings: Array<{
     index: number;
     invalidPosition: string;
@@ -326,39 +327,23 @@ function validateFormArray(
   for (const [i, item] of formArr.entries()) {
     if (!item || typeof item !== "object") continue;
     const el = item as Record<string, unknown>;
+    if (!isNonZeroNumber(el.area)) continue;
     const rawPos = typeof el.position === "string" ? el.position.trim() : "";
     if (!isValidPositionOrEmpty(rawPos, validPositions)) {
-      anyPositionMissingOrInvalid = true;
-      if (rawPos !== "") {
-        positionWarnings.push({
-          index: i,
-          invalidPosition: rawPos,
-          accepted: acceptedList,
-        });
-      }
-      continue;
+      issues.add("form.position");
+      positionWarnings.push({
+        index: i,
+        invalidPosition: rawPos,
+        accepted: acceptedList,
+      });
     }
-    const normalizedPos = normalizePosition(rawPos);
-    if (normalizedPos && seenPositions.has(normalizedPos)) {
-      hasDuplicatePosition = true;
-      continue;
+    const key = normalizePosition(rawPos) ?? "__no_pos__";
+    if (seenPositions.has(key)) {
+      issues.add("form.duplicate_position");
     }
-    if (normalizedPos) seenPositions.add(normalizedPos);
-    if (typeof el.area !== "undefined" && !isNonZeroNumber(el.area)) {
-      continue;
-    }
-    hasValidItem = true;
+    seenPositions.add(key);
   }
-  return {
-    valid:
-      isNonEmptyArray(formArr) &&
-      hasValidItem &&
-      !hasDuplicatePosition &&
-      !anyPositionMissingOrInvalid,
-    hasValidItem,
-    anyPositionMissingOrInvalid,
-    positionWarnings,
-  };
+  return { issues: Array.from(issues), positionWarnings };
 }
 
 function hasMasonryValid(
@@ -540,35 +525,6 @@ export function calculateModuleCompletion(
         }
         break;
       }
-      case "form": {
-        const arr = d.form;
-        const formResult = validateFormArray((arr as unknown[]) ?? [], type);
-        const hasArray = isNonEmptyArray(arr);
-        for (const w of formResult.positionWarnings) {
-          warnings.push({
-            field: "form",
-            index: w.index,
-            invalidPosition: w.invalidPosition,
-            acceptedPositions: w.accepted,
-          });
-        }
-        if (!hasArray || !formResult.valid) {
-          if (!hasArray) {
-            missing.push({
-              key: "form",
-              label: label("form"),
-              reason: reason("form"),
-            });
-          } else {
-            missing.push({
-              key: "form",
-              label: label("form"),
-              reason: reason("form"),
-            });
-          }
-        }
-        break;
-      }
       case "masonry": {
         const masonryMissing = hasMasonryValid(d.masonry, i18n);
         missing.push(...masonryMissing);
@@ -576,6 +532,27 @@ export function calculateModuleCompletion(
       }
       default:
         break;
+    }
+  }
+
+  // Form is never in `required`; it is checked only when items exist. The
+  // backend runs validatePositionedForm for the structure types only.
+  if (STRUCTURE_TYPES.has(type) && Array.isArray(d.form)) {
+    const formResult = validateFormItems(d.form, type);
+    for (const w of formResult.positionWarnings) {
+      warnings.push({
+        field: "form",
+        index: w.index,
+        invalidPosition: w.invalidPosition,
+        acceptedPositions: w.accepted,
+      });
+    }
+    for (const reasonKey of formResult.issues) {
+      missing.push({
+        key: reasonKey,
+        label: `${label("form")} > ${label(reasonKey)}`,
+        reason: reason(reasonKey),
+      });
     }
   }
 

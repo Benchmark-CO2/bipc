@@ -532,6 +532,8 @@ export const en: Translations = {
       "steel.mass": "Steel mass",
       "steel.other_name": "Other steel type name",
       "steel.other_resistance": "Other steel grade value",
+      "form.position": "Formwork position",
+      "form.duplicate_position": "Repeated position",
       slab_type: "Slab type",
       wall_thickness: "Wall thickness",
       slab_thickness: "Slab thickness",
@@ -580,6 +582,10 @@ export const en: Translations = {
         "Needed for calculation: name when steel type is 'other'",
       "steel.other_resistance":
         "Needed for calculation: custom grade value greater than zero when 'other'",
+      "form.position":
+        "Needed for calculation: a formwork position valid for this technology",
+      "form.duplicate_position":
+        "Needed for calculation: one formwork item per position (including General); add the areas into a single item",
     },
     form: {
       structureTypeLabel: "Construction Technology",
