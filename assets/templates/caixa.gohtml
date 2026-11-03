@@ -222,7 +222,7 @@
 					{{if .ReportData.ProjectWithUnits.Project.Siop}}
 						{{.ReportData.ProjectWithUnits.Project.Siop}}
 					{{else}}
-						-
+						<span style="color: #E65235;">S/Info.</span>
 					{{end}}
 				</div>
 			</div>
@@ -235,7 +235,7 @@
 					{{if .ReportData.ProjectWithUnits.Project.Apf}}
 						{{.ReportData.ProjectWithUnits.Project.Apf}}
 					{{else}}
-						-
+						<span style="color: #E65235;">S/Info.</span>
 					{{end}}
 				</div>
 			</div>
@@ -257,87 +257,127 @@
 			</div>
 		</div>
 
-		<div class="input" style="--input-width: 43px;">
+		<!-- <div class="input" style="--input-width: 43px;">
 			<div class="label">Tipo do uso</div>
 			<div class="input-box">
 				<div class="input-text"></div>
 			</div>
-		</div>
+		</div> -->
 
 		<div class="input" style="--input-width: 60px;">
 			<div class="label">Fase do projeto</div>
 			<div class="input-box">
-				<div class="input-text"></div>
+				<div class="input-text">
+					{{if .ReportData.ProjectWithUnits.Project.Phase}}
+						{{.ReportData.ProjectWithUnits.Project.Phase}}
+					{{else}}
+						<span style="color: #E65235;">S/Info.</span>
+					{{end}}
+				</div>
 			</div>
 		</div>
 
 		<div class="input" style="--input-width: 65px;">
 			<div class="label">Número de UH total</div>
 			<div class="input-box">
-				<div class="input-text"></div>
+				<div class="input-text">
+						{{.ReportData.TotalUH}}
+				</div>
 			</div>
 		</div>
 
 		<div class="input" style="--input-width: 50px;">
 			<div class="label">Número de UC</div>
 			<div class="input-box">
-				<div class="input-text"></div>
+				<div class="input-text">
+					{{.ReportData.TotalUC}}
+				</div>
 			</div>
 		</div>
 
-		<div class="input" style="--input-width: 65px;">
+		<!-- <div class="input" style="--input-width: 65px;">
 			<div class="label">Área const. UC (m²)</div>
 			<div class="input-box">
 				<div class="input-text"></div>
 			</div>
-		</div>
+		</div> -->
 
 		<div class="input" style="--input-width: 70px;">
 			<div class="label">Área const. total (m²)</div>
 			<div class="input-box">
-				<div class="input-text"></div>
+				<div class="input-text">
+						{{.ReportData.ProjectWithUnits.Area}}
+				</div>
 			</div>
 		</div>
 
 		<div class="input" style="--input-width: 150px;">
 			<div class="label">Rua / Avenida</div>
 			<div class="input-box">
-				<div class="input-text"></div>
+				<div class="input-text">
+					{{if .ReportData.ProjectWithUnits.Project.Street}}
+						{{.ReportData.ProjectWithUnits.Project.Street}}
+					{{else}}
+						<span style="color: #E65235;">S/Info.</span>
+					{{end}}
+				</div>
 			</div>
 		</div>
 
 		<div class="input" style="--input-width: 50px;">
 			<div class="label">CEP</div>
 			<div class="input-box">
-				<div class="input-text"></div>
+				<div class="input-text">
+					{{if .ReportData.ProjectWithUnits.Project.CEP}}
+						{{.ReportData.ProjectWithUnits.Project.CEP}}
+					{{else}}
+						<span style="color: #E65235;">S/Info.</span>
+					{{end}}
+				</div>
 			</div>
 		</div>
 
 		<div class="input" style="--input-width: 40px;">
 			<div class="label">Número</div>
 			<div class="input-box">
-				<div class="input-text"></div>
+				<div class="input-text">
+					{{if .ReportData.ProjectWithUnits.Project.Number}}
+						{{.ReportData.ProjectWithUnits.Project.Number}}
+					{{else}}
+						<span style="color: #E65235;">S/Info.</span>
+					{{end}}
+				</div>
 			</div>
 		</div>
 
 		<div class="input" style="--input-width: 150px;">
 			<div class="label">Bairro</div>
 			<div class="input-box">
-				<div class="input-text"></div>
+				<div class="input-text">
+					{{if .ReportData.ProjectWithUnits.Project.Neighborhood}}
+						{{.ReportData.ProjectWithUnits.Project.Neighborhood}}
+					{{else}}
+						<span style="color: #E65235;">S/Info.</span>
+					{{end}}
+				</div>
 			</div>
 		</div>
 
 		<div class="input" style="--input-width: 150px;">
 			<div class="label">Cidade</div>
 			<div class="input-box">
-				<div class="input-text"></div>
+				<div class="input-text">
+					{{.ReportData.ProjectWithUnits.Project.City}}
+				</div>
 			</div>
 		</div>
 
 		<div class="input" style="--input-width: 30px;">
 			<div class="label">Estado</div>
 			<div class="input-box">
-				<div class="input-text"></div>
+				<div class="input-text">
+					{{.ReportData.ProjectWithUnits.Project.State}}
+				</div>
 			</div>
 		</div>
 	</div>

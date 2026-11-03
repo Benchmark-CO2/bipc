@@ -77,6 +77,8 @@ func generateDocumentContent(templateFile string, templateName string, reportDat
 
 type ReportData struct {
 	ProjectWithUnits *data.ProjectWithUnits
+	TotalUH          int
+	TotalUC          int
 
 	SourcesTotal float32
 }
@@ -139,14 +141,40 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	//report, err := app.buildProjectBenchmarkReport(projectID)
-	//if err != nil {
-	//app.serverErrorResponse(w, r, err)
-	//return
-	//}
+	// report, err := app.buildProjectBenchmarkReport(projectID)
+	// if err != nil {
+	// 	app.serverErrorResponse(w, r, err)
+	// 	return
+	// }
+
+	// co2Class := classificationLetter(report.Rank.CO2.Y)
+	// co2Total := report.Rank.CO2.Total
+	// energyClass := classificationLetter(report.Rank.Energy.Y)
+	// energyTotal := report.Rank.Energy.Total
+
+	totalUC := 0
+	totalUH := 0
+
+	for _, unit := range project.Units {
+		rep := unit.RepetitionCount
+		if rep <= 0 {
+			rep = 1
+		}
+
+		totalUC += rep
+
+		if unit.HousingUnitsCount != nil {
+			totalUH += rep * *unit.HousingUnitsCount
+		}
+
+		//totalUCArea += unit.Area * float64(rep)
+	}
 
 	var reportData = ReportData{
 		ProjectWithUnits: project,
+
+		TotalUH: totalUH,
+		TotalUC: totalUC,
 
 		SourcesTotal: 71,
 	}
@@ -334,4 +362,17 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 	if _, err := io.Copy(w, merged); err != nil {
 		log.Println("erro ao enviar PDF:", err)
 	}
+}
+
+func classificationLetter(y float64) string {
+	if y <= 0.25 {
+		return "A"
+	}
+	if y <= 0.50 {
+		return "B"
+	}
+	if y <= 0.75 {
+		return "C"
+	}
+	return "D"
 }
