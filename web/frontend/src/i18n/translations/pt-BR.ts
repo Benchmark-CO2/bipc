@@ -578,7 +578,7 @@ export const ptBR = {
       "steel.resistance":
         "Necessário para o cálculo: resistência do aço válida (CA50, CA60, CP190 ou outra)",
       "steel.position":
-        "Necessário para o cálculo: posição do aço (parede, laje, pilar, viga, escada)",
+        "Necessário para o cálculo: posição do aço válida para esta tecnologia",
       "steel.mass": "Necessário para o cálculo: massa do aço maior que zero",
       "steel.other_name":
         "Necessário para o cálculo: nome do outro tipo de aço",

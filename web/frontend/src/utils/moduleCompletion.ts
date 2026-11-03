@@ -109,14 +109,18 @@ const VALID_STEEL_MATERIALS = new Set([
   "other",
 ]);
 const VALID_STEEL_RESISTANCES = new Set(["CA50", "CA60", "CP190", "other"]);
-const VALID_POSITIONS_BY_TYPE: Record<TModulesTypes, Set<string>> = {
-  beam_column: new Set(["column", "beam", "slab", "stair"]),
-  concrete_wall: new Set(["wall", "slab", "stair"]),
-  structural_masonry: new Set(["column", "beam", "slab", "stair"]),
-  raft_foundation: new Set(["raft"]),
-  piles_foundation: new Set(["pile"]),
-  raft_piles_foundation: new Set(["raft", "pile"]),
-};
+// Positions the backend accepts per type (*ValidPositions in
+// internal/modules/*.go), read from the schema copy instead of a hand-written
+// table that had drifted (piles accepted only "pile").
+const VALID_POSITIONS_BY_TYPE = Object.fromEntries(
+  Object.entries(SCHEMA_KEY_MAP).map(([type, schemaKey]) => [
+    type,
+    new Set<string>(
+      (moduleSchema.modules[schemaKey] as { positions?: string[] })
+        .positions ?? [],
+    ),
+  ]),
+) as Record<TModulesTypes, Set<string>>;
 
 function isNonEmptyArray(value: unknown): boolean {
   return Array.isArray(value) && value.length > 0;
