@@ -16,6 +16,7 @@ import {
 } from "@/utils/modulePositions";
 import {
   calculateModuleCompletion,
+  SUPPORTED_MORTAR_FAK,
   type CompletionResult,
   type ModuleCompletionI18n,
 } from "@/utils/moduleCompletion";
@@ -353,8 +354,16 @@ export const useModuleV2Form = ({
   };
 
   const addMasonryMortar = () => {
+    // The backend rejects a repeated fak across mortar items, so start the
+    // new item with the first supported fak not used yet.
+    const current =
+      (form.getValues("data.masonry.mortar" as never) as unknown[] | undefined) ??
+      [];
+    const used = new Set(
+      current.map((m) => Number((m as { fak?: unknown } | null)?.fak)),
+    );
     masonryMortarArray.append({
-      fak: 4.5,
+      fak: SUPPORTED_MORTAR_FAK.find((f) => !used.has(f)) ?? 4.5,
       volume: "0" as unknown as number,
       customFak: false,
     } as never);

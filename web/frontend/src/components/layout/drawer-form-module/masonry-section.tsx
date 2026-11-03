@@ -260,27 +260,17 @@ const BlocksSection = ({
                               <SelectValue placeholder="Selecione Fbk" />
                             </SelectTrigger>
                             <SelectContent>
-                              {FBK_OPTIONS.map((opt) => {
-                                const disabled = isOptionUsedInArray(
-                                  items,
-                                  "fbk",
-                                  FBK_OPTIONS,
-                                  opt,
-                                  index,
-                                  "customFbk",
-                                );
-                                return (
-                                  <SelectItem
-                                    key={opt}
-                                    value={String(opt)}
-                                    disabled={disabled}
-                                    className="text-xs"
-                                  >
-                                    {opt}
-                                    {disabled ? ` ${t.modules.form.inUse}` : ""}
-                                  </SelectItem>
-                                );
-                              })}
+                              {/* Blocks may share an fbk (e.g. full and half block):
+                                  the backend only rejects repeated fak/fgk. */}
+                              {FBK_OPTIONS.map((opt) => (
+                                <SelectItem
+                                  key={opt}
+                                  value={String(opt)}
+                                  className="text-xs"
+                                >
+                                  {opt}
+                                </SelectItem>
+                              ))}
                               {/* Every accepted value is listed; "Outro" only shows a saved value outside the list. */}
                               {isCustom && (
                                 <SelectItem value="other" className="text-xs">
@@ -837,7 +827,11 @@ const GroutItemRow = ({
           size="sm"
           onClick={() =>
             volFields.append({
-              fgk: FGK_OPTIONS[0] ?? 20,
+              // The backend rejects a repeated fgk inside the same grout.
+              fgk:
+                FGK_OPTIONS.find(
+                  (o) => !volItems.some((v) => Number(v?.fgk) === o),
+                ) ?? FGK_OPTIONS[0],
               volume: "0",
               customFgk: false,
             } as never)
