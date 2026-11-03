@@ -525,7 +525,9 @@
 				</div>
 			</div>
 
-			<div style="display: flex; width: 225px; flex-direction: column; gap: 5px;">
+			<div style="display: flex; width: 320px; flex-direction: column; gap: 5px;">
+
+				<canvas id="chart-co2" style="display: block; width: 100%; height: 300px;"></canvas>
 				
 			</div>
 
@@ -693,7 +695,9 @@
 				</div>
 			</div>
 
-			<div style="display: flex; width: 225px; flex-direction: column; gap: 5px;">
+			<div style="display: flex; width: 320px; flex-direction: column; gap: 5px;">
+
+				<canvas id="chart-energy" style="display: block; width: 100%; height: 300px;"></canvas>
 				
 			</div>
 
@@ -837,6 +841,312 @@
 
 		}
 		renderChartRastreabilidade(data.sources);
+
+		function drawBenchmarkChart(canvasId, options) {
+			const DEFAULT_COLORS = {
+				START: "#5B9BD5",
+				END: "#E0756C",
+				CUM_DOT: "#7E42B3",
+				GRID: "#e2e8f0",
+				TEXT: "#64748b",
+			};
+			const PROCEL_CLASSES = [
+				{ label: "A", color: "#00A650" },
+				{ label: "B", color: "#8DC63F" },
+				{ label: "C", color: "#FFF200" },
+				{ label: "D", color: "#F26522" },
+			];
+			const canvas = document.getElementById(canvasId);
+			if (!canvas) return;
+			const ctx = canvas.getContext("2d");
+
+			const dpr = 2;
+			const rect = canvas.getBoundingClientRect();
+			const clientWidth = rect.width > 0 ? rect.width : (canvas.parentElement ? canvas.parentElement.clientWidth : 700);
+			const clientHeight = rect.height > 0 ? rect.height : 215;
+
+			canvas.width = clientWidth * dpr;
+			canvas.height = clientHeight * dpr;
+			ctx.scale(dpr, dpr);
+
+			const margin = { top: 10, right: 32, bottom: 28, left: 38 };
+			const _width = clientWidth - margin.left - margin.right;
+			const _height = clientHeight - margin.top - margin.bottom;
+			const data = options.data || [];
+			const isCumulative = options.variant === "cumulative";
+			const selectedIds = new Set(options.selectedIds || ["total"]);
+
+			ctx.fillStyle = "#ffffff";
+			ctx.fillRect(0, 0, rect.width, rect.height);
+
+			const maxDomainX = options.maxX || 168;
+			const xScale = d3.scaleLinear().domain([0, maxDomainX]).range([0, _width]);
+			const yScale = d3.scaleLinear().domain([0, 1.0]).range([_height, 0]);
+
+			ctx.save();
+			ctx.translate(margin.left, margin.top);
+
+			ctx.save();
+			ctx.beginPath();
+			ctx.rect(0, 0, _width, _height);
+			ctx.clip();
+
+			ctx.strokeStyle = DEFAULT_COLORS.GRID;
+			ctx.lineWidth = 0.75;
+			const xTicks = isCumulative ? d3.range(0, 1.1, 0.1) : d3.range(0, 170, 10);
+			xTicks.forEach(t => {
+				const x = xScale(t);
+				ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, _height); ctx.stroke();
+			});
+			d3.range(0, 1.1, 0.1).forEach(t => {
+				const y = yScale(t);
+				ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(_width, y); ctx.stroke();
+			});
+
+			let c5Value = null, r5Value = null, p5LineX = null;
+			if (options.showTop5Line && data.length > 0) {
+				const sortedMin = [...data].map(d => d.min).sort((a, b) => a - b);
+				const sortedMax = [...data].map(d => d.max).sort((a, b) => a - b);
+				const idx = Math.floor(sortedMin.length * 0.05);
+				c5Value = sortedMin[Math.min(idx, sortedMin.length - 1)];
+				r5Value = sortedMax[Math.min(idx, sortedMax.length - 1)];
+				p5LineX = xScale(c5Value);
+			}
+
+			if (!isCumulative && data.length >= 3 && d3.regressionPoly) {
+				const sorted = [...data].sort((a, b) => a.y - b.y);
+				const drawPoly = (pts, color, dash = []) => {
+				const reg = d3.regressionPoly().x(d => d[1]).y(d => d[0]).order(3)(pts);
+				ctx.save();
+				ctx.strokeStyle = color;
+				ctx.lineWidth = 1;
+				ctx.setLineDash(dash);
+				ctx.beginPath();
+				for (let i = 0; i <= 60; i++) {
+					const yVal = i / 60;
+					const xVal = Math.max(0, reg.predict(yVal));
+					const px = xScale(xVal), py = yScale(yVal);
+					if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+				}
+				ctx.stroke();
+				ctx.restore();
+				};
+				drawPoly(sorted.map(d => [d.min, d.y]), "#5B9BD5", [2, 2]);
+				drawPoly(sorted.map(d => [(d.min + d.max) / 2, d.y]), "#52525B", []);
+				drawPoly(sorted.map(d => [d.max, d.y]), "#E0756C", [2, 2]);
+			}
+
+			data.forEach(d => {
+				const isSelected = selectedIds.has(String(d.id));
+				if (isSelected) return;
+				const x1 = xScale(d.min), x2 = xScale(d.max), y = yScale(d.y);
+
+				if (isCumulative) {
+				ctx.beginPath(); 
+				ctx.arc(x1, y, 2.5, 0, Math.PI * 2); 
+				ctx.fillStyle = "#A855F7"; // Roxo principal
+				ctx.fill();
+				ctx.strokeStyle = "#581C87"; // Contorno roxo escuro
+				ctx.lineWidth = 0.6;
+				ctx.stroke();
+				} else {
+				ctx.globalAlpha = 0.55;
+				ctx.beginPath(); ctx.arc(x1, y, 1.5, 0, Math.PI * 2); ctx.fillStyle = DEFAULT_COLORS.START; ctx.fill();
+				ctx.beginPath(); ctx.arc(x2, y, 1.5, 0, Math.PI * 2); ctx.fillStyle = DEFAULT_COLORS.END; ctx.fill();
+				ctx.globalAlpha = 1;
+				}
+			});
+
+			if (options.showBaseline) {
+				const by = yScale(0.5);
+				ctx.save();
+				ctx.strokeStyle = "#18181B";
+				ctx.lineWidth = 1;
+				ctx.beginPath(); ctx.moveTo(0, by); ctx.lineTo(_width, by); ctx.stroke();
+				ctx.font = "bold 6.5px 'Roboto Flex', sans-serif";
+				ctx.fillStyle = "#18181B";
+				ctx.textAlign = "right";
+				ctx.fillText("Linha de base", _width - 6, by - 4);
+				ctx.restore();
+			}
+
+			if (p5LineX !== null) {
+				ctx.save();
+				ctx.strokeStyle = "#A855F7";
+				ctx.lineWidth = 0.8;
+				ctx.setLineDash([4, 3]);
+				ctx.beginPath(); ctx.moveTo(p5LineX, 0); ctx.lineTo(p5LineX, _height); ctx.stroke();
+
+				const y05 = yScale(0.05);
+				ctx.strokeStyle = "#F97316";
+				ctx.beginPath(); ctx.moveTo(0, y05); ctx.lineTo(_width, y05); ctx.stroke();
+				ctx.setLineDash([]);
+				ctx.font = "bold 6.5px 'Roboto Flex', sans-serif";
+				ctx.fillStyle = "#F97316";
+				ctx.fillText("5%", 4, y05 - 3);
+				ctx.restore();
+			}
+
+			data.forEach(d => {
+				if (!selectedIds.has(String(d.id))) return;
+				const x1 = xScale(d.min), x2 = xScale(d.max), y = yScale(d.y);
+
+				if (isCumulative) {
+				// Linhas tracejadas de projeção até aos eixos X e Y
+				ctx.save();
+				ctx.strokeStyle = "#22C55E"; // Verde
+				ctx.lineWidth = 1;
+				ctx.setLineDash([3, 2]);
+				
+				// Projeção para baixo (Eixo X)
+				ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x1, _height); ctx.stroke();
+				// Projeção para a esquerda (Eixo Y)
+				ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(0, y); ctx.stroke();
+				
+				ctx.restore();
+
+				// Desenha o Ponto Selecionado (Verde)
+				ctx.beginPath(); 
+				ctx.arc(x1, y, 4.5, 0, Math.PI * 2); 
+				ctx.fillStyle = "#22C55E"; 
+				ctx.fill();
+				ctx.strokeStyle = "#14532D"; // Contorno verde escuro
+				ctx.lineWidth = 0.8;
+				ctx.stroke();
+
+				} else {
+				const xMid = xScale((d.min + d.max) / 2);
+				const barH = 3.5;
+
+				ctx.fillStyle = DEFAULT_COLORS.START;
+				ctx.fillRect(x1, y - barH / 2, Math.max(1, xMid - x1), barH);
+				ctx.fillStyle = DEFAULT_COLORS.END;
+				ctx.fillRect(xMid, y - barH / 2, Math.max(1, x2 - xMid), barH);
+
+				if (p5LineX !== null) {
+					ctx.save();
+					ctx.strokeStyle = "#9333EA";
+					ctx.lineWidth = 1;
+					ctx.setLineDash([2, 2]);
+					ctx.beginPath(); ctx.moveTo(p5LineX, y); ctx.lineTo(x1, y); ctx.stroke();
+					ctx.restore();
+				}
+
+				const drawBadge = (bx, by, letter, color) => {
+					ctx.save();
+					ctx.fillStyle = color;
+					ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI * 2); ctx.fill();
+					ctx.fillStyle = "#ffffff";
+					ctx.font = "bold 6.5px 'Roboto Flex', sans-serif";
+					ctx.textAlign = "center";
+					ctx.textBaseline = "middle";
+					ctx.fillText(letter, bx, by + 0.5);
+					ctx.restore();
+				};
+
+				if (p5LineX !== null) drawBadge(p5LineX, y, "P", "#9333EA");
+				drawBadge(x1, y - 5, "C", DEFAULT_COLORS.START);
+				drawBadge(xMid, y, "V", "#65A30D");
+				drawBadge(x2, y + 5, "R", DEFAULT_COLORS.END);
+				}
+			});
+
+			ctx.restore();
+
+			ctx.strokeStyle = "#D4D4D8";
+			ctx.lineWidth = 1;
+			ctx.beginPath(); ctx.moveTo(0, _height); ctx.lineTo(_width, _height); ctx.stroke();
+			ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, _height); ctx.stroke();
+
+			ctx.fillStyle = DEFAULT_COLORS.TEXT;
+			ctx.font = "6.5px 'Roboto Flex', sans-serif";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "top";
+
+			xTicks.forEach(t => {
+				const x = xScale(t);
+				if (x >= 0 && x <= _width) {
+				const label = isCumulative ? t.toFixed(1).replace('.', ',') : String(Math.round(t));
+				ctx.fillText(label, x, _height + 4);
+				}
+			});
+			if (!isCumulative) {
+				ctx.fillText("168", xScale(168), _height + 4);
+			}
+
+			ctx.textAlign = "right";
+			ctx.textBaseline = "middle";
+			d3.range(0, 1.1, 0.1).forEach(t => {
+				const y = yScale(t);
+				const label = t.toFixed(1).replace('.', ',');
+				ctx.fillText(label, -5, y);
+			});
+
+			if (!isCumulative) {
+				ctx.textAlign = "right";
+				ctx.fillText("Pior", -18, 2);
+				ctx.fillText("Melhor", -18, _height);
+			}
+
+			ctx.textAlign = "center";
+			ctx.fillStyle = "#52525B";
+			ctx.font = "6.5px 'Roboto Flex', sans-serif";
+			ctx.fillText(options.xAxisLabel, _width / 2, _height + 16);
+
+			ctx.save();
+			ctx.translate(-26, _height / 2);
+			ctx.rotate(-Math.PI / 2);
+			ctx.textAlign = "center";
+			ctx.fillText(options.yAxisLabel, 0, 0);
+			ctx.restore();
+
+			const reversed = [...PROCEL_CLASSES].reverse();
+			const bandSize = 1.0 / reversed.length;
+			reversed.forEach((cls, i) => {
+				const topY = yScale(1.0 - i * bandSize);
+				const botY = yScale(1.0 - (i + 1) * bandSize);
+				const isHighlighted = cls.label === options.highlightClass;
+
+				ctx.save();
+				ctx.globalAlpha = isHighlighted ? 1 : 0.25;
+				ctx.fillStyle = cls.color;
+				ctx.fillRect(_width + 4, topY, 14, botY - topY);
+
+				ctx.globalAlpha = isHighlighted ? 1 : 0.5;
+				ctx.fillStyle = "#18181B";
+				ctx.font = "bold 6.5px 'Roboto Flex', sans-serif";
+				ctx.textAlign = "center";
+				ctx.textBaseline = "middle";
+				ctx.fillText(cls.label, _width + 11, (topY + botY) / 2);
+				ctx.restore();
+			});
+
+			ctx.restore();
+    	}
+
+		drawBenchmarkChart("chart-co2", {
+              variant: "range",
+              data: data.co2Chart,
+              selectedIds: data.selectedIds,
+              maxX: 168,
+              showBaseline: true,
+              showTop5Line: true,
+              highlightClass: "B",
+              xAxisLabel: "Carbono Embutido (Kg/m²)",
+              yAxisLabel: "Potencial de mitigação"
+            });
+
+		drawBenchmarkChart("chart-energy", {
+			variant: "range",
+			data: data.energyChart,
+			selectedIds: data.selectedIds,
+			maxX: 168,
+			showBaseline: true,
+			showTop5Line: true,
+			highlightClass: "B",
+			xAxisLabel: "Consumo Embutido (MJ/m²)",
+			yAxisLabel: "Potencial de mitigação"
+		});
 	
 		function renderChartGM(data, seletor = "#GM") {
 			const paleta = ["#1f7a85", "#f28e4b", "#a46fdc", "#e5c339", "#d9534f", "#5cb85c", "#8c6d62", "#3f8fd2"];

@@ -503,7 +503,9 @@
 				</div>
 			</div>
 
-			<div style="display: flex; width: 225px; flex-direction: column; gap: 5px;">
+			<div style="display: flex; width: 320px; flex-direction: column; gap: 5px;">
+
+				<canvas id="chart-co2" style="display: block; width: 100%; height: 300px;"></canvas>
 				
 			</div>
 
@@ -671,7 +673,9 @@
 				</div>
 			</div>
 
-			<div style="display: flex; width: 225px; flex-direction: column; gap: 5px;">
+			<div style="display: flex; width: 320px; flex-direction: column; gap: 5px;">
+
+				<canvas id="chart-energy" style="display: block; width: 100%; height: 300px;"></canvas>
 				
 			</div>
 
@@ -746,7 +750,7 @@
 	<script>
 		window.chartsReady = false;
 
-		const data = {"sources":[{"label":"Softwares (TQS via plugin)","value":8,"color":"#8ab4e8"},{"label":"Arquivos IFC (via upload)","value":46,"color":"#1b7a72"},{"label":"Arquivos CSV","value":12,"color":"#e8a24a"},{"label":"Inseridos manualmente","value":5,"color":"#d4736b"}],"gm":[{"nome":"Parede de concreto","itens":[{"material":"Concreto","kg":2100},{"material":"Aço","kg":400},{"material":"Argamassa","kg":1100}]},{"nome":"Alvenaria","itens":[{"material":"Concreto","kg":3015},{"material":"Aço","kg":1450},{"material":"Argamassa","kg":520}]},{"nome":"Fundação","itens":[{"material":"Concreto","kg":4560},{"material":"Aço","kg":350},{"material":"Argamassa","kg":70}]},{"nome":"Cobertura","itens":[{"material":"Concreto","kg":2220},{"material":"Aço","kg":1050},{"material":"Argamassa","kg":1750}]}],"gc":[{"x":0.15,"y":0.0179},{"x":0.18,"y":0.0357},{"x":0.2,"y":0.0536},{"x":0.205,"y":0.0714},{"x":0.21,"y":0.0893},{"x":0.22,"y":0.1071},{"x":0.23,"y":0.125},{"x":0.26,"y":0.1429},{"x":0.3,"y":0.1607},{"x":0.31,"y":0.1786},{"x":0.33,"y":0.1964},{"x":0.335,"y":0.2143},{"x":0.36,"y":0.2321},{"x":0.37,"y":0.25},{"x":0.375,"y":0.2679},{"x":0.39,"y":0.2857},{"x":0.395,"y":0.3036},{"x":0.4,"y":0.3214},{"x":0.42,"y":0.3393},{"x":0.43,"y":0.3571},{"x":0.44,"y":0.375},{"x":0.45,"y":0.3929},{"x":0.47,"y":0.4107},{"x":0.48,"y":0.4286},{"x":0.485,"y":0.4464},{"x":0.49,"y":0.4643},{"x":0.5,"y":0.4821},{"x":0.51,"y":0.5},{"x":0.52,"y":0.5179},{"x":0.525,"y":0.5357},{"x":0.53,"y":0.5536},{"x":0.535,"y":0.5714},{"x":0.54,"y":0.5893},{"x":0.55,"y":0.6071,"destaque":true},{"x":0.555,"y":0.625},{"x":0.56,"y":0.6429},{"x":0.565,"y":0.6607},{"x":0.57,"y":0.6786},{"x":0.575,"y":0.6964},{"x":0.58,"y":0.7143},{"x":0.62,"y":0.7321},{"x":0.63,"y":0.75},{"x":0.64,"y":0.7679},{"x":0.645,"y":0.7857},{"x":0.655,"y":0.8036},{"x":0.665,"y":0.8214},{"x":0.68,"y":0.8393},{"x":0.69,"y":0.8571},{"x":0.7,"y":0.875},{"x":0.72,"y":0.8929},{"x":0.73,"y":0.9107},{"x":0.74,"y":0.9286},{"x":0.755,"y":0.9464},{"x":0.76,"y":0.9643},{"x":0.9,"y":0.9821}],"sbc1":[{"nome":"Torre A","series":[{"nome":"Parede de concreto","valor":16},{"nome":"Fundação radier","valor":5},{"nome":"Cobertura","valor":3}]},{"nome":"Torre B","series":[{"nome":"Parede de concreto","valor":16},{"nome":"Fundação radier","valor":5},{"nome":"Cobertura","valor":3}]},{"nome":"Residencial modelo","series":[{"nome":"Parede de concreto","valor":32},{"nome":"Fundação radier","valor":10},{"nome":"Cobertura","valor":6},{"nome":"teste","valor":15}]}],"sbc2":[{"nome":"Torre A","series":[{"nome":"Parede de concreto","valor":16},{"nome":"Fundação radier","valor":5},{"nome":"Cobertura","valor":3}]},{"nome":"Torre B","series":[{"nome":"Parede de concreto","valor":16},{"nome":"Fundação radier","valor":5},{"nome":"Cobertura","valor":3}]}]};
+		const data = {"sources":[{"label":"Softwares (TQS via plugin)","value":8,"color":"#8ab4e8"},{"label":"Arquivos IFC (via upload)","value":46,"color":"#1b7a72"},{"label":"Arquivos CSV","value":12,"color":"#e8a24a"},{"label":"Inseridos manualmente","value":5,"color":"#d4736b"}],"co2Chart":[{"id":"proj-0","y":0,"min":15,"max":30},{"id":"proj-1","y":0.022727272727272728,"min":15.11445811419985,"max":30.682639932381665},{"id":"proj-2","y":0.045454545454545456,"min":15.450788880540946,"max":31.587152516904585},{"id":"proj-3","y":0.06818181818181818,"min":15.998426934635612,"max":32.70297238918106},{"id":"proj-4","y":0.09090909090909091,"min":16.74680691209617,"max":34.01953418482344},{"id":"proj-5","y":0.11363636363636363,"min":17.685363448534936,"max":35.52627253944403},{"id":"proj-6","y":0.13636363636363635,"min":18.80353117956424,"max":37.212622088655145},{"id":"proj-7","y":0.1590909090909091,"min":20.090744740796392,"max":39.06801746806912},{"id":"proj-8","y":0.18181818181818182,"min":21.536438767843727,"max":41.08189331329827},{"id":"proj-9","y":0.20454545454545456,"min":23.13004789631856,"max":43.243684259954925},{"id":"proj-10","y":0.22727272727272727,"min":24.861006761833206,"max":45.54282494365139},{"id":"proj-11","y":0.25,"min":26.71875,"max":47.96875},{"id":"proj-12","y":0.2727272727272727,"min":28.692712246431253,"max":50.510894064613076},{"id":"proj-13","y":0.29545454545454547,"min":30.772328136739297,"max":53.15869177310293},{"id":"proj-14","y":0.3181818181818182,"min":32.94703230653644,"max":55.901577761081896},{"id":"proj-15","y":0.3409090909090909,"min":35.20625939143501,"max":58.728986664162285},{"id":"proj-16","y":0.36363636363636365,"min":37.53944402704733,"max":61.630353117956425},{"id":"proj-17","y":0.38636363636363635,"min":39.93602084898572,"max":64.59511175807663},{"id":"proj-18","y":0.4090909090909091,"min":42.38542449286251,"max":67.61269722013525},{"id":"total","y":0.4318181818181818,"min":48,"max":88},{"id":"proj-20","y":0.45454545454545453,"min":47.40045078888053,"max":73.7640871525169},{"id":"proj-21","y":0.4772727272727273,"min":49.94494271224644,"max":76.87676089406463},{"id":"proj-22","y":0.5,"min":52.5,"max":80},{"id":"proj-23","y":0.5227272727272727,"min":55.05505728775357,"max":83.12323910593538},{"id":"proj-24","y":0.5454545454545454,"min":57.59954921111945,"max":86.23591284748309},{"id":"proj-25","y":0.5681818181818182,"min":60.12291040571,"max":89.32745586025545},{"id":"proj-26","y":0.5909090909090909,"min":62.6145755071375,"max":92.38730277986477},{"id":"proj-27","y":0.6136363636363636,"min":65.06397915101428,"max":95.40488824192337},{"id":"proj-28","y":0.6363636363636364,"min":67.46055597295268,"max":98.36964688204358},{"id":"proj-29","y":0.6590909090909091,"min":69.79374060856499,"max":101.27101333583772},{"id":"proj-30","y":0.6818181818181818,"min":72.05296769346356,"max":104.0984222389181},{"id":"proj-31","y":0.7045454545454546,"min":74.22767186326071,"max":106.84130822689707},{"id":"proj-32","y":0.7272727272727273,"min":76.30728775356874,"max":109.48910593538693},{"id":"proj-33","y":0.75,"min":78.28125,"max":112.03125},{"id":"proj-34","y":0.7727272727272727,"min":80.13899323816679,"max":114.4571750563486},{"id":"proj-35","y":0.7954545454545454,"min":81.86995210368144,"max":116.75631574004508},{"id":"proj-36","y":0.8181818181818182,"min":83.46356123215628,"max":118.91810668670173},{"id":"proj-37","y":0.8409090909090909,"min":84.90925525920362,"max":120.93198253193088},{"id":"proj-38","y":0.8636363636363636,"min":86.19646882043577,"max":122.78737791134486},{"id":"proj-39","y":0.8863636363636364,"min":87.31463655146507,"max":124.47372746055598},{"id":"proj-40","y":0.9090909090909091,"min":88.25319308790382,"max":125.98046581517656},{"id":"proj-41","y":0.9318181818181818,"min":89.00157306536438,"max":127.29702761081893},{"id":"proj-42","y":0.9545454545454546,"min":89.54921111945906,"max":128.41284748309542},{"id":"proj-43","y":0.9772727272727273,"min":89.88554188580015,"max":129.31736006761832},{"id":"proj-44","y":1,"min":90,"max":130}],"energyChart":[{"id":"proj-0","y":0,"min":15,"max":30},{"id":"proj-1","y":0.022727272727272728,"min":15.11445811419985,"max":30.682639932381665},{"id":"proj-2","y":0.045454545454545456,"min":15.450788880540946,"max":31.587152516904585},{"id":"proj-3","y":0.06818181818181818,"min":15.998426934635612,"max":32.70297238918106},{"id":"proj-4","y":0.09090909090909091,"min":16.74680691209617,"max":34.01953418482344},{"id":"proj-5","y":0.11363636363636363,"min":17.685363448534936,"max":35.52627253944403},{"id":"proj-6","y":0.13636363636363635,"min":18.80353117956424,"max":37.212622088655145},{"id":"proj-7","y":0.1590909090909091,"min":20.090744740796392,"max":39.06801746806912},{"id":"proj-8","y":0.18181818181818182,"min":21.536438767843727,"max":41.08189331329827},{"id":"proj-9","y":0.20454545454545456,"min":23.13004789631856,"max":43.243684259954925},{"id":"proj-10","y":0.22727272727272727,"min":24.861006761833206,"max":45.54282494365139},{"id":"proj-11","y":0.25,"min":26.71875,"max":47.96875},{"id":"proj-12","y":0.2727272727272727,"min":28.692712246431253,"max":50.510894064613076},{"id":"proj-13","y":0.29545454545454547,"min":30.772328136739297,"max":53.15869177310293},{"id":"proj-14","y":0.3181818181818182,"min":32.94703230653644,"max":55.901577761081896},{"id":"proj-15","y":0.3409090909090909,"min":35.20625939143501,"max":58.728986664162285},{"id":"proj-16","y":0.36363636363636365,"min":37.53944402704733,"max":61.630353117956425},{"id":"proj-17","y":0.38636363636363635,"min":39.93602084898572,"max":64.59511175807663},{"id":"proj-18","y":0.4090909090909091,"min":42.38542449286251,"max":67.61269722013525},{"id":"total","y":0.4318181818181818,"min":48,"max":88},{"id":"proj-20","y":0.45454545454545453,"min":47.40045078888053,"max":73.7640871525169},{"id":"proj-21","y":0.4772727272727273,"min":49.94494271224644,"max":76.87676089406463},{"id":"proj-22","y":0.5,"min":52.5,"max":80},{"id":"proj-23","y":0.5227272727272727,"min":55.05505728775357,"max":83.12323910593538},{"id":"proj-24","y":0.5454545454545454,"min":57.59954921111945,"max":86.23591284748309},{"id":"proj-25","y":0.5681818181818182,"min":60.12291040571,"max":89.32745586025545},{"id":"proj-26","y":0.5909090909090909,"min":62.6145755071375,"max":92.38730277986477},{"id":"proj-27","y":0.6136363636363636,"min":65.06397915101428,"max":95.40488824192337},{"id":"proj-28","y":0.6363636363636364,"min":67.46055597295268,"max":98.36964688204358},{"id":"proj-29","y":0.6590909090909091,"min":69.79374060856499,"max":101.27101333583772},{"id":"proj-30","y":0.6818181818181818,"min":72.05296769346356,"max":104.0984222389181},{"id":"proj-31","y":0.7045454545454546,"min":74.22767186326071,"max":106.84130822689707},{"id":"proj-32","y":0.7272727272727273,"min":76.30728775356874,"max":109.48910593538693},{"id":"proj-33","y":0.75,"min":78.28125,"max":112.03125},{"id":"proj-34","y":0.7727272727272727,"min":80.13899323816679,"max":114.4571750563486},{"id":"proj-35","y":0.7954545454545454,"min":81.86995210368144,"max":116.75631574004508},{"id":"proj-36","y":0.8181818181818182,"min":83.46356123215628,"max":118.91810668670173},{"id":"proj-37","y":0.8409090909090909,"min":84.90925525920362,"max":120.93198253193088},{"id":"proj-38","y":0.8636363636363636,"min":86.19646882043577,"max":122.78737791134486},{"id":"proj-39","y":0.8863636363636364,"min":87.31463655146507,"max":124.47372746055598},{"id":"proj-40","y":0.9090909090909091,"min":88.25319308790382,"max":125.98046581517656},{"id":"proj-41","y":0.9318181818181818,"min":89.00157306536438,"max":127.29702761081893},{"id":"proj-42","y":0.9545454545454546,"min":89.54921111945906,"max":128.41284748309542},{"id":"proj-43","y":0.9772727272727273,"min":89.88554188580015,"max":129.31736006761832},{"id":"proj-44","y":1,"min":90,"max":130}],"selectedIds":["total"],"gm":[{"nome":"Parede de concreto","itens":[{"material":"Concreto","kg":2100},{"material":"Aço","kg":400},{"material":"Argamassa","kg":1100}]},{"nome":"Alvenaria","itens":[{"material":"Concreto","kg":3015},{"material":"Aço","kg":1450},{"material":"Argamassa","kg":520}]},{"nome":"Fundação","itens":[{"material":"Concreto","kg":4560},{"material":"Aço","kg":350},{"material":"Argamassa","kg":70}]},{"nome":"Cobertura","itens":[{"material":"Concreto","kg":2220},{"material":"Aço","kg":1050},{"material":"Argamassa","kg":1750}]}],"gc":[{"x":0.15,"y":0.0179},{"x":0.18,"y":0.0357},{"x":0.2,"y":0.0536},{"x":0.205,"y":0.0714},{"x":0.21,"y":0.0893},{"x":0.22,"y":0.1071},{"x":0.23,"y":0.125},{"x":0.26,"y":0.1429},{"x":0.3,"y":0.1607},{"x":0.31,"y":0.1786},{"x":0.33,"y":0.1964},{"x":0.335,"y":0.2143},{"x":0.36,"y":0.2321},{"x":0.37,"y":0.25},{"x":0.375,"y":0.2679},{"x":0.39,"y":0.2857},{"x":0.395,"y":0.3036},{"x":0.4,"y":0.3214},{"x":0.42,"y":0.3393},{"x":0.43,"y":0.3571},{"x":0.44,"y":0.375},{"x":0.45,"y":0.3929},{"x":0.47,"y":0.4107},{"x":0.48,"y":0.4286},{"x":0.485,"y":0.4464},{"x":0.49,"y":0.4643},{"x":0.5,"y":0.4821},{"x":0.51,"y":0.5},{"x":0.52,"y":0.5179},{"x":0.525,"y":0.5357},{"x":0.53,"y":0.5536},{"x":0.535,"y":0.5714},{"x":0.54,"y":0.5893},{"x":0.55,"y":0.6071,"destaque":true},{"x":0.555,"y":0.625},{"x":0.56,"y":0.6429},{"x":0.565,"y":0.6607},{"x":0.57,"y":0.6786},{"x":0.575,"y":0.6964},{"x":0.58,"y":0.7143},{"x":0.62,"y":0.7321},{"x":0.63,"y":0.75},{"x":0.64,"y":0.7679},{"x":0.645,"y":0.7857},{"x":0.655,"y":0.8036},{"x":0.665,"y":0.8214},{"x":0.68,"y":0.8393},{"x":0.69,"y":0.8571},{"x":0.7,"y":0.875},{"x":0.72,"y":0.8929},{"x":0.73,"y":0.9107},{"x":0.74,"y":0.9286},{"x":0.755,"y":0.9464},{"x":0.76,"y":0.9643},{"x":0.9,"y":0.9821}],"sbc1":[{"nome":"Torre A","series":[{"nome":"Parede de concreto","valor":16},{"nome":"Fundação radier","valor":5},{"nome":"Cobertura","valor":3}]},{"nome":"Torre B","series":[{"nome":"Parede de concreto","valor":16},{"nome":"Fundação radier","valor":5},{"nome":"Cobertura","valor":3}]},{"nome":"Residencial modelo","series":[{"nome":"Parede de concreto","valor":32},{"nome":"Fundação radier","valor":10},{"nome":"Cobertura","valor":6},{"nome":"teste","valor":15}]}],"sbc2":[{"nome":"Torre A","series":[{"nome":"Parede de concreto","valor":16},{"nome":"Fundação radier","valor":5},{"nome":"Cobertura","valor":3}]},{"nome":"Torre B","series":[{"nome":"Parede de concreto","valor":16},{"nome":"Fundação radier","valor":5},{"nome":"Cobertura","valor":3}]}]};
 
 		function renderChartRastreabilidade(data, seletor = "#SOURCES") {
 			const width = 600;
@@ -815,6 +819,312 @@
 
 		}
 		renderChartRastreabilidade(data.sources);
+
+		function drawBenchmarkChart(canvasId, options) {
+			const DEFAULT_COLORS = {
+				START: "#5B9BD5",
+				END: "#E0756C",
+				CUM_DOT: "#7E42B3",
+				GRID: "#e2e8f0",
+				TEXT: "#64748b",
+			};
+			const PROCEL_CLASSES = [
+				{ label: "A", color: "#00A650" },
+				{ label: "B", color: "#8DC63F" },
+				{ label: "C", color: "#FFF200" },
+				{ label: "D", color: "#F26522" },
+			];
+			const canvas = document.getElementById(canvasId);
+			if (!canvas) return;
+			const ctx = canvas.getContext("2d");
+
+			const dpr = 2;
+			const rect = canvas.getBoundingClientRect();
+			const clientWidth = rect.width > 0 ? rect.width : (canvas.parentElement ? canvas.parentElement.clientWidth : 700);
+			const clientHeight = rect.height > 0 ? rect.height : 215;
+
+			canvas.width = clientWidth * dpr;
+			canvas.height = clientHeight * dpr;
+			ctx.scale(dpr, dpr);
+
+			const margin = { top: 10, right: 32, bottom: 28, left: 38 };
+			const _width = clientWidth - margin.left - margin.right;
+			const _height = clientHeight - margin.top - margin.bottom;
+			const data = options.data || [];
+			const isCumulative = options.variant === "cumulative";
+			const selectedIds = new Set(options.selectedIds || ["total"]);
+
+			ctx.fillStyle = "#ffffff";
+			ctx.fillRect(0, 0, rect.width, rect.height);
+
+			const maxDomainX = options.maxX || 168;
+			const xScale = d3.scaleLinear().domain([0, maxDomainX]).range([0, _width]);
+			const yScale = d3.scaleLinear().domain([0, 1.0]).range([_height, 0]);
+
+			ctx.save();
+			ctx.translate(margin.left, margin.top);
+
+			ctx.save();
+			ctx.beginPath();
+			ctx.rect(0, 0, _width, _height);
+			ctx.clip();
+
+			ctx.strokeStyle = DEFAULT_COLORS.GRID;
+			ctx.lineWidth = 0.75;
+			const xTicks = isCumulative ? d3.range(0, 1.1, 0.1) : d3.range(0, 170, 10);
+			xTicks.forEach(t => {
+				const x = xScale(t);
+				ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, _height); ctx.stroke();
+			});
+			d3.range(0, 1.1, 0.1).forEach(t => {
+				const y = yScale(t);
+				ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(_width, y); ctx.stroke();
+			});
+
+			let c5Value = null, r5Value = null, p5LineX = null;
+			if (options.showTop5Line && data.length > 0) {
+				const sortedMin = [...data].map(d => d.min).sort((a, b) => a - b);
+				const sortedMax = [...data].map(d => d.max).sort((a, b) => a - b);
+				const idx = Math.floor(sortedMin.length * 0.05);
+				c5Value = sortedMin[Math.min(idx, sortedMin.length - 1)];
+				r5Value = sortedMax[Math.min(idx, sortedMax.length - 1)];
+				p5LineX = xScale(c5Value);
+			}
+
+			if (!isCumulative && data.length >= 3 && d3.regressionPoly) {
+				const sorted = [...data].sort((a, b) => a.y - b.y);
+				const drawPoly = (pts, color, dash = []) => {
+				const reg = d3.regressionPoly().x(d => d[1]).y(d => d[0]).order(3)(pts);
+				ctx.save();
+				ctx.strokeStyle = color;
+				ctx.lineWidth = 1;
+				ctx.setLineDash(dash);
+				ctx.beginPath();
+				for (let i = 0; i <= 60; i++) {
+					const yVal = i / 60;
+					const xVal = Math.max(0, reg.predict(yVal));
+					const px = xScale(xVal), py = yScale(yVal);
+					if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+				}
+				ctx.stroke();
+				ctx.restore();
+				};
+				drawPoly(sorted.map(d => [d.min, d.y]), "#5B9BD5", [2, 2]);
+				drawPoly(sorted.map(d => [(d.min + d.max) / 2, d.y]), "#52525B", []);
+				drawPoly(sorted.map(d => [d.max, d.y]), "#E0756C", [2, 2]);
+			}
+
+			data.forEach(d => {
+				const isSelected = selectedIds.has(String(d.id));
+				if (isSelected) return;
+				const x1 = xScale(d.min), x2 = xScale(d.max), y = yScale(d.y);
+
+				if (isCumulative) {
+				ctx.beginPath(); 
+				ctx.arc(x1, y, 2.5, 0, Math.PI * 2); 
+				ctx.fillStyle = "#A855F7"; 
+				ctx.fill();
+				ctx.strokeStyle = "#581C87"; 
+				ctx.lineWidth = 0.6;
+				ctx.stroke();
+				} else {
+				ctx.globalAlpha = 0.55;
+				ctx.beginPath(); ctx.arc(x1, y, 1.5, 0, Math.PI * 2); ctx.fillStyle = DEFAULT_COLORS.START; ctx.fill();
+				ctx.beginPath(); ctx.arc(x2, y, 1.5, 0, Math.PI * 2); ctx.fillStyle = DEFAULT_COLORS.END; ctx.fill();
+				ctx.globalAlpha = 1;
+				}
+			});
+
+			if (options.showBaseline) {
+				const by = yScale(0.5);
+				ctx.save();
+				ctx.strokeStyle = "#18181B";
+				ctx.lineWidth = 1;
+				ctx.beginPath(); ctx.moveTo(0, by); ctx.lineTo(_width, by); ctx.stroke();
+				ctx.font = "bold 6.5px 'Roboto Flex', sans-serif";
+				ctx.fillStyle = "#18181B";
+				ctx.textAlign = "right";
+				ctx.fillText("Linha de base", _width - 6, by - 4);
+				ctx.restore();
+			}
+
+			if (p5LineX !== null) {
+				ctx.save();
+				ctx.strokeStyle = "#A855F7";
+				ctx.lineWidth = 0.8;
+				ctx.setLineDash([4, 3]);
+				ctx.beginPath(); ctx.moveTo(p5LineX, 0); ctx.lineTo(p5LineX, _height); ctx.stroke();
+
+				const y05 = yScale(0.05);
+				ctx.strokeStyle = "#F97316";
+				ctx.beginPath(); ctx.moveTo(0, y05); ctx.lineTo(_width, y05); ctx.stroke();
+				ctx.setLineDash([]);
+				ctx.font = "bold 6.5px 'Roboto Flex', sans-serif";
+				ctx.fillStyle = "#F97316";
+				ctx.fillText("5%", 4, y05 - 3);
+				ctx.restore();
+			}
+
+			data.forEach(d => {
+				if (!selectedIds.has(String(d.id))) return;
+				const x1 = xScale(d.min), x2 = xScale(d.max), y = yScale(d.y);
+
+				if (isCumulative) {
+				
+				ctx.save();
+				ctx.strokeStyle = "#22C55E"; 
+				ctx.lineWidth = 1;
+				ctx.setLineDash([3, 2]);
+				
+				
+				ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x1, _height); ctx.stroke();
+				
+				ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(0, y); ctx.stroke();
+				
+				ctx.restore();
+
+				
+				ctx.beginPath(); 
+				ctx.arc(x1, y, 4.5, 0, Math.PI * 2); 
+				ctx.fillStyle = "#22C55E"; 
+				ctx.fill();
+				ctx.strokeStyle = "#14532D"; 
+				ctx.lineWidth = 0.8;
+				ctx.stroke();
+
+				} else {
+				const xMid = xScale((d.min + d.max) / 2);
+				const barH = 3.5;
+
+				ctx.fillStyle = DEFAULT_COLORS.START;
+				ctx.fillRect(x1, y - barH / 2, Math.max(1, xMid - x1), barH);
+				ctx.fillStyle = DEFAULT_COLORS.END;
+				ctx.fillRect(xMid, y - barH / 2, Math.max(1, x2 - xMid), barH);
+
+				if (p5LineX !== null) {
+					ctx.save();
+					ctx.strokeStyle = "#9333EA";
+					ctx.lineWidth = 1;
+					ctx.setLineDash([2, 2]);
+					ctx.beginPath(); ctx.moveTo(p5LineX, y); ctx.lineTo(x1, y); ctx.stroke();
+					ctx.restore();
+				}
+
+				const drawBadge = (bx, by, letter, color) => {
+					ctx.save();
+					ctx.fillStyle = color;
+					ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI * 2); ctx.fill();
+					ctx.fillStyle = "#ffffff";
+					ctx.font = "bold 6.5px 'Roboto Flex', sans-serif";
+					ctx.textAlign = "center";
+					ctx.textBaseline = "middle";
+					ctx.fillText(letter, bx, by + 0.5);
+					ctx.restore();
+				};
+
+				if (p5LineX !== null) drawBadge(p5LineX, y, "P", "#9333EA");
+				drawBadge(x1, y - 5, "C", DEFAULT_COLORS.START);
+				drawBadge(xMid, y, "V", "#65A30D");
+				drawBadge(x2, y + 5, "R", DEFAULT_COLORS.END);
+				}
+			});
+
+			ctx.restore();
+
+			ctx.strokeStyle = "#D4D4D8";
+			ctx.lineWidth = 1;
+			ctx.beginPath(); ctx.moveTo(0, _height); ctx.lineTo(_width, _height); ctx.stroke();
+			ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, _height); ctx.stroke();
+
+			ctx.fillStyle = DEFAULT_COLORS.TEXT;
+			ctx.font = "6.5px 'Roboto Flex', sans-serif";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "top";
+
+			xTicks.forEach(t => {
+				const x = xScale(t);
+				if (x >= 0 && x <= _width) {
+				const label = isCumulative ? t.toFixed(1).replace('.', ',') : String(Math.round(t));
+				ctx.fillText(label, x, _height + 4);
+				}
+			});
+			if (!isCumulative) {
+				ctx.fillText("168", xScale(168), _height + 4);
+			}
+
+			ctx.textAlign = "right";
+			ctx.textBaseline = "middle";
+			d3.range(0, 1.1, 0.1).forEach(t => {
+				const y = yScale(t);
+				const label = t.toFixed(1).replace('.', ',');
+				ctx.fillText(label, -5, y);
+			});
+
+			if (!isCumulative) {
+				ctx.textAlign = "right";
+				ctx.fillText("Pior", -18, 2);
+				ctx.fillText("Melhor", -18, _height);
+			}
+
+			ctx.textAlign = "center";
+			ctx.fillStyle = "#52525B";
+			ctx.font = "6.5px 'Roboto Flex', sans-serif";
+			ctx.fillText(options.xAxisLabel, _width / 2, _height + 16);
+
+			ctx.save();
+			ctx.translate(-26, _height / 2);
+			ctx.rotate(-Math.PI / 2);
+			ctx.textAlign = "center";
+			ctx.fillText(options.yAxisLabel, 0, 0);
+			ctx.restore();
+
+			const reversed = [...PROCEL_CLASSES].reverse();
+			const bandSize = 1.0 / reversed.length;
+			reversed.forEach((cls, i) => {
+				const topY = yScale(1.0 - i * bandSize);
+				const botY = yScale(1.0 - (i + 1) * bandSize);
+				const isHighlighted = cls.label === options.highlightClass;
+
+				ctx.save();
+				ctx.globalAlpha = isHighlighted ? 1 : 0.25;
+				ctx.fillStyle = cls.color;
+				ctx.fillRect(_width + 4, topY, 14, botY - topY);
+
+				ctx.globalAlpha = isHighlighted ? 1 : 0.5;
+				ctx.fillStyle = "#18181B";
+				ctx.font = "bold 6.5px 'Roboto Flex', sans-serif";
+				ctx.textAlign = "center";
+				ctx.textBaseline = "middle";
+				ctx.fillText(cls.label, _width + 11, (topY + botY) / 2);
+				ctx.restore();
+			});
+
+			ctx.restore();
+    	}
+
+		drawBenchmarkChart("chart-co2", {
+              variant: "range",
+              data: data.co2Chart,
+              selectedIds: data.selectedIds,
+              maxX: 168,
+              showBaseline: true,
+              showTop5Line: true,
+              highlightClass: "B",
+              xAxisLabel: "Carbono Embutido (Kg/m²)",
+              yAxisLabel: "Potencial de mitigação"
+            });
+
+		drawBenchmarkChart("chart-energy", {
+			variant: "range",
+			data: data.energyChart,
+			selectedIds: data.selectedIds,
+			maxX: 168,
+			showBaseline: true,
+			showTop5Line: true,
+			highlightClass: "B",
+			xAxisLabel: "Consumo Embutido (MJ/m²)",
+			yAxisLabel: "Potencial de mitigação"
+		});
 	
 		function renderChartGM(data, seletor = "#GM") {
 			const paleta = ["#1f7a85", "#f28e4b", "#a46fdc", "#e5c339", "#d9534f", "#5cb85c", "#8c6d62", "#3f8fd2"];
