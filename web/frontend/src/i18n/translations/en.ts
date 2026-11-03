@@ -574,7 +574,7 @@ export const en: Translations = {
       "steel.resistance":
         "Needed for calculation: valid steel grade (CA50, CA60, CP190 or other)",
       "steel.position":
-        "Needed for calculation: valid steel position (wall, slab, column, beam, stair)",
+        "Needed for calculation: a steel position valid for this technology",
       "steel.mass": "Needed for calculation: steel mass greater than zero",
       "steel.other_name":
         "Needed for calculation: name when steel type is 'other'",
