@@ -518,6 +518,9 @@ export const ptBR = {
       floor_ids: "Pavimentos vinculados",
       unit_id: "Unidade vinculada",
       concrete: "Concreto (volume por FCK)",
+      "concrete.fck": "FCK do concreto",
+      "concrete.position": "Posição do concreto",
+      "concrete.duplicate": "FCK repetido na mesma posição",
       steel: "Aço (massa por tipo)",
       form: "Fôrma (área por posição)",
       masonry: "Alvenaria (blocos / argamassa / graute)",
@@ -564,6 +567,12 @@ export const ptBR = {
       unit_id: "Necessário para o cálculo: unidade vinculada",
       concrete:
         "Necessário para o cálculo: ao menos um item de concreto com volume e FCK válidos",
+      "concrete.fck":
+        "Necessário para o cálculo: FCK maior que zero em todo concreto com volume",
+      "concrete.position":
+        "Necessário para o cálculo: posição do concreto válida para esta tecnologia",
+      "concrete.duplicate":
+        "Necessário para o cálculo: cada FCK só uma vez por posição; some os volumes em um único item",
       steel:
         "Necessário para o cálculo: ao menos um item de aço com tipo, resistência, posição e massa válidos",
       form: "Necessário para o cálculo: ao menos um item de fôrma com posição e área válidas",

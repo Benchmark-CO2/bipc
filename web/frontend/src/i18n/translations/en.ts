@@ -516,6 +516,9 @@ export const en: Translations = {
       floor_ids: "Linked Floors",
       unit_id: "Linked Unit",
       concrete: "Concrete (volume by FCK)",
+      "concrete.fck": "Concrete FCK",
+      "concrete.position": "Concrete position",
+      "concrete.duplicate": "Repeated FCK in the same position",
       steel: "Steel (mass by type)",
       form: "Formwork (area by position)",
       masonry: "Masonry (blocks / mortar / grout)",
@@ -562,6 +565,12 @@ export const en: Translations = {
       unit_id: "Needed for calculation: unit is linked",
       concrete:
         "Needed for calculation: at least one concrete item with valid volume and FCK",
+      "concrete.fck":
+        "Needed for calculation: FCK greater than zero on every concrete item with volume",
+      "concrete.position":
+        "Needed for calculation: a concrete position valid for this technology",
+      "concrete.duplicate":
+        "Needed for calculation: each FCK only once per position; add the volumes into a single item",
       steel:
         "Needed for calculation: at least one steel item with valid type, grade, position and mass",
       form: "Needed for calculation: at least one formwork item with valid position and area",

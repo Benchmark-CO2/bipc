@@ -158,8 +158,12 @@ const coerceConcreteItem = (item: unknown): Record<string, unknown> | null => {
   const volumeNum = toNum(rec.volume);
   if (volumeNum === undefined || volumeNum <= 0) return null;
   rec.volume = volumeNum;
+  // The backend decodes fck as an int: an empty "Outro" value ("") would
+  // reject the whole request with 400. Without it the module is saved as
+  // incomplete ("fck must be provided"), matching the completion badge.
   const fckNum = toInt(rec.fck);
   if (fckNum !== undefined) rec.fck = fckNum;
+  else delete rec.fck;
   if ("customFck" in rec) delete rec.customFck;
   if ("position" in rec && shouldStripPosition(String(rec.position))) {
     delete rec.position;
