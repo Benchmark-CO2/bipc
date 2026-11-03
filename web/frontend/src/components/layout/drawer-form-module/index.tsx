@@ -481,6 +481,11 @@ const DrawerFormModule = ({
     prevSelectedFloorsRef.current = curr;
   }, [selectedFloors]);
 
+  // The two effects below copy the drawer scope (floors, unit) into the form.
+  // isOpen and the technology are deps because form.reset (switching the
+  // technology, closing, after a save) drops data.floor_ids/data.unit_id while
+  // selectedFloors/unitId stay the same; without the re-sync the completion
+  // badge reports them as missing even though the payload sends them.
   useEffect(() => {
     const currentFormFloorIds = (form.getValues() as any)?.data?.floor_ids as
       | string[]
@@ -501,7 +506,7 @@ const DrawerFormModule = ({
         shouldValidate: false,
       });
     }
-  }, [selectedFloors, form]);
+  }, [selectedFloors, form, isOpen, structureTypeWatch]);
 
   useEffect(() => {
     if (!unitId) return;
@@ -514,7 +519,7 @@ const DrawerFormModule = ({
         shouldValidate: false,
       });
     }
-  }, [unitId, form]);
+  }, [unitId, form, isOpen, structureTypeWatch]);
 
   const lastStepperTargetKeyRef = useRef<string | null>(null);
   const lastModuleIdRef = useRef<string | undefined | null>(undefined);
