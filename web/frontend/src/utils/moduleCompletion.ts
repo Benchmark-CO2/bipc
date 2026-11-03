@@ -152,11 +152,26 @@ function isValidFloorIndex(value: unknown): boolean {
   return result.valid && result.values.length > 0;
 }
 
-function hasAnyConcreteValid(
+function toRoundedNumber(value: unknown): number | undefined {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? Math.round(value) : undefined;
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    const n = Number(value.replace(/\./g, "").replace(",", "."));
+    return Number.isFinite(n) ? Math.round(n) : undefined;
+  }
+  return undefined;
+}
+
+// Mirrors validatePositionedConcrete (internal/modules/common.go) on the items
+// that survive cleanZeroItemsBeforeSubmit (volume > 0): every one needs an
+// fck, a valid (or empty) position, and a unique fck per position.
+function validateConcreteArray(
   concreteArr: unknown[],
   type: TModulesTypes,
 ): {
-  valid: boolean;
+  hasItems: boolean;
+  issues: string[];
   positionWarnings: Array<{
     index: number;
     invalidPosition: string;
@@ -166,8 +181,8 @@ function hasAnyConcreteValid(
   const validPositions = VALID_POSITIONS_BY_TYPE[type];
   const acceptedList = Array.from(validPositions);
   const seen = new Set<string>();
-  let hasAtLeastOneValid = false;
-  let hasDuplicateFckByPosition = false;
+  const issues = new Set<string>();
+  let hasItems = false;
   const positionWarnings: Array<{
     index: number;
     invalidPosition: string;
@@ -177,8 +192,6 @@ function hasAnyConcreteValid(
     if (!item || typeof item !== "object") return;
     const el = item as Record<string, unknown>;
     const pos = typeof el.position === "string" ? el.position : undefined;
-    const hasVolume = isNonZeroNumber(el.volume);
-    const hasFck = isNonZeroNumber(el.fck);
     const validPosOrEmpty = isValidPositionOrEmpty(pos, validPositions);
     if (!validPosOrEmpty && typeof pos === "string" && pos.trim() !== "") {
       positionWarnings.push({
@@ -187,22 +200,20 @@ function hasAnyConcreteValid(
         accepted: acceptedList,
       });
     }
-    if (!hasVolume || !hasFck) return;
-    if (!validPosOrEmpty) return;
-    const normalizedPos = normalizePosition(pos);
-    const fck = Number(el.fck);
-    const key = `${normalizedPos ?? "__no_pos__"}:${fck}`;
-    if (seen.has(key)) {
-      hasDuplicateFckByPosition = true;
+    if (!isNonZeroNumber(el.volume)) return;
+    hasItems = true;
+    if (!validPosOrEmpty) issues.add("concrete.position");
+    // Same normalization as the payload (toInt in cleanZeroItemsBeforeSubmit).
+    const fck = toRoundedNumber(el.fck);
+    if (fck === undefined || fck <= 0) {
+      issues.add("concrete.fck");
       return;
     }
+    const key = `${normalizePosition(pos) ?? "__no_pos__"}:${fck}`;
+    if (seen.has(key)) issues.add("concrete.duplicate");
     seen.add(key);
-    hasAtLeastOneValid = true;
   });
-  return {
-    valid: hasAtLeastOneValid && !hasDuplicateFckByPosition,
-    positionWarnings,
-  };
+  return { hasItems, issues: Array.from(issues), positionWarnings };
 }
 
 export interface SteelItemIssue {
@@ -459,11 +470,10 @@ export function calculateModuleCompletion(
       }
       case "concrete": {
         const arr = d.concrete;
-        const concreteResult = hasAnyConcreteValid(
-          (arr as unknown[]) ?? [],
+        const concreteResult = validateConcreteArray(
+          Array.isArray(arr) ? arr : [],
           type,
         );
-        const concreteValid = isNonEmptyArray(arr) && concreteResult.valid;
         for (const w of concreteResult.positionWarnings) {
           warnings.push({
             field: "concrete",
@@ -472,11 +482,18 @@ export function calculateModuleCompletion(
             acceptedPositions: w.accepted,
           });
         }
-        if (!concreteValid) {
+        if (!concreteResult.hasItems) {
           missing.push({
             key: "concrete",
             label: label("concrete"),
             reason: reason("concrete"),
+          });
+        }
+        for (const reasonKey of concreteResult.issues) {
+          missing.push({
+            key: reasonKey,
+            label: `${label("concrete")} > ${label(reasonKey)}`,
+            reason: reason(reasonKey),
           });
         }
         break;
@@ -532,6 +549,31 @@ export function calculateModuleCompletion(
       }
       default:
         break;
+    }
+  }
+
+  // Concrete is optional in structural masonry, but the backend still runs
+  // validatePositionedConcrete when items exist.
+  if (
+    !requiredFields.includes("concrete") &&
+    STRUCTURE_TYPES.has(type) &&
+    Array.isArray(d.concrete)
+  ) {
+    const concreteResult = validateConcreteArray(d.concrete, type);
+    for (const w of concreteResult.positionWarnings) {
+      warnings.push({
+        field: "concrete",
+        index: w.index,
+        invalidPosition: w.invalidPosition,
+        acceptedPositions: w.accepted,
+      });
+    }
+    for (const reasonKey of concreteResult.issues) {
+      missing.push({
+        key: reasonKey,
+        label: `${label("concrete")} > ${label(reasonKey)}`,
+        reason: reason(reasonKey),
+      });
     }
   }
 
