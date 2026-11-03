@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/assets"
+	"github.com/Benchmark-CO2/bipc/internal/data"
 
 	"encoding/base64"
 	"encoding/json"
@@ -74,9 +76,8 @@ func generateDocumentContent(templateFile string, templateName string, reportDat
 }
 
 type ReportData struct {
-	Name         string
-	Siopi        string
-	Apf          string
+	ProjectWithUnits *data.ProjectWithUnits
+
 	SourcesTotal float32
 }
 
@@ -102,19 +103,51 @@ type GCPonto struct {
 	Destaque bool    `json:"destaque,omitempty"`
 }
 
+type SBCSerie struct {
+	Nome  string  `json:"nome"`
+	Valor float64 `json:"valor"`
+}
+
+type SBCLinha struct {
+	Nome   string     `json:"nome"`
+	Series []SBCSerie `json:"series"`
+}
+
 type JSONData struct {
 	Sources []SourceData  `json:"sources"`
-	GM      []GMCategoria `json:"gm"` // Total de Emissões por tecnologia e material (% / Kg CO₂)
-	GC      []GCPonto     `json:"gc"` // Impacto de CUM por tecnologia (m³/m²)
+	GM      []GMCategoria `json:"gm"`   // Total de Emissões por tecnologia e material (% / Kg CO₂)
+	GC      []GCPonto     `json:"gc"`   // Impacto de CUM por tecnologia (m³/m²)
+	SBC1    []SBCLinha    `json:"sbc1"` // Consumo total de energia por tecnologia (mj)
+	SBC2    []SBCLinha    `json:"sbc2"` // Total de Emissões por tecnologia (kg CO₂)
 }
 
 func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request) {
-	//projectID, _ := app.readUUIDParam(r, "projectID")
+	projectID, err := app.readUUIDParam(r, "projectID")
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	project, err := app.models.Projects.GetByID(projectID)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	//report, err := app.buildProjectBenchmarkReport(projectID)
+	//if err != nil {
+	//app.serverErrorResponse(w, r, err)
+	//return
+	//}
 
 	var reportData = ReportData{
-		Name:         "Residencial modelo",
-		Siopi:        "08.1234.567.890-12",
-		Apf:          "0123.4567.8901-23",
+		ProjectWithUnits: project,
+
 		SourcesTotal: 71,
 	}
 
@@ -162,6 +195,20 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 			{X: 0.645, Y: 0.7857}, {X: 0.655, Y: 0.8036}, {X: 0.665, Y: 0.8214}, {X: 0.68, Y: 0.8393},
 			{X: 0.69, Y: 0.8571}, {X: 0.70, Y: 0.8750}, {X: 0.72, Y: 0.8929}, {X: 0.73, Y: 0.9107},
 			{X: 0.74, Y: 0.9286}, {X: 0.755, Y: 0.9464}, {X: 0.76, Y: 0.9643}, {X: 0.90, Y: 0.9821},
+		},
+		SBC1: []SBCLinha{
+			{Nome: "Torre A", Series: []SBCSerie{
+				{Nome: "Parede de concreto", Valor: 16}, {Nome: "Fundação radier", Valor: 5}, {Nome: "Cobertura", Valor: 3}}},
+			{Nome: "Torre B", Series: []SBCSerie{
+				{Nome: "Parede de concreto", Valor: 16}, {Nome: "Fundação radier", Valor: 5}, {Nome: "Cobertura", Valor: 3}}},
+			{Nome: "Residencial modelo", Series: []SBCSerie{
+				{Nome: "Parede de concreto", Valor: 32}, {Nome: "Fundação radier", Valor: 10}, {Nome: "Cobertura", Valor: 6}, {Nome: "teste", Valor: 15}}},
+		},
+		SBC2: []SBCLinha{
+			{Nome: "Torre A", Series: []SBCSerie{
+				{Nome: "Parede de concreto", Valor: 16}, {Nome: "Fundação radier", Valor: 5}, {Nome: "Cobertura", Valor: 3}}},
+			{Nome: "Torre B", Series: []SBCSerie{
+				{Nome: "Parede de concreto", Valor: 16}, {Nome: "Fundação radier", Valor: 5}, {Nome: "Cobertura", Valor: 3}}},
 		},
 	}
 

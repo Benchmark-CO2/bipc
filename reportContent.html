@@ -203,6 +203,13 @@
 		.gc-chart .gc-tick text { fill: var(--gc-text); }
 		.gc-chart .gc-axis-label { fill: var(--gc-text); font-size: 12px; }
 		.gc-chart .gc-axis-label.gc-x { font-weight: 700; }
+
+		 
+		.sbc-chart { width: 100%; max-width: 360px; font-family: inherit; }
+		.sbc-chart .sbc-label { font-size: 6px; fill: currentColor; }
+		.sbc-chart .sbc-value { font-size: 4px; font-weight: 700; fill: #fff; }
+		.sbc-chart .sbc-legend text { font-size: 6px; fill: currentColor; }
+
 	</style>
 </head>
 <body>
@@ -211,16 +218,24 @@
 
 	<div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 7.5px;">
 		<div class="input" style="--input-width: 95px;">
-			<div class="label">SIOPI</div>
+			<div class="label">SIOP</div>
 			<div class="input-box">
-				<div class="input-text">08.1234.567.890-12</div>
+				<div class="input-text">
+					
+						-
+					
+				</div>
 			</div>
 		</div>
 
 		<div class="input" style="--input-width: 105px;">
 			<div class="label">Identificador do projeto (APF)</div>
 			<div class="input-box">
-				<div class="input-text">0123.4567.8901-23</div>
+				<div class="input-text">
+					
+						-
+					
+				</div>
 			</div>
 		</div>
 	</div>
@@ -229,7 +244,7 @@
 		<div class="input" style="--input-width: 150px;">
 			<div class="label">Nome do projeto</div>
 			<div class="input-box">
-				<div class="input-text">Residencial modelo</div>
+				<div class="input-text">CW93</div>
 			</div>
 		</div>
 
@@ -687,18 +702,31 @@
 		<div style="width: 1px; background: #E4E4E7; margin: 0 16px"></div>
 
 		<div style="display: flex; width: 325px; flex-direction: column; gap: 7.5px; flex: 1">
-			<h2 style="align-self: start; margin-bottom: 0px;">Impacto de CUM por tecnologia (m³/m²)</h2>
+			<div style="display: flex; justify-content: space-between;">
+				<h2 style="align-self: start; margin-bottom: 0px;">Impacto de CUM por tecnologia (m³/m²)</h2>
+				<div class="A" style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px; transform: translateY(5px);">
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">B</span>
+					<div style="display: flex; flex-direction: column; align-items: center;">
+						<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.7px;">Classificação</span>
+						<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 6px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">N: 300 projetos</span>
+					</div>
+				</div>		
+			</div>
+			
 			<div id="GC" class="gc-chart"></div>
 		</div>
 	</div>
 	
+	<div id="SBC1" class="sbc-chart"></div>
+
+	<div id="SBC2" class="sbc-chart"></div>
 
 	
 	
 	<script>
 		window.chartsReady = false;
 
-		const data = {"sources":[{"label":"Softwares (TQS via plugin)","value":8,"color":"#8ab4e8"},{"label":"Arquivos IFC (via upload)","value":46,"color":"#1b7a72"},{"label":"Arquivos CSV","value":12,"color":"#e8a24a"},{"label":"Inseridos manualmente","value":5,"color":"#d4736b"}],"gm":[{"nome":"Parede de concreto","itens":[{"material":"Concreto","kg":2100},{"material":"Aço","kg":400},{"material":"Argamassa","kg":1100}]},{"nome":"Alvenaria","itens":[{"material":"Concreto","kg":3015},{"material":"Aço","kg":1450},{"material":"Argamassa","kg":520}]},{"nome":"Fundação","itens":[{"material":"Concreto","kg":4560},{"material":"Aço","kg":350},{"material":"Argamassa","kg":70}]},{"nome":"Cobertura","itens":[{"material":"Concreto","kg":2220},{"material":"Aço","kg":1050},{"material":"Argamassa","kg":1750}]}],"gc":[{"x":0.15,"y":0.0179},{"x":0.18,"y":0.0357},{"x":0.2,"y":0.0536},{"x":0.205,"y":0.0714},{"x":0.21,"y":0.0893},{"x":0.22,"y":0.1071},{"x":0.23,"y":0.125},{"x":0.26,"y":0.1429},{"x":0.3,"y":0.1607},{"x":0.31,"y":0.1786},{"x":0.33,"y":0.1964},{"x":0.335,"y":0.2143},{"x":0.36,"y":0.2321},{"x":0.37,"y":0.25},{"x":0.375,"y":0.2679},{"x":0.39,"y":0.2857},{"x":0.395,"y":0.3036},{"x":0.4,"y":0.3214},{"x":0.42,"y":0.3393},{"x":0.43,"y":0.3571},{"x":0.44,"y":0.375},{"x":0.45,"y":0.3929},{"x":0.47,"y":0.4107},{"x":0.48,"y":0.4286},{"x":0.485,"y":0.4464},{"x":0.49,"y":0.4643},{"x":0.5,"y":0.4821},{"x":0.51,"y":0.5},{"x":0.52,"y":0.5179},{"x":0.525,"y":0.5357},{"x":0.53,"y":0.5536},{"x":0.535,"y":0.5714},{"x":0.54,"y":0.5893},{"x":0.55,"y":0.6071,"destaque":true},{"x":0.555,"y":0.625},{"x":0.56,"y":0.6429},{"x":0.565,"y":0.6607},{"x":0.57,"y":0.6786},{"x":0.575,"y":0.6964},{"x":0.58,"y":0.7143},{"x":0.62,"y":0.7321},{"x":0.63,"y":0.75},{"x":0.64,"y":0.7679},{"x":0.645,"y":0.7857},{"x":0.655,"y":0.8036},{"x":0.665,"y":0.8214},{"x":0.68,"y":0.8393},{"x":0.69,"y":0.8571},{"x":0.7,"y":0.875},{"x":0.72,"y":0.8929},{"x":0.73,"y":0.9107},{"x":0.74,"y":0.9286},{"x":0.755,"y":0.9464},{"x":0.76,"y":0.9643},{"x":0.9,"y":0.9821}]};
+		const data = {"sources":[{"label":"Softwares (TQS via plugin)","value":8,"color":"#8ab4e8"},{"label":"Arquivos IFC (via upload)","value":46,"color":"#1b7a72"},{"label":"Arquivos CSV","value":12,"color":"#e8a24a"},{"label":"Inseridos manualmente","value":5,"color":"#d4736b"}],"gm":[{"nome":"Parede de concreto","itens":[{"material":"Concreto","kg":2100},{"material":"Aço","kg":400},{"material":"Argamassa","kg":1100}]},{"nome":"Alvenaria","itens":[{"material":"Concreto","kg":3015},{"material":"Aço","kg":1450},{"material":"Argamassa","kg":520}]},{"nome":"Fundação","itens":[{"material":"Concreto","kg":4560},{"material":"Aço","kg":350},{"material":"Argamassa","kg":70}]},{"nome":"Cobertura","itens":[{"material":"Concreto","kg":2220},{"material":"Aço","kg":1050},{"material":"Argamassa","kg":1750}]}],"gc":[{"x":0.15,"y":0.0179},{"x":0.18,"y":0.0357},{"x":0.2,"y":0.0536},{"x":0.205,"y":0.0714},{"x":0.21,"y":0.0893},{"x":0.22,"y":0.1071},{"x":0.23,"y":0.125},{"x":0.26,"y":0.1429},{"x":0.3,"y":0.1607},{"x":0.31,"y":0.1786},{"x":0.33,"y":0.1964},{"x":0.335,"y":0.2143},{"x":0.36,"y":0.2321},{"x":0.37,"y":0.25},{"x":0.375,"y":0.2679},{"x":0.39,"y":0.2857},{"x":0.395,"y":0.3036},{"x":0.4,"y":0.3214},{"x":0.42,"y":0.3393},{"x":0.43,"y":0.3571},{"x":0.44,"y":0.375},{"x":0.45,"y":0.3929},{"x":0.47,"y":0.4107},{"x":0.48,"y":0.4286},{"x":0.485,"y":0.4464},{"x":0.49,"y":0.4643},{"x":0.5,"y":0.4821},{"x":0.51,"y":0.5},{"x":0.52,"y":0.5179},{"x":0.525,"y":0.5357},{"x":0.53,"y":0.5536},{"x":0.535,"y":0.5714},{"x":0.54,"y":0.5893},{"x":0.55,"y":0.6071,"destaque":true},{"x":0.555,"y":0.625},{"x":0.56,"y":0.6429},{"x":0.565,"y":0.6607},{"x":0.57,"y":0.6786},{"x":0.575,"y":0.6964},{"x":0.58,"y":0.7143},{"x":0.62,"y":0.7321},{"x":0.63,"y":0.75},{"x":0.64,"y":0.7679},{"x":0.645,"y":0.7857},{"x":0.655,"y":0.8036},{"x":0.665,"y":0.8214},{"x":0.68,"y":0.8393},{"x":0.69,"y":0.8571},{"x":0.7,"y":0.875},{"x":0.72,"y":0.8929},{"x":0.73,"y":0.9107},{"x":0.74,"y":0.9286},{"x":0.755,"y":0.9464},{"x":0.76,"y":0.9643},{"x":0.9,"y":0.9821}],"sbc1":[{"nome":"Torre A","series":[{"nome":"Parede de concreto","valor":16},{"nome":"Fundação radier","valor":5},{"nome":"Cobertura","valor":3}]},{"nome":"Torre B","series":[{"nome":"Parede de concreto","valor":16},{"nome":"Fundação radier","valor":5},{"nome":"Cobertura","valor":3}]},{"nome":"Residencial modelo","series":[{"nome":"Parede de concreto","valor":32},{"nome":"Fundação radier","valor":10},{"nome":"Cobertura","valor":6},{"nome":"teste","valor":15}]}],"sbc2":[{"nome":"Torre A","series":[{"nome":"Parede de concreto","valor":16},{"nome":"Fundação radier","valor":5},{"nome":"Cobertura","valor":3}]},{"nome":"Torre B","series":[{"nome":"Parede de concreto","valor":16},{"nome":"Fundação radier","valor":5},{"nome":"Cobertura","valor":3}]}]};
 
 		function renderChartRastreabilidade(data, seletor = "#SOURCES") {
 			const width = 600;
@@ -878,6 +906,118 @@
 			}
 			}
 		renderChartGC(data.gc, "#GC");
+
+		function renderChartSBC(data, seletor = "#SBC") {
+			
+			const palette = ["#17808f", "#f5924a", "#a56fe0", "#4caf7d", "#e5546b", "#f2c94c"];
+			
+			
+			const keys = [...new Set(data.flatMap(d => d.series.map(s => s.nome)))];
+			
+			
+			const rows = data.map(d => ({
+				nome: d.nome,
+				valores: new Map(d.series.map(s => [s.nome, s.valor]))
+			}));
+			
+			const width = 360;
+			const margin = { top: 0, right: 0, bottom: 0, left: 0 };
+			const rowStep = 15;
+			const gap = 2;
+			const plotHeight = rows.length * rowStep;
+			
+			const container = d3.select(seletor).classed("sbc-chart", true);
+			container.selectAll("svg").remove();
+			const svg = container.append("svg").attr("width", "100%");
+
+			const labelPad = 6; 
+			const medidor = svg.append("text").attr("class", "sbc-label").style("visibility", "hidden");
+			const maiorLabel = d3.max(rows, r => (medidor.text(r.nome), medidor.node().getComputedTextLength()));
+			medidor.remove();
+			margin.left = Math.ceil(maiorLabel) + labelPad;
+			
+			const layers = d3.stack()
+				.keys(keys)
+				.value((d, k) => d.valores.get(k) || 0)(rows);
+			
+			const maxTotal = d3.max(layers[layers.length - 1], d => d[1]);
+			
+			const x = d3.scaleLinear()
+				.domain([0, maxTotal])
+				.range([margin.left, width - margin.right]);
+			
+			const y = d3.scaleBand()
+				.domain(rows.map(d => d.nome))
+				.range([margin.top, margin.top + plotHeight])
+				.paddingInner(0.25)
+				.paddingOuter(0.1);
+			
+			const color = d3.scaleOrdinal().domain(keys).range(palette);
+			
+			
+			svg.selectAll(".sbc-label")
+				.data(rows)
+				.join("text")
+				.attr("class", "sbc-label")
+				.attr("x", 0)                       
+				.attr("y", d => y(d.nome) + y.bandwidth() / 2)
+				.attr("text-anchor", "start")       
+				.attr("dominant-baseline", "middle")
+				.text(d => d.nome);
+
+			
+			const groups = svg.selectAll("g.sbc-layer")
+				.data(layers)
+				.join("g")
+				.attr("class", "sbc-layer")
+				.attr("fill", d => color(d.key));
+			
+			groups.selectAll("rect")
+				.data(d => d)
+				.join("rect")
+				.attr("x", d => x(d[0]))
+				.attr("y", d => y(d.data.nome))
+				.attr("width", d => Math.max(0, x(d[1]) - x(d[0]) - gap))
+				.attr("height", y.bandwidth());
+			
+			
+			groups.selectAll("text")
+				.data(d => d.filter(v => v[1] - v[0] > 0))
+				.join("text")
+				.attr("class", "sbc-value")
+				.attr("x", d => x(d[0]) + 4)
+				.attr("y", d => y(d.data.nome) + y.bandwidth() / 2)
+				.attr("dominant-baseline", "middle")
+				.text(d => `${d[1] - d[0]}%`)
+				.each(function (d) {
+					const larguraBarra = x(d[1]) - x(d[0]) - gap;
+					const larguraTexto = this.getComputedTextLength();
+					if (larguraTexto + 4 > larguraBarra) this.remove(); 
+				});
+			
+			
+			const legendTop = margin.top + plotHeight + 14;
+			const legend = svg.append("g").attr("class", "sbc-legend");
+			const maxX = width - margin.right - margin.left;
+			let offsetX = 0, row = 0;
+			
+			keys.forEach(k => {
+				const g = legend.append("g");
+				g.append("rect").attr("width", 12).attr("height", 12).attr("rx", 2).attr("fill", color(k));
+				const t = g.append("text").attr("x", 22).attr("y", 8)
+				.attr("dominant-baseline", "middle").text(k);
+				const itemWidth = 22 + t.node().getComputedTextLength();
+			
+				if (offsetX > 0 && offsetX + itemWidth > maxX) { offsetX = 0; row++; }
+				g.attr("transform", `translate(${margin.left + offsetX}, ${legendTop + row * 24})`);
+				offsetX += itemWidth + 20;
+			});
+			
+			const height = legendTop + (row + 1) * 24 + margin.bottom;
+			svg.attr("viewBox", `0 0 ${width} ${height}`);
+		}
+		renderChartSBC(data.sbc1, "#SBC1");
+		renderChartSBC(data.sbc2, "#SBC2");
 
 		window.chartsReady = true;
 	</script>

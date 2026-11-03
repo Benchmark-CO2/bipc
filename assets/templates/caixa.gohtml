@@ -198,6 +198,16 @@
 		.gc-chart .gc-tick text { fill: var(--gc-text); }
 		.gc-chart .gc-axis-label { fill: var(--gc-text); font-size: 12px; }
 		.gc-chart .gc-axis-label.gc-x { font-weight: 700; }
+
+		/* 
+			Consumo total de energia por tecnologia (mj) 
+			Total de Emissões por tecnologia (kg CO₂)
+		*/
+		.sbc-chart { width: 100%; max-width: 360px; font-family: inherit; }
+		.sbc-chart .sbc-label { font-size: 6px; fill: currentColor; }
+		.sbc-chart .sbc-value { font-size: 4px; font-weight: 700; fill: #fff; }
+		.sbc-chart .sbc-legend text { font-size: 6px; fill: currentColor; }
+
 	</style>
 </head>
 <body>
@@ -206,16 +216,28 @@
 
 	<div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 7.5px;">
 		<div class="input" style="--input-width: 95px;">
-			<div class="label">SIOPI</div>
+			<div class="label">SIOP</div>
 			<div class="input-box">
-				<div class="input-text">{{.ReportData.Siopi}}</div>
+				<div class="input-text">
+					{{if .ReportData.ProjectWithUnits.Project.Siop}}
+						{{.ReportData.ProjectWithUnits.Project.Siop}}
+					{{else}}
+						-
+					{{end}}
+				</div>
 			</div>
 		</div>
 
 		<div class="input" style="--input-width: 105px;">
 			<div class="label">Identificador do projeto (APF)</div>
 			<div class="input-box">
-				<div class="input-text">{{.ReportData.Apf}}</div>
+				<div class="input-text">
+					{{if .ReportData.ProjectWithUnits.Project.Apf}}
+						{{.ReportData.ProjectWithUnits.Project.Apf}}
+					{{else}}
+						-
+					{{end}}
+				</div>
 			</div>
 		</div>
 	</div>
@@ -224,7 +246,7 @@
 		<div class="input" style="--input-width: 150px;">
 			<div class="label">Nome do projeto</div>
 			<div class="input-box">
-				<div class="input-text">{{.ReportData.Name}}</div>
+				<div class="input-text">{{.ReportData.ProjectWithUnits.Project.Name}}</div>
 			</div>
 		</div>
 
@@ -682,11 +704,24 @@
 		<div style="width: 1px; background: #E4E4E7; margin: 0 16px"></div>
 
 		<div style="display: flex; width: 325px; flex-direction: column; gap: 7.5px; flex: 1">
-			<h2 style="align-self: start; margin-bottom: 0px;">Impacto de CUM por tecnologia (m³/m²)</h2>
+			<div style="display: flex; justify-content: space-between;">
+				<h2 style="align-self: start; margin-bottom: 0px;">Impacto de CUM por tecnologia (m³/m²)</h2>
+				<div class="A" style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px; transform: translateY(5px);">
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">B</span>
+					<div style="display: flex; flex-direction: column; align-items: center;">
+						<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.7px;">Classificação</span>
+						<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 6px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">N: 300 projetos</span>
+					</div>
+				</div>		
+			</div>
+			
 			<div id="GC" class="gc-chart"></div>
 		</div>
 	</div>
 	
+	<div id="SBC1" class="sbc-chart"></div>
+
+	<div id="SBC2" class="sbc-chart"></div>
 
 	
 	
@@ -874,6 +909,118 @@
 			}
 		renderChartGC(data.gc, "#GC");
 
+		function renderChartSBC(data, seletor = "#SBC") {
+			// Paleta: se houver mais séries que cores, ela recomeça do início
+			const palette = ["#17808f", "#f5924a", "#a56fe0", "#4caf7d", "#e5546b", "#f2c94c"];
+			
+			// Séries dinâmicas: nomes únicos, na ordem em que aparecem
+			const keys = [...new Set(data.flatMap(d => d.series.map(s => s.nome)))];
+			
+			// Lookup nome -> valor por linha (série ausente conta como 0)
+			const rows = data.map(d => ({
+				nome: d.nome,
+				valores: new Map(d.series.map(s => [s.nome, s.valor]))
+			}));
+			
+			const width = 360;
+			const margin = { top: 0, right: 0, bottom: 0, left: 0 };
+			const rowStep = 15;
+			const gap = 2;
+			const plotHeight = rows.length * rowStep;
+			
+			const container = d3.select(seletor).classed("sbc-chart", true);
+			container.selectAll("svg").remove();
+			const svg = container.append("svg").attr("width", "100%");
+
+			const labelPad = 6; // espaço entre o label e as barras
+			const medidor = svg.append("text").attr("class", "sbc-label").style("visibility", "hidden");
+			const maiorLabel = d3.max(rows, r => (medidor.text(r.nome), medidor.node().getComputedTextLength()));
+			medidor.remove();
+			margin.left = Math.ceil(maiorLabel) + labelPad;
+			
+			const layers = d3.stack()
+				.keys(keys)
+				.value((d, k) => d.valores.get(k) || 0)(rows);
+			
+			const maxTotal = d3.max(layers[layers.length - 1], d => d[1]);
+			
+			const x = d3.scaleLinear()
+				.domain([0, maxTotal])
+				.range([margin.left, width - margin.right]);
+			
+			const y = d3.scaleBand()
+				.domain(rows.map(d => d.nome))
+				.range([margin.top, margin.top + plotHeight])
+				.paddingInner(0.25)
+				.paddingOuter(0.1);
+			
+			const color = d3.scaleOrdinal().domain(keys).range(palette);
+			
+			// Rótulos das categorias
+			svg.selectAll(".sbc-label")
+				.data(rows)
+				.join("text")
+				.attr("class", "sbc-label")
+				.attr("x", 0)                       // colado na esquerda
+				.attr("y", d => y(d.nome) + y.bandwidth() / 2)
+				.attr("text-anchor", "start")       // era "end"
+				.attr("dominant-baseline", "middle")
+				.text(d => d.nome);
+
+			// Barras empilhadas
+			const groups = svg.selectAll("g.sbc-layer")
+				.data(layers)
+				.join("g")
+				.attr("class", "sbc-layer")
+				.attr("fill", d => color(d.key));
+			
+			groups.selectAll("rect")
+				.data(d => d)
+				.join("rect")
+				.attr("x", d => x(d[0]))
+				.attr("y", d => y(d.data.nome))
+				.attr("width", d => Math.max(0, x(d[1]) - x(d[0]) - gap))
+				.attr("height", y.bandwidth());
+			
+			// Valores dentro das barras (não desenha onde o valor é 0)
+			groups.selectAll("text")
+				.data(d => d.filter(v => v[1] - v[0] > 0))
+				.join("text")
+				.attr("class", "sbc-value")
+				.attr("x", d => x(d[0]) + 4)
+				.attr("y", d => y(d.data.nome) + y.bandwidth() / 2)
+				.attr("dominant-baseline", "middle")
+				.text(d => `${d[1] - d[0]}%`)
+				.each(function (d) {
+					const larguraBarra = x(d[1]) - x(d[0]) - gap;
+					const larguraTexto = this.getComputedTextLength();
+					if (larguraTexto + 4 > larguraBarra) this.remove(); // 4px de folga de cada lado
+				});
+			
+			// Legenda dinâmica, quebrando de linha quando não couber
+			const legendTop = margin.top + plotHeight + 14;
+			const legend = svg.append("g").attr("class", "sbc-legend");
+			const maxX = width - margin.right - margin.left;
+			let offsetX = 0, row = 0;
+			
+			keys.forEach(k => {
+				const g = legend.append("g");
+				g.append("rect").attr("width", 12).attr("height", 12).attr("rx", 2).attr("fill", color(k));
+				const t = g.append("text").attr("x", 22).attr("y", 8)
+				.attr("dominant-baseline", "middle").text(k);
+				const itemWidth = 22 + t.node().getComputedTextLength();
+			
+				if (offsetX > 0 && offsetX + itemWidth > maxX) { offsetX = 0; row++; }
+				g.attr("transform", `translate(${margin.left + offsetX}, ${legendTop + row * 24})`);
+				offsetX += itemWidth + 20;
+			});
+			
+			const height = legendTop + (row + 1) * 24 + margin.bottom;
+			svg.attr("viewBox", `0 0 ${width} ${height}`);
+		}
+		renderChartSBC(data.sbc1, "#SBC1");
+		renderChartSBC(data.sbc2, "#SBC2");
+
 		window.chartsReady = true;
 	</script>
 </body>
@@ -1058,12 +1205,17 @@
 
 			<h1>Relatório de Carbono Embutido de projeto</h1>
 
-			<h2>{{.ReportData.Name}}</h2>
+			<h2>{{.ReportData.ProjectWithUnits.Project.Name}}</h2>
 
-			<div class="label">SIOPI</div>
-			<div class="identifier">{{.ReportData.Siopi}}</div>
-			<div class="label" style="margin-top: 10px">Identificador do projeto</div>
-			<div class="identifier">{{.ReportData.Apf}}</div>
+			{{if .ReportData.ProjectWithUnits.Project.Siop}}
+				<div class="label">SIOPI</div>
+				<div class="identifier">{{.ReportData.ProjectWithUnits.Project.Siop}}</div>
+			{{end}}
+
+			{{if .ReportData.ProjectWithUnits.Project.Apf}}
+				<div class="label" style="margin-top: 10px">Identificador do projeto</div>
+				<div class="identifier">{{.ReportData.ProjectWithUnits.Project.Apf}}</div>
+			{{end}}
 		</div>
 
 		<div class="container">
