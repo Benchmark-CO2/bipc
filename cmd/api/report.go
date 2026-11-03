@@ -113,12 +113,24 @@ type SBCLinha struct {
 	Series []SBCSerie `json:"series"`
 }
 
+type BenchmarkPoint struct {
+	ID    string  `json:"id"`
+	Y     float64 `json:"y"`
+	Min   float64 `json:"min"`
+	Max   float64 `json:"max"`
+	Value float64 `json:"value,omitempty"`
+	Label string  `json:"label,omitempty"`
+}
+
 type JSONData struct {
-	Sources []SourceData  `json:"sources"`
-	GM      []GMCategoria `json:"gm"`   // Total de Emissões por tecnologia e material (% / Kg CO₂)
-	GC      []GCPonto     `json:"gc"`   // Impacto de CUM por tecnologia (m³/m²)
-	SBC1    []SBCLinha    `json:"sbc1"` // Consumo total de energia por tecnologia (mj)
-	SBC2    []SBCLinha    `json:"sbc2"` // Total de Emissões por tecnologia (kg CO₂)
+	Sources     []SourceData     `json:"sources"`
+	CO2Chart    []BenchmarkPoint `json:"co2Chart"`
+	EnergyChart []BenchmarkPoint `json:"energyChart"`
+	SelectedIDs []string         `json:"selectedIds"`
+	GM          []GMCategoria    `json:"gm"`   // Total de Emissões por tecnologia e material (% / Kg CO₂)
+	GC          []GCPonto        `json:"gc"`   // Impacto de CUM por tecnologia (m³/m²)
+	SBC1        []SBCLinha       `json:"sbc1"` // Consumo total de energia por tecnologia (mj)
+	SBC2        []SBCLinha       `json:"sbc2"` // Total de Emissões por tecnologia (kg CO₂)
 }
 
 func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request) {
@@ -149,6 +161,25 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		ProjectWithUnits: project,
 
 		SourcesTotal: 71,
+	}
+
+	var co2Points, energyPoints []BenchmarkPoint
+	totalPts := 45
+	for i := 0; i < totalPts; i++ {
+		y := float64(i) / float64(totalPts-1)
+		// Simula uma curva em S (sigmoide/polinomial)
+		baseMin := 15.0 + 75.0*(y*y*(3-2*y))
+		baseMax := baseMin + 15.0 + 25.0*y
+
+		id := fmt.Sprintf("proj-%d", i)
+		if i == 19 { // Ponto selecionado em ~0.42 no eixo Y
+			id = "total"
+			baseMin = 48
+			baseMax = 88
+		}
+
+		co2Points = append(co2Points, BenchmarkPoint{ID: id, Y: y, Min: baseMin, Max: baseMax})
+		energyPoints = append(energyPoints, BenchmarkPoint{ID: id, Y: y, Min: baseMin, Max: baseMax})
 	}
 
 	var jsonData = JSONData{
@@ -210,6 +241,9 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 			{Nome: "Torre B", Series: []SBCSerie{
 				{Nome: "Parede de concreto", Valor: 16}, {Nome: "Fundação radier", Valor: 5}, {Nome: "Cobertura", Valor: 3}}},
 		},
+		CO2Chart:    co2Points,
+		EnergyChart: energyPoints,
+		SelectedIDs: []string{"total"},
 	}
 
 	reportContent, err := generateDocumentContent("caixa.gohtml", "report", reportData, jsonData, fontFaceCSS(assets.RobotoFlex, "Roboto Flex"))
