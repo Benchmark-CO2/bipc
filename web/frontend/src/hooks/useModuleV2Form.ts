@@ -332,7 +332,22 @@ export const useModuleV2Form = ({
       formArray.append(makeFormItem(position) as never);
       return;
     }
-    formArray.append(makeFormItem(position ?? positions[0]) as never);
+    if (position !== undefined) {
+      formArray.append(makeFormItem(position) as never);
+      return;
+    }
+    // The backend accepts one form item per position, so suggest the first
+    // position still free ("unspecified" = Geral when all are taken).
+    const current =
+      (form.getValues("data.form" as never) as unknown[] | undefined) ?? [];
+    const used = new Set(
+      current.map((it) => {
+        const p = (it as { position?: unknown } | null)?.position;
+        return typeof p === "string" && p.trim() !== "" ? p : "unspecified";
+      }),
+    );
+    const firstFree = positions.find((p) => !used.has(p)) ?? "unspecified";
+    formArray.append(makeFormItem(firstFree) as never);
   };
 
   const removeFormItem = (index: number) => {

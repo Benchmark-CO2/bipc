@@ -534,6 +534,8 @@ export const ptBR = {
       "steel.mass": "Massa do aço",
       "steel.other_name": "Nome do outro tipo de aço",
       "steel.other_resistance": "Resistência do outro tipo",
+      "form.position": "Posição da fôrma",
+      "form.duplicate_position": "Posição repetida",
       slab_type: "Tipo de laje",
       wall_thickness: "Espessura da parede",
       slab_thickness: "Espessura da laje",
@@ -582,6 +584,10 @@ export const ptBR = {
         "Necessário para o cálculo: nome do outro tipo de aço",
       "steel.other_resistance":
         "Necessário para o cálculo: resistência do outro tipo maior que zero",
+      "form.position":
+        "Necessário para o cálculo: posição da fôrma válida para esta tecnologia",
+      "form.duplicate_position":
+        "Necessário para o cálculo: uma fôrma por posição (inclusive Geral); some as áreas em um único item",
     },
     form: {
       structureTypeLabel: "Tecnologia Construtiva",
