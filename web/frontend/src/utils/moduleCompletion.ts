@@ -260,12 +260,16 @@ function validateSteelArray(
     if (typeof el.mass !== "undefined" && !isNonZeroNumber(el.mass)) {
       issues.push({ index: i, reasonKey: "steel.mass" });
     }
-    if (mat === "other") {
-      const on = typeof el.other_name === "string" ? el.other_name.trim() : "";
-      if (!on) issues.push({ index: i, reasonKey: "steel.other_name" });
-      if (!isNonZeroNumber(el.other_resistance)) {
-        issues.push({ index: i, reasonKey: "steel.other_resistance" });
-      }
+    // Same rules as the backend's ValidateSteelMaterials: other_name depends on
+    // the material, other_resistance on the resistance.
+    const hasOtherName =
+      typeof el.other_name === "string" && el.other_name.trim() !== "";
+    const hasOtherResistance = isNonZeroNumber(el.other_resistance);
+    if (mat === "other" && !hasOtherName) {
+      issues.push({ index: i, reasonKey: "steel.other_name" });
+    }
+    if (res === "other" && !hasOtherResistance) {
+      issues.push({ index: i, reasonKey: "steel.other_resistance" });
     }
     const isItemValid =
       mat &&
@@ -274,10 +278,8 @@ function validateSteelArray(
       VALID_STEEL_RESISTANCES.has(res) &&
       isValidPositionOrEmpty(pos, validPositions) &&
       (typeof el.mass === "undefined" || isNonZeroNumber(el.mass)) &&
-      (mat !== "other" ||
-        (typeof el.other_name === "string" &&
-          el.other_name.trim() !== "" &&
-          isNonZeroNumber(el.other_resistance)));
+      (mat !== "other" || hasOtherName) &&
+      (res !== "other" || hasOtherResistance);
     if (isItemValid) hasValidItem = true;
   });
   const uniqueIssues: SteelItemIssue[] = [];

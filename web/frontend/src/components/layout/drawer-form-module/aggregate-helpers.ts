@@ -173,8 +173,13 @@ const coerceSteelItem = (item: unknown): Record<string, unknown> | null => {
   const massNum = toNum(rec.mass);
   if (massNum === undefined || massNum <= 0) return null;
   rec.mass = massNum;
-  const otherRes = toNum(rec.other_resistance);
+  // The backend rejects other_resistance unless resistance is "other"; drop
+  // values left over after the user switched back to a standard option.
+  const otherRes =
+    rec.resistance === "other" ? toNum(rec.other_resistance) : undefined;
   if (otherRes !== undefined) rec.other_resistance = otherRes;
+  else delete rec.other_resistance;
+  if (rec.material !== "other") delete rec.other_name;
   if ("position" in rec && shouldStripPosition(String(rec.position))) {
     delete rec.position;
   }
