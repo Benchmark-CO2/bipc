@@ -527,6 +527,11 @@ export const ptBR = {
       "masonry.blocks.quantity": "Quantidade de blocos",
       "masonry.mortar.volume": "Volume da argamassa",
       "masonry.grout.volume": "Volume do graute",
+      "masonry.blocks.fbk": "Fbk do bloco",
+      "masonry.mortar.fak": "Fak da argamassa",
+      "masonry.grout.fgk": "Fgk do graute",
+      "masonry.mortar.fak_duplicate": "Fak repetido",
+      "masonry.grout.fgk_duplicate": "Fgk repetido",
       "steel.item_invalid": "Item inválido",
       "steel.material": "Tipo do aço",
       "steel.resistance": "Resistência do aço",
@@ -570,6 +575,16 @@ export const ptBR = {
         "Necessário para o cálculo: volume da argamassa maior que zero",
       "masonry.grout.volume":
         "Necessário para o cálculo: volume do graute maior que zero",
+      "masonry.blocks.fbk":
+        "Necessário para o cálculo: fbk entre os valores da lista (4,5 a 26 MPa)",
+      "masonry.mortar.fak":
+        "Necessário para o cálculo: fak entre os valores da lista (4,5 a 24 MPa)",
+      "masonry.grout.fgk":
+        "Necessário para o cálculo: fgk entre os valores da lista (15 a 50 MPa)",
+      "masonry.mortar.fak_duplicate":
+        "Necessário para o cálculo: cada fak só uma vez na argamassa; some os volumes em um único item",
+      "masonry.grout.fgk_duplicate":
+        "Necessário para o cálculo: cada fgk só uma vez em um mesmo graute; some os volumes em um único item",
       "steel.item_invalid": "Necessário para o cálculo: itens de aço inválidos",
       "steel.material":
         "Necessário para o cálculo: tipo de aço válido (ex: CA50, estribo, cordoalha)",

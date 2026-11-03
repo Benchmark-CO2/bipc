@@ -1,5 +1,6 @@
 import type { TModulesTypes, TModuleDataV2 } from "@/types/modules";
 import moduleSchema from "@/schemas/module-schema.json";
+import { parseNumber } from "@/utils/numbers";
 
 type SchemaModuleKey = keyof typeof moduleSchema.modules;
 
@@ -117,6 +118,39 @@ const VALID_POSITIONS_BY_TYPE: Record<TModulesTypes, Set<string>> = {
   piles_foundation: new Set(["pile"]),
   raft_piles_foundation: new Set(["raft", "pile"]),
 };
+
+// Resistances the backend accepts (supportedBlockFbkValues,
+// supportedMortarFakValues and sidacGroutData in internal/modules/materials.go).
+// Any other value is saved with completed=false. Also used as the select
+// options in masonry-section.tsx.
+export const SUPPORTED_BLOCK_FBK: readonly number[] = [
+  4.5, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26,
+];
+export const SUPPORTED_MORTAR_FAK: readonly number[] = [
+  4.5, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24,
+];
+export const SUPPORTED_GROUT_FGK: readonly number[] = [
+  15, 20, 25, 30, 35, 40, 45, 50,
+];
+
+export function isSupportedValue(
+  value: unknown,
+  supported: readonly number[],
+): boolean {
+  const n = typeof value === "number" ? value : parseNumber(String(value ?? ""));
+  return Number.isFinite(n) && supported.includes(n);
+}
+
+function hasDuplicateValue(values: unknown[]): boolean {
+  const seen = new Set<number>();
+  for (const v of values) {
+    const n = typeof v === "number" ? v : parseNumber(String(v ?? ""));
+    if (!Number.isFinite(n)) continue;
+    if (seen.has(n)) return true;
+    seen.add(n);
+  }
+  return false;
+}
 
 function isNonEmptyArray(value: unknown): boolean {
   return Array.isArray(value) && value.length > 0;
@@ -410,6 +444,59 @@ function hasMasonryValid(
     )
   ) {
     pushMissing("masonry.grout.volume");
+  }
+  // Only items that survive the submit cleanup (quantity/volume > 0) reach
+  // the backend, which rejects fbk/fak/fgk outside its tables.
+  if (
+    items(m.blocks).some(
+      (b) =>
+        isNonZeroNumber(b.quantity) &&
+        !isSupportedValue(b.fbk, SUPPORTED_BLOCK_FBK),
+    )
+  ) {
+    pushMissing("masonry.blocks.fbk");
+  }
+  if (
+    items(m.mortar).some(
+      (mo) =>
+        isNonZeroNumber(mo.volume) &&
+        !isSupportedValue(mo.fak, SUPPORTED_MORTAR_FAK),
+    )
+  ) {
+    pushMissing("masonry.mortar.fak");
+  }
+  if (
+    items(m.grout).some((g) =>
+      items(g.volumes).some(
+        (v) =>
+          isNonZeroNumber(v.volume) &&
+          !isSupportedValue(v.fgk, SUPPORTED_GROUT_FGK),
+      ),
+    )
+  ) {
+    pushMissing("masonry.grout.fgk");
+  }
+  // The backend also rejects a repeated fak across mortar items and a
+  // repeated fgk inside the same grout.
+  if (
+    hasDuplicateValue(
+      items(m.mortar)
+        .filter((mo) => isNonZeroNumber(mo.volume))
+        .map((mo) => mo.fak),
+    )
+  ) {
+    pushMissing("masonry.mortar.fak_duplicate");
+  }
+  if (
+    items(m.grout).some((g) =>
+      hasDuplicateValue(
+        items(g.volumes)
+          .filter((v) => isNonZeroNumber(v.volume))
+          .map((v) => v.fgk),
+      ),
+    )
+  ) {
+    pushMissing("masonry.grout.fgk_duplicate");
   }
   return missing;
 }

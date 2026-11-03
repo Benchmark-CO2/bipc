@@ -525,6 +525,11 @@ export const en: Translations = {
       "masonry.blocks.quantity": "Block quantity",
       "masonry.mortar.volume": "Mortar volume",
       "masonry.grout.volume": "Grout volume",
+      "masonry.blocks.fbk": "Block fbk",
+      "masonry.mortar.fak": "Mortar fak",
+      "masonry.grout.fgk": "Grout fgk",
+      "masonry.mortar.fak_duplicate": "Repeated fak",
+      "masonry.grout.fgk_duplicate": "Repeated fgk",
       "steel.item_invalid": "Invalid item",
       "steel.material": "Steel type",
       "steel.resistance": "Steel grade",
@@ -568,6 +573,16 @@ export const en: Translations = {
         "Needed for calculation: mortar volume greater than zero",
       "masonry.grout.volume":
         "Needed for calculation: grout volume greater than zero",
+      "masonry.blocks.fbk":
+        "Needed for calculation: fbk from the list values (4.5 to 26 MPa)",
+      "masonry.mortar.fak":
+        "Needed for calculation: fak from the list values (4.5 to 24 MPa)",
+      "masonry.grout.fgk":
+        "Needed for calculation: fgk from the list values (15 to 50 MPa)",
+      "masonry.mortar.fak_duplicate":
+        "Needed for calculation: each fak only once in the mortar; add the volumes into a single item",
+      "masonry.grout.fgk_duplicate":
+        "Needed for calculation: each fgk only once in the same grout; add the volumes into a single item",
       "steel.item_invalid": "Needed for calculation: invalid steel items",
       "steel.material":
         "Needed for calculation: valid steel type (rebar, mesh, strand, other)",
