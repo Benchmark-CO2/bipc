@@ -306,12 +306,15 @@
 			</div>
 		</div>
 
-		<!-- <div class="input" style="--input-width: 65px;">
+		<div class="input" style="--input-width: 65px;">
 			<div class="label">Área const. UC (m²)</div>
 			<div class="input-box">
-				<div class="input-text"></div>
+				<div class="input-text">
+					{{.ReportData.TotalUCArea}}
+				</div>
 			</div>
-		</div> -->
+		</div>
+		
 
 		<div class="input" style="--input-width: 70px;">
 			<div class="label">Área const. total (m²)</div>
@@ -421,7 +424,7 @@
 							Melhor cenário (Kg CO₂)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							128.577,25
+							{{printf "%.2f" .ReportData.Report.Project.CO2.Min.Total}}
 						</div>
 					</div>
 					<div style="display: flex; height: 18.5px; flex-direction: column; align-items: flex-start; gap: 2px;">
@@ -429,7 +432,7 @@
 							Melhor cenário (Kg/m² CO₂)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							45,83
+							{{printf "%.2f" .ReportData.Report.Project.CO2.Min.Value}}
 						</div>
 					</div>
 				</div>
@@ -440,7 +443,7 @@
 							Pior cenário (Kg CO₂)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							211.205,95
+							{{printf "%.2f" .ReportData.Report.Project.CO2.Max.Total}}
 						</div>
 					</div>
 					<div style="display: flex; height: 18.5px; flex-direction: column; align-items: flex-start; gap: 2px;">
@@ -448,7 +451,7 @@
 							Pior cenário (Kg/m² CO₂)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							75,28
+							{{printf "%.2f" .ReportData.Report.Project.CO2.Max.Value}}
 						</div>
 					</div>
 				</div>
@@ -459,7 +462,7 @@
 							Valor de Ref. - Total (Kg CO₂)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							211.205,95
+							{{printf "%.2f" .ReportData.Report.Project.CO2.Reference.Total}}
 						</div>
 					</div>
 					<div style="display: flex; height: 18.5px; flex-direction: column; align-items: flex-start; gap: 2px;">
@@ -467,7 +470,7 @@
 							Valor de Ref. - Benchmark (Kg/m² CO₂)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							75,28
+							{{printf "%.2f" .ReportData.Report.Project.CO2.Reference.Value}}
 						</div>
 					</div>
 				</div>
@@ -484,7 +487,7 @@
 							Melhor cenário (Kg CO₂)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							128.577,25
+							{{printf "%.2f" .ReportData.Report.Reductions.CO2.Min.Total}}
 						</div>
 					</div>
 					<div style="display: flex; height: 18.5px; flex-direction: column; align-items: flex-start; gap: 2px;">
@@ -492,7 +495,7 @@
 							Melhor cenário (Kg/m² CO₂)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							45,83
+							{{printf "%.2f" .ReportData.Report.Reductions.CO2.Min.Value}}
 						</div>
 					</div>
 				</div>
@@ -503,7 +506,7 @@
 							Pior cenário (Kg CO₂)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							211.205,95
+							{{printf "%.2f" .ReportData.Report.Reductions.CO2.Max.Total}}
 						</div>
 					</div>
 					<div style="display: flex; height: 18.5px; flex-direction: column; align-items: flex-start; gap: 2px;">
@@ -511,7 +514,7 @@
 							Pior cenário (Kg/m² CO₂)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							75,28
+							{{printf "%.2f" .ReportData.Report.Reductions.CO2.Max.Value}}
 						</div>
 					</div>
 				</div>
@@ -522,7 +525,7 @@
 							Valor de Ref. - Total (Kg CO₂)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							211.205,95
+							{{printf "%.2f" .ReportData.Report.Reductions.CO2.Reference.Total}}
 						</div>
 					</div>
 					<div style="display: flex; height: 18.5px; flex-direction: column; align-items: flex-start; gap: 2px;">
@@ -530,48 +533,50 @@
 							Valor de Ref. - Benchmark (Kg/m² CO₂)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							75,28
+							{{printf "%.2f" .ReportData.Report.Reductions.CO2.Reference.Value}}
 						</div>
 					</div>
 				</div>
 			</div>
 
-			<div style="display: flex; width: 370px; flex-direction: column; gap: 5px;">
+			<div style="display: flex; width: 370px; flex-direction: column;">
 
 				<canvas id="chart-co2" style="display: block; width: 100%; height: 270px;"></canvas>
+
+				<div style="color: #71717A; font-size: 6px; font-weight: 400; align-self: center;">Linha de base (50% melhores projetos): C{{printf "%.0f" .ReportData.Report.Baseline.CO2.Min}}, R{{printf "%.0f" .ReportData.Report.Baseline.CO2.Max}}, V{{printf "%.0f" .ReportData.BaseLineCO2reference}}; 5% melhores projetos: C{{printf "%.0f" .ReportData.Report.BestProjects.CO2.Min}}, R{{printf "%.0f" .ReportData.Report.BestProjects.CO2.Max}}, V{{printf "%.0f" .ReportData.BestC02Reference}}</div>
 				
 			</div>
 
 			<div style="display: flex; justify-content: space-evenly; align-items: center; align-self: stretch;">
 				<div style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch; border: 1px solid #9F70DB; background: #FBFEFE;">
 					<span style="color: #9F70DB; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">P</span>
-					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">25</span>
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">{{printf "%.2f" .ReportData.Report.BestProjects.CO2.Min}}</span>
 					<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 5.5px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">Kg/m²</span>
 				</div>
 
 				<div style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch; border: 1px solid #6C9EE0; background: #FBFEFE;">
-					<span style="color: #6C9EE0; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">P</span>
-					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">25</span>
+					<span style="color: #6C9EE0; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">C</span>
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">{{printf "%.2f" .ReportData.Report.Project.CO2.Min.Value}}</span>
 					<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 5.5px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">Kg/m²</span>
 				</div>
 
 				<div style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch; border: 1px solid #63B332; background: #FBFEFE;">
-					<span style="color: #63B332; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">P</span>
-					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">25</span>
+					<span style="color: #63B332; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">V</span>
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">{{printf "%.2f" .ReportData.Report.Project.CO2.Reference.Value}}</span>
 					<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 5.5px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">Kg/m²</span>
 				</div>
 
 				<div style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch; border: 1px solid #E0756C; background: #FBFEFE;">
-					<span style="color: #E0756C; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">P</span>
-					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">25</span>
+					<span style="color: #E0756C; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">R</span>
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">{{printf "%.2f" .ReportData.Report.Project.CO2.Max.Value}}</span>
 					<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 5.5px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">Kg/m²</span>
 				</div>
 
-				<div class="A" style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch;">
-					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">B</span>
+				<div class="{{.ReportData.CO2Class}}" style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch;">
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">{{.ReportData.CO2Class}}</span>
 					<div style="display: flex; flex-direction: column; align-items: center;">
 						<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.7px;">Classificação</span>
-						<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 6px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">N: 300 projetos</span>
+						<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 6px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">N: {{.ReportData.CO2Total}} projetos</span>
 					</div>
 				</div>		
 			</div>
@@ -591,7 +596,7 @@
 							Melhor cenário (MJ)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							128.577,25
+							{{printf "%.2f" .ReportData.Report.Project.Energy.Min.Total}}
 						</div>
 					</div>
 					<div style="display: flex; height: 18.5px; flex-direction: column; align-items: flex-start; gap: 2px;">
@@ -599,7 +604,7 @@
 							Melhor cenário (MJ/m²)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							45,83
+							{{printf "%.2f" .ReportData.Report.Project.Energy.Min.Value}}
 						</div>
 					</div>
 				</div>
@@ -610,7 +615,7 @@
 							Pior cenário (MJ)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							211.205,95
+							{{printf "%.2f" .ReportData.Report.Project.Energy.Max.Total}}
 						</div>
 					</div>
 					<div style="display: flex; height: 18.5px; flex-direction: column; align-items: flex-start; gap: 2px;">
@@ -618,7 +623,7 @@
 							Pior cenário (MJ/m²)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							75,28
+							{{printf "%.2f" .ReportData.Report.Project.Energy.Max.Value}}
 						</div>
 					</div>
 				</div>
@@ -629,7 +634,7 @@
 							Valor de Ref. - Total (MJ)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							211.205,95
+							{{printf "%.2f" .ReportData.Report.Project.Energy.Reference.Total}}
 						</div>
 					</div>
 					<div style="display: flex; height: 18.5px; flex-direction: column; align-items: flex-start; gap: 2px;">
@@ -637,7 +642,7 @@
 							Valor de Ref. - Benchmark (MJ/m²)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							75,28
+							{{printf "%.2f" .ReportData.Report.Project.Energy.Reference.Value}}
 						</div>
 					</div>
 				</div>
@@ -654,7 +659,7 @@
 							Melhor cenário (MJ)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							128.577,25
+							{{printf "%.2f" .ReportData.Report.Reductions.Energy.Min.Total}}
 						</div>
 					</div>
 					<div style="display: flex; height: 18.5px; flex-direction: column; align-items: flex-start; gap: 2px;">
@@ -662,7 +667,7 @@
 							Melhor cenário (MJ/m²)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							45,83
+							{{printf "%.2f" .ReportData.Report.Reductions.Energy.Min.Value}}
 						</div>
 					</div>
 				</div>
@@ -673,7 +678,7 @@
 							Pior cenário (MJ)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							211.205,95
+							{{printf "%.2f" .ReportData.Report.Reductions.Energy.Max.Total}}
 						</div>
 					</div>
 					<div style="display: flex; height: 18.5px; flex-direction: column; align-items: flex-start; gap: 2px;">
@@ -681,7 +686,7 @@
 							Pior cenário (MJ/m²)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							75,28
+							{{printf "%.2f" .ReportData.Report.Reductions.Energy.Max.Value}}
 						</div>
 					</div>
 				</div>
@@ -692,7 +697,7 @@
 							Redução total de energia (MJ)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							211.205,95
+							{{printf "%.2f" .ReportData.Report.Reductions.Energy.Reference.Total}}
 						</div>
 					</div>
 					<div style="display: flex; height: 18.5px; flex-direction: column; align-items: flex-start; gap: 2px;">
@@ -700,48 +705,50 @@
 							Redução relativa (MJ/m²)
 						</div>
 						<div style="color: #121F21; font-feature-settings: 'calt' off; font-size: 7px; font-style: normal; font-weight: 400; line-height: 9px; letter-spacing: -0.14px;">
-							75,28
+							{{printf "%.2f" .ReportData.Report.Reductions.Energy.Reference.Value}}
 						</div>
 					</div>
 				</div>
 			</div>
 
-			<div style="display: flex; width: 370px; flex-direction: column; gap: 5px;">
+			<div style="display: flex; width: 370px; flex-direction: column;">
 
 				<canvas id="chart-energy" style="display: block; width: 100%; height: 270px;"></canvas>
 				
+				<div style="color: #71717A; font-size: 6px; font-weight: 400; align-self: center;">Linha de base (50% melhores projetos): C{{printf "%.0f" .ReportData.Report.Baseline.Energy.Min}}, R{{printf "%.0f" .ReportData.Report.Baseline.Energy.Max}}, V{{printf "%.0f" .ReportData.BaselineEnergyReference}}; 5% melhores projetos: C{{printf "%.0f" .ReportData.Report.BestProjects.Energy.Min}}, R{{printf "%.0f" .ReportData.Report.BestProjects.Energy.Max}}, V{{printf "%.0f" .ReportData.BestEnergyReference}}</div>
+
 			</div>
 
 			<div style="display: flex; justify-content: space-evenly; align-items: center; align-self: stretch;">
 				<div style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch; border: 1px solid #9F70DB; background: #FBFEFE;">
 					<span style="color: #9F70DB; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">P</span>
-					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">25</span>
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">{{printf "%.2f" .ReportData.Report.BestProjects.Energy.Min}}</span>
 					<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 5.5px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">Kg/m²</span>
 				</div>
 
 				<div style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch; border: 1px solid #6C9EE0; background: #FBFEFE;">
-					<span style="color: #6C9EE0; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">P</span>
-					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">25</span>
+					<span style="color: #6C9EE0; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">C</span>
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">{{printf "%.2f" .ReportData.Report.Project.Energy.Min.Value}}</span>
 					<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 5.5px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">Kg/m²</span>
 				</div>
 
 				<div style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch; border: 1px solid #63B332; background: #FBFEFE;">
-					<span style="color: #63B332; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">P</span>
-					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">25</span>
+					<span style="color: #63B332; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">V</span>
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">{{printf "%.2f" .ReportData.Report.Project.Energy.Reference.Value}}</span>
 					<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 5.5px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">Kg/m²</span>
 				</div>
 
 				<div style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch; border: 1px solid #E0756C; background: #FBFEFE;">
-					<span style="color: #E0756C; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">P</span>
-					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">25</span>
+					<span style="color: #E0756C; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">R</span>
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">{{printf "%.2f" .ReportData.Report.Project.Energy.Max.Value}}</span>
 					<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 5.5px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">Kg/m²</span>
 				</div>
 
-				<div class="A" style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch;">
-					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">B</span>
+				<div class="{{.ReportData.EnergyClass}}" style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px;align-self: stretch;">
+					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">{{.ReportData.EnergyClass}}</span>
 					<div style="display: flex; flex-direction: column; align-items: center;">
 						<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.7px;">Classificação</span>
-						<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 6px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">N: 300 projetos</span>
+						<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 6px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">N: {{.ReportData.EnergyTotal}} projetos</span>
 					</div>
 				</div>		
 			</div>
@@ -1440,10 +1447,10 @@
 			const footer = root.append("div").attr("class", "stkbar-footer");
 			const items = footer.append("div").attr("class", "stkbar-legend")
 				.selectAll(".stkbar-legend-item").data(mats).join("div").attr("class", "stkbar-legend-item");
-			items.append("span").attr("class", "stkbar-swatch").style("background", d => d.color);
-			items.append("span").text(d => d.percent != null ? `${d.name} (${fmtPct(d.percent)}%)` : d.name);
-			footer.append("div").attr("class", "stkbar-unit").html(config.unit || "");
-			}
+				items.append("span").attr("class", "stkbar-swatch").style("background", d => d.color);
+				items.append("span").text(d => d.percent != null ? `${d.name} (${fmtPct(d.percent)}%)` : d.name);
+				footer.append("div").attr("class", "stkbar-unit").html(config.unit || "");
+		}
 		renderStackedBar({
 			title: "Parede de concreto",
 			percent: 47,
