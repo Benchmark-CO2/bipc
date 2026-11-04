@@ -79,6 +79,17 @@ type ReportData struct {
 	ProjectWithUnits *data.ProjectWithUnits
 	TotalUH          int
 	TotalUC          int
+	TotalUCArea      float64
+
+	Report                  *ProjectBenchmarkReport
+	BaseLineCO2reference    float64
+	BestC02Reference        float64
+	BaselineEnergyReference float64
+	BestEnergyReference     float64
+	CO2Class                string
+	CO2Total                int
+	EnergyClass             string
+	EnergyTotal             int
 
 	SourcesTotal float32
 }
@@ -153,19 +164,9 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// report, err := app.buildProjectBenchmarkReport(projectID)
-	// if err != nil {
-	// 	app.serverErrorResponse(w, r, err)
-	// 	return
-	// }
-
-	// co2Class := classificationLetter(report.Rank.CO2.Y)
-	// co2Total := report.Rank.CO2.Total
-	// energyClass := classificationLetter(report.Rank.Energy.Y)
-	// energyTotal := report.Rank.Energy.Total
-
 	totalUC := 0
 	totalUH := 0
+	totalUCArea := 0.0
 
 	for _, unit := range project.Units {
 		rep := unit.RepetitionCount
@@ -179,16 +180,38 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 			totalUH += rep * *unit.HousingUnitsCount
 		}
 
-		//totalUCArea += unit.Area * float64(rep)
+		totalUCArea += unit.Area * float64(rep)
 	}
+
+	report, err := app.buildProjectBenchmarkReport(projectID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	co2Class := classificationLetter(report.Rank.CO2.Y)
+	co2Total := report.Rank.CO2.Total
+	energyClass := classificationLetter(report.Rank.Energy.Y)
+	energyTotal := report.Rank.Energy.Total
 
 	var reportData = ReportData{
 		ProjectWithUnits: project,
 
-		TotalUH: totalUH,
-		TotalUC: totalUC,
+		TotalUH:     totalUH,
+		TotalUC:     totalUC,
+		TotalUCArea: totalUCArea,
 
 		SourcesTotal: 71,
+
+		Report:                  report,
+		BaseLineCO2reference:    *report.Baseline.CO2.Reference,
+		BestC02Reference:        *report.BestProjects.CO2.Reference,
+		BaselineEnergyReference: *report.Baseline.Energy.Reference,
+		BestEnergyReference:     *report.BestProjects.Energy.Reference,
+		CO2Class:                co2Class,
+		CO2Total:                co2Total,
+		EnergyClass:             energyClass,
+		EnergyTotal:             energyTotal,
 	}
 
 	var co2Points, energyPoints []BenchmarkPoint
