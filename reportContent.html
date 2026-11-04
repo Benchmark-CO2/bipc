@@ -210,6 +210,17 @@
 		.sbc-chart .sbc-value { font-size: 4px; font-weight: 700; fill: #fff; }
 		.sbc-chart .sbc-legend text { font-size: 6px; fill: currentColor; }
 
+		 
+		.stkbar { width: 100%; }
+		.stkbar .stkbar-title { font-size: 8px; font-weight: 700; }
+		.stkbar .stkbar-svg { display: block; width: 100%; overflow: visible; }
+		.stkbar .stkbar-svg .domain, .stkbar .stkbar-svg .tick line { stroke: #9aa0a6; }
+		.stkbar .stkbar-svg .tick text { font-family: "Courier New", monospace; font-size: 4px; font-weight: 700; fill: #17252a; }
+		.stkbar .stkbar-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+		.stkbar .stkbar-legend { display: flex; flex-wrap: wrap; gap: 8px 28px; }
+		.stkbar .stkbar-legend-item { display: flex; align-items: center; gap: 8px; font-size: 6px; }
+		.stkbar .stkbar-swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+		.stkbar .stkbar-unit { font-size: 12px; font-style: italic; font-weight: 600; color: #8a8f94; }
 	</style>
 </head>
 <body>
@@ -244,7 +255,7 @@
 		<div class="input" style="--input-width: 150px;">
 			<div class="label">Nome do projeto</div>
 			<div class="input-box">
-				<div class="input-text">CW93</div>
+				<div class="input-text">CW73</div>
 			</div>
 		</div>
 
@@ -292,7 +303,7 @@
 			<div class="label">Área const. total (m²)</div>
 			<div class="input-box">
 				<div class="input-text">
-						752.08
+						290.42
 				</div>
 			</div>
 		</div>
@@ -345,7 +356,7 @@
 			<div class="label">Cidade</div>
 			<div class="input-box">
 				<div class="input-text">
-					Poço Verde
+					Macapá
 				</div>
 			</div>
 		</div>
@@ -354,7 +365,7 @@
 			<div class="label">Estado</div>
 			<div class="input-box">
 				<div class="input-text">
-					SE
+					AP
 				</div>
 			</div>
 		</div>
@@ -503,9 +514,9 @@
 				</div>
 			</div>
 
-			<div style="display: flex; width: 320px; flex-direction: column; gap: 5px;">
+			<div style="display: flex; width: 370px; flex-direction: column; gap: 5px;">
 
-				<canvas id="chart-co2" style="display: block; width: 100%; height: 300px;"></canvas>
+				<canvas id="chart-co2" style="display: block; width: 100%; height: 270px;"></canvas>
 				
 			</div>
 
@@ -673,9 +684,9 @@
 				</div>
 			</div>
 
-			<div style="display: flex; width: 320px; flex-direction: column; gap: 5px;">
+			<div style="display: flex; width: 370px; flex-direction: column; gap: 5px;">
 
-				<canvas id="chart-energy" style="display: block; width: 100%; height: 300px;"></canvas>
+				<canvas id="chart-energy" style="display: block; width: 100%; height: 270px;"></canvas>
 				
 			</div>
 
@@ -744,6 +755,8 @@
 	<div id="SBC1" class="sbc-chart"></div>
 
 	<div id="SBC2" class="sbc-chart"></div>
+
+	<div id="stack"></div>
 
 	
 	
@@ -1235,9 +1248,9 @@
 				.attr("fill", "var(--gc-hl)").attr("stroke", "var(--gc-dot-stroke)").attr("stroke-width", 0.8);
 			}
 			}
-		renderChartGC(data.gc, "#GC");
+		renderChartGC(data.gc);
 
-		function renderChartSBC(data, seletor = "#SBC") {
+		function renderChartSBC(data, seletor) {
 			
 			const palette = ["#17808f", "#f5924a", "#a56fe0", "#4caf7d", "#e5546b", "#f2c94c"];
 			
@@ -1348,6 +1361,79 @@
 		}
 		renderChartSBC(data.sbc1, "#SBC1");
 		renderChartSBC(data.sbc2, "#SBC2");
+		
+		function renderStackedBar(config, seletor) {
+			const PALETA_PADRAO = [
+				"#177e89", "#e0766d", "#e9b44c", "#6a994e",
+				"#7b6d8d", "#3d5a80", "#c97b84", "#8d99ae"
+			];
+			const container = document.querySelector(seletor);
+			if (!container) throw new Error(`Elemento com seletor "${seletor}" não encontrado`);
+
+			const BAR_H = 12, BAR_Y = 6, AXIS_Y = BAR_Y + BAR_H + 8, PAD = 8, GAP = 1.5, BOTTOM = 12;
+
+			const root = d3.select(container).classed("stkbar", true).html("");
+			const palette = config.palette?.length ? config.palette : PALETA_PADRAO;
+			const mats = config.materials
+				.filter(m => m.value > 0)
+				.map((m, i) => ({ ...m, color: m.color ?? palette[i % palette.length] }));
+			const total = d3.sum(mats, m => m.value);
+			const width = container.clientWidth;
+			const fmtPct = n => d3.format(".1f")(n).replace(".", ",");
+
+			
+			const x = d3.scaleLinear()
+				.domain([0, config.max ?? total * 1.15])
+				.range([PAD, width - PAD]);
+			if (config.max == null) x.nice(10);
+
+			
+			root.append("h3")
+				.attr("class", "stkbar-title")
+				.text(config.percent != null ? `${config.title} (${Math.round(config.percent)}%)` : config.title);
+
+			
+			const svg = root.append("svg")
+				.attr("class", "stkbar-svg")
+				.attr("viewBox", `0 0 ${width} ${AXIS_Y + BOTTOM}`)
+				.attr("height", AXIS_Y + BOTTOM);
+
+			const axis = d3.axisBottom(x).tickSize(3).tickSizeOuter(0);
+			if (config.tickStep) axis.tickValues(d3.range(0, x.domain()[1] + 1e-9, config.tickStep));
+			else axis.ticks(Math.max(2, Math.floor(width / 70)));
+			svg.append("g").attr("transform", `translate(0,${AXIS_Y})`).call(axis);
+
+			
+			let acc = 0;
+			const segs = mats.map(m => ({ ...m, x0: acc, x1: (acc += m.value) }));
+			svg.selectAll("rect").data(segs).join("rect")
+				.attr("x", d => x(d.x0))
+				.attr("y", BAR_Y)
+				.attr("height", BAR_H)
+				.attr("width", d => Math.max(0, x(d.x1) - x(d.x0) - (d.x1 < total ? GAP : 0)))
+				.attr("rx", 2)
+				.attr("fill", d => d.color);
+
+			
+			const footer = root.append("div").attr("class", "stkbar-footer");
+			const items = footer.append("div").attr("class", "stkbar-legend")
+				.selectAll(".stkbar-legend-item").data(mats).join("div").attr("class", "stkbar-legend-item");
+			items.append("span").attr("class", "stkbar-swatch").style("background", d => d.color);
+			items.append("span").text(d => d.percent != null ? `${d.name} (${fmtPct(d.percent)}%)` : d.name);
+			footer.append("div").attr("class", "stkbar-unit").html(config.unit || "");
+			}
+		renderStackedBar({
+			title: "Parede de concreto",
+			percent: 47,
+			unit: "Kg CO<sub>2</sub> / m²",
+			max: 120,
+			tickStep: 10,
+			materials: [
+				{ name: "Concreto FCK25", value: 39.5, percent: 25.8 },
+				{ name: "Aço CA50",       value: 14.0, percent: 12.5 }
+			]
+		}, "#stack");
+				
 
 		window.chartsReady = true;
 	</script>
