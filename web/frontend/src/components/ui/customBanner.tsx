@@ -1,4 +1,3 @@
-import { getProjectsBenchmark } from "@/actions/benchmarks/getProjects";
 import { deleteProject } from "@/actions/projects/deleteProjects";
 import { postDuplicateProject } from "@/actions/projects/postDuplicateProject";
 import { generateReport } from "@/actions/report/generateReport";
@@ -8,7 +7,7 @@ import { IProject, TProjectPhase } from "@/types/projects";
 import { parseApiError } from "@/utils/parseApiError";
 import { phaseColors } from "@/utils/phaseConfig";
 import { queryClient } from "@/utils/queryClient";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
   ChevronDown,
@@ -16,20 +15,16 @@ import {
   Copy,
   Download,
   Edit,
+  Loader2,
   Trash2,
   UserCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { exportChartToPng } from "../charts/exportChart";
 import { DrawerFormProject } from "../layout";
 import DialogTransferOwnership from "../layout/dialog-transfer-ownership";
 import ModalConfirmDelete from "../layout/modal-confirm-delete";
 import ModalSimple from "../layout/modal-simple";
-import {
-  normalizeBenchmarkSeries,
-  recalculateY,
-} from "../summaryVariants/utils";
 import { Button } from "./button";
 import { SimpleTooltip } from "./simple-tooltip";
 
@@ -134,10 +129,6 @@ const CustomBanner = ({
     },
   });
 
-  const { data: benchmarkData } = useQuery({
-    queryKey: ["benchmark", id],
-    queryFn: () => getProjectsBenchmark({}),
-  });
   const handleCollapseToggle = () => {
     setIsCollapsed((prev) => {
       const newState = !prev;
@@ -146,103 +137,41 @@ const CustomBanner = ({
     });
   };
 
-  const { mutate: onGenerateReport } = useMutation({
-    mutationFn: (formData: { co2: File; energy: File; projectId: string }) =>
-      generateReport(formData.projectId),
-    onSuccess: async (response) => {
-      toast.success(t.customBanner.downloadReportSuccess);
-      const blob = new Blob([response.data], {
-        type: response.headers["content-type"] || "application/pdf",
-      });
-      const url = URL.createObjectURL(blob);
-      window.open(url, "_blank");
-    },
-    onError: (error: unknown) => {
-      toast.error(t.customBanner.downloadReportError, {
-        description: parseApiError(error, t),
-        duration: 5000,
-      });
-    },
-  });
-  const handleExport = async () => {
-    const projectData = queryClient.getQueryData<any>(["project", id]);
-    const consumption = projectData?.data?.project?.consumption?.total;
-
-    const buildChartImage = async (
-      type: "co2" | "energy",
-      unit: string,
-      minField: string,
-      maxField: string,
-    ) => {
-      const series = benchmarkData?.data.benchmark[type];
-      const normalized = normalizeBenchmarkSeries(series);
-
-      const allData = consumption
-        ? [
-            ...normalized,
-            {
-              id: id!,
-              minId: id!,
-              maxId: id!,
-              y: 0,
-              min: consumption[minField],
-              max: consumption[maxField],
-              label: name,
-            },
-          ]
-        : normalized;
-
-      const minData = allData.map((d) => d.min);
-      const maxData = allData.map((d) => d.max);
-      const minValue = minData.length ? Math.min(...minData) : 0;
-      const maxValue = maxData.length ? Math.max(...maxData) : 0;
-      const chartData = recalculateY(allData, minValue, maxValue);
-
-      const projectPoint = chartData.find((d) => d.id === id);
-      const procelClass = projectPoint
-        ? projectPoint.y < 0.25
-          ? "A"
-          : projectPoint.y < 0.5
-            ? "B"
-            : projectPoint.y < 0.75
-              ? "C"
-              : "D"
-        : null;
-
-      return exportChartToPng(
-        {
-          data: chartData,
-          selectedBars: id ? [id] : [],
-          showProcelScale: true,
-          procelHighlight: procelClass,
-          unit,
-          showBaseline: true,
-          showTop5Line: true,
-          top5Field: "min",
-          showMaxCurve: true,
-          showMinCurve: true,
-          showMidCurve: true,
-        },
-        t,
-      );
-    };
-
-    const [co2Image, energyImage] = await Promise.all([
-      buildChartImage("co2", "KgCO₂/m²", "co2_min", "co2_max"),
-      buildChartImage("energy", "MJ/m²", "energy_min", "energy_max"),
-    ]);
-
-    const co2File = new File([co2Image.blob], "co2_chart.png", {
-      type: "image/png",
+  const { mutate: onGenerateReport, isPending: isGeneratingReport } =
+    useMutation({
+      mutationFn: (projectId: string) => generateReport(projectId),
+      onMutate: () => ({
+        toastId: toast.loading(t.customBanner.downloadReportLoading),
+      }),
+      onSuccess: (response, _projectId, context) => {
+        const blob = new Blob([response.data], {
+          type: response.headers["content-type"] || "application/pdf",
+        });
+        const url = URL.createObjectURL(blob);
+        // Download via link: window.open after an async request is blocked as a pop-up.
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "relatorio.pdf";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        toast.success(t.customBanner.downloadReportSuccess, {
+          id: context?.toastId,
+        });
+      },
+      onError: (error: unknown, _projectId, context) => {
+        toast.error(t.customBanner.downloadReportError, {
+          id: context?.toastId,
+          description: parseApiError(error, t),
+          duration: 5000,
+        });
+      },
     });
-    const energyFile = new File([energyImage.blob], "energy_chart.png", {
-      type: "image/png",
-    });
-    onGenerateReport({
-      projectId: id!,
-      co2: co2File,
-      energy: energyFile,
-    });
+
+  const handleExport = () => {
+    if (!id) return;
+    onGenerateReport(id);
   };
 
   return (
@@ -277,8 +206,14 @@ const CustomBanner = ({
                   onClick={handleExport}
                   variant="outline-bipc"
                   size="icon"
+                  disabled={isGeneratingReport}
+                  aria-busy={isGeneratingReport}
                 >
-                  <Download className="w-4 h-4" />
+                  {isGeneratingReport ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
                 </Button>
               </SimpleTooltip>
               {hasPermission("*:*") && (

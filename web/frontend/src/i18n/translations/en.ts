@@ -1348,6 +1348,7 @@ export const en: Translations = {
   customBanner: {
     building: "Building",
     buildings: "Buildings",
+    downloadReportLoading: "Generating report...",
     downloadReportSuccess: "Report downloaded successfully",
     downloadReportError: "Error downloading report",
   },
