@@ -2,17 +2,8 @@ import api from "@/service/api";
 
 export const generateReport = (
   projectId: string,
-  _formData: {
-    co2: File;
-    energy: File;
-  },
 ) => {
-  const formData = new FormData();
-
-  formData.append("co2", _formData.co2);
-  formData.append("energy", _formData.energy);
-
-  return api.post(`/v1/projects/${projectId}/screenshot`, formData, {
+  return api.get(`/v1/projects/${projectId}/screenshot`, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
