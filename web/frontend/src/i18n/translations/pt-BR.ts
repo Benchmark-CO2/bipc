@@ -1359,6 +1359,7 @@ export const ptBR = {
   customBanner: {
     building: "Edificação",
     buildings: "Edificações",
+    downloadReportLoading: "Gerando relatório...",
     downloadReportSuccess: "Relatório baixado com sucesso",
     downloadReportError: "Erro ao baixar relatório",
   },
