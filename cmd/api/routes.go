@@ -49,6 +49,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/user/permissions", app.requireAuthenticatedUser(app.listUserPermissionsHandler))
 
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/screenshot", app.screenshotHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/reports/validate", app.validateReportHandler)
 
 	router.HandlerFunc(http.MethodGet, "/v1/events", app.notificationHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/notify/:userID", app.sendNotificationHandler)

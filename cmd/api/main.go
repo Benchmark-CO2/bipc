@@ -47,8 +47,9 @@ type config struct {
 	cors struct {
 		trustedOrigins []string
 	}
-	ifcURL    string
-	ifcSecret string
+	ifcURL              string
+	ifcSecret           string
+	reportSigningSecret string
 }
 
 type application struct {
@@ -90,6 +91,8 @@ func main() {
 	flag.StringVar(&cfg.ifcURL, "ifc-url", "", "IFC Service URL")
 
 	flag.StringVar(&cfg.ifcSecret, "ifc-secret", "", "IFC secret")
+
+	flag.StringVar(&cfg.reportSigningSecret, "report-signing-secret", "", "Report signing secret")
 
 	displayVersion := flag.Bool("version", false, "Display version and exit")
 

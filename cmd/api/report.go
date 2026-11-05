@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -15,6 +17,7 @@ import (
 	"github.com/google/uuid"
 
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"html/template"
 	"log"
@@ -463,9 +466,11 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	signed := Sign(merged.Bytes(), []byte(app.config.reportSigningSecret))
+
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", `inline; filename="relatorio.pdf"`)
-	if _, err := io.Copy(w, merged); err != nil {
+	if _, err := w.Write(signed); err != nil {
 		log.Println("erro ao enviar PDF:", err)
 	}
 }
@@ -481,4 +486,80 @@ func classificationLetter(y float64) string {
 		return "C"
 	}
 	return "D"
+}
+
+var marker = []byte("\n%%SYS-SIG:")
+
+const (
+	maxSignedPDFSize = 20 << 20
+)
+
+func (app *application) validateReportHandler(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxSignedPDFSize+1<<20)
+
+	if err := r.ParseMultipartForm(1 << 20); err != nil {
+		app.badRequestResponse(w, r, errors.New("o corpo deve ser um multipart/form-data válido"))
+		return
+	}
+
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		app.badRequestResponse(w, r, errors.New(`o campo "file" é obrigatório`))
+		return
+	}
+	defer file.Close()
+
+	signedPDF, err := io.ReadAll(io.LimitReader(file, maxSignedPDFSize+1))
+	if err != nil {
+		app.badRequestResponse(w, r, errors.New("não foi possível ler o arquivo PDF"))
+		return
+	}
+	if len(signedPDF) > maxSignedPDFSize {
+		app.badRequestResponse(w, r, fmt.Errorf("o arquivo PDF não pode ser maior que %d MiB", maxSignedPDFSize>>20))
+		return
+	}
+	if !bytes.HasPrefix(signedPDF, []byte("%PDF-")) {
+		app.badRequestResponse(w, r, errors.New("o arquivo enviado não é um PDF válido"))
+		return
+	}
+
+	valid, err := Verify(signedPDF, []byte(app.config.reportSigningSecret))
+	if err != nil {
+		valid = false
+	}
+
+	if err := app.writeJSON(w, http.StatusOK, envelope{"valid": valid}, nil); err != nil {
+		app.logError(r, err)
+	}
+}
+
+func Sign(pdf []byte, key []byte) []byte {
+	mac := hmac.New(sha256.New, key)
+	mac.Write(pdf)
+	sig := hex.EncodeToString(mac.Sum(nil))
+
+	out := make([]byte, 0, len(pdf)+len(marker)+len(sig)+1)
+	out = append(out, pdf...)
+	out = append(out, marker...)
+	out = append(out, sig...)
+	out = append(out, '\n')
+	return out
+}
+
+func Verify(signed []byte, key []byte) (bool, error) {
+	idx := bytes.LastIndex(signed, marker)
+	if idx < 0 {
+		return false, errors.New("assinatura não encontrada")
+	}
+	pdf := signed[:idx]
+	sigHex := bytes.TrimSpace(signed[idx+len(marker):])
+
+	got, err := hex.DecodeString(string(sigHex))
+	if err != nil {
+		return false, err
+	}
+
+	mac := hmac.New(sha256.New, key)
+	mac.Write(pdf)
+	return hmac.Equal(got, mac.Sum(nil)), nil
 }
