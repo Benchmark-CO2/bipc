@@ -396,7 +396,7 @@
 		</div>
 	</div>
 
-	
+	<!--
 	<h1>Percentual de rastreabilidade dos dados</h1>
 
 	<div style="display: flex; align-items: flex-start; gap: 5px; align-self: stretch;">
@@ -409,6 +409,7 @@
 			<div class="text" style="color: #187B8B">de rastreabilidade</div>
 		</div>
 	</div>
+	-->
 
 	<h1>Resumo dos resultados do Benchmark</h1>
 
@@ -756,7 +757,7 @@
 		</div>
 	</div>
 
-
+<!--
 	<div style="display: flex; justify-content: space-between; break-before: page;">
 		<div style="display: flex; width: 325px; flex-direction: column; gap: 7.5px; flex: 1">
 			<h2 style="align-self: start; margin-bottom: 0px;">Total de Emissões por tecnologia e material (% / Kg CO₂)</h2>
@@ -786,6 +787,7 @@
 	<div id="SBC2" class="sbc-chart"></div>
 
 	<div id="stack"></div>
+-->
 
 	
 	
@@ -794,73 +796,73 @@
 
 		const data = {{.JSONData}};
 
-		function renderChartRastreabilidade(data, seletor = "#SOURCES") {
-			const width = 600;
-			const barHeight = 12;
-			const height = barHeight;
+		// function renderChartRastreabilidade(data, seletor = "#SOURCES") {
+		// 	const width = 600;
+		// 	const barHeight = 12;
+		// 	const height = barHeight;
 			
-			const svg = d3.select(seletor)
-			.attr("width", width)
-			.attr("height", height)
-			.attr("viewBox", `0 0 ${width} ${height}`);
+		// 	const svg = d3.select(seletor)
+		// 	.attr("width", width)
+		// 	.attr("height", height)
+		// 	.attr("viewBox", `0 0 ${width} ${height}`);
 			
-			const total = d3.sum(data, d => d.value);
-			const xScale = d3.scaleLinear()
-			.domain([0, total])
-			.range([0, width]);
+		// 	const total = d3.sum(data, d => d.value);
+		// 	const xScale = d3.scaleLinear()
+		// 	.domain([0, total])
+		// 	.range([0, width]);
 			
-			let cumulative = 0;
-			const segments = data.map(d => {
-			const seg = {
-				...d,
-				x0: cumulative,
-				x1: cumulative + d.value
-			};
-			cumulative += d.value;
-			return seg;
-			});
+		// 	let cumulative = 0;
+		// 	const segments = data.map(d => {
+		// 	const seg = {
+		// 		...d,
+		// 		x0: cumulative,
+		// 		x1: cumulative + d.value
+		// 	};
+		// 	cumulative += d.value;
+		// 	return seg;
+		// 	});
 			
-			const gap = 3; // small gap between segments
+		// 	const gap = 3; // small gap between segments
 			
-			const groups = svg.selectAll("g.segment")
-			.data(segments)
-			.enter()
-			.append("g")
-			.attr("class", "segment");
+		// 	const groups = svg.selectAll("g.segment")
+		// 	.data(segments)
+		// 	.enter()
+		// 	.append("g")
+		// 	.attr("class", "segment");
 			
-			groups.append("rect")
-			.attr("x", d => xScale(d.x0) + (d.x0 === 0 ? 0 : gap / 2))
-			.attr("y", 0)
-			.attr("width", d => Math.max(0, xScale(d.x1) - xScale(d.x0) - (d.x0 === 0 ? gap / 2 : gap)))
-			.attr("height", barHeight)
-			.attr("rx", 3)
-			.attr("fill", d => d.color);
+		// 	groups.append("rect")
+		// 	.attr("x", d => xScale(d.x0) + (d.x0 === 0 ? 0 : gap / 2))
+		// 	.attr("y", 0)
+		// 	.attr("width", d => Math.max(0, xScale(d.x1) - xScale(d.x0) - (d.x0 === 0 ? gap / 2 : gap)))
+		// 	.attr("height", barHeight)
+		// 	.attr("rx", 3)
+		// 	.attr("fill", d => d.color);
 			
-			groups.append("text")
-			.attr("class", "segment-label")
-			.attr("x", d => xScale(d.x0) + (xScale(d.x1) - xScale(d.x0)) / 2)
-			.attr("y", barHeight / 2)
-			.attr("text-anchor", "middle")
-			.attr("dominant-baseline", "central")
-			.text(d => `${d.value}%`);
+		// 	groups.append("text")
+		// 	.attr("class", "segment-label")
+		// 	.attr("x", d => xScale(d.x0) + (xScale(d.x1) - xScale(d.x0)) / 2)
+		// 	.attr("y", barHeight / 2)
+		// 	.attr("text-anchor", "middle")
+		// 	.attr("dominant-baseline", "central")
+		// 	.text(d => `${d.value}%`);
 			
-			// Legend
-			const legend = d3.select("#legend");
-			const legendItems = legend.selectAll(".legend-item")
-			.data(data)
-			.enter()
-			.append("div")
-			.attr("class", "legend-item");
+		// 	// Legend
+		// 	const legend = d3.select("#legend");
+		// 	const legendItems = legend.selectAll(".legend-item")
+		// 	.data(data)
+		// 	.enter()
+		// 	.append("div")
+		// 	.attr("class", "legend-item");
 			
-			legendItems.append("span")
-			.attr("class", "legend-dot")
-			.style("background-color", d => d.color);
+		// 	legendItems.append("span")
+		// 	.attr("class", "legend-dot")
+		// 	.style("background-color", d => d.color);
 			
-			legendItems.append("span")
-			.text(d => `${d.value}% ${d.label}`);
+		// 	legendItems.append("span")
+		// 	.text(d => `${d.value}% ${d.label}`);
 
-		}
-		renderChartRastreabilidade(data.sources);
+		// }
+		// renderChartRastreabilidade(data.sources);
 
 		function drawBenchmarkChart(canvasId, options) {
 			const DEFAULT_COLORS = {
@@ -1142,7 +1144,6 @@
 
 			ctx.restore();
     	}
-
 		drawBenchmarkChart("chart-co2", {
               variant: "range",
               data: data.co2Chart,
@@ -1154,7 +1155,6 @@
               xAxisLabel: "Carbono Embutido (Kg/m²)",
               yAxisLabel: "Potencial de mitigação"
             });
-
 		drawBenchmarkChart("chart-energy", {
 			variant: "range",
 			data: data.energyChart,
@@ -1167,300 +1167,300 @@
 			yAxisLabel: "Potencial de mitigação"
 		});
 	
-		function renderChartGM(data, seletor = "#GM") {
-			const paleta = ["#1f7a85", "#f28e4b", "#a46fdc", "#e5c339", "#d9534f", "#5cb85c", "#8c6d62", "#3f8fd2"];
-			const fmtPct = d3.format(".2f");
-			const pt = v => fmtPct(v).replace(".", ",") + "%";
-			const largura = 360, altura = 12;
-			const raiz = d3.select(seletor).classed("gm-grafico", true).html("");
+		// function renderChartGM(data, seletor = "#GM") {
+		// 	const paleta = ["#1f7a85", "#f28e4b", "#a46fdc", "#e5c339", "#d9534f", "#5cb85c", "#8c6d62", "#3f8fd2"];
+		// 	const fmtPct = d3.format(".2f");
+		// 	const pt = v => fmtPct(v).replace(".", ",") + "%";
+		// 	const largura = 360, altura = 12;
+		// 	const raiz = d3.select(seletor).classed("gm-grafico", true).html("");
 		
-			// uma cor estável por material, definida a partir de todos os materiais presentes nos dados
-			const nomes = [...new Set(data.flatMap(d => d.itens.map(i => i.material)))];
-			const cor = d3.scaleOrdinal().domain(nomes).range(paleta); // repete a paleta se houver mais materiais que cores
+		// 	// uma cor estável por material, definida a partir de todos os materiais presentes nos dados
+		// 	const nomes = [...new Set(data.flatMap(d => d.itens.map(i => i.material)))];
+		// 	const cor = d3.scaleOrdinal().domain(nomes).range(paleta); // repete a paleta se houver mais materiais que cores
 			
-			data.forEach(d => {
-				const total = d3.sum(d.itens, i => i.kg);
-				let acc = 0;
-				const partes = d.itens.map(i => {
-				const p = { ...i, pct: total ? i.kg / total * 100 : 0, x0: acc };
-				acc += p.pct;
-				return p;
-				});
+		// 	data.forEach(d => {
+		// 		const total = d3.sum(d.itens, i => i.kg);
+		// 		let acc = 0;
+		// 		const partes = d.itens.map(i => {
+		// 		const p = { ...i, pct: total ? i.kg / total * 100 : 0, x0: acc };
+		// 		acc += p.pct;
+		// 		return p;
+		// 		});
 			
-				const grupo = raiz.append("div").attr("class", "gm-grupo");
-				grupo.append("div").attr("class", "gm-titulo").attr("role", "heading").attr("aria-level", 3).text(d.nome);
+		// 		const grupo = raiz.append("div").attr("class", "gm-grupo");
+		// 		grupo.append("div").attr("class", "gm-titulo").attr("role", "heading").attr("aria-level", 3).text(d.nome);
 			
-				const x = d3.scaleLinear().domain([0, 100]).range([0, largura]);
-				const svg = grupo.append("svg").attr("viewBox", `0 0 ${largura} ${altura}`).attr("width", "100%");
-				const g = svg.selectAll("g").data(partes).join("g");
+		// 		const x = d3.scaleLinear().domain([0, 100]).range([0, largura]);
+		// 		const svg = grupo.append("svg").attr("viewBox", `0 0 ${largura} ${altura}`).attr("width", "100%");
+		// 		const g = svg.selectAll("g").data(partes).join("g");
 			
-				g.append("rect")
-				.attr("x", p => x(p.x0))
-				.attr("width", p => x(p.pct))
-				.attr("height", altura)
-				.attr("fill", p => cor(p.material))
-				.append("title").text(p => `${p.material}: ${pt(p.pct)} / ${p.kg}Kg`);
+		// 		g.append("rect")
+		// 		.attr("x", p => x(p.x0))
+		// 		.attr("width", p => x(p.pct))
+		// 		.attr("height", altura)
+		// 		.attr("fill", p => cor(p.material))
+		// 		.append("title").text(p => `${p.material}: ${pt(p.pct)} / ${p.kg}Kg`);
 			
-				// rótulo só quando a fatia tem espaço
-				g.filter(p => x(p.pct) > 20).append("text")
-				.attr("class", "gm-rotulo")
-				.attr("x", p => x(p.x0) + 4)
-				.attr("y", altura / 2)
-				.attr("dominant-baseline", "middle")
-				.text(p => pt(p.pct));
+		// 		// rótulo só quando a fatia tem espaço
+		// 		g.filter(p => x(p.pct) > 20).append("text")
+		// 		.attr("class", "gm-rotulo")
+		// 		.attr("x", p => x(p.x0) + 4)
+		// 		.attr("y", altura / 2)
+		// 		.attr("dominant-baseline", "middle")
+		// 		.text(p => pt(p.pct));
 			
-				grupo.append("div").attr("class", "gm-legenda")
-				.selectAll(".gm-item").data(partes).join("span").attr("class", "gm-item")
-				.html(p => `<i class="gm-cor" style="background:${cor(p.material)}"></i>${p.material} (${pt(p.pct)} / ${p.kg}Kg)`);
-			});
-		}
-		renderChartGM(data.gm);
+		// 		grupo.append("div").attr("class", "gm-legenda")
+		// 		.selectAll(".gm-item").data(partes).join("span").attr("class", "gm-item")
+		// 		.html(p => `<i class="gm-cor" style="background:${cor(p.material)}"></i>${p.material} (${pt(p.pct)} / ${p.kg}Kg)`);
+		// 	});
+		// }
+		// renderChartGM(data.gm);
 
-		function renderChartGC(data, seletor = "#GC") {
-			// Ponto em destaque: o que vier com destaque: true (pode não haver nenhum)
-			const gcDestaque = data.find(d => d.destaque);
-			const gcFaixas = [
-				{ nome: "A", de: 0,    ate: 0.25, cor: "var(--gc-a)" },
-				{ nome: "B", de: 0.25, ate: 0.5,  cor: "var(--gc-b)" },
-				{ nome: "C", de: 0.5,  ate: 0.75, cor: "var(--gc-c)" },
-				{ nome: "D", de: 0.75, ate: 1,    cor: "var(--gc-d)" }
-			];
-			const gcFmt = d3.formatLocale({ decimal: ",", thousands: ".", grouping: [3], currency: ["R$", ""] }).format(".1f");
+		// function renderChartGC(data, seletor = "#GC") {
+		// 	// Ponto em destaque: o que vier com destaque: true (pode não haver nenhum)
+		// 	const gcDestaque = data.find(d => d.destaque);
+		// 	const gcFaixas = [
+		// 		{ nome: "A", de: 0,    ate: 0.25, cor: "var(--gc-a)" },
+		// 		{ nome: "B", de: 0.25, ate: 0.5,  cor: "var(--gc-b)" },
+		// 		{ nome: "C", de: 0.5,  ate: 0.75, cor: "var(--gc-c)" },
+		// 		{ nome: "D", de: 0.75, ate: 1,    cor: "var(--gc-d)" }
+		// 	];
+		// 	const gcFmt = d3.formatLocale({ decimal: ",", thousands: ".", grouping: [3], currency: ["R$", ""] }).format(".1f");
 			
-			const W = 360, H = 210, m = { top: 5, right: 0, bottom: 15, left: 25 };
-			const iw = W - m.left - m.right, ih = H - m.top - m.bottom;
-			const bandaW = 16, gap = 4, plotW = iw - bandaW - gap, bx = iw - bandaW;
-			const x = d3.scaleLinear().domain([0, 1]).range([0, plotW]);
-			const y = d3.scaleLinear().domain([0, 1]).range([ih, 0]);
+		// 	const W = 360, H = 210, m = { top: 5, right: 0, bottom: 15, left: 25 };
+		// 	const iw = W - m.left - m.right, ih = H - m.top - m.bottom;
+		// 	const bandaW = 16, gap = 4, plotW = iw - bandaW - gap, bx = iw - bandaW;
+		// 	const x = d3.scaleLinear().domain([0, 1]).range([0, plotW]);
+		// 	const y = d3.scaleLinear().domain([0, 1]).range([ih, 0]);
 			
-			const svg = d3.select(seletor).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img")
-				.attr("aria-label", "Dispersão da fração de projetos melhores em função do concreto em m² por m²");
-			const g = svg.append("g").attr("transform", `translate(${m.left},${m.top})`);
+		// 	const svg = d3.select(seletor).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img")
+		// 		.attr("aria-label", "Dispersão da fração de projetos melhores em função do concreto em m² por m²");
+		// 	const g = svg.append("g").attr("transform", `translate(${m.left},${m.top})`);
 			
-			g.append("g").call(d3.axisLeft(y).ticks(10).tickSize(-plotW).tickFormat(""))
-				.call(s => s.select(".domain").remove()).call(s => s.selectAll("line").attr("stroke", "var(--gc-grid)"));
-			g.append("g").attr("transform", `translate(0,${ih})`).call(d3.axisBottom(x).ticks(10).tickSize(-ih).tickFormat(""))
-				.call(s => s.select(".domain").remove()).call(s => s.selectAll("line").attr("stroke", "var(--gc-grid)"));
+		// 	g.append("g").call(d3.axisLeft(y).ticks(10).tickSize(-plotW).tickFormat(""))
+		// 		.call(s => s.select(".domain").remove()).call(s => s.selectAll("line").attr("stroke", "var(--gc-grid)"));
+		// 	g.append("g").attr("transform", `translate(0,${ih})`).call(d3.axisBottom(x).ticks(10).tickSize(-ih).tickFormat(""))
+		// 		.call(s => s.select(".domain").remove()).call(s => s.selectAll("line").attr("stroke", "var(--gc-grid)"));
 			
-			g.append("g").attr("class", "gc-tick").attr("transform", `translate(0,${ih})`)
-				.call(d3.axisBottom(x).ticks(10).tickSize(0).tickPadding(8).tickFormat(gcFmt))
-				.call(s => s.select(".domain").attr("stroke", "var(--gc-axis)"));
-			g.append("g").attr("class", "gc-tick").call(d3.axisLeft(y).ticks(10).tickSize(0).tickPadding(8).tickFormat(gcFmt))
-				.call(s => s.select(".domain").attr("stroke", "var(--gc-axis)"));
+		// 	g.append("g").attr("class", "gc-tick").attr("transform", `translate(0,${ih})`)
+		// 		.call(d3.axisBottom(x).ticks(10).tickSize(0).tickPadding(8).tickFormat(gcFmt))
+		// 		.call(s => s.select(".domain").attr("stroke", "var(--gc-axis)"));
+		// 	g.append("g").attr("class", "gc-tick").call(d3.axisLeft(y).ticks(10).tickSize(0).tickPadding(8).tickFormat(gcFmt))
+		// 		.call(s => s.select(".domain").attr("stroke", "var(--gc-axis)"));
 			
-			g.append("text").attr("class", "gc-axis-label gc-x").attr("x", plotW / 2).attr("y", ih + 44)
-				.attr("text-anchor", "middle").text("Concreto (m²/m²)");
-			g.append("text").attr("class", "gc-axis-label").attr("transform", "rotate(-90)").attr("x", -ih / 2).attr("y", -42)
-				.attr("text-anchor", "middle").text("Fração de projetos melhores");
+		// 	g.append("text").attr("class", "gc-axis-label gc-x").attr("x", plotW / 2).attr("y", ih + 44)
+		// 		.attr("text-anchor", "middle").text("Concreto (m²/m²)");
+		// 	g.append("text").attr("class", "gc-axis-label").attr("transform", "rotate(-90)").attr("x", -ih / 2).attr("y", -42)
+		// 		.attr("text-anchor", "middle").text("Fração de projetos melhores");
 			
-			const fx = g.append("g").attr("transform", `translate(${bx},0)`);
-			fx.selectAll("rect").data(gcFaixas).join("rect").attr("width", bandaW)
-				.attr("y", d => y(d.ate)).attr("height", d => y(d.de) - y(d.ate)).attr("fill", d => d.cor);
-			fx.selectAll("text").data(gcFaixas).join("text").attr("x", bandaW / 2)
-				.attr("y", d => y((d.de + d.ate) / 2)).attr("dy", "0.35em").attr("text-anchor", "middle")
-				.attr("font-size", 9).attr("fill", "var(--gc-band-text)").text(d => d.nome);
+		// 	const fx = g.append("g").attr("transform", `translate(${bx},0)`);
+		// 	fx.selectAll("rect").data(gcFaixas).join("rect").attr("width", bandaW)
+		// 		.attr("y", d => y(d.ate)).attr("height", d => y(d.de) - y(d.ate)).attr("fill", d => d.cor);
+		// 	fx.selectAll("text").data(gcFaixas).join("text").attr("x", bandaW / 2)
+		// 		.attr("y", d => y((d.de + d.ate) / 2)).attr("dy", "0.35em").attr("text-anchor", "middle")
+		// 		.attr("font-size", 9).attr("fill", "var(--gc-band-text)").text(d => d.nome);
 			
-			const gcGuia = (x1, y1, x2, y2) => g.append("line").attr("x1", x1).attr("y1", y1).attr("x2", x2).attr("y2", y2)
-				.attr("stroke", "var(--gc-guide)").attr("stroke-width", 1.2).attr("stroke-dasharray", "5,4");
-			if (gcDestaque) {
-				gcGuia(x(gcDestaque.x), y(gcDestaque.y), x(gcDestaque.x), ih); // vertical até o eixo X
-				gcGuia(x(gcDestaque.x), y(gcDestaque.y), bx, y(gcDestaque.y)); // horizontal até as faixas A–D
-			}
+		// 	const gcGuia = (x1, y1, x2, y2) => g.append("line").attr("x1", x1).attr("y1", y1).attr("x2", x2).attr("y2", y2)
+		// 		.attr("stroke", "var(--gc-guide)").attr("stroke-width", 1.2).attr("stroke-dasharray", "5,4");
+		// 	if (gcDestaque) {
+		// 		gcGuia(x(gcDestaque.x), y(gcDestaque.y), x(gcDestaque.x), ih); // vertical até o eixo X
+		// 		gcGuia(x(gcDestaque.x), y(gcDestaque.y), bx, y(gcDestaque.y)); // horizontal até as faixas A–D
+		// 	}
 			
-			g.selectAll("circle.gc-ponto").data(data).join("circle").attr("class", "gc-ponto")
-				.attr("cx", d => x(d.x)).attr("cy", d => y(d.y)).attr("r", 4.5).attr("fill", "var(--gc-dot)")
-				.attr("fill-opacity", 0.85).attr("stroke", "var(--gc-dot-stroke)").attr("stroke-width", 0.8);
+		// 	g.selectAll("circle.gc-ponto").data(data).join("circle").attr("class", "gc-ponto")
+		// 		.attr("cx", d => x(d.x)).attr("cy", d => y(d.y)).attr("r", 4.5).attr("fill", "var(--gc-dot)")
+		// 		.attr("fill-opacity", 0.85).attr("stroke", "var(--gc-dot-stroke)").attr("stroke-width", 0.8);
 			
-			if (gcDestaque) {
-				g.append("circle").attr("cx", x(gcDestaque.x)).attr("cy", y(gcDestaque.y)).attr("r", 7)
-				.attr("fill", "var(--gc-hl)").attr("stroke", "var(--gc-dot-stroke)").attr("stroke-width", 0.8);
-			}
-			}
-		renderChartGC(data.gc);
+		// 	if (gcDestaque) {
+		// 		g.append("circle").attr("cx", x(gcDestaque.x)).attr("cy", y(gcDestaque.y)).attr("r", 7)
+		// 		.attr("fill", "var(--gc-hl)").attr("stroke", "var(--gc-dot-stroke)").attr("stroke-width", 0.8);
+		// 	}
+		// 	}
+		// renderChartGC(data.gc);
 
-		function renderChartSBC(data, seletor) {
-			// Paleta: se houver mais séries que cores, ela recomeça do início
-			const palette = ["#17808f", "#f5924a", "#a56fe0", "#4caf7d", "#e5546b", "#f2c94c"];
+		// function renderChartSBC(data, seletor) {
+		// 	// Paleta: se houver mais séries que cores, ela recomeça do início
+		// 	const palette = ["#17808f", "#f5924a", "#a56fe0", "#4caf7d", "#e5546b", "#f2c94c"];
 			
-			// Séries dinâmicas: nomes únicos, na ordem em que aparecem
-			const keys = [...new Set(data.flatMap(d => d.series.map(s => s.nome)))];
+		// 	// Séries dinâmicas: nomes únicos, na ordem em que aparecem
+		// 	const keys = [...new Set(data.flatMap(d => d.series.map(s => s.nome)))];
 			
-			// Lookup nome -> valor por linha (série ausente conta como 0)
-			const rows = data.map(d => ({
-				nome: d.nome,
-				valores: new Map(d.series.map(s => [s.nome, s.valor]))
-			}));
+		// 	// Lookup nome -> valor por linha (série ausente conta como 0)
+		// 	const rows = data.map(d => ({
+		// 		nome: d.nome,
+		// 		valores: new Map(d.series.map(s => [s.nome, s.valor]))
+		// 	}));
 			
-			const width = 360;
-			const margin = { top: 0, right: 0, bottom: 0, left: 0 };
-			const rowStep = 15;
-			const gap = 2;
-			const plotHeight = rows.length * rowStep;
+		// 	const width = 360;
+		// 	const margin = { top: 0, right: 0, bottom: 0, left: 0 };
+		// 	const rowStep = 15;
+		// 	const gap = 2;
+		// 	const plotHeight = rows.length * rowStep;
 			
-			const container = d3.select(seletor).classed("sbc-chart", true);
-			container.selectAll("svg").remove();
-			const svg = container.append("svg").attr("width", "100%");
+		// 	const container = d3.select(seletor).classed("sbc-chart", true);
+		// 	container.selectAll("svg").remove();
+		// 	const svg = container.append("svg").attr("width", "100%");
 
-			const labelPad = 6; // espaço entre o label e as barras
-			const medidor = svg.append("text").attr("class", "sbc-label").style("visibility", "hidden");
-			const maiorLabel = d3.max(rows, r => (medidor.text(r.nome), medidor.node().getComputedTextLength()));
-			medidor.remove();
-			margin.left = Math.ceil(maiorLabel) + labelPad;
+		// 	const labelPad = 6; // espaço entre o label e as barras
+		// 	const medidor = svg.append("text").attr("class", "sbc-label").style("visibility", "hidden");
+		// 	const maiorLabel = d3.max(rows, r => (medidor.text(r.nome), medidor.node().getComputedTextLength()));
+		// 	medidor.remove();
+		// 	margin.left = Math.ceil(maiorLabel) + labelPad;
 			
-			const layers = d3.stack()
-				.keys(keys)
-				.value((d, k) => d.valores.get(k) || 0)(rows);
+		// 	const layers = d3.stack()
+		// 		.keys(keys)
+		// 		.value((d, k) => d.valores.get(k) || 0)(rows);
 			
-			const maxTotal = d3.max(layers[layers.length - 1], d => d[1]);
+		// 	const maxTotal = d3.max(layers[layers.length - 1], d => d[1]);
 			
-			const x = d3.scaleLinear()
-				.domain([0, maxTotal])
-				.range([margin.left, width - margin.right]);
+		// 	const x = d3.scaleLinear()
+		// 		.domain([0, maxTotal])
+		// 		.range([margin.left, width - margin.right]);
 			
-			const y = d3.scaleBand()
-				.domain(rows.map(d => d.nome))
-				.range([margin.top, margin.top + plotHeight])
-				.paddingInner(0.25)
-				.paddingOuter(0.1);
+		// 	const y = d3.scaleBand()
+		// 		.domain(rows.map(d => d.nome))
+		// 		.range([margin.top, margin.top + plotHeight])
+		// 		.paddingInner(0.25)
+		// 		.paddingOuter(0.1);
 			
-			const color = d3.scaleOrdinal().domain(keys).range(palette);
+		// 	const color = d3.scaleOrdinal().domain(keys).range(palette);
 			
-			// Rótulos das categorias
-			svg.selectAll(".sbc-label")
-				.data(rows)
-				.join("text")
-				.attr("class", "sbc-label")
-				.attr("x", 0)                       // colado na esquerda
-				.attr("y", d => y(d.nome) + y.bandwidth() / 2)
-				.attr("text-anchor", "start")       // era "end"
-				.attr("dominant-baseline", "middle")
-				.text(d => d.nome);
+		// 	// Rótulos das categorias
+		// 	svg.selectAll(".sbc-label")
+		// 		.data(rows)
+		// 		.join("text")
+		// 		.attr("class", "sbc-label")
+		// 		.attr("x", 0)                       // colado na esquerda
+		// 		.attr("y", d => y(d.nome) + y.bandwidth() / 2)
+		// 		.attr("text-anchor", "start")       // era "end"
+		// 		.attr("dominant-baseline", "middle")
+		// 		.text(d => d.nome);
 
-			// Barras empilhadas
-			const groups = svg.selectAll("g.sbc-layer")
-				.data(layers)
-				.join("g")
-				.attr("class", "sbc-layer")
-				.attr("fill", d => color(d.key));
+		// 	// Barras empilhadas
+		// 	const groups = svg.selectAll("g.sbc-layer")
+		// 		.data(layers)
+		// 		.join("g")
+		// 		.attr("class", "sbc-layer")
+		// 		.attr("fill", d => color(d.key));
 			
-			groups.selectAll("rect")
-				.data(d => d)
-				.join("rect")
-				.attr("x", d => x(d[0]))
-				.attr("y", d => y(d.data.nome))
-				.attr("width", d => Math.max(0, x(d[1]) - x(d[0]) - gap))
-				.attr("height", y.bandwidth());
+		// 	groups.selectAll("rect")
+		// 		.data(d => d)
+		// 		.join("rect")
+		// 		.attr("x", d => x(d[0]))
+		// 		.attr("y", d => y(d.data.nome))
+		// 		.attr("width", d => Math.max(0, x(d[1]) - x(d[0]) - gap))
+		// 		.attr("height", y.bandwidth());
 			
-			// Valores dentro das barras (não desenha onde o valor é 0)
-			groups.selectAll("text")
-				.data(d => d.filter(v => v[1] - v[0] > 0))
-				.join("text")
-				.attr("class", "sbc-value")
-				.attr("x", d => x(d[0]) + 4)
-				.attr("y", d => y(d.data.nome) + y.bandwidth() / 2)
-				.attr("dominant-baseline", "middle")
-				.text(d => `${d[1] - d[0]}%`)
-				.each(function (d) {
-					const larguraBarra = x(d[1]) - x(d[0]) - gap;
-					const larguraTexto = this.getComputedTextLength();
-					if (larguraTexto + 4 > larguraBarra) this.remove(); // 4px de folga de cada lado
-				});
+		// 	// Valores dentro das barras (não desenha onde o valor é 0)
+		// 	groups.selectAll("text")
+		// 		.data(d => d.filter(v => v[1] - v[0] > 0))
+		// 		.join("text")
+		// 		.attr("class", "sbc-value")
+		// 		.attr("x", d => x(d[0]) + 4)
+		// 		.attr("y", d => y(d.data.nome) + y.bandwidth() / 2)
+		// 		.attr("dominant-baseline", "middle")
+		// 		.text(d => `${d[1] - d[0]}%`)
+		// 		.each(function (d) {
+		// 			const larguraBarra = x(d[1]) - x(d[0]) - gap;
+		// 			const larguraTexto = this.getComputedTextLength();
+		// 			if (larguraTexto + 4 > larguraBarra) this.remove(); // 4px de folga de cada lado
+		// 		});
 			
-			// Legenda dinâmica, quebrando de linha quando não couber
-			const legendTop = margin.top + plotHeight + 14;
-			const legend = svg.append("g").attr("class", "sbc-legend");
-			const maxX = width - margin.right - margin.left;
-			let offsetX = 0, row = 0;
+		// 	// Legenda dinâmica, quebrando de linha quando não couber
+		// 	const legendTop = margin.top + plotHeight + 14;
+		// 	const legend = svg.append("g").attr("class", "sbc-legend");
+		// 	const maxX = width - margin.right - margin.left;
+		// 	let offsetX = 0, row = 0;
 			
-			keys.forEach(k => {
-				const g = legend.append("g");
-				g.append("rect").attr("width", 12).attr("height", 12).attr("rx", 2).attr("fill", color(k));
-				const t = g.append("text").attr("x", 22).attr("y", 8)
-				.attr("dominant-baseline", "middle").text(k);
-				const itemWidth = 22 + t.node().getComputedTextLength();
+		// 	keys.forEach(k => {
+		// 		const g = legend.append("g");
+		// 		g.append("rect").attr("width", 12).attr("height", 12).attr("rx", 2).attr("fill", color(k));
+		// 		const t = g.append("text").attr("x", 22).attr("y", 8)
+		// 		.attr("dominant-baseline", "middle").text(k);
+		// 		const itemWidth = 22 + t.node().getComputedTextLength();
 			
-				if (offsetX > 0 && offsetX + itemWidth > maxX) { offsetX = 0; row++; }
-				g.attr("transform", `translate(${margin.left + offsetX}, ${legendTop + row * 24})`);
-				offsetX += itemWidth + 20;
-			});
+		// 		if (offsetX > 0 && offsetX + itemWidth > maxX) { offsetX = 0; row++; }
+		// 		g.attr("transform", `translate(${margin.left + offsetX}, ${legendTop + row * 24})`);
+		// 		offsetX += itemWidth + 20;
+		// 	});
 			
-			const height = legendTop + (row + 1) * 24 + margin.bottom;
-			svg.attr("viewBox", `0 0 ${width} ${height}`);
-		}
-		renderChartSBC(data.sbc1, "#SBC1");
-		renderChartSBC(data.sbc2, "#SBC2");
+		// 	const height = legendTop + (row + 1) * 24 + margin.bottom;
+		// 	svg.attr("viewBox", `0 0 ${width} ${height}`);
+		// }
+		// renderChartSBC(data.sbc1, "#SBC1");
+		// renderChartSBC(data.sbc2, "#SBC2");
 		
-		function renderStackedBar(config, seletor) {
-			const PALETA_PADRAO = [
-				"#177e89", "#e0766d", "#e9b44c", "#6a994e",
-				"#7b6d8d", "#3d5a80", "#c97b84", "#8d99ae"
-			];
-			const container = document.querySelector(seletor);
-			if (!container) throw new Error(`Elemento com seletor "${seletor}" não encontrado`);
+		// function renderStackedBar(config, seletor) {
+		// 	const PALETA_PADRAO = [
+		// 		"#177e89", "#e0766d", "#e9b44c", "#6a994e",
+		// 		"#7b6d8d", "#3d5a80", "#c97b84", "#8d99ae"
+		// 	];
+		// 	const container = document.querySelector(seletor);
+		// 	if (!container) throw new Error(`Elemento com seletor "${seletor}" não encontrado`);
 
-			const BAR_H = 12, BAR_Y = 6, AXIS_Y = BAR_Y + BAR_H + 8, PAD = 8, GAP = 1.5, BOTTOM = 12;
+		// 	const BAR_H = 12, BAR_Y = 6, AXIS_Y = BAR_Y + BAR_H + 8, PAD = 8, GAP = 1.5, BOTTOM = 12;
 
-			const root = d3.select(container).classed("stkbar", true).html("");
-			const palette = config.palette?.length ? config.palette : PALETA_PADRAO;
-			const mats = config.materials
-				.filter(m => m.value > 0)
-				.map((m, i) => ({ ...m, color: m.color ?? palette[i % palette.length] }));
-			const total = d3.sum(mats, m => m.value);
-			const width = container.clientWidth;
-			const fmtPct = n => d3.format(".1f")(n).replace(".", ",");
+		// 	const root = d3.select(container).classed("stkbar", true).html("");
+		// 	const palette = config.palette?.length ? config.palette : PALETA_PADRAO;
+		// 	const mats = config.materials
+		// 		.filter(m => m.value > 0)
+		// 		.map((m, i) => ({ ...m, color: m.color ?? palette[i % palette.length] }));
+		// 	const total = d3.sum(mats, m => m.value);
+		// 	const width = container.clientWidth;
+		// 	const fmtPct = n => d3.format(".1f")(n).replace(".", ",");
 
-			// Escala dinâmica: usa config.max ou o total + 15% de folga
-			const x = d3.scaleLinear()
-				.domain([0, config.max ?? total * 1.15])
-				.range([PAD, width - PAD]);
-			if (config.max == null) x.nice(10);
+		// 	// Escala dinâmica: usa config.max ou o total + 15% de folga
+		// 	const x = d3.scaleLinear()
+		// 		.domain([0, config.max ?? total * 1.15])
+		// 		.range([PAD, width - PAD]);
+		// 	if (config.max == null) x.nice(10);
 
-			// Título
-			root.append("h3")
-				.attr("class", "stkbar-title")
-				.text(config.percent != null ? `${config.title} (${Math.round(config.percent)}%)` : config.title);
+		// 	// Título
+		// 	root.append("h3")
+		// 		.attr("class", "stkbar-title")
+		// 		.text(config.percent != null ? `${config.title} (${Math.round(config.percent)}%)` : config.title);
 
-			// SVG
-			const svg = root.append("svg")
-				.attr("class", "stkbar-svg")
-				.attr("viewBox", `0 0 ${width} ${AXIS_Y + BOTTOM}`)
-				.attr("height", AXIS_Y + BOTTOM);
+		// 	// SVG
+		// 	const svg = root.append("svg")
+		// 		.attr("class", "stkbar-svg")
+		// 		.attr("viewBox", `0 0 ${width} ${AXIS_Y + BOTTOM}`)
+		// 		.attr("height", AXIS_Y + BOTTOM);
 
-			const axis = d3.axisBottom(x).tickSize(3).tickSizeOuter(0);
-			if (config.tickStep) axis.tickValues(d3.range(0, x.domain()[1] + 1e-9, config.tickStep));
-			else axis.ticks(Math.max(2, Math.floor(width / 70)));
-			svg.append("g").attr("transform", `translate(0,${AXIS_Y})`).call(axis);
+		// 	const axis = d3.axisBottom(x).tickSize(3).tickSizeOuter(0);
+		// 	if (config.tickStep) axis.tickValues(d3.range(0, x.domain()[1] + 1e-9, config.tickStep));
+		// 	else axis.ticks(Math.max(2, Math.floor(width / 70)));
+		// 	svg.append("g").attr("transform", `translate(0,${AXIS_Y})`).call(axis);
 
-			// Segmentos empilhados
-			let acc = 0;
-			const segs = mats.map(m => ({ ...m, x0: acc, x1: (acc += m.value) }));
-			svg.selectAll("rect").data(segs).join("rect")
-				.attr("x", d => x(d.x0))
-				.attr("y", BAR_Y)
-				.attr("height", BAR_H)
-				.attr("width", d => Math.max(0, x(d.x1) - x(d.x0) - (d.x1 < total ? GAP : 0)))
-				.attr("rx", 2)
-				.attr("fill", d => d.color);
+		// 	// Segmentos empilhados
+		// 	let acc = 0;
+		// 	const segs = mats.map(m => ({ ...m, x0: acc, x1: (acc += m.value) }));
+		// 	svg.selectAll("rect").data(segs).join("rect")
+		// 		.attr("x", d => x(d.x0))
+		// 		.attr("y", BAR_Y)
+		// 		.attr("height", BAR_H)
+		// 		.attr("width", d => Math.max(0, x(d.x1) - x(d.x0) - (d.x1 < total ? GAP : 0)))
+		// 		.attr("rx", 2)
+		// 		.attr("fill", d => d.color);
 
-			// Legenda + unidade
-			const footer = root.append("div").attr("class", "stkbar-footer");
-			const items = footer.append("div").attr("class", "stkbar-legend")
-				.selectAll(".stkbar-legend-item").data(mats).join("div").attr("class", "stkbar-legend-item");
-				items.append("span").attr("class", "stkbar-swatch").style("background", d => d.color);
-				items.append("span").text(d => d.percent != null ? `${d.name} (${fmtPct(d.percent)}%)` : d.name);
-				footer.append("div").attr("class", "stkbar-unit").html(config.unit || "");
-		}
-		renderStackedBar({
-			title: "Parede de concreto",
-			percent: 47,
-			unit: "Kg CO<sub>2</sub> / m²",
-			max: 120,
-			tickStep: 10,
-			materials: [
-				{ name: "Concreto FCK25", value: 39.5, percent: 25.8 },
-				{ name: "Aço CA50",       value: 14.0, percent: 12.5 }
-			]
-		}, "#stack");
+		// 	// Legenda + unidade
+		// 	const footer = root.append("div").attr("class", "stkbar-footer");
+		// 	const items = footer.append("div").attr("class", "stkbar-legend")
+		// 		.selectAll(".stkbar-legend-item").data(mats).join("div").attr("class", "stkbar-legend-item");
+		// 		items.append("span").attr("class", "stkbar-swatch").style("background", d => d.color);
+		// 		items.append("span").text(d => d.percent != null ? `${d.name} (${fmtPct(d.percent)}%)` : d.name);
+		// 		footer.append("div").attr("class", "stkbar-unit").html(config.unit || "");
+		// }
+		// renderStackedBar({
+		// 	title: "Parede de concreto",
+		// 	percent: 47,
+		// 	unit: "Kg CO<sub>2</sub> / m²",
+		// 	max: 120,
+		// 	tickStep: 10,
+		// 	materials: [
+		// 		{ name: "Concreto FCK25", value: 39.5, percent: 25.8 },
+		// 		{ name: "Aço CA50",       value: 14.0, percent: 12.5 }
+		// 	]
+		// }, "#stack");
 				
 
 		window.chartsReady = true;
