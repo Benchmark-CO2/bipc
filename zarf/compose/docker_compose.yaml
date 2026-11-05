@@ -61,6 +61,7 @@ services:
         "-cors-trusted-origins=http://localhost:5173",
         "-ifc-url=${IFC_URL:-}",
         "-ifc-secret=${IFC_SECRET:-}",
+        "-report-signing-secret=${REPORT_SIGNING_SECRET}",
       ]
     healthcheck:
       test:
