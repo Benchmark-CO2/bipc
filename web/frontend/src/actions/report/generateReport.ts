@@ -9,7 +9,7 @@ export const generateReport = (projectId: string, _formData: {
   formData.append('co2', _formData.co2);
   formData.append('energy', _formData.energy);
 
-  return api.post(`/v1/projects/${projectId}/report`, formData, {
+  return api.get(`/v1/projects/${projectId}/report`, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
