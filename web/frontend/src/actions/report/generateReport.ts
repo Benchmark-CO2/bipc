@@ -1,18 +1,21 @@
-import api from '@/service/api';
+import api from "@/service/api";
 
-export const generateReport = (projectId: string, _formData: {
-  co2: File;
-  energy: File;
-}) => {
+export const generateReport = (
+  projectId: string,
+  _formData: {
+    co2: File;
+    energy: File;
+  },
+) => {
   const formData = new FormData();
 
-  formData.append('co2', _formData.co2);
-  formData.append('energy', _formData.energy);
+  formData.append("co2", _formData.co2);
+  formData.append("energy", _formData.energy);
 
-  return api.post(`/v1/projects/${projectId}/report`, formData, {
+  return api.post(`/v1/projects/${projectId}/screenshot`, formData, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      "Content-Type": "multipart/form-data",
     },
-    responseType: 'blob',
+    responseType: "blob",
   });
 };
