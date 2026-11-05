@@ -7,10 +7,12 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/assets"
 	"github.com/Benchmark-CO2/bipc/internal/data"
+	"github.com/google/uuid"
 
 	"encoding/base64"
 	"encoding/json"
@@ -146,6 +148,38 @@ type JSONData struct {
 	SBC2        []SBCLinha       `json:"sbc2"` // Total de Emissões por tecnologia (kg CO₂)
 }
 
+func normalizeScreenshotBenchmarkPoints(minPoints, maxPoints []BenchmarkValue) []BenchmarkPoint {
+	sort.Slice(minPoints, func(i, j int) bool {
+		return minPoints[i].Y < minPoints[j].Y
+	})
+	sort.Slice(maxPoints, func(i, j int) bool {
+		return maxPoints[i].Y < maxPoints[j].Y
+	})
+
+	count := min(len(minPoints), len(maxPoints))
+	points := make([]BenchmarkPoint, 0, count)
+	for i := 0; i < count; i++ {
+		points = append(points, BenchmarkPoint{
+			ID:  minPoints[i].ID.String(),
+			Y:   minPoints[i].Y,
+			Min: minPoints[i].Value,
+			Max: maxPoints[i].Value,
+		})
+	}
+
+	return points
+}
+
+func addSelectedBenchmarkPoint(points []BenchmarkValue, id uuid.UUID, value float64) []BenchmarkValue {
+	for _, point := range points {
+		if point.ID == id {
+			return points
+		}
+	}
+
+	return append(points, BenchmarkValue{ID: id, Value: value})
+}
+
 func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request) {
 	projectID, err := app.readUUIDParam(r, "projectID")
 	if err != nil {
@@ -214,24 +248,39 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		EnergyTotal:             energyTotal,
 	}
 
-	var co2Points, energyPoints []BenchmarkPoint
-	totalPts := 45
-	for i := 0; i < totalPts; i++ {
-		y := float64(i) / float64(totalPts-1)
-		// Simula uma curva em S (sigmoide/polinomial)
-		baseMin := 15.0 + 75.0*(y*y*(3-2*y))
-		baseMax := baseMin + 15.0 + 25.0*y
-
-		id := fmt.Sprintf("proj-%d", i)
-		if i == 19 { // Ponto selecionado em ~0.42 no eixo Y
-			id = "total"
-			baseMin = 48
-			baseMax = 88
-		}
-
-		co2Points = append(co2Points, BenchmarkPoint{ID: id, Y: y, Min: baseMin, Max: baseMax})
-		energyPoints = append(energyPoints, BenchmarkPoint{ID: id, Y: y, Min: baseMin, Max: baseMax})
+	benchmarkProjects, err := app.models.Benchmark.GetProjectsBenchmark(data.GetProjectsBenchmarkFilters{})
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
 	}
+
+	benchmarkSeries := separateProjectConsumption(benchmarkProjects)
+	benchmarkSeries.CO2Min = addSelectedBenchmarkPoint(
+		benchmarkSeries.CO2Min,
+		projectID,
+		report.Project.CO2.Min.Value,
+	)
+	benchmarkSeries.CO2Max = addSelectedBenchmarkPoint(
+		benchmarkSeries.CO2Max,
+		projectID,
+		report.Project.CO2.Max.Value,
+	)
+	benchmarkSeries.EnergyMin = addSelectedBenchmarkPoint(
+		benchmarkSeries.EnergyMin,
+		projectID,
+		report.Project.Energy.Min.Value,
+	)
+	benchmarkSeries.EnergyMax = addSelectedBenchmarkPoint(
+		benchmarkSeries.EnergyMax,
+		projectID,
+		report.Project.Energy.Max.Value,
+	)
+	calculateGiniRank(benchmarkSeries.CO2Min)
+	calculateGiniRank(benchmarkSeries.CO2Max)
+	calculateGiniRank(benchmarkSeries.EnergyMin)
+	calculateGiniRank(benchmarkSeries.EnergyMax)
+	co2Points := normalizeScreenshotBenchmarkPoints(benchmarkSeries.CO2Min, benchmarkSeries.CO2Max)
+	energyPoints := normalizeScreenshotBenchmarkPoints(benchmarkSeries.EnergyMin, benchmarkSeries.EnergyMax)
 
 	var jsonData = JSONData{
 		Sources: []SourceData{
@@ -294,7 +343,7 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		},
 		CO2Chart:    co2Points,
 		EnergyChart: energyPoints,
-		SelectedIDs: []string{"total"},
+		SelectedIDs: []string{projectID.String()},
 	}
 
 	reportContent, err := generateDocumentContent("caixa.gohtml", "report", reportData, jsonData, fontFaceCSS(assets.RobotoFlex, "Roboto Flex"))
