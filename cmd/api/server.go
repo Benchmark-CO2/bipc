@@ -17,8 +17,8 @@ func (app *application) serve() error {
 		Addr:         fmt.Sprintf(":%d", app.config.port),
 		Handler:      app.routes(),
 		IdleTimeout:  time.Minute,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 60 * time.Second,
 		ErrorLog:     slog.NewLogLogger(app.logger.Handler(), slog.LevelError),
 	}
 
@@ -30,6 +30,8 @@ func (app *application) serve() error {
 		s := <-quit
 
 		app.logger.Info("shutdown server", "signal", s.String())
+
+		app.sse.Close()
 
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()

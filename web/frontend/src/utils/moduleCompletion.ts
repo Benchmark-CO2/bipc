@@ -1,5 +1,6 @@
 import type { TModulesTypes, TModuleDataV2 } from "@/types/modules";
 import moduleSchema from "@/schemas/module-schema.json";
+import { parseNumber } from "@/utils/numbers";
 
 type SchemaModuleKey = keyof typeof moduleSchema.modules;
 
@@ -109,14 +110,51 @@ const VALID_STEEL_MATERIALS = new Set([
   "other",
 ]);
 const VALID_STEEL_RESISTANCES = new Set(["CA50", "CA60", "CP190", "other"]);
-const VALID_POSITIONS_BY_TYPE: Record<TModulesTypes, Set<string>> = {
-  beam_column: new Set(["column", "beam", "slab", "stair"]),
-  concrete_wall: new Set(["wall", "slab", "stair"]),
-  structural_masonry: new Set(["column", "beam", "slab", "stair"]),
-  raft_foundation: new Set(["raft"]),
-  piles_foundation: new Set(["pile"]),
-  raft_piles_foundation: new Set(["raft", "pile"]),
-};
+// Positions the backend accepts per type (*ValidPositions in
+// internal/modules/*.go), read from the schema copy instead of a hand-written
+// table that had drifted (piles accepted only "pile").
+const VALID_POSITIONS_BY_TYPE = Object.fromEntries(
+  Object.entries(SCHEMA_KEY_MAP).map(([type, schemaKey]) => [
+    type,
+    new Set<string>(
+      (moduleSchema.modules[schemaKey] as { positions?: string[] })
+        .positions ?? [],
+    ),
+  ]),
+) as Record<TModulesTypes, Set<string>>;
+
+// Resistances the backend accepts (supportedBlockFbkValues,
+// supportedMortarFakValues and sidacGroutData in internal/modules/materials.go).
+// Any other value is saved with completed=false. Also used as the select
+// options in masonry-section.tsx.
+export const SUPPORTED_BLOCK_FBK: readonly number[] = [
+  4.5, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26,
+];
+export const SUPPORTED_MORTAR_FAK: readonly number[] = [
+  4.5, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24,
+];
+export const SUPPORTED_GROUT_FGK: readonly number[] = [
+  15, 20, 25, 30, 35, 40, 45, 50,
+];
+
+export function isSupportedValue(
+  value: unknown,
+  supported: readonly number[],
+): boolean {
+  const n = typeof value === "number" ? value : parseNumber(String(value ?? ""));
+  return Number.isFinite(n) && supported.includes(n);
+}
+
+function hasDuplicateValue(values: unknown[]): boolean {
+  const seen = new Set<number>();
+  for (const v of values) {
+    const n = typeof v === "number" ? v : parseNumber(String(v ?? ""));
+    if (!Number.isFinite(n)) continue;
+    if (seen.has(n)) return true;
+    seen.add(n);
+  }
+  return false;
+}
 
 function isNonEmptyArray(value: unknown): boolean {
   return Array.isArray(value) && value.length > 0;
@@ -152,11 +190,26 @@ function isValidFloorIndex(value: unknown): boolean {
   return result.valid && result.values.length > 0;
 }
 
-function hasAnyConcreteValid(
+function toRoundedNumber(value: unknown): number | undefined {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? Math.round(value) : undefined;
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    const n = Number(value.replace(/\./g, "").replace(",", "."));
+    return Number.isFinite(n) ? Math.round(n) : undefined;
+  }
+  return undefined;
+}
+
+// Mirrors validatePositionedConcrete (internal/modules/common.go) on the items
+// that survive cleanZeroItemsBeforeSubmit (volume > 0): every one needs an
+// fck, a valid (or empty) position, and a unique fck per position.
+function validateConcreteArray(
   concreteArr: unknown[],
   type: TModulesTypes,
 ): {
-  valid: boolean;
+  hasItems: boolean;
+  issues: string[];
   positionWarnings: Array<{
     index: number;
     invalidPosition: string;
@@ -166,8 +219,8 @@ function hasAnyConcreteValid(
   const validPositions = VALID_POSITIONS_BY_TYPE[type];
   const acceptedList = Array.from(validPositions);
   const seen = new Set<string>();
-  let hasAtLeastOneValid = false;
-  let hasDuplicateFckByPosition = false;
+  const issues = new Set<string>();
+  let hasItems = false;
   const positionWarnings: Array<{
     index: number;
     invalidPosition: string;
@@ -177,8 +230,6 @@ function hasAnyConcreteValid(
     if (!item || typeof item !== "object") return;
     const el = item as Record<string, unknown>;
     const pos = typeof el.position === "string" ? el.position : undefined;
-    const hasVolume = isNonZeroNumber(el.volume);
-    const hasFck = isNonZeroNumber(el.fck);
     const validPosOrEmpty = isValidPositionOrEmpty(pos, validPositions);
     if (!validPosOrEmpty && typeof pos === "string" && pos.trim() !== "") {
       positionWarnings.push({
@@ -187,22 +238,20 @@ function hasAnyConcreteValid(
         accepted: acceptedList,
       });
     }
-    if (!hasVolume || !hasFck) return;
-    if (!validPosOrEmpty) return;
-    const normalizedPos = normalizePosition(pos);
-    const fck = Number(el.fck);
-    const key = `${normalizedPos ?? "__no_pos__"}:${fck}`;
-    if (seen.has(key)) {
-      hasDuplicateFckByPosition = true;
+    if (!isNonZeroNumber(el.volume)) return;
+    hasItems = true;
+    if (!validPosOrEmpty) issues.add("concrete.position");
+    // Same normalization as the payload (toInt in cleanZeroItemsBeforeSubmit).
+    const fck = toRoundedNumber(el.fck);
+    if (fck === undefined || fck <= 0) {
+      issues.add("concrete.fck");
       return;
     }
+    const key = `${normalizePosition(pos) ?? "__no_pos__"}:${fck}`;
+    if (seen.has(key)) issues.add("concrete.duplicate");
     seen.add(key);
-    hasAtLeastOneValid = true;
   });
-  return {
-    valid: hasAtLeastOneValid && !hasDuplicateFckByPosition,
-    positionWarnings,
-  };
+  return { hasItems, issues: Array.from(issues), positionWarnings };
 }
 
 export interface SteelItemIssue {
@@ -260,12 +309,16 @@ function validateSteelArray(
     if (typeof el.mass !== "undefined" && !isNonZeroNumber(el.mass)) {
       issues.push({ index: i, reasonKey: "steel.mass" });
     }
-    if (mat === "other") {
-      const on = typeof el.other_name === "string" ? el.other_name.trim() : "";
-      if (!on) issues.push({ index: i, reasonKey: "steel.other_name" });
-      if (!isNonZeroNumber(el.other_resistance)) {
-        issues.push({ index: i, reasonKey: "steel.other_resistance" });
-      }
+    // Same rules as the backend's ValidateSteelMaterials: other_name depends on
+    // the material, other_resistance on the resistance.
+    const hasOtherName =
+      typeof el.other_name === "string" && el.other_name.trim() !== "";
+    const hasOtherResistance = isNonZeroNumber(el.other_resistance);
+    if (mat === "other" && !hasOtherName) {
+      issues.push({ index: i, reasonKey: "steel.other_name" });
+    }
+    if (res === "other" && !hasOtherResistance) {
+      issues.push({ index: i, reasonKey: "steel.other_resistance" });
     }
     const isItemValid =
       mat &&
@@ -274,10 +327,8 @@ function validateSteelArray(
       VALID_STEEL_RESISTANCES.has(res) &&
       isValidPositionOrEmpty(pos, validPositions) &&
       (typeof el.mass === "undefined" || isNonZeroNumber(el.mass)) &&
-      (mat !== "other" ||
-        (typeof el.other_name === "string" &&
-          el.other_name.trim() !== "" &&
-          isNonZeroNumber(el.other_resistance)));
+      (mat !== "other" || hasOtherName) &&
+      (res !== "other" || hasOtherResistance);
     if (isItemValid) hasValidItem = true;
   });
   const uniqueIssues: SteelItemIssue[] = [];
@@ -297,13 +348,16 @@ function validateSteelArray(
   };
 }
 
-function validateFormArray(
+// Form is optional, but the backend still validates every item it receives
+// (validatePositionedForm in internal/modules/common.go): a filled position
+// must be valid for the type, and a position (including "no position") can
+// appear only once. Items with area <= 0 are dropped by
+// cleanZeroItemsBeforeSubmit, so they are ignored here.
+function validateFormItems(
   formArr: unknown[],
   type: TModulesTypes,
 ): {
-  valid: boolean;
-  hasValidItem: boolean;
-  anyPositionMissingOrInvalid: boolean;
+  issues: string[];
   positionWarnings: Array<{
     index: number;
     invalidPosition: string;
@@ -313,9 +367,7 @@ function validateFormArray(
   const validPositions = VALID_POSITIONS_BY_TYPE[type];
   const acceptedList = Array.from(validPositions);
   const seenPositions = new Set<string>();
-  let hasDuplicatePosition = false;
-  let hasValidItem = false;
-  let anyPositionMissingOrInvalid = false;
+  const issues = new Set<string>();
   const positionWarnings: Array<{
     index: number;
     invalidPosition: string;
@@ -324,39 +376,23 @@ function validateFormArray(
   for (const [i, item] of formArr.entries()) {
     if (!item || typeof item !== "object") continue;
     const el = item as Record<string, unknown>;
+    if (!isNonZeroNumber(el.area)) continue;
     const rawPos = typeof el.position === "string" ? el.position.trim() : "";
     if (!isValidPositionOrEmpty(rawPos, validPositions)) {
-      anyPositionMissingOrInvalid = true;
-      if (rawPos !== "") {
-        positionWarnings.push({
-          index: i,
-          invalidPosition: rawPos,
-          accepted: acceptedList,
-        });
-      }
-      continue;
+      issues.add("form.position");
+      positionWarnings.push({
+        index: i,
+        invalidPosition: rawPos,
+        accepted: acceptedList,
+      });
     }
-    const normalizedPos = normalizePosition(rawPos);
-    if (normalizedPos && seenPositions.has(normalizedPos)) {
-      hasDuplicatePosition = true;
-      continue;
+    const key = normalizePosition(rawPos) ?? "__no_pos__";
+    if (seenPositions.has(key)) {
+      issues.add("form.duplicate_position");
     }
-    if (normalizedPos) seenPositions.add(normalizedPos);
-    if (typeof el.area !== "undefined" && !isNonZeroNumber(el.area)) {
-      continue;
-    }
-    hasValidItem = true;
+    seenPositions.add(key);
   }
-  return {
-    valid:
-      isNonEmptyArray(formArr) &&
-      hasValidItem &&
-      !hasDuplicatePosition &&
-      !anyPositionMissingOrInvalid,
-    hasValidItem,
-    anyPositionMissingOrInvalid,
-    positionWarnings,
-  };
+  return { issues: Array.from(issues), positionWarnings };
 }
 
 function hasMasonryValid(
@@ -376,26 +412,91 @@ function hasMasonryValid(
     return missing;
   }
   const m = masonry as Record<string, unknown>;
-  if (!isNonEmptyArray(m.blocks)) {
+  const pushMissing = (key: string) =>
     missing.push({
-      key: "masonry.blocks",
-      label: `${masonryLabel} > ${label("masonry.blocks")}`,
-      reason: reason("masonry.blocks"),
+      key,
+      label: `${masonryLabel} > ${label(key)}`,
+      reason: reason(key),
     });
+  // Itens com valor zero são descartados no envio (cleanZeroItemsBeforeSubmit)
+  // e o backend exige volume > 0 em graute e argamassa
+  // (internal/modules/structural_masonry.go). Concreto e aço da alvenaria
+  // são opcionais no backend e não entram aqui.
+  const items = (arr: unknown) =>
+    (Array.isArray(arr) ? arr : []).filter(
+      (x): x is Record<string, unknown> => !!x && typeof x === "object",
+    );
+  if (!isNonEmptyArray(m.blocks)) {
+    pushMissing("masonry.blocks");
+  } else if (!items(m.blocks).some((b) => isNonZeroNumber(b.quantity))) {
+    pushMissing("masonry.blocks.quantity");
   }
   if (!isNonEmptyArray(m.mortar)) {
-    missing.push({
-      key: "masonry.mortar",
-      label: `${masonryLabel} > ${label("masonry.mortar")}`,
-      reason: reason("masonry.mortar"),
-    });
+    pushMissing("masonry.mortar");
+  } else if (!items(m.mortar).some((mo) => isNonZeroNumber(mo.volume))) {
+    pushMissing("masonry.mortar.volume");
   }
   if (!isNonEmptyArray(m.grout)) {
-    missing.push({
-      key: "masonry.grout",
-      label: `${masonryLabel} > ${label("masonry.grout")}`,
-      reason: reason("masonry.grout"),
-    });
+    pushMissing("masonry.grout");
+  } else if (
+    !items(m.grout).some((g) =>
+      items(g.volumes).some((v) => isNonZeroNumber(v.volume)),
+    )
+  ) {
+    pushMissing("masonry.grout.volume");
+  }
+  // Only items that survive the submit cleanup (quantity/volume > 0) reach
+  // the backend, which rejects fbk/fak/fgk outside its tables.
+  if (
+    items(m.blocks).some(
+      (b) =>
+        isNonZeroNumber(b.quantity) &&
+        !isSupportedValue(b.fbk, SUPPORTED_BLOCK_FBK),
+    )
+  ) {
+    pushMissing("masonry.blocks.fbk");
+  }
+  if (
+    items(m.mortar).some(
+      (mo) =>
+        isNonZeroNumber(mo.volume) &&
+        !isSupportedValue(mo.fak, SUPPORTED_MORTAR_FAK),
+    )
+  ) {
+    pushMissing("masonry.mortar.fak");
+  }
+  if (
+    items(m.grout).some((g) =>
+      items(g.volumes).some(
+        (v) =>
+          isNonZeroNumber(v.volume) &&
+          !isSupportedValue(v.fgk, SUPPORTED_GROUT_FGK),
+      ),
+    )
+  ) {
+    pushMissing("masonry.grout.fgk");
+  }
+  // The backend also rejects a repeated fak across mortar items and a
+  // repeated fgk inside the same grout.
+  if (
+    hasDuplicateValue(
+      items(m.mortar)
+        .filter((mo) => isNonZeroNumber(mo.volume))
+        .map((mo) => mo.fak),
+    )
+  ) {
+    pushMissing("masonry.mortar.fak_duplicate");
+  }
+  if (
+    items(m.grout).some((g) =>
+      hasDuplicateValue(
+        items(g.volumes)
+          .filter((v) => isNonZeroNumber(v.volume))
+          .map((v) => v.fgk),
+      ),
+    )
+  ) {
+    pushMissing("masonry.grout.fgk_duplicate");
   }
   return missing;
 }
@@ -460,11 +561,10 @@ export function calculateModuleCompletion(
       }
       case "concrete": {
         const arr = d.concrete;
-        const concreteResult = hasAnyConcreteValid(
-          (arr as unknown[]) ?? [],
+        const concreteResult = validateConcreteArray(
+          Array.isArray(arr) ? arr : [],
           type,
         );
-        const concreteValid = isNonEmptyArray(arr) && concreteResult.valid;
         for (const w of concreteResult.positionWarnings) {
           warnings.push({
             field: "concrete",
@@ -473,11 +573,18 @@ export function calculateModuleCompletion(
             acceptedPositions: w.accepted,
           });
         }
-        if (!concreteValid) {
+        if (!concreteResult.hasItems) {
           missing.push({
             key: "concrete",
             label: label("concrete"),
             reason: reason("concrete"),
+          });
+        }
+        for (const reasonKey of concreteResult.issues) {
+          missing.push({
+            key: reasonKey,
+            label: `${label("concrete")} > ${label(reasonKey)}`,
+            reason: reason(reasonKey),
           });
         }
         break;
@@ -526,35 +633,6 @@ export function calculateModuleCompletion(
         }
         break;
       }
-      case "form": {
-        const arr = d.form;
-        const formResult = validateFormArray((arr as unknown[]) ?? [], type);
-        const hasArray = isNonEmptyArray(arr);
-        for (const w of formResult.positionWarnings) {
-          warnings.push({
-            field: "form",
-            index: w.index,
-            invalidPosition: w.invalidPosition,
-            acceptedPositions: w.accepted,
-          });
-        }
-        if (!hasArray || !formResult.valid) {
-          if (!hasArray) {
-            missing.push({
-              key: "form",
-              label: label("form"),
-              reason: reason("form"),
-            });
-          } else {
-            missing.push({
-              key: "form",
-              label: label("form"),
-              reason: reason("form"),
-            });
-          }
-        }
-        break;
-      }
       case "masonry": {
         const masonryMissing = hasMasonryValid(d.masonry, i18n);
         missing.push(...masonryMissing);
@@ -562,6 +640,52 @@ export function calculateModuleCompletion(
       }
       default:
         break;
+    }
+  }
+
+  // Concrete is optional in structural masonry, but the backend still runs
+  // validatePositionedConcrete when items exist.
+  if (
+    !requiredFields.includes("concrete") &&
+    STRUCTURE_TYPES.has(type) &&
+    Array.isArray(d.concrete)
+  ) {
+    const concreteResult = validateConcreteArray(d.concrete, type);
+    for (const w of concreteResult.positionWarnings) {
+      warnings.push({
+        field: "concrete",
+        index: w.index,
+        invalidPosition: w.invalidPosition,
+        acceptedPositions: w.accepted,
+      });
+    }
+    for (const reasonKey of concreteResult.issues) {
+      missing.push({
+        key: reasonKey,
+        label: `${label("concrete")} > ${label(reasonKey)}`,
+        reason: reason(reasonKey),
+      });
+    }
+  }
+
+  // Form is never in `required`; it is checked only when items exist. The
+  // backend runs validatePositionedForm for the structure types only.
+  if (STRUCTURE_TYPES.has(type) && Array.isArray(d.form)) {
+    const formResult = validateFormItems(d.form, type);
+    for (const w of formResult.positionWarnings) {
+      warnings.push({
+        field: "form",
+        index: w.index,
+        invalidPosition: w.invalidPosition,
+        acceptedPositions: w.accepted,
+      });
+    }
+    for (const reasonKey of formResult.issues) {
+      missing.push({
+        key: reasonKey,
+        label: `${label("form")} > ${label(reasonKey)}`,
+        reason: reason(reasonKey),
+      });
     }
   }
 

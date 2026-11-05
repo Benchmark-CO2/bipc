@@ -1,11 +1,13 @@
 import EmissionsChart from '@/components/charts/barChart';
 import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 import React, { useEffect, useRef, useState } from 'react';
 
 // Constantes fundamentais para o alinhamento matemático perfeito dos gráficos
 const CHART_MARGIN_LEFT = 130;
 const CHART_MARGIN_RIGHT = 30;
 const CARD_INDENT = 12; // O quanto os cards secundários são menores nas laterais
+const CARD_BORDER_LEFT = 6; // Borda verde à esquerda dos cards de projeto (border-l-[6px])
 
 export const EmissionsSection = ({ 
   data, 
@@ -27,6 +29,20 @@ export const EmissionsSection = ({
   useEffect(() => {
     setItems(data);
   }, [data]);
+
+  // Largura reservada pela barra de rolagem da lista (0 com barra sobreposta, ~15px com barra clássica).
+  // Linhas tracejadas, bolinhas A/B/C/D e card Total descontam a mesma largura para continuarem alinhados às barras.
+  const listRef = useRef<HTMLDivElement>(null);
+  const [scrollbarGutter, setScrollbarGutter] = useState(0);
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const update = () => setScrollbarGutter(list.offsetWidth - list.clientWidth);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, []);
 
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
@@ -66,15 +82,15 @@ export const EmissionsSection = ({
   const buildingItems = items.filter(item => item.id !== 'total');
 
   return (
-    <div className="flex flex-col w-full p-4 pt-8 bg-[#f4f5f7] ">
+    <div className="flex-1 min-h-0 flex flex-col w-full p-4 pt-8 bg-[#f4f5f7] max-sm:flex-none">
       
       {/* Contêiner de Layout Mestre */}
-      <div className="relative w-full flex flex-col">
+      <div className="relative w-full flex-1 min-h-0 flex flex-col">
 
         {/* 1. Linhas Globais Procel */}
         <div 
           className="absolute top-8 bottom-0 pointer-events-none z-0" 
-          style={{ left: CHART_MARGIN_LEFT, right: CHART_MARGIN_RIGHT }}
+          style={{ left: CHART_MARGIN_LEFT, right: CHART_MARGIN_RIGHT + scrollbarGutter }}
         >
           {procelIndicators.map((t) => (
             <div
@@ -87,8 +103,8 @@ export const EmissionsSection = ({
 
         {/* 2. Cabeçalho das Bolinhas A, B, C, D */}
         <div 
-          className="relative z-10 flex h-8 items-center mb-2"
-          style={{ marginLeft: CHART_MARGIN_LEFT, marginRight: CHART_MARGIN_RIGHT }}
+          className="relative z-10 flex h-8 items-center mb-2 shrink-0"
+          style={{ marginLeft: CHART_MARGIN_LEFT, marginRight: CHART_MARGIN_RIGHT + scrollbarGutter }}
         >
           {procelIndicators.map((zone) => (
             <div
@@ -107,19 +123,18 @@ export const EmissionsSection = ({
         </div>
 
         {/* 3. Lista de Gráficos */}
-        <div className="relative z-10 flex flex-col gap-2">
+        <div className="relative z-10 flex-1 min-h-0 flex flex-col gap-2">
           
           {/* Card TOTAL */}
           {totalItem && (
-            <div className="w-full">
+            <div className="w-full shrink-0" style={{ paddingRight: scrollbarGutter }}>
               <div 
                 className={`
-                  flex flex-col shadow-sm overflow-hidden
+                  flex flex-col shadow-[0_2px_4px_0_rgba(0,0,0,0.08),0_3px_10px_0_rgba(0,0,0,0.10)] rounded-r-[0.3125rem] overflow-hidden
                   border-b-[6px] border-b-[#297B76] border-gray-200
                 `}
-                style={{
-                  background: 'linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 56px, rgba(255,255,255,0.7) 56px, rgba(255,255,255,0.7) 100%)'
-                }}
+                // Degradê do Figma: opaco no título e no fim, transparente no meio (tracejados A/B/C/D aparecem atrás do gráfico)
+                style={{ background: 'linear-gradient(0deg, #FFF 0%, rgba(255, 255, 255, 0.60) 39.09%, #FFF 84.92%)' }}
               >
                 <div className="h-[56px] px-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -127,8 +142,10 @@ export const EmissionsSection = ({
                       value={totalItem.id}
                       checked={selected?.includes(totalItem.id) ?? totalItem.defaultChecked}
                       onCheckedChange={(checked) => onChange?.(totalItem.id, !!checked)}
+                      className="data-[state=checked]:bg-secondary data-[state=checked]:border-secondary dark:data-[state=checked]:bg-secondary"
                     />
-                    <span className="font-bold text-sm text-gray-900">{totalItem.title}</span>
+                    {/* Título do Total conforme Figma: Body, 1rem / 700, -0.01rem, cor 800 */}
+                    <span className="text-base font-bold tracking-[-0.01rem] text-[var(--800,#121F21)] [font-feature-settings:'calt'_off]">{totalItem.title}</span>
                   </div>
                 </div>
                 
@@ -144,7 +161,7 @@ export const EmissionsSection = ({
               </div>
             </div>
           )}
-          <div className='overflow-y-auto max-h-[40vh] 2xl:max-h-[55vh] 2xl:h-[60%] '>
+          <div ref={listRef} className='flex flex-col gap-2 overflow-y-auto [scrollbar-gutter:stable] flex-1 min-h-0 max-sm:flex-none max-sm:max-h-[40vh]'>
 
           {/* Cards das Edificações (Secundários e Menores) */}
           {buildingItems.map((section) => {
@@ -162,12 +179,9 @@ export const EmissionsSection = ({
                   onDragEnter={(e) => handleDragEnter(e, realIndex)}
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => e.preventDefault()}
-                  className="flex flex-col shadow-sm border-l-[6px] border-l-secondary"
-                  style={{
-                    background: isOpen 
-                      ? 'linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 56px, rgba(255,255,255,0.7) 56px, rgba(255,255,255,0.7) 100%)'
-                      : '#ffffff'
-                  }}
+                  className={cn("flex flex-col shadow-[0_2px_4px_0_rgba(0,0,0,0.08),0_3px_10px_0_rgba(0,0,0,0.10)] rounded-r-[0.3125rem] border-l-[6px]", isChecked ? "border-l-secondary" : "border-l-gray-300")}
+                  // Aberto: degradê do Figma (tracejados aparecem atrás do gráfico). Fechado: branco sólido.
+                  style={{ background: isOpen ? 'linear-gradient(0deg, #FFF 0%, rgba(255, 255, 255, 0.60) 39.09%, #FFF 84.92%)' : '#FFFFFF' }}
                 >
                   <div 
                     className="h-[56px] px-4 flex items-center justify-between cursor-pointer"
@@ -182,7 +196,7 @@ export const EmissionsSection = ({
                       </div>
                       
                       <div onClick={(e) => e.stopPropagation()}>
-                        <Checkbox value={section.id} checked={isChecked} onCheckedChange={(checked) => onChange?.(section.id, !!checked)} />
+                        <Checkbox value={section.id} checked={isChecked} onCheckedChange={(checked) => onChange?.(section.id, !!checked)} className="data-[state=checked]:bg-secondary data-[state=checked]:border-secondary dark:data-[state=checked]:bg-secondary" />
                       </div>
                       <span className="font-semibold text-sm text-gray-900">{section.title}</span>
                     </div>
@@ -205,7 +219,7 @@ export const EmissionsSection = ({
                         data={section.chartData} 
                         benchmarkMax={benchmarkMax} 
                         barHeight={4} 
-                        marginLeft={CHART_MARGIN_LEFT - CARD_INDENT} 
+                        marginLeft={CHART_MARGIN_LEFT - CARD_INDENT - CARD_BORDER_LEFT} 
                         marginRight={CHART_MARGIN_RIGHT - CARD_INDENT}
                       />
                     </div>

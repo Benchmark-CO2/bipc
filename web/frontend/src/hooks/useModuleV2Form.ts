@@ -16,6 +16,7 @@ import {
 } from "@/utils/modulePositions";
 import {
   calculateModuleCompletion,
+  SUPPORTED_MORTAR_FAK,
   type CompletionResult,
   type ModuleCompletionI18n,
 } from "@/utils/moduleCompletion";
@@ -332,7 +333,22 @@ export const useModuleV2Form = ({
       formArray.append(makeFormItem(position) as never);
       return;
     }
-    formArray.append(makeFormItem(position ?? positions[0]) as never);
+    if (position !== undefined) {
+      formArray.append(makeFormItem(position) as never);
+      return;
+    }
+    // The backend accepts one form item per position, so suggest the first
+    // position still free ("unspecified" = Geral when all are taken).
+    const current =
+      (form.getValues("data.form" as never) as unknown[] | undefined) ?? [];
+    const used = new Set(
+      current.map((it) => {
+        const p = (it as { position?: unknown } | null)?.position;
+        return typeof p === "string" && p.trim() !== "" ? p : "unspecified";
+      }),
+    );
+    const firstFree = positions.find((p) => !used.has(p)) ?? "unspecified";
+    formArray.append(makeFormItem(firstFree) as never);
   };
 
   const removeFormItem = (index: number) => {
@@ -353,8 +369,16 @@ export const useModuleV2Form = ({
   };
 
   const addMasonryMortar = () => {
+    // The backend rejects a repeated fak across mortar items, so start the
+    // new item with the first supported fak not used yet.
+    const current =
+      (form.getValues("data.masonry.mortar" as never) as unknown[] | undefined) ??
+      [];
+    const used = new Set(
+      current.map((m) => Number((m as { fak?: unknown } | null)?.fak)),
+    );
     masonryMortarArray.append({
-      fak: 4.5,
+      fak: SUPPORTED_MORTAR_FAK.find((f) => !used.has(f)) ?? 4.5,
       volume: "0" as unknown as number,
       customFak: false,
     } as never);

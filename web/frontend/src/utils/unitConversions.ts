@@ -130,6 +130,34 @@ export function mapFloorIndexToFloorIds(
   return towerFloors.filter((f) => set.has(f.index)).map((f) => f.id);
 }
 
+// Mapeia o floor_index do IFC para os pavimentos da unidade pela POSIÇÃO
+// (k-ésimo pavimento do IFC → k-ésimo pavimento da unidade, ambos em ordem
+// crescente). O índice do IFC começa no pavimento mais baixo, enquanto a
+// unidade usa índices negativos para subsolos; casar por valor desloca tudo
+// em um andar e descarta o último. Só vale quando as quantidades batem; senão
+// cai no mapeamento por valor.
+export function mapIfcFloorIndexToFloorIds(
+  floorIndex: number | number[] | undefined | null,
+  ifcFloorIndexes: number[],
+  towerFloors: TTowerFloorCategory[],
+): string[] {
+  if (floorIndex === undefined || floorIndex === null) return [];
+  if (!towerFloors || towerFloors.length === 0) return [];
+  const sortedTower = [...towerFloors].sort((a, b) => a.index - b.index);
+  if (ifcFloorIndexes.length !== sortedTower.length) {
+    return mapFloorIndexToFloorIds(floorIndex, towerFloors);
+  }
+  const positionByIfcIndex = new Map(ifcFloorIndexes.map((v, i) => [v, i]));
+  // Sem repetidos: o backend rejeita floor_ids duplicados.
+  const indexes = Array.from(
+    new Set(Array.isArray(floorIndex) ? floorIndex : [floorIndex]),
+  );
+  if (!indexes.every((v) => positionByIfcIndex.has(v))) {
+    return mapFloorIndexToFloorIds(floorIndex, towerFloors);
+  }
+  return indexes.map((v) => sortedTower[positionByIfcIndex.get(v)!].id);
+}
+
 // Converte IUnit para dados do formulário
 export const convertUnitToFormData = (unit: IUnit): UnitFormInput => {
   if (!unit.floors || unit.floors.length === 0) {
@@ -185,6 +213,9 @@ export type UnifiedFloor = {
   height: number;
   category: FloorSchema["category"];
   index: number;
+  // Mesma chave para as cópias geradas por `repetition` > 1 (grupo de
+  // repetição); ausente em pavimentos sem repetição.
+  groupKey?: string;
 };
 
 export interface FloorFallbackLabels {
@@ -272,10 +303,11 @@ export const convertTowerFloorsToUnified = (
         repetition > 1 ? getCategoryFromIndex(realIndex) : category;
       const name =
         baseName || fallbackNameForFloor(realCategory, realIndex, labels);
+      const groupKey = floor.id || `floor-${floor.index}`;
       result.push({
         id:
           repetition > 1
-            ? `${floor.id}-r${i}`
+            ? `${groupKey}-r${i}`
             : (floor as unknown as { id?: string })?.id ||
               `floor-${realIndex}-${i}`,
         name,
@@ -283,6 +315,7 @@ export const convertTowerFloorsToUnified = (
         height: floor.height,
         category: realCategory,
         index: realIndex,
+        groupKey: repetition > 1 ? groupKey : undefined,
       });
     }
   }
@@ -329,12 +362,19 @@ export const convertFloorFormInputToUnified = (
       const name =
         baseName || fallbackNameForFloor(realCategory, realIndex, labels);
       unifiedFloors.push({
-        id: floor.id || `floor-${floor.index}-${i}`,
+        // Cópias da repetição precisam de ids distintos (chave do React e
+        // seleção); o sufixo `-r<i>` é o mesmo de convertTowerFloorsToUnified.
+        id:
+          floor.id && repetition > 1
+            ? `${floor.id}-r${i}`
+            : floor.id || `floor-${floor.index}-${i}`,
         name,
         area,
         height,
         category: realCategory,
         index: realIndex,
+        groupKey:
+          repetition > 1 ? floor.id || `floor-${floor.index}` : undefined,
       });
     }
   });

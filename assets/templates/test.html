@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SSE Test</title>
+</head>
+<body>
+    <h1>Notificações</h1>
+    <div id="status">Conectando...</div>
+    <ul id="log"></ul>
+
+    <script>
+        const log = document.getElementById("log");
+        const status = document.getElementById("status");
+
+        // ajusta a URL e o token/cookie conforme sua auth
+        const evtSource = new EventSource("http://localhost:4000/v1/events?token=X7LWWRRNZ5LM3MAYUSAF4N4LHI");
+
+        evtSource.onopen = () => {
+            status.textContent = "Conectado ✅";
+        };
+
+        evtSource.onerror = (err) => {
+            status.textContent = "Erro na conexão ❌";
+            console.error("SSE error:", err);
+        };
+
+        // escuta um tipo de evento específico
+        evtSource.addEventListener("notification", (e) => {
+            const data = JSON.parse(e.data);
+            const li = document.createElement("li");
+            li.textContent = `[notification] ${data.message}`;
+            log.appendChild(li);
+        });
+
+        evtSource.addEventListener("new_comment", (e) => {
+            const data = JSON.parse(e.data);
+            const li = document.createElement("li");
+            li.textContent = `[new_comment] ${JSON.stringify(data)}`;
+            log.appendChild(li);
+        });
+
+        // fallback pra eventos sem "event:" nomeado
+        evtSource.onmessage = (e) => {
+            const li = document.createElement("li");
+            li.textContent = `[genérico] ${e.data}`;
+            log.appendChild(li);
+        };
+    </script>
+</body>
+</html>

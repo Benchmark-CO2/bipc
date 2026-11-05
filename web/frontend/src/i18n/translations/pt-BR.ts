@@ -518,12 +518,23 @@ export const ptBR = {
       floor_ids: "Pavimentos vinculados",
       unit_id: "Unidade vinculada",
       concrete: "Concreto (volume por FCK)",
+      "concrete.fck": "FCK do concreto",
+      "concrete.position": "Posição do concreto",
+      "concrete.duplicate": "FCK repetido na mesma posição",
       steel: "Aço (massa por tipo)",
       form: "Fôrma (área por posição)",
       masonry: "Alvenaria (blocos / argamassa / graute)",
       "masonry.blocks": "Blocos",
       "masonry.mortar": "Argamassa",
       "masonry.grout": "Graute",
+      "masonry.blocks.quantity": "Quantidade de blocos",
+      "masonry.mortar.volume": "Volume da argamassa",
+      "masonry.grout.volume": "Volume do graute",
+      "masonry.blocks.fbk": "Fbk do bloco",
+      "masonry.mortar.fak": "Fak da argamassa",
+      "masonry.grout.fgk": "Fgk do graute",
+      "masonry.mortar.fak_duplicate": "Fak repetido",
+      "masonry.grout.fgk_duplicate": "Fgk repetido",
       "steel.item_invalid": "Item inválido",
       "steel.material": "Tipo do aço",
       "steel.resistance": "Resistência do aço",
@@ -531,6 +542,8 @@ export const ptBR = {
       "steel.mass": "Massa do aço",
       "steel.other_name": "Nome do outro tipo de aço",
       "steel.other_resistance": "Resistência do outro tipo",
+      "form.position": "Posição da fôrma",
+      "form.duplicate_position": "Posição repetida",
       slab_type: "Tipo de laje",
       wall_thickness: "Espessura da parede",
       slab_thickness: "Espessura da laje",
@@ -554,6 +567,12 @@ export const ptBR = {
       unit_id: "Necessário para o cálculo: unidade vinculada",
       concrete:
         "Necessário para o cálculo: ao menos um item de concreto com volume e FCK válidos",
+      "concrete.fck":
+        "Necessário para o cálculo: FCK maior que zero em todo concreto com volume",
+      "concrete.position":
+        "Necessário para o cálculo: posição do concreto válida para esta tecnologia",
+      "concrete.duplicate":
+        "Necessário para o cálculo: cada FCK só uma vez por posição; some os volumes em um único item",
       steel:
         "Necessário para o cálculo: ao menos um item de aço com tipo, resistência, posição e massa válidos",
       form: "Necessário para o cálculo: ao menos um item de fôrma com posição e área válidas",
@@ -561,18 +580,38 @@ export const ptBR = {
       "masonry.blocks": "Necessário para o cálculo: ao menos um bloco",
       "masonry.mortar": "Necessário para o cálculo: ao menos uma argamassa",
       "masonry.grout": "Necessário para o cálculo: ao menos um graute",
+      "masonry.blocks.quantity":
+        "Necessário para o cálculo: quantidade de blocos maior que zero",
+      "masonry.mortar.volume":
+        "Necessário para o cálculo: volume da argamassa maior que zero",
+      "masonry.grout.volume":
+        "Necessário para o cálculo: volume do graute maior que zero",
+      "masonry.blocks.fbk":
+        "Necessário para o cálculo: fbk entre os valores da lista (4,5 a 26 MPa)",
+      "masonry.mortar.fak":
+        "Necessário para o cálculo: fak entre os valores da lista (4,5 a 24 MPa)",
+      "masonry.grout.fgk":
+        "Necessário para o cálculo: fgk entre os valores da lista (15 a 50 MPa)",
+      "masonry.mortar.fak_duplicate":
+        "Necessário para o cálculo: cada fak só uma vez na argamassa; some os volumes em um único item",
+      "masonry.grout.fgk_duplicate":
+        "Necessário para o cálculo: cada fgk só uma vez em um mesmo graute; some os volumes em um único item",
       "steel.item_invalid": "Necessário para o cálculo: itens de aço inválidos",
       "steel.material":
         "Necessário para o cálculo: tipo de aço válido (ex: CA50, estribo, cordoalha)",
       "steel.resistance":
         "Necessário para o cálculo: resistência do aço válida (CA50, CA60, CP190 ou outra)",
       "steel.position":
-        "Necessário para o cálculo: posição do aço (parede, laje, pilar, viga, escada)",
+        "Necessário para o cálculo: posição do aço válida para esta tecnologia",
       "steel.mass": "Necessário para o cálculo: massa do aço maior que zero",
       "steel.other_name":
         "Necessário para o cálculo: nome do outro tipo de aço",
       "steel.other_resistance":
         "Necessário para o cálculo: resistência do outro tipo maior que zero",
+      "form.position":
+        "Necessário para o cálculo: posição da fôrma válida para esta tecnologia",
+      "form.duplicate_position":
+        "Necessário para o cálculo: uma fôrma por posição (inclusive Geral); some as áreas em um único item",
     },
     form: {
       structureTypeLabel: "Tecnologia Construtiva",
@@ -1021,7 +1060,9 @@ export const ptBR = {
     placeholders: {
       chartType: "Tipo de gráfico",
     },
-    title: "Benchmark do Projeto",
+    title: "Benchmark",
+    visualization: "Visualização",
+    filters: "Filtros",
     selectAll: "Selecionar Todos",
     deselectAll: "Desmarcar Todos",
     selectedItems: "itens selecionados",
@@ -1050,6 +1091,7 @@ export const ptBR = {
     classification: {
       title: "Classificação",
       projectsCount: "N: {{count}} projetos",
+      projectsCountShort: "N: {{count}}",
     },
   },
   floor: {
@@ -1105,6 +1147,8 @@ export const ptBR = {
       floorArea: "Área do Pavimento (m²)",
       floorHeight: "Altura do Pavimento (m)",
       floorRepetition: "Repetição",
+      floorRepetitionTooltip:
+        "Número total de pavimentos iguais. 1 = só este pavimento; 2 = dois pavimentos no total, e não duas cópias além dele.",
       index: "Índice",
       floorsTab: "Pavimentos",
       floorNamePlaceholder: "Pavimento Tipo",
@@ -1134,6 +1178,7 @@ export const ptBR = {
     displaying: "Exibindo",
     selected: "Selecionados",
     of: "de",
+    selectedVisible: "Exibindo {{visible}} de {{total}} selecionados",
     numberOfProjects: "Nº de empreendimentos",
     enableZoom: "Habilitar zoom",
     disableZoom: "Desabilitar zoom",
@@ -1215,6 +1260,7 @@ export const ptBR = {
     privacyRequired:
       "Você deve aceitar a Política de Privacidade para se registrar",
     nameMinLength: "O nome deve ter pelo menos 3 caracteres",
+    unitNameTaken: "Já existe uma unidade com este nome no empreendimento",
     selectPhase: "Selecione uma fase do empreendimento",
     selectUnitType: "Selecione um tipo de unidade",
     invalidUnitType: "Tipo de unidade inválido",
@@ -1498,6 +1544,13 @@ export const ptBR = {
     stepModules: "Módulos",
     stepModulesDescription: "Vincular e criar módulos",
     stepSimulationModulesDescription: "Vincular à simulação e criar módulos",
+    discardConfirm: {
+      title: "Descartar a importação?",
+      description:
+        "As unidades e os módulos que ainda não foram criados, com tudo o que você preencheu neles, serão perdidos.",
+      keepEditing: "Continuar editando",
+      discard: "Descartar e fechar",
+    },
     import: {
       fromFile: "Do arquivo IFC",
     },
@@ -1561,6 +1614,8 @@ export const ptBR = {
       step2Error: "Falha ao criar módulos.",
       batchResult:
         "{created} módulo(s) criado(s). {errors} lote(s) falhou(ram).",
+      floorBindingUnresolved:
+        "Não foi possível vincular os pavimentos selecionados em {module}. Reabra o módulo, confira os pavimentos e tente novamente.",
       createdSuccess: "{count} módulo(s) criado(s) com sucesso.",
       ignoredParts: "{parts} — não serão criados.",
       partIgnored: "{count} selecionado(s) mas sem vinculo/inválidos",
@@ -1657,6 +1712,8 @@ export const ptBR = {
       "Importação iniciada. Você pode acompanhar o status na lista de arquivos importados.",
     calculateGeometriesLabel: "Com cálculo geométrico otimizado",
     calculateGeometriesHint: "pode levar mais tempo",
+    calculateGeometriesTooltip:
+      "Calcula a geometria dos elementos do modelo. Além do tempo de processamento, a opção muda os resultados: volumes, vãos médios e o agrupamento dos pavimentos podem ser diferentes de uma importação sem cálculo.",
     selectFileLabel: "Selecione seu arquivo",
     selectFilePlaceholder: "Selecione um arquivo importado",
     noImportedFiles: "Nenhum arquivo importado encontrado",

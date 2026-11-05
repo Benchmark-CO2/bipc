@@ -1,6 +1,6 @@
 import { IBenchmarkItem } from "@/actions/benchmarks/types";
 import { Card, CardContent } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider"; // <-- Novo Import Adicionado
+import { Slider } from "@/components/ui/slider";
 import { useSummary } from "@/context/summaryContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTranslation } from "@/i18n";
@@ -18,6 +18,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+
 // Utility: Debounce function
 const debounce = <T extends (...args: any[]) => any>(
   func: T,
@@ -59,17 +60,17 @@ const PROCEL_SCALE_CONFIG = {
 } as const;
 
 const PROCEL_CLASSES = [
-  { label: "A", color: "#00A650" },
-  { label: "B", color: "#8DC63F" },
-  { label: "C", color: "#FFF200" },
-  { label: "D", color: "#F26522" },
+  { label: "A", color: "#64C85A" },
+  { label: "B", color: "#9ECF31" },
+  { label: "C", color: "#EAE61F" },
+  { label: "D", color: "#F8A12B" },
 ] as const;
 
 const PROCEL_CLASSES_5 = [
-  { label: "A", color: "#00A650" },
-  { label: "B", color: "#8DC63F" },
-  { label: "C", color: "#FFF200" },
-  { label: "D", color: "#F26522" },
+  { label: "A", color: "#64C85A" },
+  { label: "B", color: "#9ECF31" },
+  { label: "C", color: "#EAE61F" },
+  { label: "D", color: "#F8A12B" },
 ] as const;
 
 type ProcelLabel = (typeof PROCEL_CLASSES_5)[number]["label"];
@@ -128,8 +129,8 @@ const useChartDimensions = (
   hasLessValue: boolean,
   hasMoreValue: boolean,
   containerWidth: number,
+  containerHeight: number,
   showProcelScale?: boolean,
-  containerHeight?: number,
 ) => {
   return useMemo(() => {
     const margin = {
@@ -140,19 +141,21 @@ const useChartDimensions = (
     };
 
     const width = () => {
+      if (containerWidth > 0) return containerWidth - margin.left - margin.right;
       if (props.width && overrideDimensions) return Math.max(0, props.width - margin.left - margin.right);
-      if (containerWidth > 0) return containerWidth - margin.left - margin.right - 30;
       return 0;
     };
 
     const height = () => {
-      if (props.height) return props.height;
-      if (containerHeight && containerHeight > 0) return containerHeight - 40; // <-- Adicionado: Usa a altura lida do ResizeObserver
-
+      // Usa a altura real medida do contêiner flexível
+      if (containerHeight > 0) return Math.max(100, containerHeight - margin.top - margin.bottom);
+      
+      // Fallbacks
+      if (props.height) return Math.max(100, props.height - margin.top - margin.bottom);
       if (isMobile && !isExpanded) return 250;
       if (isMobile && isExpanded) return 320;
       if (isExpanded) return window.innerHeight * 0.96;
-      return 350; // Fallback seguro antes do observer montar
+      return 250; 
     };
 
     return { width: width(), height: height(), margin };
@@ -195,7 +198,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   hideBars = false,
   showProcelScale = true,
   procelHighlight = null,
-  procelFadedOpacity = 0.25,
+  procelFadedOpacity = 0.2, // classes fora da classificação do projeto ficam a 20%
   showBaseline = false,
   showTop5Line = false,
   top5Field = "min",
@@ -229,17 +232,17 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const tooltipRef = useRef<HTMLDivElement>(null);
   const hoveredItemRef = useRef<string | null>(null);
   const visibleCountRef = useRef<number>(0);
+  const selectedVisibleCountRef = useRef<number>(0);
 
   const isMobile = useIsMobile();
 
   const [tooltipData, setTooltipData] = useState<{ min: number; max: number; label?: string; floors?: string | number; technology?: string[]; } | null>(null);
   const [visibleCount, setVisibleCount] = useState<number>(0);
+  const [selectedVisibleCount, setSelectedVisibleCount] = useState<number>(0); // selecionados dentro da área visível
   const [outAboveCount, setOutAboveCount] = useState<number>(0);
   const [outBelowCount, setOutBelowCount] = useState<number>(0);
   const outAboveRef = useRef<number>(0);
   const outBelowRef = useRef<number>(0);
-  const outSmallerRef = useRef<number>(0);
-  const outLargerRef = useRef<number>(0);
   const [hasZoomed, setHasZoomed] = useState(false);
   const [zoomEnabled, setZoomEnabled] = useState(true);
   const [isBrushActive, setIsBrushActive] = useState(false);
@@ -251,24 +254,22 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
 
+  // ResizeObserver substitui o código frágil de setTimeouts
   useLayoutEffect(() => {
-    if (containerRef.current) {
-      const width = containerRef.current.getBoundingClientRect().width;
-      if (width > 0) setContainerWidth(width);
-    }
+    const el = containerRef.current;
+    if (!el) return;
+    
+    const observer = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      if (width > 0 && height > 0) {
+        setContainerWidth(width);
+        setContainerHeight(height);
+      }
+    });
+    
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
-
-  useEffect(() => {
-    if (containerRef.current && containerWidth === 0) {
-      const timer = setTimeout(() => {
-        if (containerRef.current) {
-          setContainerWidth(containerRef.current.getBoundingClientRect().width);
-          setContainerHeight(containerRef.current.getBoundingClientRect().height);
-        }
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [containerWidth]);
 
   const selectedBarIds = useMemo(() => new Set((selectedBars || []).map((id) => String(id))), [selectedBars]);
   const selectedMinBarIds = useMemo(() => new Set((selectedMinBars ?? selectedBars ?? []).map((id) => String(id))), [selectedMinBars, selectedBars]);
@@ -279,7 +280,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   }, [data.length]);
 
   useEffect(() => {
-    setVisibleCount(selectedBarIds.size || data.length);
+    setVisibleCount(data.length);
   }, [data.length, selectedBarIds]);
 
   const updateBrushCount = useCallback((count: number) => setVisibleCount(count), []);
@@ -292,7 +293,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const hasMoreValue = totalProjects > 0 ? parseFloat((maxData[maxData.length - 1] || 0).toFixed(2)) > maxMaxDataValue : false;
 
   const { width: _width, height: _height, margin } = useChartDimensions(
-    props, overrideDimensions, isMobile, isExpanded, hasLessValue, hasMoreValue, containerWidth, showProcelScale, containerHeight
+    props, overrideDimensions, isMobile, isExpanded, hasLessValue, hasMoreValue, containerWidth, containerHeight, showProcelScale
   );
 
   const maxValue = useMemo(() => (data?.map((d) => d.max).reduce((a, b) => Math.max(a, b), 0) || 170) * 1.1, [data]);
@@ -301,7 +302,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const yScale = useMemo(() => d3.scaleLinear().domain([0, 1.01]).range([_height, 0]), [_height]);
   const getTooltipPosition = useTooltipPosition();
 
-  // Estados dos sliders
   const [sliderX, setSliderX] = useState<[number, number]>([0, maxValue * 1.15]);
   const [sliderY, setSliderY] = useState<[number, number]>([0, 1]);
 
@@ -363,9 +363,13 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     }
 
     const dpr = window.devicePixelRatio || 1;
+    // Pega as medidas exatas do canvas via classe CSS
     const rect = canvas.getBoundingClientRect();
 
-    canvas.width = rect.width * dpr; canvas.height = rect.height * dpr; ctx.scale(dpr, dpr);
+    canvas.width = rect.width * dpr; 
+    canvas.height = rect.height * dpr; 
+    ctx.scale(dpr, dpr);
+    
     ctx.fillStyle = document.documentElement.classList.contains("dark") ? "#18181b" : "#ffffff";
     ctx.fillRect(0, 0, rect.width, rect.height);
 
@@ -409,13 +413,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
       p5LineX = lineX; p5LineInView = lineX >= 0 && lineX <= _width;
     }
 
-    let midPredict: ((yVal: number) => number) | null = null;
-    if (showMidCurve && data.length >= 3) {
-      const raw: [number, number][] = [...data].sort((a, b) => a.y - b.y).map((d) => [(d.min + d.max) / 2, d.y]);
-      const result = regressionPoly().x((d: [number, number]) => d[1]).y((d: [number, number]) => d[0]).order(Math.min(4, raw.length - 1))(raw);
-      midPredict = (yVal: number) => Math.max(0, result.predict(yVal));
-    }
-
     const hasActiveFilter = selectedMinBarIds.size > 0 || selectedMaxBarIds.size > 0;
 
     data.forEach((d) => {
@@ -436,7 +433,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           ctx.globalAlpha = 1;
         } else {
           const useGray = (hideBars && hasActiveFilter) || emptyResults;
-          ctx.globalAlpha = hasActiveFilter ? 0.4 : 1;
+          ctx.globalAlpha = hasActiveFilter ? 0.2 : 1; // não selecionados bem transparentes; os selecionados ficam com 1
 
           if (!isMinSelected) {
             ctx.beginPath(); ctx.arc(x1, y, radius, 0, Math.PI * 2); ctx.fillStyle = useGray ? DEFAULT_COLORS.GRAY_START : DEFAULT_COLORS.START; ctx.fill();
@@ -475,8 +472,11 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           ctx.lineWidth = 1;
           ctx.stroke();
         } else {
+          // Valor V (mesma fórmula do marcador V): define também a troca de cor azul/vermelho da barra
+          const midValue = c5Value !== null && r5Value !== null ? Math.max((c5Value - d.min) + (r5Value - d.max) / 2, (d.min + d.max) / 2) : (d.min + d.max) / 2;
+
           if (!hideBars && isMinSelected && isMaxSelected) {
-            const xMid = newXScale(midPredict ? midPredict(d.y) : (d.min + d.max) / 2);
+            const xMid = Math.min(x2, Math.max(x1, newXScale(midValue))); // troca de cor dentro da barra
             const rr = isExpanded ? barHeight / 2 : 2;
 
             ctx.fillStyle = DEFAULT_COLORS.START; ctx.beginPath(); (ctx as any).roundRect(x1, barY, Math.max(1, xMid - x1), barHeight, { upperLeft: rr, lowerLeft: rr, upperRight: 0, lowerRight: 0 }); ctx.fill();
@@ -487,7 +487,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
           if (isMaxSelected) { ctx.beginPath(); ctx.arc(x2, y, radius, 0, Math.PI * 2); ctx.fillStyle = DEFAULT_COLORS.END; ctx.fill(); }
 
           if (isMinSelected && isMaxSelected) {
-            let midValue = c5Value !== null && r5Value !== null ? Math.max((c5Value - d.min) + (r5Value - d.max) / 2, (d.min + d.max) / 2) : (d.min + d.max) / 2;
             selectedAnnotations.push({ x1, x2, xMid: newXScale(midValue), y, barHeight });
           }
         }
@@ -554,17 +553,18 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         ctx.fillStyle = DEFAULT_COLORS.END; ctx.beginPath(); ctx.arc(x2, labelY, 6, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#ffffff"; ctx.fillText("R", x2, labelY);
 
         if (p5LineX !== null && Math.abs(p5LineX - x1) > 6) {
-          const arrowLeft = Math.min(x1, p5LineX); const arrowRight = Math.max(x1, p5LineX);
+          // P fica sobre a linha de 5% (p5LineX); a seta sai do início da barra (x1) e aponta para ele
+          const dir = Math.sign(p5LineX - x1); const tipX = p5LineX - dir * 6; // ponta encosta na borda do círculo (raio 6)
           ctx.strokeStyle = "#7B2D8E"; ctx.fillStyle = "#7B2D8E"; ctx.lineWidth = 1;
-          ctx.beginPath(); ctx.moveTo(arrowLeft, y); ctx.lineTo(arrowRight, y); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(arrowLeft, y); ctx.lineTo(arrowLeft + 4, y - 2); ctx.lineTo(arrowLeft + 4, y + 2); ctx.fill();
-          ctx.beginPath(); ctx.moveTo(arrowRight, y); ctx.lineTo(arrowRight - 4, y - 2); ctx.lineTo(arrowRight - 4, y + 2); ctx.fill();
-          ctx.beginPath(); ctx.arc((arrowLeft + arrowRight) / 2, y, 6, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#ffffff"; ctx.fillText("P", (arrowLeft + arrowRight) / 2, y);
+          ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(tipX, y); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(tipX, y); ctx.lineTo(tipX - dir * 4, y - 2); ctx.lineTo(tipX - dir * 4, y + 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(p5LineX, y, 6, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#ffffff"; ctx.fillText("P", p5LineX, y);
         }
         ctx.restore();
       });
     }
 
+    // DESENHO DOS EIXOS E TEXTOS INFERIORES
     ctx.restore(); ctx.save(); ctx.translate(margin.left, margin.top);
 
     ctx.strokeStyle = DEFAULT_COLORS.TEXT; ctx.lineWidth = 1;
@@ -621,37 +621,44 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         let isHighlighted = hasSelection ? activeProcelLabels.has(cls.label) : (procelHighlight == null || cls.label === procelHighlight);
         ctx.globalAlpha = isHighlighted ? 1 : procelFadedOpacity;
         ctx.fillStyle = cls.color; ctx.fillRect(_width, bandTop, PROCEL_SCALE_CONFIG.WIDTH, Math.ceil(bandBottom - bandTop));
-        ctx.globalAlpha = isHighlighted ? 1 : Math.max(0.3, procelFadedOpacity);
-        ctx.fillStyle = "#111827"; ctx.font = "bold 10px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        // Letra branca, em negrito e 10% maior; acompanha a opacidade da faixa
+        ctx.fillStyle = "#FFFFFF"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(cls.label, _width + PROCEL_SCALE_CONFIG.WIDTH / 2, (bandTop + bandBottom) / 2);
       });
       ctx.restore();
     }
 
-
     let _countInView = 0; let _countAbove = 0; let _countBelow = 0;
     const hasSelection = selectedMinBarIds.size > 0 || selectedMaxBarIds.size > 0;
     const _countSource = hasSelection ? data.filter((d) => selectedMinBarIds.has(String(d.minId ?? d.id)) && selectedMaxBarIds.has(String(d.maxId ?? d.id))) : data;
 
-    // Calcula os limites reais de Y no zoom atual
     const currentYTop = newYScale.invert(0);
     const currentYBottom = newYScale.invert(_height);
 
     for (const d of _countSource) {
       if (d.y > currentYTop) { _countAbove++; continue; }
       if (d.y < currentYBottom) { _countBelow++; continue; }
-
-      const px1 = newXScale(d.min); const px2 = newXScale(d.max);
-      if (px2 < 0 || px1 > _width) continue; // Fora da tela no Eixo X
-
-      _countInView++;
     }
 
+    // "Exibindo X de N": todas as amostras na área visível; "Exibindo Y de Z selecionados": só os marcados
+    // Selecionados contados por id único (o mesmo id pode aparecer em mais de um ponto, como mínimo ou máximo)
+    const selectedIdsInView = new Set<string>();
+    for (const d of data) {
+      if (d.y > currentYTop || d.y < currentYBottom) continue;
+      const px1 = newXScale(d.min); const px2 = newXScale(d.max);
+      if (px2 < 0 || px1 > _width) continue;
+      _countInView++;
+      const minId = String(d.minId ?? d.id); const maxId = String(d.maxId ?? d.id);
+      if (selectedMinBarIds.has(minId)) selectedIdsInView.add(minId);
+      if (selectedMaxBarIds.has(maxId)) selectedIdsInView.add(maxId);
+    }
+    const _selectedInView = selectedIdsInView.size;
+
     if (visibleCountRef.current !== _countInView) { visibleCountRef.current = _countInView; updateBrushCount(_countInView); }
+    if (selectedVisibleCountRef.current !== _selectedInView) { selectedVisibleCountRef.current = _selectedInView; setSelectedVisibleCount(_selectedInView); }
     if (outAboveRef.current !== _countAbove) { outAboveRef.current = _countAbove; setOutAboveCount(_countAbove); }
     if (outBelowRef.current !== _countBelow) { outBelowRef.current = _countBelow; setOutBelowCount(_countBelow); }
 
-    // Sync Slider States silently via limits to prevent infinite rendering loops
     const currentVxMin = newXScale.invert(0);
     const currentVxMax = newXScale.invert(_width);
     const currentVyMin = newYScale.invert(_height);
@@ -729,12 +736,12 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         const iY = d3.interpolateNumber(start.y, 0);
         return (t) => {
           transformRef.current = { kx: iKx(t), ky: iKy(t), x: iX(t), y: iY(t) };
-          if (t === 1) { updateBrushCount(selectedBarIds.size || data.length); setHasZoomed(false); }
+          if (t === 1) { updateBrushCount(data.length); setHasZoomed(false); }
           if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
           animationFrameRef.current = requestAnimationFrame(drawChart);
         };
       });
-  }, [data.length, drawChart, selectedBarIds.size, updateBrushCount]);
+  }, [data.length, drawChart, updateBrushCount]);
 
   useEffect(() => {
     if (!brushRef.current || _width <= 0 || _height <= 0) return;
@@ -786,30 +793,7 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     d3.select(canvas).call(drag as any);
 
     const handleWheel = (e: WheelEvent) => {
-      return;
-      if (!zoomEnabled || isBrushActive) return;
-      e.preventDefault(); e.stopPropagation();
-
-      const zoomFactor = Math.exp(-e.deltaY / (e.shiftKey || e.ctrlKey ? 250 : 700));
-      const rect = canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left - margin.left;
-      const my = e.clientY - rect.top - margin.top;
-      const tr = transformRef.current;
-      let { kx, ky, x: tx, y: ty } = tr;
-
-      if (e.ctrlKey && !e.shiftKey) ky = Math.max(1, Math.min(10, ky * zoomFactor));
-      else if (e.shiftKey && !e.ctrlKey) kx = Math.max(1, Math.min(10, kx * zoomFactor));
-      else { kx = Math.max(1, Math.min(10, kx * zoomFactor)); ky = Math.max(1, Math.min(10, ky * zoomFactor)); }
-
-      tx = Math.min(0, Math.max(mx - (mx - tx) * (kx / tr.kx), _width * (1 - 1.1 * kx)));
-      ty = Math.min(0, Math.max(my - (my - ty) * (ky / tr.ky), _height * (1 - ky)));
-      transformRef.current = { kx, ky, x: tx, y: ty };
-
-      const isZoomed = kx !== 1 || ky !== 1 || tx !== 0 || ty !== 0;
-      setHasZoomed(prev => prev === isZoomed ? prev : isZoomed);
-
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = requestAnimationFrame(drawChart);
+      return; 
     };
 
     canvas.addEventListener("wheel", handleWheel, { passive: false });
@@ -836,7 +820,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
     animationFrameRef.current = requestAnimationFrame(drawChart);
   }, [selectedBars, selectedMinBars, selectedMaxBars, drawChart]);
 
-  // Handlers diretos pros Sliders atualizarem o D3 Zoom!
   const handleXSliderChange = useCallback((val: [number, number]) => {
     setSliderX(val);
     const pxMin = xScale(val[0]);
@@ -853,7 +836,6 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
 
   const handleYSliderChange = useCallback((val: [number, number]) => {
     setSliderY(val);
-    // Y é invertido!
     const pxMax = yScale(val[0]);
     const pxMin = yScale(val[1]);
     if (pxMax - pxMin === 0) return;
@@ -870,16 +852,20 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
   const labelY = yAxisLabelProp ?? t.benchmark.chartTypes.cumulativeFraction.yAxisLabel;
   const displayedCount = hasZoomed ? visibleCount : data.length;
   const totalCount = Math.max(totalProjects || 0, initialTotalRef.current || 0, data.length);
-  const selectedCount = new Set([...selectedMinBarIds, ...selectedMaxBarIds]).size;
+  // Itens marcados no painel esquerdo, contados uma vez (mínimo e máximo do mesmo item não duplicam)
+  const selectedCount = new Set(data.flatMap((d) => [String(d.minId ?? d.id), String(d.maxId ?? d.id)]).filter((id) => selectedMinBarIds.has(id) || selectedMaxBarIds.has(id))).size;
 
   return (
-    <Card className={cn("shadow-none w-full flex-1 p-1 m-0! border-transparent bg-transparent h-full")}>
-      <CardContent className="m-0! flex flex-col flex-1 h-full">
+    <Card className={cn("shadow-none w-full flex-1 p-0 m-0! border-transparent bg-transparent h-full flex flex-col min-h-0 overflow-hidden")}>
+      <CardContent className="p-0! m-0! flex flex-col flex-1 h-full min-h-0 gap-1">
+        
         {/* === LINHA SUPERIOR: SLIDER Y E CANVAS === */}
-        <div className="flex flex-row w-full relative flex-1">
-
-          {/* Coluna 1: Slider do Eixo Y */}
-          <div className="w-10 flex-shrink-0 flex items-center justify-center pt-[14px] pb-[25px]">
+        <div className="flex flex-row w-full relative flex-1 min-h-0">
+          
+          <div 
+            className="w-10 flex-shrink-0 flex items-center justify-center"
+            style={{ paddingTop: margin.top, paddingBottom: margin.bottom }}
+          >
             <Slider
               orientation="vertical"
               min={0}
@@ -891,112 +877,62 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             />
           </div>
 
-          {/* Coluna 2: Container do Canvas */}
           <div
             ref={containerRef}
-            className="overflow-hidden relative w-full"
-            style={{ minHeight: (props.height ?? 350) * 0.6 }}
+            className="overflow-hidden relative w-full h-full flex-1 min-h-0"
           >
             <span className="absolute text-xs w-auto text-center text-foreground/70 block -rotate-90 left-0 -translate-x-full top-1/2 m-0 p-0 z-10">
               {labelY}
             </span>
 
-            {/* Indicadores Topo-Direita (Pontos Acima e Máximos) */}
-            <div className="absolute top-4 left-[calc(40px+0.5rem)] flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
-              <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco acima">
-                {outAboveCount} <span className="text-[10px]"><Triangle className='w-4 h-4 fill-gray-500' /></span>
-              </span>
-              {
-                showIndicators && (
-                  <>
-                    <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Máximo do conjunto Azul">
-                      {Math.round(maxLessDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-4 h-4 fill-[#5B9BD5]' /></span>
-                    </span>
-                    <span className="text-[#E0756C] flex items-center gap-0.5" title="Máximo do conjunto Vermelho">
-                      {Math.round(maxMaxDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-4 h-4 fill-[#E0756C]' /></span>
-                    </span>
-                  </>
-                )
-              }
-            </div>
+            {/* Indicadores de dados fora do intervalo: só com zoom/sliders aplicados */}
+            {hasZoomed && (
+              <>
+              <div className="absolute top-4 left-[calc(40px+0.5rem)] flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
+                <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco acima">
+                  {outAboveCount} <span className="text-[10px]"><Triangle className='w-3 h-3 fill-gray-500' strokeWidth={0} /></span>
+                </span>
+                {
+                  showIndicators && (
+                    <>
+                      <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Máximo do conjunto Azul">
+                        {Math.round(maxLessDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-3 h-3 fill-[#5B9BD5]' strokeWidth={0} /></span>
+                      </span>
+                      <span className="text-[#E0756C] flex items-center gap-0.5" title="Máximo do conjunto Vermelho">
+                        {Math.round(maxMaxDataValue)} <span className="text-[10px] "><Triangle className='rotate-90 w-3 h-3 fill-[#E0756C]' strokeWidth={0} /></span>
+                      </span>
+                    </>
+                  )
+                }
+              </div>
 
-            {/* Indicadores Base-Esquerda (Pontos Abaixo e Mínimos) */}
-            <div className="absolute bottom-10 right-20 flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
-              <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco abaixo">
-                {outBelowCount} <span className="text-[10px]"><Triangle className='rotate-180 w-4 h-4 fill-gray-500' /></span>
-              </span>
-              {
-                showIndicators && (
-                  <>
-                    <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Mínimo do conjunto Azul">
-                      <span className="text-[10px]"><Triangle className='rotate-270 w-4 h-4 fill-[#5B9BD5]' /></span> {Math.round(minLessDataValue)}
-                    </span>
-                    <span className="text-[#E0756C] flex items-center gap-0.5" title="Mínimo do conjunto Vermelho">
-                      <span className="text-[10px]"><Triangle className='rotate-270 w-4 h-4 fill-[#E0756C]' /></span> {Math.round(minMaxDataValue)}
-                    </span>
-                  </>
-                )
-              }
-            </div>
+              <div className="absolute bottom-10 right-20 flex items-center gap-3 text-xs font-bold z-30 bg-white/60 dark:bg-zinc-900/60 px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
+                <span className="text-gray-500 flex items-center gap-0.5" title="Pontos fora do foco abaixo">
+                  {outBelowCount} <span className="text-[10px]"><Triangle className='rotate-180 w-3 h-3 fill-gray-500' strokeWidth={0} /></span>
+                </span>
+                {
+                  showIndicators && (
+                    <>
+                      <span className="text-[#5B9BD5] flex items-center gap-0.5" title="Mínimo do conjunto Azul">
+                        <span className="text-[10px]"><Triangle className='rotate-270 w-3 h-3 fill-[#5B9BD5]' strokeWidth={0} /></span> {Math.round(minLessDataValue)}
+                      </span>
+                      <span className="text-[#E0756C] flex items-center gap-0.5" title="Mínimo do conjunto Vermelho">
+                        <span className="text-[10px]"><Triangle className='rotate-270 w-3 h-3 fill-[#E0756C]' strokeWidth={0} /></span> {Math.round(minMaxDataValue)}
+                      </span>
+                    </>
+                  )
+                }
+              </div>
+              </>
+            )}
 
-            <div className="absolute top-2 left-2 z-30 flex gap-2">
-              {/* <button
-                type="button"
-                onClick={() => {
-                  setZoomEnabled((prev) => {
-                    if (!prev) setIsBrushActive(false);
-                    return !prev;
-                  });
-                }}
-                className={cn(
-                  "p-1.5 rounded-md border text-xs flex items-center gap-1 transition-colors",
-                  zoomEnabled ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90" : "bg-background text-muted-foreground border-border hover:bg-muted",
-                )}
-              >
-                {zoomEnabled ? <Search className="size-3.5" /> : <SearchX className="size-3.5" />}
-                <span className="max-sm:hidden">Zoom</span>
-              </button> */}
-
-              {/* <button
-                type="button"
-                onClick={() => {
-                  setIsBrushActive((prev) => {
-                    if (!prev) setZoomEnabled(false);
-                    return !prev;
-                  });
-                }}
-                className={cn(
-                  "p-1.5 rounded-md border text-xs flex items-center gap-1 transition-colors",
-                  isBrushActive ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90" : "bg-background text-muted-foreground border-border hover:bg-muted",
-                )}
-              >
-                <BoxSelect className="size-3.5" />
-                <span className="max-sm:hidden">Selecionar</span>
-              </button> */}
-            </div>
-
-            {/* <svg
-              className="absolute z-20"
-              width={_width}
-              height={_height}
-              viewBox={`0 0 ${_width} ${_height}`}
-              style={{
-                left: margin.left,
-                top: (margin.top * 4) + 3,
-                visibility: isBrushActive ? "visible" : "hidden",
-                pointerEvents: isBrushActive ? "auto" : "none"
-              }}
-            >
-              <g ref={brushRef} />
-            </svg> */}
-
+            {/* O SEGREDO DO CANVAS REVELADO: Posicionamento absoluto resolvendo qualquer vazamento */}
             <canvas
               ref={canvasRef}
               className={cn(
-                "bg-white dark:bg-zinc-900 w-full flex-1",
+                "absolute inset-0 w-full h-full bg-white dark:bg-zinc-900",
                 zoomEnabled ? "cursor-grab active:cursor-grabbing" : (isBrushActive ? "cursor-crosshair" : "cursor-default"),
               )}
-              style={{ width: "100%", height: `${_height + margin.top + margin.bottom - 2}px` }}
             />
 
             <div
@@ -1029,9 +965,8 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
         </div>
 
         {/* === LINHA INFERIOR: BOTÃO RESET E SLIDER X === */}
-        <div className="flex flex-row items-start w-full -mt-2">
+        <div className="flex flex-row items-start w-full shrink-0 pb-2 relative z-10">
 
-          {/* Botão de Reset na Intersecção dos Eixos */}
           <div className="w-10 flex-shrink-0 flex items-center justify-center pt-2">
             <button
               type="button"
@@ -1047,8 +982,10 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             </button>
           </div>
 
-          {/* Slider do Eixo X e Label */}
-          <div className="flex-1 flex flex-col mx-[45px] max-sm:px-[35px] mt-10 relative">
+          <div 
+            className="flex-1 flex flex-col relative pt-2"
+            style={{ marginLeft: margin.left, marginRight: margin.right }}
+          >
             <Slider
               orientation="horizontal"
               min={0}
@@ -1061,12 +998,12 @@ const D3RangeChart: React.FC<D3RangeChartProps> = ({
             <div className="flex justify-between items-center mt-3">
               <div className="flex flex-col gap-0.5 opacity-60">
                 <span className="text-xs">{t.d3chart.displaying}: {displayedCount} {t.d3chart.of} {totalCount}</span>
-                {selectedCount > 0 && (<span className="text-xs">{t.d3chart.selected}: {selectedCount} {t.d3chart.of} {data.length}</span>)}
+                {selectedCount > 0 && (<span className="text-xs">{t.d3chart.selectedVisible.replace('{{visible}}', String(selectedVisibleCount)).replace('{{total}}', String(selectedCount))}</span>)}
               </div>
               <span className="flex-1 text-xs text-center w-full text-foreground/70 font-medium">
                 {labelX}
               </span>
-              <div className="w-20" /> {/* Espaçador para manter o título X centralizado */}
+              <div className="w-20" /> 
             </div>
           </div>
         </div>

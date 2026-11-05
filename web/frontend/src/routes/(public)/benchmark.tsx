@@ -295,7 +295,7 @@ function RouteComponent() {
                   </div>
                 </div>
               )}
-              {selectedChart !== "map" && (
+              {selectedChart !== "map" && type !== 'material' && (
                 <div className="flex flex-col gap-1 mt-4">
                   <strong className="text-xs text-gray-shade-500">
                     {t.benchmark.legend}
@@ -311,9 +311,12 @@ function RouteComponent() {
                 </div>
               )}
             </div>
-            <div className="w-full">
+            <div 
+              className="w-full relative flex flex-col" 
+              style={{ minHeight: 400, height: chartMaxHeight }}
+            >
               {isBaseLoading ? (
-                <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
+                <div className="flex items-center justify-center h-full text-gray-400 text-sm">
                   {t.benchmark.loadingData}
                 </div>
               ) : selectedChart === "trend" ? (
@@ -330,14 +333,13 @@ function RouteComponent() {
                   totalCount={activeMapResult.totalCount}
                   noStateCount={activeMapResult.noStateCount}
                   unit={type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
-                  className="w-full"
-                  maxHeight={chartMaxHeight}
+                  className="w-full h-full"
+                  maxHeight={chartMaxHeight -80}
                   allowZoom
                   onStatsChange={setMapStats}
                 />
               ) : (
                 <D3RangeChart
-                  height={Math.round(window.innerHeight * 0.6)}
                   data={chartData}
                   selectedBars={selectedFilteredIds}
                   selectedMinBars={selectedFilteredMinIds}

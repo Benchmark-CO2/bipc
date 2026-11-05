@@ -560,20 +560,30 @@ function RouteComponent() {
       },
     });
 
+  // selectedOptions guarda cópias do momento da seleção; o resumo precisa da
+  // versão atual de cada opção (consumo recalculado após criar/editar módulos).
+  const liveSelectedOptions = useMemo(() => {
+    const opts: TOption[] | undefined = optionsData?.data?.options;
+    if (!opts) return selectedOptions;
+    return selectedOptions
+      .map((sel) => opts.find((opt) => opt.id === sel.id))
+      .filter((opt): opt is TOption => !!opt);
+  }, [selectedOptions, optionsData]);
+
   const technologiesSummaryPayload = useMemo(() => {
     if (!benchmarkData?.data || !unitData?.unit) return null;
     return {
       component: (
         <TechnologiesSummary
-          projects={selectedOptions as any}
+          projects={liveSelectedOptions as any}
           data={benchmarkData?.data}
-          someSelected={selectedOptions.length > 0}
+          someSelected={liveSelectedOptions.length > 0}
         />
       ),
       title: "",
       hide: false,
     };
-  }, [benchmarkData, unitData, selectedOptions]);
+  }, [benchmarkData, unitData, liveSelectedOptions]);
 
   useEffect(() => {
     if (!technologiesSummaryPayload) return;

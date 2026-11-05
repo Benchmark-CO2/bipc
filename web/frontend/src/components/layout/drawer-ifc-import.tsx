@@ -1087,6 +1087,20 @@ export default function DrawerIFCImport({
                           ({t.drawerIFC.calculateGeometriesHint})
                         </span>
                       </label>
+                      <SimpleTooltip
+                        content={t.drawerIFC.calculateGeometriesTooltip}
+                        className="max-w-72"
+                      >
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          tabIndex={-1}
+                          className="h-6 w-6 -mt-0.5 text-muted-foreground hover:text-foreground"
+                        >
+                          <Info className="h-3.5 w-3.5" />
+                        </Button>
+                      </SimpleTooltip>
                     </div>
                   )}
 

@@ -1,18 +1,20 @@
 package assets
 
-import _ "embed"
+import (
+	"embed"
+)
 
-//go:embed images/logo.png
-var Logo []byte
+//go:embed fonts/RobotoFlex-VariableFont.ttf
+var RobotoFlex []byte
 
-//go:embed fonts/Inter-Regular.ttf
-var InterRegular []byte
+//go:embed pdfs/1A_resized.pdf
+var PDF1A []byte
 
-//go:embed fonts/Inter-Bold.ttf
-var InterBold []byte
+//go:embed svgs/logo_color_full.svg
+var LogoColorFull string
 
-//go:embed fonts/Inter-Italic.ttf
-var InterItalic []byte
+//go:embed svgs/qrcode.svg
+var QRCode string
 
-//go:embed fonts/Inter-BoldItalic.ttf
-var InterBoldItalic []byte
+//go:embed "templates"
+var TemplateFS embed.FS

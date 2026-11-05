@@ -13,13 +13,13 @@ export const useChartType = (type: "co2" | "energy" | "material") => {
   };
 
   const ChartSelector = (
-    <div className='w-11/12 max-sm:w-full'>
-      <Label className="mb-0">{t.benchmark.chartType}:</Label>
+    <div className='flex flex-col gap-1 min-w-0 flex-1 max-sm:w-full'>
+      <Label className="text-sm font-normal text-muted-foreground">{t.benchmark.chartType}</Label>
       <Select
         value={chartType}
         onValueChange={changeChartType}
       >
-        <SelectTrigger className="w-full mb-4">
+        <SelectTrigger className="w-full">
           <SelectValue
             placeholder={t.benchmark.chartType}
           />

@@ -1,6 +1,12 @@
 import { useTranslation } from "@/i18n";
 import { parseNumber } from "@/utils/numbers";
 import { GROUT_POSITIONS } from "@/utils/modulePositions";
+import {
+  isSupportedValue,
+  SUPPORTED_BLOCK_FBK,
+  SUPPORTED_GROUT_FGK,
+  SUPPORTED_MORTAR_FAK,
+} from "@/utils/moduleCompletion";
 import { Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useFieldArray, useWatch } from "react-hook-form";
@@ -47,9 +53,20 @@ const BLOCK_TYPE_OPTIONS: readonly TBlockType[] = [
   "compensador 1/8 (19x19x4)",
 ] as const;
 
-const FBK_OPTIONS: readonly number[] = [3, 4.5, 6, 8, 10, 15];
-const FGK_OPTIONS: readonly number[] = [10, 15, 20, 25, 30, 40];
-const FAK_OPTIONS: readonly number[] = [2, 3, 4.5, 6, 8, 10];
+// Only values the backend accepts; see #425 for the final list.
+const FBK_OPTIONS = SUPPORTED_BLOCK_FBK;
+const FGK_OPTIONS = SUPPORTED_GROUT_FGK;
+const FAK_OPTIONS = SUPPORTED_MORTAR_FAK;
+
+// A saved value outside the options (legacy data or "Outro") has no flag
+// after a reload, so treat it as custom to keep it visible in the input.
+const isCustomValue = (
+  value: unknown,
+  options: readonly number[],
+): boolean => {
+  if (value === undefined || value === null || value === "") return false;
+  return !isSupportedValue(value, options);
+};
 
 type BlockItemForm = {
   type: TBlockType;
@@ -180,7 +197,9 @@ const BlocksSection = ({
             const fieldKey = `data.masonry.blocks.${index}`;
             const it = items[index];
             const isCustom =
-              customFbkSelected[fieldKey] ?? it?.customFbk ?? false;
+              customFbkSelected[fieldKey] ??
+              it?.customFbk ??
+              isCustomValue(it?.fbk, FBK_OPTIONS);
             return (
               <div
                 key={(it as { id?: string })?.id ?? index}
@@ -241,30 +260,23 @@ const BlocksSection = ({
                               <SelectValue placeholder="Selecione Fbk" />
                             </SelectTrigger>
                             <SelectContent>
-                              {FBK_OPTIONS.map((opt) => {
-                                const disabled = isOptionUsedInArray(
-                                  items,
-                                  "fbk",
-                                  FBK_OPTIONS,
-                                  opt,
-                                  index,
-                                  "customFbk",
-                                );
-                                return (
-                                  <SelectItem
-                                    key={opt}
-                                    value={String(opt)}
-                                    disabled={disabled}
-                                    className="text-xs"
-                                  >
-                                    {opt}
-                                    {disabled ? ` ${t.modules.form.inUse}` : ""}
-                                  </SelectItem>
-                                );
-                              })}
-                              <SelectItem value="other" className="text-xs">
-                                {t.modules.form.other}
-                              </SelectItem>
+                              {/* Blocks may share an fbk (e.g. full and half block):
+                                  the backend only rejects repeated fak/fgk. */}
+                              {FBK_OPTIONS.map((opt) => (
+                                <SelectItem
+                                  key={opt}
+                                  value={String(opt)}
+                                  className="text-xs"
+                                >
+                                  {opt}
+                                </SelectItem>
+                              ))}
+                              {/* Every accepted value is listed; "Outro" only shows a saved value outside the list. */}
+                              {isCustom && (
+                                <SelectItem value="other" className="text-xs">
+                                  {t.modules.form.other}
+                                </SelectItem>
+                              )}
                             </SelectContent>
                           </Select>
                         </FormControl>
@@ -388,7 +400,7 @@ const MortarSection = ({
       form.setValue(`${fieldKey}.customFak`, true);
       const curr = Number(form.getValues(`${fieldKey}.fak`) ?? 0);
       if (!curr || FAK_OPTIONS.includes(curr)) {
-        form.setValue(`${fieldKey}.fak`, 15);
+        form.setValue(`${fieldKey}.fak`, 12);
       }
       return;
     }
@@ -431,7 +443,9 @@ const MortarSection = ({
             const fieldKey = `data.masonry.mortar.${index}`;
             const it = items[index];
             const isCustom =
-              customFakSelected[fieldKey] ?? it?.customFak ?? false;
+              customFakSelected[fieldKey] ??
+              it?.customFak ??
+              isCustomValue(it?.fak, FAK_OPTIONS);
             return (
               <div
                 key={(it as { id?: string })?.id ?? index}
@@ -478,9 +492,12 @@ const MortarSection = ({
                                   </SelectItem>
                                 );
                               })}
-                              <SelectItem value="other" className="text-xs">
-                                {t.modules.form.other}
-                              </SelectItem>
+                              {/* Every accepted value is listed; "Outro" only shows a saved value outside the list. */}
+                              {isCustom && (
+                                <SelectItem value="other" className="text-xs">
+                                  {t.modules.form.other}
+                                </SelectItem>
+                              )}
                             </SelectContent>
                           </Select>
                         </FormControl>
@@ -680,7 +697,9 @@ const GroutItemRow = ({
           const fieldKey = `${groutFieldKey}.volumes.${volIndex}`;
           const vit = volItems[volIndex];
           const isCustom =
-            customFgkSelected[fieldKey] ?? vit?.customFgk ?? false;
+            customFgkSelected[fieldKey] ??
+            vit?.customFgk ??
+            isCustomValue(vit?.fgk, FGK_OPTIONS);
           return (
             <div
               key={(vit as { id?: string })?.id ?? volIndex}
@@ -727,9 +746,12 @@ const GroutItemRow = ({
                                 </SelectItem>
                               );
                             })}
-                            <SelectItem value="other" className="text-xs">
-                              {t.modules.form.other}
-                            </SelectItem>
+                            {/* Every accepted value is listed; "Outro" only shows a saved value outside the list. */}
+                            {isCustom && (
+                              <SelectItem value="other" className="text-xs">
+                                {t.modules.form.other}
+                              </SelectItem>
+                            )}
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -783,7 +805,9 @@ const GroutItemRow = ({
                       <FormControl>
                         <NumericStringInput
                           {...field}
-                          decimalPlaces={1}
+                          // The backend reads fgk as an int; a decimal fails
+                          // the request with 400 instead of saving it.
+                          decimalPlaces={0}
                           allowNegative={false}
                           className="h-9"
                           placeholder="50"
@@ -803,7 +827,11 @@ const GroutItemRow = ({
           size="sm"
           onClick={() =>
             volFields.append({
-              fgk: FGK_OPTIONS[0] ?? 20,
+              // The backend rejects a repeated fgk inside the same grout.
+              fgk:
+                FGK_OPTIONS.find(
+                  (o) => !volItems.some((v) => Number(v?.fgk) === o),
+                ) ?? FGK_OPTIONS[0],
               volume: "0",
               customFgk: false,
             } as never)

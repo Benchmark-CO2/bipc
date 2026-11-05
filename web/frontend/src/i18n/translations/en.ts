@@ -516,12 +516,23 @@ export const en: Translations = {
       floor_ids: "Linked Floors",
       unit_id: "Linked Unit",
       concrete: "Concrete (volume by FCK)",
+      "concrete.fck": "Concrete FCK",
+      "concrete.position": "Concrete position",
+      "concrete.duplicate": "Repeated FCK in the same position",
       steel: "Steel (mass by type)",
       form: "Formwork (area by position)",
       masonry: "Masonry (blocks / mortar / grout)",
       "masonry.blocks": "Blocks",
       "masonry.mortar": "Mortar",
       "masonry.grout": "Grout",
+      "masonry.blocks.quantity": "Block quantity",
+      "masonry.mortar.volume": "Mortar volume",
+      "masonry.grout.volume": "Grout volume",
+      "masonry.blocks.fbk": "Block fbk",
+      "masonry.mortar.fak": "Mortar fak",
+      "masonry.grout.fgk": "Grout fgk",
+      "masonry.mortar.fak_duplicate": "Repeated fak",
+      "masonry.grout.fgk_duplicate": "Repeated fgk",
       "steel.item_invalid": "Invalid item",
       "steel.material": "Steel type",
       "steel.resistance": "Steel grade",
@@ -529,6 +540,8 @@ export const en: Translations = {
       "steel.mass": "Steel mass",
       "steel.other_name": "Other steel type name",
       "steel.other_resistance": "Other steel grade value",
+      "form.position": "Formwork position",
+      "form.duplicate_position": "Repeated position",
       slab_type: "Slab type",
       wall_thickness: "Wall thickness",
       slab_thickness: "Slab thickness",
@@ -552,6 +565,12 @@ export const en: Translations = {
       unit_id: "Needed for calculation: unit is linked",
       concrete:
         "Needed for calculation: at least one concrete item with valid volume and FCK",
+      "concrete.fck":
+        "Needed for calculation: FCK greater than zero on every concrete item with volume",
+      "concrete.position":
+        "Needed for calculation: a concrete position valid for this technology",
+      "concrete.duplicate":
+        "Needed for calculation: each FCK only once per position; add the volumes into a single item",
       steel:
         "Needed for calculation: at least one steel item with valid type, grade, position and mass",
       form: "Needed for calculation: at least one formwork item with valid position and area",
@@ -559,18 +578,38 @@ export const en: Translations = {
       "masonry.blocks": "Needed for calculation: at least one block",
       "masonry.mortar": "Needed for calculation: at least one mortar",
       "masonry.grout": "Needed for calculation: at least one grout",
+      "masonry.blocks.quantity":
+        "Needed for calculation: block quantity greater than zero",
+      "masonry.mortar.volume":
+        "Needed for calculation: mortar volume greater than zero",
+      "masonry.grout.volume":
+        "Needed for calculation: grout volume greater than zero",
+      "masonry.blocks.fbk":
+        "Needed for calculation: fbk from the list values (4.5 to 26 MPa)",
+      "masonry.mortar.fak":
+        "Needed for calculation: fak from the list values (4.5 to 24 MPa)",
+      "masonry.grout.fgk":
+        "Needed for calculation: fgk from the list values (15 to 50 MPa)",
+      "masonry.mortar.fak_duplicate":
+        "Needed for calculation: each fak only once in the mortar; add the volumes into a single item",
+      "masonry.grout.fgk_duplicate":
+        "Needed for calculation: each fgk only once in the same grout; add the volumes into a single item",
       "steel.item_invalid": "Needed for calculation: invalid steel items",
       "steel.material":
         "Needed for calculation: valid steel type (rebar, mesh, strand, other)",
       "steel.resistance":
         "Needed for calculation: valid steel grade (CA50, CA60, CP190 or other)",
       "steel.position":
-        "Needed for calculation: valid steel position (wall, slab, column, beam, stair)",
+        "Needed for calculation: a steel position valid for this technology",
       "steel.mass": "Needed for calculation: steel mass greater than zero",
       "steel.other_name":
         "Needed for calculation: name when steel type is 'other'",
       "steel.other_resistance":
         "Needed for calculation: custom grade value greater than zero when 'other'",
+      "form.position":
+        "Needed for calculation: a formwork position valid for this technology",
+      "form.duplicate_position":
+        "Needed for calculation: one formwork item per position (including General); add the areas into a single item",
     },
     form: {
       structureTypeLabel: "Construction Technology",
@@ -1017,7 +1056,9 @@ export const en: Translations = {
     placeholders: {
       chartType: "Chart Type",
     },
-    title: "Project benchmark",
+    title: "Benchmark",
+    visualization: "View",
+    filters: "Filters",
     selectAll: "Select All",
     deselectAll: "Deselect All",
     selectedItems: "selected items",
@@ -1046,6 +1087,7 @@ export const en: Translations = {
     classification: {
       title: "Classification",
       projectsCount: "N: {{count}} projects",
+      projectsCountShort: "N: {{count}}",
     },
   },
   floor: {
@@ -1101,6 +1143,8 @@ export const en: Translations = {
       floorArea: "Floor Area (m²)",
       floorHeight: "Floor Height (m)",
       floorRepetition: "Repetition",
+      floorRepetitionTooltip:
+        "Total number of identical floors. 1 = this floor only; 2 = two floors in total, not two copies in addition to it.",
       index: "Index",
       floorsTab: "Floors",
       floorNamePlaceholder: "Standard Floor",
@@ -1130,6 +1174,7 @@ export const en: Translations = {
     displaying: "Displaying",
     selected: "Selected",
     of: "of",
+    selectedVisible: "Showing {{visible}} of {{total}} selected",
     numberOfProjects: "Number of projects",
     enableZoom: "Enable zoom",
     disableZoom: "Disable zoom",
@@ -1209,6 +1254,7 @@ export const en: Translations = {
     termsRequired: "You must accept the Terms of Use to register",
     privacyRequired: "You must accept the Privacy Policy to register",
     nameMinLength: "Name must be at least 3 characters",
+    unitNameTaken: "A unit with this name already exists in the project",
     selectPhase: "Select a project phase",
     selectUnitType: "Select a unit type",
     invalidUnitType: "Invalid unit type",
@@ -1486,6 +1532,13 @@ export const en: Translations = {
     stepModulesDescription: "Bind and create modules",
     stepSimulationModulesDescription:
       "Bind to the simulation and create modules",
+    discardConfirm: {
+      title: "Discard the import?",
+      description:
+        "Units and modules that have not been created yet, and everything you filled in them, will be lost.",
+      keepEditing: "Keep editing",
+      discard: "Discard and close",
+    },
     import: {
       fromFile: "From IFC file",
     },
@@ -1547,6 +1600,8 @@ export const en: Translations = {
       noBindingAtAll: "No modules with a unit bound to create. Stepper closed.",
       step2Error: "Failed to create modules.",
       batchResult: "{created} module(s) created. {errors} batch(es) failed.",
+      floorBindingUnresolved:
+        "Could not bind the selected floors of {module}. Reopen the module, check the floors and try again.",
       createdSuccess: "{count} module(s) created successfully.",
       ignoredParts: "{parts} — will not be created.",
       partIgnored: "{count} selected but without binding/invalid",
@@ -1640,6 +1695,8 @@ export const en: Translations = {
       "Import started. You can track the status in the imported files list.",
     calculateGeometriesLabel: "With optimized geometry calculation",
     calculateGeometriesHint: "may take longer",
+    calculateGeometriesTooltip:
+      "Computes the geometry of the model elements. Besides processing time, this option changes the results: volumes, average spans and floor grouping may differ from an import without it.",
     selectFileLabel: "Select your file",
     selectFilePlaceholder: "Select an imported file",
     noImportedFiles: "No imported files found",

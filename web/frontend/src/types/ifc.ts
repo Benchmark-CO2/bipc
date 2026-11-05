@@ -201,8 +201,10 @@ export interface IPostOptionResponse {
   };
 }
 
+// Formato gravado em ["unit", projectId, unitId] por todas as telas que usam
+// essa queryKey ({ unit, roles }, já sem o wrapper do Axios).
 export interface IGetUnitByUUIDCachedResponse {
-  data?: { unit?: { floors?: TTowerFloorCategory[] } };
+  unit?: { floors?: TTowerFloorCategory[] };
 }
 
 export interface TFloorMismatchError {

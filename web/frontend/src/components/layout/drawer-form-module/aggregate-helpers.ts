@@ -158,8 +158,12 @@ const coerceConcreteItem = (item: unknown): Record<string, unknown> | null => {
   const volumeNum = toNum(rec.volume);
   if (volumeNum === undefined || volumeNum <= 0) return null;
   rec.volume = volumeNum;
+  // The backend decodes fck as an int: an empty "Outro" value ("") would
+  // reject the whole request with 400. Without it the module is saved as
+  // incomplete ("fck must be provided"), matching the completion badge.
   const fckNum = toInt(rec.fck);
   if (fckNum !== undefined) rec.fck = fckNum;
+  else delete rec.fck;
   if ("customFck" in rec) delete rec.customFck;
   if ("position" in rec && shouldStripPosition(String(rec.position))) {
     delete rec.position;
@@ -173,8 +177,13 @@ const coerceSteelItem = (item: unknown): Record<string, unknown> | null => {
   const massNum = toNum(rec.mass);
   if (massNum === undefined || massNum <= 0) return null;
   rec.mass = massNum;
-  const otherRes = toNum(rec.other_resistance);
+  // The backend rejects other_resistance unless resistance is "other"; drop
+  // values left over after the user switched back to a standard option.
+  const otherRes =
+    rec.resistance === "other" ? toNum(rec.other_resistance) : undefined;
   if (otherRes !== undefined) rec.other_resistance = otherRes;
+  else delete rec.other_resistance;
+  if (rec.material !== "other") delete rec.other_name;
   if ("position" in rec && shouldStripPosition(String(rec.position))) {
     delete rec.position;
   }

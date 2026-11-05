@@ -12,6 +12,12 @@ type contextKey string
 const (
 	userContextKey   = contextKey("user")
 	sourceContextKey = contextKey("source")
+
+	SourceManual = "manual"
+	SourceTQS    = "tqs"
+	SourceAltoQi = "altoqi"
+	SourceIFC    = "ifc"
+	SourcePlugin = "plugin" // unknown
 )
 
 func (app *application) contextSetUser(r *http.Request, user *data.User) *http.Request {
@@ -36,7 +42,7 @@ func (app *application) contextSetSource(r *http.Request, source string) *http.R
 func (app *application) contextGetSource(r *http.Request) string {
 	source, ok := r.Context().Value(sourceContextKey).(string)
 	if !ok {
-		return SourceAPI
+		return SourceManual
 	}
 	return source
 }

@@ -6,11 +6,19 @@ import { postUnit } from "@/actions/units/postUnit";
 import { patchUnit } from "@/actions/units/patchUnit";
 import { getUnitByUUID } from "@/actions/units/getUnit";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useTranslation } from "@/i18n";
 import { Translations } from "@/i18n/translations/pt-BR";
 import { IProject } from "@/types/projects";
 import { TOption } from "@/types/options";
+import { IUnit, TTowerFloorCategory } from "@/types/units";
 import {
   FOUNDATION_MODULE_TYPES,
   ModuleParamsProps,
@@ -35,12 +43,14 @@ import {
 import { useFloorIndexMappings } from "@/hooks/useFloorIndexMappings";
 import { structureTypes } from "@/utils/structureTypes";
 import { parseApiError } from "@/utils/parseApiError";
-import { mapFloorIndexToFloorIds } from "@/utils/unitConversions";
+import { mapIfcFloorIndexToFloorIds } from "@/utils/unitConversions";
 import {
   aggregateIdenticalFloors,
   buildUniqueSimulationName,
   FOUNDATION_MODULE_TYPES as IFC_FOUNDATION_MODULE_TYPES,
+  getIfcFloorIndexes,
   isFoundationModuleType,
+  isValidUUID,
   mapIfcResultToStepperState,
   MODULE_TYPE_LABEL_FALLBACK,
   prepareModuleForBatch,
@@ -50,7 +60,12 @@ import {
   stripFoundationFloorIndex,
 } from "@/utils/ifcStepper";
 import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
-import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useQueries,
+  useQuery,
+  useQueryClient,
+  UseQueryResult,
+} from "@tanstack/react-query";
 import { Loader2, Wand2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -60,6 +75,21 @@ import { StepperHeader } from "./drawer-stepper-ifc/views/StepperHeader";
 import { Step1Content } from "./drawer-stepper-ifc/views/Step1Content";
 import { Step2Content } from "./drawer-stepper-ifc/views/Step2Content";
 import { CompletenessWarningsI18n } from "@/components/layout/drawer-form-module/aggregate-helpers";
+
+// Fora do componente para ser estável: o React Query só memoiza o `combine`
+// quando a referência não muda entre renders.
+const combineUnitFloorsById = (
+  results: UseQueryResult<{ unit: IUnit }>[],
+): Record<string, TTowerFloorCategory[]> => {
+  const byId: Record<string, TTowerFloorCategory[]> = {};
+  for (const r of results) {
+    const unit = r.data?.unit;
+    if (unit?.id && Array.isArray(unit.floors) && unit.floors.length > 0) {
+      byId[unit.id] = unit.floors;
+    }
+  }
+  return byId;
+};
 
 export default function DrawerStepperIFC({
   open,
@@ -81,6 +111,10 @@ export default function DrawerStepperIFC({
       completeness?: CompletenessWarningsI18n;
     }
   ).completeness as CompletenessWarningsI18n;
+  const moduleTypeLabels: Record<string, string> = {
+    ...MODULE_TYPE_LABEL_FALLBACK,
+    ...structureTypes(translations),
+  };
 
   const { data: projectData } = useQuery({
     queryKey: ["project", projectId],
@@ -102,10 +136,16 @@ export default function DrawerStepperIFC({
     (optionsData?.data as IOptionsResponse | undefined)?.options ?? [];
 
   // Fetch da UNIDADE existente quando estivermos no modo simulation
-  // (para pegar os floors e poder mapear floor_index number → floor_ids UUIDs)
+  // (para pegar os floors e poder mapear floor_index number → floor_ids UUIDs).
+  // Mesmo formato ({ unit, roles }) das telas que compartilham esta queryKey:
+  // com o AxiosResponse cru, o cache vindo da tela da unidade não tinha
+  // `.data.unit` e os pavimentos caíam no fallback inferido (IDs não-UUID).
   const { data: simulationUnitData } = useQuery({
     queryKey: ["unit", projectId, preselectedUnitId],
-    queryFn: () => getUnitByUUID(projectId, preselectedUnitId || ""),
+    queryFn: async () => {
+      const res = await getUnitByUUID(projectId, preselectedUnitId || "");
+      return { unit: res.data.unit, roles: res.data.roles };
+    },
     enabled: open && isSimulationMode && !!preselectedUnitId,
     staleTime: 1000 * 60 * 5,
   });
@@ -151,10 +191,17 @@ export default function DrawerStepperIFC({
   }, [initialResult, isSimulationMode]);
 
   const [state, setState] = useState<TIfcStepperState>(initialState);
+  const ifcFloorIndexes = useMemo(
+    () => getIfcFloorIndexes(initialResult),
+    [initialResult],
+  );
   const [step1Error, setStep1Error] = useState<string>("");
   const [step2Error, setStep2Error] = useState<string>("");
   const [isCreatingStep1, setIsCreatingStep1] = useState(false);
   const [isCreatingStep2, setIsCreatingStep2] = useState(false);
+  // Algum lote já criou módulos, mas outro falhou e o stepper ficou aberto.
+  const [hasCreatedModules, setHasCreatedModules] = useState(false);
+  const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
 
   const [editingUnitTempId, setEditingUnitTempId] = useState<string | null>(
     null,
@@ -177,6 +224,8 @@ export default function DrawerStepperIFC({
     setStep2Error("");
     setIsCreatingStep1(false);
     setIsCreatingStep2(false);
+    setHasCreatedModules(false);
+    setIsDiscardConfirmOpen(false);
     setEditingUnitTempId(null);
     setEditingModuleTempId(null);
   }, [initialState, isSimulationMode]);
@@ -197,15 +246,18 @@ export default function DrawerStepperIFC({
     return map;
   }, [state.unitsCreated, simulationBoundUnitTempId]);
 
-  // (useQueries dinâmico) fetch getUnitByUUID para cada unidade existente
-  // criada em unitsCreated (para modo normal, quando a unidade já existia previamente
-  // — ex.: reuso no step 1) — garante que o queryClient tem os floors cacheados
-  // para o normalizedUnitsFloorMap usar como fallback (D) acima.
-  useQueries({
+  // (useQueries dinâmico) fetch getUnitByUUID para cada unidade criada no
+  // step 1 (modo normal). Os floors reais (UUIDs) alimentam o
+  // normalizedUnitsFloorMap; sem eles a seleção de pavimentos no drawer usa
+  // IDs temporários, que o lote não consegue enviar.
+  const createdUnitsFloorsById = useQueries({
     queries: Array.from(unitsCreatedIdsMap.entries()).map(
       ([tempId, unitId]) => ({
-        queryKey: ["unit", projectId, unitId, "stepper"],
-        queryFn: () => getUnitByUUID(projectId, unitId || ""),
+        queryKey: ["unit", projectId, unitId],
+        queryFn: async () => {
+          const res = await getUnitByUUID(projectId, unitId || "");
+          return { unit: res.data.unit, roles: res.data.roles };
+        },
         enabled:
           open &&
           !!projectId &&
@@ -214,6 +266,7 @@ export default function DrawerStepperIFC({
         staleTime: 1000 * 60 * 5,
       }),
     ),
+    combine: combineUnitFloorsById,
   });
 
   const simulationCreatedUnit: TIfcStepperCreatedUnit | null = useMemo(() => {
@@ -312,7 +365,8 @@ export default function DrawerStepperIFC({
     isSimulationMode,
     simulationBoundUnitTempId,
     simulationUnitData,
-    projectId,
+    createdUnitsFloorsById,
+    ifcFloorIndexes,
     simulationCreatedUnit,
     editingUnitTempId,
     editingModuleTempId,
@@ -322,19 +376,63 @@ export default function DrawerStepperIFC({
   // Step 1 — Units helpers
   // ---------------------------------------------------------------------------
 
+  // Nomes que uma unidade do stepper não pode usar: as unidades do
+  // empreendimento (menos ela mesma, se já foi criada na etapa 1) e as outras
+  // unidades selecionadas do mesmo arquivo.
+  const getTakenUnitNames = (
+    tempId: string,
+    units: TIfcStepperUnitItem[],
+    unitsCreated: TIfcStepperCreatedUnit[],
+  ): string[] => {
+    const ownUnitId = unitsCreated.find((c) => c.tempId === tempId)?.unitId;
+    return [
+      ...(project?.units ?? [])
+        .filter((pu) => pu.id !== ownUnitId)
+        .map((pu) => pu.name),
+      ...units
+        .filter((o) => o.tempId !== tempId && o.selected)
+        .map((o) => o.name),
+    ];
+  };
+
+  // Um nome alterado afeta a validade das outras unidades, então revalida todas.
+  const revalidateUnits = (
+    units: TIfcStepperUnitItem[],
+    unitsCreated: TIfcStepperCreatedUnit[],
+  ): TIfcStepperUnitItem[] =>
+    units.map((u) =>
+      rerunUnitValidation(
+        u,
+        t as unknown as Translations,
+        getTakenUnitNames(u.tempId, units, unitsCreated),
+      ),
+    );
+
+  // Lista estável para o DrawerFormUnit (evita revalidar o nome a cada render).
+  const editingUnitTakenNames = useMemo(
+    () =>
+      editingUnitTempId
+        ? getTakenUnitNames(editingUnitTempId, state.units, state.unitsCreated)
+        : undefined,
+    [editingUnitTempId, state.units, state.unitsCreated, project?.units],
+  );
+
+  useEffect(() => {
+    if (!project?.units) return;
+    setState((prev) => ({
+      ...prev,
+      units: revalidateUnits(prev.units, prev.unitsCreated),
+    }));
+  }, [project?.units, initialState]);
+
   const setUnitNameInline = (tempId: string, name: string) => {
     setState((prev) => {
-      const next = { ...prev };
-      next.units = next.units.map((u) => {
-        if (u.tempId !== tempId) return u;
-        const updated: TIfcStepperUnitItem = {
-          ...u,
-          name,
-          formData: { ...u.formData, name },
-        };
-        return rerunUnitValidation(updated, t as unknown as Translations);
-      });
-      return next;
+      const units = prev.units.map((u) =>
+        u.tempId === tempId
+          ? { ...u, name, formData: { ...u.formData, name } }
+          : u,
+      );
+      return { ...prev, units: revalidateUnits(units, prev.unitsCreated) };
     });
   };
 
@@ -379,8 +477,9 @@ export default function DrawerStepperIFC({
           formData: fd,
           name: fd.name,
         };
-        return rerunUnitValidation(updated, t as unknown as Translations);
+        return updated;
       });
+      next.units = revalidateUnits(next.units, prev.unitsCreated);
       const alreadyHasCreated = prev.unitsCreated.some(
         (c) => c.tempId === currentEditingTempId,
       );
@@ -519,6 +618,11 @@ export default function DrawerStepperIFC({
             ).data;
             const updatedUnitObj: TIfcProcessorStateUnit | undefined =
               patchBody?.unit ?? patchBody?.data?.unit;
+            // Os floors (e seus UUIDs) podem ter mudado: recarrega para o
+            // mapeamento de pavimentos do step 2.
+            await queryClient.invalidateQueries({
+              queryKey: ["unit", projectId, alreadyCreated.unitId],
+            });
             const patchedRecord: TIfcStepperCreatedUnit = {
               ...alreadyCreated,
               unitId: updatedUnitObj?.id ?? alreadyCreated.unitId,
@@ -961,38 +1065,74 @@ export default function DrawerStepperIFC({
 
     const errors: string[] = [];
     let createdCount = 0;
+    // Módulos de lotes que deram certo: saem da lista se outro lote falhar,
+    // para um novo "Concluir" não criá-los em dobro.
+    const createdModuleTempIds = new Set<string>();
 
     try {
       for (const { unit, modules: groupModules } of groups.values()) {
         const payloadModules: ModuleParamsPropsV2[] = [];
+        const payloadModuleTempIds: string[] = [];
         const towerFloorsForGroup =
           normalizedUnitsFloorMap.get(unit.tempId) ?? [];
+        // Com os pavimentos reais carregados, uma seleção com UUID que não
+        // pertence mais à unidade (ex.: unidade alterada no step 1, que gera
+        // novos IDs de pavimento) também não pode ser enviada.
+        const groupFloorIds = new Set(towerFloorsForGroup.map((f) => f.id));
+        const groupFloorsAreReal =
+          towerFloorsForGroup.length > 0 &&
+          towerFloorsForGroup.every((f) => isValidUUID(f.id));
+        let unresolvedModuleLabel: string | null = null;
         for (const m of groupModules) {
           const isFoundation = FOUNDATION_MODULE_TYPES.includes(
             m.type as TModulesTypes,
           );
           // Prefere floor_ids já salvos (ex.: usuário editou e mudou via BuildingVisualizer)
           // senão mapeia a partir do floor_index numérico original vindo do IFC
-          const resolvedFloorIds =
-            (m.raw?.data as unknown as IRawModuleDataWithMeta)?.floor_ids &&
-            Array.isArray(
-              (m.raw.data as unknown as IRawModuleDataWithMeta).floor_ids,
-            ) &&
-            (m.raw.data as unknown as IRawModuleDataWithMeta).floor_ids!
-              .length > 0
-              ? ((m.raw.data as unknown as IRawModuleDataWithMeta)
-                  .floor_ids as string[])
-              : mapFloorIndexToFloorIds(
-                  (m.raw?.data as unknown as IRawModuleDataWithMeta)
-                    ?.floor_index,
-                  towerFloorsForGroup,
-                );
+          const editedFloorIds = (
+            m.raw?.data as unknown as IRawModuleDataWithMeta
+          )?.floor_ids;
+          const hasEditedFloorIds =
+            Array.isArray(editedFloorIds) && editedFloorIds.length > 0;
+          // Seleção feita com IDs temporários (pavimentos ainda não carregados):
+          // o lote reenviaria o floor_index original, aplicando o módulo a
+          // TODOS os pavimentos. Melhor falhar o lote com aviso.
+          if (
+            !isFoundation &&
+            hasEditedFloorIds &&
+            !editedFloorIds.every(
+              (id) =>
+                isValidUUID(id) &&
+                (!groupFloorsAreReal || groupFloorIds.has(id)),
+            )
+          ) {
+            unresolvedModuleLabel = moduleTypeLabels[m.type] ?? m.type;
+            break;
+          }
+          const resolvedFloorIds = hasEditedFloorIds
+            ? editedFloorIds
+            : mapIfcFloorIndexToFloorIds(
+                (m.raw?.data as unknown as IRawModuleDataWithMeta)
+                  ?.floor_index,
+                ifcFloorIndexes,
+                towerFloorsForGroup,
+              );
           const binding = isFoundation
             ? ({ unit_id: unit.unitId } as IModuleBatchBinding)
             : ({ floor_ids: resolvedFloorIds } as IModuleBatchBinding);
           const prepared = prepareModuleForBatch(m, isFoundation, binding);
           if (!prepared) continue;
           payloadModules.push(prepared as unknown as ModuleParamsPropsV2);
+          payloadModuleTempIds.push(m.tempId);
+        }
+        if (unresolvedModuleLabel) {
+          errors.push(
+            `${unit.displayName}: ${t.stepper.modules.floorBindingUnresolved.replace(
+              "{module}",
+              unresolvedModuleLabel,
+            )}`,
+          );
+          continue;
         }
         if (payloadModules.length === 0) continue;
         try {
@@ -1003,6 +1143,7 @@ export default function DrawerStepperIFC({
             unit.optionId,
           );
           createdCount += (res.data.modules ?? []).length;
+          payloadModuleTempIds.forEach((id) => createdModuleTempIds.add(id));
         } catch (err) {
           const msg = parseApiError(err, t);
           errors.push(`${unit.displayName}: ${msg}`);
@@ -1064,6 +1205,21 @@ export default function DrawerStepperIFC({
         });
       }
 
+      // Com erro, o stepper fica aberto para o usuário corrigir e tentar de
+      // novo (o erro já aparece em step2Error e no toast).
+      if (errors.length > 0) {
+        if (createdModuleTempIds.size > 0) {
+          setHasCreatedModules(true);
+          setState((prev) => ({
+            ...prev,
+            modules: prev.modules.filter(
+              (m) => !createdModuleTempIds.has(m.tempId),
+            ),
+          }));
+        }
+        return;
+      }
+
       onComplete?.(buildCompletePayload());
       onOpenChange(false);
     } catch (err) {
@@ -1077,12 +1233,36 @@ export default function DrawerStepperIFC({
 
   const handleClose = () => {
     if (isCreatingStep1 || isCreatingStep2) return;
+    setIsDiscardConfirmOpen(false);
+    // Fechar depois de uma falha parcial mantém o fluxo de conclusão (ir para
+    // a unidade com os módulos que já foram criados).
+    if (hasCreatedModules) onComplete?.(buildCompletePayload());
     onOpenChange(false);
   };
 
+  // Unidades ainda não criadas (etapa 1) ou módulos selecionados ainda não
+  // criados se perdem ao fechar; nesse caso X, Esc e "Cancelar" pedem
+  // confirmação.
+  const hasPendingWork =
+    (!isSimulationMode && activeStep === 0 && state.units.length > 0) ||
+    state.modules.some((m) => m.selected);
+
+  const requestClose = () => {
+    if (isCreatingStep1 || isCreatingStep2) return;
+    if (hasPendingWork) {
+      setIsDiscardConfirmOpen(true);
+      return;
+    }
+    handleClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[78vw] w-[78vw] h-[85vh] max-h-[85vh] flex flex-col gap-0 overflow-hidden p-4">
+    <Dialog open={open} onOpenChange={(o) => !o && requestClose()}>
+      <DialogContent
+        className="sm:max-w-[78vw] w-[78vw] h-[85vh] max-h-[85vh] flex flex-col gap-0 overflow-hidden p-4"
+        // Clique fora (fundo, toast) não fecha: descartaria todo o preenchimento.
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <StepperHeader
           isSimulationMode={isSimulationMode}
           fileName={fileName ?? null}
@@ -1119,10 +1299,7 @@ export default function DrawerStepperIFC({
             onEditModule={(tempId) => setEditingModuleTempId(tempId)}
             toggleModuleSelected={toggleModuleSelected}
             toggleAllModulesSelected={toggleAllModulesSelected}
-            moduleTypeLabels={{
-              ...MODULE_TYPE_LABEL_FALLBACK,
-              ...structureTypes(translations),
-            }}
+            moduleTypeLabels={moduleTypeLabels}
             step2Error={step2Error}
             isSimulationMode={isSimulationMode}
             activeStep={activeStep}
@@ -1134,7 +1311,7 @@ export default function DrawerStepperIFC({
             <>
               <Button
                 variant="ghost"
-                onClick={handleClose}
+                onClick={requestClose}
                 disabled={isCreatingStep1}
               >
                 {t.stepper.modules.cancel}
@@ -1163,7 +1340,7 @@ export default function DrawerStepperIFC({
             <>
               <Button
                 variant="ghost"
-                onClick={handleClose}
+                onClick={requestClose}
                 disabled={isCreatingStep2}
               >
                 {t.stepper.modules.cancel}
@@ -1204,7 +1381,7 @@ export default function DrawerStepperIFC({
             <>
               <Button
                 variant="ghost"
-                onClick={handleClose}
+                onClick={requestClose}
                 disabled={isCreatingStep2}
               >
                 {t.stepper.modules.cancel}
@@ -1250,6 +1427,7 @@ export default function DrawerStepperIFC({
             initialFormData={
               editingUnit.formData as unknown as TIfcStepperUnitItem["formData"]
             }
+            takenUnitNames={editingUnitTakenNames}
             onSubmitSuccess={handleUnitDrawerSubmit}
           />
         )}
@@ -1284,6 +1462,31 @@ export default function DrawerStepperIFC({
             }}
           />
         )}
+
+        <Dialog
+          open={isDiscardConfirmOpen}
+          onOpenChange={setIsDiscardConfirmOpen}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t.stepper.discardConfirm.title}</DialogTitle>
+              <DialogDescription>
+                {t.stepper.discardConfirm.description}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsDiscardConfirmOpen(false)}
+              >
+                {t.stepper.discardConfirm.keepEditing}
+              </Button>
+              <Button variant="destructive" onClick={handleClose}>
+                {t.stepper.discardConfirm.discard}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );

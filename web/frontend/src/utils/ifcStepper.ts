@@ -13,6 +13,7 @@ import {
   TIfcStepperUnitItem,
   TIfcStepperModuleItem,
   TIfcFloorCategory,
+  IRawModuleDataWithMeta,
 } from "@/types/ifc";
 import { MODULE_SOURCES } from "@/utils/modulePositions";
 import { calculateModuleCompletion } from "@/utils/moduleCompletion";
@@ -69,10 +70,13 @@ const generateTempId = () => {
   return `tmp_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
 };
 
-const UUID_V4_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+// Qualquer versão RFC 9562 (1–8): o backend gera IDs de pavimento com
+// uuid.NewV7() (internal/data/units.go). Aceitar só v4 descartava os IDs
+// reais e fazia o lote reenviar o floor_index original (todos os pavimentos).
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const isValidUUID = (v: unknown): v is string =>
-  typeof v === "string" && UUID_V4_REGEX.test(v);
+  typeof v === "string" && UUID_REGEX.test(v);
 
 const isKnownModuleType = (t: string | TModulesTypes): t is TModulesTypes => {
   return (KNOWN_MODULE_TYPES as string[]).includes(t as string);
@@ -339,6 +343,40 @@ const mapIfcUnitsRawToItemArray = (
   return [raw];
 };
 
+/**
+ * Índices de pavimento do IFC (espaço do `floor_index` dos módulos), em ordem
+ * crescente. Usa os floors da unidade do parser com a mesma regra de
+ * `mapIfcUnitToStepperUnitFormData`; sem unidade única com floors, usa a união
+ * dos `floor_index` dos módulos estruturais.
+ */
+export const getIfcFloorIndexes = (
+  result: TIfcProcessorAggregatedResult | null | undefined,
+): number[] => {
+  const rawUnits = result?.units ? mapIfcUnitsRawToItemArray(result.units) : [];
+  const rawFloors =
+    rawUnits.length === 1 ? (rawUnits[0]?.data?.floors ?? []) : [];
+  const indexes = new Set<number>();
+  if (rawFloors.length > 0) {
+    let lastIndex = 0;
+    rawFloors.forEach((floor, i) => {
+      const index = normalizeFloorIndex(floor.index, i === 0 ? 0 : lastIndex);
+      lastIndex = Math.max(lastIndex, index + 1);
+      indexes.add(index);
+    });
+  } else {
+    for (const m of result?.modules ?? []) {
+      if (isFoundationModuleType(normalizeModuleType(m.type))) continue;
+      const idx = (m.data as IRawModuleDataWithMeta | undefined)?.floor_index;
+      if (idx === undefined || idx === null) continue;
+      for (const v of Array.isArray(idx) ? idx : [idx]) {
+        const n = Number(v);
+        if (Number.isFinite(n)) indexes.add(n);
+      }
+    }
+  }
+  return Array.from(indexes).sort((a, b) => a - b);
+};
+
 const mapIfcUnitToStepperUnitFormData = (
   raw: TIfcProcessorResultUnits,
 ): TIfcStepperUnitItem["formData"] => {
@@ -449,9 +487,10 @@ export const aggregateIdenticalFloors = <T extends TStepperFloorFormShape>(
 const validateStepperUnit = (
   formData: TIfcStepperUnitItem["formData"],
   t: Translations,
+  takenNames: string[] = [],
 ): { isValid: boolean; errors: string[] } => {
   try {
-    const schema = createUnitFormSchema(t as any);
+    const schema = createUnitFormSchema(t as any, takenNames);
     const input = formData as unknown as UnitFormInput;
     const result = schema.safeParse(input);
     if (result.success) {
@@ -891,8 +930,9 @@ export const mapIfcResultToStepperState = (
 export const rerunUnitValidation = (
   item: TIfcStepperUnitItem,
   t: Translations,
+  takenNames: string[] = [],
 ): TIfcStepperUnitItem => {
-  const { isValid, errors } = validateStepperUnit(item.formData, t);
+  const { isValid, errors } = validateStepperUnit(item.formData, t, takenNames);
   return {
     ...item,
     name: item.formData.name,
@@ -1053,8 +1093,9 @@ export const prepareUnitForCreate = (
 };
 
 /**
- * Parses recursively all numeric-like strings ("100", "12.5") inside an object/array
- * into actual numbers. Backend Go structs use float64/int and reject string values.
+ * Parses recursively all numeric-like strings ("100", "12.5", "10,00") inside an
+ * object/array into actual numbers. Backend Go structs use float64/int and reject
+ * string values.
  */
 const recursivelyParseNumericStrings = (value: unknown): unknown => {
   if (value === null || value === undefined) return value;
@@ -1067,6 +1108,11 @@ const recursivelyParseNumericStrings = (value: unknown): unknown => {
     // Regex: optional leading minus, digits, optional . digits
     if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
       return Number(trimmed);
+    }
+    // Decimal pt-BR vindo dos inputs do formulário ("10,00", "27,9").
+    // Sem separador de milhar: o NumericStringInput não o emite no onChange.
+    if (/^-?\d+,\d+$/.test(trimmed)) {
+      return Number(trimmed.replace(",", "."));
     }
     return value;
   }
@@ -1127,17 +1173,11 @@ export const prepareModuleForBatch = (
     "blocks",
     "grout",
     "mortar",
-    "wall_area",
-    "wall_thickness",
-    "slab_thickness",
     "form_area",
     "form_columns",
     "form_beams",
     "form_slabs",
     "form_total",
-    "column_number",
-    "avg_beam_span",
-    "avg_slab_span",
     // Shared grouped-only
     "unspecified",
     "pile_caps",
@@ -1151,12 +1191,29 @@ export const prepareModuleForBatch = (
     "grout_horizontal_volume",
     "grout_general_volume",
   ]);
+  // Escalares numéricos do payload flat V2 (OpenAPI e structs Go). Antes da V2
+  // eles eram removidos junto com os campos grouped, o que descartava
+  // "Número de pilares", vãos médios, espessuras e área de parede no lote.
+  // Só seguem no tipo que os aceita e quando já são números.
+  const FLAT_V2_NUMERIC_KEYS_BY_TYPE: Record<string, readonly string[]> = {
+    beam_column: ["column_number", "avg_beam_span", "avg_slab_span"],
+    concrete_wall: ["wall_thickness", "slab_thickness", "wall_area"],
+  };
+  const flatV2NumericKeys = new Set<string>(
+    Object.values(FLAT_V2_NUMERIC_KEYS_BY_TYPE).flat(),
+  );
+  const allowedFlatV2NumericKeys = new Set<string>(
+    FLAT_V2_NUMERIC_KEYS_BY_TYPE[normalizedType] ?? [],
+  );
   const clean: Record<string, unknown> = {};
   Object.keys(effectiveData).forEach((k) => {
     if (GROUPED_ONLY_KEYS_TO_STRIP.has(k)) return;
-    (clean as Record<string, unknown>)[k] = (
-      effectiveData as Record<string, unknown>
-    )[k];
+    const v = (effectiveData as Record<string, unknown>)[k];
+    if (flatV2NumericKeys.has(k)) {
+      if (!allowedFlatV2NumericKeys.has(k)) return;
+      if (typeof v !== "number" || !Number.isFinite(v)) return;
+    }
+    (clean as Record<string, unknown>)[k] = v;
   });
 
   // 3) Remove floor_index do data (nunca esperado pelo backend;
