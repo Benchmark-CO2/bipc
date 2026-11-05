@@ -899,7 +899,8 @@
 			ctx.fillStyle = "#ffffff";
 			ctx.fillRect(0, 0, rect.width, rect.height);
 
-			const maxDomainX = options.maxX || 168;
+			const dataMaxX = d3.max(data, d => isCumulative ? d.min : d.max) || 0;
+			const maxDomainX = Math.max(options.maxX || 168, dataMaxX * 1.1);
 			const xScale = d3.scaleLinear().domain([0, maxDomainX]).range([0, _width]);
 			const yScale = d3.scaleLinear().domain([0, 1.0]).range([_height, 0]);
 
@@ -913,7 +914,9 @@
 
 			ctx.strokeStyle = DEFAULT_COLORS.GRID;
 			ctx.lineWidth = 0.75;
-			const xTicks = isCumulative ? d3.range(0, 1.1, 0.1) : d3.range(0, 170, 10);
+			const xTicks = isCumulative
+				? d3.range(0, 1.1, 0.1)
+				: d3.ticks(0, maxDomainX, 8);
 			xTicks.forEach(t => {
 				const x = xScale(t);
 				ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, _height); ctx.stroke();
@@ -1090,10 +1093,6 @@
 				ctx.fillText(label, x, _height + 4);
 				}
 			});
-			if (!isCumulative) {
-				ctx.fillText("168", xScale(168), _height + 4);
-			}
-
 			ctx.textAlign = "right";
 			ctx.textBaseline = "middle";
 			d3.range(0, 1.1, 0.1).forEach(t => {
