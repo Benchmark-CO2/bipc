@@ -1151,7 +1151,7 @@
               maxX: 168,
               showBaseline: true,
               showTop5Line: true,
-              highlightClass: "B",
+              highlightClass: {{.ReportData.CO2Class}},
               xAxisLabel: "Carbono Embutido (Kg/m²)",
               yAxisLabel: "Potencial de mitigação"
             });
@@ -1162,7 +1162,7 @@
 			maxX: 168,
 			showBaseline: true,
 			showTop5Line: true,
-			highlightClass: "B",
+			highlightClass: {{.ReportData.EnergyClass}},
 			xAxisLabel: "Consumo Embutido (MJ/m²)",
 			yAxisLabel: "Potencial de mitigação"
 		});
