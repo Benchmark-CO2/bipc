@@ -1,9 +1,11 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Switch } from "@/components/ui/switch";
+import { useTranslation } from "@/i18n";
 
 export function SidebarThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const { t } = useTranslation();
 
   const isDark = theme === "dark";
 
@@ -15,7 +17,7 @@ export function SidebarThemeToggle() {
     <div className="flex items-center justify-between w-full px-2">
       <div className="flex items-center gap-3 text-inherit">
         {isDark ? <Moon size={16} /> : <Sun size={16} />}
-        <span>{isDark ? t("sidebar.dark") : t("sidebar.light")}</span>
+        <span>{isDark ? t.sidebar.dark : t.sidebar.light}</span>
       </div>
       <Switch
         checked={isDark}

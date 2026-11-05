@@ -13,6 +13,8 @@ type SummaryContextType = {
   setSummaryContext: (context: SummaryContextProps) => void
   isExpanded: boolean
   toggleExpanded: () => void
+  isFullScreen: boolean
+  setIsFullScreen: (value: boolean) => void
 }
 
 const SummaryContext = createContext<SummaryContextType | undefined>(undefined);
@@ -29,6 +31,7 @@ export const SummaryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isOpen, setIsOpen] = useState(false);
   const [context, setContext] = useState<SummaryContextProps | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   const setSummaryContext = (context: SummaryContextProps) => {
     setContext(context);
@@ -52,7 +55,9 @@ export const SummaryProvider: React.FC<{ children: React.ReactNode }> = ({ child
         context,
         setSummaryContext,
         isExpanded,
-        toggleExpanded
+        toggleExpanded,
+        isFullScreen,
+        setIsFullScreen
       }}
     >
       {children}

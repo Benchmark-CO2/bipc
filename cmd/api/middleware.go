@@ -2,12 +2,10 @@ package main
 
 import (
 	"errors"
-	"expvar"
 	"fmt"
 	"net"
 	"net/http"
 	"path"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -41,70 +39,6 @@ func extractRealIP(r *http.Request) string {
 	return ip
 }
 
-type metricsResponseWriter struct {
-	wrapped       http.ResponseWriter
-	statusCode    int
-	headerWritten bool
-}
-
-func newMetricsResponseWriter(w http.ResponseWriter) *metricsResponseWriter {
-	return &metricsResponseWriter{
-		wrapped:    w,
-		statusCode: http.StatusOK,
-	}
-}
-
-func (mw *metricsResponseWriter) Header() http.Header {
-	return mw.wrapped.Header()
-}
-
-func (mw *metricsResponseWriter) WriteHeader(statusCode int) {
-	mw.wrapped.WriteHeader(statusCode)
-
-	if !mw.headerWritten {
-		mw.statusCode = statusCode
-		mw.headerWritten = true
-	}
-}
-
-func (mw *metricsResponseWriter) Write(b []byte) (int, error) {
-	mw.headerWritten = true
-	return mw.wrapped.Write(b)
-}
-
-func (mw *metricsResponseWriter) Unwrap() http.ResponseWriter {
-	return mw.wrapped
-}
-
-func (app *application) metrics(next http.Handler) http.Handler {
-	var (
-		totalRequestsReceived           = expvar.NewInt("total_requests_received")
-		inFlightRequests                = expvar.NewInt("in_flight_requests")
-		totalResponsesSent              = expvar.NewInt("total_responses_sent")
-		totalResponsesSentByStatus      = expvar.NewMap("total_responses_sent_by_status")
-		totalProcessingTimeMicroseconds = expvar.NewInt("total_processing_time_μs")
-	)
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-
-		totalRequestsReceived.Add(1)
-
-		inFlightRequests.Add(1)
-		defer inFlightRequests.Add(-1)
-
-		mw := newMetricsResponseWriter(w)
-		next.ServeHTTP(mw, r)
-
-		totalResponsesSent.Add(1)
-
-		totalResponsesSentByStatus.Add(strconv.Itoa(mw.statusCode), 1)
-
-		duration := time.Since(start).Microseconds()
-		totalProcessingTimeMicroseconds.Add(duration)
-	})
-}
-
 func (app *application) recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -121,7 +55,7 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 
 func (app *application) commonHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdn.redocly.com; connect-src 'self' https://brasilapi.com.br https://servicodados.ibge.gov.br https://cdn.redocly.com; img-src 'self' data: https://bipc-avatar.s3.sa-east-1.amazonaws.com https://cdn.redoc.ly; worker-src 'self' blob:")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdn.redocly.com; connect-src 'self' https://brasilapi.com.br https://servicodados.ibge.gov.br https://cdn.redocly.com https://*.s3.sa-east-1.amazonaws.com; img-src 'self' data: https://bipc-avatar.s3.sa-east-1.amazonaws.com https://cdn.redoc.ly https://img.youtube.com; worker-src 'self' blob:")
 		w.Header().Set("Referrer-Policy", "origin-when-cross-origin")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "deny")
@@ -145,7 +79,7 @@ func (app *application) enableCORS(next http.Handler) http.Handler {
 					w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 					if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
-						w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, PUT, PATCH, DELETE")
+						w.Header().Set("Access-Control-Allow-Methods", "OPTIONS, GET, POST, PUT, PATCH, DELETE")
 						w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-API-Key")
 						w.Header().Set("Access-Control-Max-Age", "600")
 						w.WriteHeader(http.StatusOK)
@@ -260,7 +194,6 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 
 		if token == "" {
 			r = app.contextSetUser(r, data.AnonymousUser)
-			r = app.contextSetSource(r, SourceAPI)
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -285,11 +218,14 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 
 		r = app.contextSetUser(r, user)
 
-		source := SourceAPI
 		if scope == data.ScopeAPIKey {
-			source = SourcePlugin
+			source := r.Header.Get("X-Source")
+			if source == "" || (source != SourceTQS && source != SourceAltoQi) {
+				source = SourcePlugin
+			}
+
+			r = app.contextSetSource(r, source)
 		}
-		r = app.contextSetSource(r, source)
 
 		next.ServeHTTP(w, r)
 	})

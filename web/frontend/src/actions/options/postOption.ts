@@ -7,7 +7,7 @@ export const postOption = (
   roleId: string,
   data: { name: string; active?: boolean }
 ) => {
-  return api.post<{ tower_option: TOption }>(
+  return api.post<{ option: TOption }>(
     `/v1/projects/${projectId}/units/${unitId}/roles/${roleId}/options`,
     data
   );

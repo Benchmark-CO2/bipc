@@ -16,9 +16,15 @@ export function parseApiError(error: unknown, t: Translations): string {
     }
 
     const status = error.response.status;
-    const backendError = (
-      error.response.data as { error?: string | Record<string, string> }
-    )?.error;
+    const responseData = error.response.data as {
+      error?: string | Record<string, string>;
+      message?: string;
+    };
+    const backendError = responseData?.error;
+    const backendMessage =
+      typeof responseData?.message === "string"
+        ? responseData.message
+        : undefined;
 
     switch (status) {
       case 401:
@@ -46,9 +52,12 @@ export function parseApiError(error: unknown, t: Translations): string {
         if (typeof backendError === "object" && backendError !== null) {
           return Object.values(backendError).join("; ");
         }
-        return typeof backendError === "string"
-          ? backendError
-          : t.errors.unexpectedError;
+        return (
+          backendMessage ??
+          (typeof backendError === "string"
+            ? backendError
+            : t.errors.unexpectedError)
+        );
 
       case 429:
         return t.apiErrors.rateLimitExceeded;
@@ -59,9 +68,12 @@ export function parseApiError(error: unknown, t: Translations): string {
         return t.apiErrors.serverError;
 
       default:
-        return typeof backendError === "string"
-          ? backendError
-          : t.errors.unexpectedError;
+        return (
+          backendMessage ??
+          (typeof backendError === "string"
+            ? backendError
+            : t.errors.unexpectedError)
+        );
     }
   }
 

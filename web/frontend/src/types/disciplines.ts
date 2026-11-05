@@ -1,4 +1,5 @@
 import { TConsumptionPerModule } from "./projects";
+import { TUnknownModuleOccurrence } from "./unknownModules";
 
 export type TRole = {
   id: string;
@@ -16,4 +17,5 @@ export type TRoleConsumptions = {
   is_member: boolean;
   is_protected?: boolean;
   consumption: TConsumptionPerModule;
+  unknown_modules?: TUnknownModuleOccurrence[];
 };

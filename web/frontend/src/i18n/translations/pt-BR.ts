@@ -20,6 +20,8 @@ export const ptBR = {
     ifcImport: "Importar do IFC",
     ifcImportTqs: "Importar de IFC/TQS",
     orLabel: "ou",
+    select: "Selecione",
+    required: "Obrigatório",
   },
   errors: {
     unexpectedError: "Erro inesperado. Tente novamente mais tarde.",
@@ -47,6 +49,8 @@ export const ptBR = {
     minimizeSidebar: "Minimizar sidebar",
     newInvite: "Novo convite",
     noNotifications: "Nenhuma notificação",
+    dark: "Tema Escuro",
+    light: "Tema Claro",
   },
   nav: {
     faq: "Perguntas frequentes",
@@ -441,9 +445,9 @@ export const ptBR = {
     deleteError: "Erro ao excluir edificação",
     form: {
       addTitle: "Adicionar Edificação",
-      editTitle: "Atualizar Edificação",
+      editTitle: "Editar Edificação",
       addButton: "Adicionar Edificação",
-      editButton: "Atualizar Edificação",
+      editButton: "Salvar Edificação",
       towerType: "Torre",
       buildingName: "Nome da Edificação *",
       buildingNamePlaceholder: "Digite o nome da Edificação",
@@ -458,14 +462,34 @@ export const ptBR = {
       updateSuccess: "Edificação atualizada com sucesso",
       updateError: "Erro ao atualizar Edificação",
       unknownError: "Erro desconhecido",
+      validationSummary: "Verifique os campos com erro abaixo:",
       duplicateFloor: "Duplicar Pavimento",
       removeFloor: "Remover Pavimento",
+      updateWarningTitle: "Importante: Confirmação de Atualização",
+      updateWarningBody:
+        "Ao editar esta unidade, todas as simulações associadas serão invalidadas e precisarão ser refeitas. Ao clicar em atualizar abaixo, você reconhece que entende as consequências desta ação.",
     },
   },
   modules: {
     deleteTitle: "Excluir Tecnologia Construtiva",
     duplicateTitle: "Duplicar Tecnologia Construtiva",
     editTitle: "Editar Tecnologia Construtiva",
+    badges: {
+      completed: "Completo",
+      incomplete: "Incompleto",
+    },
+    alerts: {
+      missingFieldsTitle:
+        "Campos necessários para o cálculo (não bloqueiam o envio)",
+      invalidPositionsTitle:
+        "Entradas com posição inválida detectadas (não bloqueiam o envio)",
+    },
+    warnings: {
+      invalidPosition:
+        "Posição inválida: '{{position}}'. Válidas para este tipo: {{accepted}}. Esta entrada não será usada no cálculo de completude.",
+      invalidPositionShort:
+        "Posição inválida '{{position}}'. Esperado: {{accepted}}.",
+    },
     table: {
       noItems: "Nenhum item encontrado",
       addNew:
@@ -485,10 +509,109 @@ export const ptBR = {
     structureTypes: {
       concreteWall: "Parede de Concreto",
       beamColumn: "Viga Pilar",
-      masonry: "Alvenaria",
+      masonry: "Alvenaria Estrutural",
       raftFoundation: "Radier",
       pilesFoundation: "Estaca",
       raftPilesFoundation: "Radier Estaqueado",
+    },
+    fields: {
+      floor_ids: "Pavimentos vinculados",
+      unit_id: "Unidade vinculada",
+      concrete: "Concreto (volume por FCK)",
+      "concrete.fck": "FCK do concreto",
+      "concrete.position": "Posição do concreto",
+      "concrete.duplicate": "FCK repetido na mesma posição",
+      steel: "Aço (massa por tipo)",
+      form: "Fôrma (área por posição)",
+      masonry: "Alvenaria (blocos / argamassa / graute)",
+      "masonry.blocks": "Blocos",
+      "masonry.mortar": "Argamassa",
+      "masonry.grout": "Graute",
+      "masonry.blocks.quantity": "Quantidade de blocos",
+      "masonry.mortar.volume": "Volume da argamassa",
+      "masonry.grout.volume": "Volume do graute",
+      "masonry.blocks.fbk": "Fbk do bloco",
+      "masonry.mortar.fak": "Fak da argamassa",
+      "masonry.grout.fgk": "Fgk do graute",
+      "masonry.mortar.fak_duplicate": "Fak repetido",
+      "masonry.grout.fgk_duplicate": "Fgk repetido",
+      "steel.item_invalid": "Item inválido",
+      "steel.material": "Tipo do aço",
+      "steel.resistance": "Resistência do aço",
+      "steel.position": "Posição do aço",
+      "steel.mass": "Massa do aço",
+      "steel.other_name": "Nome do outro tipo de aço",
+      "steel.other_resistance": "Resistência do outro tipo",
+      "form.position": "Posição da fôrma",
+      "form.duplicate_position": "Posição repetida",
+      slab_type: "Tipo de laje",
+      wall_thickness: "Espessura da parede",
+      slab_thickness: "Espessura da laje",
+      wall_area: "Área da parede",
+      slab_area: "Área da laje",
+      beam_number: "Número de vigas",
+      slab_number: "Número de lajes",
+      column_number: "Número de pilares",
+      avg_beam_span: "Vão médio das vigas",
+      avg_slab_span: "Vão médio das lajes",
+      area: "Área (radier)",
+      thickness: "Espessura (radier)",
+      fck: "Resistência do concreto (FCK)",
+      volume: "Volume",
+      mass: "Massa",
+      "raft.area": "Área do radier",
+      "raft.thickness": "Espessura do radier",
+    },
+    completionReasons: {
+      floor_ids: "Necessário para o cálculo: ao menos um pavimento",
+      unit_id: "Necessário para o cálculo: unidade vinculada",
+      concrete:
+        "Necessário para o cálculo: ao menos um item de concreto com volume e FCK válidos",
+      "concrete.fck":
+        "Necessário para o cálculo: FCK maior que zero em todo concreto com volume",
+      "concrete.position":
+        "Necessário para o cálculo: posição do concreto válida para esta tecnologia",
+      "concrete.duplicate":
+        "Necessário para o cálculo: cada FCK só uma vez por posição; some os volumes em um único item",
+      steel:
+        "Necessário para o cálculo: ao menos um item de aço com tipo, resistência, posição e massa válidos",
+      form: "Necessário para o cálculo: ao menos um item de fôrma com posição e área válidas",
+      masonry: "Necessário para o cálculo: blocos, argamassa e graute",
+      "masonry.blocks": "Necessário para o cálculo: ao menos um bloco",
+      "masonry.mortar": "Necessário para o cálculo: ao menos uma argamassa",
+      "masonry.grout": "Necessário para o cálculo: ao menos um graute",
+      "masonry.blocks.quantity":
+        "Necessário para o cálculo: quantidade de blocos maior que zero",
+      "masonry.mortar.volume":
+        "Necessário para o cálculo: volume da argamassa maior que zero",
+      "masonry.grout.volume":
+        "Necessário para o cálculo: volume do graute maior que zero",
+      "masonry.blocks.fbk":
+        "Necessário para o cálculo: fbk entre os valores da lista (4,5 a 26 MPa)",
+      "masonry.mortar.fak":
+        "Necessário para o cálculo: fak entre os valores da lista (4,5 a 24 MPa)",
+      "masonry.grout.fgk":
+        "Necessário para o cálculo: fgk entre os valores da lista (15 a 50 MPa)",
+      "masonry.mortar.fak_duplicate":
+        "Necessário para o cálculo: cada fak só uma vez na argamassa; some os volumes em um único item",
+      "masonry.grout.fgk_duplicate":
+        "Necessário para o cálculo: cada fgk só uma vez em um mesmo graute; some os volumes em um único item",
+      "steel.item_invalid": "Necessário para o cálculo: itens de aço inválidos",
+      "steel.material":
+        "Necessário para o cálculo: tipo de aço válido (ex: CA50, estribo, cordoalha)",
+      "steel.resistance":
+        "Necessário para o cálculo: resistência do aço válida (CA50, CA60, CP190 ou outra)",
+      "steel.position":
+        "Necessário para o cálculo: posição do aço válida para esta tecnologia",
+      "steel.mass": "Necessário para o cálculo: massa do aço maior que zero",
+      "steel.other_name":
+        "Necessário para o cálculo: nome do outro tipo de aço",
+      "steel.other_resistance":
+        "Necessário para o cálculo: resistência do outro tipo maior que zero",
+      "form.position":
+        "Necessário para o cálculo: posição da fôrma válida para esta tecnologia",
+      "form.duplicate_position":
+        "Necessário para o cálculo: uma fôrma por posição (inclusive Geral); some as áreas em um único item",
     },
     form: {
       structureTypeLabel: "Tecnologia Construtiva",
@@ -502,6 +625,56 @@ export const ptBR = {
       fixErrors: "Corrija os seguintes erros antes de enviar:",
       validationErrors: "Existem erros de validação",
       validationDescription: "Evite campos com valores zerados ou inválidos.",
+      partialDataWarning: "Atenção: Dados incompletos ou parciais",
+      partialDataDescription:
+        "Este módulo foi criado/importado sem todos os materiais obrigatórios. Para salvar, preencha os campos destacados em vermelho.",
+      partialDataHint: "Campos obrigatórios que estão zerados ou ausentes:",
+      selectAtLeastOneFloor:
+        "Selecione pelo menos um pavimento (Pórtico/Parede/Alvenaria não podem ser criados sem pavimento vinculado).",
+      position: "Posição",
+      useSlabAreaAvg: "Usar média da área dos pavimentos",
+      completeness: {
+        masonryLabel: "Alvenaria",
+        positions: {
+          column: "Pilar",
+          beam: "Viga",
+          slab: "Laje",
+          stair: "Escada",
+          wall: "Parede",
+          raft: "Radier",
+          pile: "Estaca",
+          block: "Bloco de coroamento",
+          grade_beam: "Viga baldrame",
+          tie_beam: "Viga de amarração",
+        },
+        missing: {
+          concrete: "dados de concreto (fck e volume)",
+          steel: "materiais de aço",
+          form: "fôrma",
+          blocks: "blocos",
+          grout: "grautes",
+          mortar: "argamassa",
+        },
+        patterns: {
+          singleMissing: "{label}: faltando {item}",
+          multiMissing: "{label}: faltando {head} e {last}",
+        },
+        global: {
+          noValidConcrete: "Módulo sem nenhum volume de concreto válido",
+          noValidSteel: "Módulo sem nenhum material de aço válido",
+          minConcrete: "Adicione pelo menos um volume de concreto",
+          minSteel: "Adicione pelo menos um material de aço",
+        },
+        warnings: {
+          invalidPositionShort:
+            "Posição inválida '{{position}}' em {{field}} #{{index}}. Válidas: {{accepted}}.",
+        },
+        labels: {
+          concrete: "Concreto",
+          steel: "Aço",
+          form: "Fôrma",
+        },
+      },
       selectFck: "Selecione fck",
       inUse: "(Em uso)",
       other: "Outro",
@@ -509,6 +682,9 @@ export const ptBR = {
       otherFbk: "Outro Fbk (MPa)",
       otherFgk: "Outro Fgk (MPa)",
       otherFak: "Outro Fak (MPa)",
+      fbkLabel: "Fbk (MPa)",
+      fgkLabel: "Fgk (MPa)",
+      fakLabel: "Fak (MPa)",
       volume: "Volume (m³)",
       totalConcreteVolume: "Volume total de concreto (m³)",
       slabTypeOptional: "Tipo de laje (opcional)",
@@ -535,11 +711,11 @@ export const ptBR = {
       fckWarning: "Para cálculo será considerado fck 50",
       totalWallVolume: "Volume total de parede (m³)",
       totalSlabVolume: "Volume total de laje (m³)",
-      blocks: "Blocos *",
-      groutSection: "Graute *",
-      mortarSection: "Argamassa *",
+      blocks: "Blocos",
+      groutSection: "Graute",
+      mortarSection: "Argamassa",
       totalQuantity: "Quantidade total",
-      groutType: "Tipo de graute *",
+      groutType: "Tipo de graute",
       selectType: "Selecione o tipo",
       addGrout: "Adicionar Graute",
       complementaryStructure: "Estrutura complementar (opcional)",
@@ -551,30 +727,53 @@ export const ptBR = {
       warningSteelZero: "As massas de aço devem ser maiores que 0.",
       warningBothZero:
         "Tanto os volumes de concreto quanto as massas de aço devem ser maiores que 0.",
-      blockType: "Tipo *",
-      blockFbk: "Fbk (MPa) *",
-      blockQuantity: "Quantidade *",
+      blockType: "Tipo",
+      blockFbk: "Fbk (MPa)",
+      blockQuantity: "Quantidade",
       piles: "Estacas",
       pileCaps: "Blocos de Coroamento (opcional)",
       gradeBeams: "Vigas Baldrame (opcional)",
       tieBeams: "Cintas (opcional)",
-      fckLabel: "fck do concreto (MPa) *",
+      fckLabel: "fck do concreto (MPa)",
       concreteVolume: "Volume de concreto (m³)",
       area: "Área (m²)",
       thickness: "Espessura (m)",
       steel: "Aço",
       raft: "Radier",
-      raftArea: "Área (m²) *",
-      raftThickness: "Espessura (m) *",
+      raftArea: "Área (m²)",
+      raftThickness: "Espessura (m)",
       steelMaterials: "Materiais de Aço",
-      material: "Material *",
-      steelType: "Tipo *",
-      massSteelKg: "Massa (kg) *",
-      customMaterialName: "Nome do Material *",
-      customResistance: "Tipo de resistência customizada (MPa) *",
+      material: "Material",
+      steelType: "Tipo",
+      massSteelKg: "Massa (kg)",
+      customMaterialName: "Nome do Material",
+      customResistance: "Tipo de resistência customizada (MPa)",
       rebar: "Vergalhão",
       mesh: "Tela",
       strand: "Cordoalha",
+      requiredLegend:
+        "Campos marcados com * são necessários para o cálculo (não bloqueiam o envio)",
+      ifcSourceLabel: "Materiais (IFC)",
+      tqsSourceLabel: "Materiais (TQS)",
+      aggregatedHint:
+        "Materiais importados em lote. Preencha volumes de concreto e aço conforme arquivo de origem.",
+      unspecifiedPosition: "Sem Posição / Geral",
+      general: "Geral",
+      positionLabel: "Posição",
+      positionPlaceholder: "Selecione a posição",
+      emptyList: {
+        concrete: "Nenhum elemento de concreto adicionado",
+        steel: "Nenhum elemento de aço adicionado",
+        forms: "Nenhum elemento de fôrma adicionado",
+        blocks: "Nenhum elemento de blocos adicionado",
+        mortar: "Nenhum elemento de argamassa adicionado",
+        groutVolumes: "Nenhum volume de graute adicionado",
+        groutSteel: "Nenhum aço de graute adicionado",
+      },
+      unspecifiedHint: "Itens sem posição declarada (soma geral do módulo)",
+      beamCount: "Número de vigas",
+      slabCount: "Número de lajes",
+      slabArea: "Área de laje (m²)",
       slabTypes: {
         solid: "Laje maciça (concreto armado) com vigas ou paredes estruturais",
         ribbed: "Laje nervurada (unidirecional, bidirecional / tipo waffle)",
@@ -696,6 +895,7 @@ export const ptBR = {
         name: "Benchmark",
         yAxisLabel: "Potencial de mitigação",
         xAxisLabelCarbon: "Carbono Embutido (kg CO₂/m²)",
+        xAxisLabelMaterial: "Consumo Unitário de Materiais (m³/m²)",
         xAxisLabelEnergy: "Energia Embutida MJ/m²",
         baseLine: "linha de base",
         ppp5Line: "PPp 5%",
@@ -711,6 +911,11 @@ export const ptBR = {
         yAxisLabel: "Classificação dos projetos",
         xAxisLabelCarbon: "Consumo Unitário de Materiais - CUM (m³/m²)",
         xAxisLabelEnergy: "Consumo Unitário de Materiais - CUM (m³/m²)",
+      },
+      emission: {
+        co2Label: "CO₂ (kg)",
+        energyLabel: "Energia (MJ)",
+        materialLabel: "Material (m³/m²)",
       },
     },
     chartPlaceholder: "Gráfico",
@@ -784,6 +989,9 @@ export const ptBR = {
     learnMore: "Saiba mais...",
     dismissCheckboxLabel:
       "Não exibir esta mensagem automaticamente ao entrar novamente neste navegador",
+    accessVideosOnYoutube: "Acesse os vídeos no YouTube",
+    videoTrainingDescription:
+      "Você também pode acessar o conteúdo da capacitação por meio de vídeos explicativos no YouTube, no seu próprio ritmo.",
   },
   phase: {
     preliminary_study: "Estudo Preliminar",
@@ -805,6 +1013,18 @@ export const ptBR = {
     daysAgo: "dias atrás",
     weeksAgo: "semanas atrás",
     monthsAgo: "meses atrás",
+  },
+  utils: {
+    date: {
+      secondsAgo:
+        "{count, plural, one {# segundo atrás} other {# segundos atrás}}",
+      minutesAgo:
+        "{count, plural, one {# minuto atrás} other {# minutos atrás}}",
+      hoursAgo: "{count, plural, one {# hora atrás} other {# horas atrás}}",
+      daysAgo: "{count, plural, one {# dia atrás} other {# dias atrás}}",
+      weeksAgo: "{count, plural, one {# semana atrás} other {# semanas atrás}}",
+      monthsAgo: "{count, plural, one {# mês atrás} other {# meses atrás}}",
+    },
   },
   drawer: {
     importantNote: "Importante: Confirmação de Dados",
@@ -834,7 +1054,15 @@ export const ptBR = {
     removeDiscipline: "Remover Disciplina",
   },
   summary: {
-    title: "Resumo",
+    chartType: {
+      stackedBar: "Barras empilhadas",
+    },
+    placeholders: {
+      chartType: "Tipo de gráfico",
+    },
+    title: "Benchmark",
+    visualization: "Visualização",
+    filters: "Filtros",
     selectAll: "Selecionar Todos",
     deselectAll: "Desmarcar Todos",
     selectedItems: "itens selecionados",
@@ -845,18 +1073,26 @@ export const ptBR = {
     total: "Total",
     chartLegend: {
       referenceValue: "Valor de referência",
-      constructionMitigationPotential: "Potencial de mitigação da construção (Melhor cenário)",
+      constructionMitigationPotential:
+        "Potencial de mitigação da construção (Melhor cenário)",
       projectMitigationPotential: "Potencial de mitigação do projeto",
-      riskOfLowerConstructionMitigation: "Risco de menor mitigação da construção (Pior cenário)",
+      riskOfLowerConstructionMitigation:
+        "Risco de menor mitigação da construção (Pior cenário)",
       referenceValue_short: "Valor de referência",
-      constructionMitigationPotential_short: "Potencial de mitigação da construção",
+      constructionMitigationPotential_short:
+        "Potencial de mitigação da construção",
       projectMitigationPotential_short: "Potencial de mitigação do projeto",
       riskOfLowerConstructionMitigation_short: "Pior cenário",
-      title: "Legenda"
+      title: "Legenda",
     },
     emissionLegend: {
-      title: 'Total de Emissões por tecnologia',
-    }
+      title: "Total de Emissões por tecnologia",
+    },
+    classification: {
+      title: "Classificação",
+      projectsCount: "N: {{count}} projetos",
+      projectsCountShort: "N: {{count}}",
+    },
   },
   floor: {
     penthouse_floor: "Cobertura",
@@ -885,6 +1121,14 @@ export const ptBR = {
     toVisualizeTheTower: "para visualizar a torre",
     floorCount_one: "pavimento",
     floorCount_other: "pavimentos",
+    fallbackNames: {
+      ground: "Térreo",
+      penthouse: "Cobertura",
+      basementOnly: "Subsolo",
+      basementNumbered: "Subsolo {n}",
+      standardOrdinalPositive: "{n}º Andar",
+      standardNumbered: "Andar {n}",
+    },
   },
   unitForm: {
     tower: {
@@ -903,6 +1147,8 @@ export const ptBR = {
       floorArea: "Área do Pavimento (m²)",
       floorHeight: "Altura do Pavimento (m)",
       floorRepetition: "Repetição",
+      floorRepetitionTooltip:
+        "Número total de pavimentos iguais. 1 = só este pavimento; 2 = dois pavimentos no total, e não duas cópias além dele.",
       index: "Índice",
       floorsTab: "Pavimentos",
       floorNamePlaceholder: "Pavimento Tipo",
@@ -932,6 +1178,7 @@ export const ptBR = {
     displaying: "Exibindo",
     selected: "Selecionados",
     of: "de",
+    selectedVisible: "Exibindo {{visible}} de {{total}} selecionados",
     numberOfProjects: "Nº de empreendimentos",
     enableZoom: "Habilitar zoom",
     disableZoom: "Desabilitar zoom",
@@ -1013,6 +1260,7 @@ export const ptBR = {
     privacyRequired:
       "Você deve aceitar a Política de Privacidade para se registrar",
     nameMinLength: "O nome deve ter pelo menos 3 caracteres",
+    unitNameTaken: "Já existe uma unidade com este nome no empreendimento",
     selectPhase: "Selecione uma fase do empreendimento",
     selectUnitType: "Selecione um tipo de unidade",
     invalidUnitType: "Tipo de unidade inválido",
@@ -1086,6 +1334,27 @@ export const ptBR = {
   },
   summaryFloors: {
     floors: "Pavimentos",
+    referenceValueTotal: "Valor de Ref. - Total",
+    referenceValueBenchmark: "Valor de Ref. - Benchmark",
+    bestScenario: "Melhor cenário",
+    worstScenario: "Pior cenário",
+    classificationName: "Classificação",
+    nProjectsLabel: "projetos",
+    defaultFloorGroupName: "Unidade",
+  },
+  summaryUnits: {
+    referenceValueTotal: "Valor de Ref. - Total",
+    referenceValueBenchmark: "Valor de Ref. - Benchmark",
+    bestScenario: "Melhor cenário",
+    worstScenario: "Pior cenário",
+    classificationName: "Classificação",
+    nProjectsLabelShort: "proj.",
+    defaultUnitName: "Unidade",
+    categories: {
+      concrete_wall: "Parede de Concreto",
+      foundation: "Fundação",
+      roof: "Cobertura",
+    },
   },
   customBanner: {
     building: "Edificação",
@@ -1115,13 +1384,20 @@ export const ptBR = {
     energyMin: "Energia Min. (MJ/m²)",
     energyMax: "Energia Max. (MJ/m²)",
     energyRange: "Energia (MJ/m²)",
-    material: "Material (kg/m²)",
+    material: "Material (m³/m²)",
     quantity: "Quantidade",
     unknown: "Desconhecida",
     outdatedTech:
       "Essa tecnologia construtiva está desatualizada devido a mudanças na unidade. Atualize-a!",
+    partialTech:
+      "Essa tecnologia construtiva foi criada com dados parciais. Abra a edição para preencher os campos necessários para o cálculo.",
+    partialLabel: "Dados parciais",
+    emptyLabel: "Sem dados",
+    emptyTech:
+      "Essa tecnologia construtiva está sem dados de materiais. Abra a edição para preencher.",
     duplicate: "Duplicar",
     selectRow: "Selecionar linha",
+    createdByUser: "(Criado pelo usuário)",
   },
   unitView: {
     tabAllDisciplines: "Todas as disciplinas",
@@ -1259,6 +1535,140 @@ export const ptBR = {
     serverError:
       "Ocorreu um erro no servidor. Por favor, tente novamente mais tarde.",
   },
+  stepper: {
+    title: "Importar dados do IFC",
+    subtitle:
+      "Valide unidades e módulos extraídos do arquivo IFC antes de criar.",
+    stepUnits: "Unidades",
+    stepUnitsDescription: "Validar e criar unidades",
+    stepModules: "Módulos",
+    stepModulesDescription: "Vincular e criar módulos",
+    stepSimulationModulesDescription: "Vincular à simulação e criar módulos",
+    discardConfirm: {
+      title: "Descartar a importação?",
+      description:
+        "As unidades e os módulos que ainda não foram criados, com tudo o que você preencheu neles, serão perdidos.",
+      keepEditing: "Continuar editando",
+      discard: "Descartar e fechar",
+    },
+    import: {
+      fromFile: "Do arquivo IFC",
+    },
+    btnNext: "Próximo passo",
+    btnFinish: "Concluir",
+    btnCancel: "Cancelar",
+    btnBack: "Voltar",
+    btnEdit: "Editar",
+    selectAll: "Selecionar todos",
+    selected: "Selecionado(s)",
+    unselected: "Desmarcado(s)",
+    total: "Total",
+    statusValid: "Válido",
+    statusWarnings: "Avisos",
+    statusInvalid: "Inválido",
+    validationErrors: "Campos inválidos ou faltantes",
+    semanticWarnings: "Avisos semânticos (dados parciais)",
+    simulation: {
+      title: "Importar módulos do IFC",
+      description:
+        "Selecione uma simulação existente para adicionar os módulos extraídos do IFC.",
+      selectLabel: "Simulação alvo (onde os módulos serão criados)",
+      contextLabel: "Unidade do projeto",
+      createdLabel: "Simulação criada",
+      noOptions: "Nenhuma simulação cadastrada",
+      selectPlaceholder: "Selecione uma simulação",
+      noOptionsHint: "Crie uma nova simulação primeiro.",
+      createNew: "Criar nova simulação",
+      requiredHint: "Selecione ou crie uma simulação antes de prosseguir.",
+      changeLabel: "Trocar",
+      changeAriaLabel: "Trocar simulação",
+    },
+    modules: {
+      hint: "A criação de módulos não é obrigatória. Somente os módulos marcados abaixo, válidos e com vínculo de unidade serão criados.",
+      title: "Módulos encontrados",
+      columnType: "Tipo",
+      columnStatus: "Status da validação",
+      columnFloors: "Pavimentos",
+      columnSummary: "Resumo dos dados",
+      columnUnit: "Unidade / Simulação",
+      columnAction: "Ação",
+      noneBound: "(Não vincular — será ignorado)",
+      unitSelectPlaceholder: "Selecione uma unidade",
+      noUnitsCreated: "Nenhuma unidade criada. Volte ao passo anterior.",
+      noneFound: "Nenhum módulo retornado pelo processamento do IFC.",
+      applyToAll: "Aplicar a todos",
+      createdUnitsTitle: "Unidades criadas",
+      editBtnDisabled: "Vincule uma unidade para editar",
+      notBoundWarning:
+        "Vincule este módulo a uma unidade no Step 2 antes de salvar. Pavimentos só serão selecionáveis após o vínculo.",
+      noneSelected:
+        "Nenhum módulo selecionado para criar. Marque ao menos 1 módulo e vincule a uma unidade.",
+      noBinding:
+        "{count} módulo(s) selecionado(s) SEM vínculo de unidade/opção. Vincule as unidades ou desmarque para prosseguir.",
+      noneValid:
+        "Nenhum módulo válido selecionado para criar. Marque ao menos 1 módulo válido e com vínculo de unidade.",
+      unselected:
+        "{count} módulo(s) desmarcado(s) — nenhum módulo selecionado válido para criar. Stepper encerrado.",
+      noBindingAtAll:
+        "Nenhum módulo com vinculo de unidade para criar. Stepper encerrado.",
+      step2Error: "Falha ao criar módulos.",
+      batchResult:
+        "{created} módulo(s) criado(s). {errors} lote(s) falhou(ram).",
+      floorBindingUnresolved:
+        "Não foi possível vincular os pavimentos selecionados em {module}. Reabra o módulo, confira os pavimentos e tente novamente.",
+      createdSuccess: "{count} módulo(s) criado(s) com sucesso.",
+      ignoredParts: "{parts} — não serão criados.",
+      partIgnored: "{count} selecionado(s) mas sem vinculo/inválidos",
+      partUnselected: "{count} desmarcado(s)",
+      creatingUnits: "Criando unidades...",
+      creatingModules: "Criando módulos...",
+      nextStep: "Próximo passo",
+      cancel: "Cancelar",
+      back: "Voltar",
+      finish: "Concluir",
+      titleBindingTooltip:
+        "{count} módulo(s) selecionado(s) sem vínculo de unidade/opção — vincule ou desmarque para prosseguir.",
+    },
+    units: {
+      title: "Unidades encontradas",
+      columnName: "Edificação",
+      columnSimulationName: "Simulação",
+      columnFloors: "Pavimentos",
+      columnStatus: "Status da validação",
+      columnAction: "Ação",
+      noneFound: "Nenhuma unidade retornada pelo processamento do IFC.",
+      labelBuildingName: "Nome da edificação",
+      labelSimulationName: "Nome da simulação",
+      simulationNamePlaceholder: "Ex.: Simulação Torre A",
+      floors: "andar",
+      floorsPlural: "andares",
+      errors: "erro",
+      errorsPlural: "erros",
+      errorsUnknown: "Validação pendente ou falhou.",
+      noneSelected: "Selecione pelo menos uma unidade para criar.",
+      invalidSelected:
+        "{count} unidade(s) selecionada(s) são inválidas. Corrija ou desmarque antes de prosseguir.",
+      projectMissing: "Dados do projeto não carregados. Tente novamente.",
+      createdUnits:
+        "{count} unidade(s) e simulação(ões) criada(s) com sucesso.",
+      updatedUnits: "{count} unidade(s) atualizada(s) com sucesso.",
+      reusedUnits:
+        "{count} unidade(s) já existiam — seguindo para o passo de módulos.",
+      mixedResult: "{parts}. Seguindo para módulos.",
+      partCreated: "{count} criada(s)",
+      partUpdated: "{count} atualizada(s)",
+      partReused: "{count} reutilizada(s)",
+      step1Error: "Falha ao criar/atualizar unidades/simulações.",
+    },
+    compat: {
+      floorMismatchTitle: "Incompatibilidade de quantidade de pavimentos",
+      floorMismatchBody:
+        "Não é possível continuar com a importação. O arquivo selecionado contém {importedUnitName} com {importedFloorsCount} {importedFloorsLabel}, porém a unidade do projeto ({contextUnitName}) possui {contextFloorsCount} {contextFloorsLabel}. As unidades devem ser compatíveis quanto ao número de pavimentos.",
+      floorMismatchActionHelp:
+        "Corrija a unidade do projeto ou importe outro arquivo para continuar.",
+    },
+    others: "outros",
+  },
   drawerIFC: {
     title: "Dados de IFC",
     titleImport: "Dados de Importação",
@@ -1270,9 +1680,19 @@ export const ptBR = {
     sectionAlreadyImportedIFC: "Utilizar dados de IFC já importados",
     sectionAlreadyImportedTQS: "Utilizar dados de Arquivo TQS já importados",
     softwareLabel: "Qual software utilizou para desenvolver?",
-    softwarePlaceholder: "Selecione o software",
-    versionLabel: "Qual versão",
-    versionPlaceholder: "Versão",
+    softwarePlaceholder: "Selecione ou digite o software",
+    softwareHelperTooltip:
+      "Selecione o software que gerou o arquivo IFC. Não está na lista? Digite o nome manualmente.",
+    versionLabel: "Qual versão (escolha a mais próxima)",
+    versionPlaceholder: "Selecione ou digite a versão",
+    versionHelperTooltip:
+      "Selecione a versão exata do software. Não achou a versão exata? Escolha a versão mínima mais próxima disponível — o parser usará a planilha de adaptação correspondente para extrair mais dados.",
+    fallbackRegisteredBadge: "Planilha cadastrada",
+    fallbackGenericBadge: "Base ISO genérica",
+    fallbackGenericWarning:
+      "Sem planilhas cadastradas para este software. O processamento usará a base ISO genérica (menos informações extraídas).",
+    fallbackAddCustomPrefix: "Usar valor personalizado",
+    fallbackEmptyOptions: "Sem opções cadastradas",
     processingMessageIFC:
       "Carregando arquivo IFC. Não feche essa janela até o upload completar.",
     processingMessageTQS:
@@ -1288,8 +1708,27 @@ export const ptBR = {
     removeFile: "Remover arquivo",
     manageFiles: "Gerenciar arquivos importados",
     importData: "Importar os dados",
+    importQueuedIFC:
+      "Importação iniciada. Você pode acompanhar o status na lista de arquivos importados.",
+    calculateGeometriesLabel: "Com cálculo geométrico otimizado",
+    calculateGeometriesHint: "pode levar mais tempo",
+    calculateGeometriesTooltip:
+      "Calcula a geometria dos elementos do modelo. Além do tempo de processamento, a opção muda os resultados: volumes, vãos médios e o agrupamento dos pavimentos podem ser diferentes de uma importação sem cálculo.",
     selectFileLabel: "Selecione seu arquivo",
     selectFilePlaceholder: "Selecione um arquivo importado",
+    noImportedFiles: "Nenhum arquivo importado encontrado",
+    statusWaitingForFiles: "Aguardando upload do IFC",
+    statusProcessing: "Em processamento",
+    statusCompleted: "Concluído",
+    statusFailed: "Falhou",
+    loadingSoftwareVersions: "Carregando opções...",
+    noSoftwareVersions: "Nenhuma opção encontrada",
+    waitingForFilesSelectHint:
+      "O upload do IFC não foi concluído para esta importação. Aguarde ou inicie uma nova importação.",
+    processingSelectHint:
+      "Este arquivo ainda está em processamento. Aguarde para utilizar os dados.",
+    failedSelectHint:
+      "O processamento deste arquivo falhou. Tente importar novamente.",
     selectUnitLabel: "Unidade",
     selectUnitPlaceholder: "Selecione a unidade",
     selectTechLabel: "Selecione as tecnologias que deseja importar",
@@ -1301,6 +1740,57 @@ export const ptBR = {
     importError: "Erro ao importar arquivo",
     useSelectedSuccess: "Dados importados com sucesso",
     useSelectedError: "Erro ao utilizar dados selecionados",
+    disciplineLabel: "Disciplina (para criação da simulação)",
+    disciplinePlaceholder: "Selecione a disciplina",
+    noDisciplinesHint:
+      "Nenhuma disciplina de simulação cadastrada neste projeto. Crie uma disciplina antes de importar arquivos.",
+    disciplinesGoTo: "Abrir aba Disciplinas",
+    newDisciplineLink: "Cadastrar nova disciplina",
+    geometryIncludedLabel:
+      "Modo 1 — Cálculo otimizado (somente geometrias necessárias para os JSONs)",
+    geometrySkippedLabel:
+      "Modo 0 — Sem cálculo de geometrias (extração ISO genérica)",
+    geometryIncludedInline: "com cálculo otimizado",
+    geometrySkippedInline: "sem cálculo geométrico",
+    simulationRoleMissing:
+      "Disciplina de simulação não selecionada. Selecione uma disciplina para prosseguir.",
+    showOnlyVisible: "Mostrar ativos",
+    showAll: "Arquivados",
+    hideFile: "Arquivar",
+    showFile: "Mostrar este arquivo",
+    hiddenBadge: "Arquivado",
+    hideSuccess: "Arquivado com sucesso",
+    showSuccess: "Arquivo ativado",
+    visibilityActionError: "Erro ao arquivar",
+  },
+  fallbacksPage: {
+    title: "Gerenciar Planilhas de Adaptação (Fallbacks)",
+    subtitle:
+      "Cadastre planilhas CSV de adaptação por software e versão para melhorar a precisão do parser IFC. Acesso restrito a administradores.",
+    adminOnlyTitle: "Acesso restrito",
+    adminOnlyDescription:
+      "Esta página é acessível apenas para administradores da plataforma.",
+    createTitle: "Cadastrar nova planilha",
+    softwareLabel: "Software (fabricante)",
+    softwarePlaceholder: "Ex.: TQS, Revit, Eberick, Cypecad",
+    versionLabel: "Versão exata",
+    versionPlaceholder:
+      "Ex.: 26.1.69 | 2024.3.6 | 2026-05 [v. 18.311] | 2017.m",
+    fileLabel: "Arquivo CSV da planilha",
+    filePlaceholder: "Selecione um arquivo .csv",
+    fileInvalidError: "Formato inválido. Selecione um arquivo .csv.",
+    fileMaxSizeError: "Arquivo muito grande. Tamanho máximo permitido: 5MB.",
+    submitButton: "Cadastrar planilha",
+    submittingButton: "Cadastrando...",
+    successToast: "Planilha cadastrada com sucesso!",
+    errorToast: "Erro ao cadastrar planilha",
+    listTitle: "Planilhas cadastradas",
+    refreshButton: "Atualizar",
+    listEmpty: "Nenhuma planilha cadastrada ainda.",
+    listLoading: "Carregando planilhas...",
+    listError: "Erro ao carregar planilhas cadastradas.",
+    colSoftware: "Software",
+    colVersion: "Versão",
   },
 } as const;
 

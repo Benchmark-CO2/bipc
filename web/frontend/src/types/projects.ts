@@ -2,6 +2,7 @@
 
 import { TRole } from "./disciplines";
 import { TModulesTypes } from "./modules";
+import { TUnknownModuleOccurrence } from "./unknownModules";
 import { TUnitType } from "./units";
 
 export type TProjectPhase =
@@ -41,6 +42,7 @@ export interface IProject {
     | number
     | TConsumptionPerModule
     | TRole[]
+    | TUnknownModuleOccurrence[]
     | boolean
     | undefined;
   id: string;
@@ -59,6 +61,7 @@ export interface IProject {
   description: string;
   units: TProjectUnit[];
   consumption?: TConsumptionPerModule;
+  unknown_modules?: TUnknownModuleOccurrence[];
   area: number;
   user_id: number;
   roles?: TRole[];

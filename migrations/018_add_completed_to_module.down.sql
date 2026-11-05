@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE module
+    DROP COLUMN IF EXISTS completed;
+
+COMMIT;

@@ -1,19 +1,19 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { PublicHeader, Sidebar } from "@/components/layout";
+import ModalTraining from "@/components/layout/modal-training";
 import Screen from "@/components/layout/screen";
 import UserActiveWarning from "@/components/layout/user-active-warning";
-import ModalTraining from "@/components/layout/modal-training";
 import BreadCrumbs from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 // import { ModeToggle } from '@/components/mode-toggle'
 import { AuthContext } from "@/context/authContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { ENV } from "@/utils/constants";
 import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
-import { useTranslation } from "@/i18n";
-import { AlertTriangle, Home, MessageSquare, RefreshCw } from "lucide-react";
+import { trainingModalStorage } from "@/utils/trainingModalStorage";
 import { QueryClient } from "@tanstack/react-query";
 import {
   createRootRouteWithContext,
@@ -21,8 +21,8 @@ import {
   useLocation,
   useNavigate,
 } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
-import { trainingModalStorage } from "@/utils/trainingModalStorage";
+import { AlertTriangle, Home, MessageSquare, RefreshCw } from "lucide-react";
+import { lazy } from "react";
 const TanStackRouterDevtools = import.meta.env.PROD
   ? () => null
   : lazy(() =>
@@ -117,9 +117,9 @@ export const Route = createRootRouteWithContext<{
           )}
         */}
 
-        <Suspense>
+        {/* <Suspense>
           <TanStackRouterDevtools position="bottom-right" />
-        </Suspense>
+        </Suspense> */}
       </div>
     );
   },

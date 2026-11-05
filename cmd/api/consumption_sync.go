@@ -53,6 +53,22 @@ func (app *application) syncMissingModuleConsumptions(moduleIDs []uuid.UUID) err
 		if err != nil {
 			return err
 		}
+
+		// Refresh the module row totals as well, otherwise legacy modules keep
+		// NULL/stale total_material and any subsequent duplication still reads
+		// a zero material value from the stored row.
+		err = app.models.Modules.UpdateComputedConsumption(
+			dataModule.ID,
+			result.CO2Min,
+			result.CO2Max,
+			result.EnergyMin,
+			result.EnergyMax,
+			result.Material,
+			dataModule.Completed,
+		)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

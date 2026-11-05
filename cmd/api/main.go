@@ -3,12 +3,10 @@ package main
 import (
 	"context"
 	"database/sql"
-	"expvar"
 	"flag"
 	"fmt"
 	"log/slog"
 	"os"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -49,8 +47,9 @@ type config struct {
 	cors struct {
 		trustedOrigins []string
 	}
-	ifcURL    string
-	ifcSecret string
+	ifcURL              string
+	ifcSecret           string
+	reportSigningSecret string
 }
 
 type application struct {
@@ -59,6 +58,7 @@ type application struct {
 	models data.Models
 	mailer *mailer.Mailer
 	wg     sync.WaitGroup
+	sse    *SSEHub
 }
 
 func main() {
@@ -92,6 +92,8 @@ func main() {
 
 	flag.StringVar(&cfg.ifcSecret, "ifc-secret", "", "IFC secret")
 
+	flag.StringVar(&cfg.reportSigningSecret, "report-signing-secret", "", "Report signing secret")
+
 	displayVersion := flag.Bool("version", false, "Display version and exit")
 
 	flag.Parse()
@@ -115,6 +117,7 @@ func main() {
 		config: cfg,
 		logger: logger,
 		models: data.NewModels(db),
+		sse:    NewSSEHub(),
 	}
 
 	err = app.backfillMissingModuleConsumptions()
@@ -129,20 +132,6 @@ func main() {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
-
-	expvar.NewString("version").Set(version)
-
-	expvar.Publish("goroutines", expvar.Func(func() any {
-		return runtime.NumGoroutine()
-	}))
-
-	expvar.Publish("database", expvar.Func(func() any {
-		return db.Stats()
-	}))
-
-	expvar.Publish("timestamp", expvar.Func(func() any {
-		return time.Now().Unix()
-	}))
 
 	app.mailer = mailer
 

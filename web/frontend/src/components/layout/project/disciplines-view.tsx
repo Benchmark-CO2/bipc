@@ -11,7 +11,6 @@ import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { useTranslation } from "@/i18n";
 import { parseApiError } from "@/utils/parseApiError";
 import { SimpleTooltip } from "@/components/ui/simple-tooltip";
-
 const DisciplinesView = ({ projectId }: { projectId: string }) => {
   const { hasPermission } = useProjectPermissions(projectId);
   const { t } = useTranslation();

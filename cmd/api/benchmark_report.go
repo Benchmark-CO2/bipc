@@ -60,6 +60,7 @@ type ProjectRank struct {
 type ProjectBenchmarkReport struct {
 	ProjectID    uuid.UUID               `json:"project_id"`
 	Area         float64                 `json:"area"`
+	Sources      map[string]float64      `json:"sources"`
 	Rank         MetricPair[ProjectRank] `json:"rank"`
 	Project      ProjectMetrics          `json:"project"`
 	Reductions   ProjectMetrics          `json:"reductions"`
@@ -136,9 +137,15 @@ func (app *application) buildProjectBenchmarkReport(projectID uuid.UUID) (*Proje
 		Energy: projectRankInSeries(energyMinPoints, projectBounds.Energy.Min),
 	}
 
+	sources, err := app.models.Modules.SourceDistribution(projectID)
+	if err != nil {
+		return nil, err
+	}
+
 	report := &ProjectBenchmarkReport{
 		ProjectID:  projectID,
 		Area:       project.Area,
+		Sources:    sources,
 		Rank:       rank,
 		Project:    buildProjectsReportMetrics(projectBounds, project.Area),
 		Reductions: buildProjectsReportMetrics(reductionsBounds, project.Area),

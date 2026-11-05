@@ -64,7 +64,7 @@ const Login = () => {
   useEffect(() => {
     const token = data?.data.authentication_token;
     if (token) {
-      auth.login(token, data?.data.user);
+      auth.login(token, data?.data.user as any);
       navigateTo("/new_projects");
     }
   }, [data, navigate]);
@@ -246,7 +246,10 @@ export const Route = createFileRoute("/(public)/login")({
     if (context.auth.isAuthenticated) {
       return redirect({
         to: "/new_projects",
-        search: { activationRequired: true },
+        search:
+          context.auth.activated === false
+            ? { activationRequired: true }
+            : { activationRequired: false },
       });
     }
   },

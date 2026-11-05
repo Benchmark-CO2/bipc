@@ -236,10 +236,11 @@ func (app *application) createUnitHandler(w http.ResponseWriter, r *http.Request
 }
 
 type RoleInfo struct {
-	ID          uuid.UUID                    `json:"id"`
-	Name        string                       `json:"name"`
-	IsMember    bool                         `json:"is_member"`
-	Consumption map[string]*data.Consumption `json:"consumption,omitempty"`
+	ID             uuid.UUID                       `json:"id"`
+	Name           string                          `json:"name"`
+	IsMember       bool                            `json:"is_member"`
+	Consumption    map[string]*data.Consumption    `json:"consumption,omitempty"`
+	UnknownModules []*data.UnknownModuleOccurrence `json:"unknown_modules,omitempty"`
 }
 
 func (app *application) readUnitHandler(w http.ResponseWriter, r *http.Request) {
@@ -292,6 +293,15 @@ func (app *application) readUnitHandler(w http.ResponseWriter, r *http.Request) 
 			}
 			if len(consumption) > 0 {
 				roleInfo.Consumption = consumption
+			}
+
+			unknownModules, err := app.models.Units.GetUnknownModulesByRole(unitID, role.ID)
+			if err != nil {
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+			if len(unknownModules) > 0 {
+				roleInfo.UnknownModules = unknownModules
 			}
 		}
 

@@ -46,7 +46,7 @@ const ItemCard = ({
         />
       </div>
       <div className="flex flex-col gap-1 w-full">
-        <p className="font-semibold text-lg text-primary">
+        <p className="font-semibold text-sm text-primary">
           Sistema viga /pilar:
         </p>
         <div
@@ -57,7 +57,7 @@ const ItemCard = ({
           }}
         />
         {!!item[type] && (
-          <p className="text-base text-foreground">
+          <p className="text-sm text-foreground">
             {(item[type] as number).toFixed(1)} kg CO₂/m²
           </p>
         )}

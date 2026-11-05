@@ -16,6 +16,29 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// resolveDataSource resolves the effective source for a module payload.
+// Precedence: explicit source from the payload wins; otherwise the context
+// source set by the authenticate middleware is used. API requests without an
+// explicit source resolve to "" (no source tag is written for changed values).
+func (app *application) resolveDataSource(r *http.Request, payloadSource string) string {
+	if payloadSource != "" {
+		return payloadSource
+	}
+
+	return mapContextSource(app.contextGetSource(r))
+}
+
+func mapContextSource(ctxSource string) string {
+	switch ctxSource {
+	case SourcePlugin:
+		return SourcePlugin
+	case SourceTQS, SourceIFC:
+		return ctxSource
+	default:
+		return ""
+	}
+}
+
 func (app *application) readUUIDParam(r *http.Request, name string) (uuid.UUID, error) {
 	params := httprouter.ParamsFromContext(r.Context())
 
@@ -63,6 +86,11 @@ func (app *application) readInt(qs url.Values, key string, defaultValue int, v *
 	}
 
 	return i
+}
+
+func (app *application) readSourceInclude(qs url.Values) bool {
+	s := qs.Get("include_source")
+	return s == "1" || strings.EqualFold(s, "true")
 }
 
 type envelope map[string]any

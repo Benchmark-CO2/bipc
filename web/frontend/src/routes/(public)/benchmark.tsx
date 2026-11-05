@@ -80,7 +80,7 @@ const toSeriesPoints = (arr?: IBenchmarkSeries["min"]): SeriesPoint[] =>
 
 export const Route = createFileRoute("/(public)/benchmark")({
   component: RouteComponent,
-  loader: ({ context }: { context: any }) => {
+  loader: ({ context }: { context: any; }) => {
     return {
       auth: context.auth,
     };
@@ -272,22 +272,22 @@ function RouteComponent() {
                       {(mapStats.isStateView
                         ? mapStats.unmatchedCount
                         : mapStats.noStateCount) > 0 && (
-                        <span
-                          title={
-                            mapStats.isStateView
-                              ? t.brazilMap.unmatchedTooltip
-                              : t.brazilMap.noStateTooltip
-                          }
-                        >
-                          · ⚠{" "}
-                          {mapStats.isStateView
-                            ? mapStats.unmatchedCount
-                            : mapStats.noStateCount}{" "}
-                          {mapStats.isStateView
-                            ? t.brazilMap.unmatchedWarning
-                            : t.brazilMap.noStateWarning}
-                        </span>
-                      )}
+                          <span
+                            title={
+                              mapStats.isStateView
+                                ? t.brazilMap.unmatchedTooltip
+                                : t.brazilMap.noStateTooltip
+                            }
+                          >
+                            · ⚠{" "}
+                            {mapStats.isStateView
+                              ? mapStats.unmatchedCount
+                              : mapStats.noStateCount}{" "}
+                            {mapStats.isStateView
+                              ? t.brazilMap.unmatchedWarning
+                              : t.brazilMap.noStateWarning}
+                          </span>
+                        )}
                     </div>
                     <div className="self-end">
                       <Legend variant="map" maxCount={mapStats.maxCount} />
@@ -295,25 +295,28 @@ function RouteComponent() {
                   </div>
                 </div>
               )}
-              {selectedChart !== "map" && (
-              <div className="flex flex-col gap-1 mt-4">
-                <strong className="text-xs text-gray-shade-500">
-                  {t.benchmark.legend}
-                </strong>
-                <p className="flex items-center gap-2 text-xs">
-                  <div className="w-3 h-3 block rounded-full bg-[#3b82f6]"></div>{" "}
-                  <i>{t.benchmark.bestSupplier}</i>
-                </p>
-                <p className="flex items-center gap-2 text-xs">
-                  <div className="w-3 h-3 block rounded-full bg-[#E36F35]"></div>{" "}
-                  <i>{t.benchmark.worstSupplier}</i>
-                </p>
-              </div>
-            )}
+              {selectedChart !== "map" && type !== 'material' && (
+                <div className="flex flex-col gap-1 mt-4">
+                  <strong className="text-xs text-gray-shade-500">
+                    {t.benchmark.legend}
+                  </strong>
+                  <p className="flex items-center gap-2 text-xs">
+                    <div className="w-3 h-3 block rounded-full bg-[#3b82f6]"></div>{" "}
+                    <i>{t.benchmark.bestSupplier}</i>
+                  </p>
+                  <p className="flex items-center gap-2 text-xs">
+                    <div className="w-3 h-3 block rounded-full bg-[#E36F35]"></div>{" "}
+                    <i>{t.benchmark.worstSupplier}</i>
+                  </p>
+                </div>
+              )}
             </div>
-            <div className="w-full">
+            <div 
+              className="w-full relative flex flex-col" 
+              style={{ minHeight: 400, height: chartMaxHeight }}
+            >
               {isBaseLoading ? (
-                <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
+                <div className="flex items-center justify-center h-full text-gray-400 text-sm">
                   {t.benchmark.loadingData}
                 </div>
               ) : selectedChart === "trend" ? (
@@ -330,14 +333,13 @@ function RouteComponent() {
                   totalCount={activeMapResult.totalCount}
                   noStateCount={activeMapResult.noStateCount}
                   unit={type === "co2" ? "kg CO₂/m²" : "MJ/m²"}
-                  className="w-full"
-                  maxHeight={chartMaxHeight}
+                  className="w-full h-full"
+                  maxHeight={chartMaxHeight -80}
                   allowZoom
                   onStatsChange={setMapStats}
                 />
               ) : (
                 <D3RangeChart
-                  height={Math.round(window.innerHeight * 0.6)}
                   data={chartData}
                   selectedBars={selectedFilteredIds}
                   selectedMinBars={selectedFilteredMinIds}
@@ -355,9 +357,9 @@ function RouteComponent() {
                   variant={type === "material" ? "cumulative" : "range"}
                   xAxisLabel={
                     t.benchmark.chartTypes[
-                      type === "co2" || type === "energy"
-                        ? "cumulativeFraction"
-                        : "material"
+                    type === "co2" || type === "energy"
+                      ? "cumulativeFraction"
+                      : "material"
                     ][type === "co2" ? "xAxisLabelCarbon" : "xAxisLabelEnergy"]
                   }
                   yAxisLabel={
@@ -367,11 +369,13 @@ function RouteComponent() {
                         : "material"
                     ].yAxisLabel
                   }
+                  emptyResults={selectedFilteredIds.length === 0 && hasActiveFilter}
+                  showIndicators={type !== "material"}
                 />
               )}
             </div>
 
-            
+
           </div>
         </div>
         <section className="w-full mt-30">

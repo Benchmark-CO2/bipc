@@ -13,13 +13,13 @@ const (
 )
 
 type ParsedModule struct {
-	FloorIndex int           `json:"floor_index"`
-	Type       ModuleType    `json:"type"`
-	Data       any           `json:"data"`
+	FloorIndex int        `json:"floor_index"`
+	Type       ModuleType `json:"type"`
+	Data       any        `json:"data"`
 }
 
 type ParsedFile struct {
-	ProjectName string        `json:"project_name"`
+	ProjectName string         `json:"project_name"`
 	Modules     []ParsedModule `json:"modules"`
 }
 
@@ -64,11 +64,11 @@ type MortarItem struct {
 }
 
 type StructuralMasonryData struct {
-	Concrete []ConcreteItem   `json:"concrete"`
-	Steel    []SteelItem      `json:"steel"`
-	Form     []FormItem       `json:"form"`
-	Masonry  MasonryElement   `json:"masonry"`
-	SlabType *string          `json:"slab_type,omitempty"`
+	Concrete []ConcreteItem `json:"concrete"`
+	Steel    []SteelItem    `json:"steel"`
+	Form     []FormItem     `json:"form"`
+	Masonry  MasonryElement `json:"masonry"`
+	SlabType *string        `json:"slab_type,omitempty"`
 }
 
 type MasonryElement struct {
@@ -238,11 +238,11 @@ type FloorResolver interface {
 }
 
 type UnitWithFloors struct {
-	ID      uuid.UUID
+	ID        uuid.UUID
 	ProjectID uuid.UUID
-	Name    string
-	Type    string
-	Floors  []FloorWithIndex
+	Name      string
+	Type      string
+	Floors    []FloorWithIndex
 }
 
 type FloorWithIndex struct {

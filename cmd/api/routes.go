@@ -14,7 +14,6 @@ func (app *application) routes() http.Handler {
 	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
 	router.NotFound = app.notFound(http.FileServer(http.FS(web.DistFs)))
 
-	router.HandlerFunc(http.MethodGet, "/v1/metrics", app.metricsHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
 
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
@@ -49,11 +48,16 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/collaborators", app.listCollaboratorsHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/user/permissions", app.requireAuthenticatedUser(app.listUserPermissionsHandler))
 
-	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/report", app.reportHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/screenshot", app.screenshotHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/reports/validate", app.validateReportHandler)
+
+	router.HandlerFunc(http.MethodGet, "/v1/events", app.notificationHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/notify/:userID", app.sendNotificationHandler)
 
 	serviceProxy := app.newServiceProxy()
 	router.HandlerFunc(http.MethodGet, "/v1/proxy/*path", app.proxyHandler(serviceProxy))
 	router.HandlerFunc(http.MethodPost, "/v1/proxy/*path", app.proxyHandler(serviceProxy))
+	router.HandlerFunc(http.MethodPatch, "/v1/proxy/*path", app.proxyHandler(serviceProxy))
 
 	// ----------------------------------------------------------------------------------------------------------------------------------
 
@@ -74,6 +78,10 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/options/:optionID", app.requireOptionRoleAssociation(app.deleteOptionHandler))
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/duplicate", app.requireOptionRoleAssociation(app.duplicateOptionHandler))
 
+	router.HandlerFunc(http.MethodGet, "/v1/users/unknown-modules", app.requireAuthenticatedUser(app.listUserUnknownModulesHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/unknown-modules", app.requireOptionRoleAssociation(app.createUnknownModuleHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/options/:optionID/unknown-modules/:occurrenceID", app.requireOptionRoleAssociation(app.deleteUnknownModuleOccurrenceHandler))
+
 	router.HandlerFunc(http.MethodPost, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules", app.requireOptionRoleAssociation(app.createModuleV1Handler))
 	router.HandlerFunc(http.MethodGet, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.readModuleV1Handler))
 	router.HandlerFunc(http.MethodDelete, "/v1/projects/:projectID/units/:unitID/options/:optionID/modules/:moduleID", app.requireOptionRoleAssociation(app.deleteModuleHandler))
@@ -90,5 +98,5 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/benchmark/units", app.getUnitsBenchmarkHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/benchmark/projects", app.getProjectsBenchmarkHandler)
 
-	return app.metrics(app.recoverPanic(app.commonHeaders(app.enableCORS(app.realIP(app.rateLimit(app.authenticate(router)))))))
+	return app.recoverPanic(app.commonHeaders(app.enableCORS(app.realIP(app.rateLimit(app.authenticate(router))))))
 }

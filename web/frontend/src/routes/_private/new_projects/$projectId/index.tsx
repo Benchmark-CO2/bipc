@@ -4,6 +4,7 @@ import {
   CollaboratorsView,
   DisciplinesView,
   DrawerFormUnit,
+  DrawerIFCImport,
   ProjectView,
 } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { useSummary } from "@/context/summaryContext";
 import { TModulesTypes } from "@/types/modules";
 import { TConsumption, TConsumptionPerModule } from "@/types/projects";
+import { TUnknownModuleOccurrence } from "@/types/unknownModules";
 import {
   createFileRoute,
   useNavigate,
@@ -18,7 +20,7 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { useTranslation } from "@/i18n";
@@ -68,22 +70,47 @@ function RouteComponent() {
     enabled: !!projectId,
   });
 
-  const projectConsumptions: TConsumption[] = Object.keys(
-    projectData?.consumption || {},
-  )
-    .filter((key) => key !== "total")
-    .map((key) => {
-      const consumption =
-        projectData?.consumption?.[key as keyof TConsumptionPerModule];
-      return {
-        type: key as TModulesTypes,
-        co2_max: consumption?.co2_max ?? 0,
-        co2_min: consumption?.co2_min ?? 0,
-        energy_max: consumption?.energy_max ?? 0,
-        energy_min: consumption?.energy_min ?? 0,
-        material: consumption?.material ?? 0,
-      };
+  const mapUnknownProjectRows = (
+    occurrences: TUnknownModuleOccurrence[] | undefined,
+  ): { type: string; name?: string; custom_technology?: boolean }[] => {
+    const seenIds = new Set<string>();
+    const rows: {
+      type: string;
+      name?: string;
+      custom_technology?: boolean;
+    }[] = [];
+    (occurrences ?? []).forEach((occ) => {
+      if (seenIds.has(occ.unknown_module_id)) return;
+      seenIds.add(occ.unknown_module_id);
+      rows.push({
+        type: "unknown_module",
+        name: occ.unknown_module?.name,
+        custom_technology: true,
+      });
     });
+    return rows;
+  };
+
+  const projectConsumptions: (
+    | TConsumption
+    | { type: string; name?: string; custom_technology?: boolean }
+  )[] = [
+    ...Object.keys(projectData?.consumption || {})
+      .filter((key) => key !== "total")
+      .map((key) => {
+        const consumption =
+          projectData?.consumption?.[key as keyof TConsumptionPerModule];
+        return {
+          type: key as TModulesTypes,
+          co2_max: consumption?.co2_max ?? 0,
+          co2_min: consumption?.co2_min ?? 0,
+          energy_max: consumption?.energy_max ?? 0,
+          energy_min: consumption?.energy_min ?? 0,
+          material: consumption?.material ?? 0,
+        };
+      }),
+    ...mapUnknownProjectRows(projectData?.unknown_modules),
+  ];
 
   useEffect(() => {
     if (searchParams.tab === "colaboradores") {
@@ -125,6 +152,17 @@ function RouteComponent() {
         />
         {selectedTab === t.projectView.tabProject && (
           <>
+            <DrawerIFCImport
+              mode="unit"
+              projectId={projectId}
+              triggerComponent={
+                <SimpleTooltip content={t.common.ifcImport} side="bottom">
+                  <Button variant="outline-bipc" size="icon-lg">
+                    <Upload />
+                  </Button>
+                </SimpleTooltip>
+              }
+            />
             {hasPermission("create:unit") && (
               <DrawerFormUnit
                 triggerComponent={

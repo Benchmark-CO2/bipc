@@ -4,6 +4,8 @@ import { TTowerFloorCategory } from "@/types/units";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   UnifiedFloor,
+  FloorFallbackLabels,
+  makeFloorFallbackLabels,
   convertTowerFloorsToUnified,
   convertFloorSchemaToUnified,
   convertFloorFormInputToUnified,
@@ -36,13 +38,28 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   isFoundation = false,
 }) => {
   const { t } = useTranslation();
-  
+
+  const floorLabels: FloorFallbackLabels = makeFloorFallbackLabels({
+    ground: t.buildingVisualizer.fallbackNames.ground,
+    penthouse: t.buildingVisualizer.fallbackNames.penthouse,
+    basementOnly: t.buildingVisualizer.fallbackNames.basementOnly,
+    basementNumberedTemplate:
+      t.buildingVisualizer.fallbackNames.basementNumbered,
+    standardOrdinalPositiveTemplate:
+      t.buildingVisualizer.fallbackNames.standardOrdinalPositive,
+    standardNumberedTemplate:
+      t.buildingVisualizer.fallbackNames.standardNumbered,
+  });
+
   const unifiedFloors: UnifiedFloor[] = towerFloors
-    ? convertTowerFloorsToUnified(towerFloors)
+    ? convertTowerFloorsToUnified(towerFloors, floorLabels)
     : floors
       ? isFloorFormInput(floors[0])
-        ? convertFloorFormInputToUnified(floors as FloorFormInput[])
-        : convertFloorSchemaToUnified(floors as FloorSchema[])
+        ? convertFloorFormInputToUnified(
+            floors as FloorFormInput[],
+            floorLabels,
+          )
+        : convertFloorSchemaToUnified(floors as FloorSchema[], floorLabels)
       : [];
 
   const selectedItems = isSelectable ? selectedFloorIds : [];
@@ -83,6 +100,38 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
     index: -2,
   };
 
+  const fallbackFloorName = (floor: UnifiedFloor): string => {
+    if (floor.name && floor.name.trim().length > 0) return floor.name;
+    const labels = floorLabels;
+    switch (floor.category) {
+      case "ground_floor":
+        return labels.ground;
+      case "penthouse_floor":
+        return labels.penthouse;
+      case "basement_floor": {
+        const n = Math.abs(floor.index);
+        return n > 0 ? labels.basementNumbered(n) : labels.basementOnly;
+      }
+      case "standard_floor":
+      default:
+        return floor.index >= 0
+          ? labels.standardOrdinalPositive(floor.index)
+          : labels.standardNumbered(floor.index);
+    }
+  };
+
+  const expansionSuffixRe = /-r\d+(?:-\d+)?$/;
+
+  const areSomeFloorIdMatchesSelected = (
+    floorId: string,
+    selected: readonly string[],
+  ): boolean => {
+    if (selected.includes(floorId)) return true;
+    const stripped = floorId.replace(expansionSuffixRe, "");
+    if (stripped !== floorId && selected.includes(stripped)) return true;
+    return false;
+  };
+
   const handleFloorSelection = (
     floorIdentifier: string,
     isChecked: boolean,
@@ -118,12 +167,17 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
   const allFloorIds = unifiedFloors.map((floor) => floor.id);
   const areAllSelected =
     allFloorIds.length > 0 &&
-    allFloorIds.every((id) => selectedItems.includes(id));
+    allFloorIds.every((id) => areSomeFloorIdMatchesSelected(id, selectedItems));
+  const selectedCount = allFloorIds.filter((id) =>
+    areSomeFloorIdMatchesSelected(id, selectedItems),
+  ).length;
 
   const renderFloorBlock = (floor: UnifiedFloor, hasFoundation = false) => {
     const widthPercentage = (floor.area / maxArea) * 100;
     const floorIdentifier = isSelectable ? floor.id : floor.name;
-    const isFloorSelected = selectedItems.includes(floorIdentifier);
+    const isFloorSelected = isSelectable
+      ? areSomeFloorIdMatchesSelected(floorIdentifier, selectedItems)
+      : false;
 
     const categoryColors = {
       penthouse_floor: "#8B5CF6",
@@ -132,6 +186,8 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
       basement_floor: "#F59E0B",
       foundation_floor: "#db7070",
     };
+
+    const finalFloorName = fallbackFloorName(floor);
 
     const opacity = () => {
       if (!complete) return "1";
@@ -163,7 +219,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
             width: `${widthPercentage}%`,
             textShadow: "1px 1px 2px rgba(0,0,0,0.5)",
           }}
-          title={`${floor.name} - ${floor.area}m² - ${floor.height}m`}
+          title={`${finalFloorName} - ${floor.area}m² - ${floor.height}m`}
         ></div>
 
         {/* Checkbox e nome */}
@@ -183,14 +239,84 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
               }
                 ${!hasFoundation ? "truncate" : ""}
               `}
-              title={floor.name}
+              title={finalFloorName}
             >
-              {floor.name}
+              {finalFloorName}
             </span>
           </>
         )}
       </div>
     );
+  };
+
+  // Colchete à esquerda das barras de um grupo de repetição (2+ pavimentos),
+  // com a quantidade no meio. Fica numa camada absoluta que repete o layout da
+  // linha (centralizado ou grid com checkbox e nome) para encostar na barra.
+  const renderGroupBracket = (group: UnifiedFloor[]) => {
+    const widthPercentage = (group[0].area / maxArea) * 100;
+    const bracket = (
+      <div className="absolute right-full top-0 bottom-2 mr-1.5 w-1.5 rounded-l-sm border-y-2 border-l-2 border-primary">
+        <span
+          className="pointer-events-auto absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-default rounded-full bg-primary px-1 py-px text-[10px] font-semibold leading-none text-primary-foreground tabular-nums shadow-sm"
+          title={`${fallbackFloorName(group[0])} × ${group.length}`}
+        >
+          ×{group.length}
+        </span>
+      </div>
+    );
+
+    return complete ? (
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 grid grid-cols-[2fr_auto_minmax(0,100px)] gap-2"
+      >
+        <div
+          className="relative ml-auto h-full"
+          style={{ width: `${widthPercentage}%` }}
+        >
+          {bracket}
+        </div>
+        <div className="size-4" />
+        <div />
+      </div>
+    ) : (
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 flex justify-center"
+      >
+        <div
+          className="relative h-full"
+          style={{ width: `${widthPercentage}%` }}
+        >
+          {bracket}
+        </div>
+      </div>
+    );
+  };
+
+  const renderFloorSection = (floors: UnifiedFloor[]) => {
+    const groups: UnifiedFloor[][] = [];
+    for (const floor of floors) {
+      const last = groups[groups.length - 1];
+      if (floor.groupKey && last?.[0]?.groupKey === floor.groupKey) {
+        last.push(floor);
+      } else {
+        groups.push([floor]);
+      }
+    }
+
+    return groups.map((group) => {
+      if (group.length < 2) return renderFloorBlock(group[0]);
+      return (
+        <div
+          key={`group-${group[0].groupKey}-${group[0].id}`}
+          className="relative"
+        >
+          {group.map((floor) => renderFloorBlock(floor))}
+          {renderGroupBracket(group)}
+        </div>
+      );
+    });
   };
 
   return (
@@ -221,7 +347,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
             />
             <div className="flex items-center">
               <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
-                {selectedItems.length} de {allFloorIds.length}
+                {selectedCount} de {allFloorIds.length}
               </span>
             </div>
           </div>
@@ -233,21 +359,21 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
           <div
             className={`w-full max-w-64 ${complete ? "ml-auto" : "mx-auto"} `}
           >
-            {sortedRoofFloors.map((floor) => renderFloorBlock(floor))}
+            {renderFloorSection(sortedRoofFloors)}
           </div>
 
           {/* Tipo */}
           <div
             className={`w-full max-w-64 ${complete ? "ml-auto" : "mx-auto"}`}
           >
-            {sortedTypicalFloors.map((floor) => renderFloorBlock(floor))}
+            {renderFloorSection(sortedTypicalFloors)}
           </div>
 
           {/* Térreo */}
           <div
             className={`w-full max-w-64 ${complete ? "ml-auto" : "mx-auto"}`}
           >
-            {sortedGroundFloors.map((floor) => renderFloorBlock(floor))}
+            {renderFloorSection(sortedGroundFloors)}
           </div>
         </div>
 
@@ -266,7 +392,7 @@ const BuildingVisualizer: React.FC<BuildingVisualizerProps> = ({
           <div
             className={`w-full max-w-64 ${complete ? "ml-auto" : "mx-auto"}`}
           >
-            {sortedBasementFloors.map((floor) => renderFloorBlock(floor))}
+            {renderFloorSection(sortedBasementFloors)}
           </div>
         </div>
 

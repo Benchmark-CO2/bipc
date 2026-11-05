@@ -209,8 +209,8 @@ func parseConcreteGroutTable(table *html.Node) (*StructuralMasonryData, error) {
 			})
 		case strings.Contains(name, "graute"):
 			data.Masonry.Grout = append(data.Masonry.Grout, GroutItem{
-				Volumes: []GroutVolumeItem{{Fgk: int(modules.NormalizeGroutFgk(resistance / 1000)), Volume: volume}},
-				Steel:   []SteelItem{},
+				Volumes:  []GroutVolumeItem{{Fgk: int(modules.NormalizeGroutFgk(resistance / 1000)), Volume: volume}},
+				Steel:    []SteelItem{},
 				Position: "vertical",
 			})
 		}

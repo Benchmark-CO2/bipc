@@ -1,21 +1,7 @@
-import { Tooltip, TooltipContent } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSummary } from '@/context/summaryContext';
 import { cn } from '@/lib/utils';
-import { TooltipTrigger } from '@radix-ui/react-tooltip';
-export const IndicatorItem = ({ color, value, currentUnit, label }: {
-  color: string;
-  value: number | string;
-  currentUnit: string;
-  label: string;
-}) => {
-  return (
-    <div className={`text-md border-1 rounded-md p-2 flex items-center justify-center min-w-[40px] gap-1 h-full`} style={{ borderColor: color }}>
-      <span className='font-bold text-xl mx-1' style={{ color }}>{label}</span>
-      <span className={`font-bold`} >{value}</span>
-      <span className='font-light'>{currentUnit}</span>
-    </div>
-  );
-};
+import { Fragment, useLayoutEffect, useRef } from 'react';
 
 type ScenarioItem = {
   total: string | number;
@@ -33,90 +19,77 @@ type ScenarioCardProps = {
 
 export const ScenarioCard = ({ letter, title, color, items }: ScenarioCardProps) => {
   const { isOpen } = useSummary();
-  if (!isOpen) {
-    return (
-      <div
-        className="border-2 rounded-lg p-3 flex-1 flex flex-col gap-1 min-w-[220px] box-border relative"
-        style={{ borderColor: color }}
-      >
-        {/* Cabeçalho do Card */}
-        <div className="flex items-start gap-2 absolute -top-2 -left-2">
-          <Tooltip>
-            <TooltipTrigger>
-              <div
-                className="rounded-full w-6 h-6 flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                style={{ backgroundColor: color }}
-              >
-                {letter}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent className='bg-white ring ring-primary' arrowClassName='bg-white fill-white'>
-              <span className={cn("font-bold text-lg", {
-                'text-base': !isOpen
-              })} style={{ color }}>{title}</span>
-            </TooltipContent>
-          </Tooltip>
+  const cardRef = useRef<HTMLDivElement>(null);
 
+  // Largura do conteúdo (a sobra fica no fim da linha). Se a linha de cards quebrar, o card da 2ª linha
+  // com o mesmo nº de métricas do primeiro card (V) fica da largura dele, alinhado a ele.
+  useLayoutEffect(() => {
+    const card = cardRef.current;
+    const row = card?.parentElement;
+    if (!card || !row) return;
 
-        </div>
+    const update = () => {
+      card.style.width = '';
+      const first = row.firstElementChild as HTMLElement | null;
+      if (!first || first === card || card.offsetTop === first.offsetTop) return;
+      if (Number(first.dataset.metrics) === items.length) card.style.width = `${first.offsetWidth}px`;
+    };
 
-        {/* Títulos das Colunas */}
-        <div className="flex justify-between border-b pb-0">
-          <span className="text-sm font-medium" style={{ color }}>Total</span>
-          <span className="text-sm font-medium" style={{ color }}>Benchmark</span>
-        </div>
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(row);
+    return () => observer.disconnect();
+  }, [items.length]);
 
-        {/* Lista de Métricas (CO2, Energia, Material) */}
-        <div className="flex flex-col gap-0">
-          {items.map((item, idx) => (
-            <div key={idx} className="flex justify-between text-sm text-neutral-700">
-              <span>
-                {item.total} <span className="text-xs">{item.unitTotal}</span>
-              </span>
-              <span className="font-bold">
-                {item.benchmark} <span className="text-xs font-normal">{item.unitBenchmark}</span>
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
   return (
     <div
-      className="border-2 rounded-lg p-3 flex-1 flex flex-col gap-1 min-w-[220px] box-border"
-      style={{ borderColor: color }}
+      ref={cardRef}
+      data-metrics={items.length}
+      className={cn(
+        "relative flex items-center bg-white rounded-lg py-2 shadow-sm box-border min-w-0 max-sm:shrink-0 text-xs", // mobile: rolagem horizontal, como antes
+        // A imagem mostra a borda verde (V) mais espessa, e as demais mais finas e cinzas.
+        letter === 'V' ? "border-[3px]" : "border border-gray-300"
+      )}
+      // Quando a linha de cards (@container/cards) fica estreita, o texto cai ~20%.
+      style={{ borderColor: letter === 'V' ? color : undefined }}
     >
-      {/* Cabeçalho do Card */}
-      <div className="flex items-start gap-2">
-        <div
-          className="rounded-full w-6 h-6 flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-          style={{ backgroundColor: color }}
-        >
-          {letter}
-        </div>
-        <span className={cn("font-bold text-lg", {
-          'text-base': !isOpen
-        })} style={{ color }}>{title}</span>
+      {/* Badge Circular Flutuante e Tooltip */}
+      <div className="absolute -top-3 -left-3 z-10">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              className="rounded-full w-6 h-6 flex items-center justify-center text-white font-bold text-xs shadow-md cursor-help"
+              style={{ backgroundColor: color }}
+            >
+              {letter}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent className='bg-white ring ring-primary' arrowClassName='bg-white fill-white'>
+            <span className={cn("font-bold text-xs", {
+              'text-xs': !isOpen
+            })} style={{ color }}>{title}</span>
+          </TooltipContent>
+        </Tooltip>
       </div>
 
-      {/* Títulos das Colunas */}
-      <div className="flex justify-between border-b pb-1">
-        <span className="text-sm font-medium" style={{ color }}>Total</span>
-        <span className="text-sm font-medium" style={{ color }}>Benchmark</span>
-      </div>
-
-      {/* Lista de Métricas (CO2, Energia, Material) */}
-      <div className="flex flex-col gap-2">
+      {/* Lista de Métricas em Linha: a sobra de largura é distribuída por igual (justify-between),
+          então cada divisória fica exatamente no meio entre duas colunas */}
+      <div className="flex items-stretch justify-between w-full px-1">
         {items.map((item, idx) => (
-          <div key={idx} className="flex justify-between text-sm text-neutral-700">
-            <span>
-              {item.total} <span className="text-xs">{item.unitTotal}</span>
-            </span>
-            <span className="font-bold">
-              {item.benchmark} <span className="text-xs font-normal">{item.unitBenchmark}</span>
-            </span>
-          </div>
+          <Fragment key={idx}>
+            {idx > 0 && <div className="w-px shrink-0 bg-gray-200" />} {/* Divisória vertical */}
+            <div className="flex flex-col gap-1.5 min-w-0 px-4 @max-[115rem]/cards:px-2 @max-[110rem]/cards:px-1.5">
+              {/* Benchmark (Topo, Negrito) */}
+              <div className="text-sm @max-[115rem]/cards:text-[0.7rem] font-bold text-neutral-900 whitespace-nowrap leading-5">
+                {item.benchmark} <span className="text-xs @max-[115rem]/cards:text-[0.6rem] font-normal text-neutral-700">{item.unitBenchmark}</span>
+              </div>
+
+              {/* Total (Fundo, Normal) */}
+              <div className="text-sm @max-[115rem]/cards:text-[0.7rem] text-neutral-600 whitespace-nowrap leading-5">
+                {item.total} <span className="text-xs @max-[115rem]/cards:text-[0.6rem] text-neutral-500">{item.unitTotal}</span>
+              </div>
+            </div>
+          </Fragment>
         ))}
       </div>
     </div>

@@ -35,14 +35,22 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response?.status === 401) {
+    const requestPath: string =
+      error?.config?.url ??
+      error?.request?.responseURL ??
+      "";
+    const isProxyRequest =
+      requestPath.includes("/v1/proxy") ||
+      requestPath.includes("/proxy/");
+
+    if (error.response?.status === 401 && !isProxyRequest) {
       localStorage.removeItem(storageTokenKey);
       localStorage.removeItem(storageUserKey);
       localStorage.removeItem("sidebarStatus");
       window.location.href = "/login";
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

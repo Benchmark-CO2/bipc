@@ -4,8 +4,8 @@ import { postDuplicateProject } from "@/actions/projects/postDuplicateProject";
 import { generateReport } from "@/actions/report/generateReport";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { useTranslation } from "@/i18n";
-import { parseApiError } from "@/utils/parseApiError";
 import { IProject, TProjectPhase } from "@/types/projects";
+import { parseApiError } from "@/utils/parseApiError";
 import { phaseColors } from "@/utils/phaseConfig";
 import { queryClient } from "@/utils/queryClient";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -95,7 +95,12 @@ const CustomBanner = ({
       await queryClient.invalidateQueries({
         queryKey: ["projects"],
       });
-      navigate({ to: `/new_projects` });
+      navigate({
+        to: `/new_projects`,
+        search: {
+          activationRequired: false,
+        },
+      });
     },
     onError: (error: unknown) => {
       toast.error(t.projects.deleteError, {
@@ -109,12 +114,17 @@ const CustomBanner = ({
     mutationFn: (projectId: string) => {
       return postDuplicateProject(projectId);
     },
-    onSuccess: async (data) => {
+    onSuccess: async () => {
       toast.success(t.projects.duplicateSuccess);
       await queryClient.invalidateQueries({
         queryKey: ["projects"],
       });
-      navigate({ to: `/new_projects` });
+      navigate({
+        to: `/new_projects`,
+        search: {
+          activationRequired: false,
+        },
+      });
     },
     onError: (error: unknown) => {
       toast.error(t.projects.duplicateError, {
@@ -138,7 +148,7 @@ const CustomBanner = ({
 
   const { mutate: onGenerateReport } = useMutation({
     mutationFn: (formData: { co2: File; energy: File; projectId: string }) =>
-      generateReport(formData.projectId, formData),
+      generateReport(formData.projectId),
     onSuccess: async (response) => {
       toast.success(t.customBanner.downloadReportSuccess);
       const blob = new Blob([response.data], {

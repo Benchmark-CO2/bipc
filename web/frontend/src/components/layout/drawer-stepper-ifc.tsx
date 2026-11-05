@@ -1,0 +1,1493 @@
+import { postModulesBatch } from "@/actions/modules/postModulesBatch";
+import { postOption } from "@/actions/options/postOption";
+import { getOptions } from "@/actions/options/getOptions";
+import { getProjectByUUID } from "@/actions/projects/getProject";
+import { postUnit } from "@/actions/units/postUnit";
+import { patchUnit } from "@/actions/units/patchUnit";
+import { getUnitByUUID } from "@/actions/units/getUnit";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useTranslation } from "@/i18n";
+import { Translations } from "@/i18n/translations/pt-BR";
+import { IProject } from "@/types/projects";
+import { TOption } from "@/types/options";
+import { IUnit, TTowerFloorCategory } from "@/types/units";
+import {
+  FOUNDATION_MODULE_TYPES,
+  ModuleParamsProps,
+  ModuleParamsPropsV2,
+  TModulesTypes,
+  TModuleDataV2,
+} from "@/types/modules";
+import {
+  TIfcStepperCreatedUnit,
+  TIfcStepperModuleItem,
+  TIfcStepperState,
+  TIfcStepperUnitItem,
+  TIfcProcessorStateUnit,
+  IRawModuleDataWithMeta,
+  IOptionsResponse,
+  IPatchUnitResponse,
+  IPostUnitResponse,
+  IPostOptionResponse,
+  IModuleBatchBinding,
+  DrawerStepperIFCProps,
+} from "@/types/ifc";
+import { useFloorIndexMappings } from "@/hooks/useFloorIndexMappings";
+import { structureTypes } from "@/utils/structureTypes";
+import { parseApiError } from "@/utils/parseApiError";
+import { mapIfcFloorIndexToFloorIds } from "@/utils/unitConversions";
+import {
+  aggregateIdenticalFloors,
+  buildUniqueSimulationName,
+  FOUNDATION_MODULE_TYPES as IFC_FOUNDATION_MODULE_TYPES,
+  getIfcFloorIndexes,
+  isFoundationModuleType,
+  isValidUUID,
+  mapIfcResultToStepperState,
+  MODULE_TYPE_LABEL_FALLBACK,
+  prepareModuleForBatch,
+  prepareUnitForCreate,
+  rerunModuleValidation,
+  rerunUnitValidation,
+  stripFoundationFloorIndex,
+} from "@/utils/ifcStepper";
+import { UnitFormInput, UnitFormSchema } from "@/validators/unitForm.validator";
+import {
+  useQueries,
+  useQuery,
+  useQueryClient,
+  UseQueryResult,
+} from "@tanstack/react-query";
+import { Loader2, Wand2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import DrawerFormModule from "./drawer-form-module";
+import DrawerFormUnit from "./drawer-form-unit";
+import { StepperHeader } from "./drawer-stepper-ifc/views/StepperHeader";
+import { Step1Content } from "./drawer-stepper-ifc/views/Step1Content";
+import { Step2Content } from "./drawer-stepper-ifc/views/Step2Content";
+import { CompletenessWarningsI18n } from "@/components/layout/drawer-form-module/aggregate-helpers";
+
+// Fora do componente para ser estável: o React Query só memoiza o `combine`
+// quando a referência não muda entre renders.
+const combineUnitFloorsById = (
+  results: UseQueryResult<{ unit: IUnit }>[],
+): Record<string, TTowerFloorCategory[]> => {
+  const byId: Record<string, TTowerFloorCategory[]> = {};
+  for (const r of results) {
+    const unit = r.data?.unit;
+    if (unit?.id && Array.isArray(unit.floors) && unit.floors.length > 0) {
+      byId[unit.id] = unit.floors;
+    }
+  }
+  return byId;
+};
+
+export default function DrawerStepperIFC({
+  open,
+  onOpenChange,
+  projectId,
+  initialResult,
+  initialRoleId,
+  mode,
+  preselectedUnitId,
+  preselectedOptionId,
+  fileName,
+  onComplete,
+}: DrawerStepperIFCProps) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const translations = t as Translations;
+  const i18nCompleteness = (
+    translations.modules.form as unknown as {
+      completeness?: CompletenessWarningsI18n;
+    }
+  ).completeness as CompletenessWarningsI18n;
+  const moduleTypeLabels: Record<string, string> = {
+    ...MODULE_TYPE_LABEL_FALLBACK,
+    ...structureTypes(translations),
+  };
+
+  const { data: projectData } = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: () => getProjectByUUID(projectId),
+    enabled: open,
+  });
+  const project: IProject | undefined = projectData?.data.project;
+
+  const isSimulationMode = mode === "simulation";
+
+  const { data: optionsData, refetch: refetchOptions } = useQuery({
+    queryKey: ["options", projectId, preselectedUnitId, initialRoleId],
+    queryFn: () =>
+      getOptions(projectId, preselectedUnitId || "", initialRoleId || ""),
+    enabled: open && isSimulationMode && !!preselectedUnitId && !!initialRoleId,
+    staleTime: 1000 * 30,
+  });
+  const availableOptions: TOption[] =
+    (optionsData?.data as IOptionsResponse | undefined)?.options ?? [];
+
+  // Fetch da UNIDADE existente quando estivermos no modo simulation
+  // (para pegar os floors e poder mapear floor_index number → floor_ids UUIDs).
+  // Mesmo formato ({ unit, roles }) das telas que compartilham esta queryKey:
+  // com o AxiosResponse cru, o cache vindo da tela da unidade não tinha
+  // `.data.unit` e os pavimentos caíam no fallback inferido (IDs não-UUID).
+  const { data: simulationUnitData } = useQuery({
+    queryKey: ["unit", projectId, preselectedUnitId],
+    queryFn: async () => {
+      const res = await getUnitByUUID(projectId, preselectedUnitId || "");
+      return { unit: res.data.unit, roles: res.data.roles };
+    },
+    enabled: open && isSimulationMode && !!preselectedUnitId,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const [selectedSimulationOptionId, setSelectedSimulationOptionId] = useState<
+    string | null
+  >(preselectedOptionId ?? null);
+
+  useEffect(() => {
+    if (!isSimulationMode) return;
+    if (selectedSimulationOptionId) return;
+    if (preselectedOptionId) {
+      setSelectedSimulationOptionId(preselectedOptionId);
+      return;
+    }
+    if (availableOptions.length === 0) return;
+    const active = availableOptions.find((o) => o.active);
+    if (active) {
+      setSelectedSimulationOptionId(active.id);
+    } else {
+      setSelectedSimulationOptionId(availableOptions[0]?.id ?? null);
+    }
+  }, [
+    isSimulationMode,
+    availableOptions,
+    preselectedOptionId,
+    selectedSimulationOptionId,
+  ]);
+
+  const initialState = useMemo<TIfcStepperState>(() => {
+    const base = mapIfcResultToStepperState(
+      initialResult,
+      t as unknown as Translations,
+    );
+    if (isSimulationMode) {
+      return {
+        ...base,
+        currentStep: "modules",
+        units: [],
+      };
+    }
+    return base;
+  }, [initialResult, isSimulationMode]);
+
+  const [state, setState] = useState<TIfcStepperState>(initialState);
+  const ifcFloorIndexes = useMemo(
+    () => getIfcFloorIndexes(initialResult),
+    [initialResult],
+  );
+  const [step1Error, setStep1Error] = useState<string>("");
+  const [step2Error, setStep2Error] = useState<string>("");
+  const [isCreatingStep1, setIsCreatingStep1] = useState(false);
+  const [isCreatingStep2, setIsCreatingStep2] = useState(false);
+  // Algum lote já criou módulos, mas outro falhou e o stepper ficou aberto.
+  const [hasCreatedModules, setHasCreatedModules] = useState(false);
+  const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
+
+  const [editingUnitTempId, setEditingUnitTempId] = useState<string | null>(
+    null,
+  );
+  const [editingModuleTempId, setEditingModuleTempId] = useState<string | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (isSimulationMode) {
+      setState({
+        ...initialState,
+        currentStep: "modules",
+        units: [],
+      });
+    } else {
+      setState(initialState);
+    }
+    setStep1Error("");
+    setStep2Error("");
+    setIsCreatingStep1(false);
+    setIsCreatingStep2(false);
+    setHasCreatedModules(false);
+    setIsDiscardConfirmOpen(false);
+    setEditingUnitTempId(null);
+    setEditingModuleTempId(null);
+  }, [initialState, isSimulationMode]);
+
+  const simulationBoundUnitTempId = "__simulation__";
+
+  // Todas as unitIds que temos no momento (unitsCreated.unitId)
+  // Para cada uma delas, se não conseguimos floors via state.units (modo normal)
+  // e a unitId é uma string válida (UUID), fazemos fetch para preencher.
+  // Evita que o BuildingVisualizer apareça vazio durante a edição no drawer.
+  const unitsCreatedIdsMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const uc of state.unitsCreated) {
+      if (uc.unitId && uc.tempId !== simulationBoundUnitTempId) {
+        map.set(uc.tempId, uc.unitId);
+      }
+    }
+    return map;
+  }, [state.unitsCreated, simulationBoundUnitTempId]);
+
+  // (useQueries dinâmico) fetch getUnitByUUID para cada unidade criada no
+  // step 1 (modo normal). Os floors reais (UUIDs) alimentam o
+  // normalizedUnitsFloorMap; sem eles a seleção de pavimentos no drawer usa
+  // IDs temporários, que o lote não consegue enviar.
+  const createdUnitsFloorsById = useQueries({
+    queries: Array.from(unitsCreatedIdsMap.entries()).map(
+      ([tempId, unitId]) => ({
+        queryKey: ["unit", projectId, unitId],
+        queryFn: async () => {
+          const res = await getUnitByUUID(projectId, unitId || "");
+          return { unit: res.data.unit, roles: res.data.roles };
+        },
+        enabled:
+          open &&
+          !!projectId &&
+          !!unitId &&
+          tempId !== simulationBoundUnitTempId,
+        staleTime: 1000 * 60 * 5,
+      }),
+    ),
+    combine: combineUnitFloorsById,
+  });
+
+  const simulationCreatedUnit: TIfcStepperCreatedUnit | null = useMemo(() => {
+    if (!isSimulationMode) return null;
+    if (!preselectedUnitId || !selectedSimulationOptionId) return null;
+    const selected = availableOptions.find(
+      (o) => o.id === selectedSimulationOptionId,
+    );
+    const display = selected?.name ?? "Simulação alvo";
+    return {
+      tempId: simulationBoundUnitTempId,
+      unitId: preselectedUnitId,
+      optionId: selectedSimulationOptionId,
+      roleId: initialRoleId,
+      name: selected?.name ?? display,
+      unitName: selected?.name ?? display,
+      displayName: display,
+      needsUpdate: false,
+    };
+  }, [
+    isSimulationMode,
+    preselectedUnitId,
+    selectedSimulationOptionId,
+    availableOptions,
+    initialRoleId,
+    simulationBoundUnitTempId,
+  ]);
+
+  useEffect(() => {
+    if (!isSimulationMode) return;
+    if (!simulationCreatedUnit) return;
+    setState((prev) => {
+      const unitsCreated: TIfcStepperCreatedUnit[] = [simulationCreatedUnit];
+      const modules = prev.modules.map((m) => {
+        const updated: TIfcStepperModuleItem = {
+          ...m,
+          boundUnitTempId: simulationCreatedUnit.tempId,
+          boundUnitId: simulationCreatedUnit.unitId,
+          boundOptionId: simulationCreatedUnit.optionId,
+        };
+        return rerunModuleValidation(updated, i18nCompleteness, null, {
+          fallbackUnitId: simulationCreatedUnit.unitId ?? null,
+        });
+      });
+      const next: TIfcStepperState = {
+        ...prev,
+        unitsCreated,
+        modules,
+      };
+      return next;
+    });
+  }, [
+    isSimulationMode,
+    simulationCreatedUnit,
+    simulationBoundUnitTempId,
+    i18nCompleteness,
+  ]);
+
+  const activeStep = isSimulationMode
+    ? 0
+    : state.currentStep === "units"
+      ? 0
+      : 1;
+
+  const steps = isSimulationMode
+    ? [
+        {
+          id: "modules",
+          label: translations.stepper.stepModules,
+          description: translations.stepper.stepSimulationModulesDescription,
+        },
+      ]
+    : [
+        {
+          id: "units",
+          label: translations.stepper.stepUnits,
+          description: translations.stepper.stepUnitsDescription,
+        },
+        {
+          id: "modules",
+          label: translations.stepper.stepModules,
+          description: translations.stepper.stepModulesDescription,
+        },
+      ];
+
+  const {
+    editingUnit,
+    editingModule,
+    editingModuleBoundUnit,
+    normalizedUnitsFloorMap,
+    editingUnitFloors,
+    editingModuleInitialSelectedFloors,
+    editingModuleInitialMerged,
+  } = useFloorIndexMappings({
+    state,
+    isSimulationMode,
+    simulationBoundUnitTempId,
+    simulationUnitData,
+    createdUnitsFloorsById,
+    ifcFloorIndexes,
+    simulationCreatedUnit,
+    editingUnitTempId,
+    editingModuleTempId,
+  });
+
+  // ---------------------------------------------------------------------------
+  // Step 1 — Units helpers
+  // ---------------------------------------------------------------------------
+
+  // Nomes que uma unidade do stepper não pode usar: as unidades do
+  // empreendimento (menos ela mesma, se já foi criada na etapa 1) e as outras
+  // unidades selecionadas do mesmo arquivo.
+  const getTakenUnitNames = (
+    tempId: string,
+    units: TIfcStepperUnitItem[],
+    unitsCreated: TIfcStepperCreatedUnit[],
+  ): string[] => {
+    const ownUnitId = unitsCreated.find((c) => c.tempId === tempId)?.unitId;
+    return [
+      ...(project?.units ?? [])
+        .filter((pu) => pu.id !== ownUnitId)
+        .map((pu) => pu.name),
+      ...units
+        .filter((o) => o.tempId !== tempId && o.selected)
+        .map((o) => o.name),
+    ];
+  };
+
+  // Um nome alterado afeta a validade das outras unidades, então revalida todas.
+  const revalidateUnits = (
+    units: TIfcStepperUnitItem[],
+    unitsCreated: TIfcStepperCreatedUnit[],
+  ): TIfcStepperUnitItem[] =>
+    units.map((u) =>
+      rerunUnitValidation(
+        u,
+        t as unknown as Translations,
+        getTakenUnitNames(u.tempId, units, unitsCreated),
+      ),
+    );
+
+  // Lista estável para o DrawerFormUnit (evita revalidar o nome a cada render).
+  const editingUnitTakenNames = useMemo(
+    () =>
+      editingUnitTempId
+        ? getTakenUnitNames(editingUnitTempId, state.units, state.unitsCreated)
+        : undefined,
+    [editingUnitTempId, state.units, state.unitsCreated, project?.units],
+  );
+
+  useEffect(() => {
+    if (!project?.units) return;
+    setState((prev) => ({
+      ...prev,
+      units: revalidateUnits(prev.units, prev.unitsCreated),
+    }));
+  }, [project?.units, initialState]);
+
+  const setUnitNameInline = (tempId: string, name: string) => {
+    setState((prev) => {
+      const units = prev.units.map((u) =>
+        u.tempId === tempId
+          ? { ...u, name, formData: { ...u.formData, name } }
+          : u,
+      );
+      return { ...prev, units: revalidateUnits(units, prev.unitsCreated) };
+    });
+  };
+
+  const setUnitSimulationNameInline = (
+    tempId: string,
+    simulationName: string,
+  ) => {
+    setState((prev) => ({
+      ...prev,
+      units: prev.units.map((u) =>
+        u.tempId === tempId ? { ...u, simulationName } : u,
+      ),
+    }));
+  };
+
+  const handleUnitDrawerSubmit = (payload: {
+    unitId?: string;
+    data: UnitFormSchema;
+    formInput: UnitFormInput;
+    unit: TIfcProcessorStateUnit;
+  }) => {
+    if (!editingUnitTempId) return;
+    const currentEditingTempId = editingUnitTempId;
+    setState((prev) => {
+      const next = { ...prev };
+      next.units = next.units.map((u) => {
+        if (u.tempId !== currentEditingTempId) return u;
+        const raw =
+          payload.formInput as unknown as TIfcStepperUnitItem["formData"];
+        const aggregatedFloors = aggregateIdenticalFloors(
+          raw?.data?.floors ?? [],
+        );
+        const fd: TIfcStepperUnitItem["formData"] = {
+          ...raw,
+          data: {
+            ...(raw?.data ?? {}),
+            floors: aggregatedFloors,
+          },
+        };
+        const updated: TIfcStepperUnitItem = {
+          ...u,
+          formData: fd,
+          name: fd.name,
+        };
+        return updated;
+      });
+      next.units = revalidateUnits(next.units, prev.unitsCreated);
+      const alreadyHasCreated = prev.unitsCreated.some(
+        (c) => c.tempId === currentEditingTempId,
+      );
+      if (alreadyHasCreated) {
+        next.unitsCreated = prev.unitsCreated.map((c) => {
+          if (c.tempId !== currentEditingTempId) return c;
+          const newUnitName =
+            (payload.formInput as unknown as TIfcStepperUnitItem["formData"])
+              ?.name ?? c.unitName;
+          return {
+            ...c,
+            unitName: newUnitName,
+            displayName: `${newUnitName} — ${c.name}`,
+            needsUpdate: true,
+          };
+        });
+      }
+      return next;
+    });
+    setEditingUnitTempId(null);
+  };
+
+  const goToStep1 = () => {
+    setState((prev) => ({ ...prev, currentStep: "units" }));
+  };
+
+  const step1CanProceed =
+    state.units.length > 0 &&
+    state.units.some((u) => u.selected) &&
+    state.units.filter((u) => u.selected).every((u) => u.isValid);
+
+  // ---------------------------------------------------------------------------
+  // Build complete payload (used by callers for redirects etc.)
+  // ---------------------------------------------------------------------------
+  const buildCompletePayload =
+    (): import("@/types/ifc").DrawerStepperIFCCompletePayload => {
+      const uniqueUnits = new Map<
+        string,
+        { unitId: string; optionId: string; tempId: string }
+      >();
+      for (const u of state.unitsCreated) {
+        if (!u.unitId) continue;
+        uniqueUnits.set(`${u.unitId}|${u.optionId ?? ""}`, {
+          unitId: u.unitId,
+          optionId: u.optionId ?? "",
+          tempId: u.tempId,
+        });
+      }
+      for (const m of state.modules) {
+        if (!m.boundUnitId) continue;
+        const key = `${m.boundUnitId}|${m.boundOptionId ?? ""}`;
+        if (uniqueUnits.has(key)) continue;
+        uniqueUnits.set(key, {
+          unitId: m.boundUnitId,
+          optionId: m.boundOptionId ?? "",
+          tempId: m.boundUnitTempId ?? "",
+        });
+      }
+      return {
+        units: Array.from(uniqueUnits.values()),
+        disciplineId: initialRoleId ?? null,
+      };
+    };
+
+  const unitsCreatedWithSimulationBound = useMemo(() => {
+    const out: TIfcStepperCreatedUnit[] = [];
+    for (const uc of state.unitsCreated) {
+      if (!uc.unitId) continue;
+      out.push(uc);
+    }
+    if (isSimulationMode && simulationCreatedUnit?.unitId) {
+      if (!out.some((u) => u.tempId === simulationBoundUnitTempId)) {
+        out.push(simulationCreatedUnit);
+      }
+    }
+    return out;
+  }, [
+    state.unitsCreated,
+    isSimulationMode,
+    simulationCreatedUnit,
+    simulationBoundUnitTempId,
+  ]);
+
+  const handleStep1CreateAndNext = async () => {
+    setStep1Error("");
+    const selectedUnits = state.units.filter((u) => u.selected);
+    if (selectedUnits.length === 0) {
+      toast.error(t.stepper.units.noneSelected);
+      return;
+    }
+    const invalidSelected = selectedUnits.filter((u) => !u.isValid);
+    if (invalidSelected.length > 0) {
+      toast.error(
+        t.stepper.units.invalidSelected.replace(
+          "{count}",
+          `${invalidSelected.length}`,
+        ),
+      );
+      return;
+    }
+    const projectObj = project;
+    if (!projectObj) {
+      toast.error(t.stepper.units.projectMissing);
+      return;
+    }
+    if (!initialRoleId) {
+      toast.error(t.drawerIFC.simulationRoleMissing);
+      return;
+    }
+    const simRoleId = initialRoleId;
+
+    setIsCreatingStep1(true);
+    const result: TIfcStepperCreatedUnit[] = [];
+    let createdCount = 0;
+    let reusedCount = 0;
+    let patchedCount = 0;
+
+    try {
+      const existingNames: string[] = [];
+      for (const unit of selectedUnits) {
+        const alreadyCreated = state.unitsCreated.find(
+          (c) => c.tempId === unit.tempId,
+        );
+        if (alreadyCreated) {
+          if (alreadyCreated.needsUpdate) {
+            const updatePayload: UnitFormSchema = prepareUnitForCreate(
+              unit.formData,
+            ) as unknown as UnitFormSchema;
+            const patchRes = await patchUnit(
+              updatePayload,
+              projectId,
+              alreadyCreated.unitId,
+            );
+            const patchBody: IPatchUnitResponse = (
+              patchRes as { data: IPatchUnitResponse }
+            ).data;
+            const updatedUnitObj: TIfcProcessorStateUnit | undefined =
+              patchBody?.unit ?? patchBody?.data?.unit;
+            // Os floors (e seus UUIDs) podem ter mudado: recarrega para o
+            // mapeamento de pavimentos do step 2.
+            await queryClient.invalidateQueries({
+              queryKey: ["unit", projectId, alreadyCreated.unitId],
+            });
+            const patchedRecord: TIfcStepperCreatedUnit = {
+              ...alreadyCreated,
+              unitId: updatedUnitObj?.id ?? alreadyCreated.unitId,
+              unitName: unit.formData.name,
+              displayName: `${unit.formData.name} — ${alreadyCreated.name}`,
+              needsUpdate: false,
+            };
+            result.push(patchedRecord);
+            patchedCount += 1;
+            existingNames.push(alreadyCreated.name);
+            continue;
+          }
+          const cleanReuse: TIfcStepperCreatedUnit = {
+            ...alreadyCreated,
+            unitName: unit.formData.name,
+            displayName: `${unit.formData.name} — ${alreadyCreated.name}`,
+            needsUpdate: false,
+          };
+          result.push(cleanReuse);
+          reusedCount += 1;
+          existingNames.push(alreadyCreated.name);
+          continue;
+        }
+
+        const createPayload: UnitFormSchema = prepareUnitForCreate(
+          unit.formData,
+        ) as unknown as UnitFormSchema;
+        const unitRes = await postUnit(createPayload, projectId);
+        const unitBody: IPostUnitResponse = (
+          unitRes as { data: IPostUnitResponse }
+        ).data;
+        const unitObj: TIfcProcessorStateUnit | undefined =
+          unitBody?.unit ?? unitBody?.data?.unit;
+        const unitId = unitObj?.id;
+        if (!unitId) {
+          throw new Error(
+            "Resposta da criação da unidade não retornou unit.id.",
+          );
+        }
+
+        // Usa o nome da simulação fornecido pelo usuário na UI; garante
+        // uniqueness apenas se o nome já foi ocupado em outra unidade do lote
+        // ou se o usuário deixou em branco (fallback para o padrão antigo).
+        const baseUserSimName = unit.simulationName
+          ? unit.simulationName.trim()
+          : "";
+        const simName = baseUserSimName
+          ? buildUniqueSimulationName(baseUserSimName, existingNames, true)
+          : buildUniqueSimulationName(unit.formData.name, existingNames);
+        existingNames.push(simName);
+
+        const optionRes = await postOption(projectId, unitId, simRoleId, {
+          name: simName,
+          active: true,
+        });
+        const optionBody: IPostOptionResponse = (
+          optionRes as { data: IPostOptionResponse }
+        ).data;
+        const optionObj: TOption | undefined =
+          optionBody?.option ??
+          optionBody?.data?.option ??
+          optionBody?.tower_option ??
+          optionBody?.data?.tower_option;
+        const optionId = optionObj?.id;
+        if (!optionId) {
+          throw new Error(
+            `Resposta da criação da simulação não retornou option.id (unidade: ${unit.formData.name}).`,
+          );
+        }
+
+        const record: TIfcStepperCreatedUnit = {
+          tempId: unit.tempId,
+          unitId,
+          optionId,
+          roleId: simRoleId,
+          name: simName,
+          unitName: unit.formData.name,
+          displayName: `${unit.formData.name} — ${simName}`,
+          needsUpdate: false,
+        };
+        result.push(record);
+        createdCount += 1;
+      }
+
+      setState((prev) => {
+        const withBound: TIfcStepperState = {
+          ...prev,
+          unitsCreated: result,
+        };
+        if (result.length > 0) {
+          const firstResult = result[0];
+          withBound.modules = prev.modules.map((m) => {
+            let updated: TIfcStepperModuleItem = { ...m };
+            if (m.boundUnitTempId) {
+              const found = result.find((c) => c.tempId === m.boundUnitTempId);
+              if (found) {
+                updated = {
+                  ...updated,
+                  boundUnitId: found.unitId,
+                  boundOptionId: found.optionId,
+                };
+              }
+            } else if (result.length === 1) {
+              updated = {
+                ...updated,
+                boundUnitTempId: firstResult.tempId,
+                boundUnitId: firstResult.unitId,
+                boundOptionId: firstResult.optionId,
+              };
+            }
+            const fallbackUnitId: string | null =
+              (typeof updated.boundUnitId === "string" &&
+              updated.boundUnitId.trim() !== ""
+                ? updated.boundUnitId
+                : null) ?? null;
+            return rerunModuleValidation(updated, i18nCompleteness, null, {
+              fallbackUnitId,
+            });
+          });
+        } else {
+          withBound.modules = prev.modules.map((m) =>
+            rerunModuleValidation(m, i18nCompleteness, null, {
+              fallbackUnitId: null,
+            }),
+          );
+        }
+        withBound.currentStep = "modules";
+        return withBound;
+      });
+      const total = createdCount + patchedCount + reusedCount;
+      if (total === createdCount && reusedCount === 0 && patchedCount === 0) {
+        toast.success(
+          t.stepper.units.createdUnits.replace("{count}", `${createdCount}`),
+        );
+      } else if (createdCount === 0 && patchedCount > 0 && reusedCount === 0) {
+        toast.success(
+          t.stepper.units.updatedUnits.replace("{count}", `${patchedCount}`),
+        );
+      } else if (createdCount === 0 && patchedCount === 0 && reusedCount > 0) {
+        toast.success(
+          t.stepper.units.reusedUnits.replace("{count}", `${reusedCount}`),
+        );
+      } else {
+        const parts: string[] = [];
+        if (createdCount > 0)
+          parts.push(
+            t.stepper.units.partCreated.replace("{count}", `${createdCount}`),
+          );
+        if (patchedCount > 0)
+          parts.push(
+            t.stepper.units.partUpdated.replace("{count}", `${patchedCount}`),
+          );
+        if (reusedCount > 0)
+          parts.push(
+            t.stepper.units.partReused.replace("{count}", `${reusedCount}`),
+          );
+        toast.success(
+          t.stepper.units.mixedResult.replace("{parts}", parts.join(", ")),
+        );
+      }
+    } catch (err) {
+      const msg = parseApiError(err, t);
+      setStep1Error(msg);
+      toast.error(t.stepper.units.step1Error, {
+        description: msg,
+      });
+    } finally {
+      setIsCreatingStep1(false);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Step 2 — Modules helpers
+  // ---------------------------------------------------------------------------
+
+  const applyUnitToAllModules = (unitTempId: string) => {
+    const found = state.unitsCreated.find((u) => u.tempId === unitTempId);
+    if (!found) return;
+    setState((prev) => ({
+      ...prev,
+      modules: prev.modules.map((m) => ({
+        ...m,
+        boundUnitTempId: found.tempId,
+        boundUnitId: found.unitId,
+        boundOptionId: found.optionId,
+      })),
+    }));
+  };
+
+  const toggleModuleSelected = (tempId: string) => {
+    setState((prev) => ({
+      ...prev,
+      modules: prev.modules.map((m) =>
+        m.tempId === tempId ? { ...m, selected: !m.selected } : m,
+      ),
+    }));
+  };
+
+  const toggleAllModulesSelected = (checked: boolean) => {
+    setState((prev) => ({
+      ...prev,
+      modules: prev.modules.map((m) => ({ ...m, selected: checked })),
+    }));
+  };
+
+  const setModuleBoundUnit = (moduleTempId: string, unitTempId: string) => {
+    const found = state.unitsCreated.find((u) => u.tempId === unitTempId);
+    const fallbackUnitId = found?.unitId ?? undefined;
+    setState((prev) => ({
+      ...prev,
+      modules: prev.modules.map((m) => {
+        if (m.tempId !== moduleTempId) return m;
+        if (unitTempId === "__none__") {
+          const next = {
+            ...m,
+            boundUnitTempId: null,
+            boundUnitId: null,
+            boundOptionId: null,
+          };
+          return rerunModuleValidation(next, i18nCompleteness, null, {
+            fallbackUnitId: null,
+          });
+        }
+        if (!found) return m;
+        const next: TIfcStepperModuleItem = {
+          ...m,
+          boundUnitTempId: found.tempId,
+          boundUnitId: found.unitId,
+          boundOptionId: found.optionId,
+        };
+        return rerunModuleValidation(next, i18nCompleteness, null, {
+          fallbackUnitId: fallbackUnitId ?? null,
+        });
+      }),
+    }));
+  };
+
+  const handleModuleDrawerSubmit = (payload: {
+    moduleId?: string;
+    params: ModuleParamsProps | ModuleParamsPropsV2;
+    selectedFloors: string[];
+    formInput: unknown;
+    flatData: TModuleDataV2 & {
+      type: TModulesTypes;
+      floor_ids?: string[];
+      unit_id?: string;
+    };
+  }) => {
+    if (!editingModuleTempId) return;
+
+    const paramsV2 = ((): ModuleParamsPropsV2 | null => {
+      const p = payload.params;
+      if (p && typeof p === "object" && "type" in p && "data" in p) {
+        const typed = p as unknown as ModuleParamsPropsV2;
+        if (typeof typed.type === "string") {
+          return typed;
+        }
+      }
+      return null;
+    })();
+
+    const fallbackType = (paramsV2?.type ??
+      payload.flatData.type ??
+      "beam_column") as TModulesTypes;
+
+    const dataPayloadFromParams = (paramsV2?.data ??
+      payload.flatData) as unknown as Record<string, unknown>;
+
+    setState((prev) => {
+      const next = { ...prev };
+      next.modules = next.modules.map((m) => {
+        if (m.tempId !== editingModuleTempId) return m;
+
+        const originalRawData = (m.raw?.data ?? {}) as unknown as Record<
+          string,
+          unknown
+        >;
+        const preservedMeta: Record<string, unknown> = {
+          floor_ids: payload.selectedFloors ?? [],
+        };
+        const originalFloorIndex =
+          (originalRawData as unknown as IRawModuleDataWithMeta).floor_index ??
+          (m.raw as unknown as IRawModuleDataWithMeta).floor_index;
+        if (originalFloorIndex !== undefined && originalFloorIndex !== null) {
+          preservedMeta.floor_index = originalFloorIndex;
+        }
+
+        const isFoundationType = FOUNDATION_MODULE_TYPES.includes(fallbackType);
+        const candidateUnitIdFromParams =
+          typeof dataPayloadFromParams.unit_id === "string" &&
+          dataPayloadFromParams.unit_id.trim().length >= 5
+            ? dataPayloadFromParams.unit_id.trim()
+            : undefined;
+        const candidateFromOriginal =
+          typeof (originalRawData as unknown as IRawModuleDataWithMeta)
+            .unit_id === "string" &&
+          (originalRawData as unknown as IRawModuleDataWithMeta).unit_id!.trim()
+            .length >= 5
+            ? (
+                originalRawData as unknown as IRawModuleDataWithMeta
+              ).unit_id!.trim()
+            : undefined;
+        const candidateFromBound =
+          typeof m.boundUnitId === "string" && m.boundUnitId.trim().length >= 5
+            ? m.boundUnitId.trim()
+            : undefined;
+        const savedUnitId =
+          candidateUnitIdFromParams ??
+          candidateFromOriginal ??
+          candidateFromBound ??
+          (isFoundationType ? candidateFromBound : undefined);
+        if (savedUnitId) preservedMeta.unit_id = savedUnitId;
+
+        const mergedDataV2: Record<string, unknown> = stripFoundationFloorIndex(
+          fallbackType,
+          {
+            ...dataPayloadFromParams,
+            ...preservedMeta,
+          },
+        );
+
+        const rawNext: TIfcStepperModuleItem["raw"] = {
+          ...m.raw,
+          type: fallbackType,
+          data: mergedDataV2 as TIfcStepperModuleItem["raw"]["data"],
+        };
+        if (
+          originalFloorIndex !== undefined &&
+          originalFloorIndex !== null &&
+          !isFoundationModuleType(fallbackType)
+        ) {
+          (rawNext as unknown as IRawModuleDataWithMeta).floor_index =
+            originalFloorIndex;
+        }
+
+        const rebuilt: TIfcStepperModuleItem = {
+          ...m,
+          raw: rawNext,
+          type: fallbackType,
+        };
+        const flatForRevalidate: TModuleDataV2 & {
+          position?: unknown;
+          [k: string]: unknown;
+        } = {
+          ...(mergedDataV2 as unknown as TModuleDataV2),
+          type: fallbackType,
+          floor_ids: payload.selectedFloors ?? [],
+        } as TModuleDataV2 & { [k: string]: unknown };
+        const reval = rerunModuleValidation(
+          rebuilt,
+          i18nCompleteness,
+          flatForRevalidate,
+          { fallbackUnitId: savedUnitId ?? m.boundUnitId ?? null },
+        );
+        return reval;
+      });
+      return next;
+    });
+    setEditingModuleTempId(null);
+  };
+
+  // ---------------------------------------------------------------------------
+  // Step 2 — Modules helpers (validação desativada — ver AGENTS.md)
+  // ---------------------------------------------------------------------------
+
+  // Depois de refatorar forms para V2 ({type,data} wrapper), as validações de
+  // módulos são relaxadas por enquanto: bloqueio do submit SÓ por vínculo
+  // unidade/opção (bindings). Validações e warnings são ignoradas.
+
+  const selectedModules = state.modules.filter((m) => m.selected);
+  const selectedModulesWithBinding = selectedModules.filter(
+    (m) => Boolean(m.boundUnitId) && Boolean(m.boundOptionId),
+  );
+  const countBlockingNoBinding =
+    selectedModules.length - selectedModulesWithBinding.length;
+
+  const modulesValidWithBinding = selectedModulesWithBinding;
+  const modulesIgnoredCount =
+    selectedModules.length - selectedModulesWithBinding.length;
+  const modulesUnselectedCount = state.modules.length - selectedModules.length;
+
+  // Submit step 2 só é bloqueado se (a) não houver nenhum selecionado com
+  // vínculo OU (b) algum selecionado NÃO tiver vínculo.
+  const step2CanProceed =
+    countBlockingNoBinding === 0 && selectedModulesWithBinding.length > 0;
+
+  const handleStep2Complete = async () => {
+    setStep2Error("");
+
+    // --- DOUBLE CHECK: bloquear submit imediatamente se não cumprir as regras ---
+    // Evita race conditions / state desatualizado mesmo quando o botão está disabled.
+    if (!step2CanProceed) {
+      if (selectedModules.length === 0) {
+        toast.warning(t.stepper.modules.noneSelected);
+      } else if (countBlockingNoBinding > 0) {
+        toast.warning(
+          t.stepper.modules.noBinding.replace(
+            "{count}",
+            `${countBlockingNoBinding}`,
+          ),
+        );
+      } else {
+        toast.warning(t.stepper.modules.noneValid);
+      }
+      return;
+    }
+
+    if (modulesUnselectedCount > 0 && modulesValidWithBinding.length === 0) {
+      toast.info(
+        t.stepper.modules.unselected.replace(
+          "{count}",
+          `${modulesUnselectedCount}`,
+        ),
+      );
+      onComplete?.(buildCompletePayload());
+      onOpenChange(false);
+      return;
+    }
+    if (modulesValidWithBinding.length === 0) {
+      toast.warning(t.stepper.modules.noBindingAtAll);
+      onComplete?.(buildCompletePayload());
+      onOpenChange(false);
+      return;
+    }
+    setIsCreatingStep2(true);
+
+    const groups = new Map<
+      string,
+      { unit: TIfcStepperCreatedUnit; modules: TIfcStepperModuleItem[] }
+    >();
+    for (const mod of modulesValidWithBinding) {
+      const key = `${mod.boundUnitId}__${mod.boundOptionId}`;
+      const unit = state.unitsCreated.find(
+        (u) => u.unitId === mod.boundUnitId && u.optionId === mod.boundOptionId,
+      );
+      if (!unit) continue;
+      if (!groups.has(key)) groups.set(key, { unit, modules: [] });
+      groups.get(key)!.modules.push(mod);
+    }
+
+    const errors: string[] = [];
+    let createdCount = 0;
+    // Módulos de lotes que deram certo: saem da lista se outro lote falhar,
+    // para um novo "Concluir" não criá-los em dobro.
+    const createdModuleTempIds = new Set<string>();
+
+    try {
+      for (const { unit, modules: groupModules } of groups.values()) {
+        const payloadModules: ModuleParamsPropsV2[] = [];
+        const payloadModuleTempIds: string[] = [];
+        const towerFloorsForGroup =
+          normalizedUnitsFloorMap.get(unit.tempId) ?? [];
+        // Com os pavimentos reais carregados, uma seleção com UUID que não
+        // pertence mais à unidade (ex.: unidade alterada no step 1, que gera
+        // novos IDs de pavimento) também não pode ser enviada.
+        const groupFloorIds = new Set(towerFloorsForGroup.map((f) => f.id));
+        const groupFloorsAreReal =
+          towerFloorsForGroup.length > 0 &&
+          towerFloorsForGroup.every((f) => isValidUUID(f.id));
+        let unresolvedModuleLabel: string | null = null;
+        for (const m of groupModules) {
+          const isFoundation = FOUNDATION_MODULE_TYPES.includes(
+            m.type as TModulesTypes,
+          );
+          // Prefere floor_ids já salvos (ex.: usuário editou e mudou via BuildingVisualizer)
+          // senão mapeia a partir do floor_index numérico original vindo do IFC
+          const editedFloorIds = (
+            m.raw?.data as unknown as IRawModuleDataWithMeta
+          )?.floor_ids;
+          const hasEditedFloorIds =
+            Array.isArray(editedFloorIds) && editedFloorIds.length > 0;
+          // Seleção feita com IDs temporários (pavimentos ainda não carregados):
+          // o lote reenviaria o floor_index original, aplicando o módulo a
+          // TODOS os pavimentos. Melhor falhar o lote com aviso.
+          if (
+            !isFoundation &&
+            hasEditedFloorIds &&
+            !editedFloorIds.every(
+              (id) =>
+                isValidUUID(id) &&
+                (!groupFloorsAreReal || groupFloorIds.has(id)),
+            )
+          ) {
+            unresolvedModuleLabel = moduleTypeLabels[m.type] ?? m.type;
+            break;
+          }
+          const resolvedFloorIds = hasEditedFloorIds
+            ? editedFloorIds
+            : mapIfcFloorIndexToFloorIds(
+                (m.raw?.data as unknown as IRawModuleDataWithMeta)
+                  ?.floor_index,
+                ifcFloorIndexes,
+                towerFloorsForGroup,
+              );
+          const binding = isFoundation
+            ? ({ unit_id: unit.unitId } as IModuleBatchBinding)
+            : ({ floor_ids: resolvedFloorIds } as IModuleBatchBinding);
+          const prepared = prepareModuleForBatch(m, isFoundation, binding);
+          if (!prepared) continue;
+          payloadModules.push(prepared as unknown as ModuleParamsPropsV2);
+          payloadModuleTempIds.push(m.tempId);
+        }
+        if (unresolvedModuleLabel) {
+          errors.push(
+            `${unit.displayName}: ${t.stepper.modules.floorBindingUnresolved.replace(
+              "{module}",
+              unresolvedModuleLabel,
+            )}`,
+          );
+          continue;
+        }
+        if (payloadModules.length === 0) continue;
+        try {
+          const res = await postModulesBatch(
+            { modules: payloadModules },
+            projectId,
+            unit.unitId,
+            unit.optionId,
+          );
+          createdCount += (res.data.modules ?? []).length;
+          payloadModuleTempIds.forEach((id) => createdModuleTempIds.add(id));
+        } catch (err) {
+          const msg = parseApiError(err, t);
+          errors.push(`${unit.displayName}: ${msg}`);
+        }
+      }
+
+      if (errors.length > 0) {
+        setStep2Error(errors.join(" | "));
+        toast.error(
+          t.stepper.modules.batchResult
+            .replace("{created}", `${createdCount}`)
+            .replace("{errors}", `${errors.length}`),
+          {
+            description: errors[0],
+          },
+        );
+      } else {
+        toast.success(
+          t.stepper.modules.createdSuccess.replace(
+            "{count}",
+            `${createdCount}`,
+          ),
+        );
+      }
+      if (modulesIgnoredCount > 0 || modulesUnselectedCount > 0) {
+        const parts: string[] = [];
+        if (modulesIgnoredCount > 0)
+          parts.push(
+            t.stepper.modules.partIgnored.replace(
+              "{count}",
+              `${modulesIgnoredCount}`,
+            ),
+          );
+        if (modulesUnselectedCount > 0)
+          parts.push(
+            t.stepper.modules.partUnselected.replace(
+              "{count}",
+              `${modulesUnselectedCount}`,
+            ),
+          );
+        toast.info(
+          t.stepper.modules.ignoredParts.replace("{parts}", parts.join(" · ")),
+        );
+      }
+
+      // Invalidate queries
+      await queryClient.invalidateQueries({
+        queryKey: ["project", projectId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["units", projectId],
+      });
+      for (const u of state.unitsCreated) {
+        await queryClient.invalidateQueries({
+          queryKey: ["unit", projectId, u.unitId],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["options", projectId, u.unitId],
+        });
+      }
+
+      // Com erro, o stepper fica aberto para o usuário corrigir e tentar de
+      // novo (o erro já aparece em step2Error e no toast).
+      if (errors.length > 0) {
+        if (createdModuleTempIds.size > 0) {
+          setHasCreatedModules(true);
+          setState((prev) => ({
+            ...prev,
+            modules: prev.modules.filter(
+              (m) => !createdModuleTempIds.has(m.tempId),
+            ),
+          }));
+        }
+        return;
+      }
+
+      onComplete?.(buildCompletePayload());
+      onOpenChange(false);
+    } catch (err) {
+      const msg = parseApiError(err, t);
+      setStep2Error(msg);
+      toast.error(t.stepper.modules.step2Error, { description: msg });
+    } finally {
+      setIsCreatingStep2(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (isCreatingStep1 || isCreatingStep2) return;
+    setIsDiscardConfirmOpen(false);
+    // Fechar depois de uma falha parcial mantém o fluxo de conclusão (ir para
+    // a unidade com os módulos que já foram criados).
+    if (hasCreatedModules) onComplete?.(buildCompletePayload());
+    onOpenChange(false);
+  };
+
+  // Unidades ainda não criadas (etapa 1) ou módulos selecionados ainda não
+  // criados se perdem ao fechar; nesse caso X, Esc e "Cancelar" pedem
+  // confirmação.
+  const hasPendingWork =
+    (!isSimulationMode && activeStep === 0 && state.units.length > 0) ||
+    state.modules.some((m) => m.selected);
+
+  const requestClose = () => {
+    if (isCreatingStep1 || isCreatingStep2) return;
+    if (hasPendingWork) {
+      setIsDiscardConfirmOpen(true);
+      return;
+    }
+    handleClose();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && requestClose()}>
+      <DialogContent
+        className="sm:max-w-[78vw] w-[78vw] h-[85vh] max-h-[85vh] flex flex-col gap-0 overflow-hidden p-4"
+        // Clique fora (fundo, toast) não fecha: descartaria todo o preenchimento.
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        <StepperHeader
+          isSimulationMode={isSimulationMode}
+          fileName={fileName ?? null}
+          translations={translations}
+          activeStep={activeStep}
+          steps={steps}
+          selectedSimulationOptionId={selectedSimulationOptionId}
+          availableOptions={availableOptions}
+          setSelectedSimulationOptionId={setSelectedSimulationOptionId}
+          preselectedUnitId={preselectedUnitId}
+          initialRoleId={initialRoleId}
+          projectId={projectId}
+          refetchOptions={refetchOptions as () => Promise<unknown>}
+          queryClient={queryClient}
+          state={state}
+          applyUnitToAllModules={applyUnitToAllModules}
+        />
+
+        <div className="flex-1 overflow-y-auto px-4 py-2 min-h-0">
+          <Step1Content
+            translations={translations}
+            state={state}
+            setUnitNameInline={setUnitNameInline}
+            setUnitSimulationNameInline={setUnitSimulationNameInline}
+            onEditUnit={(tempId) => setEditingUnitTempId(tempId)}
+            step1Error={step1Error}
+            isSimulationMode={isSimulationMode}
+            activeStep={activeStep}
+          />
+          <Step2Content
+            translations={translations}
+            state={state}
+            setModuleBoundUnit={setModuleBoundUnit}
+            onEditModule={(tempId) => setEditingModuleTempId(tempId)}
+            toggleModuleSelected={toggleModuleSelected}
+            toggleAllModulesSelected={toggleAllModulesSelected}
+            moduleTypeLabels={moduleTypeLabels}
+            step2Error={step2Error}
+            isSimulationMode={isSimulationMode}
+            activeStep={activeStep}
+          />
+        </div>
+
+        <DialogFooter className="px-4 py-2 border-t gap-2 shrink-0">
+          {!isSimulationMode && activeStep === 0 && (
+            <>
+              <Button
+                variant="ghost"
+                onClick={requestClose}
+                disabled={isCreatingStep1}
+              >
+                {t.stepper.modules.cancel}
+              </Button>
+              <Button
+                variant="bipc"
+                onClick={handleStep1CreateAndNext}
+                disabled={!step1CanProceed || isCreatingStep1}
+                className="text-white"
+              >
+                {isCreatingStep1 ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t.stepper.modules.creatingUnits}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    {t.stepper.modules.nextStep}
+                    <Wand2 className="h-4 w-4" />
+                  </span>
+                )}
+              </Button>
+            </>
+          )}
+          {!isSimulationMode && activeStep === 1 && (
+            <>
+              <Button
+                variant="ghost"
+                onClick={requestClose}
+                disabled={isCreatingStep2}
+              >
+                {t.stepper.modules.cancel}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={goToStep1}
+                disabled={isCreatingStep2}
+              >
+                {t.stepper.modules.back}
+              </Button>
+              <Button
+                variant="bipc"
+                onClick={handleStep2Complete}
+                disabled={isCreatingStep2 || !step2CanProceed}
+                className="text-white"
+                title={
+                  !step2CanProceed && countBlockingNoBinding > 0
+                    ? t.stepper.modules.titleBindingTooltip.replace(
+                        "{count}",
+                        `${countBlockingNoBinding}`,
+                      )
+                    : undefined
+                }
+              >
+                {isCreatingStep2 ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t.stepper.modules.creatingModules}
+                  </span>
+                ) : (
+                  t.stepper.modules.finish
+                )}
+              </Button>
+            </>
+          )}
+          {isSimulationMode && (
+            <>
+              <Button
+                variant="ghost"
+                onClick={requestClose}
+                disabled={isCreatingStep2}
+              >
+                {t.stepper.modules.cancel}
+              </Button>
+              <Button
+                variant="bipc"
+                onClick={handleStep2Complete}
+                disabled={
+                  isCreatingStep2 ||
+                  !selectedSimulationOptionId ||
+                  !step2CanProceed
+                }
+                className="text-white"
+                title={
+                  !step2CanProceed && countBlockingNoBinding > 0
+                    ? t.stepper.modules.titleBindingTooltip.replace(
+                        "{count}",
+                        `${countBlockingNoBinding}`,
+                      )
+                    : undefined
+                }
+              >
+                {isCreatingStep2 ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t.stepper.modules.creatingModules}
+                  </span>
+                ) : (
+                  t.stepper.modules.finish
+                )}
+              </Button>
+            </>
+          )}
+        </DialogFooter>
+
+        {editingUnit && (
+          <DrawerFormUnit
+            stepperMode
+            projectId={projectId}
+            editMode
+            open={!!editingUnitTempId}
+            onOpenChange={(o) => !o && setEditingUnitTempId(null)}
+            initialFormData={
+              editingUnit.formData as unknown as TIfcStepperUnitItem["formData"]
+            }
+            takenUnitNames={editingUnitTakenNames}
+            onSubmitSuccess={handleUnitDrawerSubmit}
+          />
+        )}
+
+        {editingModule && (
+          <DrawerFormModule
+            stepperMode
+            projectId={projectId}
+            unitId={editingModuleBoundUnit?.unitId}
+            optionId={editingModuleBoundUnit?.optionId}
+            type={(editingModule.type as TModulesTypes) ?? "beam_column"}
+            floors={editingUnitFloors}
+            open={!!editingModuleTempId}
+            editMode={true}
+            onOpenChange={(o) => !o && setEditingModuleTempId(null)}
+            initialModuleData={{
+              type: (editingModule.type as TModulesTypes) ?? "beam_column",
+              data:
+                (editingModuleInitialMerged as unknown as {
+                  [k: string]: unknown;
+                  floor_ids?: string[];
+                  unit_id?: string;
+                }) ?? {},
+            }}
+            initialSelectedFloors={editingModuleInitialSelectedFloors}
+            onSubmitSuccess={(payload) => {
+              if (!editingModuleBoundUnit) {
+                toast.warning(translations.stepper.modules.notBoundWarning);
+                return;
+              }
+              handleModuleDrawerSubmit(payload);
+            }}
+          />
+        )}
+
+        <Dialog
+          open={isDiscardConfirmOpen}
+          onOpenChange={setIsDiscardConfirmOpen}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t.stepper.discardConfirm.title}</DialogTitle>
+              <DialogDescription>
+                {t.stepper.discardConfirm.description}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsDiscardConfirmOpen(false)}
+              >
+                {t.stepper.discardConfirm.keepEditing}
+              </Button>
+              <Button variant="destructive" onClick={handleClose}>
+                {t.stepper.discardConfirm.discard}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </DialogContent>
+    </Dialog>
+  );
+}

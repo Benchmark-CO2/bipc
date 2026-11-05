@@ -600,3 +600,28 @@ func (m UnitModel) GetConsumptionByRole(unitID, roleID uuid.UUID) (map[string]*C
 
 	return GetFullConsumption(m.DB, unitID, roleID, activeOptionID)
 }
+
+// GetUnknownModulesByRole returns the unknown module occurrences applied to
+// the active option of the role, mirroring GetConsumptionByRole. When the role
+// has no active option, an empty slice is returned.
+func (m UnitModel) GetUnknownModulesByRole(unitID, roleID uuid.UUID) ([]*UnknownModuleOccurrence, error) {
+	var activeOptionID uuid.UUID
+	query := `
+		SELECT id
+		FROM options
+		WHERE unit_id = $1 AND role_id = $2 AND active = TRUE
+		LIMIT 1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, unitID, roleID).Scan(&activeOptionID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return []*UnknownModuleOccurrence{}, nil
+		}
+		return nil, err
+	}
+
+	return getUnknownModulesByOption(ctx, m.DB, activeOptionID)
+}
