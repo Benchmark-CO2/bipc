@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"sort"
 	"time"
 
@@ -361,12 +360,12 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if err := os.WriteFile("reportContent.html", []byte(reportContent), 0644); err != nil {
-		log.Fatal(err)
-	}
-	if err := os.WriteFile("coverContent.html", []byte(coverContent), 0644); err != nil {
-		log.Fatal(err)
-	}
+	// if err := os.WriteFile("reportContent.html", []byte(reportContent), 0644); err != nil {
+	// 	log.Fatal(err)
+	// }
+	// if err := os.WriteFile("coverContent.html", []byte(coverContent), 0644); err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	url := launcher.New().NoSandbox(true).Headless(true).MustLaunch()
 
