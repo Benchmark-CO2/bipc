@@ -1774,5 +1774,10 @@ export const en: Translations = {
     listError: "Error loading registered spreadsheets.",
     colSoftware: "Software",
     colVersion: "Version",
+    colActions: "Actions",
+    deleteAriaLabel: "Delete spreadsheet",
+    deleteConfirmTitle: "Delete the {{software}} {{version}} spreadsheet?",
+    deleteSuccessToast: "Spreadsheet deleted successfully!",
+    deleteErrorToast: "Error deleting spreadsheet",
   },
 };

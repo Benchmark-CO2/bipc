@@ -1,5 +1,7 @@
+import { deleteIfcFallback } from "@/actions/ifc/deleteIfcFallback";
 import { getIfcFallbacks } from "@/actions/ifc/getIfcFallbacks";
 import { postIfcCreateFallback } from "@/actions/ifc/postIfcCreateFallback";
+import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/i18n";
 import { Translations } from "@/i18n/translations/pt-BR";
@@ -7,7 +9,7 @@ import { TIfcProcessorFallbackVersion } from "@/types/ifc";
 import { parseApiError } from "@/utils/parseApiError";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Lock, Loader2, RefreshCw, Upload, X } from "lucide-react";
+import { Lock, Loader2, RefreshCw, Trash2, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
@@ -141,6 +143,24 @@ function AdminFallbacksContent({
       },
     },
   );
+
+  const {
+    mutate: handleDeleteFallback,
+    isPending: isDeleting,
+    variables: deletingFallback,
+  } = useMutation({
+    mutationFn: (item: TIfcProcessorFallbackVersion) =>
+      deleteIfcFallback(item.manufacturer, item.version),
+    onSuccess: async () => {
+      toast.success(translations.fallbacksPage.deleteSuccessToast);
+      await queryClient.invalidateQueries({ queryKey: ["ifcFallbacks"] });
+    },
+    onError: (error) => {
+      toast.error(translations.fallbacksPage.deleteErrorToast, {
+        description: parseApiError(error, translations),
+      });
+    },
+  });
 
   const validateAndSetFile = (candidate: File | null) => {
     setFieldError("");
@@ -341,13 +361,16 @@ function AdminFallbacksContent({
                 <th className="px-5 py-3 font-medium text-muted-foreground">
                   {translations.fallbacksPage.colVersion}
                 </th>
+                <th className="px-5 py-3 text-right font-medium text-muted-foreground">
+                  {translations.fallbacksPage.colActions}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {isTableLoading ? (
                 <tr>
                   <td
-                    colSpan={2}
+                    colSpan={3}
                     className="px-5 py-8 text-center text-muted-foreground"
                   >
                     <div className="flex items-center justify-center gap-2">
@@ -359,7 +382,7 @@ function AdminFallbacksContent({
               ) : isError ? (
                 <tr>
                   <td
-                    colSpan={2}
+                    colSpan={3}
                     className="px-5 py-8 text-center text-destructive"
                   >
                     {translations.fallbacksPage.listError}
@@ -368,26 +391,60 @@ function AdminFallbacksContent({
               ) : fallbacksList.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={2}
+                    colSpan={3}
                     className="px-5 py-8 text-center text-muted-foreground"
                   >
                     {translations.fallbacksPage.listEmpty}
                   </td>
                 </tr>
               ) : (
-                fallbacksList.map((item, idx) => (
-                  <tr
-                    key={`${item.manufacturer}-${item.version}-${idx}`}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800/30"
-                  >
-                    <td className="px-5 py-3 font-medium text-foreground">
-                      {item.manufacturer}
-                    </td>
-                    <td className="px-5 py-3 text-foreground">
-                      {item.version}
-                    </td>
-                  </tr>
-                ))
+                fallbacksList.map((item, idx) => {
+                  const isDeletingRow =
+                    isDeleting &&
+                    deletingFallback?.manufacturer === item.manufacturer &&
+                    deletingFallback?.version === item.version;
+
+                  return (
+                    <tr
+                      key={`${item.manufacturer}-${item.version}-${idx}`}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                    >
+                      <td className="px-5 py-3 font-medium text-foreground">
+                        {item.manufacturer}
+                      </td>
+                      <td className="px-5 py-3 text-foreground">
+                        {item.version}
+                      </td>
+                      <td className="px-5 py-2 text-right">
+                        <ModalConfirmDelete
+                          title={translations.fallbacksPage.deleteConfirmTitle
+                            .replace("{{software}}", item.manufacturer)
+                            .replace("{{version}}", item.version)}
+                          onConfirm={() => handleDeleteFallback(item)}
+                          componentTrigger={
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              disabled={isDeletingRow}
+                              aria-label={
+                                translations.fallbacksPage.deleteAriaLabel
+                              }
+                              title={translations.fallbacksPage.deleteAriaLabel}
+                              className="text-muted-foreground hover:text-destructive"
+                            >
+                              {isDeletingRow ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          }
+                        />
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

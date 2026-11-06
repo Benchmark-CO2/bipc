@@ -32,6 +32,8 @@ var ifcAdminEndpoints = []struct {
 	prefix string
 }{
 	{http.MethodPost, "/fallbacks/create"},
+	// Every DELETE forwarded to the IFC processor is admin-only (today only /fallbacks/{manufacturer}/{version}).
+	{http.MethodDelete, "/"},
 }
 
 func requiresIfcPassword(method, path string) bool {
