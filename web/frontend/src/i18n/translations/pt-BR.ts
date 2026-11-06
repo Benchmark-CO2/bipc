@@ -1792,6 +1792,11 @@ export const ptBR = {
     listError: "Erro ao carregar planilhas cadastradas.",
     colSoftware: "Software",
     colVersion: "Versão",
+    colActions: "Ações",
+    deleteAriaLabel: "Excluir planilha",
+    deleteConfirmTitle: "Excluir a planilha {{software}} {{version}}?",
+    deleteSuccessToast: "Planilha excluída com sucesso!",
+    deleteErrorToast: "Erro ao excluir planilha",
   },
 } as const;
 
