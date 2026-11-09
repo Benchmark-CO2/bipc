@@ -35,6 +35,7 @@ import { useForm } from "react-hook-form";
 
 export const Route = createFileRoute("/(public)/forget")({
   component: RouteComponent,
+  staticData: { fullBleed: true },
 });
 
 function RouteComponent() {
