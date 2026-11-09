@@ -1798,6 +1798,31 @@ export const ptBR = {
     deleteSuccessToast: "Planilha excluída com sucesso!",
     deleteErrorToast: "Erro ao excluir planilha",
   },
+  validateReport: {
+    title: "Validar Relatório",
+    description:
+      "Envie o arquivo PDF do relatório emitido pela plataforma BIPc para verificar a sua autenticidade.",
+    dropZoneLabel: "Arraste o relatório em PDF aqui ou clique para selecioná-lo",
+    dropZoneHint: "Somente arquivos .pdf de até {size} MB",
+    dropZoneAria: "Área de upload do relatório em PDF",
+    removeFile: "Remover arquivo",
+    invalidFileType: "Formato inválido. Selecione um arquivo .pdf.",
+    fileTooLarge: "O arquivo não pode ser maior que {size} MB.",
+    submit: "Validar Relatório",
+    loadingTitle: "Validando Relatório...",
+    loadingDescription: "Aguarde enquanto verificamos a autenticidade do arquivo.",
+    validTitle: "Relatório Autêntico",
+    validDescription:
+      "Este arquivo foi emitido pela plataforma BIPc e não foi alterado desde a emissão.",
+    invalidTitle: "Relatório Não Reconhecido",
+    invalidDescription:
+      "Não foi possível confirmar a autenticidade. O arquivo pode ter sido alterado após a emissão ou não foi gerado pela plataforma BIPc.",
+    errorTitle: "Erro na Validação",
+    errorDescription:
+      "Não foi possível validar o arquivo. Tente novamente em instantes.",
+    retry: "Tentar Novamente",
+    validateAnother: "Validar Outro Relatório",
+  },
 } as const;
 
 type StringifyValues<T> = {
