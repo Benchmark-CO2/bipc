@@ -44,6 +44,7 @@ type ActivateSearch = {
 
 export const Route = createFileRoute("/(public)/reset")({
   component: RouteComponent,
+  staticData: { fullBleed: true },
   validateSearch: (search: Record<string, unknown>): ActivateSearch => {
     return {
       tkn: typeof search.tkn === "string" ? search.tkn : undefined,

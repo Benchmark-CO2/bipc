@@ -19,6 +19,7 @@ import {
   createRootRouteWithContext,
   Outlet,
   useLocation,
+  useMatches,
   useNavigate,
 } from "@tanstack/react-router";
 import { AlertTriangle, Home, MessageSquare, RefreshCw } from "lucide-react";
@@ -39,6 +40,10 @@ export const Route = createRootRouteWithContext<{
     const { logout, isAuthenticated, activated } = useAuth();
     const navigate = useNavigate();
     const path = useLocation();
+    const isFullBleed = useMatches({
+      select: (matches) =>
+        matches.some((match) => match.staticData.fullBleed === true),
+    });
     const handleLogout = () => {
       logout();
       trainingModalStorage.clearAuthMinimizedOnLogout();
@@ -79,7 +84,11 @@ export const Route = createRootRouteWithContext<{
             <Screen>
               {activated === false && <UserActiveWarning />}
               <BreadCrumbs />
-              <div className="flex-1 overflow-auto p-6 pt-0">
+              <div
+                className={cn("flex-1 overflow-auto", {
+                  "p-6 pt-0": !isFullBleed,
+                })}
+              >
                 <Outlet />
               </div>
               {/* <ModeToggle /> */}
