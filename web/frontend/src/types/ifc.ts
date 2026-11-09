@@ -35,6 +35,10 @@ export interface TIfcProcessorCreateFallbackResponse {
   fallback_url: string;
 }
 
+export interface TIfcProcessorDeleteFallbackResponse {
+  message: string;
+}
+
 export interface TIfcProcessorCreateRequestResponse {
   request_id: string;
   ifc_url: string;

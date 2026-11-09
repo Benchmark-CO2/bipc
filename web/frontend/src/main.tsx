@@ -28,6 +28,10 @@ declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;
   }
+  interface StaticDataRouteOption {
+    /** Remove o padding do layout logado para a página ocupar a tela inteira. */
+    fullBleed?: boolean;
+  }
 }
 
 export const App = () => {
