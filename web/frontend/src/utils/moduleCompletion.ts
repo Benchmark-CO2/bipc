@@ -93,6 +93,20 @@ function normalizePosition(pos: string | undefined): string | undefined {
   return EMPTY_POSITION_VALUES.has(trimmed) ? undefined : trimmed;
 }
 
+/**
+ * Key used by the steel form to avoid repeating a combination. It includes
+ * the position (same idea as the backend's `position_fck` key for concrete),
+ * so the same material/type can be used in different positions. The backend
+ * does not enforce any steel uniqueness; this is a UI guard only.
+ */
+export function steelCombinationKey(
+  position: string | undefined,
+  material: string,
+  resistance: string,
+): string {
+  return `${normalizePosition(position) ?? "__no_pos__"}:${material}:${resistance}`;
+}
+
 function isValidPositionOrEmpty(
   pos: string | undefined,
   validPositions: Set<string>,

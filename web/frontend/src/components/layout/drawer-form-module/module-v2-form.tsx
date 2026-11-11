@@ -1,6 +1,7 @@
 import { useTranslation } from "@/i18n";
 import { useModuleV2Form } from "@/hooks/useModuleV2Form";
 import { parseNumber } from "@/utils/numbers";
+import { steelCombinationKey } from "@/utils/moduleCompletion";
 import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Control, useWatch } from "react-hook-form";
@@ -573,17 +574,32 @@ const SteelMaterialItemInline = ({
     allowedResistances.includes(opt.value),
   );
 
+  const currentPosition = steelArr[index]?.position;
+
   const otherCombinations = steelArr
     .map((item, i) => {
       if (i === index || !item?.material || !item?.resistance) return null;
-      return `${item.material}:${item.resistance}`;
+      return steelCombinationKey(item.position, item.material, item.resistance);
     })
     .filter(Boolean) as string[];
 
-  const isCombinationUsed = (mat: string, res: string) => {
+  const isCombinationUsed = (
+    mat: string,
+    res: string,
+    pos: string | undefined = currentPosition,
+  ) => {
     if (mat === "other" && res === "other") return false;
-    return otherCombinations.includes(`${mat}:${res}`);
+    return otherCombinations.includes(steelCombinationKey(pos, mat, res));
   };
+
+  // A position is unavailable when another row already uses the current
+  // material/type in it (the row's own position stays selectable).
+  const isPositionTaken = (pos: string) =>
+    !!currentMaterial &&
+    !!currentResistance &&
+    steelCombinationKey(pos, currentMaterial, currentResistance) !==
+      steelCombinationKey(currentPosition, currentMaterial, currentResistance) &&
+    isCombinationUsed(currentMaterial, currentResistance, pos);
 
   const isOtherMaterial = currentMaterial === "other";
   const isOtherResistance = currentResistance === "other";
@@ -607,11 +623,20 @@ const SteelMaterialItemInline = ({
                   </SelectTrigger>
                   <SelectContent>
                     {positions.map((pos) => (
-                      <SelectItem key={pos} value={pos} className="text-xs">
+                      <SelectItem
+                        key={pos}
+                        value={pos}
+                        className="text-xs"
+                        disabled={isPositionTaken(pos)}
+                      >
                         {getPositionLabel(t, pos)}
                       </SelectItem>
                     ))}
-                    <SelectItem value="unspecified" className="text-xs">
+                    <SelectItem
+                      value="unspecified"
+                      className="text-xs"
+                      disabled={isPositionTaken("unspecified")}
+                    >
                       {t.modules.form.general}
                     </SelectItem>
                   </SelectContent>
