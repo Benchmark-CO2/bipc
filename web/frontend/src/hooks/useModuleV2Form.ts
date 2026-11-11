@@ -16,6 +16,7 @@ import {
 } from "@/utils/modulePositions";
 import {
   calculateModuleCompletion,
+  steelCombinationKey,
   SUPPORTED_MORTAR_FAK,
   type CompletionResult,
   type ModuleCompletionI18n,
@@ -49,12 +50,37 @@ const makeConcreteItem = (position?: string) => ({
   customFck: false,
 });
 
-const makeSteelItem = (position?: string) => ({
-  material: "rebar" as const,
-  resistance: "CA50" as const,
+const makeSteelItem = (
+  position?: string,
+  material: string = "rebar",
+  resistance: string = "CA50",
+) => ({
+  material,
+  resistance,
   mass: "0" as unknown as number,
   position: position ?? "unspecified",
 });
+
+// Same order as the material select in the steel section; the first entry
+// keeps the previous default (rebar · CA-50).
+const STEEL_COMBINATIONS_IN_ORDER: ReadonlyArray<readonly [string, string]> = [
+  ["rebar", "CA50"],
+  ["rebar", "CA60"],
+  ["rebar", "CP190"],
+  ["rebar", "other"],
+  ["strand", "CP190"],
+  ["strand", "other"],
+  ["mesh", "CA60"],
+  ["mesh", "CP190"],
+  ["mesh", "other"],
+  ["general", "CA50"],
+  ["general", "CA60"],
+  ["general", "CP190"],
+  ["general", "other"],
+  ["other", "CA50"],
+  ["other", "CA60"],
+  ["other", "CP190"],
+];
 
 const makeFormItem = (position?: string) => ({
   area: "0" as unknown as number,
@@ -320,7 +346,31 @@ export const useModuleV2Form = ({
   };
 
   const addSteelItem = (position?: string) => {
-    steelArray.append(makeSteelItem(position) as never);
+    // Suggest the first material/type still free in the target position, so
+    // "+" does not create a row the form itself treats as a duplicate.
+    // "other · other" is always allowed and is the fallback.
+    const current =
+      (form.getValues("data.steel" as never) as unknown[] | undefined) ?? [];
+    const used = new Set(
+      current.map((it) => {
+        const item = it as {
+          position?: string;
+          material?: string;
+          resistance?: string;
+        } | null;
+        return steelCombinationKey(
+          item?.position,
+          item?.material ?? "",
+          item?.resistance ?? "",
+        );
+      }),
+    );
+    const [material, resistance] = STEEL_COMBINATIONS_IN_ORDER.find(
+      ([mat, res]) => !used.has(steelCombinationKey(position, mat, res)),
+    ) ?? ["other", "other"];
+    steelArray.append(
+      makeSteelItem(position, material, resistance) as never,
+    );
   };
 
   const removeSteelItem = (index: number) => {

@@ -8,6 +8,7 @@ import { FormControl, FormField, FormItem, FormLabel } from "../../ui/form";
 import { Input } from "../../ui/input";
 import { NumericStringInput } from "../../ui/numeric-string-input";
 import { parseNumber } from "@/utils/numbers";
+import { steelCombinationKey } from "@/utils/moduleCompletion";
 import {
   Select,
   SelectContent,
@@ -100,6 +101,10 @@ const SteelMaterialItem = ({
     control: form.control,
     name: `${name}.${index}.resistance`,
   });
+  const currentPositionValue = useWatch({
+    control: form.control,
+    name: `${name}.${index}.position`,
+  });
 
   const allowedResistancesByMaterial: Record<string, string[]> = {
     rebar: ["CA50", "CA60", "CP190", "other"],
@@ -115,10 +120,27 @@ const SteelMaterialItem = ({
     allowedResistances.includes(opt.value),
   );
 
-  const isCombinationUsed = (mat: string, res: string) => {
+  const isCombinationUsed = (
+    mat: string,
+    res: string,
+    pos: string | undefined = currentPositionValue,
+  ) => {
     if (mat === "other" && res === "other") return false;
-    return otherCombinations.includes(`${mat}:${res}`);
+    return otherCombinations.includes(steelCombinationKey(pos, mat, res));
   };
+
+  // A position is unavailable when another row already uses the current
+  // material/type in it (the row's own position stays selectable).
+  const isPositionTaken = (pos: string) =>
+    !!currentMaterial &&
+    !!currentResistance &&
+    steelCombinationKey(pos, currentMaterial, currentResistance) !==
+      steelCombinationKey(
+        currentPositionValue,
+        currentMaterial,
+        currentResistance,
+      ) &&
+    isCombinationUsed(currentMaterial, currentResistance, pos);
 
   useEffect(() => {
     if (currentResistance && !allowedResistances.includes(currentResistance)) {
@@ -212,11 +234,16 @@ const SteelMaterialItem = ({
                               key={pos}
                               value={pos}
                               className="text-xs"
+                              disabled={isPositionTaken(pos)}
                             >
                               {getPositionLabel(t, pos)}
                             </SelectItem>
                           ))}
-                          <SelectItem value="unspecified" className="text-xs">
+                          <SelectItem
+                            value="unspecified"
+                            className="text-xs"
+                            disabled={isPositionTaken("unspecified")}
+                          >
                             {t.modules.form.general}
                           </SelectItem>
                         </SelectContent>
@@ -492,7 +519,11 @@ const SteelMaterialList = ({
           .map((item: any, i: number) => {
             if (i === index || !item?.material || !item?.resistance)
               return null;
-            return `${item.material}:${item.resistance}`;
+            return steelCombinationKey(
+              item.position,
+              item.material,
+              item.resistance,
+            );
           })
           .filter(Boolean) as string[];
         return (
@@ -528,7 +559,9 @@ const SteelMaterialList = ({
 
           const currentCombinations = (steelArray || [])
             .filter((item: any) => item?.material && item?.resistance)
-            .map((item: any) => `${item.material}:${item.resistance}`);
+            .map((item: any) =>
+              steelCombinationKey(item.position, item.material, item.resistance),
+            );
 
           let foundMaterial = allowedMaterials[0] ?? "rebar";
           let foundResistance =
@@ -542,7 +575,13 @@ const SteelMaterialList = ({
                 foundResistance = res;
                 break outer;
               }
-              if (!currentCombinations.includes(`${mat}:${res}`)) {
+              // New rows start in "Geral" (unspecified), so only that
+              // position matters when looking for a free combination.
+              if (
+                !currentCombinations.includes(
+                  steelCombinationKey("unspecified", mat, res),
+                )
+              ) {
                 foundMaterial = mat;
                 foundResistance = res;
                 break outer;
