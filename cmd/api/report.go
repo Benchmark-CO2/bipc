@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"sort"
 	"time"
 
@@ -79,11 +80,25 @@ func generateDocumentContent(templateFile string, templateName string, reportDat
 	return buf.String(), nil
 }
 
+type TableRow struct {
+	Type       string // tecnologia ou material
+	Name       string
+	Co2Min     float64
+	Co2Prov    float64
+	Co2Max     float64
+	EnergyMin  float64
+	EnergyProv float64
+	EnergyMax  float64
+	Cum        float64
+}
+
 type ReportData struct {
 	ProjectWithUnits *data.ProjectWithUnits
 	TotalUH          int
 	TotalUC          int
 	TotalUCArea      float64
+
+	SourcesTotal float32
 
 	Report                  *ProjectBenchmarkReport
 	BaseLineCO2reference    float64
@@ -95,7 +110,10 @@ type ReportData struct {
 	EnergyClass             string
 	EnergyTotal             int
 
-	SourcesTotal float32
+	CumClass string
+	CumTotal int
+
+	DetailsTable []TableRow
 }
 
 type SourceData struct {
@@ -139,15 +157,33 @@ type BenchmarkPoint struct {
 	Label string  `json:"label,omitempty"`
 }
 
+type Material struct {
+	Name    string  `json:"name"`
+	Value   float64 `json:"value"`
+	Percent float64 `json:"percent"`
+}
+
+type Tecnology struct {
+	Name      string     `json:"name"`
+	Percent   float64    `json:"percent"`
+	Materials []Material `json:"materials"`
+}
+
+type Unit struct {
+	Name        string      `json:"name"`
+	Tecnologies []Tecnology `json:"tecnologies"`
+}
+
 type JSONData struct {
 	Sources     []SourceData     `json:"sources"`
 	CO2Chart    []BenchmarkPoint `json:"co2Chart"`
 	EnergyChart []BenchmarkPoint `json:"energyChart"`
 	SelectedIDs []string         `json:"selectedIds"`
-	GM          []GMCategoria    `json:"gm"`   // Total de Emissões por tecnologia e material (% / Kg CO₂)
-	GC          []GCPonto        `json:"gc"`   // Impacto de CUM por tecnologia (m³/m²)
-	SBC1        []SBCLinha       `json:"sbc1"` // Consumo total de energia por tecnologia (mj)
-	SBC2        []SBCLinha       `json:"sbc2"` // Total de Emissões por tecnologia (kg CO₂)
+	GM          []GMCategoria    `json:"gm"`    // Total de Emissões por tecnologia e material (% / Kg CO₂)
+	GC          []GCPonto        `json:"gc"`    // Impacto de CUM por tecnologia (m³/m²)
+	SBC1        []SBCLinha       `json:"sbc1"`  // Consumo total de energia por tecnologia (mj)
+	SBC2        []SBCLinha       `json:"sbc2"`  // Total de Emissões por tecnologia (kg CO₂)
+	Units       []Unit           `json:"units"` // Composição e impacto de cada tecnologia por material
 }
 
 func normalizeScreenshotBenchmarkPoints(minPoints, maxPoints []BenchmarkValue) []BenchmarkPoint {
@@ -248,6 +284,24 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		CO2Total:                co2Total,
 		EnergyClass:             energyClass,
 		EnergyTotal:             energyTotal,
+
+		CumClass: "D",
+		CumTotal: 301,
+
+		DetailsTable: []TableRow{
+			{Type: "tecnologia", Name: "Tecnologia A", Co2Min: 10.5, Co2Prov: 15.2, Co2Max: 20.0, EnergyMin: 5.0, EnergyProv: 7.5, EnergyMax: 10.0, Cum: 30.0},
+			{Type: "material", Name: "Material B", Co2Min: 8.0, Co2Prov: 12.0, Co2Max: 16.0, EnergyMin: 4.0, EnergyProv: 6.0, EnergyMax: 8.0, Cum: 24.0},
+			{Type: "material", Name: "Tecnologia C", Co2Min: 12.0, Co2Prov: 18.0, Co2Max: 24.0, EnergyMin: 6.0, EnergyProv: 9.0, EnergyMax: 12.0, Cum: 36.0},
+			{Type: "material", Name: "Material D", Co2Min: 10.0, Co2Prov: 15.0, Co2Max: 20.0, EnergyMin: 5.0, EnergyProv: 7.5, EnergyMax: 10.0, Cum: 30.0},
+			{Type: "material", Name: "Tecnologia E", Co2Min: 14.0, Co2Prov: 20.0, Co2Max: 26.0, EnergyMin: 7.0, EnergyProv: 10.0, EnergyMax: 14.0, Cum: 42.0},
+			{Type: "material", Name: "Material F", Co2Min: 11.0, Co2Prov: 16.0, Co2Max: 22.0, EnergyMin: 5.5, EnergyProv: 8.0, EnergyMax: 11.0, Cum: 33.0},
+			{Type: "tecnologia", Name: "Tecnologia A", Co2Min: 10.5, Co2Prov: 15.2, Co2Max: 20.0, EnergyMin: 5.0, EnergyProv: 7.5, EnergyMax: 10.0, Cum: 30.0},
+			{Type: "material", Name: "Material B", Co2Min: 8.0, Co2Prov: 12.0, Co2Max: 16.0, EnergyMin: 4.0, EnergyProv: 6.0, EnergyMax: 8.0, Cum: 24.0},
+			{Type: "material", Name: "Tecnologia C", Co2Min: 12.0, Co2Prov: 18.0, Co2Max: 24.0, EnergyMin: 6.0, EnergyProv: 9.0, EnergyMax: 12.0, Cum: 36.0},
+			{Type: "material", Name: "Material D", Co2Min: 10.0, Co2Prov: 15.0, Co2Max: 20.0, EnergyMin: 5.0, EnergyProv: 7.5, EnergyMax: 10.0, Cum: 30.0},
+			{Type: "material", Name: "Tecnologia E", Co2Min: 14.0, Co2Prov: 20.0, Co2Max: 26.0, EnergyMin: 7.0, EnergyProv: 10.0, EnergyMax: 14.0, Cum: 42.0},
+			{Type: "material", Name: "Material F", Co2Min: 11.0, Co2Prov: 16.0, Co2Max: 22.0, EnergyMin: 5.5, EnergyProv: 8.0, EnergyMax: 11.0, Cum: 33.0},
+		},
 	}
 
 	benchmarkProjects, err := app.models.Benchmark.GetProjectsBenchmark(data.GetProjectsBenchmarkFilters{})
@@ -346,6 +400,32 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		CO2Chart:    co2Points,
 		EnergyChart: energyPoints,
 		SelectedIDs: []string{projectID.String()},
+		Units: []Unit{
+			{Name: "Torre A", Tecnologies: []Tecnology{
+				{Name: "Parede de concreto", Percent: 40, Materials: []Material{
+					{Name: "Concreto", Value: 2100, Percent: 60},
+					{Name: "Aço", Value: 400, Percent: 20},
+					{Name: "Argamassa", Value: 1100, Percent: 20},
+				}},
+				{Name: "Fundação radier", Percent: 30, Materials: []Material{
+					{Name: "Concreto", Value: 4560, Percent: 70},
+					{Name: "Aço", Value: 350, Percent: 15},
+					{Name: "Argamassa", Value: 70, Percent: 15},
+				}},
+			}},
+			{Name: "Torre B", Tecnologies: []Tecnology{
+				{Name: "Parede de concreto", Percent: 40, Materials: []Material{
+					{Name: "Concreto", Value: 2100, Percent: 60},
+					{Name: "Aço", Value: 400, Percent: 20},
+					{Name: "Argamassa", Value: 1100, Percent: 20},
+				}},
+				{Name: "Fundação radier", Percent: 30, Materials: []Material{
+					{Name: "Concreto", Value: 4560, Percent: 70},
+					{Name: "Aço", Value: 350, Percent: 15},
+					{Name: "Argamassa", Value: 70, Percent: 15},
+				}},
+			}},
+		},
 	}
 
 	reportContent, err := generateDocumentContent("caixa.gohtml", "report", reportData, jsonData, fontFaceCSS(assets.RobotoFlex, "Roboto Flex"))
@@ -360,12 +440,12 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// if err := os.WriteFile("reportContent.html", []byte(reportContent), 0644); err != nil {
-	// 	log.Fatal(err)
-	// }
-	// if err := os.WriteFile("coverContent.html", []byte(coverContent), 0644); err != nil {
-	// 	log.Fatal(err)
-	// }
+	if err := os.WriteFile("reportContent.html", []byte(reportContent), 0644); err != nil {
+		log.Fatal(err)
+	}
+	if err := os.WriteFile("coverContent.html", []byte(coverContent), 0644); err != nil {
+		log.Fatal(err)
+	}
 
 	url := launcher.New().NoSandbox(true).Headless(true).MustLaunch()
 
@@ -437,7 +517,7 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 				</div>
 			</div>`,
 		MarginTop:    gson.Num(0.90),
-		MarginBottom: gson.Num(0.15),
+		MarginBottom: gson.Num(0.45),
 		MarginLeft:   gson.Num(0.15),
 		MarginRight:  gson.Num(0.15),
 	})
