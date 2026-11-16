@@ -166,8 +166,6 @@ type Material struct {
 type Tecnology struct {
 	Name      string     `json:"name"`
 	Percent   float64    `json:"percent"`
-	Max       int        `json:"max"`
-	TikStep   int        `json:"tickStep"`
 	Materials []Material `json:"materials"`
 }
 
@@ -404,24 +402,24 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		SelectedIDs: []string{projectID.String()},
 		Units: []Unit{
 			{Name: "Torre A", Tecnologies: []Tecnology{
-				{Name: "Parede de concreto", Percent: 40, Max: 100, TikStep: 10, Materials: []Material{
+				{Name: "Parede de concreto", Percent: 40, Materials: []Material{
 					{Name: "Concreto", Value: 2100, Percent: 60},
 					{Name: "Aço", Value: 400, Percent: 20},
 					{Name: "Argamassa", Value: 1100, Percent: 20},
 				}},
-				{Name: "Fundação radier", Percent: 30, Max: 100, TikStep: 10, Materials: []Material{
+				{Name: "Fundação radier", Percent: 30, Materials: []Material{
 					{Name: "Concreto", Value: 4560, Percent: 70},
 					{Name: "Aço", Value: 350, Percent: 15},
 					{Name: "Argamassa", Value: 70, Percent: 15},
 				}},
 			}},
 			{Name: "Torre B", Tecnologies: []Tecnology{
-				{Name: "Parede de concreto", Percent: 40, Max: 100, TikStep: 10, Materials: []Material{
+				{Name: "Parede de concreto", Percent: 40, Materials: []Material{
 					{Name: "Concreto", Value: 2100, Percent: 60},
 					{Name: "Aço", Value: 400, Percent: 20},
 					{Name: "Argamassa", Value: 1100, Percent: 20},
 				}},
-				{Name: "Fundação radier", Percent: 30, Max: 100, TikStep: 10, Materials: []Material{
+				{Name: "Fundação radier", Percent: 30, Materials: []Material{
 					{Name: "Concreto", Value: 4560, Percent: 70},
 					{Name: "Aço", Value: 350, Percent: 15},
 					{Name: "Argamassa", Value: 70, Percent: 15},

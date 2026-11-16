@@ -120,7 +120,7 @@
 		/* chart  sources */
 
 		#chart-container {
-    		max-width: 600px;
+    		max-width: 650px;
 		}
 		.legend {
 			display: flex;
@@ -829,7 +829,7 @@
 	</div>
 	
 
-	<div style="display: flex; gap: 12.5px;" >
+	<div style="display: flex; gap: 25px;" >
 		<div style="display: flex; flex-direction: column;">
 			<h3>Consumo total de energia por tecnologia (mj)</h3>
 			<div id="SBC1" class="sbc-chart"></div>
@@ -843,8 +843,8 @@
 
 	
 	
-
-	<div id="stack"></div>
+	<h2>Composição e impacto de cada tecnologia por material</h2>
+	<div id="StackedBars"></div>
 
 
 	
@@ -855,7 +855,7 @@
 		const data = {{.JSONData}};
 
 		function renderChartRastreabilidade(data, seletor = "#SOURCES") {
-			const width = 600;
+			const width = 650;
 			const barHeight = 12;
 			const height = barHeight;
 			
@@ -1467,11 +1467,12 @@
 			const width = container.clientWidth;
 			const fmtPct = n => d3.format(".1f")(n).replace(".", ",");
 
-			// Escala dinâmica: usa config.max ou o total + 15% de folga
+			// Escala dinâmica baseada no total, com 15% de folga
+			const domainMax = Math.max(total * 1.15, 1);
 			const x = d3.scaleLinear()
-				.domain([0, config.max ?? total * 1.15])
+				.domain([0, domainMax])
 				.range([PAD, width - PAD]);
-			if (config.max == null) x.nice(10);
+			x.nice(10);
 
 			// Título
 			root.append("h3")
@@ -1485,8 +1486,7 @@
 				.attr("height", AXIS_Y + BOTTOM);
 
 			const axis = d3.axisBottom(x).tickSize(3).tickSizeOuter(0);
-			if (config.tickStep) axis.tickValues(d3.range(0, x.domain()[1] + 1e-9, config.tickStep));
-			else axis.ticks(Math.max(2, Math.floor(width / 70)));
+			axis.ticks(Math.max(2, Math.floor(width / 70)));
 			svg.append("g").attr("transform", `translate(0,${AXIS_Y})`).call(axis);
 
 			// Segmentos empilhados
@@ -1508,18 +1508,27 @@
 				items.append("span").text(d => d.percent != null ? `${d.name} (${fmtPct(d.percent)}%)` : d.name);
 				footer.append("div").attr("class", "stkbar-unit").html(config.unit || "");
 		}
-		renderStackedBar({
-			title: "Parede de concreto",
-			percent: 47,
-			unit: "Kg CO<sub>2</sub> / m²",
-			max: 120,
-			tickStep: 10,
-			materials: [
-				{ name: "Concreto FCK25", value: 39.5, percent: 25.8 },
-				{ name: "Aço CA50",       value: 14.0, percent: 12.5 }
-			]
-		}, "#stack");
-				
+		data.units.forEach((u, unitIndex) => {
+			const heading = document.createElement("h3");
+			heading.textContent = u.name;
+			document.getElementById("StackedBars").appendChild(heading);
+
+			u.tecnologies.forEach((t, technologyIndex) => {
+				const chartId = `stacked-bar-${unitIndex}-${technologyIndex}`;
+				const chart = document.createElement("div");
+				chart.id = chartId;
+				document.getElementById("StackedBars").appendChild(chart);
+
+				renderStackedBar({
+					title: t.name,
+					percent: t.percent,
+					unit: "Kg CO<sub>2</sub> / m²",
+					materials: t.materials
+				}, `#${chartId}`);
+			});
+
+		});
+
 
 		window.chartsReady = true;
 	</script>
