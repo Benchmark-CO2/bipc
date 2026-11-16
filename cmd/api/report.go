@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/assets"
@@ -92,6 +93,22 @@ type TableRow struct {
 	Cum        float64
 }
 
+// UserModuleMaterial is a material row of an unknown module in the report: the
+// name plus ready-to-render quantity and unit labels.
+type UserModuleMaterial struct {
+	Name          string
+	Quantity      float64
+	Unit          string
+	QuantityLabel string
+	UnitLabel     string
+}
+
+// UserModuleGroup is an unknown module (technology) grouping its materials.
+type UserModuleGroup struct {
+	Name      string
+	Materials []UserModuleMaterial
+}
+
 type ReportData struct {
 	ProjectWithUnits *data.ProjectWithUnits
 	TotalUH          int
@@ -113,7 +130,8 @@ type ReportData struct {
 	CumClass string
 	CumTotal int
 
-	DetailsTable []TableRow
+	DetailsTable      []TableRow
+	UserModulesTable []UserModuleGroup
 }
 
 type SourceData struct {
@@ -218,6 +236,75 @@ func addSelectedBenchmarkPoint(points []BenchmarkValue, id uuid.UUID, value floa
 	return append(points, BenchmarkValue{ID: id, Value: value})
 }
 
+func unknownUnitLabel(unit string) string {
+	switch unit {
+	case "m2":
+		return "m²"
+	case "m3":
+		return "m³"
+	case "other":
+		return "Outro"
+	default:
+		return unit
+	}
+}
+
+func unknownQuantityLabel(q float64) string {
+	if q == 0 {
+		return "-"
+	}
+	return strconv.FormatFloat(q, 'f', -1, 64)
+}
+
+// buildUserModulesTable groups the unknown module occurrences of the project by
+// technology, deduplicating by module type (same as the project screen) and
+// merging repeated materials by name.
+func buildUserModulesTable(occurrences []*data.UnknownModuleOccurrence) []UserModuleGroup {
+	groups := make([]UserModuleGroup, 0)
+	groupIdx := make(map[uuid.UUID]int)
+
+	for _, occurrence := range occurrences {
+		if occurrence == nil || occurrence.UnknownModule == nil {
+			continue
+		}
+
+		gi, ok := groupIdx[occurrence.UnknownModuleID]
+		if !ok {
+			gi = len(groups)
+			groupIdx[occurrence.UnknownModuleID] = gi
+			groups = append(groups, UserModuleGroup{Name: occurrence.UnknownModule.Name})
+		}
+		group := &groups[gi]
+
+		for _, material := range occurrence.Materials {
+			found := false
+			for i := range group.Materials {
+				if group.Materials[i].Name == material.Name {
+					group.Materials[i].Quantity += material.Quantity
+					found = true
+					break
+				}
+			}
+			if !found {
+				group.Materials = append(group.Materials, UserModuleMaterial{
+					Name:     material.Name,
+					Quantity: material.Quantity,
+					Unit:     material.Unit,
+				})
+			}
+		}
+	}
+
+	for gi := range groups {
+		for mi := range groups[gi].Materials {
+			groups[gi].Materials[mi].QuantityLabel = unknownQuantityLabel(groups[gi].Materials[mi].Quantity)
+			groups[gi].Materials[mi].UnitLabel = unknownUnitLabel(groups[gi].Materials[mi].Unit)
+		}
+	}
+
+	return groups
+}
+
 func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request) {
 	projectID, err := app.readUUIDParam(r, "projectID")
 	if err != nil {
@@ -287,6 +374,8 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 
 		CumClass: "D",
 		CumTotal: 301,
+
+		UserModulesTable: buildUserModulesTable(project.UnknownModules),
 
 		DetailsTable: []TableRow{
 			{Type: "tecnologia", Name: "Tecnologia A", Co2Min: 10.5, Co2Prov: 15.2, Co2Max: 20.0, EnergyMin: 5.0, EnergyProv: 7.5, EnergyMax: 10.0, Cum: 30.0},

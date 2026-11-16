@@ -826,6 +826,33 @@
 		</table>
 		<p style="font-size: 7px; margin: 0;">*  Indica o desempenho mais provável, calculado com o dado de maior recorrência (moda) no SIDAC. Define o Indicador de CO₂ e de energia do resumo de emissões.</p>
 		<p style="font-size: 7px; margin: 0;">** Consumo Unitário de Material: indicador de desempenho que mede a quantidade de material consumida por unidade de medida da AC</p>
+
+		{{if .ReportData.UserModulesTable}}
+		<h2 style="margin: 3.75px 0 0;">Detalhamento dos materiais e tecnologias inseridos pelo usuário</h2>
+		<p style="margin: 0; color: #121F21; font-size: 8px;">Estas tecnologias não são incluídas no cálculo, mas foram descritas pelos usuários. Entre elas, encontram-se tecnologias não convencionais na construção civil ou que ainda serão integradas à plataforma.</p>
+
+		<table style="border-collapse: collapse; width: 100%;">
+			<thead style="display: table-header-group;">
+				<tr style="background: #187B8B;">
+					<th style="padding: 5px 8px; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Tecnologia/material</th>
+					<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Quantidade</th>
+					<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Unidade</th>
+				</tr>
+			</thead>
+			{{range .ReportData.UserModulesTable}}
+				<tr style="background: #E3F3F6; border-top: 1px solid #D4D4D8; border-bottom: 1px solid #D4D4D8;">
+					<td colspan="3" style="padding: 5px 8px; color: #121F21; font-size: 8px; font-weight: 700;">{{.Name}}</td>
+				</tr>
+				{{range .Materials}}
+					<tr style="border-bottom: 1px solid #D4D4D8;">
+						<td style="padding: 5px 8px; color: #121F21; font-size: 7px; font-weight: 400;">{{.Name}}</td>
+						<td style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">{{.QuantityLabel}}</td>
+						<td style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">{{.UnitLabel}}</td>
+					</tr>
+				{{end}}
+			{{end}}
+		</table>
+		{{end}}
 	</div>
 	
 
@@ -847,8 +874,6 @@
 	<div id="StackedBars"></div>
 
 
-	
-	
 	<script>
 		window.chartsReady = false;
 
