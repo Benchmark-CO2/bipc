@@ -1,6 +1,10 @@
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { postDuplicateUnit } from "@/actions/units/postDuplicateUnit";
-import { DrawerFormUnit, DrawerIFCImport } from "@/components/layout";
+import {
+  DrawerFormUnit,
+  DrawerIFCImport,
+  getImportTriggerLabel,
+} from "@/components/layout";
 import ModalSimple from "@/components/layout/modal-simple";
 import { Button } from "@/components/ui/button";
 import NotFoundList from "@/components/ui/not-found-list";
@@ -177,7 +181,10 @@ function RouteComponent() {
                 projectId={projectId}
                 unitId={params.unitId}
                 triggerComponent={
-                  <SimpleTooltip content={t.common.ifcImport} side="bottom">
+                  <SimpleTooltip
+                    content={getImportTriggerLabel(t, { withTqs: false })}
+                    side="bottom"
+                  >
                     <Button variant="outline-bipc" size="icon-lg">
                       <Upload />
                     </Button>

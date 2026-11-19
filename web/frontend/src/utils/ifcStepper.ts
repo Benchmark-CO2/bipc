@@ -5,6 +5,7 @@ import { TModulesTypes, TModuleDataV2, TModuleSource } from "@/types/modules";
 import {
   TGeometriesCalculationMode,
   TIfcProcessorAggregatedResult,
+  TIfcProcessorFileType,
   TIfcProcessorRequestListItem,
   TIfcProcessorResultUnits,
   TIfcProcessorResultUnitFloor,
@@ -84,8 +85,12 @@ const isKnownModuleType = (t: string | TModulesTypes): t is TModulesTypes => {
 
 type TRawIfcRequestListItem = Omit<
   TIfcProcessorRequestListItem,
-  "geometries_calculation_mode" | "is_visible" | "calculate_geometries"
+  | "file_type"
+  | "geometries_calculation_mode"
+  | "is_visible"
+  | "calculate_geometries"
 > & {
+  file_type?: unknown;
   isVisible?: boolean;
   is_visible?: unknown;
   geometries_calculation_mode?: unknown;
@@ -138,7 +143,14 @@ export const normalizeIfcRequestListItem = (
     isVisible = true;
   }
   const mode = castToGeometriesCalculationMode(raw);
+  // Requests anteriores ao suporte a XLSX não trazem `file_type`: eram IFC.
+  const fileType: TIfcProcessorFileType =
+    typeof raw.file_type === "string" &&
+    raw.file_type.trim().toLowerCase() === "xlsx"
+      ? "xlsx"
+      : "ifc";
   const {
+    file_type: _discardFileType,
     isVisible: _discardIsVisible,
     is_visible: _discardIsVisibleSnake,
     geometries_calculation_mode: _discardMode,
@@ -147,6 +159,7 @@ export const normalizeIfcRequestListItem = (
   } = raw;
   return {
     ...rest,
+    file_type: fileType,
     geometries_calculation_mode: mode,
     is_visible: isVisible,
   };
