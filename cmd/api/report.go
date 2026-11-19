@@ -92,6 +92,16 @@ type TableRow struct {
 	Cum        float64
 }
 
+type FloorDetail struct {
+	Name              string
+	TableCarbonEnergy []TableRow
+}
+
+type unitDetail struct {
+	Name          string
+	FloorsDetails []FloorDetail
+}
+
 type ReportData struct {
 	ProjectWithUnits *data.ProjectWithUnits
 	TotalUH          int
@@ -113,7 +123,9 @@ type ReportData struct {
 	CumClass string
 	CumTotal int
 
-	DetailsTable []TableRow
+	TableCarbonEnergy []TableRow
+
+	UnitsDetails []unitDetail
 }
 
 type SourceData struct {
@@ -288,7 +300,7 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		CumClass: "D",
 		CumTotal: 301,
 
-		DetailsTable: []TableRow{
+		TableCarbonEnergy: []TableRow{
 			{Type: "tecnologia", Name: "Tecnologia A", Co2Min: 10.5, Co2Prov: 15.2, Co2Max: 20.0, EnergyMin: 5.0, EnergyProv: 7.5, EnergyMax: 10.0, Cum: 30.0},
 			{Type: "material", Name: "Material B", Co2Min: 8.0, Co2Prov: 12.0, Co2Max: 16.0, EnergyMin: 4.0, EnergyProv: 6.0, EnergyMax: 8.0, Cum: 24.0},
 			{Type: "material", Name: "Tecnologia C", Co2Min: 12.0, Co2Prov: 18.0, Co2Max: 24.0, EnergyMin: 6.0, EnergyProv: 9.0, EnergyMax: 12.0, Cum: 36.0},
@@ -301,6 +313,41 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 			{Type: "material", Name: "Material D", Co2Min: 10.0, Co2Prov: 15.0, Co2Max: 20.0, EnergyMin: 5.0, EnergyProv: 7.5, EnergyMax: 10.0, Cum: 30.0},
 			{Type: "material", Name: "Tecnologia E", Co2Min: 14.0, Co2Prov: 20.0, Co2Max: 26.0, EnergyMin: 7.0, EnergyProv: 10.0, EnergyMax: 14.0, Cum: 42.0},
 			{Type: "material", Name: "Material F", Co2Min: 11.0, Co2Prov: 16.0, Co2Max: 22.0, EnergyMin: 5.5, EnergyProv: 8.0, EnergyMax: 11.0, Cum: 33.0},
+		},
+
+		UnitsDetails: []unitDetail{
+			{
+				Name: "Torre A",
+				FloorsDetails: []FloorDetail{
+					{
+						Name: "Pavimento tipo",
+						TableCarbonEnergy: []TableRow{
+							{Type: "tecnologia", Name: "Alvenaria estrutural", Co2Min: 48.20, Co2Prov: 52.40, Co2Max: 57.10, EnergyMin: 620.50, EnergyProv: 665.80, EnergyMax: 710.20, Cum: 0.34},
+							{Type: "material", Name: "Concreto armado", Co2Min: 72.10, Co2Prov: 78.60, Co2Max: 85.40, EnergyMin: 780.30, EnergyProv: 830.40, EnergyMax: 890.70, Cum: 0.48},
+							{Type: "material", Name: "Aco estrutural", Co2Min: 94.30, Co2Prov: 102.20, Co2Max: 111.80, EnergyMin: 920.10, EnergyProv: 980.50, EnergyMax: 1045.00, Cum: 0.62},
+						},
+					},
+					{
+						Name: "Cobertura",
+						TableCarbonEnergy: []TableRow{
+							{Type: "tecnologia", Name: "Sistema de cobertura", Co2Min: 35.40, Co2Prov: 39.80, Co2Max: 44.10, EnergyMin: 410.20, EnergyProv: 455.60, EnergyMax: 502.30, Cum: 0.28},
+							{Type: "material", Name: "Impermeabilizacao", Co2Min: 18.70, Co2Prov: 21.30, Co2Max: 24.50, EnergyMin: 205.40, EnergyProv: 228.90, EnergyMax: 251.80, Cum: 0.16},
+						},
+					},
+				},
+			},
+			{
+				Name: "Torre B",
+				FloorsDetails: []FloorDetail{
+					{
+						Name: "Pavimento tipo",
+						TableCarbonEnergy: []TableRow{
+							{Type: "tecnologia", Name: "Estrutura em concreto", Co2Min: 68.50, Co2Prov: 74.20, Co2Max: 81.30, EnergyMin: 735.00, EnergyProv: 790.40, EnergyMax: 848.60, Cum: 0.45},
+							{Type: "material", Name: "Vedacao em alvenaria", Co2Min: 42.30, Co2Prov: 46.70, Co2Max: 51.20, EnergyMin: 580.20, EnergyProv: 625.80, EnergyMax: 680.10, Cum: 0.31},
+						},
+					},
+				},
+			},
 		},
 	}
 

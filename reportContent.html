@@ -213,10 +213,12 @@
 		.gc-chart .gc-axis-label.gc-x { font-weight: 700; }
 
 		 
-		.sbc-chart { width: 100%; max-width: 360px; font-family: inherit; }
+		.sbc-chart { width: 100%; max-width: 370px; font-family: inherit; }
 		.sbc-chart .sbc-label { font-size: 6px; fill: currentColor; }
 		.sbc-chart .sbc-value { font-size: 4px; font-weight: 700; fill: #fff; }
 		.sbc-chart .sbc-legend text { font-size: 6px; fill: currentColor; }
+		.sbc-row { display: flex; gap: 15px; }
+		.sbc-panel { flex: 0 0 370px; }
 
 		 
 		.stkbar { width: 100%; }
@@ -936,12 +938,12 @@
 	</div>
 	
 
-	<div style="display: flex; gap: 25px;" >
-		<div style="display: flex; flex-direction: column;">
+	<div class="sbc-row">
+		<div class="sbc-panel" style="display: flex; flex-direction: column;">
 			<h3>Consumo total de energia por tecnologia (mj)</h3>
 			<div id="SBC1" class="sbc-chart"></div>
 		</div>
-		<div style="display: flex; flex-direction: column;">
+		<div class="sbc-panel" style="display: flex; flex-direction: column;">
 			<h3>Total de Emissões por tecnologia (kg CO₂)</h3>
 			<div id="SBC2" class="sbc-chart"></div>
 		</div>
@@ -951,10 +953,148 @@
 	
 	
 	<h2>Composição e impacto de cada tecnologia por material</h2>
-	<div id="StackedBars"></div>
+	<div id="StackedBars"></div> 
 
-
-	
+	<div style="display: flex; flex-direction: column; gap: 7.5px; margin-top: 20px;">
+		
+			<h2 style="margin: 0;">Detalhamento da unidade: Torre A</h2>
+			
+				<h3 style="color: #187B8B; margin: 0;">Pavimento tipo</h3>
+				<table style="border-collapse: collapse; width: 100%;">
+				<thead style="display: table-header-group;">
+					<tr style="background: #187B8B;">
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Tecnologia/material</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">CO₂  (kg/m²) min.</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">CO₂  (kg/m²) prov.*</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">CO₂  (kg/m²) máx.</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Energia (mj/m²) min.</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Energia (mj/m²) prov.</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Energia (mj/m²) máx.</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">CUM ** (m³/m²)</th>
+					</tr>
+				</thead>
+				
+					<tr style="border-bottom: 1px solid #D4D4D8;">
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">Alvenaria estrutural</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">48.20</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">52.40</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">57.10</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">620.50</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">665.80</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">710.20</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">0.34</td>
+					</tr>
+				
+					<tr style="border-bottom: 1px solid #D4D4D8;">
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">Concreto armado</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">72.10</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">78.60</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">85.40</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">780.30</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">830.40</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">890.70</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">0.48</td>
+					</tr>
+				
+					<tr style="border-bottom: 1px solid #D4D4D8;">
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">Aco estrutural</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">94.30</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">102.20</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">111.80</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">920.10</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">980.50</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">1045.00</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">0.62</td>
+					</tr>
+				
+			</table>
+				
+		
+				<h3 style="color: #187B8B; margin: 0;">Cobertura</h3>
+				<table style="border-collapse: collapse; width: 100%;">
+				<thead style="display: table-header-group;">
+					<tr style="background: #187B8B;">
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Tecnologia/material</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">CO₂  (kg/m²) min.</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">CO₂  (kg/m²) prov.*</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">CO₂  (kg/m²) máx.</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Energia (mj/m²) min.</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Energia (mj/m²) prov.</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Energia (mj/m²) máx.</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">CUM ** (m³/m²)</th>
+					</tr>
+				</thead>
+				
+					<tr style="border-bottom: 1px solid #D4D4D8;">
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">Sistema de cobertura</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">35.40</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">39.80</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">44.10</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">410.20</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">455.60</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">502.30</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">0.28</td>
+					</tr>
+				
+					<tr style="border-bottom: 1px solid #D4D4D8;">
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">Impermeabilizacao</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">18.70</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">21.30</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">24.50</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">205.40</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">228.90</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">251.80</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">0.16</td>
+					</tr>
+				
+			</table>
+				
+		
+		
+			<h2 style="margin: 0;">Detalhamento da unidade: Torre B</h2>
+			
+				<h3 style="color: #187B8B; margin: 0;">Pavimento tipo</h3>
+				<table style="border-collapse: collapse; width: 100%;">
+				<thead style="display: table-header-group;">
+					<tr style="background: #187B8B;">
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Tecnologia/material</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">CO₂  (kg/m²) min.</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">CO₂  (kg/m²) prov.*</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">CO₂  (kg/m²) máx.</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Energia (mj/m²) min.</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Energia (mj/m²) prov.</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Energia (mj/m²) máx.</th>
+						<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">CUM ** (m³/m²)</th>
+					</tr>
+				</thead>
+				
+					<tr style="border-bottom: 1px solid #D4D4D8;">
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">Estrutura em concreto</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">68.50</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">74.20</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">81.30</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">735.00</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">790.40</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">848.60</td>
+						<td class="tecnologia" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">0.45</td>
+					</tr>
+				
+					<tr style="border-bottom: 1px solid #D4D4D8;">
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">Vedacao em alvenaria</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">42.30</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">46.70</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">51.20</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">580.20</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">625.80</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">680.10</td>
+						<td class="material" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">0.31</td>
+					</tr>
+				
+			</table>
+				
+		
+		
+	</div> 
 	
 	<script>
 		window.chartsReady = false;
@@ -1456,7 +1596,7 @@
 				valores: new Map(d.series.map(s => [s.nome, s.valor]))
 			}));
 			
-			const width = 360;
+			const width = 370;
 			const margin = { top: 0, right: 0, bottom: 0, left: 0 };
 			const rowStep = 15;
 			const gap = 2;
