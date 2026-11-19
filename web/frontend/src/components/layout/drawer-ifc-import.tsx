@@ -4,7 +4,10 @@ import { getIfcRequestResult } from "@/actions/ifc/getIfcRequestResult";
 import { getIfcRequestsAll } from "@/actions/ifc/getIfcRequestsAll";
 import { patchIfcHideRequest } from "@/actions/ifc/patchIfcHideRequest";
 import { patchIfcShowRequest } from "@/actions/ifc/patchIfcShowRequest";
-import { postIfcCreateRequest } from "@/actions/ifc/postIfcCreateRequest";
+import {
+  postIfcCreateRequest,
+  PostIfcCreateRequestParams,
+} from "@/actions/ifc/postIfcCreateRequest";
 import { getProjectByUUID } from "@/actions/projects/getProject";
 import { getUnitByUUID } from "@/actions/units/getUnit";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,9 +18,11 @@ import { cn } from "@/lib/utils";
 import {
   DrawerStepperIFCCompletePayload,
   GEOMETRIES_CALCULATION_MODE,
+  IFC_PROCESSOR_UPLOAD_CONTENT_TYPE,
   TGeometriesCalculationMode,
   TIfcProcessorAggregatedResult,
   TIfcProcessorFallbackVersion,
+  TIfcProcessorFileType,
   TIfcProcessorImportStatus,
   TIfcProcessorRequestListItem,
   TFloorMismatchError,
@@ -26,6 +31,7 @@ import { TRole } from "@/types/disciplines";
 import { dateUtils } from "@/utils/date";
 import { normalizeIfcRequestListItem } from "@/utils/ifcStepper";
 import { parseApiError } from "@/utils/parseApiError";
+import { posLaunchFeatures } from "@/utils/posLaunchFeatures";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -69,8 +75,77 @@ import DrawerFormDisciplines from "./drawer-form-disciplines";
 // Types
 // ---------------------------------------------------------------------------
 
-type FileType = "ifc" | "tqs";
+/** `ifc` e `xlsx` passam pelo IFC processor; `tqs` vai direto para a disciplina. */
+type FileType = TIfcProcessorFileType | "tqs";
 export type IFCAccessMode = "project" | "unit" | "simulation";
+
+const isProcessorFileType = (ft: FileType): ft is TIfcProcessorFileType =>
+  ft !== "tqs";
+
+/** Abas por contexto: TQS só na simulação; XLSX atrás da flag `xlsxImport`. */
+const getAvailableFileTypes = (mode: IFCAccessMode): FileType[] => {
+  const fileTypes: FileType[] = ["ifc"];
+  if (posLaunchFeatures.xlsxImport.enabled) fileTypes.push("xlsx");
+  if (mode === "simulation") fileTypes.push("tqs");
+  return fileTypes;
+};
+
+/** Rótulo do botão que abre o drawer, coerente com as abas visíveis. */
+export const getImportTriggerLabel = (
+  t: Translations,
+  { withTqs }: { withTqs: boolean },
+) => {
+  if (posLaunchFeatures.xlsxImport.enabled) {
+    return withTqs ? t.common.ifcXlsxImportTqs : t.common.ifcXlsxImport;
+  }
+  return withTqs ? t.common.ifcImportTqs : t.common.ifcImport;
+};
+
+const FILE_TYPE_ACCEPT: Record<FileType, string> = {
+  ifc: ".ifc",
+  xlsx: ".xlsx",
+  tqs: ".htm,.html",
+};
+
+const FILE_TYPE_EXTENSIONS: Record<FileType, string[]> = {
+  ifc: [".ifc"],
+  xlsx: [".xlsx"],
+  tqs: [".html", ".htm"],
+};
+
+/** Textos que variam por tipo de arquivo. */
+const getFileTypeTexts = (t: Translations, ft: FileType) => {
+  const texts = {
+    ifc: {
+      tab: t.drawerIFC.tabIFC,
+      processing: t.drawerIFC.processingMessageIFC,
+      invalidFile: t.drawerIFC.invalidFileTypeIFC,
+      dropZoneLabel: t.drawerIFC.dropZoneLabelIFC,
+      dropZoneAria: t.drawerIFC.dropZoneAriaIFC,
+      sectionImport: t.drawerIFC.sectionImportIFC,
+      sectionAlreadyImported: t.drawerIFC.sectionAlreadyImportedIFC,
+    },
+    xlsx: {
+      tab: t.drawerIFC.tabXLSX,
+      processing: t.drawerIFC.processingMessageXLSX,
+      invalidFile: t.drawerIFC.invalidFileTypeXLSX,
+      dropZoneLabel: t.drawerIFC.dropZoneLabelXLSX,
+      dropZoneAria: t.drawerIFC.dropZoneAriaXLSX,
+      sectionImport: t.drawerIFC.sectionImportXLSX,
+      sectionAlreadyImported: t.drawerIFC.sectionAlreadyImportedXLSX,
+    },
+    tqs: {
+      tab: t.drawerIFC.tabTQS,
+      processing: t.drawerIFC.processingMessageTQS,
+      invalidFile: t.drawerIFC.invalidFileTypeTQS,
+      dropZoneLabel: t.drawerIFC.dropZoneLabelTQS,
+      dropZoneAria: t.drawerIFC.dropZoneAriaTQS,
+      sectionImport: t.drawerIFC.sectionImportTQS,
+      sectionAlreadyImported: t.drawerIFC.sectionAlreadyImportedTQS,
+    },
+  } satisfies Record<FileType, Record<string, string>>;
+  return texts[ft];
+};
 
 export interface DrawerIFCImportProps {
   /** Determines the context in which the drawer is opened */
@@ -92,6 +167,7 @@ type ImportedIFCFile = {
   date: string;
   status: TIfcProcessorImportStatus;
   errorMessage?: string | null;
+  fileType: TIfcProcessorFileType;
   geometries_calculation_mode: TGeometriesCalculationMode;
 };
 
@@ -111,14 +187,13 @@ function FileTypeTabs({
 }: {
   value: FileType;
   onChange: (v: FileType) => void;
-  availableFileTypes?: FileType[];
+  availableFileTypes: FileType[];
   disabledFileTypes?: FileType[];
 }) {
   const { t } = useTranslation();
-  const fileTypes = availableFileTypes ?? (["ifc", "tqs"] as FileType[]);
   return (
     <div className="flex items-center gap-1 border border-gray-200 dark:border-gray-700 rounded-lg p-1 w-full">
-      {fileTypes.map((ft) => {
+      {availableFileTypes.map((ft) => {
         const isDisabled = disabledFileTypes?.includes(ft);
         return (
           <button
@@ -135,7 +210,7 @@ function FileTypeTabs({
                   : "text-muted-foreground hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-800",
             )}
           >
-            {ft === "ifc" ? t.drawerIFC.tabIFC : t.drawerIFC.tabTQS}
+            {getFileTypeTexts(t, ft).tab}
           </button>
         );
       })}
@@ -155,9 +230,7 @@ function ProcessingView({ fileType }: { fileType: FileType }) {
         </div>
       </div>
       <p className="text-sm text-muted-foreground text-center max-w-md">
-        {fileType === "ifc"
-          ? t.drawerIFC.processingMessageIFC
-          : t.drawerIFC.processingMessageTQS}
+        {getFileTypeTexts(t, fileType).processing}
       </p>
     </div>
   );
@@ -178,18 +251,16 @@ function DropZone({
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  const fileTypeTexts = getFileTypeTexts(t, fileType);
+
   const validateAndSetFile = (candidate: File) => {
     const name = candidate.name.toLowerCase();
-    const isValid =
-      fileType === "ifc"
-        ? name.endsWith(".ifc")
-        : name.endsWith(".html") || name.endsWith(".htm");
+    const isValid = FILE_TYPE_EXTENSIONS[fileType].some((ext) =>
+      name.endsWith(ext),
+    );
 
     if (!isValid) {
-      const message =
-        fileType === "ifc"
-          ? t.drawerIFC.invalidFileTypeIFC
-          : t.drawerIFC.invalidFileTypeTQS;
+      const message = fileTypeTexts.invalidFile;
 
       onInvalidFile?.(message);
       toast.warning(message);
@@ -207,17 +278,13 @@ function DropZone({
     if (dropped) validateAndSetFile(dropped);
   };
 
-  const accept = fileType === "ifc" ? ".ifc" : ".htm,.html";
+  const accept = FILE_TYPE_ACCEPT[fileType];
 
   return (
     <div
       role="button"
       tabIndex={0}
-      aria-label={
-        fileType === "ifc"
-          ? t.drawerIFC.dropZoneAriaIFC
-          : t.drawerIFC.dropZoneAriaTQS
-      }
+      aria-label={fileTypeTexts.dropZoneAria}
       onClick={() => inputRef.current?.click()}
       onKeyDown={(e) => e.key === "Enter" && inputRef.current?.click()}
       onDragOver={(e) => {
@@ -278,9 +345,7 @@ function DropZone({
               </span>
             </div>
             <p className="text-sm text-center mt-1">
-              {fileType === "ifc"
-                ? t.drawerIFC.dropZoneLabelIFC
-                : t.drawerIFC.dropZoneLabelTQS}
+              {fileTypeTexts.dropZoneLabel}
             </p>
           </div>
         </>
@@ -346,7 +411,10 @@ export default function DrawerIFCImport({
   const queryClient = useQueryClient();
   const clientId = user?.id ?? "";
 
-  const hasFileTypeTabs = mode === "simulation";
+  const availableFileTypes = getAvailableFileTypes(mode);
+  const hasFileTypeTabs = availableFileTypes.length > 1;
+  const isProcessorFile = isProcessorFileType(fileType);
+  const fileTypeTexts = getFileTypeTexts(translations, fileType);
   const canUploadTqs = mode === "simulation" && !!unitId && !!roleId;
 
   // Carregar disciplinas (roles) do projeto — filtramos apenas simulation=true
@@ -470,7 +538,8 @@ export default function DrawerIFCImport({
       <div className="bg-red-50 dark:bg-red-950/20 border-2 border-red-400 dark:border-red-600 rounded-lg p-4">
         <div className="flex gap-3">
           <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-red-800 dark:text-red-300">
+          {/* O parser lista uma regra violada por linha (comum no XLSX). */}
+          <p className="text-sm text-red-800 dark:text-red-300 whitespace-pre-line break-words">
             {file.errorMessage ?? t.drawerIFC.failedSelectHint}
           </p>
         </div>
@@ -488,7 +557,7 @@ export default function DrawerIFCImport({
       const res = await getIfcRequestsAll(clientId);
       return res.data.items;
     },
-    enabled: isOpen && fileType === "ifc" && Boolean(clientId),
+    enabled: isOpen && isProcessorFile && Boolean(clientId),
     refetchInterval: (q) => {
       const items = q.state.data ?? [];
       const hasPending = items.some((i) => ifcIsPendingStatus(i.status));
@@ -496,9 +565,12 @@ export default function DrawerIFCImport({
     },
   });
 
+  // Cada aba (IFC/XLSX) mostra só os requests do seu tipo.
   const normalizedIfcRequestsAll: TIfcProcessorRequestListItem[] = (
     ifcRequestsAllRaw ?? []
-  ).map(normalizeIfcRequestListItem);
+  )
+    .map(normalizeIfcRequestListItem)
+    .filter((r) => r.file_type === fileType);
 
   const filteredVisibleIfcRequests: TIfcProcessorRequestListItem[] =
     normalizedIfcRequestsAll.filter((r) => r.is_visible);
@@ -633,6 +705,7 @@ export default function DrawerIFCImport({
     date: dateUtils.calculateRelativeTime(new Date(req.ts_created * 1000)),
     status: req.status,
     errorMessage: req.error_message,
+    fileType: req.file_type,
     is_visible: req.is_visible,
     geometries_calculation_mode: req.geometries_calculation_mode,
   });
@@ -660,30 +733,54 @@ export default function DrawerIFCImport({
 
   const { mutate: importIfcFile, isPending: isImportingIfcFile } = useMutation({
     mutationFn: async () => {
-      if (!clientId) throw new Error("Missing client id");
-      if (!uploadFile) throw new Error("Missing file");
-      if (!software || !version) throw new Error("Missing metadata");
+      // Guardas (o botão já impede esses casos); mensagens sempre traduzidas,
+      // pois o onError usa parseApiError, que devolve `error.message`.
+      if (
+        !clientId ||
+        !uploadFile ||
+        !isProcessorFileType(fileType) ||
+        (fileType === "ifc" && (!software || !version))
+      ) {
+        throw new Error(t.errors.unexpectedError);
+      }
 
       const fileHash = await sha256Base64(uploadFile);
-      const res = await postIfcCreateRequest(clientId, {
-        manufacturer: software,
-        version,
-        file_name: uploadFile.name,
-        file_hash: fileHash,
-        geometries_calculation_mode: geometriesCalculationMode,
-      });
+      const params: PostIfcCreateRequestParams =
+        fileType === "ifc"
+          ? {
+              file_type: "ifc",
+              manufacturer: software,
+              version,
+              file_name: uploadFile.name,
+              file_hash: fileHash,
+              geometries_calculation_mode: geometriesCalculationMode,
+            }
+          : {
+              file_type: "xlsx",
+              file_name: uploadFile.name,
+              file_hash: fileHash,
+            };
+      const res = await postIfcCreateRequest(clientId, params);
 
-      const putRes = await fetch(res.data.ifc_url, {
+      // `ifc_url` cobre o IFC processor antigo (produção, até migrar); só vale p/ IFC.
+      const uploadUrl =
+        res.data.upload_url ??
+        (fileType === "ifc" ? res.data.ifc_url : undefined);
+      if (!uploadUrl) throw new Error(t.drawerIFC.uploadUrlMissing);
+
+      const putRes = await fetch(uploadUrl, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/x-ifc",
+          "Content-Type": IFC_PROCESSOR_UPLOAD_CONTENT_TYPE[fileType],
           "If-None-Match": "*",
         },
         body: uploadFile,
       });
 
       if (!putRes.ok) {
-        throw new Error(`Upload failed (${putRes.status})`);
+        throw new Error(
+          t.drawerIFC.uploadFailed.replace("{status}", String(putRes.status)),
+        );
       }
 
       return res.data.request_id;
@@ -702,8 +799,7 @@ export default function DrawerIFCImport({
       setFileWarningMessage("");
     },
     onError: (error) => {
-      const message =
-        error instanceof Error ? error.message : t.common.unknownError;
+      const message = parseApiError(error, t);
       setImportErrorMessage(message);
       toast.error(t.drawerIFC.importError, {
         description: message,
@@ -717,7 +813,7 @@ export default function DrawerIFCImport({
       onSuccess: (res) => {
         const data = res.data as unknown as TIfcProcessorAggregatedResult;
         if (!data.units && !data.modules) {
-          toast.error("Dados do IFC vazios ou formato inválido.");
+          toast.error(t.drawerIFC.emptyResultError);
           return;
         }
 
@@ -823,6 +919,8 @@ export default function DrawerIFCImport({
     setSoftware(ft === "tqs" ? "tqs" : "");
     setVersion(ft === "tqs" ? "tqsv26" : "");
     setGeometriesCalculationMode(1);
+    // A lista de já importados é filtrada por tipo; a seleção não vale na outra aba.
+    setSelectedFileId("");
   };
 
   const handleSoftwareChange = (val: string) => {
@@ -846,13 +944,14 @@ export default function DrawerIFCImport({
       toast.error(t.drawerIFC.simulationRoleMissing);
       return;
     }
-    if (!uploadFile || !software || !version || !clientId) return;
+    if (!uploadFile || !clientId) return;
+    if (fileType === "ifc" && (!software || !version)) return;
     setImportErrorMessage("");
     importIfcFile();
   };
 
   const handleUseSelected = () => {
-    if (fileType !== "ifc") return;
+    if (!isProcessorFile) return;
     if (!selectedIfcFile || selectedIfcFile.status !== "completed") return;
     if (needsRolePrompt && !effectiveRoleId) {
       toast.error(t.drawerIFC.simulationRoleMissing);
@@ -862,18 +961,10 @@ export default function DrawerIFCImport({
     fetchIfcResult();
   };
 
-  const drawerTitle = hasFileTypeTabs
-    ? t.drawerIFC.titleImport
-    : t.drawerIFC.title;
+  const drawerTitle = t.drawerIFC.titleImport;
 
-  const importLabel =
-    fileType === "ifc"
-      ? t.drawerIFC.sectionImportIFC
-      : t.drawerIFC.sectionImportTQS;
-  const alreadyImportedLabel =
-    fileType === "ifc"
-      ? t.drawerIFC.sectionAlreadyImportedIFC
-      : t.drawerIFC.sectionAlreadyImportedTQS;
+  const importLabel = fileTypeTexts.sectionImport;
+  const alreadyImportedLabel = fileTypeTexts.sectionAlreadyImported;
 
   return (
     <>
@@ -928,6 +1019,7 @@ export default function DrawerIFCImport({
                   <FileTypeTabs
                     value={fileType}
                     onChange={handleFileTypeChange}
+                    availableFileTypes={availableFileTypes}
                   />
                 </div>
               )}
@@ -941,8 +1033,8 @@ export default function DrawerIFCImport({
                 </h3>
 
                 <div className="flex flex-col gap-4">
-                  {/* Software + Version comboboxes */}
-                  {fileType !== "tqs" && (
+                  {/* Software + Version comboboxes (só IFC: XLSX não usa fallback) */}
+                  {fileType === "ifc" && (
                     <div className="grid grid-cols-[1fr_1fr] gap-3 items-start">
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center gap-1.5">
@@ -1134,10 +1226,9 @@ export default function DrawerIFCImport({
                       variant="bipc"
                       size="sm"
                       disabled={
-                        fileType === "ifc"
+                        isProcessorFile
                           ? !uploadFile ||
-                            !software ||
-                            !version ||
+                            (fileType === "ifc" && (!software || !version)) ||
                             !clientId ||
                             (needsRolePrompt && !effectiveRoleId)
                           : !uploadFile || !canUploadTqs
@@ -1158,7 +1249,7 @@ export default function DrawerIFCImport({
                 </div>
               </section>
 
-              {fileType === "ifc" && (
+              {isProcessorFile && (
                 <>
                   <div className="border-t border-gray-200 dark:border-gray-700 mt-4 mb-2" />
 
@@ -1319,22 +1410,24 @@ export default function DrawerIFCImport({
                                       <span className="truncate text-sm font-medium text-foreground min-w-0">
                                         {f.name}
                                       </span>
-                                      <span
-                                        className={cn(
-                                          "text-xs shrink-0 font-medium",
-                                          f.geometries_calculation_mode ===
-                                            GEOMETRIES_CALCULATION_MODE.ENABLED_OPTIMIZED
-                                            ? "text-emerald-600 dark:text-emerald-400"
-                                            : "text-amber-600 dark:text-amber-400",
-                                        )}
-                                      >
-                                        (
-                                        {f.geometries_calculation_mode ===
-                                        GEOMETRIES_CALCULATION_MODE.ENABLED_OPTIMIZED
-                                          ? t.drawerIFC.geometryIncludedInline
-                                          : t.drawerIFC.geometrySkippedInline}
-                                        )
-                                      </span>
+                                      {f.fileType === "ifc" && (
+                                        <span
+                                          className={cn(
+                                            "text-xs shrink-0 font-medium",
+                                            f.geometries_calculation_mode ===
+                                              GEOMETRIES_CALCULATION_MODE.ENABLED_OPTIMIZED
+                                              ? "text-emerald-600 dark:text-emerald-400"
+                                              : "text-amber-600 dark:text-amber-400",
+                                          )}
+                                        >
+                                          (
+                                          {f.geometries_calculation_mode ===
+                                          GEOMETRIES_CALCULATION_MODE.ENABLED_OPTIMIZED
+                                            ? t.drawerIFC.geometryIncludedInline
+                                            : t.drawerIFC.geometrySkippedInline}
+                                          )
+                                        </span>
+                                      )}
                                       {!f.is_visible && (
                                         <Badge
                                           variant="secondary"

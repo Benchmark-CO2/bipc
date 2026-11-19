@@ -13,6 +13,15 @@ export type TIfcProcessorImportStatus =
   | "failed"
   | "completed";
 
+/** Tipos de arquivo aceitos pelo IFC processor (`file_type` do request). */
+export type TIfcProcessorFileType = "ifc" | "xlsx";
+
+/** `Content-Type` exigido pela URL pré-assinada de upload, por tipo de arquivo. */
+export const IFC_PROCESSOR_UPLOAD_CONTENT_TYPE = {
+  ifc: "application/x-ifc",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+} as const satisfies Record<TIfcProcessorFileType, string>;
+
 export type TGeometriesCalculationMode = 0 | 1;
 
 export const GEOMETRIES_CALCULATION_MODE = {
@@ -41,11 +50,16 @@ export interface TIfcProcessorDeleteFallbackResponse {
 
 export interface TIfcProcessorCreateRequestResponse {
   request_id: string;
-  ifc_url: string;
+  /** URL pré-assinada de upload (contrato atual, IFC ou XLSX). */
+  upload_url?: string;
+  /** Contrato legado (só IFC). Remover quando produção usar `upload_url`. */
+  ifc_url?: string;
 }
 
 export interface TIfcProcessorRequestListItem {
   request_id: string;
+  /** Normalizado: requests antigos, sem `file_type`, contam como `ifc`. */
+  file_type: TIfcProcessorFileType;
   file_name: string;
   file_hash: string;
   status: TIfcProcessorImportStatus;

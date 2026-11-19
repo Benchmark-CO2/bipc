@@ -19,6 +19,8 @@ export const ptBR = {
     collapse: "Recolher",
     ifcImport: "Importar do IFC",
     ifcImportTqs: "Importar de IFC/TQS",
+    ifcXlsxImport: "Importar de IFC/XLSX",
+    ifcXlsxImportTqs: "Importar de IFC/XLSX/TQS",
     orLabel: "ou",
     select: "Selecione",
     required: "Obrigatório",
@@ -1537,9 +1539,8 @@ export const ptBR = {
       "Ocorreu um erro no servidor. Por favor, tente novamente mais tarde.",
   },
   stepper: {
-    title: "Importar dados do IFC",
-    subtitle:
-      "Valide unidades e módulos extraídos do arquivo IFC antes de criar.",
+    title: "Importar dados do arquivo",
+    subtitle: "Valide unidades e módulos extraídos do arquivo antes de criar.",
     stepUnits: "Unidades",
     stepUnitsDescription: "Validar e criar unidades",
     stepModules: "Módulos",
@@ -1553,7 +1554,7 @@ export const ptBR = {
       discard: "Descartar e fechar",
     },
     import: {
-      fromFile: "Do arquivo IFC",
+      fromFile: "Do arquivo importado",
     },
     btnNext: "Próximo passo",
     btnFinish: "Concluir",
@@ -1570,9 +1571,9 @@ export const ptBR = {
     validationErrors: "Campos inválidos ou faltantes",
     semanticWarnings: "Avisos semânticos (dados parciais)",
     simulation: {
-      title: "Importar módulos do IFC",
+      title: "Importar módulos do arquivo",
       description:
-        "Selecione uma simulação existente para adicionar os módulos extraídos do IFC.",
+        "Selecione uma simulação existente para adicionar os módulos extraídos do arquivo.",
       selectLabel: "Simulação alvo (onde os módulos serão criados)",
       contextLabel: "Unidade do projeto",
       createdLabel: "Simulação criada",
@@ -1596,7 +1597,7 @@ export const ptBR = {
       noneBound: "(Não vincular — será ignorado)",
       unitSelectPlaceholder: "Selecione uma unidade",
       noUnitsCreated: "Nenhuma unidade criada. Volte ao passo anterior.",
-      noneFound: "Nenhum módulo retornado pelo processamento do IFC.",
+      noneFound: "Nenhum módulo retornado pelo processamento do arquivo.",
       applyToAll: "Aplicar a todos",
       createdUnitsTitle: "Unidades criadas",
       editBtnDisabled: "Vincule uma unidade para editar",
@@ -1637,7 +1638,7 @@ export const ptBR = {
       columnFloors: "Pavimentos",
       columnStatus: "Status da validação",
       columnAction: "Ação",
-      noneFound: "Nenhuma unidade retornada pelo processamento do IFC.",
+      noneFound: "Nenhuma unidade retornada pelo processamento do arquivo.",
       labelBuildingName: "Nome da edificação",
       labelSimulationName: "Nome da simulação",
       simulationNamePlaceholder: "Ex.: Simulação Torre A",
@@ -1671,14 +1672,16 @@ export const ptBR = {
     others: "outros",
   },
   drawerIFC: {
-    title: "Dados de IFC",
     titleImport: "Dados de Importação",
     fileTypeLabel: "Tipo de arquivo",
     tabIFC: "IFC",
+    tabXLSX: "Planilha XLSX",
     tabTQS: "Arquivo TQS",
     sectionImportIFC: "Importar novo IFC",
+    sectionImportXLSX: "Importar nova planilha XLSX",
     sectionImportTQS: "Importar novo Arquivo TQS",
     sectionAlreadyImportedIFC: "Utilizar dados de IFC já importados",
+    sectionAlreadyImportedXLSX: "Utilizar dados de planilha XLSX já importados",
     sectionAlreadyImportedTQS: "Utilizar dados de Arquivo TQS já importados",
     softwareLabel: "Qual software utilizou para desenvolver?",
     softwarePlaceholder: "Selecione ou digite o software",
@@ -1696,15 +1699,21 @@ export const ptBR = {
     fallbackEmptyOptions: "Sem opções cadastradas",
     processingMessageIFC:
       "Carregando arquivo IFC. Não feche essa janela até o upload completar.",
+    processingMessageXLSX:
+      "Carregando planilha XLSX. Não feche essa janela até o upload completar.",
     processingMessageTQS:
       "Carregando arquivo TQS. Não feche essa janela até o upload completar.",
     invalidFileTypeIFC: "Formato inválido. Selecione um arquivo .ifc.",
+    invalidFileTypeXLSX: "Formato inválido. Selecione uma planilha .xlsx.",
     invalidFileTypeTQS: "Formato inválido. Selecione um arquivo .html/.htm.",
     dropZoneLabelIFC:
       "Arraste o seu arquivo IFC aqui ou clique para selecioná-lo",
+    dropZoneLabelXLSX:
+      "Arraste a sua planilha XLSX aqui ou clique para selecioná-la",
     dropZoneLabelTQS:
       "Arraste o seu arquivo TQS aqui ou clique para selecioná-lo",
     dropZoneAriaIFC: "Área de upload de arquivo IFC",
+    dropZoneAriaXLSX: "Área de upload de planilha XLSX",
     dropZoneAriaTQS: "Área de upload de arquivo TQS",
     removeFile: "Remover arquivo",
     manageFiles: "Gerenciar arquivos importados",
@@ -1718,14 +1727,14 @@ export const ptBR = {
     selectFileLabel: "Selecione seu arquivo",
     selectFilePlaceholder: "Selecione um arquivo importado",
     noImportedFiles: "Nenhum arquivo importado encontrado",
-    statusWaitingForFiles: "Aguardando upload do IFC",
+    statusWaitingForFiles: "Aguardando upload do arquivo",
     statusProcessing: "Em processamento",
     statusCompleted: "Concluído",
     statusFailed: "Falhou",
     loadingSoftwareVersions: "Carregando opções...",
     noSoftwareVersions: "Nenhuma opção encontrada",
     waitingForFilesSelectHint:
-      "O upload do IFC não foi concluído para esta importação. Aguarde ou inicie uma nova importação.",
+      "O upload do arquivo não foi concluído para esta importação. Aguarde ou inicie uma nova importação.",
     processingSelectHint:
       "Este arquivo ainda está em processamento. Aguarde para utilizar os dados.",
     failedSelectHint:
@@ -1739,6 +1748,12 @@ export const ptBR = {
     useSelected: "Utilizar dados selecionados",
     importSuccess: "Arquivo importado com sucesso",
     importError: "Erro ao importar arquivo",
+    uploadUrlMissing:
+      "O servidor não retornou o endereço de envio do arquivo. Tente novamente.",
+    uploadFailed:
+      "Falha ao enviar o arquivo (código {status}). Tente novamente.",
+    emptyResultError:
+      "Os dados do arquivo estão vazios ou em formato inválido.",
     useSelectedSuccess: "Dados importados com sucesso",
     useSelectedError: "Erro ao utilizar dados selecionados",
     disciplineLabel: "Disciplina (para criação da simulação)",

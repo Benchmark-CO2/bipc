@@ -14,7 +14,7 @@ import CommonTable from "../common-table";
 import NotFoundList from "@/components/ui/not-found-list";
 import DrawerFormUnit from "../drawer-form-unit";
 import { Button } from "@/components/ui/button";
-import DrawerIFCImport from "../drawer-ifc-import";
+import DrawerIFCImport, { getImportTriggerLabel } from "../drawer-ifc-import";
 
 const ProjectView = ({
   projectId,
@@ -150,7 +150,9 @@ const ProjectView = ({
                   mode="unit"
                   projectId={projectId}
                   triggerComponent={
-                    <Button variant="bipc">{t.common.ifcImport}</Button>
+                    <Button variant="bipc">
+                      {getImportTriggerLabel(t, { withTqs: false })}
+                    </Button>
                   }
                 />
               </div>
