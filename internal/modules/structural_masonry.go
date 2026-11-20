@@ -207,6 +207,11 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 	var result Consumption
 
 	groutCO2Min, groutCO2Max, groutEnergyMin, groutEnergyMax := 0.0, 0.0, 0.0, 0.0
+	type groutAgg struct {
+		CO2Min, CO2Max, EnergyMin, EnergyMax, Volume float64
+	}
+	groutByKey := make(map[string]*groutAgg)
+
 	var groutSteel Consumption
 	for _, g := range me.Grout {
 		for _, gv := range g.Volumes {
@@ -227,6 +232,18 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 			result.EnergyMax += val.Max * gv.Volume
 			groutEnergyMin += val.Min * gv.Volume
 			groutEnergyMax += val.Max * gv.Volume
+
+			key := groutResistanceKey(gv.Fgk)
+			agg, ok := groutByKey[key]
+			if !ok {
+				agg = &groutAgg{}
+				groutByKey[key] = agg
+			}
+			agg.CO2Min += val.Min * gv.Volume
+			agg.CO2Max += val.Max * gv.Volume
+			agg.EnergyMin += val.Min * gv.Volume
+			agg.EnergyMax += val.Max * gv.Volume
+			agg.Volume += gv.Volume
 		}
 		steelConsumption, err := CalculateSteelConsumption(g.Steel)
 		if err != nil {
@@ -237,17 +254,25 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 	}
 
 	if groutCO2Min != 0 || groutCO2Max != 0 || groutEnergyMin != 0 || groutEnergyMax != 0 {
-		result.Materials = append(result.Materials, data.MaterialConsumption{
-			Material:  MaterialClassConcrete,
-			CO2Min:    groutCO2Min,
-			CO2Max:    groutCO2Max,
-			EnergyMin: groutEnergyMin,
-			EnergyMax: groutEnergyMax,
-		})
+		for key, agg := range groutByKey {
+			result.Materials = append(result.Materials, data.MaterialConsumption{
+				Material:   MaterialClassGrout,
+				Resistance: key,
+				CO2Min:     agg.CO2Min,
+				CO2Max:     agg.CO2Max,
+				EnergyMin:  agg.EnergyMin,
+				EnergyMax:  agg.EnergyMax,
+				Quantity:   agg.Volume,
+			})
+		}
 	}
 	result.Materials = append(result.Materials, groutSteel.Materials...)
 
 	mortarCO2Min, mortarCO2Max, mortarEnergyMin, mortarEnergyMax := 0.0, 0.0, 0.0, 0.0
+	type mortarAgg struct {
+		CO2Min, CO2Max, EnergyMin, EnergyMax, Volume float64
+	}
+	mortarByKey := make(map[string]*mortarAgg)
 	for _, m := range me.Mortar {
 		val, ok := sidacMortar.KgCO2[float64(m.Fak)]
 		if !ok {
@@ -266,19 +291,39 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 		result.EnergyMax += val.Max * m.Volume
 		mortarEnergyMin += val.Min * m.Volume
 		mortarEnergyMax += val.Max * m.Volume
+
+		key := mortarResistanceKey(m.Fak)
+		agg, ok := mortarByKey[key]
+		if !ok {
+			agg = &mortarAgg{}
+			mortarByKey[key] = agg
+		}
+		agg.CO2Min += val.Min * m.Volume
+		agg.CO2Max += val.Max * m.Volume
+		agg.EnergyMin += val.Min * m.Volume
+		agg.EnergyMax += val.Max * m.Volume
+		agg.Volume += m.Volume
 	}
 
 	if mortarCO2Min != 0 || mortarCO2Max != 0 || mortarEnergyMin != 0 || mortarEnergyMax != 0 {
-		result.Materials = append(result.Materials, data.MaterialConsumption{
-			Material:  MaterialClassMortar,
-			CO2Min:    mortarCO2Min,
-			CO2Max:    mortarCO2Max,
-			EnergyMin: mortarEnergyMin,
-			EnergyMax: mortarEnergyMax,
-		})
+		for key, agg := range mortarByKey {
+			result.Materials = append(result.Materials, data.MaterialConsumption{
+				Material:   MaterialClassMortar,
+				Resistance: key,
+				CO2Min:     agg.CO2Min,
+				CO2Max:     agg.CO2Max,
+				EnergyMin:  agg.EnergyMin,
+				EnergyMax:  agg.EnergyMax,
+				Quantity:   agg.Volume,
+			})
+		}
 	}
 
 	blocksCO2Min, blocksCO2Max, blocksEnergyMin, blocksEnergyMax := 0.0, 0.0, 0.0, 0.0
+	type blocksAgg struct {
+		CO2Min, CO2Max, EnergyMin, EnergyMax, Count float64
+	}
+	blocksByKey := make(map[string]*blocksAgg)
 	for _, b := range me.Blocks {
 		blockMass, err := GetBlockMass(b.Type, b.Fbk)
 		if err != nil {
@@ -309,16 +354,32 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 		result.EnergyMax += val.Max * float64(b.Quantity) * massFactor
 		blocksEnergyMin += val.Min * float64(b.Quantity) * massFactor
 		blocksEnergyMax += val.Max * float64(b.Quantity) * massFactor
+
+		key := blocksResistanceKey(b.Fbk)
+		agg, ok := blocksByKey[key]
+		if !ok {
+			agg = &blocksAgg{}
+			blocksByKey[key] = agg
+		}
+		agg.CO2Min += val.Min * float64(b.Quantity) * massFactor
+		agg.CO2Max += val.Max * float64(b.Quantity) * massFactor
+		agg.EnergyMin += val.Min * float64(b.Quantity) * massFactor
+		agg.EnergyMax += val.Max * float64(b.Quantity) * massFactor
+		agg.Count += float64(b.Quantity) * massFactor
 	}
 
 	if blocksCO2Min != 0 || blocksCO2Max != 0 || blocksEnergyMin != 0 || blocksEnergyMax != 0 {
-		result.Materials = append(result.Materials, data.MaterialConsumption{
-			Material:  MaterialClassBlocks,
-			CO2Min:    blocksCO2Min,
-			CO2Max:    blocksCO2Max,
-			EnergyMin: blocksEnergyMin,
-			EnergyMax: blocksEnergyMax,
-		})
+		for key, agg := range blocksByKey {
+			result.Materials = append(result.Materials, data.MaterialConsumption{
+				Material:   MaterialClassBlocks,
+				Resistance: key,
+				CO2Min:     agg.CO2Min,
+				CO2Max:     agg.CO2Max,
+				EnergyMin:  agg.EnergyMin,
+				EnergyMax:  agg.EnergyMax,
+				Quantity:   agg.Count,
+			})
+		}
 	}
 
 	total.sum(result)

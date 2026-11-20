@@ -16,13 +16,17 @@ import (
 
 // MaterialConsumption holds the per-material share of a module's carbon and
 // energy consumption, grouped by material class (e.g. Concreto, Aço,
-// Argamassa, Blocos). Stored as JSONB on the module row.
+// Argamassa, Blocos) and resistance category (FCK/CA/FAK/FBK/FGK). Quantity is
+// the material amount in its natural unit (m³ for concrete/mortar/grout, kg
+// for steel, units for blocks). Stored as JSONB on the module row.
 type MaterialConsumption struct {
 	Material  string  `json:"material"`
+	Resistance string `json:"resistance"`
 	CO2Min    float64 `json:"co2_min"`
 	CO2Max    float64 `json:"co2_max"`
 	EnergyMin float64 `json:"energy_min"`
 	EnergyMax float64 `json:"energy_max"`
+	Quantity  float64 `json:"quantity"`
 }
 
 type Module struct {
@@ -825,13 +829,19 @@ func (m ModuleModel) insertTx(tx *sql.Tx, module *Module) (*Module, error) {
 	return module, nil
 }
 
-// ProjectMaterialEmissions is one row of project-level embodied CO₂ grouped by
-// technology (module type) and material class, summed across tower units with
-// repetition weighting. CO2Avg uses the mean of the min/max bounds.
+// ProjectMaterialEmissions is one row of project-level embodied CO₂ and energy
+// grouped by technology (module type), material class and resistance category,
+// summed across tower units with repetition weighting. Quantity is the summed
+// material amount in its natural unit.
 type ProjectMaterialEmissions struct {
 	Technology string
 	Material   string
-	CO2Avg     float64
+	Resistance string
+	CO2Min     float64
+	CO2Max     float64
+	EnergyMin  float64
+	EnergyMax  float64
+	Quantity   float64
 }
 
 // GetProjectMaterialEmissionsByTechnology aggregates the per-module material
@@ -848,8 +858,12 @@ func (m ModuleModel) GetProjectMaterialEmissionsByTechnology(projectID uuid.UUID
 				f.unit_id,
 				m.type AS technology,
 				j.value->>'material' AS material,
+				COALESCE(j.value->>'resistance', '') AS resistance,
 				SUM((j.value->>'co2_min')::float8) AS co2_min,
-				SUM((j.value->>'co2_max')::float8) AS co2_max
+				SUM((j.value->>'co2_max')::float8) AS co2_max,
+				SUM((j.value->>'energy_min')::float8) AS energy_min,
+				SUM((j.value->>'energy_max')::float8) AS energy_max,
+				SUM(COALESCE((j.value->>'quantity')::float8, 0)) AS quantity
 			FROM module m
 			CROSS JOIN LATERAL jsonb_array_elements(m.material_consumption) AS j(value)
 			INNER JOIN module_target_consumption mtc ON mtc.module_id = m.id
@@ -857,7 +871,7 @@ func (m ModuleModel) GetProjectMaterialEmissionsByTechnology(projectID uuid.UUID
 			INNER JOIN options opt ON mtc.option_id = opt.id AND mtc.role_id = opt.role_id
 			INNER JOIN units u ON f.unit_id = u.id
 			WHERE u.project_id = $1 AND opt.active = TRUE
-			GROUP BY f.unit_id, m.type, j.value->>'material'
+			GROUP BY f.unit_id, m.type, j.value->>'material', j.value->>'resistance'
 
 			UNION ALL
 
@@ -865,23 +879,31 @@ func (m ModuleModel) GetProjectMaterialEmissionsByTechnology(projectID uuid.UUID
 				mtc.target_id AS unit_id,
 				m.type AS technology,
 				j.value->>'material' AS material,
+				COALESCE(j.value->>'resistance', '') AS resistance,
 				SUM((j.value->>'co2_min')::float8) AS co2_min,
-				SUM((j.value->>'co2_max')::float8) AS co2_max
+				SUM((j.value->>'co2_max')::float8) AS co2_max,
+				SUM((j.value->>'energy_min')::float8) AS energy_min,
+				SUM((j.value->>'energy_max')::float8) AS energy_max,
+				SUM(COALESCE((j.value->>'quantity')::float8, 0)) AS quantity
 			FROM module m
 			CROSS JOIN LATERAL jsonb_array_elements(m.material_consumption) AS j(value)
 			INNER JOIN module_target_consumption mtc ON mtc.module_id = m.id
 			INNER JOIN options opt ON mtc.option_id = opt.id AND mtc.role_id = opt.role_id
 			INNER JOIN units u ON mtc.target_id = u.id
 			WHERE mtc.target_type = 'unit' AND u.project_id = $1 AND opt.active = TRUE
-			GROUP BY mtc.target_id, m.type, j.value->>'material'
+			GROUP BY mtc.target_id, m.type, j.value->>'material', j.value->>'resistance'
 		)
-		SELECT um.technology, um.material,
-		       SUM((um.co2_min + um.co2_max) * GREATEST(1, COALESCE(u.repetition_count, 1))) / 2 AS co2_avg
+		SELECT um.technology, um.material, um.resistance,
+		       SUM(um.co2_min * GREATEST(1, COALESCE(u.repetition_count, 1))) AS co2_min,
+		       SUM(um.co2_max * GREATEST(1, COALESCE(u.repetition_count, 1))) AS co2_max,
+		       SUM(um.energy_min * GREATEST(1, COALESCE(u.repetition_count, 1))) AS energy_min,
+		       SUM(um.energy_max * GREATEST(1, COALESCE(u.repetition_count, 1))) AS energy_max,
+		       SUM(um.quantity * GREATEST(1, COALESCE(u.repetition_count, 1))) AS quantity
 		FROM unit_materials um
 		INNER JOIN units u ON um.unit_id = u.id
 		WHERE u.type = 'tower'
-		GROUP BY um.technology, um.material
-		ORDER BY um.technology, um.material`
+		GROUP BY um.technology, um.material, um.resistance
+		ORDER BY um.technology, um.material, um.resistance`
 
 	rows, err := m.DB.QueryContext(ctx, query, projectID)
 	if err != nil {
@@ -892,11 +914,9 @@ func (m ModuleModel) GetProjectMaterialEmissionsByTechnology(projectID uuid.UUID
 	var emissions []ProjectMaterialEmissions
 	for rows.Next() {
 		var e ProjectMaterialEmissions
-		var co2Avg sql.NullFloat64
-		if err := rows.Scan(&e.Technology, &e.Material, &co2Avg); err != nil {
+		if err := rows.Scan(&e.Technology, &e.Material, &e.Resistance, &e.CO2Min, &e.CO2Max, &e.EnergyMin, &e.EnergyMax, &e.Quantity); err != nil {
 			return nil, err
 		}
-		e.CO2Avg = co2Avg.Float64
 		emissions = append(emissions, e)
 	}
 
