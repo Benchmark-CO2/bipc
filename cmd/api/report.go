@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"sort"
@@ -317,6 +318,59 @@ func buildUserModulesTable(occurrences []*data.UnknownModuleOccurrence) []UserMo
 	return groups
 }
 
+// buildSourceData converts the per-source percentage distribution returned by
+// SourceDistribution into chart-ready segments and the total traceability
+// percentage (the sum of all source shares). Sources with no explicit tag are
+// already attributed to "manual" by the data layer. Segments are ordered by
+// share descending so the largest source renders first on the bar.
+func buildSourceData(distribution map[string]float64) ([]SourceData, float32) {
+	labels := map[string]string{
+		"manual": "Inseridos manualmente",
+		"ifc":    "Arquivos IFC (via upload)",
+		"tqs":    "Softwares (TQS via plugin)",
+		"plugin": "Softwares (TQS via plugin)",
+		"altoqi": "Softwares (AltoQi)",
+		"csv":    "Arquivos CSV",
+	}
+	colors := map[string]string{
+		"manual": "#d4736b",
+		"ifc":    "#1b7a72",
+		"tqs":    "#8ab4e8",
+		"plugin": "#8ab4e8",
+		"altoqi": "#e8a24a",
+		"csv":    "#e8a24a",
+	}
+	fallbackColors := []string{"#5B9BD5", "#E0756C", "#64C85A", "#F8A12B", "#9ECF31", "#EAE61F"}
+
+	rawTotal := 0.0
+	sources := make([]SourceData, 0, len(distribution))
+	for source, percent := range distribution {
+		rawTotal += percent
+		label := source
+		if l, ok := labels[source]; ok {
+			label = l
+		}
+		color := fallbackColors[len(sources)%len(fallbackColors)]
+		if c, ok := colors[source]; ok {
+			color = c
+		}
+		sources = append(sources, SourceData{
+			Label: label,
+			Value: int(percent + 0.5),
+			Color: color,
+		})
+	}
+
+	sort.Slice(sources, func(i, j int) bool {
+		if sources[i].Value != sources[j].Value {
+			return sources[i].Value > sources[j].Value
+		}
+		return sources[i].Label < sources[j].Label
+	})
+
+	return sources, float32(math.Round(rawTotal))
+}
+
 func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request) {
 	projectID, err := app.readUUIDParam(r, "projectID")
 	if err != nil {
@@ -365,6 +419,13 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 	energyClass := classificationLetter(report.Rank.Energy.Y)
 	energyTotal := report.Rank.Energy.Total
 
+	sourceDistribution, err := app.models.Modules.SourceDistribution(projectID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	sources, sourcesTotal := buildSourceData(sourceDistribution)
+
 	var reportData = ReportData{
 		ProjectWithUnits: project,
 
@@ -372,7 +433,7 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		TotalUC:     totalUC,
 		TotalUCArea: totalUCArea,
 
-		SourcesTotal: 71,
+		SourcesTotal: sourcesTotal,
 
 		Report:                  report,
 		BaseLineCO2reference:    *report.Baseline.CO2.Reference,
@@ -475,12 +536,7 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 	energyPoints := normalizeScreenshotBenchmarkPoints(benchmarkSeries.EnergyMin, benchmarkSeries.EnergyMax)
 
 	var jsonData = JSONData{
-		Sources: []SourceData{
-			{Label: "Softwares (TQS via plugin)", Value: 8, Color: "#8ab4e8"},
-			{Label: "Arquivos IFC (via upload)", Value: 46, Color: "#1b7a72"},
-			{Label: "Arquivos CSV", Value: 12, Color: "#e8a24a"},
-			{Label: "Inseridos manualmente", Value: 5, Color: "#d4736b"},
-		},
+		Sources: sources,
 		GM: []GMCategoria{
 			{Nome: "Parede de concreto", Itens: []GMItem{
 				{Material: "Concreto", Kg: 2100},
