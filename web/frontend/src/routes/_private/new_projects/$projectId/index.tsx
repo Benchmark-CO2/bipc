@@ -5,6 +5,7 @@ import {
   DisciplinesView,
   DrawerFormUnit,
   DrawerIFCImport,
+  getImportTriggerLabel,
   ProjectView,
 } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -156,7 +157,10 @@ function RouteComponent() {
               mode="unit"
               projectId={projectId}
               triggerComponent={
-                <SimpleTooltip content={t.common.ifcImport} side="bottom">
+                <SimpleTooltip
+                  content={getImportTriggerLabel(t, { withTqs: false })}
+                  side="bottom"
+                >
                   <Button variant="outline-bipc" size="icon-lg">
                     <Upload />
                   </Button>
