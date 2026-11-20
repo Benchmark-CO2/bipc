@@ -371,6 +371,89 @@ func buildSourceData(distribution map[string]float64) ([]SourceData, float32) {
 	return sources, float32(math.Round(rawTotal))
 }
 
+// moduleTypeDisplayNames maps module types to their report display names
+// (PT-BR). Storage keys stay English; only the display is localized.
+var moduleTypeDisplayNames = map[string]string{
+	"concrete_wall":         "Parede de Concreto",
+	"structural_masonry":    "Alvenaria Estrutural",
+	"beam_column":           "Viga Pilar",
+	"raft_foundation":       "Radier",
+	"piles_foundation":      "Estaca",
+	"raft_piles_foundation": "Radier Estaqueado",
+}
+
+// materialDisplayNames maps the stored material class keys to their report
+// display names (PT-BR).
+var materialDisplayNames = map[string]string{
+	"concrete": "Concreto",
+	"steel":    "Aço",
+	"mortar":   "Argamassa",
+	"blocks":   "Blocos",
+}
+
+// buildGMCategorias groups the project-level emissions by technology and
+// material into the stacked-bar data of the "Total de Emissões por tecnologia
+// e material" chart. Kg uses the mean of the min/max bounds. Categories and
+// their materials are ordered by Kg descending.
+func buildGMCategorias(emissions []data.ProjectMaterialEmissions) []GMCategoria {
+	type techAgg struct {
+		total float64
+		itens map[string]float64
+	}
+
+	categories := make(map[string]*techAgg)
+	for _, e := range emissions {
+		if e.CO2Avg <= 0 {
+			continue
+		}
+		name := moduleTypeDisplayNames[e.Technology]
+		if name == "" {
+			name = e.Technology
+		}
+		material := materialDisplayNames[e.Material]
+		if material == "" {
+			material = e.Material
+		}
+
+		agg, ok := categories[name]
+		if !ok {
+			agg = &techAgg{itens: make(map[string]float64)}
+			categories[name] = agg
+		}
+		agg.itens[material] += e.CO2Avg
+		agg.total += e.CO2Avg
+	}
+
+	gm := make([]GMCategoria, 0, len(categories))
+	for name, agg := range categories {
+		itens := make([]GMItem, 0, len(agg.itens))
+		for material, kg := range agg.itens {
+			if kg <= 0 {
+				continue
+			}
+			itens = append(itens, GMItem{Material: material, Kg: kg})
+		}
+		sort.Slice(itens, func(i, j int) bool {
+			return itens[i].Kg > itens[j].Kg
+		})
+		gm = append(gm, GMCategoria{Nome: name, Itens: itens})
+	}
+
+	sort.Slice(gm, func(i, j int) bool {
+		totalI := 0.0
+		for _, item := range gm[i].Itens {
+			totalI += item.Kg
+		}
+		totalJ := 0.0
+		for _, item := range gm[j].Itens {
+			totalJ += item.Kg
+		}
+		return totalI > totalJ
+	})
+
+	return gm
+}
+
 func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request) {
 	projectID, err := app.readUUIDParam(r, "projectID")
 	if err != nil {
@@ -425,6 +508,13 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 	sources, sourcesTotal := buildSourceData(sourceDistribution)
+
+	projectMaterialEmissions, err := app.models.Modules.GetProjectMaterialEmissionsByTechnology(projectID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	gm := buildGMCategorias(projectMaterialEmissions)
 
 	var reportData = ReportData{
 		ProjectWithUnits: project,
@@ -537,28 +627,7 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 
 	var jsonData = JSONData{
 		Sources: sources,
-		GM: []GMCategoria{
-			{Nome: "Parede de concreto", Itens: []GMItem{
-				{Material: "Concreto", Kg: 2100},
-				{Material: "Aço", Kg: 400},
-				{Material: "Argamassa", Kg: 1100},
-			}},
-			{Nome: "Alvenaria", Itens: []GMItem{
-				{Material: "Concreto", Kg: 3015},
-				{Material: "Aço", Kg: 1450},
-				{Material: "Argamassa", Kg: 520},
-			}},
-			{Nome: "Fundação", Itens: []GMItem{
-				{Material: "Concreto", Kg: 4560},
-				{Material: "Aço", Kg: 350},
-				{Material: "Argamassa", Kg: 70},
-			}},
-			{Nome: "Cobertura", Itens: []GMItem{
-				{Material: "Concreto", Kg: 2220},
-				{Material: "Aço", Kg: 1050},
-				{Material: "Argamassa", Kg: 1750},
-			}},
-		},
+		GM:      gm,
 		GC: []GCPonto{
 			{X: 0.15, Y: 0.0179}, {X: 0.18, Y: 0.0357}, {X: 0.20, Y: 0.0536}, {X: 0.205, Y: 0.0714},
 			{X: 0.21, Y: 0.0893}, {X: 0.22, Y: 0.1071}, {X: 0.23, Y: 0.1250}, {X: 0.26, Y: 0.1429},
