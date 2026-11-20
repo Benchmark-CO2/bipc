@@ -71,6 +71,18 @@ type ProjectBenchmarkReport struct {
 // buildProjectBenchmarkReport builds the project report payload using the same
 // ranking behavior used by /benchmark/projects (y = (i+1)/n after sorting).
 func (app *application) buildProjectBenchmarkReport(projectID uuid.UUID) (*ProjectBenchmarkReport, error) {
+	series, err := app.getProjectBenchmarkSeries(data.GetProjectsBenchmarkFilters{})
+	if err != nil {
+		return nil, err
+	}
+
+	return app.buildProjectBenchmarkReportWithSeries(projectID, series)
+}
+
+// buildProjectBenchmarkReportWithSeries builds the project report from a
+// pre-fetched benchmark series, so callers that also need the series for charts
+// avoid fetching the benchmark twice.
+func (app *application) buildProjectBenchmarkReportWithSeries(projectID uuid.UUID, series BenchmarkSeries) (*ProjectBenchmarkReport, error) {
 	project, err := app.models.Projects.GetByID(projectID)
 	if err != nil {
 		return nil, err
@@ -93,14 +105,6 @@ func (app *application) buildProjectBenchmarkReport(projectID uuid.UUID) (*Proje
 		totalConsumption.EnergyMin,
 		totalConsumption.EnergyMax,
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	series, err := app.getProjectBenchmarkSeries(data.GetProjectsBenchmarkFilters{})
-	if err != nil {
-		return nil, err
-	}
 
 	co2MinPoints := series.CO2Min
 	co2MaxPoints := series.CO2Max

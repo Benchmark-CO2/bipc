@@ -61,69 +61,71 @@ func calculateGiniRank(points []BenchmarkValue) {
 
 // separateConsumption fans out a flat slice of BenchmarkData into BenchmarkSeries.
 func separateConsumption(points []*data.BenchmarkData) BenchmarkSeries {
-	co2Min := []BenchmarkValue{}
-	co2Max := []BenchmarkValue{}
-	energyMin := []BenchmarkValue{}
-	energyMax := []BenchmarkValue{}
-	material := []BenchmarkValue{}
-
-	for _, p := range points {
-		if p.Consumption == nil {
-			continue
+	return separateConsumptionCommon(len(points), func(i int) benchmarkValueInput {
+		p := points[i]
+		return benchmarkValueInput{
+			consumption: p.Consumption,
+			id:          p.ID,
 		}
-		if p.Consumption.CO2Min != nil {
-			co2Min = append(co2Min, BenchmarkValue{ID: p.ID, Value: *p.Consumption.CO2Min})
-			co2Max = append(co2Max, BenchmarkValue{ID: p.ID, Value: *p.Consumption.CO2Max})
-		}
-		if p.Consumption.EnergyMin != nil {
-			energyMin = append(energyMin, BenchmarkValue{ID: p.ID, Value: *p.Consumption.EnergyMin})
-			energyMax = append(energyMax, BenchmarkValue{ID: p.ID, Value: *p.Consumption.EnergyMax})
-		}
-		if p.Consumption.Material != nil {
-			if *p.Consumption.Material == 0 {
-				continue
-			}
-
-			material = append(material, BenchmarkValue{ID: p.ID, Value: *p.Consumption.Material})
-		}
-	}
-
-	return BenchmarkSeries{
-		CO2Min:    co2Min,
-		CO2Max:    co2Max,
-		EnergyMin: energyMin,
-		EnergyMax: energyMax,
-		Material:  material,
-	}
+	})
 }
 
 // separateProjectConsumption does the same as separateConsumption but for the projects
 // endpoint, where each point carries extra unit metadata (floors, technology, location).
 func separateProjectConsumption(points []*data.ProjectBenchmarkData) BenchmarkSeries {
+	return separateConsumptionCommon(len(points), func(i int) benchmarkValueInput {
+		p := points[i]
+		return benchmarkValueInput{
+			consumption: p.Consumption,
+			id:          p.ID,
+			floors:      p.Floors,
+			technology:  p.Technology,
+			state:       p.State,
+			city:        p.City,
+		}
+	})
+}
+
+// benchmarkValueInput carries the per-point fields shared by the two benchmark
+// fan-out helpers; metadata fields are empty for the floors endpoint.
+type benchmarkValueInput struct {
+	consumption *data.Consumption
+	id          uuid.UUID
+	floors      int
+	technology  []string
+	state       string
+	city        string
+}
+
+// separateConsumptionCommon fans out a flat benchmark payload into the per-metric
+// series. Points without consumption are skipped; zero material values are
+// excluded from the Material series.
+func separateConsumptionCommon(n int, inputAt func(i int) benchmarkValueInput) BenchmarkSeries {
 	co2Min := []BenchmarkValue{}
 	co2Max := []BenchmarkValue{}
 	energyMin := []BenchmarkValue{}
 	energyMax := []BenchmarkValue{}
 	material := []BenchmarkValue{}
 
-	for _, p := range points {
-		if p.Consumption == nil {
+	for i := 0; i < n; i++ {
+		in := inputAt(i)
+		if in.consumption == nil {
 			continue
 		}
-		if p.Consumption.CO2Min != nil {
-			co2Min = append(co2Min, BenchmarkValue{ID: p.ID, Value: *p.Consumption.CO2Min, Floors: p.Floors, Technology: p.Technology, State: p.State, City: p.City})
-			co2Max = append(co2Max, BenchmarkValue{ID: p.ID, Value: *p.Consumption.CO2Max, Floors: p.Floors, Technology: p.Technology, State: p.State, City: p.City})
+		if in.consumption.CO2Min != nil {
+			co2Min = append(co2Min, BenchmarkValue{ID: in.id, Value: *in.consumption.CO2Min, Floors: in.floors, Technology: in.technology, State: in.state, City: in.city})
+			co2Max = append(co2Max, BenchmarkValue{ID: in.id, Value: *in.consumption.CO2Max, Floors: in.floors, Technology: in.technology, State: in.state, City: in.city})
 		}
-		if p.Consumption.EnergyMin != nil {
-			energyMin = append(energyMin, BenchmarkValue{ID: p.ID, Value: *p.Consumption.EnergyMin, Floors: p.Floors, Technology: p.Technology, State: p.State, City: p.City})
-			energyMax = append(energyMax, BenchmarkValue{ID: p.ID, Value: *p.Consumption.EnergyMax, Floors: p.Floors, Technology: p.Technology, State: p.State, City: p.City})
+		if in.consumption.EnergyMin != nil {
+			energyMin = append(energyMin, BenchmarkValue{ID: in.id, Value: *in.consumption.EnergyMin, Floors: in.floors, Technology: in.technology, State: in.state, City: in.city})
+			energyMax = append(energyMax, BenchmarkValue{ID: in.id, Value: *in.consumption.EnergyMax, Floors: in.floors, Technology: in.technology, State: in.state, City: in.city})
 		}
-		if p.Consumption.Material != nil {
-			if *p.Consumption.Material == 0 {
+		if in.consumption.Material != nil {
+			if *in.consumption.Material == 0 {
 				continue
 			}
 
-			material = append(material, BenchmarkValue{ID: p.ID, Value: *p.Consumption.Material, Floors: p.Floors, Technology: p.Technology, State: p.State, City: p.City})
+			material = append(material, BenchmarkValue{ID: in.id, Value: *in.consumption.Material, Floors: in.floors, Technology: in.technology, State: in.state, City: in.city})
 		}
 	}
 

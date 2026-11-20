@@ -296,11 +296,7 @@ func buildSBCLinhas(units []data.ProjectUnit, metric string) []SBCLinha {
 			if valor <= 0 {
 				continue
 			}
-			nome := moduleTypeDisplayNames[tech]
-			if nome == "" {
-				nome = tech
-			}
-			serie = append(serie, SBCSerie{Nome: nome, Valor: math.Round(valor*100) / 100})
+			serie = append(serie, SBCSerie{Nome: technologyDisplayName(tech), Valor: math.Round(valor*100) / 100})
 		}
 		if len(serie) == 0 {
 			continue
@@ -329,34 +325,7 @@ func buildUnits(units []data.ProjectUnit, emissionsFor func(uuid.UUID) ([]data.P
 			continue
 		}
 
-		type techAgg struct {
-			name    string
-			byMat   map[string]float64
-			total   float64
-		}
-		techs := make(map[string]*techAgg)
-		for _, e := range emissions {
-			if e.CO2Min <= 0 && e.CO2Max <= 0 {
-				continue
-			}
-			techName := moduleTypeDisplayNames[e.Technology]
-			if techName == "" {
-				techName = e.Technology
-			}
-			matName := materialDisplayNames[e.Material]
-			if matName == "" {
-				matName = e.Material
-			}
-			co2Avg := (e.CO2Min + e.CO2Max) / 2
-
-			agg, ok := techs[techName]
-			if !ok {
-				agg = &techAgg{name: techName, byMat: make(map[string]float64)}
-				techs[techName] = agg
-			}
-			agg.byMat[matName] += co2Avg
-			agg.total += co2Avg
-		}
+		techs := aggregateMaterialEmissions(emissions)
 
 		area := unit.Area
 		if area <= 0 {
@@ -541,6 +510,24 @@ var materialDisplayNames = map[string]string{
 	"grout":    "Graute",
 }
 
+// technologyDisplayName returns the report display name for a module type,
+// falling back to the raw storage key when unknown.
+func technologyDisplayName(key string) string {
+	if name, ok := moduleTypeDisplayNames[key]; ok && name != "" {
+		return name
+	}
+	return key
+}
+
+// materialDisplayName returns the report display name for a material class,
+// falling back to the raw storage key when unknown.
+func materialDisplayName(key string) string {
+	if name, ok := materialDisplayNames[key]; ok && name != "" {
+		return name
+	}
+	return key
+}
+
 // resistanceDisplayNames maps the stored resistance category keys to their
 // report display suffixes (PT-BR). Keys follow the storage format, e.g.
 // "fck_25", "ca_CA50", "fak_14", "fbk_26", "fgk_30". Display matches the
@@ -569,45 +556,51 @@ func resistanceDisplayName(key string) string {
 	}
 }
 
+// materialTechAggregation aggregates embodied CO₂ rows by technology and
+// material class, using the mean of the min/max bounds. It is shared by the
+// charts that present a per-technology/per-material breakdown.
+type materialTechAggregation struct {
+	name  string
+	byMat map[string]float64
+	total float64
+}
+
+// aggregateMaterialEmissions groups emissions rows by technology (display name)
+// and material class (display name), skipping rows without CO₂ data. The value
+// stored is the average of the min/max bounds.
+func aggregateMaterialEmissions(emissions []data.ProjectMaterialEmissions) map[string]*materialTechAggregation {
+	techs := make(map[string]*materialTechAggregation)
+	for _, e := range emissions {
+		if e.CO2Min <= 0 && e.CO2Max <= 0 {
+			continue
+		}
+		techName := technologyDisplayName(e.Technology)
+		matName := materialDisplayName(e.Material)
+		co2Avg := (e.CO2Min + e.CO2Max) / 2
+
+		agg, ok := techs[techName]
+		if !ok {
+			agg = &materialTechAggregation{name: techName, byMat: make(map[string]float64)}
+			techs[techName] = agg
+		}
+		agg.byMat[matName] += co2Avg
+		agg.total += co2Avg
+	}
+	return techs
+}
+
 // buildGMCategorias groups the project-level emissions by technology and
 // material into the stacked-bar data of the "Total de Emissões por tecnologia
 // e material" chart. Kg uses the mean of the min/max bounds. Resistance
 // categories are aggregated into their material class. Categories and their
 // materials are ordered by Kg descending.
 func buildGMCategorias(emissions []data.ProjectMaterialEmissions) []GMCategoria {
-	type techAgg struct {
-		total float64
-		itens map[string]float64
-	}
-
-	categories := make(map[string]*techAgg)
-	for _, e := range emissions {
-		if e.CO2Min <= 0 && e.CO2Max <= 0 {
-			continue
-		}
-		name := moduleTypeDisplayNames[e.Technology]
-		if name == "" {
-			name = e.Technology
-		}
-		material := materialDisplayNames[e.Material]
-		if material == "" {
-			material = e.Material
-		}
-		co2Avg := (e.CO2Min + e.CO2Max) / 2
-
-		agg, ok := categories[name]
-		if !ok {
-			agg = &techAgg{itens: make(map[string]float64)}
-			categories[name] = agg
-		}
-		agg.itens[material] += co2Avg
-		agg.total += co2Avg
-	}
+	categories := aggregateMaterialEmissions(emissions)
 
 	gm := make([]GMCategoria, 0, len(categories))
-	for name, agg := range categories {
-		itens := make([]GMItem, 0, len(agg.itens))
-		for material, kg := range agg.itens {
+	for _, agg := range categories {
+		itens := make([]GMItem, 0, len(agg.byMat))
+		for material, kg := range agg.byMat {
 			if kg <= 0 {
 				continue
 			}
@@ -616,7 +609,7 @@ func buildGMCategorias(emissions []data.ProjectMaterialEmissions) []GMCategoria 
 		sort.Slice(itens, func(i, j int) bool {
 			return itens[i].Kg > itens[j].Kg
 		})
-		gm = append(gm, GMCategoria{Nome: name, Itens: itens})
+		gm = append(gm, GMCategoria{Nome: agg.name, Itens: itens})
 	}
 
 	sort.Slice(gm, func(i, j int) bool {
@@ -655,19 +648,10 @@ func buildTableCarbonEnergy(emissions []data.ProjectMaterialEmissions, totalArea
 	var geral TableRow
 	geralByKey := make(map[string]*materialRow)
 
-	addMaterial := func(target *techAgg, e data.ProjectMaterialEmissions) {
-		materialName := materialDisplayNames[e.Material]
-		if materialName == "" {
-			materialName = e.Material
-		}
-		res := resistanceDisplayName(e.Resistance)
-		if res == "" {
-			res = e.Resistance
-		}
-
+	makeMaterialRow := func(e data.ProjectMaterialEmissions) TableRow {
 		row := TableRow{
 			Type:       "material",
-			Name:       materialName + " " + res,
+			Name:       materialDisplayName(e.Material) + " " + resistanceDisplayName(e.Resistance),
 			Co2Min:     e.CO2Min,
 			Co2Max:     e.CO2Max,
 			EnergyMin:  e.EnergyMin,
@@ -676,13 +660,23 @@ func buildTableCarbonEnergy(emissions []data.ProjectMaterialEmissions, totalArea
 		}
 		row.Co2Prov = (row.Co2Min + row.Co2Max) / 2
 		row.EnergyProv = (row.EnergyMin + row.EnergyMax) / 2
+		return row
+	}
 
+	addRow := func(target *TableRow, row TableRow) {
+		target.Co2Min += row.Co2Min
+		target.Co2Max += row.Co2Max
+		target.Co2Prov = (target.Co2Min + target.Co2Max) / 2
+		target.EnergyMin += row.EnergyMin
+		target.EnergyMax += row.EnergyMax
+		target.EnergyProv = (target.EnergyMin + target.EnergyMax) / 2
+		target.Cum += row.Cum
+	}
+
+	addMaterial := func(target *techAgg, e data.ProjectMaterialEmissions) {
+		row := makeMaterialRow(e)
 		target.materials = append(target.materials, materialRow{row: row})
-		target.total.Co2Min += row.Co2Min
-		target.total.Co2Max += row.Co2Max
-		target.total.EnergyMin += row.EnergyMin
-		target.total.EnergyMax += row.EnergyMax
-		target.total.Cum += row.Cum
+		addRow(&target.total, row)
 	}
 
 	for _, e := range emissions {
@@ -690,10 +684,7 @@ func buildTableCarbonEnergy(emissions []data.ProjectMaterialEmissions, totalArea
 			continue
 		}
 
-		techName := moduleTypeDisplayNames[e.Technology]
-		if techName == "" {
-			techName = e.Technology
-		}
+		techName := technologyDisplayName(e.Technology)
 		agg, ok := techs[techName]
 		if !ok {
 			agg = &techAgg{display: techName}
@@ -710,27 +701,11 @@ func buildTableCarbonEnergy(emissions []data.ProjectMaterialEmissions, totalArea
 		matKey := e.Material + "\x00" + e.Resistance
 		mr, ok := geralByKey[matKey]
 		if !ok {
-			row := TableRow{
-				Type:      "material",
-				Name:      materialDisplayNames[e.Material] + " " + resistanceDisplayName(e.Resistance),
-				Co2Min:    e.CO2Min,
-				Co2Max:    e.CO2Max,
-				EnergyMin: e.EnergyMin,
-				EnergyMax: e.EnergyMax,
-				Cum:       e.Quantity,
-			}
-			row.Co2Prov = (row.Co2Min + row.Co2Max) / 2
-			row.EnergyProv = (row.EnergyMin + row.EnergyMax) / 2
+			row := makeMaterialRow(e)
 			mr = &materialRow{row: row}
 			geralByKey[matKey] = mr
 		} else {
-			mr.row.Co2Min += e.CO2Min
-			mr.row.Co2Max += e.CO2Max
-			mr.row.Co2Prov = (mr.row.Co2Min + mr.row.Co2Max) / 2
-			mr.row.EnergyMin += e.EnergyMin
-			mr.row.EnergyMax += e.EnergyMax
-			mr.row.EnergyProv = (mr.row.EnergyMin + mr.row.EnergyMax) / 2
-			mr.row.Cum += e.Quantity
+			addRow(&mr.row, makeMaterialRow(e))
 		}
 	}
 
@@ -831,7 +806,14 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		totalUCArea += unit.Area * float64(rep)
 	}
 
-	report, err := app.buildProjectBenchmarkReport(projectID)
+	benchmarkProjects, err := app.models.Benchmark.GetProjectsBenchmark(data.GetProjectsBenchmarkFilters{})
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	benchmarkSeries := separateProjectConsumption(benchmarkProjects)
+
+	report, err := app.buildProjectBenchmarkReportWithSeries(projectID, benchmarkSeries)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -856,37 +838,21 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 	}
 	gm := buildGMCategorias(projectMaterialEmissions)
 
-	benchmarkProjects, err := app.models.Benchmark.GetProjectsBenchmark(data.GetProjectsBenchmarkFilters{})
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
+	type benchmarkPair struct {
+		points *[]BenchmarkValue
+		value  float64
 	}
 
-	benchmarkSeries := separateProjectConsumption(benchmarkProjects)
-	benchmarkSeries.CO2Min = addSelectedBenchmarkPoint(
-		benchmarkSeries.CO2Min,
-		projectID,
-		report.Project.CO2.Min.Value,
-	)
-	benchmarkSeries.CO2Max = addSelectedBenchmarkPoint(
-		benchmarkSeries.CO2Max,
-		projectID,
-		report.Project.CO2.Max.Value,
-	)
-	benchmarkSeries.EnergyMin = addSelectedBenchmarkPoint(
-		benchmarkSeries.EnergyMin,
-		projectID,
-		report.Project.Energy.Min.Value,
-	)
-	benchmarkSeries.EnergyMax = addSelectedBenchmarkPoint(
-		benchmarkSeries.EnergyMax,
-		projectID,
-		report.Project.Energy.Max.Value,
-	)
-	calculateGiniRank(benchmarkSeries.CO2Min)
-	calculateGiniRank(benchmarkSeries.CO2Max)
-	calculateGiniRank(benchmarkSeries.EnergyMin)
-	calculateGiniRank(benchmarkSeries.EnergyMax)
+	benchmarkPairs := []benchmarkPair{
+		{&benchmarkSeries.CO2Min, report.Project.CO2.Min.Value},
+		{&benchmarkSeries.CO2Max, report.Project.CO2.Max.Value},
+		{&benchmarkSeries.EnergyMin, report.Project.Energy.Min.Value},
+		{&benchmarkSeries.EnergyMax, report.Project.Energy.Max.Value},
+	}
+	for _, pair := range benchmarkPairs {
+		*pair.points = addSelectedBenchmarkPoint(*pair.points, projectID, pair.value)
+		calculateGiniRank(*pair.points)
+	}
 	co2Points := normalizeScreenshotBenchmarkPoints(benchmarkSeries.CO2Min, benchmarkSeries.CO2Max)
 	energyPoints := normalizeScreenshotBenchmarkPoints(benchmarkSeries.EnergyMin, benchmarkSeries.EnergyMax)
 

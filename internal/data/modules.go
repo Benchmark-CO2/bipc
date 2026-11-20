@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -844,15 +845,48 @@ type ProjectMaterialEmissions struct {
 	Quantity   float64
 }
 
-// GetProjectMaterialEmissionsByTechnology aggregates the per-module material
-// breakdown (material_consumption jsonb) at project level, mirroring the scope
-// used for project consumptions: only active options, floors plus direct unit
-// modules, tower units weighted by repetition_count.
-func (m ModuleModel) GetProjectMaterialEmissionsByTechnology(projectID uuid.UUID) ([]ProjectMaterialEmissions, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+// materialEmissionsScope describes how to filter the shared material breakdown
+// query. floorFilter and unitFilter are SQL WHERE fragments applied to the
+// floor and direct-unit UNION branches respectively; both bind $1. weight toggles
+// repetition_count weighting (project scope) vs plain sums (single unit).
+type materialEmissionsScope struct {
+	floorFilter string
+	unitFilter  string
+	weight      bool
+}
 
-	query := `
+// projectMaterialEmissionsScope scopes the query to all tower units of a project.
+func projectMaterialEmissionsScope() materialEmissionsScope {
+	return materialEmissionsScope{
+		floorFilter: `u.project_id = $1`,
+		unitFilter:  `u.project_id = $1`,
+		weight:      true,
+	}
+}
+
+// unitMaterialEmissionsScope scopes the query to a single unit.
+func unitMaterialEmissionsScope() materialEmissionsScope {
+	return materialEmissionsScope{
+		floorFilter: `f.unit_id = $1`,
+		unitFilter:  `mtc.target_id = $1`,
+		weight:      false,
+	}
+}
+
+// materialEmissionsByTechnology runs the shared per-module material breakdown
+// query (material_consumption jsonb) for the given scope, keeping the same
+// semantics as project consumptions: only active options, floors plus direct
+// unit modules. With weight enabled the sums are multiplied by the unit's
+// repetition_count and restricted to tower units.
+func (m ModuleModel) materialEmissionsByTechnology(ctx context.Context, scope materialEmissionsScope, filter uuid.UUID) ([]ProjectMaterialEmissions, error) {
+	weightExpr := ""
+	fromTail := `FROM unit_materials um`
+	if scope.weight {
+		weightExpr = ` * GREATEST(1, COALESCE(u.repetition_count, 1))`
+		fromTail = `FROM unit_materials um INNER JOIN units u ON um.unit_id = u.id WHERE u.type = 'tower'`
+	}
+
+	query := fmt.Sprintf(`
 		WITH unit_materials AS (
 			SELECT
 				f.unit_id,
@@ -870,7 +904,7 @@ func (m ModuleModel) GetProjectMaterialEmissionsByTechnology(projectID uuid.UUID
 			INNER JOIN floor f ON mtc.target_id = f.id AND mtc.target_type = 'floor'
 			INNER JOIN options opt ON mtc.option_id = opt.id AND mtc.role_id = opt.role_id
 			INNER JOIN units u ON f.unit_id = u.id
-			WHERE u.project_id = $1 AND opt.active = TRUE
+			WHERE %s AND opt.active = TRUE
 			GROUP BY f.unit_id, m.type, j.value->>'material', j.value->>'resistance'
 
 			UNION ALL
@@ -890,22 +924,25 @@ func (m ModuleModel) GetProjectMaterialEmissionsByTechnology(projectID uuid.UUID
 			INNER JOIN module_target_consumption mtc ON mtc.module_id = m.id
 			INNER JOIN options opt ON mtc.option_id = opt.id AND mtc.role_id = opt.role_id
 			INNER JOIN units u ON mtc.target_id = u.id
-			WHERE mtc.target_type = 'unit' AND u.project_id = $1 AND opt.active = TRUE
+			WHERE mtc.target_type = 'unit' AND %s AND opt.active = TRUE
 			GROUP BY mtc.target_id, m.type, j.value->>'material', j.value->>'resistance'
 		)
 		SELECT um.technology, um.material, um.resistance,
-		       SUM(um.co2_min * GREATEST(1, COALESCE(u.repetition_count, 1))) AS co2_min,
-		       SUM(um.co2_max * GREATEST(1, COALESCE(u.repetition_count, 1))) AS co2_max,
-		       SUM(um.energy_min * GREATEST(1, COALESCE(u.repetition_count, 1))) AS energy_min,
-		       SUM(um.energy_max * GREATEST(1, COALESCE(u.repetition_count, 1))) AS energy_max,
-		       SUM(um.quantity * GREATEST(1, COALESCE(u.repetition_count, 1))) AS quantity
-		FROM unit_materials um
-		INNER JOIN units u ON um.unit_id = u.id
-		WHERE u.type = 'tower'
+		       SUM(um.co2_min%s) AS co2_min,
+		       SUM(um.co2_max%s) AS co2_max,
+		       SUM(um.energy_min%s) AS energy_min,
+		       SUM(um.energy_max%s) AS energy_max,
+		       SUM(um.quantity%s) AS quantity
+		%s
 		GROUP BY um.technology, um.material, um.resistance
-		ORDER BY um.technology, um.material, um.resistance`
+		ORDER BY um.technology, um.material, um.resistance`,
+		scope.floorFilter,
+		scope.unitFilter,
+		weightExpr, weightExpr, weightExpr, weightExpr, weightExpr,
+		fromTail,
+	)
 
-	rows, err := m.DB.QueryContext(ctx, query, projectID)
+	rows, err := m.DB.QueryContext(ctx, query, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -927,6 +964,17 @@ func (m ModuleModel) GetProjectMaterialEmissionsByTechnology(projectID uuid.UUID
 	return emissions, nil
 }
 
+// GetProjectMaterialEmissionsByTechnology aggregates the per-module material
+// breakdown (material_consumption jsonb) at project level, mirroring the scope
+// used for project consumptions: only active options, floors plus direct unit
+// modules, tower units weighted by repetition_count.
+func (m ModuleModel) GetProjectMaterialEmissionsByTechnology(projectID uuid.UUID) ([]ProjectMaterialEmissions, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	return m.materialEmissionsByTechnology(ctx, projectMaterialEmissionsScope(), projectID)
+}
+
 // GetUnitMaterialEmissionsByTechnology aggregates the per-module material
 // breakdown (material_consumption jsonb) for a single unit, mirroring the scope
 // used for project consumptions: only active options, floors plus direct unit
@@ -935,74 +983,7 @@ func (m ModuleModel) GetUnitMaterialEmissionsByTechnology(unitID uuid.UUID) ([]P
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	query := `
-		WITH unit_materials AS (
-			SELECT
-				m.type AS technology,
-				j.value->>'material' AS material,
-				COALESCE(j.value->>'resistance', '') AS resistance,
-				SUM((j.value->>'co2_min')::float8) AS co2_min,
-				SUM((j.value->>'co2_max')::float8) AS co2_max,
-				SUM((j.value->>'energy_min')::float8) AS energy_min,
-				SUM((j.value->>'energy_max')::float8) AS energy_max,
-				SUM(COALESCE((j.value->>'quantity')::float8, 0)) AS quantity
-			FROM module m
-			CROSS JOIN LATERAL jsonb_array_elements(m.material_consumption) AS j(value)
-			INNER JOIN module_target_consumption mtc ON mtc.module_id = m.id
-			INNER JOIN floor f ON mtc.target_id = f.id AND mtc.target_type = 'floor'
-			INNER JOIN options opt ON mtc.option_id = opt.id AND mtc.role_id = opt.role_id
-			WHERE f.unit_id = $1 AND opt.active = TRUE
-			GROUP BY m.type, j.value->>'material', j.value->>'resistance'
-
-			UNION ALL
-
-			SELECT
-				m.type AS technology,
-				j.value->>'material' AS material,
-				COALESCE(j.value->>'resistance', '') AS resistance,
-				SUM((j.value->>'co2_min')::float8) AS co2_min,
-				SUM((j.value->>'co2_max')::float8) AS co2_max,
-				SUM((j.value->>'energy_min')::float8) AS energy_min,
-				SUM((j.value->>'energy_max')::float8) AS energy_max,
-				SUM(COALESCE((j.value->>'quantity')::float8, 0)) AS quantity
-			FROM module m
-			CROSS JOIN LATERAL jsonb_array_elements(m.material_consumption) AS j(value)
-			INNER JOIN module_target_consumption mtc ON mtc.module_id = m.id
-			INNER JOIN options opt ON mtc.option_id = opt.id AND mtc.role_id = opt.role_id
-			INNER JOIN units u ON mtc.target_id = u.id
-			WHERE mtc.target_type = 'unit' AND mtc.target_id = $1 AND opt.active = TRUE
-			GROUP BY m.type, j.value->>'material', j.value->>'resistance'
-		)
-		SELECT um.technology, um.material, um.resistance,
-		       SUM(um.co2_min) AS co2_min,
-		       SUM(um.co2_max) AS co2_max,
-		       SUM(um.energy_min) AS energy_min,
-		       SUM(um.energy_max) AS energy_max,
-		       SUM(um.quantity) AS quantity
-		FROM unit_materials um
-		GROUP BY um.technology, um.material, um.resistance
-		ORDER BY um.technology, um.material, um.resistance`
-
-	rows, err := m.DB.QueryContext(ctx, query, unitID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var emissions []ProjectMaterialEmissions
-	for rows.Next() {
-		var e ProjectMaterialEmissions
-		if err := rows.Scan(&e.Technology, &e.Material, &e.Resistance, &e.CO2Min, &e.CO2Max, &e.EnergyMin, &e.EnergyMax, &e.Quantity); err != nil {
-			return nil, err
-		}
-		emissions = append(emissions, e)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return emissions, nil
+	return m.materialEmissionsByTechnology(ctx, unitMaterialEmissionsScope(), unitID)
 }
 
 func (m ModuleModel) validateModuleTargets(tx *sql.Tx, ctx context.Context, module *Module) error {
